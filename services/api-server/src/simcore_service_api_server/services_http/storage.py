@@ -232,8 +232,8 @@ def setup(
 
 
 __all__: tuple[str, ...] = (
-    "setup",
     "StorageApi",
     "StorageFileMetaData",
+    "setup",
     "to_file_api_model",
 )

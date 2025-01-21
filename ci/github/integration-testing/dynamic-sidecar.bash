@@ -9,6 +9,7 @@ install() {
   make devenv
   # shellcheck source=/dev/null
   source .venv/bin/activate
+  sudo ./ci/github/helpers/install_7zip.bash
   pushd services/dynamic-sidecar
   make install-ci
   popd

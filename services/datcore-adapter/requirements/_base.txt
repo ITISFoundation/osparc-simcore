@@ -352,7 +352,7 @@ pyyaml==6.0.1
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   uvicorn
-redis==5.0.4
+redis==5.2.1
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -371,8 +371,6 @@ referencing==0.29.3
     # via
     #   jsonschema
     #   jsonschema-specifications
-repro-zipfile==0.3.1
-    # via -r requirements/../../../packages/service-library/requirements/_base.in
 requests==2.32.3
     # via opentelemetry-exporter-otlp-proto-http
 rich==13.7.1

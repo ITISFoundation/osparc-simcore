@@ -189,7 +189,7 @@ class JobMetadata(BaseModel):
 
 
 class Job(BaseModel):
-    id: JobID  # noqa: A003
+    id: JobID
     name: RelativeResourceName
 
     inputs_checksum: str = Field(..., description="Input's checksum")
@@ -248,7 +248,7 @@ class Job(BaseModel):
             id=global_uuid,
             runner_name=parent_name,
             inputs_checksum=inputs_checksum,
-            created_at=datetime.datetime.now(tz=datetime.timezone.utc),
+            created_at=datetime.datetime.now(tz=datetime.UTC),
             url=None,
             runner_url=None,
             outputs_url=None,

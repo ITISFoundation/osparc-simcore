@@ -25,15 +25,16 @@ jobs:
         with:
           python-version: "3.11"
       - name: install uv
-        uses: astral-sh/setup-uv@v4
+        uses: astral-sh/setup-uv@v5
         with:
-          version: "0.4.x"
+          version: "0.5.x"
           enable-cache: false
       - name: checkout source branch
         uses: actions/checkout@v4
       - name: Regenerate specs and check
         run: |
-          uv venv .venv && source .venv/bin/activate
+          make devenv
+          source .venv/bin/activate
           make openapi-specs
           if ! ./ci/github/helpers/openapi-specs-diff.bash diff \
             https://raw.githubusercontent.com/${{ github.event.pull_request.head.repo.full_name }}/refs/heads/${{ github.event.pull_request.head.ref }} \
@@ -51,11 +52,6 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - name: install uv
-        uses: astral-sh/setup-uv@v4
-        with:
-          version: "0.4.x"
-          enable-cache: false
       - name: checkout
         uses: actions/checkout@v4
       - name: check api-server backwards compatibility
@@ -75,11 +71,6 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - name: install uv
-        uses: astral-sh/setup-uv@v4
-        with:
-          version: "0.4.x"
-          enable-cache: false
       - name: checkout
         uses: actions/checkout@v4
       - name: Check openapi-specs backwards compatibility

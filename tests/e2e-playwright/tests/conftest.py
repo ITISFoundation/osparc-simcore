@@ -19,7 +19,7 @@ from typing import Any, Final
 import arrow
 import pytest
 from faker import Faker
-from playwright.sync_api import APIRequestContext, BrowserContext, Page, expect
+from playwright.sync_api import APIRequestContext, Browser, BrowserContext, Page, expect
 from playwright.sync_api._generated import Playwright
 from pydantic import AnyUrl, TypeAdapter
 from pytest_simcore.helpers.faker_factories import DEFAULT_TEST_PASSWORD
@@ -329,6 +329,7 @@ def store_browser_context() -> bool:
 
 @pytest.fixture
 def log_in_and_out(
+    browser: Browser,
     page: Page,
     product_url: AnyUrl,
     user_name: str,
@@ -340,7 +341,7 @@ def log_in_and_out(
 ) -> Iterator[RestartableWebSocket]:
     with log_context(
         logging.INFO,
-        f"Open {product_url=} using {user_name=}/{user_password=}/{auto_register=}",
+        f"Open {product_url=} using {user_name=}/{user_password=}/{auto_register=} with {browser.browser_type.name}:{browser.version}({browser.browser_type.executable_path})",
     ):
         response = page.goto(f"{product_url}")
         assert response
@@ -417,7 +418,7 @@ def log_in_and_out(
 def _open_with_resources(page: Page, *, click_it: bool):
     study_title_field = page.get_by_test_id("studyTitleField")
     # wait until the title is automatically filled up
-    expect(study_title_field).not_to_have_value("")
+    expect(study_title_field).not_to_have_value("", timeout=30000)
 
     open_with_resources_button = page.get_by_test_id("openWithResources")
     if click_it:

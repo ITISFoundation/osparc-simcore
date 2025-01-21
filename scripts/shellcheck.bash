@@ -5,4 +5,4 @@
 # - VS extension: https://github.com/timonwong/vscode-shellcheck
 #
 
-exec docker run --rm --interactive --volume "$PWD:/mnt:ro" koalaman/shellcheck:v0.9.0 "$@"
+exec docker run --rm --interactive --volume "$PWD:/mnt:ro" koalaman/shellcheck:v0.10.0 "$@"

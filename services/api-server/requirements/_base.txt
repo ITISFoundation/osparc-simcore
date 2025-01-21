@@ -675,7 +675,7 @@ pyyaml==6.0.2
     #   -r requirements/_base.in
     #   fastapi
     #   uvicorn
-redis==5.2.0
+redis==5.2.1
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -705,10 +705,6 @@ redis==5.2.0
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
-    #   -r requirements/../../../packages/service-library/requirements/_base.in
-    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
-repro-zipfile==0.3.1
-    # via
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
 requests==2.32.3

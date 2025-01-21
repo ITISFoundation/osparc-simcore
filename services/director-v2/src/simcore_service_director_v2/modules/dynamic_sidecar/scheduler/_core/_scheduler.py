@@ -41,15 +41,11 @@ from models_library.services_types import ServicePortKey
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import NonNegativeFloat
-from servicelib.background_task import (
-    cancel_task,
-    start_periodic_task,
-    stop_periodic_task,
-)
+from servicelib.async_utils import cancel_wait_task
+from servicelib.background_task import create_periodic_task
 from servicelib.fastapi.long_running_tasks.client import ProgressCallback
 from servicelib.fastapi.long_running_tasks.server import TaskProgress
-from servicelib.redis import RedisClientsManager
-from servicelib.redis_utils import exclusive
+from servicelib.redis import RedisClientsManager, exclusive
 from settings_library.redis import RedisDatabase
 
 from .....core.dynamic_services_settings.scheduler import (
@@ -108,7 +104,7 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
         settings: DynamicServicesSchedulerSettings = (
             self.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
         )
-        self._scheduler_task = start_periodic_task(
+        self._scheduler_task = create_periodic_task(
             exclusive(
                 redis_clients_manager.client(RedisDatabase.LOCKS),
                 lock_key=f"{__name__}.{self.__class__.__name__}",
@@ -130,7 +126,7 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
         self._to_observe = {}
 
         if self._scheduler_task is not None:
-            await stop_periodic_task(self._scheduler_task, timeout=5)
+            await cancel_wait_task(self._scheduler_task, max_delay=5)
             self._scheduler_task = None
 
         if self._trigger_observation_queue_task is not None:
@@ -158,7 +154,7 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
                     "Following observation tasks completed with an unexpected error:%s",
                     f"{bad_results}",
                 )
-        except asyncio.TimeoutError:
+        except TimeoutError:
             logger.exception(
                 "Timed-out waiting for %s to complete. Action: Check why this is blocking",
                 f"{running_tasks=}",
@@ -369,7 +365,7 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
                     self._service_observation_task[service_name]
                 )
                 if isinstance(service_task, asyncio.Task):
-                    await cancel_task(service_task, timeout=10)
+                    await cancel_wait_task(service_task, max_delay=10)
 
             if skip_observation_recreation:
                 return

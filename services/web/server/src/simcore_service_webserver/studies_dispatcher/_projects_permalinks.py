@@ -31,6 +31,7 @@ class _GroupAccessRightsDict(TypedDict):
 
 def create_permalink_for_study(
     request: web.Request,
+    *,
     project_uuid: ProjectID | ProjectIDStr,
     project_type: ProjectType,
     project_access_rights: dict[_GroupID, _GroupAccessRightsDict],
@@ -44,19 +45,21 @@ def create_permalink_for_study(
 
     # check: criterias/conditions on a project to have a permalink
     if project_type != ProjectType.TEMPLATE:
-        raise PermalinkNotAllowedError(
+        msg = (
             "Can only create permalink from a template project. "
             f"Got {project_uuid=} with {project_type=}"
         )
+        raise PermalinkNotAllowedError(msg)
 
     project_access_rights_group_1_or_empty: _GroupAccessRightsDict | dict = (
         project_access_rights.get("1", {})
     )
     if not project_access_rights_group_1_or_empty.get("read", False):
-        raise PermalinkNotAllowedError(
+        msg = (
             "Cannot create permalink if not shared with everyone. "
             f"Got {project_uuid=} with {project_access_rights=}"
         )
+        raise PermalinkNotAllowedError(msg)
 
     # create
     url_for = create_url_for_function(request)
@@ -114,14 +117,13 @@ async def permalink_factory(
         if not row:
             raise ProjectNotFoundError(project_uuid=project_uuid)
 
-    permalink_info = create_permalink_for_study(
+    return create_permalink_for_study(
         request,
         project_uuid=row.uuid,
         project_type=row.type,
         project_access_rights=row.access_rights,
         project_is_public=row.published,
     )
-    return permalink_info
 
 
 def setup_projects_permalinks(

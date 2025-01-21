@@ -90,6 +90,18 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
       nullable: true,
       apply: "__applyLastModified"
     },
+
+    trashedAt: {
+      check: "Date",
+      nullable: true,
+      apply: "__applyTrashedAt"
+    },
+
+    trashedBy: {
+      check: "Number",
+      nullable: true,
+      apply: "__applyTrashedBy"
+    },
   },
 
   members: {
@@ -107,16 +119,12 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
         }
         case "title":
           control = new qx.ui.basic.Label().set({
-            anonymous: true,
             font: "text-14",
           });
           this._add(control, osparc.dashboard.FolderButtonBase.POS.TITLE);
           break;
-        case "last-modified":
-          control = new qx.ui.basic.Label().set({
-            anonymous: true,
-            font: "text-12",
-          });
+        case "date-by":
+          control = new osparc.ui.basic.DateAndBy();
           this._add(control, osparc.dashboard.FolderButtonBase.POS.SUBTITLE);
           break;
         case "menu-button": {
@@ -150,6 +158,8 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
       folder.bind("parentFolderId", this, "parentFolderId");
       folder.bind("name", this, "title");
       folder.bind("lastModified", this, "lastModified");
+      folder.bind("trashedAt", this, "trashedAt");
+      folder.bind("trashedBy", this, "trashedBy");
 
       osparc.utils.Utils.setIdToWidget(this, "folderItem_" + folder.getFolderId());
 
@@ -222,15 +232,36 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
 
     __applyTitle: function(value) {
       const label = this.getChildControl("title");
-      label.setValue(value);
-
-      this.setToolTipText(value);
+      label.set({
+        value,
+        toolTipText: value,
+      });
     },
 
     __applyLastModified: function(value) {
       if (value) {
-        const label = this.getChildControl("last-modified");
-        label.setValue(osparc.utils.Utils.formatDateAndTime(value));
+        const dateBy = this.getChildControl("date-by");
+        dateBy.set({
+          date: value,
+          toolTipText: this.tr("Last modified"),
+        })
+      }
+    },
+
+    __applyTrashedAt: function(value) {
+      if (value && value.getTime() !== new Date(0).getTime()) {
+        const dateBy = this.getChildControl("date-by");
+        dateBy.set({
+          date: value,
+          toolTipText: this.tr("Moved to the bin"),
+        });
+      }
+    },
+
+    __applyTrashedBy: function(gid) {
+      if (gid) {
+        const dateBy = this.getChildControl("date-by");
+        dateBy.setGroupid(gid);
       }
     },
 
@@ -271,7 +302,7 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
 
         menu.addSeparator();
 
-        const trashButton = new qx.ui.menu.Button(this.tr("Trash"), "@FontAwesome5Solid/trash/12");
+        const trashButton = new qx.ui.menu.Button(this.tr("Move to Bin"), "@FontAwesome5Solid/trash/12");
         trashButton.addListener("execute", () => this.fireDataEvent("trashFolderRequested", this.getFolderId()), this);
         menu.add(trashButton);
       } else if (studyBrowserContext === "trash") {
@@ -329,7 +360,7 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
       const msg = this.tr("Are you sure you want to delete") + " <b>" + this.getTitle() + "</b>?";
       const confirmationWin = new osparc.ui.window.Confirmation(msg).set({
         caption: this.tr("Delete Folder"),
-        confirmText: this.tr("Delete"),
+        confirmText: this.tr("Delete permanently"),
         confirmAction: "delete"
       });
       osparc.utils.Utils.setIdToWidget(confirmationWin.getConfirmButton(), "confirmDeleteFolderButton");

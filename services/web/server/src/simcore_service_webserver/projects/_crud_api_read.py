@@ -6,7 +6,6 @@ Read operations are list, get
 """
 
 from aiohttp import web
-from models_library.api_schemas_webserver._base import OutputSchema
 from models_library.api_schemas_webserver.projects import ProjectListItem
 from models_library.folders import FolderID, FolderQuery, FolderScope
 from models_library.projects import ProjectID
@@ -19,24 +18,23 @@ from simcore_postgres_database.models.projects import ProjectType
 from simcore_postgres_database.webserver_models import ProjectType as ProjectTypeDB
 
 from ..catalog.client import get_services_for_user_in_product
-from ..folders import _folders_db as folders_db
-from ..workspaces._workspaces_api import check_user_workspace_access
-from . import projects_api
+from ..folders import _folders_repository as folders_db
+from ..workspaces._workspaces_service import check_user_workspace_access
 from ._permalink_api import update_or_pop_permalink_in_project
+from . import projects_service
 from .db import ProjectDBAPI
 from .models import ProjectDict, ProjectTypeAPI
 
 
-async def _append_fields(
+async def _append_item(
     request: web.Request,
     *,
     user_id: UserID,
     project: ProjectDict,
     is_template: bool,
-    model_schema_cls: type[OutputSchema],
 ):
     # state
-    await projects_api.add_project_states_for_user(
+    await projects_service.add_project_states_for_user(
         user_id=user_id,
         project=project,
         is_template=is_template,
@@ -47,7 +45,7 @@ async def _append_fields(
     await update_or_pop_permalink_in_project(request, project)
 
     # validate
-    return model_schema_cls.model_validate(project).data(exclude_unset=True)
+    return ProjectListItem.from_domain_model(project).data(exclude_unset=True)
 
 
 async def list_projects(  # pylint: disable=too-many-arguments
@@ -128,12 +126,11 @@ async def list_projects(  # pylint: disable=too-many-arguments
 
     projects: list[ProjectDict] = await logged_gather(
         *(
-            _append_fields(
+            _append_item(
                 request,
                 user_id=user_id,
                 project=prj,
                 is_template=prj_type == ProjectTypeDB.TEMPLATE,
-                model_schema_cls=ProjectListItem,
             )
             for prj, prj_type in zip(db_projects, db_project_types, strict=False)
         ),
@@ -144,16 +141,20 @@ async def list_projects(  # pylint: disable=too-many-arguments
     return projects, total_number_projects
 
 
-async def list_projects_full_search(
+async def list_projects_full_depth(
     request,
     *,
     user_id: UserID,
     product_name: str,
+    # attrs filter
+    trashed: bool | None,
+    tag_ids_list: list[int],
+    # pagination
     offset: NonNegativeInt,
     limit: int,
-    text: str | None,
     order_by: OrderBy,
-    tag_ids_list: list[int],
+    # search
+    text: str | None,
 ) -> tuple[list[ProjectDict], int]:
     db = ProjectDBAPI.get_from_app_context(request.app)
 
@@ -161,11 +162,12 @@ async def list_projects_full_search(
         request.app, user_id, product_name, only_key_versions=True
     )
 
-    (db_projects, db_project_types, total_number_projects,) = await db.list_projects(
+    db_projects, db_project_types, total_number_projects = await db.list_projects(
         product_name=product_name,
         user_id=user_id,
         workspace_query=WorkspaceQuery(workspace_scope=WorkspaceScope.ALL),
         folder_query=FolderQuery(folder_scope=FolderScope.ALL),
+        filter_trashed=trashed,
         filter_by_services=user_available_services,
         filter_by_text=text,
         filter_tag_ids_list=tag_ids_list,
@@ -177,12 +179,11 @@ async def list_projects_full_search(
 
     projects: list[ProjectDict] = await logged_gather(
         *(
-            _append_fields(
+            _append_item(
                 request,
                 user_id=user_id,
                 project=prj,
                 is_template=prj_type == ProjectTypeDB.TEMPLATE,
-                model_schema_cls=ProjectListItem,
             )
             for prj, prj_type in zip(db_projects, db_project_types, strict=False)
         ),

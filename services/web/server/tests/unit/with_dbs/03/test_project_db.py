@@ -16,7 +16,7 @@ import aiopg.sa
 import pytest
 import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
-from common_library.dict_tools import copy_from_dict_ex
+from common_library.dict_tools import copy_from_dict_ex, remap_keys
 from faker import Faker
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, NodeIDStr
@@ -39,7 +39,7 @@ from simcore_service_webserver.projects.exceptions import (
     ProjectNotFoundError,
 )
 from simcore_service_webserver.projects.models import ProjectDict
-from simcore_service_webserver.projects.projects_api import (
+from simcore_service_webserver.projects.projects_service import (
     _check_project_node_has_all_required_inputs,
 )
 from simcore_service_webserver.users.exceptions import UserNotFoundError
@@ -97,7 +97,8 @@ def _assert_added_project(
         "creationDate",
         "lastChangeDate",
         "accessRights",  # NOTE: access rights were moved away from the projects table
-        "trashedAt",
+        "trashed",
+        "trashedBy",
         "trashedExplicitly",
     ]
     assert {k: v for k, v in expected_prj.items() if k in _DIFFERENT_KEYS} != {
@@ -184,6 +185,7 @@ async def insert_project_in_db(
     client: TestClient,
 ) -> AsyncIterator[Callable[..., Awaitable[dict[str, Any]]]]:
     inserted_projects = []
+    assert client.app
 
     async def _inserter(prj: dict[str, Any], **overrides) -> dict[str, Any]:
         # add project without user id -> by default creates a template
@@ -504,7 +506,7 @@ async def test_patch_user_project_workbench_concurrently(
     # patch all the nodes concurrently
     randomly_created_outputs = [
         {
-            "outputs": {f"out_{k}": f"{k}"}  # noqa: RUF011
+            "outputs": {f"out_{k}": f"{k}"}  # noqa: B035
             for k in range(randint(1, 10))  # noqa: S311
         }
         for n in range(_NUMBER_OF_NODES)
@@ -708,7 +710,11 @@ async def test_replace_user_project(
     aiopg_engine: aiopg.sa.engine.Engine,
 ):
     PROJECT_DICT_IGNORE_FIELDS = {"lastChangeDate"}
-    original_project = user_project
+    original_project = remap_keys(
+        user_project,
+        rename={"trashedAt": "trashed"},
+    )
+
     # replace the project with the same should do nothing
     working_project = await db_api.replace_project(
         original_project,

@@ -77,7 +77,7 @@ qx.Class.define("osparc.desktop.credits.UsageTable", {
         id: "node",
         column: 1,
         label: qx.locale.Manager.tr("Node"),
-        width: 140
+        width: 100
       },
       SERVICE: {
         id: "service",
@@ -119,7 +119,7 @@ qx.Class.define("osparc.desktop.credits.UsageTable", {
         id: "tags",
         column: 7,
         label: qx.locale.Manager.tr("Tags"),
-        width: 140
+        width: 80
       },
     }
   }

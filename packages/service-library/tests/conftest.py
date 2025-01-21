@@ -33,7 +33,7 @@ pytest_plugins = [
 
 
 @pytest.fixture(scope="session")
-def here():
+def package_tests_dir():
     return Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 
@@ -45,12 +45,12 @@ def package_dir() -> Path:
 
 
 @pytest.fixture(scope="session")
-def osparc_simcore_root_dir(here) -> Path:
-    root_dir = here.parent.parent.parent.resolve()
+def osparc_simcore_root_dir(package_tests_dir: Path) -> Path:
+    root_dir = package_tests_dir.parent.parent.parent.resolve()
     assert root_dir.exists(), "Is this service within osparc-simcore repo?"
-    assert any(root_dir.glob("packages/service-library")), (
-        "%s not look like rootdir" % root_dir
-    )
+    assert any(
+        root_dir.glob("packages/service-library")
+    ), f"{root_dir} not look like rootdir"
     return root_dir
 
 
@@ -77,7 +77,8 @@ async def get_redis_client_sdk(
 ]:
     @asynccontextmanager
     async def _(
-        database: RedisDatabase, decode_response: bool = True  # noqa: FBT002
+        database: RedisDatabase,
+        decode_response: bool = True,  # noqa: FBT002
     ) -> AsyncIterator[RedisClientSDK]:
         redis_resources_dns = redis_service.build_redis_dsn(database)
         client = RedisClientSDK(
@@ -86,7 +87,6 @@ async def get_redis_client_sdk(
         assert client
         assert client.redis_dsn == redis_resources_dns
         assert client.client_name == "pytest"
-        await client.setup()
 
         yield client
 
@@ -97,7 +97,7 @@ async def get_redis_client_sdk(
             await clients_manager.client(db).redis.flushall()
 
     async with RedisClientsManager(
-        {RedisManagerDBConfig(db) for db in RedisDatabase},
+        {RedisManagerDBConfig(database=db) for db in RedisDatabase},
         redis_service,
         client_name="pytest",
     ) as clients_manager:

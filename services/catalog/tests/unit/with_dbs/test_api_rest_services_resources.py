@@ -186,7 +186,7 @@ class _ServiceResourceParams:
     ],
 )
 async def test_get_service_resources(
-    background_tasks_setup_disabled,
+    background_tasks_setup_disabled: None,
     rabbitmq_and_rpc_setup_disabled: None,
     mocked_director_service_labels: Route,
     client: TestClient,
@@ -298,7 +298,7 @@ def create_mock_director_service_labels(
     ],
 )
 async def test_get_service_resources_sim4life_case(
-    background_tasks_setup_disabled,
+    background_tasks_setup_disabled: None,
     rabbitmq_and_rpc_setup_disabled: None,
     create_mock_director_service_labels: Callable,
     client: TestClient,
@@ -319,7 +319,7 @@ async def test_get_service_resources_sim4life_case(
 
 
 async def test_get_service_resources_raises_errors(
-    background_tasks_setup_disabled,
+    background_tasks_setup_disabled: None,
     rabbitmq_and_rpc_setup_disabled: None,
     mocked_director_service_labels: Route,
     client: TestClient,

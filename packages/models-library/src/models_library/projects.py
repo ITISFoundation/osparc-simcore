@@ -20,6 +20,7 @@ from .projects_nodes import Node
 from .projects_nodes_io import NodeIDStr
 from .projects_state import ProjectState
 from .projects_ui import StudyUI
+from .users import UserID
 from .utils.common_validators import (
     empty_str_to_none_pre_validator,
     none_to_empty_str_pre_validator,
@@ -182,10 +183,10 @@ class Project(BaseProjectModel):
         alias="folderId",
     )
 
-    trashed_at: datetime | None = Field(
-        default=None,
-        alias="trashedAt",
-    )
-    trashed_explicitly: bool = Field(default=False, alias="trashedExplicitly")
+    trashed: datetime | None = None
+    trashed_by: Annotated[UserID | None, Field(alias="trashedBy")] = None
+    trashed_explicitly: Annotated[bool, Field(alias="trashedExplicitly")] = False
 
-    model_config = ConfigDict(title="osparc-simcore project", extra="forbid")
+    model_config = ConfigDict(
+        extra="forbid",
+    )

@@ -6,11 +6,11 @@ from aiopg.sa import Engine
 from fastapi import FastAPI
 from models_library.projects import ProjectID
 from models_library.users import UserID
-from servicelib.background_task import start_periodic_task, stop_periodic_task
+from servicelib.async_utils import cancel_wait_task
+from servicelib.background_task import create_periodic_task
 from servicelib.exception_utils import silence_exceptions
 from servicelib.logging_utils import log_context
-from servicelib.redis import CouldNotAcquireLockError
-from servicelib.redis_utils import exclusive
+from servicelib.redis import CouldNotAcquireLockError, exclusive
 from servicelib.utils import limited_gather
 
 from ...models.comp_runs import RunMetadataDict
@@ -156,7 +156,7 @@ async def schedule_all_pipelines(app: FastAPI) -> None:
 
 
 async def setup_manager(app: FastAPI) -> None:
-    app.state.scheduler_manager = start_periodic_task(
+    app.state.scheduler_manager = create_periodic_task(
         silence_exceptions((CouldNotAcquireLockError,))(schedule_all_pipelines),
         interval=SCHEDULER_INTERVAL,
         task_name=MODULE_NAME_SCHEDULER,
@@ -165,4 +165,4 @@ async def setup_manager(app: FastAPI) -> None:
 
 
 async def shutdown_manager(app: FastAPI) -> None:
-    await stop_periodic_task(app.state.scheduler_manager)
+    await cancel_wait_task(app.state.scheduler_manager)

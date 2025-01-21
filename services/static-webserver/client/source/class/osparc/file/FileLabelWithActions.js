@@ -49,6 +49,8 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
 
     const deleteBtn = this.getChildControl("delete-button");
     deleteBtn.addListener("execute", () => this.__deleteSelected(), this);
+
+    this.__selection = [];
   },
 
   events: {
@@ -61,13 +63,12 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
       init: false,
       nullable: false,
       event: "changeMultiSelect",
-      apply: "__enableMultiSelection",
+      apply: "__changeMultiSelection",
     },
   },
 
   members: {
     __selection: null,
-    __multiSelection: null,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -99,9 +100,10 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
       return control || this.base(arguments, id);
     },
 
-    __enableMultiSelection: function() {
-      this.resetItemSelected();
-      this.__multiSelection = [];
+    __changeMultiSelection: function() {
+      if (this.__selection.length > 1) {
+        this.resetSelection();
+      }
     },
 
     setItemSelected: function(selectedItem) {
@@ -111,25 +113,25 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
         this.getChildControl("delete-button").setEnabled(isFile);
         const selectedLabel = this.getChildControl("selected-label");
         if (isFile) {
-          this.__selection = selectedItem;
+          this.__selection = [selectedItem];
           selectedLabel.set({
             value: selectedItem.getLabel(),
             toolTipText: selectedItem.getFileId()
           });
         } else {
-          this.__selection = null;
+          this.__selection = [];
           selectedLabel.set({
             value: "",
             toolTipText: ""
           });
         }
       } else {
-        this.resetItemSelected();
+        this.resetSelection();
       }
     },
 
     setMultiItemSelected: function(multiSelectionData) {
-      this.__multiSelection = multiSelectionData;
+      this.__selection = multiSelectionData;
       if (multiSelectionData && multiSelectionData.length) {
         if (multiSelectionData.length === 1) {
           this.setItemSelected(multiSelectionData[0]);
@@ -140,34 +142,27 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
           });
         }
       } else {
-        this.resetItemSelected();
+        this.resetSelection();
       }
     },
 
-    resetItemSelected: function() {
-      this.__selection = null;
-      this.__multiSelection = [];
+    resetSelection: function() {
+      this.__selection = [];
       this.getChildControl("download-button").setEnabled(false);
       this.getChildControl("delete-button").setEnabled(false);
       this.getChildControl("selected-label").resetValue();
     },
 
-    getItemSelected: function() {
-      const selectedItem = this.__selection;
-      if (selectedItem && osparc.file.FilesTree.isFile(selectedItem)) {
-        return selectedItem;
-      }
-      return null;
-    },
-
     __retrieveURLAndDownloadSelected: function() {
       if (this.isMultiSelect()) {
-        this.__multiSelection.forEach(selection => {
-          this.__retrieveURLAndDownloadFile(selection);
+        this.__selection.forEach(selection => {
+          if (selection && osparc.file.FilesTree.isFile(selection)) {
+            this.__retrieveURLAndDownloadFile(selection);
+          }
         });
-      } else {
-        const selection = this.getItemSelected();
-        if (selection) {
+      } else if (this.__selection.length) {
+        const selection = this.__selection[0];
+        if (selection && osparc.file.FilesTree.isFile(selection)) {
           this.__retrieveURLAndDownloadFile(selection);
         }
       }
@@ -176,23 +171,25 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
     __deleteSelected: function() {
       if (this.isMultiSelect()) {
         const requests = [];
-        this.__multiSelection.forEach(selection => {
-          const request = this.__deleteFile(selection);
-          if (request) {
-            requests.push(request);
+        this.__selection.forEach(selection => {
+          if (selection && osparc.file.FilesTree.isFile(selection)) {
+            const request = this.__deleteFile(selection);
+            if (request) {
+              requests.push(request);
+            }
           }
         });
         Promise.all(requests)
           .then(datas => {
             if (datas.length) {
               this.fireDataEvent("fileDeleted", datas[0]);
-              osparc.FlashMessenger.getInstance().logAs(this.tr("Files successfully deleted"), "ERROR");
+              osparc.FlashMessenger.getInstance().logAs(this.tr("Files successfully deleted"), "INFO");
             }
           });
         requests
-      } else {
-        const selection = this.getItemSelected();
-        if (selection) {
+      } else if (this.__selection.length) {
+        const selection = this.__selection[0];
+        if (selection && osparc.file.FilesTree.isFile(selection)) {
           const request = this.__deleteFile(selection);
           if (request) {
             request

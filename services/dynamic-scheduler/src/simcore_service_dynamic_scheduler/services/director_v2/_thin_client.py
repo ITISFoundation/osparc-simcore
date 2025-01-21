@@ -1,8 +1,8 @@
 import datetime
 from typing import cast
 
+from common_library.exclude import as_dict_exclude_none
 from common_library.json_serialization import json_dumps
-from common_library.unset import UnSet, as_dict_exclude_unset
 from fastapi import FastAPI, status
 from httpx import Response, Timeout
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
@@ -19,7 +19,6 @@ from servicelib.common_headers import (
     X_DYNAMIC_SIDECAR_REQUEST_SCHEME,
     X_SIMCORE_USER_AGENT,
 )
-from servicelib.fastapi.http_client import AttachLifespanMixin
 from servicelib.fastapi.http_client_thin import (
     BaseThinClient,
     expect_status,
@@ -32,7 +31,7 @@ from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler.services import (
 from ...core.settings import ApplicationSettings
 
 
-class DirectorV2ThinClient(BaseThinClient, AttachLifespanMixin):
+class DirectorV2ThinClient(BaseThinClient):
     def __init__(self, app: FastAPI) -> None:
         settings: ApplicationSettings = app.state.settings
         super().__init__(
@@ -133,14 +132,11 @@ class DirectorV2ThinClient(BaseThinClient, AttachLifespanMixin):
     @retry_on_errors()
     @expect_status(status.HTTP_200_OK)
     async def get_dynamic_services(
-        self,
-        *,
-        user_id: UserID | None | UnSet = UnSet.VALUE,
-        project_id: ProjectID | None | UnSet = UnSet.VALUE,
+        self, *, user_id: UserID | None = None, project_id: ProjectID | None = None
     ) -> Response:
         return await self.client.get(
             "/dynamic_services",
-            params=as_dict_exclude_unset(user_id=user_id, project_id=project_id),
+            params=as_dict_exclude_none(user_id=user_id, project_id=project_id),
         )
 
     @retry_on_errors()

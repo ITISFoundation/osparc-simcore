@@ -10,6 +10,7 @@ import time
 from collections.abc import Awaitable, Callable, Iterator
 from copy import deepcopy
 from datetime import UTC, datetime, timedelta
+from decimal import Decimal
 from http import HTTPStatus
 from typing import Any
 from unittest import mock
@@ -25,6 +26,9 @@ from models_library.api_schemas_directorv2.dynamic_services import DynamicServic
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     DynamicServiceStart,
     DynamicServiceStop,
+)
+from models_library.api_schemas_resource_usage_tracker.credit_transactions import (
+    WalletTotalCredits,
 )
 from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGetIdle
 from models_library.projects import ProjectID
@@ -43,6 +47,7 @@ from models_library.services_resources import (
 )
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import PositiveInt
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_login import UserInfoDict, log_client_in
@@ -54,6 +59,7 @@ from pytest_simcore.helpers.webserver_projects import assert_get_same_project
 from servicelib.aiohttp import status
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from simcore_postgres_database.models.products import products
+from simcore_postgres_database.models.wallets import wallets
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects.models import ProjectDict
@@ -71,7 +77,11 @@ def app_environment(
 ) -> EnvVarsDict:
     # disable the garbage collector
     monkeypatch.setenv("WEBSERVER_GARBAGE_COLLECTOR", "null")
-    return app_environment | {"WEBSERVER_GARBAGE_COLLECTOR": "null"}
+    monkeypatch.setenv("WEBSERVER_DEV_FEATURES_ENABLED", "1")
+    return app_environment | {
+        "WEBSERVER_GARBAGE_COLLECTOR": "null",
+        "WEBSERVER_DEV_FEATURES_ENABLED": "1",
+    }
 
 
 def assert_replaced(current_project, update_data):
@@ -163,7 +173,7 @@ async def _open_project(
             try:
                 data, error = await assert_status(resp, e)
                 return data, error
-            except AssertionError:  # noqa: PERF203
+            except AssertionError:
                 # re-raise if last item
                 if e == expected[-1]:
                     raise
@@ -403,6 +413,69 @@ async def test_open_project(
         ].assert_has_calls(calls)
     else:
         mocked_notifications_plugin["subscribe"].assert_not_called()
+
+
+@pytest.fixture
+def wallets_clean_db(postgres_db: sa.engine.Engine) -> Iterator[None]:
+    with postgres_db.connect() as con:
+        yield
+        con.execute(wallets.delete())
+
+
+@pytest.mark.parametrize(
+    "user_role,expected,return_value_credits",
+    [
+        (UserRole.USER, status.HTTP_200_OK, Decimal(0)),
+        (UserRole.USER, status.HTTP_402_PAYMENT_REQUIRED, Decimal(-100)),
+    ],
+)
+async def test_open_project__in_debt(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    client_session_id_factory: Callable[[], str],
+    expected: HTTPStatus,
+    mocked_dynamic_services_interface: dict[str, mock.Mock],
+    mock_service_resources: ServiceResourcesDict,
+    mock_orphaned_services: mock.Mock,
+    mock_catalog_api: dict[str, mock.Mock],
+    osparc_product_name: str,
+    mocked_notifications_plugin: dict[str, mock.Mock],
+    return_value_credits: Decimal,
+    mocker: MockerFixture,
+    wallets_clean_db: None,
+):
+    # create a new wallet
+    url = client.app.router["create_wallet"].url_for()
+    resp = await client.post(
+        f"{url}", json={"name": "My first wallet", "description": "Custom description"}
+    )
+    added_wallet, _ = await assert_status(resp, status.HTTP_201_CREATED)
+
+    mock_get_project_wallet_total_credits = mocker.patch(
+        "simcore_service_webserver.projects._wallets_api.credit_transactions.get_project_wallet_total_credits",
+        spec=True,
+        return_value=WalletTotalCredits(
+            wallet_id=added_wallet["walletId"],
+            available_osparc_credits=return_value_credits,
+        ),
+    )
+
+    # Connect project to a wallet
+    base_url = client.app.router["connect_wallet_to_project"].url_for(
+        project_id=user_project["uuid"], wallet_id=f"{added_wallet['walletId']}"
+    )
+    resp = await client.put(f"{base_url}")
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+    assert data["walletId"] == added_wallet["walletId"]
+
+    # POST /v0/projects/{project_id}:open
+    assert client.app
+    url = client.app.router["open_project"].url_for(project_id=user_project["uuid"])
+    resp = await client.post(f"{url}", json=client_session_id_factory())
+    await assert_status(resp, expected)
+
+    assert mock_get_project_wallet_total_credits.assert_called_once
 
 
 @pytest.mark.parametrize(
@@ -1000,7 +1073,7 @@ async def test_project_node_lifetime(  # noqa: PLR0915
     create_dynamic_service_mock: Callable[..., Awaitable[DynamicServiceGet]],
 ):
     mock_storage_api_delete_data_folders_of_project_node = mocker.patch(
-        "simcore_service_webserver.projects._crud_handlers.projects_api.storage_api.delete_data_folders_of_project_node",
+        "simcore_service_webserver.projects._crud_handlers.projects_service.storage_api.delete_data_folders_of_project_node",
         return_value="",
     )
     assert client.app
@@ -1235,8 +1308,8 @@ async def test_open_shared_project_2_users_locked(
     # now the expected result is that the project is locked and opened by client 1
     owner1 = Owner(
         user_id=logged_user["id"],
-        first_name=logged_user.get("first_name", None),
-        last_name=logged_user.get("last_name", None),
+        first_name=logged_user.get("first_name"),
+        last_name=logged_user.get("last_name"),
     )
     expected_project_state_client_1.locked.value = True
     expected_project_state_client_1.locked.status = ProjectStatus.OPENED
@@ -1368,7 +1441,7 @@ async def test_open_shared_project_at_same_time(
     client: TestClient,
     client_on_running_server_factory: Callable,
     logged_user: dict,
-    shared_project: dict,
+    shared_project: ProjectDict,
     socketio_client_factory: Callable,
     client_session_id_factory: Callable,
     user_role: UserRole,
@@ -1444,7 +1517,7 @@ async def test_open_shared_project_at_same_time(
             elif data:
                 project_status = ProjectState(**data.pop("state"))
                 data.pop("folderId")
-                assert data == shared_project
+                assert data == {k: shared_project[k] for k in data}
                 assert project_status.locked.value
                 assert project_status.locked.owner
                 assert project_status.locked.owner.first_name in [

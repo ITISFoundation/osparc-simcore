@@ -106,7 +106,7 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
     },
 
     __createIntroText: function() {
-      const msg = this.tr("Only Accountants of an organization can share a wallet with the entire organization and members.");
+      const msg = this.tr("Only Accountants of an Organization can share a wallet with other users.");
       const intro = new qx.ui.basic.Label().set({
         value: msg,
         alignX: "left",
@@ -119,9 +119,6 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
     __getMemberInvitation: function() {
       const vBox = this.__memberInvitation = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
       vBox.exclude();
-
-      const label = new qx.ui.basic.Label(this.tr("Select from the list below and click Share"));
-      vBox.add(label);
 
       const addMemberBtn = new qx.ui.form.Button(this.tr("Add Members...")).set({
         appearance: "strong-button",
@@ -211,13 +208,15 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
 
       const myGroupId = osparc.auth.Data.getInstance().getGroupId();
       const membersList = [];
-      const potentialCollaborators = osparc.store.Groups.getInstance().getPotentialCollaborators(true);
       const canIWrite = wallet.getMyAccessRights()["write"];
-      wallet.getAccessRights().forEach(accessRights => {
+      const accessRightss = wallet.getAccessRights();
+      const usersStore = osparc.store.Users.getInstance();
+      for (let i=0; i<Object.keys(accessRightss).length; i++) {
+        const accessRights = accessRightss[i];
         const gid = parseInt(accessRights["gid"]);
-        if (Object.prototype.hasOwnProperty.call(potentialCollaborators, gid)) {
-          // only users or groupMe
-          const collab = potentialCollaborators[gid];
+        // only users or groupMe
+        const collab = await usersStore.getUser(gid);
+        if (collab) {
           const collaborator = {};
           collaborator["userId"] = gid === myGroupId ? osparc.auth.Data.getInstance().getUserId() : collab.getUserId();
           collaborator["groupId"] = collab.getGroupId();
@@ -253,7 +252,7 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
           collaborator["showOptions"] = Boolean(options.length);
           membersList.push(collaborator);
         }
-      });
+      }
       membersList.sort(this.self().sortWalletMembers);
       membersList.forEach(member => membersModel.append(qx.data.marshal.Json.createModel(member)));
     },

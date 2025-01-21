@@ -91,7 +91,19 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
       check: "Date",
       nullable: true,
       apply: "__applyModifiedAt"
-    }
+    },
+
+    trashedAt: {
+      check: "Date",
+      nullable: true,
+      apply: "__applyTrashedAt"
+    },
+
+    trashedBy: {
+      check: "Number",
+      nullable: true,
+      apply: "__applyTrashedBy"
+    },
   },
 
   statics: {
@@ -133,17 +145,10 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
           layout = this.getChildControl("header");
           layout.addAt(control, osparc.dashboard.WorkspaceButtonBase.HPOS.MENU);
           break;
-        case "modified-text":
-          control = new qx.ui.basic.Label().set({
-            textColor: "contrasted-text-dark",
-            alignY: "middle",
-            rich: true,
-            anonymous: true,
-            font: "text-12",
-            allowGrowY: false
-          });
+        case "date-by":
+          control = new osparc.ui.basic.DateAndBy();
           layout = this.getChildControl("footer");
-          layout.addAt(control, osparc.dashboard.WorkspaceButtonBase.FPOS.MODIFIED);
+          layout.addAt(control, osparc.dashboard.WorkspaceButtonBase.FPOS.DATE);
           break;
       }
       return control || this.base(arguments, id);
@@ -161,6 +166,8 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
       });
       workspace.bind("accessRights", this, "accessRights");
       workspace.bind("modifiedAt", this, "modifiedAt");
+      workspace.bind("trashedAt", this, "trashedAt");
+      workspace.bind("trashedBy", this, "trashedBy");
       workspace.bind("myAccessRights", this, "myAccessRights");
 
       osparc.utils.Utils.setIdToWidget(this, "workspaceItem_" + workspace.getWorkspaceId());
@@ -210,7 +217,7 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
 
           menu.addSeparator();
 
-          const trashButton = new qx.ui.menu.Button(this.tr("Trash"), "@FontAwesome5Solid/trash/12");
+          const trashButton = new qx.ui.menu.Button(this.tr("Move to Bin"), "@FontAwesome5Solid/trash/12");
           trashButton.addListener("execute", () => this.__trashWorkspaceRequested(), this);
           menu.add(trashButton);
         } else if (studyBrowserContext === "trash") {
@@ -220,7 +227,7 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
 
           menu.addSeparator();
 
-          const deleteButton = new qx.ui.menu.Button(this.tr("Delete"), "@FontAwesome5Solid/trash/12");
+          const deleteButton = new qx.ui.menu.Button(this.tr("Delete permanently"), "@FontAwesome5Solid/trash/12");
           osparc.utils.Utils.setIdToWidget(deleteButton, "deleteWorkspaceMenuItem");
           deleteButton.addListener("execute", () => this.__deleteWorkspaceRequested(), this);
           menu.add(deleteButton);
@@ -242,13 +249,36 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
     },
 
     __applyModifiedAt: function(value) {
-      const label = this.getChildControl("modified-text");
-      label.setValue(osparc.utils.Utils.formatDateAndTime(value));
+      if (value) {
+        const dateBy = this.getChildControl("date-by");
+        dateBy.set({
+          date: value,
+          toolTipText: this.tr("Last modified"),
+        })
+      }
+    },
+
+    __applyTrashedAt: function(value) {
+      if (value && value.getTime() !== new Date(0).getTime()) {
+        const dateBy = this.getChildControl("date-by");
+        dateBy.set({
+          date: value,
+          toolTipText: this.tr("Moved to the bin"),
+        });
+      }
+    },
+
+    __applyTrashedBy: function(gid) {
+      if (gid) {
+        const dateBy = this.getChildControl("date-by");
+        dateBy.setGroupId(gid);
+      }
     },
 
     __updateTooltip: function() {
       const toolTipText = this.getTitle() + (this.getDescription() ? "<br>" + this.getDescription() : "");
-      this.set({
+      const title = this.getChildControl("title");
+      title.set({
         toolTipText
       })
     },
@@ -270,11 +300,11 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
 
     __trashWorkspaceRequested: function() {
       const trashDays = osparc.store.StaticInfo.getInstance().getTrashRetentionDays();
-      let msg = this.tr("Are you sure you want to move the Workspace and all its content to the trash?");
+      let msg = this.tr("Are you sure you want to move the Workspace and all its content to the Bin?");
       msg += "<br><br>" + this.tr("It will be permanently deleted after ") + trashDays + " days.";
       const confirmationWin = new osparc.ui.window.Confirmation(msg).set({
-        caption: this.tr("Move to Trash"),
-        confirmText: this.tr("Move to Trash"),
+        caption: this.tr("Move to Bin"),
+        confirmText: this.tr("Move to Bin"),
         confirmAction: "delete"
       });
       confirmationWin.center();
@@ -291,7 +321,7 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
       msg += "<br>" + this.tr("All the content of the workspace will be deleted.");
       const confirmationWin = new osparc.ui.window.Confirmation(msg).set({
         caption: this.tr("Delete Workspace"),
-        confirmText: this.tr("Delete"),
+        confirmText: this.tr("Delete permanently"),
         confirmAction: "delete"
       });
       osparc.utils.Utils.setIdToWidget(confirmationWin.getConfirmButton(), "confirmDeleteWorkspaceButton");

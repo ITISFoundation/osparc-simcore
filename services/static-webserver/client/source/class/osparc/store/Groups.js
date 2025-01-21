@@ -45,11 +45,6 @@ qx.Class.define("osparc.store.Groups", {
       check: "osparc.data.model.Group",
       init: {}
     },
-
-    reachableUsers: {
-      check: "Object",
-      init: {}
-    },
   },
 
   events: {
@@ -115,8 +110,7 @@ qx.Class.define("osparc.store.Groups", {
             // reset group's group members
             group.setGroupMembers({});
             orgMembers.forEach(orgMember => {
-              const user = new osparc.data.model.UserMember(orgMember);
-              this.__addToUsersCache(user, groupId);
+              this.__addMemberToCache(orgMember, groupId);
             });
           }
         });
@@ -126,8 +120,9 @@ qx.Class.define("osparc.store.Groups", {
       return new Promise(resolve => {
         this.__fetchGroups()
           .then(orgs => {
-            // reset Reachable Users
-            this.resetReachableUsers();
+            // reset Users
+            const usersStore = osparc.store.Users.getInstance();
+            usersStore.resetUsers();
             const promises = Object.keys(orgs).map(orgId => this.__fetchGroupMembers(orgId));
             Promise.all(promises)
               .then(() => resolve())
@@ -136,7 +131,7 @@ qx.Class.define("osparc.store.Groups", {
       })
     },
 
-    getAllGroupsAndUsers: function() {
+    getAllGroups: function() {
       const allGroupsAndUsers = {};
 
       const groupEveryone = this.getEveryoneGroup();
@@ -152,15 +147,11 @@ qx.Class.define("osparc.store.Groups", {
         allGroupsAndUsers[organization.getGroupId()] = organization;
       });
 
-      Object.values(this.getReachableUsers()).forEach(reachableUser => {
-        allGroupsAndUsers[reachableUser.getGroupId()] = reachableUser;
-      });
-
       return allGroupsAndUsers;
     },
 
     getMyGroupId: function() {
-      return this.getGroupMe().getGroupId();
+      return osparc.auth.Data.getInstance().getGroupId();
     },
 
     getOrganizationIds: function() {
@@ -174,9 +165,11 @@ qx.Class.define("osparc.store.Groups", {
       groupMe["collabType"] = 2;
       groups.push(groupMe);
 
-      Object.values(this.getReachableUsers()).forEach(member => {
-        member["collabType"] = 2;
-        groups.push(member);
+      const usersStore = osparc.store.Users.getInstance();
+      const users = usersStore.getUsers();
+      users.forEach(user => {
+        user["collabType"] = 2;
+        groups.push(user);
       });
 
       Object.values(this.getOrganizations()).forEach(org => {
@@ -202,6 +195,12 @@ qx.Class.define("osparc.store.Groups", {
       const potentialCollaborators = {};
       const orgs = this.getOrganizations();
       const productEveryone = this.getEveryoneProductGroup();
+
+      if (includeProductEveryone && productEveryone) {
+        productEveryone["collabType"] = 0;
+        potentialCollaborators[productEveryone.getGroupId()] = productEveryone;
+      }
+
       Object.values(orgs).forEach(org => {
         if (org.getAccessRights()["read"]) {
           // maybe because of migration script, some users have access to the product everyone group
@@ -213,20 +212,20 @@ qx.Class.define("osparc.store.Groups", {
           potentialCollaborators[org.getGroupId()] = org;
         }
       });
-      const members = this.getReachableUsers();
-      for (const gid of Object.keys(members)) {
-        members[gid]["collabType"] = 2;
-        potentialCollaborators[gid] = members[gid];
-      }
+
       if (includeMe) {
         const myGroup = this.getGroupMe();
         myGroup["collabType"] = 2;
         potentialCollaborators[myGroup.getGroupId()] = myGroup;
       }
-      if (includeProductEveryone && productEveryone) {
-        productEveryone["collabType"] = 0;
-        potentialCollaborators[productEveryone.getGroupId()] = productEveryone;
-      }
+
+      const usersStore = osparc.store.Users.getInstance();
+      const users = usersStore.getUsers();
+      users.forEach(user => {
+        user["collabType"] = 2;
+        potentialCollaborators[user.getGroupId()] = user;
+      });
+
       return potentialCollaborators;
     },
 
@@ -240,16 +239,18 @@ qx.Class.define("osparc.store.Groups", {
 
     getUserByUserId: function(userId) {
       if (userId) {
-        const visibleMembers = this.getReachableUsers();
-        return Object.values(visibleMembers).find(member => member.getUserId() === userId);
+        const usersStore = osparc.store.Users.getInstance();
+        const users = usersStore.getUsers();
+        return users.find(user => user.getUserId() === userId);
       }
       return null;
     },
 
     getUserByGroupId: function(groupId) {
       if (groupId) {
-        const visibleMembers = this.getReachableUsers();
-        return Object.values(visibleMembers).find(member => member.getGroupId() === groupId);
+        const usersStore = osparc.store.Users.getInstance();
+        const users = usersStore.getUsers();
+        return users.find(user => user.getGroupId() === groupId);
       }
       return null;
     },
@@ -419,14 +420,15 @@ qx.Class.define("osparc.store.Groups", {
       delete this.getOrganizations()[groupId];
     },
 
-    __addToUsersCache: function(user, orgId = null) {
+    __addMemberToCache: function(orgMember, orgId = null) {
+      const userMember = new osparc.data.model.UserMember(orgMember);
       if (orgId) {
         const organization = this.getOrganization(orgId);
         if (organization) {
-          organization.addGroupMember(user);
+          organization.addGroupMember(userMember);
         }
       }
-      this.getReachableUsers()[user.getGroupId()] = user;
+      osparc.store.Users.getInstance().addUser(orgMember);
     },
 
     __removeUserFromCache: function(userId, orgId) {

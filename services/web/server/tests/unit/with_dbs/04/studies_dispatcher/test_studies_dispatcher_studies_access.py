@@ -32,7 +32,7 @@ from servicelib.aiohttp.rest_responses import unwrap_envelope
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from settings_library.utils_session import DEFAULT_SESSION_COOKIE_NAME
 from simcore_service_webserver.projects.models import ProjectDict
-from simcore_service_webserver.projects.projects_api import submit_delete_project_task
+from simcore_service_webserver.projects.projects_service import submit_delete_project_task
 from simcore_service_webserver.users.api import (
     delete_user_without_projects,
     get_user_role,
@@ -55,14 +55,16 @@ async def _get_user_projects(client) -> list[ProjectDict]:
 
 def _assert_same_projects(got: dict, expected: dict):
     exclude = {
+        "accessRights",
         "creationDate",
         "lastChangeDate",
         "prjOwner",
+        "trashedAt",
+        "trashedBy",
+        "trashedExplicitly",
+        "ui",
         "uuid",
         "workbench",
-        "accessRights",
-        "ui",
-        "trashedExplicitly",
     }
     for key in expected:
         if key not in exclude:
@@ -132,7 +134,7 @@ def mocks_on_projects_api(mocker: MockerFixture) -> None:
     All projects in this module are UNLOCKED
     """
     mocker.patch(
-        "simcore_service_webserver.projects.projects_api._get_project_lock_state",
+        "simcore_service_webserver.projects.projects_service._get_project_lock_state",
         return_value=ProjectLocked(value=False, status=ProjectStatus.CLOSED),
     )
 
@@ -207,7 +209,7 @@ async def _assert_redirected_to_study(
     assert response.url.path == "/"
     assert (
         "OSPARC-SIMCORE" in content
-    ), "Expected front-end rendering workbench's study, got %s" % str(content)
+    ), f"Expected front-end rendering workbench's study, got {content!s}"
 
     # Expects fragment to indicate client where to find newly created project
     m = re.match(r"/study/([\d\w-]+)", response.real_url.fragment)
@@ -217,8 +219,7 @@ async def _assert_redirected_to_study(
     assert _is_user_authenticated(session)
 
     # returns newly created project
-    redirected_project_id = m.group(1)
-    return redirected_project_id
+    return m.group(1)
 
 
 # -----------------------------------------------------------
@@ -333,7 +334,7 @@ async def test_access_study_by_logged_user(
     user_project = projects[0]
 
     # heck redirects to /#/study/{uuid}
-    assert resp.real_url.fragment.endswith("/study/%s" % user_project["uuid"])
+    assert resp.real_url.fragment.endswith("/study/{}".format(user_project["uuid"]))
     _assert_same_projects(user_project, published_project)
 
     assert user_project["prjOwner"] == logged_user["email"]

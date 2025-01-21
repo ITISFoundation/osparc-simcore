@@ -97,6 +97,7 @@ def disable_swagger_doc_generation(
 def docker_compose_env(default_app_cfg: AppConfigDict) -> Iterator[pytest.MonkeyPatch]:
     postgres_cfg = default_app_cfg["db"]["postgres"]
     redis_cfg = default_app_cfg["resource_manager"]["redis"]
+
     # docker-compose reads these environs
     with pytest.MonkeyPatch().context() as patcher:
         patcher.setenv("TEST_POSTGRES_DB", postgres_cfg["database"])
@@ -119,24 +120,28 @@ def docker_compose_file(docker_compose_env: pytest.MonkeyPatch) -> str:
 
 
 @pytest.fixture
-def app_cfg(default_app_cfg: AppConfigDict, unused_tcp_port_factory) -> AppConfigDict:
-    """
-    NOTE: SHOULD be overriden in any test module to configure the app accordingly
-    """
-    cfg = deepcopy(default_app_cfg)
-    # fills ports on the fly
-    cfg["main"]["port"] = unused_tcp_port_factory()
-    cfg["storage"]["port"] = unused_tcp_port_factory()
+def webserver_test_server_port(unused_tcp_port_factory: Callable):
+    # used to create a TestServer that emulates web-server service
+    return unused_tcp_port_factory()
 
-    # this fixture can be safely modified during test since it is renovated on every call
-    return cfg
+
+@pytest.fixture
+def storage_test_server_port(
+    unused_tcp_port_factory: Callable, webserver_test_server_port: int
+):
+    # used to create a TestServer that emulates storage service
+    port = unused_tcp_port_factory()
+    assert port != webserver_test_server_port
+    return port
 
 
 @pytest.fixture
 def app_environment(
     monkeypatch: pytest.MonkeyPatch,
-    app_cfg: AppConfigDict,
-    monkeypatch_setenv_from_app_config: Callable[[AppConfigDict], dict[str, str]],
+    default_app_cfg: AppConfigDict,
+    mock_env_devel_environment: EnvVarsDict,
+    storage_test_server_port: int,
+    monkeypatch_setenv_from_app_config: Callable[[AppConfigDict], EnvVarsDict],
 ) -> EnvVarsDict:
     # WARNING: this fixture is commonly overriden. Check before renaming.
     """overridable fixture that defines the ENV for the webserver application
@@ -144,20 +149,27 @@ def app_environment(
 
     override like so:
     @pytest.fixture
-    def app_environment(app_environment: dict[str, str], monkeypatch: pytest.MonkeyPatch) -> dict[str, str]:
+    def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
         monkeypatch.setenv("MODIFIED_ENV", "VALUE")
         return app_environment | {"MODIFIED_ENV":"VALUE"}
     """
-    print("+ web_server:")
-    cfg = deepcopy(app_cfg)
-    envs = monkeypatch_setenv_from_app_config(cfg)
+    # NOTE: remains from from old cfg
+    cfg = deepcopy(default_app_cfg)
+    cfg["storage"]["port"] = storage_test_server_port
+    envs_app_cfg = monkeypatch_setenv_from_app_config(cfg)
 
-    #
-    # NOTE: this emulates hostname: "wb-{{.Node.Hostname}}-{{.Task.Slot}}" in docker-compose that
-    # affects PostgresSettings.POSTGRES_CLIENT_NAME
-    #
-    extra = setenvs_from_dict(monkeypatch, {"HOSTNAME": "wb-test_host.0"})
-    return envs | extra
+    return (
+        mock_env_devel_environment
+        | envs_app_cfg
+        | setenvs_from_dict(
+            monkeypatch,
+            {
+                # this emulates hostname: "wb-{{.Node.Hostname}}-{{.Task.Slot}}" in docker-compose that
+                # affects PostgresSettings.POSTGRES_CLIENT_NAME
+                "HOSTNAME": "wb-test_host.0"
+            },
+        )
+    )
 
 
 @pytest.fixture
@@ -191,21 +203,23 @@ def mocked_send_email(monkeypatch: pytest.MonkeyPatch) -> None:
 @pytest.fixture
 def web_server(
     event_loop: asyncio.AbstractEventLoop,
-    app_cfg: AppConfigDict,
     app_environment: EnvVarsDict,
     postgres_db: sa.engine.Engine,
+    webserver_test_server_port: int,
     # tools
     aiohttp_server: Callable,
     mocked_send_email: None,
     disable_static_webserver: Callable,
 ) -> TestServer:
+    assert app_environment
+
     # original APP
     app = create_application()
 
     disable_static_webserver(app)
 
     server = event_loop.run_until_complete(
-        aiohttp_server(app, port=app_cfg["main"]["port"])
+        aiohttp_server(app, port=webserver_test_server_port)
     )
 
     assert isinstance(postgres_db, sa.engine.Engine)
@@ -369,7 +383,7 @@ async def storage_subsystem_mock(mocker: MockerFixture) -> MockedStorageSubsyste
     )
 
     mock2 = mocker.patch(
-        "simcore_service_webserver.projects.projects_api.storage_api.delete_data_folders_of_project_node",
+        "simcore_service_webserver.projects.projects_service.storage_api.delete_data_folders_of_project_node",
         autospec=True,
         return_value=None,
     )
@@ -513,7 +527,17 @@ def postgres_db(
     with engine.begin() as conn:
         conn.execute(sa.DDL("DROP TABLE IF EXISTS alembic_version"))
 
-    orm.metadata.drop_all(engine)
+        conn.execute(
+            # NOTE: terminates all open transactions before droping all tables
+            # This solves https://github.com/ITISFoundation/osparc-simcore/issues/7008
+            sa.DDL(
+                "SELECT pg_terminate_backend(pid) "
+                "FROM pg_stat_activity "
+                "WHERE state = 'idle in transaction';"
+            )
+        )
+        orm.metadata.drop_all(bind=conn)
+
     engine.dispose()
 
 

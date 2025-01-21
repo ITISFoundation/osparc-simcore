@@ -31,23 +31,19 @@ class WorkspaceQuery(BaseModel):
 
     @field_validator("workspace_id", mode="before")
     @classmethod
-    def validate_workspace_id(cls, value, info: ValidationInfo):
+    def _validate_workspace_id(cls, value, info: ValidationInfo):
         scope = info.data.get("workspace_scope")
         if scope == WorkspaceScope.SHARED and value is None:
             msg = f"workspace_id must be provided when workspace_scope is SHARED. Got {scope=}, {value=}"
             raise ValueError(msg)
+
         if scope != WorkspaceScope.SHARED and value is not None:
             msg = f"workspace_id should be None when workspace_scope is not SHARED. Got {scope=}, {value=}"
             raise ValueError(msg)
         return value
 
 
-#
-# DB
-#
-
-
-class WorkspaceDB(BaseModel):
+class Workspace(BaseModel):
     workspace_id: WorkspaceID
     name: str
     description: str | None
@@ -70,16 +66,16 @@ class WorkspaceDB(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-class UserWorkspaceAccessRightsDB(WorkspaceDB):
-    my_access_rights: AccessRights
-    access_rights: dict[GroupID, AccessRights]
-
-    model_config = ConfigDict(from_attributes=True)
-
-
-class WorkspaceUpdateDB(BaseModel):
+class WorkspaceUpdates(BaseModel):
     name: str | None = None
     description: str | None = None
     thumbnail: str | None = None
     trashed: datetime | None = None
     trashed_by: UserID | None = None
+
+
+class UserWorkspaceWithAccessRights(Workspace):
+    my_access_rights: AccessRights
+    access_rights: dict[GroupID, AccessRights]
+
+    model_config = ConfigDict(from_attributes=True)

@@ -45,6 +45,7 @@ qx.Class.define("osparc.store.Tags", {
           tagsData.forEach(tagData => {
             const tag = this.__addToCache(tagData);
             tags.push(tag);
+            this.fetchAccessRights(tag);
           });
           return tags;
         });
@@ -52,6 +53,10 @@ qx.Class.define("osparc.store.Tags", {
 
     getTags: function() {
       return this.tagsCached;
+    },
+
+    getTag: function(tagId = null) {
+      return this.tagsCached.find(f => f.getTagId() === tagId);
     },
 
     postTag: function(newTagData) {
@@ -83,22 +88,102 @@ qx.Class.define("osparc.store.Tags", {
         .catch(console.error);
     },
 
-    putTag: function(tagId, updateData) {
+    patchTag: function(tagId, updateData) {
       const params = {
         url: {
           tagId
         },
         data: updateData
       };
-      return osparc.data.Resources.getInstance().fetch("tags", "put", params)
+      return osparc.data.Resources.getInstance().fetch("tags", "patch", params)
         .then(tagData => {
+          if ("accessRights" in tagData) {
+            // accessRights are not patched in this endpoint
+            delete tagData["accessRights"];
+          }
           return this.__addToCache(tagData);
         })
         .catch(console.error);
     },
 
-    getTag: function(tagId = null) {
-      return this.tagsCached.find(f => f.getTagId() === tagId);
+    fetchAccessRights: function(tag) {
+      const params = {
+        url: {
+          "tagId": tag.getTagId()
+        }
+      };
+      return osparc.data.Resources.fetch("tags", "getAccessRights", params)
+        .then(accessRightsArray => {
+          const accessRights = {};
+          accessRightsArray.forEach(ar => accessRights[ar.gid] = ar);
+          tag.setAccessRights(accessRights)
+        })
+        .catch(err => console.error(err));
+    },
+
+    addCollaborators: function(tagId, newCollaborators) {
+      const promises = [];
+      Object.keys(newCollaborators).forEach(groupId => {
+        const params = {
+          url: {
+            tagId,
+            groupId,
+          },
+          data: newCollaborators[groupId]
+        };
+        promises.push(osparc.data.Resources.fetch("tags", "postAccessRights", params));
+      });
+      return Promise.all(promises)
+        .then(() => {
+          const tag = this.getTag(tagId);
+          const newAccessRights = tag.getAccessRights();
+          Object.keys(newCollaborators).forEach(gid => {
+            newAccessRights[gid] = newCollaborators[gid];
+          });
+          tag.set({
+            accessRights: newAccessRights,
+          });
+        })
+        .catch(console.error);
+    },
+
+    removeCollaborator: function(tagId, groupId) {
+      const params = {
+        url: {
+          tagId,
+          groupId,
+        }
+      };
+      return osparc.data.Resources.fetch("tags", "deleteAccessRights", params)
+        .then(() => {
+          const tag = this.getTag(tagId);
+          const newAccessRights = tag.getAccessRights();
+          delete newAccessRights[groupId];
+          tag.set({
+            accessRights: newAccessRights,
+          });
+        })
+        .catch(console.error);
+    },
+
+    updateCollaborator: function(tagId, groupId, newPermissions) {
+      const params = {
+        url: {
+          tagId,
+          groupId,
+        },
+        data: newPermissions
+      };
+      return osparc.data.Resources.fetch("tags", "putAccessRights", params)
+        .then(() => {
+          const tag = this.getTag(tagId);
+          const newAccessRights = tag.getAccessRights();
+          newAccessRights[groupId] = newPermissions;
+          tag.set({
+            accessRights: tag.newAccessRights,
+          });
+        })
+        .catch(console.error);
     },
 
     __addToCache: function(tagData) {

@@ -148,83 +148,99 @@ qx.Class.define("osparc.dashboard.CardBase", {
       return false;
     },
 
-    // groups -> [orgMembs, orgs, [productEveryone], [everyone]];
-    setIconAndTooltip: function(shareIcon, accessRights, groups) {
-      shareIcon.setSource(osparc.dashboard.CardBase.SHARE_ICON);
-      if (osparc.data.model.Study.canIWrite(accessRights)) {
-        shareIcon.set({
-          toolTipText: qx.locale.Manager.tr("Share")
-        });
-      }
-      let sharedGrps = [];
-      const myGroupId = osparc.auth.Data.getInstance().getGroupId();
-      for (let i=0; i<groups.length; i++) {
-        if (groups[i].length === 0) {
-          // user has no read access to the productEveryone
-          continue;
-        }
-        const sharedGrp = [];
-        const gids = Object.keys(accessRights);
-        for (let j=0; j<gids.length; j++) {
-          const gid = parseInt(gids[j]);
-          if (gid === myGroupId) {
-            continue;
-          }
-          const grp = groups[i].find(group => group.getGroupId() === gid);
-          if (grp) {
-            sharedGrp.push(grp);
-          }
-        }
-        if (sharedGrp.length === 0) {
-          continue;
-        } else {
-          sharedGrps = sharedGrps.concat(sharedGrp);
-        }
-        switch (i) {
-          case 0:
-            shareIcon.setSource(osparc.dashboard.CardBase.SHARED_USER);
-            break;
-          case 1:
-            shareIcon.setSource(osparc.dashboard.CardBase.SHARED_ORGS);
-            break;
-          case 2:
-          case 3:
-            shareIcon.setSource(osparc.dashboard.CardBase.SHARED_ALL);
-            break;
-        }
+    populateShareIcon: function(shareIcon, accessRights) {
+      const gids = Object.keys(accessRights).map(key => parseInt(key));
+
+      // Icon
+      const groupsStore = osparc.store.Groups.getInstance();
+      const groupEveryone = groupsStore.getEveryoneGroup();
+      const groupProductEveryone = groupsStore.getEveryoneProductGroup();
+      const organizations = groupsStore.getOrganizations();
+      const myGroupId = groupsStore.getMyGroupId();
+
+      const organizationIds = Object.keys(organizations).map(key => parseInt(key));
+      if (gids.includes(groupEveryone.getGroupId()) || gids.includes(groupProductEveryone.getGroupId())) {
+        shareIcon.setSource(osparc.dashboard.CardBase.SHARED_ALL);
+      } else if (organizationIds.filter(value => gids.includes(value)).length) { // find intersection
+        shareIcon.setSource(osparc.dashboard.CardBase.SHARED_ORGS);
+      } else if (gids.length === 1 && gids[0] === myGroupId) {
+        shareIcon.setSource(osparc.dashboard.CardBase.SHARE_ICON);
+      } else {
+        shareIcon.setSource(osparc.dashboard.CardBase.SHARED_USER);
       }
 
-      // tooltip
-      if (sharedGrps.length === 0) {
+      // Tooltip
+      if (gids.length === 0 || (gids.length === 1 && gids[0] === myGroupId)) {
+        const canIWrite = osparc.data.model.Study.canIWrite(accessRights);
+        if (canIWrite) {
+          shareIcon.set({
+            toolTipText: qx.locale.Manager.tr("Share")
+          });
+        }
         return;
       }
-      const sharedGrpLabels = [];
-      const maxItems = 6;
-      for (let i=0; i<sharedGrps.length; i++) {
-        if (i > maxItems) {
-          sharedGrpLabels.push("...");
-          break;
-        }
-        const sharedGrpLabel = sharedGrps[i].getLabel();
-        if (!sharedGrpLabels.includes(sharedGrpLabel)) {
-          sharedGrpLabels.push(sharedGrpLabel);
-        }
-      }
-      const hintText = sharedGrpLabels.join("<br>");
-      const hint = new osparc.ui.hint.Hint(shareIcon, hintText);
-      shareIcon.addListener("mouseover", () => hint.show(), this);
-      shareIcon.addListener("mouseout", () => hint.exclude(), this);
+
+      this.addHintFromGids(shareIcon, gids);
     },
 
-    // groups -> [orgMembs, orgs, [productEveryone], [everyone]];
-    populateShareIcon: function(shareIcon, accessRights) {
+    addHintFromGids: function(icon, gids) {
       const groupsStore = osparc.store.Groups.getInstance();
-      const orgMembs = Object.values(groupsStore.getReachableUsers());
-      const orgs = Object.values(groupsStore.getOrganizations());
-      const productEveryone = [groupsStore.getEveryoneProductGroup()];
-      const everyone = [groupsStore.getEveryoneGroup()];
-      const groups = [orgMembs, orgs, productEveryone, everyone];
-      osparc.dashboard.CardBase.setIconAndTooltip(shareIcon, accessRights, groups);
+      const groupEveryone = groupsStore.getEveryoneGroup();
+      const groupProductEveryone = groupsStore.getEveryoneProductGroup();
+      const organizations = groupsStore.getOrganizations();
+      const myGroupId = groupsStore.getMyGroupId();
+
+      const sharedGrps = [];
+      const groups = [];
+      groups.push(groupEveryone);
+      groups.push(groupProductEveryone);
+      groups.push(...Object.values(organizations));
+      groups.forEach(group => {
+        const idx = gids.indexOf(group.getGroupId());
+        if (idx > -1) {
+          sharedGrps.push(group);
+          gids.splice(idx, 1);
+        }
+      });
+
+      const hint = new osparc.ui.hint.Hint(icon);
+      icon.addListener("mouseover", async () => {
+        hint.show();
+
+        // lazy load tooltip, this can be an expensive call
+
+        // once the groups were removed, the remaining group ids are users' primary groups ids
+        const usersStore = osparc.store.Users.getInstance();
+        for (let i=0; i<gids.length; i++) {
+          const gid = gids[i];
+          if (myGroupId !== gid) {
+            const user = await usersStore.getUser(gid);
+            if (user) {
+              sharedGrps.push(user);
+            }
+          }
+        }
+
+        if (hint.getText() === "") {
+          const sharedGrpLabels = [];
+          const maxItems = 6;
+          for (let i=0; i<sharedGrps.length; i++) {
+            if (i > maxItems) {
+              sharedGrpLabels.push("...");
+              break;
+            }
+            const sharedGrpLabel = sharedGrps[i].getLabel();
+            if (!sharedGrpLabels.includes(sharedGrpLabel)) {
+              sharedGrpLabels.push(sharedGrpLabel);
+            }
+          }
+          const hintText = sharedGrpLabels.join("<br>");
+          if (hintText) {
+            hint.setText(hintText);
+          }
+        }
+      }, this);
+      icon.addListener("mouseout", () => hint.exclude(), this);
     },
   },
 
@@ -299,6 +315,18 @@ qx.Class.define("osparc.dashboard.CardBase", {
     lastChangeDate: {
       check: "Date",
       apply: "_applyLastChangeDate",
+      nullable: true
+    },
+
+    trashedAt: {
+      check: "Date",
+      apply: "_applyTrasehdAt",
+      nullable: true
+    },
+
+    trashedBy: {
+      check: "Number",
+      apply: "_applyTrashedBy",
       nullable: true
     },
 
@@ -451,6 +479,8 @@ qx.Class.define("osparc.dashboard.CardBase", {
         owner,
         accessRights: resourceData.accessRights ? resourceData.accessRights : {},
         lastChangeDate: resourceData.lastChangeDate ? new Date(resourceData.lastChangeDate) : null,
+        trashedAt: resourceData.trashedAt ? new Date(resourceData.trashedAt) : null,
+        trashedBy: resourceData.trashedBy || null,
         icon: resourceData.thumbnail || this.self().PRODUCT_ICON,
         state: resourceData.state ? resourceData.state : {},
         classifiers: resourceData.classifiers && resourceData.classifiers ? resourceData.classifiers : [],
@@ -514,6 +544,14 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     _applyLastChangeDate: function(value, old) {
+      throw new Error("Abstract method called!");
+    },
+
+    _applyTrasehdAt: function(value, old) {
+      throw new Error("Abstract method called!");
+    },
+
+    _applyTrashedBy: function(value, old) {
       throw new Error("Abstract method called!");
     },
 
@@ -926,7 +964,6 @@ qx.Class.define("osparc.dashboard.CardBase", {
       });
       control.addListener("tap", e => {
         e.stopPropagation();
-        this.setValue(false);
         this.fireDataEvent("emptyStudyClicked", this.getUuid());
       }, this);
       return control;

@@ -21,7 +21,7 @@ from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
 from . import _groups_api
-from ._common_models import ProjectPathParams, RequestContext
+from ._common.models import ProjectPathParams, RequestContext
 from ._groups_api import ProjectGroupGet
 from .exceptions import ProjectGroupNotFoundError, ProjectNotFoundError
 

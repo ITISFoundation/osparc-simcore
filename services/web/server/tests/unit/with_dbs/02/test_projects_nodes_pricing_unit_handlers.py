@@ -73,10 +73,10 @@ async def test_project_node_pricing_unit_user_project_access(
     )
     resp = await client.get(f"{base_url}")
     data, _ = await assert_status(resp, expected)
-    assert data == None
+    assert data is None
 
     # Now we will log as a different user who doesnt have access to the project
-    async with LoggedUser(client) as new_logged_user:
+    async with LoggedUser(client):
         base_url = client.app.router["get_project_node_pricing_unit"].url_for(
             project_id=user_project["uuid"], node_id=node_id
         )
@@ -136,7 +136,7 @@ def mocked_clusters_keeper_service_get_instance_type_details(
         ]
 
     return mocker.patch(
-        "simcore_service_webserver.projects.projects_api.get_instance_type_details",
+        "simcore_service_webserver.projects.projects_service.get_instance_type_details",
         side_effect=_fake_instance_type_details,
     )
 

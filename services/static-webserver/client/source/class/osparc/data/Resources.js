@@ -143,7 +143,7 @@ qx.Class.define("osparc.data.Resources", {
           getPageTrashed: {
             useCache: false,
             method: "GET",
-            url: statics.API + "/projects?filters={%22trashed%22:%22true%22}&offset={offset}&limit={limit}&order_by={orderBy}"
+            url: statics.API + "/projects:search?filters={%22trashed%22:%22true%22}&offset={offset}&limit={limit}&order_by={orderBy}"
           },
           postToTemplate: {
             method: "POST",
@@ -327,7 +327,7 @@ qx.Class.define("osparc.data.Resources", {
           getPageTrashed: {
             useCache: false,
             method: "GET",
-            url: statics.API + "/folders?filters={%22trashed%22:%22true%22}&offset={offset}&limit={limit}&order_by={orderBy}"
+            url: statics.API + "/folders:search?filters={%22trashed%22:%22true%22}&offset={offset}&limit={limit}&order_by={orderBy}"
           },
           post: {
             method: "POST",
@@ -373,6 +373,7 @@ qx.Class.define("osparc.data.Resources", {
           getPageTrashed: {
             useCache: false,
             method: "GET",
+            // url: statics.API + "/workspaces:search?filters={%22trashed%22:%22true%22}&offset={offset}&limit={limit}&order_by={orderBy}"
             url: statics.API + "/workspaces?filters={%22trashed%22:%22true%22}&offset={offset}&limit={limit}&order_by={orderBy}"
           },
           post: {
@@ -879,6 +880,22 @@ qx.Class.define("osparc.data.Resources", {
         }
       },
       /*
+       * USERS
+       */
+      "users": {
+        useCache: false, // osparc.store.Groups handles the cache
+        endpoints: {
+          get: {
+            method: "GET",
+            url: statics.API + "/groups/{gid}/users"
+          },
+          search: {
+            method: "POST",
+            url: statics.API + "/users:search"
+          }
+        }
+      },
+      /*
        * WALLETS
        */
       "wallets": {
@@ -919,10 +936,6 @@ qx.Class.define("osparc.data.Resources", {
             method: "PUT",
             url: statics.API + "/wallets/{walletId}/auto-recharge"
           },
-          purchases: {
-            method: "GET",
-            url: statics.API + "/wallets/{walletId}/licensed-items-purchases"
-          },
         }
       },
       /*
@@ -958,7 +971,7 @@ qx.Class.define("osparc.data.Resources", {
           }
         }
       },
-      "users": {
+      "poUsers": {
         endpoints: {
           search: {
             method: "GET",
@@ -1242,14 +1255,30 @@ qx.Class.define("osparc.data.Resources", {
             method: "POST",
             url: statics.API + "/tags"
           },
-          put: {
+          patch: {
             method: "PATCH",
             url: statics.API + "/tags/{tagId}"
           },
           delete: {
             method: "DELETE",
             url: statics.API + "/tags/{tagId}"
-          }
+          },
+          getAccessRights: {
+            method: "GET",
+            url: statics.API + "/tags/{tagId}/groups"
+          },
+          putAccessRights: {
+            method: "PUT",
+            url: statics.API + "/tags/{tagId}/groups/{groupId}"
+          },
+          postAccessRights: {
+            method: "POST",
+            url: statics.API + "/tags/{tagId}/groups/{groupId}"
+          },
+          deleteAccessRights: {
+            method: "DELETE",
+            url: statics.API + "/tags/{tagId}/groups/{groupId}"
+          },
         }
       },
 
@@ -1267,9 +1296,17 @@ qx.Class.define("osparc.data.Resources", {
             method: "GET",
             url: statics.API + "/catalog/licensed-items?offset={offset}&limit={limit}"
           },
+          purchases: {
+            method: "GET",
+            url: statics.API + "/wallets/{walletId}/licensed-items-purchases?offset={offset}&limit={limit}"
+          },
           purchase: {
             method: "POST",
             url: statics.API + "/catalog/licensed-items/{licensedItemId}:purchase"
+          },
+          checkouts: {
+            method: "GET",
+            url: statics.API + "/wallets/{walletId}/licensed-items-checkouts?offset={offset}&limit={limit}"
           },
         }
       }
@@ -1320,11 +1357,10 @@ qx.Class.define("osparc.data.Resources", {
           res[endpoint](params.url || null, params.data || null);
         }
 
-        res.addListenerOnce(endpoint + "Success", e => {
+        const successCB = e => {
           const response = e.getRequest().getResponse();
           const endpointDef = resourceDefinition.endpoints[endpoint];
           const data = endpointDef.isJsonFile ? response : response.data;
-          const useCache = ("useCache" in endpointDef) ? endpointDef.useCache : resourceDefinition.useCache;
           // OM: Temporary solution until the quality object is better defined
           if (data && endpoint.includes("get") && ["studies", "templates"].includes(resource)) {
             if (Array.isArray(data)) {
@@ -1335,6 +1371,8 @@ qx.Class.define("osparc.data.Resources", {
               osparc.metadata.Quality.attachQualityToObject(data);
             }
           }
+
+          const useCache = ("useCache" in endpointDef) ? endpointDef.useCache : resourceDefinition.useCache;
           if (useCache) {
             if (endpoint.includes("delete") && resourceDefinition["deleteId"] && resourceDefinition["deleteId"] in params.url) {
               const deleteId = params.url[resourceDefinition["deleteId"]];
@@ -1349,16 +1387,18 @@ qx.Class.define("osparc.data.Resources", {
               }
             }
           }
+
           res.dispose();
+
           if ("resolveWResponse" in options && options.resolveWResponse) {
             response.params = params;
             resolve(response);
           } else {
             resolve(data);
           }
-        }, this);
+        };
 
-        res.addListener(endpoint + "Error", e => {
+        const errorCB = e => {
           if (e.getPhase() === "timeout") {
             if (options.timeout && options.timeoutRetries) {
               options.timeoutRetries--;
@@ -1412,8 +1452,12 @@ qx.Class.define("osparc.data.Resources", {
             err.status = status;
           }
           reject(err);
-        });
+        };
 
+        const successEndpoint = endpoint + "Success";
+        const errorEndpoint = endpoint + "Error";
+        res.addListenerOnce(successEndpoint, e => successCB(e), this);
+        res.addListener(errorEndpoint, e => errorCB(e), this);
         sendRequest();
       });
     },

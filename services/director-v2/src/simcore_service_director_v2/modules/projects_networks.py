@@ -22,9 +22,9 @@ from servicelib.rabbitmq import RabbitMQClient
 from servicelib.utils import logged_gather
 
 from ..core.errors import ProjectNetworkNotFoundError
+from ..modules.catalog import CatalogClient
 from ..modules.db.repositories.projects import ProjectsRepository
 from ..modules.db.repositories.projects_networks import ProjectsNetworksRepository
-from ..modules.director_v0 import DirectorV0Client
 from ..modules.dynamic_sidecar.scheduler import DynamicSidecarsScheduler
 
 logger = logging.getLogger(__name__)
@@ -51,7 +51,7 @@ def _network_name(project_id: ProjectID, user_defined: str) -> DockerNetworkName
 async def requires_dynamic_sidecar(
     service_key: str,
     service_version: str,
-    director_v0_client: DirectorV0Client,
+    catalog_client: CatalogClient,
 ) -> bool:
     decoded_service_key = urllib.parse.unquote_plus(service_key)
 
@@ -62,11 +62,12 @@ async def requires_dynamic_sidecar(
     if service_type != "dynamic":
         return False
 
+    service_key_version = ServiceKeyVersion.model_validate(
+        {"key": decoded_service_key, "version": service_version}
+    )
     simcore_service_labels: SimcoreServiceLabels = (
-        await director_v0_client.get_service_labels(
-            service=ServiceKeyVersion.model_validate(
-                {"key": decoded_service_key, "version": service_version}
-            )
+        await catalog_client.get_service_labels(
+            service_key_version.key, service_key_version.version
         )
     )
     requires_dynamic_sidecar_: bool = simcore_service_labels.needs_dynamic_sidecar
@@ -176,7 +177,7 @@ async def _get_networks_with_aliases_for_default_network(
     project_id: ProjectID,
     user_id: UserID,
     new_workbench: NodesDict,
-    director_v0_client: DirectorV0Client,
+    catalog_client: CatalogClient,
     rabbitmq_client: RabbitMQClient,
 ) -> NetworksWithAliases:
     """
@@ -184,7 +185,9 @@ async def _get_networks_with_aliases_for_default_network(
     be on the same network.
     Return an updated version of the projects_networks
     """
-    new_networks_with_aliases: NetworksWithAliases = NetworksWithAliases.model_validate({})
+    new_networks_with_aliases: NetworksWithAliases = NetworksWithAliases.model_validate(
+        {}
+    )
 
     default_network = _network_name(project_id, "default")
     new_networks_with_aliases[default_network] = ContainerAliases.model_validate({})
@@ -194,13 +197,15 @@ async def _get_networks_with_aliases_for_default_network(
         if not await requires_dynamic_sidecar(
             service_key=node_content.key,
             service_version=node_content.version,
-            director_v0_client=director_v0_client,
+            catalog_client=catalog_client,
         ):
             continue
 
         # only add if network label is valid, otherwise it will be skipped
         try:
-            network_alias = TypeAdapter(DockerNetworkAlias).validate_python(node_content.label)
+            network_alias = TypeAdapter(DockerNetworkAlias).validate_python(
+                node_content.label
+            )
         except ValidationError:
             message = LoggerRabbitMessage(
                 user_id=user_id,
@@ -233,7 +238,7 @@ async def update_from_workbench(
     projects_networks_repository: ProjectsNetworksRepository,
     projects_repository: ProjectsRepository,
     scheduler: DynamicSidecarsScheduler,
-    director_v0_client: DirectorV0Client,
+    catalog_client: CatalogClient,
     rabbitmq_client: RabbitMQClient,
     project_id: ProjectID,
 ) -> None:
@@ -262,7 +267,7 @@ async def update_from_workbench(
         project_id=project_id,
         user_id=project.prj_owner,
         new_workbench=project.workbench,
-        director_v0_client=director_v0_client,
+        catalog_client=catalog_client,
         rabbitmq_client=rabbitmq_client,
     )
     logger.debug("%s", f"{existing_networks_with_aliases=}")

@@ -20,7 +20,7 @@ from pytest_simcore.helpers.webserver_parametrizations import (
 from servicelib.aiohttp import status
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects.models import ProjectDict
-from simcore_service_webserver.workspaces._workspaces_handlers import (
+from simcore_service_webserver.workspaces._workspaces_rest import (
     WorkspacesListQueryParams,
 )
 
@@ -169,7 +169,7 @@ async def test_list_workspaces_with_text_search(
         },
     )
     data, _ = await assert_status(resp, status.HTTP_201_CREATED)
-    added_workspace = WorkspaceGet.model_validate(data)
+    WorkspaceGet.model_validate(data)
 
     # CREATE a new workspace
     url = client.app.router["create_workspace"].url_for()
@@ -182,7 +182,7 @@ async def test_list_workspaces_with_text_search(
         },
     )
     data, _ = await assert_status(resp, status.HTTP_201_CREATED)
-    added_workspace = WorkspaceGet.model_validate(data)
+    WorkspaceGet.model_validate(data)
 
     # LIST user workspaces
     url = client.app.router["list_workspaces"].url_for()

@@ -69,4 +69,4 @@ class MyModel(BaseModel):
     ],
 )
 def test_field_fn(fn: Callable[[Any], Any], expected: Any, name: str):
-    assert expected == fn(MyModel.model_fields[name])
+    assert expected == fn(MyModel.model_fields.get(name))

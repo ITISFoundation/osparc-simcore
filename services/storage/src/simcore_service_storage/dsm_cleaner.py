@@ -1,4 +1,4 @@
-""" backround task that cleans the DSM pending/expired uploads
+"""backround task that cleans the DSM pending/expired uploads
 
 # Rationale:
  - for each upload an entry is created in the file_meta_data table in the database
@@ -24,9 +24,9 @@ from datetime import timedelta
 from typing import cast
 
 from aiohttp import web
-from servicelib.background_task import stop_periodic_task
+from servicelib.async_utils import cancel_wait_task
+from servicelib.background_task_utils import exclusive_periodic
 from servicelib.logging_utils import log_catch, log_context
-from servicelib.redis_utils import start_exclusive_periodic_task
 
 from .constants import APP_CONFIG_KEY, APP_DSM_KEY
 from .dsm_factory import DataManagerProvider
@@ -45,35 +45,31 @@ async def dsm_cleaner_task(app: web.Application) -> None:
     simcore_s3_dsm: SimcoreS3DataManager = cast(
         SimcoreS3DataManager, dsm.get(SimcoreS3DataManager.get_location_id())
     )
-    try:
-        await simcore_s3_dsm.clean_expired_uploads()
-
-    except asyncio.CancelledError:  # noqa: PERF203
-        _logger.info("cancelled dsm cleaner task")
-        raise
-    except Exception:  # pylint: disable=broad-except
-        _logger.exception("Unhandled error in dsm cleaner task, restarting task...")
+    await simcore_s3_dsm.clean_expired_uploads()
 
 
 def setup_dsm_cleaner(app: web.Application):
     async def _setup(app: web.Application):
-        with log_context(_logger, logging.INFO, msg="setup dsm cleaner"), log_catch(
-            _logger, reraise=False
+        with (
+            log_context(_logger, logging.INFO, msg="setup dsm cleaner"),
+            log_catch(_logger, reraise=False),
         ):
             cfg: Settings = app[APP_CONFIG_KEY]
             assert cfg.STORAGE_CLEANER_INTERVAL_S  # nosec
 
-            storage_background_task = start_exclusive_periodic_task(
+            @exclusive_periodic(
                 get_redis_client(app),
-                dsm_cleaner_task,
-                task_period=timedelta(seconds=cfg.STORAGE_CLEANER_INTERVAL_S),
+                task_interval=timedelta(seconds=cfg.STORAGE_CLEANER_INTERVAL_S),
                 retry_after=timedelta(minutes=5),
-                task_name=_TASK_NAME_PERIODICALY_CLEAN_DSM,
-                app=app,
             )
+            async def _periodic_dsm_clean() -> None:
+                await dsm_cleaner_task(app)
 
+            storage_background_task = asyncio.create_task(
+                _periodic_dsm_clean(), name=_TASK_NAME_PERIODICALY_CLEAN_DSM
+            )
             yield
 
-            await stop_periodic_task(storage_background_task)
+            await cancel_wait_task(storage_background_task)
 
     app.cleanup_ctx.append(_setup)

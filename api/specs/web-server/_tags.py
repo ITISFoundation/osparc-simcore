@@ -22,6 +22,7 @@ router = APIRouter(prefix=f"/{API_VTAG}", tags=["tags"])
 @router.post(
     "/tags",
     response_model=Envelope[TagGet],
+    status_code=status.HTTP_201_CREATED,
 )
 async def create_tag(_body: TagCreate):
     ...

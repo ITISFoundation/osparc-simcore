@@ -1,4 +1,4 @@
-""" Handlers for STANDARD methods on /projects colletions
+"""Handlers for STANDARD methods on /projects colletions
 
 Standard methods or CRUD that states for Create+Read(Get&List)+Update+Delete
 
@@ -36,19 +36,21 @@ from servicelib.common_headers import (
     X_SIMCORE_USER_AGENT,
 )
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
+from servicelib.redis import get_project_locked_state
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
 from .._meta import API_VTAG as VTAG
 from ..catalog.client import get_services_for_user_in_product
 from ..folders.errors import FolderAccessForbiddenError, FolderNotFoundError
 from ..login.decorators import login_required
+from ..redis import get_redis_lock_manager_client_sdk
 from ..resource_manager.user_sessions import PROJECT_ID_KEY, managed_resource
 from ..security.api import check_user_permission
 from ..security.decorators import permission_required
 from ..users.api import get_user_fullname
 from ..workspaces.errors import WorkspaceAccessForbiddenError, WorkspaceNotFoundError
-from . import _crud_api_create, _crud_api_read, projects_api
-from ._common_models import ProjectPathParams, RequestContext
+from . import _crud_api_create, _crud_api_read, projects_service
+from ._common.models import ProjectPathParams, RequestContext
 from ._crud_handlers_models import (
     ProjectActiveQueryParams,
     ProjectCreateHeaders,
@@ -65,7 +67,6 @@ from .exceptions import (
     ProjectOwnerNotFoundInTheProjectAccessRightsError,
     WrongTagIdsInQueryError,
 )
-from .lock import get_project_locked_state
 from .models import ProjectDict
 from .utils import get_project_unavailable_services, project_uses_available_services
 
@@ -113,6 +114,7 @@ routes = web.RouteTableDef()
 @login_required
 @permission_required("project.create")
 @permission_required("services.pipeline.*")  # due to update_pipeline_db
+@_handle_projects_exceptions
 async def create_project(request: web.Request):
     #
     # - Create https://google.aip.dev/133
@@ -138,7 +140,8 @@ async def create_project(request: web.Request):
         project_create: (
             ProjectCreateNew | ProjectCopyOverride | EmptyModel
         ) = await parse_request_body_as(
-            ProjectCreateNew | ProjectCopyOverride | EmptyModel, request  # type: ignore[arg-type] # from pydantic v2 --> https://github.com/pydantic/pydantic/discussions/4950
+            ProjectCreateNew | ProjectCopyOverride | EmptyModel,  # type: ignore[arg-type] # from pydantic v2 --> https://github.com/pydantic/pydantic/discussions/4950
+            request,
         )
         predefined_project = (
             project_create.model_dump(
@@ -232,17 +235,21 @@ async def list_projects_full_search(request: web.Request):
     query_params: ProjectsSearchQueryParams = parse_request_query_parameters_as(
         ProjectsSearchQueryParams, request
     )
+    if not query_params.filters:
+        query_params.filters = ProjectFilters()
+
     tag_ids_list = query_params.tag_ids_list()
 
-    projects, total_number_of_projects = await _crud_api_read.list_projects_full_search(
+    projects, total_number_of_projects = await _crud_api_read.list_projects_full_depth(
         request,
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
-        limit=query_params.limit,
-        offset=query_params.offset,
-        text=query_params.text,
-        order_by=OrderBy.model_construct(**query_params.order_by.model_dump()),
+        trashed=query_params.filters.trashed,
         tag_ids_list=tag_ids_list,
+        offset=query_params.offset,
+        limit=query_params.limit,
+        order_by=OrderBy.model_construct(**query_params.order_by.model_dump()),
+        text=query_params.text,
     )
 
     page = Page[ProjectDict].model_validate(
@@ -263,6 +270,7 @@ async def list_projects_full_search(request: web.Request):
 @routes.get(f"/{VTAG}/projects/active", name="get_active_project")
 @login_required
 @permission_required("project.read")
+@_handle_projects_exceptions
 async def get_active_project(request: web.Request) -> web.Response:
     #
     # - Get https://google.aip.dev/131
@@ -289,7 +297,7 @@ async def get_active_project(request: web.Request) -> web.Response:
 
         data = None
         if user_active_projects:
-            project = await projects_api.get_project_for_user(
+            project = await projects_service.get_project_for_user(
                 request.app,
                 project_uuid=user_active_projects[0],
                 user_id=req_ctx.user_id,
@@ -299,7 +307,7 @@ async def get_active_project(request: web.Request) -> web.Response:
             # updates project's permalink field
             await update_or_pop_permalink_in_project(request, project)
 
-            data = ProjectGet.model_validate(project).data(exclude_unset=True)
+            data = ProjectGet.from_domain_model(project).data(exclude_unset=True)
 
         return web.json_response({"data": data}, dumps=json_dumps)
 
@@ -310,6 +318,7 @@ async def get_active_project(request: web.Request) -> web.Response:
 @routes.get(f"/{VTAG}/projects/{{project_id}}", name="get_project")
 @login_required
 @permission_required("project.read")
+@_handle_projects_exceptions
 async def get_project(request: web.Request):
     """
 
@@ -328,7 +337,7 @@ async def get_project(request: web.Request):
     )
 
     try:
-        project = await projects_api.get_project_for_user(
+        project = await projects_service.get_project_for_user(
             request.app,
             project_uuid=f"{path_params.project_id}",
             user_id=req_ctx.user_id,
@@ -355,7 +364,7 @@ async def get_project(request: web.Request):
         # Adds permalink
         await update_or_pop_permalink_in_project(request, project)
 
-        data = ProjectGet.model_validate(project).data(exclude_unset=True)
+        data = ProjectGet.from_domain_model(project).data(exclude_unset=True)
         return web.json_response({"data": data}, dumps=json_dumps)
 
     except ProjectInvalidRightsError as exc:
@@ -373,10 +382,11 @@ async def get_project(request: web.Request):
 )
 @login_required
 @permission_required("project.read")
+@_handle_projects_exceptions
 async def get_project_inactivity(request: web.Request):
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
-    project_inactivity = await projects_api.get_project_inactivity(
+    project_inactivity = await projects_service.get_project_inactivity(
         app=request.app, project_id=path_params.project_id
     )
     return web.json_response(Envelope(data=project_inactivity), dumps=json_dumps)
@@ -395,7 +405,7 @@ async def patch_project(request: web.Request):
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
     project_patch = await parse_request_body_as(ProjectPatch, request)
 
-    await projects_api.patch_project(
+    await projects_service.patch_project(
         request.app,
         user_id=req_ctx.user_id,
         project_uuid=path_params.project_id,
@@ -409,6 +419,7 @@ async def patch_project(request: web.Request):
 @routes.delete(f"/{VTAG}/projects/{{project_id}}", name="delete_project")
 @login_required
 @permission_required("project.delete")
+@_handle_projects_exceptions
 async def delete_project(request: web.Request):
     # Delete https://google.aip.dev/135
     """
@@ -427,7 +438,7 @@ async def delete_project(request: web.Request):
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
     try:
-        await projects_api.get_project_for_user(
+        await projects_service.get_project_for_user(
             request.app,
             project_uuid=f"{path_params.project_id}",
             user_id=req_ctx.user_id,
@@ -448,7 +459,7 @@ async def delete_project(request: web.Request):
             )
         if project_users:
             other_user_names = {
-                await get_user_fullname(request.app, user_id=uid)
+                f"{await get_user_fullname(request.app, user_id=uid)}"
                 for uid in project_users
             }
             raise web.HTTPForbidden(
@@ -458,13 +469,14 @@ async def delete_project(request: web.Request):
 
         project_locked_state: ProjectLocked | None
         if project_locked_state := await get_project_locked_state(
-            app=request.app, project_uuid=path_params.project_id
+            get_redis_lock_manager_client_sdk(request.app),
+            project_uuid=path_params.project_id,
         ):
             raise web.HTTPConflict(
                 reason=f"Project {path_params.project_id} is locked: {project_locked_state=}"
             )
 
-        await projects_api.submit_delete_project_task(
+        await projects_service.submit_delete_project_task(
             request.app,
             path_params.project_id,
             req_ctx.user_id,
@@ -498,6 +510,7 @@ async def delete_project(request: web.Request):
 @login_required
 @permission_required("project.create")
 @permission_required("services.pipeline.*")  # due to update_pipeline_db
+@_handle_projects_exceptions
 async def clone_project(request: web.Request):
     req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)

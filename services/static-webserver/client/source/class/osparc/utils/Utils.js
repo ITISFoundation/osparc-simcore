@@ -591,7 +591,7 @@ qx.Class.define("osparc.utils.Utils", {
       const manuals = osparc.store.Support.getManuals();
       const manualLink = (manuals && manuals.length) ? manuals[0].url : "";
       const supportEmail = osparc.store.VendorInfo.getInstance().getSupportEmail();
-      const mailto = osparc.store.Support.mailToText(supportEmail, "Request Account " + productName);
+      const mailto = osparc.store.Support.mailToLink(supportEmail, "Request Account " + productName);
       let msg = "";
       msg += qx.locale.Manager.tr("To use all ");
       msg += this.createHTMLLink(productName + " features", manualLink);

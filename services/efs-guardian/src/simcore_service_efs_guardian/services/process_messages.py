@@ -1,3 +1,4 @@
+import datetime
 import logging
 
 from fastapi import FastAPI
@@ -8,6 +9,7 @@ from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.dynamic_sidecar.disk_usage import (
     update_disk_usage,
 )
+from servicelib.redis import exclusive
 from servicelib.utils import fire_and_forget_task
 
 from ..core.settings import get_application_settings
@@ -77,13 +79,13 @@ async def process_dynamic_service_running_message(app: FastAPI, data: bytes) -> 
         msg = f"Removing write permissions inside of EFS starts for project ID: {rabbit_message.project_id}, node ID: {rabbit_message.node_id}, current user: {rabbit_message.user_id}, size: {size}, upper limit: {settings.EFS_DEFAULT_USER_SERVICE_SIZE_BYTES}"
         with log_context(_logger, logging.WARNING, msg=msg):
             redis = get_redis_lock_client(app)
-            async with redis.lock_context(
-                f"efs_remove_write_permissions-{rabbit_message.project_id=}-{rabbit_message.node_id=}",
+            await exclusive(
+                redis,
+                lock_key=f"efs_remove_write_permissions-{rabbit_message.project_id=}-{rabbit_message.node_id=}",
                 blocking=True,
-                blocking_timeout_s=10,
-            ):
-                await efs_manager.remove_project_node_data_write_permissions(
-                    project_id=rabbit_message.project_id, node_id=rabbit_message.node_id
-                )
+                blocking_timeout=datetime.timedelta(seconds=10),
+            )(efs_manager.remove_project_node_data_write_permissions)(
+                project_id=rabbit_message.project_id, node_id=rabbit_message.node_id
+            )
 
     return True

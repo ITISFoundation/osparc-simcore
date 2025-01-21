@@ -32,8 +32,8 @@ from .._meta import API_VTAG as VTAG
 from ..login.decorators import login_required
 from ..projects._access_rights_api import check_user_project_permission
 from ..security.decorators import permission_required
-from . import _ports_api, projects_api
-from ._common_models import ProjectPathParams, RequestContext
+from . import _ports_api, projects_service
+from ._common.models import ProjectPathParams, RequestContext
 from .db import ProjectDBAPI
 from .exceptions import (
     NodeNotFoundError,
@@ -81,7 +81,7 @@ def _handle_project_exceptions(
 async def _get_validated_workbench_model(
     app: web.Application, project_id: ProjectID, user_id: UserID
 ) -> dict[NodeID, Node]:
-    project: ProjectDict = await projects_api.get_project_for_user(
+    project: ProjectDict = await projects_service.get_project_for_user(
         app,
         project_uuid=f"{project_id}",
         user_id=user_id,

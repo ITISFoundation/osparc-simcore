@@ -302,7 +302,7 @@ def mocks_on_projects_api(mocker) -> None:
     All projects in this module are UNLOCKED
     """
     mocker.patch(
-        "simcore_service_webserver.projects.projects_api._get_project_lock_state",
+        "simcore_service_webserver.projects.projects_service._get_project_lock_state",
         return_value=ProjectLocked(value=False, status=ProjectStatus.CLOSED),
     )
 
@@ -317,7 +317,7 @@ async def assert_redirected_to_study(
     assert resp.url.path == "/"
     assert (
         "OSPARC-SIMCORE" in content
-    ), "Expected front-end rendering workbench's study, got %s" % str(content)
+    ), f"Expected front-end rendering workbench's study, got {content!s}"
 
     # Expects auth cookie for current user
     assert DEFAULT_SESSION_COOKIE_NAME in [c.key for c in session.cookie_jar]

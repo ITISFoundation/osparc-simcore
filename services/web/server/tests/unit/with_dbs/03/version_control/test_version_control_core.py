@@ -2,15 +2,14 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from typing import Awaitable, Callable
+from collections.abc import Awaitable, Callable
 from uuid import UUID
 
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient, make_mocked_request
-from faker import Faker
 from simcore_service_webserver._constants import RQT_USERID_KEY
-from simcore_service_webserver.projects import projects_api
+from simcore_service_webserver.projects import projects_service
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.version_control._core import (
     checkout_checkpoint,
@@ -28,11 +27,10 @@ def aiohttp_mocked_request(client: TestClient, user_id: int) -> web.Request:
     return req
 
 
-@pytest.mark.acceptance_test
+@pytest.mark.acceptance_test()
 async def test_workflow(
     client: TestClient,
     project_uuid: UUID,
-    faker: Faker,
     user_id: int,
     user_project: ProjectDict,
     aiohttp_mocked_request: web.Request,
@@ -81,7 +79,7 @@ async def test_workflow(
     checkpoint_co = await checkout_checkpoint(vc_repo, project_uuid, checkpoint1.id)
     assert checkpoint1 == checkpoint_co
 
-    project = await projects_api.get_project_for_user(
+    project = await projects_service.get_project_for_user(
         aiohttp_mocked_request.app, str(project_uuid), user_id
     )
     assert project["workbench"] == user_project["workbench"]

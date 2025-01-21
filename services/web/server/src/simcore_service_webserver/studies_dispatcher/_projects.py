@@ -23,7 +23,7 @@ from servicelib.logging_utils import log_decorator
 
 from ..projects.db import ProjectDBAPI
 from ..projects.exceptions import ProjectInvalidRightsError, ProjectNotFoundError
-from ..projects.projects_api import get_project_for_user
+from ..projects.projects_service import get_project_for_user
 from ..utils import now_str
 from ._core import compose_uuid_from
 from ._models import FileParams, ServiceInfo, ViewerInfo
@@ -92,7 +92,7 @@ def _create_project(
         access_rights.write = access_rights.delete = False
 
     # Assambles project instance
-    project = Project(
+    return Project(
         uuid=project_id,
         name=name,
         description=description,
@@ -104,8 +104,6 @@ def _create_project(
         workbench=workbench,
         ui=StudyUI(workbench=workbench_ui),  # type: ignore[arg-type]
     )
-
-    return project
 
 
 def _create_project_with_service(
@@ -275,7 +273,7 @@ async def get_or_create_project_with_file_and_service(
                 download_link,
             )
             # FIXME: CANNOT GUARANTEE!!, DELETE?? ERROR?? and cannot be viewed until verified?
-            raise web.HTTPInternalServerError()
+            raise web.HTTPInternalServerError
 
     except (ProjectNotFoundError, ProjectInvalidRightsError):
         exists = False

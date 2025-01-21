@@ -108,7 +108,7 @@ class MyProfileGet(OutputSchemaWithoutCamelCase):
         return v
 
     @classmethod
-    def from_model(
+    def from_domain_model(
         cls,
         my_profile: MyProfile,
         my_groups_by_type: GroupsByTypeTuple,
@@ -133,7 +133,7 @@ class MyProfileGet(OutputSchemaWithoutCamelCase):
         )
         return cls(
             **data,
-            groups=MyGroupsGet.from_model(my_groups_by_type, my_product_group),
+            groups=MyGroupsGet.from_domain_model(my_groups_by_type, my_product_group),
             preferences=my_preferences,
         )
 
@@ -221,7 +221,7 @@ class UserGet(OutputSchema):
     email: EmailStr | None = None
 
     @classmethod
-    def from_model(cls, data):
+    def from_domain_model(cls, data):
         return cls.model_validate(data, from_attributes=True)
 
 
@@ -293,7 +293,7 @@ class MyTokenCreate(InputSchemaWithoutCamelCase):
     token_key: IDStr
     token_secret: IDStr
 
-    def to_model(self) -> UserThirdPartyToken:
+    def to_domain_model(self) -> UserThirdPartyToken:
         return UserThirdPartyToken(
             service=self.service,
             token_key=self.token_key,
@@ -309,7 +309,7 @@ class MyTokenGet(OutputSchemaWithoutCamelCase):
     ] = None
 
     @classmethod
-    def from_model(cls, token: UserThirdPartyToken) -> Self:
+    def from_domain_model(cls, token: UserThirdPartyToken) -> Self:
         return cls(
             service=token.service,  # type: ignore[arg-type]
             token_key=token.token_key,  # type: ignore[arg-type]
@@ -327,5 +327,5 @@ class MyPermissionGet(OutputSchema):
     allowed: bool
 
     @classmethod
-    def from_model(cls, permission: UserPermission) -> Self:
+    def from_domain_model(cls, permission: UserPermission) -> Self:
         return cls(name=permission.name, allowed=permission.allowed)

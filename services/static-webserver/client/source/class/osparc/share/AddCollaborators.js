@@ -52,8 +52,8 @@ qx.Class.define("osparc.share.AddCollaborators", {
       let control;
       switch (id) {
         case "intro-text":
-          control = new qx.ui.basic.Label(this.tr("Select from the list below and click Share"));
-          this._add(control);
+          control = new qx.ui.basic.Label();
+          this._addAt(control, 0);
           break;
         case "buttons-layout":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox());
@@ -89,8 +89,6 @@ qx.Class.define("osparc.share.AddCollaborators", {
     },
 
     __buildLayout: function() {
-      this.getChildControl("intro-text");
-
       const addCollaboratorBtn = this.getChildControl("share-with");
       addCollaboratorBtn.addListener("execute", () => {
         const collaboratorsManager = new osparc.share.NewCollaboratorsManager(this.__serializedDataCopy);
