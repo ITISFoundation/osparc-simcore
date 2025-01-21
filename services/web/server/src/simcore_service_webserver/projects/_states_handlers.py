@@ -34,6 +34,7 @@ from ..users import api
 from ..users.exceptions import UserDefaultWalletNotFoundError
 from ..utils_aiohttp import envelope_json_response
 from ..wallets.errors import WalletNotEnoughCreditsError
+from . import api as projects_api
 from . import projects_service
 from ._common.models import ProjectPathParams, RequestContext
 from .exceptions import (
@@ -131,7 +132,7 @@ async def open_project(request: web.Request) -> web.Response:
             ),
         )
 
-        await projects_service.check_project_financial_status(
+        await projects_api.check_project_financial_status(
             request.app,
             project_id=path_params.project_id,
             product_name=req_ctx.product_name,
