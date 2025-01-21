@@ -110,7 +110,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       page.addToHeader(toolbar);
 
       if (this.__resourceData["resourceType"] === "study") {
-        const payDebtButton = this.__payDebtButton = new qx.ui.form.Button(this.tr("Pay debt")).set({
+        const payDebtButton = this.__payDebtButton = new qx.ui.form.Button(this.tr("Credits required")).set({
           visibility: osparc.study.Utils.isInDebt(resourceData) ? "visible" : "excluded"
         });
         osparc.dashboard.resources.pages.BasePage.decorateHeaderButton(payDebtButton);

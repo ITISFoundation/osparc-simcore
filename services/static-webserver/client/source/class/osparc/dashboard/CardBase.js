@@ -810,7 +810,8 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     __blockedInDebt: function(debt) {
-      let toolTip = this.tr("Embargoed. Top up")
+      const studyAlias = osparc.product.Utils.getStudyAlias({firstUpperCase: true});
+      let toolTip = studyAlias + " " + this.tr("Embargoed - Credits Required") + "<br>";
       toolTip += (-1*debt) + " " + this.tr("credits");
       const image = "@FontAwesome5Solid/lock/";
       this.__showBlockedCard(image, toolTip);
