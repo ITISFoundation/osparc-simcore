@@ -975,8 +975,8 @@ async def update_project_node_state(
         permission="write",  # NOTE: MD: before only read was sufficient, double check this
     )
 
-    # TODO: https://github.com/ITISFoundation/osparc-simcore/issues/7046
-    # delete this once workbench is removed from the projects table
+    # Delete this once workbench is removed from the projects table
+    # See: https://github.com/ITISFoundation/osparc-simcore/issues/7046
     updated_project, _ = await db.update_project_node_data(
         user_id=user_id,
         project_uuid=project_id,
