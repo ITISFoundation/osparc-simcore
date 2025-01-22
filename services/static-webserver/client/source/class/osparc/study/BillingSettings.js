@@ -216,12 +216,7 @@ qx.Class.define("osparc.study.BillingSettings", {
     __openBuyCreditsWindow: function() {
       const wallet = this.__getSelectedWallet();
       if (wallet) {
-        const params = {
-          url: {
-            walletId: wallet.getWalletId()
-          }
-        };
-        osparc.data.Resources.fetch("paymentMethods", "get", params)
+        osparc.desktop.credits.Utils.getPaymentMethods(wallet.getWalletId())
           .then(paymentMethods => {
             osparc.desktop.credits.Utils.openBuyCredits(paymentMethods);
           });
