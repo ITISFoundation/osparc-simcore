@@ -33,6 +33,7 @@ qx.Class.define("osparc.study.BillingSettings", {
 
   members: {
     __studyData: null,
+    __studiesWalletId: null,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -125,6 +126,7 @@ qx.Class.define("osparc.study.BillingSettings", {
       osparc.data.Resources.fetch("studies", "getWallet", paramsGet)
         .then(wallet => {
           if (wallet) {
+            this.__studiesWalletId = wallet["walletId"];
             const walletFound = walletSelector.getSelectables().find(selectables => selectables.walletId === wallet["walletId"]);
             if (walletFound) {
               walletSelector.setSelection([walletFound]);
@@ -187,10 +189,10 @@ qx.Class.define("osparc.study.BillingSettings", {
       } else {
         // It's a shared wallet
         this._createChildControlImpl("debt-explanation").set({
-          value: this.tr("To unblock it, a credits transfer will be made to the negative Credit Account")
+          value: this.tr("To unblock it, a credits transfer will be made to the currently connencted Credit Account")
         });
         const transferDebtButton = this._createChildControlImpl("trasfer-debt-button");
-        transferDebtButton.addListener("execute", () => console.log("open confirmation window"));
+        transferDebtButton.addListener("execute", () => this.__transferCredits(), this);
       }
     },
 
@@ -209,6 +211,33 @@ qx.Class.define("osparc.study.BillingSettings", {
       }
     },
 
+    __transferCredits: function() {
+      const msg = this.tr("Transfer details");
+      const confirmationWin = new osparc.ui.window.Confirmation(msg).set({
+        confirmText: this.tr("Trasnfer"),
+      });
+      confirmationWin.open();
+      confirmationWin.addListener("close", () => {
+        if (confirmationWin.getConfirmed()) {
+          this.__doTransferCredits();
+        }
+      }, this);
+    },
+
+    __doTransferCredits: function() {
+      const wallet = this.__getSelectedWallet();
+      const params = {
+        url: {
+          studyId: this.__studyData["uuid"],
+          walletId: wallet.getWalletId(),
+        },
+        data: {
+          amount: this.__studyData["debt"],
+        }
+      };
+      osparc.data.Resources.fetch("studies", "payDebt", params)
+    },
+
     __switchWallet: function(walletId) {
       const creditAccountLayout = this.getChildControl("credit-account-layout");
       creditAccountLayout.setEnabled(false);
@@ -220,6 +249,7 @@ qx.Class.define("osparc.study.BillingSettings", {
       };
       osparc.data.Resources.fetch("studies", "selectWallet", paramsPut)
         .then(() => {
+          this.__studiesWalletId = walletId;
           const msg = this.tr("Credit Account saved");
           osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
         })
