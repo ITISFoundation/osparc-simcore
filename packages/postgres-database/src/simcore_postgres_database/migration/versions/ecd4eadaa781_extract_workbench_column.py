@@ -23,20 +23,20 @@ def upgrade():
         sa.Column(
             "key",
             sa.String(),
-            nullable=False,
+            nullable=True,
             comment="Distinctive name (based on the Docker registry path)",
         ),
     )
     op.add_column(
         "projects_nodes",
         sa.Column(
-            "version", sa.String(), nullable=False, comment="Semantic version number"
+            "version", sa.String(), nullable=True, comment="Semantic version number"
         ),
     )
     op.add_column(
         "projects_nodes",
         sa.Column(
-            "label", sa.String(), nullable=False, comment="Short name used for display"
+            "label", sa.String(), nullable=True, comment="Short name used for display"
         ),
     )
     op.add_column(
