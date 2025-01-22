@@ -137,13 +137,17 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       });
       openButton.addListener("execute", () => this.__openTapped());
 
+      this.evaluateOpenButton();
+
+      toolbar.add(openButton);
+    },
+
+    evaluateOpenButton: function() {
       if (this.__resourceData["resourceType"] === "study") {
         const studyData = this.__resourceData;
         const canBeOpened = osparc.study.Utils.canBeOpened(studyData);
-        openButton.setEnabled(canBeOpened);
+        this.__openButton.setEnabled(canBeOpened);
       }
-
-      toolbar.add(openButton);
     },
 
     __openTapped: function() {
