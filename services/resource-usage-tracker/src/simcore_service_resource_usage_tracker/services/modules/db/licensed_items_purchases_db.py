@@ -37,6 +37,7 @@ _SELECTION_ARGS = (
     resource_tracker_licensed_items_purchases.c.expire_at,
     resource_tracker_licensed_items_purchases.c.num_of_seats,
     resource_tracker_licensed_items_purchases.c.purchased_by_user,
+    resource_tracker_licensed_items_purchases.c.user_email,
     resource_tracker_licensed_items_purchases.c.purchased_at,
     resource_tracker_licensed_items_purchases.c.modified,
 )

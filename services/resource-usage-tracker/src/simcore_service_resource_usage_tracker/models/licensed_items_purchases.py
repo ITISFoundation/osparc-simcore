@@ -24,6 +24,7 @@ class LicensedItemsPurchasesDB(BaseModel):
     expire_at: datetime
     num_of_seats: int
     purchased_by_user: UserID
+    user_email: str
     purchased_at: datetime
     modified: datetime
 
@@ -41,6 +42,7 @@ class CreateLicensedItemsPurchasesDB(BaseModel):
     expire_at: datetime
     num_of_seats: int
     purchased_by_user: UserID
+    user_email: str
     purchased_at: datetime
 
     model_config = ConfigDict(from_attributes=True)

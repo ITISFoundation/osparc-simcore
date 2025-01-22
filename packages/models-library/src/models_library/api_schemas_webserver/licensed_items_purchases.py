@@ -24,6 +24,7 @@ class LicensedItemPurchaseGet(OutputSchema):
     expire_at: datetime
     num_of_seats: int
     purchased_by_user: UserID
+    user_email: str
     purchased_at: datetime
     modified_at: datetime
 

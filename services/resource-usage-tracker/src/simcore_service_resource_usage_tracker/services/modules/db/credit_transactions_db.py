@@ -165,7 +165,7 @@ async def batch_update_credit_transaction_status_for_in_debt_transactions(
         )
     async with transaction_context(engine, connection) as conn:
         result = await conn.execute(update_stmt)
-        print(result)
+        print(result)  # MD: Check this one ...
 
 
 async def sum_wallet_credits(
