@@ -75,5 +75,13 @@ def get_columns_from_db_model(
     Usage example:
 
         query = sa.select( get_columns_from_db_model(project, ProjectDB) )
+
+        or
+
+        query = (
+                 project.insert().
+                 # ...
+                 .returning(*get_columns_from_db_model(project, ProjectDB))
+                )
     """
     return [table.columns[field_name] for field_name in model_cls.model_fields]
