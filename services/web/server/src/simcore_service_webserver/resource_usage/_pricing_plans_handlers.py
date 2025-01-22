@@ -81,7 +81,7 @@ async def get_pricing_plan_unit(request: web.Request):
     name="list_pricing_plans",
 )
 @login_required
-@permission_required("resource-usage.write")
+@permission_required("resource-usage.read")
 @_handle_resource_usage_exceptions
 async def list_pricing_plans(request: web.Request):
     req_ctx = RequestContext.model_validate(request)
@@ -112,7 +112,7 @@ async def list_pricing_plans(request: web.Request):
     name="get_pricing_plan",
 )
 @login_required
-@permission_required("resource-usage.write")
+@permission_required("resource-usage.read")
 @_handle_resource_usage_exceptions
 async def get_pricing_plan(request: web.Request):
     req_ctx = RequestContext.model_validate(request)
