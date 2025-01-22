@@ -81,7 +81,11 @@ async def batch_get_trashed_by_primary_gid(
     Returns:
         values of trashed_by_primary_gid in the SAME ORDER as projects_uuids
     """
+    if not projects_uuids:
+        return []
+
     projects_uuids_str = [f"{uuid}" for uuid in projects_uuids]
+
     query = (
         sa.select(
             users.c.primary_gid.label("trashed_by_primary_gid"),
@@ -89,13 +93,9 @@ async def batch_get_trashed_by_primary_gid(
         .select_from(projects.outerjoin(users, projects.c.trashed_by == users.c.id))
         .where(projects.c.uuid.in_(projects_uuids_str))
     ).order_by(
-        # Preserves the order of projects_uuids
-        sa.case(
-            *[
-                (projects.c.uuid == uuid, index)
-                for index, uuid in enumerate(projects_uuids_str)
-            ]
-        )
+        *[
+            projects.c.uuid == uuid for uuid in projects_uuids_str
+        ]  # Preserves the order of project_uuids
     )
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         result = await conn.stream(query)

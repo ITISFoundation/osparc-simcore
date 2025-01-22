@@ -439,7 +439,7 @@ async def request_create_project() -> (  # noqa: C901, PLR0915
                 "folderId",
             ]
 
-            for key in new_project:
+            for key in expected_data:
                 if key not in modified_fields:
                     assert expected_data[key] == new_project[key]
 
