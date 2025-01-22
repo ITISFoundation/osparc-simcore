@@ -38,6 +38,7 @@ qx.Class.define("osparc.study.BillingSettings", {
   members: {
     __studyData: null,
     __studyWalletId: null,
+    __debtMessage: null,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -102,7 +103,7 @@ qx.Class.define("osparc.study.BillingSettings", {
       let msg = this.tr(`This ${studyAlias} is currently Embargoed.<br>`);
       msg += this.tr("Last transaction:") + "<br>";
       msg += this.__studyData["debt"] + " " + this.tr("credits");
-      const debtMessage = new qx.ui.basic.Label(msg).set({
+      const debtMessage = this.__debtMessage = new qx.ui.basic.Label(msg).set({
         decorator: border,
         font: "text-14",
         rich: true,
@@ -267,6 +268,9 @@ qx.Class.define("osparc.study.BillingSettings", {
       delete this.__studyData["debt"];
       osparc.store.Store.getInstance().setStudyDebt(this.__studyData["uuid"], 0);
       this.fireEvent("debtPayed");
+      if (this.__debtMessage) {
+        this._remove(this.__debtMessage);
+      }
       this.getChildControl("pay-debt-layout").removeAll();
     },
 

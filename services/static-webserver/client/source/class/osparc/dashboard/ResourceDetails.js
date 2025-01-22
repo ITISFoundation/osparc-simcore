@@ -397,8 +397,6 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
               page.payDebtButton.set({
                 visibility: osparc.study.Utils.isInDebt(studyData) ? "visible" : "excluded"
               });
-            }
-            if (this.__resourceData["resourceType"] === "study") {
               const canBeOpened = osparc.study.Utils.canBeOpened(studyData);
               page.openButton.setEnabled(canBeOpened);
             }
