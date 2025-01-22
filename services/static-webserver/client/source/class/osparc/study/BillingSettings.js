@@ -33,7 +33,7 @@ qx.Class.define("osparc.study.BillingSettings", {
 
   members: {
     __studyData: null,
-    __studiesWalletId: null,
+    __studyWalletId: null,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -59,7 +59,10 @@ qx.Class.define("osparc.study.BillingSettings", {
           this.getChildControl("credit-account-layout").add(control);
           break;
         case "debt-explanation":
-          control = new qx.ui.basic.Label();
+          control = new qx.ui.basic.Label().set({
+            rich: true,
+            wrap: true,
+          });
           this.getChildControl("pay-debt-layout").add(control);
           break;
         case "buy-credits-button":
@@ -70,9 +73,9 @@ qx.Class.define("osparc.study.BillingSettings", {
           });
           this.getChildControl("pay-debt-layout").add(control);
           break;
-        case "trasfer-debt-button":
+        case "transfer-debt-button":
           control = new qx.ui.form.Button().set({
-            label: this.tr("Pay with this Credit Account"),
+            label: this.tr("Transfer from this Credit Account"),
             icon: "@FontAwesome5Solid/exchange-alt/14",
             allowGrowX: false
           });
@@ -126,7 +129,7 @@ qx.Class.define("osparc.study.BillingSettings", {
       osparc.data.Resources.fetch("studies", "getWallet", paramsGet)
         .then(wallet => {
           if (wallet) {
-            this.__studiesWalletId = wallet["walletId"];
+            this.__studyWalletId = wallet["walletId"];
             const walletFound = walletSelector.getSelectables().find(selectables => selectables.walletId === wallet["walletId"]);
             if (walletFound) {
               walletSelector.setSelection([walletFound]);
@@ -173,6 +176,16 @@ qx.Class.define("osparc.study.BillingSettings", {
       return null;
     },
 
+    __getStudyWallet: function() {
+      if (this.__studyWalletId) {
+        const wallet = osparc.desktop.credits.Utils.getWallet(this.__studyWalletId);
+        if (wallet) {
+          return wallet;
+        }
+      }
+      return null;
+    },
+
     __addDebtLayout: function(walletId) {
       const payDebtLayout = this.getChildControl("pay-debt-layout");
       payDebtLayout.removeAll();
@@ -182,16 +195,16 @@ qx.Class.define("osparc.study.BillingSettings", {
       if (myWallets.find(wllt => wllt === wallet)) {
         // It's my wallet
         this._createChildControlImpl("debt-explanation").set({
-          value: this.tr("Purchase additional credits to bring the Account balance back to a positive value.")
+          value: this.tr("Top up the Credit Account:<br>Purchase additional credits to bring the Credit Account balance back to a positive value.")
         });
-        const buyCredtisButton = this._createChildControlImpl("buy-credits-button");
-        buyCredtisButton.addListener("execute", () => this.__openBuyCreditsWindow(), this);
+        const buyCreditsButton = this._createChildControlImpl("buy-credits-button");
+        buyCreditsButton.addListener("execute", () => this.__openBuyCreditsWindow(), this);
       } else {
         // It's a shared wallet
         this._createChildControlImpl("debt-explanation").set({
-          value: this.tr("Use an available Credit Account to cover the last transaction that caused the negative balance.")
+          value: this.tr("Transfer credits from another Account:<br>Use this Credit Account to cover the last transaction that caused the negative balance.")
         });
-        const transferDebtButton = this._createChildControlImpl("trasfer-debt-button");
+        const transferDebtButton = this._createChildControlImpl("transfer-debt-button");
         transferDebtButton.addListener("execute", () => this.__transferCredits(), this);
       }
     },
@@ -212,9 +225,14 @@ qx.Class.define("osparc.study.BillingSettings", {
     },
 
     __transferCredits: function() {
-      const msg = this.tr("Transfer details");
+      const originWallet = this.__getSelectedWallet();
+      const destWallet = this.__getStudyWallet();
+      let msg = this.tr("A credits transfer will be initiated to cover the last transaction:");
+      msg += "<br>- " + this.tr("Credits to transfer: ") + -1*this.__studyData["debt"];
+      msg += "<br>- " + this.tr("From: ") + originWallet.getName();
+      msg += "<br>- " + this.tr("To: ") + destWallet.getName();
       const confirmationWin = new osparc.ui.window.Confirmation(msg).set({
-        confirmText: this.tr("Trasnfer"),
+        confirmText: this.tr("Transfer"),
       });
       confirmationWin.open();
       confirmationWin.addListener("close", () => {
@@ -249,7 +267,7 @@ qx.Class.define("osparc.study.BillingSettings", {
       };
       osparc.data.Resources.fetch("studies", "selectWallet", paramsPut)
         .then(() => {
-          this.__studiesWalletId = walletId;
+          this.__studyWalletId = walletId;
           const msg = this.tr("Credit Account saved");
           osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
         })
