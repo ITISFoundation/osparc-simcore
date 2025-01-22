@@ -46,21 +46,15 @@ qx.Class.define("osparc.study.BillingSettings", {
           control = osparc.study.StudyOptions.createGroupBox(this.tr("Credit Account"));
           this._add(control);
           break;
-        case "credit-account-layout":
-          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5)).set({
-            alignY: "middle"
-          });
-          this.getChildControl("credit-account-box").add(control);
-          break;
         case "wallet-selector":
           control = osparc.desktop.credits.Utils.createWalletSelector("read");
-          this.getChildControl("credit-account-layout").add(control);
+          this.getChildControl("credit-account-box").add(control);
           break;
         case "pay-debt-layout":
           control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5).set({
             alignY: "middle",
           }));
-          this.getChildControl("credit-account-layout").add(control);
+          this.getChildControl("credit-account-box").add(control);
           break;
         case "debt-explanation":
           control = new qx.ui.basic.Label().set({
@@ -119,11 +113,10 @@ qx.Class.define("osparc.study.BillingSettings", {
     },
 
     __buildWalletGroup: function() {
-      const boxContent = this.getChildControl("credit-account-layout");
+      const boxContent = this.getChildControl("credit-account-box");
       boxContent.removeAll();
 
       const walletSelector = this.getChildControl("wallet-selector");
-      boxContent.add(walletSelector);
 
       const paramsGet = {
         url: {
@@ -276,8 +269,8 @@ qx.Class.define("osparc.study.BillingSettings", {
     },
 
     __switchWallet: function(walletId) {
-      const creditAccountLayout = this.getChildControl("credit-account-layout");
-      creditAccountLayout.setEnabled(false);
+      const creditAccountBox = this.getChildControl("credit-account-box");
+      creditAccountBox.setEnabled(false);
       const paramsPut = {
         url: {
           studyId: this.__studyData["uuid"],
@@ -295,8 +288,8 @@ qx.Class.define("osparc.study.BillingSettings", {
           osparc.FlashMessenger.logAs(err.message, "ERROR");
         })
         .finally(() => {
-          creditAccountLayout.setEnabled(true);
-          this.__buildLayout();
+          creditAccountBox.setEnabled(true);
+          this.__buildWalletGroup();
         });
     },
 
