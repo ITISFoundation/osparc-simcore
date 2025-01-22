@@ -182,14 +182,14 @@ qx.Class.define("osparc.study.BillingSettings", {
       if (myWallets.find(wllt => wllt === wallet)) {
         // It's my wallet
         this._createChildControlImpl("debt-explanation").set({
-          value: this.tr("To unblock it, you need to bring the Credit Account to positive numbers")
+          value: this.tr("Purchase additional credits to bring the Account balance back to a positive value.")
         });
         const buyCredtisButton = this._createChildControlImpl("buy-credits-button");
         buyCredtisButton.addListener("execute", () => this.__openBuyCreditsWindow(), this);
       } else {
         // It's a shared wallet
         this._createChildControlImpl("debt-explanation").set({
-          value: this.tr("To unblock it, a credits transfer will be made to the currently connencted Credit Account")
+          value: this.tr("Use an available Credit Account to cover the last transaction that caused the negative balance.")
         });
         const transferDebtButton = this._createChildControlImpl("trasfer-debt-button");
         transferDebtButton.addListener("execute", () => this.__transferCredits(), this);
