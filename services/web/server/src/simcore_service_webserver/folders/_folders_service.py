@@ -16,7 +16,7 @@ from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from servicelib.utils import fire_and_forget_task
 
-from ..projects.projects_api import submit_delete_project_task
+from ..projects.projects_service import submit_delete_project_task
 from ..users.api import get_user
 from ..workspaces.api import check_user_workspace_access
 from ..workspaces.errors import (
