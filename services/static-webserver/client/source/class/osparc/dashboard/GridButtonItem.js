@@ -188,7 +188,7 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
     },
 
     // overridden
-    _applyTrasehdAt: function(value) {
+    _applyTrashedAt: function(value) {
       if (value && value.getTime() !== new Date(0).getTime()) {
         if (this.isResourceType("study") || this.isResourceType("template")) {
           const dateBy = this.getChildControl("date-by");

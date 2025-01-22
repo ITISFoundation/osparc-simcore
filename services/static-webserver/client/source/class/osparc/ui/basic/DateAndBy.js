@@ -80,6 +80,7 @@ qx.Class.define("osparc.ui.basic.DateAndBy", {
         const label = this.getChildControl("date-text");
         const today = new Date();
         const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
         if (today.toDateString() === value.toDateString()) {
           label.setValue(osparc.utils.Utils.formatDateAndTime(value)); // show date and time
         } else if (yesterday.toDateString() === value.toDateString()) {

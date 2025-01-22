@@ -17,7 +17,8 @@ qx.Class.define("osparc.desktop.credits.BuyCreditsStepper", {
     this.__buildLayout()
   },
   events: {
-    "completed": "qx.event.type.Event"
+    "completed": "qx.event.type.Event",
+    "cancelled": "qx.event.type.Event",
   },
   properties: {
     paymentId: {
@@ -85,7 +86,7 @@ qx.Class.define("osparc.desktop.credits.BuyCreditsStepper", {
             .finally(() => this.__form.setFetching(false));
         }
       });
-      this.__form.addListener("cancel", () => this.fireEvent("completed"));
+      this.__form.addListener("cancel", () => this.fireEvent("cancelled"));
       this.add(this.__form);
       this.setSelection([this.__form])
     },

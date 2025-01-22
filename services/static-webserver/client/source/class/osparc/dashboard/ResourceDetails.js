@@ -67,6 +67,16 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         height: this.HEIGHT,
       });
       return win;
+    },
+
+    createToolbar: function() {
+      const toolbar = new qx.ui.container.Composite(new qx.ui.layout.HBox(20).set({
+        alignX: "right",
+        alignY: "top"
+      })).set({
+        maxHeight: 40
+      });
+      return toolbar;
     }
   },
 
@@ -90,32 +100,36 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
     __billingSettings: null,
     __classifiersPage: null,
     __qualityPage: null,
-    __openButton: null,
-
-    __createToolbar: function() {
-      const toolbar = new qx.ui.container.Composite(new qx.ui.layout.HBox(20).set({
-        alignX: "right",
-        alignY: "top"
-      })).set({
-        maxHeight: 40
-      });
-      return toolbar;
-    },
 
     __addOpenButton: function(page) {
       const resourceData = this.__resourceData;
 
-      const toolbar = this.__createToolbar();
+      const toolbar = this.self().createToolbar();
       page.addToHeader(toolbar);
+
+      if (this.__resourceData["resourceType"] === "study") {
+        const payDebtButton = new qx.ui.form.Button(this.tr("Credits required"));
+        page.payDebtButton = payDebtButton;
+        osparc.dashboard.resources.pages.BasePage.decorateHeaderButton(payDebtButton);
+        payDebtButton.addListener("execute", () => this.openBillingSettings());
+        if (this.__resourceData["resourceType"] === "study") {
+          const studyData = this.__resourceData;
+          payDebtButton.set({
+            visibility: osparc.study.Utils.isInDebt(studyData) ? "visible" : "excluded"
+          });
+        }
+        toolbar.add(payDebtButton);
+      }
 
       if (osparc.utils.Resources.isService(resourceData)) {
         const serviceVersionSelector = this.__createServiceVersionSelector();
         toolbar.add(serviceVersionSelector);
       }
 
-      const openButton = this.__openButton = new osparc.ui.form.FetchButton(this.tr("Open")).set({
+      const openButton = new osparc.ui.form.FetchButton(this.tr("Open")).set({
         enabled: true
       });
+      page.openButton = openButton;
       osparc.dashboard.resources.pages.BasePage.decorateHeaderButton(openButton);
       osparc.utils.Utils.setIdToWidget(openButton, "openResource");
       const store = osparc.store.Store.getInstance();
@@ -125,8 +139,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       this.bind("showOpenButton", openButton, "visibility", {
         converter: show => (store.getCurrentStudy() === null && show) ? "visible" : "excluded"
       });
-
-      openButton.addListener("execute", () => this.__openTapped());
+      openButton.addListener("execute", () => this.__openTapped(openButton));
 
       if (this.__resourceData["resourceType"] === "study") {
         const studyData = this.__resourceData;
@@ -137,13 +150,13 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       toolbar.add(openButton);
     },
 
-    __openTapped: function() {
+    __openTapped: function(openButton) {
       if (this.__resourceData["resourceType"] !== "study") {
         // Template or Service, nothing to pre-check
         this.__openResource();
         return;
       }
-      this.__openButton.setFetching(true);
+      openButton.setFetching(true);
       const params = {
         url: {
           "studyId": this.__resourceData["uuid"]
@@ -151,7 +164,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       };
       osparc.data.Resources.getOne("studies", params)
         .then(updatedStudyData => {
-          this.__openButton.setFetching(false);
+          openButton.setFetching(false);
           const updatableServices = osparc.metadata.ServicesInStudyUpdate.updatableNodeIds(updatedStudyData.workbench);
           if (updatableServices.length && osparc.data.model.Study.canIWrite(updatedStudyData["accessRights"])) {
             this.__confirmUpdate();
@@ -162,7 +175,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         .catch(err => {
           console.error(err);
           osparc.FlashMessenger.logAs(err.message, "ERROR");
-          this.__openButton.setFetching(false);
+          openButton.setFetching(false);
         });
     },
 
@@ -365,19 +378,27 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       const resourceData = this.__resourceData;
       if (osparc.utils.Resources.isStudy(resourceData)) {
         const id = "Billing";
-        const title = this.tr("Tier Settings");
+        const title = this.tr("Billing Settings");
         const iconSrc = "@FontAwesome5Solid/cogs/22";
         const page = this.__billingSettings = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
         this.__addOpenButton(page);
 
-        if (this.__resourceData["resourceType"] === "study") {
-          const studyData = this.__resourceData;
-          const canBeOpened = osparc.study.Utils.canShowBillingOptions(studyData);
+        if (resourceData["resourceType"] === "study") {
+          const canBeOpened = osparc.study.Utils.canShowBillingOptions(resourceData);
           page.setEnabled(canBeOpened);
         }
 
         const lazyLoadContent = () => {
           const billingSettings = new osparc.study.BillingSettings(resourceData);
+          billingSettings.addListener("debtPayed", () => {
+            if (resourceData["resourceType"] === "study") {
+              page.payDebtButton.set({
+                visibility: osparc.study.Utils.isInDebt(resourceData) ? "visible" : "excluded"
+              });
+              const canBeOpened = osparc.study.Utils.canBeOpened(resourceData);
+              page.openButton.setEnabled(canBeOpened);
+            }
+          })
           const billingScroll = new qx.ui.container.Scroll(billingSettings);
           page.addToContent(billingScroll);
         }
@@ -751,7 +772,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
 
           const publishTemplateButton = saveAsTemplate.getPublishTemplateButton();
           osparc.dashboard.resources.pages.BasePage.decorateHeaderButton(publishTemplateButton);
-          const toolbar = this.__createToolbar();
+          const toolbar = this.self().createToolbar();
           toolbar.add(publishTemplateButton);
           page.addToHeader(toolbar);
           page.addToContent(saveAsTemplate);
