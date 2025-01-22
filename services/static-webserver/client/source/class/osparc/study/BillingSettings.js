@@ -224,7 +224,7 @@ qx.Class.define("osparc.study.BillingSettings", {
             buyCreditsWidget.addListener("completed", () => {
               // at this point we can assume that the study got unblocked
               delete this.__studyData["debt"];
-              osparc.store.Store.getInstance().setStudyDebt(this.__studyData["uuid"].getUuid(), 0);
+              osparc.store.Store.getInstance().setStudyDebt(this.__studyData["uuid"], 0);
             })
           });
       }
@@ -263,7 +263,7 @@ qx.Class.define("osparc.study.BillingSettings", {
         .then(() => {
           // at this point we can assume that the study got unblocked
           delete this.__studyData["debt"];
-          osparc.store.Store.getInstance().setStudyDebt(this.__studyData["uuid"].getUuid(), 0);
+          osparc.store.Store.getInstance().setStudyDebt(this.__studyData["uuid"], 0);
           // also switch the study's wallet to this one
           this.__switchWallet(wallet.getWalletId());
         })

@@ -267,7 +267,7 @@ qx.Class.define("osparc.study.Utils", {
     },
 
     isInDebt: function(studyData) {
-      return Boolean("debt" in studyData && studyData["debt"] <= 0);
+      return Boolean("debt" in studyData && studyData["debt"] < 0);
     },
 
     __getBlockedState: function(studyData) {
