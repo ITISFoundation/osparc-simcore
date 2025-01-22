@@ -349,7 +349,7 @@ class ProjectDBAPI(BaseProjectDB):
                 .on_conflict_do_nothing()
             )
 
-    access_rights_subquery = (
+    _access_rights_subquery = (
         sa.select(
             project_to_groups.c.project_uuid,
             sa.func.jsonb_object_agg(
@@ -370,7 +370,7 @@ class ProjectDBAPI(BaseProjectDB):
         ).group_by(project_to_groups.c.project_uuid)
     ).subquery("access_rights_subquery")
 
-    async def list_projects(  # pylint: disable=too-many-arguments,too-many-statements,too-many-branches
+    async def list_projects_dicts(  # pylint: disable=too-many-arguments,too-many-statements,too-many-branches
         self,
         *,
         product_name: ProductName,
@@ -393,7 +393,7 @@ class ProjectDBAPI(BaseProjectDB):
         limit: int | None = None,
         # order
         order_by: OrderBy = DEFAULT_ORDER_BY,
-    ) -> tuple[list[dict[str, Any]], list[ProjectType], int]:
+    ) -> tuple[list[ProjectDict], list[ProjectType], int]:
 
         if filter_tag_ids_list is None:
             filter_tag_ids_list = []
@@ -443,9 +443,7 @@ class ProjectDBAPI(BaseProjectDB):
                     sa.select(
                         *PROJECT_DB_COLS,
                         projects.c.workbench,
-                        users.c.primary_gid.label("trashed_by_primary_gid"),
-                        # NOTE: needs `.outerjoin(users, projects.c.trashed_by == users.c.id)`
-                        self.access_rights_subquery.c.access_rights,
+                        self._access_rights_subquery.c.access_rights,
                         projects_to_products.c.product_name,
                         projects_to_folders.c.folder_id,
                         sa.func.coalesce(
@@ -454,7 +452,7 @@ class ProjectDBAPI(BaseProjectDB):
                         ).label("tags"),
                     )
                     .select_from(
-                        projects.join(self.access_rights_subquery, isouter=True)
+                        projects.join(self._access_rights_subquery, isouter=True)
                         .join(projects_to_products)
                         .join(
                             projects_to_folders,
@@ -465,7 +463,6 @@ class ProjectDBAPI(BaseProjectDB):
                             isouter=True,
                         )
                         .join(project_tags_subquery, isouter=True)
-                        .outerjoin(users, projects.c.trashed_by == users.c.id)
                     )
                     .where(
                         (
@@ -500,8 +497,6 @@ class ProjectDBAPI(BaseProjectDB):
                     sa.select(
                         *PROJECT_DB_COLS,
                         projects.c.workbench,
-                        users.c.primary_gid.label("trashed_by_primary_gid"),
-                        # NOTE: needs `.outerjoin(users, projects.c.trashed_by == users.c.id)`
                         workspace_access_rights_subquery.c.access_rights,
                         projects_to_products.c.product_name,
                         projects_to_folders.c.folder_id,
@@ -526,7 +521,6 @@ class ProjectDBAPI(BaseProjectDB):
                             isouter=True,
                         )
                         .join(project_tags_subquery, isouter=True)
-                        .outerjoin(users, projects.c.trashed_by == users.c.id)
                     )
                     .where(
                         (
@@ -674,7 +668,7 @@ class ProjectDBAPI(BaseProjectDB):
                 )
             ]
 
-    async def get_project(
+    async def get_project_dict_and_type(
         self,
         project_uuid: str,
         *,
@@ -707,25 +701,6 @@ class ProjectDBAPI(BaseProjectDB):
                     *PROJECT_DB_COLS,
                     projects.c.workbench,
                 ).where(projects.c.uuid == f"{project_uuid}")
-            )
-            row = await result.fetchone()
-            if row is None:
-                raise ProjectNotFoundError(project_uuid=project_uuid)
-            return ProjectDB.model_validate(row)
-
-    async def get_project_db2(self, project_uuid: ProjectID) -> ProjectDB:
-        async with self.engine.acquire() as conn:
-            result = await conn.execute(
-                sa.select(
-                    *PROJECT_DB_COLS,
-                    projects.c.workbench,
-                    users.c.primary_gid.label("trashed_by_primary_gid"),
-                    # NOTE: needs `.outerjoin(users, projects.c.trashed_by == users.c.id)`
-                )
-                .select_from(
-                    projects.outerjoin(users, projects.c.trashed_by == users.c.id)
-                )
-                .where(projects.c.uuid == f"{project_uuid}")
             )
             row = await result.fetchone()
             if row is None:

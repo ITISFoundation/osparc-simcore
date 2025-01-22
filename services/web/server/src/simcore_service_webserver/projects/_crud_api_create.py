@@ -400,7 +400,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
             request.app, user_id, new_project["uuid"], product_name
         )
         # get the latest state of the project (lastChangeDate for instance)
-        new_project, _ = await _projects_repository.get_project(
+        new_project, _ = await _projects_repository.get_project_dict_and_type(
             project_uuid=new_project["uuid"]
         )
         # Appends state

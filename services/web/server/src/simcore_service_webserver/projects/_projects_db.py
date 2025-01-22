@@ -4,7 +4,10 @@ import sqlalchemy as sa
 from aiohttp import web
 from models_library.projects import ProjectID
 from simcore_postgres_database.models.projects import projects
-from simcore_postgres_database.utils_repos import transaction_context
+from simcore_postgres_database.utils_repos import (
+    get_columns_from_db_model,
+    transaction_context,
+)
 from sqlalchemy.ext.asyncio import AsyncConnection
 
 from ..db.plugin import get_asyncpg_engine
@@ -14,13 +17,13 @@ from .models import ProjectDB
 _logger = logging.getLogger(__name__)
 
 
-PROJECT_DB_COLS = [  # noqa: RUF012
+PROJECT_DB_COLS = get_columns_from_db_model(  # noqa: RUF012
     # NOTE: MD: I intentionally didn't include the workbench. There is a special interface
     # for the workbench, and at some point, this column should be removed from the table.
     # The same holds true for access_rights/ui/classifiers/quality, but we have decided to proceed step by step.
-    projects.columns[field_name]
-    for field_name in ProjectDB.model_fields
-]
+    projects,
+    ProjectDB,
+)
 
 
 async def patch_project(

@@ -198,7 +198,7 @@ async def get_project_for_user(
     )
     workspace_is_private = user_project_access.workspace_id is None
 
-    project, project_type = await db.get_project(
+    project, project_type = await db.get_project_dict_and_type(
         project_uuid,
     )
 
@@ -514,7 +514,7 @@ async def _check_project_node_has_all_required_inputs(
         permission="read",
     )
 
-    project_dict, _ = await db.get_project(f"{project_uuid}")
+    project_dict, _ = await db.get_project_dict_and_type(f"{project_uuid}")
 
     nodes_map: dict[NodeID, Node] = {
         NodeID(k): Node(**v) for k, v in project_dict["workbench"].items()
@@ -1035,7 +1035,7 @@ async def patch_project_node(
 
     # 2. If patching service key or version make sure it's valid
     if _node_patch_exclude_unset.get("key") or _node_patch_exclude_unset.get("version"):
-        _project, _ = await _projects_repository.get_project(
+        _project, _ = await _projects_repository.get_project_dict_and_type(
             project_uuid=f"{project_id}"
         )
         _project_node_data = _project["workbench"][f"{node_id}"]

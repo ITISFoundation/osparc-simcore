@@ -20,8 +20,8 @@ from simcore_postgres_database.webserver_models import ProjectType as ProjectTyp
 from ..catalog.client import get_services_for_user_in_product
 from ..folders import _folders_repository as folders_db
 from ..workspaces._workspaces_service import check_user_workspace_access
-from ._permalink_api import update_or_pop_permalink_in_project
 from . import projects_service
+from ._permalink_api import update_or_pop_permalink_in_project
 from .db import ProjectDBAPI
 from .models import ProjectDict, ProjectTypeAPI
 
@@ -97,7 +97,7 @@ async def list_projects(  # pylint: disable=too-many-arguments
             workspace_id=workspace_id,
         )
 
-    db_projects, db_project_types, total_number_projects = await db.list_projects(
+    db_projects, db_project_types, total_number_projects = await db.list_projects_dicts(
         product_name=product_name,
         user_id=user_id,
         workspace_query=(
@@ -166,7 +166,7 @@ async def list_projects_full_depth(
         request.app, user_id, product_name, only_key_versions=True
     )
 
-    db_projects, db_project_types, total_number_projects = await db.list_projects(
+    db_projects, db_project_types, total_number_projects = await db.list_projects_dicts(
         product_name=product_name,
         user_id=user_id,
         workspace_query=WorkspaceQuery(workspace_scope=WorkspaceScope.ALL),
