@@ -5,7 +5,7 @@ from pydantic import ConfigDict, Field
 
 from ..api_schemas_directorv2.dynamic_services import RetrieveDataOut
 from ..basic_types import PortInt
-from ..projects_nodes import InputID, InputsDict
+from ..projects_nodes import InputID, InputsDict, PartialNode
 from ..projects_nodes_io import NodeID
 from ..services import ServiceKey, ServicePortKey, ServiceVersion
 from ..services_enums import ServiceState
@@ -26,14 +26,26 @@ BootOptions: TypeAlias = dict
 
 
 class NodePatch(InputSchemaWithoutCamelCase):
-    service_key: ServiceKey | None = Field(default=None, alias="key")
-    service_version: ServiceVersion | None = Field(default=None, alias="version")
-    label: str | None = Field(default=None)
+    service_key: Annotated[
+        ServiceKey | None,
+        Field(alias="key"),
+    ] = None
+    service_version: Annotated[
+        ServiceVersion | None,
+        Field(alias="version"),
+    ] = None
+    label: str | None = None
     inputs: Annotated[
         InputsDict, Field(default_factory=dict, json_schema_extra={"default": {}})
     ]
-    inputs_required: list[InputID] | None = Field(default=None, alias="inputsRequired")
-    input_nodes: list[NodeID] | None = Field(default=None, alias="inputNodes")
+    inputs_required: Annotated[
+        list[InputID] | None,
+         Field(alias="inputsRequired"),
+    ] = None
+    input_nodes: Annotated[
+        list[NodeID] | None,
+        Field(alias="inputNodes"),
+    ] = None
     progress: Annotated[
         float | None,
         Field(
@@ -46,6 +58,13 @@ class NodePatch(InputSchemaWithoutCamelCase):
     outputs: dict[
         str, Any
     ] | None = None  # NOTE: it is used by frontend for File Picker
+
+    def to_domain_model(self) -> PartialNode:
+        data = self.model_dump(
+            exclude_unset=True,
+            by_alias=True,
+        )
+        return PartialNode.model_construct(**data)
 
 
 class NodeCreated(OutputSchema):
