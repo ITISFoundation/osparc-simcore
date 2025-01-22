@@ -22,6 +22,14 @@ qx.Class.define("osparc.desktop.credits.Utils", {
     DANGER_ZONE: 25, // one hour consumption
     CREDITS_ICON: "@FontAwesome5Solid/database/",
 
+    creditsUpdated: function(walletId, credits) {
+      const store = osparc.store.Store.getInstance();
+      const walletFound = store.getWallets().find(wallet => wallet.getWalletId() === parseInt(walletId));
+      if (walletFound) {
+        walletFound.setCreditsAvailable(parseFloat(credits));
+      }
+    },
+
     openBuyCredits: function(paymentMethods = []) {
       const buyView = new osparc.desktop.credits.BuyCreditsStepper(
         paymentMethods.map(({idr, cardHolderName, cardNumberMasked}) => ({
