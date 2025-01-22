@@ -440,7 +440,9 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
                 for gid, access in workspace.access_rights.items()
             }
 
-        data = ProjectGet.from_domain_model(new_project).data(**RESPONSE_MODEL_POLICY)
+        data = ProjectGet.from_domain_model(new_project).model_dump(
+            **RESPONSE_MODEL_POLICY
+        )
 
         raise web.HTTPCreated(
             text=json_dumps({"data": data}),

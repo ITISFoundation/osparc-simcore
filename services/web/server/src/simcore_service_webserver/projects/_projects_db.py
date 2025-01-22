@@ -56,14 +56,15 @@ async def get_trashed_by_primary_gid(
     *,
     projects_uuid: ProjectID,
 ) -> GroupID | None:
-    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-        query = (
-            sa.select(
-                users.c.primary_gid.label("trashed_by_primary_gid"),
-            )
-            .select_from(projects.outerjoin(users, projects.c.trashed_by == users.c.id))
-            .where(projects.c.uuid == projects_uuid)
+    query = (
+        sa.select(
+            users.c.primary_gid.label("trashed_by_primary_gid"),
         )
+        .select_from(projects.outerjoin(users, projects.c.trashed_by == users.c.id))
+        .where(projects.c.uuid == projects_uuid)
+    )
+
+    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         result = await conn.stream(query)
         row = await result.first()
         return row.trashed_by_primary_gid if row else None
@@ -75,24 +76,27 @@ async def batch_get_trashed_by_primary_gid(
     *,
     projects_uuids: list[ProjectID],
 ) -> list[GroupID | None]:
+    """Batch version of get_trashed_by_primary_gid
+
+    Returns:
+        values of trashed_by_primary_gid in the SAME ORDER as projects_uuids
     """
-    Batch version of get_trashed_by_primary_gid preserving ORDER of projects_uuids
-    """
-    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-        query = (
-            sa.select(
-                users.c.primary_gid.label("trashed_by_primary_gid"),
-            )
-            .select_from(projects.outerjoin(users, projects.c.trashed_by == users.c.id))
-            .where(projects.c.uuid.in_(projects_uuids))
-        ).order_by(
-            # Preserves the order of projects_uuids
-            sa.case(
-                *[
-                    (projects.c.uuid == uuid, index)
-                    for index, uuid in enumerate(projects_uuids)
-                ]
-            )
+    projects_uuids_str = [f"{uuid}" for uuid in projects_uuids]
+    query = (
+        sa.select(
+            users.c.primary_gid.label("trashed_by_primary_gid"),
         )
+        .select_from(projects.outerjoin(users, projects.c.trashed_by == users.c.id))
+        .where(projects.c.uuid.in_(projects_uuids_str))
+    ).order_by(
+        # Preserves the order of projects_uuids
+        sa.case(
+            *[
+                (projects.c.uuid == uuid, index)
+                for index, uuid in enumerate(projects_uuids_str)
+            ]
+        )
+    )
+    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         result = await conn.stream(query)
         return [row.trashed_by_primary_gid async for row in result]

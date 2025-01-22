@@ -214,7 +214,10 @@ async def list_projects(request: web.Request):
 
     page = Page[ProjectListItem].model_validate(
         paginate_data(
-            chunk=[ProjectListItem.from_domain_model(prj) for prj in projects],
+            chunk=[
+                ProjectListItem.from_domain_model(prj).model_dump(by_alias=True)
+                for prj in projects
+            ],
             request_url=request.url,
             total=total_number_of_projects,
             limit=query_params.limit,
@@ -256,7 +259,10 @@ async def list_projects_full_search(request: web.Request):
 
     page = Page[ProjectListItem].model_validate(
         paginate_data(
-            chunk=[ProjectListItem.from_domain_model(prj) for prj in projects],
+            chunk=[
+                ProjectListItem.from_domain_model(prj).model_dump(by_alias=True)
+                for prj in projects
+            ],
             request_url=request.url,
             total=total_number_of_projects,
             limit=query_params.limit,

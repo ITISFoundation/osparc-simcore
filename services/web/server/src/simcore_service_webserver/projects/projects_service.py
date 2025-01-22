@@ -180,12 +180,10 @@ async def get_project_for_user(
     include_trashed_by_primary_gid: bool = False,
     check_permissions: str = "read",
 ) -> ProjectDict:
-    """Returns a VALID project accessible to user
+    """
+    Raises:
+        ProjectNotFoundError: _description_
 
-    :raises ProjectNotFoundError: if no match found
-    :
-    :return: schema-compliant project data
-    :rtype: Dict
     """
     db = ProjectDBAPI.get_from_app_context(app)
 
