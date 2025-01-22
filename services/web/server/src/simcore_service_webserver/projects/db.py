@@ -85,7 +85,7 @@ from ._db_utils import (
     patch_workbench,
     update_workbench,
 )
-from ._projects_db import BASE_PROJECT_SELECT_ARGS, PROJECT_WITHOUT_WORKBENCH_COLS
+from ._projects_db import PROJECT_DB_COLS
 from .exceptions import (
     ProjectDeleteError,
     ProjectInvalidRightsError,
@@ -226,7 +226,9 @@ class ProjectDBAPI(BaseProjectDB):
                                         version=node_info.get("version"),
                                         label=node_info.get("label"),
                                     )
-                                    for node_id, node_info in selected_values["workbench"].items()
+                                    for node_id, node_info in selected_values[
+                                        "workbench"
+                                    ].items()
                                 }
 
                             nodes = [
@@ -240,7 +242,9 @@ class ProjectDBAPI(BaseProjectDB):
                                         label=node_info.get("label"),
                                     ),
                                 )
-                                for node_id, node_info in selected_values["workbench"].items()
+                                for node_id, node_info in selected_values[
+                                    "workbench"
+                                ].items()
                             ]
                             await project_nodes_repo.add(conn, nodes=nodes)
         return selected_values
@@ -437,7 +441,10 @@ class ProjectDBAPI(BaseProjectDB):
 
                 private_workspace_query = (
                     sa.select(
-                        *BASE_PROJECT_SELECT_ARGS,
+                        *PROJECT_DB_COLS,
+                        projects.c.workbench,
+                        users.c.primary_gid.label("trashed_by_primary_gid"),
+                        # NOTE: needs `.outerjoin(users, projects.c.trashed_by == users.c.id)`
                         self.access_rights_subquery.c.access_rights,
                         projects_to_products.c.product_name,
                         projects_to_folders.c.folder_id,
@@ -491,7 +498,10 @@ class ProjectDBAPI(BaseProjectDB):
 
                 shared_workspace_query = (
                     sa.select(
-                        *BASE_PROJECT_SELECT_ARGS,
+                        *PROJECT_DB_COLS,
+                        projects.c.workbench,
+                        users.c.primary_gid.label("trashed_by_primary_gid"),
+                        # NOTE: needs `.outerjoin(users, projects.c.trashed_by == users.c.id)`
                         workspace_access_rights_subquery.c.access_rights,
                         projects_to_products.c.product_name,
                         projects_to_folders.c.folder_id,
@@ -694,7 +704,23 @@ class ProjectDBAPI(BaseProjectDB):
         async with self.engine.acquire() as conn:
             result = await conn.execute(
                 sa.select(
-                    *BASE_PROJECT_SELECT_ARGS,
+                    *PROJECT_DB_COLS,
+                    projects.c.workbench,
+                ).where(projects.c.uuid == f"{project_uuid}")
+            )
+            row = await result.fetchone()
+            if row is None:
+                raise ProjectNotFoundError(project_uuid=project_uuid)
+            return ProjectDB.model_validate(row)
+
+    async def get_project_db2(self, project_uuid: ProjectID) -> ProjectDB:
+        async with self.engine.acquire() as conn:
+            result = await conn.execute(
+                sa.select(
+                    *PROJECT_DB_COLS,
+                    projects.c.workbench,
+                    users.c.primary_gid.label("trashed_by_primary_gid"),
+                    # NOTE: needs `.outerjoin(users, projects.c.trashed_by == users.c.id)`
                 )
                 .select_from(
                     projects.outerjoin(users, projects.c.trashed_by == users.c.id)
@@ -712,7 +738,7 @@ class ProjectDBAPI(BaseProjectDB):
         async with self.engine.acquire() as conn:
             result = await conn.execute(
                 sa.select(
-                    *PROJECT_WITHOUT_WORKBENCH_COLS,
+                    *PROJECT_DB_COLS,
                     projects_to_folders.c.folder_id,
                 )
                 .select_from(

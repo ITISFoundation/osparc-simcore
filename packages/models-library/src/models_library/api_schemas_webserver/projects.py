@@ -111,11 +111,7 @@ class ProjectGet(OutputSchema):
     def from_domain_model(cls, project_data: dict[str, Any]) -> Self:
         return cls.model_validate(
             remap_keys(
-                {
-                    k: v
-                    for k, v in project_data.items()
-                    if k not in {"trashed_by", "trashedBy"}
-                },
+                project_data,
                 rename={
                     "trashed": "trashed_at",
                     "trashed_by_primary_gid": "trashed_by",

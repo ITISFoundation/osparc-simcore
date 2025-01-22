@@ -24,7 +24,7 @@ from sqlalchemy.sql.selectable import CompoundSelect, Select
 from ..db.models import GroupType, groups, projects_tags, user_to_groups, users
 from ..users.exceptions import UserNotFoundError
 from ..utils import format_datetime
-from ._projects_db import BASE_PROJECT_SELECT_ARGS
+from ._projects_db import PROJECT_DB_COLS
 from .exceptions import (
     NodeNotFoundError,
     ProjectInvalidRightsError,
@@ -277,7 +277,9 @@ class BaseProjectDB:
 
         query = (
             sa.select(
-                *BASE_PROJECT_SELECT_ARGS,
+                *PROJECT_DB_COLS,
+                projects.c.workbench,
+                users.c.primary_gid.label("trashed_by_primary_gid"),
                 access_rights_subquery.c.access_rights,
             )
             .select_from(

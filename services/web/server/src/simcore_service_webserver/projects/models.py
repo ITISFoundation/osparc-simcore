@@ -37,13 +37,14 @@ class ProjectTypeAPI(str, Enum):
 
 
 class ProjectDB(BaseModel):
+    # NOTE: model intented to read one-to-one columns of the `projects` table
     id: int
     type: ProjectType
     uuid: ProjectID
     name: str
     description: str
     thumbnail: HttpUrl | None
-    prj_owner: UserID
+    prj_owner: UserID  # == user.id (who created)
     creation_date: datetime
     last_change_date: datetime
     ui: StudyUI | None
@@ -53,11 +54,12 @@ class ProjectDB(BaseModel):
     published: bool
     hidden: bool
     workspace_id: WorkspaceID | None
+
     trashed: datetime | None
-    trashed_by: UserID | None
-    trashed_by_primary_gid: GroupID | None = None
+    trashed_by: UserID | None  # == user.id (who trashed)
     trashed_explicitly: bool = False
 
+    # config
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
 
     # validators
@@ -67,6 +69,11 @@ class ProjectDB(BaseModel):
     _none_description_is_empty = field_validator("description", mode="before")(
         none_to_empty_str_pre_validator
     )
+
+
+class ProjectWithTrashExtra(ProjectDB):
+    # This field is not part of the tables
+    trashed_by_primary_gid: GroupID | None = None
 
 
 class UserSpecificProjectDataDB(ProjectDB):
