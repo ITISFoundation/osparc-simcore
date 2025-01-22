@@ -23,7 +23,7 @@ from servicelib.logging_utils import log_decorator
 
 from ..projects.db import ProjectDBAPI
 from ..projects.exceptions import ProjectInvalidRightsError, ProjectNotFoundError
-from ..projects.projects_api import get_project_for_user
+from ..projects.projects_service import get_project_for_user
 from ..utils import now_str
 from ._core import compose_uuid_from
 from ._models import FileParams, ServiceInfo, ViewerInfo

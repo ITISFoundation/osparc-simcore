@@ -47,7 +47,7 @@ def mock_project_uses_available_services(mocker: MockerFixture):
 @pytest.fixture
 def mock_catalog_rpc_check_for_service(mocker: MockerFixture):
     mocker.patch(
-        "simcore_service_webserver.projects.projects_api.catalog_rpc.check_for_service",
+        "simcore_service_webserver.projects.projects_service.catalog_rpc.check_for_service",
         spec=True,
         return_value=True,
     )
@@ -56,7 +56,7 @@ def mock_catalog_rpc_check_for_service(mocker: MockerFixture):
 @pytest.fixture
 def mocked_notify_project_node_update(mocker: MockerFixture):
     return mocker.patch(
-        "simcore_service_webserver.projects.projects_api.notify_project_node_update",
+        "simcore_service_webserver.projects.projects_service.notify_project_node_update",
     )
 
 
@@ -362,14 +362,14 @@ async def test_patch_project_node_service_key_with_error(
     _patch_version = {"version": "2.0.9"}
 
     with mocker.patch(
-        "simcore_service_webserver.projects.projects_api.catalog_rpc.check_for_service",
+        "simcore_service_webserver.projects.projects_service.catalog_rpc.check_for_service",
         side_effect=CatalogForbiddenError(name="test"),
     ):
         resp = await client.patch(f"{base_url}", json=_patch_version)
         assert resp.status == status.HTTP_403_FORBIDDEN
 
     with mocker.patch(
-        "simcore_service_webserver.projects.projects_api.catalog_rpc.check_for_service",
+        "simcore_service_webserver.projects.projects_service.catalog_rpc.check_for_service",
         side_effect=CatalogItemNotFoundError(name="test"),
     ):
         resp = await client.patch(f"{base_url}", json=_patch_version)
