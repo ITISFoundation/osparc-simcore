@@ -20,7 +20,7 @@ from simcore_service_webserver.projects._projects_db import (
 )
 
 from ..catalog.client import get_services_for_user_in_product
-from ..folders import _folders_repository as folders_db
+from ..folders import _folders_repository as _folders_repository
 from ..workspaces._workspaces_service import check_user_workspace_access
 from . import projects_service
 from ._permalink_api import update_or_pop_permalink_in_project
@@ -107,7 +107,7 @@ async def list_projects(  # pylint: disable=too-many-arguments
 
     if folder_id:
         # Check whether user has access to the folder
-        await folders_db.get_for_user_or_workspace(
+        await _folders_repository.get_for_user_or_workspace(
             app,
             folder_id=folder_id,
             product_name=product_name,

@@ -30,7 +30,7 @@ from ..application_settings import get_application_settings
 from ..catalog import client as catalog_client
 from ..director_v2 import api as director_v2_api
 from ..dynamic_scheduler import api as dynamic_scheduler_api
-from ..folders import _folders_repository as folders_db
+from ..folders import _folders_repository as _folders_repository
 from ..redis import get_redis_lock_manager_client_sdk
 from ..storage.api import (
     copy_data_folders_from_project,
@@ -293,7 +293,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
                 )
             if folder_id := predefined_project.get("folderId", None):
                 # Check user has access to folder
-                await folders_db.get_for_user_or_workspace(
+                await _folders_repository.get_for_user_or_workspace(
                     request.app,
                     folder_id=folder_id,
                     product_name=product_name,

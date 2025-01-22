@@ -6,7 +6,7 @@ from models_library.api_schemas_webserver.folders_v2 import (
     FolderGet,
     FolderReplaceBodyParams,
 )
-from models_library.folders import Folder
+from models_library.folders import FolderTuple
 from models_library.rest_ordering import OrderBy
 from models_library.rest_pagination import ItemT, Page
 from models_library.rest_pagination_utils import paginate_data
@@ -54,7 +54,7 @@ async def create_folder(request: web.Request):
     req_ctx = FoldersRequestContext.model_validate(request)
     body_params = await parse_request_body_as(FolderCreateBodyParams, request)
 
-    folder: Folder = await _folders_service.create_folder(
+    folder: FolderTuple = await _folders_service.create_folder(
         request.app,
         user_id=req_ctx.user_id,
         name=body_params.name,
@@ -64,7 +64,11 @@ async def create_folder(request: web.Request):
     )
 
     return envelope_json_response(
-        FolderGet.from_domain_model(folder.folder_db, folder.my_access_rights),
+        FolderGet.from_domain_model(
+            folder.folder_db,
+            trashed_by_primary_gid=None,
+            user_folder_access_rights=folder.my_access_rights,
+        ),
         web.HTTPCreated,
     )
 
@@ -150,14 +154,18 @@ async def get_folder(request: web.Request):
     req_ctx = FoldersRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(FoldersPathParams, request)
 
-    folder: Folder = await _folders_service.get_folder(
+    folder: FolderTuple = await _folders_service.get_folder(
         app=request.app,
         folder_id=path_params.folder_id,
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
     )
     return envelope_json_response(
-        FolderGet.from_domain_model(folder.folder_db, folder.my_access_rights)
+        FolderGet.from_domain_model(
+            folder.folder_db,
+            folder.trashed_by_primary_gid,
+            user_folder_access_rights=folder.my_access_rights,
+        )
     )
 
 
@@ -173,7 +181,7 @@ async def replace_folder(request: web.Request):
     path_params = parse_request_path_parameters_as(FoldersPathParams, request)
     body_params = await parse_request_body_as(FolderReplaceBodyParams, request)
 
-    folder: Folder = await _folders_service.update_folder(
+    folder: FolderTuple = await _folders_service.update_folder(
         app=request.app,
         user_id=req_ctx.user_id,
         folder_id=path_params.folder_id,
@@ -182,7 +190,11 @@ async def replace_folder(request: web.Request):
         product_name=req_ctx.product_name,
     )
     return envelope_json_response(
-        FolderGet.from_domain_model(folder.folder_db, folder.my_access_rights)
+        FolderGet.from_domain_model(
+            folder.folder_db,
+            folder.trashed_by_primary_gid,
+            user_folder_access_rights=folder.my_access_rights,
+        )
     )
 
 

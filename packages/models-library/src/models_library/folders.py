@@ -36,11 +36,6 @@ class FolderQuery(BaseModel):
         return value
 
 
-#
-# DB
-#
-
-
 class FolderDB(BaseModel):
     folder_id: FolderID
     name: str
@@ -52,7 +47,6 @@ class FolderDB(BaseModel):
 
     trashed: datetime | None
     trashed_by: UserID | None
-    trashed_by_primary_gid: GroupID | None = None
     trashed_explicitly: bool
 
     user_id: UserID | None  # owner?
@@ -60,12 +54,13 @@ class FolderDB(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-class UserFolderAccessRightsDB(FolderDB):
+class UserFolder(FolderDB):
     my_access_rights: AccessRights
 
     model_config = ConfigDict(from_attributes=True)
 
 
-class Folder(NamedTuple):
+class FolderTuple(NamedTuple):
     folder_db: FolderDB
+    trashed_by_primary_gid: GroupID | None
     my_access_rights: AccessRights

@@ -29,16 +29,23 @@ class FolderGet(OutputSchema):
 
     @classmethod
     def from_domain_model(
-        cls, folder_db: FolderDB, user_folder_access_rights: AccessRights
+        cls,
+        folder_db: FolderDB,
+        trashed_by_primary_gid: GroupID | None,
+        user_folder_access_rights: AccessRights,
     ) -> Self:
-        return cls.model_construct(
+        if (folder_db.trashed_by is None) ^ (trashed_by_primary_gid is None):
+            msg = f"Incompatible inputs: {folder_db.trashed_by=} but not {trashed_by_primary_gid=}"
+            raise ValueError(msg)
+
+        return cls(
             folder_id=folder_db.folder_id,
             parent_folder_id=folder_db.parent_folder_id,
             name=folder_db.name,
             created_at=folder_db.created,
             modified_at=folder_db.modified,
             trashed_at=folder_db.trashed,
-            trashed_by=folder_db.trashed_by_primary_gid,
+            trashed_by=trashed_by_primary_gid,
             owner=folder_db.created_by_gid,
             workspace_id=folder_db.workspace_id,
             my_access_rights=user_folder_access_rights,

@@ -65,8 +65,8 @@ async def get_trashed_by_primary_gid(
     )
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-        result = await conn.stream(query)
-        row = await result.first()
+        result = await conn.execute(query)
+        row = result.first()
         return row.trashed_by_primary_gid if row else None
 
 
