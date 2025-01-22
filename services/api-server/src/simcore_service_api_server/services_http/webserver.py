@@ -1,5 +1,6 @@
 # pylint: disable=too-many-public-methods
 
+import json
 import logging
 import urllib.parse
 from collections.abc import Mapping
@@ -192,7 +193,9 @@ class AuthSession:
 
         optional: dict[str, Any] = {}
         if project_name_search is not None:
-            optional["filters"] = {"project_name_search": project_name_search}
+            filters_dict = {"project_name_search": project_name_search}
+            filters_json = json.dumps(filters_dict)
+            optional["filters"] = filters_json
 
         with service_exception_handler(
             service_name="Webserver",
