@@ -67,6 +67,7 @@ async def create(
                 expire_at=data.expire_at,
                 num_of_seats=data.num_of_seats,
                 purchased_by_user=data.purchased_by_user,
+                user_email=data.user_email,
                 purchased_at=data.purchased_at,
                 modified=sa.func.now(),
             )
