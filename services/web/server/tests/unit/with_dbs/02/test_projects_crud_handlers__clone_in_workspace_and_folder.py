@@ -3,8 +3,9 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+from collections.abc import AsyncIterator
 from copy import deepcopy
-from typing import Any, AsyncIterator
+from typing import Any
 
 import pytest
 import sqlalchemy as sa
@@ -41,7 +42,7 @@ async def create_workspace_and_folder(
         product_name="osparc",
     )
 
-    folder, _ = await create_folder(
+    folder_db, *_ = await create_folder(
         client.app,
         user_id=logged_user["id"],
         name="a",
@@ -50,7 +51,7 @@ async def create_workspace_and_folder(
         workspace_id=workspace.workspace_id,
     )
 
-    yield (workspace.workspace_id, folder.folder_id)
+    yield (workspace.workspace_id, folder_db.folder_id)
 
     with postgres_db.connect() as con:
         con.execute(folders_v2.delete())
