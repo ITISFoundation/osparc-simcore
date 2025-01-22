@@ -126,18 +126,7 @@ qx.Class.define("osparc.desktop.credits.BillingCenter", {
     __openBuyCredits: function() {
       if (this.__paymentMethods) {
         const paymentMethods = this.__paymentMethods.getPaymentMethods();
-        const buyView = new osparc.desktop.credits.BuyCreditsStepper(
-          paymentMethods.map(({idr, cardHolderName, cardNumberMasked}) => ({
-            label: `${cardHolderName} ${cardNumberMasked}`,
-            id: idr
-          }))
-        );
-        const win = osparc.ui.window.Window.popUpInWindow(buyView, "Buy credits", 400, 600).set({
-          resizable: false,
-          movable: false
-        });
-        buyView.addListener("completed", () => win.close());
-        win.addListener("close", () => buyView.cancelPayment())
+        osparc.desktop.credits.Utils.openBuyCredits(paymentMethods);
       }
     },
 
