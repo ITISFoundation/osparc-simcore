@@ -14,6 +14,7 @@ from models_library.api_schemas_webserver.projects import (
     ProjectCopyOverride,
     ProjectCreateNew,
     ProjectGet,
+    ProjectListItem,
     ProjectPatch,
 )
 from models_library.generics import Envelope
@@ -67,7 +68,6 @@ from .exceptions import (
     ProjectOwnerNotFoundInTheProjectAccessRightsError,
     WrongTagIdsInQueryError,
 )
-from .models import ProjectDict
 from .utils import get_project_unavailable_services, project_uses_available_services
 
 # When the user requests a project with a repo, the working copy might differ from
@@ -212,9 +212,9 @@ async def list_projects(request: web.Request):
         order_by=OrderBy.model_construct(**query_params.order_by.model_dump()),
     )
 
-    page = Page[ProjectDict].model_validate(
+    page = Page[ProjectListItem].model_validate(
         paginate_data(
-            chunk=projects,
+            chunk=[ProjectListItem.from_domain_model(prj) for prj in projects],
             request_url=request.url,
             total=total_number_of_projects,
             limit=query_params.limit,
@@ -254,9 +254,9 @@ async def list_projects_full_search(request: web.Request):
         order_by=OrderBy.model_construct(**query_params.order_by.model_dump()),
     )
 
-    page = Page[ProjectDict].model_validate(
+    page = Page[ProjectListItem].model_validate(
         paginate_data(
-            chunk=projects,
+            chunk=[ProjectListItem.from_domain_model(prj) for prj in projects],
             request_url=request.url,
             total=total_number_of_projects,
             limit=query_params.limit,

@@ -5,6 +5,7 @@ SEE rationale in https://fastapi.tiangolo.com/tutorial/extra-models/#multiple-mo
 
 """
 
+import copy
 from datetime import datetime
 from typing import Annotated, Any, Literal, Self, TypeAlias
 
@@ -109,6 +110,12 @@ class ProjectGet(OutputSchema):
 
     @classmethod
     def from_domain_model(cls, project_data: dict[str, Any]) -> Self:
+        data = copy.copy(project_data)
+        # project_data["trashed_by"] is a UserID
+        # project_data["trashed_by_primary_gid"] is a GroupID
+        data.pop("trashed_by", None)
+        data.pop("trashedBy", None)
+
         return cls.model_validate(
             remap_keys(
                 project_data,
