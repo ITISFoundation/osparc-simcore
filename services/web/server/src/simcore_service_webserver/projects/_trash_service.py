@@ -12,7 +12,7 @@ from servicelib.utils import fire_and_forget_task
 
 from ..director_v2 import api as director_v2_api
 from ..dynamic_scheduler import api as dynamic_scheduler_api
-from . import projects_api
+from . import projects_service
 from ._access_rights_api import check_user_project_permission
 from .exceptions import ProjectRunningConflictError
 from .models import ProjectPatchExtended
@@ -67,7 +67,7 @@ async def trash_project(
                 director_v2_api.stop_pipeline(
                     app, user_id=user_id, project_id=project_id
                 ),
-                projects_api.remove_project_dynamic_services(
+                projects_service.remove_project_dynamic_services(
                     user_id=user_id,
                     project_uuid=f"{project_id}",
                     app=app,
@@ -89,7 +89,7 @@ async def trash_project(
             product_name=product_name,
         )
 
-    await projects_api.patch_project(
+    await projects_service.patch_project(
         app,
         user_id=user_id,
         product_name=product_name,
@@ -108,7 +108,7 @@ async def untrash_project(
     project_id: ProjectID,
 ):
     # NOTE: check_user_project_permission is inside projects_api.patch_project
-    await projects_api.patch_project(
+    await projects_service.patch_project(
         app,
         user_id=user_id,
         product_name=product_name,
