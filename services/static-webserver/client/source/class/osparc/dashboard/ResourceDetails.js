@@ -383,21 +383,19 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         const page = this.__billingSettings = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
         this.__addOpenButton(page);
 
-        if (this.__resourceData["resourceType"] === "study") {
-          const studyData = this.__resourceData;
-          const canBeOpened = osparc.study.Utils.canShowBillingOptions(studyData);
+        if (resourceData["resourceType"] === "study") {
+          const canBeOpened = osparc.study.Utils.canShowBillingOptions(resourceData);
           page.setEnabled(canBeOpened);
         }
 
         const lazyLoadContent = () => {
-          const studyData = this.__resourceData;
           const billingSettings = new osparc.study.BillingSettings(resourceData);
           billingSettings.addListener("debtPayed", () => {
-            if (this.__resourceData["resourceType"] === "study") {
+            if (resourceData["resourceType"] === "study") {
               page.payDebtButton.set({
-                visibility: osparc.study.Utils.isInDebt(studyData) ? "visible" : "excluded"
+                visibility: osparc.study.Utils.isInDebt(resourceData) ? "visible" : "excluded"
               });
-              const canBeOpened = osparc.study.Utils.canBeOpened(studyData);
+              const canBeOpened = osparc.study.Utils.canBeOpened(resourceData);
               page.openButton.setEnabled(canBeOpened);
             }
           })
