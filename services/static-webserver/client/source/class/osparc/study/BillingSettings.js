@@ -101,7 +101,7 @@ qx.Class.define("osparc.study.BillingSettings", {
       });
       const studyAlias = osparc.product.Utils.getStudyAlias();
       let msg = this.tr(`This ${studyAlias} is currently Embargoed.<br>`);
-      msg += this.tr("Last transaction:") + "<br>";
+      msg += this.tr("Last charge:") + "<br>";
       msg += this.__studyData["debt"] + " " + this.tr("credits");
       const debtMessage = this.__debtMessage = new qx.ui.basic.Label(msg).set({
         decorator: border,
@@ -199,7 +199,7 @@ qx.Class.define("osparc.study.BillingSettings", {
       } else {
         // It's a shared wallet
         this._createChildControlImpl("debt-explanation").set({
-          value: this.tr("Transfer credits from another Account:<br>Use this Credit Account to cover the last transaction that caused the negative balance.")
+          value: this.tr("Transfer credits from another Account:<br>Use this Credit Account to cover the negative balance.")
         });
         const transferDebtButton = this._createChildControlImpl("transfer-debt-button");
         transferDebtButton.addListener("execute", () => this.__transferCredits(), this);
@@ -225,7 +225,7 @@ qx.Class.define("osparc.study.BillingSettings", {
     __transferCredits: function() {
       const originWallet = this.__getSelectedWallet();
       const destWallet = this.__getStudyWallet();
-      let msg = this.tr("A credits transfer will be initiated to cover the last transaction:");
+      let msg = this.tr("A credits transfer will be initiated to cover the negative balance:");
       msg += "<br>- " + this.tr("Credits to transfer: ") + -1*this.__studyData["debt"];
       msg += "<br>- " + this.tr("From: ") + originWallet.getName();
       msg += "<br>- " + this.tr("To: ") + destWallet.getName();
