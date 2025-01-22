@@ -68,7 +68,6 @@ from settings_library.tracing import TracingSettings
 from simcore_postgres_database.models.comp_pipeline import comp_pipeline
 from simcore_postgres_database.models.comp_tasks import comp_tasks
 from simcore_postgres_database.models.projects_networks import projects_networks
-from simcore_postgres_database.models.services import services_access_rights
 from simcore_sdk import node_ports_v2
 from simcore_sdk.node_data import data_manager
 from simcore_sdk.node_ports_common.file_io_utils import LogRedirectCB
@@ -173,22 +172,6 @@ async def minimal_configuration(
         # pylint: disable=no-value-for-parameter
         conn.execute(comp_tasks.delete())
         conn.execute(comp_pipeline.delete())
-        # NOTE: ensure access to services to everyone [catalog access needed]
-        for service in (
-            dy_static_file_server_dynamic_sidecar_service,
-            dy_static_file_server_dynamic_sidecar_compose_spec_service,
-        ):
-            service_image = service["image"]
-            conn.execute(
-                services_access_rights.insert().values(
-                    key=service_image["name"],
-                    version=service_image["tag"],
-                    gid=1,
-                    execute_access=1,
-                    write_access=0,
-                    product_name=osparc_product_name,
-                )
-            )
         yield
 
 

@@ -7,7 +7,14 @@ from models_library.api_schemas_catalog.services_specifications import (
 )
 from models_library.basic_types import LogLevel
 from models_library.services_resources import ResourcesDict, ResourceValue
-from pydantic import AliasChoices, ByteSize, Field, PositiveInt, TypeAdapter
+from pydantic import (
+    AliasChoices,
+    ByteSize,
+    Field,
+    NonNegativeInt,
+    PositiveInt,
+    TypeAdapter,
+)
 from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
 from settings_library.application import BaseApplicationSettings
 from settings_library.base import BaseCustomSettings
@@ -103,3 +110,6 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         json_schema_extra={"auto_default_from_env": True},
         description="settings for opentelemetry tracing",
     )
+
+    DIRECTOR_DEFAULT_MAX_MEMORY: NonNegativeInt = Field(default=0)
+    DIRECTOR_DEFAULT_MAX_NANO_CPUS: NonNegativeInt = Field(default=0)
