@@ -201,12 +201,13 @@ async def list_projects(request: web.Request):
         project_type=query_params.project_type,
         show_hidden=query_params.show_hidden,
         trashed=query_params.filters.trashed,
-        limit=query_params.limit,
-        offset=query_params.offset,
-        search=query_params.search,
-        order_by=OrderBy.model_construct(**query_params.order_by.model_dump()),
         folder_id=query_params.folder_id,
         workspace_id=query_params.workspace_id,
+        search_by_multi_columns=query_params.search,
+        search_by_project_name=query_params.filters.search_by_project_name,
+        offset=query_params.offset,
+        limit=query_params.limit,
+        order_by=OrderBy.model_construct(**query_params.order_by.model_dump()),
     )
 
     page = Page[ProjectDict].model_validate(
@@ -244,10 +245,11 @@ async def list_projects_full_search(request: web.Request):
         product_name=req_ctx.product_name,
         trashed=query_params.filters.trashed,
         tag_ids_list=tag_ids_list,
+        search_by_multi_columns=query_params.text,
+        search_by_project_name=query_params.filters.search_by_project_name,
         offset=query_params.offset,
         limit=query_params.limit,
         order_by=OrderBy.model_construct(**query_params.order_by.model_dump()),
-        text=query_params.text,
     )
 
     page = Page[ProjectDict].model_validate(
