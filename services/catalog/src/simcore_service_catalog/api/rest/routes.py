@@ -7,6 +7,7 @@ from . import (
     _meta,
     _services,
     _services_access_rights,
+    _services_extras,
     _services_labels,
     _services_ports,
     _services_resources,
@@ -41,6 +42,11 @@ v0_router.include_router(
 )
 v0_router.include_router(
     _services_labels.router,
+    tags=_SERVICE_TAGS,
+    prefix=_SERVICE_PREFIX,
+)
+v0_router.include_router(
+    _services_extras.router,
     tags=_SERVICE_TAGS,
     prefix=_SERVICE_PREFIX,
 )
