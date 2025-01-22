@@ -10676,6 +10676,9 @@ components:
           exclusiveMinimum: true
           title: Purchasedbyuser
           minimum: 0
+        userEmail:
+          type: string
+          title: Useremail
         purchasedAt:
           type: string
           format: date-time
@@ -10696,6 +10699,7 @@ components:
       - expireAt
       - numOfSeats
       - purchasedByUser
+      - userEmail
       - purchasedAt
       - modifiedAt
       title: LicensedItemPurchaseGet
