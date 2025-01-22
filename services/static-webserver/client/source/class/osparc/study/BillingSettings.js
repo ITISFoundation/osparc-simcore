@@ -33,7 +33,6 @@ qx.Class.define("osparc.study.BillingSettings", {
 
   members: {
     __studyData: null,
-    __walletDebtButton: null,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -48,6 +47,26 @@ qx.Class.define("osparc.study.BillingSettings", {
           });
           this.getChildControl("credit-account-box").add(control);
           break;
+        case "wallet-selector":
+          control = osparc.desktop.credits.Utils.createWalletSelector("read");
+          this.getChildControl("credit-account-layout").add(control);
+          break;
+        case "pay-debt-layout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox());
+          this.getChildControl("credit-account-layout").add(control);
+          break;
+        case "buy-credits-button":
+          control = new qx.ui.form.Button(this.tr("Buy Credits"));
+          this.getChildControl("pay-debt-layout").add(control);
+          break;
+        case "trasfer-debt-button":
+          control = new qx.ui.form.Button(this.tr("Pay with this Credit Account"));
+          this.getChildControl("pay-debt-layout").add(control);
+          break;
+        case "debt-explanation":
+          control = new qx.ui.basic.Label();
+          this.getChildControl("pay-debt-layout").add(control);
+          break;
       }
       return control || this.base(arguments, id);
     },
@@ -61,14 +80,22 @@ qx.Class.define("osparc.study.BillingSettings", {
     },
 
     __buildDebtMessage: function() {
+      const border = new qx.ui.decoration.Decorator().set({
+        radius: 4,
+        width: 1,
+        style: "solid",
+        color: "danger-red",
+      });
       const studyAlias = osparc.product.Utils.getStudyAlias();
-      let msg = this.tr(`This ${studyAlias} is currently Embargoed.`) + "<br>";
-      msg += this.tr("Credits required to unblock it:") + "<br>";
-      msg += -1*this.__studyData["debt"] + " " + this.tr("credits");
+      let msg = this.tr(`This ${studyAlias} is currently Embargoed.<br>`);
+      msg += this.tr("Last transaction:") + "<br>";
+      msg += this.__studyData["debt"] + " " + this.tr("credits");
       const label = new qx.ui.basic.Label(msg).set({
+        decorator: border,
         font: "text-14",
         rich: true,
-        paddingBottom: 20,
+        padding: 10,
+        marginBottom: 5,
       });
       this._add(label);
     },
@@ -77,7 +104,7 @@ qx.Class.define("osparc.study.BillingSettings", {
       const boxContent = this.getChildControl("credit-account-layout");
       boxContent.removeAll();
 
-      const walletSelector = osparc.desktop.credits.Utils.createWalletSelector("read");
+      const walletSelector = this.getChildControl("wallet-selector");
       boxContent.add(walletSelector);
 
       const paramsGet = {
@@ -92,7 +119,7 @@ qx.Class.define("osparc.study.BillingSettings", {
             if (walletFound) {
               walletSelector.setSelection([walletFound]);
               if (osparc.study.Utils.isInDebt(this.__studyData)) {
-                this.__addPayDebtButton(wallet["walletId"]);
+                this.__addDebtLayout(wallet["walletId"]);
               }
             } else {
               const emptyItem = new qx.ui.form.ListItem("");
@@ -113,7 +140,7 @@ qx.Class.define("osparc.study.BillingSettings", {
                 return;
               }
               if (osparc.study.Utils.isInDebt(this.__studyData)) {
-                this.__addPayDebtButton(walletId);
+                this.__addDebtLayout(walletId);
               } else {
                 this.__switchWallet(walletId);
               }
@@ -122,18 +149,29 @@ qx.Class.define("osparc.study.BillingSettings", {
         });
     },
 
-    __addPayDebtButton: function(walletId) {
-      const boxContent = this.getChildControl("credit-account-layout");
-      if (this.__walletDebtButton) {
-        boxContent.remove(this.__walletDebtButton);
-      }
+    __addDebtLayout: function(walletId) {
+      const payDebtLayout = this.getChildControl("pay-debt-layout");
+      payDebtLayout.removeAll();
+
       const wallet = osparc.desktop.credits.Utils.getWallet(walletId);
-      if (wallet.getCreditsAvailable() > -1*this.__studyData["debt"]) {
-        this.__walletDebtButton = new qx.ui.form.Button(this.tr("Pay with this Credit Account"));
+      const myWallets = osparc.desktop.credits.Utils.getMyWallets();
+      if (myWallets.find(wllt => wllt === wallet)) {
+        // It's my wallet
+        // I just need to bring to positive numbers to unblock the embargoed studies
+        const buyCredtisButton = this.getChildControl("buy-credits-button");
+        buyCredtisButton.addListener("execute", () => console.log("open credits window"));
+        this.getChildControl("debt-explanation").set({
+          value: this.tr("You don't have access to the last used Credit Account")
+        });
       } else {
-        this.__walletDebtButton = new qx.ui.form.Button(this.tr("Buy Credits"));
+        // It's a shared wallet
+        // I need to make a credits transfer (debt) from it to the wallet that went negative
+        const transferDebtButton = this.getChildControl("trasfer-debt-button");
+        transferDebtButton.addListener("execute", () => console.log("open confirmation window"));
+        this.getChildControl("debt-explanation").set({
+          value: this.tr("You don't have access to the last used Credit Account")
+        });
       }
-      boxContent.add(this.__walletDebtButton);
     },
 
     __switchWallet: function(walletId) {
