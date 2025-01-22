@@ -42,6 +42,7 @@ qx.Class.define("osparc.desktop.credits.Utils", {
         movable: false
       });
       buyView.addListener("completed", () => win.close());
+      buyView.addListener("cancelled", () => win.close());
       win.addListener("close", () => buyView.cancelPayment())
       return {
         window: win,

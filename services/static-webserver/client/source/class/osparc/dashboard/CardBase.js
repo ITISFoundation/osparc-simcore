@@ -809,10 +809,9 @@ qx.Class.define("osparc.dashboard.CardBase", {
       this.__showBlockedCard(image, toolTip);
     },
 
-    __blockedInDebt: function(debt) {
+    __blockedInDebt: function() {
       const studyAlias = osparc.product.Utils.getStudyAlias({firstUpperCase: true});
-      let toolTip = studyAlias + " " + this.tr("Embargoed - Credits Required") + "<br>";
-      toolTip += (-1*debt) + " " + this.tr("credits");
+      const toolTip = studyAlias + " " + this.tr("Embargoed<br>Credits Required");
       const image = "@FontAwesome5Solid/lock/";
       this.__showBlockedCard(image, toolTip);
     },

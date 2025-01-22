@@ -438,7 +438,11 @@ qx.Class.define("osparc.store.Store", {
       const studiesWStateCache = this.getStudies();
       const idx = studiesWStateCache.findIndex(studyWStateCache => studyWStateCache["uuid"] === studyId);
       if (idx !== -1) {
-        studiesWStateCache[idx]["debt"] = debt;
+        if (debt) {
+          studiesWStateCache[idx]["debt"] = debt;
+        } else {
+          delete studiesWStateCache[idx]["debt"];
+        }
       }
 
       this.fireDataEvent("studyDebtChanged", {

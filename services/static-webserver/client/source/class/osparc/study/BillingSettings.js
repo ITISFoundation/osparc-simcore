@@ -218,7 +218,14 @@ qx.Class.define("osparc.study.BillingSettings", {
       if (wallet) {
         osparc.desktop.credits.Utils.getPaymentMethods(wallet.getWalletId())
           .then(paymentMethods => {
-            osparc.desktop.credits.Utils.openBuyCredits(paymentMethods);
+            const {
+              buyCreditsWidget
+            } = osparc.desktop.credits.Utils.openBuyCredits(paymentMethods);
+            buyCreditsWidget.addListener("completed", () => {
+              // at this point we can assume that the study got unblocked
+              delete this.__studyData["debt"];
+              osparc.store.Store.getInstance().setStudyDebt(this.__studyData["uuid"].getUuid(), 0);
+            })
           });
       }
     },
