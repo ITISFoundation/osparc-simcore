@@ -215,9 +215,7 @@ qx.Class.define("osparc.study.BillingSettings", {
             } = osparc.desktop.credits.Utils.openBuyCredits(paymentMethods);
             buyCreditsWidget.addListener("completed", () => {
               // at this point we can assume that the study got unblocked
-              delete this.__studyData["debt"];
-              osparc.store.Store.getInstance().setStudyDebt(this.__studyData["uuid"], 0);
-              this.fireEvent("debtPayed");
+              this.__debtPayed();
             })
           });
       }
@@ -255,16 +253,21 @@ qx.Class.define("osparc.study.BillingSettings", {
       osparc.data.Resources.fetch("studies", "payDebt", params)
         .then(() => {
           // at this point we can assume that the study got unblocked
-          delete this.__studyData["debt"];
-          osparc.store.Store.getInstance().setStudyDebt(this.__studyData["uuid"], 0);
+          this.__debtPayed();
           // also switch the study's wallet to this one
           this.__switchWallet(wallet.getWalletId());
-          this.fireEvent("debtPayed");
         })
         .catch(err => {
           console.error(err);
           osparc.FlashMessenger.logAs(err.message, "ERROR");
         });
+    },
+
+    __debtPayed: function() {
+      delete this.__studyData["debt"];
+      osparc.store.Store.getInstance().setStudyDebt(this.__studyData["uuid"], 0);
+      this.fireEvent("debtPayed");
+      this.getChildControl("pay-debt-layout").removeAll();
     },
 
     __switchWallet: function(walletId) {

@@ -67,6 +67,16 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         height: this.HEIGHT,
       });
       return win;
+    },
+
+    createToolbar: function() {
+      const toolbar = new qx.ui.container.Composite(new qx.ui.layout.HBox(20).set({
+        alignX: "right",
+        alignY: "top"
+      })).set({
+        maxHeight: 40
+      });
+      return toolbar;
     }
   },
 
@@ -93,27 +103,23 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
     __openButton: null,
     __payDebtButton: null,
 
-    __createToolbar: function() {
-      const toolbar = new qx.ui.container.Composite(new qx.ui.layout.HBox(20).set({
-        alignX: "right",
-        alignY: "top"
-      })).set({
-        maxHeight: 40
-      });
-      return toolbar;
-    },
-
     __addOpenButton: function(page) {
       const resourceData = this.__resourceData;
 
-      const toolbar = this.__createToolbar();
+      const toolbar = this.self().createToolbar();
       page.addToHeader(toolbar);
 
       if (this.__resourceData["resourceType"] === "study") {
         const payDebtButton = this.__payDebtButton = new qx.ui.form.Button(this.tr("Credits required"));
+        page.payDebtButton = payDebtButton;
         osparc.dashboard.resources.pages.BasePage.decorateHeaderButton(payDebtButton);
         payDebtButton.addListener("execute", () => this.openBillingSettings());
-        this.__evaluatePayDebtButton();
+        if (this.__resourceData["resourceType"] === "study") {
+          const studyData = this.__resourceData;
+          this.__payDebtButton.set({
+            visibility: osparc.study.Utils.isInDebt(studyData) ? "visible" : "excluded"
+          });
+        }
         toolbar.add(payDebtButton);
       }
 
@@ -125,6 +131,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       const openButton = this.__openButton = new osparc.ui.form.FetchButton(this.tr("Open")).set({
         enabled: true
       });
+      page.openButton = openButton;
       osparc.dashboard.resources.pages.BasePage.decorateHeaderButton(openButton);
       osparc.utils.Utils.setIdToWidget(openButton, "openResource");
       const store = osparc.store.Store.getInstance();
@@ -136,29 +143,13 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       });
       openButton.addListener("execute", () => this.__openTapped());
 
-      this.__evaluateOpenButton();
-
-      toolbar.add(openButton);
-    },
-
-    __evaluateOpenButton: function() {
-      const openButton = this.__openButton;
       if (this.__resourceData["resourceType"] === "study") {
         const studyData = this.__resourceData;
         const canBeOpened = osparc.study.Utils.canBeOpened(studyData);
         openButton.setEnabled(canBeOpened);
-      } else {
-        openButton.setEnabled(true);
       }
-    },
 
-    __evaluatePayDebtButton: function() {
-      if (this.__resourceData["resourceType"] === "study") {
-        const studyData = this.__resourceData;
-        this.__payDebtButton.set({
-          visibility: osparc.study.Utils.isInDebt(studyData) ? "visible" : "excluded"
-        });
-      }
+      toolbar.add(openButton);
     },
 
     __openTapped: function() {
@@ -401,10 +392,18 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         }
 
         const lazyLoadContent = () => {
+          const studyData = this.__resourceData;
           const billingSettings = new osparc.study.BillingSettings(resourceData);
           billingSettings.addListener("debtPayed", () => {
-            this.__evaluatePayDebtButton();
-            this.__evaluateOpenButton();
+            if (this.__resourceData["resourceType"] === "study") {
+              page.payDebtButton.set({
+                visibility: osparc.study.Utils.isInDebt(studyData) ? "visible" : "excluded"
+              });
+            }
+            if (this.__resourceData["resourceType"] === "study") {
+              const canBeOpened = osparc.study.Utils.canBeOpened(studyData);
+              page.openButton.setEnabled(canBeOpened);
+            }
           })
           const billingScroll = new qx.ui.container.Scroll(billingSettings);
           page.addToContent(billingScroll);
@@ -779,7 +778,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
 
           const publishTemplateButton = saveAsTemplate.getPublishTemplateButton();
           osparc.dashboard.resources.pages.BasePage.decorateHeaderButton(publishTemplateButton);
-          const toolbar = this.__createToolbar();
+          const toolbar = this.self().createToolbar();
           toolbar.add(publishTemplateButton);
           page.addToHeader(toolbar);
           page.addToContent(saveAsTemplate);
