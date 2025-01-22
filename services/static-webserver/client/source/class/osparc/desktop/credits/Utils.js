@@ -22,6 +22,26 @@ qx.Class.define("osparc.desktop.credits.Utils", {
     DANGER_ZONE: 25, // one hour consumption
     CREDITS_ICON: "@FontAwesome5Solid/database/",
 
+    openBuyCredits: function(paymentMethods = []) {
+      const buyView = new osparc.desktop.credits.BuyCreditsStepper(
+        paymentMethods.map(({idr, cardHolderName, cardNumberMasked}) => ({
+          label: `${cardHolderName} ${cardNumberMasked}`,
+          id: idr
+        }))
+      );
+      const win = osparc.ui.window.Window.popUpInWindow(buyView, "Buy credits", 400, 600).set({
+        resizable: false,
+        movable: false
+      });
+      buyView.addListener("completed", () => win.close());
+      win.addListener("close", () => buyView.cancelPayment())
+      return {
+        window: win,
+        buyCreditsWidget: buyView,
+      };
+    },
+
+
     areWalletsEnabled: function() {
       const statics = osparc.store.Store.getInstance().get("statics");
       return Boolean(statics && statics["isPaymentEnabled"]);
