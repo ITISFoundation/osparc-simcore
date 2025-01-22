@@ -377,7 +377,7 @@ class ProjectDBAPI(BaseProjectDB):
         # attribute filters
         filter_by_project_type: ProjectType | None = None,
         filter_by_services: list[dict] | None = None,
-        filter_published: bool | None = False,
+        filter_published: bool | None = None,
         filter_hidden: bool | None = False,
         filter_trashed: bool | None = False,
         filter_tag_ids_list: list[int] | None = None,
