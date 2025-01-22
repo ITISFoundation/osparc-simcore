@@ -61,8 +61,8 @@ async def list_projects(  # pylint: disable=too-many-arguments
     show_hidden: bool,
     trashed: bool | None,
     # search
-    multi_column_search: str | None = None,
-    project_name_search: str | None = None,
+    search_by_multi_columns: str | None = None,
+    search_by_project_name: str | None = None,
     # pagination
     offset: NonNegativeInt,
     limit: int,
@@ -118,8 +118,8 @@ async def list_projects(  # pylint: disable=too-many-arguments
         filter_trashed=trashed,
         filter_hidden=show_hidden,
         # composed attrs
-        multi_column_search=multi_column_search,
-        project_name_search=project_name_search,
+        search_by_multi_columns=search_by_multi_columns,
+        search_by_project_name=search_by_project_name,
         # pagination
         offset=offset,
         limit=limit,
@@ -157,8 +157,8 @@ async def list_projects_full_depth(
     limit: int,
     order_by: OrderBy,
     # search
-    multi_column_search: str | None,
-    project_name_search: str | None,
+    search_by_multi_columns: str | None,
+    search_by_project_name: str | None,
 ) -> tuple[list[ProjectDict], int]:
     db = ProjectDBAPI.get_from_app_context(request.app)
 
@@ -175,8 +175,8 @@ async def list_projects_full_depth(
         filter_by_services=user_available_services,
         filter_tag_ids_list=tag_ids_list,
         filter_by_project_type=ProjectType.STANDARD,
-        multi_column_search=multi_column_search,
-        project_name_search=project_name_search,
+        search_by_multi_columns=search_by_multi_columns,
+        search_by_project_name=search_by_project_name,
         offset=offset,
         limit=limit,
         order_by=order_by,

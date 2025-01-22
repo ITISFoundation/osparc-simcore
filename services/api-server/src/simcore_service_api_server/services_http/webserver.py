@@ -186,14 +186,14 @@ class AuthSession:
         limit: int,
         offset: int,
         show_hidden: bool,
-        project_name_search: str | None = None,
+        search_by_project_name: str | None = None,
     ) -> Page[ProjectGet]:
         assert 1 <= limit <= MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE  # nosec
         assert offset >= 0  # nosec
 
         optional: dict[str, Any] = {}
-        if project_name_search is not None:
-            filters_dict = {"project_name_search": project_name_search}
+        if search_by_project_name is not None:
+            filters_dict = {"search_by_project_name": search_by_project_name}
             filters_json = json.dumps(filters_dict)
             optional["filters"] = filters_json
 
@@ -356,7 +356,7 @@ class AuthSession:
             limit=limit,
             offset=offset,
             show_hidden=True,
-            project_name_search=solver_name,
+            search_by_project_name=solver_name,
         )
 
     async def get_projects_page(self, *, limit: int, offset: int):

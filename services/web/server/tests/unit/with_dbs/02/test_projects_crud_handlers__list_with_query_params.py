@@ -185,11 +185,11 @@ async def test_list_projects_with_search_parameter(
     )
 
     # Now we will test specific project name search (used by the API server)
-    query_parameters = {"filters": '{"project_name_search": "Yoda"}'}
+    query_parameters = {"filters": '{"search_by_project_name": "Yoda"}'}
     url = base_url.with_query(**query_parameters)
     assert (
         f"{url}"
-        == f"/{api_version_prefix}/projects?filters=%7B%22project_name_search%22:+%22Yoda%22%7D"
+        == f"/{api_version_prefix}/projects?filters=%7B%22search_by_project_name%22:+%22Yoda%22%7D"
     )
 
     resp = await client.get(f"{url}")
@@ -201,7 +201,7 @@ async def test_list_projects_with_search_parameter(
         1,
         0,
         1,
-        "/v0/projects?filters=%7B%22project_name_search%22:+%22Yoda%22%7D&offset=0&limit=20",
+        "/v0/projects?filters=%7B%22search_by_project_name%22:+%22Yoda%22%7D&offset=0&limit=20",
         1,
     )
 
