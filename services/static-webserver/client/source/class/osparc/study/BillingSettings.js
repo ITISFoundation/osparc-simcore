@@ -62,13 +62,17 @@ qx.Class.define("osparc.study.BillingSettings", {
           this.getChildControl("pay-debt-layout").add(control);
           break;
         case "buy-credits-button":
-          control = new qx.ui.form.Button(this.tr("Buy Credits")).set({
+          control = new qx.ui.form.Button().set({
+            label: this.tr("Buy Credits"),
+            icon: "@FontAwesome5Solid/dollar-sign/14",
             allowGrowX: false
           });
           this.getChildControl("pay-debt-layout").add(control);
           break;
         case "trasfer-debt-button":
-          control = new qx.ui.form.Button(this.tr("Pay with this Credit Account")).set({
+          control = new qx.ui.form.Button().set({
+            label: this.tr("Pay with this Credit Account"),
+            icon: "@FontAwesome5Solid/exchange-alt/14",
             allowGrowX: false
           });
           this.getChildControl("pay-debt-layout").add(control);
@@ -138,13 +142,10 @@ qx.Class.define("osparc.study.BillingSettings", {
           }
         })
         .finally(() => {
-          walletSelector.addListener("changeSelection", e => {
-            const selection = e.getData();
-            if (selection.length) {
-              const walletId = selection[0].walletId;
-              if (walletId === null) {
-                return;
-              }
+          walletSelector.addListener("changeSelection", () => {
+            const wallet = this.__getSelectedWallet();
+            if (wallet) {
+              const walletId = wallet.getWalletId();
               if (osparc.study.Utils.isInDebt(this.__studyData)) {
                 this.__addDebtLayout(walletId);
               } else {
@@ -153,6 +154,21 @@ qx.Class.define("osparc.study.BillingSettings", {
             }
           });
         });
+    },
+
+    __getSelectedWallet: function() {
+      const walletSelector = this.getChildControl("wallet-selector");
+      const selection = walletSelector.getSelection();
+      if (selection.length) {
+        const walletId = selection[0].walletId;
+        if (walletId) {
+          const wallet = osparc.desktop.credits.Utils.getWallet(walletId);
+          if (wallet) {
+            return wallet;
+          }
+        }
+      }
+      return null;
     },
 
     __addDebtLayout: function(walletId) {
@@ -167,7 +183,7 @@ qx.Class.define("osparc.study.BillingSettings", {
           value: this.tr("To unblock it, you need to bring the Credit Account to positive numbers")
         });
         const buyCredtisButton = this._createChildControlImpl("buy-credits-button");
-        buyCredtisButton.addListener("execute", () => console.log("open credits window"));
+        buyCredtisButton.addListener("execute", () => this.__openBuyCreditsWindow(), this);
       } else {
         // It's a shared wallet
         this._createChildControlImpl("debt-explanation").set({
@@ -175,6 +191,21 @@ qx.Class.define("osparc.study.BillingSettings", {
         });
         const transferDebtButton = this._createChildControlImpl("trasfer-debt-button");
         transferDebtButton.addListener("execute", () => console.log("open confirmation window"));
+      }
+    },
+
+    __openBuyCreditsWindow: function() {
+      const wallet = this.__getSelectedWallet();
+      if (wallet) {
+        const params = {
+          url: {
+            walletId: wallet.getWalletId()
+          }
+        };
+        osparc.data.Resources.fetch("paymentMethods", "get", params)
+          .then(paymentMethods => {
+            osparc.desktop.credits.Utils.openBuyCredits(paymentMethods);
+          });
       }
     },
 
