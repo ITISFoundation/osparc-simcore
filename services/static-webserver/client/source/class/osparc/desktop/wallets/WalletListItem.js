@@ -247,24 +247,24 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
     _applyAccessRights: function(accessRights) {
       this.__buildLayout();
       this.base(arguments, accessRights);
-      this.__buyBtn = new qx.ui.form.Button().set({
+      const buyBtn = new qx.ui.form.Button().set({
         label: this.tr("Buy Credits"),
         icon: "@FontAwesome5Solid/dollar-sign/16",
         maxHeight: 30,
         alignY: "middle",
         visibility: this.__canIWrite() ? "visible" : "excluded",
       });
-      osparc.utils.Utils.setIdToWidget(this.__buyBtn, "buyCreditsBtn");
-      this.bind("accessRights", this.__buyBtn, "enabled", {
+      osparc.utils.Utils.setIdToWidget(buyBtn, "buyCreditsBtn");
+      this.bind("accessRights", buyBtn, "enabled", {
         converter: aR => {
           const myAr = osparc.data.model.Wallet.getMyAccessRights(aR);
           return Boolean(myAr && myAr.write);
         }
       });
-      this.__buyBtn.addListener("execute", () => this.fireDataEvent("buyCredits", {
+      buyBtn.addListener("execute", () => this.fireDataEvent("buyCredits", {
         walletId: this.getKey()
       }), this);
-      this._add(this.__buyBtn, {
+      this._add(buyBtn, {
         row: 0,
         column: 6,
         rowSpan: 2
