@@ -320,7 +320,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
 
     trashedAt: {
       check: "Date",
-      apply: "_applyTrasehdAt",
+      apply: "_applyTrashedAt",
       nullable: true
     },
 
@@ -547,7 +547,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
       throw new Error("Abstract method called!");
     },
 
-    _applyTrasehdAt: function(value, old) {
+    _applyTrashedAt: function(value, old) {
       throw new Error("Abstract method called!");
     },
 
