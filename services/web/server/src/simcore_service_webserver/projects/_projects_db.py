@@ -50,14 +50,33 @@ async def patch_project(
         return ProjectDB.model_validate(row)
 
 
-async def get_trashed_by_primary_gid_from_project(
+async def get_trashed_by_primary_gid(
+    app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
+    projects_uuid: ProjectID,
+) -> GroupID | None:
+    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
+        query = (
+            sa.select(
+                users.c.primary_gid.label("trashed_by_primary_gid"),
+            )
+            .select_from(projects.outerjoin(users, projects.c.trashed_by == users.c.id))
+            .where(projects.c.uuid == projects_uuid)
+        )
+        result = await conn.stream(query)
+        row = await result.first()
+        return row.trashed_by_primary_gid if row else None
+
+
+async def batch_get_trashed_by_primary_gid(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
     projects_uuids: list[ProjectID],
 ) -> list[GroupID | None]:
     """
-    Returns trashed_by as GroupID instead of UserID as is in the database
+    Batch version of get_trashed_by_primary_gid preserving ORDER of projects_uuids
     """
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         query = (

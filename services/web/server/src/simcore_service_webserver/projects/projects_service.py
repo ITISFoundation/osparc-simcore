@@ -216,12 +216,13 @@ async def get_project_for_user(
             user_id, project, project_type is ProjectType.TEMPLATE, app
         )
 
+    # adds `trashed_by_primary_gid`
     if include_trashed_by_primary_gid and project.get("trashed_by") is not None:
-        _values = await _projects_db.get_trashed_by_primary_gid_from_project(
-            app, projects_uuids=[project["uuid"]]
+        project.update(
+            trashed_by_primary_gid=await _projects_db.get_trashed_by_primary_gid(
+                app, projects_uuid=project["uuid"]
+            )
         )
-        assert len(_values) == 1
-        project.update(trashed_by_primary_gid=_values[0])
 
     if project["workspaceId"] is not None:
         workspace: UserWorkspaceWithAccessRights = (

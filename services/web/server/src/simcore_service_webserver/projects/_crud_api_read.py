@@ -16,7 +16,7 @@ from servicelib.utils import logged_gather
 from simcore_postgres_database.models.projects import ProjectType
 from simcore_postgres_database.webserver_models import ProjectType as ProjectTypeDB
 from simcore_service_webserver.projects._projects_db import (
-    get_trashed_by_primary_gid_from_project,
+    batch_get_trashed_by_primary_gid,
 )
 
 from ..catalog.client import get_services_for_user_in_product
@@ -49,16 +49,18 @@ async def _update_project_dict(
     return project
 
 
-async def _update_list_of_project_dict(
+async def _batch_update_list_of_project_dict(
     app: web.Application, list_of_project_dict: list[ProjectDict]
 ) -> list[ProjectDict]:
 
     # updating `trashed_by_primary_gid`
-    updates_values = await get_trashed_by_primary_gid_from_project(
+    trashed_by_primary_gid_values = await batch_get_trashed_by_primary_gid(
         app, projects_uuids=[ProjectID(p["uuid"]) for p in list_of_project_dict]
     )
 
-    for project_dict, value in zip(list_of_project_dict, updates_values, strict=True):
+    for project_dict, value in zip(
+        list_of_project_dict, trashed_by_primary_gid_values, strict=True
+    ):
         project_dict.update(trashed_by_primary_gid=value)
 
     return list_of_project_dict
@@ -143,7 +145,7 @@ async def list_projects(  # pylint: disable=too-many-arguments
         order_by=order_by,
     )
 
-    db_projects = await _update_list_of_project_dict(app, db_projects)
+    db_projects = await _batch_update_list_of_project_dict(app, db_projects)
 
     projects: list[ProjectDict] = await logged_gather(
         *(
@@ -200,7 +202,7 @@ async def list_projects_full_depth(
         order_by=order_by,
     )
 
-    db_projects = await _update_list_of_project_dict(request.app, db_projects)
+    db_projects = await _batch_update_list_of_project_dict(request.app, db_projects)
 
     projects: list[ProjectDict] = await logged_gather(
         *(

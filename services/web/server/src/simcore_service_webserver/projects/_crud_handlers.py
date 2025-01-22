@@ -304,6 +304,7 @@ async def get_active_project(request: web.Request) -> web.Response:
                 project_uuid=user_active_projects[0],
                 user_id=req_ctx.user_id,
                 include_state=True,
+                include_trashed_by_primary_gid=True,
             )
 
             # updates project's permalink field
@@ -344,6 +345,7 @@ async def get_project(request: web.Request):
             project_uuid=f"{path_params.project_id}",
             user_id=req_ctx.user_id,
             include_state=True,
+            include_trashed_by_primary_gid=True,
         )
         if not await project_uses_available_services(project, user_available_services):
             unavilable_services = get_project_unavailable_services(
