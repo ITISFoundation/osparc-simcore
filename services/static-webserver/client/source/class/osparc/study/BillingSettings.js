@@ -114,7 +114,6 @@ qx.Class.define("osparc.study.BillingSettings", {
 
     __buildWalletGroup: function() {
       const boxContent = this.getChildControl("credit-account-box");
-      boxContent.removeAll();
 
       const walletSelector = this.getChildControl("wallet-selector");
 
@@ -289,7 +288,6 @@ qx.Class.define("osparc.study.BillingSettings", {
         })
         .finally(() => {
           creditAccountBox.setEnabled(true);
-          this.__buildWalletGroup();
         });
     },
 
