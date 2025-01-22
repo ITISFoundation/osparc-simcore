@@ -12,6 +12,7 @@ from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
 from settings_library.base import BaseCustomSettings
 from settings_library.basic_types import LogLevel, PortInt
 from settings_library.postgres import PostgresSettings
+from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from settings_library.s3 import S3Settings
 from settings_library.tracing import TracingSettings
@@ -44,6 +45,10 @@ class Settings(BaseCustomSettings, MixinLoggingSettings):
     )
     BF_API_SECRET: str | None = Field(
         None, description="Pennsieve API secret ONLY for testing purposes"
+    )
+
+    STORAGE_RABBITMQ: RabbitSettings = Field(
+        json_schema_extra={"auto_default_from_env": True}
     )
 
     STORAGE_POSTGRES: PostgresSettings = Field(

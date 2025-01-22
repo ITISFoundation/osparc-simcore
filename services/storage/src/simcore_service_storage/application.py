@@ -20,6 +20,7 @@ from .db import setup_db
 from .dsm import setup_dsm
 from .dsm_cleaner import setup_dsm_cleaner
 from .long_running_tasks import setup_rest_api_long_running_tasks
+from .rabbitmq import setup_rabbitmq
 from .redis import setup_redis
 from .rest import setup_rest
 from .s3 import setup_s3
@@ -58,6 +59,7 @@ def create(settings: Settings) -> web.Application:
             service_name=APP_NAME,
         )
 
+    setup_rabbitmq(app)
     setup_db(app)
     setup_s3(app)
 
