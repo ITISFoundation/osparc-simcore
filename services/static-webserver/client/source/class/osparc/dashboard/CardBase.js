@@ -320,7 +320,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
 
     trashedAt: {
       check: "Date",
-      apply: "_applyTrasehdAt",
+      apply: "_applyTrashedAt",
       nullable: true
     },
 
@@ -385,15 +385,15 @@ qx.Class.define("osparc.dashboard.CardBase", {
       apply: "__applyState"
     },
 
-    projectState: {
-      check: ["NOT_STARTED", "STARTED", "SUCCESS", "FAILED", "UNKNOWN"],
-      nullable: false,
-      init: "UNKNOWN",
-      apply: "_applyProjectState"
+    debt: {
+      check: "Number",
+      nullable: true,
+      init: 0,
+      apply: "__applyDebt"
     },
 
     blocked: {
-      check: [true, "UNKNOWN_SERVICES", "IN_USE", false],
+      check: [true, "UNKNOWN_SERVICES", "IN_USE", "IN_DEBT", false],
       init: false,
       nullable: false,
       apply: "__applyBlocked"
@@ -547,7 +547,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
       throw new Error("Abstract method called!");
     },
 
-    _applyTrasehdAt: function(value, old) {
+    _applyTrashedAt: function(value, old) {
       throw new Error("Abstract method called!");
     },
 
@@ -633,7 +633,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
       const unaccessibleServices = osparc.study.Utils.getInaccessibleServices(workbench)
       if (unaccessibleServices.length) {
         this.setBlocked("UNKNOWN_SERVICES");
-        const image = "@FontAwesome5Solid/ban/";
+        let image = "@FontAwesome5Solid/ban/";
         let toolTipText = this.tr("Service info missing");
         unaccessibleServices.forEach(unSrv => {
           toolTipText += "<br>" + unSrv.key + ":" + unSrv.version;
@@ -681,65 +681,75 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     __applyState: function(state) {
-      const locked = ("locked" in state) ? state["locked"]["value"] : false;
-      this.setBlocked(locked ? "IN_USE" : false);
-      if (locked) {
-        this.__showBlockedCardFromStatus(state["locked"]);
+      let lockInUse = false;
+      if ("locked" in state && "value" in state["locked"]) {
+        lockInUse = state["locked"]["value"];
+      }
+      this.setBlocked(lockInUse ? "IN_USE" : false);
+      if (lockInUse) {
+        this.__showBlockedCardFromStatus("IN_USE", state["locked"]);
       }
 
-      const projectState = ("state" in state) ? state["state"]["value"] : undefined;
-      if (projectState) {
-        this._applyProjectState(state["state"]);
+      const pipelineState = ("state" in state) ? state["state"]["value"] : undefined;
+      if (pipelineState) {
+        this.__applyPipelineState(state["state"]["value"]);
       }
     },
 
-    _applyProjectState: function(projectStatus) {
-      const status = projectStatus["value"];
-      let icon;
-      let toolTip;
-      let border;
-      switch (status) {
+    __applyDebt: function(debt) {
+      this.setBlocked(debt ? "IN_DEBT" : false);
+      if (debt) {
+        this.__showBlockedCardFromStatus("IN_DEBT", debt);
+      }
+    },
+
+    // pipelineState: ["NOT_STARTED", "STARTED", "SUCCESS", "ABORTED", "FAILED", "UNKNOWN"]
+    __applyPipelineState: function(pipelineState) {
+      let iconSource;
+      let toolTipText;
+      let borderColor;
+      switch (pipelineState) {
         case "STARTED":
-          icon = "@FontAwesome5Solid/spinner/10";
-          toolTip = this.tr("Running");
-          border = "info";
+          iconSource = "@FontAwesome5Solid/spinner/10";
+          toolTipText = this.tr("Running");
+          borderColor = "info";
           break;
         case "SUCCESS":
-          icon = "@FontAwesome5Solid/check/10";
-          toolTip = this.tr("Ran successfully");
-          border = "success";
+          iconSource = "@FontAwesome5Solid/check/10";
+          toolTipText = this.tr("Ran successfully");
+          borderColor = "success";
           break;
         case "ABORTED":
-          icon = "@FontAwesome5Solid/exclamation/10";
-          toolTip = this.tr("Run aborted");
-          border = "warning";
+          iconSource = "@FontAwesome5Solid/exclamation/10";
+          toolTipText = this.tr("Run aborted");
+          borderColor = "warning";
           break;
         case "FAILED":
-          icon = "@FontAwesome5Solid/exclamation/10";
-          toolTip = this.tr("Ran with error");
-          border = "error";
+          iconSource = "@FontAwesome5Solid/exclamation/10";
+          toolTipText = this.tr("Ran with error");
+          borderColor = "error";
           break;
+        case "UNKNOWN":
+        case "NOT_STARTED":
         default:
-          icon = null;
-          toolTip = null;
-          border = null;
+          iconSource = null;
+          toolTipText = null;
+          borderColor = null;
           break;
       }
-      this.__applyProjectLabel(icon, toolTip, border);
-    },
 
-    __applyProjectLabel: function(icn, toolTipText, bdr) {
       const border = new qx.ui.decoration.Decorator().set({
         radius: 10,
         width: 1,
         style: "solid",
-        color: bdr,
-        backgroundColor: bdr ? bdr + "-bg" : null
+        color: borderColor,
+        backgroundColor: borderColor ? borderColor + "-bg" : null
       });
+
       const projectStatusLabel = this.getChildControl("project-status");
       projectStatusLabel.set({
         decorator: border,
-        textColor: bdr,
+        textColor: borderColor,
         alignX: "center",
         alignY: "middle",
         height: 17,
@@ -748,14 +758,25 @@ qx.Class.define("osparc.dashboard.CardBase", {
       });
 
       projectStatusLabel.set({
-        visibility: icn && toolTipText && bdr ? "visible" : "excluded",
-        source: icn,
-        toolTipIcon: icn,
+        visibility: iconSource && toolTipText && borderColor ? "visible" : "excluded",
+        source: iconSource,
+        toolTipIcon: iconSource,
         toolTipText
       });
     },
 
-    __showBlockedCardFromStatus: function(lockedStatus) {
+    __showBlockedCardFromStatus: function(reason, moreInfo) {
+      switch (reason) {
+        case "IN_USE":
+          this.__blockedInUse(moreInfo);
+          break;
+        case "IN_DEBT":
+          this.__blockedInDebt(moreInfo);
+          break;
+      }
+    },
+
+    __blockedInUse: function(lockedStatus) {
       const status = lockedStatus["status"];
       const owner = lockedStatus["owner"];
       let toolTip = osparc.utils.Utils.firstsUp(owner["first_name"] || this.tr("A user"), owner["last_name"] || ""); // it will be replaced by "userName"
@@ -788,14 +809,23 @@ qx.Class.define("osparc.dashboard.CardBase", {
       this.__showBlockedCard(image, toolTip);
     },
 
+    __blockedInDebt: function() {
+      const studyAlias = osparc.product.Utils.getStudyAlias({firstUpperCase: true});
+      const toolTip = studyAlias + " " + this.tr("Embargoed<br>Credits Required");
+      const image = "@FontAwesome5Solid/lock/";
+      this.__showBlockedCard(image, toolTip);
+    },
+
     __showBlockedCard: function(lockImageSrc, toolTipText) {
       this.getChildControl("lock-status").set({
         opacity: 1.0,
         visibility: "visible"
       });
+
       const lockImage = this.getChildControl("lock-status").getChildControl("image");
       lockImageSrc += this.classname.includes("Grid") ? "32" : "22";
       lockImage.setSource(lockImageSrc);
+
       if (toolTipText) {
         this.set({
           toolTipText

@@ -22,6 +22,35 @@ qx.Class.define("osparc.desktop.credits.Utils", {
     DANGER_ZONE: 25, // one hour consumption
     CREDITS_ICON: "@FontAwesome5Solid/database/",
 
+    creditsUpdated: function(walletId, credits) {
+      const store = osparc.store.Store.getInstance();
+      const walletFound = store.getWallets().find(wallet => wallet.getWalletId() === parseInt(walletId));
+      if (walletFound) {
+        walletFound.setCreditsAvailable(parseFloat(credits));
+      }
+    },
+
+    openBuyCredits: function(paymentMethods = []) {
+      const buyView = new osparc.desktop.credits.BuyCreditsStepper(
+        paymentMethods.map(({idr, cardHolderName, cardNumberMasked}) => ({
+          label: `${cardHolderName} ${cardNumberMasked}`,
+          id: idr
+        }))
+      );
+      const win = osparc.ui.window.Window.popUpInWindow(buyView, "Buy credits", 400, 600).set({
+        resizable: false,
+        movable: false
+      });
+      buyView.addListener("completed", () => win.close());
+      buyView.addListener("cancelled", () => win.close());
+      win.addListener("close", () => buyView.cancelPayment())
+      return {
+        window: win,
+        buyCreditsWidget: buyView,
+      };
+    },
+
+
     areWalletsEnabled: function() {
       const statics = osparc.store.Store.getInstance().get("statics");
       return Boolean(statics && statics["isPaymentEnabled"]);
@@ -74,7 +103,7 @@ qx.Class.define("osparc.desktop.credits.Utils", {
       const store = osparc.store.Store.getInstance();
 
       const walletSelector = new qx.ui.form.SelectBox().set({
-        minWidth: 220
+        maxWidth: 250
       });
 
       const populateSelectBox = selectBox => {
