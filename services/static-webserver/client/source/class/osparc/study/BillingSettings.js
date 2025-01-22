@@ -42,27 +42,6 @@ qx.Class.define("osparc.study.BillingSettings", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "embargoed-message": {
-          const border = new qx.ui.decoration.Decorator().set({
-            radius: 4,
-            width: 1,
-            style: "solid",
-            color: "danger-red",
-          });
-          const studyAlias = osparc.product.Utils.getStudyAlias();
-          let msg = this.tr(`This ${studyAlias} is currently Embargoed.<br>`);
-          msg += this.tr("Last transaction:") + "<br>";
-          msg += this.__studyData["debt"] + " " + this.tr("credits");
-          control = new qx.ui.basic.Label(msg).set({
-            decorator: border,
-            font: "text-14",
-            rich: true,
-            padding: 10,
-            marginBottom: 5,
-          });
-          this._add(control);
-          break;
-        }
         case "credit-account-box":
           control = osparc.study.StudyOptions.createGroupBox(this.tr("Credit Account"));
           this._add(control);
@@ -119,7 +98,24 @@ qx.Class.define("osparc.study.BillingSettings", {
     },
 
     __buildDebtMessage: function() {
-      this.getChildControl("embargoed-message");
+      const border = new qx.ui.decoration.Decorator().set({
+        radius: 4,
+        width: 1,
+        style: "solid",
+        color: "danger-red",
+      });
+      const studyAlias = osparc.product.Utils.getStudyAlias();
+      let msg = this.tr(`This ${studyAlias} is currently Embargoed.<br>`);
+      msg += this.tr("Last transaction:") + "<br>";
+      msg += this.__studyData["debt"] + " " + this.tr("credits");
+      const debtMessage = new qx.ui.basic.Label(msg).set({
+        decorator: border,
+        font: "text-14",
+        rich: true,
+        padding: 10,
+        marginBottom: 5,
+      });
+      this._add(debtMessage);
     },
 
     __buildWalletGroup: function() {
