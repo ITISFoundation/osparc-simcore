@@ -100,8 +100,6 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
     __billingSettings: null,
     __classifiersPage: null,
     __qualityPage: null,
-    __openButton: null,
-    __payDebtButton: null,
 
     __addOpenButton: function(page) {
       const resourceData = this.__resourceData;
@@ -110,13 +108,13 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       page.addToHeader(toolbar);
 
       if (this.__resourceData["resourceType"] === "study") {
-        const payDebtButton = this.__payDebtButton = new qx.ui.form.Button(this.tr("Credits required"));
+        const payDebtButton = new qx.ui.form.Button(this.tr("Credits required"));
         page.payDebtButton = payDebtButton;
         osparc.dashboard.resources.pages.BasePage.decorateHeaderButton(payDebtButton);
         payDebtButton.addListener("execute", () => this.openBillingSettings());
         if (this.__resourceData["resourceType"] === "study") {
           const studyData = this.__resourceData;
-          this.__payDebtButton.set({
+          payDebtButton.set({
             visibility: osparc.study.Utils.isInDebt(studyData) ? "visible" : "excluded"
           });
         }
@@ -128,7 +126,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         toolbar.add(serviceVersionSelector);
       }
 
-      const openButton = this.__openButton = new osparc.ui.form.FetchButton(this.tr("Open")).set({
+      const openButton = new osparc.ui.form.FetchButton(this.tr("Open")).set({
         enabled: true
       });
       page.openButton = openButton;
@@ -141,7 +139,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       this.bind("showOpenButton", openButton, "visibility", {
         converter: show => (store.getCurrentStudy() === null && show) ? "visible" : "excluded"
       });
-      openButton.addListener("execute", () => this.__openTapped());
+      openButton.addListener("execute", () => this.__openTapped(openButton));
 
       if (this.__resourceData["resourceType"] === "study") {
         const studyData = this.__resourceData;
@@ -152,13 +150,13 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       toolbar.add(openButton);
     },
 
-    __openTapped: function() {
+    __openTapped: function(openButton) {
       if (this.__resourceData["resourceType"] !== "study") {
         // Template or Service, nothing to pre-check
         this.__openResource();
         return;
       }
-      this.__openButton.setFetching(true);
+      openButton.setFetching(true);
       const params = {
         url: {
           "studyId": this.__resourceData["uuid"]
@@ -166,7 +164,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       };
       osparc.data.Resources.getOne("studies", params)
         .then(updatedStudyData => {
-          this.__openButton.setFetching(false);
+          openButton.setFetching(false);
           const updatableServices = osparc.metadata.ServicesInStudyUpdate.updatableNodeIds(updatedStudyData.workbench);
           if (updatableServices.length && osparc.data.model.Study.canIWrite(updatedStudyData["accessRights"])) {
             this.__confirmUpdate();
@@ -177,7 +175,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         .catch(err => {
           console.error(err);
           osparc.FlashMessenger.logAs(err.message, "ERROR");
-          this.__openButton.setFetching(false);
+          openButton.setFetching(false);
         });
     },
 
