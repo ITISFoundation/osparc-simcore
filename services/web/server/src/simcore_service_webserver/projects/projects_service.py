@@ -31,14 +31,13 @@ from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     DynamicServiceStop,
 )
 from models_library.api_schemas_webserver.projects import ProjectPatch
-from models_library.api_schemas_webserver.projects_nodes import NodePatch
 from models_library.basic_types import KeyIDStr
 from models_library.errors import ErrorDict
 from models_library.groups import GroupID
 from models_library.products import ProductName
 from models_library.projects import Project, ProjectID, ProjectIDStr
 from models_library.projects_access import Owner
-from models_library.projects_nodes import Node
+from models_library.projects_nodes import Node, NodeState, PartialNode
 from models_library.projects_nodes_io import NodeID, NodeIDStr, PortLink
 from models_library.projects_state import (
     ProjectLocked,
@@ -125,7 +124,7 @@ from ..users.preferences_api import (
 from ..wallets import api as wallets_api
 from ..wallets.errors import WalletNotEnoughCreditsError
 from ..workspaces import _workspaces_repository as workspaces_db
-from . import _crud_api_delete, _nodes_api, _projects_db
+from . import _crud_api_delete, _nodes_api, _projects_db, _projects_nodes_repository
 from ._access_rights_api import (
     check_user_project_permission,
     has_user_project_access_rights,
@@ -381,9 +380,9 @@ async def _get_default_pricing_and_hardware_info(
     )
 
 
-_MACHINE_TOTAL_RAM_SAFE_MARGIN_RATIO: Final[float] = (
-    0.1  # NOTE: machines always have less available RAM than advertised
-)
+_MACHINE_TOTAL_RAM_SAFE_MARGIN_RATIO: Final[
+    float
+] = 0.1  # NOTE: machines always have less available RAM than advertised
 _SIDECARS_OPS_SAFE_RAM_MARGIN: Final[ByteSize] = TypeAdapter(ByteSize).validate_python(
     "1GiB"
 )
@@ -789,13 +788,17 @@ async def add_project_node(
     default_resources = await catalog_client.get_service_resources(
         request.app, user_id, service_key, service_version
     )
-    db: ProjectDBAPI = request.app[APP_PROJECT_DBAPI]
+    db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(request.app)
     assert db  # nosec
     await db.add_project_node(
         user_id,
         ProjectID(project["uuid"]),
         ProjectNodeCreate(
-            node_id=node_uuid, required_resources=jsonable_encoder(default_resources)
+            node_id=node_uuid,
+            required_resources=jsonable_encoder(default_resources),
+            key=service_key,
+            version=service_version,
+            label=service_key.split("/")[-1],
         ),
         Node.model_validate(
             {
@@ -972,6 +975,8 @@ async def update_project_node_state(
         permission="write",  # NOTE: MD: before only read was sufficient, double check this
     )
 
+    # Delete this once workbench is removed from the projects table
+    # See: https://github.com/ITISFoundation/osparc-simcore/issues/7046
     updated_project, _ = await db.update_project_node_data(
         user_id=user_id,
         project_uuid=project_id,
@@ -979,6 +984,16 @@ async def update_project_node_state(
         product_name=None,
         new_node_data={"state": {"currentStatus": new_state}},
     )
+
+    await _projects_nodes_repository.update(
+        app,
+        project_id=project_id,
+        node_id=node_id,
+        partial_node=PartialNode.model_construct(
+            state=NodeState(currentStatus=RunningState(new_state))
+        ),
+    )
+
     return await add_project_states_for_user(
         user_id=user_id, project=updated_project, is_template=False, app=app
     )
@@ -996,12 +1011,13 @@ async def patch_project_node(
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
-    node_patch: NodePatch,
+    partial_node: PartialNode,
 ) -> None:
-    _node_patch_exclude_unset: dict[str, Any] = jsonable_encoder(
-        node_patch, exclude_unset=True, by_alias=True
+    _node_patch_exclude_unset: dict[str, Any] = partial_node.model_dump(
+        mode="json", exclude_unset=True, by_alias=True
     )
-    db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
+
+    _projects_repository = ProjectDBAPI.get_from_app_context(app)
 
     # 1. Check user permissions
     await check_user_project_permission(
@@ -1014,7 +1030,9 @@ async def patch_project_node(
 
     # 2. If patching service key or version make sure it's valid
     if _node_patch_exclude_unset.get("key") or _node_patch_exclude_unset.get("version"):
-        _project, _ = await db.get_project(project_uuid=f"{project_id}")
+        _project, _ = await _projects_repository.get_project(
+            project_uuid=f"{project_id}"
+        )
         _project_node_data = _project["workbench"][f"{node_id}"]
 
         _service_key = _node_patch_exclude_unset.get("key", _project_node_data["key"])
@@ -1031,12 +1049,19 @@ async def patch_project_node(
         )
 
     # 3. Patch the project node
-    updated_project, _ = await db.update_project_node_data(
+    updated_project, _ = await _projects_repository.update_project_node_data(
         user_id=user_id,
         project_uuid=project_id,
         node_id=node_id,
         product_name=product_name,
         new_node_data=_node_patch_exclude_unset,
+    )
+
+    await _projects_nodes_repository.update(
+        app,
+        project_id=project_id,
+        node_id=node_id,
+        partial_node=partial_node,
     )
 
     # 4. Make calls to director-v2 to keep data in sync (ex. comp_tasks DB table)
@@ -1098,6 +1123,15 @@ async def update_project_node_outputs(
         node_id=node_id,
         product_name=None,
         new_node_data={"outputs": new_outputs, "runHash": new_run_hash},
+    )
+
+    await _projects_nodes_repository.update(
+        app,
+        project_id=project_id,
+        node_id=node_id,
+        partial_node=PartialNode.model_construct(
+            outputs=new_outputs, run_hash=new_run_hash
+        ),
     )
 
     log.debug(
