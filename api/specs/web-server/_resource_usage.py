@@ -21,6 +21,7 @@ from models_library.api_schemas_webserver.resource_usage import (
     CreatePricingPlanBodyParams,
     CreatePricingUnitBodyParams,
     PricingPlanAdminGet,
+    PricingPlanGet,
     PricingPlanToServiceAdminGet,
     PricingUnitAdminGet,
     PricingUnitGet,
@@ -102,6 +103,29 @@ async def get_pricing_plan_unit(
     ...
 
 
+@router.get(
+    "/pricing-plans",
+    response_model=Envelope[list[PricingPlanGet]],
+    summary="List pricing plans",
+    tags=["pricing-plans"],
+    description="To keep the listing lightweight, the pricingUnits field is None.",
+)
+async def list_pricing_plans():
+    ...
+
+
+@router.get(
+    "/pricing-plans/{pricing_plan_id}",
+    response_model=Envelope[PricingPlanGet],
+    summary="Retrieve detail information about pricing plan",
+    tags=["pricing-plans"],
+)
+async def get_pricing_plan(
+    _path: Annotated[PricingPlanGetPathParams, Depends()],
+):
+    ...
+
+
 ## Pricing plans for Admin panel
 
 
@@ -112,7 +136,7 @@ async def get_pricing_plan_unit(
     tags=["admin"],
     description="To keep the listing lightweight, the pricingUnits field is None.",
 )
-async def list_pricing_plans():
+async def list_pricing_plans_for_admin_user():
     ...
 
 
@@ -122,7 +146,7 @@ async def list_pricing_plans():
     summary="Retrieve detail information about pricing plan",
     tags=["admin"],
 )
-async def get_pricing_plan(
+async def get_pricing_plan_for_admin_user(
     _path: Annotated[PricingPlanGetPathParams, Depends()],
 ):
     ...

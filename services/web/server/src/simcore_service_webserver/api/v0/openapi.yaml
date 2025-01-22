@@ -5410,13 +5410,49 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_PricingUnitGet_'
+  /v0/pricing-plans:
+    get:
+      tags:
+      - pricing-plans
+      summary: List pricing plans
+      description: To keep the listing lightweight, the pricingUnits field is None.
+      operationId: list_pricing_plans
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list_PricingPlanGet__'
+  /v0/pricing-plans/{pricing_plan_id}:
+    get:
+      tags:
+      - pricing-plans
+      summary: Retrieve detail information about pricing plan
+      operationId: get_pricing_plan
+      parameters:
+      - name: pricing_plan_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          exclusiveMinimum: true
+          title: Pricing Plan Id
+          minimum: 0
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_PricingPlanGet_'
   /v0/admin/pricing-plans:
     get:
       tags:
       - admin
       summary: List pricing plans
       description: To keep the listing lightweight, the pricingUnits field is None.
-      operationId: list_pricing_plans
+      operationId: list_pricing_plans_for_admin_user
       responses:
         '200':
           description: Successful Response
@@ -5447,7 +5483,7 @@ paths:
       tags:
       - admin
       summary: Retrieve detail information about pricing plan
-      operationId: get_pricing_plan
+      operationId: get_pricing_plan_for_admin_user
       parameters:
       - name: pricing_plan_id
         in: path
@@ -8517,6 +8553,19 @@ components:
           title: Error
       type: object
       title: Envelope[PricingPlanAdminGet]
+    Envelope_PricingPlanGet_:
+      properties:
+        data:
+          anyOf:
+          - $ref: '#/components/schemas/PricingPlanGet'
+          - type: 'null'
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[PricingPlanGet]
     Envelope_PricingPlanToServiceAdminGet_:
       properties:
         data:
@@ -9251,6 +9300,22 @@ components:
           title: Error
       type: object
       title: Envelope[list[PricingPlanAdminGet]]
+    Envelope_list_PricingPlanGet__:
+      properties:
+        data:
+          anyOf:
+          - items:
+              $ref: '#/components/schemas/PricingPlanGet'
+            type: array
+          - type: 'null'
+          title: Data
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[list[PricingPlanGet]]
     Envelope_list_PricingPlanToServiceAdminGet__:
       properties:
         data:
@@ -12317,6 +12382,49 @@ components:
       - TIER
       - LICENSE
       title: PricingPlanClassification
+    PricingPlanGet:
+      properties:
+        pricingPlanId:
+          type: integer
+          exclusiveMinimum: true
+          title: Pricingplanid
+          minimum: 0
+        displayName:
+          type: string
+          title: Displayname
+        description:
+          type: string
+          title: Description
+        classification:
+          $ref: '#/components/schemas/PricingPlanClassification'
+        createdAt:
+          type: string
+          format: date-time
+          title: Createdat
+        pricingPlanKey:
+          type: string
+          title: Pricingplankey
+        pricingUnits:
+          anyOf:
+          - items:
+              $ref: '#/components/schemas/PricingUnitGet'
+            type: array
+          - type: 'null'
+          title: Pricingunits
+        isActive:
+          type: boolean
+          title: Isactive
+      type: object
+      required:
+      - pricingPlanId
+      - displayName
+      - description
+      - classification
+      - createdAt
+      - pricingPlanKey
+      - pricingUnits
+      - isActive
+      title: PricingPlanGet
     PricingPlanToServiceAdminGet:
       properties:
         pricingPlanId:

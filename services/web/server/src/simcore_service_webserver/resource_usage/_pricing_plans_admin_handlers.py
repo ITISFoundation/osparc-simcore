@@ -19,7 +19,6 @@ from models_library.resource_tracker import (
     PricingUnitWithCostCreate,
     PricingUnitWithCostUpdate,
 )
-from models_library.rest_base import StrictRequestParameters
 from pydantic import BaseModel, ConfigDict
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
@@ -34,6 +33,7 @@ from ..models import RequestContext
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
 from . import _pricing_plans_admin_api as admin_api
+from ._pricing_plans_models import PricingPlanGetPathParams
 
 #
 # API components/schemas
@@ -64,19 +64,14 @@ routes = web.RouteTableDef()
 ## Admin Pricing Plan endpoints
 
 
-class PricingPlanGetPathParams(StrictRequestParameters):
-    pricing_plan_id: PricingPlanId
-    model_config = ConfigDict(extra="forbid")
-
-
 @routes.get(
     f"/{VTAG}/admin/pricing-plans",
-    name="list_pricing_plans",
+    name="list_pricing_plans_for_admin_user",
 )
 @login_required
 @permission_required("resource-usage.write")
 @_handle_pricing_plan_admin_exceptions
-async def list_pricing_plans(request: web.Request):
+async def list_pricing_plans_for_admin_user(request: web.Request):
     req_ctx = RequestContext.model_validate(request)
 
     pricing_plans_list = await admin_api.list_pricing_plans(
@@ -102,12 +97,12 @@ async def list_pricing_plans(request: web.Request):
 
 @routes.get(
     f"/{VTAG}/admin/pricing-plans/{{pricing_plan_id}}",
-    name="get_pricing_plan",
+    name="get_pricing_plan_for_admin_user",
 )
 @login_required
 @permission_required("resource-usage.write")
 @_handle_pricing_plan_admin_exceptions
-async def get_pricing_plan(request: web.Request):
+async def get_pricing_plan_for_admin_user(request: web.Request):
     req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(PricingPlanGetPathParams, request)
 

@@ -60,7 +60,7 @@ class PricingPlanGet(OutputSchema):
     classification: PricingPlanClassification
     created_at: datetime
     pricing_plan_key: str
-    pricing_units: list[PricingUnitGet]
+    pricing_units: list[PricingUnitGet] | None
     is_active: bool
 
 
