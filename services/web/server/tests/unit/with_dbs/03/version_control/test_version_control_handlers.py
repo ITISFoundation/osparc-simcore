@@ -241,9 +241,9 @@ async def test_delete_project_and_repo(
 
     # TMP fix here waits ------------
     # FIXME: mark as deleted, still gets entrypoints!!
-    from simcore_service_webserver.projects import projects_api
+    from simcore_service_webserver.projects import projects_service
 
-    delete_task = projects_api.get_delete_project_task(project_uuid, user_id)
+    delete_task = projects_service.get_delete_project_task(project_uuid, user_id)
     assert delete_task
     await delete_task
     # --------------------------------

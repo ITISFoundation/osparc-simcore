@@ -76,7 +76,7 @@ async def test_trash_projects(  # noqa: PLR0915
 
     # this test should have no errors stopping services
     mock_remove_dynamic_services = mocker.patch(
-        "simcore_service_webserver.projects._trash_service.projects_api.remove_project_dynamic_services",
+        "simcore_service_webserver.projects._trash_service.projects_service.remove_project_dynamic_services",
         autospec=True,
     )
     mock_stop_pipeline = mocker.patch(
