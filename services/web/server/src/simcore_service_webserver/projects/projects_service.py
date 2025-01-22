@@ -177,6 +177,7 @@ async def get_project_for_user(
     user_id: UserID,
     *,
     include_state: bool | None = False,
+    include_trashed_by_primary_gid: bool = False,
     check_permissions: str = "read",
 ) -> ProjectDict:
     """Returns a VALID project accessible to user
@@ -214,6 +215,13 @@ async def get_project_for_user(
         project = await add_project_states_for_user(
             user_id, project, project_type is ProjectType.TEMPLATE, app
         )
+
+    if include_trashed_by_primary_gid and project.get("trashed_by") is not None:
+        _values = await _projects_db.get_trashed_by_primary_gid_from_project(
+            app, projects_uuids=[project["uuid"]]
+        )
+        assert len(_values) == 1
+        project.update(trashed_by_primary_gid=_values[0])
 
     if project["workspaceId"] is not None:
         workspace: UserWorkspaceWithAccessRights = (
