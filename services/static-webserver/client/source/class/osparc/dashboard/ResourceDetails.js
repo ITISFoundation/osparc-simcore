@@ -110,11 +110,10 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       page.addToHeader(toolbar);
 
       if (this.__resourceData["resourceType"] === "study") {
-        const payDebtButton = this.__payDebtButton = new qx.ui.form.Button(this.tr("Credits required")).set({
-          visibility: osparc.study.Utils.isInDebt(resourceData) ? "visible" : "excluded"
-        });
+        const payDebtButton = this.__payDebtButton = new qx.ui.form.Button(this.tr("Credits required"));
         osparc.dashboard.resources.pages.BasePage.decorateHeaderButton(payDebtButton);
         payDebtButton.addListener("execute", () => this.openBillingSettings());
+        this.__evaluatePayDebtButton();
         toolbar.add(payDebtButton);
       }
 
@@ -137,16 +136,28 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       });
       openButton.addListener("execute", () => this.__openTapped());
 
-      this.evaluateOpenButton();
+      this.__evaluateOpenButton();
 
       toolbar.add(openButton);
     },
 
-    evaluateOpenButton: function() {
+    __evaluateOpenButton: function() {
+      const openButton = this.__openButton;
       if (this.__resourceData["resourceType"] === "study") {
         const studyData = this.__resourceData;
         const canBeOpened = osparc.study.Utils.canBeOpened(studyData);
-        this.__openButton.setEnabled(canBeOpened);
+        openButton.setEnabled(canBeOpened);
+      } else {
+        openButton.setEnabled(true);
+      }
+    },
+
+    __evaluatePayDebtButton: function() {
+      if (this.__resourceData["resourceType"] === "study") {
+        const studyData = this.__resourceData;
+        this.__payDebtButton.set({
+          visibility: osparc.study.Utils.isInDebt(studyData) ? "visible" : "excluded"
+        });
       }
     },
 
@@ -391,6 +402,10 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
 
         const lazyLoadContent = () => {
           const billingSettings = new osparc.study.BillingSettings(resourceData);
+          billingSettings.addListener("debtPayed", () => {
+            this.__evaluatePayDebtButton();
+            this.__evaluateOpenButton();
+          })
           const billingScroll = new qx.ui.container.Scroll(billingSettings);
           page.addToContent(billingScroll);
         }

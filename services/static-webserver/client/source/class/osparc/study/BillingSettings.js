@@ -31,6 +31,10 @@ qx.Class.define("osparc.study.BillingSettings", {
     this.__buildLayout();
   },
 
+  events: {
+    "debtPayed": "qx.event.type.Event",
+  },
+
   members: {
     __studyData: null,
     __studyWalletId: null,
@@ -225,6 +229,7 @@ qx.Class.define("osparc.study.BillingSettings", {
               // at this point we can assume that the study got unblocked
               delete this.__studyData["debt"];
               osparc.store.Store.getInstance().setStudyDebt(this.__studyData["uuid"], 0);
+              this.fireEvent("debtPayed");
             })
           });
       }
@@ -266,6 +271,7 @@ qx.Class.define("osparc.study.BillingSettings", {
           osparc.store.Store.getInstance().setStudyDebt(this.__studyData["uuid"], 0);
           // also switch the study's wallet to this one
           this.__switchWallet(wallet.getWalletId());
+          this.fireEvent("debtPayed");
         })
         .catch(err => {
           console.error(err);
