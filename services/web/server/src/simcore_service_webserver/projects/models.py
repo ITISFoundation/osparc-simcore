@@ -106,9 +106,3 @@ class ProjectPatchExtended(ProjectPatch):
             self.model_dump(exclude_unset=True, by_alias=False),
             rename={"trashed_at": "trashed"},
         )
-
-
-__all__: tuple[str, ...] = (
-    "ProjectDict",
-    "ProjectProxy",
-)

@@ -7,8 +7,7 @@ from models_library.api_schemas_clusters_keeper.clusters import OnDemandCluster
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from servicelib.rabbitmq import RPCRouter
-from servicelib.redis._client import RedisClientSDK
-from servicelib.redis._decorators import exclusive
+from servicelib.redis import RedisClientSDK, exclusive
 
 from ..core.settings import get_application_settings
 from ..modules import clusters

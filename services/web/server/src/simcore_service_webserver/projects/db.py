@@ -220,19 +220,27 @@ class ProjectDBAPI(BaseProjectDB):
                             if project_nodes is None:
                                 project_nodes = {
                                     NodeID(node_id): ProjectNodeCreate(
-                                        node_id=NodeID(node_id), required_resources={}
+                                        node_id=NodeID(node_id),
+                                        required_resources={},
+                                        key=node_info.get("key"),
+                                        version=node_info.get("version"),
+                                        label=node_info.get("label"),
                                     )
-                                    for node_id in selected_values["workbench"]
+                                    for node_id, node_info in selected_values["workbench"].items()
                                 }
 
                             nodes = [
                                 project_nodes.get(
                                     NodeID(node_id),
                                     ProjectNodeCreate(
-                                        node_id=NodeID(node_id), required_resources={}
+                                        node_id=NodeID(node_id),
+                                        required_resources={},
+                                        key=node_info.get("key"),
+                                        version=node_info.get("version"),
+                                        label=node_info.get("label"),
                                     ),
                                 )
-                                for node_id in selected_values["workbench"]
+                                for node_id, node_info in selected_values["workbench"].items()
                             ]
                             await project_nodes_repo.add(conn, nodes=nodes)
         return selected_values
@@ -369,7 +377,7 @@ class ProjectDBAPI(BaseProjectDB):
         # attribute filters
         filter_by_project_type: ProjectType | None = None,
         filter_by_services: list[dict] | None = None,
-        filter_published: bool | None = False,
+        filter_published: bool | None = None,
         filter_hidden: bool | None = False,
         filter_trashed: bool | None = False,
         filter_by_text: str | None = None,
