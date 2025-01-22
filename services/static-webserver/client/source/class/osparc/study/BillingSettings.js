@@ -42,7 +42,7 @@ qx.Class.define("osparc.study.BillingSettings", {
           this._add(control);
           break;
         case "credit-account-layout":
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(10)).set({
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5)).set({
             alignY: "middle"
           });
           this.getChildControl("credit-account-box").add(control);
@@ -52,19 +52,25 @@ qx.Class.define("osparc.study.BillingSettings", {
           this.getChildControl("credit-account-layout").add(control);
           break;
         case "pay-debt-layout":
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox());
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5).set({
+            alignY: "middle",
+          }));
           this.getChildControl("credit-account-layout").add(control);
-          break;
-        case "buy-credits-button":
-          control = new qx.ui.form.Button(this.tr("Buy Credits"));
-          this.getChildControl("pay-debt-layout").add(control);
-          break;
-        case "trasfer-debt-button":
-          control = new qx.ui.form.Button(this.tr("Pay with this Credit Account"));
-          this.getChildControl("pay-debt-layout").add(control);
           break;
         case "debt-explanation":
           control = new qx.ui.basic.Label();
+          this.getChildControl("pay-debt-layout").add(control);
+          break;
+        case "buy-credits-button":
+          control = new qx.ui.form.Button(this.tr("Buy Credits")).set({
+            allowGrowX: false
+          });
+          this.getChildControl("pay-debt-layout").add(control);
+          break;
+        case "trasfer-debt-button":
+          control = new qx.ui.form.Button(this.tr("Pay with this Credit Account")).set({
+            allowGrowX: false
+          });
           this.getChildControl("pay-debt-layout").add(control);
           break;
       }
@@ -157,20 +163,18 @@ qx.Class.define("osparc.study.BillingSettings", {
       const myWallets = osparc.desktop.credits.Utils.getMyWallets();
       if (myWallets.find(wllt => wllt === wallet)) {
         // It's my wallet
-        // I just need to bring to positive numbers to unblock the embargoed studies
-        const buyCredtisButton = this.getChildControl("buy-credits-button");
-        buyCredtisButton.addListener("execute", () => console.log("open credits window"));
-        this.getChildControl("debt-explanation").set({
-          value: this.tr("You don't have access to the last used Credit Account")
+        this._createChildControlImpl("debt-explanation").set({
+          value: this.tr("To unblock it, you need to bring the Credit Account to positive numbers")
         });
+        const buyCredtisButton = this._createChildControlImpl("buy-credits-button");
+        buyCredtisButton.addListener("execute", () => console.log("open credits window"));
       } else {
         // It's a shared wallet
-        // I need to make a credits transfer (debt) from it to the wallet that went negative
-        const transferDebtButton = this.getChildControl("trasfer-debt-button");
-        transferDebtButton.addListener("execute", () => console.log("open confirmation window"));
-        this.getChildControl("debt-explanation").set({
-          value: this.tr("You don't have access to the last used Credit Account")
+        this._createChildControlImpl("debt-explanation").set({
+          value: this.tr("To unblock it, a credits transfer will be made to the negative Credit Account")
         });
+        const transferDebtButton = this._createChildControlImpl("trasfer-debt-button");
+        transferDebtButton.addListener("execute", () => console.log("open confirmation window"));
       }
     },
 
