@@ -183,11 +183,30 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         .catch(err => {
           console.error(err);
           let msg = "";
-          if ("status" in err && err["status"] == 409) { // max_open_studies_per_user
-            msg = err["message"];
-          } else if ("status" in err && err["status"] == 423) { // Locked
-            msg = study.getName() + this.tr(" is already opened");
-          } else {
+          if ("status" in err && err["status"]) {
+            if (err["status"] == 402) {
+              msg = err["message"];
+              // The backend might have thrown a 402 because the wallet was negative
+              const match = msg.match(/Project debt\s([-]?\d+(\.\d+)?)\scredits/);
+              let debt = null;
+              if ("debtAmount" in err) {
+                // the study has some debt that needs to be paid
+                debt = err["debtAmount"];
+              } else if (match) {
+                // the study has some debt that needs to be paid
+                debt = parseFloat(match[1]); // Convert the captured string to a number
+              }
+              if (debt) {
+                // if get here, it means that the 402 was thrown due to the debt
+                osparc.store.Store.getInstance().setStudyDebt(study.getUuid(), debt);
+              }
+            } else if (err["status"] == 409) { // max_open_studies_per_user
+              msg = err["message"];
+            } else if (err["status"] == 423) { // Locked
+              msg = study.getName() + this.tr(" is already opened");
+            }
+          }
+          if (!msg) {
             msg = this.tr("Error opening study");
             if ("message" in err) {
               msg += "<br>" + err["message"];
