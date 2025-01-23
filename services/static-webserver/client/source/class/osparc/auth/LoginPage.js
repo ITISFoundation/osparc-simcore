@@ -16,8 +16,15 @@
 ************************************************************************ */
 
 /**
- *  Main Authentication Page:
- *    A multi-page view that fills all page
+ *  Main Authentication Page. A multi-page view that contains:
+ *  - top-spacer
+ *  - product logo
+ *  - login stack
+ *    - announcements (if any)
+ *    - the login forms
+ *    - disclaimer and extra widgets (if any)
+ *  - bottom-spacer
+ *  - footer
  */
 
 qx.Class.define("osparc.auth.LoginPage", {
