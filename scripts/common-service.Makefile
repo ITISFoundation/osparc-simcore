@@ -44,6 +44,7 @@ install-dev install-prod install-ci: _check_venv_active ## install app in develo
 .PHONY: test-dev-unit test-ci-unit test-dev-integration test-ci-integration test-dev
 
 TEST_PATH := $(if $(test-path),/$(patsubst tests/integration/%,%, $(patsubst tests/unit/%,%, $(patsubst %/,%,$(test-path)))),)
+
 test-dev-unit test-ci-unit: _check_venv_active ## run app unit tests (specifying test-path can restrict to a folder)
 	# Targets tests/unit folder
 	@make --no-print-directory _run-$(subst -unit,,$@) target=$(CURDIR)/tests/unit$(TEST_PATH)
@@ -167,12 +168,12 @@ _run-test-ci: _check_venv_active
 		--cov-config=.coveragerc \
 		--cov-report=term-missing \
 		--cov-report=xml \
-		--junitxml=junit.xml -o junit_family=legacy \
 		--cov=$(APP_PACKAGE_NAME) \
 		--durations=10 \
+		--junitxml=junit.xml -o junit_family=legacy \
 		--keep-docker-up \
 		--log-date-format="%Y-%m-%d %H:%M:%S" \
-    --log-format="%(asctime)s %(levelname)s %(message)s" \
+		--log-format="%(asctime)s %(levelname)s %(message)s" \
 		--verbose \
 		-m "not heavy_load" \
 		$(PYTEST_ADDITIONAL_PARAMETERS) \
