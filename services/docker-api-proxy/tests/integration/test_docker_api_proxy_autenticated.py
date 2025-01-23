@@ -23,8 +23,8 @@ def localhost_ip() -> str:
 
 
 @pytest.fixture
-def local_compose_path() -> Path:
-    compose_spec_path = _HERE / "secured-proxy-docker-compose.yaml"
+def authentication_proxy_compose_path() -> Path:
+    compose_spec_path = _HERE / "autentication-proxy-docker-compose.yaml"
     assert compose_spec_path.exists()
     return compose_spec_path
 
@@ -38,7 +38,7 @@ def docker_image_name() -> str:
 def deploy_local_spec(
     docker_swarm: None,
     localhost_ip: str,
-    local_compose_path: Path,
+    authentication_proxy_compose_path: Path,
     docker_image_name: str,
 ) -> Iterator[None]:
     stack_name = "with-auth"
@@ -48,7 +48,7 @@ def deploy_local_spec(
             "stack",
             "deploy",
             "-c",
-            f"{local_compose_path}",
+            authentication_proxy_compose_path,
             stack_name,
         ],
         check=True,
