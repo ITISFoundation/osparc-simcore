@@ -2165,8 +2165,9 @@ async def test_warm_buffers_only_replace_hot_buffer_if_service_is_started_issue7
         DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY: f"{hot_buffer_instance_type}"
     }
     fake_attached_node_base.spec.labels |= expected_docker_node_tags | {
-        _OSPARC_SERVICE_READY_LABEL_KEY: "true"
+        _OSPARC_SERVICE_READY_LABEL_KEY: "false"
     }
+    fake_attached_node_base.status.state = NodeState.ready
     fake_hot_buffer_nodes = []
     for i in range(num_hot_buffer):
         node = fake_attached_node_base.model_copy(deep=True)
@@ -2182,6 +2183,7 @@ async def test_warm_buffers_only_replace_hot_buffer_if_service_is_started_issue7
         autospec=True,
         return_value=fake_hot_buffer_nodes,
     )
+
     await auto_scale_cluster(app=initialized_app, auto_scaling_mode=auto_scaling_mode)
     await assert_autoscaled_dynamic_ec2_instances(
         ec2_client,
@@ -2260,11 +2262,13 @@ async def test_warm_buffers_only_replace_hot_buffer_if_service_is_started_issue7
         expected_num_instances=1,
     )
     await create_services_batch(scale_up_params)
-    # this should trigger usage of the hot buffer and the warm buffers should remain stopped
+
+    # this should trigger usage of the hot buffer and the warm buffers should replace the hot buffer
     await auto_scale_cluster(app=initialized_app, auto_scaling_mode=auto_scaling_mode)
     await assert_autoscaled_dynamic_ec2_instances(
         ec2_client,
-        expected_num_reservations=1,
+        expected_num_reservations=2,
+        check_reservation_index=0,
         expected_num_instances=num_hot_buffer,
         expected_instance_type=hot_buffer_instance_type,
         expected_instance_state="running",
@@ -2273,24 +2277,13 @@ async def test_warm_buffers_only_replace_hot_buffer_if_service_is_started_issue7
     )
     await assert_autoscaled_dynamic_warm_pools_ec2_instances(
         ec2_client,
-        expected_num_reservations=1,
-        expected_num_instances=buffer_count,
-        expected_instance_type=hot_buffer_instance_type,
-        expected_instance_state="stopped",
-        expected_additional_tag_keys=list(ec2_instance_custom_tags),
-        expected_pre_pulled_images=None,
-        instance_filters=stopped_instance_type_filters,
-    )
-
-    # this should trigger replacement TAG_PREFIX: staging-hotfix-github of the hot buffer by 1 warm buffer
-    await auto_scale_cluster(app=initialized_app, auto_scaling_mode=auto_scaling_mode)
-    await assert_autoscaled_dynamic_ec2_instances(
-        ec2_client,
-        expected_num_reservations=1,
-        expected_num_instances=num_hot_buffer + 1,
+        expected_num_reservations=2,
+        check_reservation_index=1,
+        expected_num_instances=1,
         expected_instance_type=hot_buffer_instance_type,
         expected_instance_state="running",
         expected_additional_tag_keys=list(ec2_instance_custom_tags),
+        expected_pre_pulled_images=None,
         instance_filters=instance_type_filters,
     )
     await assert_autoscaled_dynamic_warm_pools_ec2_instances(
@@ -2303,3 +2296,32 @@ async def test_warm_buffers_only_replace_hot_buffer_if_service_is_started_issue7
         expected_pre_pulled_images=None,
         instance_filters=stopped_instance_type_filters,
     )
+    # simulate one of the hot buffer is not drained anymore and took the pending service
+    random_fake_node = random.choice(fake_hot_buffer_nodes)
+    random_fake_node.spec.labels[_OSPARC_SERVICE_READY_LABEL_KEY] = "true"
+    random_fake_node.spec.labels[
+        _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY
+    ] = arrow.utcnow().isoformat()
+    random_fake_node.spec.availability = Availability.active
+    # simulate the fact that the warm buffer that just started is not yet visible
+    mock_find_node_with_name_returns_fake_node.return_value = None
+
+    # get the new analysis
+    await auto_scale_cluster(app=initialized_app, auto_scaling_mode=auto_scaling_mode)
+    spied_cluster = assert_cluster_state(
+        spied_cluster_analysis, expected_calls=2, expected_num_machines=6
+    )
+    assert len(spied_cluster.buffer_drained_nodes) == num_hot_buffer - 1
+    assert len(spied_cluster.buffer_ec2s) == buffer_count - 1
+    assert len(spied_cluster.active_nodes) == 1
+    assert len(spied_cluster.pending_ec2s) == 1
+
+    # running it again shall do nothing
+    await auto_scale_cluster(app=initialized_app, auto_scaling_mode=auto_scaling_mode)
+    spied_cluster = assert_cluster_state(
+        spied_cluster_analysis, expected_calls=1, expected_num_machines=6
+    )
+    assert len(spied_cluster.buffer_drained_nodes) == num_hot_buffer - 1
+    assert len(spied_cluster.buffer_ec2s) == buffer_count - 1
+    assert len(spied_cluster.active_nodes) == 1
+    assert len(spied_cluster.pending_ec2s) == 1

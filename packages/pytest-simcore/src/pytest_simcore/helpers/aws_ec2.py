@@ -48,6 +48,7 @@ async def assert_autoscaled_dynamic_ec2_instances(
     expected_additional_tag_keys: list[str],
     instance_filters: Sequence[FilterTypeDef] | None,
     expected_user_data: list[str] | None = None,
+    check_reservation_index: int | None = None,
 ) -> list[InstanceTypeDef]:
     if expected_user_data is None:
         expected_user_data = ["docker swarm join"]
@@ -64,6 +65,7 @@ async def assert_autoscaled_dynamic_ec2_instances(
         ],
         expected_user_data=expected_user_data,
         instance_filters=instance_filters,
+        check_reservation_index=check_reservation_index,
     )
 
 
