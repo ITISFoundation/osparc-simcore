@@ -20,8 +20,8 @@ from simcore_postgres_database.webserver_models import ProjectType as ProjectTyp
 from ..catalog.client import get_services_for_user_in_product
 from ..folders import _folders_repository as folders_db
 from ..workspaces._workspaces_service import check_user_workspace_access
-from . import projects_api
 from ._permalink_api import update_or_pop_permalink_in_project
+from . import projects_service
 from .db import ProjectDBAPI
 from .models import ProjectDict, ProjectTypeAPI
 
@@ -34,7 +34,7 @@ async def _append_item(
     is_template: bool,
 ):
     # state
-    await projects_api.add_project_states_for_user(
+    await projects_service.add_project_states_for_user(
         user_id=user_id,
         project=project,
         is_template=is_template,
@@ -60,12 +60,14 @@ async def list_projects(  # pylint: disable=too-many-arguments
     project_type: ProjectTypeAPI,
     show_hidden: bool,
     trashed: bool | None,
+    # search
+    search_by_multi_columns: str | None = None,
+    search_by_project_name: str | None = None,
     # pagination
     offset: NonNegativeInt,
     limit: int,
+    # ordering
     order_by: OrderBy,
-    # search
-    search: str | None,
 ) -> tuple[list[ProjectDict], int]:
     app = request.app
     db = ProjectDBAPI.get_from_app_context(app)
@@ -116,7 +118,8 @@ async def list_projects(  # pylint: disable=too-many-arguments
         filter_trashed=trashed,
         filter_hidden=show_hidden,
         # composed attrs
-        filter_by_text=search,
+        search_by_multi_columns=search_by_multi_columns,
+        search_by_project_name=search_by_project_name,
         # pagination
         offset=offset,
         limit=limit,
@@ -154,7 +157,8 @@ async def list_projects_full_depth(
     limit: int,
     order_by: OrderBy,
     # search
-    text: str | None,
+    search_by_multi_columns: str | None,
+    search_by_project_name: str | None,
 ) -> tuple[list[ProjectDict], int]:
     db = ProjectDBAPI.get_from_app_context(request.app)
 
@@ -169,9 +173,10 @@ async def list_projects_full_depth(
         folder_query=FolderQuery(folder_scope=FolderScope.ALL),
         filter_trashed=trashed,
         filter_by_services=user_available_services,
-        filter_by_text=text,
         filter_tag_ids_list=tag_ids_list,
         filter_by_project_type=ProjectType.STANDARD,
+        search_by_multi_columns=search_by_multi_columns,
+        search_by_project_name=search_by_project_name,
         offset=offset,
         limit=limit,
         order_by=order_by,

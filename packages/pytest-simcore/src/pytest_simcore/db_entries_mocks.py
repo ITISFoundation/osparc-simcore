@@ -96,7 +96,7 @@ async def project(
             inserted_project = ProjectAtDB.model_validate(await result.first())
             project_nodes_repo = ProjectNodesRepo(project_uuid=project_uuid)
             # NOTE: currently no resources is passed until it becomes necessary
-            default_node_config = {"required_resources": {}}
+            default_node_config = {"required_resources": {}, "key": faker.pystr(), "version": faker.pystr(), "label": faker.pystr()}
             if project_nodes_overrides:
                 default_node_config.update(project_nodes_overrides)
             await project_nodes_repo.add(

@@ -59,7 +59,6 @@ from .....modules.resource_usage_tracker_client import ResourceUsageTrackerClien
 from .....utils.computations import to_node_class
 from ....catalog import CatalogClient
 from ....comp_scheduler._utils import COMPLETED_STATES
-from ....director_v0 import DirectorV0Client
 from ...tables import NodeClass
 
 _logger = logging.getLogger(__name__)
@@ -131,7 +130,6 @@ def _compute_node_envs(node_labels: SimcoreServiceLabels) -> ContainerEnvsDict:
 
 async def _get_node_infos(
     catalog_client: CatalogClient,
-    director_client: DirectorV0Client,
     user_id: UserID,
     product_name: str,
     node: ServiceKeyVersion,
@@ -149,7 +147,7 @@ async def _get_node_infos(
         ServiceMetaDataPublished, ServiceExtras, SimcoreServiceLabels
     ] = await asyncio.gather(
         _get_service_details(catalog_client, user_id, product_name, node),
-        director_client.get_service_extras(node.key, node.version),
+        catalog_client.get_service_extras(node.key, node.version),
         catalog_client.get_service_labels(node.key, node.version),
     )
     return result
@@ -334,7 +332,6 @@ async def generate_tasks_list_from_project(
     *,
     project: ProjectAtDB,
     catalog_client: CatalogClient,
-    director_client: DirectorV0Client,
     published_nodes: list[NodeID],
     user_id: UserID,
     product_name: str,
@@ -355,7 +352,6 @@ async def generate_tasks_list_from_project(
     key_version_to_node_infos = {
         key_version: await _get_node_infos(
             catalog_client,
-            director_client,
             user_id,
             product_name,
             key_version,
