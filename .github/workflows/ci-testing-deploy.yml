@@ -77,6 +77,7 @@ jobs:
       migration: ${{ steps.filter.outputs.migration }}
       payments: ${{ steps.filter.outputs.payments }}
       dynamic-scheduler: ${{ steps.filter.outputs.dynamic-scheduler }}
+      dpcker-api-proxy: ${{ steps.filter.outputs.docker-api-proxy }}
       resource-usage-tracker: ${{ steps.filter.outputs.resource-usage-tracker }}
       static-webserver: ${{ steps.filter.outputs.static-webserver }}
       storage: ${{ steps.filter.outputs.storage }}
@@ -233,6 +234,10 @@ jobs:
                 - 'services/docker-compose*'
                 - 'scripts/mypy/*'
                 - 'mypy.ini'
+            dpcker-api-proxy:
+                - 'services/dpcker-api-proxy/**'
+                - 'packages/settings-library/**'
+                - 'packages/service-library/**'
             resource-usage-tracker:
               - 'packages/**'
               - 'services/resource-usage-tracker/**'
@@ -2185,6 +2190,71 @@ jobs:
       - name: cleanup
         if: ${{ !cancelled() }}
         run: ./ci/github/integration-testing/dynamic-sidecar.bash clean_up
+      - uses: codecov/codecov-action@v5
+        if: ${{ !cancelled() }}
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        with:
+          flags: integrationtests #optional
+
+
+  integration-test-docker-api-proxy:
+    needs: [changes, build-test-images]
+    if: ${{ needs.changes.outputs.anything-py == 'true' || needs.changes.outputs.docker-api-proxy == 'true' || github.event_name == 'push'}}
+    timeout-minutes: 30 # if this timeout gets too small, then split the tests
+    name: "[int] docker-api-proxy"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: ["3.11"]
+        os: [ubuntu-22.04]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v4
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver: docker-container
+      - name: setup python environment
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: expose github runtime for buildx
+        uses: crazy-max/ghaction-github-runtime@v3
+      # FIXME: Workaround for https://github.com/actions/download-artifact/issues/249
+      - name: download docker images with retry
+        uses: Wandalen/wretry.action@master
+        with:
+          action: actions/download-artifact@v4
+          with: |
+            name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}-backend
+            path: /${{ runner.temp }}/build
+          attempt_limit: 5
+          attempt_delay: 1000
+      - name: load docker images
+        run: make load-images local-src=/${{ runner.temp }}/build
+      - name: install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "0.5.x"
+          enable-cache: false
+          cache-dependency-glob: "**/docker-api-proxy/requirements/ci.txt"
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
+      - name: install
+        run: ./ci/github/integration-testing/docker-api-proxy.bash install
+      - name: test
+        run: ./ci/github/integration-testing/docker-api-proxy.bash test
+      - name: upload failed tests logs
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ github.job }}_docker_logs
+          path: ./services/docker-api-proxy/test_failures
+      - name: cleanup
+        if: ${{ !cancelled() }}
+        run: ./ci/github/integration-testing/docker-api-proxy.bash clean_up
       - uses: codecov/codecov-action@v5
         if: ${{ !cancelled() }}
         env:

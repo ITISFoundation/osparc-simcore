@@ -1,0 +1,18 @@
+# Shortcut to install all packages for the contigous integration (CI) of 'services/api-server'
+#
+# - As ci.txt but w/ tests
+#
+# Usage:
+#   pip install -r requirements/ci.txt
+#
+
+# installs base + tests requirements
+--requirement _base.txt
+--requirement _test.txt
+
+# installs this repo's packages
+simcore-common-library @ ../../packages/common-library/
+simcore-models-library @ ../../packages/models-library/
+pytest-simcore @ ../../packages/pytest-simcore/
+simcore-service-library @ ../../packages/service-library
+simcore-settings-library @ ../../packages/settings-library/

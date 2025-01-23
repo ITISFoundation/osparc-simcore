@@ -1,0 +1,12 @@
+aiodocker
+docker
+faker
+flaky
+pytest
+pytest-asyncio
+pytest-cov
+pytest-mock
+python-dotenv
+PyYAML
+tenacity
+arrow

@@ -49,6 +49,29 @@ log = logging.getLogger(__name__)
     stop=stop_after_attempt(10),
     after=after_log(log, logging.WARNING),
 )
+def get_service_image(service_name: str) -> str:
+    # WARNING: ENSURE that service name exposes a port in
+    # Dockerfile file or docker-compose config file
+
+    # NOTE: retries since services can take some time to start
+    client = docker.from_env()
+
+    services = [s for s in client.services.list() if str(s.name).endswith(service_name)]
+    if not services:
+        msg = (
+            f"Cannot find published port for service '{service_name}'."
+            "Probably services still not started."
+        )
+        raise RuntimeError(msg)
+
+    return services[0].attrs["Spec"]["TaskTemplate"]["ContainerSpec"]["Image"]
+
+
+@retry(
+    wait=wait_fixed(2),
+    stop=stop_after_attempt(10),
+    after=after_log(log, logging.WARNING),
+)
 def get_service_published_port(
     service_name: str, target_ports: list[int] | int | None = None
 ) -> str:

@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  traefik:
+    image: traefik:v3.1.2
+    command:
+      - --providers.swarm.endpoint=unix:///var/run/docker.sock
+      - --providers.swarm.exposedByDefault=false
+      - --entryPoints.web.address=:9999
+      - --log.level=DEBUG
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    ports:
+      - "9999:9999"
+    networks:
+      - traefik-net
+    deploy:
+      placement:
+        constraints:
+          - node.role == manager
+
+
+  docker-api-proxy:
+    image: ${IMAGE_NAME}
+    init: true
+    deploy:
+      placement:
+        constraints:
+          - node.role == manager
+      mode: global
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.whoami.rule=Host(`${LOCALHOST_IP}.nip.io`)"
+        - "traefik.http.routers.whoami.entrypoints=web"
+        - "traefik.http.services.whoami.loadbalancer.server.port=8888"
+        - "traefik.http.middlewares.auth.basicauth.users=${USER_CREDENTIALS}"
+        - "traefik.http.routers.whoami.middlewares=auth"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - traefik-net
+
+networks:
+  traefik-net:
+    driver: overlay

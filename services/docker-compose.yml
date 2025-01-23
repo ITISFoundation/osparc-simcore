@@ -571,6 +571,20 @@ services:
       DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT: ${DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT}
       TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT: ${TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT}
       TRACING_OPENTELEMETRY_COLLECTOR_PORT: ${TRACING_OPENTELEMETRY_COLLECTOR_PORT}
+
+  docker-api-proxy:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/docker-api-proxy:${DOCKER_IMAGE_TAG:-latest}
+    init: true
+    deploy:
+      placement:
+        constraints:
+          - node.role == manager
+      mode: global
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+     - docker-api-network
+
   static-webserver:
     image: ${DOCKER_REGISTRY:-itisfoundation}/static-webserver:${DOCKER_IMAGE_TAG:-latest}
     init: true
@@ -1342,6 +1356,14 @@ networks:
     internal: false
     labels:
       com.simcore.description: "computational services network"
+  docker-api-network:
+    driver: overlay
+    attachable: true
+    internal: false
+    driver_opts:
+      encrypted: "true"
+    labels:
+      com.simcore.description: "used for internal access to the docker swarm api"
 
 secrets:
   dask_tls_key:

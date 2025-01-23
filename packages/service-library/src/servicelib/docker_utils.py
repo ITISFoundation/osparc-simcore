@@ -7,11 +7,14 @@ from functools import cached_property
 from typing import Any, Final, Literal
 
 import aiodocker
+import aiohttp
 import arrow
+from aiohttp import ClientSession
 from models_library.docker import DockerGenericTag
 from models_library.generated_models.docker_rest_api import ProgressDetail
 from models_library.utils.change_case import snake_to_camel
 from pydantic import BaseModel, ByteSize, ConfigDict, TypeAdapter, ValidationError
+from settings_library.docker_api_proxy import DockerApiProxysettings
 from settings_library.docker_registry import RegistrySettings
 from yarl import URL
 
@@ -281,3 +284,23 @@ async def pull_image(
                 f"pulling {image_short_name}: {pull_progress}...",
                 logging.DEBUG,
             )
+
+
+async def get_remote_docker_client(
+    settings: DockerApiProxysettings,
+) -> aiodocker.Docker:
+    """Allows to attach to a remote docker client istnace and use it in place
+    of the docker socket.
+
+    NOTE: Usually this is required to use a manager node's docker client for swarm commands.
+    """
+    session: ClientSession | None = None
+    if settings.DOCKER_API_PROXY_USER and settings.DOCKER_API_PROXY_PASSWORD:
+        session = ClientSession(
+            auth=aiohttp.BasicAuth(
+                login=settings.DOCKER_API_PROXY_USER,
+                password=settings.DOCKER_API_PROXY_PASSWORD.get_secret_value(),
+            )
+        )
+
+    return aiodocker.Docker(url=settings.base_url, session=session)
