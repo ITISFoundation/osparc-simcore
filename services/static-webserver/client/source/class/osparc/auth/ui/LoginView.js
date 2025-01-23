@@ -27,6 +27,12 @@
 qx.Class.define("osparc.auth.ui.LoginView", {
   extend: osparc.auth.core.BaseAuthPage,
 
+  construct: function() {
+    this.__hideableItems = [];
+
+    this.base(arguments);
+  },
+
   events: {
     "toRegister": "qx.event.type.Event",
     "toRequestAccount": "qx.event.type.Event",
@@ -38,9 +44,16 @@ qx.Class.define("osparc.auth.ui.LoginView", {
   members: {
     __loginBtn: null,
     __loginAnnouncements: null,
+    __hideableItems: null,
 
     // overrides base
     _buildPage: function() {
+      this.__addAnnouncements();
+      this.__addLoginForms();
+      this.__addExtraWidgets();
+    },
+
+    __addAnnouncements: function() {
       const announcementUIFactory = osparc.announcement.AnnouncementUIFactory.getInstance();
       const addAnnouncements = () => {
         if (this.__loginAnnouncements) {
@@ -54,8 +67,9 @@ qx.Class.define("osparc.auth.ui.LoginView", {
       } else {
         announcementUIFactory.addListenerOnce("changeAnnouncements", () => addAnnouncements());
       }
+    },
 
-      // form
+    __addLoginForms: function() {
       const email = new qx.ui.form.TextField().set({
         required: true
       });
@@ -98,7 +112,7 @@ qx.Class.define("osparc.auth.ui.LoginView", {
       }
       createAccountBtn.addListener("execute", () => {
         if (window.location.hostname === "tip.itis.swiss") {
-          this.__openTIPITISSWISSPhaseOutDialog();
+          this.__openTipItisPhaseOutDialog();
         } else if (createAccountAction === "REGISTER") {
           this.fireEvent("toRegister");
         } else if (createAccountAction === "REQUEST_ACCOUNT_FORM") {
@@ -123,7 +137,9 @@ qx.Class.define("osparc.auth.ui.LoginView", {
       });
 
       this.add(grp);
+    },
 
+    __addExtraWidgets: function() {
       if (osparc.product.Utils.isProduct("tis") || osparc.product.Utils.isProduct("tiplite")) {
         let text = "";
         if (osparc.product.Utils.isProduct("tiplite")) {
@@ -165,10 +181,15 @@ qx.Class.define("osparc.auth.ui.LoginView", {
         });
         poweredByLayout.add(s4lLogo);
         this.add(poweredByLayout);
+        this.__hideableItems.push(poweredByLayout);
       }
     },
 
-    __openTIPITISSWISSPhaseOutDialog: function() {
+    getHideableItems: function() {
+      return this.__hideableItems;
+    },
+
+    __openTipItisPhaseOutDialog: function() {
       const createAccountWindow = new osparc.ui.window.Dialog("Request Account").set({
         maxWidth: 380
       });

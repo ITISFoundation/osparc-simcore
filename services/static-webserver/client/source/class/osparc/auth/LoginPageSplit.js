@@ -30,8 +30,8 @@ qx.Class.define("osparc.auth.LoginPageSplit", {
   },
 
   statics: {
-    WIDTH_BREAKPOINT: 2*(osparc.auth.core.BaseAuthPage.FORM_WIDTH + 50),
-    HEIGHT_BREAKPOINT: osparc.WindowSizeTracker.HEIGHT_BREAKPOINT,
+    COMPACT_WIDTH_BREAKPOINT: 2*(osparc.auth.core.BaseAuthPage.FORM_WIDTH + 50),
+    COMPACT_HEIGHT_BREAKPOINT: osparc.WindowSizeTracker.HEIGHT_BREAKPOINT * 1.1,
   },
 
   members: {
@@ -45,7 +45,11 @@ qx.Class.define("osparc.auth.LoginPageSplit", {
 
     __resized: function() {
       const width = document.documentElement.clientWidth;
-      this.setCompactVersion(width < this.self().WIDTH_BREAKPOINT);
+      const height = document.documentElement.clientHeight;
+      this.setCompactVersion(
+        (width < this.self().COMPACT_WIDTH_BREAKPOINT) ||
+        (height < this.self().COMPACT_HEIGHT_BREAKPOINT)
+      );
     },
 
     _reloadLayout: function() {
@@ -54,6 +58,7 @@ qx.Class.define("osparc.auth.LoginPageSplit", {
       this._removeAll();
 
       const loginLayout = this._getMainLayout();
+      const hideableItems = this.getChildControl("login-view").getHideableItems();
       if (this.isCompactVersion()) {
         // no split-image
         // just the login widget
@@ -61,6 +66,7 @@ qx.Class.define("osparc.auth.LoginPageSplit", {
         this._add(loginLayout, {
           flex: 1
         });
+        hideableItems.forEach(hideableItem => hideableItem.exclude());
       } else {
         // split-image on the left
         // the login widget on the right
@@ -71,6 +77,7 @@ qx.Class.define("osparc.auth.LoginPageSplit", {
         this._add(loginLayout, {
           width: "50%"
         });
+        hideableItems.forEach(hideableItem => hideableItem.show());
       }
     },
 
