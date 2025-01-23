@@ -30,6 +30,7 @@ def authentication_proxy_compose_path() -> Path:
 
 @pytest.fixture
 def caddy_file() -> str:
+    # NOTE: the basicauth encrypeted credentials are `asd:asd``
     return """
 :9999 {
     handle {
@@ -60,10 +61,7 @@ def deploy_local_spec(
             stack_name,
         ],
         check=True,
-        env={
-            "CADDY_FILE": caddy_file,
-            "USER_CREDENTIALS": "asd:$2y$05$c/GIJWuHO36H./0V1Pxj9.rDNHYZcFOFctBWsuKeGgoHKR6hGrLWi",  # asd:asd
-        },
+        env={"CADDY_FILE": caddy_file},
     )
 
     yield
