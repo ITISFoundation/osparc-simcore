@@ -235,9 +235,8 @@ jobs:
                 - 'scripts/mypy/*'
                 - 'mypy.ini'
             docker-api-proxy:
+                - 'packages/**'
                 - 'services/docker-api-proxy/**'
-                - 'packages/settings-library/**'
-                - 'packages/service-library/**'
             resource-usage-tracker:
               - 'packages/**'
               - 'services/resource-usage-tracker/**'
