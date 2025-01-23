@@ -2,7 +2,6 @@
 # pylint: disable=unused-argument
 
 import json
-import os
 import subprocess
 import sys
 from collections.abc import Iterator
@@ -33,9 +32,7 @@ def local_compose_path() -> Path:
 
 @pytest.fixture()
 def docker_image_name() -> str:
-    docker_registry = os.environ.get("DOCKER_REGISTRY", "local")
-    docker_image_tag = os.environ.get("DOCKER_IMAGE_TAG", "production")
-    return f"{docker_registry}/docker-api-proxy:{docker_image_tag}"
+    return "local/docker-api-proxy:production"
 
 
 @pytest.fixture
@@ -73,7 +70,7 @@ async def test_with_autnentication(deploy_local_spec: None, localhost_ip: str):
     # 1. with correct credentials -> works
     docker_api_proxy_settings = TypeAdapter(DockerApiProxysettings).validate_python(
         {
-            "DOCKER_API_PROXY_HOST": f"{localhost_ip}.nip.io",
+            "DOCKER_API_PROXY_HOST": f"{localhost_ip}",
             "DOCKER_API_PROXY_PORT": 9999,
             "DOCKER_API_PROXY_USER": "asd",
             "DOCKER_API_PROXY_PASSWORD": "asd",
@@ -93,7 +90,7 @@ async def test_with_autnentication(deploy_local_spec: None, localhost_ip: str):
     # 2. with wrong credentials -> does not work
     docker_api_proxy_settings = TypeAdapter(DockerApiProxysettings).validate_python(
         {
-            "DOCKER_API_PROXY_HOST": f"{localhost_ip}.nip.io",
+            "DOCKER_API_PROXY_HOST": f"{localhost_ip}",
             "DOCKER_API_PROXY_PORT": 9999,
             "DOCKER_API_PROXY_USER": "wrong",
             "DOCKER_API_PROXY_PASSWORD": "wrong",

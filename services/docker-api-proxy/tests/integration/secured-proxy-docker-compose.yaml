@@ -30,7 +30,7 @@ services:
       mode: global
       labels:
         - "traefik.enable=true"
-        - "traefik.http.routers.whoami.rule=Host(`${LOCALHOST_IP}.nip.io`)"
+        - "traefik.http.routers.whoami.rule=Host(`${LOCALHOST_IP}`)"
         - "traefik.http.routers.whoami.entrypoints=web"
         - "traefik.http.services.whoami.loadbalancer.server.port=8888"
         - "traefik.http.middlewares.auth.basicauth.users=${USER_CREDENTIALS}"
