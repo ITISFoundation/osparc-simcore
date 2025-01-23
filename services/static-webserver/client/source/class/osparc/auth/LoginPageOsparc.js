@@ -16,15 +16,17 @@
 ************************************************************************ */
 
 qx.Class.define("osparc.auth.LoginPageOsparc", {
-  extend: osparc.auth.LoginPage,
+  extend: qx.ui.core.Widget,
 
-  members: {
-    // overridden
-    _buildLayout: function() {
-      const loginLayout = this._getMainLayout();
-      this._add(loginLayout, {
-        flex: 1
-      });
-    },
-  }
+  construct: function() {
+    this.base(arguments);
+
+    const layout = new qx.ui.layout.HBox();
+    this._setLayout(layout);
+
+    const loginPage = new osparc.auth.LoginPage();
+    this._add(loginPage, {
+      flex: 1
+    });
+  },
 });

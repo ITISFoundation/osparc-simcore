@@ -23,14 +23,13 @@
 qx.Class.define("osparc.auth.LoginPageS4L", {
   extend: osparc.auth.LoginPageSplit,
 
+  construct: function() {
+    this.base(arguments);
+
+    this.setBackgroundColor("rgba(0, 20, 46, 1)");
+  },
+
   members: {
-    // overridden
-    _reloadLayout: function() {
-      this.base(arguments);
-
-      this.setBackgroundColor("rgba(0, 20, 46, 1)");
-    },
-
     // overridden
     _getBackgroundImage: function() {
       let backgroundImage = "";
