@@ -20,7 +20,7 @@
  *  Main Authentication Page. A multi-page view that contains:
  *  - top-spacer
  *  - product logo
- *  - login stack
+ *  - login stack (multi-page)
  *    - announcements (if any)
  *    - the login forms
  *    - disclaimer and extra widgets (if any)
@@ -28,7 +28,7 @@
  *  - footer
  */
 
-qx.Class.define("osparc.auth.LoginPage", {
+qx.Class.define("osparc.auth.LoginWithDecorators", {
   extend: qx.ui.core.Widget,
 
   /*

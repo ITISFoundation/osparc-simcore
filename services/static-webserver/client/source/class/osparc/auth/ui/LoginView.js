@@ -170,8 +170,8 @@ qx.Class.define("osparc.auth.ui.LoginView", {
         poweredByLayout.add(label);
         const s4lLogo = new qx.ui.basic.Image("osparc/Sim4Life_full_logo_white.svg");
         s4lLogo.set({
-          width: osparc.auth.LoginPage.LOGO_WIDTH/2,
-          height: osparc.auth.LoginPage.LOGO_HEIGHT/2,
+          width: osparc.auth.LoginWithDecorators.LOGO_WIDTH/2,
+          height: osparc.auth.LoginWithDecorators.LOGO_HEIGHT/2,
           scale: true,
           alignX: "center"
         });

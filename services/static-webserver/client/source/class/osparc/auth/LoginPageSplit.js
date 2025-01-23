@@ -67,7 +67,7 @@ qx.Class.define("osparc.auth.LoginPageSplit", {
     __rebuildLayout: function() {
       this._removeAll();
 
-      const loginPage = new osparc.auth.LoginPage();
+      const loginPage = new osparc.auth.LoginWithDecorators();
       loginPage.addListener("done", e => this.fireDataEvent("done", e.getData()));
       const hideableItems = loginPage.getChildControl("login-view").getHideableItems();
       if (this.isCompactVersion()) {
