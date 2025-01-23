@@ -234,6 +234,7 @@ async def request_create_project() -> (  # noqa: C901, PLR0915
             "workspaceId": None,
             "folderId": None,
             "trashedAt": None,
+            "trashedByPrimaryGid": None,
         }
         if from_study:
             from_study_wo_access_rights = deepcopy(from_study)
