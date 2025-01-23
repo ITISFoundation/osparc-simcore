@@ -66,7 +66,7 @@ def deploy_local_spec(
     )
 
 
-async def test_secure_docker_client(deploy_local_spec: None, localhost_ip: str):
+async def test_autenticated_docker_client(deploy_local_spec: None, localhost_ip: str):
     # 1. with correct credentials -> works
     docker_api_proxy_settings = TypeAdapter(DockerApiProxysettings).validate_python(
         {
