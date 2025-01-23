@@ -60,6 +60,7 @@ def deploy_local_spec(
     )
 
     yield
+
     subprocess.run(  # noqa: S603
         ["docker", "stack", "rm", stack_name], check=True  # noqa: S607
     )
