@@ -93,9 +93,15 @@ async def batch_get_trashed_by_primary_gid(
             projects.c.uuid.in_(projects_uuids_str)
         )
     ).order_by(
-        *[
-            projects.c.uuid == uuid for uuid in projects_uuids_str
-        ]  # Preserves the order of project_uuids
+        # Preserves the order of folders_ids
+        # SEE https://docs.sqlalchemy.org/en/20/core/sqlelement.html#sqlalchemy.sql.expression.case
+        sa.case(
+            {
+                project_uuid: index
+                for index, project_uuid in enumerate(projects_uuids_str)
+            },
+            value=projects.c.uuid,
+        )
     )
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         result = await conn.stream(query)

@@ -599,18 +599,22 @@ async def batch_get_trashed_by_primary_gid(
     *,
     folders_ids: list[FolderID],
 ) -> list[GroupID | None]:
+    if not folders_ids:
+        return []
 
     query = (
         _select_trashed_by_primary_gid_query().where(
             folders_v2.c.folder_id.in_(folders_ids)
         )
     ).order_by(
-        *[
-            folders_v2.c.folder_id == _id for _id in folders_ids
-        ]  # Preserves the order of folders_ids
+        # Preserves the order of folders_ids
+        # SEE https://docs.sqlalchemy.org/en/20/core/sqlelement.html#sqlalchemy.sql.expression.case
+        sa.case(
+            {folder_id: index for index, folder_id in enumerate(folders_ids)},
+            value=folders_v2.c.folder_id,
+        )
     )
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-        result = await conn.execute(query)
-        rows = result.fetchall()
-        return [row.trashed_by_primary_gid for row in rows]
+        result = await conn.stream(query)
+        return [row.trashed_by_primary_gid async for row in result]
