@@ -2,6 +2,7 @@
 # pylint: disable=unused-argument
 
 import json
+import os
 import subprocess
 import sys
 from collections.abc import Iterator
@@ -30,9 +31,19 @@ def local_compose_path() -> Path:
     return compose_spec_path
 
 
+@pytest.fixture()
+def docker_image_name() -> str:
+    docker_registry = os.environ.get("DOCKER_REGISTRY", "local")
+    docker_image_tag = os.environ.get("DOCKER_IMAGE_TAG", "production")
+    return f"{docker_registry}/docker-api-proxy:{docker_image_tag}"
+
+
 @pytest.fixture
 def deploy_local_spec(
-    docker_swarm: None, localhost_ip: str, local_compose_path: Path
+    docker_swarm: None,
+    localhost_ip: str,
+    local_compose_path: Path,
+    docker_image_name: str,
 ) -> Iterator[None]:
     stack_name = "with-auth"
     subprocess.run(  # noqa: S603
@@ -46,9 +57,9 @@ def deploy_local_spec(
         ],
         check=True,
         env={
-            "IMAGE_NAME": "local/docker-api-proxy:production",
+            "IMAGE_NAME": docker_image_name,
             "LOCALHOST_IP": f"{localhost_ip}",
-            "USER_CREDENTIALS": "asd:$2y$05$c/GIJWuHO36H./0V1Pxj9.rDNHYZcFOFctBWsuKeGgoHKR6hGrLWi",
+            "USER_CREDENTIALS": "asd:$2y$05$c/GIJWuHO36H./0V1Pxj9.rDNHYZcFOFctBWsuKeGgoHKR6hGrLWi",  # asd:asd
         },
     )
 
@@ -59,8 +70,7 @@ def deploy_local_spec(
 
 
 async def test_with_autnentication(deploy_local_spec: None, localhost_ip: str):
-
-    # epect ok
+    # 1. with correct credentials -> works
     docker_api_proxy_settings = TypeAdapter(DockerApiProxysettings).validate_python(
         {
             "DOCKER_API_PROXY_HOST": f"{localhost_ip}.nip.io",
@@ -80,7 +90,7 @@ async def test_with_autnentication(deploy_local_spec: None, localhost_ip: str):
                 info = await working_docker.system.info()
                 print(json.dumps(info, indent=2))
 
-    # worng credentils
+    # 2. with wrong credentials -> does not work
     docker_api_proxy_settings = TypeAdapter(DockerApiProxysettings).validate_python(
         {
             "DOCKER_API_PROXY_HOST": f"{localhost_ip}.nip.io",
