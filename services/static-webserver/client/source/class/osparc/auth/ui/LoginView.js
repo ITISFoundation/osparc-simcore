@@ -160,10 +160,6 @@ qx.Class.define("osparc.auth.ui.LoginView", {
         disclaimer.getChildren()[1].setFont("text-12"); // description
         this.add(disclaimer);
 
-        this.add(new qx.ui.core.Spacer(), {
-          flex: 1
-        });
-
         const poweredByLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox()).set({
           alignX: "center",
           allowGrowX: false,
