@@ -41,6 +41,10 @@ qx.Class.define("osparc.auth.LoginPageSplit", {
     }
   },
 
+  events: {
+    "done": "qx.event.type.Data",
+  },
+
   statics: {
     COMPACT_WIDTH_BREAKPOINT: 2*(osparc.auth.core.BaseAuthPage.FORM_WIDTH + 50),
     COMPACT_HEIGHT_BREAKPOINT: osparc.WindowSizeTracker.HEIGHT_BREAKPOINT * 1.1,
@@ -64,6 +68,7 @@ qx.Class.define("osparc.auth.LoginPageSplit", {
       this._removeAll();
 
       const loginPage = new osparc.auth.LoginPage();
+      loginPage.addListener("done", e => this.fireDataEvent("done", e.getData()));
       const hideableItems = loginPage.getChildControl("login-view").getHideableItems();
       if (this.isCompactVersion()) {
         // no split-image

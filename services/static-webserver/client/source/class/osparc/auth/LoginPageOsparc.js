@@ -25,8 +25,13 @@ qx.Class.define("osparc.auth.LoginPageOsparc", {
     this._setLayout(layout);
 
     const loginPage = new osparc.auth.LoginPage();
+    loginPage.addListener("done", e => this.fireDataEvent("done", e.getData()));
     this._add(loginPage, {
       flex: 1
     });
+  },
+
+  events: {
+    "done": "qx.event.type.Data",
   },
 });
