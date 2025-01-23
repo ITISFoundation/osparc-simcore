@@ -1,6 +1,26 @@
 FROM alpine:3.21 AS base
 
-RUN apk add --no-cache socat curl
+LABEL maintainer=GitHK
+
+# simcore-user uid=8004(scu) gid=8004(scu) groups=8004(scu)
+ENV SC_USER_ID=8004 \
+  SC_USER_NAME=scu \
+  SC_BUILD_TARGET=base \
+  SC_BOOT_MODE=default
+
+RUN addgroup -g ${SC_USER_ID} ${SC_USER_NAME} && \
+  adduser -u ${SC_USER_ID} -G ${SC_USER_NAME} \
+  --disabled-password \
+  --gecos "" \
+  --shell /bin/sh \
+  --home /home/${SC_USER_NAME} \
+  ${SC_USER_NAME}
+
+RUN apk add --no-cache socat curl && \
+  curl -L -o /usr/local/bin/gosu https://github.com/tianon/gosu/releases/download/1.16/gosu-amd64 && \
+  chmod +x /usr/local/bin/gosu && \
+  gosu --version
+
 
 # Health check to ensure the proxy is running
 HEALTHCHECK \
@@ -11,9 +31,14 @@ HEALTHCHECK \
   --retries=5 \
   CMD curl http://localhost:8888/version || exit 1
 
-ENTRYPOINT ["socat"]
+COPY --chown=scu:scu services/docker-api-proxy/docker services/docker-api-proxy/docker
+RUN chmod +x services/docker-api-proxy/docker/*.sh
 
-CMD ["TCP-LISTEN:8888,fork,reuseaddr", "UNIX-CONNECT:/var/run/docker.sock"]
+ENTRYPOINT [ "/bin/sh", "services/docker-api-proxy/docker/entrypoint.sh" ]
+CMD ["/bin/sh", "services/docker-api-proxy/docker/boot.sh"]
 
 FROM base AS development
+ENV SC_BUILD_TARGET=development
+
 FROM base AS production
+ENV SC_BUILD_TARGET=production
