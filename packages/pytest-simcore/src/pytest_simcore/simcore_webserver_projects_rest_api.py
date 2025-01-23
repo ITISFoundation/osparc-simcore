@@ -77,7 +77,7 @@ NEW_PROJECT = HttpApiCallCapture(
             "workspace_id": None,
             "folder_id": None,
             "trashedAt": None,
-            "trashed_by": None,
+            "trashedBy": None,
         },
         "error": None,
     },
@@ -159,7 +159,7 @@ OPEN_PROJECT = HttpApiCallCapture(
             "workspace_id": None,
             "folder_id": None,
             "trashedAt": None,
-            "trashed_by": None,
+            "trashedBy": None,
         }
     },
 )
@@ -290,7 +290,7 @@ REPLACE_PROJECT = HttpApiCallCapture(
             "workspace_id": None,
             "folder_id": None,
             "trashedAt": None,
-            "trashed_by": None,
+            "trashedBy": None,
         }
     },
 )
@@ -484,7 +484,7 @@ REPLACE_PROJECT_ON_MODIFIED = HttpApiCallCapture(
             "workspace_id": None,
             "folder_id": None,
             "trashedAt": None,
-            "trashed_by": None,
+            "trashedBy": None,
             "classifiers": [],
             "ui": {
                 "mode": "workbench",
