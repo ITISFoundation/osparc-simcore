@@ -4,7 +4,6 @@ from contextlib import asynccontextmanager
 from typing import TypeVar
 
 import sqlalchemy as sa
-from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
 _logger = logging.getLogger(__name__)
