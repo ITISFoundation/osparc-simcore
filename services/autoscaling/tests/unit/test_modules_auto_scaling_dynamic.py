@@ -2167,6 +2167,7 @@ async def test_warm_buffers_only_replace_hot_buffer_if_service_is_started_issue7
     fake_attached_node_base.spec.labels |= expected_docker_node_tags | {
         _OSPARC_SERVICE_READY_LABEL_KEY: "false"
     }
+    assert fake_attached_node_base.status
     fake_attached_node_base.status.state = NodeState.ready
     fake_hot_buffer_nodes = []
     for i in range(num_hot_buffer):
@@ -2297,7 +2298,7 @@ async def test_warm_buffers_only_replace_hot_buffer_if_service_is_started_issue7
         instance_filters=stopped_instance_type_filters,
     )
     # simulate one of the hot buffer is not drained anymore and took the pending service
-    random_fake_node = random.choice(fake_hot_buffer_nodes)
+    random_fake_node = random.choice(fake_hot_buffer_nodes)  # noqa: S311
     random_fake_node.spec.labels[_OSPARC_SERVICE_READY_LABEL_KEY] = "true"
     random_fake_node.spec.labels[
         _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY
