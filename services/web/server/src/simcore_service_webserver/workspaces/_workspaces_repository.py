@@ -33,7 +33,7 @@ from simcore_postgres_database.utils_workspaces_sql import (
 )
 from sqlalchemy import asc, desc, func
 from sqlalchemy.ext.asyncio import AsyncConnection
-from sqlalchemy.sql import select
+from sqlalchemy.sql import Select, select
 
 from ..db.plugin import get_asyncpg_engine
 from .errors import WorkspaceAccessForbiddenError, WorkspaceNotFoundError
@@ -82,7 +82,9 @@ async def create_workspace(
         return Workspace.model_validate(row)
 
 
-def _create_base_select_query(caller_user_id: UserID, product_name: ProductName):
+def _create_base_select_query(
+    caller_user_id: UserID, product_name: ProductName
+) -> Select:
     # any other access
     access_rights_subquery = (
         select(
