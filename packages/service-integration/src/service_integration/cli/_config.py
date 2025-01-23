@@ -5,6 +5,7 @@ from typing import Annotated, Final
 import rich
 import typer
 import yaml
+from models_library.utils.labels_annotations import LabelsAnnotationsDict
 from pydantic import BaseModel
 
 from ..compose_spec_model import ComposeSpecification
@@ -20,7 +21,7 @@ from ..osparc_config import (
 )
 
 
-def _get_labels_or_raise(build_labels) -> dict[str, str]:
+def _get_labels_or_raise(build_labels) -> LabelsAnnotationsDict:
     if isinstance(build_labels, list):
         return dict(item.strip().split("=") for item in build_labels)
     if isinstance(build_labels, dict):
@@ -56,7 +57,9 @@ def _create_config_from_compose_spec(
             rich.print(f"Creating {output_path} ...", end="")
 
             with output_path.open("wt") as fh:
-                data = json.loads(model.model_dump_json(by_alias=True, exclude_none=True))
+                data = json.loads(
+                    model.model_dump_json(by_alias=True, exclude_none=True)
+                )
                 yaml.safe_dump(data, fh, sort_keys=False)
 
             rich.print("DONE")
@@ -68,7 +71,7 @@ def _create_config_from_compose_spec(
                     service_name
                 ].build.labels:  # AttributeError if build is str
 
-                    labels: dict[str, str] = _get_labels_or_raise(build_labels)
+                    labels = _get_labels_or_raise(build_labels)
                     meta_cfg = MetadataConfig.from_labels_annotations(labels)
                     _save(service_name, metadata_path, meta_cfg)
 
@@ -86,11 +89,7 @@ def _create_config_from_compose_spec(
                     runtime_cfg = RuntimeConfig.from_labels_annotations(labels)
                     _save(service_name, service_specs_path, runtime_cfg)
 
-            except (  # noqa: PERF203
-                AttributeError,
-                TypeError,
-                ValueError,
-            ) as err:
+            except (AttributeError, TypeError, ValueError) as err:
                 rich.print(
                     f"WARNING: failure producing specs for {service_name}: {err}"
                 )
