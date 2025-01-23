@@ -57,7 +57,7 @@ from simcore_postgres_database.utils_projects_nodes import (
     ProjectNodesRepo,
 )
 from simcore_postgres_database.webserver_models import ProjectType, projects, users
-from sqlalchemy import func, literal_column
+from sqlalchemy import func, literal_column, sql
 from sqlalchemy.dialects.postgresql import BOOLEAN, INTEGER
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.sql import ColumnElement, CompoundSelect, Select, and_
@@ -370,6 +370,159 @@ class ProjectDBAPI(BaseProjectDB):
         ).group_by(project_to_groups.c.project_uuid)
     ).subquery("access_rights_subquery")
 
+    def _create_private_workspace_query(
+        self,
+        *,
+        product_name: ProductName,
+        user_id: UserID,
+        workspace_query: WorkspaceQuery,
+        project_tags_subquery: sql.Subquery,
+        is_search_by_multi_columns: bool,
+        user_groups: list[RowProxy],
+    ) -> sql.Select | None:
+        private_workspace_query = None
+        if workspace_query.workspace_scope is not WorkspaceScope.SHARED:
+            assert workspace_query.workspace_scope in (  # nosec
+                WorkspaceScope.PRIVATE,
+                WorkspaceScope.ALL,
+            )
+
+            private_workspace_query = (
+                sa.select(
+                    *PROJECT_DB_COLS,
+                    projects.c.workbench,
+                    self._access_rights_subquery.c.access_rights,
+                    projects_to_products.c.product_name,
+                    projects_to_folders.c.folder_id,
+                    sa.func.coalesce(
+                        project_tags_subquery.c.tags,
+                        sa.cast(sa.text("'{}'"), sa.ARRAY(sa.Integer)),
+                    ).label("tags"),
+                )
+                .select_from(
+                    projects.join(self._access_rights_subquery, isouter=True)
+                    .join(projects_to_products)
+                    .join(
+                        projects_to_folders,
+                        (
+                            (projects_to_folders.c.project_uuid == projects.c.uuid)
+                            & (projects_to_folders.c.user_id == user_id)
+                        ),
+                        isouter=True,
+                    )
+                    .join(project_tags_subquery, isouter=True)
+                )
+                .where(
+                    (
+                        (projects.c.prj_owner == user_id)
+                        | sa.text(
+                            f"jsonb_exists_any(access_rights_subquery.access_rights, {assemble_array_groups(user_groups)})"
+                        )
+                    )
+                    & (projects.c.workspace_id.is_(None))  # <-- Private workspace
+                    & (projects_to_products.c.product_name == product_name)
+                )
+            )
+            if is_search_by_multi_columns:
+                private_workspace_query = private_workspace_query.join(
+                    users, users.c.id == projects.c.prj_owner, isouter=True
+                )
+
+        return private_workspace_query
+
+    def _create_shared_workspace_query(
+        self,
+        *,
+        product_name: ProductName,
+        workspace_query: WorkspaceQuery,
+        project_tags_subquery: sql.Subquery,
+        user_groups: list[RowProxy],
+        is_search_by_multi_columns: bool,
+    ) -> sql.Select | None:
+
+        if workspace_query.workspace_scope is not WorkspaceScope.PRIVATE:
+            assert workspace_query.workspace_scope in (
+                WorkspaceScope.SHARED,
+                WorkspaceScope.ALL,
+            )
+            workspace_access_rights_subquery = (
+                sa.select(
+                    workspaces_access_rights.c.workspace_id,
+                    sa.func.jsonb_object_agg(
+                        workspaces_access_rights.c.gid,
+                        sa.func.jsonb_build_object(
+                            "read",
+                            workspaces_access_rights.c.read,
+                            "write",
+                            workspaces_access_rights.c.write,
+                            "delete",
+                            workspaces_access_rights.c.delete,
+                        ),
+                    )
+                    .filter(workspaces_access_rights.c.read)
+                    .label("access_rights"),
+                ).group_by(workspaces_access_rights.c.workspace_id)
+            ).subquery("workspace_access_rights_subquery")
+
+            shared_workspace_query = (
+                sa.select(
+                    *PROJECT_DB_COLS,
+                    projects.c.workbench,
+                    workspace_access_rights_subquery.c.access_rights,
+                    projects_to_products.c.product_name,
+                    projects_to_folders.c.folder_id,
+                    sa.func.coalesce(
+                        project_tags_subquery.c.tags,
+                        sa.cast(sa.text("'{}'"), sa.ARRAY(sa.Integer)),
+                    ).label("tags"),
+                )
+                .select_from(
+                    projects.join(
+                        workspace_access_rights_subquery,
+                        projects.c.workspace_id
+                        == workspace_access_rights_subquery.c.workspace_id,
+                    )
+                    .join(projects_to_products)
+                    .join(
+                        projects_to_folders,
+                        (
+                            (projects_to_folders.c.project_uuid == projects.c.uuid)
+                            & (projects_to_folders.c.user_id.is_(None))
+                        ),
+                        isouter=True,
+                    )
+                    .join(project_tags_subquery, isouter=True)
+                )
+                .where(
+                    (
+                        sa.text(
+                            f"jsonb_exists_any(workspace_access_rights_subquery.access_rights, {assemble_array_groups(user_groups)})"
+                        )
+                    )
+                    & (projects_to_products.c.product_name == product_name)
+                )
+            )
+            if workspace_query.workspace_scope == WorkspaceScope.ALL:
+                shared_workspace_query = shared_workspace_query.where(
+                    projects.c.workspace_id.is_not(None)  # <-- All shared workspaces
+                )
+            else:
+                assert workspace_query.workspace_scope == WorkspaceScope.SHARED
+                shared_workspace_query = shared_workspace_query.where(
+                    projects.c.workspace_id
+                    == workspace_query.workspace_id  # <-- Specific shared workspace
+                )
+
+            if is_search_by_multi_columns:
+                # NOTE: fields searched with text include user's email
+                shared_workspace_query = shared_workspace_query.join(
+                    users, users.c.id == projects.c.prj_owner, isouter=True
+                )
+
+            return shared_workspace_query
+
+        return None
+
     async def list_projects_dicts(  # pylint: disable=too-many-arguments,too-many-statements,too-many-branches
         self,
         *,
@@ -400,26 +553,6 @@ class ProjectDBAPI(BaseProjectDB):
 
         async with self.engine.acquire() as conn:
             user_groups: list[RowProxy] = await self._list_user_groups(conn, user_id)
-
-            workspace_access_rights_subquery = (
-                sa.select(
-                    workspaces_access_rights.c.workspace_id,
-                    sa.func.jsonb_object_agg(
-                        workspaces_access_rights.c.gid,
-                        sa.func.jsonb_build_object(
-                            "read",
-                            workspaces_access_rights.c.read,
-                            "write",
-                            workspaces_access_rights.c.write,
-                            "delete",
-                            workspaces_access_rights.c.delete,
-                        ),
-                    )
-                    .filter(workspaces_access_rights.c.read)
-                    .label("access_rights"),
-                ).group_by(workspaces_access_rights.c.workspace_id)
-            ).subquery("workspace_access_rights_subquery")
-
             project_tags_subquery = (
                 sa.select(
                     projects_tags.c.project_id,
@@ -433,127 +566,25 @@ class ProjectDBAPI(BaseProjectDB):
             # Private workspace query
             ###
 
-            if workspace_query.workspace_scope is not WorkspaceScope.SHARED:
-                assert workspace_query.workspace_scope in (  # nosec
-                    WorkspaceScope.PRIVATE,
-                    WorkspaceScope.ALL,
-                )
-
-                private_workspace_query = (
-                    sa.select(
-                        *PROJECT_DB_COLS,
-                        projects.c.workbench,
-                        self._access_rights_subquery.c.access_rights,
-                        projects_to_products.c.product_name,
-                        projects_to_folders.c.folder_id,
-                        sa.func.coalesce(
-                            project_tags_subquery.c.tags,
-                            sa.cast(sa.text("'{}'"), sa.ARRAY(sa.Integer)),
-                        ).label("tags"),
-                    )
-                    .select_from(
-                        projects.join(self._access_rights_subquery, isouter=True)
-                        .join(projects_to_products)
-                        .join(
-                            projects_to_folders,
-                            (
-                                (projects_to_folders.c.project_uuid == projects.c.uuid)
-                                & (projects_to_folders.c.user_id == user_id)
-                            ),
-                            isouter=True,
-                        )
-                        .join(project_tags_subquery, isouter=True)
-                    )
-                    .where(
-                        (
-                            (projects.c.prj_owner == user_id)
-                            | sa.text(
-                                f"jsonb_exists_any(access_rights_subquery.access_rights, {assemble_array_groups(user_groups)})"
-                            )
-                        )
-                        & (projects.c.workspace_id.is_(None))  # <-- Private workspace
-                        & (projects_to_products.c.product_name == product_name)
-                    )
-                )
-                if search_by_multi_columns is not None:
-                    private_workspace_query = private_workspace_query.join(
-                        users, users.c.id == projects.c.prj_owner, isouter=True
-                    )
-            else:
-                private_workspace_query = None
+            private_workspace_query = self._create_private_workspace_query(
+                product_name=product_name,
+                user_id=user_id,
+                workspace_query=workspace_query,
+                project_tags_subquery=project_tags_subquery,
+                is_search_by_multi_columns=search_by_multi_columns is not None,
+                user_groups=user_groups,
+            )
 
             ###
             # Shared workspace query
             ###
-
-            if workspace_query.workspace_scope is not WorkspaceScope.PRIVATE:
-
-                assert workspace_query.workspace_scope in (  # nosec
-                    WorkspaceScope.SHARED,
-                    WorkspaceScope.ALL,
-                )
-
-                shared_workspace_query = (
-                    sa.select(
-                        *PROJECT_DB_COLS,
-                        projects.c.workbench,
-                        workspace_access_rights_subquery.c.access_rights,
-                        projects_to_products.c.product_name,
-                        projects_to_folders.c.folder_id,
-                        sa.func.coalesce(
-                            project_tags_subquery.c.tags,
-                            sa.cast(sa.text("'{}'"), sa.ARRAY(sa.Integer)),
-                        ).label("tags"),
-                    )
-                    .select_from(
-                        projects.join(
-                            workspace_access_rights_subquery,
-                            projects.c.workspace_id
-                            == workspace_access_rights_subquery.c.workspace_id,
-                        )
-                        .join(projects_to_products)
-                        .join(
-                            projects_to_folders,
-                            (
-                                (projects_to_folders.c.project_uuid == projects.c.uuid)
-                                & (projects_to_folders.c.user_id.is_(None))
-                            ),
-                            isouter=True,
-                        )
-                        .join(project_tags_subquery, isouter=True)
-                    )
-                    .where(
-                        (
-                            sa.text(
-                                f"jsonb_exists_any(workspace_access_rights_subquery.access_rights, {assemble_array_groups(user_groups)})"
-                            )
-                        )
-                        & (projects_to_products.c.product_name == product_name)
-                    )
-                )
-                if workspace_query.workspace_scope == WorkspaceScope.ALL:
-                    shared_workspace_query = shared_workspace_query.where(
-                        projects.c.workspace_id.is_not(
-                            None
-                        )  # <-- All shared workspaces
-                    )
-                else:
-                    assert (  # nosec
-                        workspace_query.workspace_scope == WorkspaceScope.SHARED
-                    )
-                    shared_workspace_query = shared_workspace_query.where(
-                        projects.c.workspace_id
-                        == workspace_query.workspace_id  # <-- Specific shared workspace
-                    )
-
-                if search_by_multi_columns is not None:
-                    # NOTE: fields searched with text include user's email
-                    shared_workspace_query = shared_workspace_query.join(
-                        users, users.c.id == projects.c.prj_owner, isouter=True
-                    )
-
-            else:
-                shared_workspace_query = None
+            shared_workspace_query = self._create_shared_workspace_query(
+                product_name=product_name,
+                workspace_query=workspace_query,
+                project_tags_subquery=project_tags_subquery,
+                user_groups=user_groups,
+                is_search_by_multi_columns=search_by_multi_columns is not None,
+            )
 
             ###
             # Attributes Filters
