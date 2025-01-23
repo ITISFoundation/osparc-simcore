@@ -234,12 +234,17 @@ async def request_create_project() -> (  # noqa: C901, PLR0915
             "workspaceId": None,
             "folderId": None,
             "trashedAt": None,
-            "trashedByPrimaryGid": None,
+            "trashedBy": None,
         }
         if from_study:
+
             from_study_wo_access_rights = deepcopy(from_study)
             from_study_wo_access_rights.pop("accessRights")
-            expected_data = {**expected_data, **from_study_wo_access_rights}
+            expected_data = {
+                **expected_data,
+                "trashedByPrimaryGid": None,
+                **from_study_wo_access_rights,
+            }
             if not as_template:
                 expected_data["name"] = f"{from_study['name']} (Copy)"
 

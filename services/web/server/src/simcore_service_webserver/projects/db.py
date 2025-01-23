@@ -349,8 +349,8 @@ class ProjectDBAPI(BaseProjectDB):
                 .on_conflict_do_nothing()
             )
 
+    @staticmethod
     def _create_private_workspace_query(
-        self,
         *,
         product_name: ProductName,
         user_id: UserID,
@@ -434,8 +434,8 @@ class ProjectDBAPI(BaseProjectDB):
 
         return private_workspace_query
 
+    @staticmethod
     def _create_shared_workspace_query(
-        self,
         *,
         product_name: ProductName,
         workspace_query: WorkspaceQuery,
@@ -533,6 +533,74 @@ class ProjectDBAPI(BaseProjectDB):
 
         return None
 
+    @staticmethod
+    def _create_attributes_filters(
+        *,
+        filter_by_project_type: ProjectType | None,
+        filter_hidden: bool | None,
+        filter_published: bool | None,
+        filter_trashed: bool | None,
+        search_by_multi_columns: str | None,
+        search_by_project_name: str | None,
+        filter_tag_ids_list: list[int] | None,
+        folder_query: FolderQuery,
+        project_tags_subquery: sql.Subquery,
+    ) -> list[ColumnElement]:
+        attributes_filters: list[ColumnElement] = []
+
+        if filter_by_project_type is not None:
+            attributes_filters.append(projects.c.type == filter_by_project_type.value)
+
+        if filter_hidden is not None:
+            attributes_filters.append(projects.c.hidden.is_(filter_hidden))
+
+        if filter_published is not None:
+            attributes_filters.append(projects.c.published.is_(filter_published))
+
+        if filter_trashed is not None:
+            attributes_filters.append(
+                # marked explicitly as trashed
+                (
+                    projects.c.trashed.is_not(None)
+                    & projects.c.trashed_explicitly.is_(True)
+                )
+                if filter_trashed
+                # not marked as trashed
+                else projects.c.trashed.is_(None)
+            )
+
+        if search_by_multi_columns is not None:
+            attributes_filters.append(
+                (projects.c.name.ilike(f"%{search_by_multi_columns}%"))
+                | (projects.c.description.ilike(f"%{search_by_multi_columns}%"))
+                | (projects.c.uuid.ilike(f"%{search_by_multi_columns}%"))
+                | (users.c.name.ilike(f"%{search_by_multi_columns}%"))
+            )
+
+        if search_by_project_name is not None:
+            attributes_filters.append(
+                projects.c.name.like(f"%{search_by_project_name}%")
+            )
+
+        if filter_tag_ids_list:
+            attributes_filters.append(
+                sa.func.coalesce(
+                    project_tags_subquery.c.tags,
+                    sa.cast(sa.text("'{}'"), sa.ARRAY(sa.Integer)),
+                ).op("@>")(filter_tag_ids_list)
+            )
+
+        if folder_query.folder_scope is not FolderScope.ALL:
+            if folder_query.folder_scope == FolderScope.SPECIFIC:
+                attributes_filters.append(
+                    projects_to_folders.c.folder_id == folder_query.folder_id
+                )
+            else:
+                assert folder_query.folder_scope == FolderScope.ROOT  # nosec
+                attributes_filters.append(projects_to_folders.c.folder_id.is_(None))
+
+        return attributes_filters
+
     async def list_projects_dicts(  # pylint: disable=too-many-arguments,too-many-statements,too-many-branches
         self,
         *,
@@ -600,55 +668,17 @@ class ProjectDBAPI(BaseProjectDB):
             # Attributes Filters
             ###
 
-            attributes_filters: list[ColumnElement] = []
-            if filter_by_project_type is not None:
-                attributes_filters.append(
-                    projects.c.type == filter_by_project_type.value
-                )
-
-            if filter_hidden is not None:
-                attributes_filters.append(projects.c.hidden.is_(filter_hidden))
-
-            if filter_published is not None:
-                attributes_filters.append(projects.c.published.is_(filter_published))
-
-            if filter_trashed is not None:
-                attributes_filters.append(
-                    # marked explicitly as trashed
-                    (
-                        projects.c.trashed.is_not(None)
-                        & projects.c.trashed_explicitly.is_(True)
-                    )
-                    if filter_trashed
-                    # not marked as trashed
-                    else projects.c.trashed.is_(None)
-                )
-            if search_by_multi_columns is not None:
-                attributes_filters.append(
-                    (projects.c.name.ilike(f"%{search_by_multi_columns}%"))
-                    | (projects.c.description.ilike(f"%{search_by_multi_columns}%"))
-                    | (projects.c.uuid.ilike(f"%{search_by_multi_columns}%"))
-                    | (users.c.name.ilike(f"%{search_by_multi_columns}%"))
-                )
-            if search_by_project_name is not None:
-                attributes_filters.append(
-                    projects.c.name.like(f"%{search_by_project_name}%")
-                )
-            if filter_tag_ids_list:
-                attributes_filters.append(
-                    sa.func.coalesce(
-                        project_tags_subquery.c.tags,
-                        sa.cast(sa.text("'{}'"), sa.ARRAY(sa.Integer)),
-                    ).op("@>")(filter_tag_ids_list)
-                )
-            if folder_query.folder_scope is not FolderScope.ALL:
-                if folder_query.folder_scope == FolderScope.SPECIFIC:
-                    attributes_filters.append(
-                        projects_to_folders.c.folder_id == folder_query.folder_id
-                    )
-                else:
-                    assert folder_query.folder_scope == FolderScope.ROOT  # nosec
-                    attributes_filters.append(projects_to_folders.c.folder_id.is_(None))
+            attributes_filters = self._create_attributes_filters(
+                filter_by_project_type=filter_by_project_type,
+                filter_hidden=filter_hidden,
+                filter_published=filter_published,
+                filter_trashed=filter_trashed,
+                search_by_multi_columns=search_by_multi_columns,
+                search_by_project_name=search_by_project_name,
+                filter_tag_ids_list=filter_tag_ids_list,
+                folder_query=folder_query,
+                project_tags_subquery=project_tags_subquery,
+            )
 
             ###
             # Combined
