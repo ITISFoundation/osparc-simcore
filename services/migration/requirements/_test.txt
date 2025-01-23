@@ -1,15 +1,15 @@
-attrs==24.2.0
+attrs==24.3.0
     # via
     #   jsonschema
     #   pytest-docker
     #   referencing
-certifi==2024.8.30
+certifi==2024.12.14
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   requests
-charset-normalizer==3.3.2
+charset-normalizer==3.4.1
     # via requests
-coverage==7.6.1
+coverage==7.6.10
     # via pytest-cov
 docker==7.1.0
     # via -r requirements/_test.in
@@ -21,17 +21,17 @@ iniconfig==2.0.0
     # via pytest
 jsonschema==4.23.0
     # via -r requirements/_test.in
-jsonschema-specifications==2023.12.1
+jsonschema-specifications==2024.10.1
     # via jsonschema
-mypy==1.12.0
+mypy==1.14.1
     # via sqlalchemy
 mypy-extensions==1.0.0
     # via mypy
-packaging==24.1
+packaging==24.2
     # via pytest
 pluggy==1.5.0
     # via pytest
-pytest==8.3.3
+pytest==8.3.4
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
@@ -42,7 +42,7 @@ pytest-asyncio==0.23.8
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_test.in
-pytest-cov==5.0.0
+pytest-cov==6.0.0
     # via -r requirements/_test.in
 pytest-docker==3.1.1
     # via -r requirements/_test.in
@@ -56,13 +56,13 @@ pyyaml==6.0.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_test.in
-referencing==0.35.1
+referencing==0.36.1
     # via
     #   jsonschema
     #   jsonschema-specifications
 requests==2.32.3
     # via docker
-rpds-py==0.20.0
+rpds-py==0.22.3
     # via
     #   jsonschema
     #   referencing
@@ -77,8 +77,9 @@ tenacity==9.0.0
 typing-extensions==4.12.2
     # via
     #   mypy
+    #   referencing
     #   sqlalchemy2-stubs
-urllib3==2.2.3
+urllib3==2.3.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   docker
