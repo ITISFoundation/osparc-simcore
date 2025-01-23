@@ -10,7 +10,7 @@ from pathlib import Path
 import aiodocker
 import pytest
 from pydantic import TypeAdapter
-from servicelib.docker_utils import get_remote_docker_client
+from servicelib.docker_utils import create_remote_docker_client
 from settings_library.docker_api_proxy import DockerApiProxysettings
 from tenacity import AsyncRetrying, stop_after_delay, wait_fixed
 
@@ -65,7 +65,7 @@ def deploy_local_spec(
     )
 
 
-async def test_with_autnentication(deploy_local_spec: None, localhost_ip: str):
+async def test_secure_docker_client(deploy_local_spec: None, localhost_ip: str):
     # 1. with correct credentials -> works
     docker_api_proxy_settings = TypeAdapter(DockerApiProxysettings).validate_python(
         {
@@ -76,7 +76,7 @@ async def test_with_autnentication(deploy_local_spec: None, localhost_ip: str):
         }
     )
 
-    working_docker = await get_remote_docker_client(docker_api_proxy_settings)
+    working_docker = await create_remote_docker_client(docker_api_proxy_settings)
 
     async with working_docker:
         async for attempt in AsyncRetrying(
@@ -95,7 +95,7 @@ async def test_with_autnentication(deploy_local_spec: None, localhost_ip: str):
             "DOCKER_API_PROXY_PASSWORD": "wrong",
         }
     )
-    failing_docker_client = await get_remote_docker_client(docker_api_proxy_settings)
+    failing_docker_client = await create_remote_docker_client(docker_api_proxy_settings)
     async with failing_docker_client:
         with pytest.raises(aiodocker.exceptions.DockerError, match="401"):
             await failing_docker_client.system.info()

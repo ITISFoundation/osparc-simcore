@@ -286,7 +286,7 @@ async def pull_image(
             )
 
 
-async def get_remote_docker_client(
+async def create_remote_docker_client(
     settings: DockerApiProxysettings,
 ) -> aiodocker.Docker:
     """Allows to attach to a remote docker client istnace and use it in place
