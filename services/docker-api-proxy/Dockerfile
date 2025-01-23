@@ -4,15 +4,16 @@ RUN apk add --no-cache socat curl
 
 # Health check to ensure the proxy is running
 HEALTHCHECK \
-  --interval=30s \
-  --timeout=10s \
-  --start-period=5s \
-  --retries=3 \
+  --interval=10s \
+  --timeout=5s \
+  --start-period=30s \
+  --start-interval=1s \
+  --retries=5 \
   CMD curl http://localhost:8888/version || exit 1
 
 ENTRYPOINT ["socat"]
 
-CMD ["-d", "-d","-v", "TCP-LISTEN:8888,fork,reuseaddr", "UNIX-CONNECT:/var/run/docker.sock"]
+CMD ["TCP-LISTEN:8888,fork,reuseaddr", "UNIX-CONNECT:/var/run/docker.sock"]
 
 FROM base AS development
 FROM base AS production
