@@ -116,5 +116,13 @@ qx.Class.define("osparc.auth.core.BaseAuthPage", {
       });
       this.add(title);
     },
+
+    _onAppear: function() {
+      return;
+    },
+
+    _onDisappear: function() {
+      return;
+    }
   }
 });
