@@ -28,6 +28,6 @@ qx.Class.define("osparc.auth.LoginPageOsparc", {
       this._add(loginLayout, {
         flex: 1
       });
-    }
+    },
   }
 });

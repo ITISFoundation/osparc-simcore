@@ -29,6 +29,11 @@ qx.Class.define("osparc.auth.LoginPageSplit", {
     }
   },
 
+  statics: {
+    WIDTH_BREAKPOINT: 2*(osparc.auth.core.BaseAuthPage.FORM_WIDTH + 50),
+    HEIGHT_BREAKPOINT: osparc.WindowSizeTracker.HEIGHT_BREAKPOINT,
+  },
+
   members: {
     // overridden
     _buildLayout: function() {
@@ -40,7 +45,7 @@ qx.Class.define("osparc.auth.LoginPageSplit", {
 
     __resized: function() {
       const width = document.documentElement.clientWidth;
-      this.setCompactVersion(width < 2*(osparc.auth.core.BaseAuthPage.FORM_WIDTH + 50));
+      this.setCompactVersion(width < this.self().WIDTH_BREAKPOINT);
     },
 
     _reloadLayout: function() {

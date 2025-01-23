@@ -24,9 +24,10 @@ qx.Class.define("osparc.auth.LoginPageTI", {
   extend: osparc.auth.LoginPageSplit,
 
   members: {
+    // overridden
     _getBackgroundImage: function() {
       const backgroundImage = "url(resource/osparc/tip_splitimage.png)";
       return backgroundImage;
-    }
+    },
   }
 });
