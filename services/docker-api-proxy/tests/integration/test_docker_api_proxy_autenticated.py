@@ -10,7 +10,6 @@ from pathlib import Path
 import aiodocker
 import pytest
 from pydantic import TypeAdapter
-from pytest_simcore.helpers.host import get_localhost_ip
 from servicelib.docker_utils import get_remote_docker_client
 from settings_library.docker_api_proxy import DockerApiProxysettings
 from tenacity import AsyncRetrying, stop_after_delay, wait_fixed
@@ -20,7 +19,7 @@ HERE = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().paren
 
 @pytest.fixture
 def localhost_ip() -> str:
-    return get_localhost_ip()
+    return "172.17.0.1"
 
 
 @pytest.fixture
