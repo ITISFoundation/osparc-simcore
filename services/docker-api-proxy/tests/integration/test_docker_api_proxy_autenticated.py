@@ -14,12 +14,11 @@ from servicelib.docker_utils import create_remote_docker_client
 from settings_library.docker_api_proxy import DockerApiProxysettings
 from tenacity import AsyncRetrying, stop_after_delay, wait_fixed
 
+pytest_simcore_core_services_selection = [
+    "docker-api-proxy",
+]
+
 _HERE = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
-
-
-@pytest.fixture
-def localhost_ip() -> str:
-    return "127.0.0.1"
 
 
 @pytest.fixture
@@ -29,18 +28,27 @@ def authentication_proxy_compose_path() -> Path:
     return compose_spec_path
 
 
-@pytest.fixture()
-def docker_image_name() -> str:
-    return "local/docker-api-proxy:production"
+@pytest.fixture
+def caddy_file() -> str:
+    return """
+:9999 {
+    handle {
+        basicauth {
+            asd $2a$14$slb.GSUwFUX4jPOMoYTmKePjH.2UPJBkLmTPT5RmOfn38seYld1nu
+        }
+        reverse_proxy http://docker-api-proxy:8888 {
+            health_uri /version
+        }
+    }
+}
+    """
 
 
 @pytest.fixture
 def deploy_local_spec(
-    docker_swarm: None,
-    localhost_ip: str,
-    authentication_proxy_compose_path: Path,
-    docker_image_name: str,
+    docker_swarm: None, caddy_file: str, authentication_proxy_compose_path: Path
 ) -> Iterator[None]:
+
     stack_name = "with-auth"
     subprocess.run(  # noqa: S603
         [  # noqa: S607
@@ -53,8 +61,7 @@ def deploy_local_spec(
         ],
         check=True,
         env={
-            "IMAGE_NAME": docker_image_name,
-            "LOCALHOST_IP": f"{localhost_ip}",
+            "CADDY_FILE": caddy_file,
             "USER_CREDENTIALS": "asd:$2y$05$c/GIJWuHO36H./0V1Pxj9.rDNHYZcFOFctBWsuKeGgoHKR6hGrLWi",  # asd:asd
         },
     )
@@ -66,11 +73,11 @@ def deploy_local_spec(
     )
 
 
-async def test_autenticated_docker_client(deploy_local_spec: None, localhost_ip: str):
+async def test_autenticated_docker_client(deploy_local_spec: None):
     # 1. with correct credentials -> works
     docker_api_proxy_settings = TypeAdapter(DockerApiProxysettings).validate_python(
         {
-            "DOCKER_API_PROXY_HOST": f"{localhost_ip}",
+            "DOCKER_API_PROXY_HOST": "127.0.0.1",
             "DOCKER_API_PROXY_PORT": 9999,
             "DOCKER_API_PROXY_USER": "asd",
             "DOCKER_API_PROXY_PASSWORD": "asd",
@@ -81,7 +88,7 @@ async def test_autenticated_docker_client(deploy_local_spec: None, localhost_ip:
 
     async with working_docker:
         async for attempt in AsyncRetrying(
-            wait=wait_fixed(0.1), stop=stop_after_delay(60), reraise=True
+            wait=wait_fixed(0.1), stop=stop_after_delay(10), reraise=True
         ):
             with attempt:
                 info = await working_docker.system.info()
@@ -90,7 +97,7 @@ async def test_autenticated_docker_client(deploy_local_spec: None, localhost_ip:
     # 2. with wrong credentials -> does not work
     docker_api_proxy_settings = TypeAdapter(DockerApiProxysettings).validate_python(
         {
-            "DOCKER_API_PROXY_HOST": f"{localhost_ip}",
+            "DOCKER_API_PROXY_HOST": "127.0.0.1",
             "DOCKER_API_PROXY_PORT": 9999,
             "DOCKER_API_PROXY_USER": "wrong",
             "DOCKER_API_PROXY_PASSWORD": "wrong",

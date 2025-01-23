@@ -1,45 +1,14 @@
 version: '3.8'
-
 services:
-  traefik:
-    image: traefik:v3.1.2
-    command:
-      - --providers.swarm.endpoint=unix:///var/run/docker.sock
-      - --providers.swarm.exposedByDefault=false
-      - --entryPoints.web.address=:9999
-      - --log.level=DEBUG
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
+  caddy:
+    image: caddy:2.9.1-alpine
     ports:
-      - "9999:9999"
+      - 9999:9999
+    command: sh -c "echo '${CADDY_FILE}' > /etc/caddy/Caddyfile && cat /etc/caddy/Caddyfile && caddy run --adapter caddyfile --config /etc/caddy/Caddyfile"
     networks:
-      - traefik-net
-    deploy:
-      placement:
-        constraints:
-          - node.role == manager
-
-
-  docker-api-proxy:
-    image: ${IMAGE_NAME}
-    init: true
-    deploy:
-      placement:
-        constraints:
-          - node.role == manager
-      mode: global
-      labels:
-        - "traefik.enable=true"
-        - "traefik.http.routers.whoami.rule=Host(`${LOCALHOST_IP}`)"
-        - "traefik.http.routers.whoami.entrypoints=web"
-        - "traefik.http.services.whoami.loadbalancer.server.port=8888"
-        - "traefik.http.middlewares.auth.basicauth.users=${USER_CREDENTIALS}"
-        - "traefik.http.routers.whoami.middlewares=auth"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    networks:
-      - traefik-net
+     - docker-api-network
 
 networks:
-  traefik-net:
-    driver: overlay
+  docker-api-network:
+    name: pytest-simcore_docker-api-network
+    external: true
