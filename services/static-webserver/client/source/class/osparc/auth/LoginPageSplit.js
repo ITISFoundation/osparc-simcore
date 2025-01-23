@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.auth.LoginPageFlex", {
+qx.Class.define("osparc.auth.LoginPageSplit", {
   extend: osparc.auth.LoginPage,
   type: "abstract",
 
@@ -44,7 +44,38 @@ qx.Class.define("osparc.auth.LoginPageFlex", {
     },
 
     _reloadLayout: function() {
+      const layout = new qx.ui.layout.HBox();
+      this._setLayout(layout);
+      this._removeAll();
+
+      const loginLayout = this._getMainLayout();
+      if (this.isCompactVersion()) {
+        // no split-image
+        // just the login widget
+        this._resetBackgroundImage();
+        this._add(loginLayout, {
+          flex: 1
+        });
+      } else {
+        // split-image on the left
+        // the login widget on the right
+        this.__setBackgroundImage();
+        this._add(new qx.ui.core.Spacer(), {
+          width: "50%"
+        });
+        this._add(loginLayout, {
+          width: "50%"
+        });
+      }
+    },
+
+    _getBackgroundImage: function() {
       throw new Error("Abstract method called!");
+    },
+
+    __setBackgroundImage: function() {
+      const backgroundImage = this._getBackgroundImage();
+      this._setBackgroundImage(backgroundImage);
     }
   }
 });
