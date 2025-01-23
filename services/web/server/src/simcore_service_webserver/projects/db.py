@@ -349,27 +349,6 @@ class ProjectDBAPI(BaseProjectDB):
                 .on_conflict_do_nothing()
             )
 
-    _access_rights_subquery = (
-        sa.select(
-            project_to_groups.c.project_uuid,
-            sa.func.jsonb_object_agg(
-                project_to_groups.c.gid,
-                sa.func.jsonb_build_object(
-                    "read",
-                    project_to_groups.c.read,
-                    "write",
-                    project_to_groups.c.write,
-                    "delete",
-                    project_to_groups.c.delete,
-                ),
-            )
-            .filter(
-                project_to_groups.c.read  # Filters out entries where "read" is False
-            )
-            .label("access_rights"),
-        ).group_by(project_to_groups.c.project_uuid)
-    ).subquery("access_rights_subquery")
-
     def _create_private_workspace_query(
         self,
         *,
@@ -387,11 +366,32 @@ class ProjectDBAPI(BaseProjectDB):
                 WorkspaceScope.ALL,
             )
 
+            access_rights_subquery = (
+                sa.select(
+                    project_to_groups.c.project_uuid,
+                    sa.func.jsonb_object_agg(
+                        project_to_groups.c.gid,
+                        sa.func.jsonb_build_object(
+                            "read",
+                            project_to_groups.c.read,
+                            "write",
+                            project_to_groups.c.write,
+                            "delete",
+                            project_to_groups.c.delete,
+                        ),
+                    )
+                    .filter(
+                        project_to_groups.c.read  # Filters out entries where "read" is False
+                    )
+                    .label("access_rights"),
+                ).group_by(project_to_groups.c.project_uuid)
+            ).subquery("access_rights_subquery")
+
             private_workspace_query = (
                 sa.select(
                     *PROJECT_DB_COLS,
                     projects.c.workbench,
-                    self._access_rights_subquery.c.access_rights,
+                    access_rights_subquery.c.access_rights,
                     projects_to_products.c.product_name,
                     projects_to_folders.c.folder_id,
                     sa.func.coalesce(
@@ -400,7 +400,7 @@ class ProjectDBAPI(BaseProjectDB):
                     ).label("tags"),
                 )
                 .select_from(
-                    projects.join(self._access_rights_subquery, isouter=True)
+                    projects.join(access_rights_subquery, isouter=True)
                     .join(projects_to_products)
                     .join(
                         projects_to_folders,
@@ -423,6 +423,10 @@ class ProjectDBAPI(BaseProjectDB):
                     & (projects_to_products.c.product_name == product_name)
                 )
             )
+            assert (  # nosec
+                access_rights_subquery.description == "access_rights_subquery"
+            )
+
             if is_search_by_multi_columns:
                 private_workspace_query = private_workspace_query.join(
                     users, users.c.id == projects.c.prj_owner, isouter=True
@@ -441,10 +445,11 @@ class ProjectDBAPI(BaseProjectDB):
     ) -> sql.Select | None:
 
         if workspace_query.workspace_scope is not WorkspaceScope.PRIVATE:
-            assert workspace_query.workspace_scope in (
+            assert workspace_query.workspace_scope in (  # nosec
                 WorkspaceScope.SHARED,
                 WorkspaceScope.ALL,
             )
+
             workspace_access_rights_subquery = (
                 sa.select(
                     workspaces_access_rights.c.workspace_id,
@@ -502,6 +507,11 @@ class ProjectDBAPI(BaseProjectDB):
                     & (projects_to_products.c.product_name == product_name)
                 )
             )
+            assert (  # nosec
+                workspace_access_rights_subquery.description
+                == "workspace_access_rights_subquery"
+            )
+
             if workspace_query.workspace_scope == WorkspaceScope.ALL:
                 shared_workspace_query = shared_workspace_query.where(
                     projects.c.workspace_id.is_not(None)  # <-- All shared workspaces

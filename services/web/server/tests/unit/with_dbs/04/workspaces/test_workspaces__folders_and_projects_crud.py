@@ -393,6 +393,7 @@ async def test_workspaces_delete_folders(
 
 @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_200_OK)])
 async def test_listing_folders_and_projects_in_workspace__multiple_workspaces_created(
+    request: pytest.FixtureRequest,
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
@@ -409,7 +410,7 @@ async def test_listing_folders_and_projects_in_workspace__multiple_workspaces_cr
         f"{url}",
         json={
             "name": "My first workspace",
-            "description": "Custom description",
+            "description": f"workspace 1 at {request.node.name}",
             "thumbnail": None,
         },
     )
@@ -441,8 +442,8 @@ async def test_listing_folders_and_projects_in_workspace__multiple_workspaces_cr
     resp = await client.post(
         f"{url}",
         json={
-            "name": "My first workspace",
-            "description": "Custom description",
+            "name": "My second workspace",
+            "description": f"workspace 2 at {request.node.name}",
             "thumbnail": None,
         },
     )
