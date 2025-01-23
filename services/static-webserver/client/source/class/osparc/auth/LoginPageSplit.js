@@ -69,12 +69,14 @@ qx.Class.define("osparc.auth.LoginPageSplit", {
 
       const loginPage = new osparc.auth.LoginWithDecorators();
       loginPage.addListener("done", e => this.fireDataEvent("done", e.getData()));
+      const container = new qx.ui.container.Scroll();
+      container.add(loginPage);
       const hideableItems = loginPage.getChildControl("login-view").getHideableItems();
       if (this.isCompactVersion()) {
         // no split-image
         // just the login widget
         this.__resetBackgroundImage();
-        this._add(loginPage, {
+        this._add(container, {
           flex: 1
         });
         hideableItems.forEach(hideableItem => hideableItem.exclude());
@@ -85,7 +87,7 @@ qx.Class.define("osparc.auth.LoginPageSplit", {
         this._add(new qx.ui.core.Spacer(), {
           width: "50%"
         });
-        this._add(loginPage, {
+        this._add(container, {
           width: "50%"
         });
         hideableItems.forEach(hideableItem => hideableItem.show());
