@@ -47,7 +47,10 @@ def caddy_file() -> str:
 
 @pytest.fixture
 def authentication_proxy(
-    docker_swarm: None, caddy_file: str, authentication_proxy_compose_path: Path
+    docker_swarm: None,
+    docker_api_proxy_settings: DockerApiProxysettings,
+    caddy_file: str,
+    authentication_proxy_compose_path: Path,
 ) -> Iterator[None]:
 
     stack_name = "with-auth"
