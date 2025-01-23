@@ -77,7 +77,7 @@ jobs:
       migration: ${{ steps.filter.outputs.migration }}
       payments: ${{ steps.filter.outputs.payments }}
       dynamic-scheduler: ${{ steps.filter.outputs.dynamic-scheduler }}
-      dpcker-api-proxy: ${{ steps.filter.outputs.docker-api-proxy }}
+      docker-api-proxy: ${{ steps.filter.outputs.docker-api-proxy }}
       resource-usage-tracker: ${{ steps.filter.outputs.resource-usage-tracker }}
       static-webserver: ${{ steps.filter.outputs.static-webserver }}
       storage: ${{ steps.filter.outputs.storage }}
@@ -234,8 +234,8 @@ jobs:
                 - 'services/docker-compose*'
                 - 'scripts/mypy/*'
                 - 'mypy.ini'
-            dpcker-api-proxy:
-                - 'services/dpcker-api-proxy/**'
+            docker-api-proxy:
+                - 'services/docker-api-proxy/**'
                 - 'packages/settings-library/**'
                 - 'packages/service-library/**'
             resource-usage-tracker:
@@ -2332,6 +2332,7 @@ jobs:
         integration-test-director-v2-01,
         integration-test-director-v2-02,
         integration-test-dynamic-sidecar,
+        integration-test-docker-api-proxy,
         integration-test-simcore-sdk,
         integration-test-webserver-01,
         integration-test-webserver-02,
