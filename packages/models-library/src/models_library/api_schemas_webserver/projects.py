@@ -110,15 +110,15 @@ class ProjectGet(OutputSchema):
 
     @classmethod
     def from_domain_model(cls, project_data: dict[str, Any]) -> Self:
-        data = copy.copy(project_data)
+        trimmed_data = copy.copy(project_data)
         # project_data["trashed_by"] is a UserID
         # project_data["trashed_by_primary_gid"] is a GroupID
-        data.pop("trashed_by", None)
-        data.pop("trashedBy", None)
+        trimmed_data.pop("trashed_by", None)
+        trimmed_data.pop("trashedBy", None)
 
         return cls.model_validate(
             remap_keys(
-                project_data,
+                trimmed_data,
                 rename={
                     "trashed": "trashed_at",
                     "trashed_by_primary_gid": "trashed_by",

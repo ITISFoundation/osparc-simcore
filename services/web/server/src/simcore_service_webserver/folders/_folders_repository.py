@@ -571,18 +571,20 @@ async def get_folders_recursively(
         return cast(list[FolderID], [row.folder_id async for row in result])
 
 
+def _select_trashed_by_primary_gid_query():
+    return sa.select(users.c.primary_gid.label("trashed_by_primary_gid")).select_from(
+        folders_v2.outerjoin(users, folders_v2.c.trashed_by == users.c.id),
+    )
+
+
 async def get_trashed_by_primary_gid(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
     folder_id: FolderID,
 ) -> GroupID | None:
-    query = (
-        sa.select(
-            users.c.primary_gid.label("trashed_by_primary_gid"),
-        )
-        .select_from(projects.outerjoin(users, projects.c.trashed_by == users.c.id))
-        .where(folders_v2.c.folder_id == folder_id)
+    query = _select_trashed_by_primary_gid_query().where(
+        folders_v2.c.folder_id == folder_id
     )
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
@@ -599,11 +601,9 @@ async def batch_get_trashed_by_primary_gid(
 ) -> list[GroupID | None]:
 
     query = (
-        sa.select(
-            users.c.primary_gid.label("trashed_by_primary_gid"),
+        _select_trashed_by_primary_gid_query().where(
+            folders_v2.c.folder_id.in_(folders_ids)
         )
-        .select_from(folders_v2.outerjoin(users, folders_v2.c.trashed_by == users.c.id))
-        .where(folders_v2.c.folder_id.in_(folders_ids))
     ).order_by(
         *[
             folders_v2.c.folder_id == _id for _id in folders_ids

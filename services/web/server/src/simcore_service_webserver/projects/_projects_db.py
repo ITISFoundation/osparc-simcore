@@ -50,18 +50,20 @@ async def patch_project(
         return ProjectDB.model_validate(row)
 
 
+def _select_trashed_by_primary_gid_query():
+    return sa.select(
+        users.c.primary_gid.label("trashed_by_primary_gid"),
+    ).select_from(projects.outerjoin(users, projects.c.trashed_by == users.c.id))
+
+
 async def get_trashed_by_primary_gid(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
     projects_uuid: ProjectID,
 ) -> GroupID | None:
-    query = (
-        sa.select(
-            users.c.primary_gid.label("trashed_by_primary_gid"),
-        )
-        .select_from(projects.outerjoin(users, projects.c.trashed_by == users.c.id))
-        .where(projects.c.uuid == projects_uuid)
+    query = _select_trashed_by_primary_gid_query().where(
+        projects.c.uuid == projects_uuid
     )
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
@@ -87,11 +89,9 @@ async def batch_get_trashed_by_primary_gid(
     projects_uuids_str = [f"{uuid}" for uuid in projects_uuids]
 
     query = (
-        sa.select(
-            users.c.primary_gid.label("trashed_by_primary_gid"),
+        _select_trashed_by_primary_gid_query().where(
+            projects.c.uuid.in_(projects_uuids_str)
         )
-        .select_from(projects.outerjoin(users, projects.c.trashed_by == users.c.id))
-        .where(projects.c.uuid.in_(projects_uuids_str))
     ).order_by(
         *[
             projects.c.uuid == uuid for uuid in projects_uuids_str
