@@ -39,6 +39,9 @@ qx.Class.define("osparc.auth.LoginPage", {
   construct: function() {
     this.base(arguments);
 
+    const layout = new qx.ui.layout.HBox();
+    this._setLayout(layout);
+
     this._buildLayout();
   },
 
@@ -60,8 +63,6 @@ qx.Class.define("osparc.auth.LoginPage", {
             alignX: "center",
             alignY: "middle"
           });
-          const scrollView = new qx.ui.container.Scroll();
-          scrollView.add(control);
           break;
         }
         case "top-spacer":

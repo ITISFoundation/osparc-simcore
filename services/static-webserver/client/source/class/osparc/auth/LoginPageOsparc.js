@@ -21,9 +21,6 @@ qx.Class.define("osparc.auth.LoginPageOsparc", {
   members: {
     // overridden
     _buildLayout: function() {
-      const layout = new qx.ui.layout.HBox();
-      this._setLayout(layout);
-
       const loginLayout = this._getMainLayout();
       this._add(loginLayout, {
         flex: 1

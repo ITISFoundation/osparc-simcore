@@ -53,8 +53,6 @@ qx.Class.define("osparc.auth.LoginPageSplit", {
     },
 
     _reloadLayout: function() {
-      const layout = new qx.ui.layout.HBox();
-      this._setLayout(layout);
       this._removeAll();
 
       const loginLayout = this._getMainLayout();
