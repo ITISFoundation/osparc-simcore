@@ -2317,11 +2317,23 @@ async def test_warm_buffers_only_replace_hot_buffer_if_service_is_started_issue7
     assert len(spied_cluster.pending_ec2s) == 1
 
     # running it again shall do nothing
-    await auto_scale_cluster(app=initialized_app, auto_scaling_mode=auto_scaling_mode)
-    spied_cluster = assert_cluster_state(
-        spied_cluster_analysis, expected_calls=1, expected_num_machines=6
+    @tenacity.retry(
+        retry=tenacity.retry_always,
+        reraise=True,
+        wait=tenacity.wait_fixed(0.1),
+        stop=tenacity.stop_after_attempt(10),
     )
-    assert len(spied_cluster.buffer_drained_nodes) == num_hot_buffer - 1
-    assert len(spied_cluster.buffer_ec2s) == buffer_count - 1
-    assert len(spied_cluster.active_nodes) == 1
-    assert len(spied_cluster.pending_ec2s) == 1
+    async def _check_autoscaling_is_stable() -> None:
+        await auto_scale_cluster(
+            app=initialized_app, auto_scaling_mode=auto_scaling_mode
+        )
+        spied_cluster = assert_cluster_state(
+            spied_cluster_analysis, expected_calls=1, expected_num_machines=6
+        )
+        assert len(spied_cluster.buffer_drained_nodes) == num_hot_buffer - 1
+        assert len(spied_cluster.buffer_ec2s) == buffer_count - 1
+        assert len(spied_cluster.active_nodes) == 1
+        assert len(spied_cluster.pending_ec2s) == 1
+
+    with pytest.raises(tenacity.RetryError):
+        await _check_autoscaling_is_stable()
