@@ -245,6 +245,15 @@ def instance_type_filters(
     ]
 
 
+@pytest.fixture
+def stopped_instance_type_filters(
+    instance_type_filters: Sequence[FilterTypeDef],
+) -> Sequence[FilterTypeDef]:
+    copied_filters = deepcopy(instance_type_filters)
+    copied_filters[-1]["Values"] = ["stopped"]
+    return copied_filters
+
+
 @dataclass(frozen=True)
 class _ScaleUpParams:
     imposed_instance_type: InstanceTypeType | None
@@ -2090,6 +2099,7 @@ async def test_warm_buffers_only_replace_hot_buffer_if_service_is_started_issue7
     ],
     spied_cluster_analysis: MockType,
     instance_type_filters: Sequence[FilterTypeDef],
+    stopped_instance_type_filters: Sequence[FilterTypeDef],
     mock_find_node_with_name_returns_fake_node: mock.Mock,
     mock_compute_node_used_resources: mock.Mock,
     mock_docker_tag_node: mock.Mock,
@@ -2155,8 +2165,7 @@ async def test_warm_buffers_only_replace_hot_buffer_if_service_is_started_issue7
     )
     await assert_autoscaled_dynamic_warm_pools_ec2_instances(
         ec2_client,
-        expected_num_reservations=2,
-        check_reservation_index=1,
+        expected_num_reservations=1,
         expected_num_instances=buffer_count,
         expected_instance_type=cast(
             InstanceTypeType,
@@ -2167,5 +2176,39 @@ async def test_warm_buffers_only_replace_hot_buffer_if_service_is_started_issue7
         expected_instance_state="stopped",
         expected_additional_tag_keys=list(ec2_instance_custom_tags),
         expected_pre_pulled_images=None,
-        instance_filters=None,
+        instance_filters=stopped_instance_type_filters,
+    )
+
+    # calling again should do nothing
+    await auto_scale_cluster(
+        app=initialized_app, auto_scaling_mode=DynamicAutoscaling()
+    )
+    await assert_autoscaled_dynamic_ec2_instances(
+        ec2_client,
+        expected_num_reservations=1,
+        expected_num_instances=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER,
+        expected_instance_type=cast(
+            InstanceTypeType,
+            next(
+                iter(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES)
+            ),
+        ),
+        expected_instance_state="running",
+        expected_additional_tag_keys=list(ec2_instance_custom_tags),
+        instance_filters=instance_type_filters,
+    )
+    await assert_autoscaled_dynamic_warm_pools_ec2_instances(
+        ec2_client,
+        expected_num_reservations=1,
+        expected_num_instances=buffer_count,
+        expected_instance_type=cast(
+            InstanceTypeType,
+            next(
+                iter(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES)
+            ),
+        ),
+        expected_instance_state="stopped",
+        expected_additional_tag_keys=list(ec2_instance_custom_tags),
+        expected_pre_pulled_images=None,
+        instance_filters=stopped_instance_type_filters,
     )
