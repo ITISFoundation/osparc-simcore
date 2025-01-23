@@ -14,17 +14,17 @@ from servicelib.docker_utils import get_remote_docker_client
 from settings_library.docker_api_proxy import DockerApiProxysettings
 from tenacity import AsyncRetrying, stop_after_delay, wait_fixed
 
-HERE = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
+_HERE = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 
 @pytest.fixture
 def localhost_ip() -> str:
-    return "172.17.0.1"
+    return "127.0.0.1"
 
 
 @pytest.fixture
 def local_compose_path() -> Path:
-    compose_spec_path = HERE / "secured-proxy-docker-compose.yaml"
+    compose_spec_path = _HERE / "secured-proxy-docker-compose.yaml"
     assert compose_spec_path.exists()
     return compose_spec_path
 
@@ -80,7 +80,7 @@ async def test_with_autnentication(deploy_local_spec: None, localhost_ip: str):
 
     async with working_docker:
         async for attempt in AsyncRetrying(
-            wait=wait_fixed(0.1), stop=stop_after_delay(20), reraise=True
+            wait=wait_fixed(0.1), stop=stop_after_delay(60), reraise=True
         ):
             with attempt:
                 info = await working_docker.system.info()
