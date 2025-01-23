@@ -46,7 +46,7 @@ def caddy_file() -> str:
 
 
 @pytest.fixture
-def deploy_local_spec(
+def authentication_proxy(
     docker_swarm: None, caddy_file: str, authentication_proxy_compose_path: Path
 ) -> Iterator[None]:
 
@@ -71,7 +71,7 @@ def deploy_local_spec(
     )
 
 
-async def test_autenticated_docker_client(deploy_local_spec: None):
+async def test_autenticated_docker_client(authentication_proxy: None):
     # 1. with correct credentials -> works
     docker_api_proxy_settings = TypeAdapter(DockerApiProxysettings).validate_python(
         {
