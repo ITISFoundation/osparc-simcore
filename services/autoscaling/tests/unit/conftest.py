@@ -1093,7 +1093,7 @@ def ec2_instances_allowed_types_with_only_1_buffered(
             "t2.micro": EC2InstanceBootSpecific(
                 ami_id=faker.pystr(),
                 pre_pull_images=fake_pre_pull_images,
-                buffer_count=faker.pyint(min_value=1, max_value=10),
+                buffer_count=faker.pyint(min_value=2, max_value=10),
             )
         }
 

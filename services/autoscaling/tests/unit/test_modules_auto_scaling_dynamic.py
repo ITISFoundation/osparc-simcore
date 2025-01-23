@@ -2061,3 +2061,111 @@ async def test_warm_buffers_are_started_to_replace_missing_hot_buffers(
         len(analyzed_cluster.pending_ec2s)
         == app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
     )
+
+
+@pytest.mark.parametrize(
+    # NOTE: only the main test test_cluster_scaling_up_and_down is run with all options
+    "with_docker_join_drained",
+    ["without_AUTOSCALING_DOCKER_JOIN_DRAINED"],
+    indirect=True,
+)
+@pytest.mark.parametrize(
+    # NOTE: only the main test test_cluster_scaling_up_and_down is run with all options
+    "with_drain_nodes_labelled",
+    ["with_AUTOSCALING_DRAIN_NODES_WITH_LABELS"],
+    indirect=True,
+)
+async def test_warm_buffers_only_replace_hot_buffer_if_service_is_started_issue7071(
+    patch_ec2_client_launch_instances_min_number_of_instances: mock.Mock,
+    minimal_configuration: None,
+    with_instances_machines_hot_buffer: EnvVarsDict,
+    ec2_client: EC2Client,
+    initialized_app: FastAPI,
+    app_settings: ApplicationSettings,
+    ec2_instance_custom_tags: dict[str, str],
+    buffer_count: int,
+    create_buffer_machines: Callable[
+        [int, InstanceTypeType, InstanceStateNameType, list[DockerGenericTag] | None],
+        Awaitable[list[str]],
+    ],
+    spied_cluster_analysis: MockType,
+    instance_type_filters: Sequence[FilterTypeDef],
+    mock_find_node_with_name_returns_fake_node: mock.Mock,
+    mock_compute_node_used_resources: mock.Mock,
+    mock_docker_tag_node: mock.Mock,
+):
+    # NOTE: https://github.com/ITISFoundation/osparc-simcore/issues/7071
+
+    # pre-requisites
+    assert app_settings.AUTOSCALING_EC2_INSTANCES
+    assert app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER > 0
+
+    # we have nothing running now
+    all_instances = await ec2_client.describe_instances()
+    assert not all_instances["Reservations"]
+
+    # ensure we get our running hot buffer
+    await auto_scale_cluster(
+        app=initialized_app, auto_scaling_mode=DynamicAutoscaling()
+    )
+    await assert_autoscaled_dynamic_ec2_instances(
+        ec2_client,
+        expected_num_reservations=1,
+        expected_num_instances=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER,
+        expected_instance_type=cast(
+            InstanceTypeType,
+            next(
+                iter(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES)
+            ),
+        ),
+        expected_instance_state="running",
+        expected_additional_tag_keys=list(ec2_instance_custom_tags),
+        instance_filters=instance_type_filters,
+    )
+    # calling again should attach the new nodes to the reserve, but nothing should start
+    await auto_scale_cluster(
+        app=initialized_app, auto_scaling_mode=DynamicAutoscaling()
+    )
+    await assert_autoscaled_dynamic_ec2_instances(
+        ec2_client,
+        expected_num_reservations=1,
+        expected_num_instances=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER,
+        expected_instance_type=cast(
+            InstanceTypeType,
+            next(
+                iter(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES)
+            ),
+        ),
+        expected_instance_state="running",
+        expected_additional_tag_keys=list(ec2_instance_custom_tags),
+        instance_filters=instance_type_filters,
+    )
+
+    # have a few warm buffers ready with the same type as the hot buffer machines
+    buffer_machines = await create_buffer_machines(
+        buffer_count,
+        cast(
+            InstanceTypeType,
+            next(
+                iter(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES)
+            ),
+        ),
+        "stopped",
+        None,
+    )
+    await assert_autoscaled_dynamic_warm_pools_ec2_instances(
+        ec2_client,
+        expected_num_reservations=2,
+        check_reservation_index=1,
+        expected_num_instances=buffer_count,
+        expected_instance_type=cast(
+            InstanceTypeType,
+            next(
+                iter(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES)
+            ),
+        ),
+        expected_instance_state="stopped",
+        expected_additional_tag_keys=list(ec2_instance_custom_tags),
+        expected_pre_pulled_images=None,
+        instance_filters=None,
+    )
