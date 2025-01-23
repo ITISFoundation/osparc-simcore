@@ -10,6 +10,7 @@ from uuid import UUID
 import aiohttp
 import pytest
 from aiohttp.test_utils import TestClient
+from common_library.dict_tools import remap_keys
 from faker import Faker
 from models_library.projects import ProjectID
 from models_library.projects_nodes import Node
@@ -140,12 +141,12 @@ def request_update_project(
     mocker: MockerFixture,
 ) -> Callable[[TestClient, UUID], Awaitable]:
     mocker.patch(
-        "simcore_service_webserver.projects._nodes_handlers.projects_api.is_service_deprecated",
+        "simcore_service_webserver.projects._nodes_handlers.projects_service.is_service_deprecated",
         autospec=True,
         return_value=False,
     )
     mocker.patch(
-        "simcore_service_webserver.projects._nodes_handlers.projects_api.catalog_client.get_service_resources",
+        "simcore_service_webserver.projects._nodes_handlers.projects_service.catalog_client.get_service_resources",
         autospec=True,
         return_value=ServiceResourcesDict(),
     )
@@ -198,11 +199,13 @@ def request_update_project(
         project["workbench"] = {node_id: jsonable_encoder(node)}
 
         db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(client.app)
-        project.pop("state")
+        project_db = remap_keys(project, rename={"trashedAt": "trashed"})
+        project_db.pop("state")
+
         await db.replace_project(
-            project,
+            project_db,
             logged_user["id"],
-            project_uuid=project["uuid"],
+            project_uuid=project_db["uuid"],
             product_name="osparc",
         )
 
@@ -215,11 +218,11 @@ async def request_delete_project(
     mocker: MockerFixture,
 ) -> AsyncIterator[Callable[[TestClient, UUID], Awaitable]]:
     director_v2_api_delete_pipeline: mock.AsyncMock = mocker.patch(
-        "simcore_service_webserver.projects.projects_api.director_v2_api.delete_pipeline",
+        "simcore_service_webserver.projects.projects_service.director_v2_api.delete_pipeline",
         autospec=True,
     )
     dynamic_scheduler_api_stop_dynamic_services_in_project: mock.AsyncMock = mocker.patch(
-        "simcore_service_webserver.projects.projects_api.dynamic_scheduler_api.stop_dynamic_services_in_project",
+        "simcore_service_webserver.projects.projects_service.dynamic_scheduler_api.stop_dynamic_services_in_project",
         autospec=True,
     )
     fire_and_forget_call_to_storage: mock.Mock = mocker.patch(

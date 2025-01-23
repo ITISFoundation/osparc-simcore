@@ -4,13 +4,13 @@ import json
 import logging
 import re
 from collections.abc import AsyncGenerator, Mapping
-from pprint import pformat
 from typing import Any, Final, cast
 
 import httpx
 from aiocache import Cache, SimpleMemoryCache  # type: ignore[import-untyped]
 from fastapi import FastAPI, status
-from servicelib.background_task import start_periodic_task, stop_periodic_task
+from servicelib.async_utils import cancel_wait_task
+from servicelib.background_task import create_periodic_task
 from servicelib.logging_utils import log_catch, log_context
 from servicelib.utils import limited_as_completed
 from tenacity import retry
@@ -21,11 +21,7 @@ from tenacity.wait import wait_fixed, wait_random_exponential
 from yarl import URL
 
 from .client_session import get_client_session
-from .constants import (
-    DIRECTOR_SIMCORE_SERVICES_PREFIX,
-    ORG_LABELS_TO_SCHEMA_LABELS,
-    SERVICE_RUNTIME_SETTINGS,
-)
+from .constants import DIRECTOR_SIMCORE_SERVICES_PREFIX
 from .core.errors import (
     DirectorRuntimeError,
     RegistryConnectionError,
@@ -247,7 +243,7 @@ def setup(app: FastAPI) -> None:
         app_settings = get_application_settings(app)
         app.state.auto_cache_task = None
         if app_settings.DIRECTOR_REGISTRY_CACHING:
-            app.state.auto_cache_task = start_periodic_task(
+            app.state.auto_cache_task = create_periodic_task(
                 _list_all_services_task,
                 interval=app_settings.DIRECTOR_REGISTRY_CACHING_TTL / 2,
                 task_name="director-auto-cache-task",
@@ -256,7 +252,7 @@ def setup(app: FastAPI) -> None:
 
     async def on_shutdown() -> None:
         if app.state.auto_cache_task:
-            await stop_periodic_task(app.state.auto_cache_task)
+            await cancel_wait_task(app.state.auto_cache_task)
 
     app.add_event_handler("startup", on_startup)
     app.add_event_handler("shutdown", on_shutdown)
@@ -530,105 +526,3 @@ def get_service_last_names(image_key: str) -> str:
         "retrieved service last name from repo %s : %s", image_key, service_last_name
     )
     return service_last_name
-
-
-CONTAINER_SPEC_ENTRY_NAME = "ContainerSpec".lower()
-RESOURCES_ENTRY_NAME = "Resources".lower()
-
-
-def _validate_kind(entry_to_validate: dict[str, Any], kind_name: str):
-    for element in (
-        entry_to_validate.get("value", {})
-        .get("Reservations", {})
-        .get("GenericResources", [])
-    ):
-        if element.get("DiscreteResourceSpec", {}).get("Kind") == kind_name:
-            return True
-    return False
-
-
-async def get_service_extras(
-    app: FastAPI, image_key: str, image_tag: str
-) -> dict[str, Any]:
-    # check physical node requirements
-    # all nodes require "CPU"
-    app_settings = get_application_settings(app)
-    result: dict[str, Any] = {
-        "node_requirements": {
-            "CPU": app_settings.DIRECTOR_DEFAULT_MAX_NANO_CPUS / 1.0e09,
-            "RAM": app_settings.DIRECTOR_DEFAULT_MAX_MEMORY,
-        }
-    }
-
-    labels, _ = await get_image_labels(app, image_key, image_tag)
-    _logger.debug("Compiling service extras from labels %s", pformat(labels))
-
-    if SERVICE_RUNTIME_SETTINGS in labels:
-        service_settings: list[dict[str, Any]] = json.loads(
-            labels[SERVICE_RUNTIME_SETTINGS]
-        )
-        for entry in service_settings:
-            entry_name = entry.get("name", "").lower()
-            entry_value = entry.get("value")
-            invalid_with_msg = None
-
-            if entry_name == RESOURCES_ENTRY_NAME:
-                if entry_value and isinstance(entry_value, dict):
-                    res_limit = entry_value.get("Limits", {})
-                    res_reservation = entry_value.get("Reservations", {})
-                    # CPU
-                    result["node_requirements"]["CPU"] = (
-                        float(res_limit.get("NanoCPUs", 0))
-                        or float(res_reservation.get("NanoCPUs", 0))
-                        or app_settings.DIRECTOR_DEFAULT_MAX_NANO_CPUS
-                    ) / 1.0e09
-                    # RAM
-                    result["node_requirements"]["RAM"] = (
-                        res_limit.get("MemoryBytes", 0)
-                        or res_reservation.get("MemoryBytes", 0)
-                        or app_settings.DIRECTOR_DEFAULT_MAX_MEMORY
-                    )
-                else:
-                    invalid_with_msg = f"invalid type for resource [{entry_value}]"
-
-                # discrete resources (custom made ones) ---
-                # check if the service requires GPU support
-                if not invalid_with_msg and _validate_kind(entry, "VRAM"):
-
-                    result["node_requirements"]["GPU"] = 1
-                if not invalid_with_msg and _validate_kind(entry, "MPI"):
-                    result["node_requirements"]["MPI"] = 1
-
-            elif entry_name == CONTAINER_SPEC_ENTRY_NAME:
-                # NOTE: some minor validation
-                # expects {'name': 'ContainerSpec', 'type': 'ContainerSpec', 'value': {'Command': [...]}}
-                if (
-                    entry_value
-                    and isinstance(entry_value, dict)
-                    and "Command" in entry_value
-                ):
-                    result["container_spec"] = entry_value
-                else:
-                    invalid_with_msg = f"invalid container_spec [{entry_value}]"
-
-            if invalid_with_msg:
-                _logger.warning(
-                    "%s entry [%s] encoded in settings labels of service image %s:%s",
-                    invalid_with_msg,
-                    entry,
-                    image_key,
-                    image_tag,
-                )
-
-    # get org labels
-    result.update(
-        {
-            sl: labels[dl]
-            for dl, sl in ORG_LABELS_TO_SCHEMA_LABELS.items()
-            if dl in labels
-        }
-    )
-
-    _logger.debug("Following service extras were compiled: %s", pformat(result))
-
-    return result

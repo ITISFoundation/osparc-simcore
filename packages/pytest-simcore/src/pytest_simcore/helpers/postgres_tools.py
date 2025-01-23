@@ -49,11 +49,19 @@ def migrated_pg_tables_context(
     simcore_postgres_database.cli.downgrade.callback("base")
     simcore_postgres_database.cli.clean.callback()  # just cleans discover cache
 
-    # FIXME: migration downgrade fails to remove User types
-    # SEE https://github.com/ITISFoundation/osparc-simcore/issues/1776
-    # Added drop_all as tmp fix
     postgres_engine = sa.create_engine(dsn)
-    metadata.drop_all(bind=postgres_engine)
+    with postgres_engine.begin() as conn:
+        conn.execute(
+            # NOTE: terminates all open transactions before droping all tables
+            # This solves https://github.com/ITISFoundation/osparc-simcore/issues/7008
+            sa.DDL(
+                "SELECT pg_terminate_backend(pid) "
+                "FROM pg_stat_activity "
+                "WHERE state = 'idle in transaction';"
+            )
+        )
+        # SEE https://github.com/ITISFoundation/osparc-simcore/issues/1776
+        metadata.drop_all(bind=postgres_engine)
 
 
 def is_postgres_responsive(url) -> bool:

@@ -24,7 +24,6 @@ from .....modules.resource_usage_tracker_client import ResourceUsageTrackerClien
 from .....utils.computations import to_node_class
 from .....utils.db import RUNNING_STATE_TO_DB
 from ....catalog import CatalogClient
-from ....director_v0 import DirectorV0Client
 from ...tables import NodeClass, StateType, comp_tasks
 from .._base import BaseRepository
 from . import _utils
@@ -91,7 +90,6 @@ class CompTasksRepository(BaseRepository):
         *,
         project: ProjectAtDB,
         catalog_client: CatalogClient,
-        director_client: DirectorV0Client,
         published_nodes: list[NodeID],
         user_id: UserID,
         product_name: str,
@@ -106,7 +104,6 @@ class CompTasksRepository(BaseRepository):
             ] = await _utils.generate_tasks_list_from_project(
                 project=project,
                 catalog_client=catalog_client,
-                director_client=director_client,
                 published_nodes=published_nodes,
                 user_id=user_id,
                 product_name=product_name,

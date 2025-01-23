@@ -1,3 +1,5 @@
+import datetime
+
 from aws_library.ec2 import EC2InstanceData
 from aws_library.ec2._errors import EC2InstanceNotFoundError
 from fastapi import FastAPI
@@ -5,6 +7,7 @@ from models_library.api_schemas_clusters_keeper.clusters import OnDemandCluster
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from servicelib.rabbitmq import RPCRouter
+from servicelib.redis import RedisClientSDK, exclusive
 
 from ..core.settings import get_application_settings
 from ..modules import clusters
@@ -16,7 +19,33 @@ from ..utils.dask import get_scheduler_auth, get_scheduler_url
 router = RPCRouter()
 
 
+def _get_app_from_args(*args, **kwargs) -> FastAPI:
+    assert kwargs is not None  # nosec
+    if args:
+        app = args[0]
+    else:
+        assert "app" in kwargs  # nosec
+        app = kwargs["app"]
+    assert isinstance(app, FastAPI)  # nosec
+    return app
+
+
+def _get_redis_client_from_app(*args, **kwargs) -> RedisClientSDK:
+    app = _get_app_from_args(*args, **kwargs)
+    return get_redis_client(app)
+
+
+def _get_redis_lock_key(*_args, user_id: UserID, wallet_id: WalletID | None) -> str:
+    return f"get_or_create_cluster-{user_id=}-{wallet_id=}"
+
+
 @router.expose()
+@exclusive(
+    _get_redis_client_from_app,
+    lock_key=_get_redis_lock_key,
+    blocking=True,
+    blocking_timeout=datetime.timedelta(seconds=10),
+)
 async def get_or_create_cluster(
     app: FastAPI, *, user_id: UserID, wallet_id: WalletID | None
 ) -> OnDemandCluster:
@@ -26,32 +55,28 @@ async def get_or_create_cluster(
     Calling several time will always return the same cluster.
     """
     ec2_instance: EC2InstanceData | None = None
-    redis = get_redis_client(app)
     dask_scheduler_ready = False
     cluster_auth = get_scheduler_auth(app)
-    async with redis.lock_context(
-        f"get_or_create_cluster-{user_id=}-{wallet_id=}",
-        blocking=True,
-        blocking_timeout_s=10,
-    ):
-        try:
-            ec2_instance = await clusters.get_cluster(
-                app, user_id=user_id, wallet_id=wallet_id
-            )
-        except EC2InstanceNotFoundError:
-            new_ec2_instances = await clusters.create_cluster(
-                app, user_id=user_id, wallet_id=wallet_id
-            )
-            assert new_ec2_instances  # nosec
-            assert len(new_ec2_instances) == 1  # nosec
-            ec2_instance = new_ec2_instances[0]
 
-        dask_scheduler_ready = bool(
-            ec2_instance.state == "running"
-            and await ping_scheduler(get_scheduler_url(ec2_instance), cluster_auth)
+    try:
+        ec2_instance = await clusters.get_cluster(
+            app, user_id=user_id, wallet_id=wallet_id
         )
-        if dask_scheduler_ready:
-            await clusters.cluster_heartbeat(app, user_id=user_id, wallet_id=wallet_id)
+    except EC2InstanceNotFoundError:
+        new_ec2_instances = await clusters.create_cluster(
+            app, user_id=user_id, wallet_id=wallet_id
+        )
+        assert new_ec2_instances  # nosec
+        assert len(new_ec2_instances) == 1  # nosec
+        ec2_instance = new_ec2_instances[0]
+
+    dask_scheduler_ready = bool(
+        ec2_instance.state == "running"
+        and await ping_scheduler(get_scheduler_url(ec2_instance), cluster_auth)
+    )
+    if dask_scheduler_ready:
+        await clusters.cluster_heartbeat(app, user_id=user_id, wallet_id=wallet_id)
+
     assert ec2_instance is not None  # nosec
     app_settings = get_application_settings(app)
     assert app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES  # nosec

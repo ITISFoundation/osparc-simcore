@@ -97,8 +97,10 @@ qx.Class.define("osparc.navigation.NavigationBar", {
     },
 
     __buildLayout: function() {
+      const colorStr = qx.theme.manager.Color.getInstance().resolve("background-main-1");
+      const color = qx.util.ColorUtil.stringToRgb(colorStr);
       this.getContentElement().setStyles({
-        "background": "linear-gradient(0deg, rgba(1, 18, 26, 0.1) 0%, rgba(229, 229, 229, 0.1) 5%)"
+        "background": `linear-gradient(0deg, rgba(1, 18, 26, 0.1) 0%, ${qx.util.ColorUtil.rgbToRgbString(color)} 4%)`
       });
       this.getChildControl("left-items");
       this.getChildControl("center-items");

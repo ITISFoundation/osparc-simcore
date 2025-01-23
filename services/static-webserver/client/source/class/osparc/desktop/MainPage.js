@@ -89,11 +89,7 @@ qx.Class.define("osparc.desktop.MainPage", {
       const socket = osparc.wrapper.WebSocket.getInstance();
       if (!socket.slotExists("walletOsparcCreditsUpdated")) {
         socket.on("walletOsparcCreditsUpdated", data => {
-          const store = osparc.store.Store.getInstance();
-          const walletFound = store.getWallets().find(wallet => wallet.getWalletId() === parseInt(data["wallet_id"]));
-          if (walletFound) {
-            walletFound.setCreditsAvailable(parseFloat(data["osparc_credits"]));
-          }
+          osparc.desktop.credits.Utils.creditsUpdated(data["wallet_id"], data["osparc_credits"]);
         }, this);
       }
     },

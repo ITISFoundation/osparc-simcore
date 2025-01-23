@@ -26,8 +26,9 @@ from ._licensed_items_checkouts_models import (
     LicensedItemCheckoutGet,
     LicensedItemCheckoutGetPage,
     LicensedItemCheckoutPathParams,
+    LicensedItemsCheckoutsListQueryParams,
 )
-from ._models import LicensedItemsPurchasesListQueryParams, LicensedItemsRequestContext
+from ._models import LicensedItemsRequestContext
 
 _logger = logging.getLogger(__name__)
 
@@ -81,9 +82,9 @@ async def get_licensed_item_checkout(request: web.Request):
 async def list_licensed_item_checkouts_for_wallet(request: web.Request):
     req_ctx = LicensedItemsRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(WalletsPathParams, request)
-    query_params: LicensedItemsPurchasesListQueryParams = (
+    query_params: LicensedItemsCheckoutsListQueryParams = (
         parse_request_query_parameters_as(
-            LicensedItemsPurchasesListQueryParams, request
+            LicensedItemsCheckoutsListQueryParams, request
         )
     )
 

@@ -383,7 +383,7 @@ async def storage_subsystem_mock(mocker: MockerFixture) -> MockedStorageSubsyste
     )
 
     mock2 = mocker.patch(
-        "simcore_service_webserver.projects.projects_api.storage_api.delete_data_folders_of_project_node",
+        "simcore_service_webserver.projects.projects_service.storage_api.delete_data_folders_of_project_node",
         autospec=True,
         return_value=None,
     )
@@ -527,7 +527,17 @@ def postgres_db(
     with engine.begin() as conn:
         conn.execute(sa.DDL("DROP TABLE IF EXISTS alembic_version"))
 
-    orm.metadata.drop_all(engine)
+        conn.execute(
+            # NOTE: terminates all open transactions before droping all tables
+            # This solves https://github.com/ITISFoundation/osparc-simcore/issues/7008
+            sa.DDL(
+                "SELECT pg_terminate_backend(pid) "
+                "FROM pg_stat_activity "
+                "WHERE state = 'idle in transaction';"
+            )
+        )
+        orm.metadata.drop_all(bind=conn)
+
     engine.dispose()
 
 

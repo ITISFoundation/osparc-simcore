@@ -13,6 +13,9 @@ KERNEL_NAME=$(shell uname -s)
 
 NETWORK_NAME=dashboards_timenet
 
+TEST_IMAGE_NAME := itisfoundation/performance-tests
+TEST_IMAGE_TAG := v0
+
 # UTILS
 # NOTE: keep short arguments for `cut` so it works in both BusyBox (alpine) AND Ubuntu
 get_my_ip := $(shell (hostname --all-ip-addresses || hostname -i) 2>/dev/null | cut -d " " -f 1)
@@ -88,3 +91,11 @@ install-ci:
 config: ## Create config for your locust tests
 	@$(call check_defined, input, please define inputs when calling $@ - e.g. ```make $@ input="--help"```)
 	@uv run locust_settings.py $(input) | tee "${ENV_FILE}"
+
+
+.PHONY: build-test-image push-test-image
+build-test-image: _check_venv_active ## Build test image
+	docker build --build-arg PYTHON_VERSION="$(shell python --version | cut -d' ' -f2)" --build-arg UV_VERSION="$(shell uv --version | cut -d' ' -f2)" -t ${TEST_IMAGE_NAME}:${TEST_IMAGE_TAG} ./docker
+
+push-test-image: ## Push test image to dockerhub
+	docker push ${TEST_IMAGE_NAME}:${TEST_IMAGE_TAG}

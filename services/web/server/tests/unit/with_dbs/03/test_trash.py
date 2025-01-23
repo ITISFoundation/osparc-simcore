@@ -76,20 +76,20 @@ async def test_trash_projects(  # noqa: PLR0915
 
     # this test should have no errors stopping services
     mock_remove_dynamic_services = mocker.patch(
-        "simcore_service_webserver.projects._trash_api.projects_api.remove_project_dynamic_services",
+        "simcore_service_webserver.projects._trash_service.projects_service.remove_project_dynamic_services",
         autospec=True,
     )
     mock_stop_pipeline = mocker.patch(
-        "simcore_service_webserver.projects._trash_api.director_v2_api.stop_pipeline",
+        "simcore_service_webserver.projects._trash_service.director_v2_api.stop_pipeline",
         autospec=True,
     )
     mocker.patch(
-        "simcore_service_webserver.projects._trash_api.director_v2_api.is_pipeline_running",
+        "simcore_service_webserver.projects._trash_service.director_v2_api.is_pipeline_running",
         return_value=is_project_running,
         autospec=True,
     )
     mocker.patch(
-        "simcore_service_webserver.projects._trash_api.dynamic_scheduler_api.list_dynamic_services",
+        "simcore_service_webserver.projects._trash_service.dynamic_scheduler_api.list_dynamic_services",
         return_value=[mocker.MagicMock()] if is_project_running else [],
         autospec=True,
     )

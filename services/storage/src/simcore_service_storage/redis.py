@@ -24,7 +24,6 @@ def setup_redis(app: web.Application):
         app[_APP_REDIS_KEY] = client = RedisClientSDK(
             redis_locks_dsn, client_name=APP_NAME
         )
-        await client.setup()
 
         yield
 

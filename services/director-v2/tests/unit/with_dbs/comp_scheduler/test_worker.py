@@ -17,6 +17,7 @@ from fastapi import FastAPI
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from settings_library.rabbit import RabbitSettings
 from simcore_service_director_v2.models.comp_runs import RunMetadataDict
 from simcore_service_director_v2.modules.comp_scheduler._manager import run_new_pipeline
 from simcore_service_director_v2.modules.comp_scheduler._models import (
@@ -25,6 +26,7 @@ from simcore_service_director_v2.modules.comp_scheduler._models import (
 from simcore_service_director_v2.modules.comp_scheduler._worker import (
     _get_scheduler_worker,
 )
+from tenacity import retry, stop_after_delay, wait_fixed
 
 pytest_simcore_core_services_selection = ["postgres", "rabbit", "redis"]
 pytest_simcore_ops_services_selection = ["adminer"]
@@ -98,6 +100,8 @@ def with_scheduling_concurrency(
     "queue_name", [SchedulePipelineRabbitMessage.get_channel_name()]
 )
 async def test_worker_scheduling_parallelism(
+    rabbit_service: RabbitSettings,
+    ensure_parametrized_queue_is_empty: None,
     scheduling_concurrency: int,
     with_scheduling_concurrency: EnvVarsDict,
     with_disabled_auto_scheduling: mock.Mock,
@@ -105,7 +109,6 @@ async def test_worker_scheduling_parallelism(
     initialized_app: FastAPI,
     publish_project: Callable[[], Awaitable[PublishedProject]],
     run_metadata: RunMetadataDict,
-    ensure_parametrized_queue_is_empty: None,
 ):
     with_disabled_auto_scheduling.assert_called_once()
 
@@ -125,8 +128,15 @@ async def test_worker_scheduling_parallelism(
             use_on_demand_clusters=False,
         )
 
+    # whatever scheduling concurrency we call in here, we shall always see the same number of calls to the scheduler
     await asyncio.gather(
         *(_project_pipeline_creation_workflow() for _ in range(scheduling_concurrency))
     )
+    # the call to run the pipeline is async so we need to wait here
     mocked_scheduler_api.assert_called()
-    assert mocked_scheduler_api.call_count == scheduling_concurrency
+
+    @retry(stop=stop_after_delay(5), reraise=True, wait=wait_fixed(0.5))
+    def _assert_expected_called():
+        assert mocked_scheduler_api.call_count == scheduling_concurrency
+
+    _assert_expected_called()

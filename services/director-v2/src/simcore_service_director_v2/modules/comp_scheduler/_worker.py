@@ -33,7 +33,7 @@ def _unique_key_builder(
 
 
 @exclusive(
-    redis=get_redis_client_from_app,
+    get_redis_client_from_app,
     lock_key=get_redis_lock_key(
         MODULE_NAME_WORKER, unique_lock_key_builder=_unique_key_builder
     ),
