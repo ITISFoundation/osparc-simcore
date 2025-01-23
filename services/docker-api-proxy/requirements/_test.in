@@ -1,3 +1,9 @@
+--constraint ../../../requirements/constraints.txt
+
+--requirement ../../../packages/common-library/requirements/_base.in
+--requirement ../../../packages/models-library/requirements/_base.in
+--requirement ../../../packages/service-library/requirements/_base.in
+
 aiodocker
 docker
 faker

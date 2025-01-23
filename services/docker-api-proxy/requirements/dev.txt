@@ -16,3 +16,4 @@
 # installs base + tests requirements
 --requirement _base.txt
 --requirement _test.txt
+--requirement _tools.txt
