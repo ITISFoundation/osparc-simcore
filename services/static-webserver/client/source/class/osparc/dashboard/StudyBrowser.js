@@ -882,6 +882,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
     },
 
+    __addNewPlusButton: function() {
+      const newPlusButton = new osparc.dashboard.NewPlusButton();
+      this._leftFilters.add(newPlusButton);
+    },
+
     __addNewStudyButtons: function() {
       if (this.getCurrentContext() !== "studiesAndFolders") {
         return;
@@ -1043,6 +1048,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       this.__addSortByButton();
       this._addViewModeButton();
+
+      if (osparc.product.Utils.isProduct("tis") || osparc.product.Utils.isProduct("tiplite")) {
+        this.__addNewPlusButton();
+      }
 
       this._addResourceFilter();
 
