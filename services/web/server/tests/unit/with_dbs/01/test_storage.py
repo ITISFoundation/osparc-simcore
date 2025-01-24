@@ -167,7 +167,7 @@ PREFIX = "/" + API_VERSION + "/storage"
         (UserRole.TESTER, status.HTTP_200_OK),
     ],
 )
-async def test_get_storage_locations(
+async def test_list_storage_locations(
     client: TestClient, storage_server: TestServer, logged_user, expected
 ):
     url = "/v0/storage/locations"

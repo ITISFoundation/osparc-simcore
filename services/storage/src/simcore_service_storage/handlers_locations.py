@@ -30,13 +30,13 @@ routes = RouteTableDef()
 
 
 # HANDLERS ---------------------------------------------------
-@routes.get(f"/{API_VTAG}/locations", name="get_storage_locations")
-async def get_storage_locations(request: web.Request) -> web.Response:
+@routes.get(f"/{API_VTAG}/locations", name="list_storage_locations")
+async def list_storage_locations(request: web.Request) -> web.Response:
     query_params: StorageQueryParamsBase = parse_request_query_parameters_as(
         StorageQueryParamsBase, request
     )
     log.debug(
-        "received call to get_storage_locations with %s",
+        "received call to list_storage_locations with %s",
         f"{query_params=}",
     )
     dsm_provider = get_dsm_provider(request.app)

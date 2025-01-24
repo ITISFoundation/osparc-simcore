@@ -46,7 +46,7 @@ R = TypeVar("R")
 
 
 def handle_client_exception(
-    handler: Callable[P, Coroutine[Any, Any, R]]
+    handler: Callable[P, Coroutine[Any, Any, R]],
 ) -> Callable[P, Coroutine[Any, Any, R]]:
     @wraps(handler)
     async def wrapped(*args: P.args, **kwargs: P.kwargs) -> R:
@@ -134,7 +134,7 @@ async def retry_request(
 
 
 @handle_client_exception
-async def get_storage_locations(
+async def list_storage_locations(
     *, session: ClientSession, user_id: UserID
 ) -> FileLocationArray:
     async with retry_request(
@@ -239,7 +239,6 @@ async def get_file_metadata(
         expected_status=status.HTTP_200_OK,
         params={"user_id": f"{user_id}"},
     ) as response:
-
         payload = await response.json()
         if not payload.get("data"):
             # NOTE: keeps backwards compatibility

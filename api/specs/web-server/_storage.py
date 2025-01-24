@@ -41,7 +41,7 @@ StorageFileIDStr: TypeAlias = str
     response_model=list[DatasetMetaData],
     summary="Get available storage locations",
 )
-async def get_storage_locations():
+async def list_storage_locations():
     """Returns the list of available storage locations"""
 
 
