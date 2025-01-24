@@ -82,7 +82,7 @@ async def test_get_files_metadata_dataset(
         assert fmd.file_size == file.stat().st_size
 
 
-async def test_get_datasets_metadata(
+async def test_list_datasets_metadata(
     client: TestClient,
     user_id: UserID,
     location_id: int,
@@ -91,7 +91,7 @@ async def test_get_datasets_metadata(
     assert client.app
 
     url = (
-        client.app.router["get_datasets_metadata"]
+        client.app.router["list_datasets_metadata"]
         .url_for(location_id=f"{location_id}")
         .with_query(user_id=f"{user_id}")
     )

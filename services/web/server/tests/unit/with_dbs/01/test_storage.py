@@ -215,13 +215,13 @@ async def test_sync_file_meta_table(
         (UserRole.TESTER, status.HTTP_200_OK),
     ],
 )
-async def test_get_datasets_metadata(
+async def test_list_datasets_metadata(
     client: TestClient, storage_server: TestServer, logged_user, expected
 ):
     url = "/v0/storage/locations/0/datasets"
     assert url.startswith(PREFIX)
 
-    _url = client.app.router["get_datasets_metadata"].url_for(location_id="0")
+    _url = client.app.router["list_datasets_metadata"].url_for(location_id="0")
 
     assert url == str(_url)
 

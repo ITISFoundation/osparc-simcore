@@ -26,7 +26,7 @@ paths:
       - datasets
       summary: Get datasets metadata
       description: returns all the top level datasets a user has access to
-      operationId: get_datasets_metadata
+      operationId: list_datasets_metadata
       parameters:
       - name: location_id
         in: path
