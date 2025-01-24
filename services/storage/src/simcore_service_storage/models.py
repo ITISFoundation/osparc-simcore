@@ -179,6 +179,10 @@ class FileDownloadQueryParams(StorageQueryParamsBase):
         return v
 
 
+class FileDownloadResponse(BaseModel):
+    link: AnyUrl
+
+
 class FileUploadQueryParams(StorageQueryParamsBase):
     link_type: LinkType = LinkType.PRESIGNED
     file_size: ByteSize | None = None  # NOTE: in old legacy services this might happen
@@ -214,6 +218,10 @@ class FileUploadQueryParams(StorageQueryParamsBase):
         - storage relies on lazy update to find if the file is finished uploaded (when client calls get_file_meta_data, or if the dsm_cleaner goes over it after the upload time is expired)
         """
         return self.file_size is None and self.is_directory is False
+
+
+class FileUploadResponseV1(BaseModel):
+    link: AnyUrl
 
 
 class DeleteFolderQueryParams(StorageQueryParamsBase):
