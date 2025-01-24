@@ -24,6 +24,7 @@ from ...models import (
     LocationPathParams,
     StorageQueryParamsBase,
     SyncMetadataQueryParams,
+    SyncMetadataResponse,
 )
 from ...settings import Settings
 from ...simcore_s3_dsm import SimcoreS3DataManager
@@ -95,15 +96,15 @@ async def synchronise_meta_data_table(request: web.Request) -> web.Response:
         )
     else:
         sync_results = await sync_coro
-
+    response = SyncMetadataResponse(
+        removed=sync_results,
+        fire_and_forget=query_params.fire_and_forget,
+        dry_run=query_params.dry_run,
+    )
     return web.json_response(
         {
             "error": None,
-            "data": {
-                "removed": sync_results,
-                "fire_and_forget": query_params.fire_and_forget,
-                "dry_run": query_params.dry_run,
-            },
+            "data": response,
         },
         dumps=json_dumps,
     )

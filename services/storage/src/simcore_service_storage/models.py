@@ -43,7 +43,8 @@ from pydantic import (
 )
 
 
-class DatasetMetaData(DatasetMetaDataGet): ...
+class DatasetMetaData(DatasetMetaDataGet):
+    ...
 
 
 def is_uuid(value: str) -> bool:
@@ -159,6 +160,12 @@ class FileMetadataListQueryParams(StorageQueryParamsBase):
 class SyncMetadataQueryParams(BaseModel):
     dry_run: bool = False
     fire_and_forget: bool = False
+
+
+class SyncMetadataResponse(BaseModel):
+    removed: list[StorageFileID]
+    fire_and_forget: bool
+    dry_run: bool
 
 
 class FileDownloadQueryParams(StorageQueryParamsBase):
