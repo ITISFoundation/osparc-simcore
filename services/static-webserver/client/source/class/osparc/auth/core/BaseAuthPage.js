@@ -72,13 +72,9 @@ qx.Class.define("osparc.auth.core.BaseAuthPage", {
      */
     _form: null,
 
-    /**
-     * This method gets called upon construction and
-     * must be overriden in a subclass
-     *
-     * @signature function()
-     */
-    _buildPage: null,
+    _buildPage: function() {
+      throw new Error("Abstract method called!");
+    },
 
     beautifyFormFields: function() {
       const formItems = this._form.getItems();
