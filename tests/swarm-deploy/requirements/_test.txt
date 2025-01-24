@@ -125,7 +125,7 @@ click==8.1.8
     #   -r requirements/../../../packages/postgres-database/requirements/_migration.txt
     #   -r requirements/_test.in
     #   typer
-deprecated==1.2.15
+deprecated==1.2.16
     # via
     #   opentelemetry-api
     #   opentelemetry-exporter-otlp-proto-grpc

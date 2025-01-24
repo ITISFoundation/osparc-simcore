@@ -71,3 +71,6 @@ pytest-lazy-fixture>=999999999
 
 # avoid downgrades of openapi-spec-validator related libraries
 referencing==0.35.1
+
+# moto==5.0.21 broke `get_ec2_instance_capabilities`
+moto<5.0.21

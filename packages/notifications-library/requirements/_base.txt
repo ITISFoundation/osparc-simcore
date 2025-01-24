@@ -16,7 +16,7 @@ attrs==24.3.0
     #   referencing
 click==8.1.8
     # via typer
-deprecated==1.2.15
+deprecated==1.2.16
     # via
     #   opentelemetry-api
     #   opentelemetry-semantic-conventions

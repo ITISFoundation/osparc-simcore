@@ -21,7 +21,7 @@ attrs==24.3.0
     #   aiohttp
     #   jsonschema
     #   referencing
-deprecated==1.2.15
+deprecated==1.2.16
     # via
     #   opentelemetry-api
     #   opentelemetry-semantic-conventions

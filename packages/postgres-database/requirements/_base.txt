@@ -4,7 +4,7 @@ annotated-types==0.7.0
     # via pydantic
 asyncpg==0.30.0
     # via sqlalchemy
-deprecated==1.2.15
+deprecated==1.2.16
     # via
     #   opentelemetry-api
     #   opentelemetry-semantic-conventions
