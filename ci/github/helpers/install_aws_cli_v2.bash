@@ -16,7 +16,7 @@ curl "https://awscli.amazonaws.com/awscli-exe-linux-${ARCH}-${AWS_CLI_VERSION}.z
   apt-get update &&
   apt-get install -y unzip &&
   unzip awscliv2.zip &&
-  ./aws/install &&
+  ./aws/install --update &&
   apt-get remove --purge -y unzip &&
   rm awscliv2.zip &&
   rm -rf awscliv2
