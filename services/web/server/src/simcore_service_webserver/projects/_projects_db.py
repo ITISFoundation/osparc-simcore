@@ -11,6 +11,7 @@ from simcore_postgres_database.utils_repos import (
     pass_or_acquire_connection,
     transaction_context,
 )
+from sqlalchemy import sql
 from sqlalchemy.ext.asyncio import AsyncConnection
 
 from ..db.plugin import get_asyncpg_engine
@@ -50,7 +51,7 @@ async def patch_project(
         return ProjectDB.model_validate(row)
 
 
-def _select_trashed_by_primary_gid_query():
+def _select_trashed_by_primary_gid_query() -> sql.Select:
     return sa.select(
         users.c.primary_gid.label("trashed_by_primary_gid"),
     ).select_from(projects.outerjoin(users, projects.c.trashed_by == users.c.id))

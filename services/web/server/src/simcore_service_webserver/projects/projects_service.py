@@ -220,7 +220,7 @@ async def get_project_for_user(
         and project.get("trashed_by", project.get("trashedBy")) is not None
     ):
         project.update(
-            trashed_by_primary_gid=await _projects_db.get_trashed_by_primary_gid(
+            trashedByPrimaryGid=await _projects_db.get_trashed_by_primary_gid(
                 app, projects_uuid=project["uuid"]
             )
         )
