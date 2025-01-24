@@ -44,6 +44,7 @@ from models_library.services_enums import ServiceState
 from pydantic import ByteSize, TypeAdapter
 from pytest_docker.plugin import Services
 from pytest_mock import MockerFixture
+from pytest_simcore.helpers import postgres_tools
 from pytest_simcore.helpers.faker_factories import random_product
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -524,20 +525,7 @@ def postgres_db(
     # NOTE: we directly drop the table, that is faster
     # testing the upgrade/downgrade is already done in postgres-database.
     # there is no need to it here.
-    with engine.begin() as conn:
-        conn.execute(sa.DDL("DROP TABLE IF EXISTS alembic_version"))
-
-        conn.execute(
-            # NOTE: terminates all open transactions before droping all tables
-            # This solves https://github.com/ITISFoundation/osparc-simcore/issues/7008
-            sa.DDL(
-                "SELECT pg_terminate_backend(pid) "
-                "FROM pg_stat_activity "
-                "WHERE state = 'idle in transaction';"
-            )
-        )
-        # SEE https://github.com/ITISFoundation/osparc-simcore/issues/1776
-        orm.metadata.drop_all(bind=conn)
+    postgres_tools.drop_all_tables(engine)
 
     engine.dispose()
 

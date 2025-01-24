@@ -24,6 +24,7 @@ from fastapi import FastAPI
 from models_library.api_schemas_api_server.api_keys import ApiKeyInDB
 from pydantic import PositiveInt
 from pytest_mock import MockerFixture
+from pytest_simcore.helpers import postgres_tools
 from pytest_simcore.helpers.faker_factories import (
     random_api_key,
     random_product,
@@ -32,7 +33,6 @@ from pytest_simcore.helpers.faker_factories import (
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_postgres_database.models.api_keys import api_keys
-from simcore_postgres_database.models.base import metadata
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.users import users
 from simcore_service_api_server.core.application import init_app
@@ -141,8 +141,8 @@ def migrated_db(postgres_service: dict, make_engine: Callable):
     pg_cli.downgrade.callback("base")
     pg_cli.clean.callback()
     # FIXME: deletes all because downgrade is not reliable!
-    engine = make_engine(is_async=False)
-    metadata.drop_all(engine)
+    sync_engine = make_engine(is_async=False)
+    postgres_tools.drop_all_tables(sync_engine)
 
 
 @pytest.fixture

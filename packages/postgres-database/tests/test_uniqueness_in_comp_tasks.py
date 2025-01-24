@@ -4,10 +4,14 @@
 # pylint:disable=redefined-outer-name
 
 import json
+from collections.abc import Awaitable, Callable
 
+import aiopg.sa.engine
+import aiopg.sa.exc
 import pytest
 import sqlalchemy as sa
 from psycopg2.errors import UniqueViolation  # pylint: disable=no-name-in-module
+from pytest_simcore.helpers import postgres_tools
 from pytest_simcore.helpers.faker_factories import fake_pipeline, fake_task_factory
 from simcore_postgres_database.models.base import metadata
 from simcore_postgres_database.webserver_models import comp_pipeline, comp_tasks
@@ -16,9 +20,11 @@ fake_task = fake_task_factory(first_internal_id=1)
 
 
 @pytest.fixture
-async def engine(make_engine):
-    engine = await make_engine()
-    sync_engine = make_engine(is_async=False)
+async def engine(
+    make_engine: Callable[[bool], Awaitable[aiopg.sa.engine.Engine] | sa.engine.Engine]
+):
+    engine: aiopg.sa.engine.Engine = await make_engine()
+    sync_engine: sa.engine.Engine = make_engine(is_async=False)
     metadata.drop_all(sync_engine)
     metadata.create_all(sync_engine)
 
@@ -32,6 +38,7 @@ async def engine(make_engine):
 
     yield engine
 
+    postgres_tools.drop_all_tables(sync_engine)
     engine.close()
     await engine.wait_closed()
 

@@ -13,6 +13,7 @@ import aiopg.sa
 import pytest
 import sqlalchemy as sa
 import sqlalchemy.exc as sa_exceptions
+from pytest_simcore.helpers import postgres_tools
 from servicelib.aiohttp.aiopg_utils import init_pg_tables, is_pg_responsive
 from servicelib.common_aiopg_utils import DataSourceName, create_pg_engine
 
@@ -64,7 +65,7 @@ def test_dsn_uri_with_query(postgres_service_with_fake_data: DataSourceName):
 
         # if url is wrong, these will fail
         metadata.create_all(sa_engine)
-        metadata.drop_all(sa_engine)
+        postgres_tools.drop_all_tables(sa_engine)
 
     except sa_exceptions.SQLAlchemyError as ee:
         pytest.fail(f"Cannot connect with {uri}: {ee}")

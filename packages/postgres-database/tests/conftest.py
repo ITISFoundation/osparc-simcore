@@ -18,6 +18,7 @@ from aiopg.sa.connection import SAConnection
 from aiopg.sa.engine import Engine
 from aiopg.sa.result import ResultProxy, RowProxy
 from faker import Faker
+from pytest_simcore.helpers import postgres_tools
 from pytest_simcore.helpers.faker_factories import (
     random_group,
     random_project,
@@ -165,10 +166,7 @@ def pg_sa_engine(
 
     yield sync_engine
 
-    # NOTE: ALL is deleted after
-    with sync_engine.begin() as conn:
-        conn.execute(sa.DDL("DROP TABLE IF EXISTS alembic_version"))
-    db_metadata.drop_all(sync_engine)
+    postgres_tools.drop_all_tables(sync_engine)
     sync_engine.dispose()
 
 

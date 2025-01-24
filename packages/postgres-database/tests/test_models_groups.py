@@ -1,6 +1,5 @@
 # pylint: disable=redefined-outer-name
-# pylint: disable=unused-argument
-# pylint: disable=unused-variable
+# pylint: disable=unused-argument# pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
 
@@ -13,6 +12,7 @@ from aiopg.sa.connection import SAConnection
 from aiopg.sa.engine import Engine
 from aiopg.sa.result import ResultProxy, RowProxy
 from psycopg2.errors import ForeignKeyViolation, RaiseException, UniqueViolation
+from pytest_simcore.helpers import postgres_tools
 from pytest_simcore.helpers.faker_factories import random_user
 from simcore_postgres_database.models.base import metadata
 from simcore_postgres_database.webserver_models import (
@@ -36,7 +36,7 @@ async def connection(
     async with engine.acquire() as conn:
         yield conn
 
-    metadata.drop_all(sync_engine)
+    postgres_tools.drop_all_tables(sync_engine)
 
 
 async def test_user_group_uniqueness(
