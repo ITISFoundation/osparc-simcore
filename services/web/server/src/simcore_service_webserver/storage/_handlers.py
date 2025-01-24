@@ -151,11 +151,11 @@ _LIST_ALL_DATASETS_TIMEOUT_S: Final[int] = 60
 
 @routes.get(
     _path_prefix + "/{location_id}/datasets/{dataset_id}/metadata",
-    name="get_files_metadata_dataset",
+    name="list_dataset_files_metadata",
 )
 @login_required
 @permission_required("storage.files.*")
-async def get_files_metadata_dataset(request: web.Request) -> web.Response:
+async def list_dataset_files_metadata(request: web.Request) -> web.Response:
     class _PathParams(BaseModel):
         location_id: LocationID
         dataset_id: str

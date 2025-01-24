@@ -28,7 +28,7 @@ pytest_simcore_core_services_selection = ["postgres"]
 pytest_simcore_ops_services_selection = ["adminer"]
 
 
-async def test_get_files_metadata_dataset_with_no_files_returns_empty_array(
+async def test_list_dataset_files_metadata_with_no_files_returns_empty_array(
     client: TestClient,
     user_id: UserID,
     project_id: ProjectID,
@@ -36,7 +36,7 @@ async def test_get_files_metadata_dataset_with_no_files_returns_empty_array(
 ):
     assert client.app
     url = (
-        client.app.router["get_files_metadata_dataset"]
+        client.app.router["list_dataset_files_metadata"]
         .url_for(location_id=f"{location_id}", dataset_id=f"{project_id}")
         .with_query(user_id=user_id)
     )
@@ -51,7 +51,7 @@ async def test_get_files_metadata_dataset_with_no_files_returns_empty_array(
     [parametrized_file_size("100Mib")],
     ids=byte_size_ids,
 )
-async def test_get_files_metadata_dataset(
+async def test_list_dataset_files_metadata(
     upload_file: Callable[[ByteSize, str], Awaitable[tuple[Path, SimcoreS3FileID]]],
     client: TestClient,
     user_id: UserID,
@@ -65,7 +65,7 @@ async def test_get_files_metadata_dataset(
     for n in range(NUM_FILES):
         file, file_id = await upload_file(file_size, faker.file_name())
         url = (
-            client.app.router["get_files_metadata_dataset"]
+            client.app.router["list_dataset_files_metadata"]
             .url_for(location_id=f"{location_id}", dataset_id=f"{project_id}")
             .with_query(user_id=user_id)
         )
@@ -120,7 +120,7 @@ async def test_ensure_expand_dirs_defaults_true(
 
     assert client.app
     url = (
-        client.app.router["get_files_metadata_dataset"]
+        client.app.router["list_dataset_files_metadata"]
         .url_for(location_id=f"{location_id}", dataset_id=f"{project_id}")
         .with_query(user_id=user_id)
     )

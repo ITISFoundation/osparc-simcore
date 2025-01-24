@@ -49,9 +49,9 @@ async def list_datasets_metadata(request: web.Request) -> web.Response:
 
 @routes.get(
     f"/{API_VTAG}/locations/{{location_id}}/datasets/{{dataset_id}}/metadata",
-    name="get_files_metadata_dataset",
+    name="list_dataset_files_metadata",
 )
-async def get_files_metadata_dataset(request: web.Request) -> web.Response:
+async def list_dataset_files_metadata(request: web.Request) -> web.Response:
     query_params: FilesMetadataDatasetQueryParams = parse_request_query_parameters_as(
         FilesMetadataDatasetQueryParams, request
     )
@@ -59,7 +59,7 @@ async def get_files_metadata_dataset(request: web.Request) -> web.Response:
         FilesMetadataDatasetPathParams, request
     )
     log.debug(
-        "received call to get_files_metadata_dataset with %s",
+        "received call to list_dataset_files_metadata with %s",
         f"{path_params=}, {query_params=}",
     )
     dsm = get_dsm_provider(request.app).get(path_params.location_id)

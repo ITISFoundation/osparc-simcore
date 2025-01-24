@@ -55,7 +55,7 @@ paths:
       - datasets
       summary: Get Files Metadata
       description: returns all the file meta data inside dataset with dataset_id
-      operationId: get_files_metadata_dataset
+      operationId: list_dataset_files_metadata
       parameters:
       - name: location_id
         in: path
