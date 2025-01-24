@@ -8,6 +8,7 @@ from simcore_service_storage.models import (
     LocationPathParams,
     StorageQueryParamsBase,
     SyncMetadataQueryParams,
+    SyncMetadataResponse,
 )
 
 router = APIRouter(
@@ -25,21 +26,8 @@ async def list_storage_locations(
 ): ...
 
 
-@router.post("/locations/{location_id}:sync")
+@router.post("/locations/{location_id}:sync", response_model=SyncMetadataResponse)
 async def synchronise_meta_data_table(
     _query: Annotated[SyncMetadataQueryParams, Depends()],
     _path: Annotated[LocationPathParams, Depends()],
-):
-    ...
-
-    # return web.json_response(
-    #     {
-    #         "error": None,
-    #         "data": {
-    #             "removed": sync_results,
-    #             "fire_and_forget": query_params.fire_and_forget,
-    #             "dry_run": query_params.dry_run,
-    #         },
-    #     },
-    #     dumps=json_dumps,
-    # )
+): ...
