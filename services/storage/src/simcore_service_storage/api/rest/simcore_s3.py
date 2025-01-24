@@ -20,17 +20,17 @@ from servicelib.aiohttp.requests_validation import (
 from servicelib.logging_utils import log_context
 from settings_library.s3 import S3Settings
 
-from . import sts
-from ._meta import API_VTAG
-from .dsm import get_dsm_provider
-from .models import (
+from ... import sts
+from ..._meta import API_VTAG
+from ...dsm import get_dsm_provider
+from ...models import (
     DeleteFolderQueryParams,
     FileMetaData,
     SearchFilesQueryParams,
     SimcoreS3FoldersParams,
     StorageQueryParamsBase,
 )
-from .simcore_s3_dsm import SimcoreS3DataManager
+from ...simcore_s3_dsm import SimcoreS3DataManager
 
 _logger = logging.getLogger(__name__)
 

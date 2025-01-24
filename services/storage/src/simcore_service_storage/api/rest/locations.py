@@ -18,11 +18,15 @@ from servicelib.aiohttp.requests_validation import (
 from servicelib.utils import fire_and_forget_task
 
 # Exclusive for simcore-s3 storage -----------------------
-from ._meta import API_VTAG
-from .dsm import get_dsm_provider
-from .models import LocationPathParams, StorageQueryParamsBase, SyncMetadataQueryParams
-from .settings import Settings
-from .simcore_s3_dsm import SimcoreS3DataManager
+from ..._meta import API_VTAG
+from ...dsm import get_dsm_provider
+from ...models import (
+    LocationPathParams,
+    StorageQueryParamsBase,
+    SyncMetadataQueryParams,
+)
+from ...settings import Settings
+from ...simcore_s3_dsm import SimcoreS3DataManager
 
 _logger = logging.getLogger(__name__)
 
@@ -81,7 +85,7 @@ async def synchronise_meta_data_table(request: web.Request) -> web.Response:
                     "Sync metadata table completed: %d entries removed",
                     len(result),
                 )
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 _logger.exception("Sync metadata table timed out (%s seconds)", timeout)
 
         fire_and_forget_task(

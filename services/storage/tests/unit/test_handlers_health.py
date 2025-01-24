@@ -11,7 +11,7 @@ from models_library.app_diagnostics import AppStatusCheck
 from moto.server import ThreadedMotoServer
 from pytest_simcore.helpers.assert_checks import assert_status
 from servicelib.aiohttp import status
-from simcore_service_storage.handlers_health import HealthCheck
+from simcore_service_storage.health import HealthCheck
 from types_aiobotocore_s3 import S3Client
 
 pytest_simcore_core_services_selection = ["postgres"]

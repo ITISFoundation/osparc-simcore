@@ -51,7 +51,7 @@ from settings_library.s3 import S3Settings
 from simcore_postgres_database.storage_models import file_meta_data, projects, users
 from simcore_service_storage.application import create
 from simcore_service_storage.dsm import get_dsm_provider
-from simcore_service_storage.handlers_files import UPLOAD_TASKS_KEY
+from simcore_service_storage.files import UPLOAD_TASKS_KEY
 from simcore_service_storage.models import S3BucketName
 from simcore_service_storage.s3 import get_s3_client
 from simcore_service_storage.settings import Settings
@@ -378,10 +378,13 @@ def upload_file(
                 stop=stop_after_delay(60),
                 retry=retry_if_exception_type(ValueError),
             ):
-                with attempt, log_context(
-                    logging.INFO,
-                    f"waiting for upload completion {state_url=}, {attempt.retry_state.attempt_number}",
-                ) as ctx:
+                with (
+                    attempt,
+                    log_context(
+                        logging.INFO,
+                        f"waiting for upload completion {state_url=}, {attempt.retry_state.attempt_number}",
+                    ) as ctx,
+                ):
                     response = await client.post(f"{state_url}")
                     response.raise_for_status()
                     data, error = await assert_status(response, status.HTTP_200_OK)
@@ -497,10 +500,13 @@ async def create_empty_directory(
             stop=stop_after_delay(60),
             retry=retry_if_exception_type(AssertionError),
         ):
-            with attempt, log_context(
-                logging.INFO,
-                f"waiting for upload completion {state_url=}, {attempt.retry_state.attempt_number}",
-            ) as ctx:
+            with (
+                attempt,
+                log_context(
+                    logging.INFO,
+                    f"waiting for upload completion {state_url=}, {attempt.retry_state.attempt_number}",
+                ) as ctx,
+            ):
                 response = await client.post(f"{state_url}")
                 data, error = await assert_status(response, status.HTTP_200_OK)
                 assert not error

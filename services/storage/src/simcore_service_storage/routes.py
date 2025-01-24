@@ -1,7 +1,3 @@
-""" RESTful API for simcore_service_storage
-
-"""
-
 import logging
 from pathlib import Path
 
@@ -13,21 +9,14 @@ from servicelib.aiohttp.rest_utils import (
     set_default_route_names,
 )
 
-from . import (
-    handlers_datasets,
-    handlers_files,
-    handlers_health,
-    handlers_locations,
-    handlers_simcore_s3,
-)
 from ._meta import API_VTAG
-from .handlers_files import UPLOAD_TASKS_KEY
+from .api.rest import datasets, files, health, locations, simcore_s3
 from .resources import storage_resources
 
 _logger = logging.getLogger(__name__)
 
 
-def setup_rest(app: web.Application):
+def setup_rest_api_routes(app: web.Application):
     """Setup the rest API module in the application in aiohttp fashion.
 
     - loads and validate openapi specs from a remote (e.g. apihub) or local location
@@ -44,11 +33,11 @@ def setup_rest(app: web.Application):
 
     # Connects handlers
     for routes in [
-        handlers_health.routes,
-        handlers_locations.routes,
-        handlers_datasets.routes,
-        handlers_files.routes,
-        handlers_simcore_s3.routes,
+        health.routes,
+        locations.routes,
+        datasets.routes,
+        files.routes,
+        simcore_s3.routes,
     ]:
         set_default_route_names(routes)
         app.router.add_routes(routes)
@@ -56,7 +45,7 @@ def setup_rest(app: web.Application):
     _logger.debug("routes: %s", get_named_routes_as_message(app))
 
     # prepare container for upload tasks
-    app[UPLOAD_TASKS_KEY] = {}
+    app[files.UPLOAD_TASKS_KEY] = {}
 
     # Enable error, validation and envelop middleware on API routes
     append_rest_middlewares(app, api_version=f"/{API_VTAG}")

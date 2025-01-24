@@ -51,7 +51,7 @@ from pytest_simcore.helpers.parametrizations import byte_size_ids
 from pytest_simcore.helpers.s3 import upload_file_part, upload_file_to_presigned_link
 from servicelib.aiohttp import status
 from simcore_service_storage.constants import S3_UNDEFINED_OR_EXTERNAL_MULTIPART_ID
-from simcore_service_storage.handlers_files import UPLOAD_TASKS_KEY
+from simcore_service_storage.files import UPLOAD_TASKS_KEY
 from simcore_service_storage.models import S3BucketName, UploadID
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
@@ -644,10 +644,13 @@ async def test_upload_real_file_with_emulated_storage_restart_after_completion_w
         stop=stop_after_delay(60),
         retry=retry_if_exception_type(AssertionError),
     ):
-        with attempt, log_context(
-            logging.INFO,
-            f"waiting for upload completion {state_url=}, {attempt.retry_state.attempt_number}",
-        ) as ctx:
+        with (
+            attempt,
+            log_context(
+                logging.INFO,
+                f"waiting for upload completion {state_url=}, {attempt.retry_state.attempt_number}",
+            ) as ctx,
+        ):
             response = await client.post(f"{state_url}")
             data, error = await assert_status(response, status.HTTP_200_OK)
             assert not error
@@ -778,10 +781,13 @@ async def test_upload_real_file_with_s3_client(
             stop=stop_after_delay(60),
             retry=retry_if_exception_type(ValueError),
         ):
-            with attempt, log_context(
-                logging.INFO,
-                f"waiting for upload completion {state_url=}, {attempt.retry_state.attempt_number}",
-            ) as ctx:
+            with (
+                attempt,
+                log_context(
+                    logging.INFO,
+                    f"waiting for upload completion {state_url=}, {attempt.retry_state.attempt_number}",
+                ) as ctx,
+            ):
                 response = await client.post(f"{state_url}")
                 response.raise_for_status()
                 data, error = await assert_status(response, status.HTTP_200_OK)
