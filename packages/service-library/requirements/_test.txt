@@ -29,7 +29,7 @@ attrs==24.3.0
     #   jsonschema
     #   pytest-docker
     #   referencing
-botocore==1.36.4
+botocore==1.36.5
     # via -r requirements/_test.in
 certifi==2024.12.14
     # via
@@ -51,7 +51,7 @@ docker==7.1.0
     # via -r requirements/_test.in
 execnet==2.1.1
     # via pytest-xdist
-faker==34.0.2
+faker==35.0.0
     # via -r requirements/_test.in
 flaky==3.8.1
     # via -r requirements/_test.in
@@ -97,18 +97,14 @@ jsonschema==4.23.0
     # via
     #   -c requirements/_aiohttp.txt
     #   -c requirements/_base.txt
-    #   jsonschema-spec
     #   openapi-schema-validator
     #   openapi-spec-validator
-jsonschema-spec==0.1.3
-    # via openapi-spec-validator
 jsonschema-specifications==2024.10.1
     # via
     #   -c requirements/_aiohttp.txt
     #   -c requirements/_base.txt
     #   jsonschema
-lazy-object-proxy==1.10.0
-    # via openapi-spec-validator
+    #   openapi-schema-validator
 multidict==6.1.0
     # via
     #   -c requirements/_aiohttp.txt
@@ -121,9 +117,11 @@ mypy-extensions==1.0.0
     # via mypy
 numpy==2.2.2
     # via -r requirements/_test.in
-openapi-schema-validator==0.4.3
-    # via openapi-spec-validator
-openapi-spec-validator==0.5.5
+openapi-schema-validator==0.6.3
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   openapi-spec-validator
+openapi-spec-validator==0.3.1
     # via -r requirements/_test.in
 packaging==24.2
     # via
@@ -132,8 +130,6 @@ packaging==24.2
     #   -c requirements/_fastapi.txt
     #   pytest
     #   pytest-sugar
-pathable==0.4.4
-    # via jsonschema-spec
 pillow==11.1.0
     # via -r requirements/_test.in
 pip==24.3.1
@@ -201,7 +197,7 @@ pyyaml==6.0.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
-    #   jsonschema-spec
+    #   openapi-spec-validator
 referencing==0.36.1
     # via
     #   -c requirements/_aiohttp.txt
@@ -225,6 +221,7 @@ rpds-py==0.22.3
 six==1.17.0
     # via
     #   -c requirements/_base.txt
+    #   openapi-spec-validator
     #   python-dateutil
     #   rfc3339-validator
 sniffio==1.3.1
@@ -259,7 +256,6 @@ typing-extensions==4.12.2
     #   -c requirements/_fastapi.txt
     #   anyio
     #   faker
-    #   jsonschema-spec
     #   mypy
     #   referencing
     #   sqlalchemy2-stubs

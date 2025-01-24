@@ -6,7 +6,7 @@ coverage==7.6.10
     # via
     #   -r requirements/_test.in
     #   pytest-cov
-faker==34.0.2
+faker==35.0.0
     # via -r requirements/_test.in
 flexcache==0.3
     # via pint

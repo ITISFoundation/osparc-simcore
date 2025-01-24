@@ -47,7 +47,7 @@ propcache==0.2.1
     # via yarl
 psycopg2-binary==2.9.10
     # via sqlalchemy
-pydantic==2.10.5
+pydantic==2.10.6
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt

@@ -4,7 +4,7 @@ anyio==4.3.0
     #   httpx
 asgi-lifespan==2.1.0
     # via -r requirements/_test.in
-botocore-stubs==1.36.4
+botocore-stubs==1.36.5
     # via
     #   types-boto3
     #   types-botocore
@@ -25,7 +25,7 @@ coverage==7.6.10
     #   pytest-cov
 execnet==2.1.1
     # via pytest-xdist
-faker==34.0.2
+faker==35.0.0
     # via -r requirements/_test.in
 h11==0.14.0
     # via
@@ -110,11 +110,11 @@ termcolor==2.5.0
     # via pytest-sugar
 types-awscrt==0.23.6
     # via botocore-stubs
-types-boto3==1.36.4
+types-boto3==1.36.5
     # via -r requirements/_test.in
 types-botocore==1.0.2
     # via -r requirements/_test.in
-types-s3transfer==0.11.1
+types-s3transfer==0.11.2
     # via types-boto3
 typing-extensions==4.12.2
     # via

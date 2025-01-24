@@ -21,7 +21,7 @@ coverage==7.6.10
     #   pytest-cov
 docker==7.1.0
     # via -r requirements/_test.in
-faker==34.0.2
+faker==35.0.0
     # via -r requirements/_test.in
 greenlet==3.1.1
     # via

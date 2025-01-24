@@ -60,7 +60,7 @@ certifi==2024.8.30
     #   requests
 cffi==1.17.1
     # via cryptography
-cfn-lint==1.22.6
+cfn-lint==1.22.7
     # via moto
 charset-normalizer==3.4.0
     # via
@@ -87,7 +87,7 @@ docker==7.1.0
     # via
     #   -r requirements/_test.in
     #   moto
-faker==34.0.2
+faker==35.0.0
     # via -r requirements/_test.in
 fakeredis==2.26.2
     # via -r requirements/_test.in
@@ -182,7 +182,9 @@ multidict==6.1.0
 networkx==3.4.2
     # via cfn-lint
 openapi-schema-validator==0.6.3
-    # via openapi-spec-validator
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   openapi-spec-validator
 openapi-spec-validator==0.7.1
     # via moto
 orderly-set==5.2.3

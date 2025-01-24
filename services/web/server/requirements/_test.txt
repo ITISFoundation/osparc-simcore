@@ -86,7 +86,6 @@ jsonschema==3.2.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-    #   openapi-schema-validator
     #   openapi-spec-validator
 mako==1.2.2
     # via
@@ -106,9 +105,7 @@ mypy==1.14.1
     # via sqlalchemy
 mypy-extensions==1.0.0
     # via mypy
-openapi-schema-validator==0.2.3
-    # via openapi-spec-validator
-openapi-spec-validator==0.4.0
+openapi-spec-validator==0.2.9
     # via -r requirements/_test.in
 packaging==24.1
     # via
@@ -193,11 +190,11 @@ setuptools==69.1.1
     # via
     #   -c requirements/_base.txt
     #   jsonschema
-    #   openapi-spec-validator
 six==1.16.0
     # via
     #   -c requirements/_base.txt
     #   jsonschema
+    #   openapi-spec-validator
     #   python-dateutil
 sortedcontainers==2.4.0
     # via hypothesis

@@ -82,7 +82,7 @@ prometheus-client==0.21.1
     #   prometheus-fastapi-instrumentator
 prometheus-fastapi-instrumentator==7.0.2
     # via -r requirements/_fastapi.in
-pydantic==2.10.5
+pydantic==2.10.6
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt

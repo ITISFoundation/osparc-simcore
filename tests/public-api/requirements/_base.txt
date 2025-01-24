@@ -41,7 +41,7 @@ osparc-client==0.8.3
     # via osparc
 packaging==24.2
     # via osparc
-pydantic==2.10.5
+pydantic==2.10.6
     # via
     #   -c requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt

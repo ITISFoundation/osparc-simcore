@@ -8,7 +8,7 @@ packaging==24.2
     #   pytest-sugar
 pluggy==1.5.0
     # via pytest
-pydantic==2.10.5
+pydantic==2.10.6
     # via
     #   -c requirements/../../../packages/service-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt

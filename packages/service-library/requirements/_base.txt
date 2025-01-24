@@ -75,7 +75,7 @@ googleapis-common-protos==1.66.0
     # via
     #   opentelemetry-exporter-otlp-proto-grpc
     #   opentelemetry-exporter-otlp-proto-http
-grpcio==1.69.0
+grpcio==1.70.0
     # via opentelemetry-exporter-otlp-proto-grpc
 idna==3.10
     # via
@@ -173,7 +173,7 @@ protobuf==5.29.3
     #   opentelemetry-proto
 psutil==6.1.1
     # via -r requirements/_base.in
-pydantic==2.10.5
+pydantic==2.10.6
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -204,7 +204,7 @@ pydantic-settings==2.7.1
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
 pygments==2.19.1
     # via rich
-pyinstrument==5.0.0
+pyinstrument==5.0.1
     # via -r requirements/_base.in
 python-dateutil==2.9.0.post0
     # via arrow

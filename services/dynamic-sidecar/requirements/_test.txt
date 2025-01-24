@@ -49,7 +49,7 @@ coverage==7.6.10
     # via pytest-cov
 docker==7.1.0
     # via -r requirements/_test.in
-faker==34.0.2
+faker==35.0.0
     # via -r requirements/_test.in
 flaky==3.8.1
     # via -r requirements/_test.in
@@ -125,7 +125,7 @@ requests==2.32.3
     #   -c requirements/_base.txt
     #   async-asgi-testclient
     #   docker
-s3transfer==0.11.1
+s3transfer==0.11.2
     # via boto3
 six==1.16.0
     # via

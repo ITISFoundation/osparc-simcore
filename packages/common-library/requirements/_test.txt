@@ -6,7 +6,7 @@ coverage==7.6.10
     # via
     #   -r requirements/_test.in
     #   pytest-cov
-faker==34.0.2
+faker==35.0.0
     # via -r requirements/_test.in
 icdiff==2.0.7
     # via pytest-icdiff
@@ -20,7 +20,7 @@ pluggy==1.5.0
     # via pytest
 pprintpp==0.4.0
     # via pytest-icdiff
-pydantic==2.10.5
+pydantic==2.10.6
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt

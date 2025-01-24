@@ -16,7 +16,7 @@ coverage==7.6.10
     # via
     #   -r requirements/_test.in
     #   pytest-cov
-faker==34.0.2
+faker==35.0.0
     # via -r requirements/_test.in
 h11==0.14.0
     # via

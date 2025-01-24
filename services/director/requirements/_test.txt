@@ -39,7 +39,7 @@ coverage==7.6.10
     # via pytest-cov
 docker==7.1.0
     # via -r requirements/_test.in
-faker==34.0.2
+faker==35.0.0
     # via -r requirements/_test.in
 frozenlist==1.5.0
     # via

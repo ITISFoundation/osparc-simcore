@@ -66,7 +66,7 @@ certifi==2024.8.30
     #   requests
 cffi==1.17.1
     # via cryptography
-cfn-lint==1.22.6
+cfn-lint==1.22.7
     # via moto
 charset-normalizer==3.4.0
     # via
@@ -87,7 +87,7 @@ cryptography==44.0.0
     #   moto
 docker==7.1.0
     # via moto
-faker==34.0.2
+faker==35.0.0
     # via -r requirements/_test.in
 flask==3.1.0
     # via
@@ -176,7 +176,9 @@ multidict==6.1.0
 networkx==3.4.2
     # via cfn-lint
 openapi-schema-validator==0.6.3
-    # via openapi-spec-validator
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   openapi-spec-validator
 openapi-spec-validator==0.7.1
     # via moto
 packaging==24.2
@@ -268,7 +270,7 @@ rpds-py==0.21.0
     #   -c requirements/_base.txt
     #   jsonschema
     #   referencing
-s3transfer==0.11.1
+s3transfer==0.11.2
     # via boto3
 setuptools==75.8.0
     # via moto
