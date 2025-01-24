@@ -31,6 +31,14 @@ qx.Class.define("osparc.study.PricingUnitLicense", {
     },
   },
 
+  statics: {
+    getExpirationDate: function() {
+      const expirationDate = new Date();
+      expirationDate.setFullYear(expirationDate.getFullYear() + 1); // hardcoded for now: rented for one year from now
+      return expirationDate;
+    },
+  },
+
   members: {
     _createChildControlImpl: function(id) {
       let control;
@@ -77,7 +85,18 @@ qx.Class.define("osparc.study.PricingUnitLicense", {
     },
 
     __rentUnit: function() {
-      this.fireEvent("rentPricingUnit");
+      const expirationDate = osparc.study.PricingUnitLicense.getExpirationDate();
+      const msg = this.getUnitData().getName() + this.tr(" will be available until ") + osparc.utils.Utils.formatDate(expirationDate);
+      const confirmationWin = new osparc.ui.window.Confirmation(msg).set({
+        caption: this.tr("Rent"),
+        confirmText: this.tr("Rent"),
+      });
+      confirmationWin.open();
+      confirmationWin.addListener("close", () => {
+        if (confirmationWin.getConfirmed()) {
+          this.fireEvent("rentPricingUnit");
+        }
+      }, this);
     },
   }
 });
