@@ -1,9 +1,9 @@
 """
-    Link models used at i/o port nodes:
-        - Link to files:
-            - Generic: DownloadLink
-            - At Custom Service: SimCoreFileLink, DatCoreFileLink
-        - Link to another port: PortLink
+Link models used at i/o port nodes:
+    - Link to files:
+        - Generic: DownloadLink
+        - At Custom Service: SimCoreFileLink, DatCoreFileLink
+    - Link to another port: PortLink
 """
 
 from pathlib import Path
@@ -36,7 +36,7 @@ UUIDStr: TypeAlias = Annotated[str, StringConstraints(pattern=UUID_RE)]
 
 NodeIDStr: TypeAlias = UUIDStr
 
-LocationID = int
+LocationID: TypeAlias = int
 LocationName = str
 
 

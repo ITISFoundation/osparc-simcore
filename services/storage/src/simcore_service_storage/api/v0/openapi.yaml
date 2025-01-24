@@ -1,24 +1,13 @@
-openapi: 3.1.0
-info:
-  title: simcore-service-storage API
-  description: API definition for simcore-service-storage service
-  contact:
-    name: IT'IS Foundation
-    email: support@simcore.io
-  license:
-    name: MIT
-    url: https://github.com/ITISFoundation/osparc-simcore/blob/master/LICENSE
-  version: 0.5.0
 servers:
-- url: /
-  description: 'Default server: requests directed to serving url'
-- url: http://{host}:{port}/
-  description: 'Development server: can configure any base url'
+- url: ''
+  description: webserver
+- url: http://{host}:{port}
+  description: development server
   variables:
     host:
-      default: 127.0.0.1
+      default: localhost
     port:
-      default: '8000'
+      default: '8001'
 paths:
   /v0/locations/{location_id}/datasets:
     get:
@@ -120,7 +109,7 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/DatasetMetaData'
-                title: Response Get Storage Locations
+                title: Response List Storage Locations
   /v0/locations/{location_id}:sync:
     post:
       tags:
@@ -341,7 +330,7 @@ paths:
               schema:
                 anyOf:
                 - $ref: '#/components/schemas/Envelope_FileUploadSchema_'
-                - $ref: '#/components/schemas/Envelope_Url_'
+                - $ref: '#/components/schemas/Envelope_AnyUrl_'
                 title: Response Upload File
     delete:
       tags:
@@ -695,8 +684,6 @@ paths:
         in: query
         required: true
         schema:
-          enum:
-          - owned
           const: owned
           type: string
           title: Kind
@@ -824,16 +811,12 @@ components:
         url:
           anyOf:
           - type: string
-            minLength: 1
-            format: uri
           - type: 'null'
           title: Url
           description: Link to current resource
         diagnostics_url:
           anyOf:
           - type: string
-            minLength: 1
-            format: uri
           - type: 'null'
           title: Diagnostics Url
           description: Link to diagnostics report sub-resource. This MIGHT take some
@@ -861,6 +844,20 @@ components:
       - dataset_id
       - display_name
       title: DatasetMetaData
+    Envelope_AnyUrl_:
+      properties:
+        data:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Data
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[AnyUrl]
     Envelope_AppStatusCheck_:
       properties:
         data:
@@ -1017,22 +1014,6 @@ components:
           title: Error
       type: object
       title: Envelope[TaskStatus]
-    Envelope_Url_:
-      properties:
-        data:
-          anyOf:
-          - type: string
-            minLength: 1
-            format: uri
-          - type: 'null'
-          title: Data
-        error:
-          anyOf:
-          - {}
-          - type: 'null'
-          title: Error
-      type: object
-      title: Envelope[Url]
     Envelope_list_DatasetMetaData__:
       properties:
         data:
@@ -1112,8 +1093,6 @@ components:
         file_size:
           anyOf:
           - type: integer
-            enum:
-            - -1
             const: -1
           - type: integer
             minimum: 0
@@ -1246,8 +1225,6 @@ components:
         file_size:
           anyOf:
           - type: integer
-            enum:
-            - -1
             const: -1
           - type: integer
             minimum: 0
@@ -1306,8 +1283,6 @@ components:
       properties:
         state:
           type: string
-          minLength: 1
-          format: uri
           title: State
       type: object
       required:
@@ -1342,13 +1317,9 @@ components:
       properties:
         abort_upload:
           type: string
-          minLength: 1
-          format: uri
           title: Abort Upload
         complete_upload:
           type: string
-          minLength: 1
-          format: uri
           title: Complete Upload
       type: object
       required:
@@ -1364,8 +1335,6 @@ components:
         urls:
           items:
             type: string
-            minLength: 1
-            format: uri
           type: array
           title: Urls
         links:
@@ -1387,6 +1356,8 @@ components:
         nodes_map:
           additionalProperties:
             type: string
+            format: uuid
+          propertyNames:
             format: uuid
           type: object
           title: Nodes Map
@@ -1431,8 +1402,6 @@ components:
       properties:
         link:
           type: string
-          minLength: 1
-          format: uri
           title: Link
       type: object
       required:
@@ -1453,8 +1422,6 @@ components:
         S3_ENDPOINT:
           anyOf:
           - type: string
-            minLength: 1
-            format: uri
           - type: 'null'
           title: S3 Endpoint
           description: do not define if using standard AWS
@@ -1587,10 +1554,3 @@ components:
       - number
       - e_tag
       title: UploadedPart
-tags:
-- name: datasets
-- name: files
-- name: health
-- name: locations
-- name: tasks
-- name: simcore-s3
