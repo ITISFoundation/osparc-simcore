@@ -37,7 +37,7 @@ qx.Class.define("osparc.study.PricingUnitLicense", {
       switch (id) {
         case "rental-period":
           control = new qx.ui.basic.Label().set({
-            value: this.tr("Duration: 1 year"),
+            value: this.tr("Duration: 1 year"), // hardcoded for now
             font: "text-14",
           });
           this._add(control);
