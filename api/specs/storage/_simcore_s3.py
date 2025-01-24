@@ -10,9 +10,10 @@ from simcore_service_storage.api.rest.simcore_s3 import (
     DeleteFolderQueryParams,
     SimcoreS3FoldersParams,
 )
-from simcore_service_storage.models import SearchFilesQueryParams
-
-from api.specs.storage._datasets import StorageQueryParamsBase
+from simcore_service_storage.models import (
+    SearchFilesQueryParams,
+    StorageQueryParamsBase,
+)
 
 router = APIRouter(
     prefix=f"/{API_VTAG}",

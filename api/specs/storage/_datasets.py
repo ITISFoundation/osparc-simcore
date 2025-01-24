@@ -4,9 +4,11 @@ from fastapi import APIRouter, Depends
 from models_library.api_schemas_storage import DatasetMetaDataGet, FileMetaDataGet
 from models_library.generics import Envelope
 from simcore_service_storage._meta import API_VTAG
-from simcore_service_storage.models import FilesMetadataDatasetPathParams
-
-from api.specs.storage._locations import LocationPathParams, StorageQueryParamsBase
+from simcore_service_storage.models import (
+    FilesMetadataDatasetPathParams,
+    LocationPathParams,
+    StorageQueryParamsBase,
+)
 
 router = APIRouter(
     prefix=f"/{API_VTAG}",
