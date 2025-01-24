@@ -59,7 +59,7 @@ async def list_files_metadata(request: web.Request) -> web.Response:
     )
     path_params = parse_request_path_parameters_as(LocationPathParams, request)
     _logger.debug(
-        "received call to get_files_metadata with %s",
+        "received call to list_files_metadata with %s",
         f"{path_params=}, {query_params=}",
     )
     dsm = get_dsm_provider(request.app).get(path_params.location_id)

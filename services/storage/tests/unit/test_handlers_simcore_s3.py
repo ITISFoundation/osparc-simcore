@@ -350,7 +350,7 @@ async def _create_and_delete_folders_from_project(
     assert client.app
     if check_list_files:
         url = (
-            client.app.router["get_files_metadata"]
+            client.app.router["list_files_metadata"]
             .url_for(location_id=f"{SimcoreS3DataManager.get_location_id()}")
             .with_query(user_id=f"{user_id}", uuid_filter=f"{project_id}")
         )
@@ -370,7 +370,7 @@ async def _create_and_delete_folders_from_project(
     # list data is gone
     if check_list_files:
         url = (
-            client.app.router["get_files_metadata"]
+            client.app.router["list_files_metadata"]
             .url_for(location_id=f"{SimcoreS3DataManager.get_location_id()}")
             .with_query(user_id=f"{user_id}", uuid_filter=f"{project_id}")
         )
@@ -397,7 +397,10 @@ async def with_random_project_with_files(
             ]
         ],
     ],
-) -> tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, dict[str, Path | str]]],]:
+) -> tuple[
+    dict[str, Any],
+    dict[NodeID, dict[SimcoreS3FileID, dict[str, Path | str]]],
+]:
     return await random_project_with_files(
         file_sizes=(
             TypeAdapter(ByteSize).validate_python("1Mib"),
@@ -415,7 +418,7 @@ async def test_connect_to_external(
 ):
     assert client.app
     url = (
-        client.app.router["get_files_metadata"]
+        client.app.router["list_files_metadata"]
         .url_for(location_id=f"{SimcoreS3DataManager.get_location_id()}")
         .with_query(user_id=f"{user_id}", uuid_filter=f"{project_id}")
     )
