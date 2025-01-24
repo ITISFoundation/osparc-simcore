@@ -63,7 +63,9 @@ qx.Class.define("osparc.auth.LoginWithDecorators", {
       let control;
       switch (id) {
         case "top-spacer":
-          control = new qx.ui.core.Spacer();
+          control = new qx.ui.core.Spacer().set({
+            minHeight: 50,
+          });
           this._add(control, {
             flex: 1
           });
@@ -109,7 +111,9 @@ qx.Class.define("osparc.auth.LoginWithDecorators", {
           });
           break;
         case "bottom-spacer":
-          control = new qx.ui.core.Spacer();
+          control = new qx.ui.core.Spacer().set({
+            minHeight: 50,
+          });
           this._add(control, {
             flex: 1
           });
@@ -342,6 +346,6 @@ qx.Class.define("osparc.auth.LoginWithDecorators", {
       });
 
       return versionLinkLayout;
-    }
+    },
   }
 });
