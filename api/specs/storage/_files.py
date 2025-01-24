@@ -20,9 +20,9 @@ from simcore_service_storage.models import (
     FilePathParams,
     FileUploadQueryParams,
     FileUploadResponseV1,
+    LocationPathParams,
+    StorageQueryParamsBase,
 )
-
-from api.specs.storage._datasets import LocationPathParams, StorageQueryParamsBase
 
 router = APIRouter(
     prefix=f"/{API_VTAG}",
@@ -89,7 +89,7 @@ async def abort_upload_file(
 
 @router.post(
     "/locations/{location_id}/files/{file_id}:complete",
-    reponse_model=Envelope[FileUploadCompleteResponse],
+    response_model=Envelope[FileUploadCompleteResponse],
 )
 async def complete_upload_file(
     _query: Annotated[StorageQueryParamsBase, Depends()],
@@ -102,7 +102,6 @@ async def complete_upload_file(
 @router.post(
     "/locations/{location_id}/files/{file_id}:complete/futures/{future_id}",
     response_model=FileUploadCompleteFutureResponse,
-    reponses={status.HTTP_404_NOT_FOUND},
 )
 async def is_completed_upload_file(
     _query: Annotated[StorageQueryParamsBase, Depends()],

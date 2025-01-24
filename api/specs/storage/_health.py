@@ -12,7 +12,7 @@ router = APIRouter(
 )
 
 
-@router.get("/", reponse_model=Envelope[HealthCheck])
+@router.get("/", response_model=Envelope[HealthCheck])
 async def get_health():
     ...
 
