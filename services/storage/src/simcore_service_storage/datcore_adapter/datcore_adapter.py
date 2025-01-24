@@ -21,7 +21,7 @@ from .datcore_adapter_exceptions import (
     DatcoreAdapterTimeoutError,
 )
 
-log = logging.getLogger(__file__)
+_logger = logging.getLogger(__file__)
 
 
 class _DatcoreAdapterResponseError(DatcoreAdapterError):
@@ -102,7 +102,7 @@ async def _retrieve_all_pages(
             ),
         )
     ) and response.get("items"):
-        log.debug(
+        _logger.debug(
             "called %s [%d/%d], received %d objects",
             path,
             page,
@@ -155,7 +155,7 @@ async def list_all_datasets_files_metadatas(
             )
             for d in all_datasets
         ),
-        log=log,
+        _logger=_logger,
         max_concurrency=MAX_CONCURRENT_REST_CALLS,
     )
     all_files_of_all_datasets: list[FileMetaData] = []

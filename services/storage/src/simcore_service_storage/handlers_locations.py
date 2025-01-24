@@ -24,7 +24,7 @@ from .models import LocationPathParams, StorageQueryParamsBase, SyncMetadataQuer
 from .settings import Settings
 from .simcore_s3_dsm import SimcoreS3DataManager
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 routes = RouteTableDef()
 
@@ -35,7 +35,7 @@ async def list_storage_locations(request: web.Request) -> web.Response:
     query_params: StorageQueryParamsBase = parse_request_query_parameters_as(
         StorageQueryParamsBase, request
     )
-    log.debug(
+    _logger.debug(
         "received call to list_storage_locations with %s",
         f"{query_params=}",
     )
@@ -58,7 +58,7 @@ async def synchronise_meta_data_table(request: web.Request) -> web.Response:
         SyncMetadataQueryParams, request
     )
     path_params = parse_request_path_parameters_as(LocationPathParams, request)
-    log.debug(
+    _logger.debug(
         "received call to synchronise_meta_data_table with %s",
         f"{path_params=}, {query_params=}",
     )
@@ -77,12 +77,12 @@ async def synchronise_meta_data_table(request: web.Request) -> web.Response:
             timeout = settings.STORAGE_SYNC_METADATA_TIMEOUT
             try:
                 result = await asyncio.wait_for(sync_coro, timeout=timeout)
-                log.info(
+                _logger.info(
                     "Sync metadata table completed: %d entries removed",
                     len(result),
                 )
             except asyncio.TimeoutError:
-                log.exception("Sync metadata table timed out (%s seconds)", timeout)
+                _logger.exception("Sync metadata table timed out (%s seconds)", timeout)
 
         fire_and_forget_task(
             _go(),

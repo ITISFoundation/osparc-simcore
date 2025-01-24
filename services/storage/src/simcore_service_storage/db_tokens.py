@@ -9,7 +9,7 @@ from simcore_postgres_database.storage_models import tokens
 
 from .constants import APP_AIOPG_ENGINE_KEY, APP_CONFIG_KEY
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 async def _get_tokens_from_db(engine: Engine, user_id: UserID) -> dict[str, Any]:

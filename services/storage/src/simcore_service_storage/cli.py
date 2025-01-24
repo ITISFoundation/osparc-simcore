@@ -9,11 +9,11 @@ from .settings import Settings
 
 LOG_LEVEL_STEP = logging.CRITICAL - logging.ERROR
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 main = typer.Typer(name="simcore-service-storage service")
 
-main.command()(create_settings_command(settings_cls=Settings, logger=log))
+main.command()(create_settings_command(settings_cls=Settings, logger=_logger))
 
 
 @main.command()

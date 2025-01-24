@@ -21,7 +21,7 @@ from .models import (
     StorageQueryParamsBase,
 )
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 routes = RouteTableDef()
 
@@ -36,7 +36,7 @@ async def list_datasets_metadata(request: web.Request) -> web.Response:
         StorageQueryParamsBase, request
     )
     path_params = parse_request_path_parameters_as(LocationPathParams, request)
-    log.debug(
+    _logger.debug(
         "received call to list_datasets_metadata with %s",
         f"{path_params=}, {query_params=}",
     )
@@ -58,7 +58,7 @@ async def list_dataset_files_metadata(request: web.Request) -> web.Response:
     path_params = parse_request_path_parameters_as(
         FilesMetadataDatasetPathParams, request
     )
-    log.debug(
+    _logger.debug(
         "received call to list_dataset_files_metadata with %s",
         f"{path_params=}, {query_params=}",
     )
