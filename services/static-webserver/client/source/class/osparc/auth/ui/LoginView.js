@@ -186,7 +186,7 @@ qx.Class.define("osparc.auth.ui.LoginView", {
     },
 
     __openTipItisPhaseOutDialog: function() {
-      const createAccountWindow = new osparc.ui.window.Dialog("Request Account").set({
+      const createAccountWindow = new osparc.ui.window.Dialog(this.tr("Request Account")).set({
         maxWidth: 380
       });
       let message = "This version of the planning tool will be phased out soon and no longer accepts new users.";
