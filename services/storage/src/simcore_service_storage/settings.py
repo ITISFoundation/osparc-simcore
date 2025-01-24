@@ -24,17 +24,12 @@ class Settings(BaseCustomSettings, MixinLoggingSettings):
     STORAGE_HOST: str = "0.0.0.0"  # nosec
     STORAGE_PORT: PortInt = TypeAdapter(PortInt).validate_python(8080)
 
-    LOG_LEVEL: Annotated[
+    STORAGE_LOG_LEVEL: Annotated[
         LogLevel,
         Field(
             validation_alias=AliasChoices("STORAGE_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"),
         ),
     ] = LogLevel.INFO
-
-    STORAGE_MAX_WORKERS: PositiveInt = Field(
-        8,
-        description="Number of workers for the thead executor pool used in DatcoreWrapper",
-    )
 
     STORAGE_MONITORING_ENABLED: bool = False
     STORAGE_PROFILING: bool = False

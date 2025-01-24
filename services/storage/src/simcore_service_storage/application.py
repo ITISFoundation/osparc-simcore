@@ -1,6 +1,6 @@
-""" Main's application module for simcore_service_storage service
+"""Main's application module for simcore_service_storage service
 
-    Functions to create, setup and run an aiohttp application provided a settingsuration object
+Functions to create, setup and run an aiohttp application provided a settingsuration object
 """
 
 import logging
@@ -74,7 +74,7 @@ def create(settings: Settings) -> web.Application:
     if settings.STORAGE_PROFILING:
         app.middlewares.append(profiling_middleware)
 
-    if settings.LOG_LEVEL == "DEBUG":
+    if settings.STORAGE_LOG_LEVEL == "DEBUG":
         setup_dev_error_logger(app)
 
     if settings.STORAGE_MONITORING_ENABLED:
