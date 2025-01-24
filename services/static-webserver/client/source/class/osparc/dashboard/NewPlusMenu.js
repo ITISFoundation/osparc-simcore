@@ -35,6 +35,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
   events: {
     "createFolder": "qx.event.type.Data",
     "newStudyFromTemplateClicked": "qx.event.type.Data",
+    "changeTab": "qx.event.type.Data",
   },
 
   statics: {
@@ -81,10 +82,14 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
         const moreEntry = this.getChildControl("more-entry");
         moreEntry.setMenu(moreMenu);
         if (permissions.canDo("dashboard.templates.read")) {
-          moreMenu.add(this.self().createMenuButton(this.tr("Templates")));
+          const templatesButton = this.self().createMenuButton(this.tr("Templates"));
+          templatesButton.addListener("tap", () => this.fireDataEvent("changeTab", "templatesTab"));
+          moreMenu.add(templatesButton);
         }
         if (permissions.canDo("dashboard.services.read")) {
-          moreMenu.add(this.self().createMenuButton(this.tr("Services")));
+          const servicesButton = this.self().createMenuButton(this.tr("Services"));
+          servicesButton.addListener("tap", () => this.fireDataEvent("changeTab", "servicesTab"));
+          moreMenu.add(servicesButton);
         }
       }
     },
