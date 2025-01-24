@@ -789,7 +789,6 @@ class SimcoreS3DataManager(BaseDataManager):
     async def synchronise_meta_data_table(
         self, *, dry_run: bool
     ) -> list[StorageFileID]:
-
         async with self.engine.acquire() as conn:
             _logger.warning(
                 "Total number of entries to check %d",
@@ -855,7 +854,7 @@ class SimcoreS3DataManager(BaseDataManager):
                 for fmd in list_of_expired_uploads
             ),
             reraise=False,
-            log=_logger,
+            _logger=_logger,
             limit=_NO_CONCURRENCY,
         )
 
@@ -886,7 +885,7 @@ class SimcoreS3DataManager(BaseDataManager):
         reverted_fmds = await limited_gather(
             *(_revert_file(fmd) for fmd in list_of_fmds_to_delete),
             reraise=False,
-            log=_logger,
+            _logger=_logger,
             limit=_NO_CONCURRENCY,
         )
         list_of_fmds_to_delete = [
