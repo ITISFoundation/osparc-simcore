@@ -91,10 +91,10 @@ app = FastAPI(
     f"/{API_VTAG}/locations/{{location_id}}/datasets",
     response_model=Envelope[list[DatasetMetaData]],
     tags=TAGS_DATASETS,
-    operation_id="get_datasets_metadata",
+    operation_id="list_datasets_metadata",
     summary="Get datasets metadata",
 )
-async def get_datasets_metadata(location_id: LocationID, user_id: UserID):
+async def list_datasets_metadata(location_id: LocationID, user_id: UserID):
     """returns all the top level datasets a user has access to"""
 
 

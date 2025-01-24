@@ -61,7 +61,7 @@ async def synchronise_meta_data_table(
     response_model=Envelope[list[DatasetMetaData]],
     summary="Get datasets metadata",
 )
-async def get_datasets_metadata(location_id: LocationID):
+async def list_datasets_metadata(location_id: LocationID):
     """returns all the top level datasets a user has access to"""
 
 

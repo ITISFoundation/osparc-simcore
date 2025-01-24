@@ -37,7 +37,7 @@ async def list_datasets_metadata(request: web.Request) -> web.Response:
     )
     path_params = parse_request_path_parameters_as(LocationPathParams, request)
     log.debug(
-        "received call to get_datasets_metadata with %s",
+        "received call to list_datasets_metadata with %s",
         f"{path_params=}, {query_params=}",
     )
 

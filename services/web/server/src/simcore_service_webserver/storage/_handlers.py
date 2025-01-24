@@ -1,7 +1,8 @@
-""" Handlers exposed by storage subsystem
+"""Handlers exposed by storage subsystem
 
-    Mostly resolves and redirect to storage API
+Mostly resolves and redirect to storage API
 """
+
 import logging
 from typing import Any, Final, NamedTuple
 
@@ -110,10 +111,10 @@ async def get_storage_locations(request: web.Request) -> web.Response:
     return create_data_response(payload, status=status)
 
 
-@routes.get(_path_prefix + "/{location_id}/datasets", name="get_datasets_metadata")
+@routes.get(_path_prefix + "/{location_id}/datasets", name="list_datasets_metadata")
 @login_required
 @permission_required("storage.files.*")
-async def get_datasets_metadata(request: web.Request) -> web.Response:
+async def list_datasets_metadata(request: web.Request) -> web.Response:
     class _PathParams(BaseModel):
         location_id: LocationID
 
