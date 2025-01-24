@@ -589,7 +589,7 @@ async def delete_directory(
         # NOTE: ensures no more files are left in the directory,
         # even if one file is left this will detect it
         list_files_metadata_url = (
-            client.app.router["get_files_metadata"]
+            client.app.router["list_files_metadata"]
             .url_for(location_id=f"{location_id}")
             .with_query(user_id=user_id, uuid_filter=directory_file_id)
         )

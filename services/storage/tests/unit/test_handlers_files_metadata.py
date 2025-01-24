@@ -32,11 +32,10 @@ class CreateProjectAccessRightsCallable(Protocol):
         read: bool,
         write: bool,
         delete: bool,
-    ) -> None:
-        ...
+    ) -> None: ...
 
 
-async def test_get_files_metadata(
+async def test_list_files_metadata(
     upload_file: Callable[[ByteSize, str], Awaitable[tuple[Path, SimcoreS3FileID]]],
     create_project_access_rights: CreateProjectAccessRightsCallable,
     client: TestClient,
@@ -49,7 +48,7 @@ async def test_get_files_metadata(
     assert client.app
 
     url = (
-        client.app.router["get_files_metadata"]
+        client.app.router["list_files_metadata"]
         .url_for(location_id=f"{location_id}")
         .with_query(user_id=f"{user_id}")
     )

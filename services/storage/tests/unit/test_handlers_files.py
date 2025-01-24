@@ -1238,7 +1238,7 @@ async def __list_files(
 ) -> list[FileMetaDataGet]:
     assert client.app
     get_url = (
-        client.app.router["get_files_metadata"]
+        client.app.router["list_files_metadata"]
         .url_for(
             location_id=f"{location_id}",
             file_id=urllib.parse.quote(path, safe=""),
@@ -1331,7 +1331,7 @@ async def test_ensure_expand_dirs_defaults_true(
 
     assert client.app
     get_url = (
-        client.app.router["get_files_metadata"]
+        client.app.router["list_files_metadata"]
         .url_for(
             location_id=f"{location_id}",
             file_id=urllib.parse.quote("mocked_path", safe=""),
@@ -1521,7 +1521,7 @@ async def test_listing_with_project_id_filter(
     }
 
     url = (
-        client.app.router["get_files_metadata"]
+        client.app.router["list_files_metadata"]
         .url_for(location_id=f"{location_id}")
         .with_query(**{k: v for k, v in query.items() if v is not None})
     )
