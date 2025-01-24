@@ -26,10 +26,10 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_query_parameters_as,
 )
 
-from ._meta import API_VTAG
-from .dsm import get_dsm_provider
-from .exceptions import FileMetaDataNotFoundError
-from .models import (
+from ..._meta import API_VTAG
+from ...dsm import get_dsm_provider
+from ...exceptions import FileMetaDataNotFoundError
+from ...models import (
     CopyAsSoftLinkParams,
     FileDownloadQueryParams,
     FileMetaData,
@@ -41,8 +41,8 @@ from .models import (
     StorageQueryParamsBase,
     UploadLinks,
 )
-from .simcore_s3_dsm import SimcoreS3DataManager
-from .utils import create_upload_completion_task_name
+from ...simcore_s3_dsm import SimcoreS3DataManager
+from ...utils import create_upload_completion_task_name
 
 _logger = logging.getLogger(__name__)
 

@@ -11,9 +11,9 @@ from servicelib.aiohttp.requests_validation import (
 )
 
 # Exclusive for simcore-s3 storage -----------------------
-from ._meta import API_VTAG
-from .dsm import get_dsm_provider
-from .models import (
+from ..._meta import API_VTAG
+from ...dsm import get_dsm_provider
+from ...models import (
     FileMetaData,
     FilesMetadataDatasetPathParams,
     FilesMetadataDatasetQueryParams,

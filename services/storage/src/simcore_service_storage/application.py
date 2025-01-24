@@ -16,13 +16,13 @@ from servicelib.aiohttp.tracing import setup_tracing
 from settings_library.tracing import TracingSettings
 
 from ._meta import APP_NAME, APP_STARTED_BANNER_MSG, VERSION
-from .api.rest.utils_handlers import dsm_exception_handler
+from .api.rest.utils import dsm_exception_handler
 from .db import setup_db
 from .dsm import setup_dsm
 from .dsm_cleaner import setup_dsm_cleaner
 from .long_running_tasks import setup_rest_api_long_running_tasks
 from .redis import setup_redis
-from .rest import setup_rest
+from .routes import setup_rest_api_routes
 from .s3 import setup_s3
 from .settings import Settings
 
@@ -62,7 +62,7 @@ def create(settings: Settings) -> web.Application:
     setup_s3(app)
 
     setup_rest_api_long_running_tasks(app)
-    setup_rest(app)
+    setup_rest_api_routes(app)
 
     setup_dsm(app)
     if settings.STORAGE_CLEANER_INTERVAL_S:
