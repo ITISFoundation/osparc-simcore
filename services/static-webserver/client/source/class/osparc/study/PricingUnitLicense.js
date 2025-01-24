@@ -50,7 +50,7 @@ qx.Class.define("osparc.study.PricingUnitLicense", {
           this.bind("showRentButton", control, "visibility", {
             converter: show => show ? "visible" : "excluded"
           });
-          control.addListener("execute", () => this.fireEvent("rentPricingUnit"));
+          control.addListener("execute", () => this.__rentUnit());
           this._add(control);
           break;
       }
@@ -74,6 +74,10 @@ qx.Class.define("osparc.study.PricingUnitLicense", {
 
       // add rent button
       this.getChildControl("rent-button");
-    }
+    },
+
+    __rentUnit: function() {
+      this.fireEvent("rentPricingUnit");
+    },
   }
 });
