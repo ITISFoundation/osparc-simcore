@@ -60,7 +60,6 @@ openapi-core==0.19.4
     # via -r requirements.in
 openapi-schema-validator==0.6.3
     # via
-    #   -c ../../requirements/constraints.txt
     #   openapi-core
     #   openapi-spec-validator
 openapi-spec-validator==0.7.1
@@ -102,6 +101,7 @@ pyyaml==6.0.2
     #   jsonschema-path
 referencing==0.35.1
     # via
+    #   -c ../../requirements/constraints.txt
     #   jsonschema
     #   jsonschema-path
     #   jsonschema-specifications

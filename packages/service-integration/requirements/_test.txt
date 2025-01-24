@@ -34,8 +34,9 @@ pytest-runner==6.0.1
     # via -r requirements/_test.in
 pytest-sugar==1.0.0
     # via -r requirements/_test.in
-referencing==0.36.1
+referencing==0.35.1
     # via
+    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   types-jsonschema
 rpds-py==0.22.3
@@ -52,10 +53,6 @@ types-pyyaml==6.0.12.20241230
     # via -r requirements/_test.in
 types-requests==2.32.0.20241016
     # via types-docker
-typing-extensions==4.12.2
-    # via
-    #   -c requirements/_base.txt
-    #   referencing
 urllib3==2.3.0
     # via
     #   -c requirements/../../../requirements/constraints.txt

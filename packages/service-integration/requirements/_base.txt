@@ -119,8 +119,12 @@ pyyaml==6.0.2
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_base.in
     #   cookiecutter
-referencing==0.36.1
+referencing==0.35.1
     # via
+    #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../requirements/constraints.txt
     #   jsonschema
     #   jsonschema-specifications
 requests==2.32.3
@@ -150,7 +154,6 @@ typing-extensions==4.12.2
     #   pydantic
     #   pydantic-core
     #   pydantic-extra-types
-    #   referencing
     #   typer
 urllib3==2.3.0
     # via

@@ -152,6 +152,7 @@ python-dateutil==2.9.0.post0
     #   faker
 referencing==0.35.1
     # via
+    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   jsonschema
     #   jsonschema-specifications

@@ -42,8 +42,10 @@ python-dateutil==2.9.0.post0
     # via arrow
 python-dotenv==1.0.1
     # via pydantic-settings
-referencing==0.36.1
+referencing==0.35.1
     # via
+    #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../requirements/constraints.txt
     #   jsonschema
     #   jsonschema-specifications
 rpds-py==0.22.3
@@ -59,4 +61,3 @@ typing-extensions==4.12.2
     #   pydantic
     #   pydantic-core
     #   pydantic-extra-types
-    #   referencing

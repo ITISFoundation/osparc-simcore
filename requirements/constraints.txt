@@ -69,5 +69,5 @@ pennsieve>=999999999
 # User alternative e.g. parametrized fixture or request.getfixturevalue(.)
 pytest-lazy-fixture>=999999999
 
-# avoid downgrades in aws-library
-openapi-schema-validator>=0.6.2
+# avoid downgrades of openapi-spec-validator related libraries
+referencing==0.35.1

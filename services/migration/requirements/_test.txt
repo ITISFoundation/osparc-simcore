@@ -56,8 +56,9 @@ pyyaml==6.0.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_test.in
-referencing==0.36.1
+referencing==0.35.1
     # via
+    #   -c requirements/../../../requirements/constraints.txt
     #   jsonschema
     #   jsonschema-specifications
 requests==2.32.3
@@ -77,7 +78,6 @@ tenacity==9.0.0
 typing-extensions==4.12.2
     # via
     #   mypy
-    #   referencing
     #   sqlalchemy2-stubs
 urllib3==2.3.0
     # via

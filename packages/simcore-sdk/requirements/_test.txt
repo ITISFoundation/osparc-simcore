@@ -32,6 +32,8 @@ annotated-types==0.7.0
     # via
     #   -c requirements/_base.txt
     #   pydantic
+antlr4-python3-runtime==4.13.2
+    # via moto
 attrs==24.3.0
     # via
     #   -c requirements/_base.txt
@@ -83,18 +85,12 @@ coverage==7.6.10
 cryptography==44.0.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
+    #   joserfc
     #   moto
-    #   python-jose
-    #   sshpubkeys
 docker==7.1.0
     # via
     #   -r requirements/_test.in
     #   moto
-ecdsa==0.19.0
-    # via
-    #   moto
-    #   python-jose
-    #   sshpubkeys
 execnet==2.1.1
     # via pytest-xdist
 faker==35.0.0
@@ -139,10 +135,12 @@ jmespath==1.0.1
     #   aiobotocore
     #   boto3
     #   botocore
-jsondiff==2.2.1
+joserfc==1.0.2
     # via moto
 jsonpatch==1.33
     # via cfn-lint
+jsonpath-ng==1.7.0
+    # via moto
 jsonpointer==3.0.0
     # via jsonpatch
 jsonschema==4.23.0
@@ -151,11 +149,15 @@ jsonschema==4.23.0
     #   aws-sam-translator
     #   openapi-schema-validator
     #   openapi-spec-validator
+jsonschema-path==0.3.3
+    # via openapi-spec-validator
 jsonschema-specifications==2024.10.1
     # via
     #   -c requirements/_base.txt
     #   jsonschema
     #   openapi-schema-validator
+lazy-object-proxy==1.10.0
+    # via openapi-spec-validator
 mako==1.3.8
     # via
     #   -c requirements/../../../requirements/constraints.txt
@@ -167,7 +169,7 @@ markupsafe==3.0.2
     #   jinja2
     #   mako
     #   werkzeug
-moto==4.2.6
+moto==5.0.27
     # via -r requirements/_test.in
 mpmath==1.3.0
     # via sympy
@@ -184,10 +186,8 @@ mypy-extensions==1.0.0
 networkx==3.4.2
     # via cfn-lint
 openapi-schema-validator==0.6.3
-    # via
-    #   -c requirements/../../../requirements/constraints.txt
-    #   openapi-spec-validator
-openapi-spec-validator==0.3.1
+    # via openapi-spec-validator
+openapi-spec-validator==0.7.1
     # via moto
 packaging==24.2
     # via
@@ -195,8 +195,12 @@ packaging==24.2
     #   aioresponses
     #   pytest
     #   pytest-sugar
+pathable==0.4.4
+    # via jsonschema-path
 pluggy==1.5.0
     # via pytest
+ply==3.11
+    # via jsonpath-ng
 pprintpp==0.4.0
     # via pytest-icdiff
 propcache==0.2.1
@@ -204,12 +208,8 @@ propcache==0.2.1
     #   -c requirements/_base.txt
     #   aiohttp
     #   yarl
-py-partiql-parser==0.4.0
+py-partiql-parser==0.6.1
     # via moto
-pyasn1==0.6.1
-    # via
-    #   python-jose
-    #   rsa
 pycparser==2.22
     # via cffi
 pydantic==2.10.6
@@ -262,21 +262,20 @@ python-dotenv==1.0.1
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-python-jose==3.3.0
-    # via moto
 pyyaml==6.0.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   cfn-lint
-    #   jsondiff
+    #   jsonschema-path
     #   moto
-    #   openapi-spec-validator
     #   responses
-referencing==0.36.1
+referencing==0.35.1
     # via
+    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   jsonschema
+    #   jsonschema-path
     #   jsonschema-specifications
 regex==2024.11.6
     # via cfn-lint
@@ -285,6 +284,7 @@ requests==2.32.3
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
     #   docker
+    #   jsonschema-path
     #   moto
     #   responses
 responses==0.25.6
@@ -296,10 +296,6 @@ rpds-py==0.22.3
     #   -c requirements/_base.txt
     #   jsonschema
     #   referencing
-rsa==4.9
-    # via
-    #   -c requirements/../../../requirements/constraints.txt
-    #   python-jose
 s3transfer==0.11.2
     # via boto3
 setuptools==75.8.0
@@ -307,8 +303,6 @@ setuptools==75.8.0
 six==1.17.0
     # via
     #   -c requirements/_base.txt
-    #   ecdsa
-    #   openapi-spec-validator
     #   python-dateutil
     #   rfc3339-validator
 sqlalchemy==1.4.54
@@ -319,8 +313,6 @@ sqlalchemy==1.4.54
     #   alembic
 sqlalchemy2-stubs==0.0.2a38
     # via sqlalchemy
-sshpubkeys==3.3.1
-    # via moto
 sympy==1.13.3
     # via cfn-lint
 termcolor==2.5.0
@@ -347,7 +339,6 @@ typing-extensions==4.12.2
     #   mypy
     #   pydantic
     #   pydantic-core
-    #   referencing
     #   sqlalchemy2-stubs
     #   types-aiobotocore
     #   types-aiobotocore-s3

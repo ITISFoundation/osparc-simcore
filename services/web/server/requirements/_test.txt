@@ -31,7 +31,6 @@ attrs==21.4.0
     #   hypothesis
     #   jsonschema
     #   pytest-docker
-    #   referencing
 certifi==2023.7.22
     # via
     #   -c requirements/../../../../requirements/constraints.txt
@@ -86,6 +85,7 @@ jsonschema==3.2.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
+    #   openapi-schema-validator
     #   openapi-spec-validator
 mako==1.2.2
     # via
@@ -105,7 +105,9 @@ mypy==1.14.1
     # via sqlalchemy
 mypy-extensions==1.0.0
     # via mypy
-openapi-spec-validator==0.2.9
+openapi-schema-validator==0.2.3
+    # via openapi-spec-validator
+openapi-spec-validator==0.4.0
     # via -r requirements/_test.in
 packaging==24.1
     # via
@@ -123,7 +125,6 @@ pyrsistent==0.18.1
     # via
     #   -c requirements/_base.txt
     #   jsonschema
-    #   referencing
 pytest==8.3.4
     # via
     #   -r requirements/_test.in
@@ -180,8 +181,6 @@ redis==5.2.1
     #   -c requirements/../../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-referencing==0.8.11
-    # via types-jsonschema
 requests==2.32.2
     # via
     #   -c requirements/_base.txt
@@ -190,11 +189,11 @@ setuptools==69.1.1
     # via
     #   -c requirements/_base.txt
     #   jsonschema
+    #   openapi-spec-validator
 six==1.16.0
     # via
     #   -c requirements/_base.txt
     #   jsonschema
-    #   openapi-spec-validator
     #   python-dateutil
 sortedcontainers==2.4.0
     # via hypothesis
@@ -214,7 +213,7 @@ termcolor==2.5.0
     # via pytest-sugar
 types-aiofiles==24.1.0.20241221
     # via -r requirements/_test.in
-types-jsonschema==4.23.0.20241208
+types-jsonschema==4.17.0.10
     # via -r requirements/_test.in
 types-openpyxl==3.1.5.20241225
     # via -r requirements/_test.in
@@ -240,4 +239,3 @@ yarl==1.9.4
     # via
     #   -c requirements/_base.txt
     #   aiohttp
-    #   referencing

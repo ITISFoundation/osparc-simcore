@@ -75,8 +75,9 @@ pyyaml==6.0.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_test.in
-referencing==0.36.1
+referencing==0.35.1
     # via
+    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   types-jsonschema
 rpds-py==0.22.3
@@ -100,6 +101,5 @@ typing-extensions==4.12.2
     #   flexcache
     #   flexparser
     #   pint
-    #   referencing
 yarl==1.18.3
     # via -r requirements/_test.in

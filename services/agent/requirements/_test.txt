@@ -176,9 +176,7 @@ multidict==6.1.0
 networkx==3.4.2
     # via cfn-lint
 openapi-schema-validator==0.6.3
-    # via
-    #   -c requirements/../../../requirements/constraints.txt
-    #   openapi-spec-validator
+    # via openapi-spec-validator
 openapi-spec-validator==0.7.1
     # via moto
 packaging==24.2
@@ -248,6 +246,7 @@ pyyaml==6.0.2
     #   responses
 referencing==0.35.1
     # via
+    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   jsonschema
     #   jsonschema-path
