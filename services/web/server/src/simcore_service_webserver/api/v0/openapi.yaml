@@ -5650,7 +5650,7 @@ paths:
                 items:
                   $ref: '#/components/schemas/DatasetMetaData'
                 type: array
-                title: Response Get Storage Locations
+                title: Response List Storage Locations
   /v0/storage/locations/{location_id}:sync:
     post:
       tags:
