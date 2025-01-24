@@ -28,6 +28,7 @@ def test_sim4life(
     create_project_from_new_button: Callable[[str], dict[str, Any]],
     log_in_and_out: RestartableWebSocket,
     service_key: str,
+    service_version: str | None,
     use_plus_button: bool,
     is_autoscaled: bool,
     check_videostreaming: bool,
