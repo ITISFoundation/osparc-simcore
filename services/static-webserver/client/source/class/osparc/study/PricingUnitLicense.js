@@ -35,8 +35,15 @@ qx.Class.define("osparc.study.PricingUnitLicense", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
+        case "rental-period":
+          control = new qx.ui.basic.Label().set({
+            value: this.tr("Duration: 1 year"),
+            font: "text-14",
+          });
+          this._add(control);
+          break;
         case "rent-button":
-          control = new qx.ui.form.Button(qx.locale.Manager.tr("Rent")).set({
+          control = new qx.ui.form.Button(this.tr("Rent")).set({
             appearance: "strong-button",
             center: true,
           });
@@ -54,10 +61,12 @@ qx.Class.define("osparc.study.PricingUnitLicense", {
     _buildLayout: function(pricingUnit) {
       this.base(arguments, pricingUnit);
 
+      this.getChildControl("rental-period");
+
       // add price info
       const price = this.getChildControl("price");
       pricingUnit.bind("cost", price, "value", {
-        converter: v => qx.locale.Manager.tr("Credits") + ": " + v
+        converter: v => this.tr("Credits") + ": " + v
       });
 
       // add edit button
