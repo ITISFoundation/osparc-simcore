@@ -74,7 +74,7 @@ def create(settings: Settings) -> web.Application:
     if settings.STORAGE_PROFILING:
         app.middlewares.append(profiling_middleware)
 
-    if settings.STORAGE_LOG_LEVEL == "DEBUG":
+    if settings.LOG_LEVEL == "DEBUG":
         setup_dev_error_logger(app)
 
     if settings.STORAGE_MONITORING_ENABLED:

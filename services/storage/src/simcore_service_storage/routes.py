@@ -11,6 +11,7 @@ from servicelib.aiohttp.rest_utils import (
 
 from ._meta import API_VTAG
 from .api.rest import datasets, files, health, locations, simcore_s3
+from .constants import UPLOAD_TASKS_KEY
 from .resources import storage_resources
 
 _logger = logging.getLogger(__name__)
@@ -45,7 +46,7 @@ def setup_rest_api_routes(app: web.Application):
     _logger.debug("routes: %s", get_named_routes_as_message(app))
 
     # prepare container for upload tasks
-    app[files.UPLOAD_TASKS_KEY] = {}
+    app[UPLOAD_TASKS_KEY] = {}
 
     # Enable error, validation and envelop middleware on API routes
     append_rest_middlewares(app, api_version=f"/{API_VTAG}")

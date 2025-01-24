@@ -27,6 +27,7 @@ from servicelib.aiohttp.requests_validation import (
 )
 
 from ..._meta import API_VTAG
+from ...constants import UPLOAD_TASKS_KEY
 from ...dsm import get_dsm_provider
 from ...exceptions import FileMetaDataNotFoundError
 from ...models import (
@@ -47,8 +48,6 @@ from ...utils import create_upload_completion_task_name
 _logger = logging.getLogger(__name__)
 
 routes = RouteTableDef()
-
-UPLOAD_TASKS_KEY = f"{__name__}.upload_tasks"
 
 
 @routes.get(

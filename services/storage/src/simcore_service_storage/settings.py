@@ -24,7 +24,7 @@ class Settings(BaseCustomSettings, MixinLoggingSettings):
     STORAGE_HOST: str = "0.0.0.0"  # nosec
     STORAGE_PORT: PortInt = TypeAdapter(PortInt).validate_python(8080)
 
-    STORAGE_LOG_LEVEL: Annotated[
+    LOG_LEVEL: Annotated[
         LogLevel,
         Field(
             validation_alias=AliasChoices("STORAGE_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"),

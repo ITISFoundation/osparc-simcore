@@ -25,8 +25,6 @@ _logger = logging.getLogger(__name__)
 
 routes = RouteTableDef()
 
-UPLOAD_TASKS_KEY = f"{__name__}.upload_tasks"
-
 
 @routes.get(
     f"/{API_VTAG}/locations/{{location_id}}/datasets", name="list_datasets_metadata"

@@ -50,8 +50,10 @@ from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.parametrizations import byte_size_ids
 from pytest_simcore.helpers.s3 import upload_file_part, upload_file_to_presigned_link
 from servicelib.aiohttp import status
-from simcore_service_storage.constants import S3_UNDEFINED_OR_EXTERNAL_MULTIPART_ID
-from simcore_service_storage.files import UPLOAD_TASKS_KEY
+from simcore_service_storage.constants import (
+    S3_UNDEFINED_OR_EXTERNAL_MULTIPART_ID,
+    UPLOAD_TASKS_KEY,
+)
 from simcore_service_storage.models import S3BucketName, UploadID
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
