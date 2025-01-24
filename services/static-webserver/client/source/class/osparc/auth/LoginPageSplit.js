@@ -75,7 +75,7 @@ qx.Class.define("osparc.auth.LoginPageSplit", {
         loginPage.getChildControl("top-spacer"),
         loginPage.getChildControl("bottom-spacer"),
       ];
-      const hideableItems = loginPage.getChildControl("login-view").getHideableItems());
+      const hideableItems = loginPage.getChildControl("login-view").getHideableItems();
       if (this.isCompactVersion()) {
         // no split-image
         // just the login widget
