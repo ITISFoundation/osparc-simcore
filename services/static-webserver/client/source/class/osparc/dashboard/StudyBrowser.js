@@ -904,7 +904,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           this.__newPlanBtnClicked(templateData, templateInfo.newStudyLabel);
         }
       }, this);
-
     },
 
     __addNewStudyButtons: function() {
