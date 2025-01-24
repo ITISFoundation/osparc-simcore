@@ -50,8 +50,8 @@ from servicelib.aiohttp import status
 from settings_library.s3 import S3Settings
 from simcore_postgres_database.storage_models import file_meta_data, projects, users
 from simcore_service_storage.application import create
+from simcore_service_storage.constants import UPLOAD_TASKS_KEY
 from simcore_service_storage.dsm import get_dsm_provider
-from simcore_service_storage.files import UPLOAD_TASKS_KEY
 from simcore_service_storage.models import S3BucketName
 from simcore_service_storage.s3 import get_s3_client
 from simcore_service_storage.settings import Settings
