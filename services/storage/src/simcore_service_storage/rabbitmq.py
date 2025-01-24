@@ -1,3 +1,5 @@
+from typing import cast
+
 from aiohttp import web
 from servicelib.rabbitmq._client import RabbitMQClient
 from servicelib.rabbitmq._utils import wait_till_rabbitmq_responsive
@@ -26,3 +28,7 @@ async def _rabbitmq_client(app: web.Application):
 def setup_rabbitmq(app: web.Application):
     if _rabbitmq_client not in app.cleanup_ctx:
         app.cleanup_ctx.append(_rabbitmq_client)
+
+
+def get_rabbitmq_client(app: web.Application) -> RabbitMQClient:
+    return cast(RabbitMQClient, app[_APP_RABBITMQ_CLIENT_KEY])
