@@ -251,7 +251,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         })
         .catch(console.error)
         .finally(() => {
-          this.__addNewFolderButton();
+          // In favor of the NewPlusButton
+          if (!["tis", "tiplite"].includes(osparc.product.Utils.getProductName())) {
+            this.__addNewFolderButton();
+          }
           this.__loadingFolders = null;
         });
     },
@@ -884,15 +887,24 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __addNewPlusButton: function() {
       const newPlusButton = new osparc.dashboard.NewPlusButton();
-      newPlusButton.getMenu().addListener("newStudyFromTemplateClicked", e => {
+      this._leftFilters.add(newPlusButton);
+
+      const newPlusButtonMenu = newPlusButton.getMenu();
+
+      newPlusButtonMenu.addListener("createFolder", e => {
+        const data = e.getData();
+        this.__createFolder(data);
+      }, this);
+
+      newPlusButtonMenu.addListener("newStudyFromTemplateClicked", e => {
         const templateInfo = e.getData();
         const templates = osparc.store.Store.getInstance().getTemplates();
         const templateData = templates.find(t => t.name === templateInfo.expectedTemplateLabel);
         if (templateData) {
           this.__newPlanBtnClicked(templateData, templateInfo.newStudyLabel);
         }
-      })
-      this._leftFilters.add(newPlusButton);
+      }, this);
+
     },
 
     __addNewStudyButtons: function() {
@@ -914,7 +926,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           break;
         case "tis":
         case "tiplite":
-          this.__addTIPPlusButton();
+          // In favor of the NewPlusButton
+          // this.__addTIPPlusButton();
           break;
         case "s4l":
         case "s4lacad":

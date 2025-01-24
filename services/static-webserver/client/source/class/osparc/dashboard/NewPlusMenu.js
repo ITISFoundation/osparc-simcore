@@ -33,6 +33,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
   },
 
   events: {
+    "createFolder": "qx.event.type.Data",
     "newStudyFromTemplateClicked": "qx.event.type.Data",
   },
 
@@ -58,6 +59,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
         case "new-folder":
           control = this.self().createMenuButton(this.tr("New Folder"), osparc.dashboard.CardBase.NEW_ICON + "14");
           osparc.utils.Utils.setIdToWidget(control, "newFolderButton");
+          control.addListener("tap", () => this.__createNewFolder());
           this.add(control);
           break;
         case "more-entry":
@@ -118,6 +120,21 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
         menuButton.addListener("tap", () => this.fireDataEvent("newStudyFromTemplateClicked", displayTemplate));
         this.add(menuButton);
       });
-    }
+    },
+
+    __createNewFolder: function() {
+      const newFolder = true;
+      const folderEditor = new osparc.editor.FolderEditor(newFolder);
+      const title = this.tr("New Folder");
+      const win = osparc.ui.window.Window.popUpInWindow(folderEditor, title, 300, 120);
+      folderEditor.addListener("createFolder", () => {
+        const name = folderEditor.getLabel();
+        this.fireDataEvent("createFolder", {
+          name,
+        });
+        win.close();
+      });
+      folderEditor.addListener("cancel", () => win.close());
+    },
   },
 });
