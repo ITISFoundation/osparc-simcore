@@ -30,6 +30,7 @@ aiohttp_session[secure]
 aiopg[sa] # db
 aiosmtplib # email
 asyncpg # db
+bcrypt # security
 captcha
 cryptography # security
 faker # Only used in dev-mode for proof-of-concepts
