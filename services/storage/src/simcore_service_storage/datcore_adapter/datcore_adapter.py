@@ -155,7 +155,7 @@ async def list_all_datasets_files_metadatas(
             )
             for d in all_datasets
         ),
-        _logger=_logger,
+        log=_logger,
         max_concurrency=MAX_CONCURRENT_REST_CALLS,
     )
     all_files_of_all_datasets: list[FileMetaData] = []

@@ -854,7 +854,7 @@ class SimcoreS3DataManager(BaseDataManager):
                 for fmd in list_of_expired_uploads
             ),
             reraise=False,
-            _logger=_logger,
+            log=_logger,
             limit=_NO_CONCURRENCY,
         )
 
@@ -885,7 +885,7 @@ class SimcoreS3DataManager(BaseDataManager):
         reverted_fmds = await limited_gather(
             *(_revert_file(fmd) for fmd in list_of_fmds_to_delete),
             reraise=False,
-            _logger=_logger,
+            log=_logger,
             limit=_NO_CONCURRENCY,
         )
         list_of_fmds_to_delete = [
