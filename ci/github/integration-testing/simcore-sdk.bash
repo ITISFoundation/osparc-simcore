@@ -8,7 +8,7 @@ install() {
   make devenv
   # shellcheck source=/dev/null
   source .venv/bin/activate
-  ./ci/github/helpers/install_aws_cli_v2.bash
+  sudo ./ci/github/helpers/install_aws_cli_v2.bash
   pushd packages/simcore-sdk
   make install-ci
   popd
