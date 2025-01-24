@@ -62,6 +62,7 @@ def migrated_pg_tables_context(
     #
     assert simcore_postgres_database.cli.downgrade.callback
     assert simcore_postgres_database.cli.clean.callback
+
     simcore_postgres_database.cli.downgrade.callback("base")
     simcore_postgres_database.cli.clean.callback()  # just cleans discover cache
 
