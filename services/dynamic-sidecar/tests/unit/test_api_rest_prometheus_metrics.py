@@ -11,7 +11,7 @@ import pytest
 from aiodocker.volumes import DockerVolume
 from asgi_lifespan import LifespanManager
 from fastapi import FastAPI, status
-from httpx import AsyncClient
+from httpx import ASGITransport, AsyncClient
 from models_library.callbacks_mapping import CallbacksMapping
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
 from pydantic import AnyHttpUrl, TypeAdapter
@@ -70,7 +70,7 @@ async def httpx_async_client(
     cleanup_containers: None,
 ) -> AsyncIterable[AsyncClient]:
     async with AsyncClient(
-        app=app,
+        transport=ASGITransport(app=app),
         base_url=f"{backend_url}",
         headers={"Content-Type": "application/json"},
     ) as client:
