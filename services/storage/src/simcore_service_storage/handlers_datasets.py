@@ -29,9 +29,9 @@ UPLOAD_TASKS_KEY = f"{__name__}.upload_tasks"
 
 
 @routes.get(
-    f"/{API_VTAG}/locations/{{location_id}}/datasets", name="get_datasets_metadata"
+    f"/{API_VTAG}/locations/{{location_id}}/datasets", name="list_datasets_metadata"
 )
-async def get_datasets_metadata(request: web.Request) -> web.Response:
+async def list_datasets_metadata(request: web.Request) -> web.Response:
     query_params: StorageQueryParamsBase = parse_request_query_parameters_as(
         StorageQueryParamsBase, request
     )

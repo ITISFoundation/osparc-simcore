@@ -52,9 +52,9 @@ UPLOAD_TASKS_KEY = f"{__name__}.upload_tasks"
 
 
 @routes.get(
-    f"/{API_VTAG}/locations/{{location_id}}/files/metadata", name="get_files_metadata"
+    f"/{API_VTAG}/locations/{{location_id}}/files/metadata", name="list_files_metadata"
 )
-async def get_files_metadata(request: web.Request) -> web.Response:
+async def list_files_metadata(request: web.Request) -> web.Response:
     query_params: FilesMetadataQueryParams = parse_request_query_parameters_as(
         FilesMetadataQueryParams, request
     )
