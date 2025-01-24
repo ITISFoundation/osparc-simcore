@@ -43,8 +43,7 @@ from pydantic import (
 )
 
 
-class DatasetMetaData(DatasetMetaDataGet):
-    ...
+class DatasetMetaData(DatasetMetaDataGet): ...
 
 
 def is_uuid(value: str) -> bool:
@@ -151,7 +150,7 @@ class FilesMetadataDatasetQueryParams(StorageQueryParamsBase):
     expand_dirs: bool = True
 
 
-class FilesMetadataQueryParams(StorageQueryParamsBase):
+class FileMetadataListQueryParams(StorageQueryParamsBase):
     project_id: ProjectID | None = None
     uuid_filter: str = ""
     expand_dirs: bool = True

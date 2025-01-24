@@ -33,9 +33,9 @@ from .models import (
     CopyAsSoftLinkParams,
     FileDownloadQueryParams,
     FileMetaData,
+    FileMetadataListQueryParams,
     FilePathIsUploadCompletedParams,
     FilePathParams,
-    FilesMetadataQueryParams,
     FileUploadQueryParams,
     LocationPathParams,
     StorageQueryParamsBase,
@@ -55,8 +55,8 @@ UPLOAD_TASKS_KEY = f"{__name__}.upload_tasks"
     f"/{API_VTAG}/locations/{{location_id}}/files/metadata", name="list_files_metadata"
 )
 async def list_files_metadata(request: web.Request) -> web.Response:
-    query_params: FilesMetadataQueryParams = parse_request_query_parameters_as(
-        FilesMetadataQueryParams, request
+    query_params = parse_request_query_parameters_as(
+        FileMetadataListQueryParams, request
     )
     path_params = parse_request_path_parameters_as(LocationPathParams, request)
     log.debug(
@@ -82,9 +82,7 @@ async def list_files_metadata(request: web.Request) -> web.Response:
     name="get_file_metadata",
 )
 async def get_file_metadata(request: web.Request) -> web.Response:
-    query_params: StorageQueryParamsBase = parse_request_query_parameters_as(
-        StorageQueryParamsBase, request
-    )
+    query_params = parse_request_query_parameters_as(StorageQueryParamsBase, request)
     path_params = parse_request_path_parameters_as(FilePathParams, request)
     log.debug(
         "received call to get_file_metadata_dataset with %s",
@@ -144,9 +142,7 @@ async def get_file_metadata(request: web.Request) -> web.Response:
     f"/{API_VTAG}/locations/{{location_id}}/files/{{file_id}}", name="download_file"
 )
 async def download_file(request: web.Request) -> web.Response:
-    query_params: FileDownloadQueryParams = parse_request_query_parameters_as(
-        FileDownloadQueryParams, request
-    )
+    query_params = parse_request_query_parameters_as(FileDownloadQueryParams, request)
     path_params = parse_request_path_parameters_as(FilePathParams, request)
     log.debug(
         "received call to download_file with %s",
@@ -191,9 +187,7 @@ async def upload_file(request: web.Request) -> web.Response:
     Use-case v2.2: if query.file_size > 0 and query.link_type=presigned or None, returns 1 or more presigned links depending on the file size (limited to a single 5TB file)
     Use-case v2.3: if query.link_type=s3 and query.file_size>=0, returns a single s3 direct link (limited to a single 5TB file)
     """
-    query_params: FileUploadQueryParams = parse_request_query_parameters_as(
-        FileUploadQueryParams, request
-    )
+    query_params = parse_request_query_parameters_as(FileUploadQueryParams, request)
     path_params = parse_request_path_parameters_as(FilePathParams, request)
     log.debug(
         "received call to upload_file with %s",
@@ -252,9 +246,7 @@ async def upload_file(request: web.Request) -> web.Response:
     name="abort_upload_file",
 )
 async def abort_upload_file(request: web.Request) -> web.Response:
-    query_params: StorageQueryParamsBase = parse_request_query_parameters_as(
-        StorageQueryParamsBase, request
-    )
+    query_params = parse_request_query_parameters_as(StorageQueryParamsBase, request)
     path_params = parse_request_path_parameters_as(FilePathParams, request)
     log.debug(
         "received call to abort_upload_file with %s",
@@ -271,9 +263,7 @@ async def abort_upload_file(request: web.Request) -> web.Response:
     name="complete_upload_file",
 )
 async def complete_upload_file(request: web.Request) -> web.Response:
-    query_params: StorageQueryParamsBase = parse_request_query_parameters_as(
-        StorageQueryParamsBase, request
-    )
+    query_params = parse_request_query_parameters_as(StorageQueryParamsBase, request)
     path_params = parse_request_path_parameters_as(FilePathParams, request)
     body = await parse_request_body_as(FileUploadCompletionBody, request)
     log.debug(
@@ -324,9 +314,7 @@ async def complete_upload_file(request: web.Request) -> web.Response:
     name="is_completed_upload_file",
 )
 async def is_completed_upload_file(request: web.Request) -> web.Response:
-    query_params: StorageQueryParamsBase = parse_request_query_parameters_as(
-        StorageQueryParamsBase, request
-    )
+    query_params = parse_request_query_parameters_as(StorageQueryParamsBase, request)
     path_params = parse_request_path_parameters_as(
         FilePathIsUploadCompletedParams, request
     )
@@ -377,9 +365,7 @@ async def is_completed_upload_file(request: web.Request) -> web.Response:
     f"/{API_VTAG}/locations/{{location_id}}/files/{{file_id}}", name="delete_file"
 )
 async def delete_file(request: web.Request) -> web.Response:
-    query_params: StorageQueryParamsBase = parse_request_query_parameters_as(
-        StorageQueryParamsBase, request
-    )
+    query_params = parse_request_query_parameters_as(StorageQueryParamsBase, request)
     path_params = parse_request_path_parameters_as(FilePathParams, request)
     log.debug(
         "received call to delete_file with %s",
