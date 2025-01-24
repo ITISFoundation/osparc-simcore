@@ -10,6 +10,7 @@ from aws_library.s3 import S3KeyNotFoundError
 from pydantic import BaseModel, ValidationError
 from pytest_mock import MockerFixture
 from servicelib.aiohttp.aiopg_utils import DBAPIError
+from simcore_service_storage.api.rest.utils_handlers import dsm_exception_handler
 from simcore_service_storage.db_access_layer import InvalidFileIdentifierError
 from simcore_service_storage.exceptions import (
     FileAccessRightError,
@@ -17,7 +18,6 @@ from simcore_service_storage.exceptions import (
     ProjectAccessRightError,
     ProjectNotFoundError,
 )
-from simcore_service_storage.utils_handlers import dsm_exception_handler
 
 
 @pytest.fixture()
