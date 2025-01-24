@@ -105,10 +105,10 @@ async def list_datasets_metadata(location_id: LocationID, user_id: UserID):
     f"/{API_VTAG}/locations/{{location_id}}/datasets/{{dataset_id}}/metadata",
     response_model=Envelope[list[FileMetaDataGet]],
     tags=TAGS_DATASETS,
-    operation_id="get_files_metadata_dataset",
+    operation_id="list_dataset_files_metadata",
     summary="Get Files Metadata",
 )
-async def get_files_metadata_dataset(
+async def list_dataset_files_metadata(
     location_id: LocationID,
     dataset_id: str,
     user_id: UserID,

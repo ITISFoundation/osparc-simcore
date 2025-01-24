@@ -88,7 +88,7 @@ async def get_files_metadata(
     response_model=Envelope[list[FileMetaDataGet]],
     summary="Get Files Metadata",
 )
-async def get_files_metadata_dataset(
+async def list_dataset_files_metadata(
     location_id: LocationID,
     dataset_id: str,
     expand_dirs: bool = Query(

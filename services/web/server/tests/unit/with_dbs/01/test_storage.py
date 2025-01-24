@@ -242,13 +242,13 @@ async def test_list_datasets_metadata(
         (UserRole.TESTER, status.HTTP_200_OK),
     ],
 )
-async def test_get_files_metadata_dataset(
+async def test_list_dataset_files_metadata(
     client: TestClient, storage_server: TestServer, logged_user, expected
 ):
     url = "/v0/storage/locations/0/datasets/N:asdfsdf/metadata"
     assert url.startswith(PREFIX)
 
-    _url = client.app.router["get_files_metadata_dataset"].url_for(
+    _url = client.app.router["list_dataset_files_metadata"].url_for(
         location_id="0", dataset_id="N:asdfsdf"
     )
 
