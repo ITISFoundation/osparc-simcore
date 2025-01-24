@@ -103,10 +103,10 @@ routes = web.RouteTableDef()
 _path_prefix = f"/{API_VTAG}/storage/locations"
 
 
-@routes.get(_path_prefix, name="get_storage_locations")
+@routes.get(_path_prefix, name="list_storage_locations")
 @login_required
 @permission_required("storage.files.*")
-async def get_storage_locations(request: web.Request) -> web.Response:
+async def list_storage_locations(request: web.Request) -> web.Response:
     payload, status = await _forward_request_to_storage(request, "GET", body=None)
     return create_data_response(payload, status=status)
 

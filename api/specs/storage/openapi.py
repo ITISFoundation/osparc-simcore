@@ -126,10 +126,10 @@ async def get_files_metadata_dataset(
     f"/{API_VTAG}/locations",
     response_model=list[DatasetMetaData],
     tags=TAGS_LOCATIONS,
-    operation_id="get_storage_locations",
+    operation_id="list_storage_locations",
     summary="Get available storage locations",
 )
-async def get_storage_locations(user_id: UserID):
+async def list_storage_locations(user_id: UserID):
     """Returns the list of available storage locations"""
 
 

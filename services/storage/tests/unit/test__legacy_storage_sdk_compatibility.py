@@ -101,7 +101,7 @@ async def test_storage_client_used_in_simcore_sdk_0_3_2(  # noqa: PLR0915
             response_payload,
             status_code,
             response_headers,
-        ) = await api.get_storage_locations_with_http_info(user_id)
+        ) = await api.list_storage_locations_with_http_info(user_id)
         print(f"{response_payload=}")
         print(f"{status_code=}")
         print(f"{response_headers=}")
@@ -145,7 +145,7 @@ async def test_storage_client_used_in_simcore_sdk_0_3_2(  # noqa: PLR0915
 
         # _get_location_id_from_location_name
         # https://github.com/ITISFoundation/osparc-simcore/blob/cfdf4f86d844ebb362f4f39e9c6571d561b72897/packages/simcore-sdk/src/simcore_sdk/node_ports/filemanager.py#L89
-        resp_model = await api.get_storage_locations(user_id=user_id)
+        resp_model = await api.list_storage_locations(user_id=user_id)
         print(f"{resp_model=}")
         for location in resp_model.data:
             assert location["name"] == location_name

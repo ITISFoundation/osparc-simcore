@@ -101,7 +101,7 @@ paths:
       - locations
       summary: Get available storage locations
       description: Returns the list of available storage locations
-      operationId: get_storage_locations
+      operationId: list_storage_locations
       parameters:
       - name: user_id
         in: query

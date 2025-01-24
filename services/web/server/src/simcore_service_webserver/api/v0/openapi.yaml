@@ -5640,7 +5640,7 @@ paths:
       - storage
       summary: Get available storage locations
       description: Returns the list of available storage locations
-      operationId: get_storage_locations
+      operationId: list_storage_locations
       responses:
         '200':
           description: Successful Response
