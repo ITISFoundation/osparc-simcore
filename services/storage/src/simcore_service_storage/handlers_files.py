@@ -44,7 +44,7 @@ from .models import (
 from .simcore_s3_dsm import SimcoreS3DataManager
 from .utils import create_upload_completion_task_name
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 routes = RouteTableDef()
 
@@ -59,7 +59,7 @@ async def list_files_metadata(request: web.Request) -> web.Response:
         FileMetadataListQueryParams, request
     )
     path_params = parse_request_path_parameters_as(LocationPathParams, request)
-    log.debug(
+    _logger.debug(
         "received call to get_files_metadata with %s",
         f"{path_params=}, {query_params=}",
     )
@@ -84,7 +84,7 @@ async def list_files_metadata(request: web.Request) -> web.Response:
 async def get_file_metadata(request: web.Request) -> web.Response:
     query_params = parse_request_query_parameters_as(StorageQueryParamsBase, request)
     path_params = parse_request_path_parameters_as(FilePathParams, request)
-    log.debug(
+    _logger.debug(
         "received call to get_file_metadata_dataset with %s",
         f"{path_params=}, {query_params=}",
     )
@@ -144,7 +144,7 @@ async def get_file_metadata(request: web.Request) -> web.Response:
 async def download_file(request: web.Request) -> web.Response:
     query_params = parse_request_query_parameters_as(FileDownloadQueryParams, request)
     path_params = parse_request_path_parameters_as(FilePathParams, request)
-    log.debug(
+    _logger.debug(
         "received call to download_file with %s",
         f"{path_params=}, {query_params=}",
     )
@@ -189,7 +189,7 @@ async def upload_file(request: web.Request) -> web.Response:
     """
     query_params = parse_request_query_parameters_as(FileUploadQueryParams, request)
     path_params = parse_request_path_parameters_as(FilePathParams, request)
-    log.debug(
+    _logger.debug(
         "received call to upload_file with %s",
         f"{path_params=}, {query_params=}",
     )
@@ -209,7 +209,7 @@ async def upload_file(request: web.Request) -> web.Response:
         response = {
             "data": {"link": jsonable_encoder(f"{links.urls[0]}", by_alias=True)}
         }
-        log.debug("Returning v1 response: %s", response)
+        _logger.debug("Returning v1 response: %s", response)
         return web.json_response(response, dumps=json_dumps)
 
     # v2 response
@@ -237,7 +237,7 @@ async def upload_file(request: web.Request) -> web.Response:
             complete_upload=TypeAdapter(AnyUrl).validate_python(f"{complete_url}"),
         ),
     )
-    log.debug("returning v2 response: %s", v2_response)
+    _logger.debug("returning v2 response: %s", v2_response)
     return jsonable_encoder(v2_response, by_alias=True)  # type: ignore[no-any-return] # middleware takes care of enveloping
 
 
@@ -248,7 +248,7 @@ async def upload_file(request: web.Request) -> web.Response:
 async def abort_upload_file(request: web.Request) -> web.Response:
     query_params = parse_request_query_parameters_as(StorageQueryParamsBase, request)
     path_params = parse_request_path_parameters_as(FilePathParams, request)
-    log.debug(
+    _logger.debug(
         "received call to abort_upload_file with %s",
         f"{path_params=}, {query_params=}",
     )
@@ -266,7 +266,7 @@ async def complete_upload_file(request: web.Request) -> web.Response:
     query_params = parse_request_query_parameters_as(StorageQueryParamsBase, request)
     path_params = parse_request_path_parameters_as(FilePathParams, request)
     body = await parse_request_body_as(FileUploadCompletionBody, request)
-    log.debug(
+    _logger.debug(
         "received call to complete_upload_file with %s",
         f"{path_params=}, {query_params=}",
     )
@@ -318,7 +318,7 @@ async def is_completed_upload_file(request: web.Request) -> web.Response:
     path_params = parse_request_path_parameters_as(
         FilePathIsUploadCompletedParams, request
     )
-    log.debug(
+    _logger.debug(
         "received call to is completed upload file with %s",
         f"{path_params=}, {query_params=}",
     )
@@ -367,7 +367,7 @@ async def is_completed_upload_file(request: web.Request) -> web.Response:
 async def delete_file(request: web.Request) -> web.Response:
     query_params = parse_request_query_parameters_as(StorageQueryParamsBase, request)
     path_params = parse_request_path_parameters_as(FilePathParams, request)
-    log.debug(
+    _logger.debug(
         "received call to delete_file with %s",
         f"{path_params=}, {query_params=}",
     )
@@ -384,7 +384,7 @@ async def copy_as_soft_link(request: web.Request):
     )
     path_params = parse_request_path_parameters_as(CopyAsSoftLinkParams, request)
     body = await parse_request_body_as(SoftCopyBody, request)
-    log.debug(
+    _logger.debug(
         "received call to copy_as_soft_link with %s",
         f"{path_params=}, {query_params=}, {body=}",
     )
