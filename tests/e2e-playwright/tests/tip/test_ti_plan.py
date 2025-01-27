@@ -325,7 +325,9 @@ def test_classic_ti_plan(  # noqa: PLR0915
 
             with log_context(logging.INFO, "Post process"):
                 # click on the postpro mode button
-                s4l_postpro_iframe.get_by_test_id("mode-button-postro").click()
+                s4l_postpro_iframe.get_by_test_id(
+                    "mode-button-postro", timeout=_POST_PRO_MAX_STARTUP_TIME
+                ).click()
                 # click on the surface viewer
                 s4l_postpro_iframe.get_by_test_id("tree-item-ti_field.cache").click()
                 s4l_postpro_iframe.get_by_test_id("tree-item-SurfaceViewer").nth(
