@@ -78,7 +78,7 @@ class PricingPlanAdminGet(OutputSchema):
     classification: PricingPlanClassification
     created_at: datetime
     pricing_plan_key: str
-    pricing_units: list[PricingUnitGet] | None
+    pricing_units: list[PricingUnitAdminGet] | None
     is_active: bool
 
 

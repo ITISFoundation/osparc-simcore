@@ -30,15 +30,16 @@ from models_library.api_schemas_webserver.resource_usage import (
     UpdatePricingUnitBodyParams,
 )
 from models_library.generics import Envelope
+from models_library.rest_pagination import Page, PageQueryParameters
 from simcore_service_webserver._meta import API_VTAG
-from simcore_service_webserver.resource_usage._pricing_plans_admin_handlers import (
+from simcore_service_webserver.resource_usage._pricing_plans_admin_rest import (
     PricingPlanGetPathParams,
     PricingUnitGetPathParams,
 )
-from simcore_service_webserver.resource_usage._pricing_plans_handlers import (
+from simcore_service_webserver.resource_usage._pricing_plans_rest import (
     PricingPlanUnitGetPathParams,
 )
-from simcore_service_webserver.resource_usage._service_runs_handlers import (
+from simcore_service_webserver.resource_usage._service_runs_rest import (
     ServicesAggregatedUsagesListQueryParams,
     ServicesResourceUsagesListQueryParams,
     ServicesResourceUsagesReportQueryParams,
@@ -49,7 +50,7 @@ router = APIRouter(prefix=f"/{API_VTAG}")
 
 @router.get(
     "/services/-/resource-usages",
-    response_model=Envelope[list[ServiceRunGet]],
+    response_model=Page[ServiceRunGet],
     summary="Retrieve finished and currently running user services"
     " (user and product are taken from context, optionally wallet_id parameter might be provided).",
     tags=["usage"],
@@ -62,7 +63,7 @@ async def list_resource_usage_services(
 
 @router.get(
     "/services/-/aggregated-usages",
-    response_model=Envelope[list[OsparcCreditsAggregatedByServiceGet]],
+    response_model=Page[OsparcCreditsAggregatedByServiceGet],
     summary="Used credits based on aggregate by type, currently supported `services`"
     ". (user and product are taken from context, optionally wallet_id parameter might be provided).",
     tags=["usage"],
@@ -104,11 +105,13 @@ async def get_pricing_plan_unit(
 
 @router.get(
     "/pricing-plans",
-    response_model=Envelope[list[PricingPlanGet]],
+    response_model=Page[PricingPlanGet],
     tags=["pricing-plans"],
     description="To keep the listing lightweight, the pricingUnits field is None.",
 )
-async def list_pricing_plans():
+async def list_pricing_plans(
+    _query: Annotated[as_query(PageQueryParameters), Depends()]
+):
     ...
 
 
@@ -128,11 +131,13 @@ async def get_pricing_plan(
 
 @router.get(
     "/admin/pricing-plans",
-    response_model=Envelope[list[PricingPlanAdminGet]],
+    response_model=Page[PricingPlanAdminGet],
     tags=["admin"],
     description="To keep the listing lightweight, the pricingUnits field is None.",
 )
-async def list_pricing_plans_for_admin_user():
+async def list_pricing_plans_for_admin_user(
+    _query: Annotated[as_query(PageQueryParameters), Depends()]
+):
     ...
 
 

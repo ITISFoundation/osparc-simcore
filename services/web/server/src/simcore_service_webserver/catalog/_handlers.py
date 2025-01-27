@@ -36,7 +36,7 @@ from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
 from .._meta import API_VTAG
 from ..login.decorators import login_required
-from ..resource_usage.api import get_default_service_pricing_plan
+from ..resource_usage.service import get_default_service_pricing_plan
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
 from . import _api, _handlers_errors, client

@@ -7,8 +7,15 @@ from models_library.api_schemas_webserver.resource_usage import (
 )
 from models_library.resource_tracker import PricingPlanId, PricingUnitId
 from models_library.rest_base import StrictRequestParameters
-from servicelib.aiohttp.requests_validation import parse_request_path_parameters_as
+from models_library.rest_pagination import Page, PageQueryParameters
+from models_library.rest_pagination_utils import paginate_data
+from servicelib.aiohttp.requests_validation import (
+    parse_request_path_parameters_as,
+    parse_request_query_parameters_as,
+)
 from servicelib.aiohttp.typing_extension import Handler
+from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
+from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
 from .._meta import API_VTAG as VTAG
 from ..login.decorators import login_required
@@ -16,8 +23,8 @@ from ..models import RequestContext
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
 from ..wallets.errors import WalletAccessForbiddenError
-from . import _pricing_plans_admin_api as admin_api
-from . import _pricing_plans_api as api
+from . import _pricing_plans_admin_service as pricing_plans_admin_service
+from . import _pricing_plans_service as pricing_plans_service
 from ._pricing_plans_models import PricingPlanGetPathParams
 
 #
@@ -58,7 +65,7 @@ async def get_pricing_plan_unit(request: web.Request):
         PricingPlanUnitGetPathParams, request
     )
 
-    pricing_unit_get = await api.get_pricing_plan_unit(
+    pricing_unit_get = await pricing_plans_service.get_pricing_plan_unit(
         app=request.app,
         product_name=req_ctx.product_name,
         pricing_plan_id=path_params.pricing_plan_id,
@@ -85,12 +92,18 @@ async def get_pricing_plan_unit(request: web.Request):
 @_handle_resource_usage_exceptions
 async def list_pricing_plans(request: web.Request):
     req_ctx = RequestContext.model_validate(request)
+    query_params: PageQueryParameters = parse_request_query_parameters_as(
+        PageQueryParameters, request
+    )
 
-    pricing_plans_list = await admin_api.list_pricing_plans(
+    pricing_plan_page = await pricing_plans_admin_service.list_pricing_plans(
         app=request.app,
         product_name=req_ctx.product_name,
+        exclude_inactive=True,
+        offset=query_params.offset,
+        limit=query_params.limit,
     )
-    webserver_pricing_unit_get = [
+    webserver_pricing_plans = [
         PricingPlanGet(
             pricing_plan_id=pricing_plan.pricing_plan_id,
             display_name=pricing_plan.display_name,
@@ -101,10 +114,22 @@ async def list_pricing_plans(request: web.Request):
             pricing_units=None,
             is_active=pricing_plan.is_active,
         )
-        for pricing_plan in pricing_plans_list
+        for pricing_plan in pricing_plan_page.items
     ]
 
-    return envelope_json_response(webserver_pricing_unit_get, web.HTTPOk)
+    page = Page[PricingPlanGet].model_validate(
+        paginate_data(
+            chunk=webserver_pricing_plans,
+            request_url=request.url,
+            total=pricing_plan_page.total,
+            limit=query_params.limit,
+            offset=query_params.offset,
+        )
+    )
+    return web.Response(
+        text=page.model_dump_json(**RESPONSE_MODEL_POLICY),
+        content_type=MIMETYPE_APPLICATION_JSON,
+    )
 
 
 @routes.get(
@@ -118,7 +143,7 @@ async def get_pricing_plan(request: web.Request):
     req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(PricingPlanGetPathParams, request)
 
-    pricing_plan_get = await admin_api.get_pricing_plan(
+    pricing_plan_get = await pricing_plans_admin_service.get_pricing_plan(
         app=request.app,
         product_name=req_ctx.product_name,
         pricing_plan_id=path_params.pricing_plan_id,

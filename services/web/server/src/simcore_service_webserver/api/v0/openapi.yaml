@@ -5289,7 +5289,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_list_ServiceRunGet__'
+                $ref: '#/components/schemas/Page_ServiceRunGet_'
   /v0/services/-/aggregated-usages:
     get:
       tags:
@@ -5335,7 +5335,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_list_OsparcCreditsAggregatedByServiceGet__'
+                $ref: '#/components/schemas/Page_OsparcCreditsAggregatedByServiceGet_'
   /v0/services/-/usage-report:
     get:
       tags:
@@ -5384,7 +5384,7 @@ paths:
     get:
       tags:
       - pricing-plans
-      summary: Retrieve detail information about pricing unit
+      summary: Get Pricing Plan Unit
       operationId: get_pricing_plan_unit
       parameters:
       - name: pricing_plan_id
@@ -5414,21 +5414,36 @@ paths:
     get:
       tags:
       - pricing-plans
-      summary: List pricing plans
+      summary: List Pricing Plans
       description: To keep the listing lightweight, the pricingUnits field is None.
       operationId: list_pricing_plans
+      parameters:
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 20
+          title: Limit
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+          title: Offset
       responses:
         '200':
           description: Successful Response
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_list_PricingPlanGet__'
+                $ref: '#/components/schemas/Page_PricingPlanGet_'
   /v0/pricing-plans/{pricing_plan_id}:
     get:
       tags:
       - pricing-plans
-      summary: Retrieve detail information about pricing plan
+      summary: Get Pricing Plan
       operationId: get_pricing_plan
       parameters:
       - name: pricing_plan_id
@@ -5450,27 +5465,42 @@ paths:
     get:
       tags:
       - admin
-      summary: List pricing plans
+      summary: List Pricing Plans For Admin User
       description: To keep the listing lightweight, the pricingUnits field is None.
       operationId: list_pricing_plans_for_admin_user
+      parameters:
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 20
+          title: Limit
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+          title: Offset
       responses:
         '200':
           description: Successful Response
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_list_PricingPlanAdminGet__'
+                $ref: '#/components/schemas/Page_PricingPlanAdminGet_'
     post:
       tags:
       - admin
-      summary: Create pricing plan
+      summary: Create Pricing Plan
       operationId: create_pricing_plan
       requestBody:
+        required: true
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/CreatePricingPlanBodyParams'
-        required: true
       responses:
         '200':
           description: Successful Response
@@ -5482,7 +5512,7 @@ paths:
     get:
       tags:
       - admin
-      summary: Retrieve detail information about pricing plan
+      summary: Get Pricing Plan For Admin User
       operationId: get_pricing_plan_for_admin_user
       parameters:
       - name: pricing_plan_id
@@ -5503,7 +5533,7 @@ paths:
     put:
       tags:
       - admin
-      summary: Update detail information about pricing plan
+      summary: Update Pricing Plan
       operationId: update_pricing_plan
       parameters:
       - name: pricing_plan_id
@@ -5531,7 +5561,7 @@ paths:
     get:
       tags:
       - admin
-      summary: Retrieve detail information about pricing unit
+      summary: Get Pricing Unit
       operationId: get_pricing_unit
       parameters:
       - name: pricing_plan_id
@@ -5560,7 +5590,7 @@ paths:
     put:
       tags:
       - admin
-      summary: Update detail information about pricing plan
+      summary: Update Pricing Unit
       operationId: update_pricing_unit
       parameters:
       - name: pricing_plan_id
@@ -5596,7 +5626,7 @@ paths:
     post:
       tags:
       - admin
-      summary: Create pricing unit
+      summary: Create Pricing Unit
       operationId: create_pricing_unit
       parameters:
       - name: pricing_plan_id
@@ -5624,7 +5654,7 @@ paths:
     get:
       tags:
       - admin
-      summary: List services that are connected to the provided pricing plan
+      summary: List Connected Services To Pricing Plan
       operationId: list_connected_services_to_pricing_plan
       parameters:
       - name: pricing_plan_id
@@ -5645,7 +5675,7 @@ paths:
     post:
       tags:
       - admin
-      summary: Connect service with pricing plan
+      summary: Connect Service To Pricing Plan
       operationId: connect_service_to_pricing_plan
       parameters:
       - name: pricing_plan_id
@@ -9252,22 +9282,6 @@ components:
           title: Error
       type: object
       title: Envelope[list[MyTokenGet]]
-    Envelope_list_OsparcCreditsAggregatedByServiceGet__:
-      properties:
-        data:
-          anyOf:
-          - items:
-              $ref: '#/components/schemas/OsparcCreditsAggregatedByServiceGet'
-            type: array
-          - type: 'null'
-          title: Data
-        error:
-          anyOf:
-          - {}
-          - type: 'null'
-          title: Error
-      type: object
-      title: Envelope[list[OsparcCreditsAggregatedByServiceGet]]
     Envelope_list_PaymentMethodGet__:
       properties:
         data:
@@ -9284,38 +9298,6 @@ components:
           title: Error
       type: object
       title: Envelope[list[PaymentMethodGet]]
-    Envelope_list_PricingPlanAdminGet__:
-      properties:
-        data:
-          anyOf:
-          - items:
-              $ref: '#/components/schemas/PricingPlanAdminGet'
-            type: array
-          - type: 'null'
-          title: Data
-        error:
-          anyOf:
-          - {}
-          - type: 'null'
-          title: Error
-      type: object
-      title: Envelope[list[PricingPlanAdminGet]]
-    Envelope_list_PricingPlanGet__:
-      properties:
-        data:
-          anyOf:
-          - items:
-              $ref: '#/components/schemas/PricingPlanGet'
-            type: array
-          - type: 'null'
-          title: Data
-        error:
-          anyOf:
-          - {}
-          - type: 'null'
-          title: Error
-      type: object
-      title: Envelope[list[PricingPlanGet]]
     Envelope_list_PricingPlanToServiceAdminGet__:
       properties:
         data:
@@ -9444,22 +9426,6 @@ components:
           title: Error
       type: object
       title: Envelope[list[ServiceOutputGet]]
-    Envelope_list_ServiceRunGet__:
-      properties:
-        data:
-          anyOf:
-          - items:
-              $ref: '#/components/schemas/ServiceRunGet'
-            type: array
-          - type: 'null'
-          title: Data
-        error:
-          anyOf:
-          - {}
-          - type: 'null'
-          title: Error
-      type: object
-      title: Envelope[list[ServiceRunGet]]
     Envelope_list_TagGet__:
       properties:
         data:
@@ -10743,6 +10709,7 @@ components:
           minimum: 0
         userEmail:
           type: string
+          format: email
           title: Useremail
         purchasedAt:
           type: string
@@ -11912,6 +11879,24 @@ components:
       - _links
       - data
       title: Page[LicensedItemPurchaseGet]
+    Page_OsparcCreditsAggregatedByServiceGet_:
+      properties:
+        _meta:
+          $ref: '#/components/schemas/PageMetaInfoLimitOffset'
+        _links:
+          $ref: '#/components/schemas/PageLinks'
+        data:
+          items:
+            $ref: '#/components/schemas/OsparcCreditsAggregatedByServiceGet'
+          type: array
+          title: Data
+      additionalProperties: false
+      type: object
+      required:
+      - _meta
+      - _links
+      - data
+      title: Page[OsparcCreditsAggregatedByServiceGet]
     Page_PaymentTransaction_:
       properties:
         _meta:
@@ -11930,6 +11915,42 @@ components:
       - _links
       - data
       title: Page[PaymentTransaction]
+    Page_PricingPlanAdminGet_:
+      properties:
+        _meta:
+          $ref: '#/components/schemas/PageMetaInfoLimitOffset'
+        _links:
+          $ref: '#/components/schemas/PageLinks'
+        data:
+          items:
+            $ref: '#/components/schemas/PricingPlanAdminGet'
+          type: array
+          title: Data
+      additionalProperties: false
+      type: object
+      required:
+      - _meta
+      - _links
+      - data
+      title: Page[PricingPlanAdminGet]
+    Page_PricingPlanGet_:
+      properties:
+        _meta:
+          $ref: '#/components/schemas/PageMetaInfoLimitOffset'
+        _links:
+          $ref: '#/components/schemas/PageLinks'
+        data:
+          items:
+            $ref: '#/components/schemas/PricingPlanGet'
+          type: array
+          title: Data
+      additionalProperties: false
+      type: object
+      required:
+      - _meta
+      - _links
+      - data
+      title: Page[PricingPlanGet]
     Page_ProjectIterationItem_:
       properties:
         _meta:
@@ -12002,6 +12023,24 @@ components:
       - _links
       - data
       title: Page[RepoApiModel]
+    Page_ServiceRunGet_:
+      properties:
+        _meta:
+          $ref: '#/components/schemas/PageMetaInfoLimitOffset'
+        _links:
+          $ref: '#/components/schemas/PageLinks'
+        data:
+          items:
+            $ref: '#/components/schemas/ServiceRunGet'
+          type: array
+          title: Data
+      additionalProperties: false
+      type: object
+      required:
+      - _meta
+      - _links
+      - data
+      title: Page[ServiceRunGet]
     ParentMetaProjectRef:
       properties:
         project_id:
@@ -12358,7 +12397,7 @@ components:
         pricingUnits:
           anyOf:
           - items:
-              $ref: '#/components/schemas/PricingUnitGet'
+              $ref: '#/components/schemas/PricingUnitAdminGet'
             type: array
           - type: 'null'
           title: Pricingunits
