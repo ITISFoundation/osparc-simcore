@@ -49,16 +49,15 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
         font: "text-16",
         padding: 4,
       });
-      menuButton.getChildControl("label").set({
-        rich: true,
-        allowGrowX: true,
-        minWidth: 300,
-        wrap: false,
-      });
       menuButton.getChildControl("icon").set({
         scale: true,
         maxHeight: 20,
         maxWidth: 20,
+      });
+      menuButton.getChildControl("label").set({
+        rich: true,
+        allowGrowX: true,
+        wrap: false,
       });
       if (description) {
         const infoHint = new osparc.ui.hint.InfoHint(description).set({
