@@ -7,7 +7,7 @@ from aws_library.s3 import S3AccessError, S3KeyNotFoundError
 from pydantic import ValidationError
 from servicelib.aiohttp.aiopg_utils import DBAPIError
 
-from ...core.exceptions import (
+from ...exceptions.errors import (
     FileAccessRightError,
     FileMetaDataNotFoundError,
     LinkAlreadyExistsError,

@@ -25,7 +25,7 @@ from models_library.users import UserID
 from pydantic import ByteSize, TypeAdapter
 from pytest_simcore.helpers.parametrizations import byte_size_ids
 from simcore_postgres_database.storage_models import file_meta_data
-from simcore_service_storage.core.exceptions import (
+from simcore_service_storage.exceptions.errors import (
     FileAccessRightError,
     FileMetaDataNotFoundError,
 )

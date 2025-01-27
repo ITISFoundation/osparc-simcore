@@ -12,7 +12,7 @@ from models_library.projects_nodes_io import (
 from pydantic import ByteSize, NonNegativeInt, TypeAdapter
 from servicelib.utils import ensure_ends_with
 
-from ..core.exceptions import FileMetaDataNotFoundError
+from ..exceptions.errors import FileMetaDataNotFoundError
 from ..models import FileMetaData, FileMetaDataAtDB
 from ..modules.db import db_file_meta_data
 from .utils import convert_db_to_model

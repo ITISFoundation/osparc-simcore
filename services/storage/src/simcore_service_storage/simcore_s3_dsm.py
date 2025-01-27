@@ -52,15 +52,15 @@ from .constants import (
     SIMCORE_S3_ID,
     SIMCORE_S3_STR,
 )
-from .core.exceptions import (
+from .core.settings import ApplicationSettings
+from .dsm_factory import BaseDataManager
+from .exceptions.errors import (
     FileAccessRightError,
     FileMetaDataNotFoundError,
     LinkAlreadyExistsError,
     ProjectAccessRightError,
     ProjectNotFoundError,
 )
-from .core.settings import ApplicationSettings
-from .dsm_factory import BaseDataManager
 from .models import (
     DatasetMetaData,
     FileMetaData,
