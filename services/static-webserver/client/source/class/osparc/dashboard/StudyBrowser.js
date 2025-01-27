@@ -252,7 +252,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .catch(console.error)
         .finally(() => {
           // In favor of the NewPlusButton
-          if (!["tis", "tiplite"].includes(osparc.product.Utils.getProductName())) {
+          if (!osparc.product.Utils.hasNewPlusButton()) {
             this.__addNewFolderButton();
           }
           this.__loadingFolders = null;
@@ -922,20 +922,21 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         }
       }
 
-      switch (osparc.product.Utils.getProductName()) {
-        case "osparc":
-          this.__addEmptyStudyPlusButton();
-          break;
-        case "tis":
-        case "tiplite":
-          // In favor of the NewPlusButton
-          // this.__addTIPPlusButton();
-          break;
-        case "s4l":
-        case "s4lacad":
-        case "s4llite":
-          this.__addPlusButtonsFromServices();
-          break;
+      if (!osparc.product.Utils.hasNewPlusButton()) {
+        switch (osparc.product.Utils.getProductName()) {
+          case "osparc":
+            this.__addEmptyStudyPlusButton();
+            break;
+          case "tis":
+          case "tiplite":
+            this.__addTIPPlusButton();
+            break;
+          case "s4l":
+          case "s4lacad":
+          case "s4llite":
+            this.__addPlusButtonsFromServices();
+            break;
+        }
       }
     },
 
@@ -1072,7 +1073,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this.__addSortByButton();
       this._addViewModeButton();
 
-      if (osparc.product.Utils.isProduct("tis") || osparc.product.Utils.isProduct("tiplite")) {
+      if (osparc.product.Utils.hasNewPlusButton()) {
         this.__addNewPlusButton();
       }
 

@@ -293,6 +293,16 @@ qx.Class.define("osparc.product.Utils", {
           break;
       }
       return url;
-    }
+    },
+
+    hasNewPlusButton: function() {
+      return [
+        "tis",
+        "tiplite",
+        "s4l",
+        "s4lacad",
+        "s4llite",
+      ].includes(osparc.product.Utils.getProductName());
+    },
   }
 });
