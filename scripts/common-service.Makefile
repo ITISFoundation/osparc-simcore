@@ -147,11 +147,11 @@ _run-test-dev: _check_venv_active
 		--cov-config=.coveragerc \
 		--cov-report=term-missing \
 		--cov-report=xml \
-		--junitxml=junit.xml -o junit_family=legacy \
 		--cov=$(APP_PACKAGE_NAME) \
 		--durations=10 \
 		--exitfirst \
 		--failed-first \
+		--junitxml=junit.xml -o junit_family=legacy \
 		--keep-docker-up \
 		--pdb \
 		-vv \

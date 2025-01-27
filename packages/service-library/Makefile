@@ -107,7 +107,7 @@ test-dev[all]: ## runs unit tests  w/ all extras
 
 
 .PHONY: test-ci[all]
-test-ci[all]: ## runs unit tests  w/ all extras
+test-ci[all]:  ## runs unit tests  w/ all extras
 	@pytest \
 		--asyncio-mode=auto \
 		--color=yes \
@@ -115,12 +115,14 @@ test-ci[all]: ## runs unit tests  w/ all extras
 		--cov-config=$(CURDIR)/../../.coveragerc \
 		--cov-report=term-missing \
 		--cov-report=xml \
-		--junitxml=junit.xml -o junit_family=legacy \
 		--cov=$(APP_PACKAGE_NAME) \
 		--durations=10 \
+		--junitxml=junit.xml -o junit_family=legacy \
 		--keep-docker-up \
 		--log-date-format="%Y-%m-%d %H:%M:%S" \
-    --log-format="%(asctime)s %(levelname)s %(message)s" \
+		--log-format="%(asctime)s %(levelname)s %(message)s" \
 		--verbose \
 		-m "not heavy_load" \
+		--log-cli-level=DEBUG \
+		--setup-show \
 		$(CURDIR)/tests
