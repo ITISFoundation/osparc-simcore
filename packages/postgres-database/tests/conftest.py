@@ -7,12 +7,14 @@ import uuid
 import warnings
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from pathlib import Path
+from typing import Iterable
 
 import aiopg.sa
 import aiopg.sa.exc
 import pytest
 import simcore_postgres_database.cli
 import sqlalchemy as sa
+import sqlalchemy.engine
 import yaml
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.engine import Engine
@@ -70,6 +72,13 @@ def postgres_service(docker_services, docker_ip, docker_compose_file) -> str:
         pause=0.1,
     )
     return dsn
+
+
+@pytest.fixture(scope="session")
+def sync_engine(postgres_service: str) -> Iterable[sqlalchemy.engine.Engine]:
+    _engine: sqlalchemy.engine.Engine = sa.create_engine(url=postgres_service)
+    yield _engine
+    _engine.dispose()
 
 
 @pytest.fixture

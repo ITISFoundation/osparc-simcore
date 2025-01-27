@@ -26,6 +26,10 @@ async def _pause_docker_container_in_context(
     containers = await async_docker_client.containers.list(
         filters={"name": [f"{container_name}."]}
     )
+    assert (
+        containers
+    ), f"Failed to pause container {container_name=}, because it was not found"
+
     await asyncio.gather(*(c.pause() for c in containers))
     # refresh
     container_attrs = await asyncio.gather(*(c.show() for c in containers))
