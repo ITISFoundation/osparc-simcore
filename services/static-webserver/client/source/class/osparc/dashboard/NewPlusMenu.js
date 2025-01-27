@@ -194,6 +194,14 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
         }
       }
 
+      if (menuButton.getIcon()) {
+        menuButton.getChildControl("icon").set({
+          scale: true,
+          maxWidth: 22,
+          maxHeight: 22,
+        })
+      }
+
       let idx = null;
       if (templateData.category) {
         idx = this.__getLastIdxFromCategory(templateData.category);
