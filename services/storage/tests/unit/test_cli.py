@@ -10,7 +10,7 @@ from io import StringIO
 import pytest
 from dotenv import dotenv_values
 from simcore_service_storage.cli import main
-from simcore_service_storage.settings import Settings
+from simcore_service_storage.core.settings import Settings
 from typer.testing import CliRunner
 
 

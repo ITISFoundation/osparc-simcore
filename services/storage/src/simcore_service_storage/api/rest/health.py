@@ -16,10 +16,10 @@ from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
 from ..._meta import API_VERSION, API_VTAG, PROJECT_NAME, VERSION
 from ...constants import APP_CONFIG_KEY
+from ...core.settings import Settings
 from ...db import get_engine_state
 from ...db import is_service_responsive as is_pg_responsive
 from ...s3 import get_s3_client
-from ...settings import Settings
 
 _logger = logging.getLogger(__name__)
 

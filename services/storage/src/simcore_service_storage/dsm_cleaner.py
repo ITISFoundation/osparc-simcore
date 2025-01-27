@@ -29,9 +29,9 @@ from servicelib.background_task_utils import exclusive_periodic
 from servicelib.logging_utils import log_catch, log_context
 
 from .constants import APP_CONFIG_KEY, APP_DSM_KEY
+from .core.settings import Settings
 from .dsm_factory import DataManagerProvider
 from .redis import get_redis_client
-from .settings import Settings
 from .simcore_s3_dsm import SimcoreS3DataManager
 
 _logger = logging.getLogger(__name__)
