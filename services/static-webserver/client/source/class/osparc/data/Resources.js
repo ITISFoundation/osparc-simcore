@@ -162,6 +162,10 @@ qx.Class.define("osparc.data.Resources", {
             method: "PUT",
             url: statics.API + "/projects/{studyId}/wallet/{walletId}"
           },
+          payDebt: {
+            method: "POST",
+            url: statics.API + "/projects/{studyId}/wallet/{walletId}:pay-debt"
+          },
           openDisableAutoStart: {
             method: "POST",
             url: statics.API + "/projects/{studyId}:open?disable_service_auto_start={disableServiceAutoStart}"

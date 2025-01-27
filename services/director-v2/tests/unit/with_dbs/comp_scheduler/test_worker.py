@@ -12,12 +12,12 @@ from collections.abc import Awaitable, Callable
 from unittest import mock
 
 import pytest
-from tenacity import retry, stop_after_delay, wait_fixed
 from _helpers import PublishedProject
 from fastapi import FastAPI
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from settings_library.rabbit import RabbitSettings
 from simcore_service_director_v2.models.comp_runs import RunMetadataDict
 from simcore_service_director_v2.modules.comp_scheduler._manager import run_new_pipeline
 from simcore_service_director_v2.modules.comp_scheduler._models import (
@@ -26,7 +26,7 @@ from simcore_service_director_v2.modules.comp_scheduler._models import (
 from simcore_service_director_v2.modules.comp_scheduler._worker import (
     _get_scheduler_worker,
 )
-from settings_library.rabbit import RabbitSettings
+from tenacity import retry, stop_after_delay, wait_fixed
 
 pytest_simcore_core_services_selection = ["postgres", "rabbit", "redis"]
 pytest_simcore_ops_services_selection = ["adminer"]
@@ -95,7 +95,6 @@ def with_scheduling_concurrency(
     )
 
 
-@pytest.mark.testit
 @pytest.mark.parametrize("scheduling_concurrency", [1, 50, 100])
 @pytest.mark.parametrize(
     "queue_name", [SchedulePipelineRabbitMessage.get_channel_name()]

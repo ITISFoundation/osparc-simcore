@@ -377,11 +377,13 @@ class ProjectDBAPI(BaseProjectDB):
         # attribute filters
         filter_by_project_type: ProjectType | None = None,
         filter_by_services: list[dict] | None = None,
-        filter_published: bool | None = False,
+        filter_published: bool | None = None,
         filter_hidden: bool | None = False,
         filter_trashed: bool | None = False,
-        filter_by_text: str | None = None,
         filter_tag_ids_list: list[int] | None = None,
+        # search
+        search_by_multi_columns: str | None = None,
+        search_by_project_name: str | None = None,
         # pagination
         offset: int | None = 0,
         limit: int | None = None,
@@ -472,7 +474,7 @@ class ProjectDBAPI(BaseProjectDB):
                         & (projects_to_products.c.product_name == product_name)
                     )
                 )
-                if filter_by_text is not None:
+                if search_by_multi_columns is not None:
                     private_workspace_query = private_workspace_query.join(
                         users, users.c.id == projects.c.prj_owner, isouter=True
                     )
@@ -546,7 +548,7 @@ class ProjectDBAPI(BaseProjectDB):
                         == workspace_query.workspace_id  # <-- Specific shared workspace
                     )
 
-                if filter_by_text is not None:
+                if search_by_multi_columns is not None:
                     # NOTE: fields searched with text include user's email
                     shared_workspace_query = shared_workspace_query.join(
                         users, users.c.id == projects.c.prj_owner, isouter=True
@@ -582,12 +584,16 @@ class ProjectDBAPI(BaseProjectDB):
                     # not marked as trashed
                     else projects.c.trashed.is_(None)
                 )
-            if filter_by_text is not None:
+            if search_by_multi_columns is not None:
                 attributes_filters.append(
-                    (projects.c.name.ilike(f"%{filter_by_text}%"))
-                    | (projects.c.description.ilike(f"%{filter_by_text}%"))
-                    | (projects.c.uuid.ilike(f"%{filter_by_text}%"))
-                    | (users.c.name.ilike(f"%{filter_by_text}%"))
+                    (projects.c.name.ilike(f"%{search_by_multi_columns}%"))
+                    | (projects.c.description.ilike(f"%{search_by_multi_columns}%"))
+                    | (projects.c.uuid.ilike(f"%{search_by_multi_columns}%"))
+                    | (users.c.name.ilike(f"%{search_by_multi_columns}%"))
+                )
+            if search_by_project_name is not None:
+                attributes_filters.append(
+                    projects.c.name.like(f"%{search_by_project_name}%")
                 )
             if filter_tag_ids_list:
                 attributes_filters.append(
