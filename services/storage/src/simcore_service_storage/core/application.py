@@ -15,6 +15,7 @@ from servicelib.fastapi.prometheus_instrumentation import (
     setup_prometheus_instrumentation,
 )
 from servicelib.fastapi.tracing import setup_tracing
+from simcore_service_storage.api.rest.routes import setup_rest_api_routes
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from .._meta import (
@@ -30,7 +31,6 @@ from ..modules.db.db import setup_db
 from ..modules.long_running_tasks import setup_rest_api_long_running_tasks
 from ..modules.redis import setup as setup_redis
 from ..modules.s3 import setup_s3
-from ..routes import setup_rest_api_routes
 from .settings import ApplicationSettings
 
 _LOG_LEVEL_STEP = logging.CRITICAL - logging.ERROR
@@ -75,7 +75,7 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
     setup_s3(app)
 
     setup_rest_api_long_running_tasks(app)
-    setup_rest_api_routes(app)
+    setup_rest_api_routes(app, API_VTAG)
 
     setup_dsm(app)
     if settings.STORAGE_CLEANER_INTERVAL_S:
