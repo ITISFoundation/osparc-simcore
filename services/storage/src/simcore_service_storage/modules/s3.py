@@ -1,7 +1,7 @@
 """Module to access s3 service"""
 
 import logging
-from typing import cast
+from typing import Literal, cast
 
 from aws_library.s3 import SimcoreS3API
 from common_library.json_serialization import json_dumps
@@ -20,8 +20,8 @@ from ..exceptions.errors import ConfigurationError
 _logger = logging.getLogger(__name__)
 
 
-def setup_s3(app: FastAPI):
-    async def _on_startup(app: FastAPI) -> None:
+def setup_s3(app: FastAPI) -> None:
+    async def _on_startup() -> None:
         app.state.s3_client = None
         settings = get_application_settings(app)
 
@@ -46,9 +46,9 @@ def setup_s3(app: FastAPI):
         with log_context(_logger, logging.DEBUG, msg="setup.s3_bucket.cleanup_ctx"):
             await client.create_bucket(
                 bucket=settings.STORAGE_S3.S3_BUCKET_NAME,
-                region=TypeAdapter(BucketLocationConstraintType).validate_python(
-                    settings.STORAGE_S3.S3_REGION
-                ),
+                region=TypeAdapter(
+                    BucketLocationConstraintType | Literal["us-east-1"]
+                ).validate_python(settings.STORAGE_S3.S3_REGION),
             )
 
     async def _on_shutdown() -> None:
