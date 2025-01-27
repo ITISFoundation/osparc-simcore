@@ -30,6 +30,8 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
       minWidth: 300,
     });
 
+    this.__categoryHeaders = [];
+
     this.__addItems();
   },
 
@@ -81,6 +83,8 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
   },
 
   members: {
+    __categoryHeaders: null,
+
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
@@ -152,9 +156,21 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
       });
     },
 
+    __getLastIdxFromCategory: function(categoryId) {
+      for (let i=this.getChildren().length-1; i>=0; i--) {
+        const child = this.getChildren()[i];
+        if (child && child["categoryId"] && child["categoryId"] === categoryId) {
+          return i;
+        }
+      }
+      return null;
+    },
+
     __addCategories: function(categories) {
       categories.forEach(category => {
         const categoryHeader = this.self().createHeader(category["title"], null, category["description"]);
+        categoryHeader.categoryId = category["id"];
+        this.__categoryHeaders.push(categoryHeader);
         this.add(categoryHeader);
       });
     },
@@ -171,7 +187,15 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
             toolTipText: templateData.description,
           });
         }
-        this.add(menuButton);
+        let idx = null;
+        if (templateData.category) {
+          idx = this.__getLastIdxFromCategory(templateData.category);
+        }
+        if (idx) {
+          this.addAt(menuButton, idx+1);
+        } else {
+          this.add(menuButton);
+        }
         return;
       }
 
