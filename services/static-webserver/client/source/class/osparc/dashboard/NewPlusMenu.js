@@ -173,21 +173,36 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
     },
 
     __createFromResourceButton: function(resourceData) {
-      const icon = "icon" in resourceData ? resourceData["icon"] : null;
-      const menuButton = this.self().createMenuButton(resourceData.title, icon);
+      const menuButton = this.self().createMenuButton(resourceData.title);
       osparc.utils.Utils.setIdToWidget(menuButton, resourceData.idToWidget);
       return menuButton;
     },
 
-    __addFromResourceButton: function(menuButton, resourceData) {
-      if (menuButton.getIcon()) {
-        menuButton.getChildControl("icon").set({
-          scale: true,
-          maxWidth: 22,
-          maxHeight: 22,
-        })
+    __addIcon: function(menuButton, resourceInfo, resourceMetadata) {
+      let source = null;
+      if ("icon" in resourceInfo) {
+        source = resourceInfo["icon"];
+      } else if ("thumbnail" in resourceMetadata) {
+        source = resourceMetadata["thumbnail"];
       }
 
+      if (source) {
+        const thumbnail = new osparc.ui.basic.Thumbnail(source, 24, 24).set({
+          minHeight: 24,
+          minWidth: 24,
+        });
+        thumbnail.getChildControl("image").set({
+          anonymous: true,
+          decorator: "rounded",
+        });
+        // eslint-disable-next-line no-underscore-dangle
+        menuButton._add(thumbnail, {
+          column: 0
+        });
+      }
+    },
+
+    __addFromResourceButton: function(menuButton, resourceData) {
       let idx = null;
       if (resourceData.category) {
         idx = this.__getLastIdxFromCategory(resourceData.category);
@@ -203,26 +218,25 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
     __addFromTemplateButton: function(templateData, templates) {
       const menuButton = this.__createFromResourceButton(templateData);
 
+      let templateMetadata = null;
       if (templateData.showDisabled) {
         menuButton.set({
           enabled: false,
           toolTipText: templateData.description,
         });
       } else {
-        const templateFound = templates.find(t => t.name === templateData.expectedTemplateLabel);
-        if (templateFound) {
-          if (menuButton.getIcon() === null && templateFound["thumbnail"]) {
-            menuButton.setIcon(templateFound["thumbnail"]);
-          }
+        templateMetadata = templates.find(t => t.name === templateData.expectedTemplateLabel);
+        if (templateMetadata) {
           menuButton.addListener("tap", () => {
             this.fireDataEvent("newStudyFromTemplateClicked", {
-              templateData: templateFound,
+              templateData: templateMetadata,
               newStudyLabel: templateData.newStudyLabel,
             });
           });
         }
       }
 
+      this.__addIcon(menuButton, templateData, templateMetadata);
       this.__addFromResourceButton(menuButton, templateData);
     },
 
@@ -245,15 +259,13 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
               return;
             }
             menuButton.setEnabled(true);
-            if (menuButton.getIcon() === null && latestMetadata["thumbnail"]) {
-              menuButton.setIcon(latestMetadata["thumbnail"]);
-            }
             menuButton.addListener("tap", () => {
               this.fireDataEvent("newStudyFromServiceClicked", {
                 serviceMetadata: latestMetadata,
                 newStudyLabel: serviceData.newStudyLabel,
               });
             });
+            this.__addIcon(menuButton, serviceData, latestMetadata);
             this.__addFromResourceButton(menuButton, serviceData);
           })
       }
