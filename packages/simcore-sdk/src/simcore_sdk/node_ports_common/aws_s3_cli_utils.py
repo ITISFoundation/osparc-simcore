@@ -13,6 +13,8 @@ _logger = logging.getLogger(__name__)
 def _parse_size(log_string):
     match = re.search(r"^\w+ (?P<size>[^\/]+)", log_string)
     if match:
+        # NOTE: ByteSize does not know what `Bytes` are.
+        # It only knows about `b` and omitting the word bytes if they are just bytes.
         return match.group("size").replace("Bytes", "")
     return None
 
