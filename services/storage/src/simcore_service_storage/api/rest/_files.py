@@ -3,8 +3,7 @@ import logging
 import urllib.parse
 from typing import Annotated, cast
 
-from aiohttp import web
-from fastapi import APIRouter, Depends, Header, Request
+from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from models_library.api_schemas_storage import (
     FileMetaDataGet,
     FileUploadCompleteFutureResponse,
@@ -18,7 +17,6 @@ from models_library.api_schemas_storage import (
 )
 from models_library.generics import Envelope
 from models_library.projects_nodes_io import StorageFileID
-from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import AnyUrl, ByteSize, TypeAdapter
 from servicelib.aiohttp import status
 from yarl import URL
@@ -320,7 +318,7 @@ async def is_completed_upload_file(
             response = FileUploadCompleteFutureResponse(
                 state=FileUploadCompleteState.NOK
             )
-        return jsonable_encoder(response, by_alias=True)  # type: ignore[no-any-return] # middleware takes care of enveloping
+        return response
     # there is no task, either wrong call or storage was restarted
     # we try to get the file to see if it exists in S3
     dsm = get_dsm_provider(request.app).get(location_id)
@@ -331,9 +329,10 @@ async def is_completed_upload_file(
         response = FileUploadCompleteFutureResponse(
             state=FileUploadCompleteState.OK, e_tag=fmd.entity_tag
         )
-        return jsonable_encoder(response, by_alias=True)  # type: ignore[no-any-return] # middleware takes care of enveloping
-    raise web.HTTPNotFound(
-        reason="Not found. Upload could not be completed. Please try again and contact support if it fails again."
+        return response
+    raise HTTPException(
+        status.HTTP_404_NOT_FOUND,
+        detail="Not found. Upload could not be completed. Please try again and contact support if it fails again.",
     )
 
 

@@ -4,14 +4,10 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Request
 from models_library.api_schemas_storage import DatasetMetaDataGet, FileMetaDataGet
 from models_library.generics import Envelope
+from models_library.projects_nodes_io import LocationID
 
-# Exclusive for simcore-s3 storage -----------------------
 from ...dsm import get_dsm_provider
-from ...models import (
-    FilesMetadataDatasetQueryParams,
-    LocationID,
-    StorageQueryParamsBase,
-)
+from ...models import FilesMetadataDatasetQueryParams, StorageQueryParamsBase
 
 _logger = logging.getLogger(__name__)
 
@@ -30,7 +26,7 @@ async def list_datasets_metadata(
     query_params: Annotated[StorageQueryParamsBase, Depends()],
     location_id: LocationID,
     request: Request,
-) -> Envelope[DatasetMetaDataGet]:
+) -> Envelope[list[DatasetMetaDataGet]]:
     dsm = get_dsm_provider(request.app).get(location_id)
     data = await dsm.list_datasets(query_params.user_id)
     return Envelope[list[DatasetMetaDataGet]](
