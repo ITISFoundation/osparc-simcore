@@ -108,21 +108,16 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
     },
 
     __addNewStudyItems: async function() {
-      await osparc.utils.Utils.fetchJSON("/resource/osparc/new_studies.json")
-        .then(newStudiesData => {
-          const product = osparc.product.Utils.getProductName()
-          if (product in newStudiesData) {
-            osparc.data.Resources.get("templates")
-              .then(templates => {
-                if (templates) {
-                  const referencedTemplates = newStudiesData[product];
-                  if (referencedTemplates["linkedResource"] === "templates") {
-                    this.__addFromTemplateButtons(referencedTemplates, templates);
-                  }
-                }
-              });
-          }
-        });
+      await Promise.all([
+        osparc.store.Products.getInstance().getNewStudyConfig(),
+        osparc.data.Resources.get("templates")
+      ]).then(values => {
+        const newStudiesData = values[0];
+        const templates = values[1];
+        if (newStudiesData["linkedResource"] === "templates") {
+          this.__addFromTemplateButtons(newStudiesData, templates);
+        }
+      });
     },
 
     __addFromTemplateButtons: function(referencedTemplates, templates) {
