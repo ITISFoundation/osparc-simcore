@@ -6,10 +6,12 @@ from typing import cast
 from aws_library.s3 import SimcoreS3API
 from common_library.json_serialization import json_dumps
 from fastapi import FastAPI
+from pydantic import TypeAdapter
 from servicelib.logging_utils import log_context
 from tenacity.asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.wait import wait_fixed
+from types_aiobotocore_s3.literals import BucketLocationConstraintType
 
 from ..constants import RETRY_WAIT_SECS
 from ..core.settings import get_application_settings
@@ -44,7 +46,9 @@ def setup_s3(app: FastAPI):
         with log_context(_logger, logging.DEBUG, msg="setup.s3_bucket.cleanup_ctx"):
             await client.create_bucket(
                 bucket=settings.STORAGE_S3.S3_BUCKET_NAME,
-                region=settings.STORAGE_S3.S3_REGION,
+                region=TypeAdapter(BucketLocationConstraintType).validate_python(
+                    settings.STORAGE_S3.S3_REGION
+                ),
             )
 
     async def _on_shutdown() -> None:
