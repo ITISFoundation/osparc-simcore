@@ -25,12 +25,12 @@ from models_library.users import UserID
 from pydantic import ByteSize, TypeAdapter
 from pytest_simcore.helpers.parametrizations import byte_size_ids
 from simcore_postgres_database.storage_models import file_meta_data
-from simcore_service_storage import db_file_meta_data
 from simcore_service_storage.core.exceptions import (
     FileAccessRightError,
     FileMetaDataNotFoundError,
 )
 from simcore_service_storage.models import FileMetaData, S3BucketName, UploadID
+from simcore_service_storage.modules.db import db_file_meta_data
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 
 pytest_simcore_core_services_selection = ["postgres"]

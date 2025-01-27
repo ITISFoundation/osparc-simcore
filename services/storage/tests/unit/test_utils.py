@@ -21,7 +21,7 @@ from pytest_simcore.helpers.faker_factories import DEFAULT_FAKER
 from simcore_service_storage.constants import S3_UNDEFINED_OR_EXTERNAL_MULTIPART_ID
 from simcore_service_storage.models import ETag, FileMetaData, S3BucketName, UploadID
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
-from simcore_service_storage.utils import (
+from simcore_service_storage.utils.utils import (
     MAX_CHUNK_SIZE,
     download_to_file_or_raise,
     is_file_entry_valid,
