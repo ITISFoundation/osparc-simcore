@@ -43,11 +43,18 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
       const menuButton = new qx.ui.menu.Button().set({
         label,
         icon: icon || null,
-        font: "text-14",
+        font: "text-16",
         padding: 4,
       });
       menuButton.getChildControl("label").set({
         rich: true,
+      });
+      menuButton.getChildControl("icon").set({
+        scale: true,
+        maxHeight: 20,
+        maxWidth: 20,
+        allowShrinkX: true,
+        allowShrinkY: true,
       });
       return menuButton;
     },
@@ -60,7 +67,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
         case "new-folder":
           control = this.self().createMenuButton(
             this.tr("New Folder"),
-            osparc.dashboard.CardBase.NEW_ICON + "14"
+            osparc.dashboard.CardBase.NEW_ICON + "16"
           );
           osparc.utils.Utils.setIdToWidget(control, "newFolderButton");
           control.addListener("tap", () => this.__createNewFolder());
@@ -72,7 +79,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
               firstUpperCase: true,
               plural: true
             }),
-            "@FontAwesome5Solid/copy/14"
+            "@FontAwesome5Solid/copy/16"
           );
           control.addListener("tap", () => this.fireDataEvent("changeTab", "templatesTab"));
           this.add(control);
@@ -80,7 +87,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
         case "services-entry":
           control = this.self().createMenuButton(
             this.tr("Services"),
-            "@FontAwesome5Solid/cogs/14"
+            "@FontAwesome5Solid/cogs/16"
           );
           control.addListener("tap", () => this.fireDataEvent("changeTab", "servicesTab"));
           this.add(control);
@@ -129,7 +136,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
       categories.forEach(category => {
         const categoryHeader = new qx.ui.basic.Label().set({
           value: category["label"],
-          font: "text-14",
+          font: "text-16",
           rich: true,
           wrap: true,
         });
@@ -139,9 +146,11 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
     },
 
     __addFromTemplateButton: function(templateData, templates) {
+      const icon = "icon" in templateData ? templateData["icon"] : null;
+      const menuButton = this.self().createMenuButton(templateData.title, icon);
+      osparc.utils.Utils.setIdToWidget(menuButton, templateData.idToWidget);
+
       if (templateData.showDisabled) {
-        const menuButton = this.self().createMenuButton(templateData.title);
-        osparc.utils.Utils.setIdToWidget(menuButton, templateData.idToWidget);
         if (templateData.showDisabled) {
           menuButton.set({
             enabled: false,
@@ -154,8 +163,9 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
 
       const templateFound = templates.find(t => t.name === templateData.expectedTemplateLabel);
       if (templateFound) {
-        const menuButton = this.self().createMenuButton(templateData.title);
-        osparc.utils.Utils.setIdToWidget(menuButton, templateData.idToWidget);
+        if (menuButton.getIcon() === null && templateFound["thumbnail"]) {
+          menuButton.setIcon(templateFound["thumbnail"]);
+        }
         menuButton.addListener("tap", () => {
           this.fireDataEvent("newStudyFromTemplateClicked", {
             templateData: templateFound,
