@@ -20,7 +20,7 @@ async def async_docker_client() -> AsyncIterator[aiodocker.Docker]:
 
 
 @contextlib.asynccontextmanager
-async def _pause_container(
+async def _pause_docker_container_in_context(
     async_docker_client: aiodocker.Docker, container_name: str
 ) -> AsyncIterator[None]:
     containers = await async_docker_client.containers.list(
@@ -43,10 +43,12 @@ async def _pause_container(
 
 
 @pytest.fixture
-async def paused_container() -> Callable[[str], AbstractAsyncContextManager[None]]:
+async def pause_container_in_context() -> Callable[
+    [str], AbstractAsyncContextManager[None]
+]:
     @contextlib.asynccontextmanager
     async def _(container_name: str) -> AsyncIterator[None]:
-        async with aiodocker.Docker() as docker_client, _pause_container(
+        async with aiodocker.Docker() as docker_client, _pause_docker_container_in_context(
             docker_client, container_name
         ):
             yield None
