@@ -1,6 +1,6 @@
 import logging
 
-from aiohttp import web
+from fastapi import FastAPI
 
 from .constants import APP_DSM_KEY
 from .datcore_dsm import DatCoreDataManager, create_datcore_data_manager
@@ -10,8 +10,8 @@ from .simcore_s3_dsm import SimcoreS3DataManager, create_simcore_s3_data_manager
 logger = logging.getLogger(__name__)
 
 
-def setup_dsm(app: web.Application):
-    async def _cleanup_context(app: web.Application):
+def setup_dsm(app: FastAPI):
+    async def _cleanup_context(app: FastAPI):
         dsm_provider = DataManagerProvider(app)
         dsm_provider.register_builder(
             SimcoreS3DataManager.get_location_id(),
@@ -34,6 +34,6 @@ def setup_dsm(app: web.Application):
     app.cleanup_ctx.append(_cleanup_context)
 
 
-def get_dsm_provider(app: web.Application) -> DataManagerProvider:
+def get_dsm_provider(app: FastAPI) -> DataManagerProvider:
     dsm_provider: DataManagerProvider = app[APP_DSM_KEY]
     return dsm_provider

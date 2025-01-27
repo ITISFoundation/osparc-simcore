@@ -50,8 +50,8 @@ from servicelib.aiohttp import status
 from settings_library.s3 import S3Settings
 from simcore_postgres_database.storage_models import file_meta_data, projects, users
 from simcore_service_storage.constants import UPLOAD_TASKS_KEY
-from simcore_service_storage.core.application import create
-from simcore_service_storage.core.settings import Settings
+from simcore_service_storage.core.application import create_app
+from simcore_service_storage.core.settings import ApplicationSettings
 from simcore_service_storage.dsm import get_dsm_provider
 from simcore_service_storage.models import S3BucketName
 from simcore_service_storage.modules.s3 import get_s3_client
@@ -155,7 +155,7 @@ async def storage_s3_client(
 
 
 @pytest.fixture
-async def storage_s3_bucket(app_settings: Settings) -> str:
+async def storage_s3_bucket(app_settings: ApplicationSettings) -> str:
     assert app_settings.STORAGE_S3
     return app_settings.STORAGE_S3.S3_BUCKET_NAME
 
@@ -168,7 +168,7 @@ def app_settings(
     external_envfile_dict: EnvVarsDict,
     datcore_adapter_service_mock: aioresponses.aioresponses,
     monkeypatch: pytest.MonkeyPatch,
-) -> Settings:
+) -> ApplicationSettings:
     s3_settings_dict = {}
     if external_envfile_dict:
         s3_settings = S3Settings.create_from_envs(**external_envfile_dict)
@@ -184,7 +184,7 @@ def app_settings(
             "STORAGE_TRACING": "null",
         },
     )
-    test_app_settings = Settings.create_from_envs()
+    test_app_settings = ApplicationSettings.create_from_envs()
     print(f"{test_app_settings.model_dump_json(indent=2)=}")
     return test_app_settings
 
@@ -200,10 +200,10 @@ def client(
     event_loop: asyncio.AbstractEventLoop,
     aiohttp_client: Callable,
     unused_tcp_port_factory: Callable[..., int],
-    app_settings: Settings,
+    app_settings: ApplicationSettings,
     mocked_redis_server,
 ) -> TestClient:
-    app = create(app_settings)
+    app = create_app(app_settings)
     return event_loop.run_until_complete(
         aiohttp_client(app, server_kwargs={"port": unused_tcp_port_factory()})
     )

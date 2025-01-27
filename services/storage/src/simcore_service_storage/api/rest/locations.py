@@ -19,7 +19,7 @@ from servicelib.utils import fire_and_forget_task
 
 # Exclusive for simcore-s3 storage -----------------------
 from ..._meta import API_VTAG
-from ...core.settings import Settings
+from ...core.settings import ApplicationSettings
 from ...dsm import get_dsm_provider
 from ...models import (
     LocationPathParams,
@@ -76,7 +76,7 @@ async def synchronise_meta_data_table(request: web.Request) -> web.Response:
     sync_coro = dsm.synchronise_meta_data_table(dry_run=query_params.dry_run)
 
     if query_params.fire_and_forget:
-        settings: Settings = request.app[APP_CONFIG_KEY]
+        settings: ApplicationSettings = request.app[APP_CONFIG_KEY]
 
         async def _go():
             timeout = settings.STORAGE_SYNC_METADATA_TIMEOUT

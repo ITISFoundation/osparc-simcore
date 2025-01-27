@@ -10,7 +10,6 @@ from pathlib import Path
 from typing import Any, Final, cast
 
 import arrow
-from aiohttp import web
 from aiopg.sa import Engine
 from aiopg.sa.connection import SAConnection
 from aws_library.s3 import (
@@ -20,6 +19,7 @@ from aws_library.s3 import (
     S3MetaData,
     UploadedBytesTransferredCallback,
 )
+from fastapi import FastAPI
 from models_library.api_schemas_storage import (
     UNDEFINED_SIZE,
     UNDEFINED_SIZE_TYPE,
@@ -44,7 +44,6 @@ from servicelib.utils import ensure_ends_with, limited_gather
 
 from .constants import (
     APP_AIOPG_ENGINE_KEY,
-    APP_CONFIG_KEY,
     DATCORE_ID,
     EXPAND_DIR_MAX_ITEM_COUNT,
     MAX_CONCURRENT_S3_TASKS,
@@ -60,7 +59,7 @@ from .core.exceptions import (
     ProjectAccessRightError,
     ProjectNotFoundError,
 )
-from .core.settings import Settings
+from .core.settings import ApplicationSettings
 from .dsm_factory import BaseDataManager
 from .models import (
     DatasetMetaData,
@@ -102,8 +101,8 @@ _logger = logging.getLogger(__name__)
 class SimcoreS3DataManager(BaseDataManager):
     engine: Engine
     simcore_bucket_name: S3BucketName
-    app: web.Application
-    settings: Settings
+    app: FastAPI
+    settings: ApplicationSettings
 
     @classmethod
     def get_location_id(cls) -> LocationID:
@@ -1102,8 +1101,8 @@ class SimcoreS3DataManager(BaseDataManager):
         return await db_file_meta_data.upsert(conn, fmd)
 
 
-def create_simcore_s3_data_manager(app: web.Application) -> SimcoreS3DataManager:
-    cfg: Settings = app[APP_CONFIG_KEY]
+def create_simcore_s3_data_manager(app: FastAPI) -> SimcoreS3DataManager:
+    cfg: ApplicationSettings = app[APP_CONFIG_KEY]
     assert cfg.STORAGE_S3  # nosec
     return SimcoreS3DataManager(
         engine=app[APP_AIOPG_ENGINE_KEY],

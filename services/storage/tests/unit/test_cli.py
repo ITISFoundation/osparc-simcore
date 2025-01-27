@@ -10,7 +10,7 @@ from io import StringIO
 import pytest
 from dotenv import dotenv_values
 from simcore_service_storage.cli import main
-from simcore_service_storage.core.settings import Settings
+from simcore_service_storage.core.settings import ApplicationSettings
 from typer.testing import CliRunner
 
 
@@ -29,7 +29,7 @@ def test_cli_settings_as_json(
     assert result.exit_code == os.EX_OK, result
     # reuse resulting json to build settings
     settings: dict = json.loads(result.stdout)
-    assert Settings(settings)
+    assert ApplicationSettings(settings)
 
 
 def test_cli_settings_env_file(
@@ -46,4 +46,4 @@ def test_cli_settings_env_file(
         with contextlib.suppress(json.decoder.JSONDecodeError):
             settings[key] = json.loads(str(value))
 
-    assert Settings(settings)
+    assert ApplicationSettings(settings)

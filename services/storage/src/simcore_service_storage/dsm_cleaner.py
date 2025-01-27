@@ -23,13 +23,12 @@ import logging
 from datetime import timedelta
 from typing import cast
 
-from aiohttp import web
 from servicelib.async_utils import cancel_wait_task
 from servicelib.background_task_utils import exclusive_periodic
 from servicelib.logging_utils import log_catch, log_context
 
 from .constants import APP_CONFIG_KEY, APP_DSM_KEY
-from .core.settings import Settings
+from .core.settings import ApplicationSettings
 from .dsm_factory import DataManagerProvider
 from .modules.redis import get_redis_client
 from .simcore_s3_dsm import SimcoreS3DataManager
@@ -39,7 +38,7 @@ _logger = logging.getLogger(__name__)
 _TASK_NAME_PERIODICALY_CLEAN_DSM = "periodic_cleanup_of_dsm"
 
 
-async def dsm_cleaner_task(app: web.Application) -> None:
+async def dsm_cleaner_task(app: FastAPI) -> None:
     _logger.info("starting dsm cleaner task...")
     dsm: DataManagerProvider = app[APP_DSM_KEY]
     simcore_s3_dsm: SimcoreS3DataManager = cast(
@@ -48,13 +47,13 @@ async def dsm_cleaner_task(app: web.Application) -> None:
     await simcore_s3_dsm.clean_expired_uploads()
 
 
-def setup_dsm_cleaner(app: web.Application):
-    async def _setup(app: web.Application):
+def setup_dsm_cleaner(app: FastAPI):
+    async def _setup(app: FastAPI):
         with (
             log_context(_logger, logging.INFO, msg="setup dsm cleaner"),
             log_catch(_logger, reraise=False),
         ):
-            cfg: Settings = app[APP_CONFIG_KEY]
+            cfg: ApplicationSettings = app[APP_CONFIG_KEY]
             assert cfg.STORAGE_CLEANER_INTERVAL_S  # nosec
 
             @exclusive_periodic(

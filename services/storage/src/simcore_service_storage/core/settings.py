@@ -9,7 +9,7 @@ from pydantic import (
     model_validator,
 )
 from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
-from settings_library.base import BaseCustomSettings
+from settings_library.application import BaseApplicationSettings
 from settings_library.basic_types import LogLevel, PortInt
 from settings_library.postgres import PostgresSettings
 from settings_library.redis import RedisSettings
@@ -20,7 +20,7 @@ from settings_library.utils_logging import MixinLoggingSettings
 from ..modules.datcore_adapter.datcore_adapter_settings import DatcoreAdapterSettings
 
 
-class Settings(BaseCustomSettings, MixinLoggingSettings):
+class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     STORAGE_HOST: str = "0.0.0.0"  # nosec
     STORAGE_PORT: PortInt = TypeAdapter(PortInt).validate_python(8080)
 

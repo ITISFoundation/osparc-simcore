@@ -1,7 +1,6 @@
 import logging
 from pathlib import Path
 
-from aiohttp import web
 from aiohttp_swagger import setup_swagger  # type: ignore[import-untyped]
 from servicelib.aiohttp.rest_middlewares import append_rest_middlewares
 from servicelib.aiohttp.rest_utils import (
@@ -17,7 +16,7 @@ from .core.resources import storage_resources
 _logger = logging.getLogger(__name__)
 
 
-def setup_rest_api_routes(app: web.Application):
+def setup_rest_api_routes(app: FastAPI):
     """Setup the rest API module in the application in aiohttp fashion.
 
     - loads and validate openapi specs from a remote (e.g. apihub) or local location

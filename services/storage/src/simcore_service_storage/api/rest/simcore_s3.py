@@ -57,7 +57,7 @@ async def get_or_create_temporary_s3_access(request: web.Request) -> web.Respons
 
 async def _copy_folders_from_project(
     task_progress: TaskProgress,
-    app: web.Application,
+    app: FastAPI,
     query_params: StorageQueryParamsBase,
     body: FoldersBody,
 ) -> web.Response:

@@ -4,7 +4,6 @@ from math import ceil
 from typing import Any, TypeVar, cast
 
 import aiohttp
-from aiohttp import web
 from aiohttp.client import ClientSession
 from models_library.api_schemas_storage import DatCoreDatasetName
 from models_library.users import UserID
@@ -36,7 +35,7 @@ class _DatcoreAdapterResponseError(DatcoreAdapterError):
 
 
 async def _request(
-    app: web.Application,
+    app: FastAPI,
     api_key: str,
     api_secret: str,
     method: str,
@@ -85,7 +84,7 @@ _T = TypeVar("_T")
 
 
 async def _retrieve_all_pages(
-    app: web.Application,
+    app: FastAPI,
     api_key: str,
     api_secret: str,
     method: str,
@@ -115,7 +114,7 @@ async def _retrieve_all_pages(
     return objs
 
 
-async def check_service_health(app: web.Application) -> bool:
+async def check_service_health(app: FastAPI) -> bool:
     datcore_adapter_settings = app[APP_CONFIG_KEY].DATCORE_ADAPTER
     url = datcore_adapter_settings.endpoint + "/ready"
     session: ClientSession = get_client_session(app)
@@ -126,9 +125,7 @@ async def check_service_health(app: web.Application) -> bool:
     return True
 
 
-async def check_user_can_connect(
-    app: web.Application, api_key: str, api_secret: str
-) -> bool:
+async def check_user_can_connect(app: FastAPI, api_key: str, api_secret: str) -> bool:
     if not api_key or not api_secret:
         # no need to ask, datcore is an authenticated service
         return False
@@ -141,7 +138,7 @@ async def check_user_can_connect(
 
 
 async def list_all_datasets_files_metadatas(
-    app: web.Application, user_id: UserID, api_key: str, api_secret: str
+    app: FastAPI, user_id: UserID, api_key: str, api_secret: str
 ) -> list[FileMetaData]:
     all_datasets: list[DatasetMetaData] = await list_datasets(app, api_key, api_secret)
     results = await logged_gather(
@@ -168,7 +165,7 @@ _LIST_ALL_DATASETS_TIMEOUT_S = 60
 
 
 async def list_all_files_metadatas_in_dataset(
-    app: web.Application,
+    app: FastAPI,
     user_id: UserID,
     api_key: str,
     api_secret: str,
@@ -207,7 +204,7 @@ async def list_all_files_metadatas_in_dataset(
 
 
 async def list_datasets(
-    app: web.Application, api_key: str, api_secret: str
+    app: FastAPI, api_key: str, api_secret: str
 ) -> list[DatasetMetaData]:
     all_datasets: list[DatasetMetaData] = await _retrieve_all_pages(
         app,
@@ -222,7 +219,7 @@ async def list_datasets(
 
 
 async def get_file_download_presigned_link(
-    app: web.Application, api_key: str, api_secret: str, file_id: str
+    app: FastAPI, api_key: str, api_secret: str, file_id: str
 ) -> AnyUrl:
     file_download_data = cast(
         dict[str, Any],
@@ -233,7 +230,7 @@ async def get_file_download_presigned_link(
 
 
 async def get_package_files(
-    app: web.Application, api_key: str, api_secret: str, package_id: str
+    app: FastAPI, api_key: str, api_secret: str, package_id: str
 ) -> list[dict[str, Any]]:
     return cast(
         list[dict[str, Any]],
@@ -248,6 +245,6 @@ async def get_package_files(
 
 
 async def delete_file(
-    app: web.Application, api_key: str, api_secret: str, file_id: str
+    app: FastAPI, api_key: str, api_secret: str, file_id: str
 ) -> None:
     await _request(app, api_key, api_secret, "DELETE", f"/files/{file_id}")
