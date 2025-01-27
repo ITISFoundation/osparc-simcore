@@ -18,6 +18,7 @@ from typing import Final, cast
 import dotenv
 import httpx
 import pytest
+import respx
 import simcore_service_storage
 from aiohttp.test_utils import TestClient
 from asgi_lifespan import LifespanManager
@@ -67,7 +68,6 @@ from types_aiobotocore_s3 import S3Client
 from yarl import URL
 
 pytest_plugins = [
-    "pytest_simcore.aioresponses_mocker",
     "pytest_simcore.aws_s3_service",
     "pytest_simcore.aws_server",
     "pytest_simcore.cli_runner",
@@ -168,7 +168,7 @@ def app_settings(
     postgres_host_config: dict[str, str],
     mocked_s3_server_envs: EnvVarsDict,
     external_envfile_dict: EnvVarsDict,
-    datcore_adapter_service_mock: aioresponses.aioresponses,
+    datcore_adapter_service_mock: respx.MockRouter,
     monkeypatch: pytest.MonkeyPatch,
 ) -> ApplicationSettings:
     s3_settings_dict = {}
