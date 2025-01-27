@@ -21,6 +21,7 @@ from models_library.projects_nodes_io import StorageFileID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import AnyUrl, ByteSize, TypeAdapter
 from servicelib.aiohttp import status
+from yarl import URL
 
 from ...constants import UPLOAD_TASKS_KEY
 from ...dsm import get_dsm_provider
@@ -199,7 +200,10 @@ async def upload_file(
         )
 
     # v2 response
-    abort_url = request.url.join(
+
+    base_url = URL(str(request.url))
+
+    abort_url = base_url.join(
         request.app.router["abort_upload_file"]
         .url_for(
             location_id=f"{location_id}",
@@ -207,7 +211,7 @@ async def upload_file(
         )
         .with_query(user_id=query_params.user_id)
     )
-    complete_url = request.url.join(
+    complete_url = base_url.join(
         request.app.router["complete_upload_file"]
         .url_for(
             location_id=f"{location_id}",
