@@ -39,7 +39,7 @@ async def engine(
     yield async_engine
 
     try:
-        postgres_tools.drop_all_tables(sync_engine)
+        postgres_tools.force_drop_all_tables(sync_engine)
     finally:
         sync_engine.dispose()
 

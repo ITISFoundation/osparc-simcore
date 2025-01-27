@@ -17,7 +17,7 @@ class PostgresTestConfig(TypedDict):
     port: str
 
 
-def drop_all_tables(sa_sync_engine: sa.engine.Engine):
+def force_drop_all_tables(sa_sync_engine: sa.engine.Engine):
     with sa_sync_engine.begin() as conn:
         conn.execute(sa.DDL("DROP TABLE IF EXISTS alembic_version"))
         conn.execute(
@@ -68,7 +68,7 @@ def migrated_pg_tables_context(
 
     try:
         sync_engine = sa.create_engine(dsn)
-        drop_all_tables(sync_engine)
+        force_drop_all_tables(sync_engine)
     finally:
         sync_engine.dispose()
 

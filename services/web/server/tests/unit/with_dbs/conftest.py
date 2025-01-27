@@ -525,7 +525,7 @@ def postgres_db(
         # NOTE: we directly drop the table, that is faster
         # testing the upgrade/downgrade is already done in postgres-database.
         # there is no need to it here.
-        postgres_tools.drop_all_tables(sync_engine)
+        postgres_tools.force_drop_all_tables(sync_engine)
     finally:
         sync_engine.dispose()
 
