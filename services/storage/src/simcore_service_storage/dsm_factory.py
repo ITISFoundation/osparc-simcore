@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Callable
 from dataclasses import dataclass, field
 
+from fastapi import FastAPI
 from models_library.api_schemas_storage import LinkType, UploadedPart
 from models_library.basic_types import SHA256Str
 from models_library.projects import ProjectID

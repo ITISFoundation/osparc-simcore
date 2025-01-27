@@ -3,7 +3,7 @@ import urllib.parse
 from pathlib import Path
 
 import aiofiles
-from aiohttp import ClientSession
+import httpx
 from aiohttp.typedefs import StrOrURL
 from models_library.projects_nodes_io import StorageFileID
 from models_library.users import UserID
@@ -26,7 +26,7 @@ def convert_db_to_model(x: FileMetaDataAtDB) -> FileMetaData:
 
 
 async def download_to_file_or_raise(
-    session: ClientSession,
+    session: httpx.AsyncClient,
     url: StrOrURL,
     destination_path: Path,
     *,
@@ -46,12 +46,13 @@ async def download_to_file_or_raise(
     dest_file = Path(destination_path)
 
     total_size = 0
-    async with session.get(url, raise_for_status=True) as response:
-        dest_file.parent.mkdir(parents=True, exist_ok=True)
-        async with aiofiles.open(dest_file, mode="wb") as fh:
-            async for chunk in response.content.iter_chunked(chunk_size):
-                await fh.write(chunk)
-                total_size += len(chunk)
+    response = await session.get(f"{url}")
+    response.raise_for_status()
+    dest_file.parent.mkdir(parents=True, exist_ok=True)
+    async with aiofiles.open(dest_file, mode="wb") as fh:
+        async for chunk in response.aiter_bytes(chunk_size):
+            await fh.write(chunk)
+            total_size += len(chunk)
 
     return total_size
 

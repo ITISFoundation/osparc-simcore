@@ -3,14 +3,14 @@ from collections.abc import Callable
 from math import ceil
 from typing import Any, TypeVar, cast
 
-import aiohttp
-from aiohttp.client import ClientSession
+import httpx
+from fastapi import FastAPI
 from models_library.api_schemas_storage import DatCoreDatasetName
 from models_library.users import UserID
 from pydantic import AnyUrl, TypeAdapter
-from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
-from servicelib.aiohttp.client_session import get_client_session
+from servicelib.fastapi.client_session import get_client_session
 from servicelib.utils import logged_gather
+from simcore_service_storage.core.settings import get_application_settings
 
 from ...constants import DATCORE_ID, DATCORE_STR, MAX_CONCURRENT_REST_CALLS
 from ...models import DatasetMetaData, FileMetaData
@@ -45,17 +45,16 @@ async def _request(
     params: dict[str, Any] | None = None,
     **request_kwargs,
 ) -> dict[str, Any] | list[dict[str, Any]]:
-    datcore_adapter_settings = app[APP_CONFIG_KEY].DATCORE_ADAPTER
+    datcore_adapter_settings = get_application_settings(app).DATCORE_ADAPTER
     url = datcore_adapter_settings.endpoint + path
-    session: ClientSession = get_client_session(app)
+    session = get_client_session(app)
 
     try:
         if request_kwargs is None:
             request_kwargs = {}
-        async with session.request(
+        response = await session.request(
             method,
             url,
-            raise_for_status=True,
             headers={
                 "x-datcore-api-key": api_key,
                 "x-datcore-api-secret": api_secret,
@@ -63,20 +62,23 @@ async def _request(
             json=json,
             params=params,
             **request_kwargs,
-        ) as response:
-            response_data = await response.json()
-            assert isinstance(response_data, dict | list)  # nosec
-            return response_data
+        )
+        response.raise_for_status()
+        response_data = await response.json()
+        assert isinstance(response_data, dict | list)  # nosec
+        return response_data
 
-    except aiohttp.ClientResponseError as exc:
-        raise _DatcoreAdapterResponseError(status=exc.status, reason=f"{exc}") from exc
+    except httpx.HTTPStatusError as exc:
+        raise _DatcoreAdapterResponseError(
+            status=exc.response.status_code, reason=f"{exc}"
+        ) from exc
 
     except TimeoutError as exc:
         msg = f"datcore-adapter server timed-out: {exc}"
         raise DatcoreAdapterTimeoutError(msg) from exc
 
-    except aiohttp.ClientError as exc:
-        msg = f"unexpected client error: {exc}"
+    except httpx.RequestError as exc:
+        msg = f"unexpected request error: {exc}"
         raise DatcoreAdapterClientError(msg) from exc
 
 
@@ -115,12 +117,13 @@ async def _retrieve_all_pages(
 
 
 async def check_service_health(app: FastAPI) -> bool:
-    datcore_adapter_settings = app[APP_CONFIG_KEY].DATCORE_ADAPTER
+    datcore_adapter_settings = get_application_settings(app).DATCORE_ADAPTER
     url = datcore_adapter_settings.endpoint + "/ready"
-    session: ClientSession = get_client_session(app)
+    session = get_client_session(app)
     try:
-        await session.get(url, raise_for_status=True)
-    except (TimeoutError, aiohttp.ClientError):
+        response = await session.get(url)
+        response.raise_for_status()
+    except (TimeoutError, httpx.HTTPStatusError):
         return False
     return True
 
@@ -179,7 +182,7 @@ async def list_all_files_metadatas_in_dataset(
             api_secret,
             "GET",
             f"/datasets/{dataset_id}/files_legacy",
-            timeout=aiohttp.ClientTimeout(total=_LIST_ALL_DATASETS_TIMEOUT_S),
+            timeout=_LIST_ALL_DATASETS_TIMEOUT_S,
         ),
     )
     return [
