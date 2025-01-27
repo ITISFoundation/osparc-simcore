@@ -48,7 +48,7 @@ async def get_or_create_temporary_s3_access(
 
 
 async def _copy_folders_from_project(
-    task_progress: TaskProgress,
+    progress: TaskProgress,
     app: FastAPI,
     query_params: StorageQueryParamsBase,
     body: FoldersBody,
@@ -67,7 +67,7 @@ async def _copy_folders_from_project(
             body.source,
             body.destination,
             body.nodes_map,
-            task_progress=task_progress,
+            task_progress=progress,
         )
 
     return Envelope[dict[str, Any]](data=body.destination)
@@ -118,7 +118,6 @@ async def delete_folders_of_project(
     folder_id: str,
     request: Request,
 ):
-
     dsm = cast(
         SimcoreS3DataManager,
         get_dsm_provider(request.app).get(SimcoreS3DataManager.get_location_id()),
