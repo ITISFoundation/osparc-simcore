@@ -28,7 +28,7 @@ from ..dsm import setup_dsm
 from ..dsm_cleaner import setup_dsm_cleaner
 from ..modules.db.db import setup_db
 from ..modules.long_running_tasks import setup_rest_api_long_running_tasks
-from ..modules.redis import setup_redis
+from ..modules.redis import setup as setup_redis
 from ..modules.s3 import setup_s3
 from ..routes import setup_rest_api_routes
 from .settings import ApplicationSettings
