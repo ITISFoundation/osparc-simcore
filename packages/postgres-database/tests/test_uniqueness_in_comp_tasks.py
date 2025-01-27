@@ -1,15 +1,16 @@
-# pylint:disable=no-value-for-parameter
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+# pylint: disable=too-many-arguments
 
 import json
-from collections.abc import Awaitable, Callable
+from collections.abc import AsyncIterator
 
 import aiopg.sa.engine
 import aiopg.sa.exc
 import pytest
 import sqlalchemy as sa
+import sqlalchemy.engine
 from psycopg2.errors import UniqueViolation  # pylint: disable=no-name-in-module
 from pytest_simcore.helpers import postgres_tools
 from pytest_simcore.helpers.faker_factories import fake_pipeline, fake_task_factory
@@ -21,14 +22,14 @@ fake_task = fake_task_factory(first_internal_id=1)
 
 @pytest.fixture
 async def engine(
-    make_engine: Callable[[bool], Awaitable[aiopg.sa.engine.Engine] | sa.engine.Engine]
-):
-    async_engine: aiopg.sa.engine.Engine = await make_engine(is_async=True)
-    sync_engine: sa.engine.Engine = make_engine(is_async=False)
+    sync_engine: sqlalchemy.engine.Engine,
+    aiopg_engine: aiopg.sa.engine.Engine,
+) -> AsyncIterator[aiopg.sa.engine.Engine]:
+
     metadata.drop_all(sync_engine)
     metadata.create_all(sync_engine)
 
-    async with async_engine.acquire() as conn:
+    async with aiopg_engine.acquire() as conn:
         await conn.execute(
             comp_pipeline.insert().values(**fake_pipeline(project_id="PA"))
         )
@@ -36,15 +37,9 @@ async def engine(
             comp_pipeline.insert().values(**fake_pipeline(project_id="PB"))
         )
 
-    yield async_engine
+    yield aiopg_engine
 
-    try:
-        postgres_tools.force_drop_all_tables(sync_engine)
-    finally:
-        sync_engine.dispose()
-
-    async_engine.close()
-    await async_engine.wait_closed()
+    postgres_tools.force_drop_all_tables(sync_engine)
 
 
 async def test_unique_project_node_pairs(engine):

@@ -18,9 +18,8 @@ NOISY_LOGGERS = (
     "gunicorn.access",
     "openapi_spec_validator",
     "servicelib.aiohttp.monitoring",
-    # TODO: this is temporary
-    # "sqlalchemy.engine",
-    # "sqlalchemy",
+    "sqlalchemy.engine",
+    "sqlalchemy",
     "socketio",
 )
 

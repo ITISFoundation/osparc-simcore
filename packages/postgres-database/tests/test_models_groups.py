@@ -3,18 +3,14 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
-from collections.abc import AsyncIterator, Awaitable, Callable
+from collections.abc import Callable
 
 import aiopg.sa.exc
 import pytest
-import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
-from aiopg.sa.engine import Engine
 from aiopg.sa.result import ResultProxy, RowProxy
 from psycopg2.errors import ForeignKeyViolation, RaiseException, UniqueViolation
-from pytest_simcore.helpers import postgres_tools
 from pytest_simcore.helpers.faker_factories import random_user
-from simcore_postgres_database.models.base import metadata
 from simcore_postgres_database.webserver_models import (
     GroupType,
     groups,
@@ -22,31 +18,6 @@ from simcore_postgres_database.webserver_models import (
     users,
 )
 from sqlalchemy import func, literal_column, select
-
-
-@pytest.fixture
-async def connection(
-    make_engine: Callable[[bool], Awaitable[Engine] | sa.engine.base.Engine]
-) -> AsyncIterator[SAConnection]:
-    # setup
-
-    sync_engine = make_engine(is_async=False)
-    metadata.drop_all(sync_engine)
-    metadata.create_all(sync_engine)
-
-    async_engine = await make_engine(is_async=True)
-    async with async_engine.acquire() as conn:
-        yield conn
-
-    # tear-down
-
-    try:
-        postgres_tools.force_drop_all_tables(sync_engine)
-    finally:
-        sync_engine.dispose()
-
-    async_engine.close()
-    await async_engine.wait_closed()
 
 
 async def test_user_group_uniqueness(

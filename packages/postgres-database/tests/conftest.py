@@ -81,19 +81,7 @@ def sync_engine(postgres_service: str) -> Iterable[sqlalchemy.engine.Engine]:
 
 
 @pytest.fixture
-def make_engine(
-    postgres_service: str,
-) -> Callable[[bool], Awaitable[Engine] | sqlalchemy.engine.Engine]:
-    dsn = postgres_service
-
-    def _make(is_async=True) -> Awaitable[Engine] | sqlalchemy.engine.Engine:
-        return aiopg.sa.create_engine(dsn) if is_async else sa.create_engine(dsn)
-
-    return _make
-
-
-@pytest.fixture
-def make_asyncpg_engine(postgres_service: str) -> Callable[[bool], AsyncEngine]:
+def _make_asyncpg_engine(postgres_service: str) -> Callable[[bool], AsyncEngine]:
     # NOTE: users is responsible of `await engine.dispose()`
     dsn = postgres_service.replace("postgresql://", "postgresql+asyncpg://")
     minsize = 1
@@ -178,13 +166,15 @@ def pg_sa_engine(
 
 @pytest.fixture
 async def aiopg_engine(
-    pg_sa_engine: sqlalchemy.engine.Engine, make_engine: Callable
+    pg_sa_engine: sqlalchemy.engine.Engine,
+    postgres_service: str,
 ) -> AsyncIterator[Engine]:
     """
     Return an aiopg.sa engine connected to a responsive and migrated pg database
     """
-
-    aiopg_sa_engine = await make_engine(is_async=True)
+    # first start sync
+    assert pg_sa_engine.url.database
+    assert postgres_service.endswith(pg_sa_engine.url.database)
 
     warnings.warn(
         "The 'aiopg_engine' is deprecated since we are replacing `aiopg` library by `sqlalchemy.ext.asyncio`."
@@ -194,12 +184,8 @@ async def aiopg_engine(
         stacklevel=2,
     )
 
-    yield aiopg_sa_engine
-
-    # closes async-engine connections and terminates
-    aiopg_sa_engine.close()
-    await aiopg_sa_engine.wait_closed()
-    aiopg_sa_engine.terminate()
+    async with aiopg.sa.create_engine(dsn=postgres_service) as aiopg_sa_engine:
+        yield aiopg_sa_engine
 
 
 @pytest.fixture
@@ -213,14 +199,14 @@ async def connection(aiopg_engine: Engine) -> AsyncIterator[SAConnection]:
 async def asyncpg_engine(  # <-- WE SHOULD USE THIS ONE
     is_pdb_enabled: bool,
     pg_sa_engine: sqlalchemy.engine.Engine,
-    make_asyncpg_engine: Callable[[bool], AsyncEngine],
+    _make_asyncpg_engine: Callable[[bool], AsyncEngine],
 ) -> AsyncIterator[AsyncEngine]:
 
     assert (
         pg_sa_engine
     ), "Ensures pg db up, responsive, init (w/ tables) and/or migrated"
 
-    _apg_engine = make_asyncpg_engine(is_pdb_enabled)
+    _apg_engine = _make_asyncpg_engine(is_pdb_enabled)
 
     yield _apg_engine
 
@@ -233,9 +219,7 @@ async def asyncpg_engine(  # <-- WE SHOULD USE THIS ONE
 
 
 @pytest.fixture
-def create_fake_group(
-    make_engine: Callable[..., Awaitable[Engine] | sqlalchemy.engine.Engine]
-) -> Iterator[Callable]:
+def create_fake_group(sync_engine: sqlalchemy.engine.Engine) -> Iterator[Callable]:
     """factory to create standard group"""
     created_ids = []
 
@@ -254,16 +238,13 @@ def create_fake_group(
 
     yield _creator
 
-    sync_engine = make_engine(is_async=False)
     assert isinstance(sync_engine, sqlalchemy.engine.Engine)
     with sync_engine.begin() as conn:
         conn.execute(sa.delete(groups).where(groups.c.gid.in_(created_ids)))
 
 
 @pytest.fixture
-def create_fake_user(
-    make_engine: Callable[..., Awaitable[Engine] | sqlalchemy.engine.Engine]
-) -> Iterator[Callable]:
+def create_fake_user(sync_engine: sqlalchemy.engine.Engine) -> Iterator[Callable]:
     """factory to create a user w/ or w/o a standard group"""
 
     created_ids = []
@@ -294,7 +275,6 @@ def create_fake_user(
 
     yield _creator
 
-    sync_engine = make_engine(is_async=False)
     assert isinstance(sync_engine, sqlalchemy.engine.Engine)
     with sync_engine.begin() as conn:
         conn.execute(users.delete().where(users.c.id.in_(created_ids)))
