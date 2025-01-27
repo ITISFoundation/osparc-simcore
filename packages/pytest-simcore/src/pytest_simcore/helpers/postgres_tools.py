@@ -66,9 +66,11 @@ def migrated_pg_tables_context(
     simcore_postgres_database.cli.downgrade.callback("base")
     simcore_postgres_database.cli.clean.callback()  # just cleans discover cache
 
-    postgres_engine = sa.create_engine(dsn)
-    drop_all_tables(postgres_engine)
-    postgres_engine.dispose()
+    try:
+        sync_engine = sa.create_engine(dsn)
+        drop_all_tables(sync_engine)
+    finally:
+        sync_engine.dispose()
 
 
 def is_postgres_responsive(url) -> bool:

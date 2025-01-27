@@ -141,8 +141,12 @@ def migrated_db(postgres_service: dict, make_engine: Callable):
     pg_cli.downgrade.callback("base")
     pg_cli.clean.callback()
     # FIXME: deletes all because downgrade is not reliable!
-    sync_engine = make_engine(is_async=False)
-    postgres_tools.drop_all_tables(sync_engine)
+
+    try:
+        sync_engine = make_engine(is_async=False)
+        postgres_tools.drop_all_tables(sync_engine)
+    finally:
+        sync_engine.dispose()
 
 
 @pytest.fixture

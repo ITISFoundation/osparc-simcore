@@ -517,16 +517,17 @@ def postgres_db(
     assert pg_cli.upgrade.callback
     pg_cli.upgrade.callback("head")
     # Uses syncrounous engine for that
-    engine = sa.create_engine(url, isolation_level="AUTOCOMMIT")
+    sync_engine = sa.create_engine(url, isolation_level="AUTOCOMMIT")
 
-    yield engine
+    yield sync_engine
 
-    # NOTE: we directly drop the table, that is faster
-    # testing the upgrade/downgrade is already done in postgres-database.
-    # there is no need to it here.
-    postgres_tools.drop_all_tables(engine)
-
-    engine.dispose()
+    try:
+        # NOTE: we directly drop the table, that is faster
+        # testing the upgrade/downgrade is already done in postgres-database.
+        # there is no need to it here.
+        postgres_tools.drop_all_tables(sync_engine)
+    finally:
+        sync_engine.dispose()
 
 
 @pytest.fixture

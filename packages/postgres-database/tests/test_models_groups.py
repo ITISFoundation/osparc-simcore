@@ -28,15 +28,25 @@ from sqlalchemy import func, literal_column, select
 async def connection(
     make_engine: Callable[[bool], Awaitable[Engine] | sa.engine.base.Engine]
 ) -> AsyncIterator[SAConnection]:
-    engine = await make_engine()
+    # setup
+
     sync_engine = make_engine(is_async=False)
     metadata.drop_all(sync_engine)
     metadata.create_all(sync_engine)
 
-    async with engine.acquire() as conn:
+    async_engine = await make_engine(is_async=True)
+    async with async_engine.acquire() as conn:
         yield conn
 
-    postgres_tools.drop_all_tables(sync_engine)
+    # tear-down
+
+    try:
+        postgres_tools.drop_all_tables(sync_engine)
+    finally:
+        sync_engine.dispose()
+
+    async_engine.close()
+    await async_engine.wait_closed()
 
 
 async def test_user_group_uniqueness(
