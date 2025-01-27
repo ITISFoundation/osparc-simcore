@@ -169,7 +169,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
     __addCategories: function(categories) {
       categories.forEach(category => {
         const categoryHeader = this.self().createHeader(category["title"], null, category["description"]);
-        categoryHeader.categoryId = category["id"];
+        categoryHeader["categoryId"] = category["id"];
         this.__categoryHeaders.push(categoryHeader);
         this.add(categoryHeader);
       });
@@ -181,35 +181,33 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
       osparc.utils.Utils.setIdToWidget(menuButton, templateData.idToWidget);
 
       if (templateData.showDisabled) {
-        if (templateData.showDisabled) {
-          menuButton.set({
-            enabled: false,
-            toolTipText: templateData.description,
+        menuButton.set({
+          enabled: false,
+          toolTipText: templateData.description,
+        });
+      } else {
+        const templateFound = templates.find(t => t.name === templateData.expectedTemplateLabel);
+        if (templateFound) {
+          if (menuButton.getIcon() === null && templateFound["thumbnail"]) {
+            menuButton.setIcon(templateFound["thumbnail"]);
+          }
+          menuButton.addListener("tap", () => {
+            this.fireDataEvent("newStudyFromTemplateClicked", {
+              templateData: templateFound,
+              newStudyLabel: templateData.newStudyLabel,
+            });
           });
         }
-        let idx = null;
-        if (templateData.category) {
-          idx = this.__getLastIdxFromCategory(templateData.category);
-        }
-        if (idx) {
-          this.addAt(menuButton, idx+1);
-        } else {
-          this.add(menuButton);
-        }
-        return;
       }
 
-      const templateFound = templates.find(t => t.name === templateData.expectedTemplateLabel);
-      if (templateFound) {
-        if (menuButton.getIcon() === null && templateFound["thumbnail"]) {
-          menuButton.setIcon(templateFound["thumbnail"]);
-        }
-        menuButton.addListener("tap", () => {
-          this.fireDataEvent("newStudyFromTemplateClicked", {
-            templateData: templateFound,
-            newStudyLabel: templateData.newStudyLabel,
-          });
-        });
+      let idx = null;
+      if (templateData.category) {
+        idx = this.__getLastIdxFromCategory(templateData.category);
+      }
+      if (idx) {
+        menuButton["categoryId"] = templateData.category;
+        this.addAt(menuButton, idx+1);
+      } else {
         this.add(menuButton);
       }
     },

@@ -1,5 +1,13 @@
 {
   "tis": {
+    "categories": [{
+      "id": "precomputed",
+      "title": "Precomputed"
+    }, {
+      "id": "personalized",
+      "title": "Personalized",
+      "description": "In the process, TIP will launch simulations on AWS.<br>The associated resource costs will be deduced from your Credits."
+    }],
     "linkedResource": "templates",
     "resources": [{
       "expectedTemplateLabel": "TI Planning Tool",
@@ -46,17 +54,17 @@
       "category": "personalized",
       "idToWidget": "personalizationNewPMTIPlanButton",
       "billable": true
-    }],
-    "categories": [{
-      "id": "precomputed",
-      "title": "Precomputed"
-    }, {
-      "id": "personalized",
-      "title": "Personalized",
-      "description": "In the process, TIP will launch simulations on AWS.<br>The associated resource costs will be deduced from your Credits."
     }]
   },
   "tiplite": {
+    "categories": [{
+      "id": "precomputed",
+      "title": "Precomputed"
+    }, {
+      "id": "personalized",
+      "title": "Personalized",
+      "description": "In the process, TIP will launch simulations on AWS.<br>The associated resource costs will be deduced from your Credits."
+    }],
     "linkedResource": "templates",
     "resources": [{
       "expectedTemplateLabel": "TI Planning Tool",
@@ -108,14 +116,6 @@
       "category": "personalized",
       "idToWidget": "personalizationNewPMTIPlanButton",
       "billable": true
-    }],
-    "categories": [{
-      "id": "precomputed",
-      "title": "Precomputed"
-    }, {
-      "id": "personalized",
-      "title": "Personalized",
-      "description": "In the process, TIP will launch simulations on AWS.<br>The associated resource costs will be deduced from your Credits."
     }]
   },
   "s4l": {
