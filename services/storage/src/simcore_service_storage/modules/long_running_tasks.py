@@ -1,4 +1,5 @@
-from servicelib.aiohttp.long_running_tasks.server import setup
+from fastapi import FastAPI
+from servicelib.fastapi.long_running_tasks._server import setup
 
 from .._meta import API_VTAG
 
