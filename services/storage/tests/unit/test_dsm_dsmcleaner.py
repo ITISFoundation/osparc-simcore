@@ -168,7 +168,7 @@ async def test_clean_expired_uploads_deletes_expired_pending_uploads(
         is_directory=is_directory,
     )
     # ensure the database is correctly set up
-    async with aiopg_engine.connect() as conn:
+    async with sqlalchemy_async_engine.connect() as conn:
         fmd = await db_file_meta_data.get(conn, file_or_directory_id)
     assert fmd
     assert fmd.upload_expires_at
@@ -184,7 +184,7 @@ async def test_clean_expired_uploads_deletes_expired_pending_uploads(
     # now run the cleaner, nothing should happen since the expiration was set to the default of 3600
     await simcore_s3_dsm.clean_expired_uploads()
     # check the entries are still the same
-    async with aiopg_engine.connect() as conn:
+    async with sqlalchemy_async_engine.connect() as conn:
         fmd_after_clean = await db_file_meta_data.get(conn, file_or_directory_id)
     assert fmd_after_clean == fmd
     assert (
@@ -193,7 +193,7 @@ async def test_clean_expired_uploads_deletes_expired_pending_uploads(
     )
 
     # now change the upload_expires_at entry to simulate and expired entry
-    async with aiopg_engine.connect() as conn:
+    async with sqlalchemy_async_engine.connect() as conn:
         await conn.execute(
             file_meta_data.update()
             .where(file_meta_data.c.file_id == file_or_directory_id)
@@ -203,7 +203,7 @@ async def test_clean_expired_uploads_deletes_expired_pending_uploads(
     await simcore_s3_dsm.clean_expired_uploads()
 
     # check the entries were removed
-    async with aiopg_engine.connect() as conn:
+    async with sqlalchemy_async_engine.connect() as conn:
         with pytest.raises(FileMetaDataNotFoundError):
             await db_file_meta_data.get(conn, simcore_file_id)
     # since there is no entry in the db, this upload shall be cleaned up
@@ -247,7 +247,7 @@ async def test_clean_expired_uploads_reverts_to_last_known_version_expired_pendi
         file_id=None,
         sha256_checksum=checksum,
     )
-    async with aiopg_engine.connect() as conn:
+    async with sqlalchemy_async_engine.connect() as conn:
         original_fmd = await db_file_meta_data.get(conn, file_id)
 
     # now create a new link to the VERY SAME FILE UUID
@@ -260,7 +260,7 @@ async def test_clean_expired_uploads_reverts_to_last_known_version_expired_pendi
         is_directory=False,
     )
     # ensure the database is correctly set up
-    async with aiopg_engine.connect() as conn:
+    async with sqlalchemy_async_engine.connect() as conn:
         fmd = await db_file_meta_data.get(conn, file_id)
     assert fmd
     assert fmd.upload_expires_at
@@ -276,7 +276,7 @@ async def test_clean_expired_uploads_reverts_to_last_known_version_expired_pendi
     # now run the cleaner, nothing should happen since the expiration was set to the default of 3600
     await simcore_s3_dsm.clean_expired_uploads()
     # check the entries are still the same
-    async with aiopg_engine.connect() as conn:
+    async with sqlalchemy_async_engine.connect() as conn:
         fmd_after_clean = await db_file_meta_data.get(conn, file_id)
     assert fmd_after_clean == fmd
     assert (
@@ -285,7 +285,7 @@ async def test_clean_expired_uploads_reverts_to_last_known_version_expired_pendi
     )
 
     # now change the upload_expires_at entry to simulate an expired entry
-    async with aiopg_engine.connect() as conn:
+    async with sqlalchemy_async_engine.connect() as conn:
         await conn.execute(
             file_meta_data.update()
             .where(file_meta_data.c.file_id == file_id)
@@ -295,7 +295,7 @@ async def test_clean_expired_uploads_reverts_to_last_known_version_expired_pendi
     await simcore_s3_dsm.clean_expired_uploads()
 
     # check the entries were reverted
-    async with aiopg_engine.connect() as conn:
+    async with sqlalchemy_async_engine.connect() as conn:
         reverted_fmd = await db_file_meta_data.get(conn, file_id)
     assert original_fmd.model_dump(exclude={"created_at"}) == reverted_fmd.model_dump(
         exclude={"created_at"}
@@ -347,7 +347,7 @@ async def test_clean_expired_uploads_does_not_clean_multipart_upload_on_creation
         sha256_checksum=checksum,
     )
     # we create the entry in the db
-    async with aiopg_engine.connect() as conn:
+    async with sqlalchemy_async_engine.connect() as conn:
         await db_file_meta_data.upsert(conn, fmd)
 
         # ensure the database is correctly set up
