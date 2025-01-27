@@ -11,8 +11,8 @@ from .simcore_s3_dsm import SimcoreS3DataManager, create_simcore_s3_data_manager
 logger = logging.getLogger(__name__)
 
 
-def setup_dsm(app: FastAPI):
-    async def _on_startup(app: FastAPI) -> None:
+def setup_dsm(app: FastAPI) -> None:
+    async def _on_startup() -> None:
         dsm_provider = DataManagerProvider(app)
         dsm_provider.register_builder(
             SimcoreS3DataManager.get_location_id(),

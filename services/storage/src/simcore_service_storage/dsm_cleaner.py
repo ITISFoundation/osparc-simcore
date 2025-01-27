@@ -20,7 +20,6 @@
 
 import asyncio
 import logging
-from collections.abc import Awaitable, Callable
 from datetime import timedelta
 from typing import cast
 
@@ -48,7 +47,7 @@ async def dsm_cleaner_task(app: FastAPI) -> None:
 
 
 def setup_dsm_cleaner(app: FastAPI) -> None:
-    async def _on_startup(app: FastAPI) -> None:
+    async def _on_startup() -> None:
         cfg = get_application_settings(app)
         assert cfg.STORAGE_CLEANER_INTERVAL_S  # nosec
 
@@ -64,12 +63,9 @@ def setup_dsm_cleaner(app: FastAPI) -> None:
             _periodic_dsm_clean(), name=_TASK_NAME_PERIODICALY_CLEAN_DSM
         )
 
-    def _on_shutdown(app: FastAPI) -> Callable[[], Awaitable[None]]:
-        async def _stop() -> None:
-            assert isinstance(app.state.dsm_cleaner_task, asyncio.Task)  # nosec
-            await cancel_wait_task(app.state.dsm_cleaner_task)
-
-        return _stop
+    async def _on_shutdown() -> None:
+        assert isinstance(app.state.dsm_cleaner_task, asyncio.Task)  # nosec
+        await cancel_wait_task(app.state.dsm_cleaner_task)
 
     app.add_event_handler("startup", _on_startup)
-    app.add_event_handler("shutdown", _on_shutdown(app))
+    app.add_event_handler("shutdown", _on_shutdown)
