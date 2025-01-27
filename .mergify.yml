@@ -1,0 +1,3 @@
+queue_rules:
+  - name: default-merge-queue
+    branch_protection_injection_mode: queue
