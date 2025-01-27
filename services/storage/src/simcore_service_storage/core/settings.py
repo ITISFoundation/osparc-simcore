@@ -17,7 +17,7 @@ from settings_library.s3 import S3Settings
 from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
 
-from ..datcore_adapter.datcore_adapter_settings import DatcoreAdapterSettings
+from ..modules.datcore_adapter.datcore_adapter_settings import DatcoreAdapterSettings
 
 
 class Settings(BaseCustomSettings, MixinLoggingSettings):

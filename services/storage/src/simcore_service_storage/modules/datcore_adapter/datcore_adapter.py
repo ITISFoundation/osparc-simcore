@@ -13,8 +13,8 @@ from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
 from servicelib.aiohttp.client_session import get_client_session
 from servicelib.utils import logged_gather
 
-from ..constants import DATCORE_ID, DATCORE_STR, MAX_CONCURRENT_REST_CALLS
-from ..models import DatasetMetaData, FileMetaData
+from ...constants import DATCORE_ID, DATCORE_STR, MAX_CONCURRENT_REST_CALLS
+from ...models import DatasetMetaData, FileMetaData
 from .datcore_adapter_exceptions import (
     DatcoreAdapterClientError,
     DatcoreAdapterError,

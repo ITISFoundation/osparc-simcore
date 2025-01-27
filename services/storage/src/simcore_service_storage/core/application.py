@@ -19,7 +19,7 @@ from .._meta import APP_NAME, APP_STARTED_BANNER_MSG, VERSION
 from ..api.rest.utils import dsm_exception_handler
 from ..dsm import setup_dsm
 from ..dsm_cleaner import setup_dsm_cleaner
-from ..modules.db import setup_db
+from ..modules.db.db import setup_db
 from ..modules.long_running_tasks import setup_rest_api_long_running_tasks
 from ..modules.redis import setup_redis
 from ..modules.s3 import setup_s3

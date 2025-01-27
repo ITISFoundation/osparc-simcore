@@ -42,7 +42,6 @@ from servicelib.aiohttp.long_running_tasks.server import TaskProgress
 from servicelib.logging_utils import log_context
 from servicelib.utils import ensure_ends_with, limited_gather
 
-from . import db_file_meta_data, db_projects, db_tokens
 from .constants import (
     APP_AIOPG_ENGINE_KEY,
     APP_CONFIG_KEY,
@@ -62,13 +61,6 @@ from .core.exceptions import (
     ProjectNotFoundError,
 )
 from .core.settings import Settings
-from .datcore_adapter import datcore_adapter
-from .db_access_layer import (
-    AccessRights,
-    get_file_access_rights,
-    get_project_access_rights,
-    get_readable_project_ids,
-)
 from .dsm_factory import BaseDataManager
 from .models import (
     DatasetMetaData,
@@ -78,18 +70,26 @@ from .models import (
     UploadLinks,
     UserOrProjectFilter,
 )
-from .modules.s3 import get_s3_client
-from .utils import (
-    convert_db_to_model,
-    download_to_file_or_raise,
-    is_file_entry_valid,
-    is_valid_managed_multipart_upload,
+from .modules.datcore_adapter import datcore_adapter
+from .modules.db import db_file_meta_data, db_projects, db_tokens
+from .modules.db.db_access_layer import (
+    AccessRights,
+    get_file_access_rights,
+    get_project_access_rights,
+    get_readable_project_ids,
 )
+from .modules.s3 import get_s3_client
 from .utils.s3_utils import S3TransferDataCB, update_task_progress
 from .utils.simcore_s3_dsm_utils import (
     compute_file_id_prefix,
     expand_directory,
     get_directory_file_id,
+)
+from .utils.utils import (
+    convert_db_to_model,
+    download_to_file_or_raise,
+    is_file_entry_valid,
+    is_valid_managed_multipart_upload,
 )
 
 _NO_CONCURRENCY: Final[int] = 1

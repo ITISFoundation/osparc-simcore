@@ -12,8 +12,8 @@ from simcore_postgres_database.storage_models import file_meta_data
 from sqlalchemy import and_, literal_column
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
-from .core.exceptions import FileMetaDataNotFoundError
-from .models import FileMetaData, FileMetaDataAtDB, UserOrProjectFilter
+from ...core.exceptions import FileMetaDataNotFoundError
+from ...models import FileMetaData, FileMetaDataAtDB, UserOrProjectFilter
 
 
 async def exists(conn: SAConnection, file_id: SimcoreS3FileID) -> bool:
