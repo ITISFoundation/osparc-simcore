@@ -15,7 +15,7 @@ from models_library.users import UserID
 from pydantic import ByteSize, TypeAdapter
 from simcore_service_storage import db_file_meta_data
 from simcore_service_storage.models import FileMetaData
-from simcore_service_storage.s3 import get_s3_client
+from simcore_service_storage.modules.s3 import get_s3_client
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 
 pytest_simcore_core_services_selection = ["postgres"]

@@ -78,18 +78,18 @@ from .models import (
     UploadLinks,
     UserOrProjectFilter,
 )
-from .s3 import get_s3_client
-from .s3_utils import S3TransferDataCB, update_task_progress
-from .simcore_s3_dsm_utils import (
-    compute_file_id_prefix,
-    expand_directory,
-    get_directory_file_id,
-)
+from .modules.s3 import get_s3_client
 from .utils import (
     convert_db_to_model,
     download_to_file_or_raise,
     is_file_entry_valid,
     is_valid_managed_multipart_upload,
+)
+from .utils.s3_utils import S3TransferDataCB, update_task_progress
+from .utils.simcore_s3_dsm_utils import (
+    compute_file_id_prefix,
+    expand_directory,
+    get_directory_file_id,
 )
 
 _NO_CONCURRENCY: Final[int] = 1

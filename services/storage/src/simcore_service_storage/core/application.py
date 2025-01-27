@@ -22,8 +22,8 @@ from ..dsm_cleaner import setup_dsm_cleaner
 from ..long_running_tasks import setup_rest_api_long_running_tasks
 from ..modules.db import setup_db
 from ..modules.redis import setup_redis
+from ..modules.s3 import setup_s3
 from ..routes import setup_rest_api_routes
-from ..s3 import setup_s3
 from .settings import Settings
 
 _ACCESS_LOG_FORMAT: Final[
