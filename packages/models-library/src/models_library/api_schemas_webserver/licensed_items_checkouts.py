@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import NamedTuple
 
+from models_library.emails import LowerCaseEmailStr
 from pydantic import BaseModel, ConfigDict, PositiveInt
 
 from ..licensed_items import LicensedItemID
@@ -53,7 +54,7 @@ class LicensedItemCheckoutRestGet(OutputSchema):
     licensed_item_id: LicensedItemID
     wallet_id: WalletID
     user_id: UserID
-    user_email: str
+    user_email: LowerCaseEmailStr
     product_name: ProductName
     started_at: datetime
     stopped_at: datetime | None
