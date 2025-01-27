@@ -8,8 +8,8 @@
       "title": "Personalized",
       "description": "In the process, TIP will launch simulations on AWS.<br>The associated resource costs will be deduced from your Credits."
     }],
-    "linkedResource": "templates",
     "resources": [{
+      "resourceType": "template",
       "expectedTemplateLabel": "TI Planning Tool",
       "title": "Classic TI",
       "description": "",
@@ -17,6 +17,7 @@
       "category": "precomputed",
       "idToWidget": "newTIPlanButton"
     }, {
+      "resourceType": "template",
       "expectedTemplateLabel": "mcTI Planning Tool",
       "title": "Multichannel TI",
       "description": "",
@@ -24,6 +25,7 @@
       "category": "precomputed",
       "idToWidget": "newMTIPlanButton"
     }, {
+      "resourceType": "template",
       "expectedTemplateLabel": "pmTI Planning Tool",
       "title": "Phase-modulation TI",
       "description": "",
@@ -31,6 +33,7 @@
       "category": "precomputed",
       "idToWidget": "newPMTIPlanButton"
     }, {
+      "resourceType": "template",
       "expectedTemplateLabel": "personalized TI Planning Tool",
       "title": "Personalized<br>Classic TI",
       "description": "",
@@ -39,6 +42,7 @@
       "idToWidget": "personalizationNewTIPlanButton",
       "billable": true
     }, {
+      "resourceType": "template",
       "expectedTemplateLabel": "personalized mcTI Planning Tool",
       "title": "Personalized<br>Multichannel TI",
       "description": "",
@@ -47,6 +51,7 @@
       "idToWidget": "personalizationNewMTIPlanButton",
       "billable": true
     }, {
+      "resourceType": "template",
       "expectedTemplateLabel": "personalized pmTI Planning Tool",
       "title": "Personalized<br>Phase-modulation TI",
       "description": "",
@@ -65,8 +70,8 @@
       "title": "Personalized",
       "description": "In the process, TIP will launch simulations on AWS.<br>The associated resource costs will be deduced from your Credits."
     }],
-    "linkedResource": "templates",
     "resources": [{
+      "resourceType": "template",
       "expectedTemplateLabel": "TI Planning Tool",
       "title": "Classic TI",
       "description": "",
@@ -75,6 +80,7 @@
       "idToWidget": "newTIPlanButton"
     }, {
       "showDisabled": true,
+      "resourceType": "template",
       "expectedTemplateLabel": "mcTI Planning Tool",
       "title": "Multichannel TI",
       "description": "Not available in ${replace_me_product_name}",
@@ -83,6 +89,7 @@
       "idToWidget": "newMTIPlanButton"
     }, {
       "showDisabled": true,
+      "resourceType": "template",
       "expectedTemplateLabel": "pmTI Planning Tool",
       "title": "Phase-modulation TI",
       "description": "Not available in ${replace_me_product_name}",
@@ -91,6 +98,7 @@
       "idToWidget": "newPMTIPlanButton"
     }, {
       "showDisabled": true,
+      "resourceType": "template",
       "expectedTemplateLabel": "personalized TI Planning Tool",
       "title": "Personalized<br>Classic TI",
       "description": "Not available in ${replace_me_product_name}",
@@ -100,6 +108,7 @@
       "billable": true
     }, {
       "showDisabled": true,
+      "resourceType": "template",
       "expectedTemplateLabel": "personalized mcTI Planning Tool",
       "title": "Personalized<br>Multichannel TI",
       "description": "Not available in ${replace_me_product_name}",
@@ -109,6 +118,7 @@
       "billable": true
     }, {
       "showDisabled": true,
+      "resourceType": "template",
       "expectedTemplateLabel": "personalized pmTI Planning Tool",
       "title": "Personalized<br>Phase-modulation TI",
       "description": "Not available in ${replace_me_product_name}",
@@ -119,8 +129,8 @@
     }]
   },
   "s4l": {
-    "linkedResource": "services",
     "resources": [{
+      "resourceType": "service",
       "expectedKey": "simcore/services/dynamic/s4l-ui",
       "title": "Start Sim4Life",
       "description": "New Sim4Life project",
@@ -129,8 +139,8 @@
     }]
   },
   "s4lacad": {
-    "linkedResource": "services",
     "resources": [{
+      "resourceType": "service",
       "expectedKey": "simcore/services/dynamic/s4l-ui",
       "title": "Start Sim4Life",
       "description": "New Sim4Life project",
@@ -139,8 +149,8 @@
     }]
   },
   "s4llite": {
-    "linkedResource": "services",
     "resources": [{
+      "resourceType": "service",
       "expectedKey": "simcore/services/dynamic/s4l-ui-lite",
       "title": "Start ${replace_me_product_name}",
       "description": "New project",

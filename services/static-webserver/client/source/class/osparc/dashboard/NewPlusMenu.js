@@ -142,11 +142,13 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
         if (newStudiesData["categories"]) {
           this.__addCategories(newStudiesData["categories"]);
         }
-        if (newStudiesData["linkedResource"] === "templates") {
-          newStudiesData["resources"].forEach(templateData => {
-            this.__addFromTemplateButton(templateData, templates);
-          });
-        }
+        newStudiesData["resources"].forEach(resourceData => {
+          if (resourceData["resourceType"] === "template") {
+            this.__addFromTemplateButton(resourceData, templates);
+          } else if (resourceData["resourceType"] === "service") {
+            this.__addFromServiceButton(resourceData);
+          }
+        });
       });
     },
 
@@ -169,10 +171,36 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
       });
     },
 
+    __createFromResourceButton: function(resourceData) {
+      const icon = "icon" in resourceData ? resourceData["icon"] : null;
+      const menuButton = this.self().createMenuButton(resourceData.title, icon);
+      osparc.utils.Utils.setIdToWidget(menuButton, resourceData.idToWidget);
+      return menuButton;
+    },
+
+    __addFromResourceButton: function(menuButton, resourceData) {
+      if (menuButton.getIcon()) {
+        menuButton.getChildControl("icon").set({
+          scale: true,
+          maxWidth: 22,
+          maxHeight: 22,
+        })
+      }
+
+      let idx = null;
+      if (resourceData.category) {
+        idx = this.__getLastIdxFromCategory(resourceData.category);
+      }
+      if (idx) {
+        menuButton["categoryId"] = resourceData.category;
+        this.addAt(menuButton, idx+1);
+      } else {
+        this.add(menuButton);
+      }
+    },
+
     __addFromTemplateButton: function(templateData, templates) {
-      const icon = "icon" in templateData ? templateData["icon"] : null;
-      const menuButton = this.self().createMenuButton(templateData.title, icon);
-      osparc.utils.Utils.setIdToWidget(menuButton, templateData.idToWidget);
+      const menuButton = this.__createFromResourceButton(templateData);
 
       if (templateData.showDisabled) {
         menuButton.set({
@@ -194,24 +222,13 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
         }
       }
 
-      if (menuButton.getIcon()) {
-        menuButton.getChildControl("icon").set({
-          scale: true,
-          maxWidth: 22,
-          maxHeight: 22,
-        })
-      }
+      this.__addFromResourceButton(menuButton, templateData);
+    },
 
-      let idx = null;
-      if (templateData.category) {
-        idx = this.__getLastIdxFromCategory(templateData.category);
-      }
-      if (idx) {
-        menuButton["categoryId"] = templateData.category;
-        this.addAt(menuButton, idx+1);
-      } else {
-        this.add(menuButton);
-      }
+    __addFromServiceButton: function(serviceData) {
+      const menuButton = this.__createFromResourceButton(serviceData);
+
+      this.__addFromResourceButton(menuButton, serviceData);
     },
 
     __createNewFolder: function() {
