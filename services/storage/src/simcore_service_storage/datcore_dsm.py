@@ -13,11 +13,13 @@ from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize
 
 from .constants import DATCORE_ID, DATCORE_STR
-from .datcore_adapter import datcore_adapter
-from .datcore_adapter.datcore_adapter_exceptions import DatcoreAdapterMultipleFilesError
-from .db_tokens import get_api_token_and_secret
 from .dsm_factory import BaseDataManager
 from .models import DatasetMetaData, FileMetaData, UploadLinks
+from .modules.datcore_adapter import datcore_adapter
+from .modules.datcore_adapter.datcore_adapter_exceptions import (
+    DatcoreAdapterMultipleFilesError,
+)
+from .modules.db.db_tokens import get_api_token_and_secret
 
 
 @dataclass

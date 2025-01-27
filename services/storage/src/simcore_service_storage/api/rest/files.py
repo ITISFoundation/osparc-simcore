@@ -43,7 +43,7 @@ from ...models import (
     UploadLinks,
 )
 from ...simcore_s3_dsm import SimcoreS3DataManager
-from ...utils import create_upload_completion_task_name
+from ...utils.utils import create_upload_completion_task_name
 
 _logger = logging.getLogger(__name__)
 

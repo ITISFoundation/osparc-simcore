@@ -7,7 +7,7 @@ from aiopg.sa.engine import Engine
 from models_library.users import UserID
 from simcore_postgres_database.storage_models import tokens
 
-from .constants import APP_AIOPG_ENGINE_KEY, APP_CONFIG_KEY
+from ...constants import APP_AIOPG_ENGINE_KEY, APP_CONFIG_KEY
 
 _logger = logging.getLogger(__name__)
 

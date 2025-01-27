@@ -14,8 +14,10 @@ from ...core.exceptions import (
     ProjectAccessRightError,
     ProjectNotFoundError,
 )
-from ...datcore_adapter.datcore_adapter_exceptions import DatcoreAdapterTimeoutError
-from ...db_access_layer import InvalidFileIdentifierError
+from ...modules.datcore_adapter.datcore_adapter_exceptions import (
+    DatcoreAdapterTimeoutError,
+)
+from ...modules.db.db_access_layer import InvalidFileIdentifierError
 
 _logger = logging.getLogger(__name__)
 
