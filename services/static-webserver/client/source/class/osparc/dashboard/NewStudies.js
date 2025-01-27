@@ -82,7 +82,7 @@ qx.Class.define("osparc.dashboard.NewStudies", {
         this._add(noGroupContainer);
 
         Array.from(this.__groups).forEach(group => {
-          const groupContainer = this.__createGroupContainer(group.id, group.label, "transparent");
+          const groupContainer = this.__createGroupContainer(group.id, group.title, "transparent");
           this._add(groupContainer);
         });
       } else {

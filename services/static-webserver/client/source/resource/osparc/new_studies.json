@@ -49,10 +49,11 @@
     }],
     "categories": [{
       "id": "precomputed",
-      "label": "Precomputed"
+      "title": "Precomputed"
     }, {
       "id": "personalized",
-      "label": "Personalized: In the process, TIP will launch simulations on AWS.<br>The associated resource costs will be deduced from your Credits."
+      "title": "Personalized",
+      "description": "In the process, TIP will launch simulations on AWS.<br>The associated resource costs will be deduced from your Credits."
     }]
   },
   "tiplite": {
@@ -110,10 +111,11 @@
     }],
     "categories": [{
       "id": "precomputed",
-      "label": "Precomputed"
+      "title": "Precomputed"
     }, {
       "id": "personalized",
-      "label": "Personalized: In the process, TIP will launch simulations on AWS.<br>The associated resource costs will be deduced from your Credits."
+      "title": "Personalized",
+      "description": "In the process, TIP will launch simulations on AWS.<br>The associated resource costs will be deduced from your Credits."
     }]
   },
   "s4l": {

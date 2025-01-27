@@ -27,6 +27,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
       position: "bottom-left",
       padding: 10,
       allowGrowX: true,
+      minWidth: 300,
     });
 
     this.__addItems();
@@ -39,7 +40,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
   },
 
   statics: {
-    createMenuButton: function(label, icon) {
+    createMenuButton: function(label, icon, description) {
       const menuButton = new qx.ui.menu.Button().set({
         label,
         icon: icon || null,
@@ -48,15 +49,34 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
       });
       menuButton.getChildControl("label").set({
         rich: true,
+        allowGrowX: true,
+        minWidth: 300,
+        wrap: false,
       });
       menuButton.getChildControl("icon").set({
         scale: true,
         maxHeight: 20,
         maxWidth: 20,
-        allowShrinkX: true,
-        allowShrinkY: true,
       });
+      if (description) {
+        const infoHint = new osparc.ui.hint.InfoHint(description).set({
+          source: osparc.ui.hint.InfoHint.INFO_ICON + "/16",
+          alignY: "middle",
+        });
+        // where the shortcut is supposed to go
+        // eslint-disable-next-line no-underscore-dangle
+        menuButton._add(infoHint, {column:2});
+      }
       return menuButton;
+    },
+
+    createHeader: function(label, icon, description) {
+      const headerLabel = `--- ${label} ---`;
+      return this.createMenuButton(headerLabel, icon, description).set({
+        anonymous: true,
+        cursor: "default",
+        font: "text-16",
+      });
     },
   },
 
@@ -122,7 +142,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
         const newStudiesData = values[0];
         const templates = values[1];
         if (newStudiesData["categories"]) {
-          // this.__addCategories(newStudiesData["categories"]);
+          this.__addCategories(newStudiesData["categories"]);
         }
         if (newStudiesData["linkedResource"] === "templates") {
           newStudiesData["resources"].forEach(templateData => {
@@ -134,13 +154,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
 
     __addCategories: function(categories) {
       categories.forEach(category => {
-        const categoryHeader = new qx.ui.basic.Label().set({
-          value: category["label"],
-          font: "text-16",
-          rich: true,
-          wrap: true,
-        });
-        categoryHeader.id = category["id"];
+        const categoryHeader = this.self().createHeader(category["title"], null, category["description"]);
         this.add(categoryHeader);
       });
     },
