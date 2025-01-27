@@ -2266,7 +2266,6 @@ jobs:
         integration-test-dynamic-sidecar,
         integration-test-simcore-sdk,
         integration-test-webserver-01,
-        integration-test-webserver-02,
       ]
     runs-on: ubuntu-latest
     steps:
