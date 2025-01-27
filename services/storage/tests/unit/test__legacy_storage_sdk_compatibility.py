@@ -15,8 +15,8 @@ from pathlib import Path
 
 import aiohttp
 import pytest
-from aiohttp.test_utils import TestClient
 from faker import Faker
+from httpx import AsyncClient
 from models_library.projects_nodes_io import LocationID, SimcoreS3FileID
 from models_library.users import UserID
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
@@ -57,7 +57,7 @@ def location_name() -> str:
 
 
 async def test_storage_client_used_in_simcore_sdk_0_3_2(  # noqa: PLR0915
-    client: TestClient,
+    client: AsyncClient,
     file_id: str,
     user_id: str,
     location_id: int,
@@ -83,7 +83,7 @@ async def test_storage_client_used_in_simcore_sdk_0_3_2(  # noqa: PLR0915
     cfg.host = f"http://{client.host}:{client.port}/v0"
     cfg.debug = True
 
-    assert cfg.host == f'{client.make_url("/v0")}'
+    assert cfg.host == f"{client.make_url('/v0')}"
     print(f"{cfg=}")
     print(f"{cfg.to_debug_report()=}")
 
