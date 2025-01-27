@@ -54,7 +54,7 @@ from simcore_service_storage.core.application import create
 from simcore_service_storage.core.settings import Settings
 from simcore_service_storage.dsm import get_dsm_provider
 from simcore_service_storage.models import S3BucketName
-from simcore_service_storage.s3 import get_s3_client
+from simcore_service_storage.modules.s3 import get_s3_client
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
