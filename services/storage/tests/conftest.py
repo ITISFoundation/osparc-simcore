@@ -20,7 +20,6 @@ import dotenv
 import pytest
 import simcore_service_storage
 from aiohttp.test_utils import TestClient
-from aiopg.sa import Engine
 from aws_library.s3 import SimcoreS3API
 from faker import Faker
 from fakeredis.aioredis import FakeRedis
@@ -56,6 +55,7 @@ from simcore_service_storage.dsm import get_dsm_provider
 from simcore_service_storage.models import S3BucketName
 from simcore_service_storage.modules.s3 import get_s3_client
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
+from sqlalchemy.ext.asyncio import AsyncEngine
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
@@ -128,10 +128,10 @@ def project_env_devel_environment(
 
 
 @pytest.fixture
-async def cleanup_user_projects_file_metadata(aiopg_engine: Engine):
+async def cleanup_user_projects_file_metadata(sqlalchemy_async_engine: AsyncEngine):
     yield
     # cleanup
-    async with aiopg_engine.acquire() as conn:
+    async with sqlalchemy_async_engine.connect() as conn:
         await conn.execute(file_meta_data.delete())
         await conn.execute(projects.delete())
         await conn.execute(users.delete())
@@ -162,7 +162,7 @@ async def storage_s3_bucket(app_settings: ApplicationSettings) -> str:
 
 @pytest.fixture
 def app_settings(
-    aiopg_engine: Engine,
+    sqlalchemy_async_engine: AsyncEngine,
     postgres_host_config: dict[str, str],
     mocked_s3_server_envs: EnvVarsDict,
     external_envfile_dict: EnvVarsDict,
@@ -319,7 +319,7 @@ async def create_upload_file_link_v2(
 
 @pytest.fixture
 def upload_file(
-    aiopg_engine: Engine,
+    sqlalchemy_async_engine: AsyncEngine,
     storage_s3_client: SimcoreS3API,
     storage_s3_bucket: S3BucketName,
     client: TestClient,
@@ -404,7 +404,7 @@ def upload_file(
 
         # check the entry in db now has the correct file size, and the upload id is gone
         await assert_file_meta_data_in_db(
-            aiopg_engine,
+            sqlalchemy_async_engine,
             file_id=file_id,
             expected_entry_exists=True,
             expected_file_size=file_size,

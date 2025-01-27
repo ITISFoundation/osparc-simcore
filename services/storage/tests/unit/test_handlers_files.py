@@ -22,7 +22,6 @@ from uuid import uuid4
 import pytest
 from aiohttp import ClientSession
 from aiohttp.test_utils import TestClient
-from aiopg.sa import Engine
 from aws_library.s3 import S3KeyNotFoundError, S3ObjectKey, SimcoreS3API
 from aws_library.s3._constants import MULTIPART_UPLOADS_MIN_TOTAL_SIZE
 from faker import Faker
@@ -55,6 +54,7 @@ from simcore_service_storage.constants import (
     UPLOAD_TASKS_KEY,
 )
 from simcore_service_storage.models import S3BucketName, UploadID
+from sqlalchemy.ext.asyncio import AsyncEngine
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
@@ -143,7 +143,7 @@ async def test_create_upload_file_with_file_size_0_returns_single_link(
     storage_s3_bucket: S3BucketName,
     simcore_file_id: SimcoreS3FileID,
     single_link_param: SingleLinkParam,
-    aiopg_engine: Engine,
+    sqlalchemy_async_engine: AsyncEngine,
     create_upload_file_link_v2: Callable[..., Awaitable[FileUploadSchema]],
     cleanup_user_projects_file_metadata: None,
 ):
@@ -173,7 +173,7 @@ async def test_create_upload_file_with_file_size_0_returns_single_link(
 
     # now check the entry in the database is correct, there should be only one
     await assert_file_meta_data_in_db(
-        aiopg_engine,
+        sqlalchemy_async_engine,
         file_id=simcore_file_id,
         expected_entry_exists=True,
         expected_file_size=-1,
@@ -272,7 +272,7 @@ async def test_create_upload_file_with_no_file_size_query_returns_v1_structure(
     storage_s3_bucket: S3BucketName,
     simcore_file_id: SimcoreS3FileID,
     single_link_param: SingleLinkParam,
-    aiopg_engine: Engine,
+    sqlalchemy_async_engine: AsyncEngine,
     create_upload_file_link_v1: Callable[..., Awaitable[PresignedLink]],
     cleanup_user_projects_file_metadata: None,
 ):
@@ -291,7 +291,7 @@ async def test_create_upload_file_with_no_file_size_query_returns_v1_structure(
     )
     # now check the entry in the database is correct, there should be only one
     await assert_file_meta_data_in_db(
-        aiopg_engine,
+        sqlalchemy_async_engine,
         file_id=simcore_file_id,
         expected_entry_exists=True,
         expected_file_size=-1,
@@ -376,7 +376,7 @@ async def test_create_upload_file_presigned_with_file_size_returns_multipart_lin
     storage_s3_bucket: S3BucketName,
     simcore_file_id: SimcoreS3FileID,
     test_param: MultiPartParam,
-    aiopg_engine: Engine,
+    sqlalchemy_async_engine: AsyncEngine,
     create_upload_file_link_v2: Callable[..., Awaitable[FileUploadSchema]],
     cleanup_user_projects_file_metadata: None,
 ):
@@ -397,7 +397,7 @@ async def test_create_upload_file_presigned_with_file_size_returns_multipart_lin
     # now check the entry in the database is correct, there should be only one
     expect_upload_id = bool(test_param.file_size >= MULTIPART_UPLOADS_MIN_TOTAL_SIZE)
     upload_id: UploadID | None = await assert_file_meta_data_in_db(
-        aiopg_engine,
+        sqlalchemy_async_engine,
         file_id=simcore_file_id,
         expected_entry_exists=True,
         expected_file_size=-1,
@@ -423,7 +423,7 @@ async def test_create_upload_file_presigned_with_file_size_returns_multipart_lin
     ids=byte_size_ids,
 )
 async def test_delete_unuploaded_file_correctly_cleans_up_db_and_s3(
-    aiopg_engine: Engine,
+    sqlalchemy_async_engine: AsyncEngine,
     client: TestClient,
     storage_s3_client: SimcoreS3API,
     storage_s3_bucket: S3BucketName,
@@ -441,7 +441,7 @@ async def test_delete_unuploaded_file_correctly_cleans_up_db_and_s3(
     expect_upload_id = bool(file_size >= MULTIPART_UPLOADS_MIN_TOTAL_SIZE)
     # we shall have an entry in the db, waiting for upload
     upload_id = await assert_file_meta_data_in_db(
-        aiopg_engine,
+        sqlalchemy_async_engine,
         file_id=simcore_file_id,
         expected_entry_exists=True,
         expected_file_size=-1,
@@ -463,7 +463,7 @@ async def test_delete_unuploaded_file_correctly_cleans_up_db_and_s3(
 
     # the DB shall be cleaned up
     await assert_file_meta_data_in_db(
-        aiopg_engine,
+        sqlalchemy_async_engine,
         file_id=simcore_file_id,
         expected_entry_exists=False,
         expected_file_size=None,
@@ -490,7 +490,7 @@ async def test_delete_unuploaded_file_correctly_cleans_up_db_and_s3(
     ids=byte_size_ids,
 )
 async def test_upload_same_file_uuid_aborts_previous_upload(
-    aiopg_engine: Engine,
+    sqlalchemy_async_engine: AsyncEngine,
     client: TestClient,
     storage_s3_client: SimcoreS3API,
     storage_s3_bucket: S3BucketName,
@@ -509,7 +509,7 @@ async def test_upload_same_file_uuid_aborts_previous_upload(
     )
     # we shall have an entry in the db, waiting for upload
     upload_id = await assert_file_meta_data_in_db(
-        aiopg_engine,
+        sqlalchemy_async_engine,
         file_id=simcore_file_id,
         expected_entry_exists=True,
         expected_file_size=-1,
@@ -537,7 +537,7 @@ async def test_upload_same_file_uuid_aborts_previous_upload(
         assert file_upload_link == new_file_upload_link
     # we shall have an entry in the db, waiting for upload
     new_upload_id = await assert_file_meta_data_in_db(
-        aiopg_engine,
+        sqlalchemy_async_engine,
         file_id=simcore_file_id,
         expected_entry_exists=True,
         expected_file_size=-1,
@@ -604,7 +604,7 @@ async def test_upload_real_file_with_emulated_storage_restart_after_completion_w
     create_simcore_file_id: Callable[[ProjectID, NodeID, str], SimcoreS3FileID],
     create_file_of_size: Callable[[ByteSize, str | None], Path],
     create_upload_file_link_v2: Callable[..., Awaitable[FileUploadSchema]],
-    aiopg_engine: Engine,
+    sqlalchemy_async_engine: AsyncEngine,
     storage_s3_client: SimcoreS3API,
     storage_s3_bucket: S3BucketName,
 ):
@@ -667,7 +667,7 @@ async def test_upload_real_file_with_emulated_storage_restart_after_completion_w
             )
     # check the entry in db now has the correct file size, and the upload id is gone
     await assert_file_meta_data_in_db(
-        aiopg_engine,
+        sqlalchemy_async_engine,
         file_id=file_id,
         expected_entry_exists=True,
         expected_file_size=file_size,
@@ -685,7 +685,7 @@ async def test_upload_real_file_with_emulated_storage_restart_after_completion_w
 
 
 async def test_upload_of_single_presigned_link_lazily_update_database_on_get(
-    aiopg_engine: Engine,
+    sqlalchemy_async_engine: AsyncEngine,
     storage_s3_client: SimcoreS3API,
     storage_s3_bucket: S3BucketName,
     client: TestClient,
@@ -729,7 +729,7 @@ async def test_upload_of_single_presigned_link_lazily_update_database_on_get(
 
 
 async def test_upload_real_file_with_s3_client(
-    aiopg_engine: Engine,
+    sqlalchemy_async_engine: AsyncEngine,
     storage_s3_client: SimcoreS3API,
     storage_s3_bucket: S3BucketName,
     client: TestClient,
@@ -809,7 +809,7 @@ async def test_upload_real_file_with_s3_client(
 
     # check the entry in db now has the correct file size, and the upload id is gone
     await assert_file_meta_data_in_db(
-        aiopg_engine,
+        sqlalchemy_async_engine,
         file_id=simcore_file_id,
         expected_entry_exists=True,
         expected_file_size=file_size,
@@ -835,7 +835,7 @@ async def test_upload_real_file_with_s3_client(
     ids=byte_size_ids,
 )
 async def test_upload_twice_and_fail_second_time_shall_keep_first_version(
-    aiopg_engine: Engine,
+    sqlalchemy_async_engine: AsyncEngine,
     client: TestClient,
     storage_s3_client: SimcoreS3API,
     storage_s3_bucket: S3BucketName,
@@ -859,7 +859,7 @@ async def test_upload_twice_and_fail_second_time_shall_keep_first_version(
     )
     # we shall have an entry in the db, waiting for upload
     await assert_file_meta_data_in_db(
-        aiopg_engine,
+        sqlalchemy_async_engine,
         file_id=uploaded_file_id,
         expected_entry_exists=True,
         expected_file_size=-1,
@@ -890,7 +890,7 @@ async def test_upload_twice_and_fail_second_time_shall_keep_first_version(
 
     # we should have the original file still in now...
     await assert_file_meta_data_in_db(
-        aiopg_engine,
+        sqlalchemy_async_engine,
         file_id=uploaded_file_id,
         expected_entry_exists=True,
         expected_file_size=file_size,
@@ -1138,7 +1138,7 @@ async def test_download_file_access_rights(
     ids=byte_size_ids,
 )
 async def test_delete_file(
-    aiopg_engine: Engine,
+    sqlalchemy_async_engine: AsyncEngine,
     storage_s3_client: SimcoreS3API,
     storage_s3_bucket: S3BucketName,
     client: TestClient,
@@ -1164,7 +1164,7 @@ async def test_delete_file(
 
     # check the entry in db is removed
     await assert_file_meta_data_in_db(
-        aiopg_engine,
+        sqlalchemy_async_engine,
         file_id=uploaded_file_uuid,
         expected_entry_exists=False,
         expected_file_size=None,

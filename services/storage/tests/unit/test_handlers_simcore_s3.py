@@ -17,7 +17,6 @@ import pytest
 import sqlalchemy as sa
 from aiohttp import ClientResponseError
 from aiohttp.test_utils import TestClient
-from aiopg.sa.engine import Engine
 from aws_library.s3 import SimcoreS3API
 from faker import Faker
 from models_library.api_schemas_storage import FileMetaDataGet, FoldersBody
@@ -36,6 +35,7 @@ from settings_library.s3 import S3Settings
 from simcore_postgres_database.storage_models import file_meta_data
 from simcore_service_storage.models import SearchFilesQueryParams
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
+from sqlalchemy.ext.asyncio import AsyncEngine
 from tests.helpers.utils_file_meta_data import assert_file_meta_data_in_db
 from tests.helpers.utils_project import clone_project_data
 from yarl import URL
@@ -161,7 +161,7 @@ async def test_copy_folders_from_empty_project(
     client: TestClient,
     user_id: UserID,
     create_project: Callable[[], Awaitable[dict[str, Any]]],
-    aiopg_engine: Engine,
+    sqlalchemy_async_engine: AsyncEngine,
     storage_s3_client: SimcoreS3API,
 ):
     # we will copy from src to dst
@@ -177,7 +177,7 @@ async def test_copy_folders_from_empty_project(
     )
     assert data == jsonable_encoder(dst_project)
     # check there is nothing in the dst project
-    async with aiopg_engine.acquire() as conn:
+    async with aiopg_engine.connect() as conn:
         num_entries = await conn.scalar(
             sa.select(sa.func.count())
             .select_from(file_meta_data)
@@ -197,7 +197,7 @@ async def test_copy_folders_from_valid_project_with_one_large_file(
     client: TestClient,
     user_id: UserID,
     create_project: Callable[[], Awaitable[dict[str, Any]]],
-    aiopg_engine: Engine,
+    sqlalchemy_async_engine: AsyncEngine,
     random_project_with_files: Callable[
         [int, tuple[ByteSize], tuple[SHA256Str]],
         Awaitable[
@@ -265,7 +265,7 @@ async def test_copy_folders_from_valid_project(
     user_id: UserID,
     create_project: Callable[[], Awaitable[dict[str, Any]]],
     create_simcore_file_id: Callable[[ProjectID, NodeID, str], SimcoreS3FileID],
-    aiopg_engine: Engine,
+    sqlalchemy_async_engine: AsyncEngine,
     random_project_with_files: Callable[
         ...,
         Awaitable[
