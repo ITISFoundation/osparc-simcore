@@ -9,16 +9,17 @@ import logging
 from aiohttp import web
 from aws_library.s3 import S3AccessError
 from common_library.json_serialization import json_dumps
+from fastapi import Request
 from models_library.api_schemas_storage import HealthCheck, S3BucketName
 from models_library.app_diagnostics import AppStatusCheck
 from pydantic import TypeAdapter
+from servicelib.db_asyncpg_utils import check_postgres_liveness
+from servicelib.fastapi.db_asyncpg_engine import get_engine
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
+from simcore_postgres_database.utils_aiosqlalchemy import get_pg_engine_stateinfo
 
 from ..._meta import API_VERSION, API_VTAG, PROJECT_NAME, VERSION
-from ...constants import APP_CONFIG_KEY
-from ...core.settings import ApplicationSettings
-from ...modules.db.db import get_engine_state
-from ...modules.db.db import is_service_responsive as is_pg_responsive
+from ...core.settings import get_application_settings
 from ...modules.s3 import get_s3_client
 
 _logger = logging.getLogger(__name__)
@@ -43,10 +44,10 @@ async def get_health(request: web.Request) -> web.Response:
 
 
 @routes.get(f"/{API_VTAG}/status", name="get_status")
-async def get_status(request: web.Request) -> web.Response:
+async def get_status(request: Request) -> web.Response:
     # NOTE: all calls here must NOT raise
     assert request.app  # nosec
-    app_settings: ApplicationSettings = request.app[APP_CONFIG_KEY]
+    app_settings = get_application_settings(request.app)
     s3_state = "disabled"
     if app_settings.STORAGE_S3:
         try:
@@ -63,9 +64,12 @@ async def get_status(request: web.Request) -> web.Response:
             s3_state = "failed"
 
     postgres_state = "disabled"
+
     if app_settings.STORAGE_POSTGRES:
         postgres_state = (
-            "connected" if await is_pg_responsive(request.app) else "failed"
+            "connected"
+            if await check_postgres_liveness(get_engine(request.app))
+            else "failed"
         )
 
     status = AppStatusCheck.model_validate(
@@ -75,7 +79,7 @@ async def get_status(request: web.Request) -> web.Response:
             "services": {
                 "postgres": {
                     "healthy": postgres_state,
-                    "pool": get_engine_state(request.app),
+                    "pool": get_pg_engine_stateinfo(get_engine(request.app)),
                 },
                 "s3": {"healthy": s3_state},
             },

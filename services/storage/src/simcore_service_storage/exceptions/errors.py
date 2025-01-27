@@ -5,6 +5,10 @@ class StorageRuntimeError(OsparcErrorMixin, RuntimeError):
     ...
 
 
+class ConfigurationError(StorageRuntimeError):
+    msg_template: str = "Application misconfiguration: {msg}"
+
+
 class DatabaseAccessError(StorageRuntimeError):
     msg_template: str = "Unexpected error while accessing database backend"
 
