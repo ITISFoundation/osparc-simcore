@@ -1,9 +1,9 @@
 """
-    Models used in storage API:
+Models used in storage API:
 
-    Specifically services/storage/src/simcore_service_storage/api/v0/openapi.yaml#/components/schemas
+Specifically services/storage/src/simcore_service_storage/api/v0/openapi.yaml#/components/schemas
 
-    IMPORTANT: DO NOT COUPLE these schemas until storage is refactored
+IMPORTANT: DO NOT COUPLE these schemas until storage is refactored
 """
 
 from datetime import datetime
@@ -11,6 +11,8 @@ from enum import Enum
 from typing import Annotated, Any, Literal, Self, TypeAlias
 from uuid import UUID
 
+from models_library.projects import ProjectID
+from models_library.users import UserID
 from pydantic import (
     BaseModel,
     ByteSize,
@@ -111,8 +113,23 @@ UNDEFINED_SIZE_TYPE: TypeAlias = Literal[-1]
 UNDEFINED_SIZE: UNDEFINED_SIZE_TYPE = -1
 
 
-# /locations/{location_id}/files/metadata:
-# /locations/{location_id}/files/{file_id}/metadata:
+class FileMetaDataGetv010(BaseModel):
+    file_uuid: str
+    location_id: LocationID
+    location: LocationName
+    bucket_name: str
+    object_name: str
+    project_id: ProjectID | None
+    project_name: str | None
+    node_id: NodeID | None
+    node_name: str | None
+    file_name: str
+    user_id: UserID | None
+    user_name: str | None
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+
 class FileMetaDataGet(BaseModel):
     # Used by frontend
     file_uuid: str = Field(
