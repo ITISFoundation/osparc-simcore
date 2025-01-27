@@ -61,7 +61,7 @@ def migrated_pg_tables_context(
             )
         )
         # SEE https://github.com/ITISFoundation/osparc-simcore/issues/1776
-        metadata.drop_all(bind=postgres_engine)
+        metadata.drop_all(bind=conn)
 
 
 def is_postgres_responsive(url) -> bool:
