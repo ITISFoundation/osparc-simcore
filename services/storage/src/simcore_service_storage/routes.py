@@ -12,7 +12,7 @@ from servicelib.aiohttp.rest_utils import (
 from ._meta import API_VTAG
 from .api.rest import datasets, files, health, locations, simcore_s3
 from .constants import UPLOAD_TASKS_KEY
-from .resources import storage_resources
+from .core.resources import storage_resources
 
 _logger = logging.getLogger(__name__)
 

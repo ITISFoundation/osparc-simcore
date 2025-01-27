@@ -14,8 +14,8 @@ from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.openapi_specs import Entrypoint
 from simcore_service_storage._meta import API_VTAG
+from simcore_service_storage.core.resources import storage_resources
 from simcore_service_storage.core.settings import Settings
-from simcore_service_storage.resources import storage_resources
 
 
 @pytest.fixture(scope="session")
