@@ -15,7 +15,6 @@ from contextlib import AbstractAsyncContextManager, asynccontextmanager
 from pathlib import Path
 from typing import Final, cast
 
-import aioresponses
 import dotenv
 import httpx
 import pytest
