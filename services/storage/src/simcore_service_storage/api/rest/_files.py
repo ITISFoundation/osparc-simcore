@@ -153,7 +153,6 @@ async def upload_file(
     file_id: StorageFileID,
     request: Request,
 ):
-    file_id = urllib.parse.unquote(f"{file_id}")
     """creates upload file links:
 
     This function covers v1 and v2 versions of the handler.
@@ -182,7 +181,7 @@ async def upload_file(
     Use-case v2.2: if query.file_size > 0 and query.link_type=presigned or None, returns 1 or more presigned links depending on the file size (limited to a single 5TB file)
     Use-case v2.3: if query.link_type=s3 and query.file_size>=0, returns a single s3 direct link (limited to a single 5TB file)
     """
-
+    file_id = urllib.parse.unquote(f"{file_id}")
     dsm = get_dsm_provider(request.app).get(location_id)
     links: UploadLinks = await dsm.create_file_upload_links(
         user_id=query_params.user_id,
@@ -237,6 +236,7 @@ async def abort_upload_file(
     file_id: StorageFileID,
     request: Request,
 ):
+    file_id = urllib.parse.unquote(f"{file_id}")
     dsm = get_dsm_provider(request.app).get(location_id)
     await dsm.abort_file_upload(query_params.user_id, file_id)
 
@@ -252,6 +252,7 @@ async def complete_upload_file(
     body: Annotated[FileUploadCompletionBody, Depends()],
     request: Request,
 ):
+    file_id = urllib.parse.unquote(f"{file_id}")
     dsm = get_dsm_provider(request.app).get(location_id)
     # NOTE: completing a multipart upload on AWS can take up to several minutes
     # therefore we wait a bit to see if it completes fast and return a 204
@@ -299,6 +300,7 @@ async def is_completed_upload_file(
     # therefore we wait a bit to see if it completes fast and return a 204
     # if it returns slow we return a 202 - Accepted, the client will have to check later
     # for completeness
+    file_id = urllib.parse.unquote(f"{file_id}")
     task_name = create_upload_completion_task_name(query_params.user_id, file_id)
     assert task_name == future_id  # nosec
     # first check if the task is in the app
@@ -341,6 +343,7 @@ async def delete_file(
     file_id: StorageFileID,
     request: Request,
 ):
+    file_id = urllib.parse.unquote(f"{file_id}")
     dsm = get_dsm_provider(request.app).get(location_id)
     await dsm.delete_file(query_params.user_id, file_id)
 
@@ -352,6 +355,7 @@ async def copy_as_soft_link(
     body: Annotated[SoftCopyBody, Depends()],
     request: Request,
 ):
+    file_id = urllib.parse.unquote(f"{file_id}")
     dsm = cast(
         SimcoreS3DataManager,
         get_dsm_provider(request.app).get(SimcoreS3DataManager.get_location_id()),
