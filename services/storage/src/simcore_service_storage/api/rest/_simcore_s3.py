@@ -1,10 +1,12 @@
 import logging
-from typing import cast
+from typing import Annotated, cast
 
 from aiohttp import web
-from aiohttp.web import RouteTableDef
 from common_library.json_serialization import json_dumps
+from fastapi import APIRouter, Depends, FastAPI, Request
+from models_library.api_schemas_long_running_tasks.tasks import TaskGet
 from models_library.api_schemas_storage import FileMetaDataGet, FoldersBody
+from models_library.generics import Envelope
 from models_library.projects import ProjectID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from servicelib.aiohttp import status
@@ -20,7 +22,6 @@ from servicelib.aiohttp.requests_validation import (
 from servicelib.logging_utils import log_context
 from settings_library.s3 import S3Settings
 
-from ..._meta import API_VTAG
 from ...dsm import get_dsm_provider
 from ...models import (
     DeleteFolderQueryParams,
@@ -34,25 +35,24 @@ from ...simcore_s3_dsm import SimcoreS3DataManager
 
 _logger = logging.getLogger(__name__)
 
-routes = RouteTableDef()
+router = APIRouter(
+    tags=[
+        "simcore-s3",
+    ],
+)
 
 
-@routes.post(f"/{API_VTAG}/simcore-s3:access", name="get_or_create_temporary_s3_access")
-async def get_or_create_temporary_s3_access(request: web.Request) -> web.Response:
+@router.post("/simcore-s3:access", response_model=Envelope[S3Settings])
+async def get_or_create_temporary_s3_access(
+    query_params: Annotated[StorageQueryParamsBase, Depends()],
+    request: Request,
+):
     # NOTE: the name of the method is not accurate, these are not temporary at all
     # it returns the credentials of the s3 backend!
-    query_params: StorageQueryParamsBase = parse_request_query_parameters_as(
-        StorageQueryParamsBase, request
-    )
-    _logger.debug(
-        "received call to get_or_create_temporary_s3_access with %s",
-        f"{query_params=}",
-    )
-
     s3_settings: S3Settings = await sts.get_or_create_temporary_token_for_user(
         request.app, query_params.user_id
     )
-    return web.json_response({"data": s3_settings.model_dump()}, dumps=json_dumps)
+    return Envelope[S3Settings](data=s3_settings)
 
 
 async def _copy_folders_from_project(
@@ -60,7 +60,7 @@ async def _copy_folders_from_project(
     app: FastAPI,
     query_params: StorageQueryParamsBase,
     body: FoldersBody,
-) -> web.Response:
+) -> Envelope[TaskGet]:
     dsm = cast(
         SimcoreS3DataManager,
         get_dsm_provider(app).get(SimcoreS3DataManager.get_location_id()),
@@ -85,7 +85,11 @@ async def _copy_folders_from_project(
     )
 
 
-@routes.post(f"/{API_VTAG}/simcore-s3/folders", name="copy_folders_from_project")
+@router.post(
+    "/simcore-s3/folders",
+    response_model=Envelope[TaskGet],
+    status_code=status.HTTP_202_ACCEPTED,
+)
 async def copy_folders_from_project(request: web.Request) -> web.Response:
     query_params: StorageQueryParamsBase = parse_request_query_parameters_as(
         StorageQueryParamsBase, request
@@ -105,8 +109,9 @@ async def copy_folders_from_project(request: web.Request) -> web.Response:
     )
 
 
-@routes.delete(
-    f"/{API_VTAG}/simcore-s3/folders/{{folder_id}}", name="delete_folders_of_project"
+@router.delete(
+    "/simcore-s3/folders/{folder_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
 )
 async def delete_folders_of_project(request: web.Request) -> web.Response:
     query_params: DeleteFolderQueryParams = parse_request_query_parameters_as(
@@ -131,7 +136,10 @@ async def delete_folders_of_project(request: web.Request) -> web.Response:
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
 
-@routes.post(f"/{API_VTAG}/simcore-s3/files/metadata:search", name="search_files")
+@router.post(
+    "/simcore-s3/files/metadata:search",
+    response_model=Envelope[list[FileMetaDataGet]],
+)
 async def search_files(request: web.Request) -> web.Response:
     query_params: SearchFilesQueryParams = parse_request_query_parameters_as(
         SearchFilesQueryParams, request
