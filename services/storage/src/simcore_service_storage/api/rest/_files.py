@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import socket
 import urllib.parse
 from typing import Annotated, cast
 
@@ -265,10 +266,9 @@ async def complete_upload_file(
         name=create_upload_completion_task_name(query_params.user_id, file_id),
     )
     request.app[UPLOAD_TASKS_KEY][task.get_name()] = task
-    assert request.transport  # nosec
-    ip_addr, port = request.transport.get_extra_info(
-        "sockname"
-    )  # https://docs.python.org/3/library/asyncio-protocol.html#asyncio.BaseTransport.get_extra_info
+    server_ip = socket.gethostbyname(f"{request.url.hostname}")
+    server_port = request.url.port
+
     route = (
         request.app.router["is_completed_upload_file"]
         .url_for(
@@ -278,7 +278,7 @@ async def complete_upload_file(
         )
         .with_query(user_id=query_params.user_id)
     )
-    complete_task_state_url = f"{request.url.scheme}://{ip_addr}:{port}{route}"
+    complete_task_state_url = f"{request.url.scheme}://{server_ip}:{server_port}{route}"
     response = FileUploadCompleteResponse(
         links=FileUploadCompleteLinks(
             state=TypeAdapter(AnyUrl).validate_python(complete_task_state_url)
@@ -326,10 +326,9 @@ async def is_completed_upload_file(
         user_id=query_params.user_id,
         file_id=file_id,
     ):
-        response = FileUploadCompleteFutureResponse(
+        return FileUploadCompleteFutureResponse(
             state=FileUploadCompleteState.OK, e_tag=fmd.entity_tag
         )
-        return response
     raise HTTPException(
         status.HTTP_404_NOT_FOUND,
         detail="Not found. Upload could not be completed. Please try again and contact support if it fails again.",
