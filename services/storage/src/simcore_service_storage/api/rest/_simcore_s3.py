@@ -1,33 +1,25 @@
+import asyncio
 import logging
-from typing import Annotated, cast
+from typing import Annotated, Any, cast
 
-from aiohttp import web
-from common_library.json_serialization import json_dumps
 from fastapi import APIRouter, Depends, FastAPI, Request
+from models_library.api_schemas_long_running_tasks.base import TaskProgress
 from models_library.api_schemas_long_running_tasks.tasks import TaskGet
 from models_library.api_schemas_storage import FileMetaDataGet, FoldersBody
 from models_library.generics import Envelope
 from models_library.projects import ProjectID
-from models_library.utils.fastapi_encoders import jsonable_encoder
 from servicelib.aiohttp import status
-from servicelib.aiohttp.long_running_tasks.server import (
-    TaskProgress,
-    start_long_running_task,
-)
-from servicelib.aiohttp.requests_validation import (
-    parse_request_body_as,
-    parse_request_path_parameters_as,
-    parse_request_query_parameters_as,
-)
+from servicelib.fastapi.long_running_tasks._dependencies import get_tasks_manager
 from servicelib.logging_utils import log_context
+from servicelib.long_running_tasks._task import start_task
 from settings_library.s3 import S3Settings
+from yarl import URL
 
 from ...dsm import get_dsm_provider
 from ...models import (
     DeleteFolderQueryParams,
     FileMetaData,
     SearchFilesQueryParams,
-    SimcoreS3FoldersParams,
     StorageQueryParamsBase,
 )
 from ...modules import sts
@@ -60,7 +52,7 @@ async def _copy_folders_from_project(
     app: FastAPI,
     query_params: StorageQueryParamsBase,
     body: FoldersBody,
-) -> Envelope[TaskGet]:
+):
     dsm = cast(
         SimcoreS3DataManager,
         get_dsm_provider(app).get(SimcoreS3DataManager.get_location_id()),
@@ -78,11 +70,7 @@ async def _copy_folders_from_project(
             task_progress=task_progress,
         )
 
-    return web.json_response(
-        {"data": jsonable_encoder(body.destination)},
-        status=status.HTTP_201_CREATED,
-        dumps=json_dumps,
-    )
+    return Envelope[dict[str, Any]](data=body.destination)
 
 
 @router.post(
@@ -90,38 +78,46 @@ async def _copy_folders_from_project(
     response_model=Envelope[TaskGet],
     status_code=status.HTTP_202_ACCEPTED,
 )
-async def copy_folders_from_project(request: web.Request) -> web.Response:
-    query_params: StorageQueryParamsBase = parse_request_query_parameters_as(
-        StorageQueryParamsBase, request
-    )
-    body = await parse_request_body_as(FoldersBody, request)
-    _logger.debug(
-        "received call to create_folders_from_project with %s",
-        f"{body=}, {query_params=}",
-    )
-    return await start_long_running_task(
-        request,
-        _copy_folders_from_project,  # type: ignore[arg-type]
-        task_context={},
-        app=request.app,
-        query_params=query_params,
-        body=body,
-    )
+async def copy_folders_from_project(
+    query_params: StorageQueryParamsBase, body: FoldersBody, request: Request
+):
+    task_id = None
+    try:
+        task_id = start_task(
+            get_tasks_manager(request),
+            _copy_folders_from_project,
+            app=request.app,
+            query_params=query_params,
+            body=body,
+        )
+        relative_url = URL(f"{request.url}").relative()
+
+        return Envelope[TaskGet](
+            data=TaskGet(
+                task_id=task_id,
+                task_name=f"{request.method} {relative_url}",
+                status_href=f"{request.url_for('get_task_status', task_id=task_id)}",
+                result_href=f"{request.url_for('get_task_result', task_id=task_id)}",
+                abort_href=f"{request.url_for('cancel_and_delete_task', task_id=task_id)}",
+            )
+        )
+    except asyncio.CancelledError:
+        if task_id:
+            await get_tasks_manager(request).cancel_task(
+                task_id, with_task_context=None
+            )
+        raise
 
 
 @router.delete(
     "/simcore-s3/folders/{folder_id}",
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def delete_folders_of_project(request: web.Request) -> web.Response:
-    query_params: DeleteFolderQueryParams = parse_request_query_parameters_as(
-        DeleteFolderQueryParams, request
-    )
-    path_params = parse_request_path_parameters_as(SimcoreS3FoldersParams, request)
-    _logger.debug(
-        "received call to delete_folders_of_project with %s",
-        f"{path_params=}, {query_params=}",
-    )
+async def delete_folders_of_project(
+    query_params: Annotated[DeleteFolderQueryParams, Depends()],
+    folder_id: str,
+    request: Request,
+):
 
     dsm = cast(
         SimcoreS3DataManager,
@@ -129,27 +125,18 @@ async def delete_folders_of_project(request: web.Request) -> web.Response:
     )
     await dsm.delete_project_simcore_s3(
         query_params.user_id,
-        ProjectID(path_params.folder_id),
+        ProjectID(folder_id),
         query_params.node_id,
     )
-
-    return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
 
 @router.post(
     "/simcore-s3/files/metadata:search",
     response_model=Envelope[list[FileMetaDataGet]],
 )
-async def search_files(request: web.Request) -> web.Response:
-    query_params: SearchFilesQueryParams = parse_request_query_parameters_as(
-        SearchFilesQueryParams, request
-    )
-
-    _logger.debug(
-        "received call to search_files with %s",
-        f"{query_params=}",
-    )
-
+async def search_files(
+    query_params: Annotated[SearchFilesQueryParams, Depends()], request: Request
+):
     dsm = cast(
         SimcoreS3DataManager,
         get_dsm_provider(request.app).get(SimcoreS3DataManager.get_location_id()),
@@ -167,8 +154,6 @@ async def search_files(request: web.Request) -> web.Response:
         len(data),
         f"{query_params.startswith=}, {query_params.sha256_checksum=}",
     )
-
-    return web.json_response(
-        {"data": [jsonable_encoder(FileMetaDataGet(**d.model_dump())) for d in data]},
-        dumps=json_dumps,
+    return Envelope[list[FileMetaDataGet]](
+        data=[FileMetaDataGet(**d.model_dump()) for d in data]
     )
