@@ -5,6 +5,7 @@ from . import _datasets, _files, _health, _locations, _simcore_s3
 v0_router = APIRouter()
 
 # health
+health_router = _health.router
 v0_router.include_router(_health.router)
 
 # locations
