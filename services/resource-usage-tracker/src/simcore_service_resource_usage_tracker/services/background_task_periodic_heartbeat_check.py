@@ -107,6 +107,15 @@ async def _close_unhealthy_service(
             running_service.last_heartbeat_at,
             running_service.pricing_unit_cost,
         )
+        # NOTE: I have decided that in the case of an error on our side, we will
+        # close the Dynamic service as BILLED -> since the user was effectively using it until
+        # the issue occurred.
+        # NOTE: Update Jan 2025 - With the introduction of the IN_DEBT state,
+        # when closing the transaction for the dynamic service as BILLED, it is possible
+        # that the wallet may show a negative balance during this period, which would typically
+        # be considered as IN_DEBT. However, I have decided to still close it as BILLED.
+        # This ensures that the user does not have to explicitly pay the DEBT, as the closure
+        # was caused by an issue on our side.
         _transaction_status = (
             CreditTransactionStatus.NOT_BILLED
             if running_service.service_type
