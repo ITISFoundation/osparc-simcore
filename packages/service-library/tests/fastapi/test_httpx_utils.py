@@ -62,7 +62,7 @@ async def test_to_curl_command(client: AsyncClient):
 
     assert (
         cmd_short
-        == f'curl -X POST -H "host: test_base_http_api" -H "accept: */*" -H "accept-encoding: gzip, deflate" -H "connection: keep-alive" -H "user-agent: python-httpx/{httpx.__version__}" -H "x-secret: {_PLACEHOLDER}" -H "content-length: 8" -H "content-type: application/json" -d \'{{"y":12}}\' https://test_base_http_api/foo?x=3'
+        == f'curl -X POST -H "host: test_base_http_api" -H "accept: */*" -H "accept-encoding: gzip, deflate" -H "connection: keep-alive" -H "user-agent: python-httpx/{httpx.__version__}" -H "x-secret: {_PLACEHOLDER}" -H "content-length: 9" -H "content-type: application/json" -d \'{{"y": 12}}\' https://test_base_http_api/foo?x=3'
     )
 
     cmd_long = to_curl_command(response.request, use_short_options=False)
