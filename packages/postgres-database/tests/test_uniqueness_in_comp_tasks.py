@@ -23,12 +23,12 @@ fake_task = fake_task_factory(first_internal_id=1)
 async def engine(
     make_engine: Callable[[bool], Awaitable[aiopg.sa.engine.Engine] | sa.engine.Engine]
 ):
-    engine: aiopg.sa.engine.Engine = await make_engine()
+    async_engine: aiopg.sa.engine.Engine = await make_engine(is_async=True)
     sync_engine: sa.engine.Engine = make_engine(is_async=False)
     metadata.drop_all(sync_engine)
     metadata.create_all(sync_engine)
 
-    async with engine.acquire() as conn:
+    async with async_engine.acquire() as conn:
         await conn.execute(
             comp_pipeline.insert().values(**fake_pipeline(project_id="PA"))
         )
@@ -36,11 +36,11 @@ async def engine(
             comp_pipeline.insert().values(**fake_pipeline(project_id="PB"))
         )
 
-    yield engine
+    yield async_engine
 
     postgres_tools.drop_all_tables(sync_engine)
-    engine.close()
-    await engine.wait_closed()
+    async_engine.close()
+    await async_engine.wait_closed()
 
 
 async def test_unique_project_node_pairs(engine):
