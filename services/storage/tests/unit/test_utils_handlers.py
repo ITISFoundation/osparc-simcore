@@ -17,7 +17,9 @@ from simcore_service_storage.core.exceptions import (
     ProjectAccessRightError,
     ProjectNotFoundError,
 )
-from simcore_service_storage.db_access_layer import InvalidFileIdentifierError
+from simcore_service_storage.modules.db.db_access_layer import (
+    InvalidFileIdentifierError,
+)
 
 
 @pytest.fixture()
