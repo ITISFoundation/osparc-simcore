@@ -22,8 +22,8 @@ qx.Class.define("osparc.dashboard.NewPlusButton", {
     this.base(arguments);
 
     this.set({
-      appearance: "pb-new",
-      icon: osparc.dashboard.CardBase.NEW_ICON + "26",
+      appearance: "strong-button",
+      icon: osparc.dashboard.CardBase.NEW_ICON + "20",
       label: this.tr("New"),
       font: "text-16",
       gap: 15,
