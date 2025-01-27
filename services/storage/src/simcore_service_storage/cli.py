@@ -4,8 +4,8 @@ import typer
 from servicelib.logging_utils import config_all_loggers
 from settings_library.utils_cli import create_settings_command
 
-from . import application
-from .settings import Settings
+from .core import application
+from .core.settings import Settings
 
 LOG_LEVEL_STEP = logging.CRITICAL - logging.ERROR
 

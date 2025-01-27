@@ -19,6 +19,7 @@ from servicelib.utils import fire_and_forget_task
 
 # Exclusive for simcore-s3 storage -----------------------
 from ..._meta import API_VTAG
+from ...core.settings import Settings
 from ...dsm import get_dsm_provider
 from ...models import (
     LocationPathParams,
@@ -26,7 +27,6 @@ from ...models import (
     SyncMetadataQueryParams,
     SyncMetadataResponse,
 )
-from ...settings import Settings
 from ...simcore_s3_dsm import SimcoreS3DataManager
 
 _logger = logging.getLogger(__name__)

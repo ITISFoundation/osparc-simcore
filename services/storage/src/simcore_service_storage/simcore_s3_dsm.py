@@ -54,6 +54,7 @@ from .constants import (
     SIMCORE_S3_ID,
     SIMCORE_S3_STR,
 )
+from .core.settings import Settings
 from .datcore_adapter import datcore_adapter
 from .db_access_layer import (
     AccessRights,
@@ -79,7 +80,6 @@ from .models import (
 )
 from .s3 import get_s3_client
 from .s3_utils import S3TransferDataCB, update_task_progress
-from .settings import Settings
 from .simcore_s3_dsm_utils import (
     compute_file_id_prefix,
     expand_directory,

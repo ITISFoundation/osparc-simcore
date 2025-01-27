@@ -13,7 +13,7 @@ from tenacity.before_sleep import before_sleep_log
 from tenacity.wait import wait_fixed
 
 from .constants import APP_CONFIG_KEY, APP_S3_KEY, RETRY_WAIT_SECS
-from .settings import Settings
+from .core.settings import Settings
 
 _logger = logging.getLogger(__name__)
 

@@ -7,7 +7,7 @@ from settings_library.redis import RedisDatabase, RedisSettings
 
 from ._meta import APP_NAME
 from .constants import APP_CONFIG_KEY
-from .settings import Settings
+from .core.settings import Settings
 
 _logger = logging.getLogger(__name__)
 
