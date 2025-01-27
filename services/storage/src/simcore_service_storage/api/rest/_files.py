@@ -78,8 +78,8 @@ async def get_file_metadata(
     query_params: Annotated[StorageQueryParamsBase, Depends()],
     location_id: LocationID,
     file_id: StorageFileID,
+    user_agent: Annotated[str | None, Header()],
     request: Request,
-    user_agent: Header(None),
 ):
     file_id = urllib.parse.unquote(f"{file_id}")
 
