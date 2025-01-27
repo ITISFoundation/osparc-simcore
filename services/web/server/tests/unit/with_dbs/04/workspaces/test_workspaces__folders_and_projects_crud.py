@@ -416,7 +416,7 @@ async def test_listing_folders_and_projects_in_workspace__multiple_workspaces_cr
     )
     added_workspace_1, _ = await assert_status(resp, status.HTTP_201_CREATED)
 
-    # Create project in workspace
+    # Create PROJECT in workspace
     project_data = deepcopy(fake_project)
     project_data["workspace_id"] = f"{added_workspace_1['workspaceId']}"
     await create_project(
@@ -426,7 +426,7 @@ async def test_listing_folders_and_projects_in_workspace__multiple_workspaces_cr
         product_name="osparc",
     )
 
-    # Create folder in workspace
+    # Create FOLDER in workspace
     url = client.app.router["create_folder"].url_for()
     resp = await client.post(
         f"{url}",
@@ -437,7 +437,7 @@ async def test_listing_folders_and_projects_in_workspace__multiple_workspaces_cr
     )
     first_folder, _ = await assert_status(resp, status.HTTP_201_CREATED)
 
-    # create a new workspace
+    # create a new WORKSPACE
     url = client.app.router["create_workspace"].url_for()
     resp = await client.post(
         f"{url}",
@@ -448,8 +448,9 @@ async def test_listing_folders_and_projects_in_workspace__multiple_workspaces_cr
         },
     )
     added_workspace_2, _ = await assert_status(resp, status.HTTP_201_CREATED)
+    assert added_workspace_2["workspaceId"] != added_workspace_1["workspaceId"]
 
-    # Create project in workspace
+    # Create PROJECT in workspace
     project_data = deepcopy(fake_project)
     project_data["workspace_id"] = f"{added_workspace_2['workspaceId']}"
     await create_project(
@@ -459,7 +460,7 @@ async def test_listing_folders_and_projects_in_workspace__multiple_workspaces_cr
         product_name="osparc",
     )
 
-    # Create folder in workspace
+    # Create FOLDER in workspace
     url = client.app.router["create_folder"].url_for()
     resp = await client.post(
         f"{url}",
@@ -470,7 +471,7 @@ async def test_listing_folders_and_projects_in_workspace__multiple_workspaces_cr
     )
     first_folder, _ = await assert_status(resp, status.HTTP_201_CREATED)
 
-    # List projects in workspace 1
+    # List PROJECTS in workspace 1
     url = (
         client.app.router["list_projects"]
         .url_for()
@@ -480,7 +481,7 @@ async def test_listing_folders_and_projects_in_workspace__multiple_workspaces_cr
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(data) == 1
 
-    # List folders in workspace 1
+    # List FOLDERS in workspace 1
     url = (
         client.app.router["list_folders"]
         .url_for()

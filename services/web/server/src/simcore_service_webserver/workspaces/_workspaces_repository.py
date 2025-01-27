@@ -191,11 +191,11 @@ async def get_workspace_for_user(
 ) -> UserWorkspaceWithAccessRights:
     select_query = _create_base_select_query(
         caller_user_id=user_id, product_name=product_name
-    )
+    ).where(workspaces.c.workspace_id == workspace_id)
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-        result = await conn.stream(select_query)
-        row = await result.first()
+        result = await conn.execute(select_query)
+        row = result.one_or_none()
         if row is None:
             raise WorkspaceAccessForbiddenError(
                 reason=f"User {user_id} does not have access to the workspace {workspace_id}. Or workspace does not exist.",
