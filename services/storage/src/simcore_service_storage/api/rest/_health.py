@@ -6,16 +6,14 @@
 
 import logging
 
-from aiohttp import web
 from aws_library.s3 import S3AccessError
-from common_library.json_serialization import json_dumps
-from fastapi import Request
+from fastapi import APIRouter, Request
 from models_library.api_schemas_storage import HealthCheck, S3BucketName
 from models_library.app_diagnostics import AppStatusCheck
+from models_library.generics import Envelope
 from pydantic import TypeAdapter
 from servicelib.db_asyncpg_utils import check_postgres_liveness
 from servicelib.fastapi.db_asyncpg_engine import get_engine
-from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 from simcore_postgres_database.utils_aiosqlalchemy import get_pg_engine_stateinfo
 
 from ..._meta import API_VERSION, API_VTAG, PROJECT_NAME, VERSION
@@ -24,27 +22,33 @@ from ...modules.s3 import get_s3_client
 
 _logger = logging.getLogger(__name__)
 
-routes = web.RouteTableDef()
+router = APIRouter(
+    prefix=f"/{API_VTAG}",
+    tags=[
+        "status",
+    ],
+)
 
 
-@routes.get(f"/{API_VTAG}/", name="health_check")
-async def get_health(request: web.Request) -> web.Response:
+@router.get(
+    f"/{API_VTAG}/", include_in_schema=True, response_model=Envelope[HealthCheck]
+)
+async def get_health(
+    request: Request,
+) -> Envelope[HealthCheck]:
     assert request  # nosec
-    return web.json_response(
-        {
-            "data": HealthCheck(
-                name=PROJECT_NAME,
-                version=f"{VERSION}",
-                api_version=API_VERSION,
-                status=None,
-            ).model_dump(**RESPONSE_MODEL_POLICY)
-        },
-        dumps=json_dumps,
+    return Envelope[HealthCheck](
+        data=HealthCheck(
+            name=PROJECT_NAME,
+            version=f"{VERSION}",
+            api_version=API_VERSION,
+            status=None,
+        )
     )
 
 
-@routes.get(f"/{API_VTAG}/status", name="get_status")
-async def get_status(request: Request) -> web.Response:
+@router.get("/status", response_model=Envelope[AppStatusCheck])
+async def get_status(request: Request) -> Envelope[AppStatusCheck]:
     # NOTE: all calls here must NOT raise
     assert request.app  # nosec
     app_settings = get_application_settings(request.app)
@@ -85,7 +89,4 @@ async def get_status(request: Request) -> web.Response:
             },
         }
     )
-
-    return web.json_response(
-        {"data": status.model_dump(exclude_unset=True)}, dumps=json_dumps
-    )
+    return Envelope[AppStatusCheck](data=status)
