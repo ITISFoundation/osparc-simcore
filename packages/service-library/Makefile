@@ -123,5 +123,4 @@ test-ci[all]:  ## runs unit tests  w/ all extras
 		--log-format="%(asctime)s %(levelname)s %(message)s" \
 		--verbose \
 		-m "not heavy_load" \
-		--log-cli-level=DEBUG \
 		$(CURDIR)/tests
