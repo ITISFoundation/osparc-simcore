@@ -254,10 +254,9 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
                 newStudyLabel: serviceData.newStudyLabel,
               });
             });
+            this.__addFromResourceButton(menuButton, serviceData);
           })
       }
-
-      this.__addFromResourceButton(menuButton, serviceData);
     },
 
     __createNewFolder: function() {
