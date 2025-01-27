@@ -114,25 +114,56 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
       ]).then(values => {
         const newStudiesData = values[0];
         const templates = values[1];
+        if (newStudiesData["categories"]) {
+          // this.__addCategories(newStudiesData["categories"]);
+        }
         if (newStudiesData["linkedResource"] === "templates") {
-          this.__addFromTemplateButtons(newStudiesData, templates);
+          newStudiesData["resources"].forEach(templateData => {
+            this.__addFromTemplateButton(templateData, templates);
+          });
         }
       });
     },
 
-    __addFromTemplateButtons: function(referencedTemplates, templates) {
-      const displayTemplates = referencedTemplates["resources"].filter(referencedTemplate => {
-        if (referencedTemplate.showDisabled) {
-          return true;
+    __addCategories: function(categories) {
+      categories.forEach(category => {
+        const categoryHeader = new qx.ui.basic.Label().set({
+          value: category["label"],
+          font: "text-14",
+          rich: true,
+          wrap: true,
+        });
+        categoryHeader.id = category["id"];
+        this.add(categoryHeader);
+      });
+    },
+
+    __addFromTemplateButton: function(templateData, templates) {
+      if (templateData.showDisabled) {
+        const menuButton = this.self().createMenuButton(templateData.title);
+        osparc.utils.Utils.setIdToWidget(menuButton, templateData.idToWidget);
+        if (templateData.showDisabled) {
+          menuButton.set({
+            enabled: false,
+            blockToolTip: templateData.description,
+          });
         }
-        return templates.find(t => t.name === referencedTemplate.expectedTemplateLabel);
-      });
-      displayTemplates.forEach(displayTemplate => {
-        const menuButton = this.self().createMenuButton(displayTemplate.title);
-        osparc.utils.Utils.setIdToWidget(menuButton, displayTemplate.idToWidget);
-        menuButton.addListener("tap", () => this.fireDataEvent("newStudyFromTemplateClicked", displayTemplate));
         this.add(menuButton);
-      });
+        return;
+      }
+
+      const templateFound = templates.find(t => t.name === templateData.expectedTemplateLabel);
+      if (templateFound) {
+        const menuButton = this.self().createMenuButton(templateData.title);
+        osparc.utils.Utils.setIdToWidget(menuButton, templateData.idToWidget);
+        menuButton.addListener("tap", () => {
+          this.fireDataEvent("newStudyFromTemplateClicked", {
+            templateData: templateFound,
+            newStudyLabel: templateData.newStudyLabel,
+          });
+        });
+        this.add(menuButton);
+      }
     },
 
     __createNewFolder: function() {

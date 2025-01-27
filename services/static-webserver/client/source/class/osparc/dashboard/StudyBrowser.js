@@ -897,11 +897,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }, this);
 
       newPlusButtonMenu.addListener("newStudyFromTemplateClicked", e => {
-        const templateInfo = e.getData();
-        const templates = osparc.store.Store.getInstance().getTemplates();
-        const templateData = templates.find(t => t.name === templateInfo.expectedTemplateLabel);
+        const {
+          templateData,
+          newStudyLabel,
+        } = e.getData();
         if (templateData) {
-          this.__newPlanBtnClicked(templateData, templateInfo.newStudyLabel);
+          this.__newPlanBtnClicked(templateData, newStudyLabel);
         }
       }, this);
 
