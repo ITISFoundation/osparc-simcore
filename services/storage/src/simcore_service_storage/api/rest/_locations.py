@@ -5,7 +5,7 @@ from typing import Annotated, cast
 from fastapi import APIRouter, Depends, HTTPException, Request
 from models_library.api_schemas_storage import FileLocation
 from models_library.generics import Envelope
-from models_library.projects_nodes_io import StorageFileID
+from models_library.projects_nodes_io import LocationID, StorageFileID
 from servicelib.aiohttp import status
 from servicelib.aiohttp.application_keys import (
     APP_CONFIG_KEY,
@@ -17,7 +17,6 @@ from servicelib.utils import fire_and_forget_task
 from ...core.settings import ApplicationSettings
 from ...dsm import get_dsm_provider
 from ...models import (
-    LocationID,
     StorageQueryParamsBase,
     SyncMetadataQueryParams,
     SyncMetadataResponse,

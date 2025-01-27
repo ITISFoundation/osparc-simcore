@@ -52,7 +52,7 @@ from .constants import (
     SIMCORE_S3_ID,
     SIMCORE_S3_STR,
 )
-from .core.settings import ApplicationSettings
+from .core.settings import ApplicationSettings, get_application_settings
 from .dsm_factory import BaseDataManager
 from .exceptions.errors import (
     FileAccessRightError,
@@ -1102,7 +1102,7 @@ class SimcoreS3DataManager(BaseDataManager):
 
 
 def create_simcore_s3_data_manager(app: FastAPI) -> SimcoreS3DataManager:
-    cfg: ApplicationSettings = app[APP_CONFIG_KEY]
+    cfg = get_application_settings(app)
     assert cfg.STORAGE_S3  # nosec
     return SimcoreS3DataManager(
         engine=app[APP_AIOPG_ENGINE_KEY],

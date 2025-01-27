@@ -7,6 +7,7 @@ from typing import Annotated, cast
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from models_library.api_schemas_storage import (
     FileMetaDataGet,
+    FileMetaDataGetv010,
     FileUploadCompleteFutureResponse,
     FileUploadCompleteLinks,
     FileUploadCompleteResponse,
@@ -17,7 +18,7 @@ from models_library.api_schemas_storage import (
     SoftCopyBody,
 )
 from models_library.generics import Envelope
-from models_library.projects_nodes_io import StorageFileID
+from models_library.projects_nodes_io import LocationID, StorageFileID
 from pydantic import AnyUrl, ByteSize, TypeAdapter
 from servicelib.aiohttp import status
 from yarl import URL
@@ -32,7 +33,6 @@ from ...models import (
     FileMetadataListQueryParams,
     FileUploadQueryParams,
     FileUploadResponseV1,
-    LocationID,
     StorageQueryParamsBase,
     UploadLinks,
 )
@@ -72,7 +72,7 @@ async def list_files_metadata(
 
 @router.get(
     "/locations/{location_id}/files/{file_id}/metadata",
-    response_model=Envelope[FileMetaDataGet],
+    response_model=Envelope[FileMetaDataGet] | Envelope[FileMetaDataGetv010],
 )
 async def get_file_metadata(
     query_params: Annotated[StorageQueryParamsBase, Depends()],
@@ -105,8 +105,8 @@ async def get_file_metadata(
         # SEE models used in sdk in:
         # https://github.com/ITISFoundation/osparc-simcore/blob/cfdf4f86d844ebb362f4f39e9c6571d561b72897/services/storage/client-sdk/python/simcore_service_storage_sdk/models/file_meta_data_enveloped.py#L34
         # https://github.com/ITISFoundation/osparc-simcore/blob/cfdf4f86d844ebb362f4f39e9c6571d561b72897/services/storage/client-sdk/python/simcore_service_storage_sdk/models/file_meta_data_type.py#L34
-        return Envelope[FileMetaDataGet](
-            data=FileMetaDataGet(
+        return Envelope[FileMetaDataGetv010](
+            data=FileMetaDataGetv010(
                 file_uuid=data.file_uuid,
                 location_id=data.location_id,
                 location=data.location,
