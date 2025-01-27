@@ -136,15 +136,13 @@ async def test_regression_fails_on_redis_service_outage(
     redis_client_sdk: RedisClientSDK,
     mocker: MockerFixture,
 ):
-
-    redis_client_ping = mocker.spy(redis_client_sdk._client, "ping")
-
     assert await redis_client_sdk.ping() is True
-    assert redis_client_ping.call_count == 1
 
     async with pause_container_in_context("redis"):
         # no connection available any longer should not hang but timeout
         assert await redis_client_sdk.ping() is False
-        assert redis_client_ping.call_count == 2
+
+        # NOTE: that the _health_check_task is also ping-ing
+        assert not redis_client_sdk.is_healthy
 
     assert await redis_client_sdk.ping() is True
