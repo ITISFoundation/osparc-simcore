@@ -13,16 +13,19 @@ import urllib.parse
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import AbstractAsyncContextManager, asynccontextmanager
 from pathlib import Path
-from typing import cast
+from typing import Final, cast
 
 import aioresponses
 import dotenv
+import httpx
 import pytest
 import simcore_service_storage
 from aiohttp.test_utils import TestClient
+from asgi_lifespan import LifespanManager
 from aws_library.s3 import SimcoreS3API
 from faker import Faker
 from fakeredis.aioredis import FakeRedis
+from fastapi import FastAPI
 from models_library.api_schemas_storage import (
     FileMetaDataGet,
     FileUploadCompleteFutureResponse,
@@ -195,18 +198,31 @@ async def mocked_redis_server(mocker: MockerFixture) -> None:
     mocker.patch("redis.asyncio.from_url", return_value=mock_redis)
 
 
+_LIFESPAN_TIMEOUT: Final[int] = 10
+
+
 @pytest.fixture
-def client(
-    event_loop: asyncio.AbstractEventLoop,
-    aiohttp_client: Callable,
-    unused_tcp_port_factory: Callable[..., int],
-    app_settings: ApplicationSettings,
+async def initialized_app(app_settings: ApplicationSettings) -> AsyncIterator[FastAPI]:
+    settings = ApplicationSettings.create_from_envs()
+    app = create_app(settings)
+    # NOTE: the timeout is sometime too small for CI machines, and even larger machines
+    async with LifespanManager(
+        app, startup_timeout=_LIFESPAN_TIMEOUT, shutdown_timeout=_LIFESPAN_TIMEOUT
+    ):
+        yield app
+
+
+@pytest.fixture
+async def client(
+    initialized_app: FastAPI,
     mocked_redis_server,
-) -> TestClient:
-    app = create_app(app_settings)
-    return event_loop.run_until_complete(
-        aiohttp_client(app, server_kwargs={"port": unused_tcp_port_factory()})
-    )
+) -> AsyncIterator[httpx.AsyncClient]:
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=initialized_app),
+        base_url=f"http://{initialized_app.title}.testserver.io",
+        headers={"Content-Type": "application/json"},
+    ) as client:
+        yield client
 
 
 @pytest.fixture
