@@ -145,7 +145,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
         if (templateData.showDisabled) {
           menuButton.set({
             enabled: false,
-            blockToolTip: templateData.description,
+            toolTipText: templateData.description,
           });
         }
         this.add(menuButton);
