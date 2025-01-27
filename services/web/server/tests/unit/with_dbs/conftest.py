@@ -536,6 +536,7 @@ def postgres_db(
                 "WHERE state = 'idle in transaction';"
             )
         )
+        # SEE https://github.com/ITISFoundation/osparc-simcore/issues/1776
         orm.metadata.drop_all(bind=conn)
 
     engine.dispose()
