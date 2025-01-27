@@ -132,7 +132,7 @@ botocore==1.34.131
     #   aiobotocore
     #   boto3
     #   s3transfer
-botocore-stubs==1.36.6
+botocore-stubs==1.36.7
     # via types-aiobotocore
 certifi==2024.12.14
     # via
@@ -172,7 +172,7 @@ click==8.1.8
     #   rich-toolkit
     #   typer
     #   uvicorn
-deprecated==1.2.17
+deprecated==1.2.18
     # via
     #   opentelemetry-api
     #   opentelemetry-exporter-otlp-proto-grpc
