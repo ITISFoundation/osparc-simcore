@@ -4,17 +4,26 @@ Functions to create, setup and run an aiohttp application provided a settingsura
 """
 
 import logging
-from typing import Final
 
 from common_library.basic_types import BootModeEnum
 from fastapi import FastAPI
-from servicelib.aiohttp.dev_error_logger import setup_dev_error_logger
-from servicelib.aiohttp.monitoring import setup_monitoring
-from servicelib.aiohttp.profiler_middleware import profiling_middleware
+from fastapi.middleware.gzip import GZipMiddleware
+from servicelib.fastapi import timing_middleware
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
+from servicelib.fastapi.profiler_middleware import ProfilerMiddleware
+from servicelib.fastapi.prometheus_instrumentation import (
+    setup_prometheus_instrumentation,
+)
 from servicelib.fastapi.tracing import setup_tracing
+from starlette.middleware.base import BaseHTTPMiddleware
 
-from .._meta import API_VERSION, API_VTAG, APP_NAME, APP_STARTED_BANNER_MSG, VERSION
+from .._meta import (
+    API_VERSION,
+    API_VTAG,
+    APP_FINISHED_BANNER_MSG,
+    APP_NAME,
+    APP_STARTED_BANNER_MSG,
+)
 from ..api.rest.utils import dsm_exception_handler
 from ..dsm import setup_dsm
 from ..dsm_cleaner import setup_dsm_cleaner
@@ -25,16 +34,13 @@ from ..modules.s3 import setup_s3
 from ..routes import setup_rest_api_routes
 from .settings import ApplicationSettings
 
-_ACCESS_LOG_FORMAT: Final[
-    str
-] = '%a %t "%r" %s %b [%Dus] "%{Referer}i" "%{User-Agent}i"'
-
 _LOG_LEVEL_STEP = logging.CRITICAL - logging.ERROR
 _NOISY_LOGGERS = (
-    "aiobotocore",
     "aio_pika",
+    "aiobotocore",
     "aiormq",
     "botocore",
+    "httpcore",
     "werkzeug",
 )
 _logger = logging.getLogger(__name__)
@@ -66,13 +72,6 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
     # STATE
     app.state.settings = settings
 
-    if settings.STORAGE_TRACING:
-        setup_tracing(
-            app,
-            settings.STORAGE_TRACING,
-            APP_NAME,
-        )
-
     setup_db(app)
     setup_s3(app)
 
@@ -87,30 +86,28 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
     app.middlewares.append(dsm_exception_handler)
 
     if settings.STORAGE_PROFILING:
-        app.middlewares.append(profiling_middleware)
+        app.add_middleware(ProfilerMiddleware)
 
-    if settings.LOG_LEVEL == "DEBUG":
-        setup_dev_error_logger(app)
+    if settings.SC_BOOT_MODE != BootModeEnum.PRODUCTION:
+        # middleware to time requests (ONLY for development)
+        app.add_middleware(
+            BaseHTTPMiddleware, dispatch=timing_middleware.add_process_time_header
+        )
 
+    app.add_middleware(GZipMiddleware)
+
+    if settings.STORAGE_TRACING:
+        setup_tracing(app, settings.STORAGE_TRACING, APP_NAME)
     if settings.STORAGE_MONITORING_ENABLED:
-        setup_monitoring(app, APP_NAME, version=f"{VERSION}")
+        setup_prometheus_instrumentation(app)
 
-    return app
-
-
-def run(settings: ApplicationSettings, app: FastAPI | None = None):
-    _logger.debug("Serving application ")
-    if not app:
-        app = create_app(settings)
-
-    async def welcome_banner(_app: FastAPI):
+    async def _on_startup() -> None:
         print(APP_STARTED_BANNER_MSG, flush=True)  # noqa: T201
 
-    app.on_startup.append(welcome_banner)
+    async def _on_shutdown() -> None:
+        print(APP_FINISHED_BANNER_MSG, flush=True)  # noqa: T201
 
-    web.run_app(
-        app,
-        host=settings.STORAGE_HOST,
-        port=settings.STORAGE_PORT,
-        access_log_format=_ACCESS_LOG_FORMAT,
-    )
+    app.add_event_handler("startup", _on_startup)
+    app.add_event_handler("shutdown", _on_shutdown)
+
+    return app

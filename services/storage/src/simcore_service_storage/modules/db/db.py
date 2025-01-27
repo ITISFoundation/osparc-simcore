@@ -13,7 +13,7 @@ from simcore_postgres_database.utils_aiopg import (
 )
 from tenacity import retry
 
-from ...constants import APP_AIOPG_ENGINE_KEY, APP_CONFIG_KEY
+from ...constants import APP_AIOPG_ENGINE_KEY
 
 _logger = logging.getLogger(__name__)
 

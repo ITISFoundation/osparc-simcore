@@ -12,7 +12,7 @@ from simcore_postgres_database.storage_models import file_meta_data
 from sqlalchemy import and_, literal_column
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
-from ...core.exceptions import FileMetaDataNotFoundError
+from ...exceptions.errors import FileMetaDataNotFoundError
 from ...models import FileMetaData, FileMetaDataAtDB, UserOrProjectFilter
 
 
@@ -123,7 +123,6 @@ async def list_filter_with_partial_file_id(
     limit: int | None = None,
     offset: int | None = None,
 ) -> list[FileMetaDataAtDB]:
-
     stmt = _list_filter_with_partial_file_id_stmt(
         user_or_project_filter=user_or_project_filter,
         file_id_prefix=file_id_prefix,
