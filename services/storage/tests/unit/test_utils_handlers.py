@@ -11,13 +11,13 @@ from pydantic import BaseModel, ValidationError
 from pytest_mock import MockerFixture
 from servicelib.aiohttp.aiopg_utils import DBAPIError
 from simcore_service_storage.api.rest.utils import dsm_exception_handler
-from simcore_service_storage.db_access_layer import InvalidFileIdentifierError
-from simcore_service_storage.exceptions import (
+from simcore_service_storage.core.exceptions import (
     FileAccessRightError,
     FileMetaDataNotFoundError,
     ProjectAccessRightError,
     ProjectNotFoundError,
 )
+from simcore_service_storage.db_access_layer import InvalidFileIdentifierError
 
 
 @pytest.fixture()

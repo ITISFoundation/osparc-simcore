@@ -28,8 +28,8 @@ from servicelib.aiohttp.requests_validation import (
 
 from ..._meta import API_VTAG
 from ...constants import UPLOAD_TASKS_KEY
+from ...core.exceptions import FileMetaDataNotFoundError
 from ...dsm import get_dsm_provider
-from ...exceptions import FileMetaDataNotFoundError
 from ...models import (
     CopyAsSoftLinkParams,
     FileDownloadQueryParams,
