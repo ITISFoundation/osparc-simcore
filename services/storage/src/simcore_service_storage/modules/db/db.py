@@ -25,5 +25,5 @@ def setup_db(app: FastAPI) -> None:
 
 
 def get_db_engine(app: FastAPI) -> AsyncEngine:
-    assert app.state.engine  # nosec
+    assert isinstance(app.state.engine, AsyncEngine)  # nosec
     return app.state.engine

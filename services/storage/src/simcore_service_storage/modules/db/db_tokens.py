@@ -38,4 +38,7 @@ async def get_api_token_and_secret(app: FastAPI, user_id: UserID) -> tuple[str, 
     api_token = data.get("token_key", api_token)
     api_secret = data.get("token_secret", api_secret)
 
+    assert api_token is not None  # nosec
+    assert api_secret is not None  # nosec
+
     return api_token, api_secret

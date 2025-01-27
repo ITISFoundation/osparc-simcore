@@ -3,15 +3,15 @@ STS stands for Security Token Service. This is where temporary S3 token may be g
 https://docs.aws.amazon.com/STS/latest/APIReference/welcome.html
 """
 
+from fastapi import FastAPI
 from models_library.users import UserID
-from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
 from settings_library.s3 import S3Settings
 
-from ..core.settings import ApplicationSettings
+from ..core.settings import ApplicationSettings, get_application_settings
 
 
 async def get_or_create_temporary_token_for_user(
     app: FastAPI, _user_id: UserID
 ) -> S3Settings:
-    app_settings: ApplicationSettings = app[APP_CONFIG_KEY]
+    app_settings: ApplicationSettings = get_application_settings(app)
     return app_settings.STORAGE_S3
