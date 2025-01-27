@@ -43,14 +43,14 @@ async def output_file(
     file.file_size = ByteSize(12)
     file.user_id = user_id
 
-    async with aiopg_engine.connect() as conn:
+    async with sqlalchemy_async_engine.connect() as conn:
         stmt = (
             file_meta_data.insert()
             .values(jsonable_encoder(FileMetaDataAtDB.model_validate(file)))
             .returning(literal_column("*"))
         )
         result = await conn.execute(stmt)
-        row = await result.fetchone()
+        row = result.fetchone()
         assert row
 
         yield file

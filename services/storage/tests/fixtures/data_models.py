@@ -53,27 +53,29 @@ async def _user_context(
 
 
 @pytest.fixture
-async def user_id(aiopg_engine: AsyncEngine) -> AsyncIterator[UserID]:
-    async with _user_context(aiopg_engine, name="test-user") as new_user_id:
+async def user_id(sqlalchemy_async_engine: AsyncEngine) -> AsyncIterator[UserID]:
+    async with _user_context(sqlalchemy_async_engine, name="test-user") as new_user_id:
         yield new_user_id
 
 
 @pytest.fixture
-async def other_user_id(aiopg_engine: AsyncEngine) -> AsyncIterator[UserID]:
-    async with _user_context(aiopg_engine, name="test-other-user") as new_user_id:
+async def other_user_id(sqlalchemy_async_engine: AsyncEngine) -> AsyncIterator[UserID]:
+    async with _user_context(
+        sqlalchemy_async_engine, name="test-other-user"
+    ) as new_user_id:
         yield new_user_id
 
 
 @pytest.fixture
 async def create_project(
-    user_id: UserID, aiopg_engine: AsyncEngine
+    user_id: UserID, sqlalchemy_async_engine: AsyncEngine
 ) -> AsyncIterator[Callable[[], Awaitable[dict[str, Any]]]]:
     created_project_uuids = []
 
     async def _creator(**kwargs) -> dict[str, Any]:
         prj_config = {"prj_owner": user_id}
         prj_config.update(kwargs)
-        async with aiopg_engine.connect() as conn:
+        async with sqlalchemy_async_engine.connect() as conn:
             result = await conn.execute(
                 projects.insert()
                 .values(**random_project(**prj_config))
@@ -86,7 +88,7 @@ async def create_project(
 
     yield _creator
     # cleanup
-    async with aiopg_engine.connect() as conn:
+    async with sqlalchemy_async_engine.connect() as conn:
         await conn.execute(
             projects.delete().where(projects.c.uuid.in_(created_project_uuids))
         )

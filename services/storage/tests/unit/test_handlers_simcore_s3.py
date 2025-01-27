@@ -177,7 +177,7 @@ async def test_copy_folders_from_empty_project(
     )
     assert data == jsonable_encoder(dst_project)
     # check there is nothing in the dst project
-    async with aiopg_engine.connect() as conn:
+    async with sqlalchemy_async_engine.connect() as conn:
         num_entries = await conn.scalar(
             sa.select(sa.func.count())
             .select_from(file_meta_data)
@@ -229,7 +229,7 @@ async def test_copy_folders_from_valid_project_with_one_large_file(
         nodes_map={NodeID(i): NodeID(j) for i, j in nodes_map.items()},
     )
     assert data == jsonable_encoder(
-        await get_updated_project(aiopg_engine, dst_project["uuid"])
+        await get_updated_project(sqlalchemy_async_engine, dst_project["uuid"])
     )
     # check that file meta data was effectively copied
     for src_node_id in src_projects_list:
@@ -243,7 +243,7 @@ async def test_copy_folders_from_valid_project_with_one_large_file(
             checksum: Any = src_file["sha256_checksum"]
             assert isinstance(checksum, str)
             await assert_file_meta_data_in_db(
-                aiopg_engine,
+                sqlalchemy_async_engine,
                 file_id=TypeAdapter(SimcoreS3FileID).validate_python(
                     f"{src_file_id}".replace(
                         src_project["uuid"], dst_project["uuid"]
@@ -290,7 +290,7 @@ async def test_copy_folders_from_valid_project(
         nodes_map={NodeID(i): NodeID(j) for i, j in nodes_map.items()},
     )
     assert data == jsonable_encoder(
-        await get_updated_project(aiopg_engine, dst_project["uuid"])
+        await get_updated_project(sqlalchemy_async_engine, dst_project["uuid"])
     )
 
     # check that file meta data was effectively copied
@@ -305,7 +305,7 @@ async def test_copy_folders_from_valid_project(
             checksum: Any = src_file["sha256_checksum"]
             assert isinstance(checksum, str)
             await assert_file_meta_data_in_db(
-                aiopg_engine,
+                sqlalchemy_async_engine,
                 file_id=TypeAdapter(SimcoreS3FileID).validate_python(
                     f"{src_file_id}".replace(
                         src_project["uuid"], dst_project["uuid"]

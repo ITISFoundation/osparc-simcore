@@ -22,10 +22,10 @@ def has_datcore_tokens() -> bool:
 async def get_updated_project(
     sqlalchemy_async_engine: AsyncEngine, project_id: str
 ) -> dict[str, Any]:
-    async with aiopg_engine.connect() as conn:
+    async with sqlalchemy_async_engine.connect() as conn:
         result = await conn.execute(
             sa.select(projects).where(projects.c.uuid == project_id)
         )
-        row = await result.fetchone()
+        row = result.fetchone()
         assert row
         return dict(row)
