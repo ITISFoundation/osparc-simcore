@@ -906,6 +906,16 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         }
       }, this);
 
+      newPlusButtonMenu.addListener("newStudyFromServiceClicked", e => {
+        const {
+          serviceMetadata,
+          newStudyLabel,
+        } = e.getData();
+        if (serviceMetadata) {
+          this.__newStudyFromServiceBtnClicked(serviceMetadata["key"], serviceMetadata["version"], newStudyLabel);
+        }
+      }, this);
+
       newPlusButtonMenu.addListener("changeTab", e => this.fireDataEvent("changeTab", e.getData()));
     },
 
@@ -1019,7 +1029,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             const newStudyFromServiceButton = (mode === "grid") ? new osparc.dashboard.GridButtonNew(title, desc) : new osparc.dashboard.ListButtonNew(title, desc);
             newStudyFromServiceButton.setCardKey("new-"+key);
             osparc.utils.Utils.setIdToWidget(newStudyFromServiceButton, newButtonInfo.idToWidget);
-            newStudyFromServiceButton.addListener("tap", () => this.__newStudyFromServiceBtnClicked(newStudyFromServiceButton, latestMetadata["key"], latestMetadata["version"], newButtonInfo.newStudyLabel));
+            newStudyFromServiceButton.addListener("tap", () => this.__newStudyFromServiceBtnClicked(latestMetadata["key"], latestMetadata["version"], newButtonInfo.newStudyLabel));
             this._resourcesContainer.addNonResourceCard(newStudyFromServiceButton);
           })
       }
@@ -1536,7 +1546,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         });
     },
 
-    __newStudyFromServiceBtnClicked: function(button, key, version, newStudyLabel) {
+    __newStudyFromServiceBtnClicked: function(key, version, newStudyLabel) {
       this._showLoadingPage(this.tr("Creating ") + osparc.product.Utils.getStudyAlias());
       const contextProps = {
         workspaceId: this.getCurrentWorkspaceId(),

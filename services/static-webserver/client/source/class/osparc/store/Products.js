@@ -37,7 +37,6 @@ qx.Class.define("osparc.store.Products", {
 
     getNewStudyConfig: function() {
       return new Promise(resolve => {
-        console.log("newStudyConfig", this.__newStudyConfig);
         if (this.__newStudyConfig) {
           resolve(this.__newStudyConfig);
         } else {

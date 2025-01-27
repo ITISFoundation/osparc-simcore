@@ -36,6 +36,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
   events: {
     "createFolder": "qx.event.type.Data",
     "newStudyFromTemplateClicked": "qx.event.type.Data",
+    "newStudyFromServiceClicked": "qx.event.type.Data",
     "changeTab": "qx.event.type.Data",
   },
 
@@ -227,6 +228,34 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
 
     __addFromServiceButton: function(serviceData) {
       const menuButton = this.__createFromResourceButton(serviceData);
+      // disable it until found in services store
+      menuButton.setEnabled(false);
+
+      const key = serviceData.expectedKey;
+      // Include deprecated versions, they should all be updatable to a non deprecated version
+      const versions = osparc.service.Utils.getVersions(key, false);
+      if (versions.length && serviceData) {
+        // scale to latest compatible
+        const latestVersion = versions[0];
+        const latestCompatible = osparc.service.Utils.getLatestCompatible(key, latestVersion);
+        osparc.store.Services.getService(latestCompatible["key"], latestCompatible["version"])
+          .then(latestMetadata => {
+            // make sure this one is not deprecated
+            if (osparc.service.Utils.isDeprecated(latestMetadata)) {
+              return;
+            }
+            menuButton.setEnabled(true);
+            if (menuButton.getIcon() === null && latestMetadata["thumbnail"]) {
+              menuButton.setIcon(latestMetadata["thumbnail"]);
+            }
+            menuButton.addListener("tap", () => {
+              this.fireDataEvent("newStudyFromServiceClicked", {
+                serviceMetadata: latestMetadata,
+                newStudyLabel: serviceData.newStudyLabel,
+              });
+            });
+          })
+      }
 
       this.__addFromResourceButton(menuButton, serviceData);
     },
