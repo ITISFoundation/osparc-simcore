@@ -1,8 +1,8 @@
 import logging
 from typing import Any
 
-from aiohttp import web
 from aiopg.sa.engine import Engine
+from fastapi import FastAPI
 from servicelib.aiohttp.aiopg_utils import is_pg_responsive
 from servicelib.common_aiopg_utils import DataSourceName, create_pg_engine
 from servicelib.retry_policies import PostgresRetryPolicyUponInitialization
@@ -26,7 +26,7 @@ async def _ensure_pg_ready(dsn: DataSourceName, min_size: int, max_size: int) ->
         await raise_if_migration_not_ready(engine)
 
 
-async def postgres_cleanup_ctx(app: web.Application):
+async def postgres_cleanup_ctx(app: FastAPI):
     pg_cfg: PostgresSettings = app[APP_CONFIG_KEY].STORAGE_POSTGRES
     dsn = DataSourceName(
         application_name=f"{__name__}_{id(app)}",
@@ -44,7 +44,6 @@ async def postgres_cleanup_ctx(app: web.Application):
     async with create_pg_engine(
         dsn, minsize=pg_cfg.POSTGRES_MINSIZE, maxsize=pg_cfg.POSTGRES_MAXSIZE
     ) as engine:
-
         assert engine  # nosec
         app[APP_AIOPG_ENGINE_KEY] = engine
 
@@ -54,12 +53,12 @@ async def postgres_cleanup_ctx(app: web.Application):
     _logger.info("Deleted pg engine for %s", dsn)
 
 
-async def is_service_responsive(app: web.Application) -> bool:
+async def is_service_responsive(app: FastAPI) -> bool:
     """Returns true if the app can connect to db service"""
     return await is_pg_responsive(engine=app[APP_AIOPG_ENGINE_KEY])
 
 
-def get_engine_state(app: web.Application) -> dict[str, Any]:
+def get_engine_state(app: FastAPI) -> dict[str, Any]:
     engine: Engine | None = app.get(APP_AIOPG_ENGINE_KEY)
     if engine:
         engine_info: dict[str, Any] = get_pg_engine_stateinfo(engine)
@@ -67,7 +66,7 @@ def get_engine_state(app: web.Application) -> dict[str, Any]:
     return {}
 
 
-def setup_db(app: web.Application):
+def setup_db(app: FastAPI):
     app[APP_AIOPG_ENGINE_KEY] = None
 
     # app is created at this point but not yet started

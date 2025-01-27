@@ -16,7 +16,7 @@ from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
 from ..._meta import API_VERSION, API_VTAG, PROJECT_NAME, VERSION
 from ...constants import APP_CONFIG_KEY
-from ...core.settings import Settings
+from ...core.settings import ApplicationSettings
 from ...modules.db.db import get_engine_state
 from ...modules.db.db import is_service_responsive as is_pg_responsive
 from ...modules.s3 import get_s3_client
@@ -46,7 +46,7 @@ async def get_health(request: web.Request) -> web.Response:
 async def get_status(request: web.Request) -> web.Response:
     # NOTE: all calls here must NOT raise
     assert request.app  # nosec
-    app_settings: Settings = request.app[APP_CONFIG_KEY]
+    app_settings: ApplicationSettings = request.app[APP_CONFIG_KEY]
     s3_state = "disabled"
     if app_settings.STORAGE_S3:
         try:

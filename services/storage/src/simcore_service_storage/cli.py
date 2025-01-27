@@ -5,7 +5,7 @@ from servicelib.logging_utils import config_all_loggers
 from settings_library.utils_cli import create_settings_command
 
 from .core import application
-from .core.settings import Settings
+from .core.settings import ApplicationSettings
 
 LOG_LEVEL_STEP = logging.CRITICAL - logging.ERROR
 
@@ -13,14 +13,16 @@ _logger = logging.getLogger(__name__)
 
 main = typer.Typer(name="simcore-service-storage service")
 
-main.command()(create_settings_command(settings_cls=Settings, logger=_logger))
+main.command()(
+    create_settings_command(settings_cls=ApplicationSettings, logger=_logger)
+)
 
 
 @main.command()
 def run():
     """Runs application"""
     typer.secho("Resolving settings ...", nl=False)
-    settings_obj = Settings.create_from_envs()
+    settings_obj = ApplicationSettings.create_from_envs()
     typer.secho("DONE", fg=typer.colors.GREEN)
 
     logging.basicConfig(level=settings_obj.log_level)

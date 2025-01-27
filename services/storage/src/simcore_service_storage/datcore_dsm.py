@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 
-from aiohttp import web
 from models_library.api_schemas_storage import (
     DatCoreDatasetName,
     LinkType,
@@ -24,7 +23,7 @@ from .modules.db.db_tokens import get_api_token_and_secret
 
 @dataclass
 class DatCoreDataManager(BaseDataManager):
-    app: web.Application
+    app: FastAPI
 
     async def _get_datcore_tokens(self, user_id: UserID):
         return await get_api_token_and_secret(self.app, user_id)
@@ -137,5 +136,5 @@ class DatCoreDataManager(BaseDataManager):
         await datcore_adapter.delete_file(self.app, api_token, api_secret, file_id)
 
 
-def create_datcore_data_manager(app: web.Application) -> DatCoreDataManager:
+def create_datcore_data_manager(app: FastAPI) -> DatCoreDataManager:
     return DatCoreDataManager(app)

@@ -15,7 +15,7 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.openapi_specs import Entrypoint
 from simcore_service_storage._meta import API_VTAG
 from simcore_service_storage.core.resources import storage_resources
-from simcore_service_storage.core.settings import Settings
+from simcore_service_storage.core.settings import ApplicationSettings
 
 
 @pytest.fixture(scope="session")
@@ -47,8 +47,8 @@ def app(app_environment: EnvVarsDict) -> web.Application:
     # - routings happen during setup!
     # - all plugins are setup but app is NOT started (i.e events are not triggered)
     #
-    settings = Settings.create_from_envs()
-    return simcore_service_storage.core.application.create(settings)
+    settings = ApplicationSettings.create_from_envs()
+    return simcore_service_storage.core.application.create_app(settings)
 
 
 @pytest.fixture

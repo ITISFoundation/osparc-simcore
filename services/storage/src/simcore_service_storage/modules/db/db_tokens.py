@@ -2,7 +2,6 @@ import logging
 from typing import Any
 
 import sqlalchemy as sa
-from aiohttp import web
 from aiopg.sa.engine import Engine
 from models_library.users import UserID
 from simcore_postgres_database.storage_models import tokens
@@ -23,9 +22,7 @@ async def _get_tokens_from_db(engine: Engine, user_id: UserID) -> dict[str, Any]
         return dict(row) if row else {}
 
 
-async def get_api_token_and_secret(
-    app: web.Application, user_id: UserID
-) -> tuple[str, str]:
+async def get_api_token_and_secret(app: FastAPI, user_id: UserID) -> tuple[str, str]:
     # from the client side together with the userid?
     engine = app[APP_AIOPG_ENGINE_KEY]
 

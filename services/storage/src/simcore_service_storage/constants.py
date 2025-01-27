@@ -3,15 +3,12 @@ from typing import Final
 from aws_library.s3 import PRESIGNED_LINK_MAX_SIZE, S3_MAX_FILE_SIZE
 from models_library.api_schemas_storage import LinkType
 from pydantic import ByteSize
-from servicelib.aiohttp import application_keys
 
 RETRY_WAIT_SECS = 2
 MAX_CHUNK_SIZE = 1024
 MINUTE = 60
 
 UPLOAD_TASKS_KEY = f"{__name__}.upload_tasks"
-
-APP_CONFIG_KEY = application_keys.APP_CONFIG_KEY  # app-storage-key for config object
 
 # DSM locations
 SIMCORE_S3_ID = 0
