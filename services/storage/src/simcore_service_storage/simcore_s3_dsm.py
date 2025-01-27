@@ -35,6 +35,7 @@ from models_library.projects_nodes_io import (
     SimcoreS3FileID,
     StorageFileID,
 )
+from models_library.rabbitmq_messages import FileDeletedMessage
 from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize, NonNegativeInt, TypeAdapter
 from servicelib.aiohttp.client_session import get_client_session
@@ -77,6 +78,7 @@ from .models import (
     UploadLinks,
     UserOrProjectFilter,
 )
+from .rabbitmq import get_rabbitmq_client
 from .s3 import get_s3_client
 from .s3_utils import S3TransferDataCB, update_task_progress
 from .settings import Settings
@@ -537,6 +539,12 @@ class SimcoreS3DataManager(BaseDataManager):
             _logger.warning("File %s not found in S3", file_id)
             # we still need to clean up the database entry (it exists)
             # and to invalidate the size of the parent directory
+        else:
+            rabbit_client = get_rabbitmq_client(self.app)
+            msg = FileDeletedMessage(
+                file_id=file_id,
+            )
+            await rabbit_client.publish(msg.channel_name, msg)
 
         async with self.engine.acquire() as conn:
             await db_file_meta_data.delete(conn, [file_id])

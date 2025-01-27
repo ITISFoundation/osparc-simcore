@@ -316,3 +316,13 @@ class WalletCreditsLimitReachedMessage(RabbitMessageBase):
 
     def routing_key(self) -> str | None:
         return f"{self.wallet_id}.{self.credits_limit}"
+
+
+class FileDeletedMessage(RabbitMessageBase):
+    channel_name: Literal[
+        "io.simcore.service.storage.file-deleted"
+    ] = "io.simcore.service.storage.file-deleted"
+    file_id: str
+
+    def routing_key(self) -> str | None:
+        return None

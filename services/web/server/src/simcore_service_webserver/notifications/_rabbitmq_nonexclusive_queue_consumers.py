@@ -3,7 +3,10 @@ from collections.abc import AsyncIterator
 from typing import Final
 
 from aiohttp import web
-from models_library.rabbitmq_messages import InstrumentationRabbitMessage
+from models_library.rabbitmq_messages import (
+    FileDeletedMessage,
+    InstrumentationRabbitMessage,
+)
 from servicelib.aiohttp.monitor_services import (
     MONITOR_SERVICE_STARTED_LABELS,
     MONITOR_SERVICE_STOPPED_LABELS,
@@ -43,10 +46,22 @@ async def _instrumentation_message_parser(app: web.Application, data: bytes) -> 
     return True
 
 
+async def _file_deleted_message_parser(app: web.Application, data: bytes) -> bool:
+    rabbit_message = FileDeletedMessage.model_validate_json(data)
+    _logger.error("File %s deleted", rabbit_message.file_id)
+
+    return True
+
+
 _EXCHANGE_TO_PARSER_CONFIG: Final[tuple[SubcribeArgumentsTuple, ...,]] = (
     SubcribeArgumentsTuple(
         InstrumentationRabbitMessage.get_channel_name(),
         _instrumentation_message_parser,
+        {"exclusive_queue": False},
+    ),
+    SubcribeArgumentsTuple(
+        FileDeletedMessage.get_channel_name(),
+        _file_deleted_message_parser,
         {"exclusive_queue": False},
     ),
 )

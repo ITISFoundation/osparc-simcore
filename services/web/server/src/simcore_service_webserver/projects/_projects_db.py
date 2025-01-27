@@ -16,7 +16,7 @@ _logger = logging.getLogger(__name__)
 
 # NOTE: MD: I intentionally didn't include the workbench. There is a special interface
 # for the workbench, and at some point, this column should be removed from the table.
-# The same holds true for access_rights/ui/classifiers/quality, but we have decided to proceed step by step.
+# The same holds true for ui/classifiers/quality, but we have decided to proceed step by step.
 _SELECTION_PROJECT_DB_ARGS = [  # noqa: RUF012
     projects.c.id,
     projects.c.type,
