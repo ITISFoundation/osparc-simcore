@@ -3,8 +3,8 @@ import os
 from typing import Any
 
 import sqlalchemy as sa
-from aiopg.sa.engine import Engine
 from simcore_postgres_database.storage_models import projects
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 log = logging.getLogger(__name__)
 
@@ -19,8 +19,10 @@ def has_datcore_tokens() -> bool:
     return True
 
 
-async def get_updated_project(aiopg_engine: Engine, project_id: str) -> dict[str, Any]:
-    async with aiopg_engine.acquire() as conn:
+async def get_updated_project(
+    sqlalchemy_async_engine: AsyncEngine, project_id: str
+) -> dict[str, Any]:
+    async with aiopg_engine.connect() as conn:
         result = await conn.execute(
             sa.select(projects).where(projects.c.uuid == project_id)
         )

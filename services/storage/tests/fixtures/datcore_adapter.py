@@ -3,7 +3,7 @@ import re
 import pytest
 from aioresponses import aioresponses as AioResponsesMock
 from servicelib.aiohttp import status
-from simcore_service_storage.datcore_adapter.datcore_adapter_settings import (
+from simcore_service_storage.modules.datcore_adapter.datcore_adapter_settings import (
     DatcoreAdapterSettings,
 )
 
