@@ -10,13 +10,13 @@ arrow==1.3.0
     # via -r requirements/../../../packages/models-library/requirements/_base.in
 asyncpg==0.30.0
     # via sqlalchemy
-attrs==24.3.0
+attrs==25.1.0
     # via
     #   jsonschema
     #   referencing
 click==8.1.8
     # via typer
-deprecated==1.2.16
+deprecated==1.2.17
     # via
     #   opentelemetry-api
     #   opentelemetry-semantic-conventions

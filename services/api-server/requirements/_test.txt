@@ -37,17 +37,18 @@ aws-sam-translator==1.55.0
     #   cfn-lint
 aws-xray-sdk==2.14.0
     # via moto
-boto3==1.36.5
+boto3==1.35.99
     # via
+    #   -c requirements/../../../requirements/constraints.txt
     #   aws-sam-translator
     #   moto
-botocore==1.36.5
+botocore==1.35.99
     # via
     #   aws-xray-sdk
     #   boto3
     #   moto
     #   s3transfer
-botocore-stubs==1.36.5
+botocore-stubs==1.36.6
     # via types-boto3
 certifi==2024.8.30
     # via
@@ -104,7 +105,7 @@ frozenlist==1.5.0
     #   -c requirements/_base.txt
     #   aiohttp
     #   aiosignal
-graphql-core==3.2.5
+graphql-core==3.2.6
     # via moto
 greenlet==3.1.1
     # via
@@ -286,7 +287,7 @@ rsa==4.9
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   python-jose
-s3transfer==0.11.2
+s3transfer==0.10.4
     # via boto3
 sarif-om==1.0.4
     # via cfn-lint
@@ -321,9 +322,9 @@ sshpubkeys==3.3.1
     # via moto
 types-aiofiles==24.1.0.20241221
     # via -r requirements/_test.in
-types-awscrt==0.23.6
+types-awscrt==0.23.7
     # via botocore-stubs
-types-boto3==1.36.5
+types-boto3==1.36.6
     # via -r requirements/_test.in
 types-s3transfer==0.11.2
     # via types-boto3

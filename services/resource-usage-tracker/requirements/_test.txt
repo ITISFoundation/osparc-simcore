@@ -27,6 +27,7 @@ blinker==1.9.0
     # via flask
 boto3==1.34.131
     # via
+    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   aws-sam-translator
     #   moto
@@ -79,7 +80,7 @@ flask==3.1.0
     #   moto
 flask-cors==5.0.0
     # via moto
-graphql-core==3.2.5
+graphql-core==3.2.6
     # via moto
 greenlet==3.0.3
     # via
@@ -135,7 +136,7 @@ jsonschema==4.21.1
     #   aws-sam-translator
     #   openapi-schema-validator
     #   openapi-spec-validator
-jsonschema-path==0.3.3
+jsonschema-path==0.3.4
     # via openapi-spec-validator
 jsonschema-specifications==2023.7.1
     # via

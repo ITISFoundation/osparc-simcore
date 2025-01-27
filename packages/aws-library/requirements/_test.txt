@@ -4,7 +4,7 @@ annotated-types==0.7.0
     #   pydantic
 antlr4-python3-runtime==4.13.2
     # via moto
-attrs==24.3.0
+attrs==25.1.0
     # via
     #   -c requirements/_base.txt
     #   jsonschema
@@ -15,19 +15,20 @@ aws-xray-sdk==2.14.0
     # via moto
 blinker==1.9.0
     # via flask
-boto3==1.36.1
+boto3==1.35.81
     # via
+    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   aws-sam-translator
     #   moto
-botocore==1.36.1
+botocore==1.35.81
     # via
     #   -c requirements/_base.txt
     #   aws-xray-sdk
     #   boto3
     #   moto
     #   s3transfer
-botocore-stubs==1.36.5
+botocore-stubs==1.36.6
     # via
     #   -c requirements/_base.txt
     #   types-aioboto3
@@ -73,7 +74,7 @@ flexcache==0.3
     # via pint
 flexparser==0.4
     # via pint
-graphql-core==3.2.5
+graphql-core==3.2.6
     # via moto
 icdiff==2.0.7
     # via pytest-icdiff
@@ -111,7 +112,7 @@ jsonschema==4.23.0
     #   aws-sam-translator
     #   openapi-schema-validator
     #   openapi-spec-validator
-jsonschema-path==0.3.3
+jsonschema-path==0.3.4
     # via openapi-spec-validator
 jsonschema-specifications==2024.10.1
     # via
@@ -243,7 +244,7 @@ rpds-py==0.22.3
     #   -c requirements/_base.txt
     #   jsonschema
     #   referencing
-s3transfer==0.11.2
+s3transfer==0.10.4
     # via
     #   -c requirements/_base.txt
     #   boto3
@@ -264,11 +265,11 @@ types-aiobotocore==2.19.0
     # via
     #   -c requirements/_base.txt
     #   types-aioboto3
-types-awscrt==0.23.6
+types-awscrt==0.23.7
     # via
     #   -c requirements/_base.txt
     #   botocore-stubs
-types-boto3==1.36.5
+types-boto3==1.36.6
     # via -r requirements/_test.in
 types-s3transfer==0.11.2
     # via

@@ -2,9 +2,9 @@ aio-pika==9.4.1
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-aioboto3==13.4.0
+aioboto3==13.3.0
     # via -r requirements/_test.in
-aiobotocore==2.18.0
+aiobotocore==2.16.0
     # via aioboto3
 aiofiles==23.2.1
     # via
@@ -44,9 +44,11 @@ attrs==23.2.0
     #   pytest-docker
 bokeh==3.6.2
     # via dask
-boto3==1.36.1
-    # via aiobotocore
-botocore==1.36.1
+boto3==1.35.81
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   aiobotocore
+botocore==1.35.81
     # via
     #   aiobotocore
     #   boto3
@@ -143,7 +145,6 @@ jinja2==3.1.4
     #   distributed
 jmespath==1.0.1
     # via
-    #   aiobotocore
     #   boto3
     #   botocore
 locket==1.0.0
@@ -168,7 +169,6 @@ msgpack==1.1.0
 multidict==6.0.5
     # via
     #   -c requirements/_base.txt
-    #   aiobotocore
     #   aiohttp
     #   async-asgi-testclient
     #   yarl
@@ -238,7 +238,6 @@ pytest-xdist==3.6.1
 python-dateutil==2.9.0.post0
     # via
     #   -c requirements/_base.txt
-    #   aiobotocore
     #   botocore
     #   faker
     #   pandas
@@ -258,7 +257,7 @@ requests==2.32.3
     #   docker
 respx==0.22.0
     # via -r requirements/_test.in
-s3transfer==0.11.2
+s3transfer==0.10.4
     # via boto3
 six==1.16.0
     # via
@@ -316,7 +315,6 @@ urllib3==2.2.3
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
-    #   aiobotocore
     #   botocore
     #   distributed
     #   docker

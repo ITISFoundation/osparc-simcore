@@ -2,7 +2,7 @@ annotated-types==0.7.0
     # via pydantic
 arrow==1.3.0
     # via -r requirements/../../../packages/models-library/requirements/_base.in
-attrs==24.3.0
+attrs==25.1.0
     # via
     #   jsonschema
     #   referencing

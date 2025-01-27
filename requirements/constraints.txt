@@ -74,3 +74,7 @@ referencing==0.35.1
 
 # moto==5.0.21 broke `get_ec2_instance_capabilities`
 moto<5.0.21
+
+
+# Pin boto3<1.36.0 till the following is addressed https://github.com/boto/botocore/issues/2308
+boto3<1.36.0

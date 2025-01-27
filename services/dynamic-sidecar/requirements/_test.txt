@@ -1,6 +1,6 @@
-aioboto3==13.4.0
+aioboto3==13.3.0
     # via -r requirements/_test.in
-aiobotocore==2.18.0
+aiobotocore==2.16.0
     # via aioboto3
 aiofiles==24.1.0
     # via
@@ -29,9 +29,11 @@ attrs==24.2.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
-boto3==1.36.1
-    # via aiobotocore
-botocore==1.36.1
+boto3==1.35.81
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   aiobotocore
+botocore==1.35.81
     # via
     #   aiobotocore
     #   boto3
@@ -71,13 +73,11 @@ iniconfig==2.0.0
     # via pytest
 jmespath==1.0.1
     # via
-    #   aiobotocore
     #   boto3
     #   botocore
 multidict==6.1.0
     # via
     #   -c requirements/_base.txt
-    #   aiobotocore
     #   aiohttp
     #   async-asgi-testclient
     #   yarl
@@ -113,7 +113,6 @@ pytest-mock==3.14.0
 python-dateutil==2.9.0.post0
     # via
     #   -c requirements/_base.txt
-    #   aiobotocore
     #   botocore
     #   faker
 python-dotenv==1.0.1
@@ -125,7 +124,7 @@ requests==2.32.3
     #   -c requirements/_base.txt
     #   async-asgi-testclient
     #   docker
-s3transfer==0.11.2
+s3transfer==0.10.4
     # via boto3
 six==1.16.0
     # via
@@ -161,7 +160,6 @@ urllib3==2.2.3
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
-    #   aiobotocore
     #   botocore
     #   docker
     #   requests

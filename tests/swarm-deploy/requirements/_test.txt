@@ -82,7 +82,7 @@ async-timeout==4.0.3
     # via aiopg
 asyncpg==0.30.0
     # via sqlalchemy
-attrs==24.3.0
+attrs==25.1.0
     # via
     #   aiohttp
     #   jsonschema
@@ -125,7 +125,7 @@ click==8.1.8
     #   -r requirements/../../../packages/postgres-database/requirements/_migration.txt
     #   -r requirements/_test.in
     #   typer
-deprecated==1.2.16
+deprecated==1.2.17
     # via
     #   opentelemetry-api
     #   opentelemetry-exporter-otlp-proto-grpc
