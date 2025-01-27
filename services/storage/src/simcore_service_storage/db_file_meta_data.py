@@ -12,7 +12,7 @@ from simcore_postgres_database.storage_models import file_meta_data
 from sqlalchemy import and_, literal_column
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
-from .exceptions import FileMetaDataNotFoundError
+from .core.exceptions import FileMetaDataNotFoundError
 from .models import FileMetaData, FileMetaDataAtDB, UserOrProjectFilter
 
 
