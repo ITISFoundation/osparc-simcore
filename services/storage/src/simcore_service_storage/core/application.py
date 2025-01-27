@@ -24,7 +24,6 @@ from .._meta import (
     APP_NAME,
     APP_STARTED_BANNER_MSG,
 )
-from ..api.rest.utils import dsm_exception_handler
 from ..dsm import setup_dsm
 from ..dsm_cleaner import setup_dsm_cleaner
 from ..modules.db.db import setup_db
@@ -83,7 +82,7 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
         setup_redis(app)
         setup_dsm_cleaner(app)
 
-    app.middlewares.append(dsm_exception_handler)
+    # app.middlewares.append(dsm_exception_handler)
 
     if settings.STORAGE_PROFILING:
         app.add_middleware(ProfilerMiddleware)
