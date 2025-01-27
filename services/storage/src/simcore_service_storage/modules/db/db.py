@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from servicelib.db_async_engine import close_db_connection
 from servicelib.fastapi.db_asyncpg_engine import connect_to_db
 from servicelib.retry_policies import PostgresRetryPolicyUponInitialization
+from sqlalchemy.ext.asyncio import AsyncEngine
 from tenacity import retry
 
 from ...core.settings import get_application_settings
@@ -21,3 +22,8 @@ def setup_db(app: FastAPI) -> None:
 
     app.add_event_handler("startup", _on_startup)
     app.add_event_handler("shutdown", _on_shutdown)
+
+
+def get_db_engine(app: FastAPI) -> AsyncEngine:
+    assert app.state.engine  # nosec
+    return app.state.engine

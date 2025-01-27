@@ -1,7 +1,6 @@
 from contextlib import suppress
 from pathlib import Path
 
-from aiopg.sa.connection import SAConnection
 from aws_library.s3 import S3MetaData, SimcoreS3API
 from models_library.api_schemas_storage import S3BucketName
 from models_library.projects_nodes_io import (
@@ -11,6 +10,7 @@ from models_library.projects_nodes_io import (
 )
 from pydantic import ByteSize, NonNegativeInt, TypeAdapter
 from servicelib.utils import ensure_ends_with
+from sqlalchemy.ext.asyncio import AsyncConnection
 
 from ..exceptions.errors import FileMetaDataNotFoundError
 from ..models import FileMetaData, FileMetaDataAtDB
@@ -87,7 +87,7 @@ def get_simcore_directory(file_id: SimcoreS3FileID) -> str:
 
 
 async def get_directory_file_id(
-    conn: SAConnection, file_id: SimcoreS3FileID
+    conn: AsyncConnection, file_id: SimcoreS3FileID
 ) -> SimcoreS3FileID | None:
     """
     returns the containing file's `directory_file_id` if the entry exists
@@ -95,7 +95,7 @@ async def get_directory_file_id(
     """
 
     async def _get_fmd(
-        conn: SAConnection, s3_file_id: StorageFileID
+        conn: AsyncConnection, s3_file_id: StorageFileID
     ) -> FileMetaDataAtDB | None:
         with suppress(FileMetaDataNotFoundError):
             return await db_file_meta_data.get(

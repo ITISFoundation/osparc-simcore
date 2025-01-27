@@ -9,6 +9,7 @@ from common_library.basic_types import BootModeEnum
 from fastapi import FastAPI
 from fastapi.middleware.gzip import GZipMiddleware
 from servicelib.fastapi import timing_middleware
+from servicelib.fastapi.client_session import setup_client_session
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
 from servicelib.fastapi.profiler_middleware import ProfilerMiddleware
 from servicelib.fastapi.prometheus_instrumentation import (
@@ -73,6 +74,7 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
 
     setup_db(app)
     setup_s3(app)
+    setup_client_session(app)
 
     setup_rest_api_long_running_tasks(app)
     setup_rest_api_routes(app, API_VTAG)

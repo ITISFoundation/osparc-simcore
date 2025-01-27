@@ -2,7 +2,6 @@ import datetime
 from collections.abc import AsyncGenerator
 
 import sqlalchemy as sa
-from aiopg.sa.connection import SAConnection
 from models_library.basic_types import SHA256Str
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
@@ -11,12 +10,13 @@ from models_library.utils.fastapi_encoders import jsonable_encoder
 from simcore_postgres_database.storage_models import file_meta_data
 from sqlalchemy import and_, literal_column
 from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.ext.asyncio import AsyncConnection
 
 from ...exceptions.errors import FileMetaDataNotFoundError
 from ...models import FileMetaData, FileMetaDataAtDB, UserOrProjectFilter
 
 
-async def exists(conn: SAConnection, file_id: SimcoreS3FileID) -> bool:
+async def exists(conn: AsyncConnection, file_id: SimcoreS3FileID) -> bool:
     return bool(
         await conn.scalar(
             sa.select(sa.func.count())
@@ -28,7 +28,7 @@ async def exists(conn: SAConnection, file_id: SimcoreS3FileID) -> bool:
 
 
 async def upsert(
-    conn: SAConnection, fmd: FileMetaData | FileMetaDataAtDB
+    conn: AsyncConnection, fmd: FileMetaData | FileMetaDataAtDB
 ) -> FileMetaDataAtDB:
     # NOTE: upsert file_meta_data, if the file already exists, we update the whole row
     # so we get the correct time stamps
@@ -40,28 +40,28 @@ async def upsert(
         index_elements=[file_meta_data.c.file_id], set_=jsonable_encoder(fmd_db)
     ).returning(literal_column("*"))
     result = await conn.execute(on_update_statement)
-    row = await result.first()
+    row = result.first()
     assert row  # nosec
     return FileMetaDataAtDB.model_validate(row)
 
 
-async def insert(conn: SAConnection, fmd: FileMetaData) -> FileMetaDataAtDB:
+async def insert(conn: AsyncConnection, fmd: FileMetaData) -> FileMetaDataAtDB:
     fmd_db = FileMetaDataAtDB.model_validate(fmd)
     result = await conn.execute(
         file_meta_data.insert()
         .values(jsonable_encoder(fmd_db))
         .returning(literal_column("*"))
     )
-    row = await result.first()
+    row = result.first()
     assert row  # nosec
     return FileMetaDataAtDB.model_validate(row)
 
 
-async def get(conn: SAConnection, file_id: SimcoreS3FileID) -> FileMetaDataAtDB:
+async def get(conn: AsyncConnection, file_id: SimcoreS3FileID) -> FileMetaDataAtDB:
     result = await conn.execute(
-        query=sa.select(file_meta_data).where(file_meta_data.c.file_id == file_id)
+        sa.select(file_meta_data).where(file_meta_data.c.file_id == file_id)
     )
-    if row := await result.first():
+    if row := result.first():
         return FileMetaDataAtDB.model_validate(row)
     raise FileMetaDataNotFoundError(file_id=file_id)
 
@@ -113,7 +113,7 @@ def _list_filter_with_partial_file_id_stmt(
 
 
 async def list_filter_with_partial_file_id(
-    conn: SAConnection,
+    conn: AsyncConnection,
     *,
     user_or_project_filter: UserOrProjectFilter,
     file_id_prefix: str | None,
@@ -134,12 +134,12 @@ async def list_filter_with_partial_file_id(
     )
 
     return [
-        FileMetaDataAtDB.model_validate(row) async for row in await conn.execute(stmt)
+        FileMetaDataAtDB.model_validate(row) async for row in await conn.stream(stmt)
     ]
 
 
 async def list_fmds(
-    conn: SAConnection,
+    conn: AsyncConnection,
     *,
     user_id: UserID | None = None,
     project_ids: list[ProjectID] | None = None,
@@ -164,11 +164,11 @@ async def list_fmds(
     )
 
     return [
-        FileMetaDataAtDB.model_validate(row) async for row in await conn.execute(stmt)
+        FileMetaDataAtDB.model_validate(row) async for row in await conn.stream(stmt)
     ]
 
 
-async def total(conn: SAConnection) -> int:
+async def total(conn: AsyncConnection) -> int:
     """returns the number of uploaded file entries"""
     return (
         await conn.scalar(sa.select(sa.func.count()).select_from(file_meta_data)) or 0
@@ -176,31 +176,31 @@ async def total(conn: SAConnection) -> int:
 
 
 async def list_valid_uploads(
-    conn: SAConnection,
+    conn: AsyncConnection,
 ) -> AsyncGenerator[FileMetaDataAtDB, None]:
     """returns all the theoretically valid fmds (e.g. upload_expires_at column is null)"""
-    async for row in conn.execute(
+    async for row in await conn.stream(
         sa.select(file_meta_data).where(
-            file_meta_data.c.upload_expires_at == None  # lgtm [py/test-equals-none]
+            file_meta_data.c.upload_expires_at.is_(None)  # lgtm [py/test-equals-none]
         )
     ):
         fmd_at_db = FileMetaDataAtDB.model_validate(row)
         yield fmd_at_db
 
 
-async def delete(conn: SAConnection, file_ids: list[SimcoreS3FileID]) -> None:
+async def delete(conn: AsyncConnection, file_ids: list[SimcoreS3FileID]) -> None:
     await conn.execute(
         file_meta_data.delete().where(file_meta_data.c.file_id.in_(file_ids))
     )
 
 
-async def delete_all_from_project(conn: SAConnection, project_id: ProjectID) -> None:
+async def delete_all_from_project(conn: AsyncConnection, project_id: ProjectID) -> None:
     await conn.execute(
         file_meta_data.delete().where(file_meta_data.c.project_id == f"{project_id}")
     )
 
 
-async def delete_all_from_node(conn: SAConnection, node_id: NodeID) -> None:
+async def delete_all_from_node(conn: AsyncConnection, node_id: NodeID) -> None:
     await conn.execute(
         file_meta_data.delete().where(file_meta_data.c.node_id == f"{node_id}")
     )

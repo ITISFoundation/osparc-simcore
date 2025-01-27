@@ -1,4 +1,4 @@
-""" Helper functions to determin access-rights on stored data
+"""Helper functions to determin access-rights on stored data
 
 # DRAFT Rationale:
 
@@ -40,8 +40,6 @@ import logging
 from dataclasses import dataclass
 
 import sqlalchemy as sa
-from aiopg.sa.connection import SAConnection
-from aiopg.sa.result import ResultProxy, RowProxy
 from models_library.groups import GroupID
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import StorageFileID
@@ -53,6 +51,7 @@ from simcore_postgres_database.models.workspaces_access_rights import (
 )
 from simcore_postgres_database.storage_models import file_meta_data, user_to_groups
 from simcore_postgres_database.utils_sql import assemble_array_groups
+from sqlalchemy.ext.asyncio import AsyncConnection
 
 logger = logging.getLogger(__name__)
 
@@ -92,9 +91,9 @@ class InvalidFileIdentifierError(AccessLayerError):
         return f"Error in {self.identifier}: {self.reason} [{self.details}]"
 
 
-async def _get_user_groups_ids(conn: SAConnection, user_id: UserID) -> list[GroupID]:
+async def _get_user_groups_ids(conn: AsyncConnection, user_id: UserID) -> list[GroupID]:
     stmt = sa.select(user_to_groups.c.gid).where(user_to_groups.c.uid == user_id)
-    rows = await (await conn.execute(stmt)).fetchall()
+    rows = (await conn.execute(stmt)).fetchall()
     assert rows is not None  # nosec
     return [g.gid for g in rows]
 
@@ -160,7 +159,7 @@ workspace_access_rights_subquery = (
 
 
 async def list_projects_access_rights(
-    conn: SAConnection, user_id: UserID
+    conn: AsyncConnection, user_id: UserID
 ) -> dict[ProjectID, AccessRights]:
     """
     Returns access-rights of user (user_id) over all OWNED or SHARED projects
@@ -211,7 +210,7 @@ async def list_projects_access_rights(
 
     projects_access_rights = {}
 
-    async for row in conn.execute(combined_query):
+    async for row in await conn.stream(combined_query):
         assert isinstance(row.access_rights, dict)  # nosec
         assert isinstance(row.uuid, str)  # nosec
 
@@ -230,7 +229,7 @@ async def list_projects_access_rights(
 
 
 async def get_project_access_rights(
-    conn: SAConnection, user_id: UserID, project_id: ProjectID
+    conn: AsyncConnection, user_id: UserID, project_id: ProjectID
 ) -> AccessRights:
     """
     Returns access-rights of user (user_id) over a project resource (project_id)
@@ -280,8 +279,8 @@ async def get_project_access_rights(
 
     combined_query = sa.union_all(private_workspace_query, shared_workspace_query)
 
-    result: ResultProxy = await conn.execute(combined_query)
-    row: RowProxy | None = await result.first()
+    result = await conn.execute(combined_query)
+    row = result.first()
 
     if not row:
         # Either project does not exists OR user_id has NO access
@@ -298,7 +297,7 @@ async def get_project_access_rights(
 
 
 async def get_file_access_rights(
-    conn: SAConnection, user_id: UserID, file_id: StorageFileID
+    conn: AsyncConnection, user_id: UserID, file_id: StorageFileID
 ) -> AccessRights:
     """
     Returns access-rights of user (user_id) over data file resource (file_id)
@@ -312,8 +311,8 @@ async def get_file_access_rights(
     stmt = sa.select(file_meta_data.c.project_id, file_meta_data.c.user_id).where(
         file_meta_data.c.file_id == f"{file_id}"
     )
-    result: ResultProxy = await conn.execute(stmt)
-    row: RowProxy | None = await result.first()
+    result = await conn.execute(stmt)
+    row = result.first()
 
     if row:
         if int(row.user_id) == user_id:
@@ -377,7 +376,7 @@ async def get_file_access_rights(
 
 
 async def get_readable_project_ids(
-    conn: SAConnection, user_id: UserID
+    conn: AsyncConnection, user_id: UserID
 ) -> list[ProjectID]:
     """Returns a list of projects where user has granted read-access"""
     projects_access_rights = await list_projects_access_rights(conn, user_id)
