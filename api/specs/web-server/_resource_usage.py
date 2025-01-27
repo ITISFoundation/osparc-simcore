@@ -94,7 +94,6 @@ async def export_resource_usage_services(
 @router.get(
     "/pricing-plans/{pricing_plan_id}/pricing-units/{pricing_unit_id}",
     response_model=Envelope[PricingUnitGet],
-    summary="Retrieve detail information about pricing unit",
     tags=["pricing-plans"],
 )
 async def get_pricing_plan_unit(
@@ -106,7 +105,6 @@ async def get_pricing_plan_unit(
 @router.get(
     "/pricing-plans",
     response_model=Envelope[list[PricingPlanGet]],
-    summary="List pricing plans",
     tags=["pricing-plans"],
     description="To keep the listing lightweight, the pricingUnits field is None.",
 )
@@ -117,7 +115,6 @@ async def list_pricing_plans():
 @router.get(
     "/pricing-plans/{pricing_plan_id}",
     response_model=Envelope[PricingPlanGet],
-    summary="Retrieve detail information about pricing plan",
     tags=["pricing-plans"],
 )
 async def get_pricing_plan(
@@ -132,7 +129,6 @@ async def get_pricing_plan(
 @router.get(
     "/admin/pricing-plans",
     response_model=Envelope[list[PricingPlanAdminGet]],
-    summary="List pricing plans",
     tags=["admin"],
     description="To keep the listing lightweight, the pricingUnits field is None.",
 )
@@ -143,7 +139,6 @@ async def list_pricing_plans_for_admin_user():
 @router.get(
     "/admin/pricing-plans/{pricing_plan_id}",
     response_model=Envelope[PricingPlanAdminGet],
-    summary="Retrieve detail information about pricing plan",
     tags=["admin"],
 )
 async def get_pricing_plan_for_admin_user(
@@ -155,7 +150,6 @@ async def get_pricing_plan_for_admin_user(
 @router.post(
     "/admin/pricing-plans",
     response_model=Envelope[PricingPlanAdminGet],
-    summary="Create pricing plan",
     tags=["admin"],
 )
 async def create_pricing_plan(
@@ -167,7 +161,6 @@ async def create_pricing_plan(
 @router.put(
     "/admin/pricing-plans/{pricing_plan_id}",
     response_model=Envelope[PricingPlanAdminGet],
-    summary="Update detail information about pricing plan",
     tags=["admin"],
 )
 async def update_pricing_plan(
@@ -183,7 +176,6 @@ async def update_pricing_plan(
 @router.get(
     "/admin/pricing-plans/{pricing_plan_id}/pricing-units/{pricing_unit_id}",
     response_model=Envelope[PricingUnitAdminGet],
-    summary="Retrieve detail information about pricing unit",
     tags=["admin"],
 )
 async def get_pricing_unit(
@@ -195,7 +187,6 @@ async def get_pricing_unit(
 @router.post(
     "/admin/pricing-plans/{pricing_plan_id}/pricing-units",
     response_model=Envelope[PricingUnitAdminGet],
-    summary="Create pricing unit",
     tags=["admin"],
 )
 async def create_pricing_unit(
@@ -208,7 +199,6 @@ async def create_pricing_unit(
 @router.put(
     "/admin/pricing-plans/{pricing_plan_id}/pricing-units/{pricing_unit_id}",
     response_model=Envelope[PricingUnitAdminGet],
-    summary="Update detail information about pricing plan",
     tags=["admin"],
 )
 async def update_pricing_unit(
@@ -224,7 +214,6 @@ async def update_pricing_unit(
 @router.get(
     "/admin/pricing-plans/{pricing_plan_id}/billable-services",
     response_model=Envelope[list[PricingPlanToServiceAdminGet]],
-    summary="List services that are connected to the provided pricing plan",
     tags=["admin"],
 )
 async def list_connected_services_to_pricing_plan(
@@ -236,7 +225,6 @@ async def list_connected_services_to_pricing_plan(
 @router.post(
     "/admin/pricing-plans/{pricing_plan_id}/billable-services",
     response_model=Envelope[PricingPlanToServiceAdminGet],
-    summary="Connect service with pricing plan",
     tags=["admin"],
 )
 async def connect_service_to_pricing_plan(
