@@ -58,13 +58,31 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
       let control;
       switch (id) {
         case "new-folder":
-          control = this.self().createMenuButton(this.tr("New Folder"), osparc.dashboard.CardBase.NEW_ICON + "14");
+          control = this.self().createMenuButton(
+            this.tr("New Folder"),
+            osparc.dashboard.CardBase.NEW_ICON + "14"
+          );
           osparc.utils.Utils.setIdToWidget(control, "newFolderButton");
           control.addListener("tap", () => this.__createNewFolder());
           this.add(control);
           break;
-        case "more-entry":
-          control = this.self().createMenuButton(this.tr("More"));
+        case "templates-entry":
+          control = this.self().createMenuButton(
+            osparc.product.Utils.getTemplateAlias({
+              firstUpperCase: true,
+              plural: true
+            }),
+            "@FontAwesome5Solid/copy/14"
+          );
+          control.addListener("tap", () => this.fireDataEvent("changeTab", "templatesTab"));
+          this.add(control);
+          break;
+        case "services-entry":
+          control = this.self().createMenuButton(
+            this.tr("Services"),
+            "@FontAwesome5Solid/cogs/14"
+          );
+          control.addListener("tap", () => this.fireDataEvent("changeTab", "servicesTab"));
           this.add(control);
           break;
       }
@@ -74,27 +92,22 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
     __addItems: async function() {
       this.getChildControl("new-folder");
       this.addSeparator();
-      await this.__fetchReferencedTemplates();
+      await this.__addNewStudyItems();
       const permissions = osparc.data.Permissions.getInstance();
       if (permissions.canDo("dashboard.templates.read") || permissions.canDo("dashboard.services.read")) {
         this.addSeparator();
-        const moreMenu = new qx.ui.menu.Menu();
-        const moreEntry = this.getChildControl("more-entry");
-        moreEntry.setMenu(moreMenu);
         if (permissions.canDo("dashboard.templates.read")) {
-          const templatesButton = this.self().createMenuButton(this.tr("Templates"));
-          templatesButton.addListener("tap", () => this.fireDataEvent("changeTab", "templatesTab"));
-          moreMenu.add(templatesButton);
+          const templatesButton = this.getChildControl("templates-entry");
+          this.add(templatesButton);
         }
         if (permissions.canDo("dashboard.services.read")) {
-          const servicesButton = this.self().createMenuButton(this.tr("Services"));
-          servicesButton.addListener("tap", () => this.fireDataEvent("changeTab", "servicesTab"));
-          moreMenu.add(servicesButton);
+          const servicesButton = this.getChildControl("services-entry");
+          this.add(servicesButton);
         }
       }
     },
 
-    __fetchReferencedTemplates: async function() {
+    __addNewStudyItems: async function() {
       await osparc.utils.Utils.fetchJSON("/resource/osparc/new_studies.json")
         .then(newStudiesData => {
           const product = osparc.product.Utils.getProductName()
@@ -104,7 +117,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
                 if (templates) {
                   const referencedTemplates = newStudiesData[product];
                   if (referencedTemplates["linkedResource"] === "templates") {
-                    this.__addReferencedTemplateButtons(referencedTemplates, templates);
+                    this.__addFromTemplateButtons(referencedTemplates, templates);
                   }
                 }
               });
@@ -112,7 +125,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
         });
     },
 
-    __addReferencedTemplateButtons: function(referencedTemplates, templates) {
+    __addFromTemplateButtons: function(referencedTemplates, templates) {
       const displayTemplates = referencedTemplates["resources"].filter(referencedTemplate => {
         if (referencedTemplate.showDisabled) {
           return true;
