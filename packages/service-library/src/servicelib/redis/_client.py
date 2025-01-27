@@ -86,6 +86,7 @@ class RedisClientSDK:
 
     async def ping(self) -> bool:
         with log_catch(_logger, reraise=False):
+            # FIXME: this ping should NOT retry!?
             await self._client.ping()
             return True
         return False
