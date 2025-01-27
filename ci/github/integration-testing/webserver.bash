@@ -21,7 +21,7 @@ test() {
   # shellcheck source=/dev/null
   source .venv/bin/activate
   pushd services/web/server
-  make test-ci-integration test-path="$1" pytest-parameters="--setup-show --log-cli-level=DEBUG"
+  make test-ci-integration test-path="$1"
   popd
 }
 

@@ -124,5 +124,4 @@ test-ci[all]:  ## runs unit tests  w/ all extras
 		--verbose \
 		-m "not heavy_load" \
 		--log-cli-level=DEBUG \
-		--setup-show \
 		$(CURDIR)/tests
