@@ -13,7 +13,7 @@ from redis.backoff import ExponentialBackoff
 
 from ..async_utils import cancel_wait_task
 from ..background_task import periodic
-from ..logging_utils import log_catch
+from ..logging_utils import log_catch, log_context
 from ._constants import (
     DEFAULT_DECODE_RESPONSES,
     DEFAULT_HEALTH_CHECK_INTERVAL,
@@ -77,16 +77,20 @@ class RedisClientSDK:
         )
 
     async def shutdown(self) -> None:
-        if self._health_check_task:
-            assert self._health_check_task_started_event  # nosec
-            await self._health_check_task_started_event.wait()  # NOTE: wait for the health check task to have started once before we can cancel it
-            await cancel_wait_task(self._health_check_task)
+        with log_context(
+            _logger, level=logging.DEBUG, msg=f"Shutdown RedisClientSDK {self}"
+        ):
+            if self._health_check_task:
+                assert self._health_check_task_started_event  # nosec
+                # NOTE: wait for the health check task to have started once before we can cancel it
+                await self._health_check_task_started_event.wait()
+                await cancel_wait_task(self._health_check_task, max_delay=3)
 
-        await self._client.aclose(close_connection_pool=True)
+            await self._client.aclose(close_connection_pool=True)
 
     async def ping(self) -> bool:
         with log_catch(_logger, reraise=False):
-            # FIXME: this ping should NOT retry!?
+            # NOTE: retry_* input parameters from aioredis.from_url do not apply for the ping call
             await self._client.ping()
             return True
         return False
