@@ -27,12 +27,12 @@ pytest_simcore_core_services_selection = [
 
 
 async def test_rabbit_client_lose_connection(
-    paused_container: Callable[[str], AbstractAsyncContextManager[None]],
+    pause_container: Callable[[str], AbstractAsyncContextManager[None]],
     create_rabbitmq_client: Callable[[str], RabbitMQClient],
 ):
     rabbit_client = create_rabbitmq_client("pinger")
     assert await rabbit_client.ping() is True
-    async with paused_container("rabbit"):
+    async with pause_container("rabbit"):
         # check that connection was lost
         async for attempt in AsyncRetrying(
             stop=stop_after_delay(15), wait=wait_fixed(0.5), reraise=True
@@ -69,7 +69,7 @@ def random_rabbit_message(
 
 @pytest.mark.no_cleanup_check_rabbitmq_server_has_no_errors()
 async def test_rabbit_client_with_paused_container(
-    paused_container: Callable[[str], AbstractAsyncContextManager[None]],
+    pause_container: Callable[[str], AbstractAsyncContextManager[None]],
     random_exchange_name: Callable[[], str],
     random_rabbit_message: Callable[..., PytestRabbitMessage],
     create_rabbitmq_client: Callable[[str], RabbitMQClient],
@@ -79,7 +79,7 @@ async def test_rabbit_client_with_paused_container(
     exchange_name = random_exchange_name()
     message = random_rabbit_message()
     await rabbit_client.publish(exchange_name, message)
-    async with paused_container("rabbit"):
+    async with pause_container("rabbit"):
         # check that connection was lost
         with pytest.raises(asyncio.TimeoutError):
             await rabbit_client.publish(exchange_name, message)
