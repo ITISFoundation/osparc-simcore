@@ -956,31 +956,31 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         firstUpperCase: true
       })
       const desc = this.tr("Start with an empty study");
-      const newStudyBtn = (mode === "grid") ? new osparc.dashboard.GridButtonNew(title, desc) : new osparc.dashboard.ListButtonNew(title, desc);
-      newStudyBtn.setCardKey("new-study");
-      newStudyBtn.subscribeToFilterGroup("searchBarFilter");
-      osparc.utils.Utils.setIdToWidget(newStudyBtn, "newStudyBtn");
-      newStudyBtn.addListener("tap", () => this.__newStudyBtnClicked(newStudyBtn));
-      this._resourcesContainer.addNonResourceCard(newStudyBtn);
+      const newEmptyStudyBtn = (mode === "grid") ? new osparc.dashboard.GridButtonNew(title, desc) : new osparc.dashboard.ListButtonNew(title, desc);
+      newEmptyStudyBtn.setCardKey("new-study");
+      newEmptyStudyBtn.subscribeToFilterGroup("searchBarFilter");
+      osparc.utils.Utils.setIdToWidget(newEmptyStudyBtn, "emptyStudyBtn");
+      newEmptyStudyBtn.addListener("tap", () => this.__newEmptyStudyBtnClicked());
+      this._resourcesContainer.addNonResourceCard(newEmptyStudyBtn);
     },
 
     __addTIPPlusButton: function() {
       const mode = this._resourcesContainer.getMode();
       const title = this.tr("New Plan");
-      const newStudyBtn = (mode === "grid") ? new osparc.dashboard.GridButtonNew(title) : new osparc.dashboard.ListButtonNew(title);
-      newStudyBtn.setCardKey("new-study");
-      newStudyBtn.subscribeToFilterGroup("searchBarFilter");
-      osparc.utils.Utils.setIdToWidget(newStudyBtn, "newStudyBtn");
-      this._resourcesContainer.addNonResourceCard(newStudyBtn);
-      newStudyBtn.setEnabled(false);
+      const newPlansBtn = (mode === "grid") ? new osparc.dashboard.GridButtonNew(title) : new osparc.dashboard.ListButtonNew(title);
+      newPlansBtn.setCardKey("new-study");
+      newPlansBtn.subscribeToFilterGroup("searchBarFilter");
+      osparc.utils.Utils.setIdToWidget(newPlansBtn, "newPlansBtn");
+      this._resourcesContainer.addNonResourceCard(newPlansBtn);
+      newPlansBtn.setEnabled(false);
 
       osparc.utils.Utils.fetchJSON("/resource/osparc/new_studies.json")
         .then(newStudiesData => {
           const product = osparc.product.Utils.getProductName()
           if (product in newStudiesData) {
-            newStudyBtn.setEnabled(true);
+            newPlansBtn.setEnabled(true);
 
-            newStudyBtn.addListener("tap", () => {
+            newPlansBtn.addListener("tap", () => {
               osparc.data.Resources.get("templates")
                 .then(templates => {
                   if (templates) {
@@ -1506,7 +1506,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
     },
 
-    __newStudyBtnClicked: function(button) {
+    __newEmptyStudyBtnClicked: function() {
       const minStudyData = osparc.data.model.Study.createMinStudyObject();
       const existingNames = this._resourcesList.map(study => study["name"]);
       const title = osparc.utils.Utils.getUniqueName(minStudyData.name, existingNames);

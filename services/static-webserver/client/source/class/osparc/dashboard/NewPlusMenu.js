@@ -250,6 +250,8 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
       // disable it until found in services store
       menuButton.setEnabled(false);
 
+      // OM: direct access to service metadata
+
       const key = newStudyData.expectedKey;
       // Include deprecated versions, they should all be updatable to a non deprecated version
       const versions = osparc.service.Utils.getVersions(key, false);

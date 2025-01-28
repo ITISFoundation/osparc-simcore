@@ -301,8 +301,8 @@ qx.Class.define("osparc.product.Utils", {
         "s4l",
         "s4lacad",
         "s4llite",
-        "tis",
-        "tiplite",
+        // "tis",
+        // "tiplite",
       ].includes(osparc.product.Utils.getProductName());
     },
   }
