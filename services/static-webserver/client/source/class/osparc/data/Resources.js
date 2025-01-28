@@ -633,14 +633,14 @@ qx.Class.define("osparc.data.Resources", {
       },
 
       /*
-       * PRICING PLANS
+       * ADMIN PRICING PLANS
        */
-      "pricingPlans": {
+      "adminPricingPlans": {
         useCache: false, // handled in osparc.store.Pricing
         endpoints: {
-          get: {
+          getPage: {
             method: "GET",
-            url: statics.API + "/admin/pricing-plans"
+            url: statics.API + "/admin/pricing-plans?offset={offset}&limit={limit}"
           },
           getOne: {
             method: "GET",
@@ -653,6 +653,23 @@ qx.Class.define("osparc.data.Resources", {
           post: {
             method: "POST",
             url: statics.API + "/admin/pricing-plans"
+          },
+        }
+      },
+
+      /*
+       * PRICING PLANS
+       */
+      "pricingPlans": {
+        useCache: false, // handled in osparc.store.Pricing
+        endpoints: {
+          getPage: {
+            method: "GET",
+            url: statics.API + "/pricing-plans?offset={offset}&limit={limit}"
+          },
+          getOne: {
+            method: "GET",
+            url: statics.API + "/pricing-plans/{pricingPlanId}"
           },
         }
       },
