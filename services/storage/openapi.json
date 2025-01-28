@@ -795,17 +795,13 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "array",
-                "items": {
-                  "$ref": "#/components/schemas/UploadedPart"
-                },
-                "title": "Parts"
+                "$ref": "#/components/schemas/FileUploadCompletionBody"
               }
             }
           }
         },
         "responses": {
-          "200": {
+          "202": {
             "description": "Successful Response",
             "content": {
               "application/json": {
@@ -944,18 +940,18 @@
               "title": "User Id",
               "minimum": 0
             }
-          },
-          {
-            "name": "link_id",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "pattern": "^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\\/(.+)$",
-              "title": "Link Id"
-            }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SoftCopyBody"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -2025,6 +2021,22 @@
         ],
         "title": "FileUploadCompleteState"
       },
+      "FileUploadCompletionBody": {
+        "properties": {
+          "parts": {
+            "items": {
+              "$ref": "#/components/schemas/UploadedPart"
+            },
+            "type": "array",
+            "title": "Parts"
+          }
+        },
+        "type": "object",
+        "required": [
+          "parts"
+        ],
+        "title": "FileUploadCompletionBody"
+      },
       "FileUploadLinks": {
         "properties": {
           "abort_upload": {
@@ -2242,6 +2254,20 @@
           "S3_SECRET_KEY"
         ],
         "title": "S3Settings"
+      },
+      "SoftCopyBody": {
+        "properties": {
+          "link_id": {
+            "type": "string",
+            "pattern": "^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\\/(.+)$",
+            "title": "Link Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "link_id"
+        ],
+        "title": "SoftCopyBody"
       },
       "StorageQueryParamsBase": {
         "properties": {
