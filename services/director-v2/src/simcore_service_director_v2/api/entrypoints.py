@@ -4,6 +4,8 @@ from .._meta import API_VTAG
 from .routes import (
     computations,
     computations_tasks,
+    docker_networks,
+    docker_services,
     dynamic_scheduler,
     dynamic_services,
     health,
@@ -25,6 +27,12 @@ v2_router.include_router(
 )
 v2_router.include_router(
     dynamic_services.router, tags=["dynamic services"], prefix="/dynamic_services"
+)
+v2_router.include_router(
+    docker_networks.router, tags=["docker networks"], prefix="/docker/networks"
+)
+v2_router.include_router(
+    docker_services.router, tags=["docker services"], prefix="/docker/services"
 )
 
 v2_router.include_router(
