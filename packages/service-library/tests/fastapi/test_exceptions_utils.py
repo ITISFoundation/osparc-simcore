@@ -71,7 +71,7 @@ async def test_http_errors_respond_with_error_model(
     assert error.name
 
 
-# @pytest.mark.xfail
+@pytest.mark.xfail
 @pytest.mark.parametrize("code,exception", list(builtin_exceptions.items()))
 async def test_non_http_error_handling(
     client: AsyncClient, code: int | str, exception: BaseException
