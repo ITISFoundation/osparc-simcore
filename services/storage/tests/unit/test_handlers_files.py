@@ -1073,21 +1073,22 @@ async def test_download_file_the_file_is_missing_from_the_directory(
     missing_s3_file_id = TypeAdapter(SimcoreS3FileID).validate_python(
         f"{dir_path_in_s3}/missing_inside_dir.file"
     )
-    download_url = (
-        client.app.router["download_file"]
-        .url_for(
-            location_id=f"{location_id}",
-            file_id=urllib.parse.quote(missing_s3_file_id, safe=""),
-        )
-        .with_query(user_id=user_id)
-    )
+    download_url = url_from_operation_id(
+        client,
+        initialized_app,
+        "download_file",
+        location_id=f"{location_id}",
+        file_id=urllib.parse.quote(missing_s3_file_id, safe=""),
+    ).with_query(user_id=user_id)
+
     response = await client.get(f"{download_url}")
-    data, error = await assert_status(response, status.HTTP_404_NOT_FOUND)
+    data, error = assert_status(response, status.HTTP_404_NOT_FOUND, None)
     assert data is None
     assert missing_s3_file_id in error["message"]
 
 
 async def test_download_file_access_rights(
+    initialized_app: FastAPI,
     client: httpx.AsyncClient,
     location_id: int,
     user_id: UserID,
@@ -1105,17 +1106,16 @@ async def test_download_file_access_rights(
         )
         is False
     )
+    download_url = url_from_operation_id(
+        client,
+        initialized_app,
+        "download_file",
+        location_id=f"{location_id}",
+        file_id=urllib.parse.quote(missing_file, safe=""),
+    ).with_query(user_id=user_id)
 
-    download_url = (
-        client.app.router["download_file"]
-        .url_for(
-            location_id=f"{location_id}",
-            file_id=urllib.parse.quote(missing_file, safe=""),
-        )
-        .with_query(user_id=user_id)
-    )
     response = await client.get(f"{download_url}")
-    data, error = await assert_status(response, status.HTTP_403_FORBIDDEN)
+    data, error = assert_status(response, status.HTTP_403_FORBIDDEN, None)
     assert data is None
     assert "Insufficient access rights" in error["message"]
 
@@ -1131,6 +1131,7 @@ async def test_delete_file(
     sqlalchemy_async_engine: AsyncEngine,
     storage_s3_client: SimcoreS3API,
     storage_s3_bucket: S3BucketName,
+    initialized_app: FastAPI,
     client: httpx.AsyncClient,
     file_size: ByteSize,
     upload_file: Callable[[ByteSize, str], Awaitable[tuple[Path, SimcoreS3FileID]]],
@@ -1140,16 +1141,15 @@ async def test_delete_file(
 ):
     _, uploaded_file_uuid = await upload_file(file_size, faker.file_name())
 
-    delete_url = (
-        client.app.router["delete_file"]
-        .url_for(
-            location_id=f"{location_id}",
-            file_id=urllib.parse.quote(uploaded_file_uuid, safe=""),
-        )
-        .with_query(user_id=user_id)
-    )
+    delete_url = url_from_operation_id(
+        client,
+        initialized_app,
+        "delete_file",
+        location_id=f"{location_id}",
+        file_id=urllib.parse.quote(uploaded_file_uuid, safe=""),
+    ).with_query(user_id=user_id)
     response = await client.delete(f"{delete_url}")
-    await assert_status(response, status.HTTP_204_NO_CONTENT)
+    assert_status(response, status.HTTP_204_NO_CONTENT, None)
 
     # check the entry in db is removed
     await assert_file_meta_data_in_db(
@@ -1181,13 +1181,12 @@ async def test_copy_as_soft_link(
     # missing simcore_file_id returns 404
     missing_file_uuid = create_simcore_file_id(project_id, node_id, faker.file_name())
     invalid_link_id = create_simcore_file_id(uuid4(), uuid4(), faker.file_name())
-    url = (
-        client.app.router["copy_as_soft_link"]
-        .url_for(
-            file_id=urllib.parse.quote(missing_file_uuid, safe=""),
-        )
-        .with_query(user_id=user_id)
-    )
+    url = url_from_operation_id(
+        client,
+        initialized_app,
+        "copy_as_soft_link",
+        file_id=urllib.parse.quote(missing_file_uuid, safe=""),
+    ).with_query(user_id=user_id)
     response = await client.post(
         f"{url}", json=jsonable_encoder(SoftCopyBody(link_id=invalid_link_id))
     )
