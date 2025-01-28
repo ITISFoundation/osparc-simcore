@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:14.5-alpine@sha256:db802f226b620fc0b8adbeca7859eb203c8d3c9ce5d84870fadee05dea8f50ce
+    image: "postgres:17.2-alpine3.21@sha256:17143ad87797f511036cf8f50ada164aeb371f0d8068a172510549fb5d2cd65f"
     init: true
     environment:
       - POSTGRES_USER=${POSTGRES_USER:-test}
