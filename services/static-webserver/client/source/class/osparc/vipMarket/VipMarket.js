@@ -229,8 +229,7 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
                 }
                 licensedItemsStore.purchaseLicensedItem(licensedItemId, walletId, pricingPlanId, pricingUnitId, numberOfSeats)
                   .then(() => {
-                    const expirationDate = new Date();
-                    expirationDate.setMonth(expirationDate.getMonth() + 1); // rented for one month
+                    const expirationDate = osparc.study.PricingUnitLicense.getExpirationDate();
                     const purchaseData = {
                       expiresAt: expirationDate, // get this info from the response
                       numberOfSeats, // get this info from the response

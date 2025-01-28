@@ -1,12 +1,11 @@
 from datetime import datetime
-from typing import Self
+from typing import Annotated, Self
 
-from pydantic import ConfigDict
+from pydantic import ConfigDict, Field
 
 from ..access_rights import AccessRights
 from ..basic_types import IDStr
 from ..groups import GroupID
-from ..users import UserID
 from ..workspaces import UserWorkspaceWithAccessRights, WorkspaceID
 from ._base import InputSchema, OutputSchema
 
@@ -19,7 +18,9 @@ class WorkspaceGet(OutputSchema):
     created_at: datetime
     modified_at: datetime
     trashed_at: datetime | None
-    trashed_by: UserID | None
+    trashed_by: Annotated[
+        GroupID | None, Field(description="The primary gid of the user who trashed")
+    ]
     my_access_rights: AccessRights
     access_rights: dict[GroupID, AccessRights]
 
@@ -33,7 +34,7 @@ class WorkspaceGet(OutputSchema):
             created_at=wks.created,
             modified_at=wks.modified,
             trashed_at=wks.trashed,
-            trashed_by=wks.trashed_by if wks.trashed else None,
+            trashed_by=wks.trashed_by_primary_gid if wks.trashed else None,
             my_access_rights=wks.my_access_rights,
             access_rights=wks.access_rights,
         )

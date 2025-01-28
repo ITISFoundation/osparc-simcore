@@ -14,6 +14,7 @@ from models_library.api_schemas_webserver.projects import (
     ProjectCopyOverride,
     ProjectCreateNew,
     ProjectGet,
+    ProjectListItem,
     ProjectPatch,
 )
 from models_library.generics import Envelope
@@ -67,7 +68,6 @@ from .exceptions import (
     ProjectOwnerNotFoundInTheProjectAccessRightsError,
     WrongTagIdsInQueryError,
 )
-from .models import ProjectDict
 from .utils import get_project_unavailable_services, project_uses_available_services
 
 # When the user requests a project with a repo, the working copy might differ from
@@ -172,6 +172,27 @@ async def create_project(request: web.Request):
     )
 
 
+def _create_page_response(projects, request_url, total, limit, offset) -> web.Response:
+    page = Page[ProjectListItem].model_validate(
+        paginate_data(
+            chunk=[
+                ProjectListItem.from_domain_model(prj).model_dump(
+                    by_alias=True, exclude_unset=True
+                )
+                for prj in projects
+            ],
+            request_url=request_url,
+            total=total,
+            limit=limit,
+            offset=offset,
+        )
+    )
+    return web.Response(
+        text=page.model_dump_json(**RESPONSE_MODEL_POLICY),
+        content_type=MIMETYPE_APPLICATION_JSON,
+    )
+
+
 @routes.get(f"/{VTAG}/projects", name="list_projects")
 @login_required
 @permission_required("project.read")
@@ -212,18 +233,12 @@ async def list_projects(request: web.Request):
         order_by=OrderBy.model_construct(**query_params.order_by.model_dump()),
     )
 
-    page = Page[ProjectDict].model_validate(
-        paginate_data(
-            chunk=projects,
-            request_url=request.url,
-            total=total_number_of_projects,
-            limit=query_params.limit,
-            offset=query_params.offset,
-        )
-    )
-    return web.Response(
-        text=page.model_dump_json(**RESPONSE_MODEL_POLICY),
-        content_type=MIMETYPE_APPLICATION_JSON,
+    return _create_page_response(
+        projects=projects,
+        request_url=request.url,
+        total=total_number_of_projects,
+        limit=query_params.limit,
+        offset=query_params.offset,
     )
 
 
@@ -254,18 +269,12 @@ async def list_projects_full_search(request: web.Request):
         order_by=OrderBy.model_construct(**query_params.order_by.model_dump()),
     )
 
-    page = Page[ProjectDict].model_validate(
-        paginate_data(
-            chunk=projects,
-            request_url=request.url,
-            total=total_number_of_projects,
-            limit=query_params.limit,
-            offset=query_params.offset,
-        )
-    )
-    return web.Response(
-        text=page.model_dump_json(**RESPONSE_MODEL_POLICY),
-        content_type=MIMETYPE_APPLICATION_JSON,
+    return _create_page_response(
+        projects=projects,
+        request_url=request.url,
+        total=total_number_of_projects,
+        limit=query_params.limit,
+        offset=query_params.offset,
     )
 
 
@@ -304,6 +313,7 @@ async def get_active_project(request: web.Request) -> web.Response:
                 project_uuid=user_active_projects[0],
                 user_id=req_ctx.user_id,
                 include_state=True,
+                include_trashed_by_primary_gid=True,
             )
 
             # updates project's permalink field
@@ -344,6 +354,7 @@ async def get_project(request: web.Request):
             project_uuid=f"{path_params.project_id}",
             user_id=req_ctx.user_id,
             include_state=True,
+            include_trashed_by_primary_gid=True,
         )
         if not await project_uses_available_services(project, user_available_services):
             unavilable_services = get_project_unavailable_services(
