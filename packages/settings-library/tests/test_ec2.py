@@ -56,7 +56,7 @@ def test_ec2_endpoint_invalid(monkeypatch: pytest.MonkeyPatch):
     assert err_info.value.error_count() == 1
     error = err_info.value.errors()[0]
 
-    assert error["loc"] == "EC2_ENDPOINT"
+    assert error["loc"] == ("EC2_ENDPOINT",)
     assert error["type"] == "url_scheme"
 
 
