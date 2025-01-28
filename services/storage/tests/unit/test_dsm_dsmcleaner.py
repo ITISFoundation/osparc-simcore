@@ -192,13 +192,13 @@ async def test_clean_expired_uploads_deletes_expired_pending_uploads(
     )
 
     # now change the upload_expires_at entry to simulate and expired entry
-    async with sqlalchemy_async_engine.connect() as conn:
+    async with sqlalchemy_async_engine.begin() as conn:
         await conn.execute(
             file_meta_data.update()
             .where(file_meta_data.c.file_id == file_or_directory_id)
             .values(upload_expires_at=datetime.datetime.utcnow())
         )
-    await asyncio.sleep(1)
+    await asyncio.sleep(5)
     await simcore_s3_dsm.clean_expired_uploads()
 
     # check the entries were removed
