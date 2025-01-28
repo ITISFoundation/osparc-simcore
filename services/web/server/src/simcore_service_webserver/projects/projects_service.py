@@ -106,7 +106,7 @@ from ..resource_manager.user_sessions import (
     UserSessionID,
     managed_resource,
 )
-from ..resource_usage import api as rut_api
+from ..resource_usage import service as rut_api
 from ..socketio.messages import (
     SOCKET_IO_NODE_UPDATED_EVENT,
     SOCKET_IO_PROJECT_UPDATED_EVENT,

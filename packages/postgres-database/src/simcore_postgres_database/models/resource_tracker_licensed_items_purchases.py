@@ -73,6 +73,11 @@ resource_tracker_licensed_items_purchases = sa.Table(
         nullable=False,
     ),
     sa.Column(
+        "user_email",
+        sa.String,
+        nullable=True,
+    ),
+    sa.Column(
         "purchased_at",
         sa.DateTime(timezone=True),
         nullable=False,

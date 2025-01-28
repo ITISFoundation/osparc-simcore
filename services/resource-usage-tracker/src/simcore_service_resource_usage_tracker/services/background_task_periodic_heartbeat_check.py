@@ -81,6 +81,7 @@ async def _close_unhealthy_service(
     service_run_id: ServiceRunID,
     base_start_timestamp: datetime,
 ):
+
     # 1. Close the service_run
     update_service_run_stopped_at = ServiceRunStoppedAtUpdate(
         service_run_id=service_run_id,
@@ -106,21 +107,48 @@ async def _close_unhealthy_service(
             running_service.last_heartbeat_at,
             running_service.pricing_unit_cost,
         )
+        # NOTE: I have decided that in the case of an error on our side, we will
+        # close the Dynamic service as BILLED -> since the user was effectively using it until
+        # the issue occurred.
+        # NOTE: Update Jan 2025 - With the introduction of the IN_DEBT state,
+        # when closing the transaction for the dynamic service as BILLED, it is possible
+        # that the wallet may show a negative balance during this period, which would typically
+        # be considered as IN_DEBT. However, I have decided to still close it as BILLED.
+        # This ensures that the user does not have to explicitly pay the DEBT, as the closure
+        # was caused by an issue on our side.
+        _transaction_status = (
+            CreditTransactionStatus.NOT_BILLED
+            if running_service.service_type
+            == ResourceTrackerServiceType.COMPUTATIONAL_SERVICE
+            else CreditTransactionStatus.BILLED
+        )
         update_credit_transaction = CreditTransactionCreditsAndStatusUpdate(
             service_run_id=service_run_id,
             osparc_credits=make_negative(computed_credits),
-            transaction_status=(
-                CreditTransactionStatus.NOT_BILLED
-                if running_service.service_type
-                == ResourceTrackerServiceType.COMPUTATIONAL_SERVICE
-                else CreditTransactionStatus.BILLED
-            ),
+            transaction_status=_transaction_status,
         )
         await credit_transactions_db.update_credit_transaction_credits_and_status(
             db_engine, data=update_credit_transaction
         )
 
-    # 3. Release license seats in case some were checked out but not properly released.
+        # 3. If the credit transaction status is considered "NOT_BILLED", this might return
+        # the wallet to positive numbers. If, in the meantime, some transactions were marked as DEBT,
+        # we need to update them back to the BILLED state.
+        if _transaction_status == CreditTransactionStatus.NOT_BILLED:
+            wallet_total_credits = await credit_transactions_db.sum_wallet_credits(
+                db_engine,
+                product_name=running_service.product_name,
+                wallet_id=running_service.wallet_id,
+            )
+            if wallet_total_credits.available_osparc_credits >= 0:
+                await credit_transactions_db.batch_update_credit_transaction_status_for_in_debt_transactions(
+                    db_engine,
+                    project_id=None,
+                    wallet_id=running_service.wallet_id,
+                    transaction_status=CreditTransactionStatus.BILLED,
+                )
+
+    # 4. Release license seats in case some were checked out but not properly released.
     await licensed_items_checkouts_db.force_release_license_seats_by_run_id(
         db_engine, service_run_id=service_run_id
     )

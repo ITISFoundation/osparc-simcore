@@ -62,6 +62,7 @@ async def list_licensed_items_purchases(
                 expire_at=licensed_item_purchase_db.expire_at,
                 num_of_seats=licensed_item_purchase_db.num_of_seats,
                 purchased_by_user=licensed_item_purchase_db.purchased_by_user,
+                user_email=licensed_item_purchase_db.user_email,
                 purchased_at=licensed_item_purchase_db.purchased_at,
                 modified=licensed_item_purchase_db.modified,
             )
@@ -96,6 +97,7 @@ async def get_licensed_item_purchase(
         expire_at=licensed_item_purchase_db.expire_at,
         num_of_seats=licensed_item_purchase_db.num_of_seats,
         purchased_by_user=licensed_item_purchase_db.purchased_by_user,
+        user_email=licensed_item_purchase_db.user_email,
         purchased_at=licensed_item_purchase_db.purchased_at,
         modified=licensed_item_purchase_db.modified,
     )
@@ -120,6 +122,7 @@ async def create_licensed_item_purchase(
             expire_at=data.expire_at,
             num_of_seats=data.num_of_seats,
             purchased_by_user=data.purchased_by_user,
+            user_email=data.user_email,
             purchased_at=data.purchased_at,
         )
 
@@ -169,6 +172,7 @@ async def create_licensed_item_purchase(
         expire_at=licensed_item_purchase_db.expire_at,
         num_of_seats=licensed_item_purchase_db.num_of_seats,
         purchased_by_user=licensed_item_purchase_db.purchased_by_user,
+        user_email=licensed_item_purchase_db.user_email,
         purchased_at=licensed_item_purchase_db.purchased_at,
         modified=licensed_item_purchase_db.modified,
     )

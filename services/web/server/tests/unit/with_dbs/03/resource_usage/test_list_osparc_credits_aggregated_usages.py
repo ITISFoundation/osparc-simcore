@@ -39,7 +39,7 @@ _SERVICE_RUN_GET = OsparcCreditsAggregatedUsagesPage(
 @pytest.fixture
 def mock_get_osparc_credits_aggregated_usages_page(mocker: MockerFixture) -> MagicMock:
     return mocker.patch(
-        "simcore_service_webserver.resource_usage._service_runs_api.service_runs.get_osparc_credits_aggregated_usages_page",
+        "simcore_service_webserver.resource_usage._service_runs_service.service_runs.get_osparc_credits_aggregated_usages_page",
         spec=True,
         return_value=_SERVICE_RUN_GET,
     )

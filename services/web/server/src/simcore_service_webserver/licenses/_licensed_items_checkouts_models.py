@@ -24,6 +24,7 @@ class LicensedItemCheckoutGet(BaseModel):
     licensed_item_id: LicensedItemID
     wallet_id: WalletID
     user_id: UserID
+    user_email: str
     product_name: ProductName
     started_at: datetime
     stopped_at: datetime | None

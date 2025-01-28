@@ -11,7 +11,10 @@ from models_library.users import UserID
 from models_library.wallets import WalletID
 
 from . import _client
-from ._pricing_plans_api import get_default_service_pricing_plan, get_pricing_plan_unit
+from ._pricing_plans_service import (
+    get_default_service_pricing_plan,
+    get_pricing_plan_unit,
+)
 
 
 async def get_wallet_total_available_credits(

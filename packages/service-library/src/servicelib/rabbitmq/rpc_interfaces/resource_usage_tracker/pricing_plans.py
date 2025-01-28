@@ -6,6 +6,7 @@ from models_library.api_schemas_resource_usage_tracker import (
 )
 from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
     PricingPlanGet,
+    PricingPlanPage,
     PricingPlanToServiceGet,
 )
 from models_library.products import ProductName
@@ -52,14 +53,21 @@ async def list_pricing_plans(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
     product_name: ProductName,
-) -> list[PricingPlanGet]:
-    result: PricingPlanGet = await rabbitmq_rpc_client.request(
+    exclude_inactive: bool = True,
+    # pagination
+    offset: int = 0,
+    limit: int = 20,
+) -> PricingPlanPage:
+    result = await rabbitmq_rpc_client.request(
         RESOURCE_USAGE_TRACKER_RPC_NAMESPACE,
         _RPC_METHOD_NAME_ADAPTER.validate_python("list_pricing_plans"),
         product_name=product_name,
+        exclude_inactive=exclude_inactive,
+        offset=offset,
+        limit=limit,
         timeout_s=_DEFAULT_TIMEOUT_S,
     )
-    assert isinstance(result, list)  # nosec
+    assert isinstance(result, PricingPlanPage)  # nosec
     return result
 
 

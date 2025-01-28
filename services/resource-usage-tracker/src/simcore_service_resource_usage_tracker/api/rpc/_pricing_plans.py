@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
     PricingPlanGet,
+    PricingPlanPage,
     PricingPlanToServiceGet,
     PricingUnitGet,
 )
@@ -43,10 +44,17 @@ async def list_pricing_plans(
     app: FastAPI,
     *,
     product_name: ProductName,
-) -> list[PricingPlanGet]:
+    exclude_inactive: bool,
+    # pagination
+    offset: int,
+    limit: int,
+) -> PricingPlanPage:
     return await pricing_plans.list_pricing_plans_by_product(
-        product_name=product_name,
         db_engine=app.state.engine,
+        product_name=product_name,
+        exclude_inactive=exclude_inactive,
+        offset=offset,
+        limit=limit,
     )
 
 

@@ -187,7 +187,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
             if (err["status"] == 402) {
               msg = err["message"];
               // The backend might have thrown a 402 because the wallet was negative
-              const match = msg.match(/Project debt\s([-]?\d+(\.\d+)?)\scredits/);
+              const match = msg.match(/last transaction of\s([-]?\d+(\.\d+)?)\sresulted/);
               let debt = null;
               if ("debtAmount" in err) {
                 // the study has some debt that needs to be paid
