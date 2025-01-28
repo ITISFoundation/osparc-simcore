@@ -160,8 +160,17 @@
       "resourceType": "service",
       "expectedKey": "simcore/services/dynamic/s4l-ui-lite",
       "title": "${replace_me_product_name}",
-      "newStudyLabel": "New project",
+      "newStudyLabel": "New Project",
       "idToWidget": "startS4LButton"
+    }]
+  },
+  "osparc": {
+    "resources": [{
+      "resourceType": "study",
+      "icon": "@FontAwesome5Solid/file/16",
+      "title": "Empty Study",
+      "newStudyLabel": "New Study",
+      "idToWidget": "newStudyBtn"
     }]
   }
 }

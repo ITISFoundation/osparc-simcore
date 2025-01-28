@@ -32,7 +32,7 @@ qx.Class.define("osparc.dashboard.NewPlusButton", {
       allowGrowX: false,
     });
 
-    osparc.utils.Utils.setIdToWidget(this, "newStudyBtn");
+    osparc.utils.Utils.setIdToWidget(this, "newPlusBtn");
 
     this.setMenu(new osparc.dashboard.NewPlusMenu());
   },

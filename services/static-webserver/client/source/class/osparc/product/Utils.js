@@ -297,11 +297,12 @@ qx.Class.define("osparc.product.Utils", {
 
     hasNewPlusButton: function() {
       return [
-        "tis",
-        "tiplite",
+        "osparc",
         "s4l",
         "s4lacad",
         "s4llite",
+        "tis",
+        "tiplite",
       ].includes(osparc.product.Utils.getProductName());
     },
   }
