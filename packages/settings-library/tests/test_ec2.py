@@ -53,11 +53,14 @@ def test_ec2_endpoint_invalid(monkeypatch: pytest.MonkeyPatch):
     with pytest.raises(ValidationError) as err_info:
         EC2Settings.create_from_envs()
 
-    assert err_info.value.errors()
-    err_info.value.errors()[0]["loc"] == ("EC2_ENDPOINT")
-    err_info.value.errors()[0]["type"] == "url_scheme"
+    assert err_info.value.error_count() == 1
+    error = err_info.value.errors()[0]
+
+    assert error["loc"] == ("EC2_ENDPOINT")
+    assert error["type"] == "url_scheme"
 
 
 def test_ec2_endpoint_description():
-    assert EC2Settings.model_fields["EC2_ACCESS_KEY_ID"].description is None
-    assert EC2Settings.model_fields["EC2_ENDPOINT"].description is not None
+    model_fields = dict(EC2Settings.model_fields)
+    assert model_fields["EC2_ACCESS_KEY_ID"].description is None
+    assert model_fields["EC2_ENDPOINT"].description is not None

@@ -56,9 +56,10 @@ class Settings(BaseSettings):
     @classmethod
     def parse_none(cls, v, info: ValidationInfo):
         # WARNING: In nullable fields, envs equal to null or none are parsed as None !!
+
         if (
             info.field_name
-            and is_nullable(cls.model_fields[info.field_name])
+            and is_nullable(dict(cls.model_fields)[info.field_name])
             and isinstance(v, str)
             and v.lower() in ("null", "none")
         ):
