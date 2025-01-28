@@ -68,13 +68,8 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
             column: osparc.dashboard.ListButtonBase.POS.SHARED
           });
           break;
-        case "date-text":
-          control = new qx.ui.basic.Label().set({
-            font: "text-13",
-            allowGrowY: false,
-            minWidth: 120,
-            alignY: "middle"
-          });
+        case "date-by":
+          control = new osparc.ui.basic.DateAndBy();
           this._add(control, {
             row: 0,
             column: osparc.dashboard.ListButtonBase.POS.LAST_CHANGE
