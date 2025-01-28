@@ -17,8 +17,7 @@ def find_and_start_tip_plan_in_dashboard(
         plan_name_test_id: str,
     ) -> None:
         with log_context(logging.INFO, f"Finding {plan_name_test_id=} in dashboard"):
-            page.get_by_test_id("studiesTabBtn").click()
-            page.get_by_test_id("newStudyBtn").click()
+            page.get_by_test_id("newPlansBtn").click()
             page.get_by_test_id(plan_name_test_id).click()
 
     return _

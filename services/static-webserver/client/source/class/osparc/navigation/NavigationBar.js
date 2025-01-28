@@ -330,15 +330,6 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       return registerButton;
     },
 
-    addDashboardTabButtons: function(tabButtons) {
-      this.__tabButtons = tabButtons;
-      this.getChildControl("center-items").add(tabButtons);
-      this.bind("study", this.__tabButtons, "visibility", {
-        converter: s => s ? "excluded" : "visible"
-      });
-      this.__navBarResized();
-    },
-
     __applyStudy: function(study) {
       const readOnlyInfo = this.getChildControl("read-only-info")
       if (study) {

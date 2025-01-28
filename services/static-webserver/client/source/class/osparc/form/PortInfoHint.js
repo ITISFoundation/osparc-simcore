@@ -40,7 +40,7 @@ qx.Class.define("osparc.form.PortInfoHint", {
       }
       this.setHintText(text);
       this.set({
-        source: errorMsg ? this.self().ERROR_ICON : osparc.ui.hint.InfoHint.INFO_ICON,
+        source: errorMsg ? this.self().ERROR_ICON : osparc.ui.hint.InfoHint.INFO_ICON + "/14",
         textColor: errorMsg ? "failed-red" : "text"
       });
     }
