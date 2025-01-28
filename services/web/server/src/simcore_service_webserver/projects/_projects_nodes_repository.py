@@ -5,6 +5,7 @@ from aiohttp import web
 from models_library.projects import ProjectID
 from models_library.projects_nodes import Node, PartialNode
 from models_library.projects_nodes_io import NodeID
+from pydantic import TypeAdapter
 from simcore_postgres_database.utils_repos import transaction_context
 from simcore_postgres_database.webserver_models import projects_nodes
 from sqlalchemy.ext.asyncio import AsyncConnection
@@ -58,6 +59,22 @@ async def get_node(
             )
         assert row  # nosec
         return Node.model_validate(row, from_attributes=True)
+
+
+async def list_nodes(
+    app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
+    project_id: ProjectID,
+) -> list[Node]:
+    async with transaction_context(get_asyncpg_engine(app), connection) as conn:
+        result = await conn.stream(
+            sa.select(*_SELECTION_PROJECTS_NODES_DB_ARGS).where(
+                projects_nodes.c.project_uuid == f"{project_id}"
+            )
+        )
+        rows = await result.all() or []
+        return TypeAdapter(list[Node]).validate_python(rows)
 
 
 async def update_node(
