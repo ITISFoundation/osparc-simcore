@@ -96,8 +96,6 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
 
     app.add_middleware(GZipMiddleware)
 
-    app.add_middleware(BaseHTTPMiddleware, dispatch=timing_middleware.log_request)
-
     if settings.STORAGE_TRACING:
         setup_tracing(app, settings.STORAGE_TRACING, APP_NAME)
     if settings.STORAGE_MONITORING_ENABLED:
