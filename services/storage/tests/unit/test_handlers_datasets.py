@@ -16,15 +16,15 @@ from models_library.api_schemas_storage import DatasetMetaDataGet, FileMetaDataG
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import SimcoreS3FileID
 from models_library.users import UserID
-from pydantic import ByteSize, TypeAdapter
+from pydantic import ByteSize
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.fastapi import url_from_operation_id
+from pytest_simcore.helpers.httpx_assert_checks import assert_status
 from pytest_simcore.helpers.parametrizations import (
     byte_size_ids,
     parametrized_file_size,
 )
 from servicelib.aiohttp import status
-from yarl import URL
 
 pytest_simcore_core_services_selection = ["postgres"]
 pytest_simcore_ops_services_selection = ["adminer"]
@@ -40,15 +40,15 @@ async def test_list_dataset_files_metadata_with_no_files_returns_empty_array(
     url = url_from_operation_id(
         client,
         initialized_app,
-        "list_datasets_metadata",
+        "list_dataset_files_metadata",
         location_id=location_id,
-        project_id=project_id,
+        dataset_id=project_id,
     ).with_query(user_id=user_id)
 
     response = await client.get(f"{url}")
-    assert response.status_code == status.HTTP_200_OK
-    data = response.json()
+    data, error = assert_status(response, status.HTTP_200_OK, list[FileMetaDataGet])
     assert data == []
+    assert not error
 
 
 @pytest.mark.parametrize(
@@ -58,6 +58,7 @@ async def test_list_dataset_files_metadata_with_no_files_returns_empty_array(
 )
 async def test_list_dataset_files_metadata(
     upload_file: Callable[[ByteSize, str], Awaitable[tuple[Path, SimcoreS3FileID]]],
+    initialized_app: FastAPI,
     client: AsyncClient,
     user_id: UserID,
     project_id: ProjectID,
@@ -68,15 +69,20 @@ async def test_list_dataset_files_metadata(
     NUM_FILES = 3
     for n in range(NUM_FILES):
         file, file_id = await upload_file(file_size, faker.file_name())
-        url = URL(
-            f"/v0/locations/{location_id}/datasets/{project_id}/metadata"
+        url = url_from_operation_id(
+            client,
+            initialized_app,
+            "list_dataset_files_metadata",
+            location_id=location_id,
+            dataset_id=project_id,
         ).with_query(user_id=user_id)
 
         response = await client.get(f"{url}")
-        assert response.status_code == status.HTTP_200_OK
-        data = response.json()
-        assert data
-        list_fmds = TypeAdapter(list[FileMetaDataGet]).validate_python(data)
+        list_fmds, error = assert_status(
+            response, status.HTTP_200_OK, list[FileMetaDataGet]
+        )
+        assert not error
+        assert list_fmds
         assert len(list_fmds) == (n + 1)
         fmd = list_fmds[n]
         assert fmd.file_name == file.name
@@ -86,18 +92,25 @@ async def test_list_dataset_files_metadata(
 
 
 async def test_list_datasets_metadata(
+    initialized_app: FastAPI,
     client: AsyncClient,
     user_id: UserID,
     location_id: int,
     project_id: ProjectID,
 ):
-    url = URL(f"/v0/locations/{location_id}/datasets").with_query(user_id=user_id)
+    url = url_from_operation_id(
+        client,
+        initialized_app,
+        "list_datasets_metadata",
+        location_id=location_id,
+    ).with_query(user_id=user_id)
 
     response = await client.get(f"{url}")
+    list_datasets, error = assert_status(
+        response, status.HTTP_200_OK, list[DatasetMetaDataGet]
+    )
     assert response.status_code == status.HTTP_200_OK
-    data = response.json()
-    assert data
-    list_datasets = TypeAdapter(list[DatasetMetaDataGet]).validate_python(data)
+    assert list_datasets
     assert len(list_datasets) == 1
     dataset = list_datasets[0]
     assert dataset.dataset_id == project_id
@@ -105,6 +118,7 @@ async def test_list_datasets_metadata(
 
 async def test_ensure_expand_dirs_defaults_true(
     mocker: MockerFixture,
+    initialized_app: FastAPI,
     client: AsyncClient,
     user_id: UserID,
     project_id: ProjectID,
@@ -115,9 +129,13 @@ async def test_ensure_expand_dirs_defaults_true(
         autospec=True,
     )
 
-    url = URL(f"/v0/locations/{location_id}/datasets/{project_id}/metadata").with_query(
-        user_id=user_id
-    )
+    url = url_from_operation_id(
+        client,
+        initialized_app,
+        "list_dataset_files_metadata",
+        location_id=location_id,
+        dataset_id=project_id,
+    ).with_query(user_id=user_id)
 
     await client.get(f"{url}")
 
