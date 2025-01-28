@@ -1,5 +1,6 @@
 # NOTE: the PR is added to the queue when all checks have passed
-# and the CI is fully grean and ready to be merged
+# and the CI is fully green.
+# If the PR is behind the queue will take care of updating it
 queue_rules:
   - name: default
     queue_conditions:
@@ -21,17 +22,11 @@ queue_rules:
       - check-success=integration-tests
       - check-success=system-tests
 
-# NOTE: these rules help you to forget about the PR
-# and let mergify update it and deal with flaky tests
+# NOTE: in case of flaky tests you above checks will fail
+# the PR will be removed from the queue.
+# This retries the checks, as soon as they become green,
+# the PR will be pusehd to the queu again
 pull_request_rules:
-  - name: update branch if behind master
-    conditions:
-      - label=🤖-automerge
-      - label!=🤖-do-not-merge
-      - base=master
-    actions:
-      update:
-
   - name: retry CI on fails (used for flaky tests)
     conditions:
       - label=🤖-automerge
