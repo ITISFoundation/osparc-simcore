@@ -34,7 +34,6 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_postgres_database.models.api_keys import api_keys
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.users import users
-from simcore_sdk.node_ports_v2 import port
 from simcore_service_api_server.core.application import init_app
 from simcore_service_api_server.core.settings import PostgresSettings
 
