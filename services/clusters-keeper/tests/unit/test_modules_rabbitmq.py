@@ -136,7 +136,7 @@ async def test_post_message_with_disabled_rabbit_does_not_raise(
 
 
 async def test_post_message_when_rabbit_disconnected_does_not_raise(
-    paused_container_ctx: Callable[[str], AbstractAsyncContextManager[None]],
+    paused_container: Callable[[str], AbstractAsyncContextManager[None]],
     enabled_rabbitmq: RabbitSettings,
     disabled_ec2: None,
     disabled_ssm: None,
@@ -147,6 +147,6 @@ async def test_post_message_when_rabbit_disconnected_does_not_raise(
     # NOTE: if the connection is not initialized before pausing the container, then
     # this test hangs forever!!! This needs investigations!
     await post_message(initialized_app, message=rabbit_log_message)
-    async with paused_container_ctx("rabbit"):
+    async with paused_container("rabbit"):
         # now posting should not raise out
         await post_message(initialized_app, message=rabbit_log_message)

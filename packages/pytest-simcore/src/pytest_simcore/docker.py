@@ -47,7 +47,7 @@ async def _pause_docker_container_in_context(
 
 
 @pytest.fixture
-async def paused_container_ctx() -> Callable[[str], AbstractAsyncContextManager[None]]:
+async def paused_container() -> Callable[[str], AbstractAsyncContextManager[None]]:
     @contextlib.asynccontextmanager
     async def _(container_name: str) -> AsyncIterator[None]:
         async with aiodocker.Docker() as docker_client, _pause_docker_container_in_context(

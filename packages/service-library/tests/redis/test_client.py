@@ -131,12 +131,12 @@ async def test_redis_client_sdk_setup_shutdown(
 
 async def test_regression_fails_on_redis_service_outage(
     mock_redis_socket_timeout: None,
-    paused_container_ctx: Callable[[str], AbstractAsyncContextManager[None]],
+    paused_container: Callable[[str], AbstractAsyncContextManager[None]],
     redis_client_sdk: RedisClientSDK,
 ):
     assert await redis_client_sdk.ping() is True
 
-    async with paused_container_ctx("redis"):
+    async with paused_container("redis"):
         # no connection available any longer should not hang but timeout
         assert await redis_client_sdk.ping() is False
 
