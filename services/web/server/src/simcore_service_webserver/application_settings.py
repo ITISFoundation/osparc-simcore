@@ -5,13 +5,7 @@ from typing import Annotated, Any, Final
 from aiohttp import web
 from common_library.basic_types import DEFAULT_FACTORY
 from common_library.pydantic_fields_extension import is_nullable
-from models_library.basic_types import (
-    BootModeEnum,
-    BuildTargetEnum,
-    LogLevel,
-    PortInt,
-    VersionTag,
-)
+from models_library.basic_types import LogLevel, PortInt, VersionTag
 from models_library.utils.change_case import snake_to_camel
 from pydantic import (
     AliasChoices,
@@ -22,9 +16,8 @@ from pydantic import (
     model_validator,
 )
 from pydantic.fields import Field
-from pydantic.types import PositiveInt
 from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
-from settings_library.base import BaseCustomSettings
+from settings_library.application import BaseApplicationSettings
 from settings_library.email import SMTPSettings
 from settings_library.postgres import PostgresSettings
 from settings_library.prometheus import PrometheusSettings
@@ -60,32 +53,11 @@ from .users.settings import UsersSettings
 _logger = logging.getLogger(__name__)
 
 
-class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
+class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     # CODE STATICS ---------------------------------------------------------
     API_VERSION: str = API_VERSION
     APP_NAME: str = APP_NAME
     API_VTAG: VersionTag = TypeAdapter(VersionTag).validate_python(API_VTAG)
-
-    # IMAGE BUILDTIME ------------------------------------------------------
-    # @Makefile
-    SC_BUILD_DATE: str | None = None
-    SC_BUILD_TARGET: BuildTargetEnum | None = None
-    SC_VCS_REF: str | None = None
-    SC_VCS_URL: str | None = None
-
-    # @Dockerfile
-    SC_BOOT_MODE: BootModeEnum | None = None
-    SC_HEALTHCHECK_TIMEOUT: Annotated[
-        PositiveInt | None,
-        Field(
-            None,
-            description="If a single run of the check takes longer than timeout seconds "
-            "then the check is considered to have failed."
-            "It takes retries consecutive failures of the health check for the container to be considered unhealthy.",
-        ),
-    ]
-    SC_USER_ID: int | None = None
-    SC_USER_NAME: str | None = None
 
     # RUNTIME  -----------------------------------------------------------
     # settings defined from environs defined when container runs
