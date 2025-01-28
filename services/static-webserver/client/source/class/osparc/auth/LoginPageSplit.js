@@ -54,6 +54,8 @@ qx.Class.define("osparc.auth.LoginPageSplit", {
   },
 
   members: {
+    __loginPage: null,
+
     _getBackgroundImage: function() {
       throw new Error("Abstract method called!");
     },
@@ -70,7 +72,7 @@ qx.Class.define("osparc.auth.LoginPageSplit", {
     __rebuildLayout: function() {
       this._removeAll();
 
-      const loginPage = this.__loginWithDecorators;
+      const loginPage = this.__loginPage;
       const container = new qx.ui.container.Scroll();
       container.add(loginPage);
       const spacers = [
