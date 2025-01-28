@@ -342,17 +342,17 @@ class ServiceManager:
         self,
         redis_client: RedisClientSDK,
         rabbit_client: RabbitMQClient,
-        pause_container_in_context: Callable[[str], AbstractAsyncContextManager[None]],
+        paused_container: Callable[[str], AbstractAsyncContextManager[None]],
     ) -> None:
         self.redis_client = redis_client
         self.rabbit_client = rabbit_client
-        self.pause_container_in_context = pause_container_in_context
+        self.paused_container = paused_container
 
     @contextlib.asynccontextmanager
-    async def _pause_container(
+    async def _paused_container(
         self, container_name: str, client: ClientWithPingProtocol
     ) -> AsyncIterator[None]:
-        async with self.pause_container_in_context(container_name):
+        async with self.paused_container(container_name):
             async for attempt in AsyncRetrying(
                 wait=wait_fixed(0.1),
                 stop=stop_after_delay(10),
@@ -374,7 +374,7 @@ class ServiceManager:
 
     @contextlib.asynccontextmanager
     async def pause_rabbit(self) -> AsyncIterator[None]:
-        async with self._pause_container("rabbit", self.rabbit_client):
+        async with self._paused_container("rabbit", self.rabbit_client):
             yield
 
     @contextlib.asynccontextmanager
@@ -382,7 +382,7 @@ class ServiceManager:
         # save db for clean restore point
         await self.redis_client.redis.save()
 
-        async with self._pause_container("redis", self.redis_client):
+        async with self._paused_container("redis", self.redis_client):
             yield
 
 
@@ -399,7 +399,7 @@ def mock_default_socket_timeout(mocker: MockerFixture) -> None:
 @pytest.mark.parametrize("service", ["rabbit", "redis"])
 async def test_workflow_with_third_party_services_outages(
     mock_default_socket_timeout: None,
-    pause_container: Callable[[str], AbstractAsyncContextManager[None]],
+    paused_container: Callable[[str], AbstractAsyncContextManager[None]],
     redis_client_sdk_deferred_tasks: RedisClientSDK,
     rabbit_client: RabbitMQClient,
     get_remote_process: Callable[[], Awaitable[_RemoteProcess]],
@@ -410,7 +410,7 @@ async def test_workflow_with_third_party_services_outages(
     service: str,
 ):
     service_manager = ServiceManager(
-        redis_client_sdk_deferred_tasks, rabbit_client, pause_container
+        redis_client_sdk_deferred_tasks, rabbit_client, paused_container
     )
 
     async with _RemoteProcessLifecycleManager(
