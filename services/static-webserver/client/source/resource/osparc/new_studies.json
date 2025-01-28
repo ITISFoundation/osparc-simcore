@@ -147,7 +147,7 @@
       "category": "osparc",
       "resourceType": "study",
       "icon": "@FontAwesome5Solid/file/18",
-      "title": "Pipeline",
+      "title": "Empty Pipeline",
       "newStudyLabel": "New Project",
       "idToWidget": "emptyStudyBtn"
     }]
@@ -184,7 +184,7 @@
       "category": "osparc",
       "resourceType": "study",
       "icon": "@FontAwesome5Solid/file/18",
-      "title": "Pipeline",
+      "title": "Empty Pipeline",
       "newStudyLabel": "New Project",
       "idToWidget": "emptyStudyBtn"
     }]

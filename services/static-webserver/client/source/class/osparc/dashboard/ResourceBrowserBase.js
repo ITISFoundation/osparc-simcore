@@ -400,6 +400,11 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         width: this.self().SIDE_SPACER_WIDTH
       });
 
+      resourceFilter.addListener("changeTab", e => {
+        const contextTab = e.getData();
+        this.fireDataEvent("changeTab", contextTab);
+      }, this);
+
       resourceFilter.addListener("changeSharedWith", e => {
         const sharedWith = e.getData();
         this._searchBarFilter.setSharedWithActiveFilter(sharedWith.id, sharedWith.label);

@@ -35,8 +35,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
 
   events: {
     "trashContext": "qx.event.type.Event",
-    "templatesContext": "qx.event.type.Event",
-    "servicesContext": "qx.event.type.Event",
+    "changeTab": "qx.event.type.Data",
     "trashStudyRequested": "qx.event.type.Data",
     "trashFolderRequested": "qx.event.type.Data",
     "changeSharedWith": "qx.event.type.Data",
@@ -89,8 +88,6 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
       this.__workspacesAndFoldersTree.contextChanged(context);
 
       this.__trashButton.setValue(context === "trash");
-      this.__templatesButton.setValue(context === "templates");
-      this.__servicesButton.setValue(context === "services");
     },
 
     /* WORKSPACES AND FOLDERS */
@@ -224,38 +221,26 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
         firstUpperCase: true,
         plural: true
       });
-      const templatesButton = this.__templatesButton = new qx.ui.toolbar.RadioButton().set({
-        value: false,
+      const templatesButton = new qx.ui.toolbar.Button().set({
         appearance: "filter-toggle-button",
         label: templateAlias,
         icon: "@FontAwesome5Solid/copy/16",
         paddingLeft: 10, // align it with the context
       });
       osparc.utils.Utils.setIdToWidget(templatesButton, "templatesTabBtn");
-      templatesButton.addListener("changeValue", e => {
-        const trashEnabled = e.getData();
-        if (trashEnabled) {
-          this.fireEvent("templatesContext");
-        }
-      });
+      templatesButton.addListener("tap", () => this.fireDataEvent("changeTab", "templatesTab"));
       return templatesButton;
     },
 
     __createServices: function() {
-      const servicesButton = this.__servicesButton = new qx.ui.toolbar.RadioButton().set({
-        value: false,
+      const servicesButton = new qx.ui.toolbar.Button().set({
         appearance: "filter-toggle-button",
         label: this.tr("Services"),
         icon: "@FontAwesome5Solid/cogs/16",
         paddingLeft: 10, // align it with the context
       });
       osparc.utils.Utils.setIdToWidget(servicesButton, "servicesTabBtn");
-      servicesButton.addListener("changeValue", e => {
-        const trashEnabled = e.getData();
-        if (trashEnabled) {
-          this.fireEvent("servicesContext");
-        }
-      });
+      servicesButton.addListener("tap", () => this.fireDataEvent("changeTab", "servicesTab"));
       return servicesButton;
     },
 
