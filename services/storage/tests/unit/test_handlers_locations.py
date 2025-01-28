@@ -6,8 +6,9 @@
 
 from typing import Any
 
+import httpx
 import pytest
-from aiohttp.test_utils import TestClient
+from fastapi import FastAPI
 from models_library.users import UserID
 from pytest_simcore.helpers.assert_checks import assert_status
 from servicelib.aiohttp import status
@@ -17,7 +18,7 @@ pytest_simcore_core_services_selection = ["postgres"]
 pytest_simcore_ops_services_selection = ["adminer"]
 
 
-async def test_locations(client: TestClient, user_id: UserID):
+async def test_locations(client: httpx.AsyncClient, user_id: UserID):
     resp = await client.get(f"/v0/locations?user_id={user_id}")
 
     payload = await resp.json()
@@ -41,14 +42,14 @@ async def test_locations(client: TestClient, user_id: UserID):
     ],
 )
 async def test_synchronise_meta_data_table(
-    client: TestClient,
+    initialized_app: FastAPI,
+    client: httpx.AsyncClient,
     location_id: int,
     user_id: UserID,
     dry_run: bool | None,
     fire_and_forget: bool | None,
     expected_removed: list,
 ):
-    assert client.app
     query_params: dict[str, Any] = {"user_id": user_id}
     if dry_run:
         query_params["dry_run"] = f"{dry_run}"

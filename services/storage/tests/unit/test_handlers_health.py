@@ -4,8 +4,10 @@
 # pylint: disable=protected-access
 
 
+import httpx
 import simcore_service_storage._meta
 from aiohttp.test_utils import TestClient
+from fastapi import FastAPI
 from models_library.api_schemas_storage import HealthCheck, S3BucketName
 from models_library.app_diagnostics import AppStatusCheck
 from moto.server import ThreadedMotoServer
@@ -17,8 +19,7 @@ pytest_simcore_core_services_selection = ["postgres"]
 pytest_simcore_ops_services_selection = ["adminer"]
 
 
-async def test_health_check(client: TestClient):
-    assert client.app
+async def test_health_check(initialized_app: FastAPI, client: TestClient):
     url = client.app.router["health_check"].url_for()
     response = await client.get(f"{url}")
     data, error = await assert_status(response, status.HTTP_200_OK)
@@ -32,8 +33,7 @@ async def test_health_check(client: TestClient):
     )  # noqa: SLF001
 
 
-async def test_health_status(client: TestClient):
-    assert client.app
+async def test_health_status(initialized_app: FastAPI, client: TestClient):
     url = client.app.router["get_status"].url_for()
     response = await client.get(f"{url}")
     data, error = await assert_status(response, status.HTTP_200_OK)
@@ -57,11 +57,11 @@ async def test_health_status(client: TestClient):
 
 
 async def test_bad_health_status_if_bucket_missing(
-    client: TestClient,
+    initialized_app: FastAPI,
+    client: httpx.AsyncClient,
     storage_s3_bucket: S3BucketName,
     s3_client: S3Client,
 ):
-    assert client.app
     url = client.app.router["get_status"].url_for()
     response = await client.get(f"{url}")
     data, error = await assert_status(response, status.HTTP_200_OK)
@@ -81,9 +81,10 @@ async def test_bad_health_status_if_bucket_missing(
 
 
 async def test_bad_health_status_if_s3_server_missing(
-    client: TestClient, mocked_aws_server: ThreadedMotoServer
+    initialized_app: FastAPI,
+    client: httpx.AsyncClient,
+    mocked_aws_server: ThreadedMotoServer,
 ):
-    assert client.app
     url = client.app.router["get_status"].url_for()
     response = await client.get(f"{url}")
     data, error = await assert_status(response, status.HTTP_200_OK)
