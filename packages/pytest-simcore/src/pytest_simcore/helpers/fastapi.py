@@ -13,7 +13,7 @@ from servicelib.status_codes_utils import get_code_display_name, is_error
 T = TypeVar("T")
 
 
-async def assert_status(
+def assert_status(
     response: httpx.Response,
     expected_status_code: int,
     response_model: type[T],

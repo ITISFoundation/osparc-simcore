@@ -23,6 +23,6 @@ v0_router.include_router(_simcore_s3.router)
 
 def setup_rest_api_routes(app: FastAPI, vtag: str):
     # healthcheck at / and at /v0/
-    app.include_router(health_router)
+    app.include_router(health_router, prefix=f"/{vtag}")
     # api under /v*
     app.include_router(v0_router, prefix=f"/{vtag}")

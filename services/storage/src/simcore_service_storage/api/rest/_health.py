@@ -16,23 +16,20 @@ from servicelib.db_asyncpg_utils import check_postgres_liveness
 from servicelib.fastapi.db_asyncpg_engine import get_engine
 from simcore_postgres_database.utils_aiosqlalchemy import get_pg_engine_stateinfo
 
-from ..._meta import API_VERSION, API_VTAG, PROJECT_NAME, VERSION
+from ..._meta import API_VERSION, PROJECT_NAME, VERSION
 from ...core.settings import get_application_settings
 from ...modules.s3 import get_s3_client
 
 _logger = logging.getLogger(__name__)
 
 router = APIRouter(
-    prefix=f"/{API_VTAG}",
     tags=[
         "status",
     ],
 )
 
 
-@router.get(
-    f"/{API_VTAG}/", include_in_schema=True, response_model=Envelope[HealthCheck]
-)
+@router.get("/", include_in_schema=True, response_model=Envelope[HealthCheck])
 async def get_health(
     request: Request,
 ) -> Envelope[HealthCheck]:
@@ -83,7 +80,7 @@ async def get_status(request: Request) -> Envelope[AppStatusCheck]:
             "services": {
                 "postgres": {
                     "healthy": postgres_state,
-                    "pool": get_pg_engine_stateinfo(get_engine(request.app)),
+                    "pool": await get_pg_engine_stateinfo(get_engine(request.app)),
                 },
                 "s3": {"healthy": s3_state},
             },

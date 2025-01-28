@@ -1196,13 +1196,13 @@ async def test_copy_as_soft_link(
     file, original_file_uuid = await upload_file(
         TypeAdapter(ByteSize).validate_python("10Mib"), faker.file_name()
     )
-    url = (
-        client.app.router["copy_as_soft_link"]
-        .url_for(
-            file_id=urllib.parse.quote(original_file_uuid, safe=""),
-        )
-        .with_query(user_id=user_id)
-    )
+    url = url_from_operation_id(
+        client,
+        initialized_app,
+        "copy_as_soft_link",
+        file_id=urllib.parse.quote(original_file_uuid, safe=""),
+    ).with_query(user_id=user_id)
+
     link_id = TypeAdapter(SimcoreS3FileID).validate_python(
         f"api/{node_id}/{faker.file_name()}"
     )
@@ -1216,6 +1216,7 @@ async def test_copy_as_soft_link(
 
 
 async def __list_files(
+    initialized_app: FastAPI,
     client: httpx.AsyncClient,
     user_id: UserID,
     location_id: LocationID,
@@ -1223,14 +1224,13 @@ async def __list_files(
     path: str,
     expand_dirs: bool,
 ) -> list[FileMetaDataGet]:
-    get_url = (
-        client.app.router["list_files_metadata"]
-        .url_for(
-            location_id=f"{location_id}",
-            file_id=urllib.parse.quote(path, safe=""),
-        )
-        .with_query(user_id=user_id, expand_dirs=f"{expand_dirs}".lower())
-    )
+    get_url = url_from_operation_id(
+        client,
+        initialized_app,
+        "list_files_metadata",
+        location_id=f"{location_id}",
+        file_id=urllib.parse.quote(path, safe=""),
+    ).with_query(user_id=user_id, expand_dirs=f"{expand_dirs}".lower())
     response = await client.get(f"{get_url}")
     data, error = await assert_status(response, status.HTTP_200_OK)
     assert not error
@@ -1238,6 +1238,7 @@ async def __list_files(
 
 
 async def _list_files_legacy(
+    initialized_app: FastAPI,
     client: httpx.AsyncClient,
     user_id: UserID,
     location_id: LocationID,
@@ -1246,11 +1247,17 @@ async def _list_files_legacy(
     assert directory_file_upload.urls[0].path
     directory_file_id = directory_file_upload.urls[0].path.strip("/")
     return await __list_files(
-        client, user_id, location_id, path=directory_file_id, expand_dirs=True
+        initialized_app,
+        client,
+        user_id,
+        location_id,
+        path=directory_file_id,
+        expand_dirs=True,
     )
 
 
 async def _list_files_and_directories(
+    initialized_app: FastAPI,
     client: httpx.AsyncClient,
     user_id: UserID,
     location_id: LocationID,
@@ -1260,7 +1267,12 @@ async def _list_files_and_directories(
     directory_parent_path = Path(directory_file_upload.urls[0].path).parent
     directory_file_id = f"{directory_parent_path}".strip("/")
     return await __list_files(
-        client, user_id, location_id, path=directory_file_id, expand_dirs=False
+        initialized_app,
+        client,
+        user_id,
+        location_id,
+        path=directory_file_id,
+        expand_dirs=False,
     )
 
 
@@ -1278,6 +1290,7 @@ async def test_is_directory_link_forces_link_type_and_size(
     node_id: NodeID,
     create_simcore_file_id: Callable[[ProjectID, NodeID, str], SimcoreS3FileID],
     create_upload_file_link_v2: Callable[..., Awaitable[FileUploadSchema]],
+    initialized_app: FastAPI,
     client: httpx.AsyncClient,
     location_id: LocationID,
     user_id: UserID,
@@ -1296,7 +1309,7 @@ async def test_is_directory_link_forces_link_type_and_size(
     assert len(directory_file_upload.urls) == 1
 
     files_and_directories: list[FileMetaDataGet] = await _list_files_and_directories(
-        client, user_id, location_id, directory_file_upload
+        initialized_app, client, user_id, location_id, directory_file_upload
     )
     assert len(files_and_directories) == 1
     assert files_and_directories[0].is_directory is True
@@ -1316,14 +1329,13 @@ async def test_ensure_expand_dirs_defaults_true(
         autospec=True,
     )
 
-    get_url = (
-        client.app.router["list_files_metadata"]
-        .url_for(
-            location_id=f"{location_id}",
-            file_id=urllib.parse.quote("mocked_path", safe=""),
-        )
-        .with_query(user_id=user_id)
-    )
+    get_url = url_from_operation_id(
+        client,
+        initialized_app,
+        "list_files_metadata",
+        location_id=f"{location_id}",
+        file_id=urllib.parse.quote("mocked_path", safe=""),
+    ).with_query(user_id=user_id)
     await client.get(f"{get_url}")
 
     assert len(mocked_object.call_args_list) == 1
@@ -1354,12 +1366,12 @@ async def test_upload_file_is_directory_and_remove_content(
     )
 
     files_and_directories: list[FileMetaDataGet] = await _list_files_and_directories(
-        client, user_id, location_id, directory_file_upload
+        initialized_app, client, user_id, location_id, directory_file_upload
     )
     assert len(files_and_directories) == 1
 
     list_of_files: list[FileMetaDataGet] = await _list_files_legacy(
-        client, user_id, location_id, directory_file_upload
+        initialized_app, client, user_id, location_id, directory_file_upload
     )
     assert len(list_of_files) == 0
 
@@ -1373,54 +1385,52 @@ async def test_upload_file_is_directory_and_remove_content(
     )
 
     files_and_directories: list[FileMetaDataGet] = await _list_files_and_directories(
-        client, user_id, location_id, directory_file_upload
+        initialized_app, client, user_id, location_id, directory_file_upload
     )
     assert len(files_and_directories) == 1
 
     list_of_files: list[FileMetaDataGet] = await _list_files_legacy(
-        client, user_id, location_id, directory_file_upload
+        initialized_app, client, user_id, location_id, directory_file_upload
     )
     assert len(list_of_files) == SUBDIR_COUNT * FILE_COUNT
 
     # DELETE NOT EXISTING
 
-    delete_url = (
-        client.app.router["delete_file"]
-        .url_for(
-            location_id=f"{location_id}",
-            file_id=urllib.parse.quote(
-                "/".join(list_of_files[0].file_id.split("/")[:2]) + "/does_not_exist",
-                safe="",
-            ),
-        )
-        .with_query(user_id=user_id)
-    )
+    delete_url = url_from_operation_id(
+        client,
+        initialized_app,
+        "delete_file",
+        location_id=f"{location_id}",
+        file_id=urllib.parse.quote(
+            "/".join(list_of_files[0].file_id.split("/")[:2]) + "/does_not_exist",
+            safe="",
+        ),
+    ).with_query(user_id=user_id)
     response = await client.delete(f"{delete_url}")
     _, error = await assert_status(response, status.HTTP_204_NO_CONTENT)
     assert error is None
 
     list_of_files: list[FileMetaDataGet] = await _list_files_legacy(
-        client, user_id, location_id, directory_file_upload
+        initialized_app, client, user_id, location_id, directory_file_upload
     )
 
     assert len(list_of_files) == SUBDIR_COUNT * FILE_COUNT
 
     # DELETE ONE FILE FROM THE DIRECTORY
 
-    delete_url = (
-        client.app.router["delete_file"]
-        .url_for(
-            location_id=f"{location_id}",
-            file_id=urllib.parse.quote(list_of_files[0].file_id, safe=""),
-        )
-        .with_query(user_id=user_id)
-    )
+    delete_url = url_from_operation_id(
+        client,
+        initialized_app,
+        "delete_file",
+        location_id=f"{location_id}",
+        file_id=urllib.parse.quote(list_of_files[0].file_id, safe=""),
+    ).with_query(user_id=user_id)
     response = await client.delete(f"{delete_url}")
     _, error = await assert_status(response, status.HTTP_204_NO_CONTENT)
     assert error is None
 
     list_of_files: list[FileMetaDataGet] = await _list_files_legacy(
-        client, user_id, location_id, directory_file_upload
+        initialized_app, client, user_id, location_id, directory_file_upload
     )
 
     assert len(list_of_files) == SUBDIR_COUNT * FILE_COUNT - 1
@@ -1430,12 +1440,12 @@ async def test_upload_file_is_directory_and_remove_content(
     await delete_directory(directory_file_upload=directory_file_upload)
 
     list_of_files: list[FileMetaDataGet] = await _list_files_legacy(
-        client, user_id, location_id, directory_file_upload
+        initialized_app, client, user_id, location_id, directory_file_upload
     )
     assert len(list_of_files) == 0
 
     files_and_directories: list[FileMetaDataGet] = await _list_files_and_directories(
-        client, user_id, location_id, directory_file_upload
+        initialized_app, client, user_id, location_id, directory_file_upload
     )
     assert len(files_and_directories) == 0
 
@@ -1445,6 +1455,7 @@ async def test_listing_more_than_1000_objects_in_bucket(
     create_directory_with_files: Callable[
         ..., AbstractAsyncContextManager[FileUploadSchema]
     ],
+    initialized_app: FastAPI,
     client: httpx.AsyncClient,
     location_id: LocationID,
     user_id: UserID,
@@ -1457,7 +1468,7 @@ async def test_listing_more_than_1000_objects_in_bucket(
         file_count=files_in_dir,
     ) as directory_file_upload:
         list_of_files: list[FileMetaDataGet] = await _list_files_legacy(
-            client, user_id, location_id, directory_file_upload
+            initialized_app, client, user_id, location_id, directory_file_upload
         )
         # for now no more than 1000 objects will be returned
         assert len(list_of_files) == 1000
@@ -1504,11 +1515,9 @@ async def test_listing_with_project_id_filter(
         "uuid_filter": project_file_name if uuid_filter else None,
     }
 
-    url = (
-        client.app.router["list_files_metadata"]
-        .url_for(location_id=f"{location_id}")
-        .with_query(**{k: v for k, v in query.items() if v is not None})
-    )
+    url = url_from_operation_id(
+        client, initialized_app, "list_files_metadata", location_id=f"{location_id}"
+    ).with_query(**{k: v for k, v in query.items() if v is not None})
     response = await client.get(f"{url}")
     data, _ = await assert_status(response, status.HTTP_200_OK)
 

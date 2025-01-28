@@ -41,8 +41,8 @@ from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import ByteSize, TypeAdapter
 from pytest_mock import MockerFixture
-from pytest_simcore.helpers.fastapi import url_from_operation_id
-from pytest_simcore.helpers.httpx_assert_checks import assert_status
+from pytest_simcore.helpers.fastapi import assert_status
+from pytest_simcore.helpers.httpx_assert_checks import url_from_operation_id
 from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.monkeypatch_envs import delenvs_from_dict, setenvs_from_dict
 from pytest_simcore.helpers.s3 import upload_file_to_presigned_link
@@ -72,7 +72,6 @@ pytest_plugins = [
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_swarm",
     "pytest_simcore.environment_configs",
-    "pytest_simcore.fastapi",
     "pytest_simcore.file_extra",
     "pytest_simcore.httpbin_service",
     "pytest_simcore.minio_service",
