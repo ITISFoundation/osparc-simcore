@@ -48,14 +48,15 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
         font: "text-16",
         allowGrowX: true,
       });
+      menuButton.getChildControl("icon").set({
+        alignX: "center",
+      });
       menuButton.getChildControl("label").set({
         rich: true,
-        allowGrowX: true,
-        wrap: false,
       });
       if (description) {
         const infoHint = new osparc.ui.hint.InfoHint(description).set({
-          source: osparc.ui.hint.InfoHint.INFO_ICON + "/16",
+          source: osparc.ui.hint.InfoHint.INFO_ICON + "/18",
           alignY: "middle",
         });
         // where the shortcut is supposed to go
@@ -96,7 +97,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
               firstUpperCase: true,
               plural: true
             }),
-            "@FontAwesome5Solid/copy/16"
+            "@FontAwesome5Solid/copy/18"
           );
           control.addListener("tap", () => this.fireDataEvent("changeTab", "templatesTab"));
           this.add(control);
@@ -104,7 +105,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
         case "services-entry":
           control = this.self().createMenuButton(
             this.tr("Services"),
-            "@FontAwesome5Solid/cogs/16"
+            "@FontAwesome5Solid/cogs/18"
           );
           control.addListener("tap", () => this.fireDataEvent("changeTab", "servicesTab"));
           this.add(control);

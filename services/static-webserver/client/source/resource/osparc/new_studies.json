@@ -167,7 +167,7 @@
   "osparc": {
     "resources": [{
       "resourceType": "study",
-      "icon": "@FontAwesome5Solid/file/16",
+      "icon": "@FontAwesome5Solid/file/18",
       "title": "Empty Study",
       "newStudyLabel": "New Study",
       "idToWidget": "newStudyBtn"
