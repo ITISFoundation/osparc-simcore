@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: simcore-service-webserver
   description: Main service with an interface (http-API & websockets) to the web front-end
-  version: 0.50.0
+  version: 0.51.0
 servers:
 - url: ''
   description: webserver
@@ -10042,6 +10042,14 @@ components:
             format: date-time
           - type: 'null'
           title: Trashedat
+        trashedBy:
+          anyOf:
+          - type: integer
+            exclusiveMinimum: true
+            minimum: 0
+          - type: 'null'
+          title: Trashedby
+          description: The primary gid of the user who trashed
         owner:
           type: integer
           exclusiveMinimum: true
@@ -10063,6 +10071,7 @@ components:
       - createdAt
       - modifiedAt
       - trashedAt
+      - trashedBy
       - owner
       - workspaceId
       - myAccessRights
@@ -12751,6 +12760,14 @@ components:
             format: date-time
           - type: 'null'
           title: Trashedat
+        trashedBy:
+          anyOf:
+          - type: integer
+            exclusiveMinimum: true
+            minimum: 0
+          - type: 'null'
+          title: Trashedby
+          description: The primary gid of the user who trashed
       type: object
       required:
       - uuid
@@ -12767,6 +12784,7 @@ components:
       - workspaceId
       - folderId
       - trashedAt
+      - trashedBy
       title: ProjectGet
     ProjectGroupGet:
       properties:
@@ -12999,6 +13017,14 @@ components:
             format: date-time
           - type: 'null'
           title: Trashedat
+        trashedBy:
+          anyOf:
+          - type: integer
+            exclusiveMinimum: true
+            minimum: 0
+          - type: 'null'
+          title: Trashedby
+          description: The primary gid of the user who trashed
       type: object
       required:
       - uuid
@@ -13015,6 +13041,7 @@ components:
       - workspaceId
       - folderId
       - trashedAt
+      - trashedBy
       title: ProjectListItem
     ProjectLocked:
       properties:
@@ -15338,6 +15365,7 @@ components:
             minimum: 0
           - type: 'null'
           title: Trashedby
+          description: The primary gid of the user who trashed
         myAccessRights:
           $ref: '#/components/schemas/AccessRights'
         accessRights:
