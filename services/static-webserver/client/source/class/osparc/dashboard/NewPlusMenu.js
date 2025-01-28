@@ -25,7 +25,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
 
     this.set({
       position: "bottom-left",
-      spacingX: 16,
+      spacingX: 20,
     });
 
     this.__categoryHeaders = [];
@@ -57,7 +57,6 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
       if (description) {
         const infoHint = new osparc.ui.hint.InfoHint(description).set({
           source: osparc.ui.hint.InfoHint.INFO_ICON + "/16",
-          alignY: "middle",
         });
         // where the shortcut is supposed to go
         // eslint-disable-next-line no-underscore-dangle
