@@ -157,7 +157,10 @@ async def create_licensed_item_purchase(
 
     # Publish wallet total credits to RabbitMQ
     await sum_credit_transactions_and_publish_to_rabbitmq(
-        db_engine, rabbitmq_client, data.product_name, data.wallet_id
+        db_engine,
+        rabbitmq_client=rabbitmq_client,
+        product_name=data.product_name,
+        wallet_id=data.wallet_id,
     )
 
     return LicensedItemPurchaseGet(
