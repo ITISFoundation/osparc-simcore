@@ -25,7 +25,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
 
     this.set({
       position: "bottom-left",
-      padding: 8,
+      spacingX: 16,
     });
 
     this.__categoryHeaders = [];
@@ -60,9 +60,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
         });
         // where the shortcut is supposed to go
         // eslint-disable-next-line no-underscore-dangle
-        menuButton._add(infoHint, {
-          column: 2
-        });
+        menuButton._add(infoHint, {column: 2});
       }
       return menuButton;
     },
@@ -198,9 +196,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
           decorator: "rounded",
         });
         // eslint-disable-next-line no-underscore-dangle
-        menuButton._add(thumbnail, {
-          column: 0
-        });
+        menuButton._add(thumbnail, {column: 0});
       }
     },
 
