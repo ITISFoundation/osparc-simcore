@@ -41,10 +41,10 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
   },
 
   statics: {
-    createMenuButton: function(label, icon, description) {
+    createMenuButton: function(icon, label, description) {
       const menuButton = new qx.ui.menu.Button().set({
-        label,
         icon: icon || null,
+        label,
         font: "text-16",
         allowGrowX: true,
       });
@@ -56,7 +56,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
       });
       if (description) {
         const infoHint = new osparc.ui.hint.InfoHint(description).set({
-          source: osparc.ui.hint.InfoHint.INFO_ICON + "/18",
+          source: osparc.ui.hint.InfoHint.INFO_ICON + "/16",
           alignY: "middle",
         });
         // where the shortcut is supposed to go
@@ -66,9 +66,9 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
       return menuButton;
     },
 
-    createHeader: function(label, icon, description) {
+    createHeader: function(icon, label, description) {
       const headerLabel = `--- ${label} ---`;
-      return this.createMenuButton(headerLabel, icon, description).set({
+      return this.createMenuButton(icon, headerLabel, description).set({
         anonymous: true,
         cursor: "default",
         font: "text-16",
@@ -84,8 +84,8 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
       switch (id) {
         case "new-folder":
           control = this.self().createMenuButton(
+            osparc.dashboard.CardBase.NEW_ICON + "16",
             this.tr("New Folder"),
-            osparc.dashboard.CardBase.NEW_ICON + "16"
           );
           osparc.utils.Utils.setIdToWidget(control, "newFolderButton");
           control.addListener("tap", () => this.__createNewFolder());
@@ -93,19 +93,19 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
           break;
         case "templates-entry":
           control = this.self().createMenuButton(
+            "@FontAwesome5Solid/copy/18",
             osparc.product.Utils.getTemplateAlias({
               firstUpperCase: true,
               plural: true
             }),
-            "@FontAwesome5Solid/copy/18"
           );
           control.addListener("tap", () => this.fireDataEvent("changeTab", "templatesTab"));
           this.add(control);
           break;
         case "services-entry":
           control = this.self().createMenuButton(
+            "@FontAwesome5Solid/cogs/18",
             this.tr("Services"),
-            "@FontAwesome5Solid/cogs/18"
           );
           control.addListener("tap", () => this.fireDataEvent("changeTab", "servicesTab"));
           this.add(control);
@@ -166,7 +166,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
 
     __addCategories: function(categories) {
       categories.forEach(category => {
-        const categoryHeader = this.self().createHeader(category["title"], null, category["description"]);
+        const categoryHeader = this.self().createHeader(null, category["title"], category["description"]);
         categoryHeader["categoryId"] = category["id"];
         this.__categoryHeaders.push(categoryHeader);
         this.add(categoryHeader);
@@ -174,7 +174,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
     },
 
     __createFromResourceButton: function(resourceData) {
-      const menuButton = this.self().createMenuButton(resourceData.title);
+      const menuButton = this.self().createMenuButton(resourceData.icon, resourceData.title, resourceData.description);
       osparc.utils.Utils.setIdToWidget(menuButton, resourceData.idToWidget);
       return menuButton;
     },
