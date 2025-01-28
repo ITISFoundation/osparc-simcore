@@ -289,13 +289,16 @@ class UserOrProjectFilter(NamedTuple):
     project_ids: list[ProjectID]
 
 
-__all__ = (
-    "ETag",
-    "FileMetaData",
-    "FileMetaDataAtDB",
-    "S3BucketName",
-    "SimcoreS3FileID",
-    "StorageFileID",
-    "UploadID",
-    "UploadLinks",
-)
+@dataclass(frozen=True)
+class AccessRights:
+    read: bool
+    write: bool
+    delete: bool
+
+    @classmethod
+    def all(cls) -> "AccessRights":
+        return cls(read=True, write=True, delete=True)
+
+    @classmethod
+    def none(cls) -> "AccessRights":
+        return cls(read=False, write=False, delete=False)

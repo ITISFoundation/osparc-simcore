@@ -37,7 +37,6 @@
 """
 
 import logging
-from dataclasses import dataclass
 
 import sqlalchemy as sa
 from models_library.groups import GroupID
@@ -53,42 +52,10 @@ from simcore_postgres_database.storage_models import file_meta_data, user_to_gro
 from simcore_postgres_database.utils_sql import assemble_array_groups
 from sqlalchemy.ext.asyncio import AsyncConnection
 
+from ...exceptions.errors import InvalidFileIdentifierError
+from ...models import AccessRights
+
 logger = logging.getLogger(__name__)
-
-
-@dataclass(frozen=True)
-class AccessRights:
-    read: bool
-    write: bool
-    delete: bool
-
-    @classmethod
-    def all(cls) -> "AccessRights":
-        return cls(read=True, write=True, delete=True)
-
-    @classmethod
-    def none(cls) -> "AccessRights":
-        return cls(read=False, write=False, delete=False)
-
-
-class AccessLayerError(Exception):
-    """Base class for access-layer related errors"""
-
-
-class InvalidFileIdentifierError(AccessLayerError):
-    """Identifier does not follow the criteria to
-    be a file identifier (see naming criteria below)
-    """
-
-    def __init__(self, identifier, reason=None, details=None):
-        self.identifier = identifier
-        self.reason = reason or "Invalid file identifier"
-        self.details = details
-
-        super().__init__(self.reason, self.details)
-
-    def __str__(self):
-        return f"Error in {self.identifier}: {self.reason} [{self.details}]"
 
 
 async def _get_user_groups_ids(conn: AsyncConnection, user_id: UserID) -> list[GroupID]:

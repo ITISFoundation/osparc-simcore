@@ -33,3 +33,11 @@ class ProjectNotFoundError(DatabaseAccessError):
 
 class LinkAlreadyExistsError(DatabaseAccessError):
     msg_template: str = "The link {file_id} already exists"
+
+
+class AccessLayerError(StorageRuntimeError):
+    msg_template: str = "Database access layer error"
+
+
+class InvalidFileIdentifierError(AccessLayerError):
+    msg_template: str = "Error in {identifier}: [{details}]"
