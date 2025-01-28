@@ -20,9 +20,6 @@ from models_library.generics import Envelope
 from models_library.projects_nodes_io import LocationID, StorageFileID
 from pydantic import AnyUrl, ByteSize, TypeAdapter
 from servicelib.aiohttp import status
-from simcore_service_storage.modules.long_running_tasks import (
-    get_completed_upload_tasks,
-)
 from yarl import URL
 
 from ...dsm import get_dsm_provider
@@ -37,6 +34,7 @@ from ...models import (
     StorageQueryParamsBase,
     UploadLinks,
 )
+from ...modules.long_running_tasks import get_completed_upload_tasks
 from ...simcore_s3_dsm import SimcoreS3DataManager
 from ...utils.utils import create_upload_completion_task_name
 
