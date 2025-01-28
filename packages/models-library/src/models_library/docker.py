@@ -21,6 +21,8 @@ from .projects import ProjectID
 from .projects_nodes_io import NodeID
 from .users import UserID
 
+DockerNetworkID: TypeAlias = str
+
 
 class DockerLabelKey(ConstrainedStr):
     # NOTE: https://docs.docker.com/config/labels-custom-metadata/#key-format-recommendations
