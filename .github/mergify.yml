@@ -24,6 +24,12 @@ pull_request_rules:
       actions:
         merge:
 
+    - name: automatic update for PR ready to be merged
+      conditions:
+        - -draft
+        - label=🤖-automerge
+      actions:
+        update:
 
     - name: retry CI on failure
       conditions:
