@@ -250,7 +250,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
       });
       osparc.utils.Utils.setIdToWidget(studiesButton, "studiesTabBtn");
       studiesButton.addListener("tap", () => {
-        studiesButton.setValue(true);
+        studiesButton.setValue(this.__resourceType === "study");
         this.fireDataEvent("changeTab", "studiesTab");
       });
       return studiesButton;
@@ -270,7 +270,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
       });
       osparc.utils.Utils.setIdToWidget(templatesButton, "templatesTabBtn");
       templatesButton.addListener("tap", () => {
-        templatesButton.setValue(true);
+        templatesButton.setValue(this.__resourceType === "template");
         this.fireDataEvent("changeTab", "templatesTab");
       });
       return templatesButton;
@@ -286,7 +286,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
       });
       osparc.utils.Utils.setIdToWidget(servicesButton, "servicesTabBtn");
       servicesButton.addListener("tap", () => {
-        servicesButton.setValue(true);
+        servicesButton.setValue(this.__resourceType === "service");
         this.fireDataEvent("changeTab", "servicesTab");
       });
       return servicesButton;
