@@ -22,6 +22,7 @@ from models_library.services_types import ServiceRunID
 from models_library.users import UserID
 from models_library.utils.specs_substitution import SubstitutionValue
 from models_library.utils.string_substitution import OSPARC_IDENTIFIER_PREFIX
+from models_library.wallets import WalletID
 from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.faker_compose_specs import generate_fake_docker_compose
@@ -159,11 +160,13 @@ async def fake_app(faker: Faker) -> AsyncIterable[FastAPI]:
         yield app
 
 
+@pytest.mark.parametrize("wallet_id", [None, 12])
 async def test_resolve_and_substitute_session_variables_in_specs(
     mock_user_repo: None,
     mock_osparc_variables_api_auth_rpc: None,
     fake_app: FastAPI,
     faker: Faker,
+    wallet_id: WalletID | None,
 ):
     specs = {
         "product_name": "${OSPARC_VARIABLE_PRODUCT_NAME}",
@@ -175,6 +178,7 @@ async def test_resolve_and_substitute_session_variables_in_specs(
         "api_key": "${OSPARC_VARIABLE_API_KEY}",
         "api_secret": "${OSPARC_VARIABLE_API_SECRET}",
         "service_run_id": "${OSPARC_VARIABLE_SERVICE_RUN_ID}",
+        "wallet_id": "${OSPARC_VARIABLE_WALLET_ID}",
     }
     print("SPECS\n", specs)
 
@@ -186,10 +190,12 @@ async def test_resolve_and_substitute_session_variables_in_specs(
         project_id=faker.uuid4(cast_to=None),
         node_id=faker.uuid4(cast_to=None),
         service_run_id=ServiceRunID("some_run_id"),
+        wallet_id=wallet_id,
     )
     print("REPLACED SPECS\n", replaced_specs)
 
     assert OSPARC_IDENTIFIER_PREFIX not in f"{replaced_specs}"
+    assert f"{'' if wallet_id is None else wallet_id}" in f"{replaced_specs}"
 
 
 @pytest.fixture
