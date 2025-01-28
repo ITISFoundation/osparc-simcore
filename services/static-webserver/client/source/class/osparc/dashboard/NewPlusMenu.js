@@ -53,6 +53,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
       });
       menuButton.getChildControl("label").set({
         rich: true,
+        marginRight: 20,
       });
       if (description) {
         const infoHint = new osparc.ui.hint.InfoHint(description).set({
