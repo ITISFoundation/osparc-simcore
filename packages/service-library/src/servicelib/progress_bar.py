@@ -197,6 +197,9 @@ class ProgressBarData:  # pylint: disable=too-many-instance-attributes
             await self._update_parent(parent_update_value)
         await self._report_external(new_progress_value)
 
+    def reset_progress(self) -> None:
+        self._current_steps = _INITIAL_VALUE
+
     async def set_(self, new_value: float) -> None:
         await self.update(new_value - self._current_steps)
 
