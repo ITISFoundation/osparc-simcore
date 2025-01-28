@@ -12,7 +12,7 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_random_exponential
 from yarl import URL
 
-from ..rest_responses import unwrap_envelope
+from ...rest_responses import unwrap_envelope
 from .server import TaskGet, TaskId, TaskProgress, TaskStatus
 
 RequestBody: TypeAlias = Any
@@ -73,7 +73,7 @@ async def _wait_for_completion(
     except TryAgain as exc:
         # this is a timeout
         msg = f"Long running task {task_id}, calling to {status_url} timed-out after {client_timeout} seconds"
-        raise asyncio.TimeoutError(msg) from exc
+        raise TimeoutError(msg) from exc
 
 
 @retry(**_DEFAULT_AIOHTTP_RETRY_POLICY)
@@ -143,7 +143,7 @@ async def long_running_task_request(
             _result=_task_result(session, URL(task.result_href)),
         )
 
-    except (asyncio.CancelledError, asyncio.TimeoutError):
+    except (TimeoutError, asyncio.CancelledError):
         if task:
             await _abort_task(session, URL(task.abort_href))
         raise
