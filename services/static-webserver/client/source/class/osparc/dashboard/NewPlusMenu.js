@@ -37,7 +37,6 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
     "createFolder": "qx.event.type.Data",
     "newStudyFromTemplateClicked": "qx.event.type.Data",
     "newStudyFromServiceClicked": "qx.event.type.Data",
-    "changeTab": "qx.event.type.Data",
   },
 
   statics: {
@@ -91,25 +90,6 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
           control.addListener("tap", () => this.__createNewFolder());
           this.add(control);
           break;
-        case "templates-entry":
-          control = this.self().createMenuButton(
-            "@FontAwesome5Solid/copy/18",
-            osparc.product.Utils.getTemplateAlias({
-              firstUpperCase: true,
-              plural: true
-            }),
-          );
-          control.addListener("tap", () => this.fireDataEvent("changeTab", "templatesTab"));
-          this.add(control);
-          break;
-        case "services-entry":
-          control = this.self().createMenuButton(
-            "@FontAwesome5Solid/cogs/18",
-            this.tr("Services"),
-          );
-          control.addListener("tap", () => this.fireDataEvent("changeTab", "servicesTab"));
-          this.add(control);
-          break;
       }
       return control || this.base(arguments, id);
     },
@@ -118,18 +98,6 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
       this.getChildControl("new-folder");
       this.addSeparator();
       await this.__addNewStudyItems();
-      const permissions = osparc.data.Permissions.getInstance();
-      if (permissions.canDo("dashboard.templates.read") || permissions.canDo("dashboard.services.read")) {
-        this.addSeparator();
-        if (permissions.canDo("dashboard.templates.read")) {
-          const templatesButton = this.getChildControl("templates-entry");
-          this.add(templatesButton);
-        }
-        if (permissions.canDo("dashboard.services.read")) {
-          const servicesButton = this.getChildControl("services-entry");
-          this.add(servicesButton);
-        }
-      }
     },
 
     __addNewStudyItems: async function() {

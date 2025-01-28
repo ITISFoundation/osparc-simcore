@@ -915,8 +915,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           this.__newStudyFromServiceBtnClicked(serviceMetadata["key"], serviceMetadata["version"], newStudyLabel);
         }
       }, this);
-
-      newPlusButtonMenu.addListener("changeTab", e => this.fireDataEvent("changeTab", e.getData()));
     },
 
     __addNewStudyButtons: function() {
