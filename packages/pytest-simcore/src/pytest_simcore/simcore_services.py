@@ -52,10 +52,12 @@ MAP_SERVICE_HEALTHCHECK_ENTRYPOINT = {
     "invitations": "/",
     "payments": "/",
     "resource-usage-tracker": "/",
+    "docker-api-proxy": "/version",
 }
 AIOHTTP_BASED_SERVICE_PORT: int = 8080
 FASTAPI_BASED_SERVICE_PORT: int = 8000
 DASK_SCHEDULER_SERVICE_PORT: int = 8787
+DOCKER_API_PROXY_SERVICE_PORT: int = 8888
 
 _SERVICE_NAME_REPLACEMENTS: dict[str, str] = {
     "dynamic-scheduler": "dynamic-schdlr",
@@ -133,6 +135,7 @@ def services_endpoint(
                 AIOHTTP_BASED_SERVICE_PORT,
                 FASTAPI_BASED_SERVICE_PORT,
                 DASK_SCHEDULER_SERVICE_PORT,
+                DOCKER_API_PROXY_SERVICE_PORT,
             ]
             endpoint = URL(
                 f"http://{get_localhost_ip()}:{get_service_published_port(full_service_name, target_ports)}"

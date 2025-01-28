@@ -47,6 +47,7 @@ SERVICES_NAMES_TO_BUILD := \
 	payments \
 	resource-usage-tracker \
 	dynamic-scheduler \
+	docker-api-proxy \
   service-integration \
   static-webserver \
   storage \

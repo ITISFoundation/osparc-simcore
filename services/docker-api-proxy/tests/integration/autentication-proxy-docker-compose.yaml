@@ -1,0 +1,14 @@
+version: '3.8'
+services:
+  caddy:
+    image: caddy:2.9.1-alpine
+    ports:
+      - 9999:9999
+    command: sh -c "echo '${CADDY_FILE}' > /etc/caddy/Caddyfile && cat /etc/caddy/Caddyfile && caddy run --adapter caddyfile --config /etc/caddy/Caddyfile"
+    networks:
+     - docker-api-network
+
+networks:
+  docker-api-network:
+    name: pytest-simcore_docker-api-network
+    external: true
