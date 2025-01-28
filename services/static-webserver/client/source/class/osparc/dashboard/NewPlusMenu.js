@@ -228,8 +228,6 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
       // disable it until found in services store
       menuButton.setEnabled(false);
 
-      // OM: direct access to service metadata
-
       const key = newStudyData.expectedKey;
       // Include deprecated versions, they should all be updatable to a non deprecated version
       const versions = osparc.service.Utils.getVersions(key, false);
@@ -250,6 +248,18 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
                 newStudyLabel: newStudyData.newStudyLabel,
               });
             });
+
+            const cb = e => {
+              e.stopPropagation();
+              latestMetadata["resourceType"] = "service";
+              const resourceDetails = new osparc.dashboard.ResourceDetails(latestMetadata);
+              osparc.dashboard.ResourceDetails.popUpInWindow(resourceDetails);
+            }
+            const infoButton = new osparc.ui.basic.IconButton(osparc.ui.hint.InfoHint.INFO_ICON + "/16", cb);
+            // where the shortcut is supposed to go
+            // eslint-disable-next-line no-underscore-dangle
+            menuButton._add(infoButton, {column: 2});
+
             this.__addIcon(menuButton, newStudyData, latestMetadata);
             this.__addFromResourceButton(menuButton, newStudyData);
           })
