@@ -185,7 +185,7 @@ def app_settings(
         },
     )
     test_app_settings = Settings.create_from_envs()
-    print(f"{test_app_settings.model_dump_json(indent=2)=}")
+    print(f"{test_app_settings.model_dump_json(indent=2, warnings='none')=}")
     return test_app_settings
 
 

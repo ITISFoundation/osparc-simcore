@@ -29,7 +29,7 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
         settings = ApplicationSettings.create_from_envs()
 
     assert settings  # nosec
-    _logger.debug(settings.model_dump_json(indent=2))
+    _logger.debug(settings.model_dump_json(indent=2, warnings="none"))
 
     app = FastAPI(
         debug=settings.SC_BOOT_MODE

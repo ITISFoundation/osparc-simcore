@@ -32,7 +32,9 @@ _logger = logging.getLogger(__name__)
 
 
 def create_app(settings: ApplicationSettings) -> FastAPI:
-    _logger.info("app settings: %s", settings.model_dump_json(indent=1))
+    _logger.info(
+        "app settings: %s", settings.model_dump_json(indent=1, warnings="none")
+    )
 
     app = FastAPI(
         debug=settings.RESOURCE_USAGE_TRACKER_DEBUG,

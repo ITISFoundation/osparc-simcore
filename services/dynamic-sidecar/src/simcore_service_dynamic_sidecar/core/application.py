@@ -134,7 +134,7 @@ def create_base_app() -> FastAPI:
     # settings
     settings = ApplicationSettings.create_from_envs()
     setup_logger(settings)
-    logger.debug(settings.model_dump_json(indent=2))
+    logger.debug(settings.model_dump_json(indent=2, warnings="none"))
 
     # minimal
     app = FastAPI(

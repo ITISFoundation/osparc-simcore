@@ -44,7 +44,7 @@ _logger = logging.getLogger(__name__)
 def create(settings: Settings) -> web.Application:
     _logger.debug(
         "Initializing app with settings:\n%s",
-        settings.model_dump_json(indent=2),
+        settings.model_dump_json(indent=2, warnings="none"),
     )
 
     app = create_safe_application(None)
