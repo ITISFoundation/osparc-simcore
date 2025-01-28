@@ -349,7 +349,7 @@ class ServiceManager:
         self.paused_container = paused_container
 
     @contextlib.asynccontextmanager
-    async def _pause_container(
+    async def _paused_container(
         self, container_name: str, client: ClientWithPingProtocol
     ) -> AsyncIterator[None]:
         async with self.paused_container(container_name):
@@ -374,7 +374,7 @@ class ServiceManager:
 
     @contextlib.asynccontextmanager
     async def pause_rabbit(self) -> AsyncIterator[None]:
-        async with self._pause_container("rabbit", self.rabbit_client):
+        async with self._paused_container("rabbit", self.rabbit_client):
             yield
 
     @contextlib.asynccontextmanager
@@ -382,7 +382,7 @@ class ServiceManager:
         # save db for clean restore point
         await self.redis_client.redis.save()
 
-        async with self._pause_container("redis", self.redis_client):
+        async with self._paused_container("redis", self.redis_client):
             yield
 
 
