@@ -37,6 +37,8 @@ pull_request_rules:
           - check-failure=integration-tests
           - check-failure=system-tests
     actions:
+      comment:
+        message: "Restarted CI due to failing tests"
       github_actions:
         workflow:
           dispatch:
