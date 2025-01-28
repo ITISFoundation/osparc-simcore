@@ -990,10 +990,8 @@ async def test_download_file_1_to_1_with_file_meta_data(
     data, error = assert_status(response, status.HTTP_200_OK, FileDownloadResponse)
     assert not error
     assert data
-    assert "link" in data
-    assert TypeAdapter(AnyHttpUrl).validate_python(data["link"])
     await _assert_file_downloaded(
-        faker, tmp_path, link=data["link"], uploaded_file=uploaded_file
+        faker, tmp_path, link=data.link, uploaded_file=uploaded_file
     )
 
 
@@ -1039,14 +1037,13 @@ async def test_download_file_from_inside_a_directory(
     )
 
     # finally check the download link
-    download_url = (
-        client.app.router["download_file"]
-        .url_for(
-            location_id=f"{location_id}",
-            file_id=urllib.parse.quote(s3_file_id, safe=""),
-        )
-        .with_query(user_id=user_id)
-    )
+    download_url = url_from_operation_id(
+        client,
+        initialized_app,
+        "download_file",
+        location_id=f"{location_id}",
+        file_id=urllib.parse.quote(s3_file_id, safe=""),
+    ).with_query(user_id=user_id)
     response = await client.get(f"{download_url}")
     data, error = await assert_status(response, status.HTTP_200_OK)
     assert not error
