@@ -6,13 +6,13 @@
     "version": "0.5.0"
   },
   "paths": {
-    "/v0/v0/": {
+    "/v0/": {
       "get": {
         "tags": [
           "status"
         ],
         "summary": "Get Health",
-        "operationId": "get_health_v0_v0__get",
+        "operationId": "get_health_v0__get",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -34,48 +34,6 @@
         ],
         "summary": "Get Status",
         "operationId": "get_status_v0_status_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Envelope_AppStatusCheck_"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v0/v0/v0/": {
-      "get": {
-        "tags": [
-          "status"
-        ],
-        "summary": "Get Health",
-        "operationId": "get_health_v0_v0_v0__get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Envelope_HealthCheck_"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v0/v0/status": {
-      "get": {
-        "tags": [
-          "status"
-        ],
-        "summary": "Get Status",
-        "operationId": "get_status_v0_v0_status_get",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -117,68 +75,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Envelope_list_FileLocation__"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v0/locations/{location_id}:sync": {
-      "post": {
-        "tags": [
-          "locations"
-        ],
-        "summary": "Synchronise Meta Data Table",
-        "operationId": "synchronise_meta_data_table_v0_locations__location_id__sync_post",
-        "parameters": [
-          {
-            "name": "location_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Location Id"
-            }
-          },
-          {
-            "name": "dry_run",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "boolean",
-              "default": false,
-              "title": "Dry Run"
-            }
-          },
-          {
-            "name": "fire_and_forget",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "boolean",
-              "default": false,
-              "title": "Fire And Forget"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Envelope_SyncMetadataResponse_"
                 }
               }
             }
@@ -540,18 +436,28 @@
               ],
               "title": "File Id"
             }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/FileDownloadQueryParams"
-              }
+          },
+          {
+            "name": "user_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": true,
+              "title": "User Id",
+              "minimum": 0
+            }
+          },
+          {
+            "name": "link_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/LinkType",
+              "default": "PRESIGNED"
             }
           }
-        },
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -609,18 +515,76 @@
               ],
               "title": "File Id"
             }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/FileUploadQueryParams"
-              }
+          },
+          {
+            "name": "user_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": true,
+              "title": "User Id",
+              "minimum": 0
+            }
+          },
+          {
+            "name": "link_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/LinkType",
+              "default": "PRESIGNED"
+            }
+          },
+          {
+            "name": "file_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^\\s*(\\d*\\.?\\d+)\\s*(\\w+)?"
+                },
+                {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "File Size"
+            }
+          },
+          {
+            "name": "is_directory",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Is Directory"
+            }
+          },
+          {
+            "name": "sha256_checksum",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^[a-fA-F0-9]{64}$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sha256 Checksum"
             }
           }
-        },
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -1613,31 +1577,6 @@
         "type": "object",
         "title": "Envelope[S3Settings]"
       },
-      "Envelope_SyncMetadataResponse_": {
-        "properties": {
-          "data": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/SyncMetadataResponse"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "error": {
-            "anyOf": [
-              {},
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Error"
-          }
-        },
-        "type": "object",
-        "title": "Envelope[SyncMetadataResponse]"
-      },
       "Envelope_TaskGet_": {
         "properties": {
           "data": {
@@ -1749,26 +1688,6 @@
         },
         "type": "object",
         "title": "Envelope[list[FileMetaDataGet]]"
-      },
-      "FileDownloadQueryParams": {
-        "properties": {
-          "user_id": {
-            "type": "integer",
-            "exclusiveMinimum": true,
-            "title": "User Id",
-            "minimum": 0
-          },
-          "link_type": {
-            "$ref": "#/components/schemas/LinkType",
-            "default": "PRESIGNED"
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "required": [
-          "user_id"
-        ],
-        "title": "FileDownloadQueryParams"
       },
       "FileDownloadResponse": {
         "properties": {
@@ -2128,59 +2047,6 @@
         ],
         "title": "FileUploadLinks"
       },
-      "FileUploadQueryParams": {
-        "properties": {
-          "user_id": {
-            "type": "integer",
-            "exclusiveMinimum": true,
-            "title": "User Id",
-            "minimum": 0
-          },
-          "link_type": {
-            "$ref": "#/components/schemas/LinkType",
-            "default": "PRESIGNED"
-          },
-          "file_size": {
-            "anyOf": [
-              {
-                "type": "string",
-                "pattern": "^\\s*(\\d*\\.?\\d+)\\s*(\\w+)?"
-              },
-              {
-                "type": "integer",
-                "minimum": 0
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "File Size"
-          },
-          "is_directory": {
-            "type": "boolean",
-            "title": "Is Directory",
-            "default": false
-          },
-          "sha256_checksum": {
-            "anyOf": [
-              {
-                "type": "string",
-                "pattern": "^[a-fA-F0-9]{64}$"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Sha256 Checksum"
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "required": [
-          "user_id"
-        ],
-        "title": "FileUploadQueryParams"
-      },
       "FileUploadResponseV1": {
         "properties": {
           "link": {
@@ -2392,41 +2258,6 @@
           "user_id"
         ],
         "title": "StorageQueryParamsBase"
-      },
-      "SyncMetadataResponse": {
-        "properties": {
-          "removed": {
-            "items": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "pattern": "^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\\/(.+)$"
-                },
-                {
-                  "type": "string",
-                  "pattern": "^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
-                }
-              ]
-            },
-            "type": "array",
-            "title": "Removed"
-          },
-          "fire_and_forget": {
-            "type": "boolean",
-            "title": "Fire And Forget"
-          },
-          "dry_run": {
-            "type": "boolean",
-            "title": "Dry Run"
-          }
-        },
-        "type": "object",
-        "required": [
-          "removed",
-          "fire_and_forget",
-          "dry_run"
-        ],
-        "title": "SyncMetadataResponse"
       },
       "TaskGet": {
         "properties": {

@@ -71,7 +71,7 @@ async def list_files_metadata(
 
 
 @router.get(
-    "/locations/{location_id}/files/{file_id}/metadata",
+    "/locations/{location_id}/files/{file_id:path}/metadata",
     response_model=Envelope[FileMetaDataGet] | Envelope[FileMetaDataGetv010],
 )
 async def get_file_metadata(
@@ -126,13 +126,13 @@ async def get_file_metadata(
 
 
 @router.get(
-    "/locations/{location_id}/files/{file_id}",
+    "/locations/{location_id}/files/{file_id:path}",
     response_model=Envelope[FileDownloadResponse],
 )
 async def download_file(
-    query_params: FileDownloadQueryParams,
     location_id: LocationID,
     file_id: StorageFileID,
+    query_params: Annotated[FileDownloadQueryParams, Depends()],
     request: Request,
 ) -> Envelope[FileDownloadResponse]:
     file_id = urllib.parse.unquote(f"{file_id}")
@@ -144,13 +144,13 @@ async def download_file(
 
 
 @router.put(
-    "/locations/{location_id}/files/{file_id}",
+    "/locations/{location_id}/files/{file_id:path}",
     response_model=Envelope[FileUploadResponseV1] | Envelope[FileUploadSchema],
 )
 async def upload_file(
-    query_params: FileUploadQueryParams,
     location_id: LocationID,
     file_id: StorageFileID,
+    query_params: Annotated[FileUploadQueryParams, Depends()],
     request: Request,
 ):
     """creates upload file links:
@@ -181,7 +181,6 @@ async def upload_file(
     Use-case v2.2: if query.file_size > 0 and query.link_type=presigned or None, returns 1 or more presigned links depending on the file size (limited to a single 5TB file)
     Use-case v2.3: if query.link_type=s3 and query.file_size>=0, returns a single s3 direct link (limited to a single 5TB file)
     """
-    file_id = urllib.parse.unquote(f"{file_id}")
     dsm = get_dsm_provider(request.app).get(location_id)
     links: UploadLinks = await dsm.create_file_upload_links(
         user_id=query_params.user_id,
@@ -200,24 +199,30 @@ async def upload_file(
 
     # v2 response
 
-    base_url = URL(str(request.url))
+    abort_url = (
+        URL(f"{request.url}")
+        .with_path(
+            request.app.url_path_for(
+                "abort_upload_file",
+                location_id=f"{location_id}",
+                file_id=file_id,
+            )
+        )
+        .with_query(user_id=query_params.user_id)
+    )
 
-    abort_url = base_url.join(
-        request.app.router["abort_upload_file"]
-        .url_for(
-            location_id=f"{location_id}",
-            file_id=urllib.parse.quote(file_id, safe=""),
+    complete_url = (
+        URL(f"{request.url}")
+        .with_path(
+            request.app.url_path_for(
+                "complete_upload_file",
+                location_id=f"{location_id}",
+                file_id=file_id,
+            )
         )
         .with_query(user_id=query_params.user_id)
     )
-    complete_url = base_url.join(
-        request.app.router["complete_upload_file"]
-        .url_for(
-            location_id=f"{location_id}",
-            file_id=urllib.parse.quote(file_id, safe=""),
-        )
-        .with_query(user_id=query_params.user_id)
-    )
+
     v2_response = FileUploadSchema(
         chunk_size=links.chunk_size,
         urls=links.urls,
@@ -230,32 +235,30 @@ async def upload_file(
 
 
 @router.post(
-    "/locations/{location_id}/files/{file_id}:abort",
+    "/locations/{location_id}/files/{file_id:path}:abort",
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def abort_upload_file(
-    query_params: Annotated[StorageQueryParamsBase, Depends()],
     location_id: LocationID,
     file_id: StorageFileID,
+    query_params: Annotated[StorageQueryParamsBase, Depends()],
     request: Request,
 ):
-    file_id = urllib.parse.unquote(f"{file_id}")
     dsm = get_dsm_provider(request.app).get(location_id)
     await dsm.abort_file_upload(query_params.user_id, file_id)
 
 
 @router.post(
-    "/locations/{location_id}/files/{file_id}:complete",
+    "/locations/{location_id}/files/{file_id:path}:complete",
     response_model=Envelope[FileUploadCompleteResponse],
 )
 async def complete_upload_file(
     query_params: Annotated[StorageQueryParamsBase, Depends()],
     location_id: LocationID,
     file_id: StorageFileID,
-    body: Annotated[FileUploadCompletionBody, Depends()],
+    body: FileUploadCompletionBody,
     request: Request,
 ):
-    file_id = urllib.parse.unquote(f"{file_id}")
     dsm = get_dsm_provider(request.app).get(location_id)
     # NOTE: completing a multipart upload on AWS can take up to several minutes
     # therefore we wait a bit to see if it completes fast and return a 204
@@ -288,7 +291,7 @@ async def complete_upload_file(
 
 
 @router.post(
-    "/locations/{location_id}/files/{file_id}:complete/futures/{future_id}",
+    "/locations/{location_id}/files/{file_id:path}:complete/futures/{future_id}",
     response_model=FileUploadCompleteFutureResponse,
 )
 async def is_completed_upload_file(
@@ -302,7 +305,6 @@ async def is_completed_upload_file(
     # therefore we wait a bit to see if it completes fast and return a 204
     # if it returns slow we return a 202 - Accepted, the client will have to check later
     # for completeness
-    file_id = urllib.parse.unquote(f"{file_id}")
     task_name = create_upload_completion_task_name(query_params.user_id, file_id)
     assert task_name == future_id  # nosec
     # first check if the task is in the app
@@ -336,7 +338,7 @@ async def is_completed_upload_file(
 
 
 @router.delete(
-    "/locations/{location_id}/files/{file_id}",
+    "/locations/{location_id}/files/{file_id:path}",
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def delete_file(
@@ -345,19 +347,17 @@ async def delete_file(
     file_id: StorageFileID,
     request: Request,
 ):
-    file_id = urllib.parse.unquote(f"{file_id}")
     dsm = get_dsm_provider(request.app).get(location_id)
     await dsm.delete_file(query_params.user_id, file_id)
 
 
-@router.post("/files/{file_id}:soft-copy", response_model=FileMetaDataGet)
+@router.post("/files/{file_id:path}:soft-copy", response_model=FileMetaDataGet)
 async def copy_as_soft_link(
     query_params: Annotated[StorageQueryParamsBase, Depends()],
     file_id: StorageFileID,
-    body: Annotated[SoftCopyBody, Depends()],
+    body: SoftCopyBody,
     request: Request,
 ):
-    file_id = urllib.parse.unquote(f"{file_id}")
     dsm = cast(
         SimcoreS3DataManager,
         get_dsm_provider(request.app).get(SimcoreS3DataManager.get_location_id()),

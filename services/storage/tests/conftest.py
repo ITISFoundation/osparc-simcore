@@ -31,6 +31,7 @@ from models_library.api_schemas_storage import (
     FileUploadCompleteState,
     FileUploadCompletionBody,
     FileUploadSchema,
+    LinkType,
     UploadedPart,
 )
 from models_library.basic_types import SHA256Str
@@ -285,7 +286,7 @@ async def create_upload_file_link_v2(
             initialized_app,
             "upload_file",
             location_id=f"{location_id}",
-            file_id=urllib.parse.quote(file_id, safe=""),
+            file_id=file_id,
         ).with_query(**query_kwargs, user_id=user_id)
         assert (
             "file_size" in url.query
@@ -346,7 +347,10 @@ def upload_file(
         if sha256_checksum:
             query_params["sha256_checksum"] = f"{sha256_checksum}"
         file_upload_link = await create_upload_file_link_v2(
-            file_id, link_type="presigned", file_size=file_size, **query_params
+            file_id,
+            link_type=LinkType.PRESIGNED.value,
+            file_size=file_size,
+            **query_params,
         )
 
         # upload the file

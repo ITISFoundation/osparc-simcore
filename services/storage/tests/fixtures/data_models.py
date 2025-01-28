@@ -248,7 +248,7 @@ async def create_project_node(
             )
             row = result.fetchone()
             assert row
-            project_workbench: dict[str, Any] = row[projects.c.workbench]
+            project_workbench: dict[str, Any] = row.workbench
             new_node_id = node_id or NodeID(f"{faker.uuid4()}")
             node_data = {
                 "key": "simcore/services/frontend/file-picker",

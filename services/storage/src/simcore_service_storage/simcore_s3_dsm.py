@@ -303,7 +303,7 @@ class SimcoreS3DataManager(BaseDataManager):
                 # SEE https://github.com/ITISFoundation/osparc-simcore/issues/5159
                 enforce_access_rights=False,
             )
-        async with self.engine.connect() as conn:
+        async with self.engine.begin() as conn:
             # initiate the file meta data table
             fmd = await self._create_fmd_for_upload(
                 conn,
@@ -337,7 +337,7 @@ class SimcoreS3DataManager(BaseDataManager):
             )
             # update the database so we keep the upload id
             fmd.upload_id = multipart_presigned_links.upload_id
-            async with self.engine.connect() as conn:
+            async with self.engine.begin() as conn:
                 await db_file_meta_data.upsert(conn, fmd)
             return UploadLinks(
                 multipart_presigned_links.urls,
@@ -536,7 +536,7 @@ class SimcoreS3DataManager(BaseDataManager):
             # we still need to clean up the database entry (it exists)
             # and to invalidate the size of the parent directory
 
-        async with self.engine.connect() as conn:
+        async with self.engine.begin() as conn:
             await db_file_meta_data.delete(conn, [file_id])
 
             if parent_dir_fmds := await db_file_meta_data.list_filter_with_partial_file_id(
@@ -940,7 +940,7 @@ class SimcoreS3DataManager(BaseDataManager):
             fmd.file_size = TypeAdapter(ByteSize).validate_python(s3_metadata.size)
         fmd.upload_expires_at = None
         fmd.upload_id = None
-        async with self.engine.connect() as conn:
+        async with self.engine.begin() as conn:
             updated_fmd: FileMetaDataAtDB = await db_file_meta_data.upsert(
                 conn, convert_db_to_model(fmd)
             )
@@ -976,7 +976,7 @@ class SimcoreS3DataManager(BaseDataManager):
             await download_to_file_or_raise(session, f"{dc_link}", local_file_path)
 
             # copying will happen using aioboto3, therefore multipart might happen
-            async with self.engine.connect() as conn:
+            async with self.engine.begin() as conn:
                 new_fmd = await self._create_fmd_for_upload(
                     conn,
                     user_id,
@@ -1015,7 +1015,7 @@ class SimcoreS3DataManager(BaseDataManager):
         ):
             # copying will happen using aioboto3, therefore multipart might happen
             # NOTE: connection must be released to ensure database update
-            async with self.engine.connect() as conn:
+            async with self.engine.begin()() as conn:
                 new_fmd = await self._create_fmd_for_upload(
                     conn,
                     user_id,
@@ -1058,7 +1058,7 @@ class SimcoreS3DataManager(BaseDataManager):
         is_directory: bool,
         sha256_checksum: SHA256Str | None,
     ) -> FileMetaDataAtDB:
-        now = arrow.utcnow().datetime
+        now = datetime.datetime.utcnow()
         upload_expiration_date = now + datetime.timedelta(
             seconds=self.settings.STORAGE_DEFAULT_PRESIGNED_LINK_EXPIRATION_SECONDS
         )

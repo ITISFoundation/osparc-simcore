@@ -35,12 +35,13 @@ async def upsert(
     fmd_db = (
         FileMetaDataAtDB.model_validate(fmd) if isinstance(fmd, FileMetaData) else fmd
     )
-    insert_statement = pg_insert(file_meta_data).values(**jsonable_encoder(fmd_db))
+    insert_statement = pg_insert(file_meta_data).values(**fmd_db.model_dump())
     on_update_statement = insert_statement.on_conflict_do_update(
-        index_elements=[file_meta_data.c.file_id], set_=jsonable_encoder(fmd_db)
+        index_elements=[file_meta_data.c.file_id], set_=fmd_db.model_dump()
     ).returning(literal_column("*"))
     result = await conn.execute(on_update_statement)
-    row = result.first()
+    await conn.commit()
+    row = result.one()
     assert row  # nosec
     return FileMetaDataAtDB.model_validate(row)
 
@@ -52,7 +53,7 @@ async def insert(conn: AsyncConnection, fmd: FileMetaData) -> FileMetaDataAtDB:
         .values(jsonable_encoder(fmd_db))
         .returning(literal_column("*"))
     )
-    row = result.first()
+    row = result.one()
     assert row  # nosec
     return FileMetaDataAtDB.model_validate(row)
 

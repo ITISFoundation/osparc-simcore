@@ -1,7 +1,7 @@
 import datetime
 import urllib.parse
 from dataclasses import dataclass
-from typing import Any, Literal, NamedTuple
+from typing import Annotated, Any, Literal, NamedTuple
 from uuid import UUID
 
 import arrow
@@ -36,6 +36,7 @@ from pydantic import (
     ByteSize,
     ConfigDict,
     Field,
+    PlainSerializer,
     TypeAdapter,
     field_validator,
     model_validator,
@@ -56,17 +57,31 @@ def is_uuid(value: str) -> bool:
 
 
 class FileMetaDataAtDB(BaseModel):
-    location_id: LocationID
+    location_id: Annotated[
+        LocationID, PlainSerializer(lambda x: f"{x}", return_type=str)
+    ]
     location: LocationName
     bucket_name: S3BucketName
     object_name: SimcoreS3FileID
-    project_id: ProjectID | None = None
-    node_id: NodeID | None = None
-    user_id: UserID
-    created_at: datetime.datetime
+    project_id: Annotated[
+        ProjectID | None,
+        PlainSerializer(
+            lambda x: f"{x}" if x is not None else None, return_type=str | None
+        ),
+    ] = None
+    node_id: Annotated[
+        NodeID | None,
+        PlainSerializer(
+            lambda x: f"{x}" if x is not None else None, return_type=str | None
+        ),
+    ] = None
+    user_id: Annotated[UserID, PlainSerializer(lambda x: f"{x}", return_type=str)]
+    created_at: Annotated[datetime.datetime, PlainSerializer(lambda x: x.isoformat())]
     file_id: SimcoreS3FileID
     file_size: UNDEFINED_SIZE_TYPE | ByteSize
-    last_modified: datetime.datetime
+    last_modified: Annotated[
+        datetime.datetime, PlainSerializer(lambda x: x.isoformat())
+    ]
     entity_tag: ETag | None = None
     is_soft_link: bool
     upload_id: UploadID | None = None
@@ -189,13 +204,6 @@ class FileUploadQueryParams(StorageQueryParamsBase):
     is_directory: bool = False
     sha256_checksum: SHA256Str | None = None
 
-    @field_validator("link_type", mode="before")
-    @classmethod
-    def convert_from_lower_case(cls, v: str) -> str:
-        if v is not None:
-            return f"{v}".upper()
-        return v
-
     @model_validator(mode="before")
     @classmethod
     def when_directory_force_link_type_and_file_size(cls, data: Any) -> Any:
@@ -218,6 +226,8 @@ class FileUploadQueryParams(StorageQueryParamsBase):
         - storage relies on lazy update to find if the file is finished uploaded (when client calls get_file_meta_data, or if the dsm_cleaner goes over it after the upload time is expired)
         """
         return self.file_size is None and self.is_directory is False
+
+    # model_config = ConfigDict(use_enum_value=True)
 
 
 class FileUploadResponseV1(BaseModel):

@@ -25,7 +25,7 @@ from ...modules.db.db_access_layer import InvalidFileIdentifierError
 _logger = logging.getLogger(__name__)
 
 
-def set_exception_handlers(app: FastAPI):
+def set_exception_handlers(app: FastAPI) -> None:
     app.add_exception_handler(HTTPException, http_error_handler)
     app.add_exception_handler(RequestValidationError, http422_error_handler)
     # director-v2 core.errors mappend into HTTP errors
