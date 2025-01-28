@@ -110,7 +110,7 @@ def create_base_app(settings: AppSettings | None = None) -> FastAPI:
         logger_filter_mapping=settings.DIRECTOR_V2_LOG_FILTER_MAPPING,
         tracing_settings=settings.DIRECTOR_V2_TRACING,
     )
-    _logger.debug(settings.model_dump_json(indent=2, warnings="none"))
+    _logger.debug(settings.model_dump_json(indent=2))
 
     # keep mostly quiet noisy loggers
     quiet_level: int = max(

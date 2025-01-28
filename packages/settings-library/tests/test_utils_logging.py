@@ -42,7 +42,7 @@ def test_mixin_logging(monkeypatch):
     assert settings.LOG_LEVEL == "DEBUG"
 
     assert (
-        settings.model_dump_json(warnings="none")
+        settings.model_dump_json()
         == '{"SC_BOOT_MODE":null,"LOG_LEVEL":"DEBUG","APPNAME_DEBUG":false}'
     )
 

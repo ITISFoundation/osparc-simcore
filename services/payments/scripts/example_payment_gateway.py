@@ -429,7 +429,7 @@ def create_app():
     override_fastapi_openapi_method(app)
 
     app.state.settings = Settings.create_from_envs()
-    logging.info(app.state.settings.model_dump_json(indent=2, warnings="none"))
+    logging.info(app.state.settings.model_dump_json(indent=2))
 
     for factory in (
         create_payment_router,

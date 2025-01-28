@@ -199,7 +199,7 @@ def mock_env(
 async def initialized_app(mock_env: EnvVarsDict) -> AsyncIterable[FastAPI]:
     settings = AppSettings.create_from_envs()
     app = init_app(settings)
-    print("Application settings\n", settings.model_dump_json(indent=2, warnings="none"))
+    print("Application settings\n", settings.model_dump_json(indent=2))
     async with LifespanManager(app):
         yield app
 
@@ -211,7 +211,7 @@ async def client(mock_env: EnvVarsDict) -> AsyncIterator[TestClient]:
     settings = AppSettings.create_from_envs()
     app = init_app(settings)
     # NOTE: we cannot use the initialized_app fixture here as the TestClient also creates it
-    print("Application settings\n", settings.model_dump_json(indent=2, warnings="none"))
+    print("Application settings\n", settings.model_dump_json(indent=2))
     with TestClient(app, raise_server_exceptions=True) as test_client:
         yield test_client
 

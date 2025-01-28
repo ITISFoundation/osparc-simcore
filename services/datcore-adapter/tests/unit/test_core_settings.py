@@ -37,6 +37,6 @@ def app_environment(
 def test_unit_app_environment(app_environment: EnvVarsDict):
     assert app_environment
     settings = ApplicationSettings.create_from_envs()
-    print("captured settings: \n", settings.model_dump_json(indent=2, warnings="none"))
+    print("captured settings: \n", settings.model_dump_json(indent=2))
 
     assert settings.PENNSIEVE

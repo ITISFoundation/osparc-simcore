@@ -71,7 +71,7 @@ def client(async_client: httpx.AsyncClient) -> httpx.AsyncClient:
 
     settings: AppSettings = app.state.settings
     assert settings
-    print(settings.model_dump_json(indent=1, warnings="none"))
+    print(settings.model_dump_json(indent=1))
 
     return async_client
 

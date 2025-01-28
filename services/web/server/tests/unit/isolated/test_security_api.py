@@ -219,7 +219,7 @@ def client(
 
     # mocks 'setup_session': patch to avoid setting up all ApplicationSettings
     session_settings = SessionSettings.create_from_envs()
-    print(session_settings.model_dump_json(indent=1, warnings="none"))
+    print(session_settings.model_dump_json(indent=1))
     mocker.patch(
         "simcore_service_webserver.session.plugin.get_plugin_settings",
         autospec=True,

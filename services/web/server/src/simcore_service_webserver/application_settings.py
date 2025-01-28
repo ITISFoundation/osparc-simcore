@@ -546,7 +546,7 @@ def setup_settings(app: web.Application) -> ApplicationSettings:
     app[APP_SETTINGS_KEY] = settings
     _logger.debug(
         "Captured app settings:\n%s",
-        app[APP_SETTINGS_KEY].model_dump_json(indent=1, warnings="none"),
+        app[APP_SETTINGS_KEY].model_dump_json(indent=1),
     )
     return settings
 

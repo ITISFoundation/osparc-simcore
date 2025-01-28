@@ -26,7 +26,7 @@ def app_settings(
 
     # init and validation happens here
     settings = setup_settings(app)
-    print("settings:\n", settings.model_dump_json(indent=1, warnings="none"))
+    print("settings:\n", settings.model_dump_json(indent=1))
 
     assert APP_SETTINGS_KEY in app
     assert app[APP_SETTINGS_KEY] == settings
@@ -131,6 +131,7 @@ def test_disabled_plugins_settings_to_client_statics(
         assert plugin_name in set(statics["pluginsDisabled"])
 
 
+@pytest.mark.filterwarnings("error")
 def test_avoid_sensitive_info_in_public(app_settings: ApplicationSettings):
     # avoids display of sensitive info
     assert not any("pass" in key for key in app_settings.public_dict())
