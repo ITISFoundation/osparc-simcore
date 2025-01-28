@@ -6,7 +6,6 @@ Read operations are list, get
 """
 
 from aiohttp import web
-from models_library.api_schemas_webserver.projects import ProjectListItem
 from models_library.folders import FolderID, FolderQuery, FolderScope
 from models_library.projects import ProjectID
 from models_library.rest_ordering import OrderBy
@@ -16,23 +15,26 @@ from pydantic import NonNegativeInt
 from servicelib.utils import logged_gather
 from simcore_postgres_database.models.projects import ProjectType
 from simcore_postgres_database.webserver_models import ProjectType as ProjectTypeDB
+from simcore_service_webserver.projects._projects_db import (
+    batch_get_trashed_by_primary_gid,
+)
 
 from ..catalog.client import get_services_for_user_in_product
-from ..folders import _folders_repository as folders_db
+from ..folders import _folders_repository as _folders_repository
 from ..workspaces._workspaces_service import check_user_workspace_access
-from ._permalink_api import update_or_pop_permalink_in_project
 from . import projects_service
+from ._permalink_api import update_or_pop_permalink_in_project
 from .db import ProjectDBAPI
 from .models import ProjectDict, ProjectTypeAPI
 
 
-async def _append_item(
+async def _update_project_dict(
     request: web.Request,
     *,
     user_id: UserID,
     project: ProjectDict,
     is_template: bool,
-):
+) -> ProjectDict:
     # state
     await projects_service.add_project_states_for_user(
         user_id=user_id,
@@ -44,8 +46,24 @@ async def _append_item(
     # permalink
     await update_or_pop_permalink_in_project(request, project)
 
-    # validate
-    return ProjectListItem.from_domain_model(project).data(exclude_unset=True)
+    return project
+
+
+async def _batch_update_list_of_project_dict(
+    app: web.Application, list_of_project_dict: list[ProjectDict]
+) -> list[ProjectDict]:
+
+    # updating `trashed_by_primary_gid`
+    trashed_by_primary_gid_values = await batch_get_trashed_by_primary_gid(
+        app, projects_uuids=[ProjectID(p["uuid"]) for p in list_of_project_dict]
+    )
+
+    for project_dict, value in zip(
+        list_of_project_dict, trashed_by_primary_gid_values, strict=True
+    ):
+        project_dict.update(trashed_by_primary_gid=value)
+
+    return list_of_project_dict
 
 
 async def list_projects(  # pylint: disable=too-many-arguments
@@ -89,7 +107,7 @@ async def list_projects(  # pylint: disable=too-many-arguments
 
     if folder_id:
         # Check whether user has access to the folder
-        await folders_db.get_for_user_or_workspace(
+        await _folders_repository.get_for_user_or_workspace(
             app,
             folder_id=folder_id,
             product_name=product_name,
@@ -97,7 +115,7 @@ async def list_projects(  # pylint: disable=too-many-arguments
             workspace_id=workspace_id,
         )
 
-    db_projects, db_project_types, total_number_projects = await db.list_projects(
+    db_projects, db_project_types, total_number_projects = await db.list_projects_dicts(
         product_name=product_name,
         user_id=user_id,
         workspace_query=(
@@ -127,9 +145,11 @@ async def list_projects(  # pylint: disable=too-many-arguments
         order_by=order_by,
     )
 
+    db_projects = await _batch_update_list_of_project_dict(app, db_projects)
+
     projects: list[ProjectDict] = await logged_gather(
         *(
-            _append_item(
+            _update_project_dict(
                 request,
                 user_id=user_id,
                 project=prj,
@@ -166,7 +186,7 @@ async def list_projects_full_depth(
         request.app, user_id, product_name, only_key_versions=True
     )
 
-    db_projects, db_project_types, total_number_projects = await db.list_projects(
+    db_projects, db_project_types, total_number_projects = await db.list_projects_dicts(
         product_name=product_name,
         user_id=user_id,
         workspace_query=WorkspaceQuery(workspace_scope=WorkspaceScope.ALL),
@@ -182,9 +202,11 @@ async def list_projects_full_depth(
         order_by=order_by,
     )
 
+    db_projects = await _batch_update_list_of_project_dict(request.app, db_projects)
+
     projects: list[ProjectDict] = await logged_gather(
         *(
-            _append_item(
+            _update_project_dict(
                 request,
                 user_id=user_id,
                 project=prj,

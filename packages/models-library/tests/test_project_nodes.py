@@ -25,6 +25,7 @@ def test_create_minimal_node(minimal_node_data_sample: dict[str, Any]):
     # a nice way to see how the simplest node looks like
     assert node.inputs == {}
     assert node.outputs == {}
+    assert node.state is not None
     assert node.state.current_status == RunningState.NOT_STARTED
     assert node.state.modified is True
     assert node.state.dependencies == set()
