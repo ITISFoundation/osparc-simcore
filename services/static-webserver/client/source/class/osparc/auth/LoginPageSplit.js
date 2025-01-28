@@ -25,6 +25,9 @@ qx.Class.define("osparc.auth.LoginPageSplit", {
     const layout = new qx.ui.layout.HBox();
     this._setLayout(layout);
 
+    const loginPage = this.__loginPage = new osparc.auth.LoginWithDecorators();
+    loginPage.addListener("done", e => this.fireDataEvent("done", e.getData()));
+
     this.__rebuildLayout();
 
     setTimeout(() => this.__resized(), 100);
@@ -67,8 +70,7 @@ qx.Class.define("osparc.auth.LoginPageSplit", {
     __rebuildLayout: function() {
       this._removeAll();
 
-      const loginPage = new osparc.auth.LoginWithDecorators();
-      loginPage.addListener("done", e => this.fireDataEvent("done", e.getData()));
+      const loginPage = this.__loginWithDecorators;
       const container = new qx.ui.container.Scroll();
       container.add(loginPage);
       const spacers = [
