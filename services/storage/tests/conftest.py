@@ -171,6 +171,7 @@ def app_settings(
     postgres_host_config: dict[str, str],
     mocked_s3_server_envs: EnvVarsDict,
     datcore_adapter_service_mock: respx.MockRouter,
+    mocked_redis_server,
 ) -> ApplicationSettings:
     test_app_settings = ApplicationSettings.create_from_envs()
     print(f"{test_app_settings.model_dump_json(indent=2)=}")
@@ -200,7 +201,6 @@ async def initialized_app(app_settings: ApplicationSettings) -> AsyncIterator[Fa
 @pytest.fixture
 async def client(
     initialized_app: FastAPI,
-    mocked_redis_server,
 ) -> AsyncIterator[httpx.AsyncClient]:
     async with httpx.AsyncClient(
         transport=httpx.ASGITransport(app=initialized_app),
