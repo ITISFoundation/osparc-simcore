@@ -3,6 +3,7 @@ from typing import Annotated
 from fastapi import Depends
 from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
     PricingPlanGet,
+    PricingPlanPage,
     PricingPlanToServiceGet,
     PricingUnitGet,
 )
@@ -118,27 +119,36 @@ async def connect_service_to_pricing_plan(
 
 
 async def list_pricing_plans_by_product(
-    product_name: ProductName,
     db_engine: Annotated[AsyncEngine, Depends(get_resource_tracker_db_engine)],
-) -> list[PricingPlanGet]:
-    pricing_plans_list_db: list[
-        PricingPlansDB
-    ] = await pricing_plans_db.list_pricing_plans_by_product(
-        db_engine, product_name=product_name
+    product_name: ProductName,
+    exclude_inactive: bool,
+    # pagination
+    offset: int,
+    limit: int,
+) -> PricingPlanPage:
+    total, pricing_plans_list_db = await pricing_plans_db.list_pricing_plans_by_product(
+        db_engine,
+        product_name=product_name,
+        exclude_inactive=exclude_inactive,
+        offset=offset,
+        limit=limit,
     )
-    return [
-        PricingPlanGet(
-            pricing_plan_id=pricing_plan_db.pricing_plan_id,
-            display_name=pricing_plan_db.display_name,
-            description=pricing_plan_db.description,
-            classification=pricing_plan_db.classification,
-            created_at=pricing_plan_db.created,
-            pricing_plan_key=pricing_plan_db.pricing_plan_key,
-            pricing_units=None,
-            is_active=pricing_plan_db.is_active,
-        )
-        for pricing_plan_db in pricing_plans_list_db
-    ]
+    return PricingPlanPage(
+        items=[
+            PricingPlanGet(
+                pricing_plan_id=pricing_plan_db.pricing_plan_id,
+                display_name=pricing_plan_db.display_name,
+                description=pricing_plan_db.description,
+                classification=pricing_plan_db.classification,
+                created_at=pricing_plan_db.created,
+                pricing_plan_key=pricing_plan_db.pricing_plan_key,
+                pricing_units=None,
+                is_active=pricing_plan_db.is_active,
+            )
+            for pricing_plan_db in pricing_plans_list_db
+        ],
+        total=total,
+    )
 
 
 async def get_pricing_plan(
