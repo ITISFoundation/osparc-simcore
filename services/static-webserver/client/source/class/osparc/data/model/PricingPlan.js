@@ -65,7 +65,7 @@ qx.Class.define("osparc.data.model.PricingPlan", {
       check: "Array",
       nullable: true,
       init: [],
-      event: "changePricingunits"
+      event: "changePricingUnits"
     },
 
     classification: {
