@@ -398,7 +398,7 @@ class SimcoreS3DataManager(BaseDataManager):
             await self._update_database_from_storage(fmd)
         except S3KeyNotFoundError:
             # the file does not exist, so we delete the entry in the db
-            async with self.engine.connect() as conn:
+            async with self.engine.begin() as conn:
                 await db_file_meta_data.delete(conn, [fmd.file_id])
 
     async def complete_file_upload(
@@ -555,7 +555,7 @@ class SimcoreS3DataManager(BaseDataManager):
     async def delete_project_simcore_s3(
         self, user_id: UserID, project_id: ProjectID, node_id: NodeID | None = None
     ) -> None:
-        async with self.engine.connect() as conn:
+        async with self.engine.begin() as conn:
             can: AccessRights = await get_project_access_rights(
                 conn, user_id, project_id
             )
@@ -780,7 +780,7 @@ class SimcoreS3DataManager(BaseDataManager):
         target.file_id = link_file_id  # NOTE: api-server relies on this id
         target.is_soft_link = True
 
-        async with self.engine.connect() as conn:
+        async with self.engine.begin() as conn:
             return convert_db_to_model(await db_file_meta_data.insert(conn, target))
 
     async def _clean_pending_upload(
@@ -1041,7 +1041,7 @@ class SimcoreS3DataManager(BaseDataManager):
                     bytes_transfered_cb=bytes_transfered_cb,
                 )
             # we are done, let's update the copy with the src
-            async with self.engine.connect() as conn:
+            async with self.engine.begin() as conn:
                 updated_fmd = await self._update_fmd_from_other(
                     conn, fmd=new_fmd, copy_from=src_fmd
                 )

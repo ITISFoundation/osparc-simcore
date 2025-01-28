@@ -284,7 +284,7 @@ async def test_clean_expired_uploads_reverts_to_last_known_version_expired_pendi
     )
 
     # now change the upload_expires_at entry to simulate an expired entry
-    async with sqlalchemy_async_engine.connect() as conn:
+    async with sqlalchemy_async_engine.begin() as conn:
         await conn.execute(
             file_meta_data.update()
             .where(file_meta_data.c.file_id == file_id)
@@ -346,7 +346,7 @@ async def test_clean_expired_uploads_does_not_clean_multipart_upload_on_creation
         sha256_checksum=checksum,
     )
     # we create the entry in the db
-    async with sqlalchemy_async_engine.connect() as conn:
+    async with sqlalchemy_async_engine.begin() as conn:
         await db_file_meta_data.upsert(conn, fmd)
 
         # ensure the database is correctly set up

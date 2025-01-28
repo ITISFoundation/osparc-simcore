@@ -115,7 +115,7 @@ def project_slug_dir(osparc_simcore_root_dir: Path) -> Path:
 async def cleanup_user_projects_file_metadata(sqlalchemy_async_engine: AsyncEngine):
     yield
     # cleanup
-    async with sqlalchemy_async_engine.connect() as conn:
+    async with sqlalchemy_async_engine.begin() as conn:
         await conn.execute(file_meta_data.delete())
         await conn.execute(projects.delete())
         await conn.execute(users.delete())
