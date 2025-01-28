@@ -9,7 +9,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Final, cast
 
-import arrow
 from aws_library.s3 import (
     CopiedBytesTransferredCallback,
     S3DirectoryMetaData,
@@ -803,7 +802,7 @@ class SimcoreS3DataManager(BaseDataManager):
         1. will try to update the entry from S3 backend if exists
         2. will delete the entry if nothing exists in S3 backend.
         """
-        now = arrow.utcnow().datetime
+        now = datetime.datetime.utcnow()
         async with self.engine.connect() as conn:
             list_of_expired_uploads = await db_file_meta_data.list_fmds(
                 conn, expired_after=now
