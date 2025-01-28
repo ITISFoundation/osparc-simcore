@@ -21,14 +21,14 @@ from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
 from ..wallets._handlers import WalletsPathParams
 from . import _licensed_items_checkouts_service
-from ._exceptions_handlers import handle_plugin_requests_exceptions
+from ._common.exceptions_handlers import handle_plugin_requests_exceptions
+from ._common.models import LicensedItemsRequestContext
 from ._licensed_items_checkouts_models import (
     LicensedItemCheckoutGet,
     LicensedItemCheckoutGetPage,
     LicensedItemCheckoutPathParams,
     LicensedItemsCheckoutsListQueryParams,
 )
-from ._models import LicensedItemsRequestContext
 
 _logger = logging.getLogger(__name__)
 
