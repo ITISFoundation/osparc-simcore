@@ -142,7 +142,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
     },
 
     __createFromResourceButton: function(resourceData) {
-      const menuButton = this.self().createMenuButton(resourceData.icon, resourceData.title, resourceData.description);
+      const menuButton = this.self().createMenuButton(null, resourceData.title, resourceData.description);
       osparc.utils.Utils.setIdToWidget(menuButton, resourceData.idToWidget);
       return menuButton;
     },
@@ -150,8 +150,10 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
     __addIcon: function(menuButton, resourceInfo, resourceMetadata) {
       let source = null;
       if (resourceInfo && "icon" in resourceInfo) {
+        // first the one set in the new_studies
         source = resourceInfo["icon"];
       } else if (resourceMetadata && "thumbnail" in resourceMetadata) {
+        // second the one from the resource
         source = resourceMetadata["thumbnail"];
       }
 
