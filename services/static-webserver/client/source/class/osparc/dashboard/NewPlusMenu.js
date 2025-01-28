@@ -35,6 +35,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
 
   events: {
     "createFolder": "qx.event.type.Data",
+    "newEmptyStudyClicked": "qx.event.type.Data",
     "newStudyFromTemplateClicked": "qx.event.type.Data",
     "newStudyFromServiceClicked": "qx.event.type.Data",
   },
@@ -186,6 +187,13 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
 
     __addEmptyStudyButton: function(newStudyData) {
       const menuButton = this.__createFromResourceButton(newStudyData);
+
+      menuButton.addListener("tap", () => {
+        this.fireDataEvent("newEmptyStudyClicked", {
+          newStudyLabel: newStudyData.newStudyLabel,
+        });
+      });
+
       this.__addIcon(menuButton, newStudyData);
       this.__addFromResourceButton(menuButton, newStudyData);
     },

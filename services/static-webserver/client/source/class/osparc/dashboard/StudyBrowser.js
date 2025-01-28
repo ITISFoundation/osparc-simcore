@@ -896,6 +896,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         this.__createFolder(data);
       }, this);
 
+      newPlusButtonMenu.addListener("newEmptyStudyClicked", e => {
+        const {
+          newStudyLabel,
+        } = e.getData();
+        this.__newEmptyStudyBtnClicked(newStudyLabel);
+      }, this);
+
       newPlusButtonMenu.addListener("newStudyFromTemplateClicked", e => {
         const {
           templateData,
@@ -958,7 +965,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       newEmptyStudyBtn.setCardKey("new-study");
       newEmptyStudyBtn.subscribeToFilterGroup("searchBarFilter");
       osparc.utils.Utils.setIdToWidget(newEmptyStudyBtn, "emptyStudyBtn");
-      newEmptyStudyBtn.addListener("tap", () => this.__newEmptyStudyBtnClicked());
+      newEmptyStudyBtn.addListener("tap", () => this.__newEmptyStudyBtnClicked("New Study"));
       this._resourcesContainer.addNonResourceCard(newEmptyStudyBtn);
     },
 
@@ -1504,10 +1511,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
     },
 
-    __newEmptyStudyBtnClicked: function() {
-      const minStudyData = osparc.data.model.Study.createMinStudyObject();
+    __newEmptyStudyBtnClicked: function(newStudyLabel) {
       const existingNames = this._resourcesList.map(study => study["name"]);
-      const title = osparc.utils.Utils.getUniqueName(minStudyData.name, existingNames);
+      const title = osparc.utils.Utils.getUniqueName(newStudyLabel, existingNames);
+      const minStudyData = osparc.data.model.Study.createMinStudyObject();
       minStudyData["name"] = title;
       minStudyData["workspaceId"] = this.getCurrentWorkspaceId();
       minStudyData["folderId"] = this.getCurrentFolderId();
