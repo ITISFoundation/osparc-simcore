@@ -22,7 +22,7 @@ from servicelib.utils import limited_gather
 from simcore_postgres_database.models.project_to_groups import project_to_groups
 from simcore_postgres_database.storage_models import projects, users
 from sqlalchemy.dialects.postgresql import insert as pg_insert
-from sqlalchemy.ext.asyncio import AsyncEngine
+from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
 from ..helpers.utils import get_updated_project
 
@@ -39,8 +39,9 @@ async def _user_context(
 
     # pylint: disable=no-value-for-parameter
     stmt = users.insert().values(**random_user(name=name)).returning(users.c.id)
-    async with sqlalchemy_async_engine.connect() as conn:
+    async with sqlalchemy_async_engine.begin() as conn:
         result = await conn.execute(stmt)
+        await conn.commit()
         row = result.fetchone()
     assert row
     assert isinstance(row.id, int)
@@ -48,7 +49,7 @@ async def _user_context(
     try:
         yield TypeAdapter(UserID).validate_python(row.id)
     finally:
-        async with sqlalchemy_async_engine.connect() as conn:
+        async with sqlalchemy_async_engine.begin() as conn:
             await conn.execute(users.delete().where(users.c.id == row.id))
 
 
@@ -75,20 +76,21 @@ async def create_project(
     async def _creator(**kwargs) -> dict[str, Any]:
         prj_config = {"prj_owner": user_id}
         prj_config.update(kwargs)
-        async with sqlalchemy_async_engine.connect() as conn:
+        async with sqlalchemy_async_engine.begin() as conn:
             result = await conn.execute(
                 projects.insert()
                 .values(**random_project(**prj_config))
                 .returning(sa.literal_column("*"))
             )
+            await conn.commit()
             row = result.fetchone()
             assert row
-            created_project_uuids.append(row[projects.c.uuid])
+            created_project_uuids.append(row.uuid)
             return dict(row)
 
     yield _creator
     # cleanup
-    async with sqlalchemy_async_engine.connect() as conn:
+    async with sqlalchemy_async_engine.begin() as conn:
         await conn.execute(
             projects.delete().where(projects.c.uuid.in_(created_project_uuids))
         )
@@ -103,7 +105,7 @@ async def create_project_access_rights(
     async def _creator(
         project_id: ProjectID, user_id: UserID, read: bool, write: bool, delete: bool
     ) -> None:
-        async with sqlalchemy_async_engine.connect() as conn:
+        async with sqlalchemy_async_engine.begin() as conn:
             result = await conn.execute(
                 project_to_groups.insert()
                 .values(
@@ -117,6 +119,7 @@ async def create_project_access_rights(
                 )
                 .returning(sa.literal_column("*"))
             )
+            await conn.commit()
             row = result.fetchone()
             assert row
             _created.append(
@@ -126,7 +129,7 @@ async def create_project_access_rights(
     yield _creator
 
     # cleanup
-    async with sqlalchemy_async_engine.connect() as conn:
+    async with sqlalchemy_async_engine.begin() as conn:
         await conn.execute(
             project_to_groups.delete().where(
                 sa.or_(
@@ -165,17 +168,17 @@ def share_with_collaborator(
     user_id: UserID,
     project_id: ProjectID,
 ) -> Callable[[], Awaitable[None]]:
-    async def _get_user_group(conn: AsyncSAConnection, query_user: int) -> int:
+    async def _get_user_group(conn: AsyncConnection, query_user: int) -> int:
         result = await conn.execute(
             sa.select(users.c.primary_gid).where(users.c.id == query_user)
         )
-        row = await result.fetchone()
+        row = result.fetchone()
         assert row
         primary_gid: int = row[users.c.primary_gid]
         return primary_gid
 
     async def _() -> None:
-        async with sqlalchemy_async_engine.connect() as conn:
+        async with sqlalchemy_async_engine.begin() as conn:
             result = await conn.execute(
                 sa.select(projects.c.access_rights).where(
                     projects.c.uuid == f"{project_id}"
@@ -237,7 +240,7 @@ async def create_project_node(
     async def _creator(
         project_id: ProjectID, node_id: NodeID | None = None, **kwargs
     ) -> NodeID:
-        async with sqlalchemy_async_engine.connect() as conn:
+        async with sqlalchemy_async_engine.begin() as conn:
             result = await conn.execute(
                 sa.select(projects.c.workbench).where(
                     projects.c.uuid == f"{project_id}"

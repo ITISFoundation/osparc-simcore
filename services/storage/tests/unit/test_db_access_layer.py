@@ -19,6 +19,9 @@ from simcore_service_storage.modules.db.db_access_layer import (
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 pytest_simcore_core_services_selection = ["postgres"]
+pytest_simcore_ops_services_selection = [
+    "adminer",
+]
 
 
 async def test_access_rights_on_owned_project(
