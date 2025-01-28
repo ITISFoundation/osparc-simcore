@@ -115,5 +115,5 @@ async def test_to_httpx_command(client: AsyncClient):
     print(cmd_short)
     assert (
         cmd_short
-        == f'httpx -m POST -c \'{{"y": 12}}\' -h "host" "test_base_http_api" -h "accept" "*/*" -h "accept-encoding" "gzip, deflate" -h "connection" "keep-alive" -h "user-agent" "python-httpx/{httpx.__version__}" -h "x-secret" "{_PLACEHOLDER}" -h "content-length" "9" -h "content-type" "application/json" https://test_base_http_api/foo?x=3'
+        == f'httpx -m POST -c \'{{"y":12}}\' -h "host" "test_base_http_api" -h "accept" "*/*" -h "accept-encoding" "gzip, deflate" -h "connection" "keep-alive" -h "user-agent" "python-httpx/{httpx.__version__}" -h "x-secret" "{_PLACEHOLDER}" -h "content-length" "8" -h "content-type" "application/json" https://test_base_http_api/foo?x=3'
     )
