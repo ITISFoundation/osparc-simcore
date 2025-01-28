@@ -26,7 +26,7 @@ def app_settings(
 
     # init and validation happens here
     settings = setup_settings(app)
-    print("settings:\n", settings.model_dump_json(indent=1))
+    print("settings:\n", settings.model_dump_json(indent=1, warnings="none"))
 
     assert APP_SETTINGS_KEY in app
     assert app[APP_SETTINGS_KEY] == settings
