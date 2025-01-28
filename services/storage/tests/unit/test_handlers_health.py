@@ -10,8 +10,8 @@ from fastapi import FastAPI
 from models_library.api_schemas_storage import HealthCheck, S3BucketName
 from models_library.app_diagnostics import AppStatusCheck
 from moto.server import ThreadedMotoServer
-from pytest_simcore.helpers.fastapi import assert_status
-from pytest_simcore.helpers.httpx_assert_checks import url_from_operation_id
+from pytest_simcore.helpers.fastapi import url_from_operation_id
+from pytest_simcore.helpers.httpx_assert_checks import assert_status
 from servicelib.aiohttp import status
 from types_aiobotocore_s3 import S3Client
 
@@ -28,8 +28,8 @@ async def test_health_check(initialized_app: FastAPI, client: httpx.AsyncClient)
 
     assert app_health.name == simcore_service_storage._meta.PROJECT_NAME  # noqa: SLF001
     assert app_health.version == str(
-        simcore_service_storage._meta.VERSION
-    )  # noqa: SLF001
+        simcore_service_storage._meta.VERSION  # noqa: SLF001
+    )
 
 
 async def test_health_status(initialized_app: FastAPI, client: httpx.AsyncClient):
@@ -42,11 +42,12 @@ async def test_health_status(initialized_app: FastAPI, client: httpx.AsyncClient
     assert not error
 
     assert (
-        app_status_check.app_name == simcore_service_storage._meta.PROJECT_NAME
-    )  # noqa: SLF001
+        app_status_check.app_name
+        == simcore_service_storage._meta.PROJECT_NAME  # noqa: SLF001
+    )
     assert app_status_check.version == str(
-        simcore_service_storage._meta.VERSION
-    )  # noqa: SLF001
+        simcore_service_storage._meta.VERSION  # noqa: SLF001
+    )
     assert len(app_status_check.services) == 2
     assert "postgres" in app_status_check.services
     assert "healthy" in app_status_check.services["postgres"]

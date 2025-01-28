@@ -18,7 +18,7 @@ from models_library.projects_nodes_io import SimcoreS3FileID
 from models_library.users import UserID
 from pydantic import ByteSize, TypeAdapter
 from pytest_mock import MockerFixture
-from pytest_simcore.helpers.httpx_assert_checks import url_from_operation_id
+from pytest_simcore.helpers.fastapi import url_from_operation_id
 from pytest_simcore.helpers.parametrizations import (
     byte_size_ids,
     parametrized_file_size,

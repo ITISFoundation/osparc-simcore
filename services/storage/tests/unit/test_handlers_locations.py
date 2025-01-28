@@ -8,7 +8,7 @@
 import httpx
 from fastapi import FastAPI, status
 from models_library.users import UserID
-from pytest_simcore.helpers.httpx_assert_checks import url_from_operation_id
+from pytest_simcore.helpers.fastapi import url_from_operation_id
 from tests.helpers.utils import has_datcore_tokens
 
 pytest_simcore_core_services_selection = ["postgres"]
