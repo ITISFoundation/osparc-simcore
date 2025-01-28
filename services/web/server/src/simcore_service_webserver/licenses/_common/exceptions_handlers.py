@@ -3,14 +3,14 @@ import logging
 from servicelib.aiohttp import status
 from simcore_service_webserver.wallets.errors import WalletAccessForbiddenError
 
-from ..exception_handling import (
+from ...exception_handling import (
     ExceptionToHttpErrorMap,
     HttpErrorInfo,
     exception_handling_decorator,
     to_exceptions_handlers_map,
 )
-from ..wallets.errors import WalletNotEnoughCreditsError
-from .errors import LicensedItemNotFoundError, LicensedItemPricingPlanMatchError
+from ...wallets.errors import WalletNotEnoughCreditsError
+from ..errors import LicensedItemNotFoundError, LicensedItemPricingPlanMatchError
 
 _logger = logging.getLogger(__name__)
 

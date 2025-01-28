@@ -283,7 +283,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     WEBSERVER_DB_LISTENER: bool = True
     WEBSERVER_FOLDERS: bool = True
     WEBSERVER_GROUPS: bool = True
-    WEBSERVER_LICENSES: bool = True
+    WEBSERVER_LICENSES: bool = False
     WEBSERVER_META_MODELING: bool = True
     WEBSERVER_NOTIFICATIONS: bool = Field(default=True)
     WEBSERVER_PRODUCTS: bool = True
@@ -384,6 +384,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         public_plugin_candidates: Final = {
             "WEBSERVER_EXPORTER",
             "WEBSERVER_FOLDERS",
+            "WEBSERVER_LICENSES",
             "WEBSERVER_META_MODELING",
             "WEBSERVER_PAYMENTS",
             "WEBSERVER_SCICRUNCH",
@@ -451,15 +452,16 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
                 "SIMCORE_VCS_RELEASE_TAG": True,
                 "SIMCORE_VCS_RELEASE_URL": True,
                 "SWARM_STACK_NAME": True,
+                "WEBSERVER_LICENSES": True,
+                "WEBSERVER_LOGIN": {
+                    "LOGIN_ACCOUNT_DELETION_RETENTION_DAYS",
+                    "LOGIN_2FA_REQUIRED",
+                },
                 "WEBSERVER_PROJECTS": {
                     "PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES",
                 },
                 "WEBSERVER_TRASH": {
                     "TRASH_RETENTION_DAYS",
-                },
-                "WEBSERVER_LOGIN": {
-                    "LOGIN_ACCOUNT_DELETION_RETENTION_DAYS",
-                    "LOGIN_2FA_REQUIRED",
                 },
                 "WEBSERVER_SESSION": {"SESSION_COOKIE_MAX_AGE"},
             },
