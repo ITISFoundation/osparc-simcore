@@ -1919,3 +1919,9 @@ async def get_project_inactivity(
             project_settings.PROJECTS_INACTIVITY_INTERVAL.total_seconds()
         ),
     )
+
+
+async def on_file_deleted(app: web.Application, file_id: str):
+    await _projects_nodes_repository.delete_nodes_outputs_with_file_id(
+        app, file_id=file_id
+    )

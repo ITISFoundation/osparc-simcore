@@ -43,12 +43,12 @@ async def get_node(
     node_id: NodeID,
 ) -> Node:
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
-        get_stmt = sa.select(*_SELECTION_PROJECTS_NODES_DB_ARGS).where(
-            (projects_nodes.c.project_uuid == f"{project_id}")
-            & (projects_nodes.c.node_id == f"{node_id}")
+        result = await conn.stream(
+            sa.select(*_SELECTION_PROJECTS_NODES_DB_ARGS).where(
+                (projects_nodes.c.project_uuid == f"{project_id}")
+                & (projects_nodes.c.node_id == f"{node_id}")
+            )
         )
-
-        result = await conn.stream(get_stmt)
         assert result  # nosec
 
         row = await result.first()
@@ -58,6 +58,35 @@ async def get_node(
             )
         assert row  # nosec
         return Node.model_validate(row, from_attributes=True)
+
+
+async def delete_nodes_outputs_with_file_id(
+    app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
+    file_id: str,
+) -> None:
+    async with transaction_context(get_asyncpg_engine(app), connection) as conn:
+        await conn.execute(
+            sa.update(projects_nodes)
+            .values(
+                # Remove keys where the value contains the matching path
+                outputs=sa.func.jsonb_strip_nulls(
+                    sa.func.jsonb_object_agg(
+                        sa.func.jsonb_each(projects_nodes.c.outputs).key,
+                        sa.func.nullif(
+                            sa.func.jsonb_each(projects_nodes.c.outputs).value,
+                            sa.func.jsonb_build_object("path", file_id),
+                        ),
+                    )
+                )
+            )
+            .where(
+                sa.func.jsonb_each(projects_nodes.c.outputs).value.contains(
+                    {"path": file_id}
+                )
+            )
+        )
 
 
 async def update_node(

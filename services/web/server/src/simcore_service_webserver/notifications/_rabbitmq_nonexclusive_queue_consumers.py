@@ -17,6 +17,7 @@ from servicelib.logging_utils import log_catch, log_context
 from servicelib.rabbitmq import RabbitMQClient
 from servicelib.utils import logged_gather
 
+from ..projects import projects_service
 from ..rabbitmq import get_rabbitmq_client
 from ._rabbitmq_consumers_common import SubcribeArgumentsTuple, subscribe_to_rabbitmq
 
@@ -49,6 +50,8 @@ async def _instrumentation_message_parser(app: web.Application, data: bytes) -> 
 async def _file_deleted_message_parser(app: web.Application, data: bytes) -> bool:
     rabbit_message = FileDeletedMessage.model_validate_json(data)
     _logger.error("File %s deleted", rabbit_message.file_id)
+
+    projects_service.on_file_deleted(app, rabbit_message.file_id)
 
     return True
 
