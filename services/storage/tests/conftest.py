@@ -19,7 +19,6 @@ import httpx
 import pytest
 import respx
 import simcore_service_storage
-from aiohttp.test_utils import TestClient
 from asgi_lifespan import LifespanManager
 from aws_library.s3 import SimcoreS3API
 from faker import Faker
@@ -42,7 +41,8 @@ from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import ByteSize, TypeAdapter
 from pytest_mock import MockerFixture
-from pytest_simcore.helpers.assert_checks import assert_status
+from pytest_simcore.helpers.fastapi import url_from_operation_id
+from pytest_simcore.helpers.httpx_assert_checks import assert_status
 from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.monkeypatch_envs import delenvs_from_dict, setenvs_from_dict
 from pytest_simcore.helpers.s3 import upload_file_to_presigned_link
@@ -72,6 +72,7 @@ pytest_plugins = [
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_swarm",
     "pytest_simcore.environment_configs",
+    "pytest_simcore.fastapi",
     "pytest_simcore.file_extra",
     "pytest_simcore.httpbin_service",
     "pytest_simcore.minio_service",
@@ -243,23 +244,25 @@ def location_id(request: pytest.FixtureRequest) -> LocationID:
 
 @pytest.fixture
 async def get_file_meta_data(
-    client: TestClient, user_id: UserID, location_id: LocationID
+    initialized_app: FastAPI,
+    client: httpx.AsyncClient,
+    user_id: UserID,
+    location_id: LocationID,
 ) -> Callable[..., Awaitable[FileMetaDataGet]]:
     async def _getter(file_id: SimcoreS3FileID) -> FileMetaDataGet:
-        assert client.app
-        url = (
-            client.app.router["get_file_metadata"]
-            .url_for(
-                location_id=f"{location_id}",
-                file_id=urllib.parse.quote(file_id, safe=""),
-            )
-            .with_query(user_id=user_id)
-        )
+        url = url_from_operation_id(
+            client,
+            initialized_app,
+            "get_file_metadata",
+            location_id=f"{location_id}",
+            file_id=urllib.parse.quote(file_id, safe=""),
+        ).with_query(user_id=user_id)
+
         response = await client.get(f"{url}")
-        data, error = await assert_status(response, status.HTTP_200_OK)
+        received_fmd, error = assert_status(
+            response, status.HTTP_200_OK, FileMetaDataGet
+        )
         assert not error
-        assert data
-        received_fmd = TypeAdapter(FileMetaDataGet).validate_python(data)
         assert received_fmd
         return received_fmd
 
@@ -268,30 +271,31 @@ async def get_file_meta_data(
 
 @pytest.fixture
 async def create_upload_file_link_v2(
-    client: TestClient, user_id: UserID, location_id: LocationID
+    initialized_app: FastAPI,
+    client: httpx.AsyncClient,
+    user_id: UserID,
+    location_id: LocationID,
 ) -> AsyncIterator[Callable[..., Awaitable[FileUploadSchema]]]:
     file_params: list[tuple[UserID, int, SimcoreS3FileID]] = []
 
     async def _link_creator(
         file_id: SimcoreS3FileID, **query_kwargs
     ) -> FileUploadSchema:
-        assert client.app
-        url = (
-            client.app.router["upload_file"]
-            .url_for(
-                location_id=f"{location_id}",
-                file_id=urllib.parse.quote(file_id, safe=""),
-            )
-            .with_query(**query_kwargs, user_id=user_id)
-        )
+        url = url_from_operation_id(
+            client,
+            initialized_app,
+            "upload_file",
+            location_id=f"{location_id}",
+            file_id=urllib.parse.quote(file_id, safe=""),
+        ).with_query(**query_kwargs, user_id=user_id)
         assert (
             "file_size" in url.query
         ), "V2 call to upload file must contain file_size field!"
         response = await client.put(f"{url}")
-        data, error = await assert_status(response, status.HTTP_200_OK)
+        received_file_upload, error = assert_status(
+            response, status.HTTP_200_OK, FileUploadSchema
+        )
         assert not error
-        assert data
-        received_file_upload = TypeAdapter(FileUploadSchema).validate_python(data)
         assert received_file_upload
         file_params.append((user_id, location_id, file_id))
         return received_file_upload
@@ -299,17 +303,15 @@ async def create_upload_file_link_v2(
     yield _link_creator
 
     # cleanup
-    assert client.app
     clean_tasks = []
     for u_id, loc_id, file_id in file_params:
-        url = (
-            client.app.router["delete_file"]
-            .url_for(
-                location_id=f"{loc_id}",
-                file_id=urllib.parse.quote(file_id, safe=""),
-            )
-            .with_query(user_id=u_id)
-        )
+        url = url_from_operation_id(
+            client,
+            initialized_app,
+            "delete_file",
+            location_id=f"{loc_id}",
+            file_id=urllib.parse.quote(file_id, safe=""),
+        ).with_query(user_id=u_id)
         clean_tasks.append(client.delete(f"{url}"))
     await asyncio.gather(*clean_tasks)
 
@@ -319,7 +321,8 @@ def upload_file(
     sqlalchemy_async_engine: AsyncEngine,
     storage_s3_client: SimcoreS3API,
     storage_s3_bucket: S3BucketName,
-    client: TestClient,
+    initialized_app: FastAPI,
+    client: httpx.AsyncClient,
     project_id: ProjectID,
     node_id: NodeID,
     create_upload_file_link_v2: Callable[..., Awaitable[FileUploadSchema]],
@@ -335,7 +338,6 @@ def upload_file(
         sha256_checksum: SHA256Str | None = None,
         project_id: ProjectID = project_id,
     ) -> tuple[Path, SimcoreS3FileID]:
-        assert client.app
         # create a file
         file = create_file_of_size(file_size, file_name)
         if not file_id:
@@ -360,12 +362,11 @@ def upload_file(
                 json=jsonable_encoder(FileUploadCompletionBody(parts=part_to_etag)),
             )
             response.raise_for_status()
-            data, error = await assert_status(response, status.HTTP_202_ACCEPTED)
-            assert not error
-            assert data
-            file_upload_complete_response = FileUploadCompleteResponse.model_validate(
-                data
+            file_upload_complete_response, error = assert_status(
+                response, status.HTTP_202_ACCEPTED, FileUploadCompleteResponse
             )
+            assert not error
+            assert file_upload_complete_response
             state_url = URL(f"{file_upload_complete_response.links.state}").relative()
 
             completion_etag = None
@@ -384,12 +385,13 @@ def upload_file(
                 ):
                     response = await client.post(f"{state_url}")
                     response.raise_for_status()
-                    data, error = await assert_status(response, status.HTTP_200_OK)
+                    future, error = assert_status(
+                        response, status.HTTP_200_OK, FileUploadCompleteFutureResponse
+                    )
                     assert not error
-                    assert data
-                    future = FileUploadCompleteFutureResponse.model_validate(data)
+                    assert future
                     if future.state == FileUploadCompleteState.NOK:
-                        msg = f"{data=}"
+                        msg = f"{future=}"
                         raise ValueError(msg)
                     assert future.state == FileUploadCompleteState.OK
                     assert future.e_tag is not None
@@ -455,7 +457,7 @@ async def with_versioning_enabled(
 async def create_empty_directory(
     create_simcore_file_id: Callable[[ProjectID, NodeID, str], SimcoreS3FileID],
     create_upload_file_link_v2: Callable[..., Awaitable[FileUploadSchema]],
-    client: TestClient,
+    client: httpx.AsyncClient,
     project_id: ProjectID,
     node_id: NodeID,
 ) -> Callable[..., Awaitable[FileUploadSchema]]:
@@ -481,15 +483,16 @@ async def create_empty_directory(
             json=jsonable_encoder(FileUploadCompletionBody(parts=[])),
         )
         response.raise_for_status()
-        data, error = await assert_status(response, status.HTTP_202_ACCEPTED)
+        file_upload_complete_response, error = assert_status(
+            response, status.HTTP_202_ACCEPTED, FileUploadCompleteResponse
+        )
         assert not error
-        assert data
-        file_upload_complete_response = FileUploadCompleteResponse.model_validate(data)
+        assert file_upload_complete_response
         state_url = URL(f"{file_upload_complete_response.links.state}").relative()
 
         # check that it finished updating
-        assert client.app
-        client.app[UPLOAD_TASKS_KEY].clear()
+
+        initialized_app[UPLOAD_TASKS_KEY].clear()
         # now check for the completion
         async for attempt in AsyncRetrying(
             reraise=True,
@@ -505,10 +508,11 @@ async def create_empty_directory(
                 ) as ctx,
             ):
                 response = await client.post(f"{state_url}")
-                data, error = await assert_status(response, status.HTTP_200_OK)
+                future, error = assert_status(
+                    response, status.HTTP_200_OK, FileUploadCompleteFutureResponse
+                )
                 assert not error
-                assert data
-                future = FileUploadCompleteFutureResponse.model_validate(data)
+                assert future
                 assert future.state == FileUploadCompleteState.OK
                 assert future.e_tag is None
                 ctx.logger.info(
@@ -562,7 +566,8 @@ async def populate_directory(
 
 @pytest.fixture
 async def delete_directory(
-    client: TestClient,
+    initialized_app: FastAPI,
+    client: httpx.AsyncClient,
     storage_s3_client: SimcoreS3API,
     storage_s3_bucket: S3BucketName,
     user_id: UserID,
@@ -571,27 +576,25 @@ async def delete_directory(
     async def _dir_remover(directory_file_upload: FileUploadSchema) -> None:
         assert directory_file_upload.urls[0].path
         directory_file_id = directory_file_upload.urls[0].path.strip("/")
-        assert client.app
-        delete_url = (
-            client.app.router["delete_file"]
-            .url_for(
-                location_id=f"{location_id}",
-                file_id=urllib.parse.quote(directory_file_id, safe=""),
-            )
-            .with_query(user_id=user_id)
-        )
+
+        delete_url = url_from_operation_id(
+            client,
+            initialized_app,
+            "delete_file",
+            location_id=f"{location_id}",
+            file_id=urllib.parse.quote(directory_file_id, safe=""),
+        ).with_query(user_id=user_id)
+
         response = await client.delete(f"{delete_url}")
-        await assert_status(response, status.HTTP_204_NO_CONTENT)
+        assert_status(response, status.HTTP_204_NO_CONTENT, None)
 
         # NOTE: ensures no more files are left in the directory,
         # even if one file is left this will detect it
-        list_files_metadata_url = (
-            client.app.router["list_files_metadata"]
-            .url_for(location_id=f"{location_id}")
-            .with_query(user_id=user_id, uuid_filter=directory_file_id)
-        )
+        list_files_metadata_url = url_from_operation_id(
+            client, initialized_app, "list_files_metadata", location_id=f"{location_id}"
+        ).with_query(user_id=user_id, uuid_filter=directory_file_id)
         response = await client.get(f"{list_files_metadata_url}")
-        data, error = await assert_status(response, status.HTTP_200_OK)
+        data, error = assert_status(response, status.HTTP_200_OK, list[FileMetaDataGet])
         assert error is None
         assert data == []
 
