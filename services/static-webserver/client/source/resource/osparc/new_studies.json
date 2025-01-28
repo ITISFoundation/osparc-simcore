@@ -39,8 +39,7 @@
       "description": "",
       "newStudyLabel": "Personalized Classic TI",
       "category": "personalized",
-      "idToWidget": "personalizationNewTIPlanButton",
-      "billable": true
+      "idToWidget": "personalizationNewTIPlanButton"
     }, {
       "resourceType": "template",
       "expectedTemplateLabel": "personalized mcTI Planning Tool",
@@ -48,8 +47,7 @@
       "description": "",
       "newStudyLabel": "Personalized Multichannel TI",
       "category": "personalized",
-      "idToWidget": "personalizationNewMTIPlanButton",
-      "billable": true
+      "idToWidget": "personalizationNewMTIPlanButton"
     }, {
       "resourceType": "template",
       "expectedTemplateLabel": "personalized pmTI Planning Tool",
@@ -57,8 +55,7 @@
       "description": "",
       "newStudyLabel": "Personalized Phase-modulation TI",
       "category": "personalized",
-      "idToWidget": "personalizationNewPMTIPlanButton",
-      "billable": true
+      "idToWidget": "personalizationNewPMTIPlanButton"
     }]
   },
   "tiplite": {
@@ -104,8 +101,7 @@
       "description": "Not available in ${replace_me_product_name}",
       "newStudyLabel": "Personalized Classic TI",
       "category": "personalized",
-      "idToWidget": "personalizationNewTIPlanButton",
-      "billable": true
+      "idToWidget": "personalizationNewTIPlanButton"
     }, {
       "showDisabled": true,
       "resourceType": "template",
@@ -114,8 +110,7 @@
       "description": "Not available in ${replace_me_product_name}",
       "newStudyLabel": "Personalized Multichannel TI",
       "category": "personalized",
-      "idToWidget": "personalizationNewMTIPlanButton",
-      "billable": true
+      "idToWidget": "personalizationNewMTIPlanButton"
     }, {
       "showDisabled": true,
       "resourceType": "template",
@@ -124,35 +119,60 @@
       "description": "Not available in ${replace_me_product_name}",
       "newStudyLabel": "Personalized Phase-modulation TI",
       "category": "personalized",
-      "idToWidget": "personalizationNewPMTIPlanButton",
-      "billable": true
+      "idToWidget": "personalizationNewPMTIPlanButton"
     }]
   },
   "s4l": {
     "resources": [{
       "resourceType": "service",
       "expectedKey": "simcore/services/dynamic/s4l-ui",
-      "title": "Start Sim4Life",
+      "title": "Sim4Life",
       "description": "New Sim4Life project",
       "newStudyLabel": "New S4L project",
       "idToWidget": "startS4LButton"
+    }, {
+      "resourceType": "service",
+      "expectedKey": "simcore/services/dynamic/iseg-web",
+      "title": "iSEG",
+      "description": "New iSEG project",
+      "newStudyLabel": "New iSEG project"
+    }, {
+      "resourceType": "service",
+      "expectedKey": "simcore/services/dynamic/s4l-jupyter",
+      "title": "Jupyter Lab",
+      "description": "New Jupyter Lab project",
+      "icon": "https://upload.wikimedia.org/wikipedia/commons/3/38/Jupyter_logo.svg",
+      "newStudyLabel": "New S4L Jupyter Lab"
     }]
   },
   "s4lacad": {
     "resources": [{
       "resourceType": "service",
       "expectedKey": "simcore/services/dynamic/s4l-ui",
-      "title": "Start Sim4Life",
+      "title": "Sim4Life",
       "description": "New Sim4Life project",
       "newStudyLabel": "New S4L project",
       "idToWidget": "startS4LButton"
+    }, {
+      "resourceType": "service",
+      "expectedKey": "simcore/services/dynamic/iseg-web",
+      "title": "iSEG",
+      "description": "New iSEG project",
+      "newStudyLabel": "New iSEG project"
+    }, {
+      "resourceType": "service",
+      "expectedKey": "simcore/services/dynamic/s4l-jupyter",
+      "title": "Jupyter Lab",
+      "description": "New Jupyter Lab project",
+      "icon": "https://upload.wikimedia.org/wikipedia/commons/3/38/Jupyter_logo.svg",
+      "newStudyLabel": "New S4L Jupyter Lab"
     }]
   },
   "s4llite": {
     "resources": [{
       "resourceType": "service",
       "expectedKey": "simcore/services/dynamic/s4l-ui-lite",
-      "title": "Start ${replace_me_product_name}",
+      "title": "${replace_me_product_name}",
       "description": "New project",
       "newStudyLabel": "New project",
       "idToWidget": "startS4LButton"
