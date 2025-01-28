@@ -121,7 +121,7 @@ def sync_engine(postgres_service: str) -> Iterable[sqlalchemy.engine.Engine]:
 
 
 @pytest.fixture
-def migrated_db(postgres_service: dict, sync_engine: sqlalchemy.engine.Engin):
+def migrated_db(postgres_service: dict, sync_engine: sqlalchemy.engine.Engine):
     # NOTE: this is equivalent to packages/pytest-simcore/src/pytest_simcore/postgres_service.py::postgres_db
     # but we do override postgres_dsn -> postgres_engine -> postgres_db because we want the latter
     # fixture to have local scope
