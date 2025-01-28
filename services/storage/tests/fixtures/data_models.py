@@ -86,7 +86,7 @@ async def create_project(
             row = result.fetchone()
             assert row
             created_project_uuids.append(row.uuid)
-            return dict(row)
+            return dict(row._asdict())
 
     yield _creator
     # cleanup
