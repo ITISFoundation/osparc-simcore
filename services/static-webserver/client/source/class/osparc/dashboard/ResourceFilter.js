@@ -52,20 +52,24 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
     __serviceTypeButtons: null,
 
     __buildLayout: function() {
+      const filtersSpacer = new qx.ui.core.Spacer(10, 10);
       switch (this.__resourceType) {
         case "study":
           this._add(this.__createWorkspacesAndFoldersTree());
           this._add(this.__createTrashBin());
           this._add(this.__createResourceTypeContextButtons());
+          this._add(filtersSpacer);
           this._add(this.__createTagsFilterLayout());
           break;
         case "template":
           this._add(this.__createResourceTypeContextButtons());
+          this._add(filtersSpacer);
           this._add(this.__createSharedWithFilterLayout());
           this._add(this.__createTagsFilterLayout());
           break;
         case "service":
           this._add(this.__createResourceTypeContextButtons());
+          this._add(filtersSpacer);
           this._add(this.__createSharedWithFilterLayout());
           this._add(this.__createServiceTypeFilterLayout());
           break;
@@ -88,14 +92,14 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
       osparc.utils.Utils.setIdToWidget(workspacesAndFoldersTree, "contextTree");
       // Height needs to be calculated manually to make it flexible
       workspacesAndFoldersTree.set({
-        minHeight: 60,
+        minHeight: 60, // two entries
         maxHeight: 400,
         height: 60,
       });
       workspacesAndFoldersTree.addListener("openChanged", () => {
         const rowConfig = workspacesAndFoldersTree.getPane().getRowConfig();
         const totalHeight = rowConfig.itemCount * rowConfig.defaultItemSize;
-        workspacesAndFoldersTree.setHeight(totalHeight + 10);
+        workspacesAndFoldersTree.setHeight(totalHeight + 2);
       });
       return workspacesAndFoldersTree;
     },
@@ -346,9 +350,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
 
     /* TAGS */
     __createTagsFilterLayout: function() {
-      const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(2)).set({
-        marginTop: 20
-      });
+      const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(2));
       osparc.utils.Utils.setIdToWidget(layout, this.__resourceType + "-tagsFilter");
 
       this.__populateTags(layout, []);
