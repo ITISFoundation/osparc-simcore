@@ -210,7 +210,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
 
     /* RESOURCE TYPE CONTEXT */
     __createResourceTypeContextButtons: function() {
-      const resourceTypeContextButtons = new qx.ui.container.Composite(new qx.ui.layout.VBox());
+      const resourceTypeContextButtons = new qx.ui.container.Composite(new qx.ui.layout.VBox(2));
 
       const studiesButton = this.__createStudiesButton().set({
         value: this.__resourceType === "study",
@@ -295,7 +295,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
 
     /* SHARED WITH */
     __createSharedWithFilterLayout: function() {
-      const sharedWithLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+      const sharedWithLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(2));
 
       const sharedWithRadioGroup = new qx.ui.form.RadioGroup();
       sharedWithRadioGroup.setAllowEmptySelection(false);
@@ -430,7 +430,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
 
     /* SERVICE TYPE */
     __createServiceTypeFilterLayout: function() {
-      const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+      const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(2));
 
       const radioGroup = new qx.ui.form.RadioGroup();
       radioGroup.setAllowEmptySelection(true);
