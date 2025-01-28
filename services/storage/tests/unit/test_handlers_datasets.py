@@ -10,6 +10,7 @@ from pathlib import Path
 
 import pytest
 from faker import Faker
+from fastapi import FastAPI
 from httpx import AsyncClient
 from models_library.api_schemas_storage import DatasetMetaDataGet, FileMetaDataGet
 from models_library.projects import ProjectID
@@ -17,6 +18,7 @@ from models_library.projects_nodes_io import SimcoreS3FileID
 from models_library.users import UserID
 from pydantic import ByteSize, TypeAdapter
 from pytest_mock import MockerFixture
+from pytest_simcore.helpers.httpx_assert_checks import url_from_operation_id
 from pytest_simcore.helpers.parametrizations import (
     byte_size_ids,
     parametrized_file_size,
@@ -29,14 +31,19 @@ pytest_simcore_ops_services_selection = ["adminer"]
 
 
 async def test_list_dataset_files_metadata_with_no_files_returns_empty_array(
+    initialized_app: FastAPI,
     client: AsyncClient,
     user_id: UserID,
     project_id: ProjectID,
     location_id: int,
 ):
-    url = URL(f"/v0/locations/{location_id}/datasets/{project_id}/metadata").with_query(
-        user_id=user_id
-    )
+    url = url_from_operation_id(
+        client,
+        initialized_app,
+        "list_datasets_metadata",
+        location_id=location_id,
+        project_id=project_id,
+    ).with_query(user_id=user_id)
 
     response = await client.get(f"{url}")
     assert response.status_code == status.HTTP_200_OK
