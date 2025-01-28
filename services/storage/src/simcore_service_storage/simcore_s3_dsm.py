@@ -784,34 +784,6 @@ class SimcoreS3DataManager(BaseDataManager):
         async with self.engine.connect() as conn:
             return convert_db_to_model(await db_file_meta_data.insert(conn, target))
 
-    async def synchronise_meta_data_table(
-        self, *, dry_run: bool
-    ) -> list[StorageFileID]:
-        async with self.engine.connect() as conn:
-            _logger.warning(
-                "Total number of entries to check %d",
-                await db_file_meta_data.total(conn),
-            )
-            # iterate over all entries to check if there is a file in the S3 backend
-            file_ids_to_remove = [
-                fmd.file_id
-                async for fmd in db_file_meta_data.list_valid_uploads(conn)
-                if not await get_s3_client(self.app).object_exists(
-                    bucket=self.simcore_bucket_name, object_key=fmd.object_name
-                )
-            ]
-
-            if not dry_run:
-                await db_file_meta_data.delete(conn, file_ids_to_remove)
-
-            _logger.info(
-                "%s %d entries ",
-                "Would delete" if dry_run else "Deleted",
-                len(file_ids_to_remove),
-            )
-
-        return cast(list[StorageFileID], file_ids_to_remove)
-
     async def _clean_pending_upload(
         self, conn: AsyncConnection, file_id: SimcoreS3FileID
     ) -> None:
