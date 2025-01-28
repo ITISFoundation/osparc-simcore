@@ -1,24 +1,17 @@
 from typing import Annotated
 
-from pydantic import AnyHttpUrl, BeforeValidator, Field, TypeAdapter
+from pydantic import BeforeValidator, Field
 from pydantic_settings import SettingsConfigDict
 
 from .base import BaseCustomSettings
-
-ANY_HTTP_URL_ADAPTER: TypeAdapter = TypeAdapter(AnyHttpUrl)
-
-
-def _validate_url(value: str | None) -> str | None:
-    if value is not None:
-        return str(ANY_HTTP_URL_ADAPTER.validate_python(value))
-    return value
+from .utils_validators import validate_nullable_url
 
 
 class EC2Settings(BaseCustomSettings):
     EC2_ACCESS_KEY_ID: str
     EC2_ENDPOINT: Annotated[
         str | None,
-        BeforeValidator(_validate_url),
+        BeforeValidator(validate_nullable_url),
         Field(description="do not define if using standard AWS"),
     ] = None
     EC2_REGION_NAME: str = "us-east-1"
