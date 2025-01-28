@@ -111,6 +111,8 @@ attrs==21.4.0
     #   -r requirements/../../../../packages/service-library/requirements/_aiohttp.in
     #   aiohttp
     #   jsonschema
+bcrypt==4.2.1
+    # via -r requirements/_base.in
 bidict==0.22.0
     # via python-socketio
 captcha==0.5.0
