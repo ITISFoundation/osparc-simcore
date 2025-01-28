@@ -17,8 +17,10 @@ from models_library.generics import Envelope
 from models_library.rest_error import EnvelopedError
 from models_library.rest_pagination import Page
 from simcore_service_webserver._meta import API_VTAG
-from simcore_service_webserver.licenses._exceptions_handlers import _TO_HTTP_ERROR_MAP
-from simcore_service_webserver.licenses._models import (
+from simcore_service_webserver.licenses._common.exceptions_handlers import (
+    _TO_HTTP_ERROR_MAP,
+)
+from simcore_service_webserver.licenses._common.models import (
     LicensedItemsPurchasesListQueryParams,
     LicensedItemsPurchasesPathParams,
 )
