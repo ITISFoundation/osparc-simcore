@@ -26,7 +26,7 @@ from ..users.api import get_user
 from ..wallets.api import get_wallet_with_available_credits_by_user_and_wallet
 from ..wallets.errors import WalletNotEnoughCreditsError
 from . import _licensed_items_repository
-from ._models import LicensedItemsBodyParams
+from ._common.models import LicensedItemsBodyParams
 from .errors import LicensedItemPricingPlanMatchError
 
 _logger = logging.getLogger(__name__)
