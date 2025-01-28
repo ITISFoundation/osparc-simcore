@@ -16,7 +16,7 @@ T = TypeVar("T")
 def assert_status(
     response: httpx.Response,
     expected_status_code: int,
-    response_model: type[T],
+    response_model: type[T] | None,
     *,
     expected_msg: str | None = None,
     expected_error_code: str | None = None,
@@ -33,6 +33,9 @@ def assert_status(
     ), f"received {response.status_code}: {response.text}, expected {get_code_display_name(expected_status_code)}"
 
     # reponse
+    if expected_status_code == status.HTTP_204_NO_CONTENT:
+        assert response.text == ""
+        return None, None
     if is_enveloped:
         validated_response = TypeAdapter(Envelope[response_model]).validate_json(
             response.text
@@ -44,9 +47,6 @@ def assert_status(
                 data, error, expected_status_code, expected_msg, expected_error_code
             )
         return data, error
-    if expected_status_code == status.HTTP_204_NO_CONTENT:
-        assert response.text == ""
-        return None, None
 
     if is_error(expected_status_code):
         msg = "If you need it implement it"

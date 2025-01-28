@@ -13,12 +13,13 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any, Literal
 
+import httpx
 import pytest
 import sqlalchemy as sa
 from aiohttp import ClientResponseError
-from aiohttp.test_utils import TestClient
 from aws_library.s3 import SimcoreS3API
 from faker import Faker
+from fastapi import FastAPI
 from models_library.api_schemas_storage import FileMetaDataGet, FoldersBody
 from models_library.basic_types import SHA256Str
 from models_library.projects import ProjectID
@@ -26,7 +27,8 @@ from models_library.projects_nodes_io import NodeID, NodeIDStr, SimcoreS3FileID
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import ByteSize, TypeAdapter
-from pytest_simcore.helpers.assert_checks import assert_status
+from pytest_simcore.helpers.fastapi import url_from_operation_id
+from pytest_simcore.helpers.httpx_assert_checks import assert_status
 from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.aiohttp import status
@@ -71,17 +73,16 @@ def mock_datcore_download(mocker, client):
     )
 
 
-async def test_simcore_s3_access_returns_default(client: TestClient):
-    url = (
-        client.app.router["get_or_create_temporary_s3_access"]
-        .url_for()
-        .with_query(user_id=1)
-    )
+async def test_simcore_s3_access_returns_default(
+    initialized_app: FastAPI, client: httpx.AsyncClient
+):
+    url = url_from_operation_id(
+        client, initialized_app, "get_or_create_temporary_s3_access"
+    ).with_query(user_id=1)
+
     response = await client.post(f"{url}")
-    data, error = await assert_status(response, status.HTTP_200_OK)
+    received_settings, error = assert_status(response, status.HTTP_200_OK, S3Settings)
     assert not error
-    assert data
-    received_settings = S3Settings.model_validate(data)
     assert received_settings
 
 
@@ -93,9 +94,10 @@ async def _request_copy_folders(
     dst_project: dict[str, Any],
     nodes_map: dict[NodeID, NodeID],
 ) -> dict[str, Any]:
-    url = client.make_url(
-        f"{(client.app.router['copy_folders_from_project'].url_for().with_query(user_id=user_id))}"
-    )
+    url = url_from_operation_id(
+        client, initialized_app, "copy_folders_from_project"
+    ).with_query(user_id=user_id)
+
     with log_context(
         logging.INFO,
         f"Copying folders from {source_project['uuid']} to {dst_project['uuid']}",
@@ -134,6 +136,7 @@ async def test_copy_folders_from_non_existing_project(
         ClientResponseError, match=f"{incorrect_src_project['uuid']} was not found"
     ) as exc_info:
         await _request_copy_folders(
+            initialized_app,
             client,
             user_id,
             incorrect_src_project,
@@ -146,6 +149,7 @@ async def test_copy_folders_from_non_existing_project(
         ClientResponseError, match=f"{incorrect_dst_project['uuid']} was not found"
     ) as exc_info:
         await _request_copy_folders(
+            initialized_app,
             client,
             user_id,
             src_project,
@@ -168,6 +172,7 @@ async def test_copy_folders_from_empty_project(
     dst_project = await create_project()
 
     data = await _request_copy_folders(
+        initialized_app,
         client,
         user_id,
         src_project,
@@ -222,6 +227,7 @@ async def test_copy_folders_from_valid_project_with_one_large_file(
     dst_project = await create_project(**dst_project)
     # copy the project files
     data = await _request_copy_folders(
+        initialized_app,
         client,
         user_id,
         src_project,
@@ -261,6 +267,7 @@ async def test_copy_folders_from_valid_project_with_one_large_file(
 
 async def test_copy_folders_from_valid_project(
     short_dsm_cleaner_interval: int,
+    initialized_app: FastAPI,
     client: httpx.AsyncClient,
     user_id: UserID,
     create_project: Callable[[], Awaitable[dict[str, Any]]],
@@ -283,6 +290,7 @@ async def test_copy_folders_from_valid_project(
     dst_project = await create_project(**dst_project)
     # copy the project files
     data = await _request_copy_folders(
+        initialized_app,
         client,
         user_id,
         src_project,
@@ -334,6 +342,7 @@ async def _create_and_delete_folders_from_project(
 
     # creating a copy
     data = await _request_copy_folders(
+        initialized_app,
         client,
         user_id,
         project,
@@ -350,33 +359,36 @@ async def _create_and_delete_folders_from_project(
     # list data to check all is here
 
     if check_list_files:
-        url = (
-            client.app.router["list_files_metadata"]
-            .url_for(location_id=f"{SimcoreS3DataManager.get_location_id()}")
-            .with_query(user_id=f"{user_id}", uuid_filter=f"{project_id}")
-        )
+        url = url_from_operation_id(
+            client,
+            initialized_app,
+            "list_files_metadata",
+            location_id=f"{SimcoreS3DataManager.get_location_id()}",
+        ).with_query(user_id=f"{user_id}", uuid_filter=f"{project_id}")
+
         resp = await client.get(f"{url}")
-        data, error = await assert_status(resp, status.HTTP_200_OK)
+        data, error = assert_status(resp, status.HTTP_200_OK, list[FileMetaDataGet])
         assert not error
     # DELETING
-    url = (
-        client.app.router["delete_folders_of_project"]
-        .url_for(folder_id=project_id)
-        .with_query(user_id=f"{user_id}")
-    )
+    url = url_from_operation_id(
+        client,
+        initialized_app,
+        "delete_folders_of_project",
+        folder_id=project_id,
+    ).with_query(user_id=f"{user_id}")
     resp = await client.delete(f"{url}")
-
-    await assert_status(resp, expected_status_code=status.HTTP_204_NO_CONTENT)
+    assert_status(resp, status.HTTP_204_NO_CONTENT, None)
 
     # list data is gone
     if check_list_files:
-        url = (
-            client.app.router["list_files_metadata"]
-            .url_for(location_id=f"{SimcoreS3DataManager.get_location_id()}")
-            .with_query(user_id=f"{user_id}", uuid_filter=f"{project_id}")
-        )
+        url = url_from_operation_id(
+            client,
+            initialized_app,
+            "list_files_metadata",
+            location_id=f"{SimcoreS3DataManager.get_location_id()}",
+        ).with_query(user_id=f"{user_id}", uuid_filter=f"{project_id}")
         resp = await client.get(f"{url}")
-        data, error = await assert_status(resp, status.HTTP_200_OK)
+        data, error = assert_status(resp, status.HTTP_200_OK, list[FileMetaDataGet])
         assert not error
         assert not data
 
@@ -410,22 +422,25 @@ async def with_random_project_with_files(
 
 async def test_connect_to_external(
     set_log_levels_for_noisy_libraries: None,
+    initialized_app: FastAPI,
     client: httpx.AsyncClient,
     user_id: UserID,
     project_id: ProjectID,
 ):
-    url = (
-        client.app.router["list_files_metadata"]
-        .url_for(location_id=f"{SimcoreS3DataManager.get_location_id()}")
-        .with_query(user_id=f"{user_id}", uuid_filter=f"{project_id}")
-    )
+    url = url_from_operation_id(
+        client,
+        initialized_app,
+        "list_files_metadata",
+        location_id=f"{SimcoreS3DataManager.get_location_id()}",
+    ).with_query(user_id=f"{user_id}", uuid_filter=f"{project_id}")
     resp = await client.get(f"{url}")
-    data, error = await assert_status(resp, status.HTTP_200_OK)
+    data, error = assert_status(resp, status.HTTP_200_OK, list[FileMetaDataGet])
     print(data)
 
 
 async def test_create_and_delete_folders_from_project(
     set_log_levels_for_noisy_libraries: None,
+    initialized_app: FastAPI,
     client: httpx.AsyncClient,
     user_id: UserID,
     create_project: Callable[..., Awaitable[dict[str, Any]]],
@@ -437,7 +452,12 @@ async def test_create_and_delete_folders_from_project(
 ):
     project_in_db, _ = with_random_project_with_files
     await _create_and_delete_folders_from_project(
-        user_id, project_in_db, client, create_project, check_list_files=True
+        user_id,
+        project_in_db,
+        initialized_app,
+        client,
+        create_project,
+        check_list_files=True,
     )
 
 
@@ -445,6 +465,7 @@ async def test_create_and_delete_folders_from_project(
 async def test_create_and_delete_folders_from_project_burst(
     set_log_levels_for_noisy_libraries: None,
     minio_s3_settings_envs: EnvVarsDict,
+    initialized_app: FastAPI,
     client: httpx.AsyncClient,
     user_id: UserID,
     with_random_project_with_files: tuple[
@@ -460,7 +481,12 @@ async def test_create_and_delete_folders_from_project_burst(
     await asyncio.gather(
         *[
             _create_and_delete_folders_from_project(
-                user_id, project_in_db, client, create_project, check_list_files=False
+                user_id,
+                project_in_db,
+                initialized_app,
+                client,
+                create_project,
+                check_list_files=False,
             )
             for _ in range(num_concurrent_calls)
         ]
@@ -507,6 +533,7 @@ async def search_files_query_params(
 @pytest.mark.parametrize("expected_number_of_user_files", [0, 1, 3])
 @pytest.mark.parametrize("query_params_choice", ["default", "limited", "with_offset"])
 async def test_search_files_request(
+    initialized_app: FastAPI,
     client: httpx.AsyncClient,
     user_id: UserID,
     uploaded_file_ids: list[SimcoreS3FileID],
@@ -516,21 +543,16 @@ async def test_search_files_request(
     assert query_params_choice
 
     assert search_files_query_params.user_id == user_id
-
-    url = (
-        client.app.router["search_files"]
-        .url_for()
-        .with_query(
-            jsonable_encoder(
-                search_files_query_params, exclude_unset=True, exclude_none=True
-            )
+    url = url_from_operation_id(client, initialized_app, "search_files").with_query(
+        jsonable_encoder(
+            search_files_query_params, exclude_unset=True, exclude_none=True
         )
     )
-    response = await client.post(f"{url}")
-    data, error = await assert_status(response, status.HTTP_200_OK)
-    assert not error
 
-    found = TypeAdapter(list[FileMetaDataGet]).validate_python(data)
+    response = await client.post(f"{url}")
+    found, error = assert_status(response, status.HTTP_200_OK, list[FileMetaDataGet])
+    assert not error
+    assert found
 
     expected = uploaded_file_ids[
         search_files_query_params.offset : search_files_query_params.offset
@@ -555,28 +577,25 @@ async def test_search_files(
     _file_name: str = faker.file_name()
     _sha256_checksum: SHA256Str = TypeAdapter(SHA256Str).validate_python(faker.sha256())
 
-    url = (
-        client.app.router["search_files"]
-        .url_for()
-        .with_query(
-            jsonable_encoder(
-                {
-                    "user_id": user_id,
-                    "kind": kind,
-                },
-                exclude_none=True,
-            )
+    url = url_from_operation_id(client, initialized_app, "search_files").with_query(
+        jsonable_encoder(
+            {
+                "user_id": user_id,
+                "kind": kind,
+            },
+            exclude_none=True,
         )
     )
     response = await client.post(f"{url}")
 
     if kind != "owned":
-        await assert_status(response, status.HTTP_422_UNPROCESSABLE_ENTITY)
+        assert_status(response, status.HTTP_422_UNPROCESSABLE_ENTITY, None)
         return
 
-    data, error = await assert_status(response, status.HTTP_200_OK)
+    list_fmds, error = assert_status(
+        response, status.HTTP_200_OK, list[FileMetaDataGet]
+    )
     assert not error
-    list_fmds = TypeAdapter(list[FileMetaDataGet]).validate_python(data)
     assert not list_fmds
 
     # let's upload some files now
@@ -587,9 +606,11 @@ async def test_search_files(
     )
     # search again should return something
     response = await client.post(f"{url}")
-    data, error = await assert_status(response, status.HTTP_200_OK)
+    list_fmds, error = assert_status(
+        response, status.HTTP_200_OK, list[FileMetaDataGet]
+    )
     assert not error
-    list_fmds = TypeAdapter(list[FileMetaDataGet]).validate_python(data)
+    assert list_fmds
     assert len(list_fmds) == 1
     assert list_fmds[0].file_id == file_id
     assert list_fmds[0].file_size == file.stat().st_size
@@ -603,9 +624,11 @@ async def test_search_files(
         url.update_query(sha256_checksum=_sha256_checksum)
 
     response = await client.post(f"{url}")
-    data, error = await assert_status(response, status.HTTP_200_OK)
+    list_fmds, error = assert_status(
+        response, status.HTTP_200_OK, list[FileMetaDataGet]
+    )
     assert not error
-    list_fmds = TypeAdapter(list[FileMetaDataGet]).validate_python(data)
+    assert list_fmds
     assert len(list_fmds) == 1
     assert list_fmds[0].file_id == file_id
     assert list_fmds[0].file_size == file.stat().st_size
@@ -623,7 +646,8 @@ async def test_search_files(
 
     if search_startswith or search_sha256_checksum:
         response = await client.post(f"{url}")
-        data, error = await assert_status(response, status.HTTP_200_OK)
+        list_fmds, error = assert_status(
+            response, status.HTTP_200_OK, list[FileMetaDataGet]
+        )
         assert not error
-        list_fmds = TypeAdapter(list[FileMetaDataGet]).validate_python(data)
         assert not list_fmds
