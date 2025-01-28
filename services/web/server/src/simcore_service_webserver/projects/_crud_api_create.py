@@ -19,6 +19,7 @@ from pydantic import TypeAdapter
 from servicelib.aiohttp.long_running_tasks.server import TaskProgress
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.redis import with_project_locked
+from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 from simcore_postgres_database.utils_projects_nodes import (
     ProjectNode,
     ProjectNodeCreate,
@@ -29,7 +30,7 @@ from ..application_settings import get_application_settings
 from ..catalog import client as catalog_client
 from ..director_v2 import api as director_v2_api
 from ..dynamic_scheduler import api as dynamic_scheduler_api
-from ..folders import _folders_repository as folders_db
+from ..folders import _folders_repository as _folders_repository
 from ..redis import get_redis_lock_manager_client_sdk
 from ..storage.api import (
     copy_data_folders_from_project,
@@ -292,7 +293,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
                 )
             if folder_id := predefined_project.get("folderId", None):
                 # Check user has access to folder
-                await folders_db.get_for_user_or_workspace(
+                await _folders_repository.get_for_user_or_workspace(
                     request.app,
                     folder_id=folder_id,
                     product_name=product_name,
@@ -399,7 +400,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
             request.app, user_id, new_project["uuid"], product_name
         )
         # get the latest state of the project (lastChangeDate for instance)
-        new_project, _ = await _projects_repository.get_project(
+        new_project, _ = await _projects_repository.get_project_dict_and_type(
             project_uuid=new_project["uuid"]
         )
         # Appends state
@@ -439,8 +440,9 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
                 for gid, access in workspace.access_rights.items()
             }
 
-        # Ensures is like ProjectGet
-        data = ProjectGet.from_domain_model(new_project).data(exclude_unset=True)
+        data = ProjectGet.from_domain_model(new_project).model_dump(
+            **RESPONSE_MODEL_POLICY
+        )
 
         raise web.HTTPCreated(
             text=json_dumps({"data": data}),

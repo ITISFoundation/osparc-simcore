@@ -12,8 +12,7 @@ from simcore_postgres_database.utils_repos import transaction_context
 from ..db.plugin import get_asyncpg_engine
 from ..folders._trash_service import trash_folder, untrash_folder
 from ..projects._trash_service import trash_project, untrash_project
-from ._workspaces_repository import update_workspace
-from ._workspaces_service import check_user_workspace_access
+from . import _workspaces_repository, _workspaces_service
 
 _logger = logging.getLogger(__name__)
 
@@ -25,7 +24,7 @@ async def _check_exists_and_access(
     user_id: UserID,
     workspace_id: WorkspaceID,
 ):
-    await check_user_workspace_access(
+    await _workspaces_service.check_user_workspace_access(
         app=app,
         user_id=user_id,
         workspace_id=workspace_id,
@@ -50,7 +49,7 @@ async def trash_workspace(
 
     async with transaction_context(get_asyncpg_engine(app)) as connection:
         # EXPLICIT trash
-        await update_workspace(
+        await _workspaces_repository.update_workspace(
             app,
             connection,
             product_name=product_name,
@@ -59,10 +58,9 @@ async def trash_workspace(
         )
 
         # IMPLICIT trash
-        child_folders: list[FolderID] = (
-            []
+        child_folders: list[FolderID] = [
             # NOTE: follows up with https://github.com/ITISFoundation/osparc-simcore/issues/7034
-        )
+        ]
 
         for folder_id in child_folders:
             await trash_folder(
@@ -73,10 +71,9 @@ async def trash_workspace(
                 force_stop_first=force_stop_first,
             )
 
-        child_projects: list[ProjectID] = (
-            []
+        child_projects: list[ProjectID] = [
             # NOTE: follows up with https://github.com/ITISFoundation/osparc-simcore/issues/7034
-        )
+        ]
 
         for project_id in child_projects:
             await trash_project(
@@ -102,7 +99,7 @@ async def untrash_workspace(
 
     async with transaction_context(get_asyncpg_engine(app)) as connection:
         # EXPLICIT UNtrash
-        await update_workspace(
+        await _workspaces_repository.update_workspace(
             app,
             connection,
             product_name=product_name,
@@ -110,10 +107,9 @@ async def untrash_workspace(
             updates=WorkspaceUpdates(trashed=None, trashed_by=None),
         )
 
-        child_folders: list[FolderID] = (
-            []
+        child_folders: list[FolderID] = [
             # NOTE: follows up with https://github.com/ITISFoundation/osparc-simcore/issues/7034
-        )
+        ]
 
         for folder_id in child_folders:
             await untrash_folder(
@@ -123,10 +119,9 @@ async def untrash_workspace(
                 folder_id=folder_id,
             )
 
-        child_projects: list[ProjectID] = (
-            []
+        child_projects: list[ProjectID] = [
             # NOTE: follows up with https://github.com/ITISFoundation/osparc-simcore/issues/7034
-        )
+        ]
 
         for project_id in child_projects:
             await untrash_project(
