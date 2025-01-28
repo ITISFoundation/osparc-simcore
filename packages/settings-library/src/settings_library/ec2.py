@@ -8,11 +8,19 @@ from .base import BaseCustomSettings
 ANY_HTTP_URL_ADAPTER: TypeAdapter = TypeAdapter(AnyHttpUrl)
 
 
+def _validate_url(value: str | None) -> str | None:
+    if value is not None:
+        return str(ANY_HTTP_URL_ADAPTER.validate_python(value))
+    return value
+
+
 class EC2Settings(BaseCustomSettings):
     EC2_ACCESS_KEY_ID: str
     EC2_ENDPOINT: Annotated[
-        str, BeforeValidator(lambda x: str(ANY_HTTP_URL_ADAPTER.validate_python(x)))
-    ] | None = Field(default=None, description="do not define if using standard AWS")
+        str | None,
+        BeforeValidator(_validate_url),
+        Field(description="do not define if using standard AWS"),
+    ] = None
     EC2_REGION_NAME: str = "us-east-1"
     EC2_SECRET_ACCESS_KEY: str
 

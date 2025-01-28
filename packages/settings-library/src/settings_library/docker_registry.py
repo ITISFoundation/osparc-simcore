@@ -35,13 +35,16 @@ class RegistrySettings(BaseCustomSettings):
     ]
 
     REGISTRY_USER: Annotated[
-        str, Field(description="username to access the docker registry")
+        str,
+        Field(description="username to access the docker registry"),
     ]
     REGISTRY_PW: Annotated[
-        SecretStr, Field(description="password to access the docker registry")
+        SecretStr,
+        Field(description="password to access the docker registry"),
     ]
     REGISTRY_SSL: Annotated[
-        bool, Field(description="True if docker registry is using HTTPS protocol")
+        bool,
+        Field(description="True if docker registry is using HTTPS protocol"),
     ]
 
     @field_validator("REGISTRY_PATH", mode="before")
