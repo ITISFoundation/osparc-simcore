@@ -5,12 +5,10 @@ from pprint import pformat
 from typing import Any, TypeVar
 
 import httpx
-from fastapi import FastAPI
 from models_library.generics import Envelope
 from pydantic import TypeAdapter
 from servicelib.aiohttp import status
 from servicelib.status_codes_utils import get_code_display_name, is_error
-from yarl import URL
 
 T = TypeVar("T")
 
@@ -84,11 +82,3 @@ def _do_assert_error(
         assert expected_error_code in codes
 
     return data, error
-
-
-def url_from_operation_id(
-    client: httpx.AsyncClient, app: FastAPI, operation_id: str, **path_params
-) -> URL:
-    return URL(f"{client.base_url}").with_path(
-        app.url_path_for(operation_id, **path_params)
-    )
