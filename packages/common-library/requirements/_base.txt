@@ -1,19 +1,20 @@
 annotated-types==0.7.0
     # via pydantic
-orjson==3.10.10
+orjson==3.10.15
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_base.in
-pydantic==2.10.3
+pydantic==2.10.6
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_base.in
     #   pydantic-extra-types
-pydantic-core==2.27.1
+pydantic-core==2.27.2
     # via pydantic
-pydantic-extra-types==2.9.0
+pydantic-extra-types==2.10.2
     # via -r requirements/_base.in
 typing-extensions==4.12.2
     # via
     #   pydantic
     #   pydantic-core
+    #   pydantic-extra-types

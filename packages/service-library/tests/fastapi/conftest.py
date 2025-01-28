@@ -10,7 +10,7 @@ import arrow
 import pytest
 from fastapi import APIRouter, FastAPI
 from fastapi.params import Query
-from httpx import AsyncClient
+from httpx import ASGITransport, AsyncClient
 from pydantic.types import PositiveFloat
 
 
@@ -35,7 +35,9 @@ def app() -> FastAPI:
 
 @pytest.fixture
 async def client(app: FastAPI) -> AsyncIterator[AsyncClient]:
-    async with AsyncClient(app=app, base_url="http://test") as client:
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
         yield client
 
 

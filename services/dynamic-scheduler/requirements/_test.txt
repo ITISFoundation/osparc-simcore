@@ -15,13 +15,13 @@ charset-normalizer==3.4.0
     # via
     #   -c requirements/_base.txt
     #   requests
-coverage==7.6.8
+coverage==7.6.10
     # via
     #   -r requirements/_test.in
     #   pytest-cov
 docker==7.1.0
     # via -r requirements/_test.in
-faker==33.0.0
+faker==35.0.0
     # via -r requirements/_test.in
 greenlet==3.1.1
     # via
@@ -35,7 +35,7 @@ h11==0.14.0
     #   wsproto
 h2==4.1.0
     # via hypercorn
-hpack==4.0.0
+hpack==4.1.0
     # via h2
 httpcore==1.0.7
     # via
@@ -48,7 +48,7 @@ httpx==0.27.2
     #   respx
 hypercorn==0.17.3
     # via -r requirements/_test.in
-hyperframe==6.0.1
+hyperframe==6.1.0
     # via h2
 icdiff==2.0.7
     # via pytest-icdiff
@@ -65,7 +65,7 @@ packaging==24.2
     #   -c requirements/_base.txt
     #   pytest
     #   pytest-sugar
-playwright==1.49.0
+playwright==1.49.1
     # via -r requirements/_test.in
 pluggy==1.5.0
     # via pytest
@@ -75,7 +75,7 @@ priority==2.0.0
     # via hypercorn
 pyee==12.0.0
     # via playwright
-pytest==8.3.3
+pytest==8.3.4
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
@@ -109,7 +109,7 @@ requests==2.32.3
     # via
     #   -c requirements/_base.txt
     #   docker
-respx==0.21.1
+respx==0.22.0
     # via -r requirements/_test.in
 six==1.16.0
     # via
