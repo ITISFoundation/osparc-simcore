@@ -250,6 +250,8 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
             });
 
             const cb = e => {
+              this.hide();
+              // so that is not consumed by the menu button itself
               e.stopPropagation();
               latestMetadata["resourceType"] = "service";
               const resourceDetails = new osparc.dashboard.ResourceDetails(latestMetadata);
