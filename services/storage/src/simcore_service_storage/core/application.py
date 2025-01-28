@@ -16,7 +16,6 @@ from servicelib.fastapi.prometheus_instrumentation import (
     setup_prometheus_instrumentation,
 )
 from servicelib.fastapi.tracing import setup_tracing
-from simcore_service_storage.api.rest.routes import setup_rest_api_routes
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from .._meta import (
@@ -26,6 +25,7 @@ from .._meta import (
     APP_NAME,
     APP_STARTED_BANNER_MSG,
 )
+from ..api.rest.routes import setup_rest_api_routes
 from ..api.rest.utils import set_exception_handlers
 from ..dsm import setup_dsm
 from ..dsm_cleaner import setup_dsm_cleaner
