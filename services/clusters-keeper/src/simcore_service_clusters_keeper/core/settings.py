@@ -250,7 +250,7 @@ class PrimaryEC2InstancesSettings(BaseCustomSettings):
             description="defines the docker swarm default address pool in CIDR format "
             "(see https://docs.docker.com/reference/cli/docker/swarm/init/)",
         ),
-    ] = "172.20.0.0/14"
+    ] = "172.20.0.0/14"  # nosec
 
     @field_validator("PRIMARY_EC2_INSTANCES_ALLOWED_TYPES")
     @classmethod
