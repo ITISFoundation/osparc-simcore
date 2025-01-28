@@ -180,9 +180,9 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
 
     __addIcon: function(menuButton, resourceInfo, resourceMetadata) {
       let source = null;
-      if ("icon" in resourceInfo) {
+      if (resourceInfo && "icon" in resourceInfo) {
         source = resourceInfo["icon"];
-      } else if ("thumbnail" in resourceMetadata) {
+      } else if (resourceMetadata && "thumbnail" in resourceMetadata) {
         source = resourceMetadata["thumbnail"];
       }
 

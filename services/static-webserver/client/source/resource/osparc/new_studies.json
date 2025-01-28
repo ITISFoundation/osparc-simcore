@@ -12,7 +12,6 @@
       "resourceType": "template",
       "expectedTemplateLabel": "TI Planning Tool",
       "title": "Classic TI",
-      "description": "",
       "newStudyLabel": "Classic TI",
       "category": "precomputed",
       "idToWidget": "newTIPlanButton"
@@ -20,7 +19,6 @@
       "resourceType": "template",
       "expectedTemplateLabel": "mcTI Planning Tool",
       "title": "Multichannel TI",
-      "description": "",
       "newStudyLabel": "Multichannel TI",
       "category": "precomputed",
       "idToWidget": "newMTIPlanButton"
@@ -28,31 +26,27 @@
       "resourceType": "template",
       "expectedTemplateLabel": "pmTI Planning Tool",
       "title": "Phase-modulation TI",
-      "description": "",
       "newStudyLabel": "Phase-modulation TI",
       "category": "precomputed",
       "idToWidget": "newPMTIPlanButton"
     }, {
       "resourceType": "template",
       "expectedTemplateLabel": "personalized TI Planning Tool",
-      "title": "Personalized<br>Classic TI",
-      "description": "",
+      "title": "Personalized Classic TI",
       "newStudyLabel": "Personalized Classic TI",
       "category": "personalized",
       "idToWidget": "personalizationNewTIPlanButton"
     }, {
       "resourceType": "template",
       "expectedTemplateLabel": "personalized mcTI Planning Tool",
-      "title": "Personalized<br>Multichannel TI",
-      "description": "",
+      "title": "Personalized Multichannel TI",
       "newStudyLabel": "Personalized Multichannel TI",
       "category": "personalized",
       "idToWidget": "personalizationNewMTIPlanButton"
     }, {
       "resourceType": "template",
       "expectedTemplateLabel": "personalized pmTI Planning Tool",
-      "title": "Personalized<br>Phase-modulation TI",
-      "description": "",
+      "title": "Personalized Phase-modulation TI",
       "newStudyLabel": "Personalized Phase-modulation TI",
       "category": "personalized",
       "idToWidget": "personalizationNewPMTIPlanButton"
@@ -71,7 +65,6 @@
       "resourceType": "template",
       "expectedTemplateLabel": "TI Planning Tool",
       "title": "Classic TI",
-      "description": "",
       "newStudyLabel": "Classic TI",
       "category": "precomputed",
       "idToWidget": "newTIPlanButton"
@@ -97,7 +90,7 @@
       "showDisabled": true,
       "resourceType": "template",
       "expectedTemplateLabel": "personalized TI Planning Tool",
-      "title": "Personalized<br>Classic TI",
+      "title": "Personalized Classic TI",
       "description": "Not available in ${replace_me_product_name}",
       "newStudyLabel": "Personalized Classic TI",
       "category": "personalized",
@@ -106,7 +99,7 @@
       "showDisabled": true,
       "resourceType": "template",
       "expectedTemplateLabel": "personalized mcTI Planning Tool",
-      "title": "Personalized<br>Multichannel TI",
+      "title": "Personalized Multichannel TI",
       "description": "Not available in ${replace_me_product_name}",
       "newStudyLabel": "Personalized Multichannel TI",
       "category": "personalized",
@@ -115,7 +108,7 @@
       "showDisabled": true,
       "resourceType": "template",
       "expectedTemplateLabel": "personalized pmTI Planning Tool",
-      "title": "Personalized<br>Phase-modulation TI",
+      "title": "Personalized Phase-modulation TI",
       "description": "Not available in ${replace_me_product_name}",
       "newStudyLabel": "Personalized Phase-modulation TI",
       "category": "personalized",
@@ -127,20 +120,17 @@
       "resourceType": "service",
       "expectedKey": "simcore/services/dynamic/s4l-ui",
       "title": "Sim4Life",
-      "description": "New Sim4Life project",
       "newStudyLabel": "New S4L project",
       "idToWidget": "startS4LButton"
     }, {
       "resourceType": "service",
       "expectedKey": "simcore/services/dynamic/iseg-web",
       "title": "iSEG",
-      "description": "New iSEG project",
       "newStudyLabel": "New iSEG project"
     }, {
       "resourceType": "service",
       "expectedKey": "simcore/services/dynamic/s4l-jupyter",
       "title": "Jupyter Lab",
-      "description": "New Jupyter Lab project",
       "icon": "https://upload.wikimedia.org/wikipedia/commons/3/38/Jupyter_logo.svg",
       "newStudyLabel": "New S4L Jupyter Lab"
     }]
@@ -150,21 +140,18 @@
       "resourceType": "service",
       "expectedKey": "simcore/services/dynamic/s4l-ui",
       "title": "Sim4Life",
-      "description": "New Sim4Life project",
       "newStudyLabel": "New S4L project",
       "idToWidget": "startS4LButton"
     }, {
       "resourceType": "service",
       "expectedKey": "simcore/services/dynamic/iseg-web",
       "title": "iSEG",
-      "description": "New iSEG project",
       "newStudyLabel": "New iSEG project"
     }, {
       "resourceType": "service",
       "expectedKey": "simcore/services/dynamic/s4l-jupyter",
-      "title": "Jupyter Lab",
-      "description": "New Jupyter Lab project",
       "icon": "https://upload.wikimedia.org/wikipedia/commons/3/38/Jupyter_logo.svg",
+      "title": "Jupyter Lab",
       "newStudyLabel": "New S4L Jupyter Lab"
     }]
   },
@@ -173,7 +160,6 @@
       "resourceType": "service",
       "expectedKey": "simcore/services/dynamic/s4l-ui-lite",
       "title": "${replace_me_product_name}",
-      "description": "New project",
       "newStudyLabel": "New project",
       "idToWidget": "startS4LButton"
     }]
