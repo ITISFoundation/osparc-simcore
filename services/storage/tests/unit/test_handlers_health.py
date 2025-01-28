@@ -108,6 +108,7 @@ async def test_bad_health_status_if_s3_server_missing(
     # start the server again
     mocked_aws_server.start()
     # should be good again
+    response = await client.get(f"{url}")
     app_status_check, error = assert_status(
         response, status.HTTP_200_OK, AppStatusCheck
     )
