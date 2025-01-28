@@ -33,7 +33,7 @@ qx.Class.define("osparc.store.Pricing", {
     pricingPlansCached: null,
 
     fetchPricingPlans: function() {
-      return osparc.data.Resources.fetch("pricingPlans", "get")
+      return osparc.data.Resources.getInstance().getAllPages("pricingPlans")
         .then(pricingPlansData => {
           const pricingPlans = [];
           pricingPlansData.forEach(pricingPlanData => {

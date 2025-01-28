@@ -642,6 +642,10 @@ qx.Class.define("osparc.data.Resources", {
             method: "GET",
             url: statics.API + "/admin/pricing-plans"
           },
+          getPage: {
+            method: "GET",
+            url: statics.API + "/admin/pricing-plans?offset={offset}&limit={limit}"
+          },
           getOne: {
             method: "GET",
             url: statics.API + "/admin/pricing-plans/{pricingPlanId}"
