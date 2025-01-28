@@ -33,34 +33,3 @@ def test_run(cli_runner: CliRunner):
     result = cli_runner.invoke(main, ["run"])
     assert result.exit_code == 0
     assert "disabled" in result.stdout
-
-
-# @pytest.mark.parametrize(
-#     "arguments", ["--help", "run --help".split(), "settings --help".split()]
-# )
-# def test_cli_help(arguments: list[str] | str, cli_runner: CliRunner):
-#     result = cli_runner.invoke(main, arguments)
-#     assert result.exit_code == os.EX_OK, result
-
-
-# def test_cli_settings_as_json(cli_runner: CliRunner):
-#     result = cli_runner.invoke(main, ["settings", "--as-json"])
-#     assert result.exit_code == os.EX_OK, result
-#     # reuse resulting json to build settings
-#     settings: dict = json.loads(result.stdout)
-#     assert ApplicationSettings(settings)
-
-
-# def test_cli_settings_env_file(cli_runner: CliRunner):
-#     result = cli_runner.invoke(main, ["settings", "--compact"])
-#     assert result.exit_code == os.EX_OK, result
-
-#     # reuse resulting env_file to build settings
-#     env_file = StringIO(result.stdout)
-
-#     settings = dotenv_values(stream=env_file)
-#     for key, value in settings.items():
-#         with contextlib.suppress(json.decoder.JSONDecodeError):
-#             settings[key] = json.loads(str(value))
-
-#     assert ApplicationSettings(settings)

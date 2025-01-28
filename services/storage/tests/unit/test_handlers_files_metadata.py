@@ -10,15 +10,18 @@ from pathlib import Path
 from random import choice
 from typing import Protocol
 
+import httpx
 import pytest
 from aiohttp.test_utils import TestClient
 from faker import Faker
+from fastapi import FastAPI
 from models_library.api_schemas_storage import FileMetaDataGet, SimcoreS3FileID
 from models_library.projects import ProjectID
 from models_library.users import UserID
 from pydantic import ByteSize, TypeAdapter
 from pytest_simcore.helpers.assert_checks import assert_status
 from servicelib.aiohttp import status
+from yarl import URL
 
 pytest_simcore_core_services_selection = ["postgres"]
 pytest_simcore_ops_services_selection = ["adminer"]
@@ -32,31 +35,39 @@ class CreateProjectAccessRightsCallable(Protocol):
         read: bool,
         write: bool,
         delete: bool,
-    ) -> None: ...
+    ) -> None:
+        ...
 
 
 async def test_list_files_metadata(
     upload_file: Callable[[ByteSize, str], Awaitable[tuple[Path, SimcoreS3FileID]]],
     create_project_access_rights: CreateProjectAccessRightsCallable,
-    client: TestClient,
+    initialized_app: FastAPI,
+    client: httpx.AsyncClient,
     user_id: UserID,
     other_user_id: UserID,
     location_id: int,
     project_id: ProjectID,
     faker: Faker,
 ):
-    assert client.app
-
     url = (
-        client.app.router["list_files_metadata"]
-        .url_for(location_id=f"{location_id}")
+        URL(f"{client.base_url}")
+        .with_path(
+            initialized_app.url_path_for("list_files_metadata", location_id=location_id)
+        )
         .with_query(user_id=f"{user_id}")
     )
+    # url = (
+    #     client.app.router["list_files_metadata"]
+    #     .url_for(location_id=f"{location_id}")
+    #     .with_query(user_id=f"{user_id}")
+    # )
 
     # this should return an empty list
     response = await client.get(f"{url}")
-    data, error = await assert_status(response, status.HTTP_200_OK)
-    assert not error
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    assert data
     list_fmds = TypeAdapter(list[FileMetaDataGet]).validate_python(data)
     assert not list_fmds
 
@@ -70,8 +81,8 @@ async def test_list_files_metadata(
 
     # we should find these files now
     response = await client.get(f"{url}")
-    data, error = await assert_status(response, status.HTTP_200_OK)
-    assert not error
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
     list_fmds = TypeAdapter(list[FileMetaDataGet]).validate_python(data)
     assert len(list_fmds) == NUM_FILES
 
@@ -87,8 +98,8 @@ async def test_list_files_metadata(
         f"{url.update_query(project_id=str(project_id), user_id=other_user_id)}"
     )
     previous_data = deepcopy(data)
-    data, error = await assert_status(response, status.HTTP_200_OK)
-    assert not error
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
     list_fmds = TypeAdapter(list[FileMetaDataGet]).validate_python(data)
     assert len(list_fmds) == (NUM_FILES)
     assert previous_data == data
@@ -104,15 +115,15 @@ async def test_list_files_metadata(
 
     # we should find these files now
     response = await client.get(f"{url}")
-    data, error = await assert_status(response, status.HTTP_200_OK)
-    assert not error
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
     list_fmds = TypeAdapter(list[FileMetaDataGet]).validate_python(data)
     assert len(list_fmds) == (2 * NUM_FILES)
 
     # we can filter them now
     response = await client.get(f"{url.update_query(uuid_filter='common_name')}")
-    data, error = await assert_status(response, status.HTTP_200_OK)
-    assert not error
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
     list_fmds = TypeAdapter(list[FileMetaDataGet]).validate_python(data)
     assert len(list_fmds) == (NUM_FILES)
 

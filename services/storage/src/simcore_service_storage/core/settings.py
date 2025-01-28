@@ -42,7 +42,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         None, description="Pennsieve API secret ONLY for testing purposes"
     )
 
-    STORAGE_POSTGRES: PostgresSettings = Field(
+    STORAGE_POSTGRES: PostgresSettings | None = Field(
         json_schema_extra={"auto_default_from_env": True}
     )
 
@@ -50,7 +50,9 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         json_schema_extra={"auto_default_from_env": True}
     )
 
-    STORAGE_S3: S3Settings = Field(json_schema_extra={"auto_default_from_env": True})
+    STORAGE_S3: S3Settings | None = Field(
+        json_schema_extra={"auto_default_from_env": True}
+    )
 
     STORAGE_TRACING: TracingSettings | None = Field(
         json_schema_extra={"auto_default_from_env": True}

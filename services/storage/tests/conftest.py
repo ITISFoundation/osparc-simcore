@@ -120,20 +120,16 @@ async def cleanup_user_projects_file_metadata(sqlalchemy_async_engine: AsyncEngi
 
 
 @pytest.fixture
-def simcore_s3_dsm(client: TestClient) -> SimcoreS3DataManager:
-    assert client.app
+def simcore_s3_dsm(initialized_app: FastAPI) -> SimcoreS3DataManager:
     return cast(
         SimcoreS3DataManager,
-        get_dsm_provider(client.app).get(SimcoreS3DataManager.get_location_id()),
+        get_dsm_provider(initialized_app).get(SimcoreS3DataManager.get_location_id()),
     )
 
 
 @pytest.fixture
-async def storage_s3_client(
-    client: TestClient,
-) -> SimcoreS3API:
-    assert client.app
-    return get_s3_client(client.app)
+async def storage_s3_client(initialized_app: FastAPI) -> SimcoreS3API:
+    return get_s3_client(initialized_app)
 
 
 @pytest.fixture
