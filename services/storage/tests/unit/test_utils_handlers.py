@@ -1,19 +1,23 @@
+# pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
 
+from collections.abc import AsyncIterator
+
+import httpx
 import pytest
-from aiohttp import web
-from aiohttp.typedefs import Handler
-from aws_library.s3 import S3KeyNotFoundError
-from pydantic import BaseModel, ValidationError
-from pytest_mock import MockerFixture
-from servicelib.aiohttp.aiopg_utils import DBAPIError
-from simcore_service_storage.api.rest.utils import dsm_exception_handler
+from asyncpg import PostgresError
+from aws_library.s3._errors import S3AccessError, S3KeyNotFoundError
+from fastapi import FastAPI, status
+from httpx import AsyncClient
+from simcore_service_storage.api.rest.utils import set_exception_handlers
 from simcore_service_storage.exceptions.errors import (
     FileAccessRightError,
     FileMetaDataNotFoundError,
+    LinkAlreadyExistsError,
     ProjectAccessRightError,
     ProjectNotFoundError,
 )
@@ -22,44 +26,81 @@ from simcore_service_storage.modules.db.db_access_layer import (
 )
 
 
-@pytest.fixture()
-async def raising_handler(
-    mocker: MockerFixture, handler_exception: type[Exception]
-) -> Handler:
-    mock = mocker.patch("aiohttp.typedefs.Handler", autospec=True)
-    mock.side_effect = handler_exception
-    return mock
+@pytest.fixture
+def initialized_app() -> FastAPI:
+    app = FastAPI()
+    set_exception_handlers(app)
+    return app
 
 
 @pytest.fixture
-def mock_request(mocker: MockerFixture) -> web.Request:
-    return mocker.patch("aiohttp.web.Request", autospec=True)
-
-
-class FakeErrorModel(BaseModel):
-    dummy: int = 1
+async def client(initialized_app: FastAPI) -> AsyncIterator[AsyncClient]:
+    async with AsyncClient(
+        transport=httpx.ASGITransport(app=initialized_app),
+        base_url="http://test",
+        headers={"Content-Type": "application/json"},
+    ) as client:
+        yield client
 
 
 @pytest.mark.parametrize(
-    "handler_exception, expected_web_response",
+    "exception, status_code",
     [
-        (InvalidFileIdentifierError(identifier="x"), web.HTTPUnprocessableEntity),
-        (FileMetaDataNotFoundError(file_id="x"), web.HTTPNotFound),
-        (S3KeyNotFoundError(key="x", bucket="x"), web.HTTPNotFound),
-        (ProjectNotFoundError(project_id="x"), web.HTTPNotFound),
-        (FileAccessRightError(file_id="x", access_right="x"), web.HTTPForbidden),
-        (ProjectAccessRightError(project_id="x", access_right="x"), web.HTTPForbidden),
         (
-            ValidationError.from_exception_data(title="test", line_errors=[]),
-            web.HTTPUnprocessableEntity,
+            InvalidFileIdentifierError(
+                identifier="pytest file identifier", details="pytest details"
+            ),
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
         ),
-        (DBAPIError, web.HTTPServiceUnavailable),
+        (
+            FileMetaDataNotFoundError(file_id="pytest file ID"),
+            status.HTTP_404_NOT_FOUND,
+        ),
+        (
+            S3KeyNotFoundError(key="pytest key", bucket="pytest bucket"),
+            status.HTTP_404_NOT_FOUND,
+        ),
+        (
+            ProjectNotFoundError(project_id="pytest project ID"),
+            status.HTTP_404_NOT_FOUND,
+        ),
+        (
+            FileAccessRightError(
+                access_right="pytest access rights", file_id="pytest file ID"
+            ),
+            status.HTTP_403_FORBIDDEN,
+        ),
+        (
+            ProjectAccessRightError(
+                access_right="pytest access rights", project_id="pytest project ID"
+            ),
+            status.HTTP_403_FORBIDDEN,
+        ),
+        (
+            LinkAlreadyExistsError(file_id="pytest file ID"),
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+        ),
+        (
+            PostgresError("pytest postgres error"),
+            status.HTTP_503_SERVICE_UNAVAILABLE,
+        ),
+        (
+            S3AccessError(),
+            status.HTTP_503_SERVICE_UNAVAILABLE,
+        ),
     ],
+    ids=str,
 )
-async def test_dsm_exception_handler(
-    mock_request: web.Request,
-    raising_handler: Handler,
-    expected_web_response: type[web.HTTPClientError],
+async def test_exception_handlers(
+    initialized_app: FastAPI,
+    client: AsyncClient,
+    exception: Exception,
+    status_code: int,
 ):
-    with pytest.raises(expected_web_response):
-        await dsm_exception_handler(mock_request, raising_handler)
+    @initialized_app.get("/test")
+    async def test_endpoint():
+        raise exception
+
+    response = await client.get("/test")
+    assert response.status_code == status_code
+    assert response.json() == {"errors": [f"{exception}"]}
