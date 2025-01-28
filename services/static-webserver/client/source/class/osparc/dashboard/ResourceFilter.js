@@ -312,7 +312,9 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
 
     /* TAGS */
     __createTagsFilterLayout: function() {
-      const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(2));
+      const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(2)).set({
+        marginTop: 20
+      });
       osparc.utils.Utils.setIdToWidget(layout, this.__resourceType + "-tagsFilter");
 
       this.__populateTags(layout, []);
