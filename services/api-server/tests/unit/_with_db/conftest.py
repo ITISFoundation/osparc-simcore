@@ -10,6 +10,7 @@ import subprocess
 import sys
 from collections.abc import AsyncGenerator, AsyncIterator, Callable, Iterable
 from pathlib import Path
+from typing import TypedDict
 
 import httpx
 import pytest
@@ -33,6 +34,7 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_postgres_database.models.api_keys import api_keys
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.users import users
+from simcore_sdk.node_ports_v2 import port
 from simcore_service_api_server.core.application import init_app
 from simcore_service_api_server.core.settings import PostgresSettings
 
@@ -73,8 +75,19 @@ def docker_compose_file(
     return dst_path
 
 
+class PostgreServiceInfoDict(TypedDict):
+    dsn: str
+    user: str
+    password: str
+    host: str
+    port: int
+    datbase: str
+
+
 @pytest.fixture(scope="session")
-def postgres_service(docker_services, docker_ip, docker_compose_file: Path) -> dict:
+def postgres_service(
+    docker_services, docker_ip, docker_compose_file: Path
+) -> PostgreServiceInfoDict:
     # check docker-compose's environ is resolved properly
     config = yaml.safe_load(docker_compose_file.read_text())
     environ = config["services"]["postgres"]["environment"]
@@ -110,12 +123,14 @@ def postgres_service(docker_services, docker_ip, docker_compose_file: Path) -> d
     )
 
     config["dsn"] = dsn
-    return config
+    return PostgreServiceInfoDict(**config)
 
 
 @pytest.fixture(scope="session")
-def sync_engine(postgres_service: str) -> Iterable[sqlalchemy.engine.Engine]:
-    _engine: sqlalchemy.engine.Engine = sa.create_engine(url=postgres_service)
+def sync_engine(
+    postgres_service: PostgreServiceInfoDict,
+) -> Iterable[sqlalchemy.engine.Engine]:
+    _engine: sqlalchemy.engine.Engine = sa.create_engine(url=postgres_service["dsn"])
     yield _engine
     _engine.dispose()
 
