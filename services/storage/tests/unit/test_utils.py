@@ -10,8 +10,8 @@ from collections.abc import Callable
 from pathlib import Path
 from uuid import uuid4
 
+import httpx
 import pytest
-from aiohttp import ClientSession
 from faker import Faker
 from models_library.api_schemas_storage import UNDEFINED_SIZE_TYPE
 from models_library.projects import ProjectID
@@ -33,7 +33,7 @@ async def test_download_files(tmp_path: Path, httpbin_base_url: HttpUrl):
     destination = tmp_path / "data"
     expected_size = MAX_CHUNK_SIZE * 3 + 1000
 
-    async with ClientSession() as session:
+    async with httpx.AsyncClient() as session:
         total_size = await download_to_file_or_raise(
             session, f"{httpbin_base_url}/bytes/{expected_size}", destination
         )
