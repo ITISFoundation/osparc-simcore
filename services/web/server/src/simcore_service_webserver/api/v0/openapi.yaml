@@ -5666,7 +5666,7 @@ paths:
       - storage
       summary: Get available storage locations
       description: Returns the list of available storage locations
-      operationId: get_storage_locations
+      operationId: list_storage_locations
       responses:
         '200':
           description: Successful Response
@@ -5676,7 +5676,7 @@ paths:
                 items:
                   $ref: '#/components/schemas/DatasetMetaData'
                 type: array
-                title: Response Get Storage Locations
+                title: Response List Storage Locations
   /v0/storage/locations/{location_id}:sync:
     post:
       tags:
@@ -5719,7 +5719,7 @@ paths:
       - storage
       summary: Get datasets metadata
       description: returns all the top level datasets a user has access to
-      operationId: get_datasets_metadata
+      operationId: list_datasets_metadata
       parameters:
       - name: location_id
         in: path
@@ -5780,7 +5780,7 @@ paths:
       - storage
       summary: Get Files Metadata
       description: returns all the file meta data inside dataset with dataset_id
-      operationId: get_files_metadata_dataset
+      operationId: list_dataset_files_metadata
       parameters:
       - name: location_id
         in: path

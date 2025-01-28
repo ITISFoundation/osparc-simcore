@@ -3,11 +3,10 @@
 # pylint: disable=unused-variable
 
 import uuid
+from collections.abc import AsyncIterator
 from functools import lru_cache
-from typing import AsyncIterator
 
 import pytest
-from aiopg.sa.engine import Engine
 from faker import Faker
 from models_library.api_schemas_storage import S3BucketName
 from models_library.projects_nodes_io import SimcoreS3FileID
@@ -17,6 +16,7 @@ from pydantic import ByteSize, TypeAdapter
 from simcore_postgres_database.storage_models import file_meta_data
 from simcore_service_storage.models import FileMetaData, FileMetaDataAtDB
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
+from sqlalchemy.ext.asyncio import AsyncEngine
 from sqlalchemy.sql.expression import literal_column
 
 pytest_simcore_core_services_selection = ["postgres"]
@@ -25,7 +25,7 @@ pytest_simcore_ops_services_selection = ["adminer"]
 
 @pytest.fixture()
 async def output_file(
-    user_id: UserID, project_id: str, aiopg_engine: Engine, faker: Faker
+    user_id: UserID, project_id: str, sqlalchemy_async_engine: AsyncEngine, faker: Faker
 ) -> AsyncIterator[FileMetaData]:
     node_id = "fd6f9737-1988-341b-b4ac-0614b646fa82"
 
@@ -43,14 +43,14 @@ async def output_file(
     file.file_size = ByteSize(12)
     file.user_id = user_id
 
-    async with aiopg_engine.acquire() as conn:
+    async with sqlalchemy_async_engine.connect() as conn:
         stmt = (
             file_meta_data.insert()
             .values(jsonable_encoder(FileMetaDataAtDB.model_validate(file)))
             .returning(literal_column("*"))
         )
         result = await conn.execute(stmt)
-        row = await result.fetchone()
+        row = result.fetchone()
         assert row
 
         yield file

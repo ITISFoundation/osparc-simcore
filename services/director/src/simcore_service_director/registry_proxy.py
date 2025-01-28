@@ -11,6 +11,7 @@ from aiocache import Cache, SimpleMemoryCache  # type: ignore[import-untyped]
 from fastapi import FastAPI, status
 from servicelib.async_utils import cancel_wait_task
 from servicelib.background_task import create_periodic_task
+from servicelib.fastapi.client_session import get_client_session
 from servicelib.logging_utils import log_catch, log_context
 from servicelib.utils import limited_as_completed
 from tenacity import retry
@@ -20,7 +21,6 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed, wait_random_exponential
 from yarl import URL
 
-from .client_session import get_client_session
 from .constants import DIRECTOR_SIMCORE_SERVICES_PREFIX
 from .core.errors import (
     DirectorRuntimeError,

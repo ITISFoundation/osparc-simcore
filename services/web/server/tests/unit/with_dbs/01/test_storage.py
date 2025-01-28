@@ -167,7 +167,7 @@ PREFIX = "/" + API_VERSION + "/storage"
         (UserRole.TESTER, status.HTTP_200_OK),
     ],
 )
-async def test_get_storage_locations(
+async def test_list_storage_locations(
     client: TestClient, storage_server: TestServer, logged_user, expected
 ):
     url = "/v0/storage/locations"
@@ -215,13 +215,13 @@ async def test_sync_file_meta_table(
         (UserRole.TESTER, status.HTTP_200_OK),
     ],
 )
-async def test_get_datasets_metadata(
+async def test_list_datasets_metadata(
     client: TestClient, storage_server: TestServer, logged_user, expected
 ):
     url = "/v0/storage/locations/0/datasets"
     assert url.startswith(PREFIX)
 
-    _url = client.app.router["get_datasets_metadata"].url_for(location_id="0")
+    _url = client.app.router["list_datasets_metadata"].url_for(location_id="0")
 
     assert url == str(_url)
 
@@ -242,13 +242,13 @@ async def test_get_datasets_metadata(
         (UserRole.TESTER, status.HTTP_200_OK),
     ],
 )
-async def test_get_files_metadata_dataset(
+async def test_list_dataset_files_metadata(
     client: TestClient, storage_server: TestServer, logged_user, expected
 ):
     url = "/v0/storage/locations/0/datasets/N:asdfsdf/metadata"
     assert url.startswith(PREFIX)
 
-    _url = client.app.router["get_files_metadata_dataset"].url_for(
+    _url = client.app.router["list_dataset_files_metadata"].url_for(
         location_id="0", dataset_id="N:asdfsdf"
     )
 

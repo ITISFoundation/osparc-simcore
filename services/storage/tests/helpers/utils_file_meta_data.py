@@ -1,12 +1,12 @@
-from aiopg.sa.engine import Engine
 from aws_library.s3 import UploadID
 from models_library.basic_types import SHA256Str
 from models_library.projects_nodes_io import StorageFileID
 from simcore_postgres_database.storage_models import file_meta_data
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 
 async def assert_file_meta_data_in_db(
-    aiopg_engine: Engine,
+    sqlalchemy_async_engine: AsyncEngine,
     *,
     file_id: StorageFileID,
     expected_entry_exists: bool,
@@ -18,11 +18,11 @@ async def assert_file_meta_data_in_db(
     if expected_entry_exists and expected_file_size is None:
         assert True, "Invalid usage of assertion, expected_file_size cannot be None"
 
-    async with aiopg_engine.acquire() as conn:
+    async with sqlalchemy_async_engine.connect() as conn:
         result = await conn.execute(
             file_meta_data.select().where(file_meta_data.c.file_id == f"{file_id}")
         )
-        db_data = await result.fetchall()
+        db_data = result.fetchall()
         assert db_data is not None
         assert len(db_data) == (1 if expected_entry_exists else 0), (
             f"{file_id} was not found!"

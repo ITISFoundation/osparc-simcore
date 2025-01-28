@@ -1,1 +1,0 @@
-To modify the OpenAPI Specs, please do it in api/specs/storage and then run `make openapi-specs` in the current dir

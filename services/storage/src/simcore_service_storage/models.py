@@ -151,7 +151,7 @@ class FilesMetadataDatasetQueryParams(StorageQueryParamsBase):
     expand_dirs: bool = True
 
 
-class FilesMetadataQueryParams(StorageQueryParamsBase):
+class FileMetadataListQueryParams(StorageQueryParamsBase):
     project_id: ProjectID | None = None
     uuid_filter: str = ""
     expand_dirs: bool = True
@@ -160,6 +160,12 @@ class FilesMetadataQueryParams(StorageQueryParamsBase):
 class SyncMetadataQueryParams(BaseModel):
     dry_run: bool = False
     fire_and_forget: bool = False
+
+
+class SyncMetadataResponse(BaseModel):
+    removed: list[StorageFileID]
+    fire_and_forget: bool
+    dry_run: bool
 
 
 class FileDownloadQueryParams(StorageQueryParamsBase):
@@ -171,6 +177,10 @@ class FileDownloadQueryParams(StorageQueryParamsBase):
         if v is not None:
             return f"{v}".upper()
         return v
+
+
+class FileDownloadResponse(BaseModel):
+    link: AnyUrl
 
 
 class FileUploadQueryParams(StorageQueryParamsBase):
@@ -208,6 +218,10 @@ class FileUploadQueryParams(StorageQueryParamsBase):
         - storage relies on lazy update to find if the file is finished uploaded (when client calls get_file_meta_data, or if the dsm_cleaner goes over it after the upload time is expired)
         """
         return self.file_size is None and self.is_directory is False
+
+
+class FileUploadResponseV1(BaseModel):
+    link: AnyUrl
 
 
 class DeleteFolderQueryParams(StorageQueryParamsBase):
@@ -275,13 +289,16 @@ class UserOrProjectFilter(NamedTuple):
     project_ids: list[ProjectID]
 
 
-__all__ = (
-    "ETag",
-    "FileMetaData",
-    "FileMetaDataAtDB",
-    "S3BucketName",
-    "SimcoreS3FileID",
-    "StorageFileID",
-    "UploadID",
-    "UploadLinks",
-)
+@dataclass(frozen=True)
+class AccessRights:
+    read: bool
+    write: bool
+    delete: bool
+
+    @classmethod
+    def all(cls) -> "AccessRights":
+        return cls(read=True, write=True, delete=True)
+
+    @classmethod
+    def none(cls) -> "AccessRights":
+        return cls(read=False, write=False, delete=False)

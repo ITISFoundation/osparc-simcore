@@ -1,6 +1,4 @@
-""" Storage subsystem's API: responsible of communication with storage service
-
-"""
+"""Storage subsystem's API: responsible of communication with storage service"""
 
 import asyncio
 import logging
@@ -48,7 +46,7 @@ def _get_storage_client(app: web.Application) -> tuple[ClientSession, URL]:
     return session, endpoint
 
 
-async def get_storage_locations(
+async def list_storage_locations(
     app: web.Application, user_id: UserID
 ) -> FileLocationArray:
     _logger.debug("getting %s accessible locations...", f"{user_id=}")

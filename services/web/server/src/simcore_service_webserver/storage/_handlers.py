@@ -1,7 +1,8 @@
-""" Handlers exposed by storage subsystem
+"""Handlers exposed by storage subsystem
 
-    Mostly resolves and redirect to storage API
+Mostly resolves and redirect to storage API
 """
+
 import logging
 from typing import Any, Final, NamedTuple
 
@@ -102,18 +103,18 @@ routes = web.RouteTableDef()
 _path_prefix = f"/{API_VTAG}/storage/locations"
 
 
-@routes.get(_path_prefix, name="get_storage_locations")
+@routes.get(_path_prefix, name="list_storage_locations")
 @login_required
 @permission_required("storage.files.*")
-async def get_storage_locations(request: web.Request) -> web.Response:
+async def list_storage_locations(request: web.Request) -> web.Response:
     payload, status = await _forward_request_to_storage(request, "GET", body=None)
     return create_data_response(payload, status=status)
 
 
-@routes.get(_path_prefix + "/{location_id}/datasets", name="get_datasets_metadata")
+@routes.get(_path_prefix + "/{location_id}/datasets", name="list_datasets_metadata")
 @login_required
 @permission_required("storage.files.*")
-async def get_datasets_metadata(request: web.Request) -> web.Response:
+async def list_datasets_metadata(request: web.Request) -> web.Response:
     class _PathParams(BaseModel):
         location_id: LocationID
 
@@ -150,11 +151,11 @@ _LIST_ALL_DATASETS_TIMEOUT_S: Final[int] = 60
 
 @routes.get(
     _path_prefix + "/{location_id}/datasets/{dataset_id}/metadata",
-    name="get_files_metadata_dataset",
+    name="list_dataset_files_metadata",
 )
 @login_required
 @permission_required("storage.files.*")
-async def get_files_metadata_dataset(request: web.Request) -> web.Response:
+async def list_dataset_files_metadata(request: web.Request) -> web.Response:
     class _PathParams(BaseModel):
         location_id: LocationID
         dataset_id: str

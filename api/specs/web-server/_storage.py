@@ -41,7 +41,7 @@ StorageFileIDStr: TypeAlias = str
     response_model=list[DatasetMetaData],
     summary="Get available storage locations",
 )
-async def get_storage_locations():
+async def list_storage_locations():
     """Returns the list of available storage locations"""
 
 
@@ -61,7 +61,7 @@ async def synchronise_meta_data_table(
     response_model=Envelope[list[DatasetMetaData]],
     summary="Get datasets metadata",
 )
-async def get_datasets_metadata(location_id: LocationID):
+async def list_datasets_metadata(location_id: LocationID):
     """returns all the top level datasets a user has access to"""
 
 
@@ -88,7 +88,7 @@ async def get_files_metadata(
     response_model=Envelope[list[FileMetaDataGet]],
     summary="Get Files Metadata",
 )
-async def get_files_metadata_dataset(
+async def list_dataset_files_metadata(
     location_id: LocationID,
     dataset_id: str,
     expand_dirs: bool = Query(

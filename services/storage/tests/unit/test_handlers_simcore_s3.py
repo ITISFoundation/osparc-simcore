@@ -17,7 +17,6 @@ import pytest
 import sqlalchemy as sa
 from aiohttp import ClientResponseError
 from aiohttp.test_utils import TestClient
-from aiopg.sa.engine import Engine
 from aws_library.s3 import SimcoreS3API
 from faker import Faker
 from models_library.api_schemas_storage import FileMetaDataGet, FoldersBody
@@ -36,6 +35,7 @@ from settings_library.s3 import S3Settings
 from simcore_postgres_database.storage_models import file_meta_data
 from simcore_service_storage.models import SearchFilesQueryParams
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
+from sqlalchemy.ext.asyncio import AsyncEngine
 from tests.helpers.utils_file_meta_data import assert_file_meta_data_in_db
 from tests.helpers.utils_project import clone_project_data
 from yarl import URL
@@ -72,7 +72,6 @@ def mock_datcore_download(mocker, client):
 
 
 async def test_simcore_s3_access_returns_default(client: TestClient):
-    assert client.app
     url = (
         client.app.router["get_or_create_temporary_s3_access"]
         .url_for()
@@ -87,13 +86,13 @@ async def test_simcore_s3_access_returns_default(client: TestClient):
 
 
 async def _request_copy_folders(
-    client: TestClient,
+    initialized_app: FastAPI,
+    client: httpx.AsyncClient,
     user_id: UserID,
     source_project: dict[str, Any],
     dst_project: dict[str, Any],
     nodes_map: dict[NodeID, NodeID],
 ) -> dict[str, Any]:
-    assert client.app
     url = client.make_url(
         f"{(client.app.router['copy_folders_from_project'].url_for().with_query(user_id=user_id))}"
     )
@@ -118,13 +117,12 @@ async def _request_copy_folders(
 
 
 async def test_copy_folders_from_non_existing_project(
-    client: TestClient,
+    initialized_app: FastAPI,
+    client: httpx.AsyncClient,
     user_id: UserID,
     create_project: Callable[[], Awaitable[dict[str, Any]]],
     faker: Faker,
 ):
-    assert client.app
-
     src_project = await create_project()
     incorrect_src_project = deepcopy(src_project)
     incorrect_src_project["uuid"] = faker.uuid4()
@@ -158,10 +156,11 @@ async def test_copy_folders_from_non_existing_project(
 
 
 async def test_copy_folders_from_empty_project(
-    client: TestClient,
+    initialized_app: FastAPI,
+    client: httpx.AsyncClient,
     user_id: UserID,
     create_project: Callable[[], Awaitable[dict[str, Any]]],
-    aiopg_engine: Engine,
+    sqlalchemy_async_engine: AsyncEngine,
     storage_s3_client: SimcoreS3API,
 ):
     # we will copy from src to dst
@@ -177,7 +176,7 @@ async def test_copy_folders_from_empty_project(
     )
     assert data == jsonable_encoder(dst_project)
     # check there is nothing in the dst project
-    async with aiopg_engine.acquire() as conn:
+    async with sqlalchemy_async_engine.connect() as conn:
         num_entries = await conn.scalar(
             sa.select(sa.func.count())
             .select_from(file_meta_data)
@@ -193,11 +192,12 @@ def short_dsm_cleaner_interval(monkeypatch: pytest.MonkeyPatch) -> int:
 
 
 async def test_copy_folders_from_valid_project_with_one_large_file(
+    initialized_app: FastAPI,
     short_dsm_cleaner_interval: int,
-    client: TestClient,
+    client: httpx.AsyncClient,
     user_id: UserID,
     create_project: Callable[[], Awaitable[dict[str, Any]]],
-    aiopg_engine: Engine,
+    sqlalchemy_async_engine: AsyncEngine,
     random_project_with_files: Callable[
         [int, tuple[ByteSize], tuple[SHA256Str]],
         Awaitable[
@@ -229,7 +229,7 @@ async def test_copy_folders_from_valid_project_with_one_large_file(
         nodes_map={NodeID(i): NodeID(j) for i, j in nodes_map.items()},
     )
     assert data == jsonable_encoder(
-        await get_updated_project(aiopg_engine, dst_project["uuid"])
+        await get_updated_project(sqlalchemy_async_engine, dst_project["uuid"])
     )
     # check that file meta data was effectively copied
     for src_node_id in src_projects_list:
@@ -243,7 +243,7 @@ async def test_copy_folders_from_valid_project_with_one_large_file(
             checksum: Any = src_file["sha256_checksum"]
             assert isinstance(checksum, str)
             await assert_file_meta_data_in_db(
-                aiopg_engine,
+                sqlalchemy_async_engine,
                 file_id=TypeAdapter(SimcoreS3FileID).validate_python(
                     f"{src_file_id}".replace(
                         src_project["uuid"], dst_project["uuid"]
@@ -261,11 +261,11 @@ async def test_copy_folders_from_valid_project_with_one_large_file(
 
 async def test_copy_folders_from_valid_project(
     short_dsm_cleaner_interval: int,
-    client: TestClient,
+    client: httpx.AsyncClient,
     user_id: UserID,
     create_project: Callable[[], Awaitable[dict[str, Any]]],
     create_simcore_file_id: Callable[[ProjectID, NodeID, str], SimcoreS3FileID],
-    aiopg_engine: Engine,
+    sqlalchemy_async_engine: AsyncEngine,
     random_project_with_files: Callable[
         ...,
         Awaitable[
@@ -290,7 +290,7 @@ async def test_copy_folders_from_valid_project(
         nodes_map={NodeID(i): NodeID(j) for i, j in nodes_map.items()},
     )
     assert data == jsonable_encoder(
-        await get_updated_project(aiopg_engine, dst_project["uuid"])
+        await get_updated_project(sqlalchemy_async_engine, dst_project["uuid"])
     )
 
     # check that file meta data was effectively copied
@@ -305,7 +305,7 @@ async def test_copy_folders_from_valid_project(
             checksum: Any = src_file["sha256_checksum"]
             assert isinstance(checksum, str)
             await assert_file_meta_data_in_db(
-                aiopg_engine,
+                sqlalchemy_async_engine,
                 file_id=TypeAdapter(SimcoreS3FileID).validate_python(
                     f"{src_file_id}".replace(
                         src_project["uuid"], dst_project["uuid"]
@@ -324,7 +324,8 @@ async def test_copy_folders_from_valid_project(
 async def _create_and_delete_folders_from_project(
     user_id: UserID,
     project: dict[str, Any],
-    client: TestClient,
+    initialized_app: FastAPI,
+    client: httpx.AsyncClient,
     project_db_creator: Callable,
     check_list_files: bool,
 ) -> None:
@@ -347,10 +348,10 @@ async def _create_and_delete_folders_from_project(
     project_id = data["uuid"]
 
     # list data to check all is here
-    assert client.app
+
     if check_list_files:
         url = (
-            client.app.router["get_files_metadata"]
+            client.app.router["list_files_metadata"]
             .url_for(location_id=f"{SimcoreS3DataManager.get_location_id()}")
             .with_query(user_id=f"{user_id}", uuid_filter=f"{project_id}")
         )
@@ -370,7 +371,7 @@ async def _create_and_delete_folders_from_project(
     # list data is gone
     if check_list_files:
         url = (
-            client.app.router["get_files_metadata"]
+            client.app.router["list_files_metadata"]
             .url_for(location_id=f"{SimcoreS3DataManager.get_location_id()}")
             .with_query(user_id=f"{user_id}", uuid_filter=f"{project_id}")
         )
@@ -409,13 +410,12 @@ async def with_random_project_with_files(
 
 async def test_connect_to_external(
     set_log_levels_for_noisy_libraries: None,
-    client: TestClient,
+    client: httpx.AsyncClient,
     user_id: UserID,
     project_id: ProjectID,
 ):
-    assert client.app
     url = (
-        client.app.router["get_files_metadata"]
+        client.app.router["list_files_metadata"]
         .url_for(location_id=f"{SimcoreS3DataManager.get_location_id()}")
         .with_query(user_id=f"{user_id}", uuid_filter=f"{project_id}")
     )
@@ -426,7 +426,7 @@ async def test_connect_to_external(
 
 async def test_create_and_delete_folders_from_project(
     set_log_levels_for_noisy_libraries: None,
-    client: TestClient,
+    client: httpx.AsyncClient,
     user_id: UserID,
     create_project: Callable[..., Awaitable[dict[str, Any]]],
     with_random_project_with_files: tuple[
@@ -445,7 +445,7 @@ async def test_create_and_delete_folders_from_project(
 async def test_create_and_delete_folders_from_project_burst(
     set_log_levels_for_noisy_libraries: None,
     minio_s3_settings_envs: EnvVarsDict,
-    client: TestClient,
+    client: httpx.AsyncClient,
     user_id: UserID,
     with_random_project_with_files: tuple[
         dict[str, Any],
@@ -507,13 +507,12 @@ async def search_files_query_params(
 @pytest.mark.parametrize("expected_number_of_user_files", [0, 1, 3])
 @pytest.mark.parametrize("query_params_choice", ["default", "limited", "with_offset"])
 async def test_search_files_request(
-    client: TestClient,
+    client: httpx.AsyncClient,
     user_id: UserID,
     uploaded_file_ids: list[SimcoreS3FileID],
     query_params_choice: str,
     search_files_query_params: SearchFilesQueryParams,
 ):
-    assert client.app
     assert query_params_choice
 
     assert search_files_query_params.user_id == user_id
@@ -544,7 +543,8 @@ async def test_search_files_request(
 @pytest.mark.parametrize("search_sha256_checksum", [True, False])
 @pytest.mark.parametrize("kind", ["owned", "read", None])
 async def test_search_files(
-    client: TestClient,
+    initialized_app: FastAPI,
+    client: httpx.AsyncClient,
     user_id: UserID,
     upload_file: Callable[..., Awaitable[tuple[Path, SimcoreS3FileID]]],
     faker: Faker,
@@ -552,7 +552,6 @@ async def test_search_files(
     search_sha256_checksum: bool,
     kind: Literal["owned"],
 ):
-    assert client.app
     _file_name: str = faker.file_name()
     _sha256_checksum: SHA256Str = TypeAdapter(SHA256Str).validate_python(faker.sha256())
 
