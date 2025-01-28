@@ -19,6 +19,7 @@ from models_library.services import ServiceKey, ServiceVersion
 from models_library.services_types import ServiceRunID
 from models_library.users import UserID
 from models_library.utils.specs_substitution import SpecsSubstitutionsResolver
+from models_library.wallets import WalletID
 from pydantic import BaseModel
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
 from servicelib.logging_utils import log_context
@@ -121,6 +122,7 @@ class OsparcSessionVariablesTable(OsparcVariablesTable, SingletonInAppStateMixin
             ("OSPARC_VARIABLE_PRODUCT_NAME", "product_name"),
             ("OSPARC_VARIABLE_STUDY_UUID", "project_id"),
             ("OSPARC_VARIABLE_SERVICE_RUN_ID", "run_id"),
+            ("OSPARC_VARIABLE_WALLET_ID", "wallet_id"),
             ("OSPARC_VARIABLE_USER_ID", "user_id"),
             ("OSPARC_VARIABLE_API_HOST", "api_server_base_url"),
         ]:
@@ -183,6 +185,7 @@ async def resolve_and_substitute_session_variables_in_model(
     project_id: ProjectID,
     node_id: NodeID,
     service_run_id: ServiceRunID,
+    wallet_id: WalletID | None,
 ) -> TBaseModel:
     result: TBaseModel = model
     try:
@@ -204,6 +207,7 @@ async def resolve_and_substitute_session_variables_in_model(
                 project_id=project_id,
                 node_id=node_id,
                 run_id=service_run_id,
+                wallet_id=wallet_id,
                 api_server_base_url=app_settings.DIRECTOR_V2_PUBLIC_API_BASE_URL,
             ),
         )
@@ -226,6 +230,7 @@ async def resolve_and_substitute_session_variables_in_specs(
     project_id: ProjectID,
     node_id: NodeID,
     service_run_id: ServiceRunID,
+    wallet_id: WalletID | None,
 ) -> dict[str, Any]:
     table = OsparcSessionVariablesTable.get_from_app_state(app)
     resolver = SpecsSubstitutionsResolver(specs, upgrade=False)
@@ -248,6 +253,7 @@ async def resolve_and_substitute_session_variables_in_specs(
                     project_id=project_id,
                     node_id=node_id,
                     run_id=service_run_id,
+                    wallet_id="" if wallet_id is None else wallet_id,
                     api_server_base_url=app_settings.DIRECTOR_V2_PUBLIC_API_BASE_URL,
                 ),
             )
