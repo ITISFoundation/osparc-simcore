@@ -15,7 +15,6 @@ from contextlib import AbstractAsyncContextManager, asynccontextmanager
 from pathlib import Path
 from typing import Final, cast
 
-import dotenv
 import httpx
 import pytest
 import respx
@@ -45,11 +44,10 @@ from pydantic import ByteSize, TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.logging_tools import log_context
-from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
+from pytest_simcore.helpers.monkeypatch_envs import delenvs_from_dict, setenvs_from_dict
 from pytest_simcore.helpers.s3 import upload_file_to_presigned_link
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.aiohttp import status
-from settings_library.s3 import S3Settings
 from simcore_postgres_database.storage_models import file_meta_data, projects, users
 from simcore_service_storage.constants import UPLOAD_TASKS_KEY
 from simcore_service_storage.core.application import create_app
@@ -111,24 +109,6 @@ def project_slug_dir(osparc_simcore_root_dir: Path) -> Path:
     return service_folder
 
 
-@pytest.fixture(scope="session")
-def project_env_devel_dict(project_slug_dir: Path) -> dict[str, str | None]:
-    env_devel_file = project_slug_dir / ".env-devel"
-    assert env_devel_file.exists()
-    return dotenv.dotenv_values(env_devel_file, verbose=True, interpolate=True)
-
-
-@pytest.fixture
-def project_env_devel_environment(
-    project_env_devel_dict: dict[str, str], monkeypatch: pytest.MonkeyPatch
-) -> None:
-    for key, value in project_env_devel_dict.items():
-        monkeypatch.setenv(key, value)
-
-
-## FAKE DATA FIXTURES ----------------------------------------------
-
-
 @pytest.fixture
 async def cleanup_user_projects_file_metadata(sqlalchemy_async_engine: AsyncEngine):
     yield
@@ -163,29 +143,35 @@ async def storage_s3_bucket(app_settings: ApplicationSettings) -> str:
 
 
 @pytest.fixture
+def app_environment(
+    mock_env_devel_environment: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
+    external_envfile_dict: EnvVarsDict,
+) -> EnvVarsDict:
+    if external_envfile_dict:
+        # TODO: see if this is needed
+        # s3_settings = S3Settings.create_from_envs(**external_envfile_dict)
+        # if s3_settings.S3_ENDPOINT is None:
+        #     monkeypatch.delenv("S3_ENDPOINT")
+        #     s3_settings_dict = s3_settings.model_dump(exclude={"S3_ENDPOINT"})
+        # else:
+        #     s3_settings_dict = s3_settings.model_dump()
+
+        delenvs_from_dict(monkeypatch, mock_env_devel_environment, raising=False)
+        return setenvs_from_dict(monkeypatch, {**external_envfile_dict})
+
+    envs = setenvs_from_dict(monkeypatch, {})
+    return mock_env_devel_environment | envs
+
+
+@pytest.fixture
 def app_settings(
+    app_environment: EnvVarsDict,
     sqlalchemy_async_engine: AsyncEngine,
     postgres_host_config: dict[str, str],
     mocked_s3_server_envs: EnvVarsDict,
-    external_envfile_dict: EnvVarsDict,
     datcore_adapter_service_mock: respx.MockRouter,
-    monkeypatch: pytest.MonkeyPatch,
 ) -> ApplicationSettings:
-    s3_settings_dict = {}
-    if external_envfile_dict:
-        s3_settings = S3Settings.create_from_envs(**external_envfile_dict)
-        if s3_settings.S3_ENDPOINT is None:
-            monkeypatch.delenv("S3_ENDPOINT")
-            s3_settings_dict = s3_settings.model_dump(exclude={"S3_ENDPOINT"})
-        else:
-            s3_settings_dict = s3_settings.model_dump()
-    setenvs_from_dict(
-        monkeypatch,
-        {
-            **s3_settings_dict,
-            "STORAGE_TRACING": "null",
-        },
-    )
     test_app_settings = ApplicationSettings.create_from_envs()
     print(f"{test_app_settings.model_dump_json(indent=2)=}")
     return test_app_settings
