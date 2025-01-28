@@ -30,7 +30,7 @@ async def can_update_node_inputs(context):
         permission="read",
     )
     # get current version
-    current_project, _ = await db.get_project(project_uuid)
+    current_project, _ = await db.get_project_dict_and_type(project_uuid)
 
     diffs = jsondiff.diff(current_project, updated_project)
 
