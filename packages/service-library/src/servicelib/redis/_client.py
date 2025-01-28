@@ -25,7 +25,7 @@ from ._constants import (
 _logger = logging.getLogger(__name__)
 
 # SEE https://github.com/ITISFoundation/osparc-simcore/pull/7077
-HEALTHCHECK_TASK_TIMEOUT_S: Final[float] = 3.0
+_HEALTHCHECK_TASK_TIMEOUT_S: Final[float] = 3.0
 
 
 @dataclass
@@ -89,7 +89,7 @@ class RedisClientSDK:
                 # NOTE: wait for the health check task to have started once before we can cancel it
                 await self._health_check_task_started_event.wait()
                 await cancel_wait_task(
-                    self._health_check_task, max_delay=HEALTHCHECK_TASK_TIMEOUT_S
+                    self._health_check_task, max_delay=_HEALTHCHECK_TASK_TIMEOUT_S
                 )
 
             await self._client.aclose(close_connection_pool=True)
