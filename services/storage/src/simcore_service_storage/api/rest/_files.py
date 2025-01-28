@@ -1,7 +1,6 @@
 import asyncio
 import logging
 import socket
-import urllib.parse
 from typing import Annotated, cast
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
@@ -21,9 +20,11 @@ from models_library.generics import Envelope
 from models_library.projects_nodes_io import LocationID, StorageFileID
 from pydantic import AnyUrl, ByteSize, TypeAdapter
 from servicelib.aiohttp import status
+from simcore_service_storage.modules.long_running_tasks import (
+    get_completed_upload_tasks,
+)
 from yarl import URL
 
-from ...constants import UPLOAD_TASKS_KEY
 from ...dsm import get_dsm_provider
 from ...exceptions.errors import FileMetaDataNotFoundError
 from ...models import (
@@ -81,8 +82,6 @@ async def get_file_metadata(
     user_agent: Annotated[str | None, Header()],
     request: Request,
 ):
-    file_id = urllib.parse.unquote(f"{file_id}")
-
     dsm = get_dsm_provider(request.app).get(location_id)
     try:
         data = await dsm.get_file(
@@ -135,7 +134,6 @@ async def download_file(
     query_params: Annotated[FileDownloadQueryParams, Depends()],
     request: Request,
 ) -> Envelope[FileDownloadResponse]:
-    file_id = urllib.parse.unquote(f"{file_id}")
     dsm = get_dsm_provider(request.app).get(location_id)
     link = await dsm.create_file_download_link(
         query_params.user_id, file_id, query_params.link_type
@@ -251,6 +249,7 @@ async def abort_upload_file(
 @router.post(
     "/locations/{location_id}/files/{file_id:path}:complete",
     response_model=Envelope[FileUploadCompleteResponse],
+    status_code=status.HTTP_202_ACCEPTED,
 )
 async def complete_upload_file(
     query_params: Annotated[StorageQueryParamsBase, Depends()],
@@ -261,27 +260,25 @@ async def complete_upload_file(
 ):
     dsm = get_dsm_provider(request.app).get(location_id)
     # NOTE: completing a multipart upload on AWS can take up to several minutes
-    # therefore we wait a bit to see if it completes fast and return a 204
     # if it returns slow we return a 202 - Accepted, the client will have to check later
     # for completeness
     task = asyncio.create_task(
         dsm.complete_file_upload(file_id, query_params.user_id, body.parts),
         name=create_upload_completion_task_name(query_params.user_id, file_id),
     )
-    request.app[UPLOAD_TASKS_KEY][task.get_name()] = task
+    get_completed_upload_tasks(request.app)[task.get_name()] = task
     server_ip = socket.gethostbyname(f"{request.url.hostname}")
-    server_port = request.url.port
+    server_port = f":{request.url.port}" if request.url.port else ""
 
-    route = (
-        request.app.router["is_completed_upload_file"]
-        .url_for(
+    route = URL(
+        request.app.url_path_for(
+            "is_completed_upload_file",
             location_id=f"{location_id}",
-            file_id=urllib.parse.quote(file_id, safe=""),
+            file_id=file_id,
             future_id=task.get_name(),
         )
-        .with_query(user_id=query_params.user_id)
-    )
-    complete_task_state_url = f"{request.url.scheme}://{server_ip}:{server_port}{route}"
+    ).with_query(user_id=query_params.user_id)
+    complete_task_state_url = f"{request.url.scheme}://{server_ip}{server_port}{route}"
     response = FileUploadCompleteResponse(
         links=FileUploadCompleteLinks(
             state=TypeAdapter(AnyUrl).validate_python(complete_task_state_url)
@@ -308,10 +305,10 @@ async def is_completed_upload_file(
     task_name = create_upload_completion_task_name(query_params.user_id, file_id)
     assert task_name == future_id  # nosec
     # first check if the task is in the app
-    if task := request.app[UPLOAD_TASKS_KEY].get(task_name):
+    if task := get_completed_upload_tasks(request.app).get(task_name):
         if task.done():
             new_fmd: FileMetaData = task.result()
-            request.app[UPLOAD_TASKS_KEY].pop(task_name)
+            get_completed_upload_tasks(request.app).pop(task_name)
             response = FileUploadCompleteFutureResponse(
                 state=FileUploadCompleteState.OK, e_tag=new_fmd.entity_tag
             )

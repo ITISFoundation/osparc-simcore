@@ -51,11 +51,11 @@ from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.parametrizations import byte_size_ids
 from pytest_simcore.helpers.s3 import upload_file_part, upload_file_to_presigned_link
 from servicelib.aiohttp import status
-from simcore_service_storage.constants import (
-    S3_UNDEFINED_OR_EXTERNAL_MULTIPART_ID,
-    UPLOAD_TASKS_KEY,
-)
+from simcore_service_storage.constants import S3_UNDEFINED_OR_EXTERNAL_MULTIPART_ID
 from simcore_service_storage.models import FileDownloadResponse, S3BucketName, UploadID
+from simcore_service_storage.modules.long_running_tasks import (
+    get_completed_upload_tasks,
+)
 from sqlalchemy.ext.asyncio import AsyncEngine
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
@@ -638,7 +638,7 @@ async def test_upload_real_file_with_emulated_storage_restart_after_completion_w
     state_url = URL(f"{file_upload_complete_response.links.state}").relative()
 
     # here we do not check now for the state completion. instead we simulate a restart where the tasks disappear
-    initialized_app[UPLOAD_TASKS_KEY].clear()
+    get_completed_upload_tasks(initialized_app).clear()
     # now check for the completion
     completion_etag = None
     async for attempt in AsyncRetrying(
@@ -655,7 +655,7 @@ async def test_upload_real_file_with_emulated_storage_restart_after_completion_w
             ) as ctx,
         ):
             response = await client.post(f"{state_url}")
-            data, error = await assert_status(response, status.HTTP_200_OK)
+            data, error = assert_status(response, status.HTTP_200_OK)
             assert not error
             assert data
             future = FileUploadCompleteFutureResponse.model_validate(data)

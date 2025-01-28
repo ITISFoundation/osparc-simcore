@@ -9,7 +9,6 @@
 import asyncio
 import logging
 import sys
-import urllib.parse
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import AbstractAsyncContextManager, asynccontextmanager
 from pathlib import Path
@@ -50,11 +49,13 @@ from pytest_simcore.helpers.s3 import upload_file_to_presigned_link
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.aiohttp import status
 from simcore_postgres_database.storage_models import file_meta_data, projects, users
-from simcore_service_storage.constants import UPLOAD_TASKS_KEY
 from simcore_service_storage.core.application import create_app
 from simcore_service_storage.core.settings import ApplicationSettings
 from simcore_service_storage.dsm import get_dsm_provider
 from simcore_service_storage.models import S3BucketName
+from simcore_service_storage.modules.long_running_tasks import (
+    get_completed_upload_tasks,
+)
 from simcore_service_storage.modules.s3 import get_s3_client
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 from sqlalchemy.ext.asyncio import AsyncEngine
@@ -255,7 +256,7 @@ async def get_file_meta_data(
             initialized_app,
             "get_file_metadata",
             location_id=f"{location_id}",
-            file_id=urllib.parse.quote(file_id, safe=""),
+            file_id=file_id,
         ).with_query(user_id=user_id)
 
         response = await client.get(f"{url}")
@@ -310,7 +311,7 @@ async def create_upload_file_link_v2(
             initialized_app,
             "delete_file",
             location_id=f"{loc_id}",
-            file_id=urllib.parse.quote(file_id, safe=""),
+            file_id=file_id,
         ).with_query(user_id=u_id)
         clean_tasks.append(client.delete(f"{url}"))
     await asyncio.gather(*clean_tasks)
@@ -494,8 +495,7 @@ async def create_empty_directory(
         state_url = URL(f"{file_upload_complete_response.links.state}").relative()
 
         # check that it finished updating
-
-        initialized_app[UPLOAD_TASKS_KEY].clear()
+        get_completed_upload_tasks(initialized_app).clear()
         # now check for the completion
         async for attempt in AsyncRetrying(
             reraise=True,
@@ -585,7 +585,7 @@ async def delete_directory(
             initialized_app,
             "delete_file",
             location_id=f"{location_id}",
-            file_id=urllib.parse.quote(directory_file_id, safe=""),
+            file_id=directory_file_id,
         ).with_query(user_id=user_id)
 
         response = await client.delete(f"{delete_url}")

@@ -30,7 +30,7 @@ from ..api.rest.utils import set_exception_handlers
 from ..dsm import setup_dsm
 from ..dsm_cleaner import setup_dsm_cleaner
 from ..modules.db.db import setup_db
-from ..modules.long_running_tasks import setup_rest_api_long_running_tasks
+from ..modules.long_running_tasks import setup_rest_api_long_running_tasks_for_uploads
 from ..modules.redis import setup as setup_redis
 from ..modules.s3 import setup_s3
 from .settings import ApplicationSettings
@@ -76,7 +76,7 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
     setup_s3(app)
     setup_client_session(app)
 
-    setup_rest_api_long_running_tasks(app)
+    setup_rest_api_long_running_tasks_for_uploads(app)
     setup_rest_api_routes(app, API_VTAG)
     set_exception_handlers(app)
 
