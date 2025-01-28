@@ -68,7 +68,7 @@ def is_file_entry_valid(file_metadata: FileMetaData | FileMetaDataAtDB) -> bool:
 
 
 def create_upload_completion_task_name(user_id: UserID, file_id: StorageFileID) -> str:
-    return f"upload_complete_task_{user_id}_{urllib.parse.quote(file_id, safe='')}"
+    return f"upload_complete_task_{user_id}_{urllib.parse.quote(file_id.replace('/', '_'), safe='')}"
 
 
 def is_valid_managed_multipart_upload(upload_id: UploadID | None) -> bool:

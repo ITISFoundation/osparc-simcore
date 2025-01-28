@@ -287,7 +287,7 @@ async def complete_upload_file(
 
 @router.post(
     "/locations/{location_id}/files/{file_id:path}:complete/futures/{future_id}",
-    response_model=FileUploadCompleteFutureResponse,
+    response_model=Envelope[FileUploadCompleteFutureResponse],
 )
 async def is_completed_upload_file(
     query_params: Annotated[StorageQueryParamsBase, Depends()],
@@ -315,7 +315,7 @@ async def is_completed_upload_file(
             response = FileUploadCompleteFutureResponse(
                 state=FileUploadCompleteState.NOK
             )
-        return response
+        return Envelope[FileUploadCompleteFutureResponse](data=response)
     # there is no task, either wrong call or storage was restarted
     # we try to get the file to see if it exists in S3
     dsm = get_dsm_provider(request.app).get(location_id)
@@ -323,8 +323,10 @@ async def is_completed_upload_file(
         user_id=query_params.user_id,
         file_id=file_id,
     ):
-        return FileUploadCompleteFutureResponse(
-            state=FileUploadCompleteState.OK, e_tag=fmd.entity_tag
+        return Envelope[FileUploadCompleteFutureResponse](
+            data=FileUploadCompleteFutureResponse(
+                state=FileUploadCompleteState.OK, e_tag=fmd.entity_tag
+            )
         )
     raise HTTPException(
         status.HTTP_404_NOT_FOUND,
