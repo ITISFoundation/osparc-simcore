@@ -33,7 +33,8 @@ qx.Class.define("osparc.store.Pricing", {
     pricingPlansCached: null,
 
     fetchPricingPlans: function() {
-      return osparc.data.Resources.getInstance().getAllPages("pricingPlans")
+      const resourceName = osparc.data.Permissions.getInstance().isAdmin() ? "adminPricingPlans" : "pricingPlans";
+      return osparc.data.Resources.getInstance().getAllPages(resourceName)
         .then(pricingPlansData => {
           const pricingPlans = [];
           pricingPlansData.forEach(pricingPlanData => {
@@ -48,7 +49,7 @@ qx.Class.define("osparc.store.Pricing", {
       const params = {
         data: newPricingPlanData
       };
-      return osparc.data.Resources.fetch("pricingPlans", "post", params)
+      return osparc.data.Resources.fetch("adminPricingPlans", "post", params)
         .then(pricingPlanData => {
           const pricingPlan = this.__addToCache(pricingPlanData);
           this.fireDataEvent("pricingPlansChanged", pricingPlan);
@@ -63,7 +64,7 @@ qx.Class.define("osparc.store.Pricing", {
         },
         data: updateData
       };
-      return osparc.data.Resources.getInstance().fetch("pricingPlans", "update", params)
+      return osparc.data.Resources.getInstance().fetch("adminPricingPlans", "update", params)
         .then(pricingPlanData => {
           return this.__addToCache(pricingPlanData);
         })
@@ -86,7 +87,8 @@ qx.Class.define("osparc.store.Pricing", {
           pricingPlanId,
         }
       };
-      return osparc.data.Resources.fetch("pricingPlans", "getOne", params)
+      const resourceName = osparc.data.Permissions.getInstance().isAdmin() ? "adminPricingPlans" : "pricingPlans";
+      return osparc.data.Resources.fetch(resourceName, "getOne", params)
         .then(pricingPlanData => {
           const pricingPlan = this.__addToCache(pricingPlanData);
           const pricingUnits = pricingPlan.getPricingUnits();
