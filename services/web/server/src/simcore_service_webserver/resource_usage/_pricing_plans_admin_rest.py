@@ -1,6 +1,9 @@
 import functools
 
 from aiohttp import web
+from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
+    PricingPlanGet,
+)
 from models_library.api_schemas_webserver.resource_usage import (
     ConnectServiceToPricingPlanBodyParams,
     CreatePricingPlanBodyParams,
@@ -118,6 +121,36 @@ async def list_pricing_plans_for_admin_user(request: web.Request):
     )
 
 
+def pricing_plan_get_to_admin(pricing_plan_get: PricingPlanGet) -> PricingPlanAdminGet:
+    """
+    Convert a PricingPlanGet object into a PricingPlanAdminGet object.
+    """
+    if pricing_plan_get.pricing_units is None:
+        msg = "Pricing plan units should not be None"
+        raise ValueError(msg)
+
+    return PricingPlanAdminGet(
+        pricing_plan_id=pricing_plan_get.pricing_plan_id,
+        display_name=pricing_plan_get.display_name,
+        description=pricing_plan_get.description,
+        classification=pricing_plan_get.classification,
+        created_at=pricing_plan_get.created_at,
+        pricing_plan_key=pricing_plan_get.pricing_plan_key,
+        pricing_units=[
+            PricingUnitAdminGet(
+                pricing_unit_id=pu.pricing_unit_id,
+                unit_name=pu.unit_name,
+                unit_extra_info=pu.unit_extra_info,
+                specific_info=pu.specific_info,
+                current_cost_per_unit=pu.current_cost_per_unit,
+                default=pu.default,
+            )
+            for pu in pricing_plan_get.pricing_units
+        ],
+        is_active=pricing_plan_get.is_active,
+    )
+
+
 @routes.get(
     f"/{VTAG}/admin/pricing-plans/{{pricing_plan_id}}",
     name="get_pricing_plan_for_admin_user",
@@ -134,30 +167,7 @@ async def get_pricing_plan_for_admin_user(request: web.Request):
         product_name=req_ctx.product_name,
         pricing_plan_id=path_params.pricing_plan_id,
     )
-    if pricing_plan_get.pricing_units is None:
-        msg = "Pricing plan units should not be None"
-        raise ValueError(msg)
-
-    webserver_admin_pricing_plan_get = PricingPlanAdminGet(
-        pricing_plan_id=pricing_plan_get.pricing_plan_id,
-        display_name=pricing_plan_get.display_name,
-        description=pricing_plan_get.description,
-        classification=pricing_plan_get.classification,
-        created_at=pricing_plan_get.created_at,
-        pricing_plan_key=pricing_plan_get.pricing_plan_key,
-        pricing_units=[
-            PricingUnitAdminGet(
-                pricing_unit_id=pricing_unit.pricing_unit_id,
-                unit_name=pricing_unit.unit_name,
-                unit_extra_info=pricing_unit.unit_extra_info,
-                specific_info=pricing_unit.specific_info,
-                current_cost_per_unit=pricing_unit.current_cost_per_unit,
-                default=pricing_unit.default,
-            )
-            for pricing_unit in pricing_plan_get.pricing_units
-        ],
-        is_active=pricing_plan_get.is_active,
-    )
+    webserver_admin_pricing_plan_get = pricing_plan_get_to_admin(pricing_plan_get)
 
     return envelope_json_response(webserver_admin_pricing_plan_get, web.HTTPOk)
 
@@ -184,29 +194,7 @@ async def create_pricing_plan(request: web.Request):
         app=request.app,
         data=_data,
     )
-    if pricing_plan_get.pricing_units is None:
-        raise ValueError
-
-    webserver_admin_pricing_plan_get = PricingPlanAdminGet(
-        pricing_plan_id=pricing_plan_get.pricing_plan_id,
-        display_name=pricing_plan_get.display_name,
-        description=pricing_plan_get.description,
-        classification=pricing_plan_get.classification,
-        created_at=pricing_plan_get.created_at,
-        pricing_plan_key=pricing_plan_get.pricing_plan_key,
-        pricing_units=[
-            PricingUnitAdminGet(
-                pricing_unit_id=pricing_unit.pricing_unit_id,
-                unit_name=pricing_unit.unit_name,
-                unit_extra_info=pricing_unit.unit_extra_info,
-                specific_info=pricing_unit.specific_info,
-                current_cost_per_unit=pricing_unit.current_cost_per_unit,
-                default=pricing_unit.default,
-            )
-            for pricing_unit in pricing_plan_get.pricing_units
-        ],
-        is_active=pricing_plan_get.is_active,
-    )
+    webserver_admin_pricing_plan_get = pricing_plan_get_to_admin(pricing_plan_get)
 
     return envelope_json_response(webserver_admin_pricing_plan_get, web.HTTPOk)
 
@@ -234,29 +222,7 @@ async def update_pricing_plan(request: web.Request):
         product_name=req_ctx.product_name,
         data=_data,
     )
-    if pricing_plan_get.pricing_units is None:
-        raise ValueError
-
-    webserver_admin_pricing_plan_get = PricingPlanAdminGet(
-        pricing_plan_id=pricing_plan_get.pricing_plan_id,
-        display_name=pricing_plan_get.display_name,
-        description=pricing_plan_get.description,
-        classification=pricing_plan_get.classification,
-        created_at=pricing_plan_get.created_at,
-        pricing_plan_key=pricing_plan_get.pricing_plan_key,
-        pricing_units=[
-            PricingUnitAdminGet(
-                pricing_unit_id=pricing_unit.pricing_unit_id,
-                unit_name=pricing_unit.unit_name,
-                unit_extra_info=pricing_unit.unit_extra_info,
-                specific_info=pricing_unit.specific_info,
-                current_cost_per_unit=pricing_unit.current_cost_per_unit,
-                default=pricing_unit.default,
-            )
-            for pricing_unit in pricing_plan_get.pricing_units
-        ],
-        is_active=pricing_plan_get.is_active,
-    )
+    webserver_admin_pricing_plan_get = pricing_plan_get_to_admin(pricing_plan_get)
 
     return envelope_json_response(webserver_admin_pricing_plan_get, web.HTTPOk)
 
