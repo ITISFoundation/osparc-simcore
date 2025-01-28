@@ -124,14 +124,19 @@ from ..users.preferences_api import (
 from ..wallets import api as wallets_api
 from ..wallets.errors import WalletNotEnoughCreditsError
 from ..workspaces import _workspaces_repository as workspaces_db
-from . import _crud_api_delete, _nodes_api, _projects_db, _projects_nodes_repository
+from . import (
+    _crud_api_delete,
+    _nodes_api,
+    _projects_db,
+    _projects_nodes_repository,
+    _wallets_api,
+)
 from ._access_rights_api import (
     check_user_project_permission,
     has_user_project_access_rights,
 )
 from ._db_utils import PermissionStr
 from ._nodes_utils import set_reservation_same_as_limit, validate_new_service_resources
-from ._wallets_api import connect_wallet_to_project, get_project_wallet
 from .db import APP_PROJECT_DBAPI, ProjectDBAPI
 from .exceptions import (
     ClustersKeeperNotAvailableError,
@@ -148,7 +153,7 @@ from .exceptions import (
     ProjectStartsTooManyDynamicNodesError,
     ProjectTooManyProjectOpenedError,
 )
-from .models import ProjectDict, ProjectPatchExtended
+from .models import ProjectDict, ProjectPatchInternalExtended
 from .settings import ProjectsSettings, get_plugin_settings
 from .utils import extract_dns_without_default_port
 
@@ -172,14 +177,13 @@ async def get_project_for_user(
     user_id: UserID,
     *,
     include_state: bool | None = False,
+    include_trashed_by_primary_gid: bool = False,
     check_permissions: str = "read",
 ) -> ProjectDict:
-    """Returns a VALID project accessible to user
+    """
+    Raises:
+        ProjectNotFoundError: _description_
 
-    :raises ProjectNotFoundError: if no match found
-    :
-    :return: schema-compliant project data
-    :rtype: Dict
     """
     db = ProjectDBAPI.get_from_app_context(app)
 
@@ -193,7 +197,7 @@ async def get_project_for_user(
     )
     workspace_is_private = user_project_access.workspace_id is None
 
-    project, project_type = await db.get_project(
+    project, project_type = await db.get_project_dict_and_type(
         project_uuid,
     )
 
@@ -208,6 +212,17 @@ async def get_project_for_user(
     if include_state:
         project = await add_project_states_for_user(
             user_id, project, project_type is ProjectType.TEMPLATE, app
+        )
+
+    # adds `trashed_by_primary_gid`
+    if (
+        include_trashed_by_primary_gid
+        and project.get("trashed_by", project.get("trashedBy")) is not None
+    ):
+        project.update(
+            trashedByPrimaryGid=await _projects_db.get_trashed_by_primary_gid(
+                app, projects_uuid=project["uuid"]
+            )
         )
 
     if project["workspaceId"] is not None:
@@ -254,7 +269,7 @@ async def patch_project(
     *,
     user_id: UserID,
     project_uuid: ProjectID,
-    project_patch: ProjectPatch | ProjectPatchExtended,
+    project_patch: ProjectPatch | ProjectPatchInternalExtended,
     product_name: ProductName,
 ):
     patch_project_data = project_patch.to_domain_model()
@@ -509,7 +524,7 @@ async def _check_project_node_has_all_required_inputs(
         permission="read",
     )
 
-    project_dict, _ = await db.get_project(f"{project_uuid}")
+    project_dict, _ = await db.get_project_dict_and_type(f"{project_uuid}")
 
     nodes_map: dict[NodeID, Node] = {
         NodeID(k): Node(**v) for k, v in project_dict["workbench"].items()
@@ -625,7 +640,7 @@ async def _start_dynamic_service(  # noqa: C901
             and app_settings.WEBSERVER_CREDIT_COMPUTATION_ENABLED
         ):
             # Deal with Wallet
-            project_wallet = await get_project_wallet(
+            project_wallet = await _wallets_api.get_project_wallet(
                 request.app, project_id=project_uuid
             )
             if project_wallet is None:
@@ -640,7 +655,7 @@ async def _start_dynamic_service(  # noqa: C901
                 project_wallet_id = TypeAdapter(WalletID).validate_python(
                     user_default_wallet_preference.value
                 )
-                await connect_wallet_to_project(
+                await _wallets_api.connect_wallet_to_project(
                     request.app,
                     product_name=product_name,
                     project_id=project_uuid,
@@ -1030,7 +1045,7 @@ async def patch_project_node(
 
     # 2. If patching service key or version make sure it's valid
     if _node_patch_exclude_unset.get("key") or _node_patch_exclude_unset.get("version"):
-        _project, _ = await _projects_repository.get_project(
+        _project, _ = await _projects_repository.get_project_dict_and_type(
             project_uuid=f"{project_id}"
         )
         _project_node_data = _project["workbench"][f"{node_id}"]

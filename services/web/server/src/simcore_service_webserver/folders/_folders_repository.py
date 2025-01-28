@@ -16,7 +16,7 @@ from models_library.folders import (
     FolderID,
     FolderQuery,
     FolderScope,
-    UserFolderAccessRightsDB,
+    UserFolder,
 )
 from models_library.groups import GroupID
 from models_library.products import ProductName
@@ -28,7 +28,9 @@ from pydantic import NonNegativeInt
 from simcore_postgres_database.models.folders_v2 import folders_v2
 from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.models.projects_to_folders import projects_to_folders
+from simcore_postgres_database.models.users import users
 from simcore_postgres_database.utils_repos import (
+    get_columns_from_db_model,
     pass_or_acquire_connection,
     transaction_context,
 )
@@ -48,17 +50,7 @@ _logger = logging.getLogger(__name__)
 _unset: Final = UnSet()
 
 
-_SELECTION_ARGS = (
-    folders_v2.c.folder_id,
-    folders_v2.c.name,
-    folders_v2.c.parent_folder_id,
-    folders_v2.c.created_by_gid,
-    folders_v2.c.created,
-    folders_v2.c.modified,
-    folders_v2.c.trashed,
-    folders_v2.c.user_id,
-    folders_v2.c.workspace_id,
-)
+_FOLDER_DB_MODEL_COLS = get_columns_from_db_model(folders_v2, FolderDB)
 
 
 async def create(
@@ -89,7 +81,7 @@ async def create(
                 created=func.now(),
                 modified=func.now(),
             )
-            .returning(*_SELECTION_ARGS)
+            .returning(*_FOLDER_DB_MODEL_COLS)
         )
         row = await result.first()
         return FolderDB.model_validate(row)
@@ -107,7 +99,7 @@ def _create_private_workspace_query(
         )
         return (
             select(
-                *_SELECTION_ARGS,
+                *_FOLDER_DB_MODEL_COLS,
                 func.json_build_object(
                     "read",
                     sa.text("true"),
@@ -144,7 +136,8 @@ def _create_shared_workspace_query(
 
         shared_workspace_query = (
             select(
-                *_SELECTION_ARGS, workspace_access_rights_subquery.c.my_access_rights
+                *_FOLDER_DB_MODEL_COLS,
+                workspace_access_rights_subquery.c.my_access_rights,
             )
             .select_from(
                 folders_v2.join(
@@ -187,7 +180,7 @@ async def list_(  # pylint: disable=too-many-arguments,too-many-branches
     limit: int,
     # order
     order_by: OrderBy,
-) -> tuple[int, list[UserFolderAccessRightsDB]]:
+) -> tuple[int, list[UserFolder]]:
     """
     folder_query - Used to filter in which folder we want to list folders.
     trashed - If set to true, it returns folders **explicitly** trashed, if false then non-trashed folders.
@@ -262,10 +255,17 @@ async def list_(  # pylint: disable=too-many-arguments,too-many-branches
         total_count = await conn.scalar(count_query)
 
         result = await conn.stream(list_query)
-        folders: list[UserFolderAccessRightsDB] = [
-            UserFolderAccessRightsDB.model_validate(row) async for row in result
+        folders: list[UserFolder] = [
+            UserFolder.model_validate(row) async for row in result
         ]
         return cast(int, total_count), folders
+
+
+def _create_base_select_query(folder_id: FolderID, product_name: ProductName) -> Select:
+    return select(*_FOLDER_DB_MODEL_COLS,).where(
+        (folders_v2.c.product_name == product_name)
+        & (folders_v2.c.folder_id == folder_id)
+    )
 
 
 async def get(
@@ -275,18 +275,11 @@ async def get(
     folder_id: FolderID,
     product_name: ProductName,
 ) -> FolderDB:
-    query = (
-        select(*_SELECTION_ARGS)
-        .select_from(folders_v2)
-        .where(
-            (folders_v2.c.product_name == product_name)
-            & (folders_v2.c.folder_id == folder_id)
-        )
-    )
+    query = _create_base_select_query(folder_id=folder_id, product_name=product_name)
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-        result = await conn.stream(query)
-        row = await result.first()
+        result = await conn.execute(query)
+        row = result.first()
         if row is None:
             raise FolderAccessForbiddenError(
                 reason=f"Folder {folder_id} does not exist.",
@@ -307,16 +300,10 @@ async def get_for_user_or_workspace(
         user_id is not None and workspace_id is not None
     ), "Both user_id and workspace_id cannot be provided at the same time. Please provide only one."
 
-    query = (
-        select(*_SELECTION_ARGS)
-        .select_from(folders_v2)
-        .where(
-            (folders_v2.c.product_name == product_name)
-            & (folders_v2.c.folder_id == folder_id)
-        )
-    )
+    query = _create_base_select_query(folder_id=folder_id, product_name=product_name)
 
     if user_id:
+        # ownership
         query = query.where(folders_v2.c.user_id == user_id)
     else:
         query = query.where(folders_v2.c.workspace_id == workspace_id)
@@ -364,7 +351,7 @@ async def update(
     query = (
         (folders_v2.update().values(modified=func.now(), **updated))
         .where(folders_v2.c.product_name == product_name)
-        .returning(*_SELECTION_ARGS)
+        .returning(*_FOLDER_DB_MODEL_COLS)
     )
 
     if isinstance(folders_id_or_ids, set):
@@ -581,4 +568,53 @@ async def get_folders_recursively(
         # Step 4: Execute the query to get all descendants
         final_query = select(folder_hierarchy_cte)
         result = await conn.stream(final_query)
-        return [FolderID(row[0]) async for row in result]
+        return cast(list[FolderID], [row.folder_id async for row in result])
+
+
+def _select_trashed_by_primary_gid_query():
+    return sa.select(users.c.primary_gid.label("trashed_by_primary_gid")).select_from(
+        folders_v2.outerjoin(users, folders_v2.c.trashed_by == users.c.id),
+    )
+
+
+async def get_trashed_by_primary_gid(
+    app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
+    folder_id: FolderID,
+) -> GroupID | None:
+    query = _select_trashed_by_primary_gid_query().where(
+        folders_v2.c.folder_id == folder_id
+    )
+
+    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
+        result = await conn.execute(query)
+        row = result.first()
+        return row.trashed_by_primary_gid if row else None
+
+
+async def batch_get_trashed_by_primary_gid(
+    app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
+    folders_ids: list[FolderID],
+) -> list[GroupID | None]:
+    if not folders_ids:
+        return []
+
+    query = (
+        _select_trashed_by_primary_gid_query().where(
+            folders_v2.c.folder_id.in_(folders_ids)
+        )
+    ).order_by(
+        # Preserves the order of folders_ids
+        # SEE https://docs.sqlalchemy.org/en/20/core/sqlelement.html#sqlalchemy.sql.expression.case
+        sa.case(
+            {folder_id: index for index, folder_id in enumerate(folders_ids)},
+            value=folders_v2.c.folder_id,
+        )
+    )
+
+    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
+        result = await conn.stream(query)
+        return [row.trashed_by_primary_gid async for row in result]

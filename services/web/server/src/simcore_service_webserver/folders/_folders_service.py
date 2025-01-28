@@ -4,8 +4,7 @@ import logging
 
 from aiohttp import web
 from models_library.access_rights import AccessRights
-from models_library.api_schemas_webserver.folders_v2 import FolderGet, FolderGetPage
-from models_library.folders import FolderID, FolderQuery, FolderScope
+from models_library.folders import FolderID, FolderQuery, FolderScope, FolderTuple
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.rest_ordering import OrderBy
@@ -23,7 +22,7 @@ from ..workspaces.errors import (
     WorkspaceAccessForbiddenError,
     WorkspaceFolderInconsistencyError,
 )
-from . import _folders_repository as folders_db
+from . import _folders_repository
 from .errors import FolderValueNotPermittedError
 
 _logger = logging.getLogger(__name__)
@@ -36,7 +35,7 @@ async def create_folder(
     parent_folder_id: FolderID | None,
     product_name: ProductName,
     workspace_id: WorkspaceID | None,
-) -> FolderGet:
+) -> FolderTuple:
     user = await get_user(app, user_id=user_id)
 
     workspace_is_private = True
@@ -54,7 +53,7 @@ async def create_folder(
 
         # Check parent_folder_id lives in the workspace
         if parent_folder_id:
-            parent_folder_db = await folders_db.get(
+            parent_folder_db = await _folders_repository.get(
                 app, folder_id=parent_folder_id, product_name=product_name
             )
             if parent_folder_db.workspace_id != workspace_id:
@@ -64,7 +63,7 @@ async def create_folder(
 
     if parent_folder_id:
         # Check user has access to the parent folder
-        parent_folder_db = await folders_db.get_for_user_or_workspace(
+        parent_folder_db = await _folders_repository.get_for_user_or_workspace(
             app,
             folder_id=parent_folder_id,
             product_name=product_name,
@@ -77,7 +76,7 @@ async def create_folder(
                 reason=f"Folder {parent_folder_id} does not exists in workspace {workspace_id}."
             )
 
-    folder_db = await folders_db.create(
+    folder_db = await _folders_repository.create(
         app,
         product_name=product_name,
         created_by_gid=user["primary_gid"],
@@ -86,15 +85,12 @@ async def create_folder(
         user_id=user_id if workspace_is_private else None,
         workspace_id=workspace_id,
     )
-    return FolderGet(
-        folder_id=folder_db.folder_id,
-        parent_folder_id=folder_db.parent_folder_id,
-        name=folder_db.name,
-        created_at=folder_db.created,
-        modified_at=folder_db.modified,
-        trashed_at=folder_db.trashed,
-        owner=folder_db.created_by_gid,
-        workspace_id=workspace_id,
+
+    assert folder_db.trashed_by is None  # nosec
+
+    return FolderTuple(
+        folder_db=folder_db,
+        trashed_by_primary_gid=None,  # cannot be trashed upon creation
         my_access_rights=user_folder_access_rights,
     )
 
@@ -104,8 +100,8 @@ async def get_folder(
     user_id: UserID,
     folder_id: FolderID,
     product_name: ProductName,
-) -> FolderGet:
-    folder_db = await folders_db.get(
+) -> FolderTuple:
+    folder_db = await _folders_repository.get(
         app, folder_id=folder_id, product_name=product_name
     )
 
@@ -122,22 +118,25 @@ async def get_folder(
         workspace_is_private = False
         user_folder_access_rights = user_workspace_access_rights.my_access_rights
 
-    folder_db = await folders_db.get_for_user_or_workspace(
+    folder_db = await _folders_repository.get_for_user_or_workspace(
         app,
         folder_id=folder_id,
         product_name=product_name,
         user_id=user_id if workspace_is_private else None,
         workspace_id=folder_db.workspace_id,
     )
-    return FolderGet(
-        folder_id=folder_db.folder_id,
-        parent_folder_id=folder_db.parent_folder_id,
-        name=folder_db.name,
-        created_at=folder_db.created,
-        modified_at=folder_db.modified,
-        trashed_at=folder_db.trashed,
-        owner=folder_db.created_by_gid,
-        workspace_id=folder_db.workspace_id,
+
+    trashed_by_primary_gid = (
+        await _folders_repository.get_trashed_by_primary_gid(
+            app, folder_id=folder_db.folder_id
+        )
+        if folder_db.trashed_by
+        else None
+    )
+
+    return FolderTuple(
+        folder_db=folder_db,
+        trashed_by_primary_gid=trashed_by_primary_gid,
         my_access_rights=user_folder_access_rights,
     )
 
@@ -152,10 +151,10 @@ async def list_folders(
     offset: NonNegativeInt,
     limit: int,
     order_by: OrderBy,
-) -> FolderGetPage:
+) -> tuple[list[FolderTuple], int]:
     # NOTE: Folder access rights for listing are checked within the listing DB function.
 
-    total_count, folders = await folders_db.list_(
+    total_count, folders = await _folders_repository.list_(
         app,
         product_name=product_name,
         user_id=user_id,
@@ -177,22 +176,25 @@ async def list_folders(
         limit=limit,
         order_by=order_by,
     )
-    return FolderGetPage(
-        items=[
-            FolderGet(
-                folder_id=folder.folder_id,
-                parent_folder_id=folder.parent_folder_id,
-                name=folder.name,
-                created_at=folder.created,
-                modified_at=folder.modified,
-                trashed_at=folder.trashed,
-                owner=folder.created_by_gid,
-                workspace_id=folder.workspace_id,
+
+    _trashed_by_primary_gid_values = (
+        await _folders_repository.batch_get_trashed_by_primary_gid(
+            app, folders_ids=[f.folder_id for f in folders]
+        )
+    )
+
+    return (
+        [
+            FolderTuple(
+                folder_db=folder,
+                trashed_by_primary_gid=trashed_by_primary_gid,
                 my_access_rights=folder.my_access_rights,
             )
-            for folder in folders
+            for folder, trashed_by_primary_gid in zip(
+                folders, _trashed_by_primary_gid_values, strict=True
+            )
         ],
-        total=total_count,
+        total_count,
     )
 
 
@@ -206,10 +208,10 @@ async def list_folders_full_depth(
     offset: NonNegativeInt,
     limit: int,
     order_by: OrderBy,
-) -> FolderGetPage:
+) -> tuple[list[FolderTuple], int]:
     # NOTE: Folder access rights for listing are checked within the listing DB function.
 
-    total_count, folders = await folders_db.list_(
+    total_count, folders = await _folders_repository.list_(
         app,
         product_name=product_name,
         user_id=user_id,
@@ -221,22 +223,24 @@ async def list_folders_full_depth(
         limit=limit,
         order_by=order_by,
     )
-    return FolderGetPage(
-        items=[
-            FolderGet(
-                folder_id=folder.folder_id,
-                parent_folder_id=folder.parent_folder_id,
-                name=folder.name,
-                created_at=folder.created,
-                modified_at=folder.modified,
-                trashed_at=folder.trashed,
-                owner=folder.created_by_gid,
-                workspace_id=folder.workspace_id,
+    _trashed_by_primary_gid_values = (
+        await _folders_repository.batch_get_trashed_by_primary_gid(
+            app, folders_ids=[f.folder_id for f in folders]
+        )
+    )
+
+    return (
+        [
+            FolderTuple(
+                folder_db=folder,
+                trashed_by_primary_gid=trashed_by_primary_gid,
                 my_access_rights=folder.my_access_rights,
             )
-            for folder in folders
+            for folder, trashed_by_primary_gid in zip(
+                folders, _trashed_by_primary_gid_values, strict=True
+            )
         ],
-        total=total_count,
+        total_count,
     )
 
 
@@ -248,8 +252,8 @@ async def update_folder(
     name: str,
     parent_folder_id: FolderID | None,
     product_name: ProductName,
-) -> FolderGet:
-    folder_db = await folders_db.get(
+) -> FolderTuple:
+    folder_db = await _folders_repository.get(
         app, folder_id=folder_id, product_name=product_name
     )
 
@@ -267,7 +271,7 @@ async def update_folder(
         user_folder_access_rights = user_workspace_access_rights.my_access_rights
 
     # Check user has access to the folder
-    await folders_db.get_for_user_or_workspace(
+    await _folders_repository.get_for_user_or_workspace(
         app,
         folder_id=folder_id,
         product_name=product_name,
@@ -277,7 +281,7 @@ async def update_folder(
 
     if folder_db.parent_folder_id != parent_folder_id and parent_folder_id is not None:
         # Check user has access to the parent folder
-        await folders_db.get_for_user_or_workspace(
+        await _folders_repository.get_for_user_or_workspace(
             app,
             folder_id=parent_folder_id,
             product_name=product_name,
@@ -285,7 +289,7 @@ async def update_folder(
             workspace_id=folder_db.workspace_id,
         )
         # Do not allow to move to a child folder id
-        _child_folders = await folders_db.get_folders_recursively(
+        _child_folders = await _folders_repository.get_folders_recursively(
             app, folder_id=folder_id, product_name=product_name
         )
         if parent_folder_id in _child_folders:
@@ -293,22 +297,25 @@ async def update_folder(
                 reason="Parent folder id should not be one of children"
             )
 
-    folder_db = await folders_db.update(
+    folder_db = await _folders_repository.update(
         app,
         folders_id_or_ids=folder_id,
         name=name,
         parent_folder_id=parent_folder_id,
         product_name=product_name,
     )
-    return FolderGet(
-        folder_id=folder_db.folder_id,
-        parent_folder_id=folder_db.parent_folder_id,
-        name=folder_db.name,
-        created_at=folder_db.created,
-        modified_at=folder_db.modified,
-        trashed_at=folder_db.trashed,
-        owner=folder_db.created_by_gid,
-        workspace_id=folder_db.workspace_id,
+
+    trashed_by_primary_gid = (
+        await _folders_repository.get_trashed_by_primary_gid(
+            app, folder_id=folder_db.folder_id
+        )
+        if folder_db.trashed_by
+        else None
+    )
+
+    return FolderTuple(
+        folder_db=folder_db,
+        trashed_by_primary_gid=trashed_by_primary_gid,
         my_access_rights=user_folder_access_rights,
     )
 
@@ -319,7 +326,7 @@ async def delete_folder(
     folder_id: FolderID,
     product_name: ProductName,
 ) -> None:
-    folder_db = await folders_db.get(
+    folder_db = await _folders_repository.get(
         app, folder_id=folder_id, product_name=product_name
     )
 
@@ -335,7 +342,7 @@ async def delete_folder(
         workspace_is_private = False
 
     # Check user has access to the folder
-    await folders_db.get_for_user_or_workspace(
+    await _folders_repository.get_for_user_or_workspace(
         app,
         folder_id=folder_id,
         product_name=product_name,
@@ -347,7 +354,7 @@ async def delete_folder(
     # 1.1 Delete all child projects that I am an owner
     project_id_list: list[
         ProjectID
-    ] = await folders_db.get_projects_recursively_only_if_user_is_owner(
+    ] = await _folders_repository.get_projects_recursively_only_if_user_is_owner(
         app,
         folder_id=folder_id,
         private_workspace_user_id_or_none=user_id if workspace_is_private else None,
@@ -369,6 +376,6 @@ async def delete_folder(
         )
 
     # 1.2 Delete all child folders
-    await folders_db.delete_recursively(
+    await _folders_repository.delete_recursively(
         app, folder_id=folder_id, product_name=product_name
     )

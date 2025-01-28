@@ -15,7 +15,7 @@ from ..dynamic_scheduler import api as dynamic_scheduler_api
 from . import projects_service
 from ._access_rights_api import check_user_project_permission
 from .exceptions import ProjectRunningConflictError
-from .models import ProjectPatchExtended
+from .models import ProjectPatchInternalExtended
 
 _logger = logging.getLogger(__name__)
 
@@ -94,8 +94,10 @@ async def trash_project(
         user_id=user_id,
         product_name=product_name,
         project_uuid=project_id,
-        project_patch=ProjectPatchExtended(
-            trashed_at=arrow.utcnow().datetime, trashed_explicitly=explicit
+        project_patch=ProjectPatchInternalExtended(
+            trashed_at=arrow.utcnow().datetime,
+            trashed_explicitly=explicit,
+            trashed_by=user_id,
         ),
     )
 
@@ -113,5 +115,7 @@ async def untrash_project(
         user_id=user_id,
         product_name=product_name,
         project_uuid=project_id,
-        project_patch=ProjectPatchExtended(trashed_at=None, trashed_explicitly=False),
+        project_patch=ProjectPatchInternalExtended(
+            trashed_at=None, trashed_explicitly=False, trashed_by=None
+        ),
     )
