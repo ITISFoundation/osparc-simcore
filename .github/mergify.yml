@@ -19,11 +19,10 @@ queue_rules:
       - check-success=integration-tests
       - check-success=system-tests
 
-
 pull_request_rules:
   - name: update branch if behind master
     conditions:
-      - queue-name=default
+      - queue-name=default # only run if already queued
       - label=🤖-automerge
       - label!=🤖-do-not-merge
       - base=master
@@ -32,7 +31,7 @@ pull_request_rules:
 
   - name: retry CI on fails (used for flaky tests)
     conditions:
-      - queue-name=default
+      - queue-name=default # only run if already queued
       - label=🤖-automerge
       - label!=🤖-do-not-merge
       - base=master
