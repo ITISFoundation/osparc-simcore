@@ -1,7 +1,7 @@
 """remove workbench column
 
 Revision ID: 2a340e8c8e9d
-Revises: 5f88b513cd4c
+Revises: 1bc517536e0a
 Create Date: 2025-01-29 13:35:59.688366+00:00
 
 """
@@ -11,7 +11,7 @@ from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision = "2a340e8c8e9d"
-down_revision = "5f88b513cd4c"
+down_revision = "1bc517536e0a"
 branch_labels = None
 depends_on = None
 
