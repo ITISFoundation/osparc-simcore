@@ -264,7 +264,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         case "app":
           this.__slideshowView.startSlides();
           break;
-        // OM
+        case "workbench":
+        case "standalone":
         default:
           this.__workbenchView.openFirstNode();
           break;
@@ -730,17 +731,19 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
     __applyPageContext: function(newCtxt) {
       switch (newCtxt) {
-        case "workbench":
-          this.__viewsStack.setSelection([this.__workbenchView]);
-          if (this.getStudy() && this.getStudy().getUi()) {
-            this.__workbenchView.nodeSelected(this.getStudy().getUi().getCurrentNodeId());
-          }
-          break;
         case "guided":
         case "app":
           this.__viewsStack.setSelection([this.__slideshowView]);
           if (this.getStudy() && this.getStudy().getUi()) {
             this.__slideshowView.startSlides();
+          }
+          break;
+        case "workbench":
+        case "standalone":
+        default:
+          this.__viewsStack.setSelection([this.__workbenchView]);
+          if (this.getStudy() && this.getStudy().getUi()) {
+            this.__workbenchView.nodeSelected(this.getStudy().getUi().getCurrentNodeId());
           }
           break;
       }
