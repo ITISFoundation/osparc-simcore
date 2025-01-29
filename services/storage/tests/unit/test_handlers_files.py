@@ -1123,7 +1123,7 @@ async def test_download_file_access_rights(
     response = await client.get(f"{download_url}")
     data, error = assert_status(response, status.HTTP_403_FORBIDDEN, None)
     assert data is None
-    assert "Insufficient access rights" in error["message"]
+    assert "Insufficient access rights" in error["errors"][0]
 
 
 @pytest.mark.parametrize(
