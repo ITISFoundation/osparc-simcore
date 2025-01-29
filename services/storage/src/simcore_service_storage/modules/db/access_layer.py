@@ -315,7 +315,6 @@ async def get_file_access_rights(
             parent, _, _ = file_id.split("/", maxsplit=2)
 
             if parent == "api":
-                # FIXME: this is wrong, all api data must be registered and OWNED
                 # ownership still not defined, so we assume it is user_id
                 return AccessRights.all()
 

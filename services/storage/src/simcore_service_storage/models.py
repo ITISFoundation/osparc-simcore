@@ -220,8 +220,6 @@ class FileUploadQueryParams(StorageQueryParamsBase):
         """
         return self.file_size is None and self.is_directory is False
 
-    # model_config = ConfigDict(use_enum_value=True)
-
 
 class FileUploadResponseV1(BaseModel):
     link: AnyUrl
