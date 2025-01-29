@@ -17,7 +17,7 @@ from servicelib.aiohttp.typing_extension import Handler
 
 from .._meta import API_VTAG
 from ..login.decorators import login_required
-from ..resource_usage import api as rut_api
+from ..resource_usage import service as rut_api
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
 from . import projects_service

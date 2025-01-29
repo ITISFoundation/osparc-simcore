@@ -20,7 +20,7 @@ from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import PositiveInt
 from servicelib.rabbitmq import RabbitMQClient
-from sqlalchemy.ext.asyncio import AsyncEngine
+from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
 from .modules.db import credit_transactions_db, service_runs_db
 
@@ -33,12 +33,15 @@ def make_negative(n):
 
 async def sum_credit_transactions_and_publish_to_rabbitmq(
     db_engine: AsyncEngine,
+    connection: AsyncConnection | None = None,
+    *,
     rabbitmq_client: RabbitMQClient,
     product_name: ProductName,
     wallet_id: WalletID,
 ) -> WalletTotalCredits:
     wallet_total_credits = await credit_transactions_db.sum_wallet_credits(
         db_engine,
+        connection=connection,
         product_name=product_name,
         wallet_id=wallet_id,
     )
