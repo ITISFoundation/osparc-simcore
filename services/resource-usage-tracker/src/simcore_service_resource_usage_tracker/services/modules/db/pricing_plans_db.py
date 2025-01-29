@@ -1,4 +1,5 @@
 import logging
+from typing import cast
 
 import sqlalchemy as sa
 from models_library.products import ProductName
@@ -181,9 +182,13 @@ async def list_pricing_plans_by_product(
     connection: AsyncConnection | None = None,
     *,
     product_name: ProductName,
-) -> list[PricingPlansDB]:
+    exclude_inactive: bool,
+    # pagination
+    offset: int,
+    limit: int,
+) -> tuple[int, list[PricingPlansDB]]:
     async with transaction_context(engine, connection) as conn:
-        select_stmt = sa.select(
+        base_query = sa.select(
             resource_tracker_pricing_plans.c.pricing_plan_id,
             resource_tracker_pricing_plans.c.display_name,
             resource_tracker_pricing_plans.c.description,
@@ -192,9 +197,27 @@ async def list_pricing_plans_by_product(
             resource_tracker_pricing_plans.c.created,
             resource_tracker_pricing_plans.c.pricing_plan_key,
         ).where(resource_tracker_pricing_plans.c.product_name == product_name)
-        result = await conn.execute(select_stmt)
 
-    return [PricingPlansDB.model_validate(row) for row in result.fetchall()]
+        if exclude_inactive is True:
+            base_query = base_query.where(
+                resource_tracker_pricing_plans.c.is_active.is_(True)
+            )
+
+        # Select total count from base_query
+        subquery = base_query.subquery()
+        count_query = sa.select(sa.func.count()).select_from(subquery)
+
+        # Default ordering
+        list_query = base_query.order_by(resource_tracker_pricing_plans.c.created.asc())
+
+        total_count = await conn.scalar(count_query)
+        if total_count is None:
+            total_count = 0
+
+        result = await conn.execute(list_query.offset(offset).limit(limit))
+
+    items = [PricingPlansDB.model_validate(row) for row in result.fetchall()]
+    return cast(int, total_count), items
 
 
 async def create_pricing_plan(

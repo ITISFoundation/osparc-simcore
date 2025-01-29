@@ -1,7 +1,8 @@
 from datetime import datetime
 from decimal import Decimal
+from typing import NamedTuple
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, PositiveInt
 
 from ..resource_tracker import (
     HardwareInfo,
@@ -74,6 +75,11 @@ class PricingPlanGet(BaseModel):
             ]
         }
     )
+
+
+class PricingPlanPage(NamedTuple):
+    items: list[PricingPlanGet]
+    total: PositiveInt
 
 
 class PricingPlanToServiceGet(BaseModel):

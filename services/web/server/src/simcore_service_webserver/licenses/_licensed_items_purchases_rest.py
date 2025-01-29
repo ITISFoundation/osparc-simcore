@@ -21,8 +21,8 @@ from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
 from ..wallets._handlers import WalletsPathParams
 from . import _licensed_items_purchases_service
-from ._exceptions_handlers import handle_plugin_requests_exceptions
-from ._models import (
+from ._common.exceptions_handlers import handle_plugin_requests_exceptions
+from ._common.models import (
     LicensedItemsPurchasesListQueryParams,
     LicensedItemsPurchasesPathParams,
     LicensedItemsRequestContext,

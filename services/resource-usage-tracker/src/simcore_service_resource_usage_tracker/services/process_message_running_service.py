@@ -158,7 +158,10 @@ async def _process_start_event(
 
         # Publish wallet total credits to RabbitMQ
         await sum_credit_transactions_and_publish_to_rabbitmq(
-            db_engine, rabbitmq_client, msg.product_name, msg.wallet_id
+            db_engine,
+            rabbitmq_client=rabbitmq_client,
+            product_name=msg.product_name,
+            wallet_id=msg.wallet_id,
         )
 
 
@@ -216,9 +219,9 @@ async def _process_heartbeat_event(
         # Publish wallet total credits to RabbitMQ
         wallet_total_credits = await sum_credit_transactions_and_publish_to_rabbitmq(
             db_engine,
-            rabbitmq_client,
-            running_service.product_name,
-            running_service.wallet_id,
+            rabbitmq_client=rabbitmq_client,
+            product_name=running_service.product_name,
+            wallet_id=running_service.wallet_id,
         )
         if wallet_total_credits.available_osparc_credits < CreditsLimit.OUT_OF_CREDITS:
             await publish_to_rabbitmq_wallet_credits_limit_reached(
@@ -319,9 +322,9 @@ async def _process_stop_event(
         # Publish wallet total credits to RabbitMQ
         await sum_credit_transactions_and_publish_to_rabbitmq(
             db_engine,
-            rabbitmq_client,
-            running_service.product_name,
-            running_service.wallet_id,
+            rabbitmq_client=rabbitmq_client,
+            product_name=running_service.product_name,
+            wallet_id=running_service.wallet_id,
         )
 
 
