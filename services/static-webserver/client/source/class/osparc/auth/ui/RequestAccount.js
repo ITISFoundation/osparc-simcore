@@ -90,6 +90,9 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
           break;
         case "s4lacad":
         case "s4ldesktopacad":
+          this._form.add(organization, this.tr("University"), null, "university");
+          organization.setRequired(true);
+          break;
         case "tiplite":
           this._form.add(organization, this.tr("University"), null, "university");
           break;
