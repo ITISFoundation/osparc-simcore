@@ -294,6 +294,7 @@ class SocketIONodeProgressCompleteWaiter:
     logger: logging.Logger
     product_url: AnyUrl
     api_request_context: APIRequestContext
+    is_service_legacy: bool
     _current_progress: dict[NodeProgressType, float] = field(
         default_factory=defaultdict
     )
@@ -336,7 +337,12 @@ class SocketIONodeProgressCompleteWaiter:
 
         _current_timestamp = datetime.now(UTC)
         if _current_timestamp - self._last_poll_timestamp > timedelta(seconds=5):
-            url = f"https://{self.node_id}.services.{self.get_partial_product_url()}"
+            if self.is_service_legacy:
+                url = f"https://{self.get_partial_product_url()}x/{self.node_id}/"
+            else:
+                url = (
+                    f"https://{self.node_id}.services.{self.get_partial_product_url()}"
+                )
             response = self.api_request_context.get(url, timeout=1000)
             level = logging.DEBUG
             if (response.status >= 400) and (response.status not in (502, 503)):
@@ -431,6 +437,7 @@ def expected_service_running(
     timeout: int,
     press_start_button: bool,
     product_url: AnyUrl,
+    is_service_legacy: bool,
 ) -> Generator[ServiceRunning, None, None]:
     with log_context(
         logging.INFO, msg=f"Waiting for node to run. Timeout: {timeout}"
@@ -440,6 +447,7 @@ def expected_service_running(
             logger=ctx.logger,
             product_url=product_url,
             api_request_context=page.request,
+            is_service_legacy=is_service_legacy,
         )
         service_running = ServiceRunning(iframe_locator=None)
 
@@ -472,6 +480,7 @@ def wait_for_service_running(
     timeout: int,
     press_start_button: bool,
     product_url: AnyUrl,
+    is_service_legacy: bool,
 ) -> FrameLocator:
     """NOTE: if the service was already started this will not work as some of the required websocket events will not be emitted again
     In which case this will need further adjutment"""
@@ -484,6 +493,7 @@ def wait_for_service_running(
             logger=ctx.logger,
             product_url=product_url,
             api_request_context=page.request,
+            is_service_legacy=is_service_legacy,
         )
         with websocket.expect_event("framereceived", waiter, timeout=timeout):
             if press_start_button:
