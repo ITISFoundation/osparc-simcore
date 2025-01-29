@@ -70,46 +70,46 @@
       "idToWidget": "newTIPlanButton"
     }, {
       "showDisabled": true,
+      "reason": "Not available in ${replace_me_product_name}",
       "resourceType": "template",
       "expectedTemplateLabel": "mcTI Planning Tool",
       "title": "Multichannel TI",
-      "description": "Not available in ${replace_me_product_name}",
       "newStudyLabel": "Multichannel TI",
       "category": "precomputed",
       "idToWidget": "newMTIPlanButton"
     }, {
       "showDisabled": true,
+      "reason": "Not available in ${replace_me_product_name}",
       "resourceType": "template",
       "expectedTemplateLabel": "pmTI Planning Tool",
       "title": "Phase-modulation TI",
-      "description": "Not available in ${replace_me_product_name}",
       "newStudyLabel": "Phase-modulation TI",
       "category": "precomputed",
       "idToWidget": "newPMTIPlanButton"
     }, {
       "showDisabled": true,
+      "reason": "Not available in ${replace_me_product_name}",
       "resourceType": "template",
       "expectedTemplateLabel": "personalized TI Planning Tool",
       "title": "Personalized Classic TI",
-      "description": "Not available in ${replace_me_product_name}",
       "newStudyLabel": "Personalized Classic TI",
       "category": "personalized",
       "idToWidget": "personalizationNewTIPlanButton"
     }, {
       "showDisabled": true,
+      "reason": "Not available in ${replace_me_product_name}",
       "resourceType": "template",
       "expectedTemplateLabel": "personalized mcTI Planning Tool",
       "title": "Personalized Multichannel TI",
-      "description": "Not available in ${replace_me_product_name}",
       "newStudyLabel": "Personalized Multichannel TI",
       "category": "personalized",
       "idToWidget": "personalizationNewMTIPlanButton"
     }, {
       "showDisabled": true,
+      "reason": "Not available in ${replace_me_product_name}",
       "resourceType": "template",
       "expectedTemplateLabel": "personalized pmTI Planning Tool",
       "title": "Personalized Phase-modulation TI",
-      "description": "Not available in ${replace_me_product_name}",
       "newStudyLabel": "Personalized Phase-modulation TI",
       "category": "personalized",
       "idToWidget": "personalizationNewPMTIPlanButton"
