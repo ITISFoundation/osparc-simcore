@@ -59,3 +59,17 @@ pull_request_rules:
         workflow:
           dispatch:
             - workflow: ci-testing-deploy.yml
+
+  - name: Automatically add PR to queue if it meets the conditions
+    conditions:
+      - "label=🤖-automerge" # Only queue PRs with this label
+      - "label!=🤖-do-not-merge" # Do not queue PRs with this label
+      - "base=master"
+      - "-draft" # PR is not in draft state
+      - "-conflict" # PR has no conflicts
+      - "#approved-reviews-by>=2" # Requires 2 approvals
+      - "#changes-requested-reviews-by=0" # No requested changes
+      - "#review-threads-unresolved=0" # All review threads resolved
+    actions:
+      queue:
+        name: default
