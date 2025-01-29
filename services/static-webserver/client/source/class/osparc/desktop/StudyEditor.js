@@ -37,8 +37,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     });
 
     workbenchView.addListener("slidesEdit", () => this.__editSlides(), this);
-    workbenchView.addListener("slidesAppStart", () => this.setPageContext(osparc.navigation.NavigationBar.PAGE_CONTEXT[2]), this);
-    slideshowView.addListener("slidesStop", () => this.setPageContext(osparc.navigation.NavigationBar.PAGE_CONTEXT[1]), this);
+    workbenchView.addListener("slidesAppStart", () => this.setPageContext(this.self().PAGE_CONTEXT[2]), this); // "app"
+    slideshowView.addListener("slidesStop", () => this.setPageContext(this.self().PAGE_CONTEXT[1]), this); // "workbench"
 
     workbenchView.addListener("takeSnapshot", () => this.__takeSnapshot(), this);
     workbenchView.addListener("takeSnapshot", () => this.__takeSnapshot(), this);
@@ -115,7 +115,14 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
   statics: {
     AUTO_SAVE_INTERVAL: 3000,
-    READ_ONLY_TEXT: qx.locale.Manager.tr("You do not have writing permissions.<br>Your changes will not be saved.")
+    READ_ONLY_TEXT: qx.locale.Manager.tr("You do not have writing permissions.<br>Your changes will not be saved."),
+
+    PAGE_CONTEXT: {
+      0: "dashboard",
+      1: "workbench",
+      2: "app",
+      3: "standalone",
+    },
   },
 
   members: {
@@ -557,7 +564,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     },
 
     __editSlides: function() {
-      if (this.getPageContext() !== osparc.navigation.NavigationBar.PAGE_CONTEXT[1]) {
+      if (this.getPageContext() !== osparc.navigation.NavigationBar.PAGE_CONTEXT[1]) { // "workbench"
+        // if the user it not in "workbench" mode, return
         return;
       }
 
