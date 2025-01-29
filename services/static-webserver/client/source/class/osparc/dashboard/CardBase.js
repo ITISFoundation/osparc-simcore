@@ -352,7 +352,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     uiMode: {
-      check: ["workbench", "guided", "app", "standalone"], // "guided" is not longer used
+      check: ["workbench", "guided", "app", "standalone"], // "guided" is no longer used
       nullable: true,
       apply: "__applyUiMode"
     },

@@ -105,7 +105,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     },
 
     pageContext: {
-      check: ["workbench", "guided", "app", "standalone"], // "guided" is not longer used
+      check: ["workbench", "guided", "app", "standalone"], // "guided" is no longer used
       init: null,
       nullable: false,
       event: "changePageContext",
