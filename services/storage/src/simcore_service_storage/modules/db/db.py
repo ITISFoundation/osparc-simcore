@@ -15,7 +15,9 @@ _logger = logging.getLogger(__name__)
 def setup_db(app: FastAPI) -> None:
     @retry(**PostgresRetryPolicyUponInitialization(_logger).kwargs)
     async def _on_startup() -> None:
-        await connect_to_db(app, get_application_settings(app).STORAGE_POSTGRES)
+        app_settings = get_application_settings(app)
+        assert app_settings.STORAGE_POSTGRES is not None  # nosec
+        await connect_to_db(app, app_settings.STORAGE_POSTGRES)
 
     async def _on_shutdown() -> None:
         await close_db_connection(app)

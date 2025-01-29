@@ -1,6 +1,6 @@
 import logging
 
-from asyncpg import PostgresError
+from asyncpg.exceptions import PostgresError
 from aws_library.s3 import S3AccessError, S3KeyNotFoundError
 from fastapi import FastAPI, HTTPException, status
 from fastapi.exceptions import RequestValidationError
@@ -10,17 +10,17 @@ from servicelib.fastapi.http_error import (
     make_http_error_handler_for_exception,
 )
 
-from ...exceptions.errors import (
+from ..modules.datcore_adapter.datcore_adapter_exceptions import (
+    DatcoreAdapterTimeoutError,
+)
+from .errors import (
     FileAccessRightError,
     FileMetaDataNotFoundError,
+    InvalidFileIdentifierError,
     LinkAlreadyExistsError,
     ProjectAccessRightError,
     ProjectNotFoundError,
 )
-from ...modules.datcore_adapter.datcore_adapter_exceptions import (
-    DatcoreAdapterTimeoutError,
-)
-from ...modules.db.db_access_layer import InvalidFileIdentifierError
 
 _logger = logging.getLogger(__name__)
 
@@ -35,19 +35,26 @@ def set_exception_handlers(app: FastAPI) -> None:
             status.HTTP_422_UNPROCESSABLE_ENTITY, InvalidFileIdentifierError
         ),
     )
-    for exc_class in (
+    for exc_not_found in (
         FileMetaDataNotFoundError,
         S3KeyNotFoundError,
         ProjectNotFoundError,
     ):
         app.add_exception_handler(
-            exc_class,
-            make_http_error_handler_for_exception(status.HTTP_404_NOT_FOUND, exc_class),
+            exc_not_found,
+            make_http_error_handler_for_exception(
+                status.HTTP_404_NOT_FOUND, exc_not_found
+            ),
         )
-    for exc_class in (FileAccessRightError, ProjectAccessRightError):
+    for exc_access in (
+        FileAccessRightError,
+        ProjectAccessRightError,
+    ):
         app.add_exception_handler(
-            exc_class,
-            make_http_error_handler_for_exception(status.HTTP_403_FORBIDDEN, exc_class),
+            exc_access,
+            make_http_error_handler_for_exception(
+                status.HTTP_403_FORBIDDEN, exc_access
+            ),
         )
     app.add_exception_handler(
         LinkAlreadyExistsError,
@@ -55,11 +62,14 @@ def set_exception_handlers(app: FastAPI) -> None:
             status.HTTP_422_UNPROCESSABLE_ENTITY, LinkAlreadyExistsError
         ),
     )
-    for exc_class in (PostgresError, S3AccessError):
+    for exc_3rd_party in (
+        PostgresError,
+        S3AccessError,
+    ):
         app.add_exception_handler(
-            exc_class,
+            exc_3rd_party,
             make_http_error_handler_for_exception(
-                status.HTTP_503_SERVICE_UNAVAILABLE, exc_class
+                status.HTTP_503_SERVICE_UNAVAILABLE, exc_3rd_party
             ),
         )
 

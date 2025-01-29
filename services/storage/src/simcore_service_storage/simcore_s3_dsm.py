@@ -15,6 +15,7 @@ from aws_library.s3 import (
     S3KeyNotFoundError,
     S3MetaData,
     UploadedBytesTransferredCallback,
+    UploadID,
 )
 from fastapi import FastAPI
 from models_library.api_schemas_storage import (
@@ -62,7 +63,6 @@ from .models import (
     DatasetMetaData,
     FileMetaData,
     FileMetaDataAtDB,
-    UploadID,
     UploadLinks,
     UserOrProjectFilter,
 )
@@ -70,7 +70,6 @@ from .modules.datcore_adapter import datcore_adapter
 from .modules.db import db_file_meta_data, db_projects, db_tokens
 from .modules.db.db import get_db_engine
 from .modules.db.db_access_layer import (
-    AccessRights,
     get_file_access_rights,
     get_project_access_rights,
     get_readable_project_ids,
@@ -252,9 +251,7 @@ class SimcoreS3DataManager(BaseDataManager):
 
     async def get_file(self, user_id: UserID, file_id: StorageFileID) -> FileMetaData:
         async with self.engine.connect() as conn:
-            can: AccessRights = await get_file_access_rights(
-                conn, int(user_id), file_id
-            )
+            can = await get_file_access_rights(conn, int(user_id), file_id)
             if not can.read:
                 raise FileAccessRightError(access_right="read", file_id=file_id)
 
@@ -278,7 +275,7 @@ class SimcoreS3DataManager(BaseDataManager):
         is_directory: bool,
     ) -> UploadLinks:
         async with self.engine.connect() as conn:
-            can: AccessRights = await get_file_access_rights(conn, user_id, file_id)
+            can = await get_file_access_rights(conn, user_id, file_id)
             if not can.write:
                 raise FileAccessRightError(access_right="write", file_id=file_id)
 
@@ -371,9 +368,7 @@ class SimcoreS3DataManager(BaseDataManager):
         file_id: StorageFileID,
     ) -> None:
         async with self.engine.connect() as conn:
-            can: AccessRights = await get_file_access_rights(
-                conn, int(user_id), file_id
-            )
+            can = await get_file_access_rights(conn, int(user_id), file_id)
             if not can.delete or not can.write:
                 raise FileAccessRightError(access_right="write/delete", file_id=file_id)
 
@@ -408,9 +403,7 @@ class SimcoreS3DataManager(BaseDataManager):
         uploaded_parts: list[UploadedPart],
     ) -> FileMetaData:
         async with self.engine.connect() as conn:
-            can: AccessRights = await get_file_access_rights(
-                conn, int(user_id), file_id
-            )
+            can = await get_file_access_rights(conn, int(user_id), file_id)
             if not can.write:
                 raise FileAccessRightError(access_right="write", file_id=file_id)
             fmd = await db_file_meta_data.get(
@@ -478,7 +471,7 @@ class SimcoreS3DataManager(BaseDataManager):
     async def __ensure_read_access_rights(
         conn: AsyncConnection, user_id: UserID, storage_file_id: StorageFileID
     ) -> None:
-        can: AccessRights = await get_file_access_rights(conn, user_id, storage_file_id)
+        can = await get_file_access_rights(conn, user_id, storage_file_id)
         if not can.read:
             # NOTE: this is tricky. A user with read access can download and data!
             # If write permission would be required, then shared projects as views cannot
@@ -521,7 +514,7 @@ class SimcoreS3DataManager(BaseDataManager):
         # SEE https://github.com/ITISFoundation/osparc-simcore/issues/5159
         async with self.engine.connect() as conn:
             if enforce_access_rights:
-                can: AccessRights = await get_file_access_rights(conn, user_id, file_id)
+                can = await get_file_access_rights(conn, user_id, file_id)
                 if not can.delete:
                     raise FileAccessRightError(access_right="delete", file_id=file_id)
 
@@ -556,9 +549,7 @@ class SimcoreS3DataManager(BaseDataManager):
         self, user_id: UserID, project_id: ProjectID, node_id: NodeID | None = None
     ) -> None:
         async with self.engine.begin() as conn:
-            can: AccessRights = await get_project_access_rights(
-                conn, user_id, project_id
-            )
+            can = await get_project_access_rights(conn, user_id, project_id)
             if not can.delete:
                 raise ProjectAccessRightError(
                     access_right="delete", project_id=project_id
@@ -959,6 +950,8 @@ class SimcoreS3DataManager(BaseDataManager):
         api_token, api_secret = await db_tokens.get_api_token_and_secret(
             self.app, user_id
         )
+        assert api_token  # nosec
+        assert api_secret  # nosec
         dc_link = await datcore_adapter.get_file_download_presigned_link(
             self.app, api_token, api_secret, source_uuid
         )
@@ -1014,7 +1007,7 @@ class SimcoreS3DataManager(BaseDataManager):
         ):
             # copying will happen using aioboto3, therefore multipart might happen
             # NOTE: connection must be released to ensure database update
-            async with self.engine.begin()() as conn:
+            async with self.engine.begin() as conn:
                 new_fmd = await self._create_fmd_for_upload(
                     conn,
                     user_id,

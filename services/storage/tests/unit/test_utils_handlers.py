@@ -14,7 +14,6 @@ from aws_library.s3._errors import S3AccessError, S3KeyNotFoundError
 from fastapi import FastAPI, HTTPException, status
 from fastapi.exceptions import RequestValidationError
 from httpx import AsyncClient
-from simcore_service_storage.api.rest.utils import set_exception_handlers
 from simcore_service_storage.exceptions.errors import (
     FileAccessRightError,
     FileMetaDataNotFoundError,
@@ -22,6 +21,7 @@ from simcore_service_storage.exceptions.errors import (
     ProjectAccessRightError,
     ProjectNotFoundError,
 )
+from simcore_service_storage.exceptions.handlers import set_exception_handlers
 from simcore_service_storage.modules.datcore_adapter.datcore_adapter_exceptions import (
     DatcoreAdapterTimeoutError,
 )

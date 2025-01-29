@@ -24,7 +24,9 @@ async def _get_tokens_from_db(engine: AsyncEngine, user_id: UserID) -> dict[str,
         return dict(row) if row else {}
 
 
-async def get_api_token_and_secret(app: FastAPI, user_id: UserID) -> tuple[str, str]:
+async def get_api_token_and_secret(
+    app: FastAPI, user_id: UserID
+) -> tuple[str | None, str | None]:
     # from the client side together with the userid?
     engine = get_db_engine(app)
     app_settings = get_application_settings(app)

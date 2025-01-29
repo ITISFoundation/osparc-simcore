@@ -31,6 +31,7 @@ def setup_s3(app: FastAPI) -> None:
             reraise=True,
         ):
             with attempt:
+                assert settings.STORAGE_S3  # nosec
                 client = await SimcoreS3API.create(
                     settings.STORAGE_S3,
                     settings.STORAGE_S3_CLIENT_MAX_TRANSFER_CONCURRENCY,
@@ -44,6 +45,7 @@ def setup_s3(app: FastAPI) -> None:
         app.state.s3_client = client
 
         with log_context(_logger, logging.DEBUG, msg="setup.s3_bucket.cleanup_ctx"):
+            assert settings.STORAGE_S3  # nosec
             await client.create_bucket(
                 bucket=settings.STORAGE_S3.S3_BUCKET_NAME,
                 region=TypeAdapter(
