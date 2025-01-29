@@ -1,6 +1,6 @@
 astroid==3.3.8
     # via pylint
-black==24.10.0
+black==25.1.0
     # via -r requirements/../../../requirements/devenv.txt
 build==1.2.2.post1
     # via pip-tools
@@ -22,7 +22,7 @@ filelock==3.17.0
     # via virtualenv
 identify==2.6.6
     # via pre-commit
-isort==5.13.2
+isort==6.0.0
     # via
     #   -r requirements/../../../requirements/devenv.txt
     #   pylint
@@ -58,7 +58,7 @@ platformdirs==4.3.6
     #   virtualenv
 pre-commit==4.1.0
     # via -r requirements/../../../requirements/devenv.txt
-pylint==3.3.3
+pylint==3.3.4
     # via -r requirements/../../../requirements/devenv.txt
 pyproject-hooks==1.2.0
     # via

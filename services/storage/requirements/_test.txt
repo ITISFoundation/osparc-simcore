@@ -23,6 +23,12 @@ anyio==4.8.0
     #   httpx
 asgi-lifespan==2.1.0
     # via -r requirements/_test.in
+asyncpg==0.30.0
+    # via
+    #   -c requirements/_base.txt
+    #   asyncpg-stubs
+asyncpg-stubs==0.30.0
+    # via -r requirements/_test.in
 attrs==25.1.0
     # via
     #   -c requirements/_base.txt
@@ -346,6 +352,7 @@ typing-extensions==4.12.2
     # via
     #   -c requirements/_base.txt
     #   anyio
+    #   asyncpg-stubs
     #   aws-sam-translator
     #   cfn-lint
     #   faker
