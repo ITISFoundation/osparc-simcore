@@ -227,6 +227,7 @@ def random_product(
         "short_name": suffix[:4],
         "host_regex": r"[a-zA-Z0-9]+\.com",
         "support_email": f"support@{suffix}.io",
+        "product_owners_email": fake.random_element(elements=[fake.email(), None]),
         "twilio_messaging_sid": fake.random_element(elements=(None, fake.uuid4()[:34])),
         "vendor": Vendor(
             name=fake.company(),

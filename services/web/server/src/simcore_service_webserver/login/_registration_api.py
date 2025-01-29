@@ -81,7 +81,7 @@ async def send_account_request_email_to_support(
             template=email_template_path,
             context={
                 "host": request.host,
-                "name": "support-team",
+                "name": "product-owners",
                 "product": product.model_dump(
                     include={
                         "name",
