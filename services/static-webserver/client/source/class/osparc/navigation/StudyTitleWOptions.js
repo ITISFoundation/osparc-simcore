@@ -77,6 +77,7 @@ qx.Class.define("osparc.navigation.StudyTitleWOptions", {
           break;
         case "study-menu-button": {
           const optionsMenu = new qx.ui.menu.Menu();
+          optionsMenu.setAppearance("menu-wider");
           optionsMenu.add(this.getChildControl("study-menu-info"));
           optionsMenu.add(this.getChildControl("study-menu-download-logs"));
           control = new qx.ui.form.MenuButton().set({
