@@ -44,7 +44,11 @@ def assert_status(
         error = validated_response.error
         if is_error(expected_status_code):
             _do_assert_error(
-                data, error, expected_status_code, expected_msg, expected_error_code
+                data,
+                error,
+                expected_status_code,
+                expected_msg,
+                expected_error_code,
             )
         return data, error
 
@@ -60,8 +64,8 @@ def _do_assert_error(
     data,
     error,
     expected_status_code: int,
-    expected_msg: str | None = None,
-    expected_error_code: str | None = None,
+    expected_msg: str | None,
+    expected_error_code: str | None,
 ):
     assert not data, pformat(data)
     assert error, pformat(error)

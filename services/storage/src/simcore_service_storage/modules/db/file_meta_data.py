@@ -40,7 +40,6 @@ async def upsert(
         index_elements=[file_meta_data.c.file_id], set_=fmd_db.model_dump()
     ).returning(literal_column("*"))
     result = await conn.execute(on_update_statement)
-    await conn.commit()
     row = result.one()
     return FileMetaDataAtDB.model_validate(row)
 

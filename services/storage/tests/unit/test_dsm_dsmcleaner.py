@@ -22,7 +22,9 @@ from models_library.projects_nodes_io import SimcoreS3DirectoryID, SimcoreS3File
 from models_library.users import UserID
 from pydantic import ByteSize, TypeAdapter
 from pytest_simcore.helpers.parametrizations import byte_size_ids
-from simcore_postgres_database.storage_models import file_meta_data
+from simcore_postgres_database.storage_models import (
+    file_meta_data as file_meta_data_table,
+)
 from simcore_service_storage.exceptions.errors import (
     FileAccessRightError,
     FileMetaDataNotFoundError,
@@ -194,8 +196,8 @@ async def test_clean_expired_uploads_deletes_expired_pending_uploads(
     # now change the upload_expires_at entry to simulate and expired entry
     async with sqlalchemy_async_engine.begin() as conn:
         await conn.execute(
-            file_meta_data.update()
-            .where(file_meta_data.c.file_id == file_or_directory_id)
+            file_meta_data_table.update()
+            .where(file_meta_data_table.c.file_id == file_or_directory_id)
             .values(upload_expires_at=datetime.datetime.utcnow())
         )
     await asyncio.sleep(5)
@@ -286,8 +288,8 @@ async def test_clean_expired_uploads_reverts_to_last_known_version_expired_pendi
     # now change the upload_expires_at entry to simulate an expired entry
     async with sqlalchemy_async_engine.begin() as conn:
         await conn.execute(
-            file_meta_data.update()
-            .where(file_meta_data.c.file_id == file_id)
+            file_meta_data_table.update()
+            .where(file_meta_data_table.c.file_id == file_id)
             .values(upload_expires_at=datetime.datetime.utcnow())
         )
     await asyncio.sleep(1)

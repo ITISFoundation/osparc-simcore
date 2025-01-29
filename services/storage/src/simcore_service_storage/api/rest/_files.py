@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import socket
+import urllib.parse
 from typing import Annotated, cast
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
@@ -301,7 +302,9 @@ async def is_completed_upload_file(
     # if it returns slow we return a 202 - Accepted, the client will have to check later
     # for completeness
     task_name = create_upload_completion_task_name(query_params.user_id, file_id)
-    assert task_name == future_id  # nosec
+    assert task_name == urllib.parse.quote(
+        future_id
+    )  # nosec # NOTE: fastapi auto-decode path parameters
     # first check if the task is in the app
     if task := get_completed_upload_tasks(request.app).get(task_name):
         if task.done():

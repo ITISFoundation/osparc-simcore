@@ -122,9 +122,7 @@ async def create_project_access_rights(
             await conn.commit()
             row = result.fetchone()
             assert row
-            _created.append(
-                (row[project_to_groups.c.project_uuid], row[project_to_groups.c.gid])
-            )
+            _created.append((row.project_uuid, row.gid))
 
     yield _creator
 
@@ -174,7 +172,7 @@ def share_with_collaborator(
         )
         row = result.fetchone()
         assert row
-        primary_gid: int = row[users.c.primary_gid]
+        primary_gid: int = row.primary_gid
         return primary_gid
 
     async def _() -> None:
@@ -186,7 +184,7 @@ def share_with_collaborator(
             )
             row = result.fetchone()
             assert row
-            access_rights: dict[str | int, Any] = row[projects.c.access_rights]
+            access_rights: dict[str | int, Any] = row.access_rights
 
             access_rights[await _get_user_group(conn, user_id)] = {
                 "read": True,

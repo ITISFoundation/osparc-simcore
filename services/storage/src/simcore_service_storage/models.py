@@ -186,13 +186,6 @@ class SyncMetadataResponse(BaseModel):
 class FileDownloadQueryParams(StorageQueryParamsBase):
     link_type: LinkType = LinkType.PRESIGNED
 
-    @field_validator("link_type", mode="before")
-    @classmethod
-    def convert_from_lower_case(cls, v: str) -> str:
-        if v is not None:
-            return f"{v}".upper()
-        return v
-
 
 class FileDownloadResponse(BaseModel):
     link: AnyUrl

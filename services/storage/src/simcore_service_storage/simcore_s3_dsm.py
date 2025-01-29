@@ -445,7 +445,7 @@ class SimcoreS3DataManager(BaseDataManager):
             directory_file_id: SimcoreS3FileID | None = await get_directory_file_id(
                 conn, cast(SimcoreS3FileID, file_id)
             )
-            await self.__ensure_read_access_rights(
+            await self._ensure_read_access_rights(
                 conn, user_id, directory_file_id if directory_file_id else file_id
             )
         if directory_file_id:
@@ -453,7 +453,7 @@ class SimcoreS3DataManager(BaseDataManager):
                 bucket=self.simcore_bucket_name, object_key=f"{file_id}"
             ):
                 raise S3KeyNotFoundError(key=file_id, bucket=self.simcore_bucket_name)
-            return await self.__get_link(
+            return await self._get_link(
                 TypeAdapter(SimcoreS3FileID).validate_python(file_id), link_type
             )
         # standard file link
@@ -464,10 +464,10 @@ class SimcoreS3DataManager(BaseDataManager):
         if not is_file_entry_valid(fmd):
             # try lazy update
             fmd = await self._update_database_from_storage(fmd)
-        return await self.__get_link(fmd.object_name, link_type)
+        return await self._get_link(fmd.object_name, link_type)
 
     @staticmethod
-    async def __ensure_read_access_rights(
+    async def _ensure_read_access_rights(
         conn: AsyncConnection, user_id: UserID, storage_file_id: StorageFileID
     ) -> None:
         can = await get_file_access_rights(conn, user_id, storage_file_id)
@@ -478,7 +478,7 @@ class SimcoreS3DataManager(BaseDataManager):
             #
             raise FileAccessRightError(access_right="read", file_id=storage_file_id)
 
-    async def __get_link(
+    async def _get_link(
         self, s3_file_id: SimcoreS3FileID, link_type: LinkType
     ) -> AnyUrl:
         link: AnyUrl = TypeAdapter(AnyUrl).validate_python(

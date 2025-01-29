@@ -33,7 +33,7 @@ async def output_file(
 
     file = FileMetaData.from_simcore_node(
         user_id=user_id,
-        file_id=SimcoreS3FileID(f"{project_id}/{node_id}/filename.txt"),
+        file_id=f"{project_id}/{node_id}/filename.txt",
         bucket=TypeAdapter(S3BucketName).validate_python("master-simcore"),
         location_id=SimcoreS3DataManager.get_location_id(),
         location_name=SimcoreS3DataManager.get_location_name(),
@@ -42,7 +42,6 @@ async def output_file(
     file.entity_tag = "df9d868b94e53d18009066ca5cd90e9f"
     file.file_size = ByteSize(12)
     file.user_id = user_id
-
     async with sqlalchemy_async_engine.begin() as conn:
         stmt = (
             file_meta_data.insert()
@@ -50,11 +49,12 @@ async def output_file(
             .returning(literal_column("*"))
         )
         result = await conn.execute(stmt)
-        row = result.fetchone()
+        row = result.one()
         assert row
 
-        yield file
+    yield file
 
+    async with sqlalchemy_async_engine.begin() as conn:
         result = await conn.execute(
             file_meta_data.delete().where(file_meta_data.c.file_id == row.file_id)
         )
