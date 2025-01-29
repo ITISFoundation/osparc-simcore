@@ -1,9 +1,6 @@
-# NOTE: the PR is added to the queue when all checks have passed
-# and the CI is fully green.
-# If the PR is behind the queue will take care of updating it
 queue_rules:
   - name: default
-    queue_conditions:
+    queue_conditions: # condtions to be met to add the PR to the queue (manually or automatically)
       # general prerequisits fo accept the PR in the queue
       - label=🤖-automerge # let Mergify know that the PR can be merged (added manually)
       - label!=🤖-do-not-merge # block Mergify from merging the PR (added manually)
@@ -16,7 +13,7 @@ queue_rules:
       - "#changes-requested-reviews-by=0" # No changes requested
       - "#review-threads-unresolved=0" # All review threads resolved
 
-    merge_conditions:
+    merge_conditions: # conditions to be met before being able to merge
       # list of CI checks that need to pass
       - check-success=system-test-environment-setup
       - check-success=changes
@@ -56,7 +53,7 @@ pull_request_rules:
           dispatch:
             - workflow: ci-testing-deploy.yml
 
-  - name: Automatically add PR to queue if it meets the conditions
+  - name: Automatically add PR to queue if it meets conditions
     conditions:
       - "label=🤖-automerge" # Only queue PRs with this label
       - "label!=🤖-do-not-merge" # Do not queue PRs with this label
