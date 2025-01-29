@@ -19,7 +19,7 @@ from .modules.datcore_adapter import datcore_adapter
 from .modules.datcore_adapter.datcore_adapter_exceptions import (
     DatcoreAdapterMultipleFilesError,
 )
-from .modules.db.db_tokens import get_api_token_and_secret
+from .modules.db.tokens import get_api_token_and_secret
 
 
 @dataclass

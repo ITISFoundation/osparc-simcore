@@ -14,7 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncConnection
 
 from ..exceptions.errors import FileMetaDataNotFoundError
 from ..models import FileMetaData, FileMetaDataAtDB
-from ..modules.db import db_file_meta_data
+from ..modules.db import file_meta_data
 from .utils import convert_db_to_model
 
 
@@ -98,7 +98,7 @@ async def get_directory_file_id(
         conn: AsyncConnection, s3_file_id: StorageFileID
     ) -> FileMetaDataAtDB | None:
         with suppress(FileMetaDataNotFoundError):
-            return await db_file_meta_data.get(
+            return await file_meta_data.get(
                 conn, TypeAdapter(SimcoreS3FileID).validate_python(s3_file_id)
             )
         return None

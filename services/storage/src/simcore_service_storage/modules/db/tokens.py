@@ -8,7 +8,7 @@ from simcore_postgres_database.storage_models import tokens
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ...core.settings import get_application_settings
-from ...modules.db import get_db_engine
+from . import get_db_engine
 
 _logger = logging.getLogger(__name__)
 

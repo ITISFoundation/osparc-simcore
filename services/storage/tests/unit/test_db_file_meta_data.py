@@ -9,7 +9,7 @@ from uuid import uuid4
 from faker import Faker
 from simcore_postgres_database.utils import as_postgres_sql_query_str
 from simcore_service_storage.models import UserOrProjectFilter
-from simcore_service_storage.modules.db.db_file_meta_data import (
+from simcore_service_storage.modules.db.file_meta_data import (
     _list_filter_with_partial_file_id_stmt,
 )
 

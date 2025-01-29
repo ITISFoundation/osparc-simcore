@@ -25,9 +25,7 @@ from simcore_service_storage.exceptions.handlers import set_exception_handlers
 from simcore_service_storage.modules.datcore_adapter.datcore_adapter_exceptions import (
     DatcoreAdapterTimeoutError,
 )
-from simcore_service_storage.modules.db.db_access_layer import (
-    InvalidFileIdentifierError,
-)
+from simcore_service_storage.modules.db.access_layer import InvalidFileIdentifierError
 
 
 @pytest.fixture

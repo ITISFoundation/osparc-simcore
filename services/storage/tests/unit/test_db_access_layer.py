@@ -11,7 +11,7 @@ from models_library.users import UserID
 from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.models.users import users
 from simcore_postgres_database.models.workspaces import workspaces
-from simcore_service_storage.modules.db.db_access_layer import (
+from simcore_service_storage.modules.db.access_layer import (
     AccessRights,
     get_file_access_rights,
     get_project_access_rights,

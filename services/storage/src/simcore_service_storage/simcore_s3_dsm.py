@@ -67,8 +67,8 @@ from .models import (
     UserOrProjectFilter,
 )
 from .modules.datcore_adapter import datcore_adapter
-from .modules.db import db_file_meta_data, db_projects, db_tokens, get_db_engine
-from .modules.db.db_access_layer import (
+from .modules.db import file_meta_data, get_db_engine, projects, tokens
+from .modules.db.access_layer import (
     get_file_access_rights,
     get_project_access_rights,
     get_readable_project_ids,
@@ -119,7 +119,7 @@ class SimcoreS3DataManager(BaseDataManager):
                     dataset_id=prj_data.uuid,
                     display_name=prj_data.name,
                 )
-                async for prj_data in db_projects.list_valid_projects_in(
+                async for prj_data in projects.list_valid_projects_in(
                     conn, readable_projects_ids
                 )
             ]
@@ -174,7 +174,7 @@ class SimcoreS3DataManager(BaseDataManager):
                 uid = user_id
             file_and_directory_meta_data: list[
                 FileMetaDataAtDB
-            ] = await db_file_meta_data.list_filter_with_partial_file_id(
+            ] = await file_meta_data.list_filter_with_partial_file_id(
                 conn,
                 user_or_project_filter=UserOrProjectFilter(
                     user_id=uid, project_ids=accessible_projects_ids
@@ -202,7 +202,7 @@ class SimcoreS3DataManager(BaseDataManager):
         # now parse the project to search for node/project names
         async with self.engine.connect() as conn:
             prj_names_mapping: dict[ProjectID | NodeID, str] = {}
-            async for proj_data in db_projects.list_valid_projects_in(
+            async for proj_data in projects.list_valid_projects_in(
                 conn, accessible_projects_ids
             ):
                 prj_names_mapping |= {proj_data.uuid: proj_data.name} | {
@@ -254,7 +254,7 @@ class SimcoreS3DataManager(BaseDataManager):
             if not can.read:
                 raise FileAccessRightError(access_right="read", file_id=file_id)
 
-            fmd = await db_file_meta_data.get(
+            fmd = await file_meta_data.get(
                 conn, TypeAdapter(SimcoreS3FileID).validate_python(file_id)
             )
         if is_file_entry_valid(fmd):
@@ -333,7 +333,7 @@ class SimcoreS3DataManager(BaseDataManager):
             # update the database so we keep the upload id
             fmd.upload_id = multipart_presigned_links.upload_id
             async with self.engine.begin() as conn:
-                await db_file_meta_data.upsert(conn, fmd)
+                await file_meta_data.upsert(conn, fmd)
             return UploadLinks(
                 multipart_presigned_links.urls,
                 multipart_presigned_links.chunk_size,
@@ -371,7 +371,7 @@ class SimcoreS3DataManager(BaseDataManager):
             if not can.delete or not can.write:
                 raise FileAccessRightError(access_right="write/delete", file_id=file_id)
 
-            fmd: FileMetaDataAtDB = await db_file_meta_data.get(
+            fmd: FileMetaDataAtDB = await file_meta_data.get(
                 conn, TypeAdapter(SimcoreS3FileID).validate_python(file_id)
             )
         if is_valid_managed_multipart_upload(fmd.upload_id):
@@ -393,7 +393,7 @@ class SimcoreS3DataManager(BaseDataManager):
         except S3KeyNotFoundError:
             # the file does not exist, so we delete the entry in the db
             async with self.engine.begin() as conn:
-                await db_file_meta_data.delete(conn, [fmd.file_id])
+                await file_meta_data.delete(conn, [fmd.file_id])
 
     async def complete_file_upload(
         self,
@@ -405,7 +405,7 @@ class SimcoreS3DataManager(BaseDataManager):
             can = await get_file_access_rights(conn, int(user_id), file_id)
             if not can.write:
                 raise FileAccessRightError(access_right="write", file_id=file_id)
-            fmd = await db_file_meta_data.get(
+            fmd = await file_meta_data.get(
                 conn, TypeAdapter(SimcoreS3FileID).validate_python(file_id)
             )
 
@@ -458,7 +458,7 @@ class SimcoreS3DataManager(BaseDataManager):
             )
         # standard file link
         async with self.engine.connect() as conn:
-            fmd = await db_file_meta_data.get(
+            fmd = await file_meta_data.get(
                 conn, TypeAdapter(SimcoreS3FileID).validate_python(file_id)
             )
         if not is_file_entry_valid(fmd):
@@ -528,9 +528,9 @@ class SimcoreS3DataManager(BaseDataManager):
             # and to invalidate the size of the parent directory
 
         async with self.engine.begin() as conn:
-            await db_file_meta_data.delete(conn, [file_id])
+            await file_meta_data.delete(conn, [file_id])
 
-            if parent_dir_fmds := await db_file_meta_data.list_filter_with_partial_file_id(
+            if parent_dir_fmds := await file_meta_data.list_filter_with_partial_file_id(
                 conn,
                 user_or_project_filter=UserOrProjectFilter(
                     user_id=user_id, project_ids=[]
@@ -542,7 +542,7 @@ class SimcoreS3DataManager(BaseDataManager):
             ):
                 parent_dir_fmd = max(parent_dir_fmds, key=lambda fmd: len(fmd.file_id))
                 parent_dir_fmd.file_size = UNDEFINED_SIZE
-                await db_file_meta_data.upsert(conn, parent_dir_fmd)
+                await file_meta_data.upsert(conn, parent_dir_fmd)
 
     async def delete_project_simcore_s3(
         self, user_id: UserID, project_id: ProjectID, node_id: NodeID | None = None
@@ -556,9 +556,9 @@ class SimcoreS3DataManager(BaseDataManager):
 
             # we can do it this way, since we are in a transaction, it will rollback in case of error
             if not node_id:
-                await db_file_meta_data.delete_all_from_project(conn, project_id)
+                await file_meta_data.delete_all_from_project(conn, project_id)
             else:
-                await db_file_meta_data.delete_all_from_node(conn, node_id)
+                await file_meta_data.delete_all_from_node(conn, node_id)
 
         await get_s3_client(self.app).delete_objects_recursively(
             bucket=self.simcore_bucket_name,
@@ -586,7 +586,7 @@ class SimcoreS3DataManager(BaseDataManager):
             update_task_progress(task_progress, "Checking study access rights...")
             async with self.engine.connect() as conn:
                 for prj_uuid in [src_project_uuid, dst_project_uuid]:
-                    if not await db_projects.project_exists(conn, prj_uuid):
+                    if not await projects.project_exists(conn, prj_uuid):
                         raise ProjectNotFoundError(project_id=prj_uuid)
                 source_access_rights = await get_project_access_rights(
                     conn, user_id, project_id=src_project_uuid
@@ -615,9 +615,7 @@ class SimcoreS3DataManager(BaseDataManager):
             async with self.engine.connect() as conn:
                 src_project_files: list[
                     FileMetaDataAtDB
-                ] = await db_file_meta_data.list_fmds(
-                    conn, project_ids=[src_project_uuid]
-                )
+                ] = await file_meta_data.list_fmds(conn, project_ids=[src_project_uuid])
 
             with log_context(
                 _logger,
@@ -733,7 +731,7 @@ class SimcoreS3DataManager(BaseDataManager):
         async with self.engine.connect() as conn:
             file_metadatas: list[
                 FileMetaDataAtDB
-            ] = await db_file_meta_data.list_filter_with_partial_file_id(
+            ] = await file_meta_data.list_filter_with_partial_file_id(
                 conn,
                 user_or_project_filter=UserOrProjectFilter(
                     user_id=user_id, project_ids=[]
@@ -759,7 +757,7 @@ class SimcoreS3DataManager(BaseDataManager):
         self, user_id: int, target_file_id: StorageFileID, link_file_id: StorageFileID
     ) -> FileMetaData:
         async with self.engine.connect() as conn:
-            if await db_file_meta_data.exists(
+            if await file_meta_data.exists(
                 conn, TypeAdapter(SimcoreS3FileID).validate_python(link_file_id)
             ):
                 raise LinkAlreadyExistsError(file_id=link_file_id)
@@ -771,13 +769,13 @@ class SimcoreS3DataManager(BaseDataManager):
         target.is_soft_link = True
 
         async with self.engine.begin() as conn:
-            return convert_db_to_model(await db_file_meta_data.insert(conn, target))
+            return convert_db_to_model(await file_meta_data.insert(conn, target))
 
     async def _clean_pending_upload(
         self, conn: AsyncConnection, file_id: SimcoreS3FileID
     ) -> None:
         with suppress(FileMetaDataNotFoundError):
-            fmd = await db_file_meta_data.get(conn, file_id)
+            fmd = await file_meta_data.get(conn, file_id)
             if is_valid_managed_multipart_upload(fmd.upload_id):
                 assert fmd.upload_id  # nosec
                 await get_s3_client(self.app).abort_multipart_upload(
@@ -794,7 +792,7 @@ class SimcoreS3DataManager(BaseDataManager):
         """
         now = datetime.datetime.utcnow()
         async with self.engine.connect() as conn:
-            list_of_expired_uploads = await db_file_meta_data.list_fmds(
+            list_of_expired_uploads = await file_meta_data.list_fmds(
                 conn, expired_after=now
             )
 
@@ -893,7 +891,7 @@ class SimcoreS3DataManager(BaseDataManager):
 
         fmd.upload_expires_at = None
         fmd.upload_id = None
-        updated_fmd: FileMetaDataAtDB = await db_file_meta_data.upsert(
+        updated_fmd: FileMetaDataAtDB = await file_meta_data.upsert(
             conn, convert_db_to_model(fmd)
         )
         return updated_fmd
@@ -930,7 +928,7 @@ class SimcoreS3DataManager(BaseDataManager):
         fmd.upload_expires_at = None
         fmd.upload_id = None
         async with self.engine.begin() as conn:
-            updated_fmd: FileMetaDataAtDB = await db_file_meta_data.upsert(
+            updated_fmd: FileMetaDataAtDB = await file_meta_data.upsert(
                 conn, convert_db_to_model(fmd)
             )
         return updated_fmd
@@ -946,9 +944,7 @@ class SimcoreS3DataManager(BaseDataManager):
     ) -> FileMetaData:
         session = get_client_session(self.app)
         # 2 steps: Get download link for local copy, then upload to S3
-        api_token, api_secret = await db_tokens.get_api_token_and_secret(
-            self.app, user_id
-        )
+        api_token, api_secret = await tokens.get_api_token_and_secret(self.app, user_id)
         assert api_token  # nosec
         assert api_secret  # nosec
         dc_link = await datcore_adapter.get_file_download_presigned_link(
@@ -1064,7 +1060,7 @@ class SimcoreS3DataManager(BaseDataManager):
             is_directory=is_directory,
             sha256_checksum=sha256_checksum,
         )
-        return await db_file_meta_data.upsert(conn, fmd)
+        return await file_meta_data.upsert(conn, fmd)
 
 
 def create_simcore_s3_data_manager(app: FastAPI) -> SimcoreS3DataManager:
