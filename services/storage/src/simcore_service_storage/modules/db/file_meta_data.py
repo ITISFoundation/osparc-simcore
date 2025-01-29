@@ -42,7 +42,6 @@ async def upsert(
     result = await conn.execute(on_update_statement)
     await conn.commit()
     row = result.one()
-    assert row  # nosec
     return FileMetaDataAtDB.model_validate(row)
 
 
@@ -54,7 +53,6 @@ async def insert(conn: AsyncConnection, fmd: FileMetaData) -> FileMetaDataAtDB:
         .returning(literal_column("*"))
     )
     row = result.one()
-    assert row  # nosec
     return FileMetaDataAtDB.model_validate(row)
 
 
@@ -62,7 +60,7 @@ async def get(conn: AsyncConnection, file_id: SimcoreS3FileID) -> FileMetaDataAt
     result = await conn.execute(
         sa.select(file_meta_data).where(file_meta_data.c.file_id == file_id)
     )
-    if row := result.first():
+    if row := result.one_or_none():
         return FileMetaDataAtDB.model_validate(row)
     raise FileMetaDataNotFoundError(file_id=file_id)
 

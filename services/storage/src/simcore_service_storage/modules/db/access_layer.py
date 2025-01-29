@@ -125,7 +125,7 @@ workspace_access_rights_subquery = (
 ).subquery("workspace_access_rights_subquery")
 
 
-async def list_projects_access_rights(
+async def _list_projects_access_rights(
     conn: AsyncConnection, user_id: UserID
 ) -> dict[ProjectID, AccessRights]:
     """
@@ -182,7 +182,7 @@ async def list_projects_access_rights(
         assert isinstance(row.uuid, str)  # nosec
 
         if row.access_rights:
-            # TODO: access_rights should be direclty filtered from result in stm instead calling again user_group_ids
+            # NOTE: access_rights should be direclty filtered from result in stm instead calling again user_group_ids
             projects_access_rights[ProjectID(row.uuid)] = _aggregate_access_rights(
                 row.access_rights, user_group_ids
             )
@@ -339,12 +339,9 @@ async def get_file_access_rights(
     return access_rights
 
 
-# HELPERS -----------------------------------------------
-
-
 async def get_readable_project_ids(
     conn: AsyncConnection, user_id: UserID
 ) -> list[ProjectID]:
     """Returns a list of projects where user has granted read-access"""
-    projects_access_rights = await list_projects_access_rights(conn, user_id)
+    projects_access_rights = await _list_projects_access_rights(conn, user_id)
     return [pid for pid, access in projects_access_rights.items() if access.read]
