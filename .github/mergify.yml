@@ -26,9 +26,9 @@ queue_rules:
 # the PR will be removed from the queue.
 # Once the PR is ready to be merged the flaky tests will
 # be retried automatically.
-# As soon as the CI is green, the PR will be pusehd to the queu
+# As soon as the CI is green, the PR will be pushed to the queue
 pull_request_rules:
-  - name: retry flaky thests (when PR is approved)
+  - name: retry flaky tests (when PR is approved)
     conditions:
       - label=🤖-automerge
       - label!=🤖-do-not-merge
