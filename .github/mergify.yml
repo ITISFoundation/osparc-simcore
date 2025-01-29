@@ -18,6 +18,10 @@ queue_rules:
 
     merge_conditions:
       # list of CI checks that need to pass
+      - check-success=system-test-environment-setup
+      - check-success=changes
+      - check-success=build-test-images
+      - check-success=build-test-images-frontend
       - check-success=unit-tests
       - check-success=integration-tests
       - check-success=system-tests
@@ -41,6 +45,10 @@ pull_request_rules:
       - "#review-threads-unresolved=0" # All review threads resolved
 
       - or:
+          - check-failure=system-test-environment-setup
+          - check-failure=changes
+          - check-failure=build-test-images
+          - check-failure=build-test-images-frontend
           - check-failure=unit-tests
           - check-failure=integration-tests
           - check-failure=system-tests
