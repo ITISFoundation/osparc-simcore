@@ -95,12 +95,6 @@ projects = sa.Table(
         server_default=sa.text("'{}'::jsonb"),
         doc="DEPRECATED: Read/write/delete access rights of each group (gid) on this project",
     ),
-    # sa.Column(
-    #     "workbench",
-    #     sa.JSON,
-    #     nullable=False,
-    #     doc="Pipeline with the project's workflow. Schema in models_library.projects.Workbench",
-    # ),
     sa.Column(
         "ui",
         JSONB,
