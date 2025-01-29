@@ -2,6 +2,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import NamedTuple
 
+from models_library.emails import LowerCaseEmailStr
 from pydantic import PositiveInt
 
 from ..licensed_items import LicensedItemID
@@ -24,6 +25,7 @@ class LicensedItemPurchaseGet(OutputSchema):
     expire_at: datetime
     num_of_seats: int
     purchased_by_user: UserID
+    user_email: LowerCaseEmailStr
     purchased_at: datetime
     modified_at: datetime
 

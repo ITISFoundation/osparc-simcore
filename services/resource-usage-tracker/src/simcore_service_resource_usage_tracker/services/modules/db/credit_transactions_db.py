@@ -165,7 +165,13 @@ async def batch_update_credit_transaction_status_for_in_debt_transactions(
         )
     async with transaction_context(engine, connection) as conn:
         result = await conn.execute(update_stmt)
-        print(result)
+        if result.rowcount:
+            _logger.info(
+                "Wallet %s and project %s transactions in DEBT were changed to BILLED. Num. of transaction %s",
+                wallet_id,
+                project_id,
+                result.rowcount,
+            )
 
 
 async def sum_wallet_credits(

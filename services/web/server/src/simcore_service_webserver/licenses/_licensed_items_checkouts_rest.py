@@ -21,14 +21,14 @@ from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
 from ..wallets._handlers import WalletsPathParams
 from . import _licensed_items_checkouts_service
-from ._exceptions_handlers import handle_plugin_requests_exceptions
+from ._common.exceptions_handlers import handle_plugin_requests_exceptions
+from ._common.models import LicensedItemsRequestContext
 from ._licensed_items_checkouts_models import (
     LicensedItemCheckoutGet,
     LicensedItemCheckoutGetPage,
     LicensedItemCheckoutPathParams,
     LicensedItemsCheckoutsListQueryParams,
 )
-from ._models import LicensedItemsRequestContext
 
 _logger = logging.getLogger(__name__)
 
@@ -63,6 +63,7 @@ async def get_licensed_item_checkout(request: web.Request):
         licensed_item_id=checkout_item.licensed_item_id,
         wallet_id=checkout_item.wallet_id,
         user_id=checkout_item.user_id,
+        user_email=checkout_item.user_email,
         product_name=checkout_item.product_name,
         started_at=checkout_item.started_at,
         stopped_at=checkout_item.stopped_at,
@@ -106,6 +107,7 @@ async def list_licensed_item_checkouts_for_wallet(request: web.Request):
                 licensed_item_id=checkout_item.licensed_item_id,
                 wallet_id=checkout_item.wallet_id,
                 user_id=checkout_item.user_id,
+                user_email=checkout_item.user_email,
                 product_name=checkout_item.product_name,
                 started_at=checkout_item.started_at,
                 stopped_at=checkout_item.stopped_at,
