@@ -23,7 +23,7 @@ from models_library.api_schemas_storage import (
     PresignedLink,
 )
 from models_library.generics import Envelope
-from models_library.projects_pipeline import ComputationTask
+from models_library.projects_pipeline import ComputationTask, PipelineDetails
 from models_library.projects_state import RunningState
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import AnyUrl, ByteSize, TypeAdapter
@@ -111,11 +111,13 @@ def create_computation_cb(url, **kwargs) -> CallbackResult:
         update={
             "id": f"{kwargs['json']['project_id']}",
             "state": state,
-            "pipeline_details": {
-                "adjacency_list": pipeline,
-                "node_states": node_states,
-                "progress": 0,
-            },
+            "pipeline_details": PipelineDetails(
+                **{
+                    "adjacency_list": pipeline,
+                    "node_states": node_states,
+                    "progress": 0,
+                }
+            ),
         }
     )
     return CallbackResult(
@@ -140,11 +142,13 @@ def get_computation_cb(url, **kwargs) -> CallbackResult:
         update={
             "id": Path(url.path).name,
             "state": state,
-            "pipeline_details": {
-                "adjacency_list": pipeline,
-                "node_states": node_states,
-                "progress": 0,
-            },
+            "pipeline_details": PipelineDetails(
+                **{
+                    "adjacency_list": pipeline,
+                    "node_states": node_states,
+                    "progress": 0,
+                }
+            ),
         }
     )
 
