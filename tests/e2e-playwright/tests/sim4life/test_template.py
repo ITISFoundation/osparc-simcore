@@ -28,6 +28,7 @@ def test_template(
     is_autoscaled: bool,
     check_videostreaming: bool,
     product_url: AnyUrl,
+    is_service_legacy: bool,
 ):
     project_data = create_project_from_template_dashboard(template_id)
 
@@ -45,6 +46,7 @@ def test_template(
         autoscaled=is_autoscaled,
         copy_workspace=True,
         product_url=product_url,
+        is_service_legacy=is_service_legacy,
     )
     s4l_websocket = resp["websocket"]
     s4l_iframe = resp["iframe"]

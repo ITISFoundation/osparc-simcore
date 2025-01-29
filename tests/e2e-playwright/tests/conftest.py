@@ -107,6 +107,12 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         help="Service Key",
     )
     group.addoption(
+        "--service-is-legacy",
+        action="store_true",
+        default=False,
+        help="Whether service is a legacy service (no sidecar)",
+    )
+    group.addoption(
         "--template-id",
         action="store",
         type=str,
@@ -258,6 +264,12 @@ def service_key(request: pytest.FixtureRequest) -> str:
         assert isinstance(key, str)
         return key
     return os.environ["SERVICE_KEY"]
+
+
+@pytest.fixture(scope="session")
+def is_service_legacy(request: pytest.FixtureRequest) -> bool:
+    autoscaled = request.config.getoption("--service-is-legacy")
+    return TypeAdapter(bool).validate_python(autoscaled)
 
 
 @pytest.fixture(scope="session")
