@@ -71,7 +71,7 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
         cls, settings: S3Settings, s3_max_concurrency: int = _S3_MAX_CONCURRENCY_DEFAULT
     ) -> "SimcoreS3API":
         session = aioboto3.Session()
-        session_client = session.client(
+        session_client = session.client(  # type: ignore[call-overload]
             "s3",
             endpoint_url=f"{settings.S3_ENDPOINT}",
             aws_access_key_id=settings.S3_ACCESS_KEY,

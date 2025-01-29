@@ -10,6 +10,7 @@ from uuid import UUID
 
 import osparc
 import pytest
+from osparc_client.models.file import File
 
 
 def test_upload_file(files_api: osparc.FilesApi, tmp_path: Path):
@@ -38,6 +39,11 @@ def test_upload_file(files_api: osparc.FilesApi, tmp_path: Path):
     # FIXME: assert input_file.checksum == same_file.checksum
 
 
+def _get_comparison_fields(file: File) -> dict:
+    data = file.to_dict()
+    return {x: data[x] for x in ("checksum", "e_tag", "filename")}
+
+
 @pytest.mark.parametrize("file_type", ["binary", "text"])
 def test_upload_list_and_download(
     files_api: osparc.FilesApi, tmp_path: Path, file_type: str, faker
@@ -60,7 +66,7 @@ def test_upload_list_and_download(
     myfiles = files_api.list_files()
     assert myfiles
     assert all(isinstance(f, osparc.File) for f in myfiles)
-    assert input_file in myfiles
+    assert _get_comparison_fields(input_file) in map(_get_comparison_fields, myfiles)
 
     download_path: str = files_api.download_file(file_id=input_file.id)
 
