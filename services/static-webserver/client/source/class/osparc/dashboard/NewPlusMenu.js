@@ -41,10 +41,15 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
   },
 
   statics: {
-    createMenuButton: function(icon, label, infoText) {
+    createMenuButton: function(icon, title, infoText) {
+      title = osparc.utils.Utils.replaceTokens(
+        title,
+        "replace_me_product_name",
+        osparc.store.StaticInfo.getInstance().getDisplayName()
+      );
       const menuButton = new qx.ui.menu.Button().set({
         icon: icon || null,
-        label,
+        label: title,
         font: "text-16",
         allowGrowX: true,
       });
@@ -56,6 +61,11 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
         marginRight: 20,
       });
       if (infoText) {
+        infoText = osparc.utils.Utils.replaceTokens(
+          title,
+          "replace_me_product_name",
+          osparc.store.StaticInfo.getInstance().getDisplayName()
+        );
         const infoHint = new osparc.ui.hint.InfoHint(infoText).set({
           source: osparc.ui.hint.InfoHint.INFO_ICON + "/16",
         });
