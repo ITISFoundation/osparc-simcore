@@ -63,7 +63,7 @@ async def send_account_request_email_to_support(
     ipinfo: dict,
 ):
     template_name = "request_account.jinja2"
-    support_email = product.support_email
+    destination_email = product.product_owners_email or product.support_email
     email_template_path = await get_product_template_path(request, template_name)
     try:
         user_email = TypeAdapter(LowerCaseEmailStr).validate_python(
@@ -75,8 +75,8 @@ async def send_account_request_email_to_support(
     try:
         await send_email_from_template(
             request,
-            from_=support_email,
-            to=support_email,
+            from_=product.support_email,
+            to=destination_email,
             reply_to=user_email,  # So that issue-tracker system ACK email is sent to the user that requests the account
             template=email_template_path,
             context={
@@ -99,7 +99,7 @@ async def send_account_request_email_to_support(
         _logger.exception(
             "Failed while sending '%s' email to %s",
             template_name,
-            f"{support_email=}",
+            f"{destination_email=}",
         )
 
 
