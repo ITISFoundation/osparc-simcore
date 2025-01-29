@@ -50,4 +50,4 @@ pull_request_rules:
       github_actions:
         workflow:
           dispatch:
-            - workflow: .github/workflows/ci-testing-deploy.yml
+            - workflow: ci-testing-deploy.yml
