@@ -107,6 +107,13 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         help="Service Key",
     )
     group.addoption(
+        "--service-version",
+        action="store",
+        type=str,
+        default=None,
+        help="The service version option defines a service specific version",
+    )
+    group.addoption(
         "--template-id",
         action="store",
         type=str,
@@ -258,6 +265,14 @@ def service_key(request: pytest.FixtureRequest) -> str:
         assert isinstance(key, str)
         return key
     return os.environ["SERVICE_KEY"]
+
+
+@pytest.fixture(scope="session")
+def service_version(request: pytest.FixtureRequest) -> str | None:
+    if key := request.config.getoption("--service-version"):
+        assert isinstance(key, str)
+        return key
+    return None
 
 
 @pytest.fixture(scope="session")
@@ -426,6 +441,17 @@ def _open_with_resources(page: Page, *, click_it: bool):
     return open_with_resources_button
 
 
+def _select_service_version(page: Page, *, version: str) -> None:
+    try:
+        # since https://github.com/ITISFoundation/osparc-simcore/pull/7060
+        page.get_by_test_id("serviceSelectBox", timeout=5 * SECOND).select_option(
+            version
+        )
+    except TimeoutError:
+        # we try the non robust way
+        page.get_by_label("Version").select_option(version)
+
+
 @pytest.fixture
 def create_new_project_and_delete(
     page: Page,
@@ -433,6 +459,7 @@ def create_new_project_and_delete(
     is_product_billable: bool,
     api_request_context: APIRequestContext,
     product_url: AnyUrl,
+    service_version: str | None,
 ) -> Iterator[Callable[[tuple[RunningState], bool], dict[str, Any]]]:
     """The first available service currently displayed in the dashboard will be opened
     NOTE: cannot be used multiple times or going back to dashboard will fail!!
@@ -441,6 +468,7 @@ def create_new_project_and_delete(
 
     def _(
         expected_states: tuple[RunningState] = (RunningState.NOT_STARTED,),
+        *,
         press_open: bool = True,
         template_id: str | None = None,
     ) -> dict[str, Any]:
@@ -467,6 +495,8 @@ def create_new_project_and_delete(
             ):
                 open_with_resources_clicked = False
                 # Project detail view pop-ups shows
+                if service_version is not None:
+                    _select_service_version(page, version=service_version)
                 if press_open:
                     open_button = page.get_by_test_id("openResource")
                     if template_id is not None:
@@ -631,7 +661,7 @@ def create_project_from_new_button(
     def _(plus_button_test_id: str) -> dict[str, Any]:
         start_study_from_plus_button(plus_button_test_id)
         expected_states = (RunningState.UNKNOWN,)
-        return create_new_project_and_delete(expected_states, False)
+        return create_new_project_and_delete(expected_states, press_open=False)
 
     return _
 
@@ -644,7 +674,9 @@ def create_project_from_template_dashboard(
     def _(template_id: str) -> dict[str, Any]:
         find_and_click_template_in_dashboard(template_id)
         expected_states = (RunningState.UNKNOWN,)
-        return create_new_project_and_delete(expected_states, True, template_id)
+        return create_new_project_and_delete(
+            expected_states, press_open=True, template_id=template_id
+        )
 
     return _
 
@@ -663,7 +695,7 @@ def create_project_from_service_dashboard(
         expected_states = (RunningState.UNKNOWN,)
         if service_type is ServiceType.COMPUTATIONAL:
             expected_states = (RunningState.NOT_STARTED,)
-        return create_new_project_and_delete(expected_states, True)
+        return create_new_project_and_delete(expected_states, press_open=True)
 
     return _
 
