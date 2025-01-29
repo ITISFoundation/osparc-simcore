@@ -26,11 +26,7 @@ queue_rules:
       - check-success=integration-tests
       - check-success=system-tests
 
-# NOTE: in case of flaky tests you above checks will fail
-# the PR will be removed from the queue.
-# Once the PR is ready to be merged the flaky tests will
-# be retried automatically.
-# As soon as the CI is green, the PR will be pushed to the queue
+
 pull_request_rules:
   - name: retry flaky tests (when PR is approved)
     conditions:
