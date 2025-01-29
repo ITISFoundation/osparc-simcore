@@ -41,7 +41,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
   },
 
   statics: {
-    createMenuButton: function(icon, label, description) {
+    createMenuButton: function(icon, label, infoText) {
       const menuButton = new qx.ui.menu.Button().set({
         icon: icon || null,
         label,
@@ -55,8 +55,8 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
         rich: true,
         marginRight: 20,
       });
-      if (description) {
-        const infoHint = new osparc.ui.hint.InfoHint(description).set({
+      if (infoText) {
+        const infoHint = new osparc.ui.hint.InfoHint(infoText).set({
           source: osparc.ui.hint.InfoHint.INFO_ICON + "/16",
         });
         // where the shortcut is supposed to go
@@ -66,9 +66,9 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
       return menuButton;
     },
 
-    createHeader: function(icon, label, description) {
+    createHeader: function(icon, label, infoText) {
       const headerLabel = `--- ${label} ---`;
-      return this.createMenuButton(icon, headerLabel, description).set({
+      return this.createMenuButton(icon, headerLabel, infoText).set({
         anonymous: true,
         cursor: "default",
         font: "text-16",
