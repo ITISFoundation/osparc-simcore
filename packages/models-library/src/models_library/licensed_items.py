@@ -43,5 +43,4 @@ class LicensedItemDB(BaseModel):
 class LicensedItemUpdateDB(BaseModel):
     licensed_resource_name: str | None = None
     pricing_plan_id: PricingPlanId | None = None
-
     trash: bool | None = None
