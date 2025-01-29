@@ -1,11 +1,18 @@
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+# pylint: disable=too-many-arguments
+# pylint: disable=too-many-statements
+
 import re
-from typing import Annotated, Any, Iterator, Literal
+from collections.abc import Iterator
+from typing import Annotated, Any, Literal
 
 import pytest
 import respx
 from faker import Faker
 from httpx import AsyncClient
-from pydantic import BaseModel, Field, HttpUrl, ValidationError
+from pydantic import BaseModel, BeforeValidator, Field, HttpUrl, ValidationError
 from servicelib.aiohttp import status
 
 
@@ -19,12 +26,13 @@ def mock_itis_vip_downloadables_api(faker: Faker) -> Iterator[respx.MockRouter]:
                 "ID": faker.random_int(min=70, max=90),
                 "Description": faker.sentence(),
                 "Thumbnail": faker.image_url(),
-                "Features": f"{{name: {faker.name()} Right Hand, version: V{faker.pyint()}.0, sex: {faker.gender()}, age: {faker.age()} years,date: {faker.date()}, ethnicity: Caucasian, functionality: Posable}}",
-                "DOI": None,
+                # NOTE: this is manually added in the server side so be more robust to errors
+                "Features": f"{{name: {faker.name()} Right Hand, version: V{faker.pyint()}.0, sex: Male, age: 8 years,date: {faker.date()}, ethnicity: Caucasian, functionality: Posable}}",
+                "DOI": faker.bothify(text="10.####/ViP#####-##-#"),
                 "LicenseKey": faker.bothify(text="MODEL_????_V#"),
-                "LicenseVersion": "V1.0",
-                "Protection": "Code",
-                "AvailableFromURL": None,
+                "LicenseVersion": faker.bothify(text="V#.0"),
+                "Protection": faker.random_element(elements=["Code", "PayPal"]),
+                "AvailableFromURL": faker.random_element(elements=[None, faker.url()]),
             }
             for _ in range(8)
         ],
@@ -37,17 +45,22 @@ def mock_itis_vip_downloadables_api(faker: Faker) -> Iterator[respx.MockRouter]:
         yield mock
 
 
-def descriptor_to_dict(descriptor: str) -> dict[str, Any]:
+def _feature_descriptor_to_dict(descriptor: str) -> dict[str, Any]:
+    # NOTE: this is manually added in the server side so be more robust to errors
     pattern = r"(\w+): ([^,]+)"
-    matches = re.findall(pattern, descriptor)
-    return {key: value for key, value in matches}
+    matches = re.findall(pattern, descriptor.strip("{}"))
+    return dict(matches)
 
 
 class AvailableDownload(BaseModel):
     id: Annotated[int, Field(alias="ID")]
     description: Annotated[str, Field(alias="Description")]
     thumbnail: Annotated[str, Field(alias="Thumbnail")]
-    features: Annotated[dict[str, Any], Field(alias="Features")]
+    features: Annotated[
+        dict[str, Any],
+        BeforeValidator(_feature_descriptor_to_dict),
+        Field(alias="Features"),
+    ]
     doi: Annotated[str, Field(alias="DOI")]
     license_key: Annotated[str | None, Field(alias="LicenseKey")]
     license_version: Annotated[str | None, Field(alias="LicenseVersion")]
@@ -62,7 +75,7 @@ class ResponseData(BaseModel):
     ]
 
 
-async def test_computational_pantom_api(
+async def test_fetch_itis_vip_api(
     mock_itis_vip_downloadables_api: respx.MockRouter,
 ):
     async with AsyncClient(base_url="http://testserver") as client:
@@ -76,10 +89,10 @@ async def test_computational_pantom_api(
             pytest.fail(f"Response validation failed: {e}")
 
         assert validated_data.msg == 0
-        assert len(validated_data.availableDownloads) == 8
+        assert len(validated_data.available_downloads) == 8
 
         assert (
-            validated_data.availableDownloads[0].Features["functionality"] == "Posable"
+            validated_data.available_downloads[0].features["functionality"] == "Posable"
         )
 
-        print(validated_data.model_dump_json())
+        print(validated_data.model_dump_json(indent=1))
