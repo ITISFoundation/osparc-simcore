@@ -185,7 +185,7 @@ async def test_pull_image(
 
 @pytest.mark.parametrize(
     "image",
-    ["alpine:latest", "busybox:latest"],
+    ["nginx:latest", "busybox:latest"],
 )
 async def test_pull_image_without_layer_information(
     remove_images_from_host: Callable[[list[str]], Awaitable[None]],
