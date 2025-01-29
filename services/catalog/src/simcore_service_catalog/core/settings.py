@@ -2,6 +2,7 @@ import logging
 from functools import cached_property
 from typing import Annotated, Final
 
+from common_library.basic_types import DEFAULT_FACTORY
 from models_library.api_schemas_catalog.services_specifications import (
     ServiceSpecifications,
 )
@@ -59,40 +60,51 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
             ),
         ),
     ] = LogLevel.INFO
-    CATALOG_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
-        default=False,
-        validation_alias=AliasChoices(
-            "CATALOG_LOG_FORMAT_LOCAL_DEV_ENABLED", "LOG_FORMAT_LOCAL_DEV_ENABLED"
+    CATALOG_LOG_FORMAT_LOCAL_DEV_ENABLED: Annotated[
+        bool,
+        Field(
+            validation_alias=AliasChoices(
+                "CATALOG_LOG_FORMAT_LOCAL_DEV_ENABLED", "LOG_FORMAT_LOCAL_DEV_ENABLED"
+            ),
+            description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
         ),
-        description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
-    )
-    CATALOG_LOG_FILTER_MAPPING: dict[LoggerName, list[MessageSubstring]] = Field(
-        default_factory=dict,
-        validation_alias=AliasChoices(
-            "CATALOG_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"
+    ] = False
+    CATALOG_LOG_FILTER_MAPPING: Annotated[
+        dict[LoggerName, list[MessageSubstring]],
+        Field(
+            default_factory=dict,
+            validation_alias=AliasChoices(
+                "CATALOG_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"
+            ),
+            description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') to a list of log message patterns that should be filtered out.",
         ),
-        description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') to a list of log message patterns that should be filtered out.",
-    )
-    CATALOG_DEV_FEATURES_ENABLED: bool = Field(
-        default=False,
-        description="Enables development features. WARNING: make sure it is disabled in production .env file!",
-    )
+    ] = DEFAULT_FACTORY
 
-    CATALOG_POSTGRES: PostgresSettings | None = Field(
-        json_schema_extra={"auto_default_from_env": True}
-    )
+    CATALOG_DEV_FEATURES_ENABLED: Annotated[
+        bool,
+        Field(
+            description="Enables development features. WARNING: make sure it is disabled in production .env file!",
+        ),
+    ] = False
 
-    CATALOG_RABBITMQ: RabbitSettings = Field(
-        json_schema_extra={"auto_default_from_env": True}
-    )
+    CATALOG_POSTGRES: Annotated[
+        PostgresSettings | None,
+        Field(json_schema_extra={"auto_default_from_env": True}),
+    ]
 
-    CATALOG_CLIENT_REQUEST: ClientRequestSettings | None = Field(
-        json_schema_extra={"auto_default_from_env": True}
-    )
+    CATALOG_RABBITMQ: Annotated[
+        RabbitSettings, Field(json_schema_extra={"auto_default_from_env": True})
+    ]
 
-    CATALOG_DIRECTOR: DirectorSettings | None = Field(
-        json_schema_extra={"auto_default_from_env": True}
-    )
+    CATALOG_CLIENT_REQUEST: Annotated[
+        ClientRequestSettings | None,
+        Field(json_schema_extra={"auto_default_from_env": True}),
+    ]
+
+    CATALOG_DIRECTOR: Annotated[
+        DirectorSettings | None,
+        Field(json_schema_extra={"auto_default_from_env": True}),
+    ]
 
     CATALOG_PROMETHEUS_INSTRUMENTATION_ENABLED: bool = True
 
@@ -106,10 +118,13 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     CATALOG_SERVICES_DEFAULT_SPECIFICATIONS: ServiceSpecifications = (
         _DEFAULT_SERVICE_SPECIFICATIONS
     )
-    CATALOG_TRACING: TracingSettings | None = Field(
-        json_schema_extra={"auto_default_from_env": True},
-        description="settings for opentelemetry tracing",
-    )
+    CATALOG_TRACING: Annotated[
+        TracingSettings | None,
+        Field(
+            json_schema_extra={"auto_default_from_env": True},
+            description="settings for opentelemetry tracing",
+        ),
+    ]
 
-    DIRECTOR_DEFAULT_MAX_MEMORY: NonNegativeInt = Field(default=0)
-    DIRECTOR_DEFAULT_MAX_NANO_CPUS: NonNegativeInt = Field(default=0)
+    DIRECTOR_DEFAULT_MAX_MEMORY: NonNegativeInt = 0
+    DIRECTOR_DEFAULT_MAX_NANO_CPUS: NonNegativeInt = 0

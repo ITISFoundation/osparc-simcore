@@ -1,5 +1,5 @@
 from functools import cached_property
-from typing import Any, Self
+from typing import Annotated, Any, Self
 
 from pydantic import (
     AnyHttpUrl,
@@ -15,29 +15,37 @@ from .base import BaseCustomSettings
 
 
 class RegistrySettings(BaseCustomSettings):
-    REGISTRY_AUTH: bool = Field(..., description="do registry authentication")
-    REGISTRY_PATH: str | None = Field(
-        default=None,
-        # This is useful in case of a local registry, where the registry url (path) is relative to the host docker engine"
-        description="development mode only, in case a local registry is used - "
-        "this is the hostname to the docker registry as seen from the host running the containers (e.g. 127.0.0.1:5000)",
-    )
-    # NOTE: name is missleading, http or https protocol are not included
-    REGISTRY_URL: str = Field(
-        ...,
-        description="hostname of docker registry (without protocol but with port if available)",
-        min_length=1,
-    )
+    REGISTRY_AUTH: Annotated[bool, Field(description="do registry authentication")]
+    REGISTRY_PATH: Annotated[
+        str | None,
+        Field(
+            # This is useful in case of a local registry, where the registry url (path) is relative to the host docker engine"
+            description="development mode only, in case a local registry is used - "
+            "this is the hostname to the docker registry as seen from the host running the containers (e.g. 127.0.0.1:5000)",
+        ),
+    ] = None
 
-    REGISTRY_USER: str = Field(
-        ..., description="username to access the docker registry"
-    )
-    REGISTRY_PW: SecretStr = Field(
-        ..., description="password to access the docker registry"
-    )
-    REGISTRY_SSL: bool = Field(
-        ..., description="True if docker registry is using HTTPS protocol"
-    )
+    REGISTRY_URL: Annotated[
+        str,
+        Field(
+            # NOTE: name is missleading, http or https protocol are not included
+            description="hostname of docker registry (without protocol but with port if available)",
+            min_length=1,
+        ),
+    ]
+
+    REGISTRY_USER: Annotated[
+        str,
+        Field(description="username to access the docker registry"),
+    ]
+    REGISTRY_PW: Annotated[
+        SecretStr,
+        Field(description="password to access the docker registry"),
+    ]
+    REGISTRY_SSL: Annotated[
+        bool,
+        Field(description="True if docker registry is using HTTPS protocol"),
+    ]
 
     @field_validator("REGISTRY_PATH", mode="before")
     @classmethod
@@ -45,7 +53,7 @@ class RegistrySettings(BaseCustomSettings):
         return None if v == "None" else v
 
     @model_validator(mode="after")
-    def check_registry_authentication(self: Self) -> Self:
+    def _check_registry_authentication(self: Self) -> Self:
         if self.REGISTRY_AUTH and any(
             not v for v in (self.REGISTRY_USER, self.REGISTRY_PW)
         ):
