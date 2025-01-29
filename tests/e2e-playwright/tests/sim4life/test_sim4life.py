@@ -32,6 +32,7 @@ def test_sim4life(
     is_autoscaled: bool,
     check_videostreaming: bool,
     product_url: AnyUrl,
+    is_service_legacy: bool,
 ):
     if use_plus_button:
         project_data = create_project_from_new_button(service_key)
@@ -54,6 +55,7 @@ def test_sim4life(
         autoscaled=is_autoscaled,
         copy_workspace=False,
         product_url=product_url,
+        is_service_legacy=is_service_legacy,
     )
     s4l_websocket = resp["websocket"]
     s4l_iframe = resp["iframe"]

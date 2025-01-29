@@ -29,7 +29,7 @@ async def client(
     # - Needed for app to trigger start/stop event handlers
     # - Prefer this client instead of fastapi.testclient.TestClient
     async with AsyncClient(
-        app=app,
+        transport=ASGITransport(app=app),
         base_url="http://payments.testserver.io",
         headers={"Content-Type": "application/json"},
     ) as httpx_client:
