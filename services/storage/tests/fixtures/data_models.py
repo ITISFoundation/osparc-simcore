@@ -82,9 +82,7 @@ async def create_project(
                 .values(**random_project(**prj_config))
                 .returning(sa.literal_column("*"))
             )
-            await conn.commit()
-            row = result.fetchone()
-            assert row
+            row = result.one()
             created_project_uuids.append(row.uuid)
             return dict(row._asdict())
 
@@ -111,7 +109,7 @@ async def create_project_access_rights(
                 .values(
                     project_uuid=f"{project_id}",
                     gid=sa.select(users.c.primary_gid)
-                    .where(users.c.id == f"{user_id}")
+                    .where(users.c.id == user_id)
                     .scalar_subquery(),
                     read=read,
                     write=write,
@@ -119,9 +117,7 @@ async def create_project_access_rights(
                 )
                 .returning(sa.literal_column("*"))
             )
-            await conn.commit()
-            row = result.fetchone()
-            assert row
+            row = result.one()
             _created.append((row.project_uuid, row.gid))
 
     yield _creator
