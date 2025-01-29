@@ -77,11 +77,11 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
     },
 
     createHeader: function(icon, label, infoText) {
-      const headerLabel = `--- ${label} ---`;
-      return this.createMenuButton(icon, headerLabel, infoText).set({
+      return this.createMenuButton(icon, label, infoText).set({
         anonymous: true,
         cursor: "default",
-        font: "text-16",
+        font: "text-14",
+        textColor: "text-darker",
       });
     },
   },
@@ -149,6 +149,10 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
       categories.forEach(category => {
         const categoryHeader = this.self().createHeader(null, category["title"], category["description"]);
         categoryHeader["categoryId"] = category["id"];
+        if (this.__categoryHeaders.length) {
+          // add spacing between categories
+          categoryHeader.setMarginTop(10);
+        }
         this.__categoryHeaders.push(categoryHeader);
         this.add(categoryHeader);
       });
