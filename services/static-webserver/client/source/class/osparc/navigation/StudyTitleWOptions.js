@@ -84,7 +84,8 @@ qx.Class.define("osparc.navigation.StudyTitleWOptions", {
             appearance: "fab-button",
             menu: optionsMenu,
             icon: "@FontAwesome5Solid/ellipsis-v/14",
-            allowGrowY: false
+            allowGrowY: false,
+            width: 24,
           });
           this._add(control);
           break;
