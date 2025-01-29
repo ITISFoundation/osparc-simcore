@@ -11,6 +11,7 @@ from models_library.licensed_items import (
     LicensedItemDB,
     LicensedItemUpdateDB,
     LicensedResourceType,
+    VipDetails,
 )
 from models_library.rest_ordering import OrderBy
 from pytest_simcore.helpers.webserver_login import UserInfoDict
@@ -44,9 +45,12 @@ async def test_licensed_items_db_crud(
     licensed_item_db = await _licensed_items_repository.create(
         client.app,
         product_name=osparc_product_name,
-        name="Model A",
+        display_name="Model A",
         licensed_resource_type=LicensedResourceType.VIP_MODEL,
         pricing_plan_id=pricing_plan_id,
+        licensed_resource_type_details=VipDetails.model_config["json_schema_extra"][
+            "examples"
+        ][0],
     )
     _licensed_item_id = licensed_item_db.licensed_item_id
 
@@ -64,13 +68,14 @@ async def test_licensed_items_db_crud(
         licensed_item_id=_licensed_item_id,
         product_name=osparc_product_name,
     )
-    assert licensed_item_db.name == "Model A"
+    assert licensed_item_db.display_name == "Model A"
+    assert isinstance(licensed_item_db.licensed_resource_type_details, VipDetails)
 
     await _licensed_items_repository.update(
         client.app,
         licensed_item_id=_licensed_item_id,
         product_name=osparc_product_name,
-        updates=LicensedItemUpdateDB(name="Model B"),
+        updates=LicensedItemUpdateDB(display_name="Model B"),
     )
 
     licensed_item_db = await _licensed_items_repository.get(
@@ -78,7 +83,7 @@ async def test_licensed_items_db_crud(
         licensed_item_id=_licensed_item_id,
         product_name=osparc_product_name,
     )
-    assert licensed_item_db.name == "Model B"
+    assert licensed_item_db.display_name == "Model B"
 
     licensed_item_db = await _licensed_items_repository.delete(
         client.app,

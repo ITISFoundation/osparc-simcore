@@ -13,6 +13,7 @@ from models_library.licensed_items import (
     LicensedItemID,
     LicensedItemUpdateDB,
     LicensedResourceType,
+    VipDetails,
 )
 from models_library.products import ProductName
 from models_library.resource_tracker import PricingPlanId
@@ -35,11 +36,11 @@ _logger = logging.getLogger(__name__)
 
 _SELECTION_ARGS = (
     licensed_items.c.licensed_item_id,
-    licensed_items.c.name,
-    licensed_items.c.license_key,
+    licensed_items.c.display_name,
     licensed_items.c.licensed_resource_type,
     licensed_items.c.pricing_plan_id,
     licensed_items.c.product_name,
+    licensed_items.c.licensed_resource_type_details,
     licensed_items.c.created,
     licensed_items.c.modified,
 )
@@ -52,18 +53,20 @@ async def create(
     connection: AsyncConnection | None = None,
     *,
     product_name: ProductName,
-    name: str,
+    display_name: str,
     licensed_resource_type: LicensedResourceType,
     pricing_plan_id: PricingPlanId,
+    licensed_resource_type_details: VipDetails,
 ) -> LicensedItemDB:
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         result = await conn.stream(
             licensed_items.insert()
             .values(
-                name=name,
+                display_name=display_name,
                 licensed_resource_type=licensed_resource_type,
                 pricing_plan_id=pricing_plan_id,
                 product_name=product_name,
+                licensed_resource_type_details=licensed_resource_type_details,
                 created=func.now(),
                 modified=func.now(),
             )

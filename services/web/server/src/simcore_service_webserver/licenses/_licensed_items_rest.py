@@ -2,8 +2,8 @@ import logging
 
 from aiohttp import web
 from models_library.api_schemas_webserver.licensed_items import (
-    LicensedItemGet,
-    LicensedItemGetPage,
+    LicensedItemRestGet,
+    LicensedItemRestGetPage,
 )
 from models_library.rest_ordering import OrderBy
 from models_library.rest_pagination import Page
@@ -24,6 +24,8 @@ from ..utils_aiohttp import envelope_json_response
 from . import _licensed_items_service
 from ._common.exceptions_handlers import handle_plugin_requests_exceptions
 from ._common.models import (
+    LicensedItem,
+    LicensedItemPage,
     LicensedItemsBodyParams,
     LicensedItemsListQueryParams,
     LicensedItemsPathParams,
@@ -46,7 +48,7 @@ async def list_licensed_items(request: web.Request):
         LicensedItemsListQueryParams, request
     )
 
-    licensed_item_get_page: LicensedItemGetPage = (
+    licensed_item_page: LicensedItemPage = (
         await _licensed_items_service.list_licensed_items(
             app=request.app,
             product_name=req_ctx.product_name,
@@ -55,8 +57,23 @@ async def list_licensed_items(request: web.Request):
             order_by=OrderBy.model_construct(**query_params.order_by.model_dump()),
         )
     )
+    licensed_item_get_page: LicensedItemRestGetPage = LicensedItemRestGetPage(
+        items=[
+            LicensedItemRestGet.model_construct(
+                licensed_item_id=licensed_item.licensed_item_id,
+                display_name=licensed_item.display_name,
+                licensed_resource_type=licensed_item.licensed_resource_type,
+                pricing_plan_id=licensed_item.pricing_plan_id,
+                licensed_resource_type_details=licensed_item.licensed_resource_type_details,
+                created_at=licensed_item.created_at,
+                modified_at=licensed_item.modified_at,
+            )
+            for licensed_item in licensed_item_page.items
+        ],
+        total=licensed_item_page.total,
+    )
 
-    page = Page[LicensedItemGet].model_validate(
+    page = Page[LicensedItemRestGet].model_validate(
         paginate_data(
             chunk=licensed_item_get_page.items,
             request_url=request.url,
@@ -81,12 +98,19 @@ async def get_licensed_item(request: web.Request):
     req_ctx = LicensedItemsRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(LicensedItemsPathParams, request)
 
-    licensed_item_get: LicensedItemGet = (
-        await _licensed_items_service.get_licensed_item(
-            app=request.app,
-            licensed_item_id=path_params.licensed_item_id,
-            product_name=req_ctx.product_name,
-        )
+    licensed_item: LicensedItem = await _licensed_items_service.get_licensed_item(
+        app=request.app,
+        licensed_item_id=path_params.licensed_item_id,
+        product_name=req_ctx.product_name,
+    )
+    licensed_item_get = LicensedItemRestGet.model_construct(
+        licensed_item_id=licensed_item.licensed_item_id,
+        display_name=licensed_item.display_name,
+        licensed_resource_type=licensed_item.licensed_resource_type,
+        pricing_plan_id=licensed_item.pricing_plan_id,
+        licensed_resource_type_details=licensed_item.licensed_resource_type_details,
+        created_at=licensed_item.created_at,
+        modified_at=licensed_item.modified_at,
     )
 
     return envelope_json_response(licensed_item_get)

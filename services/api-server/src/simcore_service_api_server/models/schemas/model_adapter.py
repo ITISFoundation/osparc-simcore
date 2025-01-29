@@ -8,7 +8,7 @@ from models_library.api_schemas_api_server.pricing_plans import (
     ServicePricingPlanGet as _ServicePricingPlanGet,
 )
 from models_library.api_schemas_webserver.licensed_items import (
-    LicensedItemGet as _LicensedItemGet,
+    LicensedItemRpcGet as _LicensedItemGet,
 )
 from models_library.api_schemas_webserver.licensed_items_checkouts import (
     LicensedItemCheckoutRpcGet as _LicensedItemCheckoutRpcGet,
@@ -24,7 +24,11 @@ from models_library.api_schemas_webserver.wallets import (
 )
 from models_library.basic_types import IDStr, NonNegativeDecimal
 from models_library.groups import GroupID
-from models_library.licensed_items import LicensedItemID, LicensedResourceType
+from models_library.licensed_items import (
+    LicensedItemID,
+    LicensedResourceType,
+    VipDetails,
+)
 from models_library.products import ProductName
 from models_library.resource_tracker import (
     PricingPlanClassification,
@@ -137,10 +141,10 @@ assert set(ServicePricingPlanGetLegacy.model_fields.keys()) == set(
 
 class LicensedItemGet(BaseModel):
     licensed_item_id: LicensedItemID
-    name: Annotated[str, Field(alias="display_name")]
-    license_key: str | None
+    display_name: Annotated[str, Field(alias="display_name")]
     licensed_resource_type: LicensedResourceType
     pricing_plan_id: PricingPlanId
+    licensed_resource_type_details: VipDetails
     created_at: datetime
     modified_at: datetime
     model_config = ConfigDict(

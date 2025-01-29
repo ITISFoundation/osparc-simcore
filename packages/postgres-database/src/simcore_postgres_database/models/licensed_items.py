@@ -4,7 +4,7 @@
 import enum
 
 import sqlalchemy as sa
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 
 from ._common import RefActions, column_created_datetime, column_modified_datetime
 from .base import metadata
@@ -25,7 +25,7 @@ licensed_items = sa.Table(
         server_default=sa.text("gen_random_uuid()"),
     ),
     sa.Column(
-        "name",
+        "display_name",
         sa.String,
         nullable=False,
     ),
@@ -59,10 +59,10 @@ licensed_items = sa.Table(
         doc="Product name",
     ),
     sa.Column(
-        "license_key",
-        sa.String,
-        nullable=True,
-        doc="Purpose: Acts as a mapping key to the internal license server. Usage: The Sim4Life base applications use this key to check out a seat from the internal license server.",
+        "licensed_resource_type_details",
+        JSONB,
+        nullable=False,
+        server_default=sa.text("'{}'::jsonb"),
     ),
     column_created_datetime(timezone=True),
     column_modified_datetime(timezone=True),
