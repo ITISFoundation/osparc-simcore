@@ -58,7 +58,7 @@ qx.Class.define("osparc.file.FilePicker", {
     },
 
     pageContext: {
-      check: ["workbench", "guided", "app"],
+      check: ["workbench", "guided", "app", "standalone"],
       nullable: false
     }
   },
@@ -291,8 +291,7 @@ qx.Class.define("osparc.file.FilePicker", {
         this.__buildInfoLayout();
       } else {
         this.__addProgressBar();
-        const isWorkbenchContext = this.getPageContext() === "workbench";
-        if (isWorkbenchContext) {
+        if (this.getPageContext() === "workbench") {
           this.__buildWorkbenchLayout();
         } else {
           this.setMargin(10);
@@ -545,8 +544,8 @@ qx.Class.define("osparc.file.FilePicker", {
         flex: 1
       });
       treeFolderLayout.add(treeLayout, 0);
-      const allowMultiselection = false;
-      const folderViewer = new osparc.file.FolderViewer(allowMultiselection);
+      const allowMultiSelection = false;
+      const folderViewer = new osparc.file.FolderViewer(allowMultiSelection);
       treeFolderLayout.add(folderViewer, 1);
 
       filesTree.addListener("selectionChanged", () => {

@@ -582,21 +582,16 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     __applyUiMode: function(uiMode) {
-      let source = null;
-      let toolTipText = null;
       switch (uiMode) {
         case "guided":
-        case "app":
-          source = osparc.dashboard.CardBase.MODE_APP;
-          toolTipText = this.tr("App mode");
+        case "app": {
+          const uiModeIcon = this.getChildControl("workbench-mode");
+          uiModeIcon.set({
+            source: osparc.dashboard.CardBase.MODE_APP,
+            toolTipText: this.tr("App mode"),
+          });
           break;
-      }
-      if (source) {
-        const uiModeIcon = this.getChildControl("workbench-mode");
-        uiModeIcon.set({
-          source,
-          toolTipText,
-        });
+        }
       }
     },
 

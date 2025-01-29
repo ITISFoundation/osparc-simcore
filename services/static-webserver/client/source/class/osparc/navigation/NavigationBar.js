@@ -84,7 +84,8 @@ qx.Class.define("osparc.navigation.NavigationBar", {
     PAGE_CONTEXT: {
       0: "dashboard",
       1: "workbench",
-      2: "app"
+      2: "app",
+      3: "standalone", // OM
     }
   },
 

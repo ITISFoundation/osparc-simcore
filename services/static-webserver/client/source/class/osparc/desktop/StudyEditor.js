@@ -105,11 +105,11 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     },
 
     pageContext: {
-      check: ["workbench", "guided", "app"],
+      check: ["workbench", "guided", "app", "standalone"], // "guided" is not longer used
       init: null,
       nullable: false,
       event: "changePageContext",
-      apply: "__applyPageContext"
+      apply: "__applyPageContext" // OM
     }
   },
 
@@ -257,6 +257,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         case "app":
           this.__slideshowView.startSlides();
           break;
+        // OM
         default:
           this.__workbenchView.openFirstNode();
           break;

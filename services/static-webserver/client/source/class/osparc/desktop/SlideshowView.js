@@ -271,7 +271,7 @@ qx.Class.define("osparc.desktop.SlideshowView", {
         }
         view.setNode(node);
         if (node.isDynamic()) {
-          view.getSettingsLayout().setVisibility(this.getPageContext() === "app" ? "excluded" : "visible");
+          view.getSettingsLayout().setVisibility(["app", "standalone"].includes(this.getPageContext()) ? "excluded" : "visible");
         }
       }
       this.__connectMaximizeEvents(node);
