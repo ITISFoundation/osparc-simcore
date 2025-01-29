@@ -4,16 +4,15 @@
 # pylint: disable=too-many-arguments
 # pylint: disable=too-many-statements
 
-import re
 from collections.abc import Iterator
-from typing import Annotated, Any, Literal
 
 import pytest
 import respx
 from faker import Faker
 from httpx import AsyncClient
-from pydantic import BaseModel, BeforeValidator, Field, HttpUrl, ValidationError
+from pydantic import ValidationError
 from servicelib.aiohttp import status
+from simcore_service_webserver.licenses._itis_vip_service import ResponseData
 
 
 @pytest.fixture
@@ -43,36 +42,6 @@ def mock_itis_vip_downloadables_api(faker: Faker) -> Iterator[respx.MockRouter]:
             status_code=200, json=response_data
         )
         yield mock
-
-
-def _feature_descriptor_to_dict(descriptor: str) -> dict[str, Any]:
-    # NOTE: this is manually added in the server side so be more robust to errors
-    pattern = r"(\w+): ([^,]+)"
-    matches = re.findall(pattern, descriptor.strip("{}"))
-    return dict(matches)
-
-
-class AvailableDownload(BaseModel):
-    id: Annotated[int, Field(alias="ID")]
-    description: Annotated[str, Field(alias="Description")]
-    thumbnail: Annotated[str, Field(alias="Thumbnail")]
-    features: Annotated[
-        dict[str, Any],
-        BeforeValidator(_feature_descriptor_to_dict),
-        Field(alias="Features"),
-    ]
-    doi: Annotated[str, Field(alias="DOI")]
-    license_key: Annotated[str | None, Field(alias="LicenseKey")]
-    license_version: Annotated[str | None, Field(alias="LicenseVersion")]
-    protection: Annotated[Literal["Code", "PayPal"], Field(alias="Protection")]
-    available_from_url: Annotated[HttpUrl | None, Field(alias="AvailableFromURL")]
-
-
-class ResponseData(BaseModel):
-    msg: int = -1
-    available_downloads: Annotated[
-        list[AvailableDownload], Field(alias="availableDownloads")
-    ]
 
 
 async def test_fetch_itis_vip_api(
