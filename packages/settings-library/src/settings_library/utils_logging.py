@@ -1,6 +1,8 @@
 import logging
 from functools import cached_property
 
+from common_library.basic_types import LogLevel
+
 
 class MixinLoggingSettings:
     """
@@ -8,14 +10,14 @@ class MixinLoggingSettings:
     """
 
     @classmethod
-    def validate_log_level(cls, value: str) -> str:
+    def validate_log_level(cls, value: str) -> LogLevel:
         """Standard implementation for @validator("LOG_LEVEL")"""
         try:
             getattr(logging, value.upper())
         except AttributeError as err:
             msg = f"{value.upper()} is not a valid level"
             raise ValueError(msg) from err
-        return value.upper()
+        return LogLevel(value.upper())
 
     @cached_property
     def log_level(self) -> int:

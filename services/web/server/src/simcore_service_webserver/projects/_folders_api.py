@@ -6,7 +6,7 @@ from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.users import UserID
 
-from ..folders import _folders_repository as folders_db
+from ..folders import _folders_repository as _folders_repository
 from ..projects._access_rights_api import get_user_project_access_rights
 from . import _folders_db as project_to_folders_db
 from .db import APP_PROJECT_DBAPI, ProjectDBAPI
@@ -45,7 +45,7 @@ async def move_project_into_folder(
 
     if folder_id:
         # Check user has access to folder
-        await folders_db.get_for_user_or_workspace(
+        await _folders_repository.get_for_user_or_workspace(
             app,
             folder_id=folder_id,
             product_name=product_name,

@@ -1,6 +1,7 @@
 from functools import cached_property
 from typing import Annotated
 
+from common_library.basic_types import DEFAULT_FACTORY
 from models_library.basic_types import BootModeEnum, LogLevel
 from pydantic import AliasChoices, Field, TypeAdapter, field_validator
 from pydantic.networks import AnyUrl
@@ -34,32 +35,39 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         ),
     ] = LogLevel.INFO
 
-    PENNSIEVE: PennsieveSettings = Field(
-        json_schema_extra={"auto_default_from_env": True}
-    )
+    PENNSIEVE: Annotated[
+        PennsieveSettings, Field(json_schema_extra={"auto_default_from_env": True})
+    ]
 
-    DATCORE_ADAPTER_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
-        default=False,
-        validation_alias=AliasChoices(
-            "DATCORE_ADAPTER_LOG_FORMAT_LOCAL_DEV_ENABLED",
-            "LOG_FORMAT_LOCAL_DEV_ENABLED",
+    DATCORE_ADAPTER_LOG_FORMAT_LOCAL_DEV_ENABLED: Annotated[
+        bool,
+        Field(
+            validation_alias=AliasChoices(
+                "DATCORE_ADAPTER_LOG_FORMAT_LOCAL_DEV_ENABLED",
+                "LOG_FORMAT_LOCAL_DEV_ENABLED",
+            ),
+            description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
         ),
-        description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
-    )
-    DATCORE_ADAPTER_LOG_FILTER_MAPPING: dict[
-        LoggerName, list[MessageSubstring]
-    ] = Field(
-        default_factory=dict,
-        validation_alias=AliasChoices(
-            "DATCORE_ADAPTER_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"
+    ] = False
+    DATCORE_ADAPTER_LOG_FILTER_MAPPING: Annotated[
+        dict[LoggerName, list[MessageSubstring]],
+        Field(
+            default_factory=dict,
+            validation_alias=AliasChoices(
+                "DATCORE_ADAPTER_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"
+            ),
+            description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') to a list of log message patterns that should be filtered out.",
         ),
-        description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') to a list of log message patterns that should be filtered out.",
-    )
+    ] = DEFAULT_FACTORY
+
     DATCORE_ADAPTER_PROMETHEUS_INSTRUMENTATION_ENABLED: bool = True
-    DATCORE_ADAPTER_TRACING: TracingSettings | None = Field(
-        description="settings for opentelemetry tracing",
-        json_schema_extra={"auto_default_from_env": True},
-    )
+    DATCORE_ADAPTER_TRACING: Annotated[
+        TracingSettings | None,
+        Field(
+            description="settings for opentelemetry tracing",
+            json_schema_extra={"auto_default_from_env": True},
+        ),
+    ]
 
     @cached_property
     def debug(self) -> bool:

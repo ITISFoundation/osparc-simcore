@@ -1,6 +1,7 @@
 from aiohttp import web
 from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
     PricingPlanGet,
+    PricingPlanPage,
     PricingPlanToServiceGet,
     PricingUnitGet,
 )
@@ -28,11 +29,19 @@ from ..rabbitmq import get_rabbitmq_rpc_client
 
 async def list_pricing_plans(
     app: web.Application,
+    *,
     product_name: ProductName,
-) -> list[PricingPlanGet]:
+    exclude_inactive: bool,
+    offset: int,
+    limit: int,
+) -> PricingPlanPage:
     rpc_client = get_rabbitmq_rpc_client(app)
-    output: list[PricingPlanGet] = await pricing_plans.list_pricing_plans(
-        rpc_client, product_name=product_name
+    output: PricingPlanPage = await pricing_plans.list_pricing_plans(
+        rpc_client,
+        product_name=product_name,
+        exclude_inactive=exclude_inactive,
+        offset=offset,
+        limit=limit,
     )
     return output
 

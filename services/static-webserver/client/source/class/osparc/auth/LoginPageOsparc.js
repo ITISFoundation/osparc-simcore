@@ -16,18 +16,24 @@
 ************************************************************************ */
 
 qx.Class.define("osparc.auth.LoginPageOsparc", {
-  extend: osparc.auth.LoginPage,
+  extend: qx.ui.core.Widget,
 
-  members: {
-    // overridden
-    _buildLayout: function() {
-      const layout = new qx.ui.layout.HBox();
-      this._setLayout(layout);
+  construct: function() {
+    this.base(arguments);
 
-      const loginLayout = this._getMainLayout();
-      this._add(loginLayout, {
-        flex: 1
-      });
-    }
-  }
+    const layout = new qx.ui.layout.HBox();
+    this._setLayout(layout);
+
+    const loginPage = new osparc.auth.LoginWithDecorators();
+    loginPage.addListener("done", e => this.fireDataEvent("done", e.getData()));
+    const container = new qx.ui.container.Scroll();
+    container.add(loginPage);
+    this._add(container, {
+      flex: 1
+    });
+  },
+
+  events: {
+    "done": "qx.event.type.Data",
+  },
 });
