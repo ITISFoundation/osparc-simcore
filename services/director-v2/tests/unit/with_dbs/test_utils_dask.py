@@ -661,5 +661,6 @@ async def test_compute_task_envs(
         node_image=sleeper_task.image,
         metadata=run_metadata,
         resource_tracking_run_id=resource_tracking_run_id,
+        wallet_id=run_metadata.get("wallet_id", None),
     )
     assert task_envs == expected_computed_task_envs
