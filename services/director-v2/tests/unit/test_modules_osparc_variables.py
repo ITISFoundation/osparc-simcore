@@ -195,7 +195,7 @@ async def test_resolve_and_substitute_session_variables_in_specs(
     print("REPLACED SPECS\n", replaced_specs)
 
     assert OSPARC_IDENTIFIER_PREFIX not in f"{replaced_specs}"
-    assert f"{'' if wallet_id is None else wallet_id}" in f"{replaced_specs}"
+    assert f"'wallet_id': '{wallet_id}'" in f"{replaced_specs}"
 
 
 @pytest.fixture

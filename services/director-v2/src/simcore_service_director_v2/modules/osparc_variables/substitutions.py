@@ -253,7 +253,7 @@ async def resolve_and_substitute_session_variables_in_specs(
                     project_id=project_id,
                     node_id=node_id,
                     run_id=service_run_id,
-                    wallet_id="" if wallet_id is None else wallet_id,
+                    wallet_id=wallet_id,
                     api_server_base_url=app_settings.DIRECTOR_V2_PUBLIC_API_BASE_URL,
                 ),
             )
