@@ -1,4 +1,5 @@
 from functools import cached_property
+from typing import Annotated
 from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
 
 from pydantic import (
@@ -25,26 +26,28 @@ class PostgresSettings(BaseCustomSettings):
     POSTGRES_PASSWORD: SecretStr
 
     # database
-    POSTGRES_DB: str = Field(..., description="Database name")
+    POSTGRES_DB: Annotated[str, Field(description="Database name")]
 
     # pool connection limits
-    POSTGRES_MINSIZE: int = Field(
-        default=1, description="Minimum number of connections in the pool", ge=1
-    )
-    POSTGRES_MAXSIZE: int = Field(
-        default=50, description="Maximum number of connections in the pool", ge=1
-    )
+    POSTGRES_MINSIZE: Annotated[
+        int, Field(description="Minimum number of connections in the pool", ge=1)
+    ] = 1
+    POSTGRES_MAXSIZE: Annotated[
+        int, Field(description="Maximum number of connections in the pool", ge=1)
+    ] = 50
 
-    POSTGRES_CLIENT_NAME: str | None = Field(
-        default=None,
-        description="Name of the application connecting the postgres database, will default to use the host hostname (hostname on linux)",
-        validation_alias=AliasChoices(
-            "POSTGRES_CLIENT_NAME",
-            # This is useful when running inside a docker container, then the hostname is set each client gets a different name
-            "HOST",
-            "HOSTNAME",
+    POSTGRES_CLIENT_NAME: Annotated[
+        str | None,
+        Field(
+            description="Name of the application connecting the postgres database, will default to use the host hostname (hostname on linux)",
+            validation_alias=AliasChoices(
+                "POSTGRES_CLIENT_NAME",
+                # This is useful when running inside a docker container, then the hostname is set each client gets a different name
+                "HOST",
+                "HOSTNAME",
+            ),
         ),
-    )
+    ] = None
 
     @field_validator("POSTGRES_MAXSIZE")
     @classmethod
