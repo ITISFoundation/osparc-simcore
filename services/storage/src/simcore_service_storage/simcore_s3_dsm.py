@@ -67,8 +67,7 @@ from .models import (
     UserOrProjectFilter,
 )
 from .modules.datcore_adapter import datcore_adapter
-from .modules.db import db_file_meta_data, db_projects, db_tokens
-from .modules.db.db import get_db_engine
+from .modules.db import db_file_meta_data, db_projects, db_tokens, get_db_engine
 from .modules.db.db_access_layer import (
     get_file_access_rights,
     get_project_access_rights,

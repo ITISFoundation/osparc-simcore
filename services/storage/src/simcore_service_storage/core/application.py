@@ -29,7 +29,7 @@ from ..api.rest.routes import setup_rest_api_routes
 from ..dsm import setup_dsm
 from ..dsm_cleaner import setup_dsm_cleaner
 from ..exceptions.handlers import set_exception_handlers
-from ..modules.db.db import setup_db
+from ..modules.db import setup_db
 from ..modules.long_running_tasks import setup_rest_api_long_running_tasks_for_uploads
 from ..modules.redis import setup as setup_redis
 from ..modules.s3 import setup_s3
