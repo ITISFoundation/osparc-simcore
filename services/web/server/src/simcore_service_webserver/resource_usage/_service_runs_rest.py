@@ -6,6 +6,7 @@ from models_library.api_schemas_resource_usage_tracker.service_runs import (
     OsparcCreditsAggregatedUsagesPage,
     ServiceRunPage,
 )
+from models_library.api_schemas_webserver.resource_usage import ServiceRunGet
 from models_library.basic_types import IDStr
 from models_library.resource_tracker import (
     ServiceResourceUsagesFilters,
@@ -32,7 +33,7 @@ from ..login.decorators import login_required
 from ..models import RequestContext
 from ..security.decorators import permission_required
 from ..wallets.errors import WalletAccessForbiddenError
-from . import _service_runs_api as api
+from . import _service_runs_service as api
 
 #
 # API components/schemas
@@ -142,7 +143,7 @@ async def list_resource_usage_services(request: web.Request):
         ),
     )
 
-    page = Page[dict[str, Any]].model_validate(
+    page = Page[ServiceRunGet].model_validate(
         paginate_data(
             chunk=services.items,
             request_url=request.url,
