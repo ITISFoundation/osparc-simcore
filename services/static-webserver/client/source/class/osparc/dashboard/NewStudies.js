@@ -82,7 +82,9 @@ qx.Class.define("osparc.dashboard.NewStudies", {
         this._add(noGroupContainer);
 
         Array.from(this.__groups).forEach(group => {
-          const groupContainer = this.__createGroupContainer(group.id, group.label, "transparent");
+          let headerLabel = group.title;
+          headerLabel += "description" in group ? (". " + group["description"]) : "";
+          const groupContainer = this.__createGroupContainer(group.id, headerLabel, "transparent");
           this._add(groupContainer);
         });
       } else {
@@ -106,7 +108,18 @@ qx.Class.define("osparc.dashboard.NewStudies", {
       this.__newStudies.forEach(resourceData => {
         const cards = this.__resourceToCards(resourceData);
         cards.forEach(newCard => {
-          newCard.setEnabled(!(resourceData.showDisabled));
+          if (resourceData.showDisabled) {
+            newCard.setEnabled(false);
+            if (resourceData.reason) {
+              const reason = osparc.utils.Utils.replaceTokens(
+                resourceData.reason,
+                "replace_me_product_name",
+                osparc.store.StaticInfo.getInstance().getDisplayName()
+              );
+              const descLabel = newCard.getChildControl("subtitle-text");
+              descLabel.setValue(reason.toString());
+            }
+          }
           newCards.push(newCard);
         });
       });
