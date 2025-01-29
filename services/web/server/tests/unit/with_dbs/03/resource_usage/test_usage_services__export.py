@@ -27,7 +27,7 @@ from simcore_service_webserver.db.models import UserRole
 @pytest.fixture
 def mock_export_usage_services(mocker: MockerFixture) -> MagicMock:
     return mocker.patch(
-        "simcore_service_webserver.resource_usage._service_runs_api.service_runs.export_service_runs",
+        "simcore_service_webserver.resource_usage._service_runs_service.service_runs.export_service_runs",
         spec=True,
         return_value=TypeAdapter(AnyUrl).validate_python("https://www.google.com/"),
     )

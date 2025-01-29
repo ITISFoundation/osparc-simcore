@@ -61,9 +61,10 @@ async def create_credit_transaction(
 
         wallet_total_credits = await sum_credit_transactions_and_publish_to_rabbitmq(
             db_engine,
-            rabbitmq_client,
-            credit_transaction_create_body.product_name,
-            credit_transaction_create_body.wallet_id,
+            connection=conn,
+            rabbitmq_client=rabbitmq_client,
+            product_name=credit_transaction_create_body.product_name,
+            wallet_id=credit_transaction_create_body.wallet_id,
         )
         if wallet_total_credits.available_osparc_credits >= 0:
             # Change status from `IN_DEBT` to `BILLED`
@@ -196,9 +197,9 @@ async def pay_project_debt(
     fire_and_forget_task(
         sum_credit_transactions_and_publish_to_rabbitmq(
             db_engine,
-            rabbitmq_client,
-            new_wallet_transaction_create.product_name,
-            new_wallet_transaction_create.wallet_id,  # <-- New wallet
+            rabbitmq_client=rabbitmq_client,
+            product_name=new_wallet_transaction_create.product_name,
+            wallet_id=new_wallet_transaction_create.wallet_id,  # <-- New wallet
         ),
         task_suffix_name=f"sum_and_publish_credits_wallet_id{new_wallet_transaction_create.wallet_id}",
         fire_and_forget_tasks_collection=rut_fire_and_forget_tasks,
@@ -206,9 +207,9 @@ async def pay_project_debt(
     fire_and_forget_task(
         sum_credit_transactions_and_publish_to_rabbitmq(
             db_engine,
-            rabbitmq_client,
-            current_wallet_transaction_create.product_name,
-            current_wallet_transaction_create.wallet_id,  # <-- Current wallet
+            rabbitmq_client=rabbitmq_client,
+            product_name=current_wallet_transaction_create.product_name,
+            wallet_id=current_wallet_transaction_create.wallet_id,  # <-- Current wallet
         ),
         task_suffix_name=f"sum_and_publish_credits_wallet_id{current_wallet_transaction_create.wallet_id}",
         fire_and_forget_tasks_collection=rut_fire_and_forget_tasks,
