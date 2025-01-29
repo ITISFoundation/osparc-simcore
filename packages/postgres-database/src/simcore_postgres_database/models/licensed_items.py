@@ -51,7 +51,7 @@ licensed_items = sa.Table(
         "licensed_resource_data",
         postgresql.JSONB,
         nullable=True,
-        doc="Stores data related to this licensed resource that is used for read-only purposes",
+        doc="Stores metadata related to this licensed resource. Used for read-only purposes",
     ),
     sa.Column(
         "pricing_plan_id",
