@@ -1227,7 +1227,6 @@ async def _list_files(
     user_id: UserID,
     location_id: LocationID,
     *,
-    path: str,
     expand_dirs: bool,
 ) -> list[FileMetaDataGet]:
     get_url = url_from_operation_id(
@@ -1235,7 +1234,6 @@ async def _list_files(
         initialized_app,
         "list_files_metadata",
         location_id=f"{location_id}",
-        # file_id=path,
     ).with_query(user_id=user_id, expand_dirs=f"{expand_dirs}".lower())
     response = await client.get(f"{get_url}")
     fmds, error = assert_status(response, status.HTTP_200_OK, list[FileMetaDataGet])
@@ -1252,13 +1250,11 @@ async def _list_files_legacy(
     directory_file_upload: FileUploadSchema,
 ) -> list[FileMetaDataGet]:
     assert directory_file_upload.urls[0].path
-    directory_file_id = directory_file_upload.urls[0].path.strip("/")
     return await _list_files(
         initialized_app,
         client,
         user_id,
         location_id,
-        path=directory_file_id,
         expand_dirs=True,
     )
 
@@ -1271,14 +1267,11 @@ async def _list_files_and_directories(
     directory_file_upload: FileUploadSchema,
 ) -> list[FileMetaDataGet]:
     assert directory_file_upload.urls[0].path
-    directory_parent_path = Path(directory_file_upload.urls[0].path).parent
-    directory_file_id = f"{directory_parent_path}".strip("/")
     return await _list_files(
         initialized_app,
         client,
         user_id,
         location_id,
-        path=directory_file_id,
         expand_dirs=False,
     )
 
@@ -1341,7 +1334,6 @@ async def test_ensure_expand_dirs_defaults_true(
         initialized_app,
         "list_files_metadata",
         location_id=f"{location_id}",
-        # file_id="mocked_path",
     ).with_query(user_id=user_id)
     await client.get(f"{get_url}")
 
