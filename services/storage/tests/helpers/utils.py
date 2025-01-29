@@ -26,4 +26,4 @@ async def get_updated_project(
         )
         row = result.fetchone()
         assert row
-        return dict(row)
+        return row._asdict()

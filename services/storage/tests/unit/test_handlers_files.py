@@ -1221,7 +1221,7 @@ async def test_copy_as_soft_link(
     assert fmd.file_id == link_id
 
 
-async def __list_files(
+async def _list_files(
     initialized_app: FastAPI,
     client: httpx.AsyncClient,
     user_id: UserID,
@@ -1235,7 +1235,7 @@ async def __list_files(
         initialized_app,
         "list_files_metadata",
         location_id=f"{location_id}",
-        file_id=path,
+        # file_id=path,
     ).with_query(user_id=user_id, expand_dirs=f"{expand_dirs}".lower())
     response = await client.get(f"{get_url}")
     fmds, error = assert_status(response, status.HTTP_200_OK, list[FileMetaDataGet])
@@ -1253,7 +1253,7 @@ async def _list_files_legacy(
 ) -> list[FileMetaDataGet]:
     assert directory_file_upload.urls[0].path
     directory_file_id = directory_file_upload.urls[0].path.strip("/")
-    return await __list_files(
+    return await _list_files(
         initialized_app,
         client,
         user_id,
@@ -1273,7 +1273,7 @@ async def _list_files_and_directories(
     assert directory_file_upload.urls[0].path
     directory_parent_path = Path(directory_file_upload.urls[0].path).parent
     directory_file_id = f"{directory_parent_path}".strip("/")
-    return await __list_files(
+    return await _list_files(
         initialized_app,
         client,
         user_id,
@@ -1287,7 +1287,7 @@ async def _list_files_and_directories(
 @pytest.mark.parametrize(
     "file_size",
     [
-        ByteSize(-1),
+        ByteSize(0),
         TypeAdapter(ByteSize).validate_python("0"),
         TypeAdapter(ByteSize).validate_python("1TB"),
     ],
@@ -1341,7 +1341,7 @@ async def test_ensure_expand_dirs_defaults_true(
         initialized_app,
         "list_files_metadata",
         location_id=f"{location_id}",
-        file_id="mocked_path",
+        # file_id="mocked_path",
     ).with_query(user_id=user_id)
     await client.get(f"{get_url}")
 

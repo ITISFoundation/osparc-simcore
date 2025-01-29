@@ -351,7 +351,9 @@ async def delete_file(
     await dsm.delete_file(query_params.user_id, file_id)
 
 
-@router.post("/files/{file_id:path}:soft-copy", response_model=FileMetaDataGet)
+@router.post(
+    "/files/{file_id:path}:soft-copy", response_model=Envelope[FileMetaDataGet]
+)
 async def copy_as_soft_link(
     query_params: Annotated[StorageQueryParamsBase, Depends()],
     file_id: StorageFileID,
@@ -364,4 +366,4 @@ async def copy_as_soft_link(
     )
     file_link = await dsm.create_soft_link(query_params.user_id, file_id, body.link_id)
 
-    return FileMetaDataGet(**file_link.model_dump())
+    return Envelope[FileMetaDataGet](data=FileMetaDataGet(**file_link.model_dump()))
