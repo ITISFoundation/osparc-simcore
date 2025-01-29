@@ -42,10 +42,10 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     const mainLayoutWithSideSpacers = new qx.ui.container.Composite(new qx.ui.layout.HBox(spacing))
     this._addToMainLayout(mainLayoutWithSideSpacers);
 
-    this.__leftFilters = new qx.ui.container.Composite(new qx.ui.layout.VBox(15)).set({
+    this._leftFilters = new qx.ui.container.Composite(new qx.ui.layout.VBox(15)).set({
       width: leftColumnWidth
     });
-    mainLayoutWithSideSpacers.add(this.__leftFilters);
+    mainLayoutWithSideSpacers.add(this._leftFilters);
 
     this.__centerLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(15));
     mainLayoutWithSideSpacers.add(this.__centerLayout);
@@ -95,7 +95,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       return isLogged;
     },
 
-    startStudyById: function(studyId, openCB, cancelCB, showStudyOptions = false) {
+    startStudyById: function(studyId, openCB, cancelCB, isStudyCreation = false) {
       if (!osparc.dashboard.ResourceBrowserBase.checkLoggedIn()) {
         return;
       }
@@ -117,12 +117,15 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         osparc.data.Resources.fetch("studies", "getWallet", params)
           .then(wallet => {
             if (
-              showStudyOptions ||
+              isStudyCreation ||
               wallet === null ||
               osparc.desktop.credits.Utils.getWallet(wallet["walletId"]) === null
             ) {
               // pop up study options if the study was just created or if it has no wallet assigned or user has no access to it
               const resourceSelector = new osparc.study.StudyOptions(studyId);
+              if (isStudyCreation) {
+                resourceSelector.getChildControl("open-button").setLabel(this.tr("New"));
+              }
               const win = osparc.study.StudyOptions.popUpInWindow(resourceSelector);
               win.moveItUp();
               resourceSelector.addListener("startStudy", () => {
@@ -190,7 +193,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
   },
 
   members: {
-    __leftFilters: null,
+    _leftFilters: null,
     _resourceFilter: null,
     __centerLayout: null,
     _resourceType: null,
@@ -395,10 +398,15 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
 
     _addResourceFilter: function() {
       const resourceFilter = this._resourceFilter = new osparc.dashboard.ResourceFilter(this._resourceType).set({
-        marginTop: osparc.dashboard.SearchBarFilter.HEIGHT + 10,
+        marginTop: 20,
         maxWidth: this.self().SIDE_SPACER_WIDTH,
         width: this.self().SIDE_SPACER_WIDTH
       });
+
+      resourceFilter.addListener("changeTab", e => {
+        const contextTab = e.getData();
+        this.fireDataEvent("changeTab", contextTab);
+      }, this);
 
       resourceFilter.addListener("changeSharedWith", e => {
         const sharedWith = e.getData();
@@ -420,7 +428,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         resourceFilter.filterChanged(filterData);
       });
 
-      this.__leftFilters.add(resourceFilter, {
+      this._leftFilters.add(resourceFilter, {
         flex: 1
       });
     },
