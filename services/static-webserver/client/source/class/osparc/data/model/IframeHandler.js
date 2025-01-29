@@ -92,7 +92,10 @@ qx.Class.define("osparc.data.model.IframeHandler", {
     __initIFrame: function() {
       const iframe = new osparc.widget.PersistentIframe();
       osparc.utils.Utils.setIdToWidget(iframe.getIframe(), "iframe_"+this.getNode().getNodeId());
-      if (osparc.product.Utils.isProduct("s4llite")) {
+      if (
+        osparc.product.Utils.isProduct("s4llite") ||
+        this.getStudy().getUi().getMode() === "standalone"
+      ) {
         iframe.setShowToolbar(false);
       }
       iframe.addListener("restart", () => this.__restartIFrame(), this);

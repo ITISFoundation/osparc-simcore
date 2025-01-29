@@ -68,6 +68,24 @@ qx.Class.define("osparc.navigation.StudyTitleWOptions", {
             });
           });
           break;
+        case "study-menu-reload":
+          control = new qx.ui.menu.Button().set({
+            label: this.tr("Reload"),
+            icon: "@MaterialIcons/info_outline/14",
+          });
+          control.addListener("execute", () => {
+            console.log("Reload page");
+          });
+          break;
+        case "study-menu-convert-to-pipeline":
+          control = new qx.ui.menu.Button().set({
+            label: this.tr("Convert to Pipeline"),
+            icon: "@MaterialIcons/info_outline/14",
+          });
+          control.addListener("execute", () => {
+            console.log("Convert to Pipeline");
+          });
+          break;
         case "study-menu-download-logs":
           control = new qx.ui.menu.Button().set({
             label: this.tr("Download logs"),
@@ -79,6 +97,10 @@ qx.Class.define("osparc.navigation.StudyTitleWOptions", {
           const optionsMenu = new qx.ui.menu.Menu();
           optionsMenu.setAppearance("menu-wider");
           optionsMenu.add(this.getChildControl("study-menu-info"));
+          if (this.getStudy().getUi().getMode() === "standalone") {
+            optionsMenu.add(this.getChildControl("study-menu-reload"));
+            optionsMenu.add(this.getChildControl("study-menu-convert-to-pipeline"));
+          }
           optionsMenu.add(this.getChildControl("study-menu-download-logs"));
           control = new qx.ui.form.MenuButton().set({
             appearance: "fab-button",
