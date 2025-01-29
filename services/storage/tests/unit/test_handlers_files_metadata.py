@@ -18,6 +18,7 @@ from models_library.api_schemas_storage import FileMetaDataGet, SimcoreS3FileID
 from models_library.projects import ProjectID
 from models_library.users import UserID
 from pydantic import ByteSize, TypeAdapter
+from pytest_simcore.helpers.fastapi import url_from_operation_id
 from pytest_simcore.helpers.httpx_assert_checks import assert_status
 from servicelib.aiohttp import status
 from yarl import URL
@@ -169,24 +170,22 @@ async def test_get_file_metadata(
     simcore_file_id: SimcoreS3FileID,
     faker: Faker,
 ):
-    url = (
-        URL(f"{client.base_url}")
-        .with_path(
-            initialized_app.url_path_for(
-                "get_file_metadata",
-                location_id=location_id,
-                file_id=f"{urllib.parse.quote(simcore_file_id, safe='')}",
-            )
-        )
-        .with_query(user_id=f"{user_id}")
-    )
+    url = url_from_operation_id(
+        client,
+        initialized_app,
+        "get_file_metadata",
+        location_id=f"{location_id}",
+        file_id=simcore_file_id,
+    ).with_query(user_id=user_id)
+
     # this should return an empty list
     response = await client.get(f"{url}")
     # await assert_status(response, status.HTTP_404_NOT_FOUND)
 
     # NOTE: This needs to be a Ok response with empty data until ALL legacy services are gone, then it should be changed to 404! see test above
-    assert response.status_code == status.HTTP_200_OK
-    assert await response.json() == {"data": {}, "error": "No result found"}
+    data, error = assert_status(response, status.HTTP_200_OK, dict)
+    assert error == "No result found"
+    assert data == {}
 
     # now add some stuff there
     NUM_FILES = 10
@@ -195,21 +194,17 @@ async def test_get_file_metadata(
         await upload_file(file_size, faker.file_name()) for _ in range(NUM_FILES)
     ]
     selected_file, selected_file_uuid = choice(files_owned_by_us)  # noqa: S311
-    url = (
-        URL(f"{client.base_url}")
-        .with_path(
-            initialized_app.url_path_for(
-                "get_file_metadata",
-                location_id=location_id,
-                file_id=f"{urllib.parse.quote(selected_file_uuid, safe='')}",
-            )
-        )
-        .with_query(user_id=f"{user_id}")
-    )
+    url = url_from_operation_id(
+        client,
+        initialized_app,
+        "get_file_metadata",
+        location_id=f"{location_id}",
+        file_id=selected_file_uuid,
+    ).with_query(user_id=user_id)
+
     response = await client.get(f"{url}")
-    assert response.status_code == status.HTTP_200_OK
-    data = response.json()
-    assert data
-    fmd = TypeAdapter(FileMetaDataGet).validate_python(data)
+    fmd, error = assert_status(response, status.HTTP_200_OK, FileMetaDataGet)
+    assert not error
+    assert fmd
     assert fmd.file_id == selected_file_uuid
     assert fmd.file_size == selected_file.stat().st_size

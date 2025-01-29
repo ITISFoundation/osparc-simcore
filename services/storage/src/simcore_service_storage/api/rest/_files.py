@@ -72,7 +72,9 @@ async def list_files_metadata(
 
 @router.get(
     "/locations/{location_id}/files/{file_id:path}/metadata",
-    response_model=Envelope[FileMetaDataGet] | Envelope[FileMetaDataGetv010],
+    response_model=Envelope[FileMetaDataGet]
+    | Envelope[FileMetaDataGetv010]
+    | Envelope[dict],
 )
 async def get_file_metadata(
     query_params: Annotated[StorageQueryParamsBase, Depends()],
@@ -93,8 +95,8 @@ async def get_file_metadata(
         # Cannot remove until we retire all legacy services
         # https://github.com/ITISFoundation/osparc-simcore/issues/5676
         # https://github.com/ITISFoundation/osparc-simcore/blob/cfdf4f86d844ebb362f4f39e9c6571d561b72897/services/storage/client-sdk/python/simcore_service_storage_sdk/models/file_meta_data_enveloped.py#L34
-        return Envelope[FileMetaDataGet](
-            data=None,
+        return Envelope[dict](
+            data={},
             error="No result found",  # NOTE: LEGACY compatibility
         )
 
