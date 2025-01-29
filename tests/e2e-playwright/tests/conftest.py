@@ -564,7 +564,6 @@ def create_new_project_and_delete(
             with log_context(logging.INFO, "Go back to dashboard"):
                 page.get_by_test_id("dashboardBtn").click()
                 page.get_by_test_id("confirmDashboardBtn").click()
-                page.get_by_test_id("studiesTabBtn").click()
 
     for project_uuid in created_project_uuids:
         with log_context(

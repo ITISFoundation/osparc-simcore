@@ -25,7 +25,7 @@ qx.Class.define("osparc.ui.hint.InfoHint", {
    * @extends osparc.ui.basic.IconButton
    */
   construct: function(hintText) {
-    this.base(arguments, this.self().INFO_ICON);
+    this.base(arguments, this.self().INFO_ICON + "/14");
 
     this.__createHint();
 
@@ -39,7 +39,7 @@ qx.Class.define("osparc.ui.hint.InfoHint", {
   },
 
   statics: {
-    INFO_ICON: "@MaterialIcons/info_outline/14"
+    INFO_ICON: "@MaterialIcons/info_outline"
   },
 
   properties: {
