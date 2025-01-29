@@ -56,5 +56,5 @@ async def get_category_items(
     """
     response = await client.post(f"{url}")
     response.raise_for_status()
-    validated_data = ResponseData.model_validate(**response.json())
+    validated_data = ResponseData.model_validate(response.json())
     return validated_data.available_downloads

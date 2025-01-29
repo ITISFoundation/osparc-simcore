@@ -34,7 +34,7 @@ def app_environment(
         monkeypatch,
         {
             "ITIS_VIP_API_URL": f"{fake_api_base_url}/PD_DirectDownload/getDownloadableItems/{{category}}",
-            "ITIS_VIP_CATEGORIES": "ComputationalPantom,Foo,Bar",
+            "ITIS_VIP_CATEGORIES": '["ComputationalPantom","Foo","Bar"]',  # NOTE: ItisVipSettings will decode with json.dumps()
         },
     )
 
@@ -63,7 +63,7 @@ def mock_itis_vip_downloadables_api(
     }
 
     with respx.mock(base_url=fake_api_base_url) as mock:
-        mock.post(path__regex=r"/getDownloadableItems/(?P<category>\d+)").respond(
+        mock.post(path__regex=r"/getDownloadableItems/(?P<category>\w+)").respond(
             status_code=200, json=response_data
         )
         yield mock
@@ -73,7 +73,7 @@ async def test_fetch_and_validate_itis_vip_api(
     mock_itis_vip_downloadables_api: respx.MockRouter, fake_api_base_url: str
 ):
     async with AsyncClient(base_url=fake_api_base_url) as client:
-        response = await client.post("getDownloadableItems/ComputationalPantom")
+        response = await client.post("/getDownloadableItems/ComputationalPantom")
         assert response.status_code == status.HTTP_200_OK
         response_json = response.json()
 
