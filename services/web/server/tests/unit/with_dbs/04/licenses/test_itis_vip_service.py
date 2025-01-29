@@ -11,13 +11,38 @@ import respx
 from faker import Faker
 from httpx import AsyncClient
 from pydantic import ValidationError
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.aiohttp import status
+from simcore_service_webserver.licenses import _itis_vip_service
 from simcore_service_webserver.licenses._itis_vip_service import ResponseData
+from simcore_service_webserver.licenses.settings import ItisVipSettings
+
+
+@pytest.fixture(scope="session")
+def fake_api_base_url() -> str:
+    return "https://testserver"
 
 
 @pytest.fixture
-def mock_itis_vip_downloadables_api(faker: Faker) -> Iterator[respx.MockRouter]:
-    api_url = "http://testserver"
+def app_environment(
+    monkeypatch: pytest.MonkeyPatch,
+    app_environment: EnvVarsDict,
+    fake_api_base_url: str,
+):
+    return app_environment | setenvs_from_dict(
+        monkeypatch,
+        {
+            "ITIS_VIP_API_URL": f"{fake_api_base_url}/PD_DirectDownload/getDownloadableItems/{{category}}",
+            "ITIS_VIP_CATEGORIES": "ComputationalPantom,Foo,Bar",
+        },
+    )
+
+
+@pytest.fixture
+def mock_itis_vip_downloadables_api(
+    faker: Faker, fake_api_base_url: str
+) -> Iterator[respx.MockRouter]:
     response_data = {
         "msg": 0,
         "availableDownloads": [
@@ -37,17 +62,17 @@ def mock_itis_vip_downloadables_api(faker: Faker) -> Iterator[respx.MockRouter]:
         ],
     }
 
-    with respx.mock(base_url=api_url) as mock:
-        mock.post("getDownloadableItems/ComputationalPantom").respond(
+    with respx.mock(base_url=fake_api_base_url) as mock:
+        mock.post(path__regex=r"/getDownloadableItems/(?P<category>\d+)").respond(
             status_code=200, json=response_data
         )
         yield mock
 
 
-async def test_fetch_itis_vip_api(
-    mock_itis_vip_downloadables_api: respx.MockRouter,
+async def test_fetch_and_validate_itis_vip_api(
+    mock_itis_vip_downloadables_api: respx.MockRouter, fake_api_base_url: str
 ):
-    async with AsyncClient(base_url="http://testserver") as client:
+    async with AsyncClient(base_url=fake_api_base_url) as client:
         response = await client.post("getDownloadableItems/ComputationalPantom")
         assert response.status_code == status.HTTP_200_OK
         response_json = response.json()
@@ -65,3 +90,21 @@ async def test_fetch_itis_vip_api(
         )
 
         print(validated_data.model_dump_json(indent=1))
+
+
+async def test_get_category_items(
+    mock_itis_vip_downloadables_api: respx.MockRouter,
+    app_environment: EnvVarsDict,
+):
+    settings = ItisVipSettings.create_from_envs()
+    assert settings.ITIS_VIP_CATEGORIES
+
+    async with AsyncClient() as client:
+        for url, category in zip(
+            settings.get_urls(), settings.ITIS_VIP_CATEGORIES, strict=True
+        ):
+            assert f"{url}".endswith(category)
+
+            items = await _itis_vip_service.get_category_items(client, url)
+
+            assert items[0].features["functionality"] == "Posable"
