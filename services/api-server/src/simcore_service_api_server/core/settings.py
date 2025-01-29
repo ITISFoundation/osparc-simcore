@@ -1,6 +1,7 @@
 from functools import cached_property
 from typing import Annotated
 
+from common_library.basic_types import DEFAULT_FACTORY
 from models_library.basic_types import BootModeEnum, LogLevel
 from pydantic import (
     AliasChoices,
@@ -28,20 +29,22 @@ from settings_library.webserver import WebServerSettings as WebServerBaseSetting
 
 class WebServerSettings(WebServerBaseSettings, MixinSessionSettings):
 
-    WEBSERVER_SESSION_SECRET_KEY: SecretStr = Field(
-        ...,
-        description="Secret key to encrypt cookies. "
-        'TIP: python3 -c "from cryptography.fernet import *; print(Fernet.generate_key())"',
-        min_length=44,
-        validation_alias=AliasChoices(
-            "SESSION_SECRET_KEY", "WEBSERVER_SESSION_SECRET_KEY"
+    WEBSERVER_SESSION_SECRET_KEY: Annotated[
+        SecretStr,
+        Field(
+            description="Secret key to encrypt cookies. "
+            'TIP: python3 -c "from cryptography.fernet import *; print(Fernet.generate_key())"',
+            min_length=44,
+            validation_alias=AliasChoices(
+                "SESSION_SECRET_KEY", "WEBSERVER_SESSION_SECRET_KEY"
+            ),
         ),
-    )
+    ]
     WEBSERVER_SESSION_NAME: str = DEFAULT_SESSION_COOKIE_NAME
 
     @field_validator("WEBSERVER_SESSION_SECRET_KEY")
     @classmethod
-    def check_valid_fernet_key(cls, v):
+    def _check_valid_fernet_key(cls, v):
         return cls.do_check_valid_fernet_key(v)
 
 
@@ -50,12 +53,14 @@ class WebServerSettings(WebServerBaseSettings, MixinSessionSettings):
 
 class BasicSettings(BaseCustomSettings, MixinLoggingSettings):
     # DEVELOPMENT
-    API_SERVER_DEV_FEATURES_ENABLED: bool = Field(
-        default=False,
-        validation_alias=AliasChoices(
-            "API_SERVER_DEV_FEATURES_ENABLED", "FAKE_API_SERVER_ENABLED"
+    API_SERVER_DEV_FEATURES_ENABLED: Annotated[
+        bool,
+        Field(
+            validation_alias=AliasChoices(
+                "API_SERVER_DEV_FEATURES_ENABLED", "FAKE_API_SERVER_ENABLED"
+            ),
         ),
-    )
+    ] = False
 
     # LOGGING
     LOG_LEVEL: Annotated[
@@ -67,20 +72,27 @@ class BasicSettings(BaseCustomSettings, MixinLoggingSettings):
         ),
     ] = LogLevel.INFO
 
-    API_SERVER_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
-        default=False,
-        validation_alias=AliasChoices(
-            "API_SERVER_LOG_FORMAT_LOCAL_DEV_ENABLED", "LOG_FORMAT_LOCAL_DEV_ENABLED"
+    API_SERVER_LOG_FORMAT_LOCAL_DEV_ENABLED: Annotated[
+        bool,
+        Field(
+            validation_alias=AliasChoices(
+                "API_SERVER_LOG_FORMAT_LOCAL_DEV_ENABLED",
+                "LOG_FORMAT_LOCAL_DEV_ENABLED",
+            ),
+            description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
         ),
-        description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
-    )
-    API_SERVER_LOG_FILTER_MAPPING: dict[LoggerName, list[MessageSubstring]] = Field(
-        default_factory=dict,
-        validation_alias=AliasChoices(
-            "API_SERVER_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"
+    ] = False
+
+    API_SERVER_LOG_FILTER_MAPPING: Annotated[
+        dict[LoggerName, list[MessageSubstring]],
+        Field(
+            default_factory=dict,
+            validation_alias=AliasChoices(
+                "API_SERVER_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"
+            ),
+            description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') to a list of log message patterns that should be filtered out.",
         ),
-        description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') to a list of log message patterns that should be filtered out.",
-    )
+    ] = DEFAULT_FACTORY
 
     @field_validator("LOG_LEVEL", mode="before")
     @classmethod
@@ -98,24 +110,29 @@ class ApplicationSettings(BasicSettings):
         Field(json_schema_extra={"auto_default_from_env": True}),
     ]
 
-    API_SERVER_RABBITMQ: RabbitSettings | None = Field(
-        json_schema_extra={"auto_default_from_env": True},
-        description="settings for service/rabbitmq",
-    )
+    API_SERVER_RABBITMQ: Annotated[
+        RabbitSettings | None,
+        Field(
+            json_schema_extra={"auto_default_from_env": True},
+            description="settings for service/rabbitmq",
+        ),
+    ]
 
     # SERVICES with http API
-    API_SERVER_WEBSERVER: WebServerSettings | None = Field(
-        json_schema_extra={"auto_default_from_env": True}
-    )
-    API_SERVER_CATALOG: CatalogSettings | None = Field(
-        json_schema_extra={"auto_default_from_env": True}
-    )
-    API_SERVER_STORAGE: StorageSettings | None = Field(
-        json_schema_extra={"auto_default_from_env": True}
-    )
-    API_SERVER_DIRECTOR_V2: DirectorV2Settings | None = Field(
-        json_schema_extra={"auto_default_from_env": True}
-    )
+    API_SERVER_WEBSERVER: Annotated[
+        WebServerSettings | None,
+        Field(json_schema_extra={"auto_default_from_env": True}),
+    ]
+    API_SERVER_CATALOG: Annotated[
+        CatalogSettings | None, Field(json_schema_extra={"auto_default_from_env": True})
+    ]
+    API_SERVER_STORAGE: Annotated[
+        StorageSettings | None, Field(json_schema_extra={"auto_default_from_env": True})
+    ]
+    API_SERVER_DIRECTOR_V2: Annotated[
+        DirectorV2Settings | None,
+        Field(json_schema_extra={"auto_default_from_env": True}),
+    ]
     API_SERVER_LOG_CHECK_TIMEOUT_SECONDS: NonNegativeInt = 3 * 60
     API_SERVER_PROMETHEUS_INSTRUMENTATION_ENABLED: bool = True
     API_SERVER_HEALTH_CHECK_TASK_PERIOD_SECONDS: PositiveInt = 30
@@ -123,10 +140,13 @@ class ApplicationSettings(BasicSettings):
     API_SERVER_ALLOWED_HEALTH_CHECK_FAILURES: PositiveInt = 5
     API_SERVER_PROMETHEUS_INSTRUMENTATION_COLLECT_SECONDS: PositiveInt = 5
     API_SERVER_PROFILING: bool = False
-    API_SERVER_TRACING: TracingSettings | None = Field(
-        description="settings for opentelemetry tracing",
-        json_schema_extra={"auto_default_from_env": True},
-    )
+    API_SERVER_TRACING: Annotated[
+        TracingSettings | None,
+        Field(
+            description="settings for opentelemetry tracing",
+            json_schema_extra={"auto_default_from_env": True},
+        ),
+    ]
 
     @cached_property
     def debug(self) -> bool:
