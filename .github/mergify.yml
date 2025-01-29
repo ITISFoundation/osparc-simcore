@@ -24,20 +24,30 @@ queue_rules:
 
 # NOTE: in case of flaky tests you above checks will fail
 # the PR will be removed from the queue.
-# This retries the checks, as soon as they become green,
-# the PR will be pusehd to the queu again
+# Once the PR is ready to be merged the flaky tests will
+# be retried automatically.
+# As soon as the CI is green, the PR will be pushed to the queue
 pull_request_rules:
-  - name: retry CI on fails (used for flaky tests)
+  - name: retry flaky tests (when PR is approved)
     conditions:
       - label=🤖-automerge
       - label!=🤖-do-not-merge
       - base=master
+
+      - -draft # PR is not in draft state
+      - -conflict # No merge conflicts
+      - "#approved-reviews-by>=2" # Requires 2 approving reviews
+      - "#changes-requested-reviews-by=0" # No changes requested
+      - "#review-threads-unresolved=0" # All review threads resolved
+
       - or:
           - check-failure=unit-tests
           - check-failure=integration-tests
           - check-failure=system-tests
     actions:
+      comment:
+        message: "Restarted CI due to failing tests"
       github_actions:
         workflow:
           dispatch:
-            - workflow: .github/workflows/ci-testing-deploy.yml
+            - workflow: ci-testing-deploy.yml
