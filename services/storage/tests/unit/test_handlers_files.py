@@ -1090,7 +1090,7 @@ async def test_download_file_the_file_is_missing_from_the_directory(
     response = await client.get(f"{download_url}")
     data, error = assert_status(response, status.HTTP_404_NOT_FOUND, None)
     assert data is None
-    assert missing_s3_file_id in error["message"]
+    assert missing_s3_file_id in error["errors"][0]
 
 
 async def test_download_file_access_rights(

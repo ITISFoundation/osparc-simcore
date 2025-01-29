@@ -461,6 +461,7 @@ async def with_versioning_enabled(
 async def create_empty_directory(
     create_simcore_file_id: Callable[[ProjectID, NodeID, str], SimcoreS3FileID],
     create_upload_file_link_v2: Callable[..., Awaitable[FileUploadSchema]],
+    initialized_app: FastAPI,
     client: httpx.AsyncClient,
     project_id: ProjectID,
     node_id: NodeID,
@@ -474,7 +475,7 @@ async def create_empty_directory(
 
         directory_file_id = create_simcore_file_id(project_id, node_id, dir_name)
         directory_file_upload = await create_upload_file_link_v2(
-            directory_file_id, link_type="S3", is_directory="true", file_size=-1
+            directory_file_id, link_type="S3", is_directory="true", file_size=0
         )
         # always returns a v2 link when dealing with directories
         assert isinstance(directory_file_upload, FileUploadSchema)
