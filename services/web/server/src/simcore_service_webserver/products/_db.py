@@ -32,6 +32,7 @@ _PRODUCTS_COLUMNS = [
     products.c.short_name,
     products.c.host_regex,
     products.c.support_email,
+    products.c.product_owners_email,
     products.c.twilio_messaging_sid,
     products.c.vendor,
     products.c.issues,

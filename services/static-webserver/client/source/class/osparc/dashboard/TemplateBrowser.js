@@ -144,6 +144,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
         // they will be patched once the study is created
         studyOptions.setPatchStudy(false);
         studyOptions.setStudyData(templateData);
+        studyOptions.getChildControl("open-button").setLabel(this.tr("New"));
         const win = osparc.study.StudyOptions.popUpInWindow(studyOptions);
         win.moveItUp();
         const cancelStudyOptions = () => {
