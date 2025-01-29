@@ -34,6 +34,7 @@ captcha
 cryptography # security
 faker # Only used in dev-mode for proof-of-concepts
 gunicorn[setproctitle]
+httpx
 jinja_app_loader # email
 json2html
 jsondiff
