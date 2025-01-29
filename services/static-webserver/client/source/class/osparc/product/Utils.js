@@ -269,11 +269,8 @@ qx.Class.define("osparc.product.Utils", {
     },
 
     showS4LStore: function() {
-      const platformName = osparc.store.StaticInfo.getInstance().getPlatformName();
-      if (platformName !== "master") {
-        return false;
-      }
-      return this.isS4LProduct();
+      const licensesEnabled = osparc.store.StaticInfo.getInstance().areLicensesEnabled();
+      return this.isS4LProduct() && licensesEnabled;
     },
 
     getProductThumbUrl: function(asset = "Default.png") {
