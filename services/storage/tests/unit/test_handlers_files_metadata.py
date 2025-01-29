@@ -3,7 +3,6 @@
 # pylint: disable=unused-argument
 
 
-import urllib.parse
 from collections.abc import Awaitable, Callable
 from copy import deepcopy
 from pathlib import Path
@@ -149,7 +148,7 @@ async def test_get_file_metadata_is_legacy_services_compatible(
             initialized_app.url_path_for(
                 "get_file_metadata",
                 location_id=location_id,
-                file_id=f"{urllib.parse.quote(simcore_file_id, safe='')}",
+                file_id=simcore_file_id,
             )
         )
         .with_query(user_id=f"{user_id}")
