@@ -45,7 +45,7 @@ async def create_licensed_item_from_resource(
     licensed_resource_data: BaseModel,
     license_key: str | None,
 ) -> LicensedItemDB:
-    return await _licensed_items_repository.create(
+    return await _licensed_items_repository.create_if_not_exists(
         app,
         licensed_resource_name=licensed_resource_name,
         licensed_resource_type=licensed_resource_type,
