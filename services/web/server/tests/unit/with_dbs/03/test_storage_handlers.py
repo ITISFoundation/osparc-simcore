@@ -178,7 +178,6 @@ async def test_openapi_regression_test(
 
 
 def test_url_storage_resolver_helpers(faker: Faker, app_environment: EnvVarsDict):
-
     app = web.Application()
     setup_settings(app)
 
@@ -188,14 +187,17 @@ def test_url_storage_resolver_helpers(faker: Faker, app_environment: EnvVarsDict
     assert urllib.parse.quote("/", safe="") == "%2F"
     assert urllib.parse.quote("%2F", safe="") == "%252F"
 
-    file_id = urllib.parse.quote(f"{faker.uuid4()}/{faker.uuid4()}/file.py", safe="")
-    assert "%2F" in file_id
-    assert "%252F" not in file_id
+    file_id = f"{faker.uuid4()}/{faker.uuid4()}/file.py"
+    encoded_file_id = urllib.parse.quote(file_id, safe="")
+    assert "%2F" in encoded_file_id
+    assert "%252F" not in encoded_file_id
 
-    url = URL(f"/v0/storage/locations/0/files/{file_id}:complete", encoded=True)
-    assert url.raw_parts[-1] == f"{file_id}:complete"
+    encoded_url = URL(
+        f"/v0/storage/locations/0/files/{encoded_file_id}:complete", encoded=True
+    )
+    assert encoded_url.raw_parts[-1] == f"{encoded_file_id}:complete"
 
-    web_request = make_mocked_request("GET", str(url), app=app)
+    web_request = make_mocked_request("GET", str(encoded_url), app=app)
     web_request[RQT_USERID_KEY] = faker.pyint()
 
     # web -> storage
@@ -211,7 +213,9 @@ def test_url_storage_resolver_helpers(faker: Faker, app_environment: EnvVarsDict
 
     # storage -> web
     web_url: AnyUrl = _from_storage_url(
-        web_request, TypeAdapter(AnyUrl).validate_python(f"{storage_url}")
+        web_request,
+        TypeAdapter(AnyUrl).validate_python(f"{storage_url}"),
+        url_encode=None,
     )
 
     assert storage_url.host != web_url.host

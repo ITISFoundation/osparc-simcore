@@ -58,5 +58,6 @@ if [ "${SC_BOOT_MODE}" = "debug" ]; then
 else
   exec uvicorn simcore_service_storage.main:the_app \
     --host 0.0.0.0 \
+    --port ${STORAGE_PORT} \
     --log-level "${SERVER_LOG_LEVEL}"
 fi
