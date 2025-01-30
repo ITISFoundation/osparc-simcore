@@ -149,10 +149,25 @@ async def test_sync_itis_vip_as_licensed_items(
 
             for vip_item in items:
                 # TODO: how to update to minimize collisions? one by one?
-                await _licensed_items_service.create_licensed_item_from_resource(
-                    client.app,
-                    licensed_resource_name=f"{category}/{vip_item.id}",
-                    licensed_resource_type=LicensedResourceType.VIP_MODEL,
-                    licensed_resource_data=vip_item,
-                    license_key=vip_item.license_key,
+
+                got1 = (
+                    await _licensed_items_service.register_licensed_item_from_resource(
+                        client.app,
+                        licensed_resource_name=f"{category}/{vip_item.id}",
+                        licensed_resource_type=LicensedResourceType.VIP_MODEL,
+                        licensed_resource_data=vip_item,
+                        license_key=vip_item.license_key,
+                    )
                 )
+
+                got2 = (
+                    await _licensed_items_service.register_licensed_item_from_resource(
+                        client.app,
+                        licensed_resource_name=f"{category}/{vip_item.id}",
+                        licensed_resource_type=LicensedResourceType.VIP_MODEL,
+                        licensed_resource_data=vip_item,
+                        license_key=vip_item.license_key,
+                    )
+                )
+
+                assert got1 == got2

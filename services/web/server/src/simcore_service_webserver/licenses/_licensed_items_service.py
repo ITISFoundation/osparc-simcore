@@ -32,12 +32,24 @@ from ..wallets.api import get_wallet_with_available_credits_by_user_and_wallet
 from ..wallets.errors import WalletNotEnoughCreditsError
 from . import _licensed_items_repository
 from ._common.models import LicensedItemsBodyParams
-from .errors import LicensedItemPricingPlanMatchError
+from .errors import LicensedItemNotFoundError, LicensedItemPricingPlanMatchError
 
 _logger = logging.getLogger(__name__)
 
 
-async def create_licensed_item_from_resource(
+def _compute_difference(old_data: dict, new_data: dict):
+    differences = {
+        k: {"old": old_data[k], "new": new_data[k]}
+        for k in old_data
+        if old_data[k] != new_data.get(k)
+    }
+    differences.update(
+        {k: {"old": None, "new": new_data[k]} for k in new_data if k not in old_data}
+    )
+    return differences
+
+
+async def register_licensed_item_from_resource(
     app: web.Application,
     *,
     licensed_resource_name: str,
@@ -45,17 +57,54 @@ async def create_licensed_item_from_resource(
     licensed_resource_data: BaseModel,
     license_key: str | None,
 ) -> LicensedItemDB:
-    return await _licensed_items_repository.create_if_not_exists(
-        app,
-        licensed_resource_name=licensed_resource_name,
-        licensed_resource_type=licensed_resource_type,
-        licensed_resource_data=licensed_resource_data.model_dump(
+
+    try:
+        license_item = await _licensed_items_repository.get_by_resource_identifier(
+            app,
+            licensed_resource_name=licensed_resource_name,
+            licensed_resource_type=licensed_resource_type,
+        )
+
+        if license_item.licensed_resource_data != licensed_resource_data.model_dump(
             mode="json", exclude_unset=True
-        ),
-        license_key=license_key,
-        product_name=None,
-        pricing_plan_id=None,
-    )
+        ):
+            differences = _compute_difference(
+                license_item.licensed_resource_data or {},
+                licensed_resource_data.model_dump(mode="json", exclude_unset=True),
+            )
+            _logger.warning(
+                "CHANGES: NEEDED for %s, %s: Resource differs from the one registered: %s",
+                licensed_resource_name,
+                licensed_resource_type,
+                differences,
+            )
+        else:
+            _logger.info(
+                "Resource %s, %s already registered",
+                licensed_resource_name,
+                licensed_resource_type,
+            )
+
+    except LicensedItemNotFoundError:
+        license_item = await _licensed_items_repository.create_if_not_exists(
+            app,
+            licensed_resource_name=licensed_resource_name,
+            licensed_resource_type=licensed_resource_type,
+            licensed_resource_data=licensed_resource_data.model_dump(
+                mode="json", exclude_unset=True
+            ),
+            license_key=license_key,
+            product_name=None,
+            pricing_plan_id=None,
+        )
+
+        _logger.info(
+            "NEW license with resource %s, %s already registered",
+            licensed_resource_name,
+            licensed_resource_type,
+        )
+
+    return license_item
 
 
 async def get_licensed_item(
