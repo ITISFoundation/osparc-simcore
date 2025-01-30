@@ -92,11 +92,12 @@ qx.Class.define("osparc.data.model.IframeHandler", {
     __initIFrame: function() {
       const iframe = new osparc.widget.PersistentIframe();
       osparc.utils.Utils.setIdToWidget(iframe.getIframe(), "iframe_"+this.getNode().getNodeId());
-      if (
-        osparc.product.Utils.isProduct("s4llite") ||
-        this.getStudy().getUi().getMode() === "standalone"
-      ) {
+      if (osparc.product.Utils.isProduct("s4llite")) {
         iframe.setShowToolbar(false);
+      } else {
+        this.getStudy().getUi().bind("mode", iframe, "showToolbar", {
+          converter: mode => mode !== "standalone"
+        });
       }
       iframe.addListener("restart", () => this.restartIFrame(), this);
       iframe.getDiskUsageIndicator().setCurrentNode(this.getNode())
