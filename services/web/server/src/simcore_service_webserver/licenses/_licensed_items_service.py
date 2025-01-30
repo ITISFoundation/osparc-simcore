@@ -40,10 +40,10 @@ async def get_licensed_item(
     )
     return LicensedItem.model_construct(
         licensed_item_id=licensed_item_db.licensed_item_id,
-        display_name=licensed_item_db.display_name,
+        licensed_resource_name=licensed_item_db.licensed_resource_name,
         licensed_resource_type=licensed_item_db.licensed_resource_type,
+        licensed_resource_data=licensed_item_db.licensed_resource_data,
         pricing_plan_id=licensed_item_db.pricing_plan_id,
-        licensed_resource_type_details=licensed_item_db.licensed_resource_type_details,
         created_at=licensed_item_db.created,
         modified_at=licensed_item_db.modified,
     )
@@ -64,10 +64,10 @@ async def list_licensed_items(
         items=[
             LicensedItem.model_construct(
                 licensed_item_id=licensed_item_db.licensed_item_id,
-                display_name=licensed_item_db.display_name,
+                licensed_resource_name=licensed_item_db.licensed_resource_name,
                 licensed_resource_type=licensed_item_db.licensed_resource_type,
+                licensed_resource_data=licensed_item_db.licensed_resource_data,
                 pricing_plan_id=licensed_item_db.pricing_plan_id,
-                licensed_resource_type_details=licensed_item_db.licensed_resource_type_details,
                 created_at=licensed_item_db.created,
                 modified_at=licensed_item_db.modified,
             )

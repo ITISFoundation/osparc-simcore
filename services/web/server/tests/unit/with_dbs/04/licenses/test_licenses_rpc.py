@@ -139,7 +139,7 @@ async def test_license_checkout_workflow(
         licensed_resource_name="Model A",
         licensed_resource_type=LicensedResourceType.VIP_MODEL,
         pricing_plan_id=pricing_plan_id,
-        licensed_resource_type_details=VIP_DETAILS_EXAMPLE,
+        licensed_resource_data=VIP_DETAILS_EXAMPLE,
     )
 
     result = await get_licensed_items(

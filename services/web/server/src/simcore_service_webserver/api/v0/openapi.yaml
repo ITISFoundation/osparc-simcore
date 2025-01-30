@@ -10695,19 +10695,19 @@ components:
           type: string
           format: uuid
           title: Licenseditemid
-        displayName:
+        licensedResourceName:
           type: string
-          title: Displayname
+          title: Licensedresourcename
         licensedResourceType:
           $ref: '#/components/schemas/LicensedResourceType'
+        licensedResourceData:
+          type: object
+          title: Licensedresourcedata
         pricingPlanId:
           type: integer
           exclusiveMinimum: true
           title: Pricingplanid
           minimum: 0
-        licensedResourceTypeDetails:
-          type: object
-          title: Licensedresourcetypedetails
         createdAt:
           type: string
           format: date-time
@@ -10719,10 +10719,10 @@ components:
       type: object
       required:
       - licensedItemId
-      - displayName
+      - licensedResourceName
       - licensedResourceType
+      - licensedResourceData
       - pricingPlanId
-      - licensedResourceTypeDetails
       - createdAt
       - modifiedAt
       title: LicensedItemRestGet

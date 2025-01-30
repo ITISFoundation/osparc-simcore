@@ -58,10 +58,10 @@ def _create_licensed_items_get_page(
         [
             LicensedItemGet(
                 licensed_item_id=elm.licensed_item_id,
-                display_name=elm.display_name,
+                licensed_resource_name=elm.licensed_resource_name,
                 licensed_resource_type=elm.licensed_resource_type,
+                licensed_resource_data=elm.licensed_resource_data,
                 pricing_plan_id=elm.pricing_plan_id,
-                licensed_resource_type_details=elm.licensed_resource_type_details,
                 created_at=elm.created_at,
                 modified_at=elm.modified_at,
             )

@@ -137,10 +137,10 @@ assert set(ServicePricingPlanGetLegacy.model_fields.keys()) == set(
 
 class LicensedItemGet(BaseModel):
     licensed_item_id: LicensedItemID
-    display_name: Annotated[str, Field(alias="display_name")]
+    licensed_resource_name: str
     licensed_resource_type: LicensedResourceType
+    licensed_resource_data: dict[str, Any]
     pricing_plan_id: PricingPlanId
-    licensed_resource_type_details: dict[str, Any]
     created_at: datetime
     modified_at: datetime
     model_config = ConfigDict(

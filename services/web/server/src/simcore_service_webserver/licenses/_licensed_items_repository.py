@@ -43,6 +43,7 @@ async def create(
     *,
     licensed_resource_name: str,
     licensed_resource_type: LicensedResourceType,
+    licensed_resource_data: dict | None,
     product_name: ProductName | None,
     pricing_plan_id: PricingPlanId | None,
 ) -> LicensedItemDB:
@@ -54,7 +55,7 @@ async def create(
                 licensed_resource_type=licensed_resource_type,
                 pricing_plan_id=pricing_plan_id,
                 product_name=product_name,
-                licensed_resource_type_details=licensed_resource_type_details,
+                licensed_resource_data=licensed_resource_data,
                 created=func.now(),
                 modified=func.now(),
             )

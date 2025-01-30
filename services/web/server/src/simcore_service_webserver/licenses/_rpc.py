@@ -47,7 +47,7 @@ async def get_licensed_items(
             product_name=product_name,
             offset=offset,
             limit=limit,
-            order_by=OrderBy(field=IDStr("display_name")),
+            order_by=OrderBy(field=IDStr("licensed_resource_name")),
         )
     )
 
@@ -55,10 +55,10 @@ async def get_licensed_items(
         items=[
             LicensedItemRpcGet.model_construct(
                 licensed_item_id=licensed_item.licensed_item_id,
-                display_name=licensed_item.display_name,
+                licensed_resource_name=licensed_item.licensed_resource_name,
                 licensed_resource_type=licensed_item.licensed_resource_type,
+                licensed_resource_data=licensed_item.licensed_resource_data,
                 pricing_plan_id=licensed_item.pricing_plan_id,
-                licensed_resource_type_details=licensed_item.licensed_resource_type_details,
                 created_at=licensed_item.created_at,
                 modified_at=licensed_item.modified_at,
             )

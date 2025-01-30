@@ -45,7 +45,7 @@ async def test_licensed_items_listing(
         licensed_resource_name="Model A",
         licensed_resource_type=LicensedResourceType.VIP_MODEL,
         pricing_plan_id=pricing_plan_id,
-        licensed_resource_type_details=VIP_DETAILS_EXAMPLE,
+        licensed_resource_data=VIP_DETAILS_EXAMPLE,
     )
     _licensed_item_id = licensed_item_db.licensed_item_id
 
@@ -113,7 +113,7 @@ async def test_licensed_items_purchase(
         licensed_resource_name="Model A",
         licensed_resource_type=LicensedResourceType.VIP_MODEL,
         pricing_plan_id=pricing_plan_id,
-        licensed_resource_type_details=VIP_DETAILS_EXAMPLE,
+        licensed_resource_data=VIP_DETAILS_EXAMPLE,
     )
     _licensed_item_id = licensed_item_db.licensed_item_id
 

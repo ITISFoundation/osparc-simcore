@@ -61,10 +61,10 @@ async def list_licensed_items(request: web.Request):
         items=[
             LicensedItemRestGet.model_construct(
                 licensed_item_id=licensed_item.licensed_item_id,
-                display_name=licensed_item.display_name,
+                licensed_resource_name=licensed_item.licensed_resource_name,
                 licensed_resource_type=licensed_item.licensed_resource_type,
+                licensed_resource_data=licensed_item.licensed_resource_data,
                 pricing_plan_id=licensed_item.pricing_plan_id,
-                licensed_resource_type_details=licensed_item.licensed_resource_type_details,
                 created_at=licensed_item.created_at,
                 modified_at=licensed_item.modified_at,
             )
@@ -105,10 +105,10 @@ async def get_licensed_item(request: web.Request):
     )
     licensed_item_get = LicensedItemRestGet.model_construct(
         licensed_item_id=licensed_item.licensed_item_id,
-        display_name=licensed_item.display_name,
+        licensed_resource_name=licensed_item.licensed_resource_name,
         licensed_resource_type=licensed_item.licensed_resource_type,
         pricing_plan_id=licensed_item.pricing_plan_id,
-        licensed_resource_type_details=licensed_item.licensed_resource_type_details,
+        licensed_resource_data=licensed_item.licensed_resource_data,
         created_at=licensed_item.created_at,
         modified_at=licensed_item.modified_at,
     )

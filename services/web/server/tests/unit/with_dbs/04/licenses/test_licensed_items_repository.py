@@ -50,7 +50,7 @@ async def test_licensed_items_db_crud(
         licensed_resource_name="Model A",
         licensed_resource_type=LicensedResourceType.VIP_MODEL,
         pricing_plan_id=pricing_plan_id,
-        licensed_resource_type_details=VIP_DETAILS_EXAMPLE,
+        licensed_resource_data=VIP_DETAILS_EXAMPLE,
     )
     _licensed_item_id = licensed_item_db.licensed_item_id
 
@@ -68,8 +68,8 @@ async def test_licensed_items_db_crud(
         licensed_item_id=_licensed_item_id,
         product_name=osparc_product_name,
     )
-    assert licensed_item_db.licensed_resource_display_name == "Model A"
-    assert isinstance(licensed_item_db.licensed_resource_type_details, dict)
+    assert licensed_item_db.licensed_resource_name == "Model A"
+    assert isinstance(licensed_item_db.licensed_resource_data, dict)
 
     await _licensed_items_repository.update(
         client.app,
@@ -116,6 +116,7 @@ async def test_licensed_items_db_trash(
             product_name=osparc_product_name,
             licensed_resource_name=name,
             licensed_resource_type=LicensedResourceType.VIP_MODEL,
+            licensed_resource_data=None,
             pricing_plan_id=pricing_plan_id,
         )
         licensed_item_ids.append(licensed_item_db.licensed_item_id)

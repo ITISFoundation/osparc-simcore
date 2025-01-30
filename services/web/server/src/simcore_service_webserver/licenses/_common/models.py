@@ -31,10 +31,10 @@ _logger = logging.getLogger(__name__)
 
 class LicensedItem(BaseModel):
     licensed_item_id: LicensedItemID
-    display_name: str
+    licensed_resource_name: str
     licensed_resource_type: LicensedResourceType
+    licensed_resource_data: dict[str, Any]
     pricing_plan_id: PricingPlanId
-    licensed_resource_type_details: dict[str, Any]
     created_at: datetime
     modified_at: datetime
     model_config = ConfigDict(
@@ -42,10 +42,10 @@ class LicensedItem(BaseModel):
             "examples": [
                 {
                     "licensed_item_id": "0362b88b-91f8-4b41-867c-35544ad1f7a1",
-                    "display_name": "best-model",
+                    "licensed_resource_name": "best-model",
                     "licensed_resource_type": f"{LicensedResourceType.VIP_MODEL}",
+                    "licensed_resource_data": VIP_DETAILS_EXAMPLE,
                     "pricing_plan_id": "15",
-                    "licensed_resource_type_details": VIP_DETAILS_EXAMPLE,
                     "created_at": "2024-12-12 09:59:26.422140",
                     "modified_at": "2024-12-12 09:59:26.422140",
                 }
