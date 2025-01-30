@@ -2,12 +2,10 @@ import logging
 
 from asyncpg.exceptions import PostgresError
 from aws_library.s3 import S3AccessError, S3KeyNotFoundError
-from fastapi import FastAPI, HTTPException, status
-from fastapi.exceptions import RequestValidationError
-from pydantic import ValidationError
+from fastapi import FastAPI, status
 from servicelib.fastapi.http_error import (
-    make_default_http_error_handler,
     make_http_error_handler_for_exception,
+    set_app_default_http_error_handlers,
 )
 
 from ..modules.datcore_adapter.datcore_adapter_exceptions import (
@@ -25,36 +23,12 @@ from .errors import (
 _logger = logging.getLogger(__name__)
 
 
-def _request_validation_error_extractor(
-    validation_error: RequestValidationError,
-) -> list[str]:
-    return [f"{e}" for e in validation_error.errors()]
-
-
 def set_exception_handlers(app: FastAPI) -> None:
-    app.add_exception_handler(
-        HTTPException, make_default_http_error_handler(envelope_error=True)
-    )
+    set_app_default_http_error_handlers(app)
 
-    app.add_exception_handler(
-        RequestValidationError,
-        make_http_error_handler_for_exception(
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
-            RequestValidationError,
-            envelope_error=True,
-            error_extractor=_request_validation_error_extractor,
-        ),
-    )
-
-    app.add_exception_handler(
-        ValidationError,
-        make_http_error_handler_for_exception(
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
-            ValidationError,
-            envelope_error=True,
-        ),
-    )
-
+    #
+    # add custom exception handlers
+    #
     app.add_exception_handler(
         InvalidFileIdentifierError,
         make_http_error_handler_for_exception(
