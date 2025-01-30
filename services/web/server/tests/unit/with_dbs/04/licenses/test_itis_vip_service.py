@@ -31,7 +31,7 @@ def test_pre_validator_feature_descriptor_to_dict():
 
 @pytest.fixture(scope="session")
 def fake_api_base_url() -> str:
-    return "https://testserver"
+    return "https://testserver-itis-vip.xyz"
 
 
 @pytest.fixture
