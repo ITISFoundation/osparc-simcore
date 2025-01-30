@@ -55,9 +55,10 @@ pull_request_rules:
 
   - name: Automatically add PR to queue if it meets conditions
     conditions:
-      - "label=🤖-automerge" # Only queue PRs with this label
-      - "label!=🤖-do-not-merge" # Do not queue PRs with this label
+      - "label=🤖-automerge"
+      - "label!=🤖-do-not-merge"
       - "base=master"
+
       - "-draft" # PR is not in draft state
       - "-conflict" # PR has no conflicts
       - "#approved-reviews-by>=2" # Requires 2 approvals
