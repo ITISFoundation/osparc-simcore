@@ -9,7 +9,6 @@ from unittest import mock
 
 import pytest
 from faker import Faker
-from models_library.basic_types import IDStr
 from models_library.progress_bar import ProgressReport, ProgressStructuredMessage
 from pydantic import ValidationError
 from pytest_mock import MockerFixture
@@ -55,7 +54,7 @@ async def test_progress_bar_progress_report_cb(
         num_steps=outer_num_steps,
         progress_report_cb=mocked_cb,
         progress_unit="Byte",
-        description=IDStr(faker.pystr()),
+        description=faker.pystr(),
     ) as root:
         assert root.num_steps == outer_num_steps
         assert root.step_weights is None  # i.e. all steps have equal weight
@@ -97,7 +96,7 @@ async def test_progress_bar_progress_report_cb(
         # 2nd step is a sub progress bar of 10 steps
         inner_num_steps_step2 = 100
         async with root.sub_progress(
-            steps=inner_num_steps_step2, description=IDStr(faker.pystr())
+            steps=inner_num_steps_step2, description=faker.pystr()
         ) as sub:
             assert sub._current_steps == pytest.approx(0)  # noqa: SLF001
             assert root._current_steps == pytest.approx(1)  # noqa: SLF001
@@ -126,7 +125,7 @@ async def test_progress_bar_progress_report_cb(
         # 3rd step is another subprogress of 50 steps
         inner_num_steps_step3 = 50
         async with root.sub_progress(
-            steps=inner_num_steps_step3, description=IDStr(faker.pystr())
+            steps=inner_num_steps_step3, description=faker.pystr()
         ) as sub:
             assert sub._current_steps == pytest.approx(0)  # noqa: SLF001
             assert root._current_steps == pytest.approx(2)  # noqa: SLF001
@@ -148,7 +147,7 @@ async def test_progress_bar_progress_report_cb(
 def test_creating_progress_bar_with_invalid_unit_fails(faker: Faker):
     with pytest.raises(ValidationError):
         ProgressBarData(
-            num_steps=321, progress_unit="invalid", description=IDStr(faker.pystr())
+            num_steps=321, progress_unit="invalid", description=faker.pystr()
         )
 
 
@@ -159,7 +158,7 @@ async def test_progress_bar_always_reports_0_on_creation_and_1_on_finish(
     progress_bar = ProgressBarData(
         num_steps=num_steps,
         progress_report_cb=mocked_progress_bar_cb,
-        description=IDStr(faker.pystr()),
+        description=faker.pystr(),
     )
     assert progress_bar._current_steps == _INITIAL_VALUE  # noqa: SLF001
     async with progress_bar as root:
@@ -207,7 +206,7 @@ async def test_progress_bar_always_reports_1_on_finish(
     progress_bar = ProgressBarData(
         num_steps=num_steps,
         progress_report_cb=mocked_progress_bar_cb,
-        description=IDStr(faker.pystr()),
+        description=faker.pystr(),
     )
     assert progress_bar._current_steps == _INITIAL_VALUE  # noqa: SLF001
     async with progress_bar as root:
@@ -249,7 +248,7 @@ async def test_progress_bar_always_reports_1_on_finish(
 
 
 async def test_set_progress(caplog: pytest.LogCaptureFixture, faker: Faker):
-    async with ProgressBarData(num_steps=50, description=IDStr(faker.pystr())) as root:
+    async with ProgressBarData(num_steps=50, description=faker.pystr()) as root:
         assert root._current_steps == pytest.approx(0)  # noqa: SLF001
         assert root.num_steps == 50
         assert root.step_weights is None
@@ -264,7 +263,7 @@ async def test_set_progress(caplog: pytest.LogCaptureFixture, faker: Faker):
 
 
 async def test_reset_progress(caplog: pytest.LogCaptureFixture, faker: Faker):
-    async with ProgressBarData(num_steps=50, description=IDStr(faker.pystr())) as root:
+    async with ProgressBarData(num_steps=50, description=faker.pystr()) as root:
         assert root._current_steps == pytest.approx(0)  # noqa: SLF001
         assert root.num_steps == 50
         assert root.step_weights is None
@@ -292,7 +291,7 @@ async def test_reset_progress(caplog: pytest.LogCaptureFixture, faker: Faker):
 
 async def test_concurrent_progress_bar(faker: Faker):
     async def do_something(root: ProgressBarData):
-        async with root.sub_progress(steps=50, description=IDStr(faker.pystr())) as sub:
+        async with root.sub_progress(steps=50, description=faker.pystr()) as sub:
             assert sub.num_steps == 50
             assert sub.step_weights is None
             assert sub._current_steps == 0  # noqa: SLF001
@@ -300,7 +299,7 @@ async def test_concurrent_progress_bar(faker: Faker):
                 await sub.update()
                 assert sub._current_steps == (n + 1)  # noqa: SLF001
 
-    async with ProgressBarData(num_steps=12, description=IDStr(faker.pystr())) as root:
+    async with ProgressBarData(num_steps=12, description=faker.pystr()) as root:
         assert root._current_steps == pytest.approx(0)  # noqa: SLF001
         assert root.step_weights is None
         await asyncio.gather(*[do_something(root) for n in range(12)])
@@ -308,27 +307,25 @@ async def test_concurrent_progress_bar(faker: Faker):
 
 
 async def test_too_many_sub_progress_bars_raises(faker: Faker):
-    async with ProgressBarData(num_steps=2, description=IDStr(faker.pystr())) as root:
+    async with ProgressBarData(num_steps=2, description=faker.pystr()) as root:
         assert root.num_steps == 2
         assert root.step_weights is None
-        async with root.sub_progress(steps=50, description=IDStr(faker.pystr())) as sub:
+        async with root.sub_progress(steps=50, description=faker.pystr()) as sub:
             for _ in range(50):
                 await sub.update()
-        async with root.sub_progress(steps=50, description=IDStr(faker.pystr())) as sub:
+        async with root.sub_progress(steps=50, description=faker.pystr()) as sub:
             for _ in range(50):
                 await sub.update()
 
         with pytest.raises(RuntimeError):
-            async with root.sub_progress(
-                steps=50, description=IDStr(faker.pystr())
-            ) as sub:
+            async with root.sub_progress(steps=50, description=faker.pystr()) as sub:
                 ...
 
 
 async def test_too_many_updates_does_not_raise_but_show_warning_with_stack(
     caplog: pytest.LogCaptureFixture, faker: Faker
 ):
-    async with ProgressBarData(num_steps=2, description=IDStr(faker.pystr())) as root:
+    async with ProgressBarData(num_steps=2, description=faker.pystr()) as root:
         assert root.num_steps == 2
         assert root.step_weights is None
         await root.update()
@@ -344,7 +341,7 @@ async def test_weighted_progress_bar(mocked_progress_bar_cb: mock.Mock, faker: F
         num_steps=outer_num_steps,
         step_weights=[1, 3, 1],
         progress_report_cb=mocked_progress_bar_cb,
-        description=IDStr(faker.pystr()),
+        description=faker.pystr(),
     ) as root:
         mocked_progress_bar_cb.assert_called_once_with(
             ProgressReport(
@@ -399,7 +396,7 @@ async def test_weighted_progress_bar_with_weighted_sub_progress(
         num_steps=outer_num_steps,
         step_weights=[1, 3, 1],
         progress_report_cb=mocked_progress_bar_cb,
-        description=IDStr(faker.pystr()),
+        description=faker.pystr(),
     ) as root:
         mocked_progress_bar_cb.assert_called_once_with(
             ProgressReport(
@@ -426,7 +423,7 @@ async def test_weighted_progress_bar_with_weighted_sub_progress(
 
         # 2nd step is a sub progress bar of 5 steps
         async with root.sub_progress(
-            steps=5, step_weights=[2, 5, 1, 2, 3], description=IDStr(faker.pystr())
+            steps=5, step_weights=[2, 5, 1, 2, 3], description=faker.pystr()
         ) as sub:
             assert sub.step_weights == [2 / 13, 5 / 13, 1 / 13, 2 / 13, 3 / 13, 0]
             assert sub._current_steps == pytest.approx(0)  # noqa: SLF001
@@ -487,7 +484,7 @@ async def test_weighted_progress_bar_with_weighted_sub_progress(
 async def test_weighted_progress_bar_wrong_num_weights_raises(faker: Faker):
     with pytest.raises(RuntimeError):
         async with ProgressBarData(
-            num_steps=3, step_weights=[3, 1], description=IDStr(faker.pystr())
+            num_steps=3, step_weights=[3, 1], description=faker.pystr()
         ):
             ...
 
@@ -496,7 +493,7 @@ async def test_weighted_progress_bar_with_0_weights_is_equivalent_to_standard_pr
     faker: Faker,
 ):
     async with ProgressBarData(
-        num_steps=3, step_weights=[0, 0, 0], description=IDStr(faker.pystr())
+        num_steps=3, step_weights=[0, 0, 0], description=faker.pystr()
     ) as root:
         assert root.step_weights == [1, 1, 1, 0]
 
@@ -509,13 +506,13 @@ async def test_concurrent_sub_progress_update_correct_sub_progress(
         num_steps=3,
         step_weights=[3, 1, 2],
         progress_report_cb=mocked_progress_bar_cb,
-        description=IDStr(faker.pystr()),
+        description=faker.pystr(),
     ) as root:
-        sub_progress1 = root.sub_progress(23, description=IDStr(faker.pystr()))
+        sub_progress1 = root.sub_progress(23, description=faker.pystr())
         assert sub_progress1._current_steps == _INITIAL_VALUE  # noqa: SLF001
-        sub_progress2 = root.sub_progress(45, description=IDStr(faker.pystr()))
+        sub_progress2 = root.sub_progress(45, description=faker.pystr())
         assert sub_progress2._current_steps == _INITIAL_VALUE  # noqa: SLF001
-        sub_progress3 = root.sub_progress(12, description=IDStr(faker.pystr()))
+        sub_progress3 = root.sub_progress(12, description=faker.pystr())
         assert sub_progress3._current_steps == _INITIAL_VALUE  # noqa: SLF001
 
         # NOTE: in a gather call there is no control on which step finishes first
