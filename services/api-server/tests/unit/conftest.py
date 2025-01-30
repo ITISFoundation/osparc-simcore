@@ -355,7 +355,7 @@ def mocked_storage_service_api_base(
         base_url=settings.API_SERVER_STORAGE.base_url,
         assert_all_called=False,
     ) as respx_mock:
-        assert openapi["paths"]["/v0/"]["get"]["operationId"] == "health_check"
+        assert openapi["paths"]["/v0/"]["get"]["operationId"] == "get_health_v0__get"
 
         respx_mock.get(path="/v0/", name="health_check").respond(
             status.HTTP_200_OK,
