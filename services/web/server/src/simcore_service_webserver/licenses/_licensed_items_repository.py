@@ -41,16 +41,16 @@ async def create(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
-    product_name: ProductName,
-    name: str,
+    licensed_resource_name: str,
     licensed_resource_type: LicensedResourceType,
-    pricing_plan_id: PricingPlanId,
+    product_name: ProductName | None,
+    pricing_plan_id: PricingPlanId | None,
 ) -> LicensedItemDB:
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         result = await conn.execute(
             licensed_items.insert()
             .values(
-                name=name,
+                licensed_resource_name=licensed_resource_name,
                 licensed_resource_type=licensed_resource_type,
                 pricing_plan_id=pricing_plan_id,
                 product_name=product_name,
@@ -90,12 +90,12 @@ async def list_(
     if inactive == "exclude":
         base_query = base_query.where(
             licensed_items.c.product_name.is_(None)
-            or licensed_items.c.licensed_item_id.is_(None)
+            | licensed_items.c.licensed_item_id.is_(None)
         )
     elif inactive == "only":
         base_query = base_query.where(
             licensed_items.c.product_name.is_not(None)
-            and licensed_items.c.licensed_item_id.is_not(None)
+            & licensed_items.c.licensed_item_id.is_not(None)
         )
 
     # Select total count from base_query
