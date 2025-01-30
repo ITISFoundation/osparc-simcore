@@ -35,7 +35,6 @@ _logger = logging.getLogger(__name__)
 
 
 _SELECTION_ARGS = get_columns_from_db_model(licensed_items, LicensedItemDB)
-_SELECTION_ARGS = get_columns_from_db_model(licensed_items, LicensedItemDB)
 
 
 async def create(
@@ -62,7 +61,6 @@ async def create(
             )
             .returning(*_SELECTION_ARGS)
         )
-        row = result.one()
         row = result.one()
         return LicensedItemDB.model_validate(row)
 

@@ -55,6 +55,12 @@ async def test_licensed_items_listing(
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(data) == 1
     assert LicensedItemRestGet(**data[0])
+    assert data[0]["licensedResourceData"][
+        "additionalField"
+    ]  # <-- Testing nested camel case
+    assert data[0]["licensedResourceData"]["features"][
+        "additionalField"
+    ]  # <-- Testing nested camel case
 
     # get
     url = client.app.router["get_licensed_item"].url_for(

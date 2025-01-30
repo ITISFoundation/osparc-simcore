@@ -63,20 +63,10 @@ class LicensedItemDB(BaseModel):
     modified: datetime
     trashed: datetime | None
 
-    licensed_resource_data: dict[str, Any] | None
-
-    pricing_plan_id: PricingPlanId | None
-    product_name: ProductName | None
-
-    # states
-    created: datetime
-    modified: datetime
-    trashed: datetime | None
-
     model_config = ConfigDict(from_attributes=True)
 
 
 class LicensedItemUpdateDB(BaseModel):
-    display_name: str | None = None
+    licensed_resource_name: str | None = None
     pricing_plan_id: PricingPlanId | None = None
     trash: bool | None = None
