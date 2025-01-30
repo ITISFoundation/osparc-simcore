@@ -11,6 +11,7 @@
 # testing
 coverage
 faker
+fastapi
 httpx
 moto[server]
 pint
