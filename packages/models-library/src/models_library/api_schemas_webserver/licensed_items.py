@@ -1,7 +1,12 @@
 from datetime import datetime
-from typing import NamedTuple
+from typing import NamedTuple, Self
 
-from models_library.licensed_items import LicensedItemID, LicensedResourceType
+from common_library.dict_tools import remap_keys
+from models_library.licensed_items import (
+    LicensedItemDB,
+    LicensedItemID,
+    LicensedResourceType,
+)
 from models_library.resource_tracker import PricingPlanId
 from pydantic import ConfigDict, PositiveInt
 
@@ -31,6 +36,19 @@ class LicensedItemGet(OutputSchema):
             ]
         }
     )
+
+    @classmethod
+    def from_domain_model(cls, licensed_item_db: LicensedItemDB) -> Self:
+        return cls.model_validate(
+            remap_keys(
+                licensed_item_db.model_dump(),
+                {
+                    "licensed_resource_name": "name",
+                    "created": "created_at",
+                    "modified": "modified_at",
+                },
+            )
+        )
 
 
 class LicensedItemGetPage(NamedTuple):
