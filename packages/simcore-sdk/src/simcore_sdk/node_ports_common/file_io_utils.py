@@ -17,9 +17,9 @@ from aiohttp import (
     ClientSession,
     RequestInfo,
 )
-from aiohttp.typedefs import LooseHeaders
 from models_library.api_schemas_storage import ETag, FileUploadSchema, UploadedPart
 from models_library.basic_types import IDStr, SHA256Str
+from multidict import MultiMapping
 from pydantic import AnyUrl, NonNegativeInt
 from servicelib.aiohttp import status
 from servicelib.logging_utils import log_catch
@@ -62,7 +62,7 @@ class _ExtendedClientResponseError(ClientResponseError):
         code: int | None = None,
         status_code: int | None = None,
         message: str = "",
-        headers: LooseHeaders | None = None,
+        headers: MultiMapping[str] | None = None,
     ):
         super().__init__(
             request_info,
