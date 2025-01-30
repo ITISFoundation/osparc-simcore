@@ -174,9 +174,9 @@ async def test_generic_exception_handler(initialized_app: FastAPI, client: Async
 
     @initialized_app.get("/test")
     async def test_endpoint():
-        raise Exception(
+        raise Exception(  # pylint: disable=broad-exception-raised # noqa: TRY002
             _error_msg
-        )  # pylint: disable=broad-exception-raised # noqa: TRY002
+        )
 
     response = await client.get("/test")
     assert_status(
