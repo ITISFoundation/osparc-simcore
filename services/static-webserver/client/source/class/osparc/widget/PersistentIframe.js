@@ -116,9 +116,6 @@ qx.Class.define("osparc.widget.PersistentIframe", {
         alignX: "right",
         alignY: "middle"
       }));
-      this.bind("showToolbar", buttonsContainer, "visibility", {
-        converter: showToolbar => showToolbar ? "visible" : "excluded"
-      });
 
       const diskUsageIndicator = this.__diskUsageIndicator = new osparc.workbench.DiskUsageIndicator();
       diskUsageIndicator.getChildControl("disk-indicator").set({
@@ -162,6 +159,7 @@ qx.Class.define("osparc.widget.PersistentIframe", {
           top: this.self().HIDDEN_TOP
         });
       });
+
       this.addListener("move", e => {
         // got to let the new layout render first or we don't see it
         this.__syncIframePos();
@@ -238,7 +236,8 @@ qx.Class.define("osparc.widget.PersistentIframe", {
       }, 0);
     },
 
-    __applyShowToolbar: function() {
+    __applyShowToolbar: function(show) {
+      this.setToolbarHeight(show ? 25 : 0);
       this.__syncIframePos();
     },
 
