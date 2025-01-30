@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime
-from typing import Any, NamedTuple
+from typing import Any, NamedTuple, cast
 
 from models_library.basic_types import IDStr
 from models_library.licensed_items import (
@@ -22,6 +22,7 @@ from models_library.rest_pagination import PageQueryParameters
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import BaseModel, ConfigDict, Field, PositiveInt
+from pydantic.config import JsonDict
 from servicelib.request_keys import RQT_USERID_KEY
 
 from ..._constants import RQ_PRODUCT_KEY
@@ -37,21 +38,26 @@ class LicensedItem(BaseModel):
     pricing_plan_id: PricingPlanId
     created_at: datetime
     modified_at: datetime
-    model_config = ConfigDict(
-        json_schema_extra={
-            "examples": [
-                {
-                    "licensed_item_id": "0362b88b-91f8-4b41-867c-35544ad1f7a1",
-                    "licensed_resource_name": "best-model",
-                    "licensed_resource_type": f"{LicensedResourceType.VIP_MODEL}",
-                    "licensed_resource_data": VIP_DETAILS_EXAMPLE,
-                    "pricing_plan_id": "15",
-                    "created_at": "2024-12-12 09:59:26.422140",
-                    "modified_at": "2024-12-12 09:59:26.422140",
-                }
-            ]
-        }
-    )
+
+    @staticmethod
+    def _update_json_schema_extra(schema: JsonDict) -> None:
+        schema.update(
+            {
+                "examples": [
+                    {
+                        "licensed_item_id": "0362b88b-91f8-4b41-867c-35544ad1f7a1",
+                        "licensed_resource_name": "best-model",
+                        "licensed_resource_type": f"{LicensedResourceType.VIP_MODEL}",
+                        "licensed_resource_data": cast(JsonDict, VIP_DETAILS_EXAMPLE),
+                        "pricing_plan_id": "15",
+                        "created_at": "2024-12-12 09:59:26.422140",
+                        "modified_at": "2024-12-12 09:59:26.422140",
+                    }
+                ]
+            }
+        )
+
+    model_config = ConfigDict(json_schema_extra=_update_json_schema_extra)
 
 
 class LicensedItemPage(NamedTuple):

@@ -25,11 +25,6 @@ def user_role() -> UserRole:
     return UserRole.USER
 
 
-@pytest.fixture
-def user_role() -> UserRole:
-    return UserRole.USER
-
-
 async def test_licensed_items_db_crud(
     client: TestClient,
     logged_user: UserInfoDict,
