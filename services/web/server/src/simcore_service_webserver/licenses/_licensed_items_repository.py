@@ -5,7 +5,7 @@
 """
 
 import logging
-from typing import cast
+from typing import Literal, cast
 
 from aiohttp import web
 from models_library.licensed_items import (
@@ -20,6 +20,7 @@ from models_library.rest_ordering import OrderBy, OrderDirection
 from pydantic import NonNegativeInt
 from simcore_postgres_database.models.licensed_items import licensed_items
 from simcore_postgres_database.utils_repos import (
+    get_columns_from_db_model,
     pass_or_acquire_connection,
     transaction_context,
 )
@@ -33,18 +34,7 @@ from .errors import LicensedItemNotFoundError
 _logger = logging.getLogger(__name__)
 
 
-_SELECTION_ARGS = (
-    licensed_items.c.licensed_item_id,
-    licensed_items.c.name,
-    licensed_items.c.license_key,
-    licensed_items.c.licensed_resource_type,
-    licensed_items.c.pricing_plan_id,
-    licensed_items.c.product_name,
-    licensed_items.c.created,
-    licensed_items.c.modified,
-)
-
-assert set(LicensedItemDB.model_fields) == {c.name for c in _SELECTION_ARGS}  # nosec
+_SELECTION_ARGS = get_columns_from_db_model(licensed_items, LicensedItemDB)
 
 
 async def create(
@@ -57,7 +47,7 @@ async def create(
     pricing_plan_id: PricingPlanId,
 ) -> LicensedItemDB:
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
-        result = await conn.stream(
+        result = await conn.execute(
             licensed_items.insert()
             .values(
                 name=name,
@@ -69,7 +59,7 @@ async def create(
             )
             .returning(*_SELECTION_ARGS)
         )
-        row = await result.first()
+        row = result.one()
         return LicensedItemDB.model_validate(row)
 
 
@@ -81,12 +71,19 @@ async def list_(
     offset: NonNegativeInt,
     limit: NonNegativeInt,
     order_by: OrderBy,
+    filter_trashed: Literal["exclude", "only", "include"] = "exclude",
 ) -> tuple[int, list[LicensedItemDB]]:
     base_query = (
         select(*_SELECTION_ARGS)
         .select_from(licensed_items)
         .where(licensed_items.c.product_name == product_name)
     )
+
+    # Apply trashed filter
+    if filter_trashed == "exclude":
+        base_query = base_query.where(licensed_items.c.trashed.is_(None))
+    elif filter_trashed == "only":
+        base_query = base_query.where(licensed_items.c.trashed.is_not(None))
 
     # Select total count from base_query
     subquery = base_query.subquery()
@@ -147,11 +144,16 @@ async def update(
     # NOTE: at least 'touch' if updated_values is empty
     _updates = {
         **updates.model_dump(exclude_unset=True),
-        "modified": func.now(),
+        licensed_items.c.modified.name: func.now(),
     }
 
+    # trashing
+    assert "trash" in dict(LicensedItemUpdateDB.model_fields)  # nosec
+    if trash := _updates.pop("trash", None):
+        _updates[licensed_items.c.trashed.name] = func.now() if trash else None
+
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
-        result = await conn.stream(
+        result = await conn.execute(
             licensed_items.update()
             .values(**_updates)
             .where(
@@ -160,7 +162,7 @@ async def update(
             )
             .returning(*_SELECTION_ARGS)
         )
-        row = await result.first()
+        row = result.one_or_none()
         if row is None:
             raise LicensedItemNotFoundError(licensed_item_id=licensed_item_id)
         return LicensedItemDB.model_validate(row)

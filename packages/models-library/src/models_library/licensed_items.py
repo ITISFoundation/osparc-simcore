@@ -23,18 +23,19 @@ class LicensedResourceType(StrAutoEnum):
 
 class LicensedItemDB(BaseModel):
     licensed_item_id: LicensedItemID
-    name: str
-
     license_key: str | None
+
+    licensed_resource_name: str
     licensed_resource_type: LicensedResourceType
     licensed_resource_data: dict[str, Any] | None
 
-    pricing_plan_id: PricingPlanId
-    product_name: ProductName
+    pricing_plan_id: PricingPlanId | None
+    product_name: ProductName | None
 
-    created: datetime  # Timestamp upon creation
-    modified: datetime  # Timestamp on last modification
-    trashed: datetime | None  # Marked as trashed
+    # states
+    created: datetime
+    modified: datetime
+    trashed: datetime | None
 
     model_config = ConfigDict(from_attributes=True)
 
