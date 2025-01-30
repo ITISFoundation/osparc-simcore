@@ -83,7 +83,7 @@ qx.Class.define("osparc.navigation.StudyTitleWOptions", {
           control.addListener("execute", () => {
             this.getStudy().getUi().setMode("workbench");
             const validNodes = this.getStudy().getNonFrontendNodes();
-            if (validNodes.length === 1 && validNodes[0].isDynamic()) {
+            if (this.getStudy().isOnlyNodeDynamic()) {
               const dynamicNode = validNodes[0];
               dynamicNode.getIFrame().maximizeIFrame(false);
             }
@@ -97,7 +97,7 @@ qx.Class.define("osparc.navigation.StudyTitleWOptions", {
           control.addListener("execute", () => {
             this.getStudy().getUi().setMode("standalone");
             const validNodes = this.getStudy().getNonFrontendNodes();
-            if (validNodes.length === 1 && validNodes[0].isDynamic()) {
+            if (this.getStudy().isOnlyNodeDynamic()) {
               const dynamicNode = validNodes[0];
               dynamicNode.getIFrame().maximizeIFrame(true);
             }
@@ -168,8 +168,7 @@ qx.Class.define("osparc.navigation.StudyTitleWOptions", {
 
         const convertToStandaloneButton = this.getChildControl("study-menu-convert-to-standalone");
         const evaluateConvertToPipelineButton = () => {
-          const mode = study.getUi();
-          if (mode === "workbench") {
+          if (study.getUi().getMode() === "workbench" && study.isOnlyNodeDynamic()) {
             convertToStandaloneButton.show();
           } else {
             convertToStandaloneButton.exclude();
