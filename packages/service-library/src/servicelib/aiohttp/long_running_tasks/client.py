@@ -4,7 +4,6 @@ from dataclasses import dataclass
 from typing import Any, Final, TypeAlias
 
 from aiohttp import ClientConnectionError, ClientSession
-from servicelib.aiohttp import status
 from tenacity import TryAgain, retry
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
@@ -13,6 +12,7 @@ from tenacity.wait import wait_random_exponential
 from yarl import URL
 
 from ...rest_responses import unwrap_envelope
+from .. import status
 from .server import TaskGet, TaskId, TaskProgress, TaskStatus
 
 RequestBody: TypeAlias = Any

@@ -3,15 +3,14 @@ Provides a convenient way to return the result given a TaskId.
 """
 
 import asyncio
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, Coroutine
 from dataclasses import dataclass
-from typing import Any, Coroutine, Final, TypeAlias
+from typing import Any, Final, TypeAlias
 
 import httpx
 from fastapi import status
 from models_library.api_schemas_long_running_tasks.base import TaskProgress
 from models_library.api_schemas_long_running_tasks.tasks import TaskGet, TaskStatus
-from servicelib.rest_responses import unwrap_envelope_if_required
 from tenacity import (
     AsyncRetrying,
     TryAgain,
@@ -30,6 +29,7 @@ from ...long_running_tasks._models import (
     ProgressPercent,
 )
 from ...long_running_tasks._task import TaskId, TaskResult
+from ...rest_responses import unwrap_envelope_if_required
 from ._client import DEFAULT_HTTP_REQUESTS_TIMEOUT, Client, setup
 from ._context_manager import periodic_task_result
 
