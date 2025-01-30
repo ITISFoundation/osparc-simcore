@@ -10706,7 +10706,8 @@ components:
           title: Pricingplanid
           minimum: 0
         licensedResourceTypeDetails:
-          $ref: '#/components/schemas/VipDetails'
+          type: object
+          title: Licensedresourcetypedetails
         createdAt:
           type: string
           format: date-time
@@ -15091,93 +15092,6 @@ components:
         \ can be in two different viewer resources\n  - viewer1=(JPEG, RawGraph service)\n\
         \  - viewer2=(CSV, RawGraph service)\n\nA viewer can be dispatched using the\
         \ view_url and appending the"
-    VipDetails:
-      properties:
-        id:
-          type: integer
-          title: Id
-        description:
-          type: string
-          title: Description
-        thumbnail:
-          type: string
-          title: Thumbnail
-        features:
-          $ref: '#/components/schemas/VipFeatures'
-        doi:
-          type: string
-          title: Doi
-        licenseKey:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Licensekey
-        licenseVersion:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Licenseversion
-        protection:
-          type: string
-          title: Protection
-        availableFromUrl:
-          type: string
-          title: Availablefromurl
-      additionalProperties: true
-      type: object
-      required:
-      - id
-      - description
-      - thumbnail
-      - features
-      - doi
-      - licenseKey
-      - licenseVersion
-      - protection
-      - availableFromUrl
-      title: VipDetails
-    VipFeatures:
-      properties:
-        name:
-          type: string
-          title: Name
-        version:
-          type: string
-          title: Version
-        sex:
-          type: string
-          title: Sex
-        age:
-          type: string
-          title: Age
-        weight:
-          type: string
-          title: Weight
-        height:
-          type: string
-          title: Height
-        data:
-          type: string
-          title: Data
-        ethnicity:
-          type: string
-          title: Ethnicity
-        functionality:
-          type: string
-          title: Functionality
-      additionalProperties: true
-      type: object
-      required:
-      - name
-      - version
-      - sex
-      - age
-      - weight
-      - height
-      - data
-      - ethnicity
-      - functionality
-      title: VipFeatures
     WalletGet:
       properties:
         walletId:
