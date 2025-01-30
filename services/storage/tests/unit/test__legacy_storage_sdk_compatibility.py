@@ -79,7 +79,6 @@ async def test_storage_client_used_in_simcore_sdk_0_3_2(  # noqa: PLR0915
 
     # --------
     cfg = Configuration()
-    client.base_url
     cfg.host = f"http://{client.base_url.host}:{client.base_url.port or '80'}/v0"
     cfg.debug = True
 
@@ -138,7 +137,7 @@ async def test_storage_client_used_in_simcore_sdk_0_3_2(  # noqa: PLR0915
         #   A bug in the response of this call was preventing downloading data
         #   with the new storage API
         #
-        resp_model = await api.get_file_metadata(file_id, location_id, user_id)
+        resp_model = await api.get_file_metadata(file_id, location_id, str_user_id)
         print(type(resp_model), ":\n", resp_model)
         assert resp_model.data.object_name is not None
         assert resp_model.error is None
