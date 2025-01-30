@@ -8,14 +8,20 @@ from collections.abc import Iterator
 
 import pytest
 import respx
+from aiohttp.test_utils import TestClient
 from faker import Faker
 from httpx import AsyncClient
+from models_library.licensed_items import LicensedResourceType
 from pydantic import ValidationError
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.aiohttp import status
-from simcore_service_webserver.licenses import _itis_vip_service
+from simcore_service_webserver.licenses import (
+    _itis_vip_service,
+    _licensed_items_repository,
+)
 from simcore_service_webserver.licenses._itis_vip_models import (
+    AvailableDownload,
     _feature_descriptor_to_dict,
 )
 from simcore_service_webserver.licenses._itis_vip_service import ResponseData
@@ -44,7 +50,7 @@ def app_environment(
         monkeypatch,
         {
             "ITIS_VIP_API_URL": f"{fake_api_base_url}/PD_DirectDownload/getDownloadableItems/{{category}}",
-            "ITIS_VIP_CATEGORIES": '["ComputationalPantom","Foo","Bar"]',  # NOTE: ItisVipSettings will decode with json.dumps()
+            "ITIS_VIP_CATEGORIES": '["ComputationalPantom","FooCategory","BarCategory"]',  # NOTE: ItisVipSettings will decode with json.dumps()
         },
     )
 
@@ -118,3 +124,39 @@ async def test_get_category_items(
             items = await _itis_vip_service.get_category_items(client, url)
 
             assert items[0].features["functionality"] == "Posable"
+
+
+async def test_sync_itis_vip_as_licensed_items(
+    mock_itis_vip_downloadables_api: respx.MockRouter,
+    app_environment: EnvVarsDict,
+    client: TestClient,
+):
+    assert client.app
+
+    settings = ItisVipSettings.create_from_envs()
+    assert settings.ITIS_VIP_CATEGORIES
+
+    async with AsyncClient() as http_client:
+        for url, category in zip(
+            settings.get_urls(), settings.ITIS_VIP_CATEGORIES, strict=True
+        ):
+            assert f"{url}".endswith(category)
+
+            items: list[AvailableDownload] = await _itis_vip_service.get_category_items(
+                http_client, url
+            )
+            assert items[0].features["functionality"] == "Posable"
+
+            for item in items:
+                # TODO: how to update to minimize collisions? one by one?
+                await _licensed_items_repository.create(
+                    client.app,
+                    licensed_resource_name=f"{category}/{item.id}",
+                    licensed_resource_type=LicensedResourceType.VIP_MODEL,
+                    licensed_resource_data=item.model_dump(
+                        mode="json", exclude_unset=True
+                    ),
+                    licensed_key=item.license_key,
+                    product_name=None,
+                    pricing_plan_id=None,
+                )

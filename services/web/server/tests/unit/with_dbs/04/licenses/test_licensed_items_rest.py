@@ -41,10 +41,10 @@ async def test_licensed_items_listing(
 
     licensed_item_db = await _licensed_items_repository.create(
         client.app,
-        product_name=osparc_product_name,
         licensed_resource_name="Model A",
         licensed_resource_type=LicensedResourceType.VIP_MODEL,
         pricing_plan_id=pricing_plan_id,
+        product_name=osparc_product_name,
     )
     _licensed_item_id = licensed_item_db.licensed_item_id
 
@@ -108,10 +108,10 @@ async def test_licensed_items_purchase(
 
     licensed_item_db = await _licensed_items_repository.create(
         client.app,
-        product_name=osparc_product_name,
         licensed_resource_name="Model A",
         licensed_resource_type=LicensedResourceType.VIP_MODEL,
         pricing_plan_id=pricing_plan_id,
+        product_name=osparc_product_name,
     )
     _licensed_item_id = licensed_item_db.licensed_item_id
 

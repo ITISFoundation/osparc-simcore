@@ -41,9 +41,9 @@ async def test_licensed_items_db_crud(
 
     got = await _licensed_items_repository.create(
         client.app,
-        product_name=osparc_product_name,
         licensed_resource_name="Model A",
         licensed_resource_type=LicensedResourceType.VIP_MODEL,
+        product_name=osparc_product_name,
         pricing_plan_id=pricing_plan_id,
     )
     licensed_item_id = got.licensed_item_id
