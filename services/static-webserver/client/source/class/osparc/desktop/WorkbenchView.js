@@ -557,7 +557,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           if (node) {
             this.__populateSecondaryColumn(node);
             this.__openIframeTab(node);
-            node.getLoadingPage().maximizeIFrame(true);
             node.getIFrame().maximizeIFrame(true);
           }
           this.__loggerView.setCurrentNodeId(nodeId);
@@ -1184,7 +1183,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
     openFirstNode: function() {
       const nodes = this.getStudy().getWorkbench().getNodes();
-      const validNodes = Object.values(nodes).filter(node => node.isComputational() || node.isDynamic());
+      const validNodes = osparc.data.model.Workbench.getNonFrontendNodes(nodes);
       if (validNodes.length === 1 && validNodes[0].isDynamic()) {
         const dynamicNode = validNodes[0];
         this.nodeSelected(dynamicNode.getNodeId());

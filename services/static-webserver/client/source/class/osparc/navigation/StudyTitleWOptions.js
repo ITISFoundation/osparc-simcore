@@ -80,7 +80,28 @@ qx.Class.define("osparc.navigation.StudyTitleWOptions", {
             label: this.tr("Convert to Pipeline"),
             icon: null,
           });
-          control.addListener("execute", () => this.getStudy().getUi().setMode("workbench"));
+          control.addListener("execute", () => {
+            this.getStudy().getUi().setMode("workbench");
+            const validNodes = osparc.data.model.Workbench.getNonFrontendNodes(this.getStudy().getWorkbench().getNodes());
+            if (validNodes.length === 1 && validNodes[0].isDynamic()) {
+              const dynamicNode = validNodes[0];
+              dynamicNode.getIFrame().maximizeIFrame(false);
+            }
+          });
+          break;
+        case "study-menu-convert-to-standalone":
+          control = new qx.ui.menu.Button().set({
+            label: this.tr("Convert to Standalone"),
+            icon: null,
+          });
+          control.addListener("execute", () => {
+            this.getStudy().getUi().setMode("standalone");
+            const validNodes = osparc.data.model.Workbench.getNonFrontendNodes(this.getStudy().getWorkbench().getNodes());
+            if (validNodes.length === 1 && validNodes[0].isDynamic()) {
+              const dynamicNode = validNodes[0];
+              dynamicNode.getIFrame().maximizeIFrame(true);
+            }
+          });
           break;
         case "study-menu-download-logs":
           control = new qx.ui.menu.Button().set({
@@ -133,13 +154,20 @@ qx.Class.define("osparc.navigation.StudyTitleWOptions", {
       if (study) {
         const editTitle = this.getChildControl("edit-title-label");
         study.bind("name", editTitle, "value");
+
         const reloadButton = this.getChildControl("study-menu-reload");
         study.getUi().bind("mode", reloadButton, "visibility", {
           converter: mode => mode === "standalone" ? "visible" : "excluded"
         });
+
         const convertToPipelineButton = this.getChildControl("study-menu-convert-to-pipeline");
         study.getUi().bind("mode", convertToPipelineButton, "visibility", {
           converter: mode => mode === "standalone" ? "visible" : "excluded"
+        });
+
+        const convertToStandaloneButton = this.getChildControl("study-menu-convert-to-standalone");
+        study.getUi().bind("mode", convertToStandaloneButton, "visibility", {
+          converter: mode => mode === "workbench" ? "visible" : "excluded"
         });
       } else {
         this.exclude();
