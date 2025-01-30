@@ -15,10 +15,10 @@ from models_library.api_schemas_resource_usage_tracker.licensed_items_checkouts 
     LicensedItemCheckoutGet,
 )
 from models_library.api_schemas_webserver.licensed_items import (
-    LicensedItem as _LicensedItemGet,
+    LicensedItemRpcGet as _LicensedItemGet,
 )
 from models_library.api_schemas_webserver.licensed_items import (
-    LicensedItemPage as _LicensedItemGetPage,
+    LicensedItemRpcGetPage as _LicensedItemGetPage,
 )
 from models_library.api_schemas_webserver.licensed_items_checkouts import (
     LicensedItemCheckoutRpcGet,
