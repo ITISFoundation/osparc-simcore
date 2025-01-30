@@ -114,6 +114,7 @@ async function dashboardNewTIPlan(page) {
 async function dashboardStartSim4LifeLite(page) {
   console.log("Start Sim4Lite from + button");
 
+  await utils.waitAndClick(page, '[osparc-test-id="newPlansBtn"]');
   await utils.waitAndClick(page, '[osparc-test-id="startS4LButton"]');
 }
 
