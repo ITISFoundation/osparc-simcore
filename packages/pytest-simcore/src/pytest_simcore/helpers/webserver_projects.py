@@ -82,9 +82,7 @@ async def create_project(
                 required_resources=ServiceResourcesDictHelpers.model_config[
                     "json_schema_extra"
                 ]["examples"][0],
-                key=node_info.get("key"),
-                version=node_info.get("version"),
-                label=node_info.get("label"),
+                **node_info,
             )
             for node_id, node_info in project_data.get("workbench", {}).items()
         },

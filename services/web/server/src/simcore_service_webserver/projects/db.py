@@ -112,6 +112,45 @@ DEFAULT_ORDER_BY = OrderBy(
 # NOTE: https://github.com/ITISFoundation/osparc-simcore/issues/3516
 
 
+def _make_workbench_subquery():
+    return (
+        sa.select(
+            projects_nodes.c.project_uuid,
+            sa.func.jsonb_object_agg(
+                projects_nodes.c.node_id,
+                sa.func.jsonb_build_object(
+                    "key",
+                    projects_nodes.c.key,
+                    "version",
+                    projects_nodes.c.version,
+                    "label",
+                    projects_nodes.c.label,
+                    "input_access",
+                    projects_nodes.c.input_access,
+                    "input_nodes",
+                    projects_nodes.c.input_nodes,
+                    "inputs",
+                    projects_nodes.c.inputs,
+                    "inputs_required",
+                    projects_nodes.c.inputs_required,
+                    "output_nodes",
+                    projects_nodes.c.output_nodes,
+                    "outputs",
+                    projects_nodes.c.outputs,
+                    "run_hash",
+                    projects_nodes.c.run_hash,
+                    "state",
+                    projects_nodes.c.state,
+                    "parent",
+                    projects_nodes.c.parent,
+                    "boot_options",
+                    projects_nodes.c.boot_options,
+                ),
+            ).label("workbench"),
+        ).group_by(projects_nodes.c.project_uuid)
+    ).subquery("workbench_subquery")
+
+
 class ProjectDBAPI(BaseProjectDB):
     def __init__(self, app: web.Application) -> None:
         self._app = app
@@ -167,6 +206,7 @@ class ProjectDBAPI(BaseProjectDB):
                         project_index = None
                         project_uuid = ProjectID(f"{insert_values['uuid']}")
 
+                        workbench = insert_values.pop("workbench")
                         try:
                             result: ResultProxy = await conn.execute(
                                 projects.insert()
@@ -183,6 +223,7 @@ class ProjectDBAPI(BaseProjectDB):
                             assert row  # nosec
 
                             selected_values = ProjectDict(row.items())
+                            selected_values["workbench"] = workbench
                             project_index = selected_values.pop("id")
 
                         except UniqueViolation as err:
@@ -222,9 +263,7 @@ class ProjectDBAPI(BaseProjectDB):
                                     NodeID(node_id): ProjectNodeCreate(
                                         node_id=NodeID(node_id),
                                         required_resources={},
-                                        key=node_info.get("key"),
-                                        version=node_info.get("version"),
-                                        label=node_info.get("label"),
+                                        **node_info,
                                     )
                                     for node_id, node_info in selected_values[
                                         "workbench"
@@ -237,9 +276,7 @@ class ProjectDBAPI(BaseProjectDB):
                                     ProjectNodeCreate(
                                         node_id=NodeID(node_id),
                                         required_resources={},
-                                        key=node_info.get("key"),
-                                        version=node_info.get("version"),
-                                        label=node_info.get("label"),
+                                        **node_info,
                                     ),
                                 )
                                 for node_id, node_info in selected_values[
@@ -390,7 +427,7 @@ class ProjectDBAPI(BaseProjectDB):
             private_workspace_query = (
                 sa.select(
                     *PROJECT_DB_COLS,
-                    projects.c.workbench,
+                    _make_workbench_subquery().c.workbench,
                     access_rights_subquery.c.access_rights,
                     projects_to_products.c.product_name,
                     projects_to_folders.c.folder_id,
@@ -472,7 +509,7 @@ class ProjectDBAPI(BaseProjectDB):
             shared_workspace_query = (
                 sa.select(
                     *PROJECT_DB_COLS,
-                    projects.c.workbench,
+                    _make_workbench_subquery().c.workbench,
                     workspace_access_rights_subquery.c.access_rights,
                     projects_to_products.c.product_name,
                     projects_to_folders.c.folder_id,
@@ -770,7 +807,7 @@ class ProjectDBAPI(BaseProjectDB):
             result = await conn.execute(
                 sa.select(
                     *PROJECT_DB_COLS,
-                    projects.c.workbench,
+                    # projects.c.workbench, TODO GCR
                 ).where(projects.c.uuid == f"{project_uuid}")
             )
             row = await result.fetchone()
