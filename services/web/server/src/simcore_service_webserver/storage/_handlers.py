@@ -22,9 +22,10 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_path_parameters_as,
     parse_request_query_parameters_as,
 )
-from servicelib.aiohttp.rest_responses import create_data_response, unwrap_envelope
+from servicelib.aiohttp.rest_responses import create_data_response
 from servicelib.common_headers import X_FORWARDED_PROTO
 from servicelib.request_keys import RQT_USERID_KEY
+from servicelib.rest_responses import unwrap_envelope
 from yarl import URL
 
 from .._meta import API_VTAG
