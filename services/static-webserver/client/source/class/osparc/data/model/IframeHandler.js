@@ -116,7 +116,9 @@ qx.Class.define("osparc.data.model.IframeHandler", {
       node.addListener("changeLabel", () => loadingPage.setHeader(this.__getLoadingPageHeader()), this);
 
       const nodeStatus = node.getStatus();
-      const sequenceWidget = nodeStatus.getProgressSequence().getWidgetForLoadingPage();
+      const sequenceWidget = nodeStatus.getProgressSequence().getWidgetForLoadingPage().set({
+        width: 400
+      });
       nodeStatus.bind("interactive", sequenceWidget, "visibility", {
         converter: state => ["pending", "pulling", "starting", "connecting"].includes(state) ? "visible" : "excluded"
       });
