@@ -1182,8 +1182,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     },
 
     openFirstNode: function() {
-      const nodes = this.getStudy().getWorkbench().getNodes();
-      const validNodes = osparc.data.model.Workbench.getNonFrontendNodes(nodes);
+      const validNodes = this.getStudy().getNonFrontendNodes();
       if (validNodes.length === 1 && validNodes[0].isDynamic()) {
         const dynamicNode = validNodes[0];
         this.nodeSelected(dynamicNode.getNodeId());

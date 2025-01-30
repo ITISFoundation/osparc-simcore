@@ -88,10 +88,6 @@ qx.Class.define("osparc.data.model.Workbench", {
       });
       return Array.from(linkedNodeIDs);
     },
-
-    getNonFrontendNodes: function(nodes) {
-      return Object.values(nodes).filter(node => node.isComputational() || node.isDynamic());
-    },
   },
 
   members: {
