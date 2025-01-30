@@ -130,12 +130,6 @@ qx.Class.define("osparc.desktop.SlideshowView", {
       apply: "__applyMaximized",
       event: "changeMaximized"
     },
-
-    pageContext: {
-      check: ["guided", "app"],
-      nullable: false,
-      init: "guided"
-    }
   },
 
   statics: {
@@ -269,9 +263,6 @@ qx.Class.define("osparc.desktop.SlideshowView", {
           view = new osparc.node.slideshow.NodeView();
         }
         view.setNode(node);
-        if (node.isDynamic()) {
-          view.getSettingsLayout().setVisibility(["app", "standalone"].includes(this.getPageContext()) ? "excluded" : "visible");
-        }
       }
       this.__connectMaximizeEvents(node);
       this.__styleView(node, view);
@@ -376,7 +367,6 @@ qx.Class.define("osparc.desktop.SlideshowView", {
           });
         }
       }
-      this.setPageContext("app");
       this.__slideshowToolbar.populateButtons(true);
       const currentNodeId = this.getStudy().getUi().getCurrentNodeId();
       const isValid = slideshow.getPosition(currentNodeId) !== -1;

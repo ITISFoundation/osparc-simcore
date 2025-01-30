@@ -39,28 +39,22 @@ qx.Class.define("osparc.file.FilePicker", {
   /**
     * @param node {osparc.data.model.Node} Node owning the widget
     */
-  construct: function(node, pageContext = "workbench") {
+  construct: function(node, viewContext = "workbench") {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.VBox(20));
 
     this.set({
       node,
-      pageContext
     });
 
-    this.__buildLayout();
+    this.__buildLayout(viewContext);
   },
 
   properties: {
     node: {
       check: "osparc.data.model.Node"
     },
-
-    pageContext: {
-      check: ["workbench", "guided", "app", "standalone"],
-      nullable: false
-    }
   },
 
   events: {
@@ -284,14 +278,14 @@ qx.Class.define("osparc.file.FilePicker", {
       }
     },
 
-    __buildLayout: function() {
+    __buildLayout: function(viewContext) {
       this._removeAll();
       const hasOutput = osparc.file.FilePicker.hasOutputAssigned(this.getNode().getOutputs());
       if (hasOutput) {
         this.__buildInfoLayout();
       } else {
         this.__addProgressBar();
-        if (this.getPageContext() === "workbench") {
+        if (viewContext === "workbench") {
           this.__buildWorkbenchLayout();
         } else {
           this.setMargin(10);
