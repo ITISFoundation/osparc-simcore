@@ -49,7 +49,8 @@ class LicensedItemGet(OutputSchema):
                     include={
                         "licensed_item_id",
                         "licensed_resource_name",
-                        "licensed_resource_type" "license_key",
+                        "licensed_resource_type",
+                        "license_key",
                         "pricing_plan_id",
                         "created",
                         "modified",
