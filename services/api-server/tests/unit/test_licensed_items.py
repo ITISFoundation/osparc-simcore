@@ -15,10 +15,8 @@ from models_library.api_schemas_resource_usage_tracker.licensed_items_checkouts 
     LicensedItemCheckoutGet,
 )
 from models_library.api_schemas_webserver.licensed_items import (
-    LicensedItemRpcGet as _LicensedItemGet,
-)
-from models_library.api_schemas_webserver.licensed_items import (
-    LicensedItemRpcGetPage as _LicensedItemGetPage,
+    LicensedItemRpcGet,
+    LicensedItemRpcGetPage,
 )
 from models_library.api_schemas_webserver.licensed_items_checkouts import (
     LicensedItemCheckoutRpcGet,
@@ -64,15 +62,15 @@ async def _get_backend_licensed_items(
     product_name: str,
     offset: int,
     limit: int,
-) -> _LicensedItemGetPage:
+) -> LicensedItemRpcGetPage:
     if exception_to_raise is not None:
         raise exception_to_raise
-    extra = _LicensedItemGet.model_config.get("json_schema_extra")
+    extra = LicensedItemRpcGet.model_config.get("json_schema_extra")
     assert isinstance(extra, dict)
     examples = extra.get("examples")
     assert isinstance(examples, list)
-    return _LicensedItemGetPage(
-        items=[_LicensedItemGet.model_validate(ex) for ex in examples],
+    return LicensedItemRpcGetPage(
+        items=[LicensedItemRpcGet.model_validate(ex) for ex in examples],
         total=len(examples),
     )
 
@@ -162,16 +160,16 @@ async def test_get_licensed_items_for_wallet(
         user_id: UserID,
         offset: int,
         limit: int,
-    ) -> _LicensedItemGetPage:
+    ) -> LicensedItemRpcGetPage:
         assert _wallet_id == wallet_id
         if exception_to_raise is not None:
             raise exception_to_raise
-        extra = _LicensedItemGet.model_config.get("json_schema_extra")
+        extra = LicensedItemRpcGet.model_config.get("json_schema_extra")
         assert isinstance(extra, dict)
         examples = extra.get("examples")
         assert isinstance(examples, list)
-        return _LicensedItemGetPage(
-            items=[_LicensedItemGet.model_validate(ex) for ex in examples],
+        return LicensedItemRpcGetPage(
+            items=[LicensedItemRpcGet.model_validate(ex) for ex in examples],
             total=len(examples),
         )
 

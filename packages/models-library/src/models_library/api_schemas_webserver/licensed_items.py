@@ -26,7 +26,6 @@ class LicensedItemRpcGet(BaseModel):
     created_at: datetime
     modified_at: datetime
     model_config = ConfigDict(
-        alias_generator=to_camel,
         json_schema_extra={
             "examples": [
                 {
