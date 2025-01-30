@@ -23,9 +23,10 @@ from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.webserver_login import UserInfoDict
+from pytest_simcore.helpers.webserver_login import NewUser, UserInfoDict
 from servicelib.aiohttp import status
 from simcore_service_webserver.db.models import UserRole
+from simcore_service_webserver.projects._groups_api import ProjectGroupGet
 from simcore_service_webserver.projects.models import ProjectDict
 from yarl import URL
 
@@ -74,9 +75,9 @@ async def test_trash_projects(  # noqa: PLR0915
 ):
     assert client.app
 
-    # this test should have no errors stopping services
+    # this test should emulate NO errors stopping services
     mock_remove_dynamic_services = mocker.patch(
-        "simcore_service_webserver.projects._trash_service.projects_api.remove_project_dynamic_services",
+        "simcore_service_webserver.projects._trash_service.projects_service.remove_project_dynamic_services",
         autospec=True,
     )
     mock_stop_pipeline = mocker.patch(
@@ -150,6 +151,7 @@ async def test_trash_projects(  # noqa: PLR0915
         assert got.trashed_at
         assert trashing_at < got.trashed_at
         assert got.trashed_at < arrow.utcnow().datetime
+        assert got.trashed_by == logged_user["primary_gid"]
 
     # LIST trashed
     resp = await client.get("/v0/projects", params={"filters": '{"trashed": true}'})
@@ -179,6 +181,103 @@ async def test_trash_projects(  # noqa: PLR0915
         await asyncio.sleep(0.1)
         mock_stop_pipeline.assert_awaited()
         mock_remove_dynamic_services.assert_awaited()
+
+
+@pytest.fixture
+async def other_user(
+    client: TestClient, logged_user: UserInfoDict
+) -> AsyncIterable[UserInfoDict]:
+    # new user different from logged_user
+    async with NewUser(
+        {
+            "name": f"other_user_than_{logged_user['name']}",
+            "role": "USER",
+        },
+        client.app,
+    ) as user:
+        yield user
+
+
+async def test_trash_projects_shared_among_users(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    other_user: UserInfoDict,
+    mocked_catalog: None,
+    mocked_dynamic_services_interface: dict[str, MagicMock],
+):
+    assert client.app
+
+    project_uuid = UUID(user_project["uuid"])
+
+    # GET project
+    url = client.app.router["get_project"].url_for(project_id=f"{project_uuid}")
+    resp = await client.get(f"{url}")
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+
+    project = ProjectGet.model_validate(data)
+    assert project.uuid == project_uuid
+    assert project.prj_owner == logged_user["email"]
+
+    # SHARE PROJECT with other-user
+    url = client.app.router["create_project_group"].url_for(
+        project_id=f"{project_uuid}", group_id=f"{other_user['primary_gid']}"
+    )
+    resp = await client.post(
+        f"{url}",
+        json={"read": True, "write": True, "delete": False},
+    )
+    data, _ = await assert_status(resp, status.HTTP_201_CREATED)
+
+    project_group = ProjectGroupGet.model_validate(data)
+    assert project_group.gid == other_user["primary_gid"]
+    assert project_group.read is True
+    assert project_group.write is True
+    assert project_group.delete is False
+
+    # TRASH project
+    trashing_at = arrow.utcnow().datetime
+    resp = await client.post(
+        f"/v0/projects/{project_uuid}:trash", params={"force": "true"}
+    )
+    await assert_status(resp, status.HTTP_204_NO_CONTENT)
+
+    # LIST trashed of logged_user
+    resp = await client.get("/v0/projects", params={"filters": '{"trashed": true}'})
+    await assert_status(resp, status.HTTP_200_OK)
+
+    page = Page[ProjectListItem].model_validate(await resp.json())
+    assert page.meta.total == 1
+    assert page.data[0].uuid == project_uuid
+    assert page.data[0].trashed_at
+    assert trashing_at < page.data[0].trashed_at
+    assert page.data[0].trashed_by == logged_user["primary_gid"]
+
+    # Swith USER: LOGOUT
+    url = client.app.router["auth_logout"].url_for()
+    resp = await client.post(f"{url}")
+    await assert_status(resp, status.HTTP_200_OK)
+
+    url = client.app.router["auth_login"].url_for()
+    resp = await client.post(
+        f"{url}",
+        json={
+            "email": other_user["email"],
+            "password": other_user["raw_password"],
+        },
+    )
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+
+    # LIST trashed of another_user
+    resp = await client.get("/v0/projects", params={"filters": '{"trashed": true}'})
+    await assert_status(resp, status.HTTP_200_OK)
+
+    page = Page[ProjectListItem].model_validate(await resp.json())
+    assert page.meta.total == 1
+    assert page.data[0].uuid == project_uuid
+    assert page.data[0].trashed_at
+    assert trashing_at < page.data[0].trashed_at
+    assert page.data[0].trashed_by == logged_user["primary_gid"]
 
 
 @pytest.mark.acceptance_test(
@@ -232,6 +331,8 @@ async def test_trash_single_folder(client: TestClient, logged_user: UserInfoDict
     assert got.trashed_at
     assert trashing_at < got.trashed_at
     assert got.trashed_at < arrow.utcnow().datetime
+    assert got.trashed_by == logged_user["primary_gid"]
+    assert got.owner == logged_user["primary_gid"]
 
     # LIST trashed
     resp = await client.get("/v0/folders", params={"filters": '{"trashed": true}'})
@@ -347,16 +448,19 @@ async def test_trash_folder_with_content(
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     got = FolderGet.model_validate(data)
     assert got.trashed_at is not None
+    assert got.trashed_by == logged_user["primary_gid"]
 
     resp = await client.get(f"/v0/folders/{subfolder.folder_id}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     got = FolderGet.model_validate(data)
     assert got.trashed_at is not None
+    assert got.trashed_by == logged_user["primary_gid"]
 
     resp = await client.get(f"/v0/projects/{project_uuid}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     got = ProjectGet.model_validate(data)
     assert got.trashed_at is not None
+    assert got.trashed_by == logged_user["primary_gid"]
 
     # UNTRASH folder
     resp = await client.post(f"/v0/folders/{folder.folder_id}:untrash")
@@ -409,12 +513,12 @@ async def workspace(
     # CREATE a workspace
     resp = await client.post("/v0/workspaces", json={"name": "My first workspace"})
     data, _ = await assert_status(resp, status.HTTP_201_CREATED)
-    workspace = WorkspaceGet.model_validate(data)
+    wks = WorkspaceGet.model_validate(data)
 
-    yield workspace
+    yield wks
 
     # DELETE a workspace
-    resp = await client.delete(f"/v0/workspaces/{workspace.workspace_id}")
+    resp = await client.delete(f"/v0/workspaces/{wks.workspace_id}")
     data, _ = await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
 
@@ -449,7 +553,7 @@ async def test_trash_empty_workspace(
     _exclude_attrs = {"trashed_by", "trashed_at", "modified_at"}
 
     # TRASH
-    before_trash = arrow.utcnow().datetime
+    trashing_at = arrow.utcnow().datetime
     resp = await client.post(f"/v0/workspaces/{workspace.workspace_id}:trash")
     await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
@@ -470,8 +574,8 @@ async def test_trash_empty_workspace(
         exclude=_exclude_attrs
     )
     assert page.data[0].trashed_at is not None
-    assert before_trash < page.data[0].trashed_at
-    assert page.data[0].trashed_by == logged_user["id"]
+    assert trashing_at < page.data[0].trashed_at
+    assert page.data[0].trashed_by == logged_user["primary_gid"]
 
     # --------
 

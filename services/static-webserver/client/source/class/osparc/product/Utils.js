@@ -114,23 +114,6 @@ qx.Class.define("osparc.product.Utils", {
       return resourceType;
     },
 
-    __linkExists: function(url) {
-      return new Promise((resolve, reject) => {
-        const reqSvg = new XMLHttpRequest();
-        reqSvg.open("GET", url, true);
-        reqSvg.onreadystatechange = () => {
-          if (reqSvg.readyState === 4) {
-            if (reqSvg.status === 404) {
-              reject();
-            } else {
-              resolve();
-            }
-          }
-        };
-        reqSvg.send();
-      });
-    },
-
     getLogoPath: function(longLogo = true) {
       let logosPath = null;
       const colorManager = qx.theme.manager.Color.getInstance();
@@ -269,11 +252,8 @@ qx.Class.define("osparc.product.Utils", {
     },
 
     showS4LStore: function() {
-      const platformName = osparc.store.StaticInfo.getInstance().getPlatformName();
-      if (platformName !== "master") {
-        return false;
-      }
-      return this.isS4LProduct();
+      const licensesEnabled = osparc.store.StaticInfo.getInstance().areLicensesEnabled();
+      return this.isS4LProduct() && licensesEnabled;
     },
 
     getProductThumbUrl: function(asset = "Default.png") {
@@ -310,6 +290,17 @@ qx.Class.define("osparc.product.Utils", {
           break;
       }
       return url;
-    }
+    },
+
+    hasNewPlusButton: function() {
+      return [
+        "osparc",
+        "s4l",
+        "s4lacad",
+        "s4llite",
+        // "tis",
+        // "tiplite",
+      ].includes(osparc.product.Utils.getProductName());
+    },
   }
 });

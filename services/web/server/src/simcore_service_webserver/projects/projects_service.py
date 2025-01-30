@@ -9,7 +9,6 @@
 
 import asyncio
 import collections
-import contextlib
 import datetime
 import json
 import logging
@@ -32,14 +31,13 @@ from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     DynamicServiceStop,
 )
 from models_library.api_schemas_webserver.projects import ProjectPatch
-from models_library.api_schemas_webserver.projects_nodes import NodePatch
 from models_library.basic_types import KeyIDStr
 from models_library.errors import ErrorDict
 from models_library.groups import GroupID
 from models_library.products import ProductName
 from models_library.projects import Project, ProjectID, ProjectIDStr
 from models_library.projects_access import Owner
-from models_library.projects_nodes import Node
+from models_library.projects_nodes import Node, NodeState, PartialNode
 from models_library.projects_nodes_io import NodeID, NodeIDStr, PortLink
 from models_library.projects_state import (
     ProjectLocked,
@@ -81,7 +79,12 @@ from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler.errors import (
     ServiceWaitingForManualInterventionError,
     ServiceWasNotFoundError,
 )
-from servicelib.redis._decorators import exclusive
+from servicelib.redis import (
+    exclusive,
+    get_project_locked_state,
+    is_project_locked,
+    with_project_locked,
+)
 from servicelib.utils import fire_and_forget_task, logged_gather
 from simcore_postgres_database.models.users import UserRole
 from simcore_postgres_database.utils_projects_nodes import (
@@ -103,7 +106,7 @@ from ..resource_manager.user_sessions import (
     UserSessionID,
     managed_resource,
 )
-from ..resource_usage import api as rut_api
+from ..resource_usage import service as rut_api
 from ..socketio.messages import (
     SOCKET_IO_NODE_UPDATED_EVENT,
     SOCKET_IO_PROJECT_UPDATED_EVENT,
@@ -121,14 +124,19 @@ from ..users.preferences_api import (
 from ..wallets import api as wallets_api
 from ..wallets.errors import WalletNotEnoughCreditsError
 from ..workspaces import _workspaces_repository as workspaces_db
-from . import _crud_api_delete, _nodes_api, _projects_db
+from . import (
+    _crud_api_delete,
+    _nodes_api,
+    _projects_db,
+    _projects_nodes_repository,
+    _wallets_api,
+)
 from ._access_rights_api import (
     check_user_project_permission,
     has_user_project_access_rights,
 )
 from ._db_utils import PermissionStr
 from ._nodes_utils import set_reservation_same_as_limit, validate_new_service_resources
-from ._wallets_api import connect_wallet_to_project, get_project_wallet
 from .db import APP_PROJECT_DBAPI, ProjectDBAPI
 from .exceptions import (
     ClustersKeeperNotAvailableError,
@@ -145,8 +153,7 @@ from .exceptions import (
     ProjectStartsTooManyDynamicNodesError,
     ProjectTooManyProjectOpenedError,
 )
-from .lock import get_project_locked_state, is_project_locked, lock_project
-from .models import ProjectDict, ProjectPatchExtended
+from .models import ProjectDict, ProjectPatchInternalExtended
 from .settings import ProjectsSettings, get_plugin_settings
 from .utils import extract_dns_without_default_port
 
@@ -170,14 +177,13 @@ async def get_project_for_user(
     user_id: UserID,
     *,
     include_state: bool | None = False,
+    include_trashed_by_primary_gid: bool = False,
     check_permissions: str = "read",
 ) -> ProjectDict:
-    """Returns a VALID project accessible to user
+    """
+    Raises:
+        ProjectNotFoundError: _description_
 
-    :raises ProjectNotFoundError: if no match found
-    :
-    :return: schema-compliant project data
-    :rtype: Dict
     """
     db = ProjectDBAPI.get_from_app_context(app)
 
@@ -191,7 +197,7 @@ async def get_project_for_user(
     )
     workspace_is_private = user_project_access.workspace_id is None
 
-    project, project_type = await db.get_project(
+    project, project_type = await db.get_project_dict_and_type(
         project_uuid,
     )
 
@@ -206,6 +212,17 @@ async def get_project_for_user(
     if include_state:
         project = await add_project_states_for_user(
             user_id, project, project_type is ProjectType.TEMPLATE, app
+        )
+
+    # adds `trashed_by_primary_gid`
+    if (
+        include_trashed_by_primary_gid
+        and project.get("trashed_by", project.get("trashedBy")) is not None
+    ):
+        project.update(
+            trashedByPrimaryGid=await _projects_db.get_trashed_by_primary_gid(
+                app, projects_uuid=project["uuid"]
+            )
         )
 
     if project["workspaceId"] is not None:
@@ -252,7 +269,7 @@ async def patch_project(
     *,
     user_id: UserID,
     project_uuid: ProjectID,
-    project_patch: ProjectPatch | ProjectPatchExtended,
+    project_patch: ProjectPatch | ProjectPatchInternalExtended,
     product_name: ProductName,
 ):
     patch_project_data = project_patch.to_domain_model()
@@ -282,7 +299,7 @@ async def patch_project(
             "delete": True,
         }
         user: dict = await get_user(app, project_db.prj_owner)
-        _prj_owner_primary_group = f'{user["primary_gid"]}'
+        _prj_owner_primary_group = f"{user['primary_gid']}"
         if _prj_owner_primary_group not in new_prj_access_rights:
             raise ProjectOwnerNotFoundInTheProjectAccessRightsError
         if new_prj_access_rights[_prj_owner_primary_group] != _prj_required_permissions:
@@ -361,8 +378,8 @@ async def _get_default_pricing_and_hardware_info(
     service_pricing_plan_get = await rut_api.get_default_service_pricing_plan(
         app,
         product_name=product_name,
-        service_key=ServiceKey(service_key),
-        service_version=ServiceVersion(service_version),
+        service_key=service_key,
+        service_version=service_version,
     )
     if service_pricing_plan_get.pricing_units:
         for unit in service_pricing_plan_get.pricing_units:
@@ -507,7 +524,7 @@ async def _check_project_node_has_all_required_inputs(
         permission="read",
     )
 
-    project_dict, _ = await db.get_project(f"{project_uuid}")
+    project_dict, _ = await db.get_project_dict_and_type(f"{project_uuid}")
 
     nodes_map: dict[NodeID, Node] = {
         NodeID(k): Node(**v) for k, v in project_dict["workbench"].items()
@@ -623,7 +640,7 @@ async def _start_dynamic_service(  # noqa: C901
             and app_settings.WEBSERVER_CREDIT_COMPUTATION_ENABLED
         ):
             # Deal with Wallet
-            project_wallet = await get_project_wallet(
+            project_wallet = await _wallets_api.get_project_wallet(
                 request.app, project_id=project_uuid
             )
             if project_wallet is None:
@@ -638,7 +655,7 @@ async def _start_dynamic_service(  # noqa: C901
                 project_wallet_id = TypeAdapter(WalletID).validate_python(
                     user_default_wallet_preference.value
                 )
-                await connect_wallet_to_project(
+                await _wallets_api.connect_wallet_to_project(
                     request.app,
                     product_name=product_name,
                     project_id=project_uuid,
@@ -786,13 +803,17 @@ async def add_project_node(
     default_resources = await catalog_client.get_service_resources(
         request.app, user_id, service_key, service_version
     )
-    db: ProjectDBAPI = request.app[APP_PROJECT_DBAPI]
+    db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(request.app)
     assert db  # nosec
     await db.add_project_node(
         user_id,
         ProjectID(project["uuid"]),
         ProjectNodeCreate(
-            node_id=node_uuid, required_resources=jsonable_encoder(default_resources)
+            node_id=node_uuid,
+            required_resources=jsonable_encoder(default_resources),
+            key=service_key,
+            version=service_version,
+            label=service_key.split("/")[-1],
         ),
         Node.model_validate(
             {
@@ -969,6 +990,8 @@ async def update_project_node_state(
         permission="write",  # NOTE: MD: before only read was sufficient, double check this
     )
 
+    # Delete this once workbench is removed from the projects table
+    # See: https://github.com/ITISFoundation/osparc-simcore/issues/7046
     updated_project, _ = await db.update_project_node_data(
         user_id=user_id,
         project_uuid=project_id,
@@ -976,6 +999,16 @@ async def update_project_node_state(
         product_name=None,
         new_node_data={"state": {"currentStatus": new_state}},
     )
+
+    await _projects_nodes_repository.update(
+        app,
+        project_id=project_id,
+        node_id=node_id,
+        partial_node=PartialNode.model_construct(
+            state=NodeState(currentStatus=RunningState(new_state))
+        ),
+    )
+
     return await add_project_states_for_user(
         user_id=user_id, project=updated_project, is_template=False, app=app
     )
@@ -993,12 +1026,13 @@ async def patch_project_node(
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
-    node_patch: NodePatch,
+    partial_node: PartialNode,
 ) -> None:
-    _node_patch_exclude_unset: dict[str, Any] = jsonable_encoder(
-        node_patch, exclude_unset=True, by_alias=True
+    _node_patch_exclude_unset: dict[str, Any] = partial_node.model_dump(
+        mode="json", exclude_unset=True, by_alias=True
     )
-    db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
+
+    _projects_repository = ProjectDBAPI.get_from_app_context(app)
 
     # 1. Check user permissions
     await check_user_project_permission(
@@ -1011,7 +1045,9 @@ async def patch_project_node(
 
     # 2. If patching service key or version make sure it's valid
     if _node_patch_exclude_unset.get("key") or _node_patch_exclude_unset.get("version"):
-        _project, _ = await db.get_project(project_uuid=f"{project_id}")
+        _project, _ = await _projects_repository.get_project_dict_and_type(
+            project_uuid=f"{project_id}"
+        )
         _project_node_data = _project["workbench"][f"{node_id}"]
 
         _service_key = _node_patch_exclude_unset.get("key", _project_node_data["key"])
@@ -1028,12 +1064,19 @@ async def patch_project_node(
         )
 
     # 3. Patch the project node
-    updated_project, _ = await db.update_project_node_data(
+    updated_project, _ = await _projects_repository.update_project_node_data(
         user_id=user_id,
         project_uuid=project_id,
         node_id=node_id,
         product_name=product_name,
         new_node_data=_node_patch_exclude_unset,
+    )
+
+    await _projects_nodes_repository.update(
+        app,
+        project_id=project_id,
+        node_id=node_id,
+        partial_node=partial_node,
     )
 
     # 4. Make calls to director-v2 to keep data in sync (ex. comp_tasks DB table)
@@ -1097,6 +1140,15 @@ async def update_project_node_outputs(
         new_node_data={"outputs": new_outputs, "runHash": new_run_hash},
     )
 
+    await _projects_nodes_repository.update(
+        app,
+        project_id=project_id,
+        node_id=node_id,
+        partial_node=PartialNode.model_construct(
+            outputs=new_outputs, run_hash=new_run_hash
+        ),
+    )
+
     log.debug(
         "patched project %s, following entries changed: %s",
         project_id,
@@ -1150,7 +1202,7 @@ async def _trigger_connected_service_retrieve(
     app: web.Application, project: dict, updated_node_uuid: str, changed_keys: list[str]
 ) -> None:
     project_id = project["uuid"]
-    if await is_project_locked(app, project_id):
+    if await is_project_locked(get_redis_lock_manager_client_sdk(app), project_id):
         # NOTE: we log warn since this function is fire&forget and raise an exception would not be anybody to handle it
         log.warning(
             "Skipping service retrieval because project with %s is currently locked."
@@ -1241,9 +1293,18 @@ async def _clean_user_disconnected_clients(
                 await user_session.remove(PROJECT_ID_KEY)
 
 
+def create_user_notification_cb(
+    user_id: UserID, project_uuid: ProjectID, app: web.Application
+):
+    async def _notification_cb() -> None:
+        await retrieve_and_notify_project_locked_state(user_id, f"{project_uuid}", app)
+
+    return _notification_cb
+
+
 async def try_open_project_for_user(
     user_id: UserID,
-    project_uuid: str,
+    project_uuid: ProjectID,
     client_session_id: str,
     app: web.Application,
     max_number_of_studies_per_user: int | None,
@@ -1256,14 +1317,17 @@ async def try_open_project_for_user(
         False if cannot be opened (e.g. locked, )
     """
     try:
-        async with lock_with_notification(
-            app,
-            project_uuid,
-            ProjectStatus.OPENING,
-            user_id,
-            await get_user_fullname(app, user_id=user_id),
-            notify_users=False,
-        ):
+
+        @with_project_locked(
+            get_redis_lock_manager_client_sdk(app),
+            project_uuid=project_uuid,
+            status=ProjectStatus.OPENING,
+            owner=Owner(
+                user_id=user_id, **await get_user_fullname(app, user_id=user_id)
+            ),
+            notification_cb=None,
+        )
+        async def _open_project() -> bool:
             with managed_resource(user_id, client_session_id, app) as user_session:
                 # NOTE: if max_number_of_studies_per_user is set, the same
                 # project shall still be openable if the tab was closed
@@ -1288,11 +1352,11 @@ async def try_open_project_for_user(
                 sessions_with_project: list[
                     UserSessionID
                 ] = await user_session.find_users_of_resource(
-                    app, PROJECT_ID_KEY, project_uuid
+                    app, PROJECT_ID_KEY, f"{project_uuid}"
                 )
                 if not sessions_with_project:
                     # no one has the project so we assign it
-                    await user_session.add(PROJECT_ID_KEY, project_uuid)
+                    await user_session.add(PROJECT_ID_KEY, f"{project_uuid}")
                     return True
 
                 # Otherwise if this is the only user (NOTE: a session = user_id + client_seesion_id !)
@@ -1308,13 +1372,15 @@ async def try_open_project_for_user(
                         app,
                     ):
                         # steal the project
-                        await user_session.add(PROJECT_ID_KEY, project_uuid)
+                        await user_session.add(PROJECT_ID_KEY, f"{project_uuid}")
                         await _clean_user_disconnected_clients(
                             sessions_with_project, app
                         )
                         return True
 
             return False
+
+        return await _open_project()
 
     except ProjectLockError:
         # the project is currently locked
@@ -1401,7 +1467,7 @@ async def _get_project_lock_state(
         f"{user_id=}",
     )
     prj_locked_state: ProjectLocked | None = await get_project_locked_state(
-        app, project_uuid
+        get_redis_lock_manager_client_sdk(app), project_uuid
     )
     if prj_locked_state:
         log.debug(
@@ -1495,26 +1561,27 @@ async def add_project_states_for_user(
     lock_state = await _get_project_lock_state(user_id, project["uuid"], app)
     running_state = RunningState.UNKNOWN
 
-    if not is_template:
-        if computation_task := await director_v2_api.get_computation_task(
+    if not is_template and (
+        computation_task := await director_v2_api.get_computation_task(
             app, user_id, project["uuid"]
-        ):
-            # get the running state
-            running_state = computation_task.state
-            # get the nodes individual states
-            for (
-                node_id,
-                node_state,
-            ) in computation_task.pipeline_details.node_states.items():
-                prj_node = project["workbench"].get(str(node_id))
-                if prj_node is None:
-                    continue
-                node_state_dict = json.loads(
-                    node_state.model_dump_json(by_alias=True, exclude_unset=True)
-                )
-                prj_node.setdefault("state", {}).update(node_state_dict)
-                prj_node_progress = node_state_dict.get("progress", None) or 0
-                prj_node.update({"progress": round(prj_node_progress * 100.0)})
+        )
+    ):
+        # get the running state
+        running_state = computation_task.state
+        # get the nodes individual states
+        for (
+            node_id,
+            node_state,
+        ) in computation_task.pipeline_details.node_states.items():
+            prj_node = project["workbench"].get(str(node_id))
+            if prj_node is None:
+                continue
+            node_state_dict = json.loads(
+                node_state.model_dump_json(by_alias=True, exclude_unset=True)
+            )
+            prj_node.setdefault("state", {}).update(node_state_dict)
+            prj_node_progress = node_state_dict.get("progress", None) or 0
+            prj_node.update({"progress": round(prj_node_progress * 100.0)})
 
     project["state"] = ProjectState(
         locked=lock_state, state=ProjectRunningState(value=running_state)
@@ -1748,14 +1815,18 @@ async def remove_project_dynamic_services(
         save_state = False
     # -------------------
 
-    async with lock_with_notification(
-        app,
-        project_uuid,
-        ProjectStatus.CLOSING,
-        user_id,
-        user_name_data,
-        notify_users=notify_users,
-    ):
+    @with_project_locked(
+        get_redis_lock_manager_client_sdk(app),
+        project_uuid=project_uuid,
+        status=ProjectStatus.CLOSING,
+        owner=Owner(user_id=user_id, **user_name_data),
+        notification_cb=(
+            create_user_notification_cb(user_id, ProjectID(project_uuid), app)
+            if notify_users
+            else None
+        ),
+    )
+    async def _locked_stop_dynamic_serivces_in_project() -> None:
         # save the state if the user is not a guest. if we do not know we save in any case.
         with suppress(
             RPCServerError,
@@ -1770,6 +1841,8 @@ async def remove_project_dynamic_services(
                 simcore_user_agent=simcore_user_agent,
                 save_state=save_state,
             )
+
+    await _locked_stop_dynamic_serivces_in_project()
 
 
 #
@@ -1846,45 +1919,6 @@ async def retrieve_and_notify_project_locked_state(
     await notify_project_state_update(
         app, project, notify_only_user=user_id if notify_only_prj_user else None
     )
-
-
-@contextlib.asynccontextmanager
-async def lock_with_notification(
-    app: web.Application,
-    project_uuid: str,
-    status: ProjectStatus,
-    user_id: int,
-    user_name: FullNameDict,
-    *,
-    notify_users: bool = True,
-):
-    try:
-        async with lock_project(
-            app,
-            project_uuid,
-            status,
-            user_id,
-            user_name,
-        ):
-            if notify_users:
-                await retrieve_and_notify_project_locked_state(
-                    user_id, project_uuid, app
-                )
-            yield
-    except ProjectLockError:
-        # someone else has already the lock?
-        prj_states: ProjectState = await get_project_states_for_user(
-            user_id, project_uuid, app
-        )
-        log.exception(
-            "Project [%s] already locked in state '%s'. Please check with support.",
-            f"{project_uuid=}",
-            f"{prj_states.locked.status=}",
-        )
-        raise
-    finally:
-        if notify_users:
-            await retrieve_and_notify_project_locked_state(user_id, project_uuid, app)
 
 
 async def get_project_inactivity(

@@ -1,4 +1,4 @@
-""" Handlers for STANDARD methods on /projects colletions
+"""Handlers for STANDARD methods on /projects colletions
 
 Standard methods or CRUD that states for Create+Read(Get&List)+Update+Delete
 
@@ -14,6 +14,7 @@ from models_library.api_schemas_webserver.projects import (
     ProjectCopyOverride,
     ProjectCreateNew,
     ProjectGet,
+    ProjectListItem,
     ProjectPatch,
 )
 from models_library.generics import Envelope
@@ -36,18 +37,20 @@ from servicelib.common_headers import (
     X_SIMCORE_USER_AGENT,
 )
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
+from servicelib.redis import get_project_locked_state
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
 from .._meta import API_VTAG as VTAG
 from ..catalog.client import get_services_for_user_in_product
 from ..folders.errors import FolderAccessForbiddenError, FolderNotFoundError
 from ..login.decorators import login_required
+from ..redis import get_redis_lock_manager_client_sdk
 from ..resource_manager.user_sessions import PROJECT_ID_KEY, managed_resource
 from ..security.api import check_user_permission
 from ..security.decorators import permission_required
 from ..users.api import get_user_fullname
 from ..workspaces.errors import WorkspaceAccessForbiddenError, WorkspaceNotFoundError
-from . import _crud_api_create, _crud_api_read, projects_api
+from . import _crud_api_create, _crud_api_read, projects_service
 from ._common.models import ProjectPathParams, RequestContext
 from ._crud_handlers_models import (
     ProjectActiveQueryParams,
@@ -65,8 +68,6 @@ from .exceptions import (
     ProjectOwnerNotFoundInTheProjectAccessRightsError,
     WrongTagIdsInQueryError,
 )
-from .lock import get_project_locked_state
-from .models import ProjectDict
 from .utils import get_project_unavailable_services, project_uses_available_services
 
 # When the user requests a project with a repo, the working copy might differ from
@@ -139,7 +140,8 @@ async def create_project(request: web.Request):
         project_create: (
             ProjectCreateNew | ProjectCopyOverride | EmptyModel
         ) = await parse_request_body_as(
-            ProjectCreateNew | ProjectCopyOverride | EmptyModel, request  # type: ignore[arg-type] # from pydantic v2 --> https://github.com/pydantic/pydantic/discussions/4950
+            ProjectCreateNew | ProjectCopyOverride | EmptyModel,  # type: ignore[arg-type] # from pydantic v2 --> https://github.com/pydantic/pydantic/discussions/4950
+            request,
         )
         predefined_project = (
             project_create.model_dump(
@@ -167,6 +169,27 @@ async def create_project(request: web.Request):
         predefined_project=predefined_project,
         parent_project_uuid=header_params.parent_project_uuid,
         parent_node_id=header_params.parent_node_id,
+    )
+
+
+def _create_page_response(projects, request_url, total, limit, offset) -> web.Response:
+    page = Page[ProjectListItem].model_validate(
+        paginate_data(
+            chunk=[
+                ProjectListItem.from_domain_model(prj).model_dump(
+                    by_alias=True, exclude_unset=True
+                )
+                for prj in projects
+            ],
+            request_url=request_url,
+            total=total,
+            limit=limit,
+            offset=offset,
+        )
+    )
+    return web.Response(
+        text=page.model_dump_json(**RESPONSE_MODEL_POLICY),
+        content_type=MIMETYPE_APPLICATION_JSON,
     )
 
 
@@ -201,26 +224,21 @@ async def list_projects(request: web.Request):
         project_type=query_params.project_type,
         show_hidden=query_params.show_hidden,
         trashed=query_params.filters.trashed,
-        limit=query_params.limit,
-        offset=query_params.offset,
-        search=query_params.search,
-        order_by=OrderBy.model_construct(**query_params.order_by.model_dump()),
         folder_id=query_params.folder_id,
         workspace_id=query_params.workspace_id,
+        search_by_multi_columns=query_params.search,
+        search_by_project_name=query_params.filters.search_by_project_name,
+        offset=query_params.offset,
+        limit=query_params.limit,
+        order_by=OrderBy.model_construct(**query_params.order_by.model_dump()),
     )
 
-    page = Page[ProjectDict].model_validate(
-        paginate_data(
-            chunk=projects,
-            request_url=request.url,
-            total=total_number_of_projects,
-            limit=query_params.limit,
-            offset=query_params.offset,
-        )
-    )
-    return web.Response(
-        text=page.model_dump_json(**RESPONSE_MODEL_POLICY),
-        content_type=MIMETYPE_APPLICATION_JSON,
+    return _create_page_response(
+        projects=projects,
+        request_url=request.url,
+        total=total_number_of_projects,
+        limit=query_params.limit,
+        offset=query_params.offset,
     )
 
 
@@ -244,24 +262,19 @@ async def list_projects_full_search(request: web.Request):
         product_name=req_ctx.product_name,
         trashed=query_params.filters.trashed,
         tag_ids_list=tag_ids_list,
+        search_by_multi_columns=query_params.text,
+        search_by_project_name=query_params.filters.search_by_project_name,
         offset=query_params.offset,
         limit=query_params.limit,
         order_by=OrderBy.model_construct(**query_params.order_by.model_dump()),
-        text=query_params.text,
     )
 
-    page = Page[ProjectDict].model_validate(
-        paginate_data(
-            chunk=projects,
-            request_url=request.url,
-            total=total_number_of_projects,
-            limit=query_params.limit,
-            offset=query_params.offset,
-        )
-    )
-    return web.Response(
-        text=page.model_dump_json(**RESPONSE_MODEL_POLICY),
-        content_type=MIMETYPE_APPLICATION_JSON,
+    return _create_page_response(
+        projects=projects,
+        request_url=request.url,
+        total=total_number_of_projects,
+        limit=query_params.limit,
+        offset=query_params.offset,
     )
 
 
@@ -295,11 +308,12 @@ async def get_active_project(request: web.Request) -> web.Response:
 
         data = None
         if user_active_projects:
-            project = await projects_api.get_project_for_user(
+            project = await projects_service.get_project_for_user(
                 request.app,
                 project_uuid=user_active_projects[0],
                 user_id=req_ctx.user_id,
                 include_state=True,
+                include_trashed_by_primary_gid=True,
             )
 
             # updates project's permalink field
@@ -335,11 +349,12 @@ async def get_project(request: web.Request):
     )
 
     try:
-        project = await projects_api.get_project_for_user(
+        project = await projects_service.get_project_for_user(
             request.app,
             project_uuid=f"{path_params.project_id}",
             user_id=req_ctx.user_id,
             include_state=True,
+            include_trashed_by_primary_gid=True,
         )
         if not await project_uses_available_services(project, user_available_services):
             unavilable_services = get_project_unavailable_services(
@@ -384,7 +399,7 @@ async def get_project(request: web.Request):
 async def get_project_inactivity(request: web.Request):
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
-    project_inactivity = await projects_api.get_project_inactivity(
+    project_inactivity = await projects_service.get_project_inactivity(
         app=request.app, project_id=path_params.project_id
     )
     return web.json_response(Envelope(data=project_inactivity), dumps=json_dumps)
@@ -403,7 +418,7 @@ async def patch_project(request: web.Request):
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
     project_patch = await parse_request_body_as(ProjectPatch, request)
 
-    await projects_api.patch_project(
+    await projects_service.patch_project(
         request.app,
         user_id=req_ctx.user_id,
         project_uuid=path_params.project_id,
@@ -436,7 +451,7 @@ async def delete_project(request: web.Request):
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
     try:
-        await projects_api.get_project_for_user(
+        await projects_service.get_project_for_user(
             request.app,
             project_uuid=f"{path_params.project_id}",
             user_id=req_ctx.user_id,
@@ -457,7 +472,7 @@ async def delete_project(request: web.Request):
             )
         if project_users:
             other_user_names = {
-                await get_user_fullname(request.app, user_id=uid)
+                f"{await get_user_fullname(request.app, user_id=uid)}"
                 for uid in project_users
             }
             raise web.HTTPForbidden(
@@ -467,13 +482,14 @@ async def delete_project(request: web.Request):
 
         project_locked_state: ProjectLocked | None
         if project_locked_state := await get_project_locked_state(
-            app=request.app, project_uuid=path_params.project_id
+            get_redis_lock_manager_client_sdk(request.app),
+            project_uuid=path_params.project_id,
         ):
             raise web.HTTPConflict(
                 reason=f"Project {path_params.project_id} is locked: {project_locked_state=}"
             )
 
-        await projects_api.submit_delete_project_task(
+        await projects_service.submit_delete_project_task(
             request.app,
             path_params.project_id,
             req_ctx.user_id,

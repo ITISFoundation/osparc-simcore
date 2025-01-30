@@ -59,7 +59,7 @@ services:
         - traefik.http.services.${SWARM_STACK_NAME}_api-server.loadbalancer.healthcheck.timeout=1000ms
         - traefik.http.routers.${SWARM_STACK_NAME}_api-server.rule=(Path(`/`) || Path(`/v0`) ||  PathPrefix(`/v0/`) || Path(`/api/v0/openapi.json`))
         - traefik.http.routers.${SWARM_STACK_NAME}_api-server.entrypoints=simcore_api
-        - traefik.http.routers.${SWARM_STACK_NAME}_api-server.priority=1
+        - traefik.http.routers.${SWARM_STACK_NAME}_api-server.priority=3
         - traefik.http.routers.${SWARM_STACK_NAME}_api-server.middlewares=${SWARM_STACK_NAME}_gzip@swarm,ratelimit-${SWARM_STACK_NAME}_api-server,inflightreq-${SWARM_STACK_NAME}_api-server
     networks:
       - default
@@ -156,6 +156,8 @@ services:
       CATALOG_PROFILING: ${CATALOG_PROFILING}
       CATALOG_SERVICES_DEFAULT_RESOURCES: ${CATALOG_SERVICES_DEFAULT_RESOURCES}
       CATALOG_SERVICES_DEFAULT_SPECIFICATIONS: ${CATALOG_SERVICES_DEFAULT_SPECIFICATIONS}
+      DIRECTOR_DEFAULT_MAX_MEMORY: ${DIRECTOR_DEFAULT_MAX_MEMORY}
+      DIRECTOR_DEFAULT_MAX_NANO_CPUS: ${DIRECTOR_DEFAULT_MAX_NANO_CPUS}
       DIRECTOR_HOST: ${DIRECTOR_HOST:-director}
       DIRECTOR_PORT: ${DIRECTOR_PORT:-8080}
       LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
@@ -593,11 +595,11 @@ services:
         - traefik.http.routers.${SWARM_STACK_NAME}_static_webserver.rule=(Path(`/osparc`) || Path(`/s4l`) || Path(`/s4llite`) || Path(`/s4lacad`) || Path(`/s4lengine`) || Path(`/s4ldesktop`) || Path(`/s4ldesktopacad`) || Path(`/tis`) || Path(`/tiplite`) || Path(`/transpiled`) || Path(`/resource`) || PathPrefix(`/osparc/`) || PathPrefix(`/s4l/`) || PathPrefix(`/s4llite/`) || PathPrefix(`/s4lacad/`) || PathPrefix(`/s4lengine/`) || PathPrefix(`/s4ldesktop/`) || PathPrefix(`/s4ldesktopacad/`) || PathPrefix(`/tis/`) || PathPrefix(`/tiplite/`) || PathPrefix(`/transpiled/`) || PathPrefix(`/resource/`))
         - traefik.http.routers.${SWARM_STACK_NAME}_static_webserver.service=${SWARM_STACK_NAME}_static_webserver
         - traefik.http.routers.${SWARM_STACK_NAME}_static_webserver.entrypoints=http
-        - traefik.http.routers.${SWARM_STACK_NAME}_static_webserver.priority=2
+        - traefik.http.routers.${SWARM_STACK_NAME}_static_webserver.priority=6
         - traefik.http.routers.${SWARM_STACK_NAME}_static_webserver.middlewares=${SWARM_STACK_NAME}_gzip@swarm,${SWARM_STACK_NAME}_static_webserver_retry
         # catchall for legacy services (this happens if a backend disappears and a frontend tries to reconnect, the right return value is a 503)
         - traefik.http.routers.${SWARM_STACK_NAME}_legacy_services_catchall.service=${SWARM_STACK_NAME}_legacy_services_catchall
-        - traefik.http.routers.${SWARM_STACK_NAME}_legacy_services_catchall.priority=1
+        - traefik.http.routers.${SWARM_STACK_NAME}_legacy_services_catchall.priority=3
         - traefik.http.routers.${SWARM_STACK_NAME}_legacy_services_catchall.entrypoints=http
         - traefik.http.routers.${SWARM_STACK_NAME}_legacy_services_catchall.rule=PathRegexp(`^/x/(?P<node_uuid>\b[0-9a-f]{8}\b-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-\b[0-9a-f]{12}\b)[\/]?`)
         # this tricks traefik into a 502 (bad gateway) since the service does not exist on this port
@@ -610,7 +612,7 @@ services:
         # catchall for dynamic-sidecar powered-services (this happens if a backend disappears and a frontend tries to reconnect, the right return value is a 503)
         - traefik.http.routers.${SWARM_STACK_NAME}_modern_services_catchall.service=${SWARM_STACK_NAME}_modern_services_catchall
         # the priority is a bit higher than webserver, the webserver is the fallback to everything and has prio 2
-        - traefik.http.routers.${SWARM_STACK_NAME}_modern_services_catchall.priority=3
+        - traefik.http.routers.${SWARM_STACK_NAME}_modern_services_catchall.priority=9
         - traefik.http.routers.${SWARM_STACK_NAME}_modern_services_catchall.entrypoints=http
         # in theory the pattern should be uuid.services.OSPARC_DOMAIN, but anything could go through.. so let's catch everything
         - traefik.http.routers.${SWARM_STACK_NAME}_modern_services_catchall.rule=HostRegexp(`(?P<node_uuid>\b[0-9a-f]{8}\b-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-\b[0-9a-f]{12}\b)\.services\.(?P<host>.+)`)
@@ -701,6 +703,8 @@ services:
       INVITATIONS_PORT: ${INVITATIONS_PORT}
       INVITATIONS_SECRET_KEY: ${INVITATIONS_SECRET_KEY}
       INVITATIONS_USERNAME: ${INVITATIONS_USERNAME}
+
+      WEBSERVER_LICENSES: ${WEBSERVER_LICENSES}
 
       WEBSERVER_LOGIN: ${WEBSERVER_LOGIN}
       LOGIN_ACCOUNT_DELETION_RETENTION_DAYS: ${LOGIN_ACCOUNT_DELETION_RETENTION_DAYS}
@@ -832,7 +836,7 @@ services:
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver.service=${SWARM_STACK_NAME}_webserver
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver.rule=(Path(`/`) || Path(`/v0`) || Path(`/socket.io/`) || Path(`/static-frontend-data.json`) || PathRegexp(`^/study/(?P<study_uuid>\b[0-9a-f]{8}\b-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-\b[0-9a-f]{12}\b)`) || Path(`/view`) || Path(`/#/view`) || Path(`/#/error`) || PathPrefix(`/v0/`))
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver.entrypoints=http
-        - traefik.http.routers.${SWARM_STACK_NAME}_webserver.priority=2
+        - traefik.http.routers.${SWARM_STACK_NAME}_webserver.priority=6
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver.middlewares=${SWARM_STACK_NAME}_gzip@swarm, ${SWARM_STACK_NAME_NO_HYPHEN}_sslheader@swarm, ${SWARM_STACK_NAME}_webserver_retry
     networks: &webserver_networks
       - default
@@ -895,6 +899,7 @@ services:
       WEBSERVER_GARBAGE_COLLECTOR: ${WB_DB_EL_GARBAGE_COLLECTOR}
       WEBSERVER_GROUPS: ${WB_DB_EL_GROUPS}
       WEBSERVER_INVITATIONS: ${WB_DB_EL_INVITATIONS}
+      WEBSERVER_LICENSES: 0
       WEBSERVER_LOGIN: ${WB_DB_EL_LOGIN}
       WEBSERVER_PAYMENTS: ${WB_DB_EL_PAYMENTS}
       WEBSERVER_META_MODELING: ${WB_DB_EL_META_MODELING}
@@ -998,6 +1003,7 @@ services:
       WEBSERVER_FRONTEND: ${WB_GC_FRONTEND}
       WEBSERVER_GROUPS: ${WB_GC_GROUPS}
       WEBSERVER_INVITATIONS: ${WB_GC_INVITATIONS}
+      WEBSERVER_LICENSES: 0
       WEBSERVER_LOGIN: ${WB_GC_LOGIN}
       WEBSERVER_META_MODELING: ${WB_GC_META_MODELING}
       WEBSERVER_NOTIFICATIONS: ${WB_GC_NOTIFICATIONS}

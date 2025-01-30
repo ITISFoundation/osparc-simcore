@@ -50,6 +50,11 @@ class CreditTransactionCreditsAndStatusUpdate(BaseModel):
     transaction_status: CreditTransactionStatus
 
 
+class CreditTransactionStatusUpdate(BaseModel):
+    service_run_id: ServiceRunID
+    transaction_status: CreditTransactionStatus
+
+
 class CreditTransactionDB(BaseModel):
     transaction_id: CreditTransactionId
     product_name: ProductName

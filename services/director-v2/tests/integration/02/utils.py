@@ -265,7 +265,7 @@ async def patch_dynamic_service_url(app: FastAPI, node_uuid: str) -> str:
         )
         assert (
             proxy_published_port is not None
-        ), f"{sidecar_settings.model_dump_json()=}"
+        ), f"{sidecar_settings.model_dump_json(warnings='none')=}"
 
         async with scheduler.scheduler._lock:  # noqa: SLF001
             localhost_ip = get_localhost_ip()

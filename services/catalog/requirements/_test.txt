@@ -43,11 +43,11 @@ click==8.1.7
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-coverage==7.6.9
+coverage==7.6.10
     # via pytest-cov
 docker==7.1.0
     # via -r requirements/_test.in
-faker==33.1.0
+faker==35.0.0
     # via -r requirements/_test.in
 frozenlist==1.5.0
     # via
@@ -102,7 +102,7 @@ multidict==6.1.0
     #   -c requirements/_base.txt
     #   aiohttp
     #   yarl
-mypy==1.13.0
+mypy==1.14.1
     # via sqlalchemy
 mypy-extensions==1.0.0
     # via mypy
@@ -130,7 +130,7 @@ pytest==8.3.4
     #   pytest-cov
     #   pytest-docker
     #   pytest-mock
-pytest-aiohttp==1.0.5
+pytest-aiohttp==1.1.0
     # via -r requirements/_test.in
 pytest-asyncio==0.23.8
     # via
@@ -152,6 +152,7 @@ python-dateutil==2.9.0.post0
     #   faker
 referencing==0.35.1
     # via
+    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   jsonschema
     #   jsonschema-specifications
@@ -159,7 +160,7 @@ requests==2.32.3
     # via
     #   -c requirements/_base.txt
     #   docker
-respx==0.21.1
+respx==0.22.0
     # via -r requirements/_test.in
 rpds-py==0.22.3
     # via
@@ -184,9 +185,9 @@ sqlalchemy==1.4.54
     #   alembic
 sqlalchemy2-stubs==0.0.2a38
     # via sqlalchemy
-types-psycopg2==2.9.21.20241019
+types-psycopg2==2.9.21.20250121
     # via -r requirements/_test.in
-types-pyyaml==6.0.12.20240917
+types-pyyaml==6.0.12.20241230
     # via -r requirements/_test.in
 typing-extensions==4.12.2
     # via

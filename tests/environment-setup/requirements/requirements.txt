@@ -2,13 +2,13 @@ annotated-types==0.7.0
     # via pydantic
 iniconfig==2.0.0
     # via pytest
-packaging==24.1
+packaging==24.2
     # via
     #   pytest
     #   pytest-sugar
 pluggy==1.5.0
     # via pytest
-pydantic==2.10.3
+pydantic==2.10.6
     # via
     #   -c requirements/../../../packages/service-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -20,9 +20,9 @@ pydantic==2.10.3
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/requirements.in
-pydantic-core==2.27.1
+pydantic-core==2.27.2
     # via pydantic
-pytest==8.3.3
+pytest==8.3.4
     # via
     #   -r requirements/requirements.in
     #   pytest-asyncio
@@ -58,7 +58,7 @@ pyyaml==6.0.2
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/requirements.in
-termcolor==2.4.0
+termcolor==2.5.0
     # via pytest-sugar
 typing-extensions==4.12.2
     # via

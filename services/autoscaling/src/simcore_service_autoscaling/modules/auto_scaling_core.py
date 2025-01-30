@@ -391,7 +391,9 @@ async def _activate_drained_nodes(
         return cluster
 
     with log_context(
-        _logger, logging.INFO, f"activate {len(nodes_to_activate)} drained nodes"
+        _logger,
+        logging.INFO,
+        f"activate {len(nodes_to_activate)} drained nodes {[n.ec2_instance.id for n in nodes_to_activate]}",
     ):
         activated_nodes = await asyncio.gather(
             *(
@@ -447,9 +449,19 @@ async def _start_warm_buffer_instances(
             if (warm_buffer.ec2_instance.type == hot_buffer_instance_type)
             and not warm_buffer.assigned_tasks
         ]
+        # check there are no empty pending ec2s/nodes that are not assigned to any task
+        unnassigned_pending_ec2s = [
+            i.ec2_instance for i in cluster.pending_ec2s if not i.assigned_tasks
+        ]
+        unnassigned_pending_nodes = [
+            i.ec2_instance for i in cluster.pending_nodes if not i.assigned_tasks
+        ]
+
         instances_to_start += free_startable_warm_buffers_to_replace_hot_buffers[
             : app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
             - len(cluster.buffer_drained_nodes)
+            - len(unnassigned_pending_ec2s)
+            - len(unnassigned_pending_nodes)
         ]
 
     if not instances_to_start:
@@ -983,11 +995,14 @@ async def _try_scale_down_cluster(app: FastAPI, cluster: Cluster) -> Cluster:
     new_terminating_instances = []
     for instance in await _find_terminateable_instances(app, cluster):
         assert instance.node.description is not None  # nosec
-        with log_context(
-            _logger,
-            logging.INFO,
-            msg=f"termination process for {instance.node.description.hostname}:{instance.ec2_instance.id}",
-        ), log_catch(_logger, reraise=False):
+        with (
+            log_context(
+                _logger,
+                logging.INFO,
+                msg=f"termination process for {instance.node.description.hostname}:{instance.ec2_instance.id}",
+            ),
+            log_catch(_logger, reraise=False),
+        ):
             await utils_docker.set_node_begin_termination_process(
                 get_docker_client(app), instance.node
             )
@@ -1232,7 +1247,6 @@ async def _autoscale_cluster(
 async def _notify_autoscaling_status(
     app: FastAPI, cluster: Cluster, auto_scaling_mode: BaseAutoscaling
 ) -> None:
-
     monitored_instances = list(
         itertools.chain(
             cluster.active_nodes, cluster.drained_nodes, cluster.buffer_drained_nodes

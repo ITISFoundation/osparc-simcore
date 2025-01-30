@@ -12,17 +12,24 @@
 
    Authors:
      * Pedro Crespo (pcrespov)
+     * Odei Maiz (odeimaiz)
 
 ************************************************************************ */
 
 /**
- *  Main Authentication Page:
- *    A multi-page view that fills all page
+ *  Main Authentication Page. A multi-page view that contains:
+ *  - top-spacer
+ *  - product logo
+ *  - login stack (multi-page)
+ *    - announcements (if any)
+ *    - the login forms
+ *    - disclaimer and extra widgets (if any)
+ *  - bottom-spacer
+ *  - footer
  */
 
-qx.Class.define("osparc.auth.LoginPage", {
+qx.Class.define("osparc.auth.LoginWithDecorators", {
   extend: qx.ui.core.Widget,
-  type: "abstract",
 
   /*
   *****************************************************************************
@@ -32,7 +39,14 @@ qx.Class.define("osparc.auth.LoginPage", {
   construct: function() {
     this.base(arguments);
 
-    this._buildLayout();
+    this._setLayout(new qx.ui.layout.VBox(10));
+
+    this.set({
+      alignX: "center",
+      alignY: "middle"
+    });
+
+    this.__buildLayout();
   },
 
   events: {
@@ -48,20 +62,11 @@ qx.Class.define("osparc.auth.LoginPage", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "main-layout": {
-          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
-            alignX: "center",
-            alignY: "middle"
-          });
-          const scrollView = new qx.ui.container.Scroll();
-          scrollView.add(control);
-          break;
-        }
         case "top-spacer":
           control = new qx.ui.core.Spacer().set({
-            minHeight: 50
+            minHeight: 50,
           });
-          this.getChildControl("main-layout").add(control, {
+          this._add(control, {
             flex: 1
           });
           break;
@@ -82,7 +87,7 @@ qx.Class.define("osparc.auth.LoginPage", {
             });
           }
           control.setFont("text-18");
-          this.getChildControl("main-layout").add(control);
+          this._add(control);
           break;
         }
         case "science-text-image":
@@ -93,28 +98,29 @@ qx.Class.define("osparc.auth.LoginPage", {
             alignX: "center",
             marginTop: -25
           });
-          this.getChildControl("main-layout").add(control);
+          this._add(control);
           break;
         case "pages-stack":
           control = new qx.ui.container.Stack().set({
             allowGrowX: false,
-            alignX: "center"
+            alignX: "center",
+            minHeight: 165,
           });
-          this.getChildControl("main-layout").add(control, {
+          this._add(control, {
             flex: 1
           });
           break;
         case "bottom-spacer":
           control = new qx.ui.core.Spacer().set({
-            minHeight: 50
+            minHeight: 50,
           });
-          this.getChildControl("main-layout").add(control, {
+          this._add(control, {
             flex: 1
           });
           break;
         case "footer": {
           control = this.__getVersionLink();
-          this.getChildControl("main-layout").add(control);
+          this._add(control);
           break;
         }
         case "login-view": {
@@ -160,36 +166,7 @@ qx.Class.define("osparc.auth.LoginPage", {
       return control || this.base(arguments, id);
     },
 
-    _buildLayout: function() {
-      throw new Error("Abstract method called!");
-    },
-
-    _setBackgroundImage: function(backgroundImage) {
-      if (osparc.product.Utils.getProductName().includes("s4l")) {
-        this.getContentElement().setStyles({
-          "background-image": backgroundImage,
-          "background-repeat": "no-repeat",
-          "background-size": "65% auto, 80% auto", // auto width, 85% height
-          "background-position": "left bottom, left -440px bottom -230px" // left bottom
-        });
-      } else {
-        this.getContentElement().setStyles({
-          "background-image": backgroundImage,
-          "background-repeat": "no-repeat",
-          "background-size": "50% auto", // 50% of the view width
-          "background-position": "left 10% center" // left bottom
-        });
-      }
-    },
-
-    _resetBackgroundImage: function() {
-      this.getContentElement().setStyles({
-        "background-image": ""
-      });
-    },
-
-    _getMainLayout: function() {
-      const mainLayout = this.getChildControl("main-layout");
+    __buildLayout: function() {
       this.getChildControl("top-spacer");
       const logo = this.getChildControl("logo-w-platform");
       if (osparc.product.Utils.isS4LProduct() || osparc.product.Utils.isProduct("s4llite")) {
@@ -202,7 +179,6 @@ qx.Class.define("osparc.auth.LoginPage", {
       this.__getLoginStack();
       this.getChildControl("bottom-spacer");
       this.getChildControl("footer");
-      return mainLayout;
     },
 
     __getLoginStack: function() {
@@ -370,6 +346,6 @@ qx.Class.define("osparc.auth.LoginPage", {
       });
 
       return versionLinkLayout;
-    }
+    },
   }
 });

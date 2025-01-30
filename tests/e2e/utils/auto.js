@@ -94,11 +94,6 @@ async function dashboardPreferences(page) {
   await utils.waitAndClick(page, '[osparc-test-id="preferencesWindowCloseBtn"]');
 }
 
-async function dashboardStudiesBrowser(page) {
-  console.log("Navigating through Studies");
-  await utils.waitAndClick(page, '[osparc-test-id="studiesTabBtn"]')
-}
-
 async function __dashboardTemplatesBrowser(page) {
   console.log("Navigating through Templates");
   await utils.waitAndClick(page, '[osparc-test-id="templatesTabBtn"]');
@@ -112,15 +107,14 @@ async function __dashboardServicesBrowser(page) {
 async function dashboardNewTIPlan(page) {
   console.log("Creating New Plan");
 
-  await dashboardStudiesBrowser(page);
-  await utils.waitAndClick(page, '[osparc-test-id="newStudyBtn"]');
+  await utils.waitAndClick(page, '[osparc-test-id="newPlansBtn"]');
   await utils.waitAndClick(page, '[osparc-test-id="newTIPlanButton"]');
 }
 
 async function dashboardStartSim4LifeLite(page) {
   console.log("Start Sim4Lite from + button");
 
-  await dashboardStudiesBrowser(page);
+  await utils.waitAndClick(page, '[osparc-test-id="newPlansBtn"]');
   await utils.waitAndClick(page, '[osparc-test-id="startS4LButton"]');
 }
 
@@ -213,7 +207,6 @@ async function __openResource(page) {
 }
 
 async function __filterStudiesByText(page, studyName) {
-  await dashboardStudiesBrowser(page);
   await __typeInSearchBarFilter(page, "study", studyName);
 }
 
@@ -295,8 +288,6 @@ async function runStudy(page) {
 
 async function deleteFirstStudy(page, studyName) {
   console.log("Deleting first study")
-
-  await dashboardStudiesBrowser(page);
 
   if (studyName) {
     await __filterStudiesByText(page, studyName);
@@ -405,7 +396,6 @@ module.exports = {
   logIn,
   logOut,
   dashboardAbout,
-  dashboardStudiesBrowser,
   dashboardPreferences,
   dashboardNewTIPlan,
   dashboardStartSim4LifeLite,

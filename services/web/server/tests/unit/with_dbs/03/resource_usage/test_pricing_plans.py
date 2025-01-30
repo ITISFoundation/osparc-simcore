@@ -14,6 +14,7 @@ from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
     PricingPlanGet,
     PricingUnitGet,
 )
+from models_library.api_schemas_webserver import resource_usage as webserver_api
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pytest_simcore.aioresponses_mocker import AioResponsesMock
 from pytest_simcore.helpers.assert_checks import assert_status
@@ -101,3 +102,23 @@ async def test_get_pricing_plan(
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert data["pricingPlanKey"] == "pricing-plan-sleeper"
     assert len(data["pricingUnits"]) == 1
+
+
+@pytest.mark.parametrize("user_role", [(UserRole.USER)])
+async def test_list_pricing_plans(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    mock_rpc_resource_usage_tracker_service_api: AioResponsesMock,
+):
+    url = client.app.router["list_pricing_plans"].url_for()
+    resp = await client.get(f"{url}")
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+    assert isinstance(data, list)
+    for item in data:
+        assert webserver_api.PricingPlanGet(**item)
+        assert len(item) == len(webserver_api.PricingPlanGet(**item).model_dump())
+    url = client.app.router["get_pricing_plan"].url_for(pricing_plan_id="1")
+    resp = await client.get(f"{url}")
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+    assert webserver_api.PricingPlanGet(**data)
+    assert len(data) == len(webserver_api.PricingPlanGet(**data).model_dump())

@@ -1,10 +1,11 @@
 """Defines the different exceptions that may arise in the projects subpackage"""
+
 # mypy: disable-error-code=truthy-function
 from typing import Any
 
 from models_library.projects import ProjectID
 from models_library.users import UserID
-from servicelib.project_lock import ProjectLockError
+from servicelib.redis import ProjectLockError
 
 from ..errors import WebServerBaseError
 
@@ -235,6 +236,20 @@ class InvalidInputValue(WebServerBaseError):
 
 class ProjectGroupNotFoundError(BaseProjectError):
     msg_template = "Project group not found. {reason}"
+
+
+class ProjectInDebtCanNotChangeWalletError(BaseProjectError):
+    msg_template = "Unable to change the credit account linked to the project. The project is embargoed because the last transaction of {debt_amount} resulted in the credit account going negative."
+
+
+class ProjectInDebtCanNotOpenError(BaseProjectError):
+    msg_template = "Unable to open the project. The project is embargoed because the last transaction of {debt_amount} resulted in the credit account going negative."
+
+
+class ProjectWalletPendingTransactionError(BaseProjectError):
+    msg_template = (
+        "Project has currently pending transactions. It is forbidden to change wallet."
+    )
 
 
 assert ProjectLockError  # nosec

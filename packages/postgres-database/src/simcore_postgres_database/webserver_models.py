@@ -12,6 +12,7 @@ from .models.confirmations import ConfirmationAction, confirmations
 from .models.groups import GroupType, groups, user_to_groups
 from .models.products import products
 from .models.projects import ProjectType, projects
+from .models.projects_nodes import projects_nodes
 from .models.projects_tags import projects_tags
 from .models.projects_to_wallet import projects_to_wallet
 from .models.scicrunch_resources import scicrunch_resources
@@ -32,6 +33,7 @@ __all__ = (
     "NodeClass",
     "products",
     "projects",
+    "projects_nodes",
     "ProjectType",
     "scicrunch_resources",
     "StateType",
