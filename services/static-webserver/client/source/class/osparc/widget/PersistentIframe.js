@@ -91,7 +91,7 @@ qx.Class.define("osparc.widget.PersistentIframe", {
 
     // override
     _createContentElement : function() {
-      let iframe = this.__iframe = new qx.ui.embed.Iframe(this.getSource());
+      const iframe = this.__iframe = new qx.ui.embed.Iframe(this.getSource());
       const persistentIframe = this;
       iframe.addListener("load", () => {
         const currentTheme = qx.theme.manager.Meta.getInstance().getTheme();
@@ -115,6 +115,9 @@ qx.Class.define("osparc.widget.PersistentIframe", {
         alignX: "right",
         alignY: "middle"
       }));
+      this.bind("showToolbar", buttonContainer, "visibility", {
+        converter: showToolbar => showToolbar ? "visible" : "excluded"
+      });
 
       const diskUsageIndicator = this.__diskUsageIndicator = new osparc.workbench.DiskUsageIndicator();
       diskUsageIndicator.getChildControl("disk-indicator").set({
@@ -231,8 +234,6 @@ qx.Class.define("osparc.widget.PersistentIframe", {
           top: (divPos.top - iframeParentPos.top),
           right: (iframeParentPos.right - iframeParentPos.left - divPos.right)
         });
-
-        this.__buttonContainer.setVisibility(this.isShowToolbar() ? "visible" : "excluded");
       }, 0);
     },
 
