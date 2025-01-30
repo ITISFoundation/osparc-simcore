@@ -116,6 +116,7 @@ qx.Class.define("osparc.navigation.StudyTitleWOptions", {
           optionsMenu.add(this.getChildControl("study-menu-info"));
           optionsMenu.add(this.getChildControl("study-menu-reload"));
           optionsMenu.add(this.getChildControl("study-menu-convert-to-pipeline"));
+          optionsMenu.add(this.getChildControl("study-menu-convert-to-standalone"));
           optionsMenu.add(this.getChildControl("study-menu-download-logs"));
           control = new qx.ui.form.MenuButton().set({
             appearance: "fab-button",
