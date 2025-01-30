@@ -82,7 +82,7 @@ async def create_if_not_exists(
     product_name: ProductName | None = None,
     pricing_plan_id: PricingPlanId | None = None,
 ) -> LicensedItemDB:
-    insert_query_or_none_query = (
+    insert_or_none_query = (
         postgresql.insert(licensed_items)
         .values(
             licensed_resource_name=licensed_resource_name,
@@ -94,18 +94,20 @@ async def create_if_not_exists(
             created=func.now(),
             modified=func.now(),
         )
-        .on_conflict_do_nothing()
         .returning(*_SELECTION_ARGS)
+        .on_conflict_do_nothing()
     )
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
-        result = await conn.execute(insert_query_or_none_query)
+        result = await conn.execute(insert_or_none_query)
         row = result.one_or_none()
+
         if row is None:
             select_query = select(*_SELECTION_ARGS).where(
                 (licensed_items.c.licensed_resource_name == licensed_resource_name)
                 & (licensed_items.c.licensed_resource_type == licensed_resource_type)
             )
+
             result = await conn.execute(select_query)
             row = result.one()
 

@@ -26,6 +26,7 @@ from simcore_service_webserver.licenses._itis_vip_models import (
 )
 from simcore_service_webserver.licenses._itis_vip_service import ResponseData
 from simcore_service_webserver.licenses._itis_vip_settings import ItisVipSettings
+from simcore_service_webserver.licenses._licensed_items_service import RegistrationState
 
 
 def test_pre_validator_feature_descriptor_to_dict():
@@ -148,6 +149,8 @@ async def test_sync_itis_vip_as_licensed_items(
             assert items[0].features["functionality"] == "Posable"
 
             for vip_item in items:
+
+                # register a NEW resource
                 (
                     got1,
                     state1,
@@ -158,10 +161,9 @@ async def test_sync_itis_vip_as_licensed_items(
                     licensed_resource_data=vip_item,
                     license_key=vip_item.license_key,
                 )
-                assert (
-                    state1 == _licensed_items_service.RegistrationState.NEWLY_REGISTERED
-                )
+                assert state1 == RegistrationState.NEWLY_REGISTERED
 
+                # register the SAME resource
                 (
                     got2,
                     state2,
@@ -173,21 +175,10 @@ async def test_sync_itis_vip_as_licensed_items(
                     license_key=vip_item.license_key,
                 )
 
-                assert (
-                    state2
-                    == _licensed_items_service.RegistrationState.ALREADY_REGISTERED
-                )
+                assert state2 == RegistrationState.ALREADY_REGISTERED
                 assert got1 == got2
 
-                # Modify vip_item and register again
-                vip_item_modified = vip_item.model_copy(
-                    update={
-                        "features": {
-                            **vip_item.features,
-                            "functionality": "Non-Posable",
-                        }
-                    }
-                )
+                # register a MODIFIED version of the same resource
                 (
                     got3,
                     state3,
@@ -195,13 +186,16 @@ async def test_sync_itis_vip_as_licensed_items(
                     client.app,
                     licensed_resource_name=f"{category}/{vip_item.id}",
                     licensed_resource_type=LicensedResourceType.VIP_MODEL,
-                    licensed_resource_data=vip_item_modified,
+                    licensed_resource_data=vip_item.model_copy(
+                        update={
+                            "features": {
+                                **vip_item.features,
+                                "functionality": "Non-Posable",
+                            }
+                        }
+                    ),
                     license_key=vip_item.license_key,
                 )
 
-                assert (
-                    state3
-                    == _licensed_items_service.RegistrationState.DIFFERENT_RESOURCE
-                )
-                # not stored!
+                assert state3 == RegistrationState.DIFFERENT_RESOURCE
                 assert got2 == got3
