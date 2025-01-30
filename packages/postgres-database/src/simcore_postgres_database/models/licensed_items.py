@@ -48,12 +48,6 @@ licensed_items = sa.Table(
         doc="Resource metadata. Used for read-only purposes",
     ),
     sa.Column(
-        "licensed_resource_data",
-        postgresql.JSONB,
-        nullable=True,
-        doc="Stores metadata related to this licensed resource. Used for read-only purposes",
-    ),
-    sa.Column(
         "pricing_plan_id",
         sa.BigInteger,
         sa.ForeignKey(
