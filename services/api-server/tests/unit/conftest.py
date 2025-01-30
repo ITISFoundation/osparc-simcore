@@ -357,7 +357,7 @@ def mocked_storage_service_api_base(
     ) as respx_mock:
         assert openapi["paths"]["/v0/"]["get"]["operationId"] == "get_health_v0__get"
 
-        respx_mock.get(path="/v0/", name="health_check").respond(
+        respx_mock.get(path="/v0/", name="get_health_v0__get").respond(
             status.HTTP_200_OK,
             json=Envelope[HealthCheck](
                 data={
@@ -369,8 +369,11 @@ def mocked_storage_service_api_base(
             ).model_dump(),
         )
 
-        assert openapi["paths"]["/v0/status"]["get"]["operationId"] == "get_status"
-        respx_mock.get(path="/v0/status", name="get_status").respond(
+        assert (
+            openapi["paths"]["/v0/status"]["get"]["operationId"]
+            == "get_status_v0_status_get"
+        )
+        respx_mock.get(path="/v0/status", name="get_status_v0_status_get").respond(
             status.HTTP_200_OK,
             json=Envelope[AppStatusCheck](
                 data={
