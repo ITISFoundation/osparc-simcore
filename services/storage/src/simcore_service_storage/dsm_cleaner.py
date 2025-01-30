@@ -26,6 +26,7 @@ from typing import cast
 from fastapi import FastAPI
 from servicelib.async_utils import cancel_wait_task
 from servicelib.background_task_utils import exclusive_periodic
+from servicelib.logging_utils import log_context
 
 from .core.settings import get_application_settings
 from .dsm import get_dsm_provider
@@ -38,12 +39,12 @@ _TASK_NAME_PERIODICALY_CLEAN_DSM = "periodic_cleanup_of_dsm"
 
 
 async def dsm_cleaner_task(app: FastAPI) -> None:
-    _logger.info("starting dsm cleaner task...")
-    dsm = get_dsm_provider(app)
-    simcore_s3_dsm: SimcoreS3DataManager = cast(
-        SimcoreS3DataManager, dsm.get(SimcoreS3DataManager.get_location_id())
-    )
-    await simcore_s3_dsm.clean_expired_uploads()
+    with log_context(_logger, logging.INFO, "dsm cleaner task"):
+        dsm = get_dsm_provider(app)
+        simcore_s3_dsm: SimcoreS3DataManager = cast(
+            SimcoreS3DataManager, dsm.get(SimcoreS3DataManager.get_location_id())
+        )
+        await simcore_s3_dsm.clean_expired_uploads()
 
 
 def setup_dsm_cleaner(app: FastAPI) -> None:

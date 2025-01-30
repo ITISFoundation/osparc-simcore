@@ -42,6 +42,7 @@ _NOISY_LOGGERS = (
     "aiormq",
     "botocore",
     "httpcore",
+    "urllib3",
     "werkzeug",
 )
 _logger = logging.getLogger(__name__)
