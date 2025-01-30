@@ -16,7 +16,7 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.aiohttp import status
 from simcore_service_webserver.licenses import _itis_vip_service
 from simcore_service_webserver.licenses._itis_vip_service import ResponseData
-from simcore_service_webserver.licenses.settings import ItisVipSettings
+from simcore_service_webserver.licenses._itis_vip_settings import ItisVipSettings
 
 
 @pytest.fixture(scope="session")
