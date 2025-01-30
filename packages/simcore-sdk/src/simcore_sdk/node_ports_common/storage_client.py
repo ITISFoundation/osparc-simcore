@@ -121,12 +121,13 @@ async def retry_request(
             async with _session_method(session, method, url, **kwargs) as response:
                 if response.status != expected_status:
                     # this is a more precise raise_for_status()
+                    error_msg = await response.json()
                     response.release()
                     raise ClientResponseError(
                         response.request_info,
                         response.history,
                         status=response.status,
-                        message=f"Received {response.status} but was expecting {expected_status=}",
+                        message=f"Received {response.status} but was expecting {expected_status=}: '{error_msg=}'",
                         headers=response.headers,
                     )
 
@@ -211,7 +212,7 @@ async def get_upload_file_links(
     async with retry_request(
         session,
         "PUT",
-        f"{get_base_url()}/locations/{location_id}/files/{quote(file_id, safe='')}",
+        f"{get_base_url()}/locations/{location_id}/files/{file_id}",
         expected_status=status.HTTP_200_OK,
         params=query_params,
     ) as response:
