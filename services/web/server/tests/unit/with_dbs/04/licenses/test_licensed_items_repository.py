@@ -66,7 +66,7 @@ async def test_licensed_items_db_crud(
         licensed_item_id=_licensed_item_id,
         product_name=osparc_product_name,
     )
-    assert licensed_item_db.name == "Model A"
+    assert licensed_item_db.licensed_resource_name == "Model A"
 
     await _licensed_items_repository.update(
         client.app,
@@ -80,7 +80,7 @@ async def test_licensed_items_db_crud(
         licensed_item_id=_licensed_item_id,
         product_name=osparc_product_name,
     )
-    assert licensed_item_db.name == "Model B"
+    assert licensed_item_db.licensed_resource_name == "Model B"
 
     licensed_item_db = await _licensed_items_repository.delete(
         client.app,
@@ -140,7 +140,7 @@ async def test_licensed_items_db_trash(
         offset=0,
         limit=10,
         order_by=OrderBy(field="modified"),
-        filter_trashed="include",
+        trashed="include",
     )
     assert total_count == 2
     assert {i.licensed_item_id for i in items} == set(licensed_item_ids)
@@ -152,7 +152,7 @@ async def test_licensed_items_db_trash(
         offset=0,
         limit=10,
         order_by=OrderBy(field="modified"),
-        filter_trashed="exclude",
+        trashed="exclude",
     )
     assert total_count == 1
     assert items[0].licensed_item_id == licensed_item_id2
@@ -165,7 +165,7 @@ async def test_licensed_items_db_trash(
         offset=0,
         limit=10,
         order_by=OrderBy(field="modified"),
-        filter_trashed="only",
+        trashed="only",
     )
     assert total_count == 1
     assert items[0].licensed_item_id == trashed_item.licensed_item_id

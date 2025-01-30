@@ -71,8 +71,10 @@ async def list_(
     offset: NonNegativeInt,
     limit: NonNegativeInt,
     order_by: OrderBy,
-    filter_trashed: Literal["exclude", "only", "include"] = "exclude",
+    trashed: Literal["exclude", "only", "include"] = "exclude",
+    inactive: Literal["exclude", "only", "include"] = "exclude",
 ) -> tuple[int, list[LicensedItemDB]]:
+
     base_query = (
         select(*_SELECTION_ARGS)
         .select_from(licensed_items)
@@ -80,10 +82,21 @@ async def list_(
     )
 
     # Apply trashed filter
-    if filter_trashed == "exclude":
+    if trashed == "exclude":
         base_query = base_query.where(licensed_items.c.trashed.is_(None))
-    elif filter_trashed == "only":
+    elif trashed == "only":
         base_query = base_query.where(licensed_items.c.trashed.is_not(None))
+
+    if inactive == "exclude":
+        base_query = base_query.where(
+            licensed_items.c.product_name.is_(None)
+            or licensed_items.c.licensed_item_id.is_(None)
+        )
+    elif inactive == "only":
+        base_query = base_query.where(
+            licensed_items.c.product_name.is_not(None)
+            and licensed_items.c.licensed_item_id.is_not(None)
+        )
 
     # Select total count from base_query
     subquery = base_query.subquery()
