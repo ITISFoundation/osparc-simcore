@@ -411,7 +411,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
 
         return (
             None
-            if info.field_name and is_nullable(cls.model_fields[info.field_name])
+            if info.field_name and is_nullable(dict(cls.model_fields)[info.field_name])
             else False
         )
 

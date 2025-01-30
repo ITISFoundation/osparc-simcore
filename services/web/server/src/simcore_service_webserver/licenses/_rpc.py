@@ -43,7 +43,7 @@ async def get_licensed_items(
             product_name=product_name,
             offset=offset,
             limit=limit,
-            order_by=OrderBy(field=IDStr("name")),
+            order_by=OrderBy(field=IDStr("licensed_resource_name")),
         )
     )
     return licensed_item_get_page
