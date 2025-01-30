@@ -63,7 +63,7 @@ def mock_itis_vip_downloadables_api(
         "msg": 0,
         "availableDownloads": [
             {
-                "ID": faker.random_int(min=70, max=90),
+                "ID": i,
                 "Description": faker.sentence(),
                 "Thumbnail": faker.image_url(),
                 # NOTE: this is manually added in the server side so be more robust to errors
@@ -74,7 +74,7 @@ def mock_itis_vip_downloadables_api(
                 "Protection": faker.random_element(elements=["Code", "PayPal"]),
                 "AvailableFromURL": faker.random_element(elements=[None, faker.url()]),
             }
-            for _ in range(8)
+            for i in range(8)
         ],
     }
 
@@ -148,26 +148,60 @@ async def test_sync_itis_vip_as_licensed_items(
             assert items[0].features["functionality"] == "Posable"
 
             for vip_item in items:
-                # TODO: how to update to minimize collisions? one by one?
-
-                got1 = (
-                    await _licensed_items_service.register_licensed_item_from_resource(
-                        client.app,
-                        licensed_resource_name=f"{category}/{vip_item.id}",
-                        licensed_resource_type=LicensedResourceType.VIP_MODEL,
-                        licensed_resource_data=vip_item,
-                        license_key=vip_item.license_key,
-                    )
+                (
+                    got1,
+                    state1,
+                ) = await _licensed_items_service.register_resource_as_licensed_item(
+                    client.app,
+                    licensed_resource_name=f"{category}/{vip_item.id}",
+                    licensed_resource_type=LicensedResourceType.VIP_MODEL,
+                    licensed_resource_data=vip_item,
+                    license_key=vip_item.license_key,
+                )
+                assert (
+                    state1 == _licensed_items_service.RegistrationState.NEWLY_REGISTERED
                 )
 
-                got2 = (
-                    await _licensed_items_service.register_licensed_item_from_resource(
-                        client.app,
-                        licensed_resource_name=f"{category}/{vip_item.id}",
-                        licensed_resource_type=LicensedResourceType.VIP_MODEL,
-                        licensed_resource_data=vip_item,
-                        license_key=vip_item.license_key,
-                    )
+                (
+                    got2,
+                    state2,
+                ) = await _licensed_items_service.register_resource_as_licensed_item(
+                    client.app,
+                    licensed_resource_name=f"{category}/{vip_item.id}",
+                    licensed_resource_type=LicensedResourceType.VIP_MODEL,
+                    licensed_resource_data=vip_item,
+                    license_key=vip_item.license_key,
                 )
 
+                assert (
+                    state2
+                    == _licensed_items_service.RegistrationState.ALREADY_REGISTERED
+                )
                 assert got1 == got2
+
+                # Modify vip_item and register again
+                vip_item_modified = vip_item.model_copy(
+                    update={
+                        "features": {
+                            **vip_item.features,
+                            "functionality": "Non-Posable",
+                        }
+                    }
+                )
+                (
+                    got3,
+                    state3,
+                ) = await _licensed_items_service.register_resource_as_licensed_item(
+                    client.app,
+                    licensed_resource_name=f"{category}/{vip_item.id}",
+                    licensed_resource_type=LicensedResourceType.VIP_MODEL,
+                    licensed_resource_data=vip_item_modified,
+                    license_key=vip_item.license_key,
+                )
+
+                assert (
+                    state3
+                    == _licensed_items_service.RegistrationState.DIFFERENT_RESOURCE
+                )
+                # not stored!
+                assert got2 == got3

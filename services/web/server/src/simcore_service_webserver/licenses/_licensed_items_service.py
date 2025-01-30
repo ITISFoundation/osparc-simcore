@@ -2,6 +2,8 @@
 
 import logging
 from datetime import UTC, datetime, timedelta
+from enum import Enum, auto
+from pprint import pformat
 
 from aiohttp import web
 from models_library.api_schemas_webserver.licensed_items import (
@@ -37,6 +39,12 @@ from .errors import LicensedItemNotFoundError, LicensedItemPricingPlanMatchError
 _logger = logging.getLogger(__name__)
 
 
+class RegistrationState(Enum):
+    ALREADY_REGISTERED = auto()
+    DIFFERENT_RESOURCE = auto()
+    NEWLY_REGISTERED = auto()
+
+
 def _compute_difference(old_data: dict, new_data: dict):
     differences = {
         k: {"old": old_data[k], "new": new_data[k]}
@@ -49,44 +57,45 @@ def _compute_difference(old_data: dict, new_data: dict):
     return differences
 
 
-async def register_licensed_item_from_resource(
+async def register_resource_as_licensed_item(
     app: web.Application,
     *,
     licensed_resource_name: str,
     licensed_resource_type: LicensedResourceType,
     licensed_resource_data: BaseModel,
     license_key: str | None,
-) -> LicensedItemDB:
-
+) -> tuple[LicensedItemDB, RegistrationState]:
     try:
-        license_item = await _licensed_items_repository.get_by_resource_identifier(
+        licensed_item = await _licensed_items_repository.get_by_resource_identifier(
             app,
             licensed_resource_name=licensed_resource_name,
             licensed_resource_type=licensed_resource_type,
         )
 
-        if license_item.licensed_resource_data != licensed_resource_data.model_dump(
+        if licensed_item.licensed_resource_data != licensed_resource_data.model_dump(
             mode="json", exclude_unset=True
         ):
             differences = _compute_difference(
-                license_item.licensed_resource_data or {},
+                licensed_item.licensed_resource_data or {},
                 licensed_resource_data.model_dump(mode="json", exclude_unset=True),
             )
             _logger.warning(
-                "CHANGES: NEEDED for %s, %s: Resource differs from the one registered: %s",
+                "DIFFERENT_RESOURCE: %s, %s. Difference: %s",
                 licensed_resource_name,
                 licensed_resource_type,
-                differences,
+                pformat(differences),
             )
-        else:
-            _logger.info(
-                "Resource %s, %s already registered",
-                licensed_resource_name,
-                licensed_resource_type,
-            )
+            return licensed_item, RegistrationState.DIFFERENT_RESOURCE
+
+        _logger.info(
+            "ALREADY_REGISTERED: %s, %s",
+            licensed_resource_name,
+            licensed_resource_type,
+        )
+        return licensed_item, RegistrationState.ALREADY_REGISTERED
 
     except LicensedItemNotFoundError:
-        license_item = await _licensed_items_repository.create_if_not_exists(
+        licensed_item = await _licensed_items_repository.create_if_not_exists(
             app,
             licensed_resource_name=licensed_resource_name,
             licensed_resource_type=licensed_resource_type,
@@ -99,12 +108,11 @@ async def register_licensed_item_from_resource(
         )
 
         _logger.info(
-            "NEW license with resource %s, %s already registered",
+            "NEWLY_REGISTERED: %s, %s",
             licensed_resource_name,
             licensed_resource_type,
         )
-
-    return license_item
+        return licensed_item, RegistrationState.NEWLY_REGISTERED
 
 
 async def get_licensed_item(
