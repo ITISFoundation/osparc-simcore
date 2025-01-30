@@ -124,7 +124,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
               // pop up study options if the study was just created or if it has no wallet assigned or user has no access to it
               const resourceSelector = new osparc.study.StudyOptions(studyId);
               if (isStudyCreation) {
-                resourceSelector.getChildControl("open-button").setLabel(this.tr("New"));
+                resourceSelector.getChildControl("open-button").setLabel(qx.locale.Manager.tr("New"));
               }
               const win = osparc.study.StudyOptions.popUpInWindow(resourceSelector);
               win.moveItUp();
