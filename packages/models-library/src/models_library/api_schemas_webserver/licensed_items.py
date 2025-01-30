@@ -15,12 +15,16 @@ from ._base import OutputSchema
 
 class LicensedItemGet(OutputSchema):
     licensed_item_id: LicensedItemID
+
     name: str
     license_key: str | None
     licensed_resource_type: LicensedResourceType
+
     pricing_plan_id: PricingPlanId
+
     created_at: datetime
     modified_at: datetime
+
     model_config = ConfigDict(
         json_schema_extra={
             "examples": [
@@ -45,7 +49,7 @@ class LicensedItemGet(OutputSchema):
                     include={
                         "licensed_item_id",
                         "licensed_resource_name",
-                        "license_key",
+                        "licensed_resource_type" "license_key",
                         "pricing_plan_id",
                         "created",
                         "modified",
