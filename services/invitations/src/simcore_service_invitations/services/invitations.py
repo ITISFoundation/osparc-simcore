@@ -64,8 +64,7 @@ def _build_link(
     r = URL("/registration").include_query_params(invitation=code_url_safe)
 
     # Adds query to fragment
-    base_url = f"{base_url}/"
-    url = URL(base_url).replace(fragment=f"{r}")
+    url = URL(f"{base_url.rstrip('/')}/").replace(fragment=f"{r}")
     return TypeAdapter(HttpUrl).validate_python(f"{url}")
 
 

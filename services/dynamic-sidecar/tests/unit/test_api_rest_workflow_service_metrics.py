@@ -17,7 +17,7 @@ from aiodocker.utils import clean_filters
 from aiodocker.volumes import DockerVolume
 from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
-from httpx import AsyncClient
+from httpx import ASGITransport, AsyncClient
 from models_library.generated_models.docker_rest_api import ContainerState
 from models_library.generated_models.docker_rest_api import Status2 as ContainerStatus
 from models_library.rabbitmq_messages import (
@@ -113,7 +113,9 @@ async def httpx_async_client(
 ) -> AsyncIterable[AsyncClient]:
     # crete dir here
     async with AsyncClient(
-        app=app, base_url=f"{backend_url}", headers={"Content-Type": "application/json"}
+        transport=ASGITransport(app=app),
+        base_url=f"{backend_url}",
+        headers={"Content-Type": "application/json"},
     ) as client:
         yield client
 

@@ -6,8 +6,6 @@ Read operations are list, get
 """
 
 from aiohttp import web
-from models_library.api_schemas_webserver._base import OutputSchema
-from models_library.api_schemas_webserver.projects import ProjectListItem
 from models_library.folders import FolderID, FolderQuery, FolderScope
 from models_library.projects import ProjectID
 from models_library.rest_ordering import OrderBy
@@ -17,26 +15,28 @@ from pydantic import NonNegativeInt
 from servicelib.utils import logged_gather
 from simcore_postgres_database.models.projects import ProjectType
 from simcore_postgres_database.webserver_models import ProjectType as ProjectTypeDB
+from simcore_service_webserver.projects._projects_db import (
+    batch_get_trashed_by_primary_gid,
+)
 
 from ..catalog.client import get_services_for_user_in_product
-from ..folders import _folders_db as folders_db
-from ..workspaces._workspaces_api import check_user_workspace_access
-from . import projects_api
+from ..folders import _folders_repository as _folders_repository
+from ..workspaces._workspaces_service import check_user_workspace_access
+from . import projects_service
 from ._permalink_api import update_or_pop_permalink_in_project
 from .db import ProjectDBAPI
 from .models import ProjectDict, ProjectTypeAPI
 
 
-async def _append_fields(
+async def _update_project_dict(
     request: web.Request,
     *,
     user_id: UserID,
     project: ProjectDict,
     is_template: bool,
-    model_schema_cls: type[OutputSchema],
-):
+) -> ProjectDict:
     # state
-    await projects_api.add_project_states_for_user(
+    await projects_service.add_project_states_for_user(
         user_id=user_id,
         project=project,
         is_template=is_template,
@@ -46,8 +46,24 @@ async def _append_fields(
     # permalink
     await update_or_pop_permalink_in_project(request, project)
 
-    # validate
-    return model_schema_cls.model_validate(project).data(exclude_unset=True)
+    return project
+
+
+async def _batch_update_list_of_project_dict(
+    app: web.Application, list_of_project_dict: list[ProjectDict]
+) -> list[ProjectDict]:
+
+    # updating `trashed_by_primary_gid`
+    trashed_by_primary_gid_values = await batch_get_trashed_by_primary_gid(
+        app, projects_uuids=[ProjectID(p["uuid"]) for p in list_of_project_dict]
+    )
+
+    for project_dict, value in zip(
+        list_of_project_dict, trashed_by_primary_gid_values, strict=True
+    ):
+        project_dict.update(trashed_by_primary_gid=value)
+
+    return list_of_project_dict
 
 
 async def list_projects(  # pylint: disable=too-many-arguments
@@ -62,12 +78,14 @@ async def list_projects(  # pylint: disable=too-many-arguments
     project_type: ProjectTypeAPI,
     show_hidden: bool,
     trashed: bool | None,
+    # search
+    search_by_multi_columns: str | None = None,
+    search_by_project_name: str | None = None,
     # pagination
     offset: NonNegativeInt,
     limit: int,
+    # ordering
     order_by: OrderBy,
-    # search
-    search: str | None,
 ) -> tuple[list[ProjectDict], int]:
     app = request.app
     db = ProjectDBAPI.get_from_app_context(app)
@@ -89,7 +107,7 @@ async def list_projects(  # pylint: disable=too-many-arguments
 
     if folder_id:
         # Check whether user has access to the folder
-        await folders_db.get_for_user_or_workspace(
+        await _folders_repository.get_for_user_or_workspace(
             app,
             folder_id=folder_id,
             product_name=product_name,
@@ -97,7 +115,7 @@ async def list_projects(  # pylint: disable=too-many-arguments
             workspace_id=workspace_id,
         )
 
-    db_projects, db_project_types, total_number_projects = await db.list_projects(
+    db_projects, db_project_types, total_number_projects = await db.list_projects_dicts(
         product_name=product_name,
         user_id=user_id,
         workspace_query=(
@@ -118,7 +136,8 @@ async def list_projects(  # pylint: disable=too-many-arguments
         filter_trashed=trashed,
         filter_hidden=show_hidden,
         # composed attrs
-        filter_by_text=search,
+        search_by_multi_columns=search_by_multi_columns,
+        search_by_project_name=search_by_project_name,
         # pagination
         offset=offset,
         limit=limit,
@@ -126,14 +145,15 @@ async def list_projects(  # pylint: disable=too-many-arguments
         order_by=order_by,
     )
 
+    db_projects = await _batch_update_list_of_project_dict(app, db_projects)
+
     projects: list[ProjectDict] = await logged_gather(
         *(
-            _append_fields(
+            _update_project_dict(
                 request,
                 user_id=user_id,
                 project=prj,
                 is_template=prj_type == ProjectTypeDB.TEMPLATE,
-                model_schema_cls=ProjectListItem,
             )
             for prj, prj_type in zip(db_projects, db_project_types, strict=False)
         ),
@@ -157,7 +177,8 @@ async def list_projects_full_depth(
     limit: int,
     order_by: OrderBy,
     # search
-    text: str | None,
+    search_by_multi_columns: str | None,
+    search_by_project_name: str | None,
 ) -> tuple[list[ProjectDict], int]:
     db = ProjectDBAPI.get_from_app_context(request.app)
 
@@ -165,29 +186,31 @@ async def list_projects_full_depth(
         request.app, user_id, product_name, only_key_versions=True
     )
 
-    db_projects, db_project_types, total_number_projects = await db.list_projects(
+    db_projects, db_project_types, total_number_projects = await db.list_projects_dicts(
         product_name=product_name,
         user_id=user_id,
         workspace_query=WorkspaceQuery(workspace_scope=WorkspaceScope.ALL),
         folder_query=FolderQuery(folder_scope=FolderScope.ALL),
         filter_trashed=trashed,
         filter_by_services=user_available_services,
-        filter_by_text=text,
         filter_tag_ids_list=tag_ids_list,
         filter_by_project_type=ProjectType.STANDARD,
+        search_by_multi_columns=search_by_multi_columns,
+        search_by_project_name=search_by_project_name,
         offset=offset,
         limit=limit,
         order_by=order_by,
     )
 
+    db_projects = await _batch_update_list_of_project_dict(request.app, db_projects)
+
     projects: list[ProjectDict] = await logged_gather(
         *(
-            _append_fields(
+            _update_project_dict(
                 request,
                 user_id=user_id,
                 project=prj,
                 is_template=prj_type == ProjectTypeDB.TEMPLATE,
-                model_schema_cls=ProjectListItem,
             )
             for prj, prj_type in zip(db_projects, db_project_types, strict=False)
         ),

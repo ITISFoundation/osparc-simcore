@@ -64,8 +64,6 @@ def app_environment(
             "STUDIES_ACCESS_ANONYMOUS_ALLOWED": "1",
         },
     )
-    # NOTE: To see logs, use pytest -s --log-cli-level=DEBUG
-    # setup_logging(level=logging.DEBUG)
     print(env_vars)
     return env_vars
 

@@ -32,6 +32,8 @@ pytest_plugins = [
     "pytest_simcore.docker_registry",
     "pytest_simcore.docker_swarm",
     "pytest_simcore.environment_configs",
+    "pytest_simcore.faker_projects_data",
+    "pytest_simcore.faker_products_data",
     "pytest_simcore.postgres_service",
     "pytest_simcore.pydantic_models",
     "pytest_simcore.pytest_global_environs",
@@ -133,7 +135,7 @@ def client(app_settings: ApplicationSettings) -> Iterator[TestClient]:
 @pytest.fixture
 async def async_client(initialized_app: FastAPI) -> AsyncIterator[httpx.AsyncClient]:
     async with httpx.AsyncClient(
-        app=initialized_app,
+        transport=httpx.ASGITransport(app=initialized_app),
         base_url=f"http://{initialized_app.title}.testserver.io",
         headers={"Content-Type": "application/json"},
     ) as client:

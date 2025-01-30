@@ -39,6 +39,7 @@
     "workspaceId": 3,
     "folderId": 1,
     "trashedAt": null,
+    "trashedBy": null,
     "workbench": {
      "4b03863d-107a-5c77-a3ca-c5ba1d7048c0": {
       "key": "simcore/services/comp/isolve",

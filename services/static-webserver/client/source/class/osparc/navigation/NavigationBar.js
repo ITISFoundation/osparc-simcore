@@ -97,8 +97,10 @@ qx.Class.define("osparc.navigation.NavigationBar", {
     },
 
     __buildLayout: function() {
+      const colorStr = qx.theme.manager.Color.getInstance().resolve("background-main-1");
+      const color = qx.util.ColorUtil.stringToRgb(colorStr);
       this.getContentElement().setStyles({
-        "background": "linear-gradient(0deg, rgba(1, 18, 26, 0.1) 0%, rgba(229, 229, 229, 0.1) 5%)"
+        "background": `linear-gradient(0deg, rgba(1, 18, 26, 0.1) 0%, ${qx.util.ColorUtil.rgbToRgbString(color)} 4%)`
       });
       this.getChildControl("left-items");
       this.getChildControl("center-items");
@@ -326,15 +328,6 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       const registerButton = new qx.ui.form.Button(this.tr("Log in"), "@FontAwesome5Solid/edit/14");
       registerButton.addListener("execute", () => window.open(window.location.href, "_blank"));
       return registerButton;
-    },
-
-    addDashboardTabButtons: function(tabButtons) {
-      this.__tabButtons = tabButtons;
-      this.getChildControl("center-items").add(tabButtons);
-      this.bind("study", this.__tabButtons, "visibility", {
-        converter: s => s ? "excluded" : "visible"
-      });
-      this.__navBarResized();
     },
 
     __applyStudy: function(study) {

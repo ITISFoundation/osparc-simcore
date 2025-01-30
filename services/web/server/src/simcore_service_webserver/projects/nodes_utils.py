@@ -12,7 +12,7 @@ from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
 from servicelib.logging_utils import log_decorator
 from servicelib.utils import fire_and_forget_task, logged_gather
 
-from . import projects_api
+from . import projects_service
 from .utils import get_frontend_node_outputs_changes
 
 log = logging.getLogger(__name__)
@@ -46,7 +46,7 @@ async def update_node_outputs(
     ui_changed_keys: set[str] | None,
 ) -> None:
     # the new outputs might be {}, or {key_name: payload}
-    project, keys_changed = await projects_api.update_project_node_outputs(
+    project, keys_changed = await projects_service.update_project_node_outputs(
         app,
         user_id,
         project_uuid,
@@ -55,14 +55,14 @@ async def update_node_outputs(
         new_run_hash=run_hash,
     )
 
-    await projects_api.notify_project_node_update(
+    await projects_service.notify_project_node_update(
         app, project, node_uuid, errors=node_errors
     )
     # get depending node and notify for these ones as well
     depending_node_uuids = await project_get_depending_nodes(project, node_uuid)
     await logged_gather(
         *[
-            projects_api.notify_project_node_update(app, project, nid, errors=None)
+            projects_service.notify_project_node_update(app, project, nid, errors=None)
             for nid in depending_node_uuids
         ]
     )
@@ -86,7 +86,7 @@ async def update_node_outputs(
     )
 
     # fire&forget to notify connected nodes to retrieve its inputs **if necessary**
-    await projects_api.post_trigger_connected_service_retrieve(
+    await projects_service.post_trigger_connected_service_retrieve(
         app=app, project=project, updated_node_uuid=f"{node_uuid}", changed_keys=keys
     )
 

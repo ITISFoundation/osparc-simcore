@@ -1,8 +1,0 @@
-# Minimal packages for install_pylint.bash
-#
-# Installing these void e.g. E0611: No name 'UploadFile' in module 'fastapi' (no-name-in-module)
-#
---constraint ../../requirements/constraints.txt
-
-aiohttp
-fastapi

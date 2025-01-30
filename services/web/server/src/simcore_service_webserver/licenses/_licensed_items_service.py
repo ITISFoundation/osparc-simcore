@@ -21,12 +21,12 @@ from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker import (
 )
 
 from ..rabbitmq import get_rabbitmq_rpc_client
-from ..resource_usage.api import get_pricing_plan_unit
+from ..resource_usage.service import get_pricing_plan_unit
 from ..users.api import get_user
 from ..wallets.api import get_wallet_with_available_credits_by_user_and_wallet
 from ..wallets.errors import WalletNotEnoughCreditsError
 from . import _licensed_items_repository
-from ._models import LicensedItemsBodyParams
+from ._common.models import LicensedItemsBodyParams
 from .errors import LicensedItemPricingPlanMatchError
 
 _logger = logging.getLogger(__name__)
@@ -42,15 +42,7 @@ async def get_licensed_item(
     licensed_item_db = await _licensed_items_repository.get(
         app, licensed_item_id=licensed_item_id, product_name=product_name
     )
-    return LicensedItemGet(
-        licensed_item_id=licensed_item_db.licensed_item_id,
-        name=licensed_item_db.name,
-        license_key=licensed_item_db.license_key,
-        licensed_resource_type=licensed_item_db.licensed_resource_type,
-        pricing_plan_id=licensed_item_db.pricing_plan_id,
-        created_at=licensed_item_db.created,
-        modified_at=licensed_item_db.modified,
-    )
+    return LicensedItemGet.from_domain_model(licensed_item_db)
 
 
 async def list_licensed_items(
@@ -61,21 +53,19 @@ async def list_licensed_items(
     limit: int,
     order_by: OrderBy,
 ) -> LicensedItemGetPage:
-    total_count, licensed_item_db_list = await _licensed_items_repository.list_(
-        app, product_name=product_name, offset=offset, limit=limit, order_by=order_by
+    total_count, items = await _licensed_items_repository.list_(
+        app,
+        product_name=product_name,
+        offset=offset,
+        limit=limit,
+        order_by=order_by,
+        trashed="exclude",
+        inactive="exclude",
     )
     return LicensedItemGetPage(
         items=[
-            LicensedItemGet(
-                licensed_item_id=licensed_item_db.licensed_item_id,
-                name=licensed_item_db.name,
-                license_key=licensed_item_db.license_key,
-                licensed_resource_type=licensed_item_db.licensed_resource_type,
-                pricing_plan_id=licensed_item_db.pricing_plan_id,
-                created_at=licensed_item_db.created,
-                modified_at=licensed_item_db.modified,
-            )
-            for licensed_item_db in licensed_item_db_list
+            LicensedItemGet.from_domain_model(licensed_item_db)
+            for licensed_item_db in items
         ],
         total=total_count,
     )

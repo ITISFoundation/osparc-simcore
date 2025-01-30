@@ -128,7 +128,7 @@ class MixinServiceSettings:
             isinstance(v, (str, int)) or v is None for v in kwargs.values()
         )  # nosec
 
-        composed_url: str = str(AnyUrl.build(**kwargs))  # type: ignore[arg-type]
+        composed_url: str = str(AnyUrl.build(**kwargs))  # type: ignore[arg-type] # pylint: disable=missing-kwoa
         return composed_url.rstrip("/")
 
     def _build_api_base_url(self, *, prefix: str) -> str:

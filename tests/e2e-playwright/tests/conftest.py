@@ -19,7 +19,7 @@ from typing import Any, Final
 import arrow
 import pytest
 from faker import Faker
-from playwright.sync_api import APIRequestContext, BrowserContext, Page, expect
+from playwright.sync_api import APIRequestContext, Browser, BrowserContext, Page, expect
 from playwright.sync_api._generated import Playwright
 from pydantic import AnyUrl, TypeAdapter
 from pytest_simcore.helpers.faker_factories import DEFAULT_TEST_PASSWORD
@@ -105,6 +105,12 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         type=str,
         default=None,
         help="Service Key",
+    )
+    group.addoption(
+        "--service-is-legacy",
+        action="store_true",
+        default=False,
+        help="Whether service is a legacy service (no sidecar)",
     )
     group.addoption(
         "--template-id",
@@ -261,6 +267,12 @@ def service_key(request: pytest.FixtureRequest) -> str:
 
 
 @pytest.fixture(scope="session")
+def is_service_legacy(request: pytest.FixtureRequest) -> bool:
+    autoscaled = request.config.getoption("--service-is-legacy")
+    return TypeAdapter(bool).validate_python(autoscaled)
+
+
+@pytest.fixture(scope="session")
 def template_id(request: pytest.FixtureRequest) -> str | None:
     if key := request.config.getoption("--template-id"):
         assert isinstance(key, str)
@@ -329,6 +341,7 @@ def store_browser_context() -> bool:
 
 @pytest.fixture
 def log_in_and_out(
+    browser: Browser,
     page: Page,
     product_url: AnyUrl,
     user_name: str,
@@ -340,7 +353,7 @@ def log_in_and_out(
 ) -> Iterator[RestartableWebSocket]:
     with log_context(
         logging.INFO,
-        f"Open {product_url=} using {user_name=}/{user_password=}/{auto_register=}",
+        f"Open {product_url=} using {user_name=}/{user_password=}/{auto_register=} with {browser.browser_type.name}:{browser.version}({browser.browser_type.executable_path})",
     ):
         response = page.goto(f"{product_url}")
         assert response
@@ -551,7 +564,6 @@ def create_new_project_and_delete(
             with log_context(logging.INFO, "Go back to dashboard"):
                 page.get_by_test_id("dashboardBtn").click()
                 page.get_by_test_id("confirmDashboardBtn").click()
-                page.get_by_test_id("studiesTabBtn").click()
 
     for project_uuid in created_project_uuids:
         with log_context(
@@ -579,6 +591,7 @@ def start_study_from_plus_button(
         with log_context(
             logging.INFO, f"Find plus button {plus_button_test_id=} in study browser"
         ):
+            page.get_by_test_id("newPlusBtn").click()
             page.get_by_test_id(plus_button_test_id).click()
 
     return _

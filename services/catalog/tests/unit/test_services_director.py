@@ -77,12 +77,6 @@ async def test_director_client_low_level_api(
 
     assert service_labels
 
-    service_extras = await director_api.get(
-        f"/service_extras/{urllib.parse.quote_plus(key)}/{version}"
-    )
-
-    assert service_extras
-
     service = await director_api.get(
         f"/services/{urllib.parse.quote_plus(key)}/{version}"
     )

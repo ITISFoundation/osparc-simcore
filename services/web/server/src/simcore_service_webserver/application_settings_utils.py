@@ -202,7 +202,7 @@ def convert_to_environ_vars(  # noqa: C901, PLR0915, PLR0912
     def _set_if_disabled(field_name, section):
         # Assumes that by default is enabled
         enabled = section.get("enabled", True)
-        field = ApplicationSettings.model_fields[field_name]
+        field = dict(ApplicationSettings.model_fields)[field_name]
         if not enabled:
             envs[field_name] = "null" if is_nullable(field) else "0"
         elif get_type(field) == bool:

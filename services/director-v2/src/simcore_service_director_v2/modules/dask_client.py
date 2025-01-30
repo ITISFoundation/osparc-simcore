@@ -399,6 +399,7 @@ class DaskClient:
                     node_image=node_image,
                     metadata=metadata,
                     resource_tracking_run_id=resource_tracking_run_id,
+                    wallet_id=metadata.get("wallet_id"),
                 )
                 task_owner = dask_utils.compute_task_owner(
                     user_id, project_id, node_id, metadata.get("project_metadata", {})

@@ -231,12 +231,12 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
       const sequenceLoadingPage = new osparc.widget.ProgressSequence(qx.locale.Manager.tr("LOADING ..."));
       const nTasks = 7;
       this.__overallProgressBar = sequenceLoadingPage.addOverallProgressBar(nTasks);
-      this.__clusterUpScalingLayout = sequenceLoadingPage.addNewTask(qx.locale.Manager.tr("Increasing system capacity ..."));
-      this.__pullingSidecarLayout = sequenceLoadingPage.addNewTask(qx.locale.Manager.tr("Setting up key components ..."));
+      this.__clusterUpScalingLayout = sequenceLoadingPage.addNewTask(qx.locale.Manager.tr("Provisioning resources ..."));
+      this.__pullingSidecarLayout = sequenceLoadingPage.addNewTask(qx.locale.Manager.tr("Setting up system software ..."));
       this.__pullingOutputsLayout = sequenceLoadingPage.addNewTask(qx.locale.Manager.tr("Retrieving your output data ..."));
       this.__pullingStateLayout = sequenceLoadingPage.addNewTask(qx.locale.Manager.tr("Retrieving your work ..."));
-      this.__pullingImagesLayout = sequenceLoadingPage.addNewTask(qx.locale.Manager.tr("Installing software ..."));
-      this.__startingSoftwareLayout = sequenceLoadingPage.addNewTask(qx.locale.Manager.tr("Starting software ..."));
+      this.__pullingImagesLayout = sequenceLoadingPage.addNewTask(qx.locale.Manager.tr("Installing services ..."));
+      this.__startingSoftwareLayout = sequenceLoadingPage.addNewTask(qx.locale.Manager.tr("Starting services ..."));
       this.__pullingInputsLayout = sequenceLoadingPage.addNewTask(qx.locale.Manager.tr("Retrieving your input data ..."));
       this.__mainLoadingPage.addAt(sequenceLoadingPage, 0, {
         flex: 1

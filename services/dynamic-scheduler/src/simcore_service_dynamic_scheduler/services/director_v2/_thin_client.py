@@ -19,7 +19,6 @@ from servicelib.common_headers import (
     X_DYNAMIC_SIDECAR_REQUEST_SCHEME,
     X_SIMCORE_USER_AGENT,
 )
-from servicelib.fastapi.http_client import AttachLifespanMixin
 from servicelib.fastapi.http_client_thin import (
     BaseThinClient,
     expect_status,
@@ -32,7 +31,7 @@ from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler.services import (
 from ...core.settings import ApplicationSettings
 
 
-class DirectorV2ThinClient(BaseThinClient, AttachLifespanMixin):
+class DirectorV2ThinClient(BaseThinClient):
     def __init__(self, app: FastAPI) -> None:
         settings: ApplicationSettings = app.state.settings
         super().__init__(

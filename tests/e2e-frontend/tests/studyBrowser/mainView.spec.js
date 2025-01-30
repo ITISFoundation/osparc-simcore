@@ -9,33 +9,51 @@ import users from '../users.json';
 
 const expectedElements = {
   "osparc": {
+    "newButton": {
+      "id": "newPlusBtn"
+    },
     "plusButton": {
-      "id": "newStudyBtn",
+      "id": "emptyStudyBtn",
     },
   },
   "s4l": {
+    "newButton": {
+      "id": "newPlusBtn"
+    },
     "plusButton": {
       "id": "startS4LButton",
     },
   },
   "s4lacad": {
+    "newButton": {
+      "id": "newPlusBtn"
+    },
     "plusButton": {
       "id": "startS4LButton",
     },
   },
   "s4llite": {
+    "newButton": {
+      "id": "newPlusBtn"
+    },
     "plusButton": {
       "id": "startS4LButton",
     },
   },
   "tis": {
+    "newButton": {
+      "id": "newPlansBtn"
+    },
     "plusButton": {
-      "id": "newStudyBtn",
+      "id": "newTIPlanButton",
     },
   },
   "tiplite": {
+    "newButton": {
+      "id": "newPlansBtn"
+    },
     "plusButton": {
-      "id": "newStudyBtn",
+      "id": "newTIPlanButton",
     },
   },
 };
@@ -66,8 +84,13 @@ for (const product in products) {
           await browser.close();
         });
 
-        test(`Plus button`, async () => {
+        test(`Plus button after New button`, async () => {
           expect(expectedElements[product]["plusButton"]).toBeDefined();
+
+          if (expectedElements[product]["newPlusButton"]) {
+            const newPlusButton = page.getByTestId("newPlusBtn");
+            await newPlusButton.click();
+          }
 
           const plusButtonId = expectedElements[product]["plusButton"]["id"];
           const plusButton = page.getByTestId(plusButtonId);

@@ -11,25 +11,35 @@ from pydantic import BeforeValidator, Field, StringConstraints, TypeAdapter
 
 from .base import BaseCustomSettings
 
-# Based on https://countrycode.org/
 CountryCodeStr: TypeAlias = Annotated[
     str,
     BeforeValidator(str),
+    # Based on https://countrycode.org/
     StringConstraints(strip_whitespace=True, pattern=r"^\d{1,4}"),
 ]
 
 
 class TwilioSettings(BaseCustomSettings):
-    TWILIO_ACCOUNT_SID: str = Field(..., description="Twilio account String Identifier")
-    TWILIO_AUTH_TOKEN: str = Field(..., description="API tokens")
-    TWILIO_COUNTRY_CODES_W_ALPHANUMERIC_SID_SUPPORT: list[CountryCodeStr] = Field(
-        default=TypeAdapter(list[CountryCodeStr]).validate_python(
-            [
-                "41",
-            ],
+    TWILIO_ACCOUNT_SID: Annotated[
+        str,
+        Field(description="Twilio account String Identifier"),
+    ]
+
+    TWILIO_AUTH_TOKEN: Annotated[
+        str,
+        Field(description="API tokens"),
+    ]
+
+    TWILIO_COUNTRY_CODES_W_ALPHANUMERIC_SID_SUPPORT: Annotated[
+        list[CountryCodeStr],
+        Field(
+            description="list of country-codes supporting/registered for alphanumeric sender ID"
+            "See https://support.twilio.com/hc/en-us/articles/223133767-International-support-for-Alphanumeric-Sender-ID",
         ),
-        description="list of country-codes supporting/registered for alphanumeric sender ID"
-        "See https://support.twilio.com/hc/en-us/articles/223133767-International-support-for-Alphanumeric-Sender-ID",
+    ] = TypeAdapter(list[CountryCodeStr]).validate_python(
+        [
+            "41",
+        ],
     )
 
     def is_alphanumeric_supported(self, phone_number: str) -> bool:

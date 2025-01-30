@@ -132,9 +132,9 @@ qx.Class.define("osparc.store.Support", {
       });
     },
 
-    mailToText: function(email, subject, centered = true) {
+    mailToLink: function(email, subject, centered = true) {
       const color = qx.theme.manager.Color.getInstance().resolve("text");
-      let textLink = `<a href="mailto:${email}?subject=${subject}" style='color: ${color}' target='_blank'>${email}</a>&nbsp&nbsp`;
+      let textLink = `<a href="mailto:${email}?subject=${subject}" style='color: ${color}' target='_blank'>${email}</a>`;
       if (centered) {
         textLink = `<center>${textLink}</center>`
       }
@@ -142,11 +142,11 @@ qx.Class.define("osparc.store.Support", {
     },
 
     getMailToLabel: function(email, subject) {
-      const mailto = new qx.ui.basic.Label(this.mailToText(email, subject)).set({
-        alignX: "center",
+      const mailto = new qx.ui.basic.Label(this.mailToLink(email, subject, false)).set({
         font: "text-14",
+        allowGrowX: true, // let it grow to make it easier to select
         selectable: true,
-        rich: true
+        rich: true,
       });
       return mailto;
     },
@@ -155,6 +155,7 @@ qx.Class.define("osparc.store.Support", {
       const productName = osparc.product.Utils.getProductName();
       const giveEmailFeedbackWindow = new osparc.ui.window.Dialog("Feedback", null, qx.locale.Manager.tr("Please send us an email to:"));
       const mailto = this.getMailToLabel(email, productName + " feedback");
+      mailto.setTextAlign("center");
       giveEmailFeedbackWindow.addWidget(mailto);
       giveEmailFeedbackWindow.open();
     },

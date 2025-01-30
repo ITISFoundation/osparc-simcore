@@ -18,7 +18,7 @@ from servicelib.logging_utils import log_catch, log_context
 from servicelib.rabbitmq import RabbitMQClient
 from servicelib.utils import logged_gather
 
-from ..projects import projects_api
+from ..projects import projects_service
 from ..projects.exceptions import ProjectNotFoundError
 from ..rabbitmq import get_rabbitmq_client
 from ..socketio.messages import (
@@ -42,7 +42,7 @@ async def _convert_to_node_update_event(
     app: web.Application, message: ProgressRabbitMessageNode
 ) -> SocketMessageDict | None:
     try:
-        project = await projects_api.get_project_for_user(
+        project = await projects_service.get_project_for_user(
             app, f"{message.project_id}", message.user_id
         )
         if f"{message.node_id}" in project["workbench"]:

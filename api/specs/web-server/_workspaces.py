@@ -19,14 +19,16 @@ from models_library.api_schemas_webserver.workspaces import (
 from models_library.generics import Envelope
 from models_library.rest_error import EnvelopedError
 from simcore_service_webserver._meta import API_VTAG
-from simcore_service_webserver.folders._exceptions_handlers import _TO_HTTP_ERROR_MAP
-from simcore_service_webserver.workspaces._groups_api import WorkspaceGroupGet
-from simcore_service_webserver.workspaces._models import (
+from simcore_service_webserver.folders._common.exceptions_handlers import (
+    _TO_HTTP_ERROR_MAP,
+)
+from simcore_service_webserver.workspaces._common.models import (
     WorkspacesGroupsBodyParams,
     WorkspacesGroupsPathParams,
     WorkspacesListQueryParams,
     WorkspacesPathParams,
 )
+from simcore_service_webserver.workspaces._groups_service import WorkspaceGroupGet
 
 router = APIRouter(
     prefix=f"/{API_VTAG}",

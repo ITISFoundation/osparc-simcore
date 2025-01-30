@@ -11,6 +11,9 @@ updates:
       - sanderegg
     assignees:
       - pcrespov
+      - sanderegg
+    labels:
+      - t:maintenance
     ignore:
       - dependency-name: docker-compose
         versions:
@@ -26,32 +29,10 @@ updates:
       - dependency-name: httpx
         versions:
           - 0.17.0
-  - package-ecosystem: pip
-    directory: "/packages/service-library"
-    schedule:
-      interval: weekly
-      time: "04:00"
-    open-pull-requests-limit: 10
-    reviewers:
-      - pcrespov
-      - sanderegg
-    assignees:
-      - pcrespov
-    ignore:
       - dependency-name: openapi-core
         versions:
           - "> 0.12.0, < 1"
-  - package-ecosystem: pip
-    directory: "/packages/postgres-database"
-    schedule:
-      interval: weekly
-      time: "04:00"
-    open-pull-requests-limit: 10
-    reviewers:
-      - pcrespov
-      - sanderegg
-    assignees:
-      - pcrespov
+
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
@@ -62,3 +43,5 @@ updates:
       - pcrespov
     assignees:
       - sanderegg
+    labels:
+      - t:maintenance

@@ -49,6 +49,7 @@ from .storage.plugin import setup_storage
 from .studies_dispatcher.plugin import setup_studies_dispatcher
 from .tags.plugin import setup_tags
 from .tracing import setup_app_tracing
+from .trash.plugin import setup_trash
 from .users.plugin import setup_users
 from .version_control.plugin import setup_version_control
 from .wallets.plugin import setup_wallets
@@ -142,6 +143,9 @@ def create_application() -> web.Application:
 
     # licenses
     setup_licenses(app)
+
+    # trash add-on
+    setup_trash(app)
 
     # tagging
     setup_scicrunch(app)

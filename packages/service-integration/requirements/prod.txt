@@ -9,6 +9,7 @@
 # installs base + tests requirements
 --requirement _base.txt
 
+simcore-common-library @ ../common-library/
 simcore-models-library @ ../models-library
 
 # current module

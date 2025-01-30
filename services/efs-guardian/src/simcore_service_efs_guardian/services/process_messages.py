@@ -9,7 +9,7 @@ from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.dynamic_sidecar.disk_usage import (
     update_disk_usage,
 )
-from servicelib.redis._decorators import exclusive
+from servicelib.redis import exclusive
 from servicelib.utils import fire_and_forget_task
 
 from ..core.settings import get_application_settings

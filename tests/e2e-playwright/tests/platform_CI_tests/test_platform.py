@@ -64,6 +64,7 @@ def test_simple_folder_workflow(
 
     page.goto(f"{product_url}")
     page.wait_for_timeout(1000)
+    page.get_by_test_id("newPlusBtn").click()
     page.get_by_test_id("newFolderButton").click()
 
     with page.expect_response(

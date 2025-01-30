@@ -1024,6 +1024,15 @@ def with_instances_machines_hot_buffer(
 
 
 @pytest.fixture
+def hot_buffer_instance_type(app_settings: ApplicationSettings) -> InstanceTypeType:
+    assert app_settings.AUTOSCALING_EC2_INSTANCES
+    return cast(
+        InstanceTypeType,
+        next(iter(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES)),
+    )
+
+
+@pytest.fixture
 def mock_find_node_with_name_returns_none(mocker: MockerFixture) -> Iterator[mock.Mock]:
     return mocker.patch(
         "simcore_service_autoscaling.modules.auto_scaling_core.utils_docker.find_node_with_name",
@@ -1093,7 +1102,7 @@ def ec2_instances_allowed_types_with_only_1_buffered(
             "t2.micro": EC2InstanceBootSpecific(
                 ami_id=faker.pystr(),
                 pre_pull_images=fake_pre_pull_images,
-                buffer_count=faker.pyint(min_value=1, max_value=10),
+                buffer_count=faker.pyint(min_value=2, max_value=10),
             )
         }
 

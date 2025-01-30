@@ -65,7 +65,7 @@ def pennsieve_mock_dataset_packages(mocks_dir: Path) -> dict[str, Any]:
 
 @pytest.fixture()
 def minimal_app(
-    app_envs: None,
+    app_environment: None,
 ) -> FastAPI:
     from simcore_service_datcore_adapter.main import the_app
 
@@ -79,7 +79,7 @@ def client(minimal_app: FastAPI) -> TestClient:
 
 
 @pytest.fixture
-def app_envs(
+def app_environment(
     mock_env_devel_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
 ) -> EnvVarsDict:
     return setenvs_from_dict(
@@ -93,7 +93,7 @@ def app_envs(
 
 @pytest.fixture()
 async def initialized_app(
-    app_envs: None, minimal_app: FastAPI
+    app_environment: None, minimal_app: FastAPI
 ) -> AsyncIterator[FastAPI]:
     async with LifespanManager(minimal_app):
         yield minimal_app
@@ -102,7 +102,7 @@ async def initialized_app(
 @pytest.fixture
 async def async_client(initialized_app: FastAPI) -> AsyncIterator[httpx.AsyncClient]:
     async with httpx.AsyncClient(
-        app=initialized_app,
+        transport=httpx.ASGITransport(app=initialized_app),
         base_url="http://datcore-adapter.testserver.io",
         headers={"Content-Type": "application/json"},
     ) as client:

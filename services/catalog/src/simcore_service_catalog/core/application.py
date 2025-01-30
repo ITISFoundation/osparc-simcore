@@ -50,9 +50,7 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
         setup_tracing(app, settings.CATALOG_TRACING, APP_NAME)
 
     # STARTUP-EVENT
-    app.add_event_handler(
-        "startup", create_on_startup(app, tracing_settings=settings.CATALOG_TRACING)
-    )
+    app.add_event_handler("startup", create_on_startup(app))
 
     # PLUGIN SETUP
     setup_function_services(app)

@@ -155,6 +155,12 @@ products = sa.Table(
         'Therefore smtp_sender = f"{display_name} support <{support_email}>"',
     ),
     sa.Column(
+        "product_owners_email",
+        sa.String,
+        nullable=True,
+        doc="Alternative support email directed to POs only (e.g. for account request, sales, etc)",
+    ),
+    sa.Column(
         "twilio_messaging_sid",
         sa.String,
         nullable=True,

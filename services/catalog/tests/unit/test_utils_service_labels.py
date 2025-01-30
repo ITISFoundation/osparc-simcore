@@ -5,7 +5,7 @@ from collections.abc import Callable
 from unittest.mock import AsyncMock
 
 import pytest
-from fastapi import FastAPI
+from fastapi import FastAPI, status
 from httpx import AsyncClient
 from respx import MockRouter
 
@@ -27,5 +27,5 @@ async def test_get_service_labels(
     service_key = "simcore/services/comp/ans-model"
     service_version = "3.0.0"
     result = await aclient.get(f"/v0/services/{service_key}/{service_version}/labels")
-    assert result.status_code == 200, result.text
+    assert result.status_code == status.HTTP_200_OK, result.text
     assert result.json() == get_mocked_service_labels(service_key, service_version)

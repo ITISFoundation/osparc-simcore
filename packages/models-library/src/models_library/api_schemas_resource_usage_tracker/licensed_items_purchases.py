@@ -25,6 +25,7 @@ class LicensedItemPurchaseGet(BaseModel):
     expire_at: datetime
     num_of_seats: int
     purchased_by_user: UserID
+    user_email: str
     purchased_at: datetime
     modified: datetime
 
@@ -43,6 +44,7 @@ class LicensedItemPurchaseGet(BaseModel):
                     "expire_at": "2023-01-11 13:11:47.293595",
                     "num_of_seats": 1,
                     "purchased_by_user": 1,
+                    "user_email": "test@test.com",
                     "purchased_at": "2023-01-11 13:11:47.293595",
                     "modified": "2023-01-11 13:11:47.293595",
                 }

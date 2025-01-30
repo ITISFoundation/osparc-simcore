@@ -106,6 +106,7 @@ def wait_for_launched_s4l(
     autoscaled: bool,
     copy_workspace: bool,
     product_url: AnyUrl,
+    is_service_legacy: bool,
 ) -> WaitForS4LDict:
     with log_context(logging.INFO, "launch S4L") as ctx:
         predicate = S4LWaitForWebsocket(logger=ctx.logger)
@@ -132,6 +133,7 @@ def wait_for_launched_s4l(
                 + (_S4L_COPY_WORKSPACE_TIME if copy_workspace else 0),
                 press_start_button=False,
                 product_url=product_url,
+                is_service_legacy=is_service_legacy,
             )
         s4l_websocket = ws_info.value
         ctx.logger.info("acquired S4L websocket!")

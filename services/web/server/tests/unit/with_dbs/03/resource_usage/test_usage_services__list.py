@@ -58,7 +58,7 @@ _SERVICE_RUN_GET = ServiceRunPage(
 @pytest.fixture
 def mock_list_usage_services(mocker: MockerFixture) -> tuple:
     return mocker.patch(
-        "simcore_service_webserver.resource_usage._service_runs_api.service_runs.get_service_run_page",
+        "simcore_service_webserver.resource_usage._service_runs_service.service_runs.get_service_run_page",
         spec=True,
         return_value=_SERVICE_RUN_GET,
     )

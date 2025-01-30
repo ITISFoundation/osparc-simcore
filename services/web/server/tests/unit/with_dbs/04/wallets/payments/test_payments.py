@@ -362,7 +362,7 @@ async def test_payment_not_found(
 
 
 def test_payment_transaction_state_and_literals_are_in_sync():
-    state_literals = PaymentTransaction.model_fields["state"].annotation
+    state_literals = dict(PaymentTransaction.model_fields)["state"].annotation
     assert (
         TypeAdapter(list[state_literals]).validate_python(
             [f"{s}" for s in PaymentTransactionState]

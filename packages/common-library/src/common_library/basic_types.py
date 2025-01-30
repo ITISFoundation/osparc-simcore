@@ -3,11 +3,12 @@ from typing import Any
 
 from pydantic_core import PydanticUndefined
 
-# SEE https://github.com/fastapi/fastapi/blob/master/fastapi/_compat.py#L75-L78
 Undefined = PydanticUndefined
 DEFAULT_FACTORY: Any = Undefined
-# Use `UNSET` as default when default_factory
+# Use `DEFAULT_FACTORY` as field default when using Field(default_factory=...)
 # SEE https://github.com/ITISFoundation/osparc-simcore/pull/6882
+# SEE https://github.com/ITISFoundation/osparc-simcore/pull/7112#discussion_r1933432238
+# SEE https://github.com/fastapi/fastapi/blob/master/fastapi/_compat.py#L75-L78
 
 
 class LogLevel(StrEnum):

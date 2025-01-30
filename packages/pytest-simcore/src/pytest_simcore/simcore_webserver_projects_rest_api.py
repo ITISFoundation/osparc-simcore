@@ -76,7 +76,8 @@ NEW_PROJECT = HttpApiCallCapture(
             "dev": None,
             "workspace_id": None,
             "folder_id": None,
-            "trashed_at": None,
+            "trashedAt": None,
+            "trashedBy": None,
         },
         "error": None,
     },
@@ -102,7 +103,6 @@ GET_PROJECT = HttpApiCallCapture(
             "workbench": {},
             "workspaceId": 123,
             "folderId": 2,
-            "trashedAt": "2021-12-06T10:13:18.100Z",
             "accessRights": {"2": {"read": True, "write": True, "delete": True}},
             "dev": {},
             "classifiers": [],
@@ -115,7 +115,8 @@ GET_PROJECT = HttpApiCallCapture(
             },
             "workspace_id": None,
             "folder_id": None,
-            "trashed_at": None,
+            "trashedAt": "2021-12-06T10:13:18.100Z",
+            "trashedBy": 3,
         }
     },
 )
@@ -157,7 +158,8 @@ OPEN_PROJECT = HttpApiCallCapture(
             },
             "workspace_id": None,
             "folder_id": None,
-            "trashed_at": None,
+            "trashedAt": None,
+            "trashedBy": None,
         }
     },
 )
@@ -287,7 +289,8 @@ REPLACE_PROJECT = HttpApiCallCapture(
             },
             "workspace_id": None,
             "folder_id": None,
-            "trashed_at": None,
+            "trashedAt": None,
+            "trashedBy": None,
         }
     },
 )
@@ -480,7 +483,8 @@ REPLACE_PROJECT_ON_MODIFIED = HttpApiCallCapture(
             "dev": {},
             "workspace_id": None,
             "folder_id": None,
-            "trashed_at": None,
+            "trashedAt": None,
+            "trashedBy": None,
             "classifiers": [],
             "ui": {
                 "mode": "workbench",
@@ -681,7 +685,8 @@ LIST_PROJECTS = HttpApiCallCapture(
                 "dev": {},
                 "workspace_id": None,
                 "folder_id": None,
-                "trashed_at": None,
+                "trashedAt": None,
+                "trashed_by": None,
                 "quality": {
                     "enabled": True,
                     "tsr_target": {
@@ -931,7 +936,8 @@ CREATE_FROM_TEMPLATE__TASK_RESULT = HttpApiCallCapture(
             "dev": {},
             "workspace_id": None,
             "folder_id": None,
-            "trashed_at": None,
+            "trashedAt": None,
+            "trashedBy": None,
             "quality": {
                 "enabled": True,
                 "tsr_target": {

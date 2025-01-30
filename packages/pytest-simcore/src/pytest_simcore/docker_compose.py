@@ -335,7 +335,9 @@ def _save_docker_logs_to_folder(failed_test_directory: Path):
 
 
 @pytest.hookimpl()
-def pytest_exception_interact(node, call, report):
+def pytest_exception_interact(
+    node, call: pytest.CallInfo[Any], report: pytest.CollectReport
+):
     # get the node root dir (guaranteed to exist)
     root_directory: Path = Path(node.config.rootdir)
     failed_test_directory = root_directory / "test_failures" / node.name

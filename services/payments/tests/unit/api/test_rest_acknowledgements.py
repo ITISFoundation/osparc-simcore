@@ -77,7 +77,6 @@ async def client(
             external_base_url,
         )
         async with httpx.AsyncClient(
-            app=None,
             base_url=external_base_url,
             headers={"Content-Type": "application/json"},
         ) as new_client:

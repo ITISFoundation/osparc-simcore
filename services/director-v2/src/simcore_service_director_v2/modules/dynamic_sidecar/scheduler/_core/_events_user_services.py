@@ -101,6 +101,9 @@ async def submit_compose_sepc(app: FastAPI, scheduler_data: SchedulerData) -> No
         simcore_user_agent=scheduler_data.request_simcore_user_agent,
         swarm_stack_name=dynamic_services_scheduler_settings.SWARM_STACK_NAME,
         service_run_id=scheduler_data.run_id,
+        wallet_id=(
+            scheduler_data.wallet_info.wallet_id if scheduler_data.wallet_info else None
+        ),
     )
 
     _logger.debug(

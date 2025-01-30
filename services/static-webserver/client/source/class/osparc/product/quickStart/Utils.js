@@ -66,6 +66,7 @@ qx.Class.define("osparc.product.quickStart.Utils", {
       const label = new qx.ui.basic.Label().set({
         rich: true,
         wrap: true,
+        selectable: true,
         font: "text-14"
       });
       if (text) {

@@ -65,6 +65,7 @@ async def list_licensed_items_purchases(
                 expire_at=item.expire_at,
                 num_of_seats=item.num_of_seats,
                 purchased_by_user=item.purchased_by_user,
+                user_email=item.user_email,
                 purchased_at=item.purchased_at,
                 modified_at=item.modified,
             )
@@ -108,6 +109,7 @@ async def get_licensed_item_purchase(
         expire_at=licensed_item_get.expire_at,
         num_of_seats=licensed_item_get.num_of_seats,
         purchased_by_user=licensed_item_get.purchased_by_user,
+        user_email=licensed_item_get.user_email,
         purchased_at=licensed_item_get.purchased_at,
         modified_at=licensed_item_get.modified,
     )

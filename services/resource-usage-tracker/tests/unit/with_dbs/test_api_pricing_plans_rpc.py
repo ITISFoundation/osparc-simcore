@@ -6,6 +6,7 @@ import sqlalchemy as sa
 from faker import Faker
 from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
     PricingPlanGet,
+    PricingPlanPage,
     PricingPlanToServiceGet,
     PricingUnitGet,
 )
@@ -147,10 +148,11 @@ async def test_rpc_pricing_plans_workflow(
         rpc_client,
         product_name="osparc",
     )
-    assert isinstance(result, list)
-    assert len(result) == 1
-    assert isinstance(result[0], PricingPlanGet)
-    assert result[0].pricing_units is None
+    assert isinstance(result, PricingPlanPage)
+    assert result.total == 1
+    assert len(result.items) == 1
+    assert isinstance(result.items[0], PricingPlanGet)
+    assert result.items[0].pricing_units is None
 
     # Now I will deactivate the pricing plan
     result = await pricing_plans.update_pricing_plan(

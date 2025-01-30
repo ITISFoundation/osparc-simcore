@@ -103,12 +103,14 @@ qx.Class.define("osparc.data.model.Workspace", {
       check: "Date",
       nullable: true,
       init: null,
+      event: "changeTrashedAt",
     },
 
     trashedBy: {
       check: "Number",
       nullable: true,
       init: null,
+      event: "changeTrashedBy",
     },
   },
 

@@ -25,7 +25,7 @@ from yarl import URL
 
 from ..db.plugin import get_database_engine
 from ..products.api import get_product_stripe_info
-from ..resource_usage.api import add_credits_to_wallet
+from ..resource_usage.service import add_credits_to_wallet
 from ..users.api import get_user_display_and_id_names, get_user_invoice_address
 from ..wallets.api import get_wallet_by_user, get_wallet_with_permissions_by_user
 from ..wallets.errors import WalletAccessForbiddenError

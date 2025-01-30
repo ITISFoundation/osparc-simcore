@@ -3,12 +3,20 @@
 # pylint: disable=unused-variable
 
 import os
+import traceback
 from collections.abc import Callable
 from pathlib import Path
 
 import yaml
+from click.testing import Result
 from service_integration.compose_spec_model import ComposeSpecification
 from service_integration.osparc_config import MetadataConfig
+
+
+def _format_cli_error(result: Result) -> str:
+    assert result.exception
+    tb_message = "\n".join(traceback.format_tb(result.exception.__traceback__))
+    return f"Below exception was raised by the cli:\n{tb_message}"
 
 
 def test_make_docker_compose_meta(
@@ -33,7 +41,7 @@ def test_make_docker_compose_meta(
         "--to-spec-file",
         target_compose_specs,
     )
-    assert result.exit_code == os.EX_OK, result.output
+    assert result.exit_code == os.EX_OK, _format_cli_error(result)
 
     # produces a compose spec
     assert target_compose_specs.exists()
@@ -50,6 +58,4 @@ def test_make_docker_compose_meta(
     assert compose_labels
     assert isinstance(compose_labels.root, dict)
 
-    assert (
-        MetadataConfig.from_labels_annotations(compose_labels.root) == metadata_cfg
-    )
+    assert MetadataConfig.from_labels_annotations(compose_labels.root) == metadata_cfg

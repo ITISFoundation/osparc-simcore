@@ -104,17 +104,16 @@ async def periodic_task_result(
         )
         return task_status
 
-    async def _wait_task_completion() -> None:
+    async def _wait_for_task_result() -> Any:
         task_status = await _status_update()
         while not task_status.done:
             await asyncio.sleep(status_poll_interval)
             task_status = await _status_update()
 
+        return await client.get_task_result(task_id)
+
     try:
-        await asyncio.wait_for(_wait_task_completion(), timeout=task_timeout)
-
-        result = await client.get_task_result(task_id)
-
+        result = await asyncio.wait_for(_wait_for_task_result(), timeout=task_timeout)
         logger.debug("%s, %s", f"{task_id=}", f"{result=}")
 
         yield result

@@ -34,6 +34,7 @@ _LICENSED_ITEM_PURCHASE_GET = (
             "expire_at": "2023-01-11 13:11:47.293595",
             "num_of_seats": 1,
             "purchased_by_user": 1,
+            "user_email": "test@test.com",
             "purchased_at": "2023-01-11 13:11:47.293595",
             "modified": "2023-01-11 13:11:47.293595",
         }

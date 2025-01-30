@@ -130,5 +130,5 @@ async def list_user_permissions(request: web.Request) -> web.Response:
         request.app, user_id=req_ctx.user_id, product_name=req_ctx.product_name
     )
     return envelope_json_response(
-        [MyPermissionGet.from_model(p) for p in list_permissions]
+        [MyPermissionGet.from_domain_model(p) for p in list_permissions]
     )

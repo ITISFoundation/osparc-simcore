@@ -102,10 +102,28 @@ async def project_in_db(
         yield row
 
 
+# Create a mock object manually
+mock_with_locked_project = MagicMock()
+
+
+# The stand-in decorator to replace the original one and record the function call
+def mock_decorator(*args, **kwargs):
+    def _decorator(func):
+        def wrapper(*args, **kwargs):
+            mock_with_locked_project(*args, **kwargs)  # Log the call
+            return func(*args, **kwargs)
+
+        return wrapper
+
+    return _decorator
+
+
 @patch("simcore_service_efs_guardian.services.background_tasks.get_redis_lock_client")
-@patch("simcore_service_efs_guardian.services.background_tasks.lock_project")
+@patch(
+    "simcore_service_efs_guardian.services.background_tasks.with_project_locked",
+    new=mock_decorator,
+)
 async def test_efs_removal_policy_task(
-    mock_lock_project: MagicMock,
     mock_get_redis_lock_client: MagicMock,
     faker: Faker,
     app: FastAPI,
@@ -116,7 +134,7 @@ async def test_efs_removal_policy_task(
 ):
     # 1. Nothing should happen
     await removal_policy_task(app)
-    assert not mock_lock_project.called
+    assert not mock_with_locked_project.called
 
     # 2. Lets create some project with data
     aws_efs_settings: AwsEfsSettings = app.state.settings.EFS_GUARDIAN_AWS_EFS_SETTINGS
@@ -148,7 +166,7 @@ async def test_efs_removal_policy_task(
 
     # 3. Nothing should happen
     await removal_policy_task(app)
-    assert not mock_lock_project.called
+    assert not mock_with_locked_project.called
 
     # 4. We will artifically change the project last change date
     app_settings: ApplicationSettings = app.state.settings
@@ -169,7 +187,7 @@ async def test_efs_removal_policy_task(
 
     # 5. Now removal policy should remove those data
     await removal_policy_task(app)
-    assert mock_lock_project.assert_called_once
+    assert mock_with_locked_project.assert_called_once
     assert mock_get_redis_lock_client.assert_called_once
     projects_list = await efs_manager.list_projects_across_whole_efs()
     assert projects_list == []

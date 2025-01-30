@@ -20,11 +20,20 @@ services:
     #   - net.ipv4.tcp_keepalive_intvl=600
     #   - net.ipv4.tcp_keepalive_probes=9
     #   - net.ipv4.tcp_keepalive_time=600
-    command: |
-      postgres
-      -c tcp_keepalives_idle=600
-      -c tcp_keepalives_interval=600
-      -c tcp_keepalives_count=5
+    command:
+      - "postgres"
+      - "-c"
+      - "tcp_keepalives_idle=600"
+      - "-c"
+      - "tcp_keepalives_interval=600"
+      - "-c"
+      - "tcp_keepalives_count=5"
+      - "-c"
+      - "log_statement=all"
+      - "-c"
+      - "log_min_duration_statement=500"
+      - "-c"
+      - "log_lock_waits=on"
   adminer:
     image: adminer:4.8.1
     init: true

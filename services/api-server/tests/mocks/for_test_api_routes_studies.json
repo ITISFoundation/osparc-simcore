@@ -92,6 +92,7 @@
      "workspaceId": 278,
      "folderId": 123,
      "trashedAt": "2023-07-20T20:02:55.535Z",
+     "trashedBy": 2,
      "workbench": {
       "deea006c-a223-4103-b46e-7b677428de9f": {
        "key": "simcore/services/frontend/file-picker",
@@ -314,6 +315,7 @@
     "workspaceId": 278,
     "folderId": 123,
     "trashedAt": "2023-07-20T20:04:10.607Z",
+    "trashedBy": 2,
     "workbench": {
      "deea006c-a223-4103-b46e-7b677428de9f": {
       "key": "simcore/services/frontend/file-picker",

@@ -1,7 +1,10 @@
 import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from typing import TypeVar
 
+import sqlalchemy as sa
+from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
 _logger = logging.getLogger(__name__)
@@ -56,3 +59,29 @@ async def transaction_context(
             finally:
                 assert not conn.closed  # nosec
                 assert not conn.in_transaction()  # nosec
+
+
+SQLModel = TypeVar(
+    # Towards using https://sqlmodel.tiangolo.com/#create-a-sqlmodel-model
+    "SQLModel",
+    bound=BaseModel,
+)
+
+
+def get_columns_from_db_model(
+    table: sa.Table, model_cls: type[SQLModel]
+) -> list[sa.Column]:
+    """
+    Usage example:
+
+        query = sa.select( get_columns_from_db_model(project, ProjectDB) )
+
+        or
+
+        query = (
+                 project.insert().
+                 # ...
+                 .returning(*get_columns_from_db_model(project, ProjectDB))
+                )
+    """
+    return [table.columns[field_name] for field_name in model_cls.model_fields]

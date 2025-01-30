@@ -106,7 +106,7 @@ async def get_my_profile(request: web.Request) -> web.Response:
         request.app, user_id=req_ctx.user_id, product_name=req_ctx.product_name
     )
 
-    profile = MyProfileGet.from_model(
+    profile = MyProfileGet.from_domain_model(
         my_profile, groups_by_type, my_product_group, preferences
     )
 
@@ -153,7 +153,7 @@ async def search_users(request: web.Request) -> web.Response:
         limit=search_params.limit,
     )
 
-    return envelope_json_response([UserGet.from_model(user) for user in found])
+    return envelope_json_response([UserGet.from_domain_model(user) for user in found])
 
 
 #

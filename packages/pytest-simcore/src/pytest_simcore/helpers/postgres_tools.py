@@ -17,6 +17,22 @@ class PostgresTestConfig(TypedDict):
     port: str
 
 
+def force_drop_all_tables(sa_sync_engine: sa.engine.Engine):
+    with sa_sync_engine.begin() as conn:
+        conn.execute(sa.DDL("DROP TABLE IF EXISTS alembic_version"))
+        conn.execute(
+            # NOTE: terminates all open transactions before droping all tables
+            # This solves https://github.com/ITISFoundation/osparc-simcore/issues/7008
+            sa.DDL(
+                "SELECT pg_terminate_backend(pid) "
+                "FROM pg_stat_activity "
+                "WHERE state = 'idle in transaction';"
+            )
+        )
+        # SEE https://github.com/ITISFoundation/osparc-simcore/issues/1776
+        metadata.drop_all(bind=conn)
+
+
 @contextmanager
 def migrated_pg_tables_context(
     postgres_config: PostgresTestConfig,
@@ -46,14 +62,15 @@ def migrated_pg_tables_context(
     #
     assert simcore_postgres_database.cli.downgrade.callback
     assert simcore_postgres_database.cli.clean.callback
+
     simcore_postgres_database.cli.downgrade.callback("base")
     simcore_postgres_database.cli.clean.callback()  # just cleans discover cache
 
-    # FIXME: migration downgrade fails to remove User types
-    # SEE https://github.com/ITISFoundation/osparc-simcore/issues/1776
-    # Added drop_all as tmp fix
-    postgres_engine = sa.create_engine(dsn)
-    metadata.drop_all(bind=postgres_engine)
+    try:
+        sync_engine = sa.create_engine(dsn)
+        force_drop_all_tables(sync_engine)
+    finally:
+        sync_engine.dispose()
 
 
 def is_postgres_responsive(url) -> bool:

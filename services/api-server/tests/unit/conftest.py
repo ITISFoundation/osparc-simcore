@@ -521,6 +521,7 @@ def patch_webserver_long_running_project_tasks(
                     "prjOwner": "owner@email.com",
                     "dev": None,
                     "trashed_at": None,
+                    "trashed_by": None,
                     **project_create,
                 }
             )

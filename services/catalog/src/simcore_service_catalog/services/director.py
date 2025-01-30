@@ -1,37 +1,64 @@
 import asyncio
 import functools
+import json
 import logging
 import urllib.parse
 from collections.abc import Awaitable, Callable
 from contextlib import suppress
-from typing import Any
+from pprint import pformat
+from typing import Any, Final
 
 import httpx
 from common_library.json_serialization import json_dumps
 from fastapi import FastAPI, HTTPException
+from models_library.api_schemas_directorv2.services import ServiceExtras
 from models_library.services_metadata_published import ServiceMetaDataPublished
 from models_library.services_types import ServiceKey, ServiceVersion
+from pydantic import NonNegativeInt, TypeAdapter
 from servicelib.fastapi.tracing import setup_httpx_client_tracing
 from servicelib.logging_utils import log_context
-from settings_library.tracing import TracingSettings
 from starlette import status
 from tenacity.asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_random
 
+from ..core.settings import ApplicationSettings
 from ..exceptions.errors import DirectorUnresponsiveError
 
 _logger = logging.getLogger(__name__)
 
-MINUTE = 60
+_MINUTE: Final[NonNegativeInt] = 60
+
+
+_SERVICE_RUNTIME_SETTINGS: Final[str] = "simcore.service.settings"
+_ORG_LABELS_TO_SCHEMA_LABELS: Final[dict[str, str]] = {
+    "org.label-schema.build-date": "build_date",
+    "org.label-schema.vcs-ref": "vcs_ref",
+    "org.label-schema.vcs-url": "vcs_url",
+}
+
+_CONTAINER_SPEC_ENTRY_NAME = "ContainerSpec".lower()
+_RESOURCES_ENTRY_NAME = "Resources".lower()
+
+
+def _validate_kind(entry_to_validate: dict[str, Any], kind_name: str):
+    for element in (
+        entry_to_validate.get("value", {})
+        .get("Reservations", {})
+        .get("GenericResources", [])
+    ):
+        if element.get("DiscreteResourceSpec", {}).get("Kind") == kind_name:
+            return True
+    return False
+
 
 _director_startup_retry_policy: dict[str, Any] = {
     # Random service startup order in swarm.
     # wait_random prevents saturating other services while startup
     #
     "wait": wait_random(2, 5),
-    "stop": stop_after_delay(2 * MINUTE),
+    "stop": stop_after_delay(2 * _MINUTE),
     "before_sleep": before_sleep_log(_logger, logging.WARNING),
     "reraise": True,
 }
@@ -108,16 +135,22 @@ class DirectorApi:
     SEE services/catalog/src/simcore_service_catalog/api/dependencies/director.py
     """
 
-    def __init__(
-        self, base_url: str, app: FastAPI, tracing_settings: TracingSettings | None
-    ):
+    def __init__(self, base_url: str, app: FastAPI):
+        settings: ApplicationSettings = app.state.settings
+
+        assert settings.CATALOG_CLIENT_REQUEST  # nosec
         self.client = httpx.AsyncClient(
             base_url=base_url,
-            timeout=app.state.settings.CATALOG_CLIENT_REQUEST.HTTP_CLIENT_REQUEST_TOTAL_TIMEOUT,
+            timeout=settings.CATALOG_CLIENT_REQUEST.HTTP_CLIENT_REQUEST_TOTAL_TIMEOUT,
         )
-        if tracing_settings:
+        if settings.CATALOG_TRACING:
             setup_httpx_client_tracing(self.client)
-        self.vtag = app.state.settings.CATALOG_DIRECTOR.DIRECTOR_VTAG
+
+        assert settings.CATALOG_DIRECTOR  # nosec
+        self.vtag = settings.CATALOG_DIRECTOR.DIRECTOR_VTAG
+
+        self.default_max_memory = settings.DIRECTOR_DEFAULT_MAX_MEMORY
+        self.default_max_nano_cpus = settings.DIRECTOR_DEFAULT_MAX_NANO_CPUS
 
     async def close(self):
         await self.client.aclose()
@@ -167,26 +200,103 @@ class DirectorApi:
         assert isinstance(response, dict)  # nosec
         return response
 
+    async def get_service_extras(
+        self,
+        service_key: ServiceKey,
+        service_version: ServiceVersion,
+    ) -> ServiceExtras:
+        # check physical node requirements
+        # all nodes require "CPU"
+        result: dict[str, Any] = {
+            "node_requirements": {
+                "CPU": self.default_max_nano_cpus / 1.0e09,
+                "RAM": self.default_max_memory,
+            }
+        }
 
-async def setup_director(
-    app: FastAPI, tracing_settings: TracingSettings | None
-) -> None:
+        labels = await self.get_service_labels(service_key, service_version)
+        _logger.debug("Compiling service extras from labels %s", pformat(labels))
+
+        if _SERVICE_RUNTIME_SETTINGS in labels:
+            service_settings: list[dict[str, Any]] = json.loads(
+                labels[_SERVICE_RUNTIME_SETTINGS]
+            )
+            for entry in service_settings:
+                entry_name = entry.get("name", "").lower()
+                entry_value = entry.get("value")
+                invalid_with_msg = None
+
+                if entry_name == _RESOURCES_ENTRY_NAME:
+                    if entry_value and isinstance(entry_value, dict):
+                        res_limit = entry_value.get("Limits", {})
+                        res_reservation = entry_value.get("Reservations", {})
+                        # CPU
+                        result["node_requirements"]["CPU"] = (
+                            float(res_limit.get("NanoCPUs", 0))
+                            or float(res_reservation.get("NanoCPUs", 0))
+                            or self.default_max_nano_cpus
+                        ) / 1.0e09
+                        # RAM
+                        result["node_requirements"]["RAM"] = (
+                            res_limit.get("MemoryBytes", 0)
+                            or res_reservation.get("MemoryBytes", 0)
+                            or self.default_max_memory
+                        )
+                    else:
+                        invalid_with_msg = f"invalid type for resource [{entry_value}]"
+
+                    # discrete resources (custom made ones) ---
+                    # check if the service requires GPU support
+                    if not invalid_with_msg and _validate_kind(entry, "VRAM"):
+
+                        result["node_requirements"]["GPU"] = 1
+                    if not invalid_with_msg and _validate_kind(entry, "MPI"):
+                        result["node_requirements"]["MPI"] = 1
+
+                elif entry_name == _CONTAINER_SPEC_ENTRY_NAME:
+                    # NOTE: some minor validation
+                    # expects {'name': 'ContainerSpec', 'type': 'ContainerSpec', 'value': {'Command': [...]}}
+                    if (
+                        entry_value
+                        and isinstance(entry_value, dict)
+                        and "Command" in entry_value
+                    ):
+                        result["container_spec"] = entry_value
+                    else:
+                        invalid_with_msg = f"invalid container_spec [{entry_value}]"
+
+                if invalid_with_msg:
+                    _logger.warning(
+                        "%s entry [%s] encoded in settings labels of service image %s:%s",
+                        invalid_with_msg,
+                        entry,
+                        service_key,
+                        service_version,
+                    )
+
+        # get org labels
+        result.update(
+            {
+                sl: labels[dl]
+                for dl, sl in _ORG_LABELS_TO_SCHEMA_LABELS.items()
+                if dl in labels
+            }
+        )
+
+        _logger.debug("Following service extras were compiled: %s", pformat(result))
+
+        return TypeAdapter(ServiceExtras).validate_python(result)
+
+
+async def setup_director(app: FastAPI) -> None:
     if settings := app.state.settings.CATALOG_DIRECTOR:
         with log_context(
             _logger, logging.DEBUG, "Setup director at %s", f"{settings.base_url=}"
         ):
             async for attempt in AsyncRetrying(**_director_startup_retry_policy):
-                client = DirectorApi(
-                    base_url=settings.base_url,
-                    app=app,
-                    tracing_settings=tracing_settings,
-                )
+                client = DirectorApi(base_url=settings.base_url, app=app)
                 with attempt:
-                    client = DirectorApi(
-                        base_url=settings.base_url,
-                        app=app,
-                        tracing_settings=tracing_settings,
-                    )
+                    client = DirectorApi(base_url=settings.base_url, app=app)
                     if not await client.is_responsive():
                         with suppress(Exception):
                             await client.close()

@@ -133,7 +133,7 @@ class SimcoreEC2API:
         with log_context(
             _logger,
             logging.INFO,
-            msg=f"launching {number_of_instances} AWS instance(s) {instance_config.type.name} with {instance_config.tags=}",
+            msg=f"launch {number_of_instances} AWS instance(s) {instance_config.type.name} with {instance_config.tags=}",
         ):
             # first check the max amount is not already reached
             current_instances = await self.get_instances(
@@ -277,7 +277,7 @@ class SimcoreEC2API:
         with log_context(
             _logger,
             logging.INFO,
-            msg=f"starting instances {instance_ids}",
+            msg=f"start instances {instance_ids}",
         ):
             await self.client.start_instances(InstanceIds=instance_ids)
             # wait for the instance to be in a pending state
@@ -310,7 +310,7 @@ class SimcoreEC2API:
         with log_context(
             _logger,
             logging.INFO,
-            msg=f"stopping instances {[i.id for i in instance_datas]}",
+            msg=f"stop instances {[i.id for i in instance_datas]}",
         ):
             await self.client.stop_instances(InstanceIds=[i.id for i in instance_datas])
 
@@ -321,7 +321,7 @@ class SimcoreEC2API:
         with log_context(
             _logger,
             logging.INFO,
-            msg=f"terminating instances {[i.id for i in instance_datas]}",
+            msg=f"terminate instances {[i.id for i in instance_datas]}",
         ):
             await self.client.terminate_instances(
                 InstanceIds=[i.id for i in instance_datas]
@@ -335,7 +335,7 @@ class SimcoreEC2API:
             with log_context(
                 _logger,
                 logging.DEBUG,
-                msg=f"setting {tags=} on instances '[{[i.id for i in instances]}]'",
+                msg=f"set {tags=} on instances '[{[i.id for i in instances]}]'",
             ):
                 await self.client.create_tags(
                     Resources=[i.id for i in instances],
@@ -357,7 +357,7 @@ class SimcoreEC2API:
             with log_context(
                 _logger,
                 logging.DEBUG,
-                msg=f"removing {tag_keys=} of instances '[{[i.id for i in instances]}]'",
+                msg=f"removal of {tag_keys=} from instances '[{[i.id for i in instances]}]'",
             ):
                 await self.client.delete_tags(
                     Resources=[i.id for i in instances],

@@ -5,12 +5,11 @@ SEE rationale in https://fastapi.tiangolo.com/tutorial/extra-models/#multiple-mo
 
 """
 
+import copy
 from datetime import datetime
-from typing import Annotated, Any, Literal, TypeAlias
+from typing import Annotated, Any, Literal, Self, TypeAlias
 
-from models_library.folders import FolderID
-from models_library.utils._original_fastapi_encoders import jsonable_encoder
-from models_library.workspaces import WorkspaceID
+from common_library.dict_tools import remap_keys
 from pydantic import (
     BeforeValidator,
     ConfigDict,
@@ -24,10 +23,12 @@ from ..api_schemas_long_running_tasks.tasks import TaskGet
 from ..basic_types import LongTruncatedStr, ShortTruncatedStr
 from ..emails import LowerCaseEmailStr
 from ..folders import FolderID
+from ..groups import GroupID
 from ..projects import ClassifierID, DateTimeStr, NodesDict, ProjectID
 from ..projects_access import AccessRights, GroupIDStr
 from ..projects_state import ProjectState
 from ..projects_ui import StudyUI
+from ..utils._original_fastapi_encoders import jsonable_encoder
 from ..utils.common_validators import (
     empty_str_to_none_pre_validator,
     none_to_empty_str_pre_validator,
@@ -95,13 +96,36 @@ class ProjectGet(OutputSchema):
     permalink: ProjectPermalink | None = None
     workspace_id: WorkspaceID | None
     folder_id: FolderID | None
+
     trashed_at: datetime | None
+    trashed_by: Annotated[
+        GroupID | None, Field(description="The primary gid of the user who trashed")
+    ]
 
     _empty_description = field_validator("description", mode="before")(
         none_to_empty_str_pre_validator
     )
 
     model_config = ConfigDict(frozen=False)
+
+    @classmethod
+    def from_domain_model(cls, project_data: dict[str, Any]) -> Self:
+        trimmed_data = copy.copy(project_data)
+        # project_data["trashed_by"] is a UserID
+        # project_data["trashed_by_primary_gid"] is a GroupID
+        trimmed_data.pop("trashed_by", None)
+        trimmed_data.pop("trashedBy", None)
+
+        return cls.model_validate(
+            remap_keys(
+                trimmed_data,
+                rename={
+                    "trashed": "trashed_at",
+                    "trashed_by_primary_gid": "trashed_by",
+                    "trashedByPrimaryGid": "trashedBy",
+                },
+            )
+        )
 
 
 TaskProjectGet: TypeAlias = TaskGet
@@ -116,7 +140,8 @@ class ProjectReplace(InputSchema):
     name: ShortTruncatedStr
     description: LongTruncatedStr
     thumbnail: Annotated[
-        HttpUrl | None, BeforeValidator(empty_str_to_none_pre_validator)
+        HttpUrl | None,
+        BeforeValidator(empty_str_to_none_pre_validator),
     ] = Field(default=None)
     creation_date: DateTimeStr
     last_change_date: DateTimeStr
@@ -159,6 +184,9 @@ class ProjectPatch(InputSchema):
         ),
     ] = Field(default=None)
     quality: dict[str, Any] | None = Field(default=None)
+
+    def to_domain_model(self) -> dict[str, Any]:
+        return self.model_dump(exclude_unset=True, by_alias=False)
 
 
 __all__: tuple[str, ...] = (

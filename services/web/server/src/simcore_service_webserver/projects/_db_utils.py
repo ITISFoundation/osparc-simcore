@@ -19,12 +19,12 @@ from simcore_postgres_database.models.project_to_groups import project_to_groups
 from simcore_postgres_database.models.projects_to_products import projects_to_products
 from simcore_postgres_database.webserver_models import ProjectType, projects
 from sqlalchemy.dialects.postgresql import insert as pg_insert
-from sqlalchemy.sql import select
 from sqlalchemy.sql.selectable import CompoundSelect, Select
 
 from ..db.models import GroupType, groups, projects_tags, user_to_groups, users
 from ..users.exceptions import UserNotFoundError
 from ..utils import format_datetime
+from ._projects_db import PROJECT_DB_COLS
 from .exceptions import (
     NodeNotFoundError,
     ProjectInvalidRightsError,
@@ -65,6 +65,8 @@ def convert_to_db_names(project_document_data: dict) -> dict:
         "tags",
         "prjOwner",
         "folderId",
+        "trashedByPrimaryGid",
+        "trashed_by_primary_gid",
     ]  # No column for tags, prjOwner is a foreign key in db
     for key, value in project_document_data.items():
         if key not in exclude_keys:
@@ -82,20 +84,20 @@ def convert_to_schema_names(
 ) -> dict:
     # SEE https://github.com/ITISFoundation/osparc-simcore/issues/3516
     converted_args = {}
-    for key, value in project_database_data.items():
-        if key in DB_EXCLUSIVE_COLUMNS:
+    for col_name, col_value in project_database_data.items():
+        if col_name in DB_EXCLUSIVE_COLUMNS:
             continue
-        converted_value = value
-        if isinstance(value, datetime) and key not in {"trashed_at"}:
-            converted_value = format_datetime(value)
-        elif key == "prj_owner":
+        converted_value = col_value
+        if isinstance(col_value, datetime) and col_name not in {"trashed"}:
+            converted_value = format_datetime(col_value)
+        elif col_name == "prj_owner":
             # this entry has to be converted to the owner e-mail address
             converted_value = user_email
 
-        if key in SCHEMA_NON_NULL_KEYS and value is None:
+        if col_name in SCHEMA_NON_NULL_KEYS and col_value is None:
             converted_value = ""
 
-        converted_args[snake_to_camel(key)] = converted_value
+        converted_args[snake_to_camel(col_name)] = converted_value
     converted_args.update(**kwargs)
     return converted_args
 
@@ -130,7 +132,7 @@ class BaseProjectDB:
             user_groups.append(everyone_group)
         else:
             result = await conn.execute(
-                select(groups)
+                sa.select(groups)
                 .select_from(groups.join(user_to_groups))
                 .where(user_to_groups.c.uid == user_id)
             )
@@ -255,7 +257,7 @@ class BaseProjectDB:
         exclude_foreign = exclude_foreign or []
 
         access_rights_subquery = (
-            select(
+            sa.select(
                 project_to_groups.c.project_uuid,
                 sa.func.jsonb_object_agg(
                     project_to_groups.c.gid,
@@ -275,10 +277,16 @@ class BaseProjectDB:
 
         query = (
             sa.select(
-                *[col for col in projects.columns if col.name not in ["access_rights"]],
+                *PROJECT_DB_COLS,
+                projects.c.workbench,
+                users.c.primary_gid.label("trashed_by_primary_gid"),
                 access_rights_subquery.c.access_rights,
             )
-            .select_from(projects.join(access_rights_subquery, isouter=True))
+            .select_from(
+                projects.join(access_rights_subquery, isouter=True).outerjoin(
+                    users, projects.c.trashed_by == users.c.id
+                )
+            )
             .where(
                 (projects.c.uuid == f"{project_uuid}")
                 & (

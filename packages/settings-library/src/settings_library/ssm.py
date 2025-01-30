@@ -1,20 +1,19 @@
 from typing import Annotated
 
-from pydantic import AnyHttpUrl, BeforeValidator, Field, SecretStr, TypeAdapter
+from pydantic import BeforeValidator, Field, SecretStr
 from pydantic_settings import SettingsConfigDict
 
 from .base import BaseCustomSettings
+from .utils_validators import validate_nullable_url
 
 
 class SSMSettings(BaseCustomSettings):
     SSM_ACCESS_KEY_ID: SecretStr
-    SSM_ENDPOINT: (
-        Annotated[
-            str,
-            BeforeValidator(lambda x: str(TypeAdapter(AnyHttpUrl).validate_python(x))),
-        ]
-        | None
-    ) = Field(default=None, description="do not define if using standard AWS")
+    SSM_ENDPOINT: Annotated[
+        str | None,
+        BeforeValidator(validate_nullable_url),
+        Field(description="do not define if using standard AWS"),
+    ] = None
     SSM_REGION_NAME: str = "us-east-1"
     SSM_SECRET_ACCESS_KEY: SecretStr
 

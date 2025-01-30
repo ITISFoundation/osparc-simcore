@@ -54,7 +54,7 @@ async def registered_project(
 
 
 @pytest.mark.parametrize("expected", (datetime.now(tz=UTC), None))
-async def test_get_project_trashed_at_column_can_be_converted_to_datetime(
+async def test_get_project_trashed_column_can_be_converted_to_datetime(
     asyncpg_engine: AsyncEngine, registered_project: dict, expected: datetime | None
 ):
     project_id = registered_project["uuid"]
@@ -62,15 +62,16 @@ async def test_get_project_trashed_at_column_can_be_converted_to_datetime(
     async with transaction_context(asyncpg_engine) as conn:
         result = await conn.execute(
             projects.update()
-            .values(trashed_at=expected)
+            .values(trashed=expected)
             .where(projects.c.uuid == project_id)
             .returning(sa.literal_column("*"))
         )
 
         row = result.fetchone()
 
-    trashed_at = TypeAdapter(datetime | None).validate_python(row.trashed_at)
-    assert trashed_at == expected
+    assert row
+    trashed = TypeAdapter(datetime | None).validate_python(row.trashed)
+    assert trashed == expected
 
 
 async def test_get_project_last_change_date(

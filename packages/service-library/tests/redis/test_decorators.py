@@ -75,7 +75,7 @@ async def test_exclusive_with_empty_lock_key_raises(redis_client_sdk: RedisClien
             pass
 
 
-async def test_exclusive_decorator(
+async def test_exclusive_decorator_runs_original_method(
     redis_client_sdk: RedisClientSDK,
     lock_name: str,
     sleep_duration: float,

@@ -162,7 +162,7 @@ qx.Class.define("osparc.product.AboutProduct", {
     __getMailTo: function() {
       const supportEmail = osparc.store.VendorInfo.getInstance().getSupportEmail();
       const productName = osparc.store.StaticInfo.getInstance().getDisplayName();
-      return osparc.store.Support.mailToText(supportEmail, "Support " + productName, false);
+      return osparc.store.Support.mailToLink(supportEmail, "Support " + productName, false);
     },
 
     __addCopyright: function() {

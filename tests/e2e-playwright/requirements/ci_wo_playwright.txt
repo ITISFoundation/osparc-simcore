@@ -1,0 +1,2 @@
+--requirement _test_wo_playwright.txt
+pytest-simcore @ ../../packages/pytest-simcore

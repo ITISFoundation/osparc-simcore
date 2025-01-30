@@ -38,38 +38,11 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
       event: "changeOpenBy",
     },
 
-    metadataUrl: {
-      check: "String",
+    vipSubset: {
+      check: ["HUMAN_BODY", "HUMAN_BODY_REGION", "ANIMAL", "PHANTOM"],
       init: null,
-      nullable: false,
+      nullable: true,
       apply: "__fetchModels",
-    }
-  },
-
-  statics: {
-    curateAnatomicalModels: function(anatomicalModelsRaw) {
-      const anatomicalModels = [];
-      const models = anatomicalModelsRaw["availableDownloads"];
-      models.forEach(model => {
-        const curatedModel = {};
-        Object.keys(model).forEach(key => {
-          if (key === "Features") {
-            let featuresRaw = model["Features"];
-            featuresRaw = featuresRaw.substring(1, featuresRaw.length-1); // remove brackets
-            featuresRaw = featuresRaw.split(","); // split the string by commas
-            const features = {};
-            featuresRaw.forEach(pair => { // each pair is "key: value"
-              const keyValue = pair.split(":");
-              features[keyValue[0].trim()] = keyValue[1].trim()
-            });
-            curatedModel["Features"] = features;
-          } else {
-            curatedModel[key] = model[key];
-          }
-        });
-        anatomicalModels.push(curatedModel);
-      });
-      return anatomicalModels;
     },
   },
 
@@ -192,28 +165,19 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
       }, this);
     },
 
-    __fetchModels: function(url) {
-      fetch(url, {
-        method:"POST"
-      })
-        .then(resp => resp.json())
-        .then(anatomicalModelsRaw => {
-          const allAnatomicalModels = this.self().curateAnatomicalModels(anatomicalModelsRaw);
-
+    __fetchModels: function(vipSubset) {
+      const licensedItemsStore = osparc.store.LicensedItems.getInstance();
+      licensedItemsStore.getVipModels(vipSubset)
+        .then(allAnatomicalModels => {
           const store = osparc.store.Store.getInstance();
           const contextWallet = store.getContextWallet();
           if (!contextWallet) {
             return;
           }
           const walletId = contextWallet.getWalletId();
-          const purchasesParams = {
-            url: {
-              walletId
-            }
-          };
           Promise.all([
-            osparc.data.Resources.get("licensedItems"),
-            osparc.data.Resources.fetch("wallets", "purchases", purchasesParams),
+            licensedItemsStore.getLicensedItems(),
+            licensedItemsStore.getPurchasedLicensedItems(walletId),
           ])
             .then(values => {
               const licensedItems = values[0];
@@ -221,17 +185,11 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
 
               this.__anatomicalModels = [];
               allAnatomicalModels.forEach(model => {
-                const modelId = model["ID"];
+                const modelId = model["modelId"];
                 const licensedItem = licensedItems.find(licItem => licItem["name"] == modelId);
                 if (licensedItem) {
-                  const anatomicalModel = {};
-                  anatomicalModel["modelId"] = model["ID"];
-                  anatomicalModel["thumbnail"] = model["Thumbnail"];
-                  anatomicalModel["name"] = model["Features"]["name"] + " " + model["Features"]["version"];
-                  anatomicalModel["description"] = model["Description"];
-                  anatomicalModel["features"] = model["Features"];
-                  anatomicalModel["date"] = new Date(model["Features"]["date"]);
-                  anatomicalModel["DOI"] = model["DOI"];
+                  const anatomicalModel = osparc.utils.Utils.deepCloneObject(model);
+                  anatomicalModel["date"] = new Date(anatomicalModel["date"]);
                   // attach license data
                   anatomicalModel["licensedItemId"] = licensedItem["licensedItemId"];
                   anatomicalModel["pricingPlanId"] = licensedItem["pricingPlanId"];
@@ -269,21 +227,9 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
                   const split = pricingUnit.getName().split(" ");
                   numberOfSeats = parseInt(split[0]);
                 }
-                const params = {
-                  url: {
-                    licensedItemId
-                  },
-                  data: {
-                    "wallet_id": walletId,
-                    "pricing_plan_id": pricingPlanId,
-                    "pricing_unit_id": pricingUnitId,
-                    "num_of_seats": numberOfSeats, // this should go away
-                  },
-                }
-                osparc.data.Resources.fetch("licensedItems", "purchase", params)
+                licensedItemsStore.purchaseLicensedItem(licensedItemId, walletId, pricingPlanId, pricingUnitId, numberOfSeats)
                   .then(() => {
-                    const expirationDate = new Date();
-                    expirationDate.setMonth(expirationDate.getMonth() + 1); // rented for one month
+                    const expirationDate = osparc.study.PricingUnitLicense.getExpirationDate();
                     const purchaseData = {
                       expiresAt: expirationDate, // get this info from the response
                       numberOfSeats, // get this info from the response

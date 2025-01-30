@@ -21,36 +21,17 @@
  */
 
 qx.Class.define("osparc.auth.LoginPageS4L", {
-  extend: osparc.auth.LoginPageFlex,
+  extend: osparc.auth.LoginPageSplit,
+
+  construct: function() {
+    this.base(arguments);
+
+    this.setBackgroundColor("rgba(0, 20, 46, 1)");
+  },
 
   members: {
     // overridden
-    _reloadLayout: function() {
-      const layout = new qx.ui.layout.HBox();
-      this._setLayout(layout);
-
-      this.setBackgroundColor("rgba(0, 20, 46, 1)");
-
-      this._removeAll();
-
-      const loginLayout = this._getMainLayout();
-      if (this.isCompactVersion()) {
-        this._resetBackgroundImage();
-        this._add(loginLayout, {
-          flex: 1
-        });
-      } else {
-        this.__setBackgroundImage();
-        this._add(new qx.ui.core.Spacer(), {
-          width: "50%"
-        });
-        this._add(loginLayout, {
-          width: "50%"
-        });
-      }
-    },
-
-    __setBackgroundImage: function() {
+    _getBackgroundImage: function() {
       let backgroundImage = "";
 
       const defaultBG = `url(${osparc.product.Utils.getProductBackgroundUrl("Sim4Life-head-default.png")}), url(${osparc.product.Utils.getProductBackgroundUrl("clouds_11.png")})`;
@@ -71,7 +52,7 @@ qx.Class.define("osparc.auth.LoginPageS4L", {
           backgroundImage = defaultBG;
           break;
       }
-      this._setBackgroundImage(backgroundImage);
-    }
+      return backgroundImage;
+    },
   }
 });

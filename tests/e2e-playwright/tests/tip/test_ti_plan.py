@@ -95,6 +95,7 @@ def test_classic_ti_plan(  # noqa: PLR0915
     is_product_lite: bool,
     create_tip_plan_from_dashboard: Callable[[str], dict[str, Any]],
     product_url: AnyUrl,
+    is_service_legacy: bool,
 ):
     with log_context(logging.INFO, "Checking 'Access TIP' teaser"):
         # click to open and expand
@@ -145,6 +146,7 @@ def test_classic_ti_plan(  # noqa: PLR0915
             ),
             press_start_button=False,
             product_url=product_url,
+            is_service_legacy=is_service_legacy,
         )
         # NOTE: Sometimes this iframe flicks and shows a white page. This wait will avoid it
         page.wait_for_timeout(_ELECTRODE_SELECTOR_FLICKERING_WAIT_TIME)
@@ -205,6 +207,7 @@ def test_classic_ti_plan(  # noqa: PLR0915
                 ),
                 press_start_button=False,
                 product_url=product_url,
+                is_service_legacy=is_service_legacy,
             ) as service_running:
                 app_mode_trigger_next_app(page)
             ti_iframe = service_running.iframe_locator
@@ -318,6 +321,7 @@ def test_classic_ti_plan(  # noqa: PLR0915
                 ),
                 press_start_button=False,
                 product_url=product_url,
+                is_service_legacy=is_service_legacy,
             ) as service_running:
                 app_mode_trigger_next_app(page)
             s4l_postpro_iframe = service_running.iframe_locator

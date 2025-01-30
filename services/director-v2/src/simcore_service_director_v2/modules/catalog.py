@@ -5,6 +5,7 @@ from typing import Any
 
 import httpx
 from fastapi import FastAPI, HTTPException, status
+from models_library.api_schemas_directorv2.services import ServiceExtras
 from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.services_resources import ServiceResourcesDict
@@ -118,6 +119,17 @@ class CatalogClient:
         resp.raise_for_status()
         if resp.status_code == status.HTTP_200_OK:
             return SimcoreServiceLabels.model_validate(resp.json())
+        raise HTTPException(status_code=resp.status_code, detail=resp.content)
+
+    async def get_service_extras(
+        self, service_key: ServiceKey, service_version: ServiceVersion
+    ) -> ServiceExtras:
+        resp = await self.request(
+            "GET",
+            f"/services/{urllib.parse.quote_plus(service_key)}/{service_version}/extras",
+        )
+        if resp.status_code == status.HTTP_200_OK:
+            return ServiceExtras.model_validate(resp.json())
         raise HTTPException(status_code=resp.status_code, detail=resp.content)
 
     async def get_service_specifications(

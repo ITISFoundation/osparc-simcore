@@ -11,7 +11,6 @@ from unittest import mock
 from unittest.mock import MagicMock, call
 
 import pytest
-import redis.asyncio as aioredis
 import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
 from faker import Faker
@@ -20,6 +19,7 @@ from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     DynamicServiceStop,
 )
 from models_library.projects import ProjectID
+from models_library.projects_access import Owner
 from models_library.projects_state import ProjectStatus
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import UserInfoDict
@@ -30,13 +30,14 @@ from pytest_simcore.helpers.webserver_parametrizations import (
 )
 from servicelib.aiohttp import status
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
+from servicelib.redis import with_project_locked
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.projects_to_products import projects_to_products
 from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects import _crud_api_delete
 from simcore_service_webserver.projects.models import ProjectDict
-from simcore_service_webserver.projects.projects_api import lock_with_notification
+from simcore_service_webserver.redis import get_redis_lock_manager_client_sdk
 from socketio.exceptions import ConnectionError as SocketConnectionError
 
 
@@ -147,7 +148,6 @@ async def test_delete_multiple_opened_project_forbidden(
     user_role: UserRole,
     expected_ok: HTTPStatus,
     expected_forbidden: HTTPStatus,
-    redis_client: aioredis.Redis,
 ):
     assert client.app
 
@@ -223,17 +223,16 @@ async def test_delete_project_while_it_is_locked_raises_error(
     logged_user: UserInfoDict,
     user_project: ProjectDict,
     expected: ExpectedResponse,
+    faker: Faker,
 ):
     assert client.app
 
     project_uuid = user_project["uuid"]
     user_id = logged_user["id"]
-    async with lock_with_notification(
-        app=client.app,
+    await with_project_locked(
+        get_redis_lock_manager_client_sdk(client.app),
         project_uuid=project_uuid,
         status=ProjectStatus.CLOSING,
-        user_id=user_id,
-        user_name={"first_name": "test", "last_name": "test"},
-        notify_users=False,
-    ):
-        await _request_delete_project(client, user_project, expected.conflict)
+        owner=Owner(user_id=user_id, first_name=faker.name(), last_name=faker.name()),
+        notification_cb=None,
+    )(_request_delete_project)(client, user_project, expected.conflict)

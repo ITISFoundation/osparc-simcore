@@ -23,10 +23,6 @@ class ProjectsSettings(BaseCustomSettings):
         description="interval after which services need to be idle in order to be considered inactive",
     )
 
-    PROJECTS_TRASH_RETENTION_DAYS: NonNegativeInt = Field(
-        default=7, description="Trashed items will be deleted after this time"
-    )
-
 
 def get_plugin_settings(app: web.Application) -> ProjectsSettings:
     settings = app[APP_SETTINGS_KEY].WEBSERVER_PROJECTS

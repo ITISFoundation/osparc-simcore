@@ -89,11 +89,7 @@ qx.Class.define("osparc.desktop.MainPage", {
       const socket = osparc.wrapper.WebSocket.getInstance();
       if (!socket.slotExists("walletOsparcCreditsUpdated")) {
         socket.on("walletOsparcCreditsUpdated", data => {
-          const store = osparc.store.Store.getInstance();
-          const walletFound = store.getWallets().find(wallet => wallet.getWalletId() === parseInt(data["wallet_id"]));
-          if (walletFound) {
-            walletFound.setCreditsAvailable(parseFloat(data["osparc_credits"]));
-          }
+          osparc.desktop.credits.Utils.creditsUpdated(data["wallet_id"], data["osparc_credits"]);
         }, this);
       }
     },
@@ -203,11 +199,6 @@ qx.Class.define("osparc.desktop.MainPage", {
 
     __createDashboardLayout: function() {
       const dashboard = this.__dashboard = new osparc.dashboard.Dashboard();
-      const tabsBar = dashboard.getChildControl("bar");
-      tabsBar.set({
-        paddingBottom: 6
-      });
-      this.__navBar.addDashboardTabButtons(tabsBar);
       const dashboardLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
       dashboardLayout.add(dashboard, {
         flex: 1

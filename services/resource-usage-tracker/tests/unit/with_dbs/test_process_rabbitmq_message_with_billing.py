@@ -12,7 +12,11 @@ from models_library.rabbitmq_messages import (
     SimcorePlatformStatus,
     WalletCreditsLimitReachedMessage,
 )
-from models_library.resource_tracker import UnitExtraInfo
+from models_library.resource_tracker import (
+    CreditClassification,
+    CreditTransactionStatus,
+    UnitExtraInfo,
+)
 from pytest_mock.plugin import MockerFixture
 from servicelib.rabbitmq import RabbitMQClient
 from simcore_postgres_database.models.resource_tracker_credit_transactions import (
@@ -208,8 +212,11 @@ async def test_process_event_functions(
     await _process_start_event(engine, msg, publisher)
     output = await assert_credit_transactions_db_row(postgres_db, msg.service_run_id)
     assert output.osparc_credits == 0.0
-    assert output.transaction_status == "PENDING"
-    assert output.transaction_classification == "DEDUCT_SERVICE_RUN"
+    assert output.transaction_status == CreditTransactionStatus.PENDING.value
+    assert (
+        output.transaction_classification
+        == CreditClassification.DEDUCT_SERVICE_RUN.value
+    )
     first_occurence_of_last_heartbeat_at = output.last_heartbeat_at
     modified_at = output.modified
 
@@ -223,7 +230,7 @@ async def test_process_event_functions(
     )
     first_credits_used = output.osparc_credits
     assert first_credits_used < 0.0
-    assert output.transaction_status == "PENDING"
+    assert output.transaction_status == CreditTransactionStatus.PENDING.value
     assert first_occurence_of_last_heartbeat_at < output.last_heartbeat_at
     modified_at = output.modified
 
@@ -240,7 +247,7 @@ async def test_process_event_functions(
         postgres_db, msg.service_run_id, modified_at
     )
     assert output.osparc_credits < first_credits_used
-    assert output.transaction_status == "BILLED"
+    assert output.transaction_status == CreditTransactionStatus.IN_DEBT.value
 
     async for attempt in AsyncRetrying(
         wait=wait_fixed(0.1),

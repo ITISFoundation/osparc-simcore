@@ -147,7 +147,7 @@ def init_app(settings: AppSettings | None = None) -> FastAPI:
     if settings.DIRECTOR_V2_TRACING:
         setup_tracing(app, settings.DIRECTOR_V2_TRACING, APP_NAME)
 
-    if settings.DIRECTOR_V0.DIRECTOR_V0_ENABLED:
+    if settings.DIRECTOR_V0.DIRECTOR_ENABLED:
         director_v0.setup(
             app,
             director_v0_settings=settings.DIRECTOR_V0,

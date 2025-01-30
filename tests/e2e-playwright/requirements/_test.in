@@ -1,16 +1,4 @@
-# intra-repo required dependencies
-# --requirement ../../../packages/models-library/requirements/_base.in
-# NOTE: should be used once this is pydantic V2 comptible
+# this only adds playwright
+--requirement _test_wo_playwright.txt
 
-arrow
-docker
-faker
-pydantic[email]
-pytest-html
-pytest-instafail
 pytest-playwright
-pytest-runner
-pytest-sugar
-pyyaml
-tenacity
-httpx

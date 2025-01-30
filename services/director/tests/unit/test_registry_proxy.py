@@ -299,23 +299,3 @@ def test_list_services_performance(
         asyncio.get_event_loop().run_until_complete(_list_services())
 
     benchmark.pedantic(run_async_test, rounds=5)
-
-
-async def test_generate_service_extras(
-    configure_registry_access: EnvVarsDict,
-    app: FastAPI,
-    push_services,
-):
-    images = await push_services(
-        number_of_computational_services=1, number_of_interactive_services=1
-    )
-
-    for image in images:
-        service_description = image["service_description"]
-        service_extras = image["service_extras"]
-
-        extras = await registry_proxy.get_service_extras(
-            app, service_description["key"], service_description["version"]
-        )
-
-        assert extras == service_extras

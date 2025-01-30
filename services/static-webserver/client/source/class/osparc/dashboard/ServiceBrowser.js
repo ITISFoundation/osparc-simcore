@@ -103,7 +103,9 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
         return;
       }
 
-      this._showLoadingPage(this.tr("Creating ") + osparc.product.Utils.getStudyAlias());
+      const studyAlias = osparc.product.Utils.getStudyAlias({firstUpperCase: true});
+      this._showLoadingPage(this.tr("Creating ") + studyAlias);
+
       osparc.study.Utils.createStudyFromService(key, version)
         .then(studyId => {
           const openCB = () => this._hideLoadingPage();

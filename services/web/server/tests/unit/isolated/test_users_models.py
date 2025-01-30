@@ -89,7 +89,7 @@ def test_auto_compute_gravatar__deprecated(fake_profile_get: MyProfileGet):
 
     assert (
         "gravatar_id" not in data
-    ), f"{MyProfileGet.model_fields['gravatar_id'].deprecated=}"
+    ), f"{dict(MyProfileGet.model_fields)['gravatar_id'].deprecated=}"
     assert data["id"] == profile.id
     assert data["first_name"] == profile.first_name
     assert data["last_name"] == profile.last_name

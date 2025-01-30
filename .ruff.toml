@@ -1,5 +1,5 @@
 
-select = [
+lint.select = [
   "A",     # [https://pypi.org/project/flake8-builtins/]
   "ARG",   # [https://pypi.org/project/flake8-unused-arguments/]
   "ASYNC", # [https://pypi.org/project/flake8-async/]
@@ -40,7 +40,7 @@ select = [
   "W",     # [https://pypi.org/project/pycodestyle/] warnings
   "YTT",   # [https://pypi.org/project/flake8-2020/]
 ]
-ignore = [
+lint.ignore = [
   "E501",   # line too long, handled by black
   "S101",   # use of `assert` detected hanbled by pylance, does not support noseq
   "TID252", # [*] Relative imports from parent modules are banned
@@ -50,7 +50,7 @@ ignore = [
 target-version = "py311"
 
 
-[per-file-ignores]
+[lint.per-file-ignores]
 "**/{tests,pytest_simcore}/**" = [
   "T201",    # print found
   "ARG001",  # unused function argument
@@ -64,10 +64,10 @@ target-version = "py311"
   "FBT001",  # Boolean positional arg in function definition
 ]
 
-[flake8-pytest-style]
+[lint.flake8-pytest-style]
 fixture-parentheses = false
 parametrize-names-type = "csv"
 
 
-[pylint]
+[lint.pylint]
 max-args = 10

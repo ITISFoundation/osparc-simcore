@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 
 import pytest
+from helpers import print_tree
 from pydantic import NonNegativeInt
 from servicelib.archiving_utils._interface_7zip import (
     _7ZipProgressParser,
@@ -61,12 +62,19 @@ async def test_compress_progress_parser(
     assert sum(detected_entries) == expected_size
 
 
+def _assert_same_folder_content(f1: Path, f2: Path) -> None:
+    in_f1 = {x.relative_to(f1) for x in f1.rglob("*")}
+    in_f2 = {x.relative_to(f2) for x in f2.rglob("*")}
+    assert in_f1 == in_f2
+
+
 @pytest.mark.parametrize("compress", [True, False])
 async def test_archive_unarchive(
     mixed_file_types: Path, archive_path: Path, unpacked_archive: Path, compress: bool
 ):
     await archive_dir(mixed_file_types, archive_path, compress=compress)
     await unarchive_dir(archive_path, unpacked_archive)
+    _assert_same_folder_content(mixed_file_types, unpacked_archive)
 
 
 @pytest.fixture
@@ -82,6 +90,7 @@ async def test_archive_unarchive_empty_folder(
 ):
     await archive_dir(empty_folder, archive_path, compress=compress)
     await unarchive_dir(archive_path, unpacked_archive)
+    _assert_same_folder_content(empty_folder, unpacked_archive)
 
 
 @pytest.mark.parametrize(
@@ -102,3 +111,27 @@ def test__extract_file_names_from_archive(
     archive_list_stdout_path.read_text()
     files = _extract_file_names_from_archive(archive_list_stdout_path.read_text())
     assert len(files) == expected_file_count
+
+
+@pytest.mark.parametrize("compress", [True, False])
+async def test_archive_unarchive_with_names_with_spaces(tmp_path: Path, compress: bool):
+    to_archive_path = tmp_path / "'source of files!a ads now strange'"
+    to_archive_path.mkdir(parents=True, exist_ok=True)
+    assert to_archive_path.exists()
+
+    # generate some content
+    for i in range(10):
+        (to_archive_path / f"f{i}.txt").write_text("*" * i)
+    print_tree(to_archive_path)
+
+    archive_path = tmp_path / "archived version herre!)!(/£)!'"
+    assert not archive_path.exists()
+
+    extracted_to_path = tmp_path / "this is where i want them to be extracted to''''"
+    extracted_to_path.mkdir(parents=True, exist_ok=True)
+    assert extracted_to_path.exists()
+
+    # source and destination all with spaces
+    await archive_dir(to_archive_path, archive_path, compress=compress)
+    await unarchive_dir(archive_path, extracted_to_path)
+    _assert_same_folder_content(to_archive_path, extracted_to_path)

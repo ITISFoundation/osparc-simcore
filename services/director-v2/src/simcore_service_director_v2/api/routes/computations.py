@@ -67,7 +67,6 @@ from ...modules.db.repositories.comp_tasks import CompTasksRepository
 from ...modules.db.repositories.projects import ProjectsRepository
 from ...modules.db.repositories.projects_metadata import ProjectsMetadataRepository
 from ...modules.db.repositories.users import UsersRepository
-from ...modules.director_v0 import DirectorV0Client
 from ...modules.resource_usage_tracker_client import ResourceUsageTrackerClient
 from ...utils import computations as utils
 from ...utils.dags import (
@@ -81,7 +80,6 @@ from ...utils.dags import (
 )
 from ..dependencies.catalog import get_catalog_client
 from ..dependencies.database import get_repository
-from ..dependencies.director_v0 import get_director_v0_client
 from ..dependencies.rabbitmq import rabbitmq_rpc_client
 from ..dependencies.rut_client import get_rut_client
 from .computations_tasks import analyze_pipeline
@@ -288,7 +286,6 @@ async def create_computation(  # noqa: PLR0913 # pylint: disable=too-many-positi
     projects_metadata_repo: Annotated[
         ProjectsMetadataRepository, Depends(get_repository(ProjectsMetadataRepository))
     ],
-    director_client: Annotated[DirectorV0Client, Depends(get_director_v0_client)],
     catalog_client: Annotated[CatalogClient, Depends(get_catalog_client)],
     rut_client: Annotated[ResourceUsageTrackerClient, Depends(get_rut_client)],
     rpc_client: Annotated[RabbitMQRPCClient, Depends(rabbitmq_rpc_client)],
@@ -334,7 +331,6 @@ async def create_computation(  # noqa: PLR0913 # pylint: disable=too-many-positi
         comp_tasks = await comp_tasks_repo.upsert_tasks_from_project(
             project=project,
             catalog_client=catalog_client,
-            director_client=director_client,
             published_nodes=min_computation_nodes if computation.start_pipeline else [],
             user_id=computation.user_id,
             product_name=computation.product_name,

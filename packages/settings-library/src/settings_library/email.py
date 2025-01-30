@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Self
+from typing import Annotated, Self
 
 from pydantic import model_validator
 from pydantic.fields import Field
@@ -25,12 +25,15 @@ class SMTPSettings(BaseCustomSettings):
 
     SMTP_HOST: str
     SMTP_PORT: PortInt
-    SMTP_PROTOCOL: EmailProtocol = Field(
-        EmailProtocol.UNENCRYPTED,
-        description="Select between TLS, STARTTLS Secure Mode or unencrypted communication",
-    )
-    SMTP_USERNAME: str | None = Field(None, min_length=1)
-    SMTP_PASSWORD: SecretStr | None = Field(None, min_length=1)
+    SMTP_PROTOCOL: Annotated[
+        EmailProtocol,
+        Field(
+            description="Select between TLS, STARTTLS Secure Mode or unencrypted communication",
+        ),
+    ] = EmailProtocol.UNENCRYPTED
+
+    SMTP_USERNAME: Annotated[str | None, Field(min_length=1)] = None
+    SMTP_PASSWORD: Annotated[SecretStr | None, Field(min_length=1)] = None
 
     @model_validator(mode="after")
     def _both_credentials_must_be_set(self) -> Self:

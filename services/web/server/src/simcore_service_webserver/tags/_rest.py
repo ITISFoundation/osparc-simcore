@@ -148,7 +148,7 @@ async def list_tag_groups(request: web.Request):
         caller_user_id=req_ctx.user_id,
         tag_id=path_params.tag_id,
     )
-    return envelope_json_response([TagGroupGet.from_model(md) for md in got])
+    return envelope_json_response([TagGroupGet.from_domain_model(md) for md in got])
 
 
 @routes.post(f"/{VTAG}/tags/{{tag_id}}/groups/{{group_id}}", name="create_tag_group")
@@ -165,11 +165,11 @@ async def create_tag_group(request: web.Request):
         caller_user_id=req_ctx.user_id,
         tag_id=path_params.tag_id,
         group_id=path_params.group_id,
-        access_rights=body_params.to_model(),
+        access_rights=body_params.to_domain_model(),
     )
 
     return envelope_json_response(
-        TagGroupGet.from_model(got), status_cls=web.HTTPCreated
+        TagGroupGet.from_domain_model(got), status_cls=web.HTTPCreated
     )
 
 
@@ -187,10 +187,10 @@ async def replace_tag_group(request: web.Request):
         caller_user_id=req_ctx.user_id,
         tag_id=path_params.tag_id,
         group_id=path_params.group_id,
-        access_rights=body_params.to_model(),
+        access_rights=body_params.to_domain_model(),
     )
 
-    return envelope_json_response(TagGroupGet.from_model(got))
+    return envelope_json_response(TagGroupGet.from_domain_model(got))
 
 
 @routes.delete(f"/{VTAG}/tags/{{tag_id}}/groups/{{group_id}}", name="delete_tag_group")

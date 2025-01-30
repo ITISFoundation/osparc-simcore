@@ -10,10 +10,6 @@ import users from '../users.json';
 const expectedElements = {
   "osparc": {
     "poweredByOsparc": false,
-    "studies": {
-      "visible": true,
-      "label": "STUDIES",
-    },
     "templates": {
       "visible": true,
       "label": "TEMPLATES",
@@ -33,10 +29,6 @@ const expectedElements = {
   },
   "s4l": {
     "poweredByOsparc": true,
-    "studies": {
-      "visible": true,
-      "label": "PROJECTS",
-    },
     "templates": {
       "visible": true,
       "label": "TUTORIALS",
@@ -55,10 +47,6 @@ const expectedElements = {
   },
   "s4lacad": {
     "poweredByOsparc": true,
-    "studies": {
-      "visible": true,
-      "label": "PROJECTS",
-    },
     "templates": {
       "visible": true,
       "label": "TUTORIALS",
@@ -77,10 +65,6 @@ const expectedElements = {
   },
   "s4llite": {
     "poweredByOsparc": true,
-    "studies": {
-      "visible": true,
-      "label": "PROJECTS",
-    },
     "templates": {
       "visible": true,
       "label": "TUTORIALS",
@@ -98,10 +82,6 @@ const expectedElements = {
   },
   "tis": {
     "poweredByOsparc": true,
-    "studies": {
-      "visible": true,
-      "label": "STUDIES",
-    },
     "templates": {
       "visible": false,
     },
@@ -118,10 +98,6 @@ const expectedElements = {
   },
   "tiplite": {
     "poweredByOsparc": true,
-    "studies": {
-      "visible": true,
-      "label": "STUDIES",
-    },
     "templates": {
       "visible": false,
     },
@@ -177,13 +153,10 @@ for (const product in products) {
         });
 
         test(`Check Dashboard tabs`, async () => {
-          expect(expectedElements[product]["studies"]).toBeDefined();
           expect(expectedElements[product]["templates"]).toBeDefined();
           expect(expectedElements[product]["services"]).toBeDefined();
           expect(expectedElements[product]["data"]).toBeDefined();
 
-          const isStudiesVisible = expectedElements[product]["studies"]["visible"];
-          const studiesLabel = expectedElements[product]["studies"]["label"];
           const isTemplatesVisible = expectedElements[product]["templates"]["visible"];
           const templatesLabel = expectedElements[product]["templates"]["label"];
           const isServicesVisible = expectedElements[product]["services"]["visible"];
@@ -201,7 +174,6 @@ for (const product in products) {
             }
           };
 
-          await checkButton("studiesTabBtn", isStudiesVisible, studiesLabel);
           await checkButton("templatesTabBtn", isTemplatesVisible, templatesLabel);
           await checkButton("servicesTabBtn", isServicesVisible, servicesLabel);
           await checkButton("dataTabBtn", isDataVisible, dataLabel);

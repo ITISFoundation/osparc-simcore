@@ -12,6 +12,7 @@ from typing import Any
 
 from aiohttp import web
 from aiohttp.test_utils import TestClient
+from common_library.dict_tools import remap_keys
 from models_library.projects_nodes_io import NodeID
 from models_library.services_resources import ServiceResourcesDictHelpers
 from simcore_postgres_database.utils_projects_nodes import ProjectNodeCreate
@@ -81,8 +82,11 @@ async def create_project(
                 required_resources=ServiceResourcesDictHelpers.model_config[
                     "json_schema_extra"
                 ]["examples"][0],
+                key=node_info.get("key"),
+                version=node_info.get("version"),
+                label=node_info.get("label"),
             )
-            for node_id in project_data.get("workbench", {})
+            for node_id, node_info in project_data.get("workbench", {}).items()
         },
     )
 
@@ -113,6 +117,10 @@ async def create_project(
     for key in DB_EXCLUSIVE_COLUMNS:
         project_data.pop(key, None)
 
+    new_project: ProjectDict = remap_keys(
+        new_project,
+        rename={"trashed": "trashedAt"},
+    )
     return new_project
 
 
@@ -163,6 +171,7 @@ class NewProject:
             default_project_json=self.tests_data_dir / "fake-project.json",
             as_template=self.as_template,
         )
+
         return self.prj
 
     async def __aexit__(self, *args):

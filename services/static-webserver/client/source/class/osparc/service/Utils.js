@@ -207,6 +207,7 @@ qx.Class.define("osparc.service.Utils", {
     versionToListItem: function(key, version) {
       const versionDisplay = this.getVersionDisplay(key, version);
       const listItem = new qx.ui.form.ListItem(versionDisplay);
+      osparc.utils.Utils.setIdToWidget(listItem, "serviceVersionItem_" + versionDisplay);
       listItem.version = version;
       return listItem;
     },

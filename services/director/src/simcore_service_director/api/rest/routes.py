@@ -6,7 +6,7 @@ from servicelib.fastapi.exceptions_utils import (
     http_exception_as_json_response,
 )
 
-from . import _health, _running_interactive_services, _service_extras, _services
+from . import _health, _running_interactive_services, _services
 
 _V0_VTAG: Final[str] = "v0"
 
@@ -22,7 +22,6 @@ def setup_api_routes(app: FastAPI):
     # include the rest under /vX
     api_router = APIRouter(prefix=f"/{_V0_VTAG}")
     api_router.include_router(_services.router, tags=["services"])
-    api_router.include_router(_service_extras.router, tags=["services"])
     api_router.include_router(_running_interactive_services.router, tags=["services"])
     app.include_router(api_router)
 

@@ -2,10 +2,13 @@
 
 """
 
+from typing import Any
 
+from models_library.utils.labels_annotations import LabelsAnnotationsDict
 from service_integration.compose_spec_model import (
     BuildItem,
     ComposeSpecification,
+    ListOrDict,
     Service,
 )
 
@@ -19,14 +22,14 @@ def create_image_spec(
     docker_compose_overwrite_cfg: DockerComposeOverwriteConfig,
     runtime_cfg: RuntimeConfig | None = None,
     *,
-    extra_labels: dict[str, str] | None = None,
+    extra_labels: LabelsAnnotationsDict | None = None,
     **_context
 ) -> ComposeSpecification:
     """Creates the image-spec provided the osparc-config and a given context (e.g. development)
 
     - the image-spec simplifies building an image to ``docker compose build``
     """
-    labels = {**meta_cfg.to_labels_annotations()}
+    labels = meta_cfg.to_labels_annotations()
     if extra_labels:
         labels.update(extra_labels)
     if runtime_cfg:
@@ -36,19 +39,26 @@ def create_image_spec(
 
     assert docker_compose_overwrite_cfg.services  # nosec
 
-    if not docker_compose_overwrite_cfg.services[service_name].build.context:
-        docker_compose_overwrite_cfg.services[service_name].build.context = "./"
+    build = docker_compose_overwrite_cfg.services[service_name].build
+    assert isinstance(build, BuildItem)  # nosec
+    if not build.context:
+        build.context = "./"
 
-    docker_compose_overwrite_cfg.services[service_name].build.labels = labels
+    build.labels = ListOrDict(root=labels)
 
-    overwrite_options = docker_compose_overwrite_cfg.services[
-        service_name
-    ].build.model_dump(exclude_none=True, serialize_as_any=True)
+    overwrite_options = build.model_dump(exclude_none=True, serialize_as_any=True)
     build_spec = BuildItem(**overwrite_options)
+
+    service_kwargs: dict[str, Any] = {
+        "image": meta_cfg.image_name(settings),
+        "build": build_spec,
+    }
+    if docker_compose_overwrite_cfg.services[service_name].depends_on:
+        service_kwargs["depends_on"] = docker_compose_overwrite_cfg.services[
+            service_name
+        ].depends_on
 
     return ComposeSpecification(
         version=settings.COMPOSE_VERSION,
-        services={
-            service_name: Service(image=meta_cfg.image_name(settings), build=build_spec)
-        },
+        services={service_name: Service(**service_kwargs)},
     )

@@ -18,6 +18,7 @@ from .base import metadata
 class CreditTransactionStatus(str, enum.Enum):
     PENDING = "PENDING"
     BILLED = "BILLED"
+    IN_DEBT = "IN_DEBT"
     NOT_BILLED = "NOT_BILLED"
     REQUIRES_MANUAL_REVIEW = "REQUIRES_MANUAL_REVIEW"
 
@@ -28,6 +29,8 @@ class CreditTransactionClassification(str, enum.Enum):
         "DEDUCT_SERVICE_RUN"  # computational/dynamic service run costs)
     )
     DEDUCT_LICENSE_PURCHASE = "DEDUCT_LICENSE_PURCHASE"
+    ADD_WALLET_EXCHANGE = "ADD_WALLET_EXCHANGE"
+    DEDUCT_WALLET_EXCHANGE = "DEDUCT_WALLET_EXCHANGE"
 
 
 resource_tracker_credit_transactions = sa.Table(

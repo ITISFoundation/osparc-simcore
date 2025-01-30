@@ -6,7 +6,7 @@ import arrow
 import rich
 import typer
 import yaml
-from models_library.utils.labels_annotations import to_labels
+from models_library.utils.labels_annotations import LabelsAnnotationsDict, to_labels
 from rich.console import Console
 from yarl import URL
 
@@ -93,7 +93,7 @@ def create_docker_compose_image_spec(
             rich.print("No runtime config found (optional), using default.")
 
     # OCI annotations (optional)
-    extra_labels = {}
+    extra_labels: LabelsAnnotationsDict = {}
     try:
         oci_spec = yaml.safe_load(
             (config_basedir / f"{OCI_LABEL_PREFIX}.yml").read_text()

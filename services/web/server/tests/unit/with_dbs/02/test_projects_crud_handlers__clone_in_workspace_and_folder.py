@@ -3,7 +3,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from collections.abc import Iterator
+from collections.abc import AsyncIterator
 from copy import deepcopy
 from typing import Any
 
@@ -20,17 +20,19 @@ from servicelib.aiohttp.long_running_tasks.client import long_running_task_reque
 from simcore_postgres_database.models.folders_v2 import folders_v2
 from simcore_postgres_database.models.workspaces import workspaces
 from simcore_service_webserver.db.models import UserRole
-from simcore_service_webserver.folders._folders_api import create_folder
+from simcore_service_webserver.folders._folders_service import create_folder
 from simcore_service_webserver.projects._folders_api import move_project_into_folder
 from simcore_service_webserver.projects.models import ProjectDict
-from simcore_service_webserver.workspaces._workspaces_api import create_workspace
+from simcore_service_webserver.workspaces._workspaces_service import create_workspace
 from yarl import URL
 
 
 @pytest.fixture
 async def create_workspace_and_folder(
     client: TestClient, logged_user: UserInfoDict, postgres_db: sa.engine.Engine
-) -> Iterator[tuple[WorkspaceID, FolderID]]:
+) -> AsyncIterator[tuple[WorkspaceID, FolderID]]:
+    assert client.app
+
     workspace = await create_workspace(
         client.app,
         user_id=logged_user["id"],
@@ -40,7 +42,7 @@ async def create_workspace_and_folder(
         product_name="osparc",
     )
 
-    folder = await create_folder(
+    folder_db, *_ = await create_folder(
         client.app,
         user_id=logged_user["id"],
         name="a",
@@ -49,7 +51,7 @@ async def create_workspace_and_folder(
         workspace_id=workspace.workspace_id,
     )
 
-    yield (workspace.workspace_id, folder.folder_id)
+    yield (workspace.workspace_id, folder_db.folder_id)
 
     with postgres_db.connect() as con:
         con.execute(folders_v2.delete())

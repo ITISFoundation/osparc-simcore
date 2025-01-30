@@ -176,9 +176,37 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
 
     // overridden
     _applyLastChangeDate: function(value, old) {
-      if (value && (this.isResourceType("study") || this.isResourceType("template"))) {
-        const label = this.getChildControl("modified-text");
-        label.setValue(osparc.utils.Utils.formatDateAndTime(value));
+      if (value) {
+        if (this.isResourceType("study") || this.isResourceType("template")) {
+          const dateBy = this.getChildControl("date-by");
+          dateBy.set({
+            date: value,
+            toolTipText: this.tr("Last modified"),
+          });
+        }
+      }
+    },
+
+    // overridden
+    _applyTrashedAt: function(value) {
+      if (value && value.getTime() !== new Date(0).getTime()) {
+        if (this.isResourceType("study") || this.isResourceType("template")) {
+          const dateBy = this.getChildControl("date-by");
+          dateBy.set({
+            date: value,
+            toolTipText: this.tr("Moved to the bin"),
+          });
+        }
+      }
+    },
+
+    // overridden
+    _applyTrashedBy: function(gid) {
+      if (gid) {
+        if (this.isResourceType("study") || this.isResourceType("template")) {
+          const dateBy = this.getChildControl("date-by");
+          dateBy.setGroupId(gid);
+        }
       }
     },
 

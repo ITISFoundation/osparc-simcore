@@ -40,10 +40,25 @@ class ProjectNodesDuplicateNodeError(BaseProjectNodesError):
 class ProjectNodeCreate(BaseModel):
     node_id: uuid.UUID
     required_resources: dict[str, Any] = Field(default_factory=dict)
+    key: str
+    version: str
+    label: str
+    progress: float | None = None
+    thumbnail: str | None = None
+    input_access: dict[str, Any] | None = None
+    input_nodes: list[str] | None = None
+    inputs: dict[str, Any] | None = None
+    inputs_units: dict[str, Any] | None = None
+    output_nodes: list[str] | None = None
+    outputs: dict[str, Any] | None = None
+    run_hash: str | None = None
+    state: dict[str, Any] | None = None
+    parent: str | None = None
+    boot_options: dict[str, Any] | None = None
 
     @classmethod
     def get_field_names(cls, *, exclude: set[str]) -> set[str]:
-        return {name for name in cls.model_fields.keys() if name not in exclude}
+        return cls.model_fields.keys() - exclude
 
     model_config = ConfigDict(frozen=True)
 
@@ -65,7 +80,7 @@ class ProjectNodesRepo:
         *,
         nodes: list[ProjectNodeCreate],
     ) -> list[ProjectNode]:
-        """creates a new entry in *projects_nodes* and *projects_to_projects_nodes* tables
+        """Creates a new entry in *projects_nodes* table
 
         NOTE: Do not use this in an asyncio.gather call as this will fail!
 
@@ -83,7 +98,7 @@ class ProjectNodesRepo:
                 [
                     {
                         "project_uuid": f"{self.project_uuid}",
-                        **node.model_dump(),
+                        **node.model_dump(exclude_unset=True),
                     }
                     for node in nodes
                 ]

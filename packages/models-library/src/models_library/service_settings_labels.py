@@ -589,7 +589,7 @@ class SimcoreServiceLabels(DynamicSidecarServiceLabels):
     settings: Annotated[
         Json[SimcoreServiceSettingsLabel],
         Field(
-            default_factory=dict,
+            default_factory=lambda: SimcoreServiceSettingsLabel.model_validate([]),
             alias="simcore.service.settings",
             description=(
                 "Json encoded. Contains setting like environment variables and "

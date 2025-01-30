@@ -113,7 +113,12 @@ qx.Class.define("osparc.widget.logger.LoggerModel", {
         newRow["level"] = this.self().getLevelIcon(newRow.logLevel);
         newRow["time"] = osparc.utils.Utils.formatTime(newRow.timeStamp, true);
         newRow["who"] = newRow.label;
-        newRow["msgRich"] = newRow.msg.replace(/\n/g, "<br>");
+
+        // there might a double backslash before the n
+        let clean = newRow.msg.replace(/\\n/g, "<br>");
+        clean = newRow.msg.replace(/\n/g, "<br>");
+        newRow["msgRich"] = clean;
+
         this.__rawData.push(newRow);
       });
     },

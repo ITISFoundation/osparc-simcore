@@ -511,6 +511,6 @@ qx.Class.define("osparc.info.StudyUtils", {
           studyData["lastChangeDate"] = new Date().toISOString();
         })
         .catch(err => osparc.FlashMessenger.logAs(err.message, "ERROR"));
-    }
+    },
   }
 });

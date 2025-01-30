@@ -63,11 +63,18 @@ class Product(BaseModel):
         ..., description="Host regex"
     )
 
-    support_email: LowerCaseEmailStr = Field(
-        ...,
-        description="Main support email."
-        " Other support emails can be defined under 'support' field",
-    )
+    support_email: Annotated[
+        LowerCaseEmailStr,
+        Field(
+            description="Main support email."
+            " Other support emails can be defined under 'support' field",
+        ),
+    ]
+
+    product_owners_email: Annotated[
+        LowerCaseEmailStr | None,
+        Field(description="Used e.g. for account requests forms"),
+    ] = None
 
     twilio_messaging_sid: str | None = Field(
         default=None, min_length=34, max_length=34, description="Identifier for SMS"

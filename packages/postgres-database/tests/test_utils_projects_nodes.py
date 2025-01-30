@@ -79,6 +79,9 @@ def create_fake_projects_node(
         node = ProjectNodeCreate(
             node_id=uuid.uuid4(),
             required_resources=faker.pydict(allowed_types=(str,)),
+            key=faker.pystr(),
+            version=faker.pystr(),
+            label=faker.pystr(),
         )
         assert node
         return node

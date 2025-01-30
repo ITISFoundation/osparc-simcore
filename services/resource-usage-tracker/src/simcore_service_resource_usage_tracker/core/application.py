@@ -18,6 +18,7 @@ from ..exceptions.handlers import setup_exception_handlers
 from ..services.background_task_periodic_heartbeat_check_setup import (
     setup as setup_background_task_periodic_heartbeat_check,
 )
+from ..services.fire_and_forget_setup import setup as fire_and_forget_setup
 from ..services.modules.db import setup as setup_db
 from ..services.modules.rabbitmq import setup as setup_rabbitmq
 from ..services.modules.redis import setup as setup_redis
@@ -50,6 +51,7 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
 
     # PLUGINS SETUP
     setup_api_routes(app)
+    fire_and_forget_setup(app)
 
     if settings.RESOURCE_USAGE_TRACKER_POSTGRES:
         setup_db(app)

@@ -28,7 +28,7 @@ qx.Class.define("osparc.store.Users", {
   },
 
   members: {
-    fetchUser: function(groupId) {
+    __fetchUser: function(groupId) {
       const params = {
         url: {
           gid: groupId
@@ -41,14 +41,22 @@ qx.Class.define("osparc.store.Users", {
         });
     },
 
-    getUser: function(groupId, fetchIfNotFound = true) {
+    getUser: async function(groupId, fetchIfNotFound = true) {
       const userFound = this.getUsers().find(user => user.getGroupId() === groupId);
       if (userFound) {
-        return new Promise(resolve => resolve(userFound));
-      } else if (fetchIfNotFound) {
-        return this.fetchUser(groupId);
+        return userFound;
       }
-      return new Promise(reject => reject());
+      if (fetchIfNotFound) {
+        try {
+          const user = await this.__fetchUser(groupId);
+          if (user) {
+            return user;
+          }
+        } catch (error) {
+          console.error(error);
+        }
+      }
+      return null;
     },
 
     addUser: function(userData) {

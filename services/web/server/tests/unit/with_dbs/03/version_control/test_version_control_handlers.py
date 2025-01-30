@@ -11,7 +11,8 @@ from uuid import UUID
 import aiohttp
 import pytest
 from aiohttp.test_utils import TestClient
-from models_library.projects import Project, ProjectID
+from models_library.api_schemas_webserver.projects import ProjectGet
+from models_library.projects import ProjectID
 from models_library.rest_pagination import Page
 from models_library.users import UserID
 from pydantic.main import BaseModel
@@ -62,7 +63,7 @@ async def test_workflow(
     # get existing project
     resp = await client.get(f"/{VX}/projects/{project_uuid}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
-    project = Project.model_validate(data)
+    project = ProjectGet.model_validate(data)
     assert project.uuid == UUID(project_uuid)
 
     #
@@ -179,7 +180,7 @@ async def test_workflow(
     # get working copy
     resp = await client.get(f"/{VX}/projects/{project_uuid}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
-    project_wc = Project.model_validate(data)
+    project_wc = ProjectGet.model_validate(data)
     assert project_wc.uuid == UUID(project_uuid)
     assert project_wc != project
 
@@ -240,9 +241,9 @@ async def test_delete_project_and_repo(
 
     # TMP fix here waits ------------
     # FIXME: mark as deleted, still gets entrypoints!!
-    from simcore_service_webserver.projects import projects_api
+    from simcore_service_webserver.projects import projects_service
 
-    delete_task = projects_api.get_delete_project_task(project_uuid, user_id)
+    delete_task = projects_service.get_delete_project_task(project_uuid, user_id)
     assert delete_task
     await delete_task
     # --------------------------------

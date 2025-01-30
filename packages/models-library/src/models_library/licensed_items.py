@@ -1,9 +1,9 @@
 from datetime import datetime
 from enum import auto
-from typing import TypeAlias
+from typing import Any, TypeAlias
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict
 
 from .products import ProductName
 from .resource_tracker import PricingPlanId
@@ -23,23 +23,25 @@ class LicensedResourceType(StrAutoEnum):
 
 class LicensedItemDB(BaseModel):
     licensed_item_id: LicensedItemID
-    name: str
     license_key: str | None
+
+    licensed_resource_name: str
     licensed_resource_type: LicensedResourceType
-    pricing_plan_id: PricingPlanId
-    product_name: ProductName
-    created: datetime = Field(
-        ...,
-        description="Timestamp on creation",
-    )
-    modified: datetime = Field(
-        ...,
-        description="Timestamp of last modification",
-    )
-    # ----
+    licensed_resource_data: dict[str, Any] | None
+
+    pricing_plan_id: PricingPlanId | None
+    product_name: ProductName | None
+
+    # states
+    created: datetime
+    modified: datetime
+    trashed: datetime | None
+
     model_config = ConfigDict(from_attributes=True)
 
 
 class LicensedItemUpdateDB(BaseModel):
-    name: str | None = None
+    licensed_resource_name: str | None = None
     pricing_plan_id: PricingPlanId | None = None
+
+    trash: bool | None = None

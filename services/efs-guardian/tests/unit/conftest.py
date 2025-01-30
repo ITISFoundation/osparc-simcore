@@ -17,7 +17,6 @@ import sqlalchemy as sa
 from asgi_lifespan import LifespanManager
 from faker import Faker
 from fastapi import FastAPI
-from httpx._transports.asgi import ASGITransport
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.rabbitmq import RabbitMQRPCClient
@@ -119,38 +118,22 @@ async def client(app: FastAPI) -> AsyncIterator[httpx.AsyncClient]:
     # - Needed for app to trigger start/stop event handlers
     # - Prefer this client instead of fastapi.testclient.TestClient
     async with httpx.AsyncClient(
-        app=app,
-        base_url="http://efs-guardian.testserver.io",
+        transport=httpx.ASGITransport(app=app),
+        base_url=f"http://{app.title}.testserver.io",
         headers={"Content-Type": "application/json"},
     ) as client:
-        assert isinstance(
-            client._transport, ASGITransport  # pylint: disable=protected-access
-        )
         yield client
 
 
-#
-# Redis
-#
+@pytest.fixture
+def with_disabled_background_tasks(mocker: MockerFixture) -> None:
+    mocker.patch("simcore_service_efs_guardian.core.application.setup_background_tasks")
 
 
 @pytest.fixture
-def disable_redis_and_background_tasks_setup(mocker: MockerFixture) -> Callable:
-    def _():
-        # The following services are affected if redis is not in place
-        mocker.patch("simcore_service_efs_guardian.core.application.setup_redis")
-        mocker.patch(
-            "simcore_service_efs_guardian.core.application.setup_background_tasks"
-        )
-
-    return _
-
-
-@pytest.fixture
-def with_disabled_redis_and_background_tasks(
-    disable_redis_and_background_tasks_setup: Callable,
-):
-    disable_redis_and_background_tasks_setup()
+def with_disabled_redis_and_background_tasks(mocker: MockerFixture) -> None:
+    mocker.patch("simcore_service_efs_guardian.core.application.setup_redis")
+    mocker.patch("simcore_service_efs_guardian.core.application.setup_background_tasks")
 
 
 #
@@ -159,8 +142,7 @@ def with_disabled_redis_and_background_tasks(
 
 
 @pytest.fixture
-async def efs_cleanup(app: FastAPI):
-
+async def efs_cleanup(app: FastAPI) -> AsyncIterator[None]:
     yield
 
     aws_efs_settings: AwsEfsSettings = app.state.settings.EFS_GUARDIAN_AWS_EFS_SETTINGS

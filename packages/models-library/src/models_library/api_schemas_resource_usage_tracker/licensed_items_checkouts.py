@@ -17,6 +17,7 @@ class LicensedItemCheckoutGet(BaseModel):
     licensed_item_id: LicensedItemID
     wallet_id: WalletID
     user_id: UserID
+    user_email: str
     product_name: ProductName
     service_run_id: ServiceRunID
     started_at: datetime
@@ -31,6 +32,7 @@ class LicensedItemCheckoutGet(BaseModel):
                     "licensed_item_id": "303942ef-6d31-4ba8-afbe-dbb1fce2a953",
                     "wallet_id": 1,
                     "user_id": 1,
+                    "user_email": "test@test.com",
                     "product_name": "osparc",
                     "service_run_id": "run_1",
                     "started_at": "2023-01-11 13:11:47.293595",

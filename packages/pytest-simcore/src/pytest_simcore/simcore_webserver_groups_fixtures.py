@@ -28,7 +28,7 @@ from simcore_service_webserver.groups._groups_service import (
 
 
 def _groupget_model_dump(group, access_rights) -> dict[str, Any]:
-    return GroupGet.from_model(group, access_rights).model_dump(
+    return GroupGet.from_domain_model(group, access_rights).model_dump(
         mode="json",
         by_alias=True,
         exclude_unset=True,

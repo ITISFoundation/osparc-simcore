@@ -23,6 +23,7 @@ from models_library.services_resources import (
 from models_library.services_types import ServiceRunID
 from models_library.users import UserID
 from models_library.utils.docker_compose import replace_env_vars_in_compose_spec
+from models_library.wallets import WalletID
 from pydantic import ByteSize
 from servicelib.resources import CPU_RESOURCE_LIMIT_KEY, MEM_RESOURCE_LIMIT_KEY
 from settings_library.docker_registry import RegistrySettings
@@ -280,6 +281,7 @@ async def assemble_spec(  # pylint: disable=too-many-arguments # noqa: PLR0913
     simcore_user_agent: str,
     swarm_stack_name: str,
     service_run_id: ServiceRunID,
+    wallet_id: WalletID | None,
 ) -> str:
     """
     returns a docker-compose spec used by
@@ -353,6 +355,7 @@ async def assemble_spec(  # pylint: disable=too-many-arguments # noqa: PLR0913
             project_id=project_id,
             node_id=node_id,
             service_run_id=service_run_id,
+            wallet_id=wallet_id,
         )
 
         add_egress_configuration(
@@ -392,6 +395,7 @@ async def assemble_spec(  # pylint: disable=too-many-arguments # noqa: PLR0913
         project_id=project_id,
         node_id=node_id,
         service_run_id=service_run_id,
+        wallet_id=wallet_id,
     )
 
     stringified_service_spec: str = replace_env_vars_in_compose_spec(

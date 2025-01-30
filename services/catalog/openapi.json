@@ -190,6 +190,59 @@
         }
       }
     },
+    "/v0/services/{service_key}/{service_version}/extras": {
+      "get": {
+        "tags": [
+          "services"
+        ],
+        "summary": "Get Service Extras",
+        "operationId": "get_service_extras_v0_services__service_key___service_version__extras_get",
+        "parameters": [
+          {
+            "name": "service_key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
+              "title": "Service Key"
+            }
+          },
+          {
+            "name": "service_version",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+              "title": "Service Version"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServiceExtras"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v0/services/{service_key}/{service_version}/specifications": {
       "get": {
         "tags": [
@@ -904,371 +957,6 @@
         },
         "type": "object",
         "title": "Config1"
-      },
-      "ContainerSpec": {
-        "properties": {
-          "Image": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Image",
-            "description": "The image name to use for the container"
-          },
-          "Labels": {
-            "anyOf": [
-              {
-                "additionalProperties": {
-                  "type": "string"
-                },
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Labels",
-            "description": "User-defined key/value data."
-          },
-          "Command": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Command",
-            "description": "The command to be run in the image."
-          },
-          "Args": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Args",
-            "description": "Arguments to the command."
-          },
-          "Hostname": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Hostname",
-            "description": "The hostname to use for the container, as a valid\n[RFC 1123](https://tools.ietf.org/html/rfc1123) hostname.\n"
-          },
-          "Env": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Env",
-            "description": "A list of environment variables in the form `VAR=value`.\n"
-          },
-          "Dir": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Dir",
-            "description": "The working directory for commands to run in."
-          },
-          "User": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "User",
-            "description": "The user inside the container."
-          },
-          "Groups": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Groups",
-            "description": "A list of additional groups that the container process will run as.\n"
-          },
-          "Privileges": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/Privileges"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Security options for the container"
-          },
-          "TTY": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Tty",
-            "description": "Whether a pseudo-TTY should be allocated."
-          },
-          "OpenStdin": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Openstdin",
-            "description": "Open `stdin`"
-          },
-          "ReadOnly": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Readonly",
-            "description": "Mount the container's root filesystem as read only."
-          },
-          "Mounts": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/Mount"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Mounts",
-            "description": "Specification for mounts to be added to containers created as part\nof the service.\n"
-          },
-          "StopSignal": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Stopsignal",
-            "description": "Signal to stop the container."
-          },
-          "StopGracePeriod": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Stopgraceperiod",
-            "description": "Amount of time to wait for the container to terminate before\nforcefully killing it.\n"
-          },
-          "HealthCheck": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/HealthConfig"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "Hosts": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Hosts",
-            "description": "A list of hostname/IP mappings to add to the container's `hosts`\nfile. The format of extra hosts is specified in the\n[hosts(5)](http://man7.org/linux/man-pages/man5/hosts.5.html)\nman page:\n\n    IP_address canonical_hostname [aliases...]\n"
-          },
-          "DNSConfig": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/DnsConfig"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Specification for DNS related configurations in resolver configuration\nfile (`resolv.conf`).\n"
-          },
-          "Secrets": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/Secret"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Secrets",
-            "description": "Secrets contains references to zero or more secrets that will be\nexposed to the service.\n"
-          },
-          "Configs": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/Config1"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Configs",
-            "description": "Configs contains references to zero or more configs that will be\nexposed to the service.\n"
-          },
-          "Isolation": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/Isolation1"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Isolation technology of the containers running the service.\n(Windows only)\n"
-          },
-          "Init": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Init",
-            "description": "Run an init inside the container that forwards signals and reaps\nprocesses. This field is omitted if empty, and the default (as\nconfigured on the daemon) is used.\n"
-          },
-          "Sysctls": {
-            "anyOf": [
-              {
-                "additionalProperties": {
-                  "type": "string"
-                },
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Sysctls",
-            "description": "Set kernel namedspaced parameters (sysctls) in the container.\nThe Sysctls option on services accepts the same sysctls as the\nare supported on containers. Note that while the same sysctls are\nsupported, no guarantees or checks are made about their\nsuitability for a clustered environment, and it's up to the user\nto determine whether a given sysctl will work properly in a\nService.\n"
-          },
-          "CapabilityAdd": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Capabilityadd",
-            "description": "A list of kernel capabilities to add to the default set\nfor the container.\n"
-          },
-          "CapabilityDrop": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Capabilitydrop",
-            "description": "A list of kernel capabilities to drop from the default set\nfor the container.\n"
-          },
-          "Ulimits": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/Ulimit"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Ulimits",
-            "description": "A list of resource limits to set in the container. For example: `{\"Name\": \"nofile\", \"Soft\": 1024, \"Hard\": 2048}`\"\n"
-          }
-        },
-        "type": "object",
-        "title": "ContainerSpec",
-        "description": "Container spec for the service.\n\n<p><br /></p>\n\n> **Note**: ContainerSpec, NetworkAttachmentSpec, and PluginSpec are\n> mutually exclusive. PluginSpec is only used when the Runtime field\n> is set to `plugin`. NetworkAttachmentSpec is used when the Runtime\n> field is set to `attachment`."
       },
       "CredentialSpec": {
         "properties": {
@@ -2167,6 +1855,55 @@
         "title": "NetworkAttachmentSpec",
         "description": "Read-only spec type for non-swarm containers attached to swarm overlay\nnetworks.\n\n<p><br /></p>\n\n> **Note**: ContainerSpec, NetworkAttachmentSpec, and PluginSpec are\n> mutually exclusive. PluginSpec is only used when the Runtime field\n> is set to `plugin`. NetworkAttachmentSpec is used when the Runtime\n> field is set to `attachment`."
       },
+      "NodeRequirements": {
+        "properties": {
+          "CPU": {
+            "type": "number",
+            "exclusiveMinimum": true,
+            "title": "Cpu",
+            "description": "defines the required (maximum) CPU shares for running the services",
+            "minimum": 0.0
+          },
+          "GPU": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gpu",
+            "description": "defines the required (maximum) GPU for running the services"
+          },
+          "RAM": {
+            "type": "integer",
+            "minimum": 0,
+            "title": "Ram",
+            "description": "defines the required (maximum) amount of RAM for running the services"
+          },
+          "VRAM": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vram",
+            "description": "defines the required (maximum) amount of VRAM for running the services"
+          }
+        },
+        "type": "object",
+        "required": [
+          "CPU",
+          "RAM"
+        ],
+        "title": "NodeRequirements"
+      },
       "Order": {
         "type": "string",
         "enum": [
@@ -2892,6 +2629,61 @@
           "gids_with_access_rights"
         ],
         "title": "ServiceAccessRightsGet"
+      },
+      "ServiceBuildDetails": {
+        "properties": {
+          "build_date": {
+            "type": "string",
+            "title": "Build Date"
+          },
+          "vcs_ref": {
+            "type": "string",
+            "title": "Vcs Ref"
+          },
+          "vcs_url": {
+            "type": "string",
+            "title": "Vcs Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "build_date",
+          "vcs_ref",
+          "vcs_url"
+        ],
+        "title": "ServiceBuildDetails"
+      },
+      "ServiceExtras": {
+        "properties": {
+          "node_requirements": {
+            "$ref": "#/components/schemas/NodeRequirements"
+          },
+          "service_build_details": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ServiceBuildDetails"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "container_spec": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/models_library__service_settings_labels__ContainerSpec"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "node_requirements"
+        ],
+        "title": "ServiceExtras"
       },
       "ServiceGet": {
         "properties": {
@@ -3826,7 +3618,7 @@
           "ContainerSpec": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/ContainerSpec"
+                "$ref": "#/components/schemas/models_library__generated_models__docker_rest_api__ContainerSpec"
               },
               {
                 "type": "null"
@@ -4232,6 +4024,392 @@
           "SelectBox"
         ],
         "title": "WidgetType"
+      },
+      "models_library__generated_models__docker_rest_api__ContainerSpec": {
+        "properties": {
+          "Image": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image",
+            "description": "The image name to use for the container"
+          },
+          "Labels": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Labels",
+            "description": "User-defined key/value data."
+          },
+          "Command": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Command",
+            "description": "The command to be run in the image."
+          },
+          "Args": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Args",
+            "description": "Arguments to the command."
+          },
+          "Hostname": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hostname",
+            "description": "The hostname to use for the container, as a valid\n[RFC 1123](https://tools.ietf.org/html/rfc1123) hostname.\n"
+          },
+          "Env": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Env",
+            "description": "A list of environment variables in the form `VAR=value`.\n"
+          },
+          "Dir": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dir",
+            "description": "The working directory for commands to run in."
+          },
+          "User": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User",
+            "description": "The user inside the container."
+          },
+          "Groups": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Groups",
+            "description": "A list of additional groups that the container process will run as.\n"
+          },
+          "Privileges": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Privileges"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Security options for the container"
+          },
+          "TTY": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tty",
+            "description": "Whether a pseudo-TTY should be allocated."
+          },
+          "OpenStdin": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Openstdin",
+            "description": "Open `stdin`"
+          },
+          "ReadOnly": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Readonly",
+            "description": "Mount the container's root filesystem as read only."
+          },
+          "Mounts": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/Mount"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mounts",
+            "description": "Specification for mounts to be added to containers created as part\nof the service.\n"
+          },
+          "StopSignal": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stopsignal",
+            "description": "Signal to stop the container."
+          },
+          "StopGracePeriod": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stopgraceperiod",
+            "description": "Amount of time to wait for the container to terminate before\nforcefully killing it.\n"
+          },
+          "HealthCheck": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HealthConfig"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "Hosts": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hosts",
+            "description": "A list of hostname/IP mappings to add to the container's `hosts`\nfile. The format of extra hosts is specified in the\n[hosts(5)](http://man7.org/linux/man-pages/man5/hosts.5.html)\nman page:\n\n    IP_address canonical_hostname [aliases...]\n"
+          },
+          "DNSConfig": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DnsConfig"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Specification for DNS related configurations in resolver configuration\nfile (`resolv.conf`).\n"
+          },
+          "Secrets": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/Secret"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Secrets",
+            "description": "Secrets contains references to zero or more secrets that will be\nexposed to the service.\n"
+          },
+          "Configs": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/Config1"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Configs",
+            "description": "Configs contains references to zero or more configs that will be\nexposed to the service.\n"
+          },
+          "Isolation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Isolation1"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Isolation technology of the containers running the service.\n(Windows only)\n"
+          },
+          "Init": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Init",
+            "description": "Run an init inside the container that forwards signals and reaps\nprocesses. This field is omitted if empty, and the default (as\nconfigured on the daemon) is used.\n"
+          },
+          "Sysctls": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sysctls",
+            "description": "Set kernel namedspaced parameters (sysctls) in the container.\nThe Sysctls option on services accepts the same sysctls as the\nare supported on containers. Note that while the same sysctls are\nsupported, no guarantees or checks are made about their\nsuitability for a clustered environment, and it's up to the user\nto determine whether a given sysctl will work properly in a\nService.\n"
+          },
+          "CapabilityAdd": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Capabilityadd",
+            "description": "A list of kernel capabilities to add to the default set\nfor the container.\n"
+          },
+          "CapabilityDrop": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Capabilitydrop",
+            "description": "A list of kernel capabilities to drop from the default set\nfor the container.\n"
+          },
+          "Ulimits": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/Ulimit"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ulimits",
+            "description": "A list of resource limits to set in the container. For example: `{\"Name\": \"nofile\", \"Soft\": 1024, \"Hard\": 2048}`\"\n"
+          }
+        },
+        "type": "object",
+        "title": "ContainerSpec",
+        "description": "Container spec for the service.\n\n<p><br /></p>\n\n> **Note**: ContainerSpec, NetworkAttachmentSpec, and PluginSpec are\n> mutually exclusive. PluginSpec is only used when the Runtime field\n> is set to `plugin`. NetworkAttachmentSpec is used when the Runtime\n> field is set to `attachment`."
+      },
+      "models_library__service_settings_labels__ContainerSpec": {
+        "properties": {
+          "Command": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 2,
+            "minItems": 1,
+            "title": "Command",
+            "description": "Used to override the container's command"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "Command"
+        ],
+        "title": "ContainerSpec",
+        "description": "Implements entries that can be overriden for https://docs.docker.com/engine/api/v1.41/#operation/ServiceCreate\nrequest body: TaskTemplate -> ContainerSpec"
       }
     }
   }

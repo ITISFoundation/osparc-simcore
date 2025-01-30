@@ -277,6 +277,7 @@ qx.Class.define("osparc.study.StudyOptions", {
             walletSelector.setSelection([selectable]);
           }
         });
+        osparc.utils.Utils.growSelectBox(walletSelector, 220);
       }
     },
 
