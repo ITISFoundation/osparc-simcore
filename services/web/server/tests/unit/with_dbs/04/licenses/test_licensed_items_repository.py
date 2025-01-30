@@ -114,18 +114,16 @@ async def test_licensed_items_db_trash(
         )
         licensed_item_ids.append(licensed_item_db.licensed_item_id)
 
-    licensed_item_id1, licensed_item_id2 = licensed_item_ids
-
     # Trash one licensed item
     trashing_at = arrow.now().datetime
     trashed_item = await _licensed_items_repository.update(
         client.app,
-        licensed_item_id=licensed_item_id1,
+        licensed_item_id=licensed_item_ids[0],
         product_name=osparc_product_name,
         updates=LicensedItemUpdateDB(trash=True),
     )
 
-    assert trashed_item.licensed_item_id == licensed_item_id1
+    assert trashed_item.licensed_item_id == licensed_item_ids[0]
     assert trashed_item.trashed
     assert trashing_at < trashed_item.trashed
     assert trashed_item.trashed < arrow.now().datetime
@@ -152,7 +150,7 @@ async def test_licensed_items_db_trash(
         trashed="exclude",
     )
     assert total_count == 1
-    assert items[0].licensed_item_id == licensed_item_id2
+    assert items[0].licensed_item_id == licensed_item_ids[1]
     assert items[0].trashed is None
 
     # List with filter_trashed all
