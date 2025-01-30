@@ -25,28 +25,35 @@ from .errors import (
 _logger = logging.getLogger(__name__)
 
 
+def _request_validation_error_extractor(
+    validation_error: RequestValidationError,
+) -> list[str]:
+    return [f"{e}" for e in validation_error.errors()]
+
+
 def set_exception_handlers(app: FastAPI) -> None:
     app.add_exception_handler(
         HTTPException, make_default_http_error_handler(envelope_error=True)
     )
+
     app.add_exception_handler(
-        HTTPException,
+        RequestValidationError,
         make_http_error_handler_for_exception(
             status.HTTP_422_UNPROCESSABLE_ENTITY,
-            HTTPException,
+            RequestValidationError,
             envelope_error=True,
+            error_extractor=_request_validation_error_extractor,
         ),
     )
 
-    for exc_unprocessable in (ValidationError, RequestValidationError):
-        app.add_exception_handler(
-            exc_unprocessable,
-            make_http_error_handler_for_exception(
-                status.HTTP_422_UNPROCESSABLE_ENTITY,
-                exc_unprocessable,
-                envelope_error=True,
-            ),
-        )
+    app.add_exception_handler(
+        ValidationError,
+        make_http_error_handler_for_exception(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            ValidationError,
+            envelope_error=True,
+        ),
+    )
 
     app.add_exception_handler(
         InvalidFileIdentifierError,

@@ -14,6 +14,8 @@ from aws_library.s3._errors import S3AccessError, S3KeyNotFoundError
 from fastapi import FastAPI, HTTPException, status
 from fastapi.exceptions import RequestValidationError
 from httpx import AsyncClient
+from pydantic import ValidationError
+from pytest_simcore.helpers.httpx_assert_checks import assert_status
 from simcore_service_storage.exceptions.errors import (
     FileAccessRightError,
     FileMetaDataNotFoundError,
@@ -112,8 +114,7 @@ async def test_exception_handlers(
         raise exception
 
     response = await client.get("/test")
-    assert response.status_code == status_code
-    assert response.json() == {"errors": [f"{exception}"]}
+    assert_status(response, status_code, None, expected_msg=f"{exception}")
 
 
 async def test_generic_http_exception_handler(
@@ -124,31 +125,61 @@ async def test_generic_http_exception_handler(
         raise HTTPException(status_code=status.HTTP_410_GONE)
 
     response = await client.get("/test")
-    assert response.status_code == status.HTTP_410_GONE
-    assert response.json() == {"errors": ["Gone"]}
+    assert_status(response, status.HTTP_410_GONE, None, expected_msg="Gone")
 
 
 async def test_request_validation_error_handler(
     initialized_app: FastAPI, client: AsyncClient
 ):
+    _error_msg = "pytest request validation error"
+
     @initialized_app.get("/test")
     async def test_endpoint():
-        raise RequestValidationError(errors=["pytest request validation error"])
+        raise RequestValidationError(errors=[_error_msg])
 
     response = await client.get("/test")
+    assert_status(
+        response,
+        status.HTTP_422_UNPROCESSABLE_ENTITY,
+        None,
+        expected_msg=_error_msg,
+    )
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
-    assert response.json() == {"errors": ["pytest request validation error"]}
+
+
+async def test_validation_error_handler(initialized_app: FastAPI, client: AsyncClient):
+    _error_msg = "pytest request validation error"
+
+    @initialized_app.get("/test")
+    async def test_endpoint():
+        raise ValidationError.from_exception_data(
+            _error_msg,
+            line_errors=[],
+        )
+
+    response = await client.get("/test")
+    assert_status(
+        response,
+        status.HTTP_422_UNPROCESSABLE_ENTITY,
+        None,
+        expected_msg=f"0 validation errors for {_error_msg}",
+    )
 
 
 @pytest.mark.xfail(
     reason="Generic exception handler is not working as expected as shown in https://github.com/ITISFoundation/osparc-simcore/blob/5732a12e07e63d5ce55010ede9b9ab543bb9b278/packages/service-library/tests/fastapi/test_exceptions_utils.py"
 )
 async def test_generic_exception_handler(initialized_app: FastAPI, client: AsyncClient):
+    _error_msg = "Generic pytest exception"
+
     @initialized_app.get("/test")
     async def test_endpoint():
-        msg = "Generic exception"
-        raise Exception(msg)
+        raise Exception(_error_msg)  # noqa: TRY002
 
     response = await client.get("/test")
-    assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
-    assert response.json() == {"detail": "Generic exception"}
+    assert_status(
+        response,
+        status.HTTP_500_INTERNAL_SERVER_ERROR,
+        None,
+        expected_msg=_error_msg,
+    )

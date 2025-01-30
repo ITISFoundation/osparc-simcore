@@ -1,4 +1,5 @@
 from collections.abc import Awaitable, Callable
+from typing import TypeVar
 
 from fastapi import HTTPException
 from fastapi.encoders import jsonable_encoder
@@ -34,11 +35,15 @@ validation_error_response_definition["properties"] = {
 }
 
 
+TException = TypeVar("TException")
+
+
 def make_http_error_handler_for_exception(
     status_code: int,
-    exception_cls: type[BaseException],
+    exception_cls: type[TException],
     *,
     envelope_error: bool,
+    error_extractor: Callable[[TException], list[str]] | None = None,
 ) -> Callable[[Request, Exception], Awaitable[JSONResponse]]:
     """
     Produces a handler for BaseException-type exceptions which converts them
@@ -49,7 +54,10 @@ def make_http_error_handler_for_exception(
 
     async def _http_error_handler(_: Request, exc: Exception) -> JSONResponse:
         assert isinstance(exc, exception_cls)  # nosec
-        error_content = {"errors": [f"{exc}"]}
+        error_content = {
+            "errors": error_extractor(exc) if error_extractor else [f"{exc}"]
+        }
+
         if envelope_error:
             error_content = {"error": error_content}
         return JSONResponse(

@@ -1,5 +1,6 @@
 """Extends assertions for testing"""
 
+import re
 from http import HTTPStatus
 from pprint import pformat
 from typing import Any, TypeVar
@@ -19,7 +20,6 @@ def assert_status(
     response_model: type[T] | None,
     *,
     expected_msg: str | None = None,
-    expected_error_code: str | None = None,
     is_enveloped: bool = True,
 ) -> tuple[T | None, Any]:
     """
@@ -48,7 +48,6 @@ def assert_status(
                 error,
                 expected_status_code,
                 expected_msg,
-                expected_error_code,
             )
         return data, error
 
@@ -64,25 +63,25 @@ def _do_assert_error(
     data,
     error,
     expected_status_code: int,
-    expected_msg: str | None,
-    expected_error_code: str | None,
-):
+    expected_msg: list[str] | str | list[re.Pattern[str]] | re.Pattern[str] | None,
+) -> None:
     assert not data, pformat(data)
     assert error, pformat(error)
 
     assert is_error(expected_status_code)
 
-    # New versions of the error models might not have this attribute
     details = error.get("errors", [])
+    assert isinstance(details, list)
 
     if expected_msg:
-        assert details
-        messages = [e["message"] for e in details]
-        assert expected_msg in messages
+        assert details is not None
+        # find the expected msg are in the details
+        if isinstance(expected_msg, list):
+            list_expected_msg = expected_msg
+        else:
+            list_expected_msg = [expected_msg]
 
-    if expected_error_code:
-        assert details
-        codes = [e["code"] for e in details]
-        assert expected_error_code in codes
-
-    return data, error
+        for msg in list_expected_msg:
+            assert any(
+                re.search(msg, e) for e in details
+            ), f"could not find {msg=} in {details=}"

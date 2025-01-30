@@ -40,4 +40,4 @@ class AccessLayerError(StorageRuntimeError):
 
 
 class InvalidFileIdentifierError(AccessLayerError):
-    msg_template: str = "Error in {identifier}: [{details}]"
+    msg_template: str = "Error in {identifier}: {details}"
