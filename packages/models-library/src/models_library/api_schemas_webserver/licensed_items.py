@@ -41,7 +41,16 @@ class LicensedItemGet(OutputSchema):
     def from_domain_model(cls, licensed_item_db: LicensedItemDB) -> Self:
         return cls.model_validate(
             remap_keys(
-                licensed_item_db.model_dump(),
+                licensed_item_db.model_dump(
+                    include={
+                        "licensed_item_id",
+                        "licensed_resource_name",
+                        "license_key",
+                        "pricing_plan_id",
+                        "created",
+                        "modified",
+                    }
+                ),
                 {
                     "licensed_resource_name": "name",
                     "created": "created_at",
