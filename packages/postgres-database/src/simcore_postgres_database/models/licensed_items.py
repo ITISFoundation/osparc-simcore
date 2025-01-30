@@ -30,22 +30,22 @@ licensed_items = sa.Table(
         server_default=sa.text("gen_random_uuid()"),
     ),
     sa.Column(
-        "name",
+        "licensed_resource_name",
         sa.String,
         nullable=False,
-        doc="Item Name identifier",
+        doc="Resource name identifier",
     ),
     sa.Column(
         "licensed_resource_type",
         sa.Enum(LicensedResourceType),
         nullable=False,
-        doc="Item type, ex. VIP_MODEL",
+        doc="Resource type, ex. VIP_MODEL",
     ),
     sa.Column(
         "licensed_resource_data",
         postgresql.JSONB,
         nullable=True,
-        doc="Stores metadata related to this licensed resource. Used for read-only purposes",
+        doc="Resource metadata. Used for read-only purposes",
     ),
     sa.Column(
         "pricing_plan_id",
@@ -56,7 +56,7 @@ licensed_items = sa.Table(
             onupdate=RefActions.CASCADE,
             ondelete=RefActions.RESTRICT,
         ),
-        nullable=False,
+        nullable=True,
     ),
     sa.Column(
         "product_name",
@@ -67,7 +67,7 @@ licensed_items = sa.Table(
             ondelete=RefActions.CASCADE,
             name="fk_resource_tracker_license_packages_product_name",
         ),
-        nullable=False,
+        nullable=True,
         doc="Product name identifier. If None, then the item is not exposed",
     ),
     sa.Column(
