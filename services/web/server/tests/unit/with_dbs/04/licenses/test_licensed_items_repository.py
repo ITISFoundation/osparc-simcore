@@ -46,6 +46,7 @@ async def test_licensed_items_db_crud(
     got = await _licensed_items_repository.create(
         client.app,
         product_name=osparc_product_name,
+        display_name="Model A Display Name",
         licensed_resource_name="Model A",
         licensed_resource_type=LicensedResourceType.VIP_MODEL,
         licensed_resource_data=VIP_DETAILS_EXAMPLE,
@@ -58,7 +59,7 @@ async def test_licensed_items_db_crud(
         product_name=osparc_product_name,
         offset=0,
         limit=10,
-        order_by=OrderBy(field="modified"),
+        order_by=OrderBy(field="display_name"),
     )
     assert total_count == 1
     assert items[0].licensed_item_id == licensed_item_id
@@ -113,6 +114,7 @@ async def test_licensed_items_db_trash(
         licensed_item_db = await _licensed_items_repository.create(
             client.app,
             product_name=osparc_product_name,
+            display_name="Model A Display Name",
             licensed_resource_name=name,
             licensed_resource_type=LicensedResourceType.VIP_MODEL,
             licensed_resource_data=VIP_DETAILS_EXAMPLE,
@@ -140,7 +142,7 @@ async def test_licensed_items_db_trash(
         product_name=osparc_product_name,
         offset=0,
         limit=10,
-        order_by=OrderBy(field="modified"),
+        order_by=OrderBy(field="display_name"),
         trashed="include",
     )
     assert total_count == 2
@@ -152,7 +154,7 @@ async def test_licensed_items_db_trash(
         product_name=osparc_product_name,
         offset=0,
         limit=10,
-        order_by=OrderBy(field="modified"),
+        order_by=OrderBy(field="display_name"),
         trashed="exclude",
     )
     assert total_count == 1
@@ -165,7 +167,7 @@ async def test_licensed_items_db_trash(
         product_name=osparc_product_name,
         offset=0,
         limit=10,
-        order_by=OrderBy(field="modified"),
+        order_by=OrderBy(field="display_name"),
         trashed="only",
     )
     assert total_count == 1

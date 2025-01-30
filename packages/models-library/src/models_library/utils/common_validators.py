@@ -133,11 +133,6 @@ def to_camel_recursive(data: dict[str, Any]) -> dict[str, Any]:
         new_key = to_camel(key)  # Convert key to camelCase
         if isinstance(value, dict):
             new_dict[new_key] = to_camel_recursive(value)  # Recursive call for dicts
-        elif isinstance(value, list):
-            new_dict[new_key] = [
-                to_camel_recursive(item) if isinstance(item, dict) else item
-                for item in value
-            ]
         else:
             new_dict[new_key] = value
     return new_dict

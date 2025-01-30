@@ -137,7 +137,7 @@ assert set(ServicePricingPlanGetLegacy.model_fields.keys()) == set(
 
 class LicensedItemGet(BaseModel):
     licensed_item_id: LicensedItemID
-    licensed_resource_name: str
+    display_name: str
     licensed_resource_type: LicensedResourceType
     licensed_resource_data: dict[str, Any]
     pricing_plan_id: PricingPlanId

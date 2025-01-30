@@ -30,6 +30,12 @@ licensed_items = sa.Table(
         server_default=sa.text("gen_random_uuid()"),
     ),
     sa.Column(
+        "display_name",
+        sa.String,
+        nullable=False,
+        doc="Display name for front-end",
+    ),
+    sa.Column(
         "licensed_resource_name",
         sa.String,
         nullable=False,

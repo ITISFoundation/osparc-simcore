@@ -41,6 +41,7 @@ async def create(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
+    display_name: str,
     licensed_resource_name: str,
     licensed_resource_type: LicensedResourceType,
     licensed_resource_data: dict | None,
@@ -52,6 +53,7 @@ async def create(
             licensed_items.insert()
             .values(
                 product_name=product_name,
+                display_name=display_name,
                 licensed_resource_name=licensed_resource_name,
                 licensed_resource_type=licensed_resource_type,
                 licensed_resource_data=licensed_resource_data,

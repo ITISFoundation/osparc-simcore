@@ -10695,9 +10695,9 @@ components:
           type: string
           format: uuid
           title: Licenseditemid
-        licensedResourceName:
+        displayName:
           type: string
-          title: Licensedresourcename
+          title: Displayname
         licensedResourceType:
           $ref: '#/components/schemas/LicensedResourceType'
         licensedResourceData:
@@ -10719,7 +10719,7 @@ components:
       type: object
       required:
       - licensedItemId
-      - licensedResourceName
+      - displayName
       - licensedResourceType
       - licensedResourceData
       - pricingPlanId

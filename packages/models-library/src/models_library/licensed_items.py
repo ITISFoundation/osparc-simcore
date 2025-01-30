@@ -50,6 +50,7 @@ VIP_DETAILS_EXAMPLE = {
 
 class LicensedItemDB(BaseModel):
     licensed_item_id: LicensedItemID
+    display_name: str
 
     licensed_resource_name: str
     licensed_resource_type: LicensedResourceType
@@ -67,6 +68,7 @@ class LicensedItemDB(BaseModel):
 
 
 class LicensedItemUpdateDB(BaseModel):
+    display_name: str | None = None
     licensed_resource_name: str | None = None
     pricing_plan_id: PricingPlanId | None = None
     trash: bool | None = None
