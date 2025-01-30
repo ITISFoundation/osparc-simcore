@@ -26,7 +26,7 @@ def is_enveloped(payload: Mapping | str) -> bool:
     return False
 
 
-def unwrap_envelope(payload: dict[str, Any]) -> tuple:
+def unwrap_envelope(payload: Mapping[str, Any]) -> tuple:
     """
     Safe returns (data, error) tuple from a response payload
     """
@@ -37,5 +37,4 @@ def unwrap_envelope_if_required(data: Mapping) -> Mapping:
     if is_enveloped(data):
         data, error = unwrap_envelope(data)
         assert not error  # nosec
-        # assert data is not None  # nosec
     return data
