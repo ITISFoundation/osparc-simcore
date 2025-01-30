@@ -71,6 +71,7 @@ async def list_(
     offset: NonNegativeInt,
     limit: NonNegativeInt,
     order_by: OrderBy,
+    # filters
     trashed: Literal["exclude", "only", "include"] = "exclude",
     inactive: Literal["exclude", "only", "include"] = "exclude",
 ) -> tuple[int, list[LicensedItemDB]]:
@@ -87,12 +88,12 @@ async def list_(
     elif trashed == "only":
         base_query = base_query.where(licensed_items.c.trashed.is_not(None))
 
-    if inactive == "exclude":
+    if inactive == "only":
         base_query = base_query.where(
             licensed_items.c.product_name.is_(None)
             | licensed_items.c.licensed_item_id.is_(None)
         )
-    elif inactive == "only":
+    elif inactive == "exclude":
         base_query = base_query.where(
             licensed_items.c.product_name.is_not(None)
             & licensed_items.c.licensed_item_id.is_not(None)
