@@ -71,7 +71,7 @@ qx.Class.define("osparc.navigation.StudyTitleWOptions", {
         case "study-menu-reload":
           control = new qx.ui.menu.Button().set({
             label: this.tr("Reload"),
-            icon: "@MaterialIcons/info_outline/14",
+            icon: "@FontAwesome5Solid/redo-alt/12",
           });
           control.addListener("execute", () => {
             console.log("Reload page");
@@ -80,7 +80,7 @@ qx.Class.define("osparc.navigation.StudyTitleWOptions", {
         case "study-menu-convert-to-pipeline":
           control = new qx.ui.menu.Button().set({
             label: this.tr("Convert to Pipeline"),
-            icon: "@MaterialIcons/info_outline/14",
+            icon: null,
           });
           control.addListener("execute", () => {
             console.log("Convert to Pipeline");
@@ -97,10 +97,8 @@ qx.Class.define("osparc.navigation.StudyTitleWOptions", {
           const optionsMenu = new qx.ui.menu.Menu();
           optionsMenu.setAppearance("menu-wider");
           optionsMenu.add(this.getChildControl("study-menu-info"));
-          if (this.getStudy().getUi().getMode() === "standalone") {
-            optionsMenu.add(this.getChildControl("study-menu-reload"));
-            optionsMenu.add(this.getChildControl("study-menu-convert-to-pipeline"));
-          }
+          optionsMenu.add(this.getChildControl("study-menu-reload"));
+          optionsMenu.add(this.getChildControl("study-menu-convert-to-pipeline"));
           optionsMenu.add(this.getChildControl("study-menu-download-logs"));
           control = new qx.ui.form.MenuButton().set({
             appearance: "fab-button",
@@ -130,7 +128,16 @@ qx.Class.define("osparc.navigation.StudyTitleWOptions", {
 
     __applyStudy: function(study) {
       if (study) {
-        study.bind("name", this.getChildControl("edit-title-label"), "value");
+        const editTitle = this.getChildControl("edit-title-label");
+        study.bind("name", editTitle, "value");
+        const reloadButton = this.getChildControl("study-menu-reload");
+        study.getUi().bind("mode", reloadButton, "visibility", {
+          converter: mode => mode === "standalone" ? "visible" : "excluded"
+        });
+        const convertToPipelineButton = this.getChildControl("study-menu-convert-to-pipeline");
+        study.getUi().bind("mode", convertToPipelineButton, "visibility", {
+          converter: mode => mode === "standalone" ? "visible" : "excluded"
+        });
       } else {
         this.exclude();
       }
