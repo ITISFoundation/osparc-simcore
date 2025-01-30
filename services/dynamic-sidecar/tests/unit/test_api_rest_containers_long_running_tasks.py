@@ -18,7 +18,7 @@ from aiodocker.volumes import DockerVolume
 from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
 from fastapi.routing import APIRoute
-from httpx import AsyncClient
+from httpx import ASGITransport, AsyncClient
 from models_library.api_schemas_long_running_tasks.base import (
     ProgressMessage,
     ProgressPercent,
@@ -186,7 +186,7 @@ async def httpx_async_client(
 ) -> AsyncIterable[AsyncClient]:
     # crete dir here
     async with AsyncClient(
-        app=app,
+        transport=ASGITransport(app=app),
         base_url=f"{backend_url}",
         headers={"Content-Type": "application/json"},
     ) as client:
