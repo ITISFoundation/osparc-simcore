@@ -195,8 +195,8 @@ async def get(
     )
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-        result = await conn.stream(base_query)
-        row = await result.first()
+        result = await conn.execute(base_query)
+        row = result.one_or_none()
         if row is None:
             raise LicensedItemNotFoundError(licensed_item_id=licensed_item_id)
         return LicensedItemDB.model_validate(row)
