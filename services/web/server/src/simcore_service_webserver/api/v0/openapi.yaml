@@ -3077,7 +3077,7 @@ paths:
           type: string
           contentMediaType: application/json
           contentSchema: {}
-          default: '{"field":"modified","direction":"desc"}'
+          default: '{"field":"display_name","direction":"desc"}'
           title: Order By
       - name: limit
         in: query
