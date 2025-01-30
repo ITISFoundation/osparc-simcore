@@ -61,6 +61,7 @@ qx.Class.define("osparc.data.model.Study", {
       dev: studyData.dev || this.getDev(),
       trashedAt: studyData.trashedAt ? new Date(studyData.trashedAt) : this.getTrashedAt(),
       trashedBy: studyData.trashedBy || null,
+      icon: this.self().getIcon(studyData),
     });
 
     const wbData = studyData.workbench || this.getWorkbench();
@@ -225,6 +226,13 @@ qx.Class.define("osparc.data.model.Study", {
       init: null,
       event: "changeTrashedBy",
     },
+
+    icon: {
+      check: "String",
+      nullable: false,
+      event: "changeIcon",
+      init: ""
+    },
     // ------ ignore for serializing ------
   },
 
@@ -235,6 +243,7 @@ qx.Class.define("osparc.data.model.Study", {
       "pipelineRunning",
       "readOnly",
       "trashedAt",
+      "icon",
     ],
 
     IgnoreModelizationProps: [
@@ -306,6 +315,16 @@ qx.Class.define("osparc.data.model.Study", {
         return true;
       }
       return false;
+    },
+
+    getIcon: function(studyData) {
+      let icon = "";
+      if (this.getUiMode() === "standalone") {
+        return "@FontAwesome5Solid/user/14";
+      } else if (this.getUiMode() === "workbench") {
+        return "@FontAwesome5Solid/globe/14";
+      }
+      return icon;
     },
 
     getUiMode: function(studyData) {
