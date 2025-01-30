@@ -73,9 +73,7 @@ qx.Class.define("osparc.navigation.StudyTitleWOptions", {
             label: this.tr("Reload"),
             icon: "@FontAwesome5Solid/redo-alt/12",
           });
-          control.addListener("execute", () => {
-            console.log("Reload page");
-          });
+          control.addListener("execute", () => this.__reloadIFrame(), this);
           break;
         case "study-menu-convert-to-pipeline":
           control = new qx.ui.menu.Button().set({
@@ -124,6 +122,13 @@ qx.Class.define("osparc.navigation.StudyTitleWOptions", {
           break;
       }
       return control || this.base(arguments, id);
+    },
+
+    __reloadIFrame: function() {
+      const nodes = this.getStudy().getWorkbench().getNodes();
+      if (Object.keys(nodes).length === 1) {
+        Object.values(nodes)[0].getIframeHandler().restartIFrame();
+      }
     },
 
     __applyStudy: function(study) {

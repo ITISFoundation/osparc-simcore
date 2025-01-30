@@ -98,7 +98,7 @@ qx.Class.define("osparc.data.model.IframeHandler", {
       ) {
         iframe.setShowToolbar(false);
       }
-      iframe.addListener("restart", () => this.__restartIFrame(), this);
+      iframe.addListener("restart", () => this.restartIFrame(), this);
       iframe.getDiskUsageIndicator().setCurrentNode(this.getNode())
       this.setIFrame(iframe);
     },
@@ -359,7 +359,7 @@ qx.Class.define("osparc.data.model.IframeHandler", {
         node.fireDataEvent("showInLogger", msgData);
 
         // will switch to iframe's content
-        this.__restartIFrame();
+        this.restartIFrame();
         if (!node.isDynamicV2()) {
           node.callRetrieveInputs();
         }
@@ -381,7 +381,7 @@ qx.Class.define("osparc.data.model.IframeHandler", {
       }
     },
 
-    __restartIFrame: function() {
+    restartIFrame: function() {
       const node = this.getNode();
       if (node.getServiceUrl() !== null) {
         // restart button pushed
