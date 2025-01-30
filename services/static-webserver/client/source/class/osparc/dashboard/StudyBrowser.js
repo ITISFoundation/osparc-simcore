@@ -1119,17 +1119,17 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
         studiesMoveButton.set({
           visibility: selection.length && currentContext === "studiesAndFolders" ? "visible" : "excluded",
-          label: this.tr("Move") + (selection.length > 1 ? this.tr(" selected ") + `(${selection.length})` : ""),
+          label: this.tr("Move") + (selection.length > 1 ? ` (${selection.length})` : ""),
         });
 
         studiesTrashButton.set({
           visibility: selection.length && currentContext === "studiesAndFolders" ? "visible" : "excluded",
-          label: this.tr("Move to Bin") + (selection.length > 1 ? this.tr(" selected ") + `(${selection.length})` : ""),
+          label: this.tr("Move to Bin") + (selection.length > 1 ? ` (${selection.length})` : ""),
         });
 
         studiesDeleteButton.set({
           visibility: selection.length && currentContext === "trash" ? "visible" : "excluded",
-          label: this.tr("Delete permanently") + (selection.length > 1 ? this.tr(" selected ") + `(${selection.length})` : ""),
+          label: this.tr("Delete permanently") + (selection.length > 1 ? ` (${selection.length})` : ""),
         });
       });
 
