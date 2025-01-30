@@ -3,10 +3,18 @@ from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, BeforeValidator, Field, HttpUrl
 
+_MAX_LENGTH = 1_000
+
 
 def _feature_descriptor_to_dict(descriptor: str) -> dict[str, Any]:
     # NOTE: this is manually added in the server side so be more robust to errors
-    pattern = r"(\w+): ([^,]+)"
+    # Safe against polynomial runtime vulnerability due to backtracking
+    if (size := len(descriptor)) and size > _MAX_LENGTH:
+        msg = f"Features field too long [{size=}]"
+        raise ValueError(msg)
+
+    pattern = r"(\w{1,100}): ([^,]{1,100})"
+
     matches = re.findall(pattern, descriptor.strip("{}"))
     return dict(matches)
 

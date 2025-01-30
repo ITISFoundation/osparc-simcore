@@ -15,6 +15,9 @@ from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.aiohttp import status
 from simcore_service_webserver.licenses import _itis_vip_service
+from simcore_service_webserver.licenses._itis_vip_models import (
+    _feature_descriptor_to_dict,
+)
 from simcore_service_webserver.licenses._itis_vip_service import ResponseData
 from simcore_service_webserver.licenses._itis_vip_settings import ItisVipSettings
 
@@ -108,3 +111,8 @@ async def test_get_category_items(
             items = await _itis_vip_service.get_category_items(client, url)
 
             assert items[0].features["functionality"] == "Posable"
+
+
+def test_pre_validator_feature_descriptor_to_dict():
+    with pytest.raises(ValueError):
+        _feature_descriptor_to_dict("a" * 10000 + ": " + "b" * 10000)
