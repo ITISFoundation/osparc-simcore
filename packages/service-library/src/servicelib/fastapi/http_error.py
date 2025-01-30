@@ -42,10 +42,10 @@ def make_http_error_handler_for_exception(
             "errors": error_extractor(exc) if error_extractor else [f"{exc}"]
         }
 
-        if envelope_error:
-            error_content = {"error": error_content}
         return JSONResponse(
-            content=jsonable_encoder(error_content),
+            content=jsonable_encoder(
+                {"error": error_content} if envelope_error else error_content
+            ),
             status_code=status_code,
         )
 
@@ -65,10 +65,11 @@ def _make_default_http_error_handler(
         assert isinstance(exc, HTTPException)
 
         error_content = {"errors": [exc.detail]}
-        if envelope_error:
-            error_content = {"error": error_content}
+
         return JSONResponse(
-            content=jsonable_encoder(error_content),
+            content=jsonable_encoder(
+                {"error": error_content} if envelope_error else error_content
+            ),
             status_code=exc.status_code,
         )
 
