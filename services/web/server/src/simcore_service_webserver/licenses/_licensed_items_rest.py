@@ -112,3 +112,21 @@ async def purchase_licensed_item(request: web.Request):
         body_params=body_params,
     )
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
+
+
+@routes.post(
+    f"/{VTAG}/catalog/licensed-items/{{licensed_item_id}}:resync",
+    name="resync_licensed_item",
+)
+@login_required
+@permission_required("catalog/licensed-items.admin")
+@handle_plugin_requests_exceptions
+async def resync_licensed_item(request: web.Request):
+    req_ctx = LicensedItemsRequestContext.model_validate(request)
+
+    # TODO: forces resync. can schedule a run with a lock?
+    # fetches resources
+    # register resources
+    # returns issues
+
+    return web.json_response(status=status.HTTP_202_ACCEPTED)
