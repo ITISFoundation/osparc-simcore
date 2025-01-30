@@ -591,6 +591,7 @@ def start_study_from_plus_button(
         with log_context(
             logging.INFO, f"Find plus button {plus_button_test_id=} in study browser"
         ):
+            page.get_by_test_id("newPlusBtn").click()
             page.get_by_test_id(plus_button_test_id).click()
 
     return _

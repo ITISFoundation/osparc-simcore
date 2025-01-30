@@ -136,7 +136,7 @@ async def test_license_checkout_workflow(
     license_item_db = await _licensed_items_repository.create(
         client.app,
         product_name=osparc_product_name,
-        display_name="Model A",
+        licensed_resource_name="Model A",
         licensed_resource_type=LicensedResourceType.VIP_MODEL,
         pricing_plan_id=pricing_plan_id,
         licensed_resource_type_details=VIP_DETAILS_EXAMPLE,

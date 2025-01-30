@@ -1,15 +1,16 @@
 from datetime import datetime
-from typing import Any, NamedTuple
+from typing import NamedTuple
 
+from common_library.dict_tools import remap_keys
 from models_library.licensed_items import (
     VIP_DETAILS_EXAMPLE,
+    LicensedItemDB,
     LicensedItemID,
     LicensedResourceType,
 )
 from models_library.resource_tracker import PricingPlanId
 from models_library.utils.common_validators import to_camel_recursive
 from pydantic import AfterValidator, BaseModel, ConfigDict, PositiveInt
-from pydantic.alias_generators import to_camel
 from typing_extensions import Annotated
 
 from ._base import OutputSchema
@@ -48,17 +49,6 @@ class LicensedItemRpcGetPage(NamedTuple):
 
 
 # Rest
-class CustomBaseModel(BaseModel):
-    model_config = ConfigDict(
-        alias_generator=to_camel, populate_by_name=True, extra="allow"
-    )
-
-    def model_dump_camel(self):
-        data = self.model_dump(by_alias=True)
-        if hasattr(self, "__pydantic_extra__") and self.__pydantic_extra__:
-            extra_camel = {to_camel(k): v for k, v in self.__pydantic_extra__.items()}
-            data.update(extra_camel)
-        return data
 
 
 class LicensedItemRestGet(OutputSchema):
@@ -86,6 +76,28 @@ class LicensedItemRestGet(OutputSchema):
             ]
         }
     )
+
+    @classmethod
+    def from_domain_model(cls, licensed_item_db: LicensedItemDB) -> Self:
+        return cls.model_validate(
+            remap_keys(
+                licensed_item_db.model_dump(
+                    include={
+                        "licensed_item_id",
+                        "licensed_resource_name",
+                        "license_key",
+                        "pricing_plan_id",
+                        "created",
+                        "modified",
+                    }
+                ),
+                {
+                    "licensed_resource_name": "name",
+                    "created": "created_at",
+                    "modified": "modified_at",
+                },
+            )
+        )
 
 
 class LicensedItemRestGetPage(NamedTuple):
