@@ -5,6 +5,7 @@ Mostly resolves and redirect to storage API
 
 import logging
 from typing import Any, Final, NamedTuple
+from urllib.parse import quote
 
 from aiohttp import ClientTimeout, web
 from models_library.api_schemas_storage import (
@@ -67,14 +68,21 @@ def _to_storage_url(request: web.Request) -> URL:
     )
 
 
-def _from_storage_url(request: web.Request, storage_url: AnyUrl) -> AnyUrl:
+def _from_storage_url(
+    request: web.Request, storage_url: AnyUrl, url_encode: str | None
+) -> AnyUrl:
     """Converts storage-api url to web-api url"""
     assert storage_url.path  # nosec
 
     prefix = f"/{_get_storage_vtag(request.app)}"
-    converted_url = request.url.with_path(
-        f"/v0/storage{storage_url.path.removeprefix(prefix)}", encoded=True
-    ).with_scheme(request.headers.get(X_FORWARDED_PROTO, request.url.scheme))
+    converted_url = str(
+        request.url.with_path(
+            f"/v0/storage{storage_url.path.removeprefix(prefix)}"
+        ).with_scheme(request.headers.get(X_FORWARDED_PROTO, request.url.scheme))
+    )
+
+    if url_encode:
+        converted_url = converted_url.replace(url_encode, quote(url_encode, safe=""))
 
     webserver_url: AnyUrl = TypeAdapter(AnyUrl).validate_python(f"{converted_url}")
     return webserver_url
@@ -228,7 +236,7 @@ async def upload_file(request: web.Request) -> web.Response:
         location_id: LocationID
         file_id: StorageFileIDStr
 
-    parse_request_path_parameters_as(_PathParams, request)
+    path_params = parse_request_path_parameters_as(_PathParams, request)
 
     class _QueryParams(BaseModel):
         file_size: ByteSize | None = None
@@ -240,11 +248,16 @@ async def upload_file(request: web.Request) -> web.Response:
     payload, status = await _forward_request_to_storage(request, "PUT", body=None)
     data, _ = unwrap_envelope(payload)
     file_upload_schema = FileUploadSchema.model_validate(data)
+    # NOTE: since storage is fastapi-based it returns file_id not url encoded and aiohttp does not like it
+    # /v0/locations/{location_id}/files/{file_id:non-encoded-containing-slashes}:complete --> /v0/storage/locations/{location_id}/files/{file_id:non-encode}:complete
+
     file_upload_schema.links.complete_upload = _from_storage_url(
-        request, file_upload_schema.links.complete_upload
+        request,
+        file_upload_schema.links.complete_upload,
+        url_encode=path_params.file_id,
     )
     file_upload_schema.links.abort_upload = _from_storage_url(
-        request, file_upload_schema.links.abort_upload
+        request, file_upload_schema.links.abort_upload, url_encode=path_params.file_id
     )
     return create_data_response(jsonable_encoder(file_upload_schema), status=status)
 
@@ -260,7 +273,7 @@ async def complete_upload_file(request: web.Request) -> web.Response:
         location_id: LocationID
         file_id: StorageFileIDStr
 
-    parse_request_path_parameters_as(_PathParams, request)
+    path_params = parse_request_path_parameters_as(_PathParams, request)
     body_item = await parse_request_body_as(FileUploadCompletionBody, request)
 
     payload, status = await _forward_request_to_storage(
@@ -269,7 +282,7 @@ async def complete_upload_file(request: web.Request) -> web.Response:
     data, _ = unwrap_envelope(payload)
     file_upload_complete = FileUploadCompleteResponse.model_validate(data)
     file_upload_complete.links.state = _from_storage_url(
-        request, file_upload_complete.links.state
+        request, file_upload_complete.links.state, url_encode=path_params.file_id
     )
     return create_data_response(jsonable_encoder(file_upload_complete), status=status)
 
