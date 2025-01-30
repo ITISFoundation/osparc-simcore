@@ -643,7 +643,7 @@ qx.Class.define("osparc.data.model.Study", {
     },
 
     isOnlyNodeDynamic: function() {
-      const validNodes = this.getStudy().getNonFrontendNodes();
+      const validNodes = this.getNonFrontendNodes();
       if (validNodes.length === 1) {
         return validNodes[0].isDynamic();
       }
