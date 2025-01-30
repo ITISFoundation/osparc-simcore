@@ -68,6 +68,7 @@ qx.Class.define("osparc.widget.PersistentIframe", {
     showToolbar: {
       check: "Boolean",
       init: true,
+      event: "changeShowToolbar",
       apply: "__applyShowToolbar"
     }
   },
@@ -84,7 +85,7 @@ qx.Class.define("osparc.widget.PersistentIframe", {
   members: {
     __iframe: null,
     __syncScheduled: null,
-    __buttonContainer: null,
+    __buttonsContainer: null,
     __diskUsageIndicator: null,
     __reloadButton: null,
     __zoomButton: null,
@@ -111,11 +112,11 @@ qx.Class.define("osparc.widget.PersistentIframe", {
       const host = window.location.host;
       iframeEl.setAttribute("allow", `clipboard-read; clipboard-write; from *.services.${host}`);
 
-      const buttonContainer = this.__buttonContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
+      const buttonsContainer = this.__buttonsContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
         alignX: "right",
         alignY: "middle"
       }));
-      this.bind("showToolbar", buttonContainer, "visibility", {
+      this.bind("showToolbar", buttonsContainer, "visibility", {
         converter: showToolbar => showToolbar ? "visible" : "excluded"
       });
 
@@ -123,7 +124,7 @@ qx.Class.define("osparc.widget.PersistentIframe", {
       diskUsageIndicator.getChildControl("disk-indicator").set({
         margin: 0
       });
-      buttonContainer.add(diskUsageIndicator);
+      buttonsContainer.add(diskUsageIndicator);
 
       const reloadButton = this.__reloadButton = this.self().createToolbarButton().set({
         label: this.tr("Reload"),
@@ -135,7 +136,7 @@ qx.Class.define("osparc.widget.PersistentIframe", {
         this.fireEvent("restart");
       }, this);
       osparc.utils.Utils.setIdToWidget(reloadButton, "iFrameRestartBtn");
-      buttonContainer.add(reloadButton);
+      buttonsContainer.add(reloadButton);
 
       const zoomButton = this.__zoomButton = this.self().createToolbarButton().set({
         label: this.self().getZoomLabel(false),
@@ -145,9 +146,9 @@ qx.Class.define("osparc.widget.PersistentIframe", {
       zoomButton.addListener("execute", e => {
         this.maximizeIFrame(!this.hasState("maximized"));
       }, this);
-      buttonContainer.add(zoomButton);
+      buttonsContainer.add(zoomButton);
 
-      appRoot.add(buttonContainer, {
+      appRoot.add(buttonsContainer, {
         top: this.self().HIDDEN_TOP
       });
       standin.addListener("appear", e => {
@@ -157,7 +158,7 @@ qx.Class.define("osparc.widget.PersistentIframe", {
         iframe.setLayoutProperties({
           top: this.self().HIDDEN_TOP
         });
-        buttonContainer.setLayoutProperties({
+        buttonsContainer.setLayoutProperties({
           top: this.self().HIDDEN_TOP
         });
       });
@@ -230,15 +231,14 @@ qx.Class.define("osparc.widget.PersistentIframe", {
           height: divSize.height - this.getToolbarHeight()
         });
 
-        this.__buttonContainer.setLayoutProperties({
+        this.__buttonsContainer.setLayoutProperties({
           top: (divPos.top - iframeParentPos.top),
           right: (iframeParentPos.right - iframeParentPos.left - divPos.right)
         });
       }, 0);
     },
 
-    __applyShowToolbar: function(show) {
-      this.setToolbarHeight(show ? 25 : 0);
+    __applyShowToolbar: function() {
       this.__syncIframePos();
     },
 
