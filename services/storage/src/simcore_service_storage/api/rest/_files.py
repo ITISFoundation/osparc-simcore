@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import socket
 import urllib.parse
 from typing import Annotated, cast
 
@@ -268,18 +267,21 @@ async def complete_upload_file(
         name=create_upload_completion_task_name(query_params.user_id, file_id),
     )
     get_completed_upload_tasks(request.app)[task.get_name()] = task
-    server_ip = socket.gethostbyname(f"{request.url.hostname}")
-    server_port = f":{request.url.port}" if request.url.port else ""
 
-    route = URL(
-        request.app.url_path_for(
-            "is_completed_upload_file",
-            location_id=f"{location_id}",
-            file_id=file_id,
-            future_id=task.get_name(),
+    route = (
+        URL(f"{request.url}")
+        .with_path(
+            request.app.url_path_for(
+                "is_completed_upload_file",
+                location_id=f"{location_id}",
+                file_id=file_id,
+                future_id=task.get_name(),
+            )
         )
-    ).with_query(user_id=query_params.user_id)
-    complete_task_state_url = f"{request.url.scheme}://{server_ip}{server_port}{route}"
+        .with_query(user_id=query_params.user_id)
+    )
+    complete_task_state_url = f"{route}"
+
     response = FileUploadCompleteResponse(
         links=FileUploadCompleteLinks(
             state=TypeAdapter(AnyUrl).validate_python(complete_task_state_url)
