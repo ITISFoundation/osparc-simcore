@@ -147,14 +147,6 @@ def app_environment(
     external_envfile_dict: EnvVarsDict,
 ) -> EnvVarsDict:
     if external_envfile_dict:
-        # TODO: see if this is needed
-        # s3_settings = S3Settings.create_from_envs(**external_envfile_dict)
-        # if s3_settings.S3_ENDPOINT is None:
-        #     monkeypatch.delenv("S3_ENDPOINT")
-        #     s3_settings_dict = s3_settings.model_dump(exclude={"S3_ENDPOINT"})
-        # else:
-        #     s3_settings_dict = s3_settings.model_dump()
-
         delenvs_from_dict(monkeypatch, mock_env_devel_environment, raising=False)
         return setenvs_from_dict(monkeypatch, {**external_envfile_dict})
 

@@ -26,7 +26,6 @@ def datcore_adapter_service_mock() -> respx.MockRouter:
         respx_mocker.get(list_datasets_re, name="list_datasets").respond(
             status.HTTP_200_OK
         )
-        # TODO: why?
         respx_mocker.get(datcore_adapter_base_url, name="base_endpoint").respond(
             status.HTTP_200_OK, json={}
         )
