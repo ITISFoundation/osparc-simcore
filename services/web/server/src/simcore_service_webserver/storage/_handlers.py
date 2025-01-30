@@ -77,7 +77,7 @@ def _from_storage_url(
     prefix = f"/{_get_storage_vtag(request.app)}"
     converted_url = str(
         request.url.with_path(
-            f"/v0/storage{storage_url.path.removeprefix(prefix)}"
+            f"/v0/storage{storage_url.path.removeprefix(prefix)}", encoded=True
         ).with_scheme(request.headers.get(X_FORWARDED_PROTO, request.url.scheme))
     )
 

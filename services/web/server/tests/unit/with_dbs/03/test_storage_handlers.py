@@ -197,30 +197,56 @@ def test_url_storage_resolver_helpers(faker: Faker, app_environment: EnvVarsDict
     )
     assert encoded_url.raw_parts[-1] == f"{encoded_file_id}:complete"
 
-    web_request = make_mocked_request("GET", str(encoded_url), app=app)
-    web_request[RQT_USERID_KEY] = faker.pyint()
+    encoded_web_request = make_mocked_request("GET", str(encoded_url), app=app)
+    encoded_web_request[RQT_USERID_KEY] = faker.pyint()
 
     # web -> storage
-    storage_url = _to_storage_url(web_request)
+    encoded_storage_url = _to_storage_url(encoded_web_request)
     # Something like
     # http://storage:123/v5/locations/0/files/e3e70...c07cd%2Ff7...55%2Ffile.py:complete?user_id=8376
 
-    assert storage_url.raw_parts[-1] == web_request.url.raw_parts[-1]
+    assert encoded_storage_url.raw_parts[-1] == encoded_web_request.url.raw_parts[-1]
 
-    assert storage_url.host == app_environment["STORAGE_HOST"]
-    assert storage_url.port == int(app_environment["STORAGE_PORT"])
-    assert storage_url.query["user_id"] == str(web_request[RQT_USERID_KEY])
+    assert encoded_storage_url.host == app_environment["STORAGE_HOST"]
+    assert encoded_storage_url.port == int(app_environment["STORAGE_PORT"])
+    assert encoded_storage_url.query["user_id"] == str(
+        encoded_web_request[RQT_USERID_KEY]
+    )
 
     # storage -> web
-    web_url: AnyUrl = _from_storage_url(
-        web_request,
-        TypeAdapter(AnyUrl).validate_python(f"{storage_url}"),
+    encoded_web_url: AnyUrl = _from_storage_url(
+        encoded_web_request,
+        TypeAdapter(AnyUrl).validate_python(f"{encoded_storage_url}"),
         url_encode=None,
     )
 
-    assert storage_url.host != web_url.host
-    assert storage_url.port != web_url.port
+    assert encoded_storage_url.host != encoded_web_url.host
+    assert encoded_storage_url.port != encoded_web_url.port
 
-    assert isinstance(storage_url, URL)  # this is a bit inconvenient
-    assert isinstance(web_url, AnyUrl)
-    assert f"{web_url}" == f"{web_request.url}"
+    assert isinstance(encoded_storage_url, URL)  # this is a bit inconvenient
+    assert isinstance(encoded_web_url, AnyUrl)
+    assert f"{encoded_web_url}" == f"{encoded_web_request.url}"
+
+    # since storage is FastAPI-base it now returns non encoded URLs
+    non_encoded_url = URL(f"/v0/storage/locations/0/files/{file_id}:complete")
+    non_encoded_web_request = make_mocked_request("GET", str(non_encoded_url), app=app)
+    non_encoded_web_request[RQT_USERID_KEY] = faker.pyint()
+    non_encoded_storage_url = _to_storage_url(non_encoded_web_request)
+    assert (
+        non_encoded_storage_url.raw_parts[-1]
+        == non_encoded_web_request.url.raw_parts[-1]
+    )
+    assert non_encoded_storage_url.host == app_environment["STORAGE_HOST"]
+    assert non_encoded_storage_url.port == int(app_environment["STORAGE_PORT"])
+    assert non_encoded_storage_url.query["user_id"] == str(
+        non_encoded_web_request[RQT_USERID_KEY]
+    )
+
+    assert (
+        _from_storage_url(
+            non_encoded_web_request,
+            TypeAdapter(AnyUrl).validate_python(f"{non_encoded_storage_url}"),
+            url_encode=file_id,
+        ).path
+        == f"{encoded_url}"
+    )
