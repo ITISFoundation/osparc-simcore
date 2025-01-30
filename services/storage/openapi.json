@@ -382,6 +382,9 @@
                     },
                     {
                       "$ref": "#/components/schemas/Envelope_FileMetaDataGetv010_"
+                    },
+                    {
+                      "$ref": "#/components/schemas/Envelope_dict_"
                     }
                   ],
                   "title": "Response Get File Metadata V0 Locations  Location Id  Files  File Id  Metadata Get"
@@ -886,7 +889,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/FileUploadCompleteFutureResponse"
+                  "$ref": "#/components/schemas/Envelope_FileUploadCompleteFutureResponse_"
                 }
               }
             }
@@ -958,7 +961,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/FileMetaDataGet"
+                  "$ref": "#/components/schemas/Envelope_FileMetaDataGet_"
                 }
               }
             }
@@ -1027,15 +1030,28 @@
         ],
         "summary": "Copy Folders From Project",
         "operationId": "copy_folders_from_project_v0_simcore_s3_folders_post",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": true,
+              "title": "User Id",
+              "minimum": 0
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Body_copy_folders_from_project_v0_simcore_s3_folders_post"
+                "$ref": "#/components/schemas/FoldersBody"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "202": {
@@ -1304,22 +1320,6 @@
         ],
         "title": "AppStatusCheck"
       },
-      "Body_copy_folders_from_project_v0_simcore_s3_folders_post": {
-        "properties": {
-          "query_params": {
-            "$ref": "#/components/schemas/StorageQueryParamsBase"
-          },
-          "body": {
-            "$ref": "#/components/schemas/FoldersBody"
-          }
-        },
-        "type": "object",
-        "required": [
-          "query_params",
-          "body"
-        ],
-        "title": "Body_copy_folders_from_project_v0_simcore_s3_folders_post"
-      },
       "DatasetMetaDataGet": {
         "properties": {
           "dataset_id": {
@@ -1447,6 +1447,31 @@
         },
         "type": "object",
         "title": "Envelope[FileMetaDataGetv010]"
+      },
+      "Envelope_FileUploadCompleteFutureResponse_": {
+        "properties": {
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FileUploadCompleteFutureResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "error": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          }
+        },
+        "type": "object",
+        "title": "Envelope[FileUploadCompleteFutureResponse]"
       },
       "Envelope_FileUploadCompleteResponse_": {
         "properties": {
@@ -1597,6 +1622,32 @@
         },
         "type": "object",
         "title": "Envelope[TaskGet]"
+      },
+      "Envelope_dict_": {
+        "properties": {
+          "data": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          },
+          "error": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          }
+        },
+        "type": "object",
+        "title": "Envelope[dict]"
       },
       "Envelope_list_DatasetMetaDataGet__": {
         "properties": {
@@ -2268,22 +2319,6 @@
           "link_id"
         ],
         "title": "SoftCopyBody"
-      },
-      "StorageQueryParamsBase": {
-        "properties": {
-          "user_id": {
-            "type": "integer",
-            "exclusiveMinimum": true,
-            "title": "User Id",
-            "minimum": 0
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "required": [
-          "user_id"
-        ],
-        "title": "StorageQueryParamsBase"
       },
       "TaskGet": {
         "properties": {

@@ -121,15 +121,18 @@ async def client(
     #
 
     # LifespanManager will trigger app's startup&shutown event handlers
-    async with LifespanManager(
-        app,
-        startup_timeout=None if is_pdb_enabled else MAX_TIME_FOR_APP_TO_STARTUP,
-        shutdown_timeout=None if is_pdb_enabled else MAX_TIME_FOR_APP_TO_SHUTDOWN,
-    ), httpx.AsyncClient(
-        base_url="http://api.testserver.io",
-        headers={"Content-Type": "application/json"},
-        transport=ASGITransport(app=app),
-    ) as httpx_async_client:
+    async with (
+        LifespanManager(
+            app,
+            startup_timeout=None if is_pdb_enabled else MAX_TIME_FOR_APP_TO_STARTUP,
+            shutdown_timeout=None if is_pdb_enabled else MAX_TIME_FOR_APP_TO_SHUTDOWN,
+        ),
+        httpx.AsyncClient(
+            base_url="http://api.testserver.io",
+            headers={"Content-Type": "application/json"},
+            transport=ASGITransport(app=app),
+        ) as httpx_async_client,
+    ):
         assert isinstance(httpx_async_client, httpx.AsyncClient)
         yield httpx_async_client
 
@@ -242,11 +245,8 @@ def webserver_service_openapi_specs(
 def storage_service_openapi_specs(
     osparc_simcore_services_dir: Path,
 ) -> dict[str, Any]:
-    openapi_path = (
-        osparc_simcore_services_dir
-        / "storage/src/simcore_service_storage/api/v0/openapi.yaml"
-    )
-    return yaml.safe_load(openapi_path.read_text())
+    openapi_path = osparc_simcore_services_dir / "storage" / "openapi.json"
+    return json.loads(openapi_path.read_text())
 
 
 @pytest.fixture
