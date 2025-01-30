@@ -22,6 +22,13 @@ from simcore_service_webserver.licenses._itis_vip_service import ResponseData
 from simcore_service_webserver.licenses._itis_vip_settings import ItisVipSettings
 
 
+def test_pre_validator_feature_descriptor_to_dict():
+    # Makes sure the regex used here, which is vulnerable to polynomial runtime due to backtracking, cannot lead to denial of service.
+    with pytest.raises(ValidationError) as err_info:
+        _feature_descriptor_to_dict("a" * 10000 + ": " + "b" * 10000)
+    assert err_info.value.errors()[0]["type"] == "string_too_long"
+
+
 @pytest.fixture(scope="session")
 def fake_api_base_url() -> str:
     return "https://testserver"
@@ -111,8 +118,3 @@ async def test_get_category_items(
             items = await _itis_vip_service.get_category_items(client, url)
 
             assert items[0].features["functionality"] == "Posable"
-
-
-def test_pre_validator_feature_descriptor_to_dict():
-    with pytest.raises(ValueError):
-        _feature_descriptor_to_dict("a" * 10000 + ": " + "b" * 10000)

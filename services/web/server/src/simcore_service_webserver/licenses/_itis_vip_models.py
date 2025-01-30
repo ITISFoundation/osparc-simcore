@@ -1,21 +1,25 @@
 import re
 from typing import Annotated, Any, Literal
 
-from pydantic import BaseModel, BeforeValidator, Field, HttpUrl
+from pydantic import (
+    BaseModel,
+    BeforeValidator,
+    Field,
+    HttpUrl,
+    StringConstraints,
+    TypeAdapter,
+)
 
-_MAX_LENGTH = 1_000
+_max_str_adapter = TypeAdapter(
+    Annotated[str, StringConstraints(strip_whitespace=True, max_length=1_000)]
+)
 
 
 def _feature_descriptor_to_dict(descriptor: str) -> dict[str, Any]:
     # NOTE: this is manually added in the server side so be more robust to errors
-    # Safe against polynomial runtime vulnerability due to backtracking
-    if (size := len(descriptor)) and size > _MAX_LENGTH:
-        msg = f"Features field too long [{size=}]"
-        raise ValueError(msg)
-
+    descriptor = _max_str_adapter.validate_python(descriptor.strip("{}"))
     pattern = r"(\w{1,100}): ([^,]{1,100})"
-
-    matches = re.findall(pattern, descriptor.strip("{}"))
+    matches = re.findall(pattern, descriptor)
     return dict(matches)
 
 
@@ -38,5 +42,8 @@ class AvailableDownload(BaseModel):
 class ResponseData(BaseModel):
     msg: int | None = None  # still not used
     available_downloads: Annotated[
-        list[AvailableDownload], Field(alias="availableDownloads")
+        list[AvailableDownload],
+        Field(alias="availableDownloads")
+        # TODO: consider just parsing those that you are interested in instead of performing so many checks
+        # and then throw them
     ]
