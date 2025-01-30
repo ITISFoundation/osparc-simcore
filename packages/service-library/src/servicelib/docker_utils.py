@@ -1,6 +1,6 @@
 import logging
-from collections.abc import Awaitable, Callable
-from contextlib import AsyncExitStack
+from collections.abc import AsyncIterator, Awaitable, Callable
+from contextlib import AsyncExitStack, asynccontextmanager
 from dataclasses import dataclass
 from datetime import datetime
 from functools import cached_property
@@ -10,6 +10,7 @@ import aiodocker
 import aiohttp
 import arrow
 from aiohttp import ClientSession
+from fastapi import FastAPI
 from models_library.docker import DockerGenericTag
 from models_library.generated_models.docker_rest_api import ProgressDetail
 from models_library.utils.change_case import snake_to_camel
@@ -286,14 +287,15 @@ async def pull_image(
             )
 
 
-async def create_remote_docker_client(
-    settings: DockerApiProxysettings,
-) -> aiodocker.Docker:
-    """Allows to attach to a remote docker client istnace and use it in place
-    of the docker socket.
+@asynccontextmanager
+async def lifespan_remote_docker_client(app: FastAPI) -> AsyncIterator[None]:
+    """Ensures `setup` and `teardown` for the docker client.
 
-    NOTE: Usually this is required to use a manager node's docker client for swarm commands.
+    NOTE: the `DockerApiProxysettings` must be placed as `DOCKER_API_PROXY`
+    on the Application's Settings object
     """
+    settings: DockerApiProxysettings = app.state.settings.DOCKER_API_PROXY
+
     session: ClientSession | None = None
     if settings.DOCKER_API_PROXY_USER and settings.DOCKER_API_PROXY_PASSWORD:
         session = ClientSession(
@@ -303,4 +305,26 @@ async def create_remote_docker_client(
             )
         )
 
-    return aiodocker.Docker(url=settings.base_url, session=session)
+    async with AsyncExitStack() as exit_stack:
+        if settings.DOCKER_API_PROXY_USER and settings.DOCKER_API_PROXY_PASSWORD:
+            await exit_stack.enter_async_context(
+                ClientSession(
+                    auth=aiohttp.BasicAuth(
+                        login=settings.DOCKER_API_PROXY_USER,
+                        password=settings.DOCKER_API_PROXY_PASSWORD.get_secret_value(),
+                    )
+                )
+            )
+
+        client = await exit_stack.enter_async_context(
+            aiodocker.Docker(url=settings.base_url, session=session)
+        )
+
+        app.state.remote_docker_client = client
+
+        yield
+
+
+def get_remote_docker_client(app: FastAPI) -> aiodocker.Docker:
+    client: aiodocker.Docker = app.state.remote_docker_client
+    return client

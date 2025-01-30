@@ -6,8 +6,11 @@
 --requirement ../../../packages/service-library/requirements/_base.in
 
 aiodocker
+arrow
+asgi_lifespan
 docker
 faker
+fastapi
 flaky
 pytest
 pytest-asyncio
@@ -16,4 +19,3 @@ pytest-mock
 python-dotenv
 PyYAML
 tenacity
-arrow

@@ -4,13 +4,13 @@
 import json
 import subprocess
 import sys
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
+from contextlib import AbstractAsyncContextManager
 from pathlib import Path
 
 import aiodocker
 import pytest
-from pydantic import TypeAdapter
-from servicelib.docker_utils import create_remote_docker_client
+from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
 from settings_library.docker_api_proxy import DockerApiProxysettings
 from tenacity import AsyncRetrying, stop_after_delay, wait_fixed
 
@@ -74,20 +74,19 @@ def authentication_proxy(
     )
 
 
-async def test_autenticated_docker_client(authentication_proxy: None):
-    # 1. with correct credentials -> works
-    docker_api_proxy_settings = TypeAdapter(DockerApiProxysettings).validate_python(
-        {
-            "DOCKER_API_PROXY_HOST": "127.0.0.1",
-            "DOCKER_API_PROXY_PORT": 9999,
-            "DOCKER_API_PROXY_USER": "asd",
-            "DOCKER_API_PROXY_PASSWORD": "asd",
-        }
-    )
-
-    working_docker = await create_remote_docker_client(docker_api_proxy_settings)
-
-    async with working_docker:
+async def test_with_correct_credentials(
+    authentication_proxy: None,
+    setup_docker_client: Callable[
+        [EnvVarsDict], AbstractAsyncContextManager[aiodocker.Docker]
+    ],
+):
+    envs = {
+        "DOCKER_API_PROXY_HOST": "127.0.0.1",
+        "DOCKER_API_PROXY_PORT": "9999",
+        "DOCKER_API_PROXY_USER": "asd",
+        "DOCKER_API_PROXY_PASSWORD": "asd",
+    }
+    async with setup_docker_client(envs) as working_docker:
         async for attempt in AsyncRetrying(
             wait=wait_fixed(0.1), stop=stop_after_delay(10), reraise=True
         ):
@@ -95,16 +94,23 @@ async def test_autenticated_docker_client(authentication_proxy: None):
                 info = await working_docker.system.info()
                 print(json.dumps(info, indent=2))
 
-    # 2. with wrong credentials -> does not work
-    docker_api_proxy_settings = TypeAdapter(DockerApiProxysettings).validate_python(
-        {
-            "DOCKER_API_PROXY_HOST": "127.0.0.1",
-            "DOCKER_API_PROXY_PORT": 9999,
-            "DOCKER_API_PROXY_USER": "wrong",
-            "DOCKER_API_PROXY_PASSWORD": "wrong",
-        }
-    )
-    failing_docker_client = await create_remote_docker_client(docker_api_proxy_settings)
-    async with failing_docker_client:
-        with pytest.raises(aiodocker.exceptions.DockerError, match="401"):
-            await failing_docker_client.system.info()
+
+async def test_wrong_credentials(
+    authentication_proxy: None,
+    setup_docker_client: Callable[
+        [EnvVarsDict], AbstractAsyncContextManager[aiodocker.Docker]
+    ],
+):
+    envs = {
+        "DOCKER_API_PROXY_HOST": "127.0.0.1",
+        "DOCKER_API_PROXY_PORT": "9999",
+        "DOCKER_API_PROXY_USER": "wrong",
+        "DOCKER_API_PROXY_PASSWORD": "wrong",
+    }
+    async with setup_docker_client(envs) as failing_docker_client:
+        async for attempt in AsyncRetrying(
+            wait=wait_fixed(0.1), stop=stop_after_delay(10), reraise=True
+        ):
+            with attempt:  # noqa: SIM117
+                with pytest.raises(aiodocker.exceptions.DockerError, match="401"):
+                    await failing_docker_client.system.info()
