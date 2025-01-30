@@ -41,9 +41,7 @@ async def _user_context(
     stmt = users.insert().values(**random_user(name=name)).returning(users.c.id)
     async with sqlalchemy_async_engine.begin() as conn:
         result = await conn.execute(stmt)
-        await conn.commit()
-        row = result.fetchone()
-    assert row
+        row = result.one()
     assert isinstance(row.id, int)
 
     try:
