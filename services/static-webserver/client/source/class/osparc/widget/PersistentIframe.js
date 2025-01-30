@@ -234,7 +234,7 @@ qx.Class.define("osparc.widget.PersistentIframe", {
           right: (iframeParentPos.right - iframeParentPos.left - divPos.right)
         });
 
-        this.__buttonContainer.setVisibility(this.isShowToolbar() ? "visible" : "excluded");
+        this.__buttonsContainer.setVisibility(this.isShowToolbar() ? "visible" : "excluded");
       }, 0);
     },
 

@@ -33,12 +33,15 @@ qx.Class.define("osparc.ui.message.Loading", {
 
   construct: function() {
     this.base(arguments);
-    this._setLayout(new qx.ui.layout.VBox());
 
-    this.set({
-      alignX: "center",
-      alignY: "middle",
-    });
+    const layout = new qx.ui.layout.Grid(20, 20);
+    layout.setRowFlex(this.self().GRID_POS.SPACER_TOP, 1);
+    layout.setRowFlex(this.self().GRID_POS.SPACER_BOTTOM, 1);
+    layout.setColumnFlex(0, 1);
+    layout.setColumnFlex(2, 1);
+    layout.setColumnMaxWidth(1, 400);
+    layout.setColumnAlign(1, "center", "middle");
+    this._setLayout(layout);
 
     this.__buildLayout();
   },
@@ -62,28 +65,6 @@ qx.Class.define("osparc.ui.message.Loading", {
       nullable: true,
       apply: "__applyMessages"
     },
-
-    toolbarHeight: {
-      check: "Integer",
-      init: 25
-    },
-
-    /**
-     * Show Restart-Maximize Toolbar
-     */
-    showToolbar: {
-      check: "Boolean",
-      init: true,
-      event: "changeShowToolbar",
-    },
-  },
-
-  // from osparc.widget.PersistentIframe
-  events: {
-    /** Fired if the iframe is restored from a minimized or maximized state */
-    "restore" : "qx.event.type.Event",
-    /** Fired if the iframe is maximized */
-    "maximize" : "qx.event.type.Event"
   },
 
   statics: {
@@ -93,10 +74,12 @@ qx.Class.define("osparc.ui.message.Loading", {
     STATUS_ICON_SIZE: 20,
 
     GRID_POS: {
+      SPACER_TOP: 0,
       LOGO: 1,
       WAITING: 2,
       MESSAGES: 3,
-      EXTRA_WIDGETS: 4
+      EXTRA_WIDGETS: 4,
+      SPACER_BOTTOM: 5,
     }
   },
 
@@ -108,44 +91,18 @@ qx.Class.define("osparc.ui.message.Loading", {
     __maxButton: null,
 
     __buildLayout: function() {
-      this.__createMaximizeButton();
-      this.__createMainLayout();
-    },
-
-    __createMaximizeButton: function() {
-      const maximize = false;
-      const maxButton = this.__maxButton = osparc.widget.PersistentIframe.createToolbarButton(maximize).set({
-        label: osparc.widget.PersistentIframe.getZoomLabel(maximize),
-        icon: osparc.widget.PersistentIframe.getZoomIcon(maximize),
-      });
-      osparc.utils.Utils.setIdToWidget(maxButton, osparc.widget.PersistentIframe.getMaximizeWidgetId(maximize));
-      maxButton.addListener("execute", () => this.maximizeIFrame(!this.hasState("maximized")), this);
-
-      const buttonsContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
-        alignX: "right",
-        alignY: "middle"
-      }));
-      this.bind("showToolbar", buttonsContainer, "visibility", {
-        converter: showToolbar => showToolbar ? "visible" : "excluded"
-      });
-      buttonsContainer.add(maxButton);
-      this._add(buttonsContainer);
-    },
-
-    __createMainLayout: function() {
-      const layout = new qx.ui.layout.Grid(20, 20);
-      layout.setColumnFlex(0, 1);
-      layout.setColumnAlign(0, "center", "middle");
-      const mainLayout = new qx.ui.container.Composite(layout).set({
-        maxWidth: 400,
-        alignX: "center",
+      this._add(new qx.ui.core.Spacer(), {
+        column: 0,
+        row: 0
       });
       this._add(new qx.ui.core.Spacer(), {
-        flex: 1
+        column: 2,
+        row: 0
       });
-      this._add(mainLayout);
+
       this._add(new qx.ui.core.Spacer(), {
-        flex: 1
+        column: 1,
+        row: this.self().GRID_POS.SPACER_TOP
       });
 
       const productLogoPath = osparc.product.Utils.getLogoPath();
@@ -165,8 +122,8 @@ qx.Class.define("osparc.ui.message.Loading", {
           height: logoHeight
         });
       }
-      mainLayout.add(thumbnail, {
-        column: 0,
+      this._add(thumbnail, {
+        column: 1,
         row: this.self().GRID_POS.LOGO
       });
 
@@ -178,37 +135,39 @@ qx.Class.define("osparc.ui.message.Loading", {
         gap: 15,
         allowGrowX: false
       });
+      const icon = waitingHeader.getChildControl("icon");
+      osparc.service.StatusUI.updateCircleAnimation(icon);
       const label = waitingHeader.getChildControl("label");
       label.set({
         rich: true,
-        wrap: true
+        wrap: true,
+        alignX: "center",
       });
-      const icon = waitingHeader.getChildControl("icon");
-      osparc.service.StatusUI.updateCircleAnimation(icon);
-      mainLayout.add(waitingHeader, {
-        column: 0,
+      this._add(waitingHeader, {
+        column: 1,
         row: this.self().GRID_POS.WAITING
       });
 
       const messages = this.__messagesContainer = new qx.ui.container.Composite(new qx.ui.layout.VBox(10).set({
         alignX: "center"
       }));
-      mainLayout.add(messages, {
-        column: 0,
+      this._add(messages, {
+        column: 1,
         row: this.self().GRID_POS.MESSAGES
       });
 
       const extraWidgets = this.__extraWidgets = new qx.ui.container.Composite(new qx.ui.layout.VBox(10).set({
         alignX: "center"
       }));
-      mainLayout.add(extraWidgets, {
-        column: 0,
+      this._add(extraWidgets, {
+        column: 1,
         row: this.self().GRID_POS.EXTRA_WIDGETS
       });
-    },
 
-    __applyShowToolbar: function(show) {
-      this.setToolbarHeight(show ? 25 : 0);
+      this._add(new qx.ui.core.Spacer(), {
+        column: 1,
+        row: this.self().GRID_POS.SPACER_BOTTOM
+      });
     },
 
     __applyLogo: function(newLogo) {
@@ -276,23 +235,5 @@ qx.Class.define("osparc.ui.message.Loading", {
     addExtraWidget: function(widget) {
       this.__extraWidgets.add(widget);
     },
-
-    // from osparc.widget.PersistentIframe
-    maximizeIFrame: function(maximize) {
-      if (maximize) {
-        this.fireEvent("maximize");
-        this.addState("maximized");
-      } else {
-        this.fireEvent("restore");
-        this.removeState("maximized");
-      }
-      const maxButton = this.__maxButton;
-      maxButton.set({
-        label: osparc.widget.PersistentIframe.getZoomLabel(maximize),
-        icon: osparc.widget.PersistentIframe.getZoomIcon(maximize)
-      });
-      osparc.utils.Utils.setIdToWidget(maxButton, osparc.widget.PersistentIframe.getMaximizeWidgetId(maximize));
-      qx.event.message.Bus.getInstance().dispatchByName("maximizeIframe", this.hasState("maximized"));
-    }
   }
 });

@@ -1191,7 +1191,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         this.nodeSelected(dynamicNode.getNodeId());
         qx.event.Timer.once(() => {
           this.__openIframeTab(dynamicNode);
-          dynamicNode.getLoadingPage().maximizeIFrame(true);
           dynamicNode.getIFrame().maximizeIFrame(true);
         }, this, 10);
         return;
