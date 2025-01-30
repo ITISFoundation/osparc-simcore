@@ -8,14 +8,19 @@ from models_library.api_schemas_webserver.licensed_items import (
     LicensedItemGet,
     LicensedItemGetPage,
 )
-from models_library.licensed_items import LicensedItemID
+from models_library.licensed_items import (
+    LicensedItemDB,
+    LicensedItemID,
+    LicensedItemUpdateDB,
+    LicensedResourceType,
+)
 from models_library.products import ProductName
 from models_library.resource_tracker_licensed_items_purchases import (
     LicensedItemsPurchasesCreate,
 )
 from models_library.rest_ordering import OrderBy
 from models_library.users import UserID
-from pydantic import NonNegativeInt
+from pydantic import BaseModel, NonNegativeInt
 from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker import (
     licensed_items_purchases,
 )
@@ -30,6 +35,27 @@ from ._common.models import LicensedItemsBodyParams
 from .errors import LicensedItemPricingPlanMatchError
 
 _logger = logging.getLogger(__name__)
+
+
+async def create_licensed_item_from_resource(
+    app: web.Application,
+    *,
+    licensed_resource_name: str,
+    licensed_resource_type: LicensedResourceType,
+    licensed_resource_data: BaseModel,
+    license_key: str | None,
+) -> LicensedItemDB:
+    return await _licensed_items_repository.create(
+        app,
+        licensed_resource_name=licensed_resource_name,
+        licensed_resource_type=licensed_resource_type,
+        licensed_resource_data=licensed_resource_data.model_dump(
+            mode="json", exclude_unset=True
+        ),
+        license_key=license_key,
+        product_name=None,
+        pricing_plan_id=None,
+    )
 
 
 async def get_licensed_item(
@@ -68,6 +94,34 @@ async def list_licensed_items(
             for licensed_item_db in items
         ],
         total=total_count,
+    )
+
+
+async def trash_licensed_item(
+    app: web.Application,
+    *,
+    product_name: ProductName,
+    licensed_item_id: LicensedItemID,
+):
+    await _licensed_items_repository.update(
+        app,
+        product_name=product_name,
+        licensed_item_id=licensed_item_id,
+        updates=LicensedItemUpdateDB(trash=True),
+    )
+
+
+async def untrash_licensed_item(
+    app: web.Application,
+    *,
+    product_name: ProductName,
+    licensed_item_id: LicensedItemID,
+):
+    await _licensed_items_repository.update(
+        app,
+        product_name=product_name,
+        licensed_item_id=licensed_item_id,
+        updates=LicensedItemUpdateDB(trash=True),
     )
 
 

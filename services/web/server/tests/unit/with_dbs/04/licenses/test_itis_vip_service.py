@@ -18,7 +18,7 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.aiohttp import status
 from simcore_service_webserver.licenses import (
     _itis_vip_service,
-    _licensed_items_repository,
+    _licensed_items_service,
 )
 from simcore_service_webserver.licenses._itis_vip_models import (
     AvailableDownload,
@@ -147,16 +147,12 @@ async def test_sync_itis_vip_as_licensed_items(
             )
             assert items[0].features["functionality"] == "Posable"
 
-            for item in items:
+            for vip_item in items:
                 # TODO: how to update to minimize collisions? one by one?
-                await _licensed_items_repository.create(
+                await _licensed_items_service.create_licensed_item_from_resource(
                     client.app,
-                    licensed_resource_name=f"{category}/{item.id}",
+                    licensed_resource_name=f"{category}/{vip_item.id}",
                     licensed_resource_type=LicensedResourceType.VIP_MODEL,
-                    licensed_resource_data=item.model_dump(
-                        mode="json", exclude_unset=True
-                    ),
-                    licensed_key=item.license_key,
-                    product_name=None,
-                    pricing_plan_id=None,
+                    licensed_resource_data=vip_item,
+                    license_key=vip_item.license_key,
                 )
