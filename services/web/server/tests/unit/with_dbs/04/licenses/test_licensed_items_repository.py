@@ -8,10 +8,10 @@ from http import HTTPStatus
 import pytest
 from aiohttp.test_utils import TestClient
 from models_library.licensed_items import (
+    VIP_DETAILS_EXAMPLE,
     LicensedItemDB,
     LicensedItemUpdateDB,
     LicensedResourceType,
-    VipDetails,
 )
 from models_library.rest_ordering import OrderBy
 from pytest_simcore.helpers.webserver_login import UserInfoDict
@@ -48,9 +48,7 @@ async def test_licensed_items_db_crud(
         display_name="Model A",
         licensed_resource_type=LicensedResourceType.VIP_MODEL,
         pricing_plan_id=pricing_plan_id,
-        licensed_resource_type_details=VipDetails.model_config["json_schema_extra"][
-            "examples"
-        ][0],
+        licensed_resource_type_details=VIP_DETAILS_EXAMPLE,
     )
     _licensed_item_id = licensed_item_db.licensed_item_id
 
@@ -69,7 +67,7 @@ async def test_licensed_items_db_crud(
         product_name=osparc_product_name,
     )
     assert licensed_item_db.display_name == "Model A"
-    assert isinstance(licensed_item_db.licensed_resource_type_details, VipDetails)
+    assert isinstance(licensed_item_db.licensed_resource_type_details, dict)
 
     await _licensed_items_repository.update(
         client.app,

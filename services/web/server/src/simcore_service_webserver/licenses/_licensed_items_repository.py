@@ -5,7 +5,7 @@
 """
 
 import logging
-from typing import cast
+from typing import Any, cast
 
 from aiohttp import web
 from models_library.licensed_items import (
@@ -13,7 +13,6 @@ from models_library.licensed_items import (
     LicensedItemID,
     LicensedItemUpdateDB,
     LicensedResourceType,
-    VipDetails,
 )
 from models_library.products import ProductName
 from models_library.resource_tracker import PricingPlanId
@@ -56,7 +55,7 @@ async def create(
     display_name: str,
     licensed_resource_type: LicensedResourceType,
     pricing_plan_id: PricingPlanId,
-    licensed_resource_type_details: VipDetails,
+    licensed_resource_type_details: dict[str, Any],
 ) -> LicensedItemDB:
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         result = await conn.stream(

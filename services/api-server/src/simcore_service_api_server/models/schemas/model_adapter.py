@@ -2,7 +2,7 @@
 
 from datetime import datetime
 from decimal import Decimal
-from typing import Annotated
+from typing import Annotated, Any
 
 from models_library.api_schemas_api_server.pricing_plans import (
     ServicePricingPlanGet as _ServicePricingPlanGet,
@@ -24,11 +24,7 @@ from models_library.api_schemas_webserver.wallets import (
 )
 from models_library.basic_types import IDStr, NonNegativeDecimal
 from models_library.groups import GroupID
-from models_library.licensed_items import (
-    LicensedItemID,
-    LicensedResourceType,
-    VipDetails,
-)
+from models_library.licensed_items import LicensedItemID, LicensedResourceType
 from models_library.products import ProductName
 from models_library.resource_tracker import (
     PricingPlanClassification,
@@ -144,7 +140,7 @@ class LicensedItemGet(BaseModel):
     display_name: Annotated[str, Field(alias="display_name")]
     licensed_resource_type: LicensedResourceType
     pricing_plan_id: PricingPlanId
-    licensed_resource_type_details: VipDetails
+    licensed_resource_type_details: dict[str, Any]
     created_at: datetime
     modified_at: datetime
     model_config = ConfigDict(

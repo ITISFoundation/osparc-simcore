@@ -23,6 +23,7 @@ from typing import Any
 from common_library.json_serialization import json_loads
 from orjson import JSONDecodeError
 from pydantic import BaseModel
+from pydantic.alias_generators import to_camel
 
 
 def empty_str_to_none_pre_validator(value: Any):
@@ -120,3 +121,23 @@ def create__check_only_one_is_set__root_validator(
         return values
 
     return _validator
+
+
+def to_camel_recursive(data: dict[str, Any]) -> dict[str, Any]:
+    """Recursively convert dictionary keys to camelCase"""
+    if not isinstance(data, dict):
+        return data  # Return as-is if it's not a dictionary
+
+    new_dict = {}
+    for key, value in data.items():
+        new_key = to_camel(key)  # Convert key to camelCase
+        if isinstance(value, dict):
+            new_dict[new_key] = to_camel_recursive(value)  # Recursive call for dicts
+        elif isinstance(value, list):
+            new_dict[new_key] = [
+                to_camel_recursive(item) if isinstance(item, dict) else item
+                for item in value
+            ]
+        else:
+            new_dict[new_key] = value
+    return new_dict

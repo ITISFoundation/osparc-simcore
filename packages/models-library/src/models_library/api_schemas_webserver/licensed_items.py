@@ -1,14 +1,16 @@
 from datetime import datetime
-from typing import NamedTuple
+from typing import Any, NamedTuple
 
 from models_library.licensed_items import (
+    VIP_DETAILS_EXAMPLE,
     LicensedItemID,
     LicensedResourceType,
-    VipDetails,
 )
 from models_library.resource_tracker import PricingPlanId
-from pydantic import BaseModel, ConfigDict, PositiveInt
+from models_library.utils.common_validators import to_camel_recursive
+from pydantic import AfterValidator, BaseModel, ConfigDict, PositiveInt
 from pydantic.alias_generators import to_camel
+from typing_extensions import Annotated
 
 from ._base import OutputSchema
 
@@ -20,10 +22,11 @@ class LicensedItemRpcGet(BaseModel):
     display_name: str
     licensed_resource_type: LicensedResourceType
     pricing_plan_id: PricingPlanId
-    licensed_resource_type_details: VipDetails
+    licensed_resource_type_details: dict[str, Any]
     created_at: datetime
     modified_at: datetime
     model_config = ConfigDict(
+        alias_generator=to_camel,
         json_schema_extra={
             "examples": [
                 {
@@ -31,14 +34,12 @@ class LicensedItemRpcGet(BaseModel):
                     "display_name": "best-model",
                     "licensed_resource_type": f"{LicensedResourceType.VIP_MODEL}",
                     "pricing_plan_id": "15",
-                    "licensed_resource_type_details": VipDetails.model_config[
-                        "json_schema_extra"
-                    ]["examples"][0],
+                    "licensed_resource_type_details": VIP_DETAILS_EXAMPLE,
                     "created_at": "2024-12-12 09:59:26.422140",
                     "modified_at": "2024-12-12 09:59:26.422140",
                 }
             ]
-        }
+        },
     )
 
 
@@ -66,7 +67,9 @@ class LicensedItemRestGet(OutputSchema):
     display_name: str
     licensed_resource_type: LicensedResourceType
     pricing_plan_id: PricingPlanId
-    licensed_resource_type_details: VipDetails
+    licensed_resource_type_details: Annotated[
+        dict[str, Any], AfterValidator(to_camel_recursive)
+    ]
     created_at: datetime
     modified_at: datetime
     model_config = ConfigDict(
@@ -77,9 +80,7 @@ class LicensedItemRestGet(OutputSchema):
                     "display_name": "best-model",
                     "licensed_resource_type": f"{LicensedResourceType.VIP_MODEL}",
                     "pricing_plan_id": "15",
-                    "licensed_resource_type_details": VipDetails.model_config[
-                        "json_schema_extra"
-                    ]["examples"][0],
+                    "licensed_resource_type_details": VIP_DETAILS_EXAMPLE,
                     "created_at": "2024-12-12 09:59:26.422140",
                     "modified_at": "2024-12-12 09:59:26.422140",
                 }

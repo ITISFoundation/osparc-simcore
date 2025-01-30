@@ -12,7 +12,7 @@ from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
 )
 from models_library.api_schemas_webserver.licensed_items import LicensedItemRestGet
 from models_library.api_schemas_webserver.wallets import WalletGetWithAvailableCredits
-from models_library.licensed_items import LicensedResourceType, VipDetails
+from models_library.licensed_items import VIP_DETAILS_EXAMPLE, LicensedResourceType
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import UserInfoDict
@@ -45,9 +45,7 @@ async def test_licensed_items_listing(
         display_name="Model A",
         licensed_resource_type=LicensedResourceType.VIP_MODEL,
         pricing_plan_id=pricing_plan_id,
-        licensed_resource_type_details=VipDetails.model_config["json_schema_extra"][
-            "examples"
-        ][0],
+        licensed_resource_type_details=VIP_DETAILS_EXAMPLE,
     )
     _licensed_item_id = licensed_item_db.licensed_item_id
 
@@ -115,9 +113,7 @@ async def test_licensed_items_purchase(
         display_name="Model A",
         licensed_resource_type=LicensedResourceType.VIP_MODEL,
         pricing_plan_id=pricing_plan_id,
-        licensed_resource_type_details=VipDetails.model_config["json_schema_extra"][
-            "examples"
-        ][0],
+        licensed_resource_type_details=VIP_DETAILS_EXAMPLE,
     )
     _licensed_item_id = licensed_item_db.licensed_item_id
 

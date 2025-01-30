@@ -1,12 +1,12 @@
 import logging
 from datetime import datetime
-from typing import NamedTuple
+from typing import Any, NamedTuple
 
 from models_library.basic_types import IDStr
 from models_library.licensed_items import (
+    VIP_DETAILS_EXAMPLE,
     LicensedItemID,
     LicensedResourceType,
-    VipDetails,
 )
 from models_library.resource_tracker import PricingPlanId, PricingUnitId
 from models_library.resource_tracker_licensed_items_purchases import (
@@ -34,7 +34,7 @@ class LicensedItem(BaseModel):
     display_name: str
     licensed_resource_type: LicensedResourceType
     pricing_plan_id: PricingPlanId
-    licensed_resource_type_details: VipDetails
+    licensed_resource_type_details: dict[str, Any]
     created_at: datetime
     modified_at: datetime
     model_config = ConfigDict(
@@ -45,9 +45,7 @@ class LicensedItem(BaseModel):
                     "display_name": "best-model",
                     "licensed_resource_type": f"{LicensedResourceType.VIP_MODEL}",
                     "pricing_plan_id": "15",
-                    "licensed_resource_type_details": VipDetails.model_config[
-                        "json_schema_extra"
-                    ]["examples"][0],
+                    "licensed_resource_type_details": VIP_DETAILS_EXAMPLE,
                     "created_at": "2024-12-12 09:59:26.422140",
                     "modified_at": "2024-12-12 09:59:26.422140",
                 }

@@ -11,7 +11,7 @@ from models_library.api_schemas_resource_usage_tracker.licensed_items_checkouts 
     LicensedItemCheckoutGet,
 )
 from models_library.api_schemas_webserver.licensed_items import LicensedItemRpcGetPage
-from models_library.licensed_items import LicensedResourceType, VipDetails
+from models_library.licensed_items import VIP_DETAILS_EXAMPLE, LicensedResourceType
 from models_library.products import ProductName
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
@@ -139,9 +139,7 @@ async def test_license_checkout_workflow(
         display_name="Model A",
         licensed_resource_type=LicensedResourceType.VIP_MODEL,
         pricing_plan_id=pricing_plan_id,
-        licensed_resource_type_details=VipDetails.model_config["json_schema_extra"][
-            "examples"
-        ][0],
+        licensed_resource_type_details=VIP_DETAILS_EXAMPLE,
     )
 
     result = await get_licensed_items(
