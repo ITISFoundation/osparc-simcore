@@ -11,6 +11,7 @@ import httpx
 from fastapi import status
 from models_library.api_schemas_long_running_tasks.base import TaskProgress
 from models_library.api_schemas_long_running_tasks.tasks import TaskGet, TaskStatus
+from servicelib.rest_responses import unwrap_envelope_if_required
 from tenacity import (
     AsyncRetrying,
     TryAgain,
@@ -29,7 +30,6 @@ from ...long_running_tasks._models import (
     ProgressPercent,
 )
 from ...long_running_tasks._task import TaskId, TaskResult
-from ...rest_responses import unwrap_envelope
 from ._client import DEFAULT_HTTP_REQUESTS_TIMEOUT, Client, setup
 from ._context_manager import periodic_task_result
 
@@ -52,9 +52,7 @@ async def _start(
 ) -> TaskGet:
     response = await session.post(f"{url}", json=json)
     response.raise_for_status()
-    data, error = unwrap_envelope(await response.json())
-    assert not error  # nosec
-    assert data is not None  # nosec
+    data = unwrap_envelope_if_required(response.json())
     return TaskGet.model_validate(data)
 
 
@@ -74,10 +72,9 @@ async def _wait_for_completion(
             with attempt:
                 response = await session.get(f"{status_url}")
                 response.raise_for_status()
-                data, error = unwrap_envelope(await response.json())
-                assert not error  # nosec
-                assert data is not None  # nosec
+                data = unwrap_envelope_if_required(response.json())
                 task_status = TaskStatus.model_validate(data)
+
                 yield task_status.task_progress
                 if not task_status.done:
                     await asyncio.sleep(
@@ -98,13 +95,10 @@ async def _wait_for_completion(
 
 @retry(**_DEFAULT_AIOHTTP_RETRY_POLICY)
 async def _task_result(session: httpx.AsyncClient, result_url: URL) -> Any:
-    response = await session.get(f"{result_url}")
+    response = await session.get(f"{result_url}", params={"return_exception": True})
     response.raise_for_status()
     if response.status_code != status.HTTP_204_NO_CONTENT:
-        data, error = unwrap_envelope(await response.json())
-        assert not error  # nosec
-        assert data  # nosec
-        return data
+        return unwrap_envelope_if_required(response.json())
     return None
 
 
@@ -112,9 +106,6 @@ async def _task_result(session: httpx.AsyncClient, result_url: URL) -> Any:
 async def _abort_task(session: httpx.AsyncClient, abort_url: URL) -> None:
     response = await session.delete(f"{abort_url}")
     response.raise_for_status()
-    data, error = unwrap_envelope(await response.json())
-    assert not error  # nosec
-    assert not data  # nosec
 
 
 @dataclass(frozen=True)

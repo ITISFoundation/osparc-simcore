@@ -79,7 +79,9 @@ async def _copy_folders_from_project(
     status_code=status.HTTP_202_ACCEPTED,
 )
 async def copy_folders_from_project(
-    query_params: StorageQueryParamsBase, body: FoldersBody, request: Request
+    query_params: Annotated[StorageQueryParamsBase, Depends()],
+    body: FoldersBody,
+    request: Request,
 ):
     task_id = None
     try:

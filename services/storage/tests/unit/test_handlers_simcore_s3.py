@@ -16,7 +16,6 @@ from typing import Any, Literal
 import httpx
 import pytest
 import sqlalchemy as sa
-from aiohttp import ClientResponseError
 from aws_library.s3 import SimcoreS3API
 from faker import Faker
 from fastapi import FastAPI
@@ -32,7 +31,7 @@ from pytest_simcore.helpers.httpx_assert_checks import assert_status
 from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.aiohttp import status
-from servicelib.aiohttp.long_running_tasks.client import long_running_task_request
+from servicelib.fastapi.long_running_tasks.client import long_running_task_request
 from settings_library.s3 import S3Settings
 from simcore_postgres_database.storage_models import file_meta_data
 from simcore_service_storage.models import SearchFilesQueryParams
@@ -103,7 +102,7 @@ async def _request_copy_folders(
         f"Copying folders from {source_project['uuid']} to {dst_project['uuid']}",
     ) as ctx:
         async for lr_task in long_running_task_request(
-            client.session,
+            client,
             url,
             json=jsonable_encoder(
                 FoldersBody(
@@ -132,9 +131,7 @@ async def test_copy_folders_from_non_existing_project(
     incorrect_dst_project = deepcopy(dst_project)
     incorrect_dst_project["uuid"] = faker.uuid4()
 
-    with pytest.raises(
-        ClientResponseError, match=f"{incorrect_src_project['uuid']} was not found"
-    ) as exc_info:
+    with pytest.raises(httpx.HTTPStatusError, match="404") as exc_info:
         await _request_copy_folders(
             initialized_app,
             client,
@@ -143,11 +140,14 @@ async def test_copy_folders_from_non_existing_project(
             dst_project,
             nodes_map={},
         )
-    assert exc_info.value.status == status.HTTP_404_NOT_FOUND
+    assert_status(
+        exc_info.value.response,
+        status.HTTP_404_NOT_FOUND,
+        None,
+        expected_msg=f"{incorrect_src_project['uuid']} was not found",
+    )
 
-    with pytest.raises(
-        ClientResponseError, match=f"{incorrect_dst_project['uuid']} was not found"
-    ) as exc_info:
+    with pytest.raises(httpx.HTTPStatusError, match="404") as exc_info:
         await _request_copy_folders(
             initialized_app,
             client,
@@ -156,7 +156,12 @@ async def test_copy_folders_from_non_existing_project(
             incorrect_dst_project,
             nodes_map={},
         )
-    assert exc_info.value.status == status.HTTP_404_NOT_FOUND
+    assert_status(
+        exc_info.value.response,
+        status.HTTP_404_NOT_FOUND,
+        None,
+        expected_msg=f"{incorrect_dst_project['uuid']} was not found",
+    )
 
 
 async def test_copy_folders_from_empty_project(
