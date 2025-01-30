@@ -4,9 +4,14 @@
 import enum
 
 import sqlalchemy as sa
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects import postgresql
 
-from ._common import RefActions, column_created_datetime, column_modified_datetime
+from ._common import (
+    RefActions,
+    column_created_datetime,
+    column_modified_datetime,
+    column_trashed_datetime,
+)
 from .base import metadata
 
 
@@ -19,7 +24,7 @@ licensed_items = sa.Table(
     metadata,
     sa.Column(
         "licensed_item_id",
-        UUID(as_uuid=True),
+        postgresql.UUID(as_uuid=True),
         nullable=False,
         primary_key=True,
         server_default=sa.text("gen_random_uuid()"),
@@ -28,12 +33,19 @@ licensed_items = sa.Table(
         "name",
         sa.String,
         nullable=False,
+        doc="Item Name identifier",
     ),
     sa.Column(
         "licensed_resource_type",
         sa.Enum(LicensedResourceType),
         nullable=False,
         doc="Item type, ex. VIP_MODEL",
+    ),
+    sa.Column(
+        "licensed_resource_data",
+        postgresql.JSONB,
+        nullable=True,
+        doc="Stores metadata related to this licensed resource. Used for read-only purposes",
     ),
     sa.Column(
         "pricing_plan_id",
@@ -56,14 +68,16 @@ licensed_items = sa.Table(
             name="fk_resource_tracker_license_packages_product_name",
         ),
         nullable=False,
-        doc="Product name",
+        doc="Product name identifier. If None, then the item is not exposed",
     ),
     sa.Column(
         "license_key",
         sa.String,
         nullable=True,
-        doc="Purpose: Acts as a mapping key to the internal license server. Usage: The Sim4Life base applications use this key to check out a seat from the internal license server.",
+        doc="Purpose: Acts as a mapping key to the internal license server."
+        "Usage: The Sim4Life base applications use this key to check out a seat from the internal license server.",
     ),
     column_created_datetime(timezone=True),
     column_modified_datetime(timezone=True),
+    column_trashed_datetime("licensed_item"),
 )
