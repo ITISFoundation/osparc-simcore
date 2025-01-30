@@ -138,7 +138,7 @@ services:
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver_local.service=${SWARM_STACK_NAME}_webserver
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver_local.entrypoints=http
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver_local.rule=PathPrefix(`/dev/`)
-        - traefik.http.routers.${SWARM_STACK_NAME}_webserver_local.priority=3
+        - traefik.http.routers.${SWARM_STACK_NAME}_webserver_local.priority=9
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver_local.middlewares=${SWARM_STACK_NAME}_gzip@swarm, ${SWARM_STACK_NAME_NO_HYPHEN}_sslheader@swarm, ${SWARM_STACK_NAME}_webserver_retry
 
   wb-api-server:

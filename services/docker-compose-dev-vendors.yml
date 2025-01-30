@@ -24,7 +24,6 @@ services:
         - traefik.http.services.${SWARM_STACK_NAME}_manual.loadbalancer.healthcheck.interval=2000ms
         - traefik.http.services.${SWARM_STACK_NAME}_manual.loadbalancer.healthcheck.timeout=1000ms
         - traefik.http.routers.${SWARM_STACK_NAME}_manual.entrypoints=http
-        - traefik.http.routers.${SWARM_STACK_NAME}_manual.priority=10
         - traefik.http.routers.${SWARM_STACK_NAME}_manual.rule=HostRegexp(`${VENDOR_DEV_MANUAL_SUBDOMAIN}\.(?P<host>.+)`)
         - traefik.http.routers.${SWARM_STACK_NAME}_manual.middlewares=${SWARM_STACK_NAME}_gzip@swarm, ${SWARM_STACK_NAME}_manual-auth
     networks:
