@@ -80,4 +80,9 @@ licensed_items = sa.Table(
     column_created_datetime(timezone=True),
     column_modified_datetime(timezone=True),
     column_trashed_datetime("licensed_item"),
+    sa.UniqueConstraint(
+        "licensed_resource_name",
+        "licensed_resource_type",
+        name="uq_licensed_resource_name_type",
+    ),
 )
