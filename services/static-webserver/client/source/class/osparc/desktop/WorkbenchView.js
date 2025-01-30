@@ -70,7 +70,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     "expandNavBar": "qx.event.type.Event",
     "backToDashboardPressed": "qx.event.type.Event",
     "slidesEdit": "qx.event.type.Event",
-    "slidesAppStart": "qx.event.type.Event",
     "annotationRectStart": "qx.event.type.Event",
     "takeSnapshot": "qx.event.type.Event",
     "showSnapshots": "qx.event.type.Event",
@@ -448,7 +447,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         marginTop: 7,
         ...osparc.navigation.NavigationBar.BUTTON_OPTIONS
       });
-      startAppButtonTB.addListener("execute", () => this.fireEvent("slidesAppStart"));
+      startAppButtonTB.addListener("execute", () => study.getUi().setMode("app"));
       topBar.add(startAppButtonTB);
 
       const collapseWithUserMenu = this.__collapseWithUserMenu = new osparc.desktop.CollapseWithUserMenu();
@@ -843,7 +842,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         toolTipText: this.tr("Start App Mode"),
         height: buttonsHeight
       });
-      startAppBtn.addListener("execute", () => this.fireEvent("slidesAppStart"), this);
+      startAppBtn.addListener("execute", () => this.getStudy().getUi().setMode("app"), this);
       slideshowButtons.add(startAppBtn);
 
       this.__evalSlidesButtons();

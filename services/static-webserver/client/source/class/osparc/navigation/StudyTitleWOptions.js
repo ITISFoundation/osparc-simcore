@@ -80,9 +80,7 @@ qx.Class.define("osparc.navigation.StudyTitleWOptions", {
             label: this.tr("Convert to Pipeline"),
             icon: null,
           });
-          control.addListener("execute", () => {
-            console.log("Convert to Pipeline");
-          });
+          control.addListener("execute", () => this.getStudy().getUi().setMode("workbench"));
           break;
         case "study-menu-download-logs":
           control = new qx.ui.menu.Button().set({

@@ -72,7 +72,7 @@ qx.Class.define("osparc.desktop.SlideshowView", {
       const nodeId = e.getData();
       this.__hideNode(nodeId);
     }, this);
-    slideshowToolbar.addListener("slidesStop", () => this.fireEvent("slidesStop"), this);
+    slideshowToolbar.addListener("slidesStop", () => this.getStudy().getUi().setMode("workbench"), this);
     this._add(slideshowToolbar);
 
     const mainView = this.__mainView = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
@@ -109,7 +109,6 @@ qx.Class.define("osparc.desktop.SlideshowView", {
   },
 
   events: {
-    "slidesStop": "qx.event.type.Event",
     "startPartialPipeline": "qx.event.type.Data",
     "stopPipeline": "qx.event.type.Event",
     "backToDashboardPressed": "qx.event.type.Event",
