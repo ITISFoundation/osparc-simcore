@@ -4,7 +4,7 @@ from contextlib import AsyncExitStack, asynccontextmanager
 from dataclasses import dataclass
 from datetime import datetime
 from functools import cached_property
-from typing import Any, Final, Literal
+from typing import Any, AsyncContextManager, Final, Literal
 
 import aiodocker
 import aiohttp
@@ -287,44 +287,56 @@ async def pull_image(
             )
 
 
-@asynccontextmanager
-async def lifespan_remote_docker_client(app: FastAPI) -> AsyncIterator[None]:
-    """Ensures `setup` and `teardown` for the docker client.
+def get_lifespan_remote_docker_client(
+    docker_api_proxy_settings_property_name: str,
+) -> Callable[[FastAPI], AsyncContextManager[None]]:
+    """Ensures `setup` and `teardown` for the remote docker client.
 
-    NOTE: the `DockerApiProxysettings` must be placed as `DOCKER_API_PROXY`
-    on the Application's Settings object
+    Arguments:
+        docker_api_proxy_settings_property_name -- if the name is `PROP_NAME`
+        then it should be accessible as `app.state.settings.PROP_NAME`
+
+    Returns:
+        docker client lifespan manager
     """
-    settings: DockerApiProxysettings = app.state.settings.DOCKER_API_PROXY
 
-    session: ClientSession | None = None
-    if settings.DOCKER_API_PROXY_USER and settings.DOCKER_API_PROXY_PASSWORD:
-        session = ClientSession(
-            auth=aiohttp.BasicAuth(
-                login=settings.DOCKER_API_PROXY_USER,
-                password=settings.DOCKER_API_PROXY_PASSWORD.get_secret_value(),
-            )
+    @asynccontextmanager
+    async def _(app: FastAPI) -> AsyncIterator[None]:
+        settings: DockerApiProxysettings = getattr(
+            app.state.settings, docker_api_proxy_settings_property_name
         )
 
-    async with AsyncExitStack() as exit_stack:
+        session: ClientSession | None = None
         if settings.DOCKER_API_PROXY_USER and settings.DOCKER_API_PROXY_PASSWORD:
-            await exit_stack.enter_async_context(
-                ClientSession(
-                    auth=aiohttp.BasicAuth(
-                        login=settings.DOCKER_API_PROXY_USER,
-                        password=settings.DOCKER_API_PROXY_PASSWORD.get_secret_value(),
-                    )
+            session = ClientSession(
+                auth=aiohttp.BasicAuth(
+                    login=settings.DOCKER_API_PROXY_USER,
+                    password=settings.DOCKER_API_PROXY_PASSWORD.get_secret_value(),
                 )
             )
 
-        client = await exit_stack.enter_async_context(
-            aiodocker.Docker(url=settings.base_url, session=session)
-        )
+        async with AsyncExitStack() as exit_stack:
+            if settings.DOCKER_API_PROXY_USER and settings.DOCKER_API_PROXY_PASSWORD:
+                await exit_stack.enter_async_context(
+                    ClientSession(
+                        auth=aiohttp.BasicAuth(
+                            login=settings.DOCKER_API_PROXY_USER,
+                            password=settings.DOCKER_API_PROXY_PASSWORD.get_secret_value(),
+                        )
+                    )
+                )
 
-        app.state.remote_docker_client = client
+            client = await exit_stack.enter_async_context(
+                aiodocker.Docker(url=settings.base_url, session=session)
+            )
 
-        yield
+            app.state.remote_docker_client = client
+
+            yield
+
+    return _
 
 
 def get_remote_docker_client(app: FastAPI) -> aiodocker.Docker:
-    client: aiodocker.Docker = app.state.remote_docker_client
-    return client
+    assert isinstance(app.state.remote_docker_client, aiodocker.Docker)  # nosec
+    return app.state.remote_docker_client

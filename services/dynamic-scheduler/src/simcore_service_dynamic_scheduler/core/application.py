@@ -1,4 +1,6 @@
 from fastapi import FastAPI
+from servicelib.docker_utils import get_lifespan_remote_docker_client
+from servicelib.fastapi.lifespan_utils import combine_lfiespan_context_managers
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
 from servicelib.fastapi.profiler_middleware import ProfilerMiddleware
 from servicelib.fastapi.prometheus_instrumentation import (
@@ -41,6 +43,9 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
             "/doc" if app_settings.DYNAMIC_SCHEDULER_SWAGGER_API_DOC_ENABLED else None
         ),
         redoc_url=None,  # default disabled, see below
+        lifespan=combine_lfiespan_context_managers(
+            get_lifespan_remote_docker_client("DYNAMIC_SCHEDULER_DOCKER_API_PROXY")
+        ),
     )
     override_fastapi_openapi_method(app)
 
