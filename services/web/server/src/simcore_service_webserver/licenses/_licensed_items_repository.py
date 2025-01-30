@@ -35,6 +35,7 @@ _logger = logging.getLogger(__name__)
 
 
 _SELECTION_ARGS = get_columns_from_db_model(licensed_items, LicensedItemDB)
+_SELECTION_ARGS = get_columns_from_db_model(licensed_items, LicensedItemDB)
 
 
 async def create(
@@ -51,16 +52,17 @@ async def create(
         result = await conn.execute(
             licensed_items.insert()
             .values(
+                product_name=product_name,
                 licensed_resource_name=licensed_resource_name,
                 licensed_resource_type=licensed_resource_type,
-                pricing_plan_id=pricing_plan_id,
-                product_name=product_name,
                 licensed_resource_data=licensed_resource_data,
+                pricing_plan_id=pricing_plan_id,
                 created=func.now(),
                 modified=func.now(),
             )
             .returning(*_SELECTION_ARGS)
         )
+        row = result.one()
         row = result.one()
         return LicensedItemDB.model_validate(row)
 
@@ -73,6 +75,7 @@ async def list_(
     offset: NonNegativeInt,
     limit: NonNegativeInt,
     order_by: OrderBy,
+    # filters
     trashed: Literal["exclude", "only", "include"] = "exclude",
     inactive: Literal["exclude", "only", "include"] = "exclude",
 ) -> tuple[int, list[LicensedItemDB]]:
@@ -89,12 +92,12 @@ async def list_(
     elif trashed == "only":
         base_query = base_query.where(licensed_items.c.trashed.is_not(None))
 
-    if inactive == "exclude":
+    if inactive == "only":
         base_query = base_query.where(
             licensed_items.c.product_name.is_(None)
             | licensed_items.c.licensed_item_id.is_(None)
         )
-    elif inactive == "only":
+    elif inactive == "exclude":
         base_query = base_query.where(
             licensed_items.c.product_name.is_not(None)
             & licensed_items.c.licensed_item_id.is_not(None)

@@ -6,12 +6,7 @@ import enum
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
-from ._common import (
-    RefActions,
-    column_created_datetime,
-    column_modified_datetime,
-    column_trashed_datetime,
-)
+from ._common import RefActions, column_modified_datetime, column_trashed_datetime
 from .base import metadata
 
 
@@ -48,6 +43,12 @@ licensed_items = sa.Table(
         doc="Resource metadata. Used for read-only purposes",
     ),
     sa.Column(
+        "licensed_resource_data",
+        postgresql.JSONB,
+        nullable=True,
+        doc="Resource metadata. Used for read-only purposes",
+    ),
+    sa.Column(
         "pricing_plan_id",
         sa.BigInteger,
         sa.ForeignKey(
@@ -70,7 +71,6 @@ licensed_items = sa.Table(
         nullable=True,
         doc="Product name identifier. If None, then the item is not exposed",
     ),
-    column_created_datetime(timezone=True),
     column_modified_datetime(timezone=True),
     column_trashed_datetime("licensed_item"),
 )

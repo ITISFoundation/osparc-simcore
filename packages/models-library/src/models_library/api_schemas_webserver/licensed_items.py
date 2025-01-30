@@ -57,8 +57,10 @@ class LicensedItemRestGet(OutputSchema):
         dict[str, Any], AfterValidator(to_camel_recursive)
     ]
     pricing_plan_id: PricingPlanId
+
     created_at: datetime
     modified_at: datetime
+
     model_config = ConfigDict(
         json_schema_extra={
             "examples": [

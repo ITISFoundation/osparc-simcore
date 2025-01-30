@@ -56,9 +56,15 @@ async def list_licensed_items(
     offset: NonNegativeInt,
     limit: int,
     order_by: OrderBy,
-) -> LicensedItemPage:
-    total_count, licensed_item_db_list = await _licensed_items_repository.list_(
-        app, product_name=product_name, offset=offset, limit=limit, order_by=order_by
+) -> LicensedItemGetPage:
+    total_count, items = await _licensed_items_repository.list_(
+        app,
+        product_name=product_name,
+        offset=offset,
+        limit=limit,
+        order_by=order_by,
+        trashed="exclude",
+        inactive="exclude",
     )
     return LicensedItemPage(
         items=[
