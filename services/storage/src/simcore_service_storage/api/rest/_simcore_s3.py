@@ -52,7 +52,7 @@ async def _copy_folders_from_project(
     app: FastAPI,
     query_params: StorageQueryParamsBase,
     body: FoldersBody,
-):
+) -> Envelope[dict[str, Any]]:
     dsm = cast(
         SimcoreS3DataManager,
         get_dsm_provider(app).get(SimcoreS3DataManager.get_location_id()),

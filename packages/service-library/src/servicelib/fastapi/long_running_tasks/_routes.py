@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Query, Request, status
 
@@ -61,7 +61,7 @@ async def get_task_result(
     tasks_manager: Annotated[TasksManager, Depends(get_tasks_manager)],
     *,
     return_exception: Annotated[bool, Query()] = False,
-) -> TaskResult:
+) -> TaskResult | Any:
     assert request  # nosec
     # TODO: refactor this to use same as in https://github.com/ITISFoundation/osparc-simcore/issues/3265
     try:

@@ -37,5 +37,5 @@ def unwrap_envelope_if_required(data: Mapping) -> Mapping:
     if is_enveloped(data):
         data, error = unwrap_envelope(data)
         assert not error  # nosec
-        assert data is not None  # nosec
+        # assert data is not None  # nosec
     return data

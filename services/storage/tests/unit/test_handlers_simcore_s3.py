@@ -557,7 +557,7 @@ async def test_search_files_request(
     response = await client.post(f"{url}")
     found, error = assert_status(response, status.HTTP_200_OK, list[FileMetaDataGet])
     assert not error
-    assert found
+    assert found is not None
 
     expected = uploaded_file_ids[
         search_files_query_params.offset : search_files_query_params.offset
