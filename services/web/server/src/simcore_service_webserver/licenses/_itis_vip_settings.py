@@ -1,8 +1,9 @@
-from typing import Annotated, TypeAlias
+from typing import Annotated
 
-from models_library.basic_types import IDStr
 from pydantic import AfterValidator, HttpUrl
 from settings_library.base import BaseCustomSettings
+
+from ._itis_vip_models import CategoryDisplay, CategoryID, CategoryTuple
 
 
 def _validate_url_contains_category(url: str) -> str:
@@ -10,10 +11,6 @@ def _validate_url_contains_category(url: str) -> str:
         msg = "URL must contain '{category}'"
         raise ValueError(msg)
     return url
-
-
-CategoryID: TypeAlias = IDStr
-CategoryDisplay: TypeAlias = str
 
 
 class ItisVipSettings(BaseCustomSettings):
@@ -24,4 +21,14 @@ class ItisVipSettings(BaseCustomSettings):
         return [
             HttpUrl(self.ITIS_VIP_API_URL.format(category=category))
             for category in self.ITIS_VIP_CATEGORIES
+        ]
+
+    def to_categories(self) -> list[CategoryTuple]:
+        return [
+            CategoryTuple(
+                url=HttpUrl(self.ITIS_VIP_API_URL.format(category=category_id)),
+                id=category_id,
+                display=category_display,
+            )
+            for category_id, category_display in self.ITIS_VIP_CATEGORIES.items()
         ]

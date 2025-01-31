@@ -1,5 +1,5 @@
 import re
-from typing import Annotated, Any, Literal, NamedTuple, NotRequired
+from typing import Annotated, Any, Literal, NamedTuple, NotRequired, TypeAlias
 
 from models_library.basic_types import IDStr
 from pydantic import (
@@ -78,8 +78,11 @@ class ItisVipResourceData(BaseModel):
 # INTERNAL
 #
 
+CategoryID: TypeAlias = IDStr
+CategoryDisplay: TypeAlias = str
+
 
 class CategoryTuple(NamedTuple):
     url: HttpUrl
-    id: IDStr
-    display: str
+    id: CategoryID
+    display: CategoryDisplay
