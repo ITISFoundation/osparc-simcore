@@ -7,6 +7,7 @@ from pprint import pformat
 from typing import NamedTuple
 
 from aiohttp import web
+from deepdiff import DeepDiff
 from models_library.licensed_items import (
     LicensedItemDB,
     LicensedItemID,
@@ -48,18 +49,6 @@ class RegistrationResult(NamedTuple):
     message: str | None
 
 
-def _compute_difference(old_data: dict, new_data: dict):
-    differences = {
-        k: {"old": old_data[k], "new": new_data[k]}
-        for k in old_data
-        if old_data[k] != new_data.get(k)
-    }
-    differences.update(
-        {k: {"old": None, "new": new_data[k]} for k in new_data if k not in old_data}
-    )
-    return differences
-
-
 async def register_resource_as_licensed_item(
     app: web.Application,
     *,
@@ -77,6 +66,8 @@ async def register_resource_as_licensed_item(
     #
     # This approach not only reduces unnecessary error logs but also helps prevent race conditions
     # when multiple concurrent calls attempt to register the same resource.
+
+    resource_key = f"{licensed_resource_type}, {licensed_resource_name}"
     new_licensed_resource_data = licensed_resource_data.model_dump(
         mode="json", exclude_unset=True
     )
@@ -89,12 +80,13 @@ async def register_resource_as_licensed_item(
         )
 
         if licensed_item.licensed_resource_data != new_licensed_resource_data:
-            # differences = _compute_difference(
-            #    licensed_item.licensed_resource_data or {},
-            #    new_licensed_resource_data,
-            # )
-            differences = "there are differences TMP"
-            msg = f"DIFFERENT_RESOURCE: {licensed_resource_name}, {licensed_resource_type}. Difference:\n{pformat(differences)}"
+            ddiff = DeepDiff(
+                licensed_item.licensed_resource_data, new_licensed_resource_data
+            )
+            msg = (
+                f"DIFFERENT_RESOURCE: {resource_key=} found in licensed_item_id={licensed_item.licensed_item_id} with different data. "
+                f"Diff:\n\t{pformat(ddiff, indent=2, width=200)}"
+            )
             return RegistrationResult(
                 licensed_item, RegistrationState.DIFFERENT_RESOURCE, msg
             )
@@ -102,7 +94,7 @@ async def register_resource_as_licensed_item(
         return RegistrationResult(
             licensed_item,
             RegistrationState.ALREADY_REGISTERED,
-            f"ALREADY_REGISTERED: {licensed_resource_name}, {licensed_resource_type}",
+            f"ALREADY_REGISTERED: {resource_key=} found in licensed_item_id={licensed_item.licensed_item_id}",
         )
 
     except LicensedItemNotFoundError:
@@ -119,7 +111,7 @@ async def register_resource_as_licensed_item(
         return RegistrationResult(
             licensed_item,
             RegistrationState.NEWLY_REGISTERED,
-            f"NEWLY_REGISTERED: {licensed_resource_name}, {licensed_resource_type}",
+            f"NEWLY_REGISTERED: {resource_key=} registered with licensed_item_id={licensed_item.licensed_item_id}",
         )
 
 

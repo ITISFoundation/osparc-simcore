@@ -189,6 +189,8 @@ cryptography==41.0.7
     #   -c requirements/../../../../requirements/constraints.txt
     #   -r requirements/_base.in
     #   aiohttp-session
+deepdiff==8.1.1
+    # via -r requirements/_base.in
 deprecated==1.2.14
     # via
     #   opentelemetry-api
@@ -455,6 +457,8 @@ opentelemetry-util-http==0.48b0
     #   opentelemetry-instrumentation-aiohttp-client
     #   opentelemetry-instrumentation-aiohttp-server
     #   opentelemetry-instrumentation-requests
+orderly-set==5.2.3
+    # via deepdiff
 orjson==3.10.0
     # via
     #   -c requirements/../../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -504,6 +508,7 @@ orjson==3.10.0
     #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/_base.in
+    #   deepdiff
 packaging==24.1
     # via
     #   -r requirements/../../../../packages/simcore-sdk/requirements/_base.in

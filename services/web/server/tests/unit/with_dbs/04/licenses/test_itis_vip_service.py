@@ -189,7 +189,7 @@ async def test_sync_itis_vip_as_licensed_items(
                 (
                     licensed_item3,
                     state3,
-                    _,
+                    msg,
                 ) = await _licensed_items_service.register_resource_as_licensed_item(
                     client.app,
                     licensed_resource_name=f"{category}/{vip.id}",
@@ -204,9 +204,10 @@ async def test_sync_itis_vip_as_licensed_items(
                     ),
                     licensed_item_display_name="foo",
                 )
-
                 assert state3 == RegistrationState.DIFFERENT_RESOURCE
                 assert licensed_item2 == licensed_item3
+                # {'values_changed': {"root['features']['functionality']": {'new_value': 'Non-Posable', 'old_value': 'Posable'}}}
+                assert "functionality" in msg
 
 
 async def test_itis_vip_syncer_service(

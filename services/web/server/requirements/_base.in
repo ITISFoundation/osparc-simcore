@@ -32,6 +32,7 @@ aiosmtplib # email
 asyncpg # db
 captcha
 cryptography # security
+deepdiff[optimize] # diffs data-structures
 faker # Only used in dev-mode for proof-of-concepts
 gunicorn[setproctitle]
 httpx
