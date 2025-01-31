@@ -76,6 +76,7 @@ qx.Class.define("osparc.store.LicensedItems", {
         },
       }
       return osparc.data.Resources.fetch("licensedItems", "purchase", params);
+      // OM add purchase to cache
     },
 
     getCheckedOutLicensedItems: function(walletId, urlParams, options = {}) {
