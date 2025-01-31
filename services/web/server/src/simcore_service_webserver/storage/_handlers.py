@@ -252,14 +252,16 @@ async def upload_file(request: web.Request) -> web.Response:
     file_upload_schema = FileUploadSchema.model_validate(data)
     # NOTE: since storage is fastapi-based it returns file_id not url encoded and aiohttp does not like it
     # /v0/locations/{location_id}/files/{file_id:non-encoded-containing-slashes}:complete --> /v0/storage/locations/{location_id}/files/{file_id:non-encode}:complete
-
+    storage_encoded_file_id = quote(path_params.file_id, safe="/")
     file_upload_schema.links.complete_upload = _from_storage_url(
         request,
         file_upload_schema.links.complete_upload,
-        url_encode=path_params.file_id,
+        url_encode=storage_encoded_file_id,
     )
     file_upload_schema.links.abort_upload = _from_storage_url(
-        request, file_upload_schema.links.abort_upload, url_encode=path_params.file_id
+        request,
+        file_upload_schema.links.abort_upload,
+        url_encode=storage_encoded_file_id,
     )
     return create_data_response(jsonable_encoder(file_upload_schema), status=status)
 
@@ -282,9 +284,10 @@ async def complete_upload_file(request: web.Request) -> web.Response:
         request, "POST", body=body_item.model_dump()
     )
     data, _ = unwrap_envelope(payload)
+    storage_encoded_file_id = quote(path_params.file_id, safe="/")
     file_upload_complete = FileUploadCompleteResponse.model_validate(data)
     file_upload_complete.links.state = _from_storage_url(
-        request, file_upload_complete.links.state, url_encode=path_params.file_id
+        request, file_upload_complete.links.state, url_encode=storage_encoded_file_id
     )
     return create_data_response(jsonable_encoder(file_upload_complete), status=status)
 
