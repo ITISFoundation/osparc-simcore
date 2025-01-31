@@ -15,8 +15,8 @@ def combine_lfiespans(*lifespans: LifespanContextManager) -> LifespanContextMana
     @asynccontextmanager
     async def _(app: FastAPI) -> AsyncGenerator[None, None]:
         async with AsyncExitStack() as stack:
-            for context_manager in lifespans:
-                await stack.enter_async_context(context_manager(app))
+            for lifespan in lifespans:
+                await stack.enter_async_context(lifespan(app))
             yield
 
     return _
