@@ -21,7 +21,7 @@ from .._meta import (
     SUMMARY,
 )
 from ..api.frontend import initialize_frontend
-from ..api.rest.routes import lifespan_rest_api
+from ..api.rest.routes import initialize_rest_api
 from ..api.rpc.routes import lifespan_rpc_api_routes
 from ..services.deferred_manager import lifespan_deferred_manager
 from ..services.director_v0 import lifespan_director_v0
@@ -54,7 +54,6 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
         lifespan_service_tracker,
         lifespan_deferred_manager,
         lifespan_status_monitor,
-        lifespan_rest_api,
     ]
 
     if app_settings.DYNAMIC_SCHEDULER_PROMETHEUS_INSTRUMENTATION_ENABLED:
@@ -78,15 +77,17 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
     )
     override_fastapi_openapi_method(app)
 
+    # STATE
+    app.state.settings = app_settings
+    assert app.state.settings.API_VERSION == API_VERSION  # nosec
+
+    initialize_rest_api(app)
+
     initialize_prometheus_instrumentation(app)
 
     initialize_frontend(app)
 
     if app_settings.DYNAMIC_SCHEDULER_PROFILING:
         initialize_profiler(app)
-
-    # STATE
-    app.state.settings = app_settings
-    assert app.state.settings.API_VERSION == API_VERSION  # nosec
 
     return app
