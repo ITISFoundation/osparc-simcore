@@ -10,6 +10,8 @@ from prometheus_fastapi_instrumentator import Instrumentator
 
 
 def initialize_prometheus_instrumentation(app: FastAPI) -> None:
+    # NOTE: this cannot be ran once the application is started
+
     # NOTE: use that registry to prevent having a global one
     app.state.prometheus_registry = registry = CollectorRegistry(auto_describe=True)
     app.state.prometheus_instrumentator = Instrumentator(
@@ -17,7 +19,6 @@ def initialize_prometheus_instrumentation(app: FastAPI) -> None:
         inprogress_labels=False,
         registry=registry,
     )
-    # NOTE: this cannot be ran once the application is started
     app.state.prometheus_instrumentator.instrument(app)
 
 
