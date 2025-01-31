@@ -10,9 +10,9 @@ from aiohttp.test_utils import TestClient
 from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
     PricingUnitGet,
 )
-from models_library.api_schemas_webserver.licensed_items import LicensedItemGet
+from models_library.api_schemas_webserver.licensed_items import LicensedItemRestGet
 from models_library.api_schemas_webserver.wallets import WalletGetWithAvailableCredits
-from models_library.licensed_items import LicensedResourceType
+from models_library.licensed_items import VIP_DETAILS_EXAMPLE, LicensedResourceType
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import UserInfoDict
@@ -42,9 +42,11 @@ async def test_licensed_items_listing(
     licensed_item_db = await _licensed_items_repository.create(
         client.app,
         product_name=osparc_product_name,
-        name="Model A",
+        display_name="Model A display name",
+        licensed_resource_name="Model A",
         licensed_resource_type=LicensedResourceType.VIP_MODEL,
         pricing_plan_id=pricing_plan_id,
+        licensed_resource_data=VIP_DETAILS_EXAMPLE,
     )
     _licensed_item_id = licensed_item_db.licensed_item_id
 
@@ -53,7 +55,13 @@ async def test_licensed_items_listing(
     resp = await client.get(f"{url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(data) == 1
-    assert LicensedItemGet(**data[0])
+    assert LicensedItemRestGet(**data[0])
+    assert data[0]["licensedResourceData"][
+        "additionalField"
+    ]  # <-- Testing nested camel case
+    assert data[0]["licensedResourceData"]["features"][
+        "additionalField"
+    ]  # <-- Testing nested camel case
 
     # get
     url = client.app.router["get_licensed_item"].url_for(
@@ -61,7 +69,7 @@ async def test_licensed_items_listing(
     )
     resp = await client.get(f"{url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
-    assert LicensedItemGet(**data)
+    assert LicensedItemRestGet(**data)
 
 
 @pytest.fixture
@@ -109,9 +117,11 @@ async def test_licensed_items_purchase(
     licensed_item_db = await _licensed_items_repository.create(
         client.app,
         product_name=osparc_product_name,
-        name="Model A",
+        display_name="Model A display name",
+        licensed_resource_name="Model A",
         licensed_resource_type=LicensedResourceType.VIP_MODEL,
         pricing_plan_id=pricing_plan_id,
+        licensed_resource_data=VIP_DETAILS_EXAMPLE,
     )
     _licensed_item_id = licensed_item_db.licensed_item_id
 
@@ -121,7 +131,7 @@ async def test_licensed_items_purchase(
     )
     resp = await client.get(f"{url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
-    assert LicensedItemGet(**data)
+    assert LicensedItemRestGet(**data)
 
     # purchase
     url = client.app.router["purchase_licensed_item"].url_for(
