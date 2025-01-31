@@ -10,6 +10,7 @@ from pathlib import Path
 
 import aiodocker
 import pytest
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
 from settings_library.docker_api_proxy import DockerApiProxysettings
 from tenacity import AsyncRetrying, stop_after_delay, wait_fixed
@@ -46,7 +47,13 @@ def caddy_file() -> str:
 
 
 @pytest.fixture
+def mock_wait_till_docker_api_proxy_is_responsive(mocker: MockerFixture) -> None:
+    mocker.patch("servicelib.docker_utils.wait_till_docker_api_proxy_is_responsive")
+
+
+@pytest.fixture
 def authentication_proxy(
+    mock_wait_till_docker_api_proxy_is_responsive: None,
     docker_swarm: None,
     docker_api_proxy_settings: DockerApiProxysettings,
     caddy_file: str,

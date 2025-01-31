@@ -59,7 +59,7 @@ async def setup_docker_client(
 
         app = _get_test_app()
 
-        async with LifespanManager(app):
+        async with LifespanManager(app, startup_timeout=30, shutdown_timeout=30):
             yield get_remote_docker_client(app)
 
     return _

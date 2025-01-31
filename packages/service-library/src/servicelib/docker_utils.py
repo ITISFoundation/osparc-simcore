@@ -9,6 +9,7 @@ from typing import Any, AsyncContextManager, Final, Literal
 import aiodocker
 import aiohttp
 import arrow
+import tenacity
 from aiohttp import ClientSession
 from fastapi import FastAPI
 from models_library.docker import DockerGenericTag
@@ -332,9 +333,21 @@ def get_lifespan_remote_docker_client(
 
             app.state.remote_docker_client = client
 
+            await wait_till_docker_api_proxy_is_responsive(app)
+
             yield
 
     return _
+
+
+@tenacity.retry(
+    wait=tenacity.wait_fixed(5),
+    stop=tenacity.stop_after_delay(60),
+    before_sleep=tenacity.before_sleep_log(_logger, logging.INFO),
+    reraise=True,
+)
+async def wait_till_docker_api_proxy_is_responsive(app: FastAPI) -> None:
+    await get_remote_docker_client(app).version()
 
 
 def get_remote_docker_client(app: FastAPI) -> aiodocker.Docker:
