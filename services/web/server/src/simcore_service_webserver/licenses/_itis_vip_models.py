@@ -1,6 +1,7 @@
 import re
-from typing import Annotated, Any, Literal
+from typing import Annotated, Any, Literal, NotRequired, TypedDict
 
+from models_library.basic_types import IDStr
 from pydantic import (
     BaseModel,
     BeforeValidator,
@@ -23,12 +24,29 @@ def _feature_descriptor_to_dict(descriptor: str) -> dict[str, Any]:
     return dict(matches)
 
 
-class AvailableDownload(BaseModel):
+#
+# ITIS-VIP API Schema
+#
+
+
+class FeaturesDict(TypedDict):
+    name: str
+    version: str
+    sex: NotRequired[str]
+    age: NotRequired[str]
+    weight: NotRequired[str]
+    height: NotRequired[str]
+    date: NotRequired[str]
+    ethnicity: NotRequired[str]
+    functionality: NotRequired[str]
+
+
+class ItisVipData(BaseModel):
     id: Annotated[int, Field(alias="ID")]
     description: Annotated[str, Field(alias="Description")]
     thumbnail: Annotated[str, Field(alias="Thumbnail")]
     features: Annotated[
-        dict[str, Any],
+        FeaturesDict,
         BeforeValidator(_feature_descriptor_to_dict),
         Field(alias="Features"),
     ]
@@ -39,11 +57,17 @@ class AvailableDownload(BaseModel):
     available_from_url: Annotated[HttpUrl | None, Field(alias="AvailableFromURL")]
 
 
-class ResponseData(BaseModel):
+class ItisVipApiResponse(BaseModel):
     msg: int | None = None  # still not used
-    available_downloads: Annotated[
-        list[AvailableDownload],
-        Field(alias="availableDownloads")
-        # TODO: consider just parsing those that you are interested in instead of performing so many checks
-        # and then throw them
+    available_downloads: Annotated[list[ItisVipData], Field(alias="availableDownloads")]
+
+
+#
+# RESOURCE
+#
+class ItisVipResourceData(BaseModel):
+    category_id: IDStr
+    category_display: str
+    data: Annotated[
+        ItisVipData, Field(description="Original published data in the api")
     ]
