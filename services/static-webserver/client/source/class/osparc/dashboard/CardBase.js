@@ -877,6 +877,10 @@ qx.Class.define("osparc.dashboard.CardBase", {
         if (duplicateButton) {
           duplicateButton.setEnabled(osparc.study.Utils.canBeDuplicated(resourceData));
         }
+        const convertToPipelineButton = menuButtons.find(menuBtn => "convertToPipelineButton" in menuBtn);
+        if (convertToPipelineButton) {
+          convertToPipelineButton.setEnabled(osparc.study.Utils.canBeDuplicated(resourceData));
+        }
         const exportCMISButton = menuButtons.find(menuBtn => "exportCMISButton" in menuBtn);
         if (exportCMISButton) {
           exportCMISButton.setEnabled(osparc.study.Utils.canBeExported(resourceData));

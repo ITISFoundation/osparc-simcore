@@ -1648,6 +1648,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const duplicateStudyButton = this.__getDuplicateMenuButton(studyData);
       menu.add(duplicateStudyButton);
 
+      const convertToPipelineButton = this.__getConvertToPipelineMenuButton(studyData);
+      menu.add(convertToPipelineButton);
+
       if (osparc.product.Utils.isProduct("osparc")) {
         const exportStudyButton = this.__getExportMenuButton(studyData);
         menu.add(exportStudyButton);
@@ -1722,6 +1725,16 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       return renameButton;
     },
 
+    __updateName: function(studyData, name) {
+      osparc.info.StudyUtils.patchStudyData(studyData, "name", name)
+        .then(() => this._updateStudyData(studyData))
+        .catch(err => {
+          console.error(err);
+          const msg = err.message || this.tr("Something went wrong Renaming");
+          osparc.FlashMessenger.logAs(msg, "ERROR");
+        });
+    },
+
     __getThumbnailStudyMenuButton: function(studyData) {
       const thumbButton = new qx.ui.menu.Button(this.tr("Thumbnail..."), "@FontAwesome5Solid/image/12");
       thumbButton.addListener("execute", () => {
@@ -1741,16 +1754,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           .catch(err => console.error(err));
       }, this);
       return thumbButton;
-    },
-
-    __updateName: function(studyData, name) {
-      osparc.info.StudyUtils.patchStudyData(studyData, "name", name)
-        .then(() => this._updateStudyData(studyData))
-        .catch(err => {
-          console.error(err);
-          const msg = err.message || this.tr("Something went wrong Renaming");
-          osparc.FlashMessenger.logAs(msg, "ERROR");
-        });
     },
 
     __updateThumbnail: function(studyData, url) {
@@ -1858,6 +1861,29 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       duplicateButton["duplicateButton"] = true;
       duplicateButton.addListener("execute", () => this.__duplicateStudy(studyData), this);
       return duplicateButton;
+    },
+
+    __getConvertToPipelineMenuButton: function(studyData) {
+      const convertToPipelineButton = new qx.ui.menu.Button(this.tr("Convert to Pipeline"), null);
+      convertToPipelineButton["convertToPipelineButton"] = true;
+      const uiMode = osparc.data.model.Study.getUiMode(studyData);
+      convertToPipelineButton.setVisibility(uiMode === "standalone" ? "visible" : "excluded");
+      convertToPipelineButton.addListener("execute", () => {
+        this.__updateUIMode(studyData, "workbench")
+          .catch(err => {
+            console.error(err);
+            const msg = err.message || this.tr("Something went wrong Converting to Pipeline");
+            osparc.FlashMessenger.logAs(msg, "ERROR");
+          });
+      }, this);
+      return convertToPipelineButton;
+    },
+
+    __updateUIMode: function(studyData, uiMode) {
+      const studyUI = osparc.utils.Utils.deepCloneObject(studyData["ui"]);
+      studyUI["mode"] = uiMode;
+      return osparc.info.StudyUtils.patchStudyData(studyData, "ui", studyUI)
+        .then(() => this._updateStudyData(studyData))
     },
 
     __getExportMenuButton: function(studyData) {
