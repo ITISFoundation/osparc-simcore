@@ -7,8 +7,8 @@ from fastapi import FastAPI
 LifespanContextManager: TypeAlias = Callable[[FastAPI], AsyncContextManager[None]]
 
 
-def combine_lfiespans(*lifespans: LifespanContextManager) -> LifespanContextManager:
-    """Applyes the `setup` part of the context mangers in the order they are provided.
+def combine_lifespans(*lifespans: LifespanContextManager) -> LifespanContextManager:
+    """Applies the `setup` part of the contextmangers in the order they are provided.
     The `teardown` is in revere order with regarad to the `seutp`.
     """
 

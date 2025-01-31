@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 import pytest
 from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
-from servicelib.fastapi.lifespan_utils import combine_lfiespans
+from servicelib.fastapi.lifespan_utils import combine_lifespans
 
 
 async def test_multiple_lifespan_managers(capsys: pytest.CaptureFixture):
@@ -20,7 +20,7 @@ async def test_multiple_lifespan_managers(capsys: pytest.CaptureFixture):
         yield
         print("shutdown CACHE")
 
-    app = FastAPI(lifespan=combine_lfiespans(database_lifespan, cache_lifespan))
+    app = FastAPI(lifespan=combine_lifespans(database_lifespan, cache_lifespan))
 
     capsys.readouterr()
 
