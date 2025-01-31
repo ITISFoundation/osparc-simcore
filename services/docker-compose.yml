@@ -549,7 +549,7 @@ services:
     hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
     networks:
       - default
-      - ${SWARM_STACK_NAME}_docker-api-network
+      - docker-api-network
     environment:
       LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
       LOG_FILTER_MAPPING : ${LOG_FILTER_MAPPING}
