@@ -124,7 +124,7 @@ qx.Class.define("osparc.desktop.credits.PurchasesTableModel", {
         ])
           .then(values => {
             const licensedItems = values[0];
-            const purchasesItems = values[1]["data"];
+            const purchasesItems = values[1]["data"]; // this one is paginated
 
             const data = [];
             const purchasesCols = osparc.desktop.credits.PurchasesTable.COLS;
