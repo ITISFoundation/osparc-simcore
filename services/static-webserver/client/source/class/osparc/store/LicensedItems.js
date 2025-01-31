@@ -23,10 +23,12 @@ qx.Class.define("osparc.store.LicensedItems", {
     this.base(arguments);
 
     this.__licensedItems = null;
+    this.__purchasedLicensedItems = {};
   },
 
   members: {
     __licensedItems: null,
+    __purchasedLicensedItems: null,
 
     getLicensedItems: function() {
       if (this.__licensedItems) {
@@ -41,6 +43,9 @@ qx.Class.define("osparc.store.LicensedItems", {
     },
 
     getPurchasedLicensedItems: function(walletId, urlParams, options = {}) {
+      if (walletId in this.__purchasedLicensedItems) {
+        return new Promise(resolve => resolve(this.__purchasedLicensedItems[walletId]));
+      }
       let purchasesParams = {
         url: {
           walletId,
@@ -51,7 +56,11 @@ qx.Class.define("osparc.store.LicensedItems", {
       if (urlParams) {
         purchasesParams.url = Object.assign(purchasesParams.url, urlParams);
       }
-      return osparc.data.Resources.fetch("licensedItems", "purchases", purchasesParams, options);
+      return osparc.data.Resources.fetch("licensedItems", "purchases", purchasesParams, options)
+        .then(purchases => {
+          this.__purchasedLicensedItems[walletId] = purchases;
+          return purchases;
+        });
     },
 
     purchaseLicensedItem: function(licensedItemId, walletId, pricingPlanId, pricingUnitId, numberOfSeats) {

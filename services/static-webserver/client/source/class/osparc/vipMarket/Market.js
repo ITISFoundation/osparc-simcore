@@ -27,8 +27,20 @@ qx.Class.define("osparc.vipMarket.Market", {
     });
     this.addWidgetOnTopOfTheTabs(miniWallet);
 
-    osparc.store.LicensedItems.getInstance().getLicensedItems()
-      .then(licensedItems => {
+    const store = osparc.store.Store.getInstance();
+    const contextWallet = store.getContextWallet();
+    if (!contextWallet) {
+      return;
+    }
+
+    const walletId = contextWallet.getWalletId();
+    const licensedItemsStore = osparc.store.LicensedItems.getInstance();
+    Promise.all([
+      licensedItemsStore.getLicensedItems(),
+      licensedItemsStore.getPurchasedLicensedItems(walletId),
+    ])
+      .then(values => {
+        const licensedItems = values[0];
         const categories = {};
         licensedItems.forEach(licensedItem => {
           if (licensedItem["licensedResourceData"] && licensedItem["licensedResourceData"]["category"]) {
