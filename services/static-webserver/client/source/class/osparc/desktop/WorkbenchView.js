@@ -503,6 +503,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         this.__evalIframe();
         this.__openWorkbenchTab();
         this.__loggerView.setCurrentNodeId(null);
+
+        this.getStudy().getUi().setCurrentNodeId(this.getStudy().getUuid());
       });
       nodesTree.addListener("changeSelectedNode", e => {
         studyTreeItem.resetSelection();
@@ -516,6 +518,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         this.__loggerView.setCurrentNodeId(nodeId);
         this.__workbenchUI.nodeSelected(nodeId);
         this.fireDataEvent("changeSelectedNode", nodeId);
+
+        this.getStudy().getUi().setCurrentNodeId(nodeId);
       });
 
       if (this.__workbenchUIConnected === null) {
@@ -531,9 +535,13 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
             this.__evalIframe(node);
             this.__loggerView.setCurrentNodeId(nodeId);
             this.fireDataEvent("changeSelectedNode", nodeId);
+
+            this.getStudy().getUi().setCurrentNodeId(nodeId);
           } else {
             // empty selection
             this.__studyTreeItem.selectStudyItem();
+
+            this.getStudy().getUi().setCurrentNodeId(this.getStudy().getUuid());
           }
         });
         workbenchUI.addListener("nodeSelected", e => {
@@ -547,6 +555,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
             this.__populateSecondaryColumn(node);
             this.__openIframeTab(node);
             this.__loggerView.setCurrentNodeId(nodeId);
+
+            this.getStudy().getUi().setCurrentNodeId(nodeId);
           }
         }, this);
       }
@@ -564,6 +574,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           }
           this.__loggerView.setCurrentNodeId(nodeId);
           this.__workbenchUI.nodeSelected(nodeId);
+
+          this.getStudy().getUi().setCurrentNodeId(nodeId);
         }
       }, this);
       nodesTree.addListener("removeNode", e => {
@@ -1184,19 +1196,25 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.__nodesTree.nodeSelected(this.__currentNodeId);
     },
 
+    fullscreenNode: function(nodeId) {
+      const node = this.getStudy().getWorkbench().getNode(nodeId);
+      if (node.isDynamic()) {
+        qx.event.Timer.once(() => {
+          this.__openIframeTab(node);
+          node.getIFrame().maximizeIFrame(true);
+        }, this, 10);
+      }
+    },
+
     openFirstNode: function() {
       const validNodes = this.getStudy().getNonFrontendNodes();
       if (validNodes.length === 1 && validNodes[0].isDynamic()) {
         const dynamicNode = validNodes[0];
-        this.nodeSelected(dynamicNode.getNodeId());
-        qx.event.Timer.once(() => {
-          this.__openIframeTab(dynamicNode);
-          dynamicNode.getIFrame().maximizeIFrame(true);
-        }, this, 10);
-        return;
+        this.fullscreenNode(dynamicNode.getNodeId());
+      } else {
+        this.setMaximized(false);
+        this.nodeSelected(this.getStudy().getUuid());
       }
-      this.setMaximized(false);
-      this.nodeSelected(this.getStudy().getUuid());
     }
   }
 });

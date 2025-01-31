@@ -716,7 +716,12 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           this.__viewsStack.setSelection([this.__workbenchView]);
           const currentNodeId = this.getStudy().getUi().getCurrentNodeId();
           if (currentNodeId) {
-            this.__workbenchView.nodeSelected(currentNodeId);
+            const node = this.getStudy().getWorkbench().getNode(currentNodeId);
+            if (node && node.isDynamic()) {
+              this.__workbenchView.fullscreenNode(currentNodeId);
+            } else {
+              this.__workbenchView.nodeSelected(currentNodeId);
+            }
           } else {
             this.__workbenchView.openFirstNode();
           }

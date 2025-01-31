@@ -108,6 +108,13 @@ qx.Class.define("osparc.data.model.IframeHandler", {
       const loadingPage = new osparc.ui.message.Loading().set({
         header: this.__getLoadingPageHeader()
       });
+      if (osparc.product.Utils.isProduct("s4llite")) {
+        loadingPage.setShowToolbar(false);
+      } else {
+        this.getStudy().getUi().bind("mode", loadingPage, "showToolbar", {
+          converter: mode => mode !== "standalone"
+        });
+      }
 
       const node = this.getNode();
       const thumbnail = node.getMetaData()["thumbnail"];

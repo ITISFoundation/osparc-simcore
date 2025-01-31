@@ -67,6 +67,15 @@ qx.Class.define("osparc.ui.message.Loading", {
       nullable: true,
       apply: "__applyMessages"
     },
+
+    /**
+     * Show Restart-Maximize Toolbar
+     */
+    showToolbar: {
+      check: "Boolean",
+      init: false,
+      event: "changeShowToolbar",
+    }
   },
 
   events: {
@@ -206,11 +215,14 @@ qx.Class.define("osparc.ui.message.Loading", {
       osparc.utils.Utils.setIdToWidget(maxButton, osparc.widget.PersistentIframe.getMaximizeWidgetId(maximize));
       maxButton.addListener("execute", () => this.maximizeIFrame(!this.hasState("maximized")), this);
 
-      const maximizeLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
+      const toolbarLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
         alignX: "right",
       }));
-      maximizeLayout.add(maxButton);
-      return maximizeLayout;
+      this.bind("showToolbar", toolbarLayout, "visibility", {
+        converter: showToolbar => showToolbar ? "visible" : "hidden"
+      });
+      toolbarLayout.add(maxButton);
+      return toolbarLayout;
     },
 
     __applyLogo: function(newLogo) {
