@@ -54,7 +54,7 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
 
       const anatomicalModelsData = this.getAnatomicalModelsData();
       if (anatomicalModelsData) {
-        const modelInfo = this.__createModelInfo(anatomicalModelsData);
+        const modelInfo = this.__createModelInfo(anatomicalModelsData["licensedResourceData"]);
         const pricingUnits = this.__createPricingUnits(anatomicalModelsData);
         const importButton = this.__createImportSection(anatomicalModelsData);
         this._add(modelInfo);
@@ -77,7 +77,7 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
       const cardGrid = new qx.ui.layout.Grid(16, 16);
       const cardLayout = new qx.ui.container.Composite(cardGrid);
 
-      const description = anatomicalModelsData["description"];
+      const description = anatomicalModelsData["description"] || "";
       description.split(" - ").forEach((desc, idx) => {
         const titleLabel = new qx.ui.basic.Label().set({
           value: desc,
@@ -162,7 +162,7 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
       });
 
       const doiValue = new qx.ui.basic.Label().set({
-        value: anatomicalModelsData["DOI"] ? anatomicalModelsData["DOI"] : "-",
+        value: anatomicalModelsData["doi"] ? anatomicalModelsData["doi"] : "-",
         font: "text-14",
         alignX: "left",
         marginTop: 16,
