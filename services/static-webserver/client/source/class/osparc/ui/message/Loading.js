@@ -19,6 +19,7 @@
  * The loading page
  *
  * -----------------------
+ * |                  [] |
  * |                     |
  * | oSparc/service logo |
  * |   spinner + header  |
@@ -38,9 +39,10 @@ qx.Class.define("osparc.ui.message.Loading", {
     layout.setRowFlex(this.self().GRID_POS.SPACER_TOP, 1);
     layout.setRowFlex(this.self().GRID_POS.SPACER_BOTTOM, 1);
     layout.setColumnFlex(0, 1);
-    layout.setColumnFlex(2, 1);
     layout.setColumnMaxWidth(1, 400);
     layout.setColumnAlign(1, "center", "middle");
+    layout.setColumnFlex(2, 1);
+    layout.setColumnAlign(2, "right", "middle");
     this._setLayout(layout);
 
     this.__buildLayout();
@@ -67,6 +69,11 @@ qx.Class.define("osparc.ui.message.Loading", {
     },
   },
 
+  events: {
+    "restore" : "qx.event.type.Event",
+    "maximize" : "qx.event.type.Event",
+  },
+
   statics: {
     ICON_WIDTH: 190,
     LOGO_HEIGHT: 100,
@@ -74,12 +81,13 @@ qx.Class.define("osparc.ui.message.Loading", {
     STATUS_ICON_SIZE: 20,
 
     GRID_POS: {
-      SPACER_TOP: 0,
-      LOGO: 1,
-      WAITING: 2,
-      MESSAGES: 3,
-      EXTRA_WIDGETS: 4,
-      SPACER_BOTTOM: 5,
+      TOOLBAR: 0,
+      SPACER_TOP: 1,
+      LOGO: 2,
+      WAITING: 3,
+      MESSAGES: 4,
+      EXTRA_WIDGETS: 5,
+      SPACER_BOTTOM: 6,
     }
   },
 
@@ -95,9 +103,11 @@ qx.Class.define("osparc.ui.message.Loading", {
         column: 0,
         row: 0
       });
-      this._add(new qx.ui.core.Spacer(), {
+
+      const maxLayout = this.__createMaximizeToolbar();
+      this._add(maxLayout, {
         column: 2,
-        row: 0
+        row: this.self().GRID_POS.TOOLBAR
       });
 
       this._add(new qx.ui.core.Spacer(), {
@@ -168,6 +178,37 @@ qx.Class.define("osparc.ui.message.Loading", {
         column: 1,
         row: this.self().GRID_POS.SPACER_BOTTOM
       });
+    },
+
+    maximizeIFrame: function(maximize) {
+      if (maximize) {
+        this.fireEvent("maximize");
+        this.addState("maximized");
+      } else {
+        this.fireEvent("restore");
+        this.removeState("maximized");
+      }
+      const maxButton = this.__maxButton;
+      maxButton.set({
+        label: osparc.widget.PersistentIframe.getZoomLabel(maximize),
+        icon: osparc.widget.PersistentIframe.getZoomIcon(maximize)
+      });
+      osparc.utils.Utils.setIdToWidget(maxButton, osparc.widget.PersistentIframe.getMaximizeWidgetId(maximize));
+      qx.event.message.Bus.getInstance().dispatchByName("maximizeIframe", this.hasState("maximized"));
+    },
+
+    __createMaximizeToolbar: function() {
+      const maximize = false;
+      const maxButton = this.__maxButton = osparc.widget.PersistentIframe.createToolbarButton(maximize).set({
+        label: osparc.widget.PersistentIframe.getZoomLabel(maximize),
+        icon: osparc.widget.PersistentIframe.getZoomIcon(maximize),
+      });
+      osparc.utils.Utils.setIdToWidget(maxButton, osparc.widget.PersistentIframe.getMaximizeWidgetId(maximize));
+      maxButton.addListener("execute", () => this.maximizeIFrame(!this.hasState("maximized")), this);
+
+      const maximizeLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox());
+      maximizeLayout.add(maxButton);
+      return maximizeLayout;
     },
 
     __applyLogo: function(newLogo) {
