@@ -283,6 +283,25 @@ class FileUploadSchema(BaseModel):
     urls: list[AnyUrl]
     links: FileUploadLinks
 
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={
+            "examples": [
+                # typical S3 entry
+                {
+                    "chunk_size": "10000000",
+                    "urls": [
+                        "https://s3.amazonaws.com/bucket-name/key-name?AWSAccessKeyId=AKIAIOSFODNN7EXAMPLE&Expires=1698298164&Signature=WObYM%2F%2B4t7O3%2FZS3Kegb%2Bc4%3D",
+                    ],
+                    "links": {
+                        "abort_upload": "https://storage.com:3021/bucket-name/key-name:abort",
+                        "complete_upload": "https://storage.com:3021/bucket-name/key-name:complete",
+                    },
+                },
+            ]
+        },
+    )
+
 
 class TableSynchronisation(BaseModel):
     dry_run: bool | None = None

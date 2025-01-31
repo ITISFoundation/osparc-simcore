@@ -20,10 +20,16 @@ from models_library.api_schemas_storage import (
     FileLocation,
     FileMetaDataGet,
     FileMetaDataGetv010,
+    FileUploadCompleteResponse,
+    FileUploadCompletionBody,
+    FileUploadSchema,
+    LinkType,
 )
 from models_library.generics import Envelope
 from models_library.projects import ProjectID
+from models_library.projects_nodes_io import LocationID, StorageFileID
 from models_library.users import UserID
+from pydantic import AnyUrl, TypeAdapter
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.logging_tools import log_context
 from servicelib.aiohttp import status
@@ -162,6 +168,86 @@ def fake_storage_app(storage_vtag: str) -> FastAPI:
                 for e in FileMetaDataGet.model_config["json_schema_extra"]["examples"]
             ]
         )
+
+    @router.put(
+        "/locations/{location_id}/files/{file_id:path}",
+        response_model=Envelope[FileUploadSchema],
+    )
+    async def upload_file(
+        user_id: UserID,
+        location_id: LocationID,
+        file_id: StorageFileID,
+        request: Request,
+        link_type: LinkType = LinkType.PRESIGNED,
+    ):
+        assert "json_schema_extra" in FileUploadSchema.model_config
+        assert isinstance(FileUploadSchema.model_config["json_schema_extra"], dict)
+        assert isinstance(
+            FileUploadSchema.model_config["json_schema_extra"]["examples"], list
+        )
+
+        abort_url = (
+            URL(f"{request.url}")
+            .with_path(
+                request.app.url_path_for(
+                    "abort_upload_file",
+                    location_id=f"{location_id}",
+                    file_id=file_id,
+                )
+            )
+            .with_query(user_id=user_id)
+        )
+
+        complete_url = (
+            URL(f"{request.url}")
+            .with_path(
+                request.app.url_path_for(
+                    "complete_upload_file",
+                    location_id=f"{location_id}",
+                    file_id=file_id,
+                )
+            )
+            .with_query(user_id=user_id)
+        )
+        response = FileUploadSchema.model_validate(
+            random.choice(  # noqa: S311
+                FileUploadSchema.model_config["json_schema_extra"]["examples"]
+            )
+        )
+        response.links.abort_upload = TypeAdapter(AnyUrl).validate_python(
+            f"{abort_url}"
+        )
+        response.links.complete_upload = TypeAdapter(AnyUrl).validate_python(
+            f"{complete_url}"
+        )
+
+        return Envelope[FileUploadSchema](data=response)
+
+    @router.post(
+        "/locations/{location_id}/files/{file_id:path}:complete",
+        response_model=Envelope[FileUploadCompleteResponse],
+        status_code=status.HTTP_202_ACCEPTED,
+    )
+    async def complete_upload_file(
+        user_id: UserID,
+        location_id: LocationID,
+        file_id: StorageFileID,
+        body: FileUploadCompletionBody,
+        request: Request,
+    ):
+        ...
+
+    @router.post(
+        "/locations/{location_id}/files/{file_id:path}:abort",
+        status_code=status.HTTP_204_NO_CONTENT,
+    )
+    async def abort_upload_file(
+        user_id: UserID,
+        location_id: LocationID,
+        file_id: StorageFileID,
+        request: Request,
+    ):
+        ...
 
     app.include_router(router)
 
@@ -403,3 +489,35 @@ async def test_storage_list_filter(
         for item in data:
             model = FileMetaDataGet.model_validate(item)
             assert model
+
+
+@pytest.fixture
+def file_id(faker: Faker) -> StorageFileID:
+    return TypeAdapter(StorageFileID).validate_python(
+        f"{faker.uuid4()}/{faker.uuid4()}/{faker.file_name()}"
+    )
+
+
+@pytest.mark.parametrize(
+    "user_role,expected",
+    [
+        # (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
+        # (UserRole.GUEST, status.HTTP_200_OK),
+        (UserRole.USER, status.HTTP_200_OK),
+        # (UserRole.TESTER, status.HTTP_200_OK),
+    ],
+)
+async def test_upload_file(
+    client: TestClient,
+    logged_user: dict[str, Any],
+    expected: int,
+    file_id: StorageFileID,
+):
+    url = f"/v0/storage/locations/0/files/{quote(file_id, safe='')}"
+
+    assert url.startswith(PREFIX)
+
+    resp = await client.put(url, params={"user_id": logged_user["id"]})
+    data, error = await assert_status(resp, expected)
+    assert not error
+    assert data
