@@ -2,10 +2,7 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
-from servicelib.fastapi.lifespan_utils import (
-    LifespanContextManager,
-    combine_lfiespan_context_managers,
-)
+from servicelib.fastapi.lifespan_utils import LifespanContextManager, combine_lfiespans
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
 from servicelib.fastapi.profiler import lifespan_profiler
 from servicelib.fastapi.prometheus_instrumentation import (
@@ -81,7 +78,7 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
             "/doc" if app_settings.DYNAMIC_SCHEDULER_SWAGGER_API_DOC_ENABLED else None
         ),
         redoc_url=None,
-        lifespan=combine_lfiespan_context_managers(*lifespans, _lifespan_banner),
+        lifespan=combine_lfiespans(*lifespans, _lifespan_banner),
     )
     override_fastapi_openapi_method(app)
 

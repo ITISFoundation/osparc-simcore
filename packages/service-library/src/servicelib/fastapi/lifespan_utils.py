@@ -7,7 +7,7 @@ from fastapi import FastAPI
 LifespanContextManager: TypeAlias = Callable[[FastAPI], AsyncContextManager[None]]
 
 
-def combine_lfiespan_context_managers(
+def combine_lfiespans(
     *context_managers: LifespanContextManager,
 ) -> LifespanContextManager:
     """Applyes the `setup` part of the context mangers in the order they are provided.
