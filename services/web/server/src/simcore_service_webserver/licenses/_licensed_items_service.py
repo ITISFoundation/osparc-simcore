@@ -6,10 +6,6 @@ from enum import Enum, auto
 from pprint import pformat
 
 from aiohttp import web
-from models_library.api_schemas_webserver.licensed_items import (
-    LicensedItemGet,
-    LicensedItemGetPage,
-)
 from models_library.licensed_items import (
     LicensedItemDB,
     LicensedItemID,
@@ -33,7 +29,7 @@ from ..users.api import get_user
 from ..wallets.api import get_wallet_with_available_credits_by_user_and_wallet
 from ..wallets.errors import WalletNotEnoughCreditsError
 from . import _licensed_items_repository
-from ._common.models import LicensedItemsBodyParams
+from ._common.models import LicensedItem, LicensedItemPage, LicensedItemsBodyParams
 from .errors import LicensedItemNotFoundError, LicensedItemPricingPlanMatchError
 
 _logger = logging.getLogger(__name__)
@@ -120,12 +116,21 @@ async def get_licensed_item(
     *,
     licensed_item_id: LicensedItemID,
     product_name: ProductName,
-) -> LicensedItemGet:
+) -> LicensedItem:
 
     licensed_item_db = await _licensed_items_repository.get(
         app, licensed_item_id=licensed_item_id, product_name=product_name
     )
-    return LicensedItemGet.from_domain_model(licensed_item_db)
+    return LicensedItem.model_construct(
+        licensed_item_id=licensed_item_db.licensed_item_id,
+        display_name=licensed_item_db.display_name,
+        licensed_resource_name=licensed_item_db.licensed_resource_name,
+        licensed_resource_type=licensed_item_db.licensed_resource_type,
+        licensed_resource_data=licensed_item_db.licensed_resource_data,
+        pricing_plan_id=licensed_item_db.pricing_plan_id,
+        created_at=licensed_item_db.created,
+        modified_at=licensed_item_db.modified,
+    )
 
 
 async def list_licensed_items(
@@ -135,7 +140,7 @@ async def list_licensed_items(
     offset: NonNegativeInt,
     limit: int,
     order_by: OrderBy,
-) -> LicensedItemGetPage:
+) -> LicensedItemPage:
     total_count, items = await _licensed_items_repository.list_(
         app,
         product_name=product_name,
@@ -145,9 +150,18 @@ async def list_licensed_items(
         trashed="exclude",
         inactive="exclude",
     )
-    return LicensedItemGetPage(
+    return LicensedItemPage(
         items=[
-            LicensedItemGet.from_domain_model(licensed_item_db)
+            LicensedItem.model_construct(
+                licensed_item_id=licensed_item_db.licensed_item_id,
+                display_name=licensed_item_db.display_name,
+                licensed_resource_name=licensed_item_db.licensed_resource_name,
+                licensed_resource_type=licensed_item_db.licensed_resource_type,
+                licensed_resource_data=licensed_item_db.licensed_resource_data,
+                pricing_plan_id=licensed_item_db.pricing_plan_id,
+                created_at=licensed_item_db.created,
+                modified_at=licensed_item_db.modified,
+            )
             for licensed_item_db in items
         ],
         total=total_count,
