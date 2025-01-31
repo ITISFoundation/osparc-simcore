@@ -6,7 +6,7 @@ Mostly resolves and redirect to storage API
 import logging
 import urllib.parse
 from typing import Any, Final, NamedTuple
-from urllib.parse import quote
+from urllib.parse import quote, unquote
 
 from aiohttp import ClientTimeout, web
 from models_library.api_schemas_storage import (
@@ -18,6 +18,7 @@ from models_library.api_schemas_storage import (
 from models_library.projects_nodes_io import LocationID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import AnyUrl, BaseModel, ByteSize, TypeAdapter
+from servicelib.aiohttp import status
 from servicelib.aiohttp.client_session import get_client_session
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
@@ -61,7 +62,13 @@ def _to_storage_url(request: web.Request) -> URL:
     # strip basepath from webserver API path (i.e. webserver api version)
     # >>> URL('http://storage:1234/v5/storage/asdf/').raw_parts[3:]
     suffix = "/".join(request.url.parts[basepath_index:])
-    fastapi_encoded_suffix = urllib.parse.quote(suffix, safe="/")
+    # we need to quote anything before the column, but not the column
+    if (column_index := suffix.find(":")) > 0:
+        fastapi_encoded_suffix = (
+            urllib.parse.quote(suffix[:column_index], safe="/") + suffix[column_index:]
+        )
+    else:
+        fastapi_encoded_suffix = urllib.parse.quote(suffix, safe="/")
 
     return (
         url.joinpath(fastapi_encoded_suffix, encoded=True)
@@ -82,9 +89,10 @@ def _from_storage_url(
             f"/v0/storage{storage_url.path.removeprefix(prefix)}", encoded=True
         ).with_scheme(request.headers.get(X_FORWARDED_PROTO, request.url.scheme))
     )
-
     if url_encode:
-        converted_url = converted_url.replace(url_encode, quote(url_encode, safe=""))
+        converted_url = converted_url.replace(
+            url_encode, quote(unquote(url_encode), safe="")
+        )
 
     webserver_url: AnyUrl = TypeAdapter(AnyUrl).validate_python(f"{converted_url}")
     return webserver_url
@@ -104,6 +112,8 @@ async def _forward_request_to_storage(
     async with session.request(
         method.upper(), url, ssl=False, json=body, **kwargs
     ) as resp:
+        if resp.status >= status.HTTP_400_BAD_REQUEST:
+            raise web.HTTPException(reason=await resp.text())
         payload = await resp.json()
         return _ResponseTuple(payload=payload, status_code=resp.status)
 
