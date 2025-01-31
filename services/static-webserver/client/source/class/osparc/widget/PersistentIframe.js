@@ -316,14 +316,15 @@ qx.Class.define("osparc.widget.PersistentIframe", {
             break;
           }
           case "openMarket": {
-            const category = data["message"] && data["message"]["category"];
-            osparc.vipMarket.MarketWindow.openWindow(nodeId, category);
+            if (osparc.product.Utils.showS4LStore()) {
+              const category = data["message"] && data["message"]["category"];
+              setTimeout(() => osparc.vipMarket.MarketWindow.openWindow(nodeId, category), 100);
+            }
             break;
           }
           case "openWallets": {
-            const walletsEnabled = osparc.desktop.credits.Utils.areWalletsEnabled();
-            if (walletsEnabled) {
-              osparc.desktop.credits.BillingCenterWindow.openWindow();
+            if (osparc.desktop.credits.Utils.areWalletsEnabled()) {
+              setTimeout(() => osparc.desktop.credits.BillingCenterWindow.openWindow(), 100);
             }
             break;
           }
