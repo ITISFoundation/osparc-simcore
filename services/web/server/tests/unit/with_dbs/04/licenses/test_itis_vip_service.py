@@ -135,6 +135,7 @@ async def test_sync_itis_vip_as_licensed_items(
     mock_itis_vip_downloadables_api: respx.MockRouter,
     app_environment: EnvVarsDict,
     client: TestClient,
+    ensure_empty_licensed_items: None,
 ):
     assert client.app
 
@@ -213,6 +214,7 @@ async def test_itis_vip_syncer_service(
     app_environment: EnvVarsDict,
     client: TestClient,
     caplog: pytest.LogCaptureFixture,
+    ensure_empty_licensed_items: None,
 ):
     assert client.app
 
@@ -222,14 +224,20 @@ async def test_itis_vip_syncer_service(
     categories = settings.to_categories()
 
     with caplog.at_level(logging.DEBUG, _itis_vip_syncer_service._logger.name):
-        caplog.clear()
+
+        def _get_captured_levels():
+            return [
+                rc[1]
+                for rc in caplog.record_tuples
+                if rc[0] == _itis_vip_syncer_service._logger.name
+            ]
 
         # one round
+        caplog.clear()
         await _itis_vip_syncer_service.sync_resources_with_licensed_items(
             client.app, categories
         )
-
-        levels_logged = [o[1] for o in caplog.record_tuples]
+        levels_logged = _get_captured_levels()
         assert logging.DEBUG not in levels_logged
         assert logging.INFO in levels_logged
         assert logging.WARNING not in levels_logged
@@ -240,6 +248,7 @@ async def test_itis_vip_syncer_service(
             client.app, categories
         )
 
+        levels_logged = _get_captured_levels()
         assert logging.DEBUG in levels_logged
         assert logging.INFO not in levels_logged
         assert logging.WARNING not in levels_logged

@@ -77,6 +77,10 @@ async def register_resource_as_licensed_item(
     #
     # This approach not only reduces unnecessary error logs but also helps prevent race conditions
     # when multiple concurrent calls attempt to register the same resource.
+    new_licensed_resource_data = licensed_resource_data.model_dump(
+        mode="json", exclude_unset=True
+    )
+
     try:
         licensed_item = await _licensed_items_repository.get_by_resource_identifier(
             app,
@@ -84,14 +88,13 @@ async def register_resource_as_licensed_item(
             licensed_resource_type=licensed_resource_type,
         )
 
-        new_data = licensed_resource_data.model_dump(mode="json", exclude_unset=True)
-
-        if licensed_item.licensed_resource_data != new_data:
-            differences = _compute_difference(
-                licensed_item.licensed_resource_data or {},
-                licensed_resource_data.model_dump(mode="json", exclude_unset=True),
-            )
-            msg = f"DIFFERENT RESOURCE: {licensed_resource_name}, {licensed_resource_type}. Difference:\n{pformat(differences)}"
+        if licensed_item.licensed_resource_data != new_licensed_resource_data:
+            # differences = _compute_difference(
+            #    licensed_item.licensed_resource_data or {},
+            #    new_licensed_resource_data,
+            # )
+            differences = "there are differences TMP"
+            msg = f"DIFFERENT_RESOURCE: {licensed_resource_name}, {licensed_resource_type}. Difference:\n{pformat(differences)}"
             return RegistrationResult(
                 licensed_item, RegistrationState.DIFFERENT_RESOURCE, msg
             )
@@ -99,7 +102,7 @@ async def register_resource_as_licensed_item(
         return RegistrationResult(
             licensed_item,
             RegistrationState.ALREADY_REGISTERED,
-            f"ALREADY REGISTERED: {licensed_resource_name}, {licensed_resource_type}",
+            f"ALREADY_REGISTERED: {licensed_resource_name}, {licensed_resource_type}",
         )
 
     except LicensedItemNotFoundError:
@@ -108,9 +111,7 @@ async def register_resource_as_licensed_item(
             display_name=licensed_item_display_name,
             licensed_resource_name=licensed_resource_name,
             licensed_resource_type=licensed_resource_type,
-            licensed_resource_data=licensed_resource_data.model_dump(
-                mode="json", exclude_unset=True
-            ),
+            licensed_resource_data=new_licensed_resource_data,
             product_name=None,
             pricing_plan_id=None,
         )
@@ -118,7 +119,7 @@ async def register_resource_as_licensed_item(
         return RegistrationResult(
             licensed_item,
             RegistrationState.NEWLY_REGISTERED,
-            f"NEWLY REGISTERED: {licensed_resource_name}, {licensed_resource_type}",
+            f"NEWLY_REGISTERED: {licensed_resource_name}, {licensed_resource_type}",
         )
 
 
