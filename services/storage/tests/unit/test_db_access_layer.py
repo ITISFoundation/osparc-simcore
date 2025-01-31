@@ -46,8 +46,7 @@ async def prepare_db(
         result = await conn.execute(
             sa.select(users.c.primary_gid).where(users.c.id == user_id)
         )
-        row = result.first()
-        assert row
+        row = result.one()
         user_primary_id = row[0]
 
         result = await conn.execute(
@@ -63,8 +62,7 @@ async def prepare_db(
             )
             .returning(workspaces.c.workspace_id)
         )
-        row = result.first()
-        assert row
+        row = result.one()
         workspace_id = row[0]
 
         await conn.execute(

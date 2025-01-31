@@ -20,7 +20,7 @@ async def _get_tokens_from_db(engine: AsyncEngine, user_id: UserID) -> dict[str,
                 tokens,
             ).where(tokens.c.user_id == user_id)
         )
-        row = result.first()
+        row = result.one_or_none()
         return dict(row) if row else {}
 
 

@@ -247,7 +247,7 @@ async def get_project_access_rights(
     combined_query = sa.union_all(private_workspace_query, shared_workspace_query)
 
     result = await conn.execute(combined_query)
-    row = result.first()
+    row = result.one_or_none()
 
     if not row:
         # Either project does not exists OR user_id has NO access
@@ -279,7 +279,7 @@ async def get_file_access_rights(
         file_meta_data.c.file_id == f"{file_id}"
     )
     result = await conn.execute(stmt)
-    row = result.first()
+    row = result.one_or_none()
 
     if row:
         if int(row.user_id) == user_id:
