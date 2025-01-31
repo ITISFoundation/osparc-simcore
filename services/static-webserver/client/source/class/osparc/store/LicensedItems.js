@@ -51,7 +51,7 @@ qx.Class.define("osparc.store.LicensedItems", {
       if (urlParams) {
         purchasesParams.url = Object.assign(purchasesParams.url, urlParams);
       }
-      return osparc.data.Resources.fetch("licensedItems", "purchases", purchasesParams, options)
+      return osparc.data.Resources.fetch("licensedItems", "purchases", purchasesParams, options);
     },
 
     purchaseLicensedItem: function(licensedItemId, walletId, pricingPlanId, pricingUnitId, numberOfSeats) {
