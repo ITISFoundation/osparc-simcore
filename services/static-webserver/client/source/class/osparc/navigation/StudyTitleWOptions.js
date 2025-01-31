@@ -158,11 +158,8 @@ qx.Class.define("osparc.navigation.StudyTitleWOptions", {
 
         const convertToStandaloneButton = this.getChildControl("study-menu-convert-to-standalone");
         const evaluateConvertToPipelineButton = () => {
-          if (study.getUi().getMode() === "workbench" && study.isOnlyNodeDynamic()) {
-            convertToStandaloneButton.show();
-          } else {
-            convertToStandaloneButton.exclude();
-          }
+          // exclude until we have the export to standalone backend functionality
+          convertToStandaloneButton.exclude();
         };
         study.getWorkbench().addListener("pipelineChanged", () => evaluateConvertToPipelineButton());
         study.getUi().addListener("changeMode", () => evaluateConvertToPipelineButton());
