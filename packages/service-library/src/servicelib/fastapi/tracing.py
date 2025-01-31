@@ -3,6 +3,9 @@
 """
 
 import logging
+from collections.abc import AsyncIterator, Callable
+from contextlib import asynccontextmanager
+from typing import AsyncContextManager
 
 from fastapi import FastAPI
 from httpx import AsyncClient, Client
@@ -129,6 +132,17 @@ def setup_tracing(
             msg="Attempting to add requests opentelemetry autoinstrumentation...",
         ):
             RequestsInstrumentor().instrument()
+
+
+def get_lifespan_tracing(
+    tracing_settings: TracingSettings, service_name: str
+) -> Callable[[FastAPI], AsyncContextManager[None]]:
+    @asynccontextmanager
+    async def _(app: FastAPI) -> AsyncIterator[None]:
+        setup_tracing(app, tracing_settings, service_name)
+        yield
+
+    return _
 
 
 def setup_httpx_client_tracing(client: AsyncClient | Client):
