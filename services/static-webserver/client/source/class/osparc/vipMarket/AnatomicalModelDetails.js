@@ -24,7 +24,7 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
     const layout = new qx.ui.layout.VBox(15);
     this._setLayout(layout);
 
-    this.__poplulateLayout();
+    this.__populateLayout();
   },
 
   events: {
@@ -44,12 +44,12 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
       check: "Object",
       init: null,
       nullable: true,
-      apply: "__poplulateLayout"
+      apply: "__populateLayout"
     },
   },
 
   members: {
-    __poplulateLayout: function() {
+    __populateLayout: function() {
       this._removeAll();
 
       const anatomicalModelsData = this.getAnatomicalModelsData();

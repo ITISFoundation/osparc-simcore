@@ -18,7 +18,7 @@
 qx.Class.define("osparc.vipMarket.Market", {
   extend: osparc.ui.window.TabbedView,
 
-  construct: function(category) {
+  construct: function(openCategory) {
     this.base(arguments);
 
     const miniWallet = osparc.desktop.credits.BillingCenter.createMiniWalletView().set({
@@ -28,33 +28,41 @@ qx.Class.define("osparc.vipMarket.Market", {
     this.addWidgetOnTopOfTheTabs(miniWallet);
 
     osparc.store.LicensedItems.getInstance().getLicensedItems()
-      .then(() => {
-        [{
+      .then(licensedItems => {
+        const categories = {};
+        licensedItems.forEach(licensedItem => {
+          if (licensedItem["licensedResourceData"] && licensedItem["licensedResourceData"]["category"]) {
+            const category = licensedItem["licensedResourceData"]["category"];
+            if (!(category in categories)) {
+              categories[category] = [];
+            }
+            categories[category].push(licensedItem);
+          }
+        });
+
+        const expectedCategories = [{
           category: "human",
           label: "Humans",
           icon: "@FontAwesome5Solid/users/20",
-          vipSubset: "HUMAN_BODY",
         }, {
           category: "human_region",
           label: "Humans (Region)",
           icon: "@FontAwesome5Solid/users/20",
-          vipSubset: "HUMAN_BODY_REGION",
         }, {
           category: "animal",
           label: "Animals",
           icon: "@FontAwesome5Solid/users/20",
-          vipSubset: "ANIMAL",
         }, {
           category: "phantom",
           label: "Phantoms",
           icon: "@FontAwesome5Solid/users/20",
-          vipSubset: "PHANTOM",
-        }].forEach(marketInfo => {
-          this.__buildViPMarketPage(marketInfo);
+        }]
+        expectedCategories.forEach(expectedCategory => {
+          this.__buildViPMarketPage(expectedCategory, categories[expectedCategory["category"]]);
         });
 
-        if (category) {
-          this.openCategory(category);
+        if (openCategory) {
+          this.openCategory(openCategory);
         }
       });
   },
@@ -73,15 +81,15 @@ qx.Class.define("osparc.vipMarket.Market", {
   },
 
   members: {
-    __buildViPMarketPage: function(marketInfo) {
-      const vipMarketView = new osparc.vipMarket.VipMarket();
+    __buildViPMarketPage: function(marketTabInfo, licensedItems = []) {
+      const vipMarketView = new osparc.vipMarket.VipMarket(licensedItems);
       vipMarketView.set({
-        vipSubset: marketInfo["vipSubset"],
+        category: marketTabInfo["category"],
       });
       this.bind("openBy", vipMarketView, "openBy");
       vipMarketView.addListener("importMessageSent", () => this.fireEvent("importMessageSent"));
-      const page = this.addTab(marketInfo["label"], marketInfo["icon"], vipMarketView);
-      page.category = marketInfo["category"];
+      const page = this.addTab(marketTabInfo["label"], marketTabInfo["icon"], vipMarketView);
+      page.category = marketTabInfo["category"];
       return page;
     },
 
