@@ -321,7 +321,10 @@ qx.Class.define("osparc.widget.PersistentIframe", {
             break;
           }
           case "openWallets": {
-            osparc.desktop.credits.BillingCenterWindow.openWindow();
+            const walletsEnabled = osparc.desktop.credits.Utils.areWalletsEnabled();
+            if (walletsEnabled) {
+              osparc.desktop.credits.BillingCenterWindow.openWindow();
+            }
             break;
           }
         }
