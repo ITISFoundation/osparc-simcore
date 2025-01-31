@@ -80,7 +80,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
   properties: {
     study: {
       check: "osparc.data.model.Study",
-      apply: "_applyStudy",
+      apply: "__applyStudy",
       nullable: false
     },
 
@@ -243,7 +243,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       return sidePanelsNewWidth;
     },
 
-    _applyStudy: function(study) {
+    __applyStudy: function(study) {
       if (study) {
         this.__initViews();
         this.__connectEvents();
