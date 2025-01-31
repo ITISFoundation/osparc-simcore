@@ -16,7 +16,14 @@ from fastapi import FastAPI
 from models_library.docker import DockerGenericTag
 from models_library.generated_models.docker_rest_api import ProgressDetail
 from models_library.utils.change_case import snake_to_camel
-from pydantic import BaseModel, ByteSize, ConfigDict, TypeAdapter, ValidationError
+from pydantic import (
+    BaseModel,
+    ByteSize,
+    ConfigDict,
+    NonNegativeInt,
+    TypeAdapter,
+    ValidationError,
+)
 from settings_library.docker_api_proxy import DockerApiProxysettings
 from settings_library.docker_registry import RegistrySettings
 from yarl import URL
@@ -25,6 +32,8 @@ from .logging_utils import LogLevelInt
 from .progress_bar import ProgressBarData
 
 _logger = logging.getLogger(__name__)
+
+_DEFAULT_DOCKER_API_PROXY_HEALTH_TIMEOUT: Final[NonNegativeInt] = 5
 
 
 def to_datetime(docker_timestamp: str) -> datetime:
@@ -348,7 +357,17 @@ def get_lifespan_remote_docker_client(
     reraise=True,
 )
 async def wait_till_docker_api_proxy_is_responsive(app: FastAPI) -> None:
-    await asyncio.wait_for(get_remote_docker_client(app).version(), timeout=5)
+    await is_docker_api_proxy_ready(app)
+
+
+async def is_docker_api_proxy_ready(
+    app: FastAPI, *, timeout=_DEFAULT_DOCKER_API_PROXY_HEALTH_TIMEOUT
+) -> bool:
+    try:
+        await asyncio.wait_for(get_remote_docker_client(app).version(), timeout=timeout)
+    except (aiodocker.DockerError, TimeoutError):
+        return False
+    return True
 
 
 def get_remote_docker_client(app: FastAPI) -> aiodocker.Docker:
