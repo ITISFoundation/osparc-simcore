@@ -10,7 +10,8 @@ from aiohttp.test_utils import TestClient
 from models_library.api_schemas_resource_usage_tracker.licensed_items_checkouts import (
     LicensedItemCheckoutGet,
 )
-from models_library.licensed_items import LicensedResourceType
+from models_library.api_schemas_webserver.licensed_items import LicensedItemRpcGetPage
+from models_library.licensed_items import VIP_DETAILS_EXAMPLE, LicensedResourceType
 from models_library.products import ProductName
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
@@ -135,9 +136,11 @@ async def test_license_checkout_workflow(
     license_item_db = await _licensed_items_repository.create(
         client.app,
         product_name=osparc_product_name,
-        name="Model A",
+        display_name="Model A display name",
+        licensed_resource_name="Model A",
         licensed_resource_type=LicensedResourceType.VIP_MODEL,
         pricing_plan_id=pricing_plan_id,
+        licensed_resource_data=VIP_DETAILS_EXAMPLE,
     )
 
     result = await get_licensed_items(
@@ -145,6 +148,7 @@ async def test_license_checkout_workflow(
     )
     assert len(result.items) == 1
     assert result.total == 1
+    assert isinstance(result, LicensedItemRpcGetPage)
 
     with pytest.raises(NotImplementedError):
         await get_available_licensed_items_for_wallet(

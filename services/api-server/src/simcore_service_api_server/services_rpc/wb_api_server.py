@@ -4,7 +4,7 @@ from typing import cast
 
 from fastapi import FastAPI
 from fastapi_pagination import create_page
-from models_library.api_schemas_webserver.licensed_items import LicensedItemGetPage
+from models_library.api_schemas_webserver.licensed_items import LicensedItemRpcGetPage
 from models_library.licensed_items import LicensedItemID
 from models_library.resource_tracker_licensed_items_checkouts import (
     LicensedItemCheckoutID,
@@ -52,15 +52,15 @@ _exception_mapper = partial(service_exception_mapper, service_name="WebApiServer
 
 
 def _create_licensed_items_get_page(
-    *, licensed_items_page: LicensedItemGetPage, page_params: PaginationParams
+    *, licensed_items_page: LicensedItemRpcGetPage, page_params: PaginationParams
 ) -> Page[LicensedItemGet]:
     page = create_page(
         [
             LicensedItemGet(
                 licensed_item_id=elm.licensed_item_id,
-                name=elm.name,
-                license_key=elm.license_key,
+                display_name=elm.display_name,
                 licensed_resource_type=elm.licensed_resource_type,
+                licensed_resource_data=elm.licensed_resource_data,
                 pricing_plan_id=elm.pricing_plan_id,
                 created_at=elm.created_at,
                 modified_at=elm.modified_at,
