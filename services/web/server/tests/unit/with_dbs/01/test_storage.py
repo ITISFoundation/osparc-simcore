@@ -494,7 +494,7 @@ async def test_storage_list_filter(
 @pytest.fixture
 def file_id(faker: Faker) -> StorageFileID:
     return TypeAdapter(StorageFileID).validate_python(
-        f"{faker.uuid4()}/{faker.uuid4()}/{faker.file_name()}"
+        f"{faker.uuid4()}/{faker.uuid4()}/{faker.file_name()} with space.dat"
     )
 
 
@@ -519,5 +519,15 @@ async def test_upload_file(
 
     resp = await client.put(url, params={"user_id": logged_user["id"]})
     data, error = await assert_status(resp, expected)
+    assert not error
+    assert data
+    file_upload_schema = FileUploadSchema.model_validate(data)
+
+    # let's abort
+    resp = await client.post(
+        f"{file_upload_schema.links.abort_upload.path}",
+        params={"user_id": logged_user["id"]},
+    )
+    data, error = await assert_status(resp, status.HTTP_204_NO_CONTENT)
     assert not error
     assert data
