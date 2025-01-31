@@ -9,6 +9,7 @@ from aiohttp import web
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
 from .._constants import APP_SETTINGS_KEY
+from ..rabbitmq import setup_rabbitmq
 from . import (
     _comments_handlers,
     _crud_handlers,
@@ -26,6 +27,7 @@ from . import (
 )
 from ._observer import setup_project_observer_events
 from ._projects_access import setup_projects_access
+from .api.rpc.routes import register_rpc_routes
 from .db import setup_projects_db
 
 logger = logging.getLogger(__name__)
@@ -63,5 +65,10 @@ def setup_projects(app: web.Application) -> bool:
     app.router.add_routes(_projects_nodes_pricing_unit_handlers.routes)
     app.router.add_routes(_workspaces_handlers.routes)
     app.router.add_routes(_trash_rest.routes)
+
+    # RPC
+    setup_rabbitmq(app)
+    if app[APP_SETTINGS_KEY].WEBSERVER_RABBITMQ:
+        app.on_startup.append(register_rpc_routes)
 
     return True

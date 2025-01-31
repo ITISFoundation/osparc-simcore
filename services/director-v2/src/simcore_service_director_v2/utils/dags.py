@@ -42,9 +42,9 @@ def create_complete_dag(workbench: NodesDict) -> nx.DiGraph:
         )
         if node.input_nodes:
             for input_node_id in node.input_nodes:
-                predecessor_node = workbench.get(NodeIDStr(input_node_id))
+                predecessor_node = workbench.get(f"{input_node_id}")
                 if predecessor_node:
-                    dag_graph.add_edge(str(input_node_id), node_id)
+                    dag_graph.add_edge(f"{input_node_id}", node_id)
 
     return dag_graph
 

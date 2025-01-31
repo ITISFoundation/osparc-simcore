@@ -36,16 +36,16 @@ _SELECTION_PROJECTS_NODES_DB_ARGS = [
 ]
 
 
-async def get_node(
+async def get_project_node(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
-    project_id: ProjectID,
+    project_uuid: ProjectID,
     node_id: NodeID,
 ) -> Node:
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         get_stmt = sa.select(*_SELECTION_PROJECTS_NODES_DB_ARGS).where(
-            (projects_nodes.c.project_uuid == f"{project_id}")
+            (projects_nodes.c.project_uuid == f"{project_uuid}")
             & (projects_nodes.c.node_id == f"{node_id}")
         )
 
@@ -55,44 +55,48 @@ async def get_node(
         row = await result.first()
         if row is None:
             raise NodeNotFoundError(
-                project_uuid=f"{project_id}", node_uuid=f"{node_id}"
+                project_uuid=f"{project_uuid}", node_uuid=f"{node_id}"
             )
         assert row  # nosec
         return Node.model_validate(row, from_attributes=True)
 
 
-async def list_nodes(
+async def list_project_nodes(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
-    project_id: ProjectID,
+    project_uuid: ProjectID,
 ) -> list[Node]:
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         result = await conn.stream(
             sa.select(*_SELECTION_PROJECTS_NODES_DB_ARGS).where(
-                projects_nodes.c.project_uuid == f"{project_id}"
+                projects_nodes.c.project_uuid == f"{project_uuid}"
             )
         )
         rows = await result.all() or []
         return TypeAdapter(list[Node]).validate_python(rows)
 
 
-async def update_node(
+async def update_project_node(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
-    project_id: ProjectID,
+    project_uuid: ProjectID,
     node_id: NodeID,
     partial_node: PartialNode,
-) -> None:
+) -> Node:
     values = partial_node.model_dump(mode="json", exclude_unset=True)
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
-        await conn.stream(
+        result = await conn.stream(
             projects_nodes.update()
             .values(**values)
             .where(
-                (projects_nodes.c.project_uuid == f"{project_id}")
+                (projects_nodes.c.project_uuid == f"{project_uuid}")
                 & (projects_nodes.c.node_id == f"{node_id}")
             )
+            .returning(*_SELECTION_PROJECTS_NODES_DB_ARGS)
         )
+        row = await result.first()
+        assert row
+        return Node.model_validate(row, from_attributes=True)

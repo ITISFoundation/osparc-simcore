@@ -1001,9 +1001,9 @@ async def update_project_node_state(
         new_node_data={"state": {"currentStatus": new_state}},
     )
 
-    await _projects_nodes_repository.update_node(
+    await _projects_nodes_repository.update_project_node(
         app,
-        project_id=project_id,
+        project_uuid=project_id,
         node_id=node_id,
         partial_node=PartialNode.model_construct(
             state=NodeState(currentStatus=RunningState(new_state))
@@ -1073,9 +1073,9 @@ async def patch_project_node(
         new_node_data=_node_patch_exclude_unset,
     )
 
-    await _projects_nodes_repository.update_node(
+    await _projects_nodes_repository.update_project_node(
         app,
-        project_id=project_id,
+        project_uuid=project_id,
         node_id=node_id,
         partial_node=partial_node,
     )
@@ -1141,9 +1141,9 @@ async def update_project_node_outputs(
         new_node_data={"outputs": new_outputs, "runHash": new_run_hash},
     )
 
-    await _projects_nodes_repository.update_node(
+    await _projects_nodes_repository.update_project_node(
         app,
-        project_id=project_id,
+        project_uuid=project_id,
         node_id=node_id,
         partial_node=PartialNode.model_construct(
             outputs=new_outputs, run_hash=new_run_hash
@@ -1165,6 +1165,15 @@ async def update_project_node_outputs(
         changed_entries.get(NodeIDStr(f"{node_id}"), {}).get("outputs", {}).keys()
     )
     return updated_project, changed_keys
+
+
+async def list_project_nodes(
+    app: web.Application,
+    project_uuid: ProjectID,
+) -> list[Node]:
+    return await _projects_nodes_repository.list_project_nodes(
+        app, project_uuid=project_uuid
+    )
 
 
 async def list_node_ids_in_project(

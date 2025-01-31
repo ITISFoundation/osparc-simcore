@@ -37,6 +37,9 @@ from pydantic import AnyHttpUrl, TypeAdapter
 from servicelib.async_utils import run_sequentially_in_context
 from servicelib.logging_utils import log_decorator
 from servicelib.rabbitmq import RabbitMQRPCClient
+from servicelib.rabbitmq.rpc_interfaces.webserver.projects import (
+    projects_nodes as projects_nodes_rpc,
+)
 from simcore_postgres_database.utils_projects_metadata import DBProjectNotFoundError
 from starlette import status
 from starlette.requests import Request
@@ -301,9 +304,14 @@ async def create_computation(  # noqa: PLR0913 # pylint: disable=too-many-positi
 
         # check if current state allow to modify the computation
         await _check_pipeline_not_running_or_raise_409(comp_tasks_repo, computation)
-
+        workbench = {
+            node.key: node
+            for node in await projects_nodes_rpc.list_project_nodes(
+                rpc_client, project_uuid=computation.project_id
+            )
+        }
         # create the complete DAG graph
-        complete_dag = create_complete_dag(project.workbench)
+        complete_dag = create_complete_dag(workbench)
         # find the minimal viable graph to be run
         minimal_computational_dag: nx.DiGraph = (
             await create_minimal_computational_graph_based_on_selection(
