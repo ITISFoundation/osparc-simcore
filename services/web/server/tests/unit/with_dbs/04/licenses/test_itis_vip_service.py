@@ -1,9 +1,10 @@
+# pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
-# pylint: disable=too-many-arguments
-# pylint: disable=too-many-statements
 
+import logging
 from collections.abc import Iterator
 
 import pytest
@@ -18,6 +19,7 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.aiohttp import status
 from simcore_service_webserver.licenses import (
     _itis_vip_service,
+    _itis_vip_syncer_service,
     _licensed_items_service,
 )
 from simcore_service_webserver.licenses._itis_vip_models import (
@@ -204,3 +206,40 @@ async def test_sync_itis_vip_as_licensed_items(
 
                 assert state3 == RegistrationState.DIFFERENT_RESOURCE
                 assert licensed_item2 == licensed_item3
+
+
+async def test_itis_vip_syncer_service(
+    mock_itis_vip_downloadables_api: respx.MockRouter,
+    app_environment: EnvVarsDict,
+    client: TestClient,
+    caplog: pytest.LogCaptureFixture,
+):
+    assert client.app
+
+    settings = ItisVipSettings.create_from_envs()
+    assert settings.ITIS_VIP_CATEGORIES
+
+    categories = settings.to_categories()
+
+    with caplog.at_level(logging.DEBUG, _itis_vip_syncer_service._logger.name):
+        caplog.clear()
+
+        # one round
+        await _itis_vip_syncer_service.sync_resources_with_licensed_items(
+            client.app, categories
+        )
+
+        levels_logged = [o[1] for o in caplog.record_tuples]
+        assert logging.DEBUG not in levels_logged
+        assert logging.INFO in levels_logged
+        assert logging.WARNING not in levels_logged
+
+        caplog.clear()
+        # second round
+        await _itis_vip_syncer_service.sync_resources_with_licensed_items(
+            client.app, categories
+        )
+
+        assert logging.DEBUG in levels_logged
+        assert logging.INFO not in levels_logged
+        assert logging.WARNING not in levels_logged
