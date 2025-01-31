@@ -549,6 +549,7 @@ services:
     hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
     networks:
       - default
+      - ${SWARM_STACK_NAME}_docker-api-network
     environment:
       LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
       LOG_FILTER_MAPPING : ${LOG_FILTER_MAPPING}
@@ -573,7 +574,11 @@ services:
       DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT: ${DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT}
       TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT: ${TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT}
       TRACING_OPENTELEMETRY_COLLECTOR_PORT: ${TRACING_OPENTELEMETRY_COLLECTOR_PORT}
-
+      DOCKER_API_PROXY_HOST: ${DOCKER_API_PROXY_HOST}
+      DOCKER_API_PROXY_PASSWORD: ${DOCKER_API_PROXY_PASSWORD}
+      DOCKER_API_PROXY_PORT: ${DOCKER_API_PROXY_PORT}
+      DOCKER_API_PROXY_SECURE: ${DOCKER_API_PROXY_SECURE}
+      DOCKER_API_PROXY_USER: ${DOCKER_API_PROXY_USER}
   docker-api-proxy:
     image: ${DOCKER_REGISTRY:-itisfoundation}/docker-api-proxy:${DOCKER_IMAGE_TAG:-latest}
     init: true
@@ -1367,6 +1372,7 @@ networks:
     labels:
       com.simcore.description: "computational services network"
   docker-api-network:
+    name: ${SWARM_STACK_NAME}_docker-api-network
     driver: overlay
     attachable: true
     internal: false
