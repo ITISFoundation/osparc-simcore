@@ -53,19 +53,19 @@ qx.Class.define("osparc.vipMarket.Market", {
         });
 
         const expectedCategories = [{
-          category: "human",
+          category: "HumanWholeBody",
           label: "Humans",
           icon: "@FontAwesome5Solid/users/20",
         }, {
-          category: "human_region",
+          category: "HumanBodyRegion",
           label: "Humans (Region)",
           icon: "@FontAwesome5Solid/users/20",
         }, {
-          category: "animal",
+          category: "AnimalWholeBody",
           label: "Animals",
           icon: "@FontAwesome5Solid/users/20",
         }, {
-          category: "phantom",
+          category: "ComputationalPhantom",
           label: "Phantoms",
           icon: "@FontAwesome5Solid/users/20",
         }]
