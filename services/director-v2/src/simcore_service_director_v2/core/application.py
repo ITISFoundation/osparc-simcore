@@ -6,7 +6,7 @@ from servicelib.fastapi.openapi import (
     get_common_oas_options,
     override_fastapi_openapi_method,
 )
-from servicelib.fastapi.profiler_middleware import ProfilerMiddleware
+from servicelib.fastapi.profiler import setup_profiler
 from servicelib.fastapi.tracing import setup_tracing
 from servicelib.logging_utils import config_all_loggers
 
@@ -204,7 +204,7 @@ def init_app(settings: AppSettings | None = None) -> FastAPI:
         instrumentation.setup(app)
 
     if settings.DIRECTOR_V2_PROFILING:
-        app.add_middleware(ProfilerMiddleware)
+        setup_profiler(app)
 
     # setup app --
     app.add_event_handler("startup", on_startup)

@@ -1,5 +1,8 @@
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from typing import Any, Final
 
+from fastapi import FastAPI
 from servicelib.aiohttp import status
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from starlette.requests import Request
@@ -13,7 +16,7 @@ from ..utils_profiling_middleware import (
 )
 
 
-def is_last_response(response_headers: dict[bytes, bytes], message: dict[str, Any]):
+def _is_last_response(response_headers: dict[bytes, bytes], message: dict[str, Any]):
     if (
         content_type := response_headers.get(b"content-type")
     ) and content_type == MIMETYPE_APPLICATION_JSON.encode():
@@ -79,7 +82,7 @@ class ProfilerMiddleware:
                         response_headers = dict(message.get("headers"))
                         message["headers"] = check_response_headers(response_headers)
                     elif message["type"] == "http.response.body":
-                        if is_last_response(response_headers, message):
+                        if _is_last_response(response_headers, message):
                             _profiler.stop()
                             profile_text = _profiler.output_text(
                                 unicode=True, color=True, show_all=True
@@ -96,3 +99,16 @@ class ProfilerMiddleware:
 
         finally:
             _profiler.reset()
+
+
+def setup_profiler(app: FastAPI) -> None:
+    async def on_startup() -> None:
+        app.add_middleware(ProfilerMiddleware)
+
+    app.add_event_handler("startup", on_startup)
+
+
+@asynccontextmanager
+async def lifespan_profiler(app: FastAPI) -> AsyncIterator[None]:
+    app.add_middleware(ProfilerMiddleware)
+    yield
