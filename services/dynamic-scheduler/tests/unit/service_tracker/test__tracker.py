@@ -36,9 +36,9 @@ def disable_monitor_task(mocker: MockerFixture) -> None:
 @pytest.fixture
 def app_environment(
     disable_monitor_task: None,
-    disable_rabbitmq_setup: None,
-    disable_deferred_manager_setup: None,
-    disable_notifier_setup: None,
+    disable_rabbitmq_lifespan: None,
+    disable_deferred_manager_lifespan: None,
+    disable_notifier_lifespan: None,
     app_environment: EnvVarsDict,
     redis_service: RedisSettings,
     remove_redis_data: None,
