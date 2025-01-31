@@ -299,12 +299,12 @@ qx.Class.define("osparc.widget.PersistentIframe", {
     },
 
     __handleIframeMessage: function(data, nodeId) {
-      if (data["type"] && data["message"]) {
+      if (data["type"]) {
         switch (data["type"]) {
           case "theme": {
             // switch theme driven by the iframe
             const message = data["message"];
-            if (message.includes("osparc;theme=")) {
+            if (message && message.includes("osparc;theme=")) {
               const themeName = message.replace("osparc;theme=", "");
               const validThemes = osparc.ui.switch.ThemeSwitcher.getValidThemes();
               const themeFound = validThemes.find(theme => theme.basename === themeName);

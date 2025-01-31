@@ -319,9 +319,9 @@ qx.Class.define("osparc.data.model.Study", {
 
     getIcon: function(studyData) {
       let icon = "";
-      if (this.getUiMode() === "standalone") {
+      if (this.getUiMode(studyData) === "standalone") {
         return "@FontAwesome5Solid/user/14";
-      } else if (this.getUiMode() === "workbench") {
+      } else if (this.getUiMode(studyData) === "workbench") {
         return "@FontAwesome5Solid/globe/14";
       }
       return icon;
