@@ -39,7 +39,7 @@ async def healthcheck(
         Depends(get_redis_clients_from_request),
     ],
 ):
-    if not is_docker_api_proxy_ready(app, timeout=1):
+    if not await is_docker_api_proxy_ready(app, timeout=1):
         raise HealthCheckError(DOCKER_API_PROXY_UNHEALTHY_MSG)
 
     if not rabbit_client.healthy or not rabbit_rpc_server.healthy:
