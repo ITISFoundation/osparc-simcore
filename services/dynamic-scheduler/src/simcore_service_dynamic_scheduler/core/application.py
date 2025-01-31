@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from servicelib.fastapi.lifespan_utils import LifespanContextManager, combine_lfiespans
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
-from servicelib.fastapi.profiler import lifespan_profiler
+from servicelib.fastapi.profiler import initialize_profiler
 from servicelib.fastapi.prometheus_instrumentation import (
     initialize_prometheus_instrumentation,
     lifespan_prometheus_instrumentation,
@@ -66,9 +66,6 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
             get_lifespan_tracing(app_settings.DYNAMIC_SCHEDULER_TRACING, APP_NAME)
         )
 
-    if app_settings.DYNAMIC_SCHEDULER_PROFILING:
-        lifespans.append(lifespan_profiler)
-
     app = FastAPI(
         title=f"{PROJECT_NAME} web API",
         description=SUMMARY,
@@ -83,6 +80,9 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
     override_fastapi_openapi_method(app)
 
     initialize_prometheus_instrumentation(app)
+
+    if app_settings.DYNAMIC_SCHEDULER_PROFILING:
+        initialize_profiler(app)
 
     # STATE
     app.state.settings = app_settings

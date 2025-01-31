@@ -1,5 +1,3 @@
-from collections.abc import AsyncIterator
-from contextlib import asynccontextmanager
 from typing import Any, Final
 
 from fastapi import FastAPI
@@ -101,14 +99,5 @@ class ProfilerMiddleware:
             _profiler.reset()
 
 
-def setup_profiler(app: FastAPI) -> None:
-    async def on_startup() -> None:
-        app.add_middleware(ProfilerMiddleware)
-
-    app.add_event_handler("startup", on_startup)
-
-
-@asynccontextmanager
-async def lifespan_profiler(app: FastAPI) -> AsyncIterator[None]:
+def initialize_profiler(app: FastAPI) -> None:
     app.add_middleware(ProfilerMiddleware)
-    yield
