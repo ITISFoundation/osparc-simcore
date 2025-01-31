@@ -36,7 +36,6 @@ async def lifespan_redis(app: FastAPI) -> AsyncIterator[None]:
 
     yield
 
-    manager: RedisClientsManager = app.state.redis_clients_manager
     await manager.shutdown()
 
 

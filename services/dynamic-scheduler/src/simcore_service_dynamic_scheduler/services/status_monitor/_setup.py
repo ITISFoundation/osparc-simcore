@@ -19,7 +19,6 @@ async def lifespan_status_monitor(app: FastAPI) -> AsyncIterator[None]:
 
     yield
 
-    monitor: Monitor = app.state.status_monitor
     await monitor.shutdown()
 
 

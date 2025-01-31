@@ -21,5 +21,4 @@ async def lifespan_deferred_manager(app: FastAPI) -> AsyncIterator[None]:
 
     yield
 
-    manager: DeferredManager = app.state.deferred_manager
     await manager.shutdown()
