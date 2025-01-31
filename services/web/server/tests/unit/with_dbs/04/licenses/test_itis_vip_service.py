@@ -21,10 +21,10 @@ from simcore_service_webserver.licenses import (
     _licensed_items_service,
 )
 from simcore_service_webserver.licenses._itis_vip_models import (
-    AvailableDownload,
+    ItisVipData,
     _feature_descriptor_to_dict,
 )
-from simcore_service_webserver.licenses._itis_vip_service import ResponseData
+from simcore_service_webserver.licenses._itis_vip_service import ItisVipApiResponse
 from simcore_service_webserver.licenses._itis_vip_settings import ItisVipSettings
 from simcore_service_webserver.licenses._licensed_items_service import RegistrationState
 
@@ -95,7 +95,7 @@ async def test_fetch_and_validate_itis_vip_api(
         response_json = response.json()
 
         try:
-            validated_data = ResponseData(**response_json)
+            validated_data = ItisVipApiResponse(**response_json)
         except ValidationError as e:
             pytest.fail(f"Response validation failed: {e}")
 
@@ -144,7 +144,7 @@ async def test_sync_itis_vip_as_licensed_items(
             assert f"{url}".endswith(category)
 
             vip_resources: list[
-                AvailableDownload
+                ItisVipData
             ] = await _itis_vip_service.get_category_items(http_client, url)
             assert vip_resources[0].features["functionality"] == "Posable"
 
@@ -159,7 +159,7 @@ async def test_sync_itis_vip_as_licensed_items(
                     licensed_resource_name=f"{category}/{vip.id}",
                     licensed_resource_type=LicensedResourceType.VIP_MODEL,
                     licensed_resource_data=vip,
-                    license_key=vip.license_key,
+                    licensed_item_display_name=f"{vip.features.get('name','')}",
                 )
                 assert state1 == RegistrationState.NEWLY_REGISTERED
 
@@ -172,7 +172,7 @@ async def test_sync_itis_vip_as_licensed_items(
                     licensed_resource_name=f"{category}/{vip.id}",
                     licensed_resource_type=LicensedResourceType.VIP_MODEL,
                     licensed_resource_data=vip,
-                    license_key=vip.license_key,
+                    licensed_item_display_name=vip.license_key,
                 )
 
                 assert state2 == RegistrationState.ALREADY_REGISTERED
@@ -194,7 +194,7 @@ async def test_sync_itis_vip_as_licensed_items(
                             }
                         }
                     ),
-                    license_key=vip.license_key,
+                    licensed_item_display_name=vip.license_key,
                 )
 
                 assert state3 == RegistrationState.DIFFERENT_RESOURCE
