@@ -143,59 +143,59 @@ async def test_sync_itis_vip_as_licensed_items(
         ):
             assert f"{url}".endswith(category)
 
-            items: list[AvailableDownload] = await _itis_vip_service.get_category_items(
-                http_client, url
-            )
-            assert items[0].features["functionality"] == "Posable"
+            vip_resources: list[
+                AvailableDownload
+            ] = await _itis_vip_service.get_category_items(http_client, url)
+            assert vip_resources[0].features["functionality"] == "Posable"
 
-            for vip_item in items:
+            for vip in vip_resources:
 
                 # register a NEW resource
                 (
-                    got1,
+                    licensed_item1,
                     state1,
                 ) = await _licensed_items_service.register_resource_as_licensed_item(
                     client.app,
-                    licensed_resource_name=f"{category}/{vip_item.id}",
+                    licensed_resource_name=f"{category}/{vip.id}",
                     licensed_resource_type=LicensedResourceType.VIP_MODEL,
-                    licensed_resource_data=vip_item,
-                    license_key=vip_item.license_key,
+                    licensed_resource_data=vip,
+                    license_key=vip.license_key,
                 )
                 assert state1 == RegistrationState.NEWLY_REGISTERED
 
                 # register the SAME resource
                 (
-                    got2,
+                    licensed_item2,
                     state2,
                 ) = await _licensed_items_service.register_resource_as_licensed_item(
                     client.app,
-                    licensed_resource_name=f"{category}/{vip_item.id}",
+                    licensed_resource_name=f"{category}/{vip.id}",
                     licensed_resource_type=LicensedResourceType.VIP_MODEL,
-                    licensed_resource_data=vip_item,
-                    license_key=vip_item.license_key,
+                    licensed_resource_data=vip,
+                    license_key=vip.license_key,
                 )
 
                 assert state2 == RegistrationState.ALREADY_REGISTERED
-                assert got1 == got2
+                assert licensed_item1 == licensed_item2
 
                 # register a MODIFIED version of the same resource
                 (
-                    got3,
+                    licensed_item3,
                     state3,
                 ) = await _licensed_items_service.register_resource_as_licensed_item(
                     client.app,
-                    licensed_resource_name=f"{category}/{vip_item.id}",
+                    licensed_resource_name=f"{category}/{vip.id}",
                     licensed_resource_type=LicensedResourceType.VIP_MODEL,
-                    licensed_resource_data=vip_item.model_copy(
+                    licensed_resource_data=vip.model_copy(
                         update={
                             "features": {
-                                **vip_item.features,
+                                **vip.features,
                                 "functionality": "Non-Posable",
                             }
                         }
                     ),
-                    license_key=vip_item.license_key,
+                    license_key=vip.license_key,
                 )
 
                 assert state3 == RegistrationState.DIFFERENT_RESOURCE
-                assert got2 == got3
+                assert licensed_item2 == licensed_item3
