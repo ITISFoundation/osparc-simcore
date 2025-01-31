@@ -20,7 +20,7 @@ from .._meta import (
     PROJECT_NAME,
     SUMMARY,
 )
-from ..api.frontend import lifespan_frontend
+from ..api.frontend import initialize_frontend
 from ..api.rest.routes import lifespan_rest_api
 from ..api.rpc.routes import lifespan_rpc_api_routes
 from ..services.deferred_manager import lifespan_deferred_manager
@@ -55,7 +55,6 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
         lifespan_deferred_manager,
         lifespan_status_monitor,
         lifespan_rest_api,
-        lifespan_frontend,
     ]
 
     if app_settings.DYNAMIC_SCHEDULER_PROMETHEUS_INSTRUMENTATION_ENABLED:
@@ -80,6 +79,8 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
     override_fastapi_openapi_method(app)
 
     initialize_prometheus_instrumentation(app)
+
+    initialize_frontend(app)
 
     if app_settings.DYNAMIC_SCHEDULER_PROFILING:
         initialize_profiler(app)
