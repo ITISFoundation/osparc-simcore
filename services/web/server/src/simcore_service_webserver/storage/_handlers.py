@@ -4,6 +4,7 @@ Mostly resolves and redirect to storage API
 """
 
 import logging
+import urllib.parse
 from typing import Any, Final, NamedTuple
 from urllib.parse import quote
 
@@ -59,10 +60,11 @@ def _to_storage_url(request: web.Request) -> URL:
     basepath_index = 3
     # strip basepath from webserver API path (i.e. webserver api version)
     # >>> URL('http://storage:1234/v5/storage/asdf/').raw_parts[3:]
-    suffix = "/".join(request.url.raw_parts[basepath_index:])
+    suffix = "/".join(request.url.parts[basepath_index:])
+    fastapi_encoded_suffix = urllib.parse.quote(suffix, safe="/")
 
     return (
-        url.joinpath(suffix, encoded=True)
+        url.joinpath(fastapi_encoded_suffix, encoded=True)
         .with_query(request.query)
         .update_query(user_id=userid)
     )

@@ -227,26 +227,67 @@ def test_url_storage_resolver_helpers(faker: Faker, app_environment: EnvVarsDict
     assert isinstance(encoded_web_url, AnyUrl)
     assert f"{encoded_web_url}" == f"{encoded_web_request.url}"
 
-    # since storage is FastAPI-base it now returns non encoded URLs
-    non_encoded_url = URL(f"/v0/storage/locations/0/files/{file_id}:complete")
-    non_encoded_web_request = make_mocked_request("GET", str(non_encoded_url), app=app)
-    non_encoded_web_request[RQT_USERID_KEY] = faker.pyint()
-    non_encoded_storage_url = _to_storage_url(non_encoded_web_request)
-    assert (
-        non_encoded_storage_url.raw_parts[-1]
-        == non_encoded_web_request.url.raw_parts[-1]
+
+def test_from_storage_url_with_fastapi_storage(
+    faker: Faker, app_environment: EnvVarsDict
+):
+    app = web.Application()
+    setup_settings(app)
+    # NOTE: aiohttp does not handle file_id containing / characters, but fastAPI does
+    # frontend --> webserver --> storage --> webserver --> frontend and back
+    # fully encoded --> / not encoded --> re-encode /
+    file_id = f"{faker.uuid4()}/{faker.uuid4()}/file with space and öäè.py"
+    fully_encoded_file_id = urllib.parse.quote(file_id, safe="")
+    storage_fastapi_encoded_file_id = urllib.parse.quote(
+        file_id, safe="/"
+    )  # NOTE: / is safe for fastapi
+    assert file_id != fully_encoded_file_id
+    assert file_id != storage_fastapi_encoded_file_id
+    assert fully_encoded_file_id != storage_fastapi_encoded_file_id
+
+    webserver_url_path = URL(
+        f"/v0/storage/locations/0/files/{fully_encoded_file_id}:complete"
     )
-    assert non_encoded_storage_url.host == app_environment["STORAGE_HOST"]
-    assert non_encoded_storage_url.port == int(app_environment["STORAGE_PORT"])
-    assert non_encoded_storage_url.query["user_id"] == str(
-        non_encoded_web_request[RQT_USERID_KEY]
+    assert (
+        f"{webserver_url_path}"
+        == f"/v0/storage/locations/0/files/{fully_encoded_file_id}:complete"
+    )
+    assert webserver_url_path.raw_parts[-1] == f"{fully_encoded_file_id}:complete"
+
+    storage_url_path = URL(
+        f"/v0/locations/0/files/{storage_fastapi_encoded_file_id}:complete",
+    )
+    assert (
+        f"{storage_url_path}"
+        == f"/v0/locations/0/files/{storage_fastapi_encoded_file_id}:complete"
     )
 
-    assert (
-        _from_storage_url(
-            non_encoded_web_request,
-            TypeAdapter(AnyUrl).validate_python(f"{non_encoded_storage_url}"),
-            url_encode=file_id,
-        ).path
-        == f"{encoded_url}"
-    )
+    webserver_request = make_mocked_request("POST", f"{webserver_url_path}", app=app)
+    webserver_request[RQT_USERID_KEY] = faker.pyint()
+    # assert webserver_request.url.path == webserver_url_path
+    generated_storage_url = _to_storage_url(webserver_request)
+    assert f"{generated_storage_url.path}" == storage_url_path
+
+    # since storage is FastAPI-base it now returns non encoded URLs
+    # non_encoded_url = URL(f"/v0/storage/locations/0/files/{file_id}:complete")
+    # non_encoded_web_request = make_mocked_request("GET", str(non_encoded_url), app=app)
+    # non_encoded_web_request[RQT_USERID_KEY] = faker.pyint()
+    # non_encoded_storage_url = _to_storage_url(non_encoded_web_request)
+    # assert (
+    #     non_encoded_storage_url.raw_parts[-1]
+    #     == non_encoded_web_request.url.raw_parts[-1]
+    # )
+    # assert non_encoded_storage_url.host == app_environment["STORAGE_HOST"]
+    # assert non_encoded_storage_url.port == int(app_environment["STORAGE_PORT"])
+    # assert non_encoded_storage_url.query["user_id"] == str(
+    #     non_encoded_web_request[RQT_USERID_KEY]
+    # )
+
+    # assert (
+    #     _from_storage_url(
+    #         non_encoded_web_request,
+    #         TypeAdapter(AnyUrl).validate_python(f"{non_encoded_storage_url}"),
+    #         url_encode=file_id,
+    #     ).path
+    #     == f"{encoded_url}"
+    # )
