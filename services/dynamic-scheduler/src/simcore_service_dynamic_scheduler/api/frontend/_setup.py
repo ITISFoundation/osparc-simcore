@@ -1,3 +1,6 @@
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
+
 import nicegui
 from fastapi import FastAPI
 
@@ -6,7 +9,8 @@ from ._utils import set_parent_app
 from .routes import router
 
 
-def setup_frontend(app: FastAPI) -> None:
+@asynccontextmanager
+async def lifespan_frontend(app: FastAPI) -> AsyncIterator[None]:
     settings: ApplicationSettings = app.state.settings
 
     nicegui.app.include_router(router)
@@ -17,3 +21,5 @@ def setup_frontend(app: FastAPI) -> None:
         storage_secret=settings.DYNAMIC_SCHEDULER_UI_STORAGE_SECRET.get_secret_value(),
     )
     set_parent_app(app)
+
+    yield

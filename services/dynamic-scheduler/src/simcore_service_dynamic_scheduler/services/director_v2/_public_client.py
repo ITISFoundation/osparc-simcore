@@ -1,4 +1,6 @@
 import datetime
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from typing import Any
 
 from fastapi import FastAPI, status
@@ -141,6 +143,9 @@ class DirectorV2Client(SingletonInAppStateMixin, AttachLifespanMixin):
         await self.thin_client.patch_projects_networks(project_id=project_id)
 
 
-def setup_director_v2(app: FastAPI) -> None:
+@asynccontextmanager
+async def lifespan_director_v2(app: FastAPI) -> AsyncIterator[None]:
     public_client = DirectorV2Client(app)
     public_client.set_to_app_state(app)
+
+    yield

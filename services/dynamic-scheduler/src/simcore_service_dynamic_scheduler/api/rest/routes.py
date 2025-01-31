@@ -1,3 +1,6 @@
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
+
 from fastapi import APIRouter, FastAPI, HTTPException
 from servicelib.fastapi.exceptions_utils import (
     handle_errors_as_500,
@@ -8,7 +11,8 @@ from ..._meta import API_VTAG
 from . import _health, _meta
 
 
-def setup_rest_api(app: FastAPI):
+@asynccontextmanager
+async def lifespan_rest_api(app: FastAPI) -> AsyncIterator[None]:
     app.include_router(_health.router)
 
     api_router = APIRouter(prefix=f"/{API_VTAG}")
@@ -17,3 +21,5 @@ def setup_rest_api(app: FastAPI):
 
     app.add_exception_handler(Exception, handle_errors_as_500)
     app.add_exception_handler(HTTPException, http_exception_as_json_response)
+
+    yield

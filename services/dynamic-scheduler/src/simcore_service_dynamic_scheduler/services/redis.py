@@ -1,3 +1,5 @@
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from typing import Final
 
 from fastapi import FastAPI
@@ -18,30 +20,24 @@ _BINARY_DBS: Final[set[RedisDatabase]] = {
 _ALL_REDIS_DATABASES: Final[set[RedisDatabase]] = _DECODE_DBS | _BINARY_DBS
 
 
-def setup_redis(app: FastAPI) -> None:
+@asynccontextmanager
+async def lifespan_redis(app: FastAPI) -> AsyncIterator[None]:
     settings: RedisSettings = app.state.settings.DYNAMIC_SCHEDULER_REDIS
 
-    async def on_startup() -> None:
-        app.state.redis_clients_manager = manager = RedisClientsManager(
-            {
-                RedisManagerDBConfig(database=x, decode_responses=False)
-                for x in _BINARY_DBS
-            }
-            | {
-                RedisManagerDBConfig(database=x, decode_responses=True)
-                for x in _DECODE_DBS
-            },
-            settings,
-            client_name=APP_NAME,
-        )
-        await manager.setup()
+    app.state.redis_clients_manager = manager = RedisClientsManager(
+        {RedisManagerDBConfig(database=x, decode_responses=False) for x in _BINARY_DBS}
+        | {
+            RedisManagerDBConfig(database=x, decode_responses=True) for x in _DECODE_DBS
+        },
+        settings,
+        client_name=APP_NAME,
+    )
+    await manager.setup()
 
-    async def on_shutdown() -> None:
-        manager: RedisClientsManager = app.state.redis_clients_manager
-        await manager.shutdown()
+    yield
 
-    app.add_event_handler("startup", on_startup)
-    app.add_event_handler("shutdown", on_shutdown)
+    manager: RedisClientsManager = app.state.redis_clients_manager
+    await manager.shutdown()
 
 
 def get_redis_client(app: FastAPI, database: RedisDatabase) -> RedisClientSDK:

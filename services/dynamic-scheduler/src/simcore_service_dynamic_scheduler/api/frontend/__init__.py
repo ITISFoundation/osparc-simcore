@@ -1,3 +1,3 @@
-from ._setup import setup_frontend
+from ._setup import lifespan_frontend
 
-__all__: tuple[str, ...] = ("setup_frontend",)
+__all__: tuple[str, ...] = ("lifespan_frontend",)
