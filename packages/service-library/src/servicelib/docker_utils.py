@@ -361,7 +361,7 @@ async def wait_till_docker_api_proxy_is_responsive(app: FastAPI) -> None:
 
 
 async def is_docker_api_proxy_ready(
-    app: FastAPI, *, timeout=_DEFAULT_DOCKER_API_PROXY_HEALTH_TIMEOUT
+    app: FastAPI, *, timeout=_DEFAULT_DOCKER_API_PROXY_HEALTH_TIMEOUT  # noqa: ASYNC109
 ) -> bool:
     try:
         await asyncio.wait_for(get_remote_docker_client(app).version(), timeout=timeout)
