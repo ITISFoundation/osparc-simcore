@@ -37,7 +37,7 @@ UUIDStr: TypeAlias = Annotated[str, StringConstraints(pattern=UUID_RE)]
 NodeIDStr: TypeAlias = UUIDStr
 
 LocationID: TypeAlias = int
-LocationName = str
+LocationName: TypeAlias = str
 
 
 SimcoreS3FileID: TypeAlias = Annotated[
