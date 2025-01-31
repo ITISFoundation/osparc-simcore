@@ -494,7 +494,7 @@ async def test_storage_list_filter(
 @pytest.fixture
 def file_id(faker: Faker) -> StorageFileID:
     return TypeAdapter(StorageFileID).validate_python(
-        f"{faker.uuid4()}/{faker.uuid4()}/{faker.file_name()} with space.dat"
+        f"{faker.uuid4()}/{faker.uuid4()}/{faker.file_name()} with spaces.dat"
     )
 
 
@@ -530,4 +530,4 @@ async def test_upload_file(
     )
     data, error = await assert_status(resp, status.HTTP_204_NO_CONTENT)
     assert not error
-    assert data
+    assert not data
