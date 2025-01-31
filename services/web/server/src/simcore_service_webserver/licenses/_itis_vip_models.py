@@ -1,5 +1,5 @@
 import re
-from typing import Annotated, Any, Literal, NotRequired
+from typing import Annotated, Any, Literal, NamedTuple, NotRequired
 
 from models_library.basic_types import IDStr
 from pydantic import (
@@ -72,3 +72,14 @@ class ItisVipResourceData(BaseModel):
     data: Annotated[
         ItisVipData, Field(description="Original published data in the api")
     ]
+
+
+#
+# INTERNAL
+#
+
+
+class CategoryTuple(NamedTuple):
+    url: HttpUrl
+    id: IDStr
+    display: str
