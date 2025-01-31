@@ -206,7 +206,9 @@ qx.Class.define("osparc.ui.message.Loading", {
       osparc.utils.Utils.setIdToWidget(maxButton, osparc.widget.PersistentIframe.getMaximizeWidgetId(maximize));
       maxButton.addListener("execute", () => this.maximizeIFrame(!this.hasState("maximized")), this);
 
-      const maximizeLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox());
+      const maximizeLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
+        alignX: "right",
+      }));
       maximizeLayout.add(maxButton);
       return maximizeLayout;
     },
