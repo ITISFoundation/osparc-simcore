@@ -339,25 +339,3 @@ async def delete_file(request: web.Request) -> web.Response:
 
     payload, status = await _forward_request_to_storage(request, "DELETE", body=None)
     return create_data_response(payload, status=status)
-
-
-@routes.post(
-    _path_prefix + "/{location_id}:sync",
-    name="synchronise_meta_data_table",
-)
-@login_required
-@permission_required("storage.files.sync")
-async def synchronise_meta_data_table(request: web.Request) -> web.Response:
-    class _PathParams(BaseModel):
-        location_id: LocationID
-
-    parse_request_path_parameters_as(_PathParams, request)
-
-    class _QueryParams(BaseModel):
-        dry_run: bool = False
-        fire_and_forget: bool = False
-
-    parse_request_query_parameters_as(_QueryParams, request)
-
-    payload, status = await _forward_request_to_storage(request, "POST", body=None)
-    return create_data_response(payload, status=status)

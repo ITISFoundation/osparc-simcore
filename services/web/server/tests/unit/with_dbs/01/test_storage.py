@@ -136,9 +136,6 @@ def storage_server(
 
     app = create_safe_application()
     app.router.add_get(f"/{storage_api_version}/locations", _get_locs)
-    app.router.add_post(
-        f"/{storage_api_version}/locations/0:sync", _post_sync_meta_data
-    )
     app.router.add_get(
         f"/{storage_api_version}/locations/0/files/{{file_id}}/metadata", _get_filemeta
     )
@@ -179,31 +176,6 @@ async def test_list_storage_locations(
     if not error:
         assert len(data) == 1
         assert data[0]["user_id"] == logged_user["id"]
-
-
-@pytest.mark.parametrize(
-    "user_role,expected",
-    [
-        (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
-        (UserRole.GUEST, status.HTTP_403_FORBIDDEN),
-        (UserRole.USER, status.HTTP_403_FORBIDDEN),
-        (UserRole.TESTER, status.HTTP_403_FORBIDDEN),
-        (UserRole.ADMIN, status.HTTP_200_OK),
-    ],
-)
-async def test_sync_file_meta_table(
-    client: TestClient, storage_server: TestServer, logged_user, expected
-):
-    url = "/v0/storage/locations/0:sync"
-    assert url.startswith(PREFIX)
-
-    resp = await client.post(url, params={"dry_run": "true"})
-    data, error = await assert_status(resp, expected)
-
-    if not error:
-        # the test of the functionality is already done in storage
-        assert "removed" in data
-        assert not data["removed"]
 
 
 @pytest.mark.parametrize(

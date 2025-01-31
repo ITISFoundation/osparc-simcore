@@ -5651,42 +5651,6 @@ paths:
                   $ref: '#/components/schemas/DatasetMetaData'
                 type: array
                 title: Response List Storage Locations
-  /v0/storage/locations/{location_id}:sync:
-    post:
-      tags:
-      - storage
-      summary: Manually triggers the synchronisation of the file meta data table in
-        the database
-      description: Returns an object containing added, changed and removed paths
-      operationId: synchronise_meta_data_table
-      parameters:
-      - name: location_id
-        in: path
-        required: true
-        schema:
-          type: integer
-          title: Location Id
-      - name: dry_run
-        in: query
-        required: false
-        schema:
-          type: boolean
-          default: false
-          title: Dry Run
-      - name: fire_and_forget
-        in: query
-        required: false
-        schema:
-          type: boolean
-          default: false
-          title: Fire And Forget
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_TableSynchronisation_'
   /v0/storage/locations/{location_id}/datasets:
     get:
       tags:
@@ -8380,19 +8344,6 @@ components:
           title: Error
       type: object
       title: Envelope[StatusDiagnosticsGet]
-    Envelope_TableSynchronisation_:
-      properties:
-        data:
-          anyOf:
-          - $ref: '#/components/schemas/TableSynchronisation'
-          - type: 'null'
-        error:
-          anyOf:
-          - {}
-          - type: 'null'
-          title: Error
-      type: object
-      title: Envelope[TableSynchronisation]
     Envelope_TagGet_:
       properties:
         data:
@@ -13757,27 +13708,6 @@ components:
       additionalProperties: true
       type: object
       title: StudyUI
-    TableSynchronisation:
-      properties:
-        dry_run:
-          anyOf:
-          - type: boolean
-          - type: 'null'
-          title: Dry Run
-        fire_and_forget:
-          anyOf:
-          - type: boolean
-          - type: 'null'
-          title: Fire And Forget
-        removed:
-          items:
-            type: string
-          type: array
-          title: Removed
-      type: object
-      required:
-      - removed
-      title: TableSynchronisation
     TagAccessRights:
       properties:
         read:
