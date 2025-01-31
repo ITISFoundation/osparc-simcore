@@ -718,6 +718,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           this.__viewsStack.setSelection([this.__workbenchView]);
           if (oldUIMode === "standalone") {
             // in this transition, show workbenchUI
+            this.__workbenchView.setMaximized(false);
             this.__workbenchView.showPipeline();
           } else {
             const currentNodeId = this.getStudy().getUi().getCurrentNodeId();
