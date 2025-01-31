@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import AsyncExitStack, asynccontextmanager
@@ -347,7 +348,7 @@ def get_lifespan_remote_docker_client(
     reraise=True,
 )
 async def wait_till_docker_api_proxy_is_responsive(app: FastAPI) -> None:
-    await get_remote_docker_client(app).version()
+    await asyncio.wait_for(get_remote_docker_client(app).version(), timeout=5)
 
 
 def get_remote_docker_client(app: FastAPI) -> aiodocker.Docker:
