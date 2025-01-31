@@ -51,7 +51,8 @@ def app_environment(
         monkeypatch,
         {
             "ITIS_VIP_API_URL": f"{fake_api_base_url}/PD_DirectDownload/getDownloadableItems/{{category}}",
-            "ITIS_VIP_CATEGORIES": '["ComputationalPantom","FooCategory","BarCategory"]',  # NOTE: ItisVipSettings will decode with json.dumps()
+            # NOTE: ItisVipSettings will decode with json.dumps(). Use " and not ' the json keys!!
+            "ITIS_VIP_CATEGORIES": '{"ComputationalPantom": "Phantoms", "HumanBodyRegion": "Humans (Regions)"}',
         },
     )
 
@@ -103,7 +104,8 @@ async def test_fetch_and_validate_itis_vip_api(
         assert len(validated_data.available_downloads) == 8
 
         assert (
-            validated_data.available_downloads[0].features["functionality"] == "Posable"
+            validated_data.available_downloads[0].features.get("functionality")
+            == "Posable"
         )
 
         print(validated_data.model_dump_json(indent=1))
@@ -124,7 +126,7 @@ async def test_get_category_items(
 
             items = await _itis_vip_service.get_category_items(client, url)
 
-            assert items[0].features["functionality"] == "Posable"
+            assert items[0].features.get("functionality") == "Posable"
 
 
 async def test_sync_itis_vip_as_licensed_items(
@@ -146,7 +148,7 @@ async def test_sync_itis_vip_as_licensed_items(
             vip_resources: list[
                 ItisVipData
             ] = await _itis_vip_service.get_category_items(http_client, url)
-            assert vip_resources[0].features["functionality"] == "Posable"
+            assert vip_resources[0].features.get("functionality") == "Posable"
 
             for vip in vip_resources:
 
@@ -159,7 +161,7 @@ async def test_sync_itis_vip_as_licensed_items(
                     licensed_resource_name=f"{category}/{vip.id}",
                     licensed_resource_type=LicensedResourceType.VIP_MODEL,
                     licensed_resource_data=vip,
-                    licensed_item_display_name=f"{vip.features.get('name','')}",
+                    licensed_item_display_name="foo",
                 )
                 assert state1 == RegistrationState.NEWLY_REGISTERED
 
@@ -172,7 +174,7 @@ async def test_sync_itis_vip_as_licensed_items(
                     licensed_resource_name=f"{category}/{vip.id}",
                     licensed_resource_type=LicensedResourceType.VIP_MODEL,
                     licensed_resource_data=vip,
-                    licensed_item_display_name=vip.license_key,
+                    licensed_item_display_name="foo",
                 )
 
                 assert state2 == RegistrationState.ALREADY_REGISTERED
@@ -194,7 +196,7 @@ async def test_sync_itis_vip_as_licensed_items(
                             }
                         }
                     ),
-                    licensed_item_display_name=vip.license_key,
+                    licensed_item_display_name="foo",
                 )
 
                 assert state3 == RegistrationState.DIFFERENT_RESOURCE

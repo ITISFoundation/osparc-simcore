@@ -1,5 +1,5 @@
 import re
-from typing import Annotated, Any, Literal, NotRequired, TypedDict
+from typing import Annotated, Any, Literal, NotRequired
 
 from models_library.basic_types import IDStr
 from pydantic import (
@@ -10,6 +10,7 @@ from pydantic import (
     StringConstraints,
     TypeAdapter,
 )
+from typing_extensions import TypedDict
 
 _max_str_adapter = TypeAdapter(
     Annotated[str, StringConstraints(strip_whitespace=True, max_length=1_000)]

@@ -38,19 +38,15 @@ _logger = logging.getLogger(__name__)
 _SELECTION_ARGS = get_columns_from_db_model(licensed_items, LicensedItemDB)
 
 
-async def create(
-    app: web.Application,
-    connection: AsyncConnection | None = None,
-    *,
+def _create_insert_query(
     display_name: str,
     licensed_resource_name: str,
     licensed_resource_type: LicensedResourceType,
-    licensed_resource_data: dict[str, Any] | None = None,
-    product_name: ProductName | None = None,
-    pricing_plan_id: PricingPlanId | None = None,
-) -> LicensedItemDB:
-
-    query = (
+    licensed_resource_data: dict[str, Any] | None,
+    product_name: ProductName | None,
+    pricing_plan_id: PricingPlanId | None,
+) -> postgresql.Insert:
+    return (
         postgresql.insert(licensed_items)
         .values(
             licensed_resource_name=licensed_resource_name,
@@ -65,6 +61,27 @@ async def create(
         .returning(*_SELECTION_ARGS)
     )
 
+
+async def create(
+    app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
+    display_name: str,
+    licensed_resource_name: str,
+    licensed_resource_type: LicensedResourceType,
+    licensed_resource_data: dict[str, Any] | None = None,
+    product_name: ProductName | None = None,
+    pricing_plan_id: PricingPlanId | None = None,
+) -> LicensedItemDB:
+
+    query = _create_insert_query(
+        display_name,
+        licensed_resource_name,
+        licensed_resource_type,
+        licensed_resource_data,
+        product_name,
+        pricing_plan_id,
+    )
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         result = await conn.execute(query)
         row = result.one()
@@ -75,28 +92,22 @@ async def create_if_not_exists(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
+    display_name: str,
     licensed_resource_name: str,
     licensed_resource_type: LicensedResourceType,
     licensed_resource_data: dict[str, Any] | None = None,
-    license_key: str | None = None,
     product_name: ProductName | None = None,
     pricing_plan_id: PricingPlanId | None = None,
 ) -> LicensedItemDB:
-    insert_or_none_query = (
-        postgresql.insert(licensed_items)
-        .values(
-            licensed_resource_name=licensed_resource_name,
-            licensed_resource_type=licensed_resource_type,
-            licensed_resource_data=licensed_resource_data,
-            license_key=license_key,
-            pricing_plan_id=pricing_plan_id,
-            product_name=product_name,
-            created=func.now(),
-            modified=func.now(),
-        )
-        .returning(*_SELECTION_ARGS)
-        .on_conflict_do_nothing()
-    )
+
+    insert_or_none_query = _create_insert_query(
+        display_name,
+        licensed_resource_name,
+        licensed_resource_type,
+        licensed_resource_data,
+        product_name,
+        pricing_plan_id,
+    ).on_conflict_do_nothing()
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         result = await conn.execute(insert_or_none_query)

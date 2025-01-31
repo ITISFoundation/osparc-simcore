@@ -59,7 +59,7 @@ async def register_resource_as_licensed_item(
     licensed_resource_name: str,
     licensed_resource_type: LicensedResourceType,
     licensed_resource_data: BaseModel,
-    license_key: str | None,
+    licensed_item_display_name: str,
 ) -> tuple[LicensedItemDB, RegistrationState]:
     try:
         licensed_item = await _licensed_items_repository.get_by_resource_identifier(
@@ -93,12 +93,12 @@ async def register_resource_as_licensed_item(
     except LicensedItemNotFoundError:
         licensed_item = await _licensed_items_repository.create_if_not_exists(
             app,
+            display_name=licensed_item_display_name,
             licensed_resource_name=licensed_resource_name,
             licensed_resource_type=licensed_resource_type,
             licensed_resource_data=licensed_resource_data.model_dump(
                 mode="json", exclude_unset=True
             ),
-            license_key=license_key,
             product_name=None,
             pricing_plan_id=None,
         )
