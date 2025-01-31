@@ -206,7 +206,11 @@ class ProjectDBAPI(BaseProjectDB):
                         project_index = None
                         project_uuid = ProjectID(f"{insert_values['uuid']}")
 
-                        workbench = insert_values.pop("workbench")
+                        workbench = (
+                            insert_values.pop("workbench")
+                            if "workbench" in insert_values
+                            else None
+                        )
                         try:
                             result: ResultProxy = await conn.execute(
                                 projects.insert()
@@ -223,7 +227,8 @@ class ProjectDBAPI(BaseProjectDB):
                             assert row  # nosec
 
                             selected_values = ProjectDict(row.items())
-                            selected_values["workbench"] = workbench
+                            if workbench:
+                                selected_values["workbench"] = workbench
                             project_index = selected_values.pop("id")
 
                         except UniqueViolation as err:
@@ -254,7 +259,7 @@ class ProjectDBAPI(BaseProjectDB):
                         selected_values["tags"] = project_tag_ids
 
                         # NOTE: this will at some point completely replace workbench in the DB
-                        if selected_values["workbench"]:
+                        if workbench:
                             project_nodes_repo = ProjectNodesRepo(
                                 project_uuid=project_uuid
                             )
@@ -265,9 +270,7 @@ class ProjectDBAPI(BaseProjectDB):
                                         required_resources={},
                                         **node_info,
                                     )
-                                    for node_id, node_info in selected_values[
-                                        "workbench"
-                                    ].items()
+                                    for node_id, node_info in workbench.items()
                                 }
 
                             nodes = [

@@ -16,6 +16,7 @@ from models_library.users import UserID
 from models_library.utils.change_case import camel_to_snake, snake_to_camel
 from pydantic import ValidationError
 from simcore_postgres_database.models.project_to_groups import project_to_groups
+from simcore_postgres_database.models.projects_nodes import projects_nodes
 from simcore_postgres_database.models.projects_to_products import projects_to_products
 from simcore_postgres_database.webserver_models import ProjectType, projects
 from sqlalchemy.dialects.postgresql import insert as pg_insert
@@ -108,6 +109,45 @@ def assemble_array_groups(user_groups: list[RowProxy]) -> str:
         if len(user_groups) == 0
         else f"""array[{', '.join(f"'{group.gid}'" for group in user_groups)}]"""
     )
+
+
+def _make_workbench_subquery():
+    return (
+        sa.select(
+            projects_nodes.c.project_uuid,
+            sa.func.jsonb_object_agg(
+                projects_nodes.c.node_id,
+                sa.func.jsonb_build_object(
+                    "key",
+                    projects_nodes.c.key,
+                    "version",
+                    projects_nodes.c.version,
+                    "label",
+                    projects_nodes.c.label,
+                    "input_access",
+                    projects_nodes.c.input_access,
+                    "input_nodes",
+                    projects_nodes.c.input_nodes,
+                    "inputs",
+                    projects_nodes.c.inputs,
+                    "inputs_required",
+                    projects_nodes.c.inputs_required,
+                    "output_nodes",
+                    projects_nodes.c.output_nodes,
+                    "outputs",
+                    projects_nodes.c.outputs,
+                    "run_hash",
+                    projects_nodes.c.run_hash,
+                    "state",
+                    projects_nodes.c.state,
+                    "parent",
+                    projects_nodes.c.parent,
+                    "boot_options",
+                    projects_nodes.c.boot_options,
+                ),
+            ).label("workbench"),
+        ).group_by(projects_nodes.c.project_uuid)
+    ).subquery("workbench_subquery")
 
 
 class BaseProjectDB:
@@ -278,7 +318,7 @@ class BaseProjectDB:
         query = (
             sa.select(
                 *PROJECT_DB_COLS,
-                projects.c.workbench,
+                _make_workbench_subquery().c.workbench,
                 users.c.primary_gid.label("trashed_by_primary_gid"),
                 access_rights_subquery.c.access_rights,
             )
