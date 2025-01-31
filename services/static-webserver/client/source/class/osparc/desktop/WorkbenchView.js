@@ -301,9 +301,12 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       if (study === null) {
         return;
       }
+
       this.__initPrimaryColumn();
       this.__initSecondaryColumn();
       this.__initMainView();
+
+      this.setMaximized(false);
     },
 
     __initPrimaryColumn: function() {
