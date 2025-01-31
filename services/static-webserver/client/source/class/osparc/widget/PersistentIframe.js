@@ -320,6 +320,10 @@ qx.Class.define("osparc.widget.PersistentIframe", {
             osparc.vipMarket.MarketWindow.openWindow(nodeId, category);
             break;
           }
+          case "openWallets": {
+            osparc.desktop.credits.BillingCenterWindow.openWindow();
+            break;
+          }
         }
       }
     },
