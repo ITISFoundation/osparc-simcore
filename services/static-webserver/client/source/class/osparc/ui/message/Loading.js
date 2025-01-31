@@ -108,7 +108,7 @@ qx.Class.define("osparc.ui.message.Loading", {
     __maxButton: null,
 
     __buildLayout: function() {
-      this._add(new qx.ui.core.Spacer(), {
+      this._add(new qx.ui.core.Widget(), {
         column: 0,
         row: 0
       });
@@ -209,6 +209,7 @@ qx.Class.define("osparc.ui.message.Loading", {
     __createMaximizeToolbar: function() {
       const maximize = false;
       const maxButton = this.__maxButton = osparc.widget.PersistentIframe.createToolbarButton(maximize).set({
+        maxHeight: 25,
         label: osparc.widget.PersistentIframe.getZoomLabel(maximize),
         icon: osparc.widget.PersistentIframe.getZoomIcon(maximize),
       });

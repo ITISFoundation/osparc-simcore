@@ -565,16 +565,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         const nodeId = e.getData();
         if (nodeId) {
           studyTreeItem.resetSelection();
-          const workbench = this.getStudy().getWorkbench();
-          const node = workbench.getNode(nodeId);
-          if (node) {
-            this.__populateSecondaryColumn(node);
-            this.__openIframeTab(node);
-            node.getIFrame().maximizeIFrame(true);
-          }
-          this.__loggerView.setCurrentNodeId(nodeId);
-          this.__workbenchUI.nodeSelected(nodeId);
-
+          this.fullscreenNode(nodeId);
           this.getStudy().getUi().setCurrentNodeId(nodeId);
         }
       }, this);
@@ -1198,12 +1189,15 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
     fullscreenNode: function(nodeId) {
       const node = this.getStudy().getWorkbench().getNode(nodeId);
-      if (node.isDynamic()) {
+      if (node && node.isDynamic()) {
         qx.event.Timer.once(() => {
+          this.__populateSecondaryColumn(node);
           this.__openIframeTab(node);
           node.getIFrame().maximizeIFrame(true);
         }, this, 10);
       }
+      this.__loggerView.setCurrentNodeId(nodeId);
+      this.__workbenchUI.nodeSelected(nodeId);
     },
 
     openFirstNode: function() {
@@ -1211,6 +1205,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       if (validNodes.length === 1 && validNodes[0].isDynamic()) {
         const dynamicNode = validNodes[0];
         this.fullscreenNode(dynamicNode.getNodeId());
+        this.getStudy().getUi().setCurrentNodeId(dynamicNode.getNodeId());
       } else {
         this.setMaximized(false);
         this.nodeSelected(this.getStudy().getUuid());
