@@ -1,7 +1,7 @@
 """add uniqu constraint in licensed_items
 
 Revision ID: e71ea59858f4
-Revises: 4f31760a63ba
+Revises: 7d1c6425a51d"
 Create Date: 2025-01-30 18:42:15.192968+00:00
 
 """
@@ -9,7 +9,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = "e71ea59858f4"
-down_revision = "4f31760a63ba"
+down_revision = "7d1c6425a51d"
 branch_labels = None
 depends_on = None
 
