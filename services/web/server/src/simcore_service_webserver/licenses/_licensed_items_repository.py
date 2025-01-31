@@ -41,8 +41,10 @@ async def create(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
+    display_name: str,
     licensed_resource_name: str,
     licensed_resource_type: LicensedResourceType,
+    licensed_resource_data: dict | None,
     product_name: ProductName | None,
     pricing_plan_id: PricingPlanId | None,
 ) -> LicensedItemDB:
@@ -50,10 +52,12 @@ async def create(
         result = await conn.execute(
             licensed_items.insert()
             .values(
+                product_name=product_name,
+                display_name=display_name,
                 licensed_resource_name=licensed_resource_name,
                 licensed_resource_type=licensed_resource_type,
+                licensed_resource_data=licensed_resource_data,
                 pricing_plan_id=pricing_plan_id,
-                product_name=product_name,
                 created=func.now(),
                 modified=func.now(),
             )
