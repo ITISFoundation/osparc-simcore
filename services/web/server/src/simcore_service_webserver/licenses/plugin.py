@@ -10,6 +10,7 @@ from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setu
 from ..rabbitmq import setup_rabbitmq
 from ..rest.plugin import setup_rest
 from . import (
+    _itis_vip_syncer_service,
     _licensed_items_checkouts_rest,
     _licensed_items_purchases_rest,
     _licensed_items_rest,
@@ -37,3 +38,6 @@ def setup_licenses(app: web.Application):
     setup_rabbitmq(app)
     if app[APP_SETTINGS_KEY].WEBSERVER_RABBITMQ:
         app.on_startup.append(_rpc.register_rpc_routes_on_startup)
+
+    # TODO: this is temporary
+    _itis_vip_syncer_service.setup_itis_vip_syncer(app)
