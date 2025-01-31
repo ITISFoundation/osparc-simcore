@@ -92,9 +92,5 @@ qx.Class.define("osparc.store.LicensedItems", {
       }
       return osparc.data.Resources.fetch("licensedItems", "checkouts", purchasesParams, options);
     },
-
-    getVipModels: async function(vipSubset) {
-      console.log(this.getLicensedItems());
-    }
   }
 });
