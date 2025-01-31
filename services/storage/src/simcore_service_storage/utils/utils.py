@@ -69,8 +69,8 @@ def is_file_entry_valid(file_metadata: FileMetaData | FileMetaDataAtDB) -> bool:
 
 
 def create_upload_completion_task_name(user_id: UserID, file_id: StorageFileID) -> str:
-    hash = hashlib.sha256(f"{user_id}_{file_id}").hexdigest()
-    return f"upload_complete_task_{hash}"
+    the_hash = hashlib.sha256(f"{user_id}_{file_id}".encode()).hexdigest()
+    return f"upload_complete_task_{the_hash}"
 
 
 def is_valid_managed_multipart_upload(upload_id: UploadID | None) -> bool:
