@@ -169,7 +169,9 @@ qx.Class.define("osparc.desktop.StudyEditor", {
             }, this);
           }
 
-          study.getUi().addListener("changeMode", e => this.__uiModeChanged(e.getData()));
+          study.getUi().addListener("changeMode", e => {
+            this.__uiModeChanged(e.getData(), e.getOldData());
+          });
         })
         .catch(err => {
           console.error(err);
@@ -699,7 +701,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       return this.__workbenchView.getLogger();
     },
 
-    __uiModeChanged: function(newUIMode) {
+    __uiModeChanged: function(newUIMode, oldUIMode) {
       switch (newUIMode) {
         case "guided":
         case "app":
@@ -714,16 +716,21 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         case "workbench":
         default: {
           this.__viewsStack.setSelection([this.__workbenchView]);
-          const currentNodeId = this.getStudy().getUi().getCurrentNodeId();
-          if (currentNodeId) {
-            const node = this.getStudy().getWorkbench().getNode(currentNodeId);
-            if (node && node.isDynamic()) {
-              this.__workbenchView.fullscreenNode(currentNodeId);
-            } else {
-              this.__workbenchView.nodeSelected(currentNodeId);
-            }
+          if (oldUIMode === "standalone") {
+            // in this transition, show workbenchUI
+            this.__workbenchView.showPipeline();
           } else {
-            this.__workbenchView.openFirstNode();
+            const currentNodeId = this.getStudy().getUi().getCurrentNodeId();
+            if (currentNodeId) {
+              const node = this.getStudy().getWorkbench().getNode(currentNodeId);
+              if (node && node.isDynamic()) {
+                this.__workbenchView.fullscreenNode(currentNodeId);
+              } else {
+                this.__workbenchView.nodeSelected(currentNodeId);
+              }
+            } else {
+              this.__workbenchView.openFirstNode();
+            }
           }
           break;
         }

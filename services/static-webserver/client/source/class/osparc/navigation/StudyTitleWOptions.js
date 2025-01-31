@@ -96,11 +96,6 @@ qx.Class.define("osparc.navigation.StudyTitleWOptions", {
           });
           control.addListener("execute", () => {
             this.getStudy().getUi().setMode("standalone");
-            const validNodes = this.getStudy().getNonFrontendNodes();
-            if (this.getStudy().isOnlyNodeDynamic()) {
-              const dynamicNode = validNodes[0];
-              dynamicNode.getIFrame().maximizeIFrame(true);
-            }
           });
           break;
         case "study-menu-download-logs":
