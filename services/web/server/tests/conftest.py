@@ -18,6 +18,7 @@ import simcore_service_webserver
 from aiohttp.test_utils import TestClient
 from common_library.json_serialization import json_dumps
 from faker import Faker
+from models_library.api_schemas_webserver.projects import ProjectGet
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import ProjectState
@@ -216,7 +217,7 @@ async def request_create_project() -> (  # noqa: C901, PLR0915
         project_data: ProjectDict = {}
         expected_data: ProjectDict = {
             "classifiers": [],
-            "accessRights": [],
+            "accessRights": {},
             "tags": [],
             "lastChangeDate": None,
             "creationDate": None,
@@ -233,13 +234,23 @@ async def request_create_project() -> (  # noqa: C901, PLR0915
             "workspaceId": None,
             "folderId": None,
             "trashedAt": None,
+            "trashedBy": None,
         }
         if from_study:
-            # access rights are replaced
-            expected_data = deepcopy(from_study)
-            expected_data["accessRights"] = {}
+
+            from_study_wo_access_rights = deepcopy(from_study)
+            from_study_wo_access_rights.pop("accessRights")
+            expected_data = {
+                **expected_data,
+                "trashedByPrimaryGid": None,
+                **from_study_wo_access_rights,
+            }
             if not as_template:
                 expected_data["name"] = f"{from_study['name']} (Copy)"
+
+            expected_data = ProjectGet.from_domain_model(expected_data).model_dump(
+                mode="json", by_alias=True
+            )
 
         if not from_study or project:
             assert NEW_PROJECT.request_payload
@@ -434,7 +445,7 @@ async def request_create_project() -> (  # noqa: C901, PLR0915
                 "folderId",
             ]
 
-            for key in new_project:
+            for key in expected_data:
                 if key not in modified_fields:
                     assert expected_data[key] == new_project[key]
 

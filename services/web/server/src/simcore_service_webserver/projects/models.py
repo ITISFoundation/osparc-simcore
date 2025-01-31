@@ -3,8 +3,10 @@ from enum import Enum
 from typing import Any, TypeAlias
 
 from aiopg.sa.result import RowProxy
+from common_library.dict_tools import remap_keys
 from models_library.api_schemas_webserver.projects import ProjectPatch
 from models_library.folders import FolderID
+from models_library.groups import GroupID
 from models_library.projects import ClassifierID, ProjectID
 from models_library.projects_ui import StudyUI
 from models_library.users import UserID
@@ -14,7 +16,7 @@ from models_library.utils.common_validators import (
 )
 from models_library.workspaces import WorkspaceID
 from pydantic import BaseModel, ConfigDict, HttpUrl, field_validator
-from simcore_postgres_database.models.projects import ProjectType, projects
+from simcore_postgres_database.models.projects import ProjectType
 
 ProjectDict: TypeAlias = dict[str, Any]
 ProjectProxy: TypeAlias = RowProxy
@@ -35,13 +37,14 @@ class ProjectTypeAPI(str, Enum):
 
 
 class ProjectDB(BaseModel):
+    # NOTE: model intented to read one-to-one columns of the `projects` table
     id: int
     type: ProjectType
     uuid: ProjectID
     name: str
     description: str
     thumbnail: HttpUrl | None
-    prj_owner: UserID
+    prj_owner: UserID  # == user.id (who created)
     creation_date: datetime
     last_change_date: datetime
     ui: StudyUI | None
@@ -51,9 +54,12 @@ class ProjectDB(BaseModel):
     published: bool
     hidden: bool
     workspace_id: WorkspaceID | None
-    trashed_at: datetime | None
+
+    trashed: datetime | None
+    trashed_by: UserID | None  # == user.id (who trashed)
     trashed_explicitly: bool = False
 
+    # config
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
 
     # validators
@@ -65,15 +71,15 @@ class ProjectDB(BaseModel):
     )
 
 
+class ProjectWithTrashExtra(ProjectDB):
+    # This field is not part of the tables
+    trashed_by_primary_gid: GroupID | None = None
+
+
 class UserSpecificProjectDataDB(ProjectDB):
     folder_id: FolderID | None
 
     model_config = ConfigDict(from_attributes=True)
-
-
-assert set(ProjectDB.model_fields.keys()).issubset(  # nosec
-    {c.name for c in projects.columns if c.name not in ["access_rights"]}
-)
 
 
 class UserProjectAccessRightsDB(BaseModel):
@@ -93,15 +99,16 @@ class UserProjectAccessRightsWithWorkspace(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-class ProjectPatchExtended(ProjectPatch):
-    # Only used internally
+class ProjectPatchInternalExtended(ProjectPatch):
+    # ONLY used internally
     trashed_at: datetime | None
+    trashed_by: UserID | None
     trashed_explicitly: bool
 
     model_config = ConfigDict(populate_by_name=True, extra="forbid")
 
-
-__all__: tuple[str, ...] = (
-    "ProjectDict",
-    "ProjectProxy",
-)
+    def to_domain_model(self) -> dict[str, Any]:
+        return remap_keys(
+            self.model_dump(exclude_unset=True, by_alias=False),
+            rename={"trashed_at": "trashed"},
+        )

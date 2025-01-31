@@ -86,12 +86,7 @@ qx.Class.define("osparc.info.ServiceUtils", {
       * @param serviceData {Object} Serialized Service Object
       */
     createContact: function(serviceData) {
-      const contact = new qx.ui.basic.Label();
-      contact.set({
-        value: osparc.store.Support.mailToText(serviceData["contact"], (serviceData["name"] + ":" + serviceData["version"])),
-        selectable: true,
-        rich: true
-      });
+      const contact = osparc.store.Support.getMailToLabel(serviceData["contact"], serviceData["name"] + ":" + serviceData["version"]);
       return contact;
     },
 

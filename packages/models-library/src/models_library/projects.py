@@ -15,11 +15,13 @@ from pydantic import BaseModel, ConfigDict, Field, HttpUrl, field_validator
 
 from .basic_regex import DATE_RE, UUID_RE_BASE
 from .emails import LowerCaseEmailStr
+from .groups import GroupID
 from .projects_access import AccessRights, GroupIDStr
 from .projects_nodes import Node
 from .projects_nodes_io import NodeIDStr
 from .projects_state import ProjectState
 from .projects_ui import StudyUI
+from .users import UserID
 from .utils.common_validators import (
     empty_str_to_none_pre_validator,
     none_to_empty_str_pre_validator,
@@ -105,7 +107,7 @@ class ProjectAtDB(BaseProjectModel):
 
     @field_validator("project_type", mode="before")
     @classmethod
-    def convert_sql_alchemy_enum(cls, v):
+    def _convert_sql_alchemy_enum(cls, v):
         if isinstance(v, Enum):
             return v.value
         return v
@@ -182,10 +184,14 @@ class Project(BaseProjectModel):
         alias="folderId",
     )
 
-    trashed_at: datetime | None = Field(
-        default=None,
-        alias="trashedAt",
-    )
-    trashed_explicitly: bool = Field(default=False, alias="trashedExplicitly")
+    trashed: datetime | None = None
+    trashed_by: Annotated[UserID | None, Field(alias="trashedBy")] = None
+    trashed_by_primary_gid: Annotated[
+        GroupID | None, Field(alias="trashedByPrimaryGid")
+    ] = None
+    trashed_explicitly: Annotated[bool, Field(alias="trashedExplicitly")] = False
 
-    model_config = ConfigDict(title="osparc-simcore project", extra="forbid")
+    model_config = ConfigDict(
+        # NOTE: this is a security measure until we get rid of the ProjectDict variants
+        extra="forbid",
+    )

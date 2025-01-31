@@ -3,10 +3,10 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from collections.abc import Callable
 
 import pytest
 import simcore_postgres_database.cli
+import sqlalchemy.engine
 from alembic.script.revision import MultipleHeads
 from simcore_postgres_database.utils_migration import get_current_head
 from sqlalchemy import inspect
@@ -23,8 +23,8 @@ def test_migration_has_no_branches():
         )
 
 
-def test_migration_upgrade_downgrade(make_engine: Callable):
-    sync_engine = make_engine(is_async=False)
+def test_migration_upgrade_downgrade(sync_engine: sqlalchemy.engine.Engine):
+
     assert sync_engine
     assert simcore_postgres_database.cli.discover.callback
     assert simcore_postgres_database.cli.upgrade.callback

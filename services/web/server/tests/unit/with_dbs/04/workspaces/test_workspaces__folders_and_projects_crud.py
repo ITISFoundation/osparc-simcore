@@ -259,7 +259,7 @@ def mock_storage_delete_data_folders(mocker: MockerFixture) -> mock.Mock:
         autospec=True,
     )
     mocker.patch(
-        "simcore_service_webserver.projects.projects_api.remove_project_dynamic_services",
+        "simcore_service_webserver.projects.projects_service.remove_project_dynamic_services",
         autospec=True,
     )
     mocker.patch(
@@ -393,6 +393,7 @@ async def test_workspaces_delete_folders(
 
 @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_200_OK)])
 async def test_listing_folders_and_projects_in_workspace__multiple_workspaces_created(
+    request: pytest.FixtureRequest,
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
@@ -409,13 +410,13 @@ async def test_listing_folders_and_projects_in_workspace__multiple_workspaces_cr
         f"{url}",
         json={
             "name": "My first workspace",
-            "description": "Custom description",
+            "description": f"workspace 1 at {request.node.name}",
             "thumbnail": None,
         },
     )
     added_workspace_1, _ = await assert_status(resp, status.HTTP_201_CREATED)
 
-    # Create project in workspace
+    # Create PROJECT in workspace
     project_data = deepcopy(fake_project)
     project_data["workspace_id"] = f"{added_workspace_1['workspaceId']}"
     await create_project(
@@ -425,7 +426,7 @@ async def test_listing_folders_and_projects_in_workspace__multiple_workspaces_cr
         product_name="osparc",
     )
 
-    # Create folder in workspace
+    # Create FOLDER in workspace
     url = client.app.router["create_folder"].url_for()
     resp = await client.post(
         f"{url}",
@@ -436,19 +437,20 @@ async def test_listing_folders_and_projects_in_workspace__multiple_workspaces_cr
     )
     first_folder, _ = await assert_status(resp, status.HTTP_201_CREATED)
 
-    # create a new workspace
+    # create a new WORKSPACE
     url = client.app.router["create_workspace"].url_for()
     resp = await client.post(
         f"{url}",
         json={
-            "name": "My first workspace",
-            "description": "Custom description",
+            "name": "My second workspace",
+            "description": f"workspace 2 at {request.node.name}",
             "thumbnail": None,
         },
     )
     added_workspace_2, _ = await assert_status(resp, status.HTTP_201_CREATED)
+    assert added_workspace_2["workspaceId"] != added_workspace_1["workspaceId"]
 
-    # Create project in workspace
+    # Create PROJECT in workspace
     project_data = deepcopy(fake_project)
     project_data["workspace_id"] = f"{added_workspace_2['workspaceId']}"
     await create_project(
@@ -458,7 +460,7 @@ async def test_listing_folders_and_projects_in_workspace__multiple_workspaces_cr
         product_name="osparc",
     )
 
-    # Create folder in workspace
+    # Create FOLDER in workspace
     url = client.app.router["create_folder"].url_for()
     resp = await client.post(
         f"{url}",
@@ -469,7 +471,7 @@ async def test_listing_folders_and_projects_in_workspace__multiple_workspaces_cr
     )
     first_folder, _ = await assert_status(resp, status.HTTP_201_CREATED)
 
-    # List projects in workspace 1
+    # List PROJECTS in workspace 1
     url = (
         client.app.router["list_projects"]
         .url_for()
@@ -479,7 +481,7 @@ async def test_listing_folders_and_projects_in_workspace__multiple_workspaces_cr
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(data) == 1
 
-    # List folders in workspace 1
+    # List FOLDERS in workspace 1
     url = (
         client.app.router["list_folders"]
         .url_for()

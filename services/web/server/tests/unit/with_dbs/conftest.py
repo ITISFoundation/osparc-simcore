@@ -28,7 +28,6 @@ import pytest
 import redis
 import redis.asyncio as aioredis
 import simcore_postgres_database.cli as pg_cli
-import simcore_service_webserver.db.models as orm
 import simcore_service_webserver.email
 import simcore_service_webserver.email._core
 import simcore_service_webserver.utils
@@ -44,6 +43,7 @@ from models_library.services_enums import ServiceState
 from pydantic import ByteSize, TypeAdapter
 from pytest_docker.plugin import Services
 from pytest_mock import MockerFixture
+from pytest_simcore.helpers import postgres_tools
 from pytest_simcore.helpers.faker_factories import random_product
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -383,7 +383,7 @@ async def storage_subsystem_mock(mocker: MockerFixture) -> MockedStorageSubsyste
     )
 
     mock2 = mocker.patch(
-        "simcore_service_webserver.projects.projects_api.storage_api.delete_data_folders_of_project_node",
+        "simcore_service_webserver.projects.projects_service.storage_api.delete_data_folders_of_project_node",
         autospec=True,
         return_value=None,
     )
@@ -517,18 +517,17 @@ def postgres_db(
     assert pg_cli.upgrade.callback
     pg_cli.upgrade.callback("head")
     # Uses syncrounous engine for that
-    engine = sa.create_engine(url, isolation_level="AUTOCOMMIT")
+    sync_engine = sa.create_engine(url, isolation_level="AUTOCOMMIT")
 
-    yield engine
+    yield sync_engine
 
-    # NOTE: we directly drop the table, that is faster
-    # testing the upgrade/downgrade is already done in postgres-database.
-    # there is no need to it here.
-    with engine.begin() as conn:
-        conn.execute(sa.DDL("DROP TABLE IF EXISTS alembic_version"))
-
-    orm.metadata.drop_all(engine)
-    engine.dispose()
+    try:
+        # NOTE: we directly drop the table, that is faster
+        # testing the upgrade/downgrade is already done in postgres-database.
+        # there is no need to it here.
+        postgres_tools.force_drop_all_tables(sync_engine)
+    finally:
+        sync_engine.dispose()
 
 
 @pytest.fixture

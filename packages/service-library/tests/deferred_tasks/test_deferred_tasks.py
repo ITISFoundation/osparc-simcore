@@ -22,7 +22,6 @@ from pydantic import NonNegativeFloat, NonNegativeInt
 from pytest_mock import MockerFixture
 from servicelib.rabbitmq import RabbitMQClient
 from servicelib.redis import RedisClientSDK
-from servicelib.redis import _constants as redis_client_constants
 from servicelib.sequences_utils import partition_gen
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
@@ -350,7 +349,7 @@ class ServiceManager:
         self.paused_container = paused_container
 
     @contextlib.asynccontextmanager
-    async def _pause_container(
+    async def _paused_container(
         self, container_name: str, client: ClientWithPingProtocol
     ) -> AsyncIterator[None]:
         async with self.paused_container(container_name):
@@ -375,7 +374,7 @@ class ServiceManager:
 
     @contextlib.asynccontextmanager
     async def pause_rabbit(self) -> AsyncIterator[None]:
-        async with self._pause_container("rabbit", self.rabbit_client):
+        async with self._paused_container("rabbit", self.rabbit_client):
             yield
 
     @contextlib.asynccontextmanager
@@ -383,15 +382,14 @@ class ServiceManager:
         # save db for clean restore point
         await self.redis_client.redis.save()
 
-        async with self._pause_container("redis", self.redis_client):
+        async with self._paused_container("redis", self.redis_client):
             yield
 
 
 @pytest.fixture
 def mock_default_socket_timeout(mocker: MockerFixture) -> None:
-    mocker.patch.object(
-        redis_client_constants,
-        "DEFAULT_SOCKET_TIMEOUT",
+    mocker.patch(
+        "servicelib.redis._client.DEFAULT_SOCKET_TIMEOUT",
         datetime.timedelta(seconds=0.25),
     )
 

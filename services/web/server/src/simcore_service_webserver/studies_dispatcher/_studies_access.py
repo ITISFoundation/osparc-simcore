@@ -82,7 +82,7 @@ async def _get_published_template_project(
     only_public_projects = not is_user_authenticated
 
     try:
-        prj, _ = await db.get_project(
+        prj, _ = await db.get_project_dict_and_type(
             project_uuid=project_uuid,
             # NOTE: these are the conditions for a published study
             # 1. MUST be a template
@@ -163,7 +163,7 @@ async def copy_study_to_account(
         )
 
         # Avoids multiple copies of the same template on each account
-        await db.get_project(project_uuid)
+        await db.get_project_dict_and_type(project_uuid)
 
     except ProjectNotFoundError:
         # New project cloned from template

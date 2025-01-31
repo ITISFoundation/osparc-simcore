@@ -3,7 +3,8 @@ from collections.abc import Awaitable, Callable
 from typing import Final
 
 from fastapi import FastAPI
-from servicelib.background_task import start_periodic_task, stop_periodic_task
+from servicelib.async_utils import cancel_wait_task
+from servicelib.background_task import create_periodic_task
 from servicelib.redis import exclusive
 
 from ..core.settings import ApplicationSettings
@@ -24,7 +25,7 @@ def on_app_startup(app: FastAPI) -> Callable[[], Awaitable[None]]:
         lock_key, lock_value = create_lock_key_and_value(app)
         assert lock_key  # nosec
         assert lock_value  # nosec
-        app.state.autoscaler_task = start_periodic_task(
+        app.state.autoscaler_task = create_periodic_task(
             exclusive(get_redis_client(app), lock_key=lock_key, lock_value=lock_value)(
                 auto_scale_cluster
             ),
@@ -43,7 +44,7 @@ def on_app_startup(app: FastAPI) -> Callable[[], Awaitable[None]]:
 
 def on_app_shutdown(app: FastAPI) -> Callable[[], Awaitable[None]]:
     async def _stop() -> None:
-        await stop_periodic_task(app.state.autoscaler_task)
+        await cancel_wait_task(app.state.autoscaler_task)
 
     return _stop
 

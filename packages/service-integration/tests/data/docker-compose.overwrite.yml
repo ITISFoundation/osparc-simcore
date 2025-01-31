@@ -1,4 +1,6 @@
 services:
   osparc-python-runner:
+    depends_on:
+      - another-service
     build:
       dockerfile: Dockerfile

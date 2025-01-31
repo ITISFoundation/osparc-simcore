@@ -84,6 +84,8 @@ def test_settings_to_client_statics_plugins(
 
     assert settings.WEBSERVER_LOGIN
 
+    assert statics["webserverLicenses"] == settings.WEBSERVER_LICENSES
+
     assert (
         statics["webserverLogin"]["LOGIN_ACCOUNT_DELETION_RETENTION_DAYS"]
         == settings.WEBSERVER_LOGIN.LOGIN_ACCOUNT_DELETION_RETENTION_DAYS
@@ -129,6 +131,7 @@ def test_disabled_plugins_settings_to_client_statics(
         assert plugin_name in set(statics["pluginsDisabled"])
 
 
+@pytest.mark.filterwarnings("error")
 def test_avoid_sensitive_info_in_public(app_settings: ApplicationSettings):
     # avoids display of sensitive info
     assert not any("pass" in key for key in app_settings.public_dict())
