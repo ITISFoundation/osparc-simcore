@@ -24,7 +24,7 @@ qx.Class.define("osparc.desktop.account.MyAccount", {
     const miniProfile = osparc.desktop.account.MyAccount.createMiniProfileView().set({
       paddingRight: 10
     });
-    this.addWidgetOnTopOfTheTabs(miniProfile);
+    this.addWidgetToTabs(miniProfile);
 
     this.__profilePage = this.__addProfilePage();
 

@@ -25,7 +25,7 @@ qx.Class.define("osparc.vipMarket.Market", {
       paddingRight: 10,
       minWidth: 150,
     });
-    this.addWidgetOnTopOfTheTabs(miniWallet);
+    this.addWidgetToTabs(miniWallet);
 
     osparc.store.LicensedItems.getInstance().getLicensedItems()
       .then(() => {
