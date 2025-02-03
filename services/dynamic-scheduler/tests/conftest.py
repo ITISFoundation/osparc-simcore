@@ -107,7 +107,7 @@ def disable_deferred_manager_lifespan(mocker: MockerFixture) -> None:
 
 @pytest.fixture
 def disable_notifier_lifespan(mocker: MockerFixture) -> None:
-    mocker.patch(f"{_PATH_APPLICATION}.lifespan_notifier")
+    mocker.patch(f"{_PATH_APPLICATION}.get_notifier_lifespans")
 
 
 @pytest.fixture
