@@ -951,9 +951,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
 
     openData: function() {
       const resourceData = this.getResourceData();
-      const studyDataManager = new osparc.widget.StudyDataManager(resourceData["uuid"], null);
-      const title = osparc.product.Utils.getStudyAlias({firstUpperCase: true}) + this.tr(" Files");
-      osparc.ui.window.Window.popUpInWindow(studyDataManager, title, osparc.dashboard.ResourceDetails.WIDTH, osparc.dashboard.ResourceDetails.HEIGHT);
+      osparc.widget.StudyDataManager.popUpInWindow(resourceData["uuid"]);
     },
 
     openBilling: function() {

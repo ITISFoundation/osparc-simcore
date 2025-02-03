@@ -58,6 +58,14 @@ qx.Class.define("osparc.widget.StudyDataManager", {
     this.__reloadTree();
   },
 
+  statics: {
+    popUpInWindow: function(studyId, nodeId) {
+      const studyDataManager = new osparc.widget.StudyDataManager(studyId, nodeId);
+      const title = osparc.product.Utils.getStudyAlias({firstUpperCase: true}) + qx.locale.Manager.tr(" Files");
+      osparc.ui.window.Window.popUpInWindow(studyDataManager, title, osparc.dashboard.ResourceDetails.WIDTH, osparc.dashboard.ResourceDetails.HEIGHT);
+    },
+  },
+
   properties: {
     studyId: {
       check: "String",
