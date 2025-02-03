@@ -352,7 +352,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     uiMode: {
-      check: ["workbench", "guided", "app"],
+      check: ["workbench", "guided", "app", "standalone"], // "guided" is no longer used
       nullable: true,
       apply: "__applyUiMode"
     },
@@ -582,21 +582,16 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     __applyUiMode: function(uiMode) {
-      let source = null;
-      let toolTipText = null;
       switch (uiMode) {
         case "guided":
-        case "app":
-          source = osparc.dashboard.CardBase.MODE_APP;
-          toolTipText = this.tr("App mode");
+        case "app": {
+          const uiModeIcon = this.getChildControl("workbench-mode");
+          uiModeIcon.set({
+            source: osparc.dashboard.CardBase.MODE_APP,
+            toolTipText: this.tr("App mode"),
+          });
           break;
-      }
-      if (source) {
-        const uiModeIcon = this.getChildControl("workbench-mode");
-        uiModeIcon.set({
-          source,
-          toolTipText,
-        });
+        }
       }
     },
 
@@ -881,6 +876,10 @@ qx.Class.define("osparc.dashboard.CardBase", {
         const duplicateButton = menuButtons.find(menuBtn => "duplicateButton" in menuBtn);
         if (duplicateButton) {
           duplicateButton.setEnabled(osparc.study.Utils.canBeDuplicated(resourceData));
+        }
+        const convertToPipelineButton = menuButtons.find(menuBtn => "convertToPipelineButton" in menuBtn);
+        if (convertToPipelineButton) {
+          convertToPipelineButton.setEnabled(osparc.study.Utils.canBeDuplicated(resourceData));
         }
         const exportCMISButton = menuButtons.find(menuBtn => "exportCMISButton" in menuBtn);
         if (exportCMISButton) {

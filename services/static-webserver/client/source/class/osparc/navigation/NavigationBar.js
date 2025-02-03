@@ -80,12 +80,6 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       minWidth: 30,
       minHeight: 30
     },
-
-    PAGE_CONTEXT: {
-      0: "dashboard",
-      1: "workbench",
-      2: "app"
-    }
   },
 
   members: {
