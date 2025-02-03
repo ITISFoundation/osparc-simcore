@@ -163,16 +163,16 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
           });
           break;
         case "footer": {
-          const fgrid = new qx.ui.layout.Grid();
-          fgrid.setSpacing(2);
-          fgrid.setColumnFlex(0, 1);
+          const fGrid = new qx.ui.layout.Grid();
+          fGrid.setSpacing(2);
+          fGrid.setColumnFlex(0, 1);
           control = new qx.ui.container.Composite().set({
             backgroundColor: "background-card-overlay",
             padding: this.self().PADDING - 2,
             maxWidth: this.self().ITEM_WIDTH,
             maxHeight: this.self().ITEM_HEIGHT
           });
-          control.setLayout(fgrid);
+          control.setLayout(fGrid);
           break;
         }
         case "title-row":
@@ -185,6 +185,23 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
             flex: 1
           });
           break;
+        case "icon": {
+          layout = this.getChildControl("body");
+          const maxWidth = this.self().ITEM_WIDTH;
+          control = new osparc.ui.basic.Thumbnail(null, maxWidth, 124);
+          control.getChildControl("image").set({
+            anonymous: true,
+            alignY: "middle",
+            alignX: "center",
+            allowGrowX: true,
+            allowGrowY: true
+          });
+          layout.getContentElement().setStyles({
+            "border-width": "0px"
+          });
+          layout.add(control, {flex: 1});
+          break;
+        }
         case "title":
           control = new qx.ui.basic.Label().set({
             textColor: "contrasted-text-light",
@@ -232,23 +249,6 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
           subtitleLayout.addAt(control, 1, {
             flex: 1
           });
-          break;
-        }
-        case "icon": {
-          layout = this.getChildControl("body");
-          const maxWidth = this.self().ITEM_WIDTH;
-          control = new osparc.ui.basic.Thumbnail(null, maxWidth, 124);
-          control.getChildControl("image").set({
-            anonymous: true,
-            alignY: "middle",
-            alignX: "center",
-            allowGrowX: true,
-            allowGrowY: true
-          });
-          layout.getContentElement().setStyles({
-            "border-width": "0px"
-          });
-          layout.add(control, {flex: 1});
           break;
         }
         case "thumbnail": {
