@@ -9,7 +9,7 @@ LifespanContextManager: TypeAlias = Callable[[FastAPI], AsyncContextManager[None
 
 def combine_lifespans(*lifespans: LifespanContextManager) -> LifespanContextManager:
     """Applies the `setup` part of the contextmangers in the order they are provided.
-    The `teardown` is in revere order with regarad to the `seutp`.
+    The `teardown` is run in reverse order with regard to the `setup`.
     """
 
     @asynccontextmanager
