@@ -31,12 +31,11 @@ jobs:
           enable-cache: false
       - name: checkout source branch
         uses: actions/checkout@v4
-      - name: Enter venv
+      - name: Generate openapi specs
         run: |
           make devenv
           source .venv/bin/activate
-      - name: Generate openapi-specs
-        run: make openapi-specs
+          make openapi-specs
       - name: Check api-server backwards compatibility
         run: |
           if ! ./ci/github/helpers/openapi-specs-diff.bash diff \
