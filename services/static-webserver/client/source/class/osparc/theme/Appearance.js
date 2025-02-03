@@ -719,6 +719,17 @@ qx.Theme.define("osparc.theme.Appearance", {
       }
     },
 
+    "menu-wider": {
+      include: "menu",
+      style: () => {
+        return {
+          decorator: "border-simple",
+          font: "text-14",
+          padding: 4,
+        };
+      }
+    },
+
     "menu-button": {
       alias: "atom",
 

@@ -94,18 +94,27 @@ qx.Class.define("osparc.data.model.IframeHandler", {
       osparc.utils.Utils.setIdToWidget(iframe.getIframe(), "iframe_"+this.getNode().getNodeId());
       if (osparc.product.Utils.isProduct("s4llite")) {
         iframe.setShowToolbar(false);
+      } else {
+        this.getStudy().getUi().bind("mode", iframe, "showToolbar", {
+          converter: mode => mode !== "standalone"
+        });
       }
-      iframe.addListener("restart", () => this.__restartIFrame(), this);
+      iframe.addListener("restart", () => this.restartIFrame(), this);
       iframe.getDiskUsageIndicator().setCurrentNode(this.getNode())
       this.setIFrame(iframe);
     },
 
     __initLoadingPage: function() {
-      const showZoomMaximizeButton = !osparc.product.Utils.isProduct("s4llite");
-      const loadingPage = new osparc.ui.message.Loading(showZoomMaximizeButton);
-      loadingPage.set({
+      const loadingPage = new osparc.ui.message.Loading().set({
         header: this.__getLoadingPageHeader()
       });
+      if (osparc.product.Utils.isProduct("s4llite")) {
+        loadingPage.setShowToolbar(false);
+      } else {
+        this.getStudy().getUi().bind("mode", loadingPage, "showToolbar", {
+          converter: mode => mode !== "standalone"
+        });
+      }
 
       const node = this.getNode();
       const thumbnail = node.getMetaData()["thumbnail"];
@@ -115,7 +124,9 @@ qx.Class.define("osparc.data.model.IframeHandler", {
       node.addListener("changeLabel", () => loadingPage.setHeader(this.__getLoadingPageHeader()), this);
 
       const nodeStatus = node.getStatus();
-      const sequenceWidget = nodeStatus.getProgressSequence().getWidgetForLoadingPage();
+      const sequenceWidget = nodeStatus.getProgressSequence().getWidgetForLoadingPage().set({
+        width: 400
+      });
       nodeStatus.bind("interactive", sequenceWidget, "visibility", {
         converter: state => ["pending", "pulling", "starting", "connecting"].includes(state) ? "visible" : "excluded"
       });
@@ -352,7 +363,7 @@ qx.Class.define("osparc.data.model.IframeHandler", {
         node.fireDataEvent("showInLogger", msgData);
 
         // will switch to iframe's content
-        this.__restartIFrame();
+        this.restartIFrame();
         if (!node.isDynamicV2()) {
           node.callRetrieveInputs();
         }
@@ -374,7 +385,7 @@ qx.Class.define("osparc.data.model.IframeHandler", {
       }
     },
 
-    __restartIFrame: function() {
+    restartIFrame: function() {
       const node = this.getNode();
       if (node.getServiceUrl() !== null) {
         // restart button pushed

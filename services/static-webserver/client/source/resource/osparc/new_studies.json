@@ -148,7 +148,7 @@
       "resourceType": "study",
       "icon": "@FontAwesome5Solid/file/18",
       "title": "Empty Pipeline",
-      "newStudyLabel": "New Project",
+      "newStudyLabel": "New Pipeline",
       "idToWidget": "emptyStudyBtn"
     }]
   },
@@ -185,7 +185,7 @@
       "resourceType": "study",
       "icon": "@FontAwesome5Solid/file/18",
       "title": "Empty Pipeline",
-      "newStudyLabel": "New Project",
+      "newStudyLabel": "New Pipeline",
       "idToWidget": "emptyStudyBtn"
     }]
   },

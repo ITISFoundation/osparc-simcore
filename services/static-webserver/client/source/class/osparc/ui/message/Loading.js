@@ -19,6 +19,7 @@
  * The loading page
  *
  * -----------------------
+ * |                  [] |
  * |                     |
  * | oSparc/service logo |
  * |   spinner + header  |
@@ -31,19 +32,20 @@
 qx.Class.define("osparc.ui.message.Loading", {
   extend: qx.ui.core.Widget,
 
-  /**
-   * Constructor for the Loading widget.
-   *
-   * @param {Boolean} showMaximizeButton
-   */
-  construct: function(showMaximizeButton = false) {
+  construct: function() {
     this.base(arguments);
-    this._setLayout(new qx.ui.layout.HBox());
 
-    this.set({
-      alignX: "center"
-    });
-    this.__buildLayout(showMaximizeButton);
+    const layout = new qx.ui.layout.Grid(20, 20);
+    layout.setRowFlex(this.self().GRID_POS.SPACER_TOP, 1);
+    layout.setRowFlex(this.self().GRID_POS.SPACER_BOTTOM, 1);
+    layout.setColumnFlex(0, 1);
+    layout.setColumnMaxWidth(1, 400);
+    layout.setColumnAlign(1, "center", "middle");
+    layout.setColumnFlex(2, 1);
+    layout.setColumnAlign(2, "right", "middle");
+    this._setLayout(layout);
+
+    this.__buildLayout();
   },
 
   properties: {
@@ -64,15 +66,21 @@ qx.Class.define("osparc.ui.message.Loading", {
       check: "Array",
       nullable: true,
       apply: "__applyMessages"
+    },
+
+    /**
+     * Show Restart-Maximize Toolbar
+     */
+    showToolbar: {
+      check: "Boolean",
+      init: false,
+      event: "changeShowToolbar",
     }
   },
 
-  // from osparc.widget.PersistentIframe
   events: {
-    /** Fired if the iframe is restored from a minimized or maximized state */
     "restore" : "qx.event.type.Event",
-    /** Fired if the iframe is maximized */
-    "maximize" : "qx.event.type.Event"
+    "maximize" : "qx.event.type.Event",
   },
 
   statics: {
@@ -82,42 +90,38 @@ qx.Class.define("osparc.ui.message.Loading", {
     STATUS_ICON_SIZE: 20,
 
     GRID_POS: {
-      LOGO: 1,
-      WAITING: 2,
-      MESSAGES: 3,
-      EXTRA_WIDGETS: 4
+      TOOLBAR: 0,
+      SPACER_TOP: 1,
+      LOGO: 2,
+      WAITING: 3,
+      MESSAGES: 4,
+      EXTRA_WIDGETS: 5,
+      SPACER_BOTTOM: 6,
     }
   },
 
   members: {
-    __mainLayout: null,
     __thumbnail: null,
     __header: null,
     __messagesContainer: null,
     __extraWidgets: null,
     __maxButton: null,
 
-    __buildLayout: function(showMaximizeButton) {
-      this.__createMainLayout();
-      this.__createMaximizeButton(showMaximizeButton);
-    },
+    __buildLayout: function() {
+      this._add(new qx.ui.core.Widget(), {
+        column: 0,
+        row: 0
+      });
 
-    __createMainLayout: function() {
-      const layout = new qx.ui.layout.Grid(20, 20);
-      layout.setColumnFlex(0, 1);
-      const mainLayout = this.__mainLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(20).set({
-        alignX: "center",
-        alignY: "middle"
-      })).set({
-        width: 400,
-        padding: 0
+      const maxLayout = this.__createMaximizeToolbar();
+      this._add(maxLayout, {
+        column: 2,
+        row: this.self().GRID_POS.TOOLBAR
       });
-      this._add(new qx.ui.core.Widget(), {
-        flex: 1
-      });
-      this._add(mainLayout);
-      this._add(new qx.ui.core.Widget(), {
-        flex: 1
+
+      this._add(new qx.ui.core.Spacer(), {
+        column: 1,
+        row: this.self().GRID_POS.SPACER_TOP
       });
 
       const productLogoPath = osparc.product.Utils.getLogoPath();
@@ -137,8 +141,8 @@ qx.Class.define("osparc.ui.message.Loading", {
           height: logoHeight
         });
       }
-      mainLayout.addAt(thumbnail, {
-        column: 0,
+      this._add(thumbnail, {
+        column: 1,
         row: this.self().GRID_POS.LOGO
       });
 
@@ -150,53 +154,76 @@ qx.Class.define("osparc.ui.message.Loading", {
         gap: 15,
         allowGrowX: false
       });
+      const icon = waitingHeader.getChildControl("icon");
+      osparc.service.StatusUI.updateCircleAnimation(icon);
       const label = waitingHeader.getChildControl("label");
       label.set({
         rich: true,
-        wrap: true
+        wrap: true,
+        alignX: "center",
       });
-      const icon = waitingHeader.getChildControl("icon");
-      osparc.service.StatusUI.updateCircleAnimation(icon);
-      mainLayout.addAt(waitingHeader, {
-        column: 0,
+      this._add(waitingHeader, {
+        column: 1,
         row: this.self().GRID_POS.WAITING
       });
 
       const messages = this.__messagesContainer = new qx.ui.container.Composite(new qx.ui.layout.VBox(10).set({
         alignX: "center"
       }));
-      mainLayout.addAt(messages, {
-        column: 0,
+      this._add(messages, {
+        column: 1,
         row: this.self().GRID_POS.MESSAGES
       });
 
       const extraWidgets = this.__extraWidgets = new qx.ui.container.Composite(new qx.ui.layout.VBox(10).set({
         alignX: "center"
       }));
-      mainLayout.addAt(extraWidgets, {
-        column: 0,
+      this._add(extraWidgets, {
+        column: 1,
         row: this.self().GRID_POS.EXTRA_WIDGETS
+      });
+
+      this._add(new qx.ui.core.Spacer(), {
+        column: 1,
+        row: this.self().GRID_POS.SPACER_BOTTOM
       });
     },
 
-    __createMaximizeButton: function(showMaximizeButton) {
+    maximizeIFrame: function(maximize) {
+      if (maximize) {
+        this.fireEvent("maximize");
+        this.addState("maximized");
+      } else {
+        this.fireEvent("restore");
+        this.removeState("maximized");
+      }
+      const maxButton = this.__maxButton;
+      maxButton.set({
+        label: osparc.widget.PersistentIframe.getZoomLabel(maximize),
+        icon: osparc.widget.PersistentIframe.getZoomIcon(maximize)
+      });
+      osparc.utils.Utils.setIdToWidget(maxButton, osparc.widget.PersistentIframe.getMaximizeWidgetId(maximize));
+      qx.event.message.Bus.getInstance().dispatchByName("maximizeIframe", this.hasState("maximized"));
+    },
+
+    __createMaximizeToolbar: function() {
       const maximize = false;
       const maxButton = this.__maxButton = osparc.widget.PersistentIframe.createToolbarButton(maximize).set({
+        maxHeight: 25,
         label: osparc.widget.PersistentIframe.getZoomLabel(maximize),
         icon: osparc.widget.PersistentIframe.getZoomIcon(maximize),
-        visibility: showMaximizeButton ? "visible" : "excluded"
       });
       osparc.utils.Utils.setIdToWidget(maxButton, osparc.widget.PersistentIframe.getMaximizeWidgetId(maximize));
       maxButton.addListener("execute", () => this.maximizeIFrame(!this.hasState("maximized")), this);
 
-      const maximizeLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox()).set({
-        maxWidth: 100
+      const toolbarLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
+        alignX: "right",
+      }));
+      this.bind("showToolbar", toolbarLayout, "visibility", {
+        converter: showToolbar => showToolbar ? "visible" : "hidden"
       });
-      maximizeLayout.add(maxButton);
-      maximizeLayout.add(new qx.ui.core.Widget(), {
-        flex: 1
-      });
-      this._add(maximizeLayout);
+      toolbarLayout.add(maxButton);
+      return toolbarLayout;
     },
 
     __applyLogo: function(newLogo) {
@@ -264,23 +291,5 @@ qx.Class.define("osparc.ui.message.Loading", {
     addExtraWidget: function(widget) {
       this.__extraWidgets.add(widget);
     },
-
-    // from osparc.widget.PersistentIframe
-    maximizeIFrame: function(maximize) {
-      if (maximize) {
-        this.fireEvent("maximize");
-        this.addState("maximized");
-      } else {
-        this.fireEvent("restore");
-        this.removeState("maximized");
-      }
-      const maxButton = this.__maxButton;
-      maxButton.set({
-        label: osparc.widget.PersistentIframe.getZoomLabel(maximize),
-        icon: osparc.widget.PersistentIframe.getZoomIcon(maximize)
-      });
-      osparc.utils.Utils.setIdToWidget(maxButton, osparc.widget.PersistentIframe.getMaximizeWidgetId(maximize));
-      qx.event.message.Bus.getInstance().dispatchByName("maximizeIframe", this.hasState("maximized"));
-    }
   }
 });

@@ -68,6 +68,31 @@ qx.Class.define("osparc.navigation.StudyTitleWOptions", {
             });
           });
           break;
+        case "study-menu-reload":
+          control = new qx.ui.menu.Button().set({
+            label: this.tr("Reload"),
+            icon: "@FontAwesome5Solid/redo-alt/12",
+          });
+          control.addListener("execute", () => this.__reloadIFrame(), this);
+          break;
+        case "study-menu-convert-to-pipeline":
+          control = new qx.ui.menu.Button().set({
+            label: this.tr("Convert to Pipeline"),
+            icon: null,
+          });
+          control.addListener("execute", () => {
+            this.getStudy().getUi().setMode("workbench");
+          });
+          break;
+        case "study-menu-convert-to-standalone":
+          control = new qx.ui.menu.Button().set({
+            label: this.tr("Convert to Standalone"),
+            icon: null,
+          });
+          control.addListener("execute", () => {
+            this.getStudy().getUi().setMode("standalone");
+          });
+          break;
         case "study-menu-download-logs":
           control = new qx.ui.menu.Button().set({
             label: this.tr("Download logs"),
@@ -77,13 +102,18 @@ qx.Class.define("osparc.navigation.StudyTitleWOptions", {
           break;
         case "study-menu-button": {
           const optionsMenu = new qx.ui.menu.Menu();
+          optionsMenu.setAppearance("menu-wider");
           optionsMenu.add(this.getChildControl("study-menu-info"));
+          optionsMenu.add(this.getChildControl("study-menu-reload"));
+          optionsMenu.add(this.getChildControl("study-menu-convert-to-pipeline"));
+          optionsMenu.add(this.getChildControl("study-menu-convert-to-standalone"));
           optionsMenu.add(this.getChildControl("study-menu-download-logs"));
           control = new qx.ui.form.MenuButton().set({
             appearance: "fab-button",
             menu: optionsMenu,
             icon: "@FontAwesome5Solid/ellipsis-v/14",
-            allowGrowY: false
+            allowGrowY: false,
+            width: 24,
           });
           this._add(control);
           break;
@@ -104,9 +134,35 @@ qx.Class.define("osparc.navigation.StudyTitleWOptions", {
       return control || this.base(arguments, id);
     },
 
+    __reloadIFrame: function() {
+      const nodes = this.getStudy().getWorkbench().getNodes();
+      if (Object.keys(nodes).length === 1) {
+        Object.values(nodes)[0].getIframeHandler().restartIFrame();
+      }
+    },
+
     __applyStudy: function(study) {
       if (study) {
-        study.bind("name", this.getChildControl("edit-title-label"), "value");
+        const editTitle = this.getChildControl("edit-title-label");
+        study.bind("name", editTitle, "value");
+
+        const reloadButton = this.getChildControl("study-menu-reload");
+        study.getUi().bind("mode", reloadButton, "visibility", {
+          converter: mode => mode === "standalone" ? "visible" : "excluded"
+        });
+
+        const convertToPipelineButton = this.getChildControl("study-menu-convert-to-pipeline");
+        study.getUi().bind("mode", convertToPipelineButton, "visibility", {
+          converter: mode => mode === "standalone" ? "visible" : "excluded"
+        });
+
+        const convertToStandaloneButton = this.getChildControl("study-menu-convert-to-standalone");
+        const evaluateConvertToPipelineButton = () => {
+          // exclude until we have the export to standalone backend functionality
+          convertToStandaloneButton.exclude();
+        };
+        study.getWorkbench().addListener("pipelineChanged", () => evaluateConvertToPipelineButton());
+        study.getUi().addListener("changeMode", () => evaluateConvertToPipelineButton());
       } else {
         this.exclude();
       }

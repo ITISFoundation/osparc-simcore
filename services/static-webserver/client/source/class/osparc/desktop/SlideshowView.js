@@ -72,7 +72,7 @@ qx.Class.define("osparc.desktop.SlideshowView", {
       const nodeId = e.getData();
       this.__hideNode(nodeId);
     }, this);
-    slideshowToolbar.addListener("slidesStop", () => this.fireEvent("slidesStop"), this);
+    slideshowToolbar.addListener("slidesStop", () => this.getStudy().getUi().setMode("workbench"), this);
     this._add(slideshowToolbar);
 
     const mainView = this.__mainView = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
@@ -109,7 +109,6 @@ qx.Class.define("osparc.desktop.SlideshowView", {
   },
 
   events: {
-    "slidesStop": "qx.event.type.Event",
     "startPartialPipeline": "qx.event.type.Data",
     "stopPipeline": "qx.event.type.Event",
     "backToDashboardPressed": "qx.event.type.Event",
@@ -131,12 +130,6 @@ qx.Class.define("osparc.desktop.SlideshowView", {
       apply: "__applyMaximized",
       event: "changeMaximized"
     },
-
-    pageContext: {
-      check: ["guided", "app"],
-      nullable: false,
-      init: "guided"
-    }
   },
 
   statics: {
@@ -270,9 +263,6 @@ qx.Class.define("osparc.desktop.SlideshowView", {
           view = new osparc.node.slideshow.NodeView();
         }
         view.setNode(node);
-        if (node.isDynamic()) {
-          view.getSettingsLayout().setVisibility(this.getPageContext() === "app" ? "excluded" : "visible");
-        }
       }
       this.__connectMaximizeEvents(node);
       this.__styleView(node, view);
@@ -377,7 +367,6 @@ qx.Class.define("osparc.desktop.SlideshowView", {
           });
         }
       }
-      this.setPageContext("app");
       this.__slideshowToolbar.populateButtons(true);
       const currentNodeId = this.getStudy().getUi().getCurrentNodeId();
       const isValid = slideshow.getPosition(currentNodeId) !== -1;

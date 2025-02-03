@@ -39,28 +39,22 @@ qx.Class.define("osparc.file.FilePicker", {
   /**
     * @param node {osparc.data.model.Node} Node owning the widget
     */
-  construct: function(node, pageContext = "workbench") {
+  construct: function(node, viewContext = "workbench") {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.VBox(20));
 
     this.set({
       node,
-      pageContext
     });
 
-    this.__buildLayout();
+    this.__buildLayout(viewContext);
   },
 
   properties: {
     node: {
       check: "osparc.data.model.Node"
     },
-
-    pageContext: {
-      check: ["workbench", "guided", "app"],
-      nullable: false
-    }
   },
 
   events: {
@@ -284,15 +278,14 @@ qx.Class.define("osparc.file.FilePicker", {
       }
     },
 
-    __buildLayout: function() {
+    __buildLayout: function(viewContext) {
       this._removeAll();
       const hasOutput = osparc.file.FilePicker.hasOutputAssigned(this.getNode().getOutputs());
       if (hasOutput) {
         this.__buildInfoLayout();
       } else {
         this.__addProgressBar();
-        const isWorkbenchContext = this.getPageContext() === "workbench";
-        if (isWorkbenchContext) {
+        if (viewContext === "workbench") {
           this.__buildWorkbenchLayout();
         } else {
           this.setMargin(10);
@@ -545,8 +538,8 @@ qx.Class.define("osparc.file.FilePicker", {
         flex: 1
       });
       treeFolderLayout.add(treeLayout, 0);
-      const allowMultiselection = false;
-      const folderViewer = new osparc.file.FolderViewer(allowMultiselection);
+      const allowMultiSelection = false;
+      const folderViewer = new osparc.file.FolderViewer(allowMultiSelection);
       treeFolderLayout.add(folderViewer, 1);
 
       filesTree.addListener("selectionChanged", () => {
