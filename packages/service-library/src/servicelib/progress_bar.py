@@ -87,6 +87,7 @@ class ProgressBarData:  # pylint: disable=too-many-instance-attributes
     progress_unit: ProgressUnit | None = None
     progress_report_cb: AsyncReportCB | ReportCB | None = None
     _current_steps: float = _INITIAL_VALUE
+    _currnet_attempt: int = 0
     _children: list["ProgressBarData"] = field(default_factory=list)
     _parent: Optional["ProgressBarData"] = None
     _continuous_value_lock: asyncio.Lock = field(init=False)
@@ -146,6 +147,7 @@ class ProgressBarData:  # pylint: disable=too-many-instance-attributes
                         # NOTE: here we convert back to actual value since this is possibly weighted
                         actual_value=value * self.num_steps,
                         total=self.num_steps,
+                        attempt=self._currnet_attempt,
                         unit=self.progress_unit,
                         message=self.compute_report_message_stuct(),
                     ),
@@ -197,7 +199,9 @@ class ProgressBarData:  # pylint: disable=too-many-instance-attributes
         await self._report_external(new_progress_value)
 
     def reset_progress(self) -> None:
+        self._currnet_attempt += 1
         self._current_steps = _INITIAL_VALUE
+        self._last_report_value = _INITIAL_VALUE
 
     async def set_(self, new_value: float) -> None:
         await self.update(new_value - self._current_steps)

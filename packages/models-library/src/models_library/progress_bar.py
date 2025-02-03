@@ -2,14 +2,12 @@ from typing import Literal, TypeAlias
 
 from pydantic import BaseModel, ConfigDict
 
-from .basic_types import IDStr
-
 # NOTE: keep a list of possible unit, and please use correct official unit names
 ProgressUnit: TypeAlias = Literal["Byte"]
 
 
 class ProgressStructuredMessage(BaseModel):
-    description: IDStr
+    description: str
     current: float
     total: int
     unit: str | None = None
@@ -51,6 +49,7 @@ UNITLESS = None
 class ProgressReport(BaseModel):
     actual_value: float
     total: float = 1.0
+    attempt: int = 0
     unit: ProgressUnit | None = UNITLESS
     message: ProgressStructuredMessage | None = None
 
