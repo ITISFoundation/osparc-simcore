@@ -121,28 +121,25 @@ qx.Class.define("osparc.desktop.credits.PurchasesTableModel", {
         return Promise.all([
           licensedItemsStore.getLicensedItems(),
           licensedItemsStore.getPurchasedLicensedItems(walletId, urlParams),
-          licensedItemsStore.getVipModels(),
         ])
           .then(values => {
             const licensedItems = values[0];
             const purchasesItems = values[1];
-            const vipModels = values[2];
 
             const data = [];
             const purchasesCols = osparc.desktop.credits.PurchasesTable.COLS;
             purchasesItems.forEach(purchasesItem => {
               const licensedItemId = purchasesItem["licensedItemId"];
               const licensedItem = licensedItems.find(licItem => licItem["licensedItemId"] === licensedItemId);
-              const vipModel = vipModels.find(vipMdl => licensedItem && (vipMdl["modelId"] == licensedItem["name"]));
               data.push({
                 [purchasesCols.PURCHASE_ID.id]: purchasesItem["licensedItemPurchaseId"],
                 [purchasesCols.ITEM_ID.id]: licensedItemId,
-                [purchasesCols.ITEM_LABEL.id]: vipModel ? vipModel["name"] : "unknown model",
+                [purchasesCols.ITEM_LABEL.id]: licensedItem ? licensedItem["displayName"] : "unknown model",
                 [purchasesCols.START.id]: osparc.utils.Utils.formatDateAndTime(new Date(purchasesItem["startAt"])),
                 [purchasesCols.END.id]: osparc.utils.Utils.formatDateAndTime(new Date(purchasesItem["expireAt"])),
                 [purchasesCols.SEATS.id]: purchasesItem["numOfSeats"],
                 [purchasesCols.COST.id]: purchasesItem["pricingUnitCost"] ? ("-" + parseFloat(purchasesItem["pricingUnitCost"]).toFixed(2)) : "", // show it negative
-                [purchasesCols.USER.id]: purchasesItem["purchasedByUser"],
+                [purchasesCols.USER.id]: purchasesItem["userEmail"],
               });
             });
             return data;
