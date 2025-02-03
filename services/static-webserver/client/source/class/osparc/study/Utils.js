@@ -391,8 +391,7 @@ qx.Class.define("osparc.study.Utils", {
           return "https://images.seeklogo.com/logo-png/35/1/jupyter-logo-png_seeklogo-354673.png";
         }
         if (wbServices[0]["key"].includes("s4l-ui")) {
-          // return "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/refs/heads/main/app/icons/s4l/Sim4Life.png";
-          return "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/refs/heads/main/app/icons/s4l/Default.png";
+          return "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/refs/heads/main/app/icons/s4l/Sim4Life.png";
         }
       }
       return osparc.dashboard.CardBase.PRODUCT_ICON;
