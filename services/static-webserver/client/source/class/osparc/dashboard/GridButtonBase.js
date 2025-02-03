@@ -144,6 +144,7 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
             spacing: 0, // the sub-elements will take care of the padding
           });
           hGrid.setColumnFlex(1, 1);
+          hGrid.setRowAlign(0, "left", "middle");
           control = new qx.ui.container.Composite().set({
             backgroundColor: "background-card-overlay",
             padding: 0,
@@ -203,7 +204,7 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
             font: "text-14",
             padding: this.self().PADDING,
             maxWidth: this.self().ITEM_WIDTH - 2*this.self().PADDING,
-            maxHeight: this.self().TITLE_MAX_HEIGHT
+            maxHeight: this.self().TITLE_MAX_HEIGHT,
           });
           layout = this.getChildControl("header");
           layout.addAt(control, 0, {

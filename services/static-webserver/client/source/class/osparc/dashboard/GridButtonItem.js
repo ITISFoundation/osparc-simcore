@@ -112,8 +112,8 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
           });
           osparc.utils.Utils.setIdToWidget(control, "studyItemMenuButton");
           this._add(control, {
-            top: 8,
-            right: 8
+            top: 6,
+            right: 6,
           });
           break;
         case "tick-unselected":
