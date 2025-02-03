@@ -62,19 +62,10 @@ qx.Class.define("osparc.info.StudyLarge", {
 
       const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
 
-      const mainHBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+      const infoElements = this.__infoElements();
+      const infoLayout = osparc.info.StudyUtils.infoElementsToLayout(infoElements);
 
-      const leftVBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
-      mainHBox.add(leftVBox, {
-        flex: 1
-      });
-
-      vBox.add(mainHBox);
-
-      const extraInfo = this.__extraInfo();
-      const extraInfoLayout = this.__createExtraInfo(extraInfo);
-
-      leftVBox.add(extraInfoLayout);
+      vBox.add(infoLayout);
 
       let text = osparc.product.Utils.getStudyAlias({firstUpperCase: true}) + " Id";
       if (this.__isTemplate) {
@@ -87,7 +78,7 @@ qx.Class.define("osparc.info.StudyLarge", {
         allowGrowX: false
       });
       copyIdButton.addListener("execute", () => osparc.utils.Utils.copyTextToClipboard(this.getStudy().getUuid()));
-      leftVBox.add(copyIdButton);
+      vBox.add(copyIdButton);
 
       const scrollContainer = new qx.ui.container.Scroll();
       scrollContainer.add(vBox);
@@ -97,8 +88,8 @@ qx.Class.define("osparc.info.StudyLarge", {
       });
     },
 
-    __extraInfo: function() {
-      const extraInfo = {
+    __infoElements: function() {
+      const infoLayout = {
         "TITLE": {
           label: this.tr("Title:"),
           view: osparc.info.StudyUtils.createTitle(this.getStudy()),
@@ -166,7 +157,7 @@ qx.Class.define("osparc.info.StudyLarge", {
         this.getStudy().getQuality() &&
         osparc.metadata.Quality.isEnabled(this.getStudy().getQuality())
       ) {
-        extraInfo["QUALITY"] = {
+        infoLayout["QUALITY"] = {
           label: this.tr("Quality:"),
           view: osparc.info.StudyUtils.createQuality(this.getStudy()),
           action: {
@@ -178,7 +169,7 @@ qx.Class.define("osparc.info.StudyLarge", {
       }
 
       if (osparc.product.Utils.showClassifiers()) {
-        extraInfo["CLASSIFIERS"] = {
+        infoLayout["CLASSIFIERS"] = {
           label: this.tr("Classifiers:"),
           view: osparc.info.StudyUtils.createClassifiers(this.getStudy()),
           action: (this.getStudy().getClassifiers().length || this.__canIWrite()) ? {
@@ -192,18 +183,14 @@ qx.Class.define("osparc.info.StudyLarge", {
       if (!this.__isTemplate) {
         const pathLabel = new qx.ui.basic.Label();
         pathLabel.setValue(this.getStudy().getLocationString());
-        extraInfo["LOCATION"] = {
+        infoLayout["LOCATION"] = {
           label: this.tr("Location:"),
           view: pathLabel,
           action: null
         };
       }
 
-      return extraInfo;
-    },
-
-    __createExtraInfo: function(extraInfo) {
-      return osparc.info.StudyUtils.createExtraInfoGrid(extraInfo);
+      return infoLayout;
     },
 
     __createStudyId: function() {
