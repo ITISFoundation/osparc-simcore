@@ -22,7 +22,7 @@
 qx.Class.define("osparc.file.FolderViewer", {
   extend: qx.ui.core.Widget,
 
-  construct: function(allowMultiselection = true) {
+  construct: function(allowMultiSelection = true) {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.VBox(10));
@@ -33,11 +33,11 @@ qx.Class.define("osparc.file.FolderViewer", {
     folderUpBtn.addListener("execute", () => this.fireDataEvent("folderUp", this.getFolder()), this);
     this.getChildControl("folder-path");
     let multiSelectButton = null;
-    if (allowMultiselection) {
+    if (allowMultiSelection) {
       multiSelectButton = this.getChildControl("multi-select-button");
     }
-    const gridViewButton = this.getChildControl("view-options-icons");
     const listViewButton = this.getChildControl("view-options-list");
+    const gridViewButton = this.getChildControl("view-options-icons");
     const folderContent = this.getChildControl("folder-content");
     const selectedFileLayout = this.getChildControl("selected-file-layout");
 
@@ -51,7 +51,7 @@ qx.Class.define("osparc.file.FolderViewer", {
 
     this.bind("folder", folderContent, "folder");
 
-    if (allowMultiselection) {
+    if (allowMultiSelection) {
       multiSelectButton.bind("value", folderContent, "multiSelect");
       folderContent.bind("multiSelect", multiSelectButton, "value");
       multiSelectButton.addListener("changeValue", e => {
@@ -142,12 +142,12 @@ qx.Class.define("osparc.file.FolderViewer", {
           header.addAt(control, 2);
           break;
         }
-        case "view-options-rgroup":
+        case "view-options-radio-group":
           control = new qx.ui.form.RadioGroup();
           break;
         case "view-options-icons": {
           control = new qx.ui.form.ToggleButton(null, "@MaterialIcons/apps/18");
-          const group = this.getChildControl("view-options-rgroup");
+          const group = this.getChildControl("view-options-radio-group");
           group.add(control);
           const header = this.getChildControl("header");
           header.addAt(control, 3);
@@ -155,7 +155,7 @@ qx.Class.define("osparc.file.FolderViewer", {
         }
         case "view-options-list": {
           control = new qx.ui.form.ToggleButton(null, "@MaterialIcons/reorder/18");
-          const group = this.getChildControl("view-options-rgroup");
+          const group = this.getChildControl("view-options-radio-group");
           group.add(control);
           const header = this.getChildControl("header");
           header.addAt(control, 4);

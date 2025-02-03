@@ -36,7 +36,7 @@ qx.Class.define("osparc.file.FolderContent", {
 
     mode: {
       check: ["list", "icons"],
-      init: "icons",
+      init: "list",
       nullable: false,
       event: "changeMode",
       apply: "__reloadFolderContent"
@@ -80,7 +80,7 @@ qx.Class.define("osparc.file.FolderContent", {
     T_POS: {
       TYPE: 0,
       NAME: 1,
-      DATE: 2,
+      MODIFIED_DATE: 2,
       SIZE: 3,
       ID: 4
     }
@@ -105,9 +105,9 @@ qx.Class.define("osparc.file.FolderContent", {
           });
           control.getTableColumnModel().setDataCellRenderer(this.self().T_POS.TYPE, new qx.ui.table.cellrenderer.Image());
           control.setColumnWidth(this.self().T_POS.TYPE, 30);
-          control.setColumnWidth(this.self().T_POS.NAME, 360);
-          control.setColumnWidth(this.self().T_POS.DATE, 170);
-          control.setColumnWidth(this.self().T_POS.SIZE, 70);
+          control.setColumnWidth(this.self().T_POS.NAME, 250);
+          control.setColumnWidth(this.self().T_POS.MODIFIED_DATE, 125);
+          control.setColumnWidth(this.self().T_POS.SIZE, 80);
           this.bind("mode", control, "visibility", {
             converter: mode => mode === "list" ? "visible" : "excluded"
           });
