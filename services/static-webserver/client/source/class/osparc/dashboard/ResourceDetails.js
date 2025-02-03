@@ -326,7 +326,8 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
           icon: iconSrc,
           font: "text-14",
           padding: 8,
-          gap: 18,
+          paddingLeft: 12,
+          gap: 14,
           cursor: "pointer",
         });
         dataAccess.addListener("tap", () => osparc.widget.StudyDataManager.popUpInWindow(resourceData["uuid"]));
