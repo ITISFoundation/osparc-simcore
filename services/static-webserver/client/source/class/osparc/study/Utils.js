@@ -365,7 +365,7 @@ qx.Class.define("osparc.study.Utils", {
       if (osparc.product.Utils.isProduct("tis") || osparc.product.Utils.isProduct("tiplite")) {
         return this.__guessTIPIcon(studyData);
       }
-      return osparc.dashboard.CardBase.PRODUCT_THUMBNAIL;
+      return osparc.dashboard.CardBase.PRODUCT_ICON;
     },
 
     __guessS4LIcon: function(studyData) {
@@ -382,7 +382,7 @@ qx.Class.define("osparc.study.Utils", {
           return "osparc/icons/Sim4Life.ico";
         }
       }
-      return osparc.dashboard.CardBase.PRODUCT_THUMBNAIL;
+      return osparc.dashboard.CardBase.PRODUCT_ICON;
     },
 
     __guessTIPIcon: function(studyData) {

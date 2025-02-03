@@ -256,6 +256,24 @@ qx.Class.define("osparc.product.Utils", {
       return this.isS4LProduct() && licensesEnabled;
     },
 
+    getProductIconUrl: function(asset = "Default.png") {
+      const base = "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/icons/"
+      let url;
+      switch (osparc.product.Utils.getProductName()) {
+        case "osparc":
+          url = `${base}/oSparc/${asset}`;
+          break;
+        case "tis":
+        case "tiplite":
+          url = `${base}/TIP/${asset}`;
+          break;
+        default:
+          url = `${base}/S4L/${asset}`;
+          break;
+      }
+      return url;
+    },
+
     getProductThumbUrl: function(asset = "Default.png") {
       const base = "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails"
       let url;
