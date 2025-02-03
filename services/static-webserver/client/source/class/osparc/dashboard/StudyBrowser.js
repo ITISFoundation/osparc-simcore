@@ -1744,7 +1744,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __updateName: function(studyData, name) {
-      osparc.info.StudyUtils.patchStudyData(studyData, "name", name)
+      osparc.store.Study.patchStudyData(studyData, "name", name)
         .then(() => this._updateStudyData(studyData))
         .catch(err => {
           console.error(err);
@@ -1754,7 +1754,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __updateThumbnail: function(studyData, url) {
-      osparc.info.StudyUtils.patchStudyData(studyData, "thumbnail", url)
+      osparc.store.Study.patchStudyData(studyData, "thumbnail", url)
         .then(() => this._updateStudyData(studyData))
         .catch(err => {
           console.error(err);
@@ -2139,7 +2139,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       // remove me from collaborators
       const myGid = osparc.auth.Data.getInstance().getGroupId();
       delete arCopy[myGid];
-      return osparc.info.StudyUtils.patchStudyData(studyData, "accessRights", arCopy);
+      return osparc.store.Study.patchStudyData(studyData, "accessRights", arCopy);
     },
 
     __doDeleteStudy: function(studyData) {
