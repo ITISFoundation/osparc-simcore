@@ -637,6 +637,19 @@ qx.Class.define("osparc.data.model.Study", {
       return parameters;
     },
 
+    getNonFrontendNodes: function() {
+      const nodes = this.getWorkbench().getNodes();
+      return Object.values(nodes).filter(node => node.isComputational() || node.isDynamic());
+    },
+
+    isOnlyNodeDynamic: function() {
+      const validNodes = this.getNonFrontendNodes();
+      if (validNodes.length === 1) {
+        return validNodes[0].isDynamic();
+      }
+      return null;
+    },
+
     hasSlideshow: function() {
       return !this.getUi().getSlideshow().isEmpty();
     },

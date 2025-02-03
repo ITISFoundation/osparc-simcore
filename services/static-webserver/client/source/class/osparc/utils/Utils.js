@@ -253,18 +253,11 @@ qx.Class.define("osparc.utils.Utils", {
     },
 
     prettifyMenu: function(menu) {
-      menu.set({
-        font: "text-14",
-        padding: 4
-      });
+      menu.setAppearance("menu-wider");
       menu.getChildren().forEach(menuItem => {
         if (menuItem.classname !== "qx.ui.menu.Separator") {
           menuItem.setPadding(4);
         }
-      });
-
-      menu.getContentElement().setStyles({
-        "border-radius": "4px"
       });
     },
 
