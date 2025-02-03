@@ -5,7 +5,7 @@
    https://osparc.io
 
    Copyright:
-     2024 IT'IS Foundation, https://itis.swiss
+     2025 IT'IS Foundation, https://itis.swiss
 
    License:
      MIT: https://opensource.org/licenses/MIT
