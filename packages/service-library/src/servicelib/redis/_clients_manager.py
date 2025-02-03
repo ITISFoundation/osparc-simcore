@@ -20,13 +20,18 @@ class RedisClientsManager:
     _client_sdks: dict[RedisDatabase, RedisClientSDK] = field(default_factory=dict)
 
     async def setup(self) -> None:
+        use_health_check = True
         for config in self.databases_configs:
             self._client_sdks[config.database] = RedisClientSDK(
                 redis_dsn=self.settings.build_redis_dsn(config.database),
                 decode_responses=config.decode_responses,
                 health_check_interval=config.health_check_interval,
                 client_name=f"{self.client_name}",
+                with_health_check=use_health_check,
             )
+            # NOTE: disables health check for all clients except the first
+            # reduces health check requests to Redis
+            use_health_check = False
 
     async def shutdown(self) -> None:
         await asyncio.gather(

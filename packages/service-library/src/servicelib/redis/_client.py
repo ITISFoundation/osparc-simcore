@@ -34,6 +34,7 @@ class RedisClientSDK:
     client_name: str
     decode_responses: bool = DEFAULT_DECODE_RESPONSES
     health_check_interval: datetime.timedelta = DEFAULT_HEALTH_CHECK_INTERVAL
+    with_health_check: bool = True
 
     _client: aioredis.Redis = field(init=False)
     _health_check_task: Task | None = None
@@ -69,10 +70,11 @@ class RedisClientSDK:
             self._health_check_task_started_event.set()
             self._is_healthy = await self.ping()
 
-        self._health_check_task = asyncio.create_task(
-            _periodic_check_health(),
-            name=f"redis_service_health_check_{self.redis_dsn}__{uuid4()}",
-        )
+        if self.with_health_check:
+            self._health_check_task = asyncio.create_task(
+                _periodic_check_health(),
+                name=f"redis_service_health_check_{self.redis_dsn}__{uuid4()}",
+            )
 
         _logger.info(
             "Connection to %s succeeded with %s",
