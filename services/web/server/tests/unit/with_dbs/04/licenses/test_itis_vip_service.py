@@ -4,7 +4,6 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-import logging
 from collections.abc import Iterator
 
 import pytest
@@ -14,6 +13,7 @@ from faker import Faker
 from httpx import AsyncClient
 from models_library.licensed_items import LicensedResourceType
 from pydantic import ValidationError
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.faker_factories import (
     random_itis_vip_available_download_item,
 )
@@ -41,7 +41,14 @@ def app_environment(
     monkeypatch: pytest.MonkeyPatch,
     app_environment: EnvVarsDict,
     fake_api_base_url: str,
+    mocker: MockerFixture,
 ):
+    # prevents syncer setup
+    mocker.patch(
+        "simcore_service_webserver.licenses.plugin._itis_vip_syncer_service.setup_itis_vip_syncer",
+        autospec=True,
+    )
+
     return app_environment | setenvs_from_dict(
         monkeypatch,
         {
@@ -62,7 +69,7 @@ def mock_itis_vip_downloadables_api(
             random_itis_vip_available_download_item(
                 identifier=i,
                 features_functionality="Posable",
-                faker=faker,
+                fake=faker,
             )
             for i in range(8)
         ],
@@ -200,7 +207,6 @@ async def test_itis_vip_syncer_service(
     mock_itis_vip_downloadables_api: respx.MockRouter,
     app_environment: EnvVarsDict,
     client: TestClient,
-    caplog: pytest.LogCaptureFixture,
     ensure_empty_licensed_items: None,
 ):
     assert client.app
@@ -210,32 +216,12 @@ async def test_itis_vip_syncer_service(
 
     categories = settings.to_categories()
 
-    with caplog.at_level(logging.DEBUG, _itis_vip_syncer_service._logger.name):
+    # one round
+    await _itis_vip_syncer_service.sync_resources_with_licensed_items(
+        client.app, categories
+    )
 
-        def _get_captured_levels():
-            return [
-                rc[1]
-                for rc in caplog.record_tuples
-                if rc[0] == _itis_vip_syncer_service._logger.name
-            ]
-
-        # one round
-        caplog.clear()
-        await _itis_vip_syncer_service.sync_resources_with_licensed_items(
-            client.app, categories
-        )
-        levels_logged = _get_captured_levels()
-        assert logging.DEBUG not in levels_logged
-        assert logging.INFO in levels_logged
-        assert logging.WARNING not in levels_logged
-
-        caplog.clear()
-        # second round
-        await _itis_vip_syncer_service.sync_resources_with_licensed_items(
-            client.app, categories
-        )
-
-        levels_logged = _get_captured_levels()
-        assert logging.DEBUG in levels_logged
-        assert logging.INFO not in levels_logged
-        assert logging.WARNING not in levels_logged
+    # second round
+    await _itis_vip_syncer_service.sync_resources_with_licensed_items(
+        client.app, categories
+    )

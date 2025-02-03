@@ -83,6 +83,8 @@ async def sync_resources_with_licensed_items(
                             result.registered.licensed_item_id,
                         )
 
+            # TODO: check delete!?
+
 
 _BACKGROUND_TASK_NAME = f"{__name__}.itis_vip_syncer_cleanup_ctx._periodic_sync"
 
@@ -98,30 +100,35 @@ def setup_itis_vip_syncer(app: web.Application):
         _logger.warning("IT'IS VIP syncer disabled. Skipping. %s", err)
         return
 
-    async def _cleanup_ctx(app: web.Application):
-        with (
-            log_context(
-                _logger, logging.INFO, f"IT'IS VIP syncing {len(categories)} categories"
-            ),
-            log_catch(_logger, reraise=False),
-        ):
-
-            @exclusive_periodic(
-                get_redis_lock_manager_client_sdk(app),
-                task_interval=timedelta(minutes=1),
-                retry_after=timedelta(minutes=2),
-            )
-            async def _periodic_sync() -> None:
-                await sync_resources_with_licensed_items(app, categories=categories)
-
-            background_task = asyncio.create_task(
-                _periodic_sync(), name=_BACKGROUND_TASK_NAME
-            )
-
-            yield
-
-            await cancel_wait_task(background_task)
-
     if categories:
+
+        async def _cleanup_ctx(app_: web.Application):
+            with (
+                log_context(
+                    _logger,
+                    logging.INFO,
+                    f"IT'IS VIP syncing {len(categories)} categories",
+                ),
+                log_catch(_logger, reraise=False),
+            ):
+
+                @exclusive_periodic(
+                    get_redis_lock_manager_client_sdk(app_),
+                    task_interval=timedelta(minutes=1),
+                    retry_after=timedelta(minutes=2),
+                )
+                async def _periodic_sync() -> None:
+                    await sync_resources_with_licensed_items(
+                        app_, categories=categories
+                    )
+
+                background_task = asyncio.create_task(
+                    _periodic_sync(), name=_BACKGROUND_TASK_NAME
+                )
+
+                yield
+
+                await cancel_wait_task(background_task)
+
         setup_redis(app)
         app.cleanup_ctx.append(_cleanup_ctx)

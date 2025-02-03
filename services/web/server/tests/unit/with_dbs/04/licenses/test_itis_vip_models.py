@@ -30,7 +30,7 @@ def test_validation_of_itis_vip_response_model(faker: Faker):
     available_download = random_itis_vip_available_download_item(
         identifier=0,
         features_functionality="Posable",
-        faker=faker,
+        fake=faker,
     )
 
     vip_data = ItisVipData.model_validate(available_download)
