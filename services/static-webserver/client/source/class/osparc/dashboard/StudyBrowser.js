@@ -1725,16 +1725,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       return renameButton;
     },
 
-    __updateName: function(studyData, name) {
-      osparc.info.StudyUtils.patchStudyData(studyData, "name", name)
-        .then(() => this._updateStudyData(studyData))
-        .catch(err => {
-          console.error(err);
-          const msg = err.message || this.tr("Something went wrong Renaming");
-          osparc.FlashMessenger.logAs(msg, "ERROR");
-        });
-    },
-
     __getThumbnailStudyMenuButton: function(studyData) {
       const thumbButton = new qx.ui.menu.Button(this.tr("Thumbnail..."), "@FontAwesome5Solid/image/12");
       thumbButton.addListener("execute", () => {
@@ -1876,7 +1866,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __getConvertToPipelineMenuButton: function(studyData) {
       const convertToPipelineButton = new qx.ui.menu.Button(this.tr("Convert to Pipeline"), null);
       convertToPipelineButton["convertToPipelineButton"] = true;
-      const uiMode = osparc.data.model.Study.getUiMode(studyData);
+      const uiMode = osparc.study.Utils.getUiMode(studyData);
       convertToPipelineButton.setVisibility(uiMode === "standalone" ? "visible" : "excluded");
       convertToPipelineButton.addListener("execute", () => {
         this.__updateUIMode(studyData, "workbench")
