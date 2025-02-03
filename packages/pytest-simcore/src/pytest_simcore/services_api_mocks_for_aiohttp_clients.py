@@ -23,6 +23,7 @@ from models_library.api_schemas_storage import (
     PresignedLink,
 )
 from models_library.generics import Envelope
+from models_library.projects_nodes import NodeID, NodeState
 from models_library.projects_pipeline import ComputationTask, PipelineDetails, TaskID
 from models_library.projects_state import RunningState
 from models_library.utils.fastapi_encoders import jsonable_encoder
@@ -89,29 +90,39 @@ def create_computation_cb(url, **kwargs) -> CallbackResult:
         pipeline = {}
         node_states = {}
         for node_id in body.get("subgraph"):
-            pipeline[node_id] = [
-                "62237c33-8d6c-4709-aa92-c3cf693dd6d2",
-                "0bdf824f-57cb-4e38-949e-fd12c184f000",
+            pipeline[NodeID(node_id)] = [
+                NodeID("62237c33-8d6c-4709-aa92-c3cf693dd6d2"),
+                NodeID("0bdf824f-57cb-4e38-949e-fd12c184f000"),
             ]
-            node_states[node_id] = {"state": {"modified": True, "dependencies": []}}
-        node_states["62237c33-8d6c-4709-aa92-c3cf693dd6d2"] = {
-            "modified": True,
-            "dependencies": ["2f493631-30b4-4ad8-90f2-a74e4b46fe73"],
-        }
-        node_states["0bdf824f-57cb-4e38-949e-fd12c184f000"] = {
-            "modified": True,
-            "dependencies": [
-                "2f493631-30b4-4ad8-90f2-a74e4b46fe73",
-                "62237c33-8d6c-4709-aa92-c3cf693dd6d2",
-            ],
-        }
+            node_states[NodeID(node_id)] = NodeState.model_construct(
+                **{"state": {"modified": True, "dependencies": []}}
+            )
+        node_states[
+            NodeID("62237c33-8d6c-4709-aa92-c3cf693dd6d2")
+        ] = NodeState.model_construct(
+            **{
+                "modified": True,
+                "dependencies": {NodeID("2f493631-30b4-4ad8-90f2-a74e4b46fe73")},
+            }
+        )
+        node_states[
+            NodeID("0bdf824f-57cb-4e38-949e-fd12c184f000")
+        ] = NodeState.model_construct(
+            **{
+                "modified": True,
+                "dependencies": {
+                    NodeID("2f493631-30b4-4ad8-90f2-a74e4b46fe73"),
+                    NodeID("62237c33-8d6c-4709-aa92-c3cf693dd6d2"),
+                },
+            }
+        )
     returned_computation = ComputationTask.model_validate(
         ComputationTask.model_config["json_schema_extra"]["examples"][0]
     ).model_copy(
         update={
             "id": TaskID(f"{kwargs['json']['project_id']}"),
             "state": state,
-            "pipeline_details": PipelineDetails(
+            "pipeline_details": PipelineDetails.model_construct(
                 **{
                     "adjacency_list": pipeline,
                     "node_states": node_states,
@@ -142,7 +153,7 @@ def get_computation_cb(url, **kwargs) -> CallbackResult:
         update={
             "id": TaskID(Path(url.path).name),
             "state": state,
-            "pipeline_details": PipelineDetails(
+            "pipeline_details": PipelineDetails.model_construct(
                 **{
                     "adjacency_list": pipeline,
                     "node_states": node_states,

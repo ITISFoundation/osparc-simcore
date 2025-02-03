@@ -58,12 +58,13 @@ async def test_start_partial_computation(
     project_id: ProjectID,
     user_role: UserRole,
     expected: ExpectedResponse,
+    faker: Faker,
 ):
     assert client.app
 
     url = client.app.router["start_computation"].url_for(project_id=f"{project_id}")
     rsp = await client.post(
-        f"{url}", json={"subgraph": ["node_id1", "node_id2", "node_id498"]}
+        f"{url}", json={"subgraph": [faker.uuid4(), faker.uuid4(), faker.uuid4()]}
     )
     data, error = await assert_status(
         rsp,
