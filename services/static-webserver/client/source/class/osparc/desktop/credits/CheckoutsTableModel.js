@@ -122,19 +122,16 @@ qx.Class.define("osparc.desktop.credits.CheckoutsTableModel", {
         return Promise.all([
           licensedItemsStore.getLicensedItems(),
           licensedItemsStore.getCheckedOutLicensedItems(walletId, urlParams),
-          licensedItemsStore.getVipModels(),
         ])
           .then(values => {
             const licensedItems = values[0];
             const checkoutsItems = values[1];
-            const vipModels = values[2];
 
             const data = [];
             const checkoutsCols = osparc.desktop.credits.CheckoutsTable.COLS;
             checkoutsItems.forEach(checkoutsItem => {
               const licensedItemId = checkoutsItem["licensedItemId"];
               const licensedItem = licensedItems.find(licItem => licItem["licensedItemId"] === licensedItemId);
-              const vipModel = vipModels.find(vipMdl => licensedItem && (vipMdl["modelId"] == licensedItem["name"]));
               let start = "";
               let duration = "";
               if (checkoutsItem["startedAt"]) {
@@ -146,11 +143,11 @@ qx.Class.define("osparc.desktop.credits.CheckoutsTableModel", {
               data.push({
                 [checkoutsCols.CHECKOUT_ID.id]: checkoutsItem["licensedItemCheckoutId"],
                 [checkoutsCols.ITEM_ID.id]: licensedItemId,
-                [checkoutsCols.ITEM_LABEL.id]: vipModel ? vipModel["name"] : "unknown model",
+                [checkoutsCols.ITEM_LABEL.id]: licensedItem ? licensedItem["displayName"] : "unknown model",
                 [checkoutsCols.START.id]: start,
                 [checkoutsCols.DURATION.id]: duration,
                 [checkoutsCols.SEATS.id]: checkoutsItem["numOfSeats"],
-                [checkoutsCols.USER.id]: checkoutsItem["userId"],
+                [checkoutsCols.USER.id]: checkoutsItem["userEmail"],
               });
             });
             return data;

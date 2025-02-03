@@ -68,12 +68,12 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelListItem", {
       apply: "__applyThumbnail",
     },
 
-    name: {
+    displayName: {
       check: "String",
       init: null,
       nullable: false,
-      event: "changeName",
-      apply: "__applyName",
+      event: "changeDisplayName",
+      apply: "__applyDisplayName",
     },
 
     date: {
@@ -157,7 +157,7 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelListItem", {
       this.getChildControl("thumbnail").setSource(value);
     },
 
-    __applyName: function(value) {
+    __applyDisplayName: function(value) {
       this.getChildControl("name").setValue(value);
     },
 
