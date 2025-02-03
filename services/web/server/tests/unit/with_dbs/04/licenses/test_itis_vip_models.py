@@ -38,10 +38,10 @@ def test_validation_of_itis_vip_response_model(faker: Faker):
     # Dumped as in the source
     assert vip_data.model_dump(by_alias=True)["Features"] == vip_data.features
 
-    license_resource_data = ItisVipResourceData.create(
+    license_resource_data = ItisVipResourceData(
         category_id="123",
         category_display="This is a resource",
         source=vip_data,
     )
 
-    assert license_resource_data.source["Features"] == vip_data.features
+    assert license_resource_data.source.features == vip_data.features

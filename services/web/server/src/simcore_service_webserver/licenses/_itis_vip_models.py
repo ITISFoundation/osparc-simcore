@@ -1,5 +1,5 @@
 import re
-from typing import Annotated, Any, Literal, NamedTuple, NotRequired, Self, TypeAlias
+from typing import Annotated, Any, Literal, NamedTuple, NotRequired, TypeAlias
 
 from models_library.basic_types import IDStr
 from pydantic import (
@@ -72,19 +72,8 @@ class ItisVipResourceData(BaseModel):
     category_id: IDStr
     category_display: str
     source: Annotated[
-        dict[str, Any], Field(description="Original published data in the api")
+        ItisVipData, Field(description="Original published data in the api")
     ]
-
-    @classmethod
-    def create(
-        cls, category_id: IDStr, category_display: str, source: ItisVipData
-    ) -> Self:
-        return cls(
-            category_id=category_id,
-            category_display=category_display,
-            # NOTE: ensures source data is the same as the one in the original VIP API model
-            source=source.model_dump(mode="json", by_alias=True),
-        )
 
 
 #
