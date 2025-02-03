@@ -69,7 +69,9 @@ async def register_resource_as_licensed_item(
 
     resource_key = f"{licensed_resource_type}, {licensed_resource_name}"
     new_licensed_resource_data = licensed_resource_data.model_dump(
-        mode="json", exclude_unset=True
+        mode="json",
+        exclude_unset=True,
+        by_alias=True,  # FIXME: ensure only feature are exposed by_alias
     )
 
     try:

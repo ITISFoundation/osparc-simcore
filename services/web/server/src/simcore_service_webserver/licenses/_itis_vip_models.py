@@ -69,7 +69,7 @@ class ItisVipApiResponse(BaseModel):
 class ItisVipResourceData(BaseModel):
     category_id: IDStr
     category_display: str
-    data: Annotated[
+    source: Annotated[
         ItisVipData, Field(description="Original published data in the api")
     ]
 

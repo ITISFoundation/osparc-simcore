@@ -60,7 +60,7 @@ async def sync_resources_with_licensed_items(
                         licensed_resource_data=ItisVipResourceData(
                             category_id=category_id,
                             category_display=category_display,
-                            data=vip_data,
+                            source=vip_data,
                         ),
                     )
 
