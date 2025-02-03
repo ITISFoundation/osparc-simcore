@@ -59,10 +59,12 @@ qx.Class.define("osparc.widget.StudyDataManager", {
   },
 
   statics: {
-    popUpInWindow: function(studyId, nodeId) {
+    popUpInWindow: function(studyId, nodeId, title) {
       const studyDataManager = new osparc.widget.StudyDataManager(studyId, nodeId);
-      const title = osparc.product.Utils.getStudyAlias({firstUpperCase: true}) + qx.locale.Manager.tr(" Files");
-      osparc.ui.window.Window.popUpInWindow(studyDataManager, title, osparc.dashboard.ResourceDetails.WIDTH, osparc.dashboard.ResourceDetails.HEIGHT);
+      if (!title) {
+        title = osparc.product.Utils.getStudyAlias({firstUpperCase: true}) + qx.locale.Manager.tr(" Files");
+      }
+      return osparc.ui.window.Window.popUpInWindow(studyDataManager, title, osparc.dashboard.ResourceDetails.WIDTH, osparc.dashboard.ResourceDetails.HEIGHT);
     },
   },
 

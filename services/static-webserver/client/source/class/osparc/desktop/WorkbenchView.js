@@ -55,10 +55,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     },
 
     openStudyDataManager: function(node) {
-      const nodeDataManager = new osparc.widget.StudyDataManager(null, node.getNodeId());
-      const win = osparc.ui.window.Window.popUpInWindow(nodeDataManager, node.getLabel(), 900, 600).set({
-        appearance: "service-window"
-      });
+      const win = osparc.widget.StudyDataManager.popUpInWindow(null, node.getNodeId(), node.getLabel());
       const closeBtn = win.getChildControl("close-button");
       osparc.utils.Utils.setIdToWidget(closeBtn, "nodeDataManagerCloseBtn");
     }
