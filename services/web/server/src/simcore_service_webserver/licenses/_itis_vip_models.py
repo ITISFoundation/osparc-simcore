@@ -1,5 +1,5 @@
 import re
-from typing import Annotated, Any, Literal, NamedTuple, NotRequired, TypeAlias
+from typing import Annotated, Any, Literal, NamedTuple, NotRequired, Self, TypeAlias
 
 from models_library.basic_types import IDStr
 from pydantic import (
@@ -47,7 +47,7 @@ class ItisVipData(BaseModel):
     description: Annotated[str, Field(alias="Description")]
     thumbnail: Annotated[str, Field(alias="Thumbnail")]
     features: Annotated[
-        dict,
+        dict[str, Any],  # NOTE: for the moment FeaturesDict is NOT used
         BeforeValidator(_feature_descriptor_to_dict),
         Field(alias="Features"),
     ]
@@ -66,12 +66,25 @@ class ItisVipApiResponse(BaseModel):
 #
 # RESOURCE
 #
+
+
 class ItisVipResourceData(BaseModel):
     category_id: IDStr
     category_display: str
     source: Annotated[
-        ItisVipData, Field(description="Original published data in the api")
+        dict[str, Any], Field(description="Original published data in the api")
     ]
+
+    @classmethod
+    def create(
+        cls, category_id: IDStr, category_display: str, source: ItisVipData
+    ) -> Self:
+        return cls(
+            category_id=category_id,
+            category_display=category_display,
+            # NOTE: ensures source data is the same as the one in the original VIP API model
+            source=source.model_dump(mode="json", by_alias=True),
+        )
 
 
 #

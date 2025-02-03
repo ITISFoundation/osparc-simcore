@@ -13,6 +13,7 @@ from pytest_simcore.helpers.faker_factories import (
 )
 from simcore_service_webserver.licenses._itis_vip_models import (
     ItisVipData,
+    ItisVipResourceData,
     _feature_descriptor_to_dict,
 )
 
@@ -24,7 +25,7 @@ def test_pre_validator_feature_descriptor_to_dict():
     assert err_info.value.errors()[0]["type"] == "string_too_long"
 
 
-def test_model(faker: Faker):
+def test_validation_of_itis_vip_response_model(faker: Faker):
 
     available_download = random_itis_vip_available_download_item(
         identifier=0,
@@ -34,4 +35,13 @@ def test_model(faker: Faker):
 
     vip_data = ItisVipData.model_validate(available_download)
 
-    print(vip_data.model_dump(by_alias=True))
+    # Dumped as in the source
+    assert vip_data.model_dump(by_alias=True)["Features"] == vip_data.features
+
+    license_resource_data = ItisVipResourceData.create(
+        category_id="123",
+        category_display="This is a resource",
+        source=vip_data,
+    )
+
+    assert license_resource_data.source["Features"] == vip_data.features

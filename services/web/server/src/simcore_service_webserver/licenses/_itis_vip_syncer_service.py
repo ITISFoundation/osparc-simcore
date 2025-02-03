@@ -57,7 +57,7 @@ async def sync_resources_with_licensed_items(
                         licensed_resource_name=licensed_resource_name,
                         licensed_resource_type=LicensedResourceType.VIP_MODEL,
                         # RESOURCE extended data
-                        licensed_resource_data=ItisVipResourceData(
+                        licensed_resource_data=ItisVipResourceData.create(
                             category_id=category_id,
                             category_display=category_display,
                             source=vip_data,
