@@ -42,7 +42,7 @@ qx.Class.define("osparc.metadata.ServicesInStudy", {
 
     this._studyData = osparc.data.model.Study.deepCloneStudyObject(studyData);
 
-    const servicesInStudy = osparc.study.Utils.extractServices(this._studyData["workbench"]);
+    const servicesInStudy = osparc.study.Utils.extractUniqueServices(this._studyData["workbench"]);
     if (servicesInStudy.length) {
       const promises = [];
       servicesInStudy.forEach(srv => promises.push(osparc.store.Services.getService(srv.key, srv.version)));
