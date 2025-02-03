@@ -66,7 +66,7 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
       let control;
       switch (id) {
         case "icon": {
-          control = new osparc.ui.basic.Thumbnail(null, this.self().ITEM_HEIGHT, this.self().ITEM_HEIGHT-2*5).set({
+          control = new osparc.ui.basic.Thumbnail(null, this.self().ITEM_HEIGHT, this.self().ITEM_HEIGHT).set({
             minHeight: this.self().ITEM_HEIGHT,
             minWidth: this.self().ITEM_HEIGHT
           });
