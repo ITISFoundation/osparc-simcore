@@ -488,7 +488,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
         lastChangeDate: resourceData.lastChangeDate ? new Date(resourceData.lastChangeDate) : null,
         trashedAt: resourceData.trashedAt ? new Date(resourceData.trashedAt) : null,
         trashedBy: resourceData.trashedBy || null,
-        icon: resourceData.thumbnail || this.self().PRODUCT_ICON,
+        icon: ["study", "template"].includes(resourceData.resourceType) ? osparc.study.Utils.suggestIcon(resourceData) : this.self().PRODUCT_ICON,
         thumbnail: resourceData.thumbnail || this.self().PRODUCT_ICON,
         state: resourceData.state ? resourceData.state : {},
         classifiers: resourceData.classifiers && resourceData.classifiers ? resourceData.classifiers : [],
