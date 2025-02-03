@@ -68,7 +68,6 @@ async def get_wallet(
     status_code=status.HTTP_200_OK,
     responses=WALLET_STATUS_CODES,
     description="Get all available licensed items for a given wallet",
-    include_in_schema=False,
 )
 async def get_available_licensed_items_for_wallet(
     wallet_id: int,
@@ -91,7 +90,6 @@ async def get_available_licensed_items_for_wallet(
     status_code=status.HTTP_200_OK,
     responses=WALLET_STATUS_CODES,
     description="Checkout licensed item",
-    include_in_schema=False,
 )
 async def checkout_licensed_item(
     wallet_id: int,
