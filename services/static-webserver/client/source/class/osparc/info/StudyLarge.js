@@ -64,7 +64,6 @@ qx.Class.define("osparc.info.StudyLarge", {
 
       const infoElements = this.__infoElements();
       const infoLayout = osparc.info.StudyUtils.infoElementsToLayout(infoElements);
-
       vBox.add(infoLayout);
 
       let text = osparc.product.Utils.getStudyAlias({firstUpperCase: true}) + " Id";
