@@ -354,9 +354,9 @@ qx.Class.define("osparc.study.Utils", {
       return ["UNKNOWN_SERVICES", false].includes(blocked);
     },
 
-    suggestIcon: function(studyData) {
+    guessIcon: function(studyData) {
       if (osparc.product.Utils.isProduct("tis") || osparc.product.Utils.isProduct("tiplite")) {
-        return "https://images.seeklogo.com/logo-png/35/1/jupyter-logo-png_seeklogo-354673.png";
+        return "osparc/icons/TI.png";
       }
       const uiMode = this.self().getUiMode(studyData);
       if (uiMode === "standalone") {
