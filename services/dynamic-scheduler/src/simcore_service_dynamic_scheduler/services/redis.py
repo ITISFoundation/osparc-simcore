@@ -1,8 +1,8 @@
 from collections.abc import AsyncIterator
-from contextlib import asynccontextmanager
 from typing import Final
 
 from fastapi import FastAPI
+from fastapi_lifespan_manager import State
 from servicelib.redis import RedisClientSDK, RedisClientsManager, RedisManagerDBConfig
 from settings_library.redis import RedisDatabase, RedisSettings
 
@@ -20,8 +20,7 @@ _BINARY_DBS: Final[set[RedisDatabase]] = {
 _ALL_REDIS_DATABASES: Final[set[RedisDatabase]] = _DECODE_DBS | _BINARY_DBS
 
 
-@asynccontextmanager
-async def lifespan_redis(app: FastAPI) -> AsyncIterator[None]:
+async def lifespan_redis(app: FastAPI) -> AsyncIterator[State]:
     settings: RedisSettings = app.state.settings.DYNAMIC_SCHEDULER_REDIS
 
     app.state.redis_clients_manager = manager = RedisClientsManager(
@@ -34,7 +33,7 @@ async def lifespan_redis(app: FastAPI) -> AsyncIterator[None]:
     )
     await manager.setup()
 
-    yield
+    yield {}
 
     await manager.shutdown()
 

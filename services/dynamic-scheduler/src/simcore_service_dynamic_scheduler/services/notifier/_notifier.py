@@ -1,10 +1,10 @@
 import contextlib
 from collections.abc import AsyncIterator
-from contextlib import asynccontextmanager
 
 import socketio  # type: ignore[import-untyped]
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
+from fastapi_lifespan_manager import State
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.api_schemas_dynamic_scheduler.socketio import (
     SOCKET_IO_SERVICE_STATUS_EVENT,
@@ -39,8 +39,7 @@ async def notify_service_status_change(
     await notifier.notify_service_status(user_id=user_id, status=status)
 
 
-@asynccontextmanager
-async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+async def lifespan(app: FastAPI) -> AsyncIterator[State]:
 
     assert app.state.external_socketio  # nosec
 
@@ -50,7 +49,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     notifier.set_to_app_state(app)
     assert Notifier.get_from_app_state(app) == notifier  # nosec
 
-    yield
+    yield {}
 
     with contextlib.suppress(AttributeError):
         Notifier.pop_from_app_state(app)

@@ -1,8 +1,8 @@
 from collections.abc import AsyncIterator
-from contextlib import asynccontextmanager
 from typing import cast
 
 from fastapi import FastAPI
+from fastapi_lifespan_manager import State
 from models_library.rabbitmq_messages import RabbitMessageBase
 from servicelib.rabbitmq import (
     RabbitMQClient,
@@ -12,11 +12,8 @@ from servicelib.rabbitmq import (
 from settings_library.rabbit import RabbitSettings
 
 
-@asynccontextmanager
-async def lifespan_rabbitmq(app: FastAPI) -> AsyncIterator[None]:
+async def lifespan_rabbitmq(app: FastAPI) -> AsyncIterator[State]:
     settings: RabbitSettings = app.state.settings.DYNAMIC_SCHEDULER_RABBITMQ
-    app.state.rabbitmq_client = None
-    app.state.rabbitmq_rpc_server = None
 
     await wait_till_rabbitmq_responsive(settings.dsn)
 
@@ -30,14 +27,11 @@ async def lifespan_rabbitmq(app: FastAPI) -> AsyncIterator[None]:
         client_name="dynamic_scheduler_rpc_server", settings=settings
     )
 
-    yield
+    yield {}
 
-    if app.state.rabbitmq_client:
-        await app.state.rabbitmq_client.close()
-    if app.state.rabbitmq_rpc_client:
-        await app.state.rabbitmq_rpc_client.close()
-    if app.state.rabbitmq_rpc_server:
-        await app.state.rabbitmq_rpc_server.close()
+    await app.state.rabbitmq_client.close()
+    await app.state.rabbitmq_rpc_client.close()
+    await app.state.rabbitmq_rpc_server.close()
 
 
 def get_rabbitmq_client(app: FastAPI) -> RabbitMQClient:

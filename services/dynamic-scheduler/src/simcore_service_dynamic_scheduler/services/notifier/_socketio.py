@@ -1,9 +1,9 @@
 import logging
 from collections.abc import AsyncIterator
-from contextlib import asynccontextmanager
 
 import socketio  # type: ignore[import-untyped]
 from fastapi import FastAPI
+from fastapi_lifespan_manager import State
 from servicelib.socketio_utils import cleanup_socketio_async_pubsub_manager
 
 from ...core.settings import ApplicationSettings
@@ -11,8 +11,7 @@ from ...core.settings import ApplicationSettings
 _logger = logging.getLogger(__name__)
 
 
-@asynccontextmanager
-async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+async def lifespan(app: FastAPI) -> AsyncIterator[State]:
     settings: ApplicationSettings = app.state.settings
 
     assert app.state.rabbitmq_client  # nosec
@@ -24,7 +23,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         url=settings.DYNAMIC_SCHEDULER_RABBITMQ.dsn, logger=_logger, write_only=True
     )
 
-    yield
+    yield {}
 
     if external_socketio := getattr(app.state, "external_socketio"):  # noqa: B009
         await cleanup_socketio_async_pubsub_manager(server_manager=external_socketio)

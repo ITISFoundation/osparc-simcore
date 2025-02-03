@@ -1,22 +1,17 @@
-from collections.abc import AsyncGenerator, Callable
-from contextlib import AsyncExitStack, asynccontextmanager
-from typing import AsyncContextManager, TypeAlias
+from collections.abc import AsyncIterator, Callable
+from typing import TypeAlias
 
 from fastapi import FastAPI
+from fastapi_lifespan_manager import LifespanManager, State
 
-LifespanContextManager: TypeAlias = Callable[[FastAPI], AsyncContextManager[None]]
+SetupGenerator: TypeAlias = Callable[[FastAPI], AsyncIterator[State]]
 
 
-def combine_lifespans(*lifespans: LifespanContextManager) -> LifespanContextManager:
-    """Applies the `setup` part of the contextmangers in the order they are provided.
-    The `teardown` is run in reverse order with regard to the `setup`.
-    """
+def combine_setups(*generators: SetupGenerator) -> LifespanManager:
 
-    @asynccontextmanager
-    async def _(app: FastAPI) -> AsyncGenerator[None, None]:
-        async with AsyncExitStack() as stack:
-            for lifespan in lifespans:
-                await stack.enter_async_context(lifespan(app))
-            yield
+    manager = LifespanManager()
 
-    return _
+    for generator in generators:
+        manager.add(generator)
+
+    return manager

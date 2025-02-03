@@ -2,9 +2,9 @@
 
 
 from collections.abc import AsyncIterator
-from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi_lifespan_manager import State
 from prometheus_client import CollectorRegistry
 from prometheus_fastapi_instrumentator import Instrumentator
 
@@ -54,10 +54,9 @@ def setup_prometheus_instrumentation(app: FastAPI) -> Instrumentator:
     return get_prometheus_instrumentator(app)
 
 
-@asynccontextmanager
-async def lifespan_prometheus_instrumentation(app: FastAPI) -> AsyncIterator[None]:
+async def lifespan_prometheus_instrumentation(app: FastAPI) -> AsyncIterator[State]:
     # NOTE: requires ``initialize_prometheus_instrumentation`` to be called before the
     # lifespan of the applicaiton runs, usually rigth after the ``FastAPI`` instance is created
     _setup(app)
-    yield
+    yield {}
     _shutdown(app)

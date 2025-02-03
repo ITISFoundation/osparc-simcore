@@ -1,8 +1,8 @@
 from collections.abc import AsyncIterator
-from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
-from servicelib.fastapi.lifespan_utils import LifespanContextManager, combine_lifespans
+from fastapi_lifespan_manager import State
+from servicelib.fastapi.lifespan_utils import SetupGenerator, combine_setups
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
 from servicelib.fastapi.profiler import initialize_profiler
 from servicelib.fastapi.prometheus_instrumentation import (
@@ -26,7 +26,7 @@ from ..api.rpc.routes import lifespan_rpc_api_routes
 from ..services.deferred_manager import lifespan_deferred_manager
 from ..services.director_v0 import lifespan_director_v0
 from ..services.director_v2 import lifespan_director_v2
-from ..services.notifier import lifespan_notifier
+from ..services.notifier import get_notifier_lifespans
 from ..services.rabbitmq import lifespan_rabbitmq
 from ..services.redis import lifespan_redis
 from ..services.service_tracker import lifespan_service_tracker
@@ -34,23 +34,22 @@ from ..services.status_monitor import lifespan_status_monitor
 from .settings import ApplicationSettings
 
 
-@asynccontextmanager
-async def _lifespan_banner(_: FastAPI) -> AsyncIterator[None]:
+async def _lifespan_banner(_: FastAPI) -> AsyncIterator[State]:
     print(APP_STARTED_BANNER_MSG, flush=True)  # noqa: T201
-    yield
+    yield {}
     print(APP_FINISHED_BANNER_MSG, flush=True)  # noqa: T201
 
 
 def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
     app_settings = settings or ApplicationSettings.create_from_envs()
 
-    lifespans: list[LifespanContextManager] = [
+    lifespans: list[SetupGenerator] = [
         lifespan_director_v2,
         lifespan_director_v0,
         lifespan_rabbitmq,
         lifespan_rpc_api_routes,
         lifespan_redis,
-        lifespan_notifier,
+        *get_notifier_lifespans(),
         lifespan_service_tracker,
         lifespan_deferred_manager,
         lifespan_status_monitor,
@@ -73,7 +72,7 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
             "/doc" if app_settings.DYNAMIC_SCHEDULER_SWAGGER_API_DOC_ENABLED else None
         ),
         redoc_url=None,
-        lifespan=combine_lifespans(*lifespans, _lifespan_banner),
+        lifespan=combine_setups(*lifespans, _lifespan_banner),
     )
     override_fastapi_openapi_method(app)
 
