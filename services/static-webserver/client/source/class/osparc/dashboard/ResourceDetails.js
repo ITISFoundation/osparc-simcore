@@ -317,6 +317,22 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         }
       });
 
+      const resourceData = this.__resourceData;
+      if (!osparc.utils.Resources.isService(resourceData)) {
+        const title = osparc.product.Utils.getStudyAlias({firstUpperCase: true}) + this.tr(" Files...");
+        const iconSrc = "@FontAwesome5Solid/file/22";
+        const dataAccess = new qx.ui.basic.Atom().set({
+          label: title,
+          icon: iconSrc,
+          font: "text-14",
+          padding: 8,
+          gap: 18,
+          cursor: "pointer",
+        });
+        dataAccess.addListener("tap", () => osparc.widget.StudyDataManager.popUpInWindow(resourceData["uuid"]));
+        this.addWidgetToTabs(dataAccess);
+      }
+
       if (selectedTabId) {
         const pageFound = tabsView.getChildren().find(page => page.tabId === selectedTabId);
         if (pageFound) {
