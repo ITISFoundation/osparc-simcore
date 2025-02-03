@@ -380,7 +380,7 @@ qx.Class.define("osparc.study.Utils", {
         }
         if (wbServices[0]["key"].includes("s4l-ui")) {
           // return "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/refs/heads/main/app/icons/s4l/Sim4Life.png";
-          return "osparc/icons/Sim4Life.png";
+          return "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/refs/heads/main/app/icons/s4l/Default.png";
         }
       }
       return osparc.dashboard.CardBase.PRODUCT_ICON;
