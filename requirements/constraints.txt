@@ -70,7 +70,7 @@ pennsieve>=999999999
 pytest-lazy-fixture>=999999999
 
 # avoid downgrades of openapi-spec-validator related libraries
-referencing<=0.35.1
+referencing<=0.36.2
 
 # moto==5.0.21 broke `get_ec2_instance_capabilities`
 # SEE https://github.com/ITISFoundation/osparc-simcore/issues/7086
