@@ -93,7 +93,6 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
     __resourceData: null,
     __resourceModel: null,
     __infoPage: null,
-    __dataPage: null,
     __servicesUpdatePage: null,
     __permissionsPage: null,
     __tagsPage: null,
@@ -216,10 +215,6 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       this._openPage(this.__infoPage);
     },
 
-    openData: function() {
-      this._openPage(this.__dataPage);
-    },
-
     openUpdateServices: function() {
       this._openPage(this.__servicesUpdatePage);
     },
@@ -306,7 +301,6 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         this.__getBillingPage,
         this.__getServicesUpdatePage,
         this.__getServicesBootOptionsPage,
-        this.__getDataPage,
         this.__getCommentsPage,
         this.__getPermissionsPage,
         this.__getSaveAsTemplatePage,
@@ -480,33 +474,6 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
           addComment.addListener("commentAdded", () => commentsList.fetchComments());
           page.addToFooter(addComment);
         }
-      }
-      page.addListenerOnce("appear", lazyLoadContent, this);
-
-      return page;
-    },
-
-    __getDataPage: function() {
-      const resourceData = this.__resourceData;
-      if (osparc.utils.Resources.isService(resourceData)) {
-        return null;
-      }
-
-      const id = "Data";
-      const title = osparc.product.Utils.getStudyAlias({firstUpperCase: true}) + this.tr(" Files");
-      const iconSrc = "@FontAwesome5Solid/file/22";
-      const page = this.__dataPage = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
-      this.__addOpenButton(page);
-
-      if (this.__resourceData["resourceType"] === "study") {
-        const studyData = this.__resourceData;
-        const canBeOpened = osparc.study.Utils.canShowStudyData(studyData);
-        page.setEnabled(canBeOpened);
-      }
-
-      const lazyLoadContent = () => {
-        const studyDataManager = new osparc.widget.StudyDataManager(resourceData["uuid"]);
-        page.addToContent(studyDataManager);
       }
       page.addListenerOnce("appear", lazyLoadContent, this);
 
