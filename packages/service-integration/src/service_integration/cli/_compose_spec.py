@@ -192,6 +192,14 @@ def create_compose(
             if file_path.exists():
                 configs_kwargs_map[config_name][arg_name] = file_path
 
+    # warn about subfolders without metadata.yml
+    for subdir in filter(lambda p: p.is_dir(), basedir.rglob("*")):
+        if not (subdir / "metadata.yml").exists():
+            relative_subdir = subdir.relative_to(basedir)
+            rich.print(
+                f"[warning] Subfolder '{relative_subdir}' does not contain a 'metadata.yml' file. Skipping."
+            )
+
     if not configs_kwargs_map:
         rich.print(f"[warning] No config files were found in '{config_path}'")
 
