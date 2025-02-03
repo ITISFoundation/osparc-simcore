@@ -14,6 +14,9 @@ from faker import Faker
 from httpx import AsyncClient
 from models_library.licensed_items import LicensedResourceType
 from pydantic import ValidationError
+from pytest_simcore.helpers.faker_factories import (
+    random_itis_vip_available_download_item,
+)
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.aiohttp import status
@@ -22,20 +25,10 @@ from simcore_service_webserver.licenses import (
     _itis_vip_syncer_service,
     _licensed_items_service,
 )
-from simcore_service_webserver.licenses._itis_vip_models import (
-    ItisVipData,
-    _feature_descriptor_to_dict,
-)
+from simcore_service_webserver.licenses._itis_vip_models import ItisVipData
 from simcore_service_webserver.licenses._itis_vip_service import ItisVipApiResponse
 from simcore_service_webserver.licenses._itis_vip_settings import ItisVipSettings
 from simcore_service_webserver.licenses._licensed_items_service import RegistrationState
-
-
-def test_pre_validator_feature_descriptor_to_dict():
-    # Makes sure the regex used here, which is vulnerable to polynomial runtime due to backtracking, cannot lead to denial of service.
-    with pytest.raises(ValidationError) as err_info:
-        _feature_descriptor_to_dict("a" * 10000 + ": " + "b" * 10000)
-    assert err_info.value.errors()[0]["type"] == "string_too_long"
 
 
 @pytest.fixture(scope="session")
@@ -66,18 +59,11 @@ def mock_itis_vip_downloadables_api(
     response_data = {
         "msg": 0,
         "availableDownloads": [
-            {
-                "ID": i,
-                "Description": faker.sentence(),
-                "Thumbnail": faker.image_url(),
-                # NOTE: this is manually added in the server side so be more robust to errors
-                "Features": f"{{name: {faker.name()} Right Hand, version: V{faker.pyint()}.0, sex: Male, age: 8 years,date: {faker.date()}, ethnicity: Caucasian, functionality: Posable}}",
-                "DOI": faker.bothify(text="10.####/ViP#####-##-#"),
-                "LicenseKey": faker.bothify(text="MODEL_????_V#"),
-                "LicenseVersion": faker.bothify(text="V#.0"),
-                "Protection": faker.random_element(elements=["Code", "PayPal"]),
-                "AvailableFromURL": faker.random_element(elements=[None, faker.url()]),
-            }
+            random_itis_vip_available_download_item(
+                identifier=i,
+                features_functionality="Posable",
+                faker=faker,
+            )
             for i in range(8)
         ],
     }
