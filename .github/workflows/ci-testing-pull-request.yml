@@ -38,6 +38,7 @@ jobs:
           make openapi-specs
       - name: Check openapi specs are up to date
         run: |
+          echo "github.event.after=${{ github.event.after }}"
           if ! ./ci/github/helpers/openapi-specs-diff.bash diff \
             https://raw.githubusercontent.com/${{ github.event.pull_request.head.repo.full_name }}/${{ github.event.after }} \
             .; then \
