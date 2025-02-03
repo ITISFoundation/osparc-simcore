@@ -54,7 +54,7 @@ qx.Class.define("osparc.service.ServiceListItem", {
     LATEST: "latest",
     ITEM_WIDTH: 550,
     ITEM_HEIGHT: 35,
-    SERVICE_ICON: osparc.product.Utils.getProductThumbUrl()
+    SERVICE_THUMBNAIL: osparc.product.Utils.getProductThumbUrl()
   },
 
   members: {
@@ -66,7 +66,7 @@ qx.Class.define("osparc.service.ServiceListItem", {
       if (service.getThumbnail()) {
         this.getChildControl("icon").setSource(service.getThumbnail());
       } else {
-        this.getChildControl("icon").setSource(this.self().SERVICE_ICON);
+        this.getChildControl("icon").setSource(this.self().SERVICE_THUMBNAIL);
       }
       service.bind("name", this.getChildControl("title"), "value");
 

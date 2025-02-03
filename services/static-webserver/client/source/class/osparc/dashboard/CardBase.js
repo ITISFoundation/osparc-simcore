@@ -56,7 +56,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
     NEW_ICON: "@FontAwesome5Solid/plus/",
     LOADING_ICON: "@FontAwesome5Solid/circle-notch/",
     // Get the default thumbnail for each product else add the image and extension osparc.product.Utils.getProductThumbUrl(Thumbnail-01.png)
-    PRODUCT_ICON: osparc.product.Utils.getProductThumbUrl(),
+    PRODUCT_THUMBNAIL: osparc.product.Utils.getProductThumbUrl(),
 
     CARD_PRIORITY: {
       NEW: 0,
@@ -489,7 +489,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
         trashedAt: resourceData.trashedAt ? new Date(resourceData.trashedAt) : null,
         trashedBy: resourceData.trashedBy || null,
         icon: ["study", "template"].includes(resourceData.resourceType) ? osparc.study.Utils.guessIcon(resourceData) : null,
-        thumbnail: resourceData.thumbnail || this.self().PRODUCT_ICON,
+        thumbnail: resourceData.thumbnail || this.self().PRODUCT_THUMBNAIL,
         state: resourceData.state ? resourceData.state : {},
         classifiers: resourceData.classifiers && resourceData.classifiers ? resourceData.classifiers : [],
         quality: resourceData.quality ? resourceData.quality : null,
