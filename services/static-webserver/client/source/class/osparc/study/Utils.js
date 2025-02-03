@@ -23,6 +23,17 @@ qx.Class.define("osparc.study.Utils", {
   type: "static",
 
   statics: {
+    __isAnyLinkedNodeMissing: function(studyData) {
+      const existingNodeIds = Object.keys(studyData["workbench"]);
+      const linkedNodeIds = osparc.data.model.Workbench.getLinkedNodeIds(studyData["workbench"]);
+      const allExist = linkedNodeIds.every(linkedNodeId => existingNodeIds.includes(linkedNodeId));
+      return !allExist;
+    },
+
+    isCorrupt: function(studyData) {
+      return this.__isAnyLinkedNodeMissing(studyData);
+    },
+
     extractServices: function(workbench) {
       const services = [];
       Object.values(workbench).forEach(srv => {
@@ -268,6 +279,13 @@ qx.Class.define("osparc.study.Utils", {
 
     isInDebt: function(studyData) {
       return Boolean("debt" in studyData && studyData["debt"] < 0);
+    },
+
+    getUiMode: function(studyData) {
+      if ("ui" in studyData && "mode" in studyData["ui"]) {
+        return studyData["ui"]["mode"];
+      }
+      return null;
     },
 
     __getBlockedState: function(studyData) {
