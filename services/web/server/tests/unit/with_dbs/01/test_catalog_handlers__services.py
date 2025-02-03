@@ -16,6 +16,7 @@ from models_library.api_schemas_webserver.catalog import (
 from models_library.products import ProductName
 from models_library.rest_pagination import Page
 from models_library.rpc_pagination import PageLimitInt, PageRpc
+from models_library.services_access import ServiceGroupAccessRightsV2
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
@@ -195,7 +196,11 @@ async def test_get_and_patch_service(
         classifiers=None,
         versionDisplay="Some nice name",
         descriptionUi=True,
-        accessRights={1: {"execute": True, "write": True}},
+        accessRights={
+            1: ServiceGroupAccessRightsV2.model_construct(
+                **{"execute": True, "write": True}
+            )
+        },
     )
     response = await client.patch(
         f"{url}", json=jsonable_encoder(update, exclude_unset=True)
