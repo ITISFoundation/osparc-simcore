@@ -39,7 +39,7 @@ jobs:
       - name: Check openapi specs are up to date
         run: |
           if ! ./ci/github/helpers/openapi-specs-diff.bash diff \
-            https://raw.githubusercontent.com/${{ github.event.pull_request.head.repo.full_name }}/${{ github.sha }} \
+            https://raw.githubusercontent.com/${{ github.event.pull_request.head.repo.full_name }}/${{ github.event.after }} \
             .; then \
             echo "::error:: OAS are not up to date. Run 'make openapi-specs' to update them"; exit 1; \
           fi
