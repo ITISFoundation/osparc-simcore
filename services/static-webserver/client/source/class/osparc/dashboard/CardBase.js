@@ -55,9 +55,9 @@ qx.Class.define("osparc.dashboard.CardBase", {
     MODE_APP: "@FontAwesome5Solid/desktop/13",
     NEW_ICON: "@FontAwesome5Solid/plus/",
     LOADING_ICON: "@FontAwesome5Solid/circle-notch/",
-    PRODUCT_ICON: osparc.product.Utils.getProductIconUrl(),
-    // Get the default thumbnail for each product else add the image and extension osparc.product.Utils.getProductThumbUrl(Thumbnail-01.png)
-    PRODUCT_THUMBNAIL: osparc.product.Utils.getProductThumbUrl(),
+    PRODUCT_ICON: osparc.product.Utils.getIconUrl(),
+    // Get the default thumbnail for each product else add the image and extension osparc.product.Utils.getThumbnailUrl(Thumbnail-01.png)
+    PRODUCT_THUMBNAIL: osparc.product.Utils.getThumbnailUrl(),
 
     CARD_PRIORITY: {
       NEW: 0,

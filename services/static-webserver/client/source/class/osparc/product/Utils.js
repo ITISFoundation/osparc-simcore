@@ -256,7 +256,7 @@ qx.Class.define("osparc.product.Utils", {
       return this.isS4LProduct() && licensesEnabled;
     },
 
-    getProductIconUrl: function(asset = "Default.png") {
+    getIconUrl: function(asset = "Default.png") {
       const base = "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/icons/"
       let url;
       switch (osparc.product.Utils.getProductName()) {
@@ -274,7 +274,7 @@ qx.Class.define("osparc.product.Utils", {
       return url;
     },
 
-    getProductThumbUrl: function(asset = "Default.png") {
+    getThumbnailUrl: function(asset = "Default.png") {
       const base = "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails"
       let url;
       switch (osparc.product.Utils.getProductName()) {
@@ -292,7 +292,7 @@ qx.Class.define("osparc.product.Utils", {
       return url;
     },
 
-    getProductBackgroundUrl: function(asset = "Thumbnail-01.png") {
+    getBackgroundUrl: function(asset = "Thumbnail-01.png") {
       const base = "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/background-images"
       let url;
       switch (osparc.product.Utils.getProductName()) {

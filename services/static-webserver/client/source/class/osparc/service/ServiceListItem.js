@@ -54,7 +54,7 @@ qx.Class.define("osparc.service.ServiceListItem", {
     LATEST: "latest",
     ITEM_WIDTH: 550,
     ITEM_HEIGHT: 35,
-    SERVICE_THUMBNAIL: osparc.product.Utils.getProductThumbUrl()
+    SERVICE_THUMBNAIL: osparc.product.Utils.getThumbnailUrl()
   },
 
   members: {
