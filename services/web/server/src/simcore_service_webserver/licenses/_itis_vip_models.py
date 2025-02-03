@@ -47,11 +47,11 @@ class ItisVipData(BaseModel):
     description: Annotated[str, Field(alias="Description")]
     thumbnail: Annotated[str, Field(alias="Thumbnail")]
     features: Annotated[
-        FeaturesDict,
+        dict,
         BeforeValidator(_feature_descriptor_to_dict),
         Field(alias="Features"),
     ]
-    doi: Annotated[str, Field(alias="DOI")]
+    doi: Annotated[str | None, Field(alias="DOI")]
     license_key: Annotated[str | None, Field(alias="LicenseKey")]
     license_version: Annotated[str | None, Field(alias="LicenseVersion")]
     protection: Annotated[Literal["Code", "PayPal"], Field(alias="Protection")]

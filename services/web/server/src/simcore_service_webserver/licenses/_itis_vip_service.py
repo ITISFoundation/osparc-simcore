@@ -28,4 +28,5 @@ async def get_category_items(
     response.raise_for_status()
 
     validated_data = ItisVipApiResponse.model_validate(response.json())
+
     return validated_data.available_downloads
