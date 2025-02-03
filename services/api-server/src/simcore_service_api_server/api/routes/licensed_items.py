@@ -31,7 +31,6 @@ _LICENSE_ITEMS_STATUS_CODES: dict[int | str, dict[str, Any]] = {
     status_code=status.HTTP_200_OK,
     responses=_LICENSE_ITEMS_STATUS_CODES,
     description="Get all licensed items",
-    include_in_schema=False,
 )
 async def get_licensed_items(
     page_params: Annotated[PaginationParams, Depends()],
@@ -49,7 +48,6 @@ async def get_licensed_items(
     status_code=status.HTTP_200_OK,
     responses=_LICENSE_ITEMS_STATUS_CODES,
     description="Release previously checked out licensed item",
-    include_in_schema=False,
 )
 async def release_licensed_item(
     web_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
