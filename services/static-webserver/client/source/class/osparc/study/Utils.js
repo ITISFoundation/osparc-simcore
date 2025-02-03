@@ -370,7 +370,7 @@ qx.Class.define("osparc.study.Utils", {
 
     __guessS4LIcon: function(studyData) {
       // the was to guess the TI type is to check the boot mode of the ti-postpro in the pipeline
-      const wbServices = new Set(this.extractUniqueServices(studyData["workbench"]));
+      const wbServices = Object.values(studyData["workbench"]);
       if (wbServices.length === 1) {
         if (wbServices[0]["key"].includes("iseg")) {
           return "https://raw.githubusercontent.com/ITISFoundation/osparc-iseg/master/iSeg/images/isegicon.png";
@@ -379,7 +379,8 @@ qx.Class.define("osparc.study.Utils", {
           return "https://images.seeklogo.com/logo-png/35/1/jupyter-logo-png_seeklogo-354673.png";
         }
         if (wbServices[0]["key"].includes("s4l-ui")) {
-          return "osparc/icons/Sim4Life.ico";
+          // return "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/refs/heads/main/app/icons/s4l/Sim4Life.png";
+          return "osparc/icons/Sim4Life.png";
         }
       }
       return osparc.dashboard.CardBase.PRODUCT_ICON;
