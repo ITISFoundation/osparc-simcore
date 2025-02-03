@@ -144,13 +144,18 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
       });
     },
 
+    _applyThumbnail: function(value, old) {
+      // do not shot thumbnail in list button, icon takes over
+      return;
+    },
+
     _applyTitle: function(value, old) {
       const label = this.getChildControl("title");
       label.setValue(value);
     },
 
     _applyDescription: function(value, old) {
-      return
+      return;
     }
   },
 

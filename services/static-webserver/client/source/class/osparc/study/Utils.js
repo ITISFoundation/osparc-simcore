@@ -353,5 +353,16 @@ qx.Class.define("osparc.study.Utils", {
       const blocked = this.__getBlockedState(studyData);
       return ["UNKNOWN_SERVICES", false].includes(blocked);
     },
+
+    suggestIcon: function(studyData) {
+      if (osparc.product.Utils.isProduct("tis") || osparc.product.Utils.isProduct("tiplite")) {
+        return "https://images.seeklogo.com/logo-png/35/1/jupyter-logo-png_seeklogo-354673.png";
+      }
+      const uiMode = this.self().getUiMode(studyData);
+      if (uiMode === "standalone") {
+        return "https://raw.githubusercontent.com/ITISFoundation/osparc-iseg/master/iSeg/images/isegicon.png";
+      }
+      return osparc.dashboard.CardBase.PRODUCT_ICON;
+    },
   }
 });

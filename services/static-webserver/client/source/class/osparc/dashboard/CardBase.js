@@ -269,6 +269,13 @@ qx.Class.define("osparc.dashboard.CardBase", {
       apply: "_applyIcon",
     },
 
+    thumbnail: {
+      check: "String",
+      init: null,
+      nullable: true,
+      apply: "_applyThumbnail",
+    },
+
     resourceData: {
       check: "Object",
       nullable: false,
@@ -482,6 +489,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
         trashedAt: resourceData.trashedAt ? new Date(resourceData.trashedAt) : null,
         trashedBy: resourceData.trashedBy || null,
         icon: resourceData.thumbnail || this.self().PRODUCT_ICON,
+        thumbnail: resourceData.thumbnail || this.self().PRODUCT_ICON,
         state: resourceData.state ? resourceData.state : {},
         classifiers: resourceData.classifiers && resourceData.classifiers ? resourceData.classifiers : [],
         quality: resourceData.quality ? resourceData.quality : null,
@@ -528,6 +536,10 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     _applyIcon: function(value, old) {
+      throw new Error("Abstract method called!");
+    },
+
+    _applyThumbnail: function(value, old) {
       throw new Error("Abstract method called!");
     },
 

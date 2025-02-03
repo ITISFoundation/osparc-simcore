@@ -251,6 +251,23 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
           layout.add(control, {flex: 1});
           break;
         }
+        case "thumbnail": {
+          layout = this.getChildControl("body");
+          const maxWidth = this.self().ITEM_WIDTH;
+          control = new osparc.ui.basic.Thumbnail(null, maxWidth, 124);
+          control.getChildControl("image").set({
+            anonymous: true,
+            alignY: "middle",
+            alignX: "center",
+            allowGrowX: true,
+            allowGrowY: true
+          });
+          layout.getContentElement().setStyles({
+            "border-width": "0px"
+          });
+          layout.add(control, {flex: 1});
+          break;
+        }
         case "date-by":
           control = new osparc.ui.basic.DateAndBy();
           layout = this.getChildControl("footer");
@@ -276,9 +293,14 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
 
     // overridden
     _applyIcon: function(value, old) {
+      console.log("show icon", value);
+    },
+
+    // overridden
+    _applyThumbnail: function(value, old) {
       if (value.includes("@FontAwesome5Solid/")) {
         value += this.self().ICON_SIZE;
-        const image = this.getChildControl("icon").getChildControl("image");
+        const image = this.getChildControl("thumbnail").getChildControl("image");
         image.set({
           source: value
         });
