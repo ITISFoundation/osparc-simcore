@@ -4,7 +4,6 @@
 
 import re
 from pathlib import Path
-from typing import Any
 from urllib.parse import urlparse, urlunparse
 
 import pytest
@@ -36,40 +35,56 @@ pytest_plugins = [
 ]
 
 # The adjacency list is defined as a dictionary with the key to the node and its list of successors
-FULL_PROJECT_PIPELINE_ADJACENCY: dict[str, list[str]] = {
-    "62bca361-8594-48c8-875e-b8577e868aec": [
-        "e0d7a1a5-0700-42c7-b033-97f72ac4a5cd",
-        "5284bb5b-b068-4d0e-9075-3d5d8eec5060",
-        "750454a8-b450-43ce-a012-40b669f7d28c",
+FULL_PROJECT_PIPELINE_ADJACENCY: dict[NodeID, list[NodeID]] = {
+    NodeID("62bca361-8594-48c8-875e-b8577e868aec"): [
+        NodeID("e0d7a1a5-0700-42c7-b033-97f72ac4a5cd"),
+        NodeID("5284bb5b-b068-4d0e-9075-3d5d8eec5060"),
+        NodeID("750454a8-b450-43ce-a012-40b669f7d28c"),
     ],
-    "e0d7a1a5-0700-42c7-b033-97f72ac4a5cd": ["e83a359a-1efe-41d3-83aa-a285afbfaf12"],
-    "5284bb5b-b068-4d0e-9075-3d5d8eec5060": ["e83a359a-1efe-41d3-83aa-a285afbfaf12"],
-    "750454a8-b450-43ce-a012-40b669f7d28c": ["e83a359a-1efe-41d3-83aa-a285afbfaf12"],
-    "e83a359a-1efe-41d3-83aa-a285afbfaf12": [],
+    NodeID("e0d7a1a5-0700-42c7-b033-97f72ac4a5cd"): [
+        NodeID("e83a359a-1efe-41d3-83aa-a285afbfaf12")
+    ],
+    NodeID("5284bb5b-b068-4d0e-9075-3d5d8eec5060"): [
+        NodeID("e83a359a-1efe-41d3-83aa-a285afbfaf12")
+    ],
+    NodeID("750454a8-b450-43ce-a012-40b669f7d28c"): [
+        NodeID("e83a359a-1efe-41d3-83aa-a285afbfaf12")
+    ],
+    NodeID("e83a359a-1efe-41d3-83aa-a285afbfaf12"): [],
 }
 
-FULL_PROJECT_NODE_STATES: dict[str, dict[str, Any]] = {
-    "62bca361-8594-48c8-875e-b8577e868aec": {"modified": True, "dependencies": []},
-    "e0d7a1a5-0700-42c7-b033-97f72ac4a5cd": {
-        "modified": True,
-        "dependencies": ["62bca361-8594-48c8-875e-b8577e868aec"],
-    },
-    "5284bb5b-b068-4d0e-9075-3d5d8eec5060": {
-        "modified": True,
-        "dependencies": ["62bca361-8594-48c8-875e-b8577e868aec"],
-    },
-    "750454a8-b450-43ce-a012-40b669f7d28c": {
-        "modified": True,
-        "dependencies": ["62bca361-8594-48c8-875e-b8577e868aec"],
-    },
-    "e83a359a-1efe-41d3-83aa-a285afbfaf12": {
-        "modified": True,
-        "dependencies": [
-            "e0d7a1a5-0700-42c7-b033-97f72ac4a5cd",
-            "5284bb5b-b068-4d0e-9075-3d5d8eec5060",
-            "750454a8-b450-43ce-a012-40b669f7d28c",
-        ],
-    },
+FULL_PROJECT_NODE_STATES: dict[NodeID, NodeState] = {
+    NodeID("62bca361-8594-48c8-875e-b8577e868aec"): NodeState.model_construct(
+        **{"modified": True, "dependencies": set()}
+    ),
+    NodeID("e0d7a1a5-0700-42c7-b033-97f72ac4a5cd"): NodeState.model_construct(
+        **{
+            "modified": True,
+            "dependencies": {NodeID("62bca361-8594-48c8-875e-b8577e868aec")},
+        }
+    ),
+    NodeID("5284bb5b-b068-4d0e-9075-3d5d8eec5060"): NodeState.model_construct(
+        **{
+            "modified": True,
+            "dependencies": {NodeID("62bca361-8594-48c8-875e-b8577e868aec")},
+        }
+    ),
+    NodeID("750454a8-b450-43ce-a012-40b669f7d28c"): NodeState.model_construct(
+        **{
+            "modified": True,
+            "dependencies": {NodeID("62bca361-8594-48c8-875e-b8577e868aec")},
+        }
+    ),
+    NodeID("e83a359a-1efe-41d3-83aa-a285afbfaf12"): NodeState.model_construct(
+        **{
+            "modified": True,
+            "dependencies": {
+                NodeID("e0d7a1a5-0700-42c7-b033-97f72ac4a5cd"),
+                NodeID("5284bb5b-b068-4d0e-9075-3d5d8eec5060"),
+                NodeID("750454a8-b450-43ce-a012-40b669f7d28c"),
+            },
+        }
+    ),
 }
 
 
@@ -83,7 +98,7 @@ def create_computation_cb(url, **kwargs) -> CallbackResult:
         if body.get("start_pipeline")
         else RunningState.NOT_STARTED
     )
-    pipeline: dict[str, list[str]] = FULL_PROJECT_PIPELINE_ADJACENCY
+    pipeline: dict[NodeID, list[str]] = FULL_PROJECT_PIPELINE_ADJACENCY
     node_states = FULL_PROJECT_NODE_STATES
     if body.get("subgraph"):
         # create some fake adjacency list
