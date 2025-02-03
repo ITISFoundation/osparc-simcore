@@ -385,9 +385,12 @@ qx.Class.define("osparc.study.Utils", {
     __guessTIPIcon: function(studyData) {
       // the was to guess the TI type is to check the boot mode of the ti-postpro in the pipeline
       const tiPostpro = Object.values(studyData["workbench"]).find(srv => srv.key.includes("ti-postpro"));
-      if (tiPostpro) {
+      if (tiPostpro && tiPostpro["bootOptions"]) {
         console.log(tiPostpro);
-        switch (tiPostpro["bootOptions"]) {
+        switch (tiPostpro["bootOptions"]["boot_mode"]) {
+          case "0":
+            // classic TI
+            return "osparc/icons/TI.png";
           case "1":
             // multichannel
             return "osparc/icons/MC.png";
@@ -403,9 +406,8 @@ qx.Class.define("osparc.study.Utils", {
           case "5":
             // personalized phase-modulation
             return "osparc/icons/pPM.png";
-          case "0":
           default:
-            return "osparc/icons/pTI.png";
+            return "osparc/icons/TI.png";
         }
       }
       return "osparc/icons/TI.png";
