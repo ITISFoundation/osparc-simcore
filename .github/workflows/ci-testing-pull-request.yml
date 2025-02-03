@@ -36,7 +36,7 @@ jobs:
           make devenv
           source .venv/bin/activate
           make openapi-specs
-      - name: Check api-server backwards compatibility
+      - name: Check openapi specs are up to date
         run: |
           if ! ./ci/github/helpers/openapi-specs-diff.bash diff \
             https://raw.githubusercontent.com/${{ github.event.pull_request.head.repo.full_name }}/${{ github.event.pull_request.head.sha }} \
