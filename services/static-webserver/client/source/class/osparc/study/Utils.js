@@ -359,11 +359,23 @@ qx.Class.define("osparc.study.Utils", {
     },
 
     guessIcon: function(studyData) {
+      if (osparc.product.Utils.isProduct("osparc")) {
+        return this.__guessOsparcIcon(studyData);
+      }
       if (osparc.product.Utils.isS4LProduct() || osparc.product.Utils.isProduct("s4llite")) {
         return this.__guessS4LIcon(studyData);
       }
       if (osparc.product.Utils.isProduct("tis") || osparc.product.Utils.isProduct("tiplite")) {
         return this.__guessTIPIcon(studyData);
+      }
+      return osparc.dashboard.CardBase.PRODUCT_ICON;
+    },
+
+    __guessOsparcIcon: function(studyData) {
+      // the was to guess the TI type is to check the boot mode of the ti-postpro in the pipeline
+      const wbServices = Object.values(studyData["workbench"]);
+      if (wbServices.length > 1) {
+        return "osparc/icons/diagram.png";
       }
       return osparc.dashboard.CardBase.PRODUCT_ICON;
     },

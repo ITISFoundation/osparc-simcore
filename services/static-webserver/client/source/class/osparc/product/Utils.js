@@ -261,14 +261,14 @@ qx.Class.define("osparc.product.Utils", {
       let url;
       switch (osparc.product.Utils.getProductName()) {
         case "osparc":
-          url = `${base}/oSparc/${asset}`;
+          url = `${base}/osparc/${asset}`;
           break;
         case "tis":
         case "tiplite":
-          url = `${base}/TIP/${asset}`;
+          url = `${base}/tip/${asset}`;
           break;
         default:
-          url = `${base}/S4L/${asset}`;
+          url = `${base}/s4l/${asset}`;
           break;
       }
       return url;
