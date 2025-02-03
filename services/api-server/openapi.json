@@ -5322,6 +5322,285 @@
         }
       }
     },
+    "/v0/wallets/{wallet_id}/licensed-items": {
+      "get": {
+        "tags": [
+          "wallets"
+        ],
+        "summary": "Get Available Licensed Items For Wallet",
+        "description": "Get all available licensed items for a given wallet",
+        "operationId": "get_available_licensed_items_for_wallet",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "wallet_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Wallet Id"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_LicensedItemGet_"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Wallet not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access to wallet is not allowed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Unexpected error when communicating with backend service",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Request to a backend service timed out.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/wallets/{wallet_id}/licensed-items/{licensed_item_id}/checkout": {
+      "post": {
+        "tags": [
+          "wallets"
+        ],
+        "summary": "Checkout Licensed Item",
+        "description": "Checkout licensed item",
+        "operationId": "checkout_licensed_item",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "wallet_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Wallet Id"
+            }
+          },
+          {
+            "name": "licensed_item_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Licensed Item Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LicensedItemCheckoutData"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LicensedItemCheckoutGet"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Wallet not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access to wallet is not allowed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Unexpected error when communicating with backend service",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Request to a backend service timed out.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v0/credits/price": {
       "get": {
         "tags": [
@@ -5347,6 +5626,227 @@
             "HTTPBasic": []
           }
         ]
+      }
+    },
+    "/v0/licensed-items": {
+      "get": {
+        "tags": [
+          "licensed-items"
+        ],
+        "summary": "Get Licensed Items",
+        "description": "Get all licensed items",
+        "operationId": "get_licensed_items",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_LicensedItemGet_"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Unexpected error when communicating with backend service",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Request to a backend service timed out.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/licensed-items/{licensed_item_id}/checked-out-items/{licensed_item_checkout_id}/release": {
+      "post": {
+        "tags": [
+          "licensed-items"
+        ],
+        "summary": "Release Licensed Item",
+        "description": "Release previously checked out licensed item",
+        "operationId": "release_licensed_item",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "licensed_item_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Licensed Item Id"
+            }
+          },
+          {
+            "name": "licensed_item_checkout_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Licensed Item Checkout Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LicensedItemCheckoutGet"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Unexpected error when communicating with backend service",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Request to a backend service timed out.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     }
   },
@@ -6086,6 +6586,143 @@
           "submitted_at": "2021-04-01 07:15:54.631007"
         }
       },
+      "LicensedItemCheckoutData": {
+        "properties": {
+          "number_of_seats": {
+            "type": "integer",
+            "exclusiveMinimum": true,
+            "title": "Number Of Seats",
+            "minimum": 0
+          },
+          "service_run_id": {
+            "type": "string",
+            "title": "Service Run Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "number_of_seats",
+          "service_run_id"
+        ],
+        "title": "LicensedItemCheckoutData"
+      },
+      "LicensedItemCheckoutGet": {
+        "properties": {
+          "licensed_item_checkout_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Licensed Item Checkout Id"
+          },
+          "licensed_item_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Licensed Item Id"
+          },
+          "wallet_id": {
+            "type": "integer",
+            "exclusiveMinimum": true,
+            "title": "Wallet Id",
+            "minimum": 0
+          },
+          "user_id": {
+            "type": "integer",
+            "exclusiveMinimum": true,
+            "title": "User Id",
+            "minimum": 0
+          },
+          "product_name": {
+            "type": "string",
+            "title": "Product Name"
+          },
+          "started_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Started At"
+          },
+          "stopped_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stopped At"
+          },
+          "num_of_seats": {
+            "type": "integer",
+            "title": "Num Of Seats"
+          }
+        },
+        "type": "object",
+        "required": [
+          "licensed_item_checkout_id",
+          "licensed_item_id",
+          "wallet_id",
+          "user_id",
+          "product_name",
+          "started_at",
+          "stopped_at",
+          "num_of_seats"
+        ],
+        "title": "LicensedItemCheckoutGet"
+      },
+      "LicensedItemGet": {
+        "properties": {
+          "licensed_item_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Licensed Item Id"
+          },
+          "display_name": {
+            "type": "string",
+            "title": "Display Name"
+          },
+          "licensed_resource_type": {
+            "$ref": "#/components/schemas/LicensedResourceType"
+          },
+          "licensed_resource_data": {
+            "type": "object",
+            "title": "Licensed Resource Data"
+          },
+          "pricing_plan_id": {
+            "type": "integer",
+            "exclusiveMinimum": true,
+            "title": "Pricing Plan Id",
+            "minimum": 0
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "modified_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Modified At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "licensed_item_id",
+          "display_name",
+          "licensed_resource_type",
+          "licensed_resource_data",
+          "pricing_plan_id",
+          "created_at",
+          "modified_at"
+        ],
+        "title": "LicensedItemGet"
+      },
+      "LicensedResourceType": {
+        "type": "string",
+        "enum": [
+          "VIP_MODEL"
+        ],
+        "title": "LicensedResourceType"
+      },
       "Links": {
         "properties": {
           "first": {
@@ -6408,6 +7045,65 @@
           "links"
         ],
         "title": "Page[Job]"
+      },
+      "Page_LicensedItemGet_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/LicensedItemGet"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total"
+          },
+          "limit": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Limit"
+          },
+          "offset": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Offset"
+          },
+          "links": {
+            "$ref": "#/components/schemas/Links"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset",
+          "links"
+        ],
+        "title": "Page[LicensedItemGet]"
       },
       "Page_Study_": {
         "properties": {
