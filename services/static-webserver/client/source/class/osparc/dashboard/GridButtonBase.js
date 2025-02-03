@@ -295,11 +295,13 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
 
     // overridden
     _applyIcon: function(value, old) {
-      const image = this.getChildControl("icon").getChildControl("image");
-      image.set({
-        source: value,
-        decorator: "rounded",
-      });
+      if (value) {
+        const image = this.getChildControl("icon").getChildControl("image");
+        image.set({
+          source: value,
+          decorator: "rounded",
+        });
+      }
     },
 
     // overridden

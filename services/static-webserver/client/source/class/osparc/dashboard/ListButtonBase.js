@@ -135,13 +135,15 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
     },
 
     _applyIcon: function(value, old) {
-      if (value.includes("@FontAwesome5Solid/")) {
-        value += "22";
+      if (value) {
+        if (value.includes("@FontAwesome5Solid/")) {
+          value += "22";
+        }
+        const image = this.getChildControl("icon").getChildControl("image");
+        image.set({
+          source: value
+        });
       }
-      const image = this.getChildControl("icon").getChildControl("image");
-      image.set({
-        source: value
-      });
     },
 
     _applyThumbnail: function(value, old) {
