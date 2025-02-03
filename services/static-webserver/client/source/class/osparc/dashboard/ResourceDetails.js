@@ -505,7 +505,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       }
 
       const lazyLoadContent = () => {
-        const studyDataManager = new osparc.widget.NodeDataManager(resourceData["uuid"]);
+        const studyDataManager = new osparc.widget.StudyDataManager(resourceData["uuid"]);
         page.addToContent(studyDataManager);
       }
       page.addListenerOnce("appear", lazyLoadContent, this);

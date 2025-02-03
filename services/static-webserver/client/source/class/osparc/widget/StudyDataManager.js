@@ -25,12 +25,12 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let dataManager = new osparc.widget.NodeDataManager(null, nodeId);
+ *   let dataManager = new osparc.widget.StudyDataManager(null, nodeId);
  *   this.getRoot().add(dataManager);
  * </pre>
  */
 
-qx.Class.define("osparc.widget.NodeDataManager", {
+qx.Class.define("osparc.widget.StudyDataManager", {
   extend: qx.ui.core.Widget,
 
   /**
