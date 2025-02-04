@@ -9,8 +9,10 @@ from typing import NamedTuple
 from aiohttp import web
 from deepdiff import DeepDiff
 from models_library.licensed_items import (
+    LicensedItem,
     LicensedItemDB,
     LicensedItemID,
+    LicensedItemPage,
     LicensedItemUpdateDB,
     LicensedResourceType,
 )
@@ -31,7 +33,7 @@ from ..users.api import get_user
 from ..wallets.api import get_wallet_with_available_credits_by_user_and_wallet
 from ..wallets.errors import WalletNotEnoughCreditsError
 from . import _licensed_items_repository
-from ._common.models import LicensedItem, LicensedItemPage, LicensedItemsBodyParams
+from ._common.models import LicensedItemsBodyParams
 from .errors import LicensedItemNotFoundError, LicensedItemPricingPlanMatchError
 
 _logger = logging.getLogger(__name__)

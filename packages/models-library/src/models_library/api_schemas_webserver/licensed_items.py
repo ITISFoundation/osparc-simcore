@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, NamedTuple, cast
+from typing import Any, NamedTuple, Self, cast
 
 from models_library.licensed_items import (
     VIP_DETAILS_EXAMPLE,
@@ -12,6 +12,7 @@ from pydantic import AfterValidator, BaseModel, ConfigDict, PositiveInt
 from pydantic.config import JsonDict
 from typing_extensions import Annotated
 
+from ..licensed_items import LicensedItem
 from ._base import OutputSchema
 
 # RPC
@@ -77,6 +78,18 @@ class LicensedItemRestGet(OutputSchema):
             ]
         }
     )
+
+    @classmethod
+    def from_domain_model(cls, item: LicensedItem) -> Self:
+        return cls(
+            licensed_item_id=item.licensed_item_id,
+            display_name=item.display_name,
+            licensed_resource_type=item.licensed_resource_type,
+            licensed_resource_data=item.licensed_resource_data,
+            pricing_plan_id=item.pricing_plan_id,
+            created_at=item.created_at,
+            modified_at=item.modified_at,
+        )
 
 
 class LicensedItemRestGetPage(NamedTuple):
