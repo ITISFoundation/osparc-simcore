@@ -12,7 +12,7 @@ from pydantic import (
     TypeAdapter,
 )
 
-_max_str_adapter = TypeAdapter(
+_max_str_adapter: TypeAdapter[str] = TypeAdapter(
     Annotated[str, StringConstraints(strip_whitespace=True, max_length=1_000)]
 )
 

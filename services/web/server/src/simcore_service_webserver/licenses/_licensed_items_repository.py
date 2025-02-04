@@ -45,7 +45,7 @@ def _create_insert_query(
     licensed_resource_data: dict[str, Any] | None,
     product_name: ProductName | None,
     pricing_plan_id: PricingPlanId | None,
-) -> postgresql.Insert:
+):
     return (
         postgresql.insert(licensed_items)
         .values(
