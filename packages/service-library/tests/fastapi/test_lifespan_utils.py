@@ -8,14 +8,16 @@ from servicelib.fastapi.lifespan_utils import combine_lifespans
 
 
 async def test_multiple_lifespan_managers(capsys: pytest.CaptureFixture):
-    async def database_lifespan(_: FastAPI) -> AsyncIterator[State]:
+    async def database_lifespan(app: FastAPI) -> AsyncIterator[State]:
+        _ = app
         print("setup DB")
-        yield {}
+        yield State()
         print("shutdown  DB")
 
-    async def cache_lifespan(_: FastAPI) -> AsyncIterator[State]:
+    async def cache_lifespan(app: FastAPI) -> AsyncIterator[State]:
+        _ = app
         print("setup CACHE")
-        yield {}
+        yield State()
         print("shutdown CACHE")
 
     app = FastAPI(lifespan=combine_lifespans(database_lifespan, cache_lifespan))
