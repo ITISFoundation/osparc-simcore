@@ -34,7 +34,8 @@ from ..services.status_monitor import lifespan_status_monitor
 from .settings import ApplicationSettings
 
 
-async def _lifespan_banner(_: FastAPI) -> AsyncIterator[State]:
+async def _lifespan_banner(app: FastAPI) -> AsyncIterator[State]:
+    _ = app
     print(APP_STARTED_BANNER_MSG, flush=True)  # noqa: T201
     yield {}
     print(APP_FINISHED_BANNER_MSG, flush=True)  # noqa: T201
