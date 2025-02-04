@@ -14,7 +14,6 @@ from unittest import mock
 import pytest
 from faker import Faker
 from models_library.projects import ProjectAtDB
-from models_library.projects_nodes_io import NodeIDStr
 from models_library.projects_state import RunningState
 from models_library.rabbitmq_messages import (
     InstrumentationRabbitMessage,
@@ -195,9 +194,7 @@ async def test_publish_service_resource_tracking_started(
         project_id=project.uuid,
         project_name=project.name,
         node_id=random_task.node_id,
-        node_name=fake_workbench_without_outputs[
-            NodeIDStr(f"{random_task.node_id}")
-        ].label,
+        node_name=fake_workbench_without_outputs[f"{random_task.node_id}"]["label"],
         parent_project_id=None,
         parent_node_id=None,
         root_parent_project_id=None,
