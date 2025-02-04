@@ -2,7 +2,7 @@ import logging
 import os
 
 import typer
-from servicelib.fastapi.docker import DockerApiProxysettings
+from settings_library.docker_api_proxy import DockerApiProxysettings
 from settings_library.rabbit import RabbitSettings
 from settings_library.utils_cli import (
     create_settings_command,
