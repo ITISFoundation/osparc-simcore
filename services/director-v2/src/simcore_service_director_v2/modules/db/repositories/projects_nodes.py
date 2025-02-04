@@ -3,7 +3,10 @@ import logging
 import sqlalchemy as sa
 from models_library.projects import NodesDict, ProjectID
 from models_library.projects_nodes import Node, NodeID
-from simcore_postgres_database.utils_projects_nodes import ProjectNode
+from simcore_postgres_database.utils_projects_nodes import (
+    ProjectNode,
+    ProjectNodesNodeNotFoundError,
+)
 
 from ..tables import projects_nodes
 from ._base import BaseRepository
@@ -50,3 +53,17 @@ class ProjectsNodesRepository(BaseRepository):
                 )
             ).fetchone()
             return result is not None
+
+    async def get_project_id_from_node(self, node_id: NodeID) -> ProjectID:
+        async with self.db_engine.acquire() as conn:
+            result = await (
+                await conn.execute(
+                    sa.select(projects_nodes.c.project_uuid).where(
+                        projects_nodes.c.node_id == f"{node_id}"
+                    )
+                )
+            ).fetchone()
+            if result is None:
+                raise ProjectNodesNodeNotFoundError(node_id=node_id)
+
+            return ProjectID(result[0])

@@ -13,9 +13,6 @@ from models_library.projects_nodes_io import NodeID
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_postgres_database.utils_projects_nodes import ProjectNodesNodeNotFoundError
-from simcore_service_director_v2.modules.db.repositories.projects import (
-    ProjectsRepository,
-)
 from simcore_service_director_v2.modules.db.repositories.projects_nodes import (
     ProjectsNodesRepository,
 )
@@ -81,7 +78,7 @@ async def project(
     return await project(registered_user(), workbench=workbench)
 
 
-async def test_is_node_present_in_workbench(
+async def test_exists_node(
     initialized_app: FastAPI,
     project: ProjectAtDB,
     workbench: dict[str, Any],
@@ -117,15 +114,18 @@ async def test_is_node_present_in_workbench(
 
 
 async def test_get_project_id_from_node(
-    initialized_app: FastAPI, project: ProjectAtDB, faker: Faker
+    initialized_app: FastAPI,
+    project: ProjectAtDB,
+    workbench: dict[str, Any],
+    faker: Faker,
 ):
-    project_repository = get_repository(initialized_app, ProjectsRepository)
-    for node_uuid in project.workbench:
+    project_nodes_repo = get_repository(initialized_app, ProjectsNodesRepository)
+    for node_uuid in workbench:
         assert (
-            await project_repository.get_project_id_from_node(NodeID(node_uuid))
+            await project_nodes_repo.get_project_id_from_node(NodeID(node_uuid))
             == project.uuid
         )
 
     not_existing_node_id = faker.uuid4(cast_to=None)
     with pytest.raises(ProjectNodesNodeNotFoundError):
-        await project_repository.get_project_id_from_node(not_existing_node_id)
+        await project_nodes_repo.get_project_id_from_node(not_existing_node_id)
