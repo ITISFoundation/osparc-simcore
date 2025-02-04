@@ -2,13 +2,15 @@ import logging
 
 from fastapi import FastAPI
 from models_library.api_schemas_long_running_tasks.base import ProgressPercent
-from models_library.projects import ProjectAtDB
-from models_library.projects_nodes_io import NodeIDStr
+from models_library.projects import NodesDict, ProjectAtDB
 from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services import ServiceVersion
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
 from pydantic import TypeAdapter
 from servicelib.fastapi.long_running_tasks.client import TaskId
+from simcore_service_director_v2.modules.db.repositories.projects_nodes import (
+    ProjectsNodesRepository,
+)
 from tenacity import RetryError
 from tenacity.asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
@@ -143,7 +145,14 @@ async def create_user_services(  # pylint: disable=too-many-statements
         project_id=scheduler_data.project_id
     )
     project_name = project.name
-    node_name = project.workbench[NodeIDStr(scheduler_data.node_uuid)].label
+
+    projects_nodes_repo: ProjectsNodesRepository = get_repository(
+        app, ProjectsNodesRepository
+    )
+    workbench: NodesDict = await projects_nodes_repo.get_nodes(
+        scheduler_data.project_id
+    )
+    node_name = workbench[f"{scheduler_data.node_uuid}"].label
 
     # data from user
     users_repository = get_repository(app, UsersRepository)

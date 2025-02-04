@@ -23,6 +23,9 @@ from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 from servicelib.logging_utils import log_decorator
 from servicelib.rabbitmq import RabbitMQClient
 from servicelib.utils import logged_gather
+from simcore_service_director_v2.modules.db.repositories.projects_nodes import (
+    ProjectsNodesRepository,
+)
 from starlette import status
 from starlette.datastructures import URL
 from tenacity import RetryCallState, TryAgain
@@ -323,6 +326,9 @@ async def update_projects_networks(
     projects_repository: Annotated[
         ProjectsRepository, Depends(get_repository(ProjectsRepository))
     ],
+    projects_nodes_repository: Annotated[
+        ProjectsNodesRepository, Depends(get_repository(ProjectsNodesRepository))
+    ],
     scheduler: Annotated[DynamicSidecarsScheduler, Depends(get_scheduler)],
     catalog_client: Annotated[CatalogClient, Depends(get_catalog_client)],
     rabbitmq_client: Annotated[
@@ -333,6 +339,7 @@ async def update_projects_networks(
     await projects_networks.update_from_workbench(
         projects_networks_repository=projects_networks_repository,
         projects_repository=projects_repository,
+        projects_nodes_repository=projects_nodes_repository,
         scheduler=scheduler,
         catalog_client=catalog_client,
         rabbitmq_client=rabbitmq_client,
