@@ -11,13 +11,13 @@ async def test_multiple_lifespan_managers(capsys: pytest.CaptureFixture):
     async def database_lifespan(app: FastAPI) -> AsyncIterator[State]:
         _ = app
         print("setup DB")
-        yield State()
+        yield {}
         print("shutdown  DB")
 
     async def cache_lifespan(app: FastAPI) -> AsyncIterator[State]:
         _ = app
         print("setup CACHE")
-        yield State()
+        yield {}
         print("shutdown CACHE")
 
     app = FastAPI(lifespan=combine_lifespans(database_lifespan, cache_lifespan))
