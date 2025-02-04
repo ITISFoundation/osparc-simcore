@@ -940,7 +940,11 @@ async def test_get_computation_from_published_computation_task(
         dag_adjacency_list=fake_workbench_adjacency,
     )
     comp_tasks = await create_tasks(
-        user=user, project=proj, state=StateType.PUBLISHED, progress=0
+        user=user,
+        project=proj,
+        workbench=fake_workbench_without_outputs,
+        state=StateType.PUBLISHED,
+        progress=0,
     )
     comp_runs = await create_comp_run(
         user=user, project=proj, result=StateType.PUBLISHED
