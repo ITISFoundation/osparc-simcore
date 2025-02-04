@@ -55,7 +55,9 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
         lifespan_service_tracker,
         lifespan_deferred_manager,
         lifespan_status_monitor,
-        get_lifespan_remote_docker_client("DYNAMIC_SCHEDULER_DOCKER_API_PROXY"),
+        get_lifespan_remote_docker_client(
+            app_settings.DYNAMIC_SCHEDULER_DOCKER_API_PROXY
+        ),
     ]
 
     if app_settings.DYNAMIC_SCHEDULER_PROMETHEUS_INSTRUMENTATION_ENABLED:

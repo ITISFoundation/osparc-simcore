@@ -39,12 +39,14 @@ def _get_test_app() -> FastAPI:
             Field(json_schema_extra={"auto_default_from_env": True}),
         ]
 
+    settings = ApplicationSetting.create_from_envs()
+
     app = FastAPI(
         lifespan=combine_lifespans(
-            get_lifespan_remote_docker_client("DOCKER_API_PROXY")
+            get_lifespan_remote_docker_client(settings.DOCKER_API_PROXY)
         )
     )
-    app.state.settings = ApplicationSetting.create_from_envs()
+    app.state.settings = settings
 
     return app
 

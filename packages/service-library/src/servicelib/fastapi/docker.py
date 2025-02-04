@@ -20,22 +20,9 @@ _DEFAULT_DOCKER_API_PROXY_HEALTH_TIMEOUT: Final[NonNegativeInt] = 5
 
 
 def get_lifespan_remote_docker_client(
-    docker_api_proxy_settings_property_name: str,
+    settings: DockerApiProxysettings,
 ) -> LifespanGenerator:
-    """Ensures `setup` and `teardown` for the remote docker client.
-
-    Arguments:
-        docker_api_proxy_settings_property_name -- if the name is `PROP_NAME`
-        then it should be accessible as `app.state.settings.PROP_NAME`
-
-    Returns:
-        docker client lifespan manager
-    """
-
     async def _(app: FastAPI) -> AsyncIterator[State]:
-        settings: DockerApiProxysettings = getattr(
-            app.state.settings, docker_api_proxy_settings_property_name
-        )
 
         session: ClientSession | None = None
         if settings.DOCKER_API_PROXY_USER and settings.DOCKER_API_PROXY_PASSWORD:
