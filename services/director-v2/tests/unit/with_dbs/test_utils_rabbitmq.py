@@ -96,6 +96,7 @@ async def project(
 async def tasks(
     user: dict[str, Any],
     project: ProjectAtDB,
+    fake_workbench_without_outputs: dict[str, Any],
     fake_workbench_adjacency: dict[str, Any],
     create_pipeline: Callable[..., Awaitable[CompPipelineAtDB]],
     create_tasks: Callable[..., Awaitable[list[CompTaskAtDB]]],
@@ -104,7 +105,7 @@ async def tasks(
         project_id=f"{project.uuid}",
         dag_adjacency_list=fake_workbench_adjacency,
     )
-    comp_tasks = await create_tasks(user, project)
+    comp_tasks = await create_tasks(user, project, fake_workbench_without_outputs)
     assert len(comp_tasks) > 0
     return comp_tasks
 
@@ -162,6 +163,7 @@ async def test_publish_service_resource_tracking_started(
     create_rabbitmq_client: Callable[[str], RabbitMQClient],
     user: dict[str, Any],
     project: ProjectAtDB,
+    fake_workbench_without_outputs: dict[str, Any],
     simcore_user_agent: str,
     tasks: list[CompTaskAtDB],
     mocked_message_parser: mock.AsyncMock,
@@ -193,7 +195,9 @@ async def test_publish_service_resource_tracking_started(
         project_id=project.uuid,
         project_name=project.name,
         node_id=random_task.node_id,
-        node_name=project.workbench[NodeIDStr(f"{random_task.node_id}")].label,
+        node_name=fake_workbench_without_outputs[
+            NodeIDStr(f"{random_task.node_id}")
+        ].label,
         parent_project_id=None,
         parent_node_id=None,
         root_parent_project_id=None,
