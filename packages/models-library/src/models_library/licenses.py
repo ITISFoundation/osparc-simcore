@@ -26,7 +26,7 @@ VIP_FEATURES_EXAMPLE = {
     "age": "34 years",
     "weight": "70.2 Kg",
     "height": "1.77 m",
-    "data": "2015-03-01",
+    "date": "2015-03-01",
     "ethnicity": "Caucasian",
     "functionality": "Static",
     "additional_field": "allowed",
@@ -55,7 +55,7 @@ VIP_DETAILS_EXAMPLE = {
     "license_version": "custom value",
     "protection": "custom value",
     "available_from_url": "custom value",
-    "additional_field": "allowed",
+    "additional_field": "trimmed if rest",
 }
 
 

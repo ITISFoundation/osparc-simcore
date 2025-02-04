@@ -46,8 +46,13 @@ async def test_licensed_items_listing(
         licensed_resource_name="Model A",
         licensed_resource_type=LicensedResourceType.VIP_MODEL,
         pricing_plan_id=pricing_plan_id,
-        licensed_resource_data=VIP_DETAILS_EXAMPLE,
+        licensed_resource_data={
+            "categoryId": "HumanWholeBody",
+            "categoryDisplay": "Humans",
+            "source": VIP_DETAILS_EXAMPLE,
+        },
     )
+
     _licensed_item_id = licensed_item_db.licensed_item_id
 
     # list
@@ -56,12 +61,14 @@ async def test_licensed_items_listing(
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(data) == 1
     assert LicensedItemRestGet(**data[0])
-    assert data[0]["licensedResourceData"][
-        "additionalField"
-    ]  # <-- Testing nested camel case
-    assert data[0]["licensedResourceData"]["features"][
-        "additionalField"
-    ]  # <-- Testing nested camel case
+
+    # <-- Testing nested camel case
+    source = data[0]["licensedResourceData"]["source"]
+    assert source["license"]
+
+    # Testing trimmed
+    assert "additionalField" not in source["features"]
+    assert "additional_field" not in source["features"]
 
     # get
     url = client.app.router["get_licensed_item"].url_for(
@@ -77,17 +84,13 @@ def mock_licensed_items_purchase_functions(mocker: MockerFixture) -> tuple:
     mock_wallet_credits = mocker.patch(
         "simcore_service_webserver.licenses._licensed_items_service.get_wallet_with_available_credits_by_user_and_wallet",
         spec=True,
-        return_value=WalletGetWithAvailableCredits.model_validate(
-            WalletGetWithAvailableCredits.model_config["json_schema_extra"]["examples"][
-                0
-            ]
-        ),
+        return_value=WalletGetWithAvailableCredits.model_json_schema()["examples"][0],
     )
     mock_get_pricing_unit = mocker.patch(
         "simcore_service_webserver.licenses._licensed_items_service.get_pricing_plan_unit",
         spec=True,
         return_value=PricingUnitGet.model_validate(
-            PricingUnitGet.model_config["json_schema_extra"]["examples"][0]
+            PricingUnitGet.model_json_schema()["examples"][0]
         ),
     )
     mock_create_licensed_item_purchase = mocker.patch(
@@ -121,7 +124,11 @@ async def test_licensed_items_purchase(
         licensed_resource_name="Model A",
         licensed_resource_type=LicensedResourceType.VIP_MODEL,
         pricing_plan_id=pricing_plan_id,
-        licensed_resource_data=VIP_DETAILS_EXAMPLE,
+        licensed_resource_data={
+            "categoryId": "HumanWholeBody",
+            "categoryDisplay": "Humans",
+            "source": VIP_DETAILS_EXAMPLE,
+        },
     )
     _licensed_item_id = licensed_item_db.licensed_item_id
 

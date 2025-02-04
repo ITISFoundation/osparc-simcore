@@ -26,6 +26,7 @@ class LicensedItemRpcGet(BaseModel):
     pricing_plan_id: PricingPlanId
     created_at: datetime
     modified_at: datetime
+
     model_config = ConfigDict(
         json_schema_extra={
             "examples": [
@@ -76,21 +77,33 @@ class LicensedItemRestGet(OutputSchema):
     created_at: datetime
     modified_at: datetime
 
-    model_config = ConfigDict(
-        json_schema_extra={
-            "examples": [
-                {
-                    "licensed_item_id": "0362b88b-91f8-4b41-867c-35544ad1f7a1",
-                    "display_name": "best-model",
-                    "licensed_resource_type": f"{LicensedResourceType.VIP_MODEL}",
-                    "licensed_resource_data": cast(JsonDict, VIP_DETAILS_EXAMPLE),
-                    "pricing_plan_id": "15",
-                    "created_at": "2024-12-12 09:59:26.422140",
-                    "modified_at": "2024-12-12 09:59:26.422140",
-                }
-            ]
-        }
-    )
+    @staticmethod
+    def _update_json_schema_extra(schema: JsonDict) -> None:
+        schema.update(
+            {
+                "examples": [
+                    {
+                        "licensedItemId": "0362b88b-91f8-4b41-867c-35544ad1f7a1",
+                        "displayName": "my best model",
+                        "licensedResourceName": "best-model",
+                        "licensedResourceType": f"{LicensedResourceType.VIP_MODEL}",
+                        "licensedResourceData": cast(
+                            JsonDict,
+                            {
+                                "categoryId": "HumanWholeBody",
+                                "categoryDisplay": "Humans",
+                                "source": VIP_DETAILS_EXAMPLE,
+                            },
+                        ),
+                        "pricingPlanId": "15",
+                        "createdAt": "2024-12-12 09:59:26.422140",
+                        "modifiedAt": "2024-12-12 09:59:26.422140",
+                    }
+                ]
+            }
+        )
+
+    model_config = ConfigDict(json_schema_extra=_update_json_schema_extra)
 
     @classmethod
     def from_domain_model(cls, item: LicensedItem) -> Self:
