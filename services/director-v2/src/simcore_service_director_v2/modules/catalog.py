@@ -83,7 +83,7 @@ class CatalogClient:
     ) -> dict[str, Any]:
         resp = await self.request(
             "GET",
-            f"/services/{urllib.parse.quote( service_key, safe='')}/{service_version}",
+            f"/services/{urllib.parse.quote(service_key, safe='')}/{service_version}",
             params={"user_id": user_id},
             headers={"X-Simcore-Products-Name": product_name},
         )
@@ -98,7 +98,7 @@ class CatalogClient:
     ) -> ServiceResourcesDict:
         resp = await self.request(
             "GET",
-            f"/services/{urllib.parse.quote( service_key, safe='')}/{service_version}/resources",
+            f"/services/{urllib.parse.quote(service_key, safe='')}/{service_version}/resources",
             params={"user_id": user_id},
         )
         resp.raise_for_status()
@@ -109,12 +109,12 @@ class CatalogClient:
             return json_response
         raise HTTPException(status_code=resp.status_code, detail=resp.content)
 
-    async def get_service_labels(
+    async def get_service_labels(  # to add
         self, service_key: ServiceKey, service_version: ServiceVersion
     ) -> SimcoreServiceLabels:
         resp = await self.request(
             "GET",
-            f"/services/{urllib.parse.quote( service_key, safe='')}/{service_version}/labels",
+            f"/services/{urllib.parse.quote(service_key, safe='')}/{service_version}/labels",
         )
         resp.raise_for_status()
         if resp.status_code == status.HTTP_200_OK:
@@ -132,12 +132,12 @@ class CatalogClient:
             return ServiceExtras.model_validate(resp.json())
         raise HTTPException(status_code=resp.status_code, detail=resp.content)
 
-    async def get_service_specifications(
+    async def get_service_specifications(  # to add
         self, user_id: UserID, service_key: ServiceKey, service_version: ServiceVersion
     ) -> dict[str, Any]:
         resp = await self.request(
             "GET",
-            f"/services/{urllib.parse.quote( service_key, safe='')}/{service_version}/specifications",
+            f"/services/{urllib.parse.quote(service_key, safe='')}/{service_version}/specifications",
             params={"user_id": user_id},
         )
         resp.raise_for_status()

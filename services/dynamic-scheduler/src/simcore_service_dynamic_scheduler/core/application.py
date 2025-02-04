@@ -18,6 +18,7 @@ from .._meta import (
 from ..api.frontend import setup_frontend
 from ..api.rest.routes import setup_rest_api
 from ..api.rpc.routes import setup_rpc_api_routes
+from ..services.catalog import setup_catalog
 from ..services.deferred_manager import setup_deferred_manager
 from ..services.director_v0 import setup_director_v0
 from ..services.director_v2 import setup_director_v2
@@ -64,6 +65,7 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
 
     setup_director_v2(app)
     setup_director_v0(app)
+    setup_catalog(app)
 
     setup_rabbitmq(app)
     setup_rpc_api_routes(app)
