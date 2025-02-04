@@ -277,9 +277,9 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
           // first criteria
           const nASeats = osparc.store.LicensedItems.purchasesToNSeats(a["purchases"]);
           const nBSeats = osparc.store.LicensedItems.purchasesToNSeats(b["purchases"]);
-          if (nASeats !== nBSeats) {
+          if (nBSeats !== nASeats) {
             // nSeats first
-            return nASeats - nBSeats;
+            return nBSeats - nASeats;
           }
           // second criteria
           if (sortBy) {
