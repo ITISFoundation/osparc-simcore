@@ -65,6 +65,7 @@ def get_lifespan_remote_docker_client(
 
             await wait_till_docker_api_proxy_is_responsive(app)
 
+            # NOTE this has to be inside exit_stack scope
             yield {}
 
     return _

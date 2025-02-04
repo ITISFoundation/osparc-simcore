@@ -14,7 +14,7 @@ from servicelib.fastapi.docker import (
     get_lifespan_remote_docker_client,
     get_remote_docker_client,
 )
-from servicelib.fastapi.lifespan_utils import combine_lfiespan_context_managers
+from servicelib.fastapi.lifespan_utils import combine_lifespans
 from settings_library.application import BaseApplicationSettings
 from settings_library.docker_api_proxy import DockerApiProxysettings
 
@@ -40,7 +40,7 @@ def _get_test_app() -> FastAPI:
         ]
 
     app = FastAPI(
-        lifespan=combine_lfiespan_context_managers(
+        lifespan=combine_lifespans(
             get_lifespan_remote_docker_client("DOCKER_API_PROXY")
         )
     )
