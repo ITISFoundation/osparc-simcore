@@ -29,7 +29,7 @@ from models_library.api_schemas_dynamic_sidecar.containers import (
     ActivityInfo,
     ActivityInfoOrNone,
 )
-from models_library.projects import ProjectAtDB, ProjectID
+from models_library.projects import NodesDict, ProjectAtDB, ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import SimcoreServiceLabels
 from pytest_mock.plugin import MockerFixture
@@ -612,14 +612,17 @@ def mock_internals_inactivity(
     mock_project = Mock()
     mock_project.workbench = list(service_inactivity_map.keys())
 
-    class MockProjectRepo:
+    class MockRepo:
         async def get_project(self, _: ProjectID) -> ProjectAtDB:
             return mock_project
+
+        async def get_nodes(self, _: ProjectID) -> NodesDict:
+            return mock_project.workbench
 
     # patch get_project
     mocker.patch(
         "simcore_service_director_v2.api.dependencies.database.get_base_repository",
-        return_value=MockProjectRepo(),
+        return_value=MockRepo(),
     )
 
     async def get_service_activity(node_uuid: NodeID) -> ActivityInfoOrNone:
