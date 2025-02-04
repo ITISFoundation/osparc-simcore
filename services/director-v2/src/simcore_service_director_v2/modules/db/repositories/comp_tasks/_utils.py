@@ -13,7 +13,7 @@ from models_library.api_schemas_directorv2.services import (
     ServiceExtras,
 )
 from models_library.function_services_catalog import iter_service_docker_data
-from models_library.projects import ProjectAtDB, ProjectID
+from models_library.projects import NodesDict, ProjectAtDB, ProjectID
 from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
@@ -60,7 +60,6 @@ from .....utils.computations import to_node_class
 from ....catalog import CatalogClient
 from ....comp_scheduler._utils import COMPLETED_STATES
 from ...tables import NodeClass
-from ..projects_nodes import NodesDict
 
 _logger = logging.getLogger(__name__)
 

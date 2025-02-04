@@ -7,7 +7,7 @@ import sqlalchemy as sa
 from aiopg.sa.result import ResultProxy, RowProxy
 from models_library.basic_types import IDStr
 from models_library.errors import ErrorDict
-from models_library.projects import ProjectAtDB, ProjectID
+from models_library.projects import NodesDict, ProjectAtDB, ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
 from models_library.users import UserID
@@ -26,7 +26,6 @@ from .....utils.db import RUNNING_STATE_TO_DB
 from ....catalog import CatalogClient
 from ...tables import NodeClass, StateType, comp_tasks
 from .._base import BaseRepository
-from ..projects_nodes import NodesDict
 from . import _utils
 
 _logger = logging.getLogger(__name__)
