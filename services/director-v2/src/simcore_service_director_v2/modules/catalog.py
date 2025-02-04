@@ -109,7 +109,7 @@ class CatalogClient:
             return json_response
         raise HTTPException(status_code=resp.status_code, detail=resp.content)
 
-    async def get_service_labels(  # to add
+    async def get_service_labels(
         self, service_key: ServiceKey, service_version: ServiceVersion
     ) -> SimcoreServiceLabels:
         resp = await self.request(
@@ -132,7 +132,7 @@ class CatalogClient:
             return ServiceExtras.model_validate(resp.json())
         raise HTTPException(status_code=resp.status_code, detail=resp.content)
 
-    async def get_service_specifications(  # to add
+    async def get_service_specifications(
         self, user_id: UserID, service_key: ServiceKey, service_version: ServiceVersion
     ) -> dict[str, Any]:
         resp = await self.request(
