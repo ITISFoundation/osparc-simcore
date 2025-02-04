@@ -126,10 +126,10 @@ qx.Theme.define("osparc.theme.ColorDark", {
     "table-header": "background-main",
     "table-header-foreground": "c09",
     "table-header-border": "c07",
-    "table-focus-indicator": "background-main-5",
+    "table-header-cell": "background-main",
 
     // used in table code
-    "table-header-cell": "background-main",
+    "table-focus-indicator": "background-main-5",
     "table-row-background-even": "background-main",
     "table-row-background-odd": "background-main",
     "table-row-background-focused": "background-main-1",
