@@ -281,6 +281,7 @@ async def running_project(
         tasks=await create_tasks(
             user=user,
             project=created_project,
+            workbench=fake_workbench_without_outputs,
             state=StateType.RUNNING,
             progress=0.0,
             start=now_time,
@@ -318,6 +319,7 @@ async def running_project_mark_for_cancellation(
         tasks=await create_tasks(
             user=user,
             project=created_project,
+            workbench=fake_workbench_without_outputs,
             state=StateType.RUNNING,
             progress=0.0,
             start=now_time,
