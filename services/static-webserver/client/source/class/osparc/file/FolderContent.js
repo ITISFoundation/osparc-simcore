@@ -280,14 +280,14 @@ qx.Class.define("osparc.file.FolderContent", {
         }
         if (this.isMultiSelect()) {
           // pass all buttons that are selected
-          const selectedFiles = [];
+          const selectedItems = [];
           const iconsLayout = this.getChildControl("icons-layout");
           iconsLayout.getChildren().forEach(btn => {
-            if (osparc.file.FilesTree.isFile(btn.entry) && btn.getValue()) {
-              selectedFiles.push(btn.entry);
+            if (btn.getValue() && "entry" in btn) {
+              selectedItems.push(btn.entry);
             }
           });
-          this.__selectionChanged(selectedFiles);
+          this.__selectionChanged(selectedItems);
         } else {
           // unselect the other items
           const iconsLayout = this.getChildControl("icons-layout");
@@ -311,17 +311,17 @@ qx.Class.define("osparc.file.FolderContent", {
         if (e.getNativeEvent().ctrlKey) {
           this.setMultiSelect(true);
         }
-        const selectedFiles = [];
+        const selectedItems = [];
         const selectionRanges = table.getSelectionModel().getSelectedRanges();
         selectionRanges.forEach(range => {
           for (let i=range.minIndex; i<=range.maxIndex; i++) {
             const row = table.getTableModel().getRowData(i);
-            if (row && "entry" in row && osparc.file.FilesTree.isFile(row.entry)) {
-              selectedFiles.push(row.entry);
+            if (row && "entry" in row) {
+              selectedItems.push(row.entry);
             }
           }
         });
-        this.__selectionChanged(selectedFiles);
+        this.__selectionChanged(selectedItems);
       }, this);
       table.addListener("cellDbltap", e => {
         const selectedRow = e.getRow();
