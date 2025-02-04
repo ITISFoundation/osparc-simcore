@@ -89,8 +89,6 @@ def mock_catalog(
             json=service_specifications.model_dump(mode="json"),
         )
 
-        print("Respx mock paths:", [route.pattern for route in respx_mock.routes])
-
         yield
 
 
