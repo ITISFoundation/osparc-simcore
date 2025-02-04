@@ -1,5 +1,8 @@
+import logging
+from typing import Annotated
+
 import httpx
-from pydantic import HttpUrl
+from pydantic import BaseModel, Field, HttpUrl, ValidationError
 from tenacity import (
     retry,
     retry_if_exception_cause_type,
@@ -7,7 +10,14 @@ from tenacity import (
     wait_exponential,
 )
 
-from ._itis_vip_models import ItisVipApiResponse, ItisVipData
+from ._itis_vip_models import ItisVipData
+
+_logger = logging.getLogger(__name__)
+
+
+class _ItisVipApiResponse(BaseModel):
+    msg: int | None = None  # still not used
+    available_downloads: Annotated[list[dict], Field(alias="availableDownloads")]
 
 
 @retry(
@@ -27,6 +37,14 @@ async def get_category_items(
     response = await client.post(f"{url}")
     response.raise_for_status()
 
-    validated_data = ItisVipApiResponse.model_validate(response.json())
+    data = _ItisVipApiResponse.model_validate(response.json())
 
-    return validated_data.available_downloads
+    # Filters only downloads with ItisVipData guarantees
+    category_items = []
+    for download in data.available_downloads:
+        try:
+            category_items.append(ItisVipData.model_validate(download))
+        except ValidationError as err:
+            _logger.debug("Skipped %s because %s", download, err)
+
+    return category_items

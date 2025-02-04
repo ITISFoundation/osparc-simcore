@@ -26,7 +26,7 @@ from simcore_service_webserver.licenses import (
     _licensed_items_service,
 )
 from simcore_service_webserver.licenses._itis_vip_models import ItisVipData
-from simcore_service_webserver.licenses._itis_vip_service import ItisVipApiResponse
+from simcore_service_webserver.licenses._itis_vip_service import _ItisVipApiResponse
 from simcore_service_webserver.licenses._itis_vip_settings import ItisVipSettings
 from simcore_service_webserver.licenses._licensed_items_service import RegistrationState
 
@@ -91,19 +91,12 @@ async def test_fetch_and_validate_itis_vip_api(
         response_json = response.json()
 
         try:
-            validated_data = ItisVipApiResponse(**response_json)
+            response = _ItisVipApiResponse(**response_json)
         except ValidationError as e:
             pytest.fail(f"Response validation failed: {e}")
 
-        assert validated_data.msg == 0
-        assert len(validated_data.available_downloads) == 8
-
-        assert (
-            validated_data.available_downloads[0].features.get("functionality")
-            == "Posable"
-        )
-
-        print(validated_data.model_dump_json(indent=1))
+        assert response.msg == 0
+        assert len(response.available_downloads) == 8
 
 
 async def test_get_category_items(

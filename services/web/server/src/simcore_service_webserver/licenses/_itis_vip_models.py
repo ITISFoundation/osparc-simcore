@@ -1,5 +1,5 @@
 import re
-from typing import Annotated, Any, Literal, NamedTuple, NotRequired, TypeAlias
+from typing import Annotated, Any, Literal, NamedTuple, TypeAlias
 
 from models_library.basic_types import IDStr
 from pydantic import (
@@ -25,47 +25,46 @@ def _feature_descriptor_to_dict(descriptor: str) -> dict[str, Any]:
     return dict(matches)
 
 
-#
-# ITIS-VIP API Schema
-#
-
-
-class FeaturesDict(TypedDict):
+class FeaturesDict(TypedDict, total=False):
+    # All optional (for now)
     name: str
     version: str
-    sex: NotRequired[str]
-    age: NotRequired[str]
-    weight: NotRequired[str]
-    height: NotRequired[str]
-    date: NotRequired[str]
-    ethnicity: NotRequired[str]
-    functionality: NotRequired[str]
+    sex: str
+    age: str
+    weight: str
+    height: str
+    date: str
+    ethnicity: str
+    functionality: str
 
 
 class ItisVipData(BaseModel):
+    # Designed to parse items from response from VIP-API
     id: Annotated[int, Field(alias="ID")]
     description: Annotated[str, Field(alias="Description")]
     thumbnail: Annotated[str, Field(alias="Thumbnail")]
     features: Annotated[
-        dict[str, Any],  # NOTE: for the moment FeaturesDict is NOT used
+        FeaturesDict,
         BeforeValidator(_feature_descriptor_to_dict),
         Field(alias="Features"),
     ]
     doi: Annotated[str | None, Field(alias="DOI")]
-    license_key: Annotated[str | None, Field(alias="LicenseKey")]
-    license_version: Annotated[str | None, Field(alias="LicenseVersion")]
+    license_key: Annotated[
+        str,
+        Field(
+            alias="LicenseKey",
+            description="NOTE: skips VIP w/o license key",
+        ),
+    ]
+    license_version: Annotated[
+        str,
+        Field(
+            alias="LicenseVersion",
+            description="NOTE: skips VIP w/o license version",
+        ),
+    ]
     protection: Annotated[Literal["Code", "PayPal"], Field(alias="Protection")]
     available_from_url: Annotated[HttpUrl | None, Field(alias="AvailableFromURL")]
-
-
-class ItisVipApiResponse(BaseModel):
-    msg: int | None = None  # still not used
-    available_downloads: Annotated[list[ItisVipData], Field(alias="availableDownloads")]
-
-
-#
-# RESOURCE
-#
 
 
 class ItisVipResourceData(BaseModel):
@@ -74,11 +73,8 @@ class ItisVipResourceData(BaseModel):
     source: Annotated[
         ItisVipData, Field(description="Original published data in the api")
     ]
+    terms_of_use_url: HttpUrl | None = None
 
-
-#
-# INTERNAL
-#
 
 CategoryID: TypeAlias = IDStr
 CategoryDisplay: TypeAlias = str
