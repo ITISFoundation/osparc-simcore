@@ -132,7 +132,7 @@ async def project_id(
         dag_adjacency_list=fake_workbench_adjacency,
     )
     # insert tasks -> comp_tasks
-    comp_tasks = await create_tasks(user=user, project=proj)
+    await create_tasks(user=user, project=proj, workbench=fake_workbench_adjacency)
 
     return proj.uuid
 
