@@ -68,6 +68,7 @@ class _ItisVipResourceRestData(OutputSchema):
 class LicensedItemRestGet(OutputSchema):
     licensed_item_id: LicensedItemID
     display_name: str
+    # NOTE: to put here a discriminator we have to embed it one more layer
     licensed_resource_type: LicensedResourceType
     licensed_resource_data: _ItisVipResourceRestData
     pricing_plan_id: PricingPlanId

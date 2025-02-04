@@ -9731,6 +9731,39 @@ components:
             in_1: 1
           d76fca06-f050-4790-88a8-0aac10c87b39:
             out_1: true
+    FeaturesDict:
+      properties:
+        name:
+          type: string
+          title: Name
+        version:
+          type: string
+          title: Version
+        sex:
+          type: string
+          title: Sex
+        age:
+          type: string
+          title: Age
+        weight:
+          type: string
+          title: Weight
+        height:
+          type: string
+          title: Height
+        date:
+          type: string
+          title: Date
+        ethnicity:
+          type: string
+          title: Ethnicity
+        functionality:
+          type: string
+          title: Functionality
+      type: object
+      required:
+      - date
+      title: FeaturesDict
     FileMetaData:
       properties:
         file_uuid:
@@ -10701,8 +10734,7 @@ components:
         licensedResourceType:
           $ref: '#/components/schemas/LicensedResourceType'
         licensedResourceData:
-          type: object
-          title: Licensedresourcedata
+          $ref: '#/components/schemas/_ItisVipResourceRestData'
         pricingPlanId:
           type: integer
           exclusiveMinimum: true
@@ -15476,6 +15508,49 @@ components:
       required:
       - pipeline_id
       title: _ComputationStarted
+    _ItisVipResourceRestData:
+      properties:
+        categoryId:
+          type: string
+          maxLength: 100
+          minLength: 1
+          title: Categoryid
+        categoryDisplay:
+          type: string
+          title: Categorydisplay
+        source:
+          $ref: '#/components/schemas/_ItisVipRestData'
+        termsOfUseUrl:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Termsofuseurl
+      type: object
+      required:
+      - categoryId
+      - categoryDisplay
+      - source
+      title: _ItisVipResourceRestData
+    _ItisVipRestData:
+      properties:
+        description:
+          type: string
+          title: Description
+        thumbnail:
+          type: string
+          title: Thumbnail
+        features:
+          $ref: '#/components/schemas/FeaturesDict'
+        doi:
+          type: string
+          title: Doi
+      type: object
+      required:
+      - description
+      - thumbnail
+      - features
+      - doi
+      title: _ItisVipRestData
     _PageParams:
       properties:
         expiration_2fa:
