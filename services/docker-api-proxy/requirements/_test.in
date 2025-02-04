@@ -11,6 +11,7 @@ asgi_lifespan
 docker
 faker
 fastapi
+fastapi-lifespan-manager
 flaky
 pytest
 pytest-asyncio
