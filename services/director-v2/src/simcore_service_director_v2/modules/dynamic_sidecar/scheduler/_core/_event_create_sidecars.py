@@ -8,7 +8,7 @@ from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
 from models_library.aiodocker_api import AioDockerServiceSpec
 from models_library.progress_bar import ProgressReport
-from models_library.projects import ProjectAtDB
+from models_library.projects import NodesDict
 from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeIDStr
 from models_library.rabbitmq_messages import (
@@ -35,7 +35,7 @@ from .....utils.db import get_repository
 from .....utils.dict_utils import nested_update
 from ....catalog import CatalogClient
 from ....db.repositories.groups_extra_properties import GroupsExtraPropertiesRepository
-from ....db.repositories.projects import ProjectsRepository
+from ....db.repositories.projects_nodes import ProjectsNodesRepository
 from ...docker_api import (
     constrain_service_to_node,
     create_network,
@@ -172,14 +172,14 @@ class CreateSidecars(DynamicSchedulerEvent):
         # also other encodes the env vars to target the proper container
 
         # fetching project form DB and fetching user settings
-        projects_repository = get_repository(app, ProjectsRepository)
+        project_nodes_repository = get_repository(app, ProjectsNodesRepository)
 
-        project: ProjectAtDB = await projects_repository.get_project(
+        workbench: NodesDict = await project_nodes_repository.get_nodes(
             project_id=scheduler_data.project_id
         )
 
         node_uuid_str = NodeIDStr(scheduler_data.node_uuid)
-        node: Node | None = project.workbench.get(node_uuid_str)
+        node: Node | None = workbench.get(node_uuid_str)
         boot_options = (
             node.boot_options
             if node is not None and node.boot_options is not None
