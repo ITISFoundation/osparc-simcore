@@ -128,7 +128,7 @@ qx.Class.define("osparc.desktop.organizations.ServicesList", {
             const orgServiceCopy = osparc.utils.Utils.deepCloneObject(orgService);
             orgServiceCopy["orgId"] = groupId;
             if (orgServiceCopy["thumbnail"] === null) {
-              orgServiceCopy["thumbnail"] = osparc.dashboard.CardBase.PRODUCT_ICON;
+              orgServiceCopy["thumbnail"] = osparc.dashboard.CardBase.PRODUCT_THUMBNAIL;
             }
             servicesModel.append(qx.data.marshal.Json.createModel(orgServiceCopy));
           });

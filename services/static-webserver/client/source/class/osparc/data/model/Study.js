@@ -301,20 +301,6 @@ qx.Class.define("osparc.data.model.Study", {
       return false;
     },
 
-    hasSlideshow: function(studyData) {
-      if ("ui" in studyData && "slideshow" in studyData["ui"] && Object.keys(studyData["ui"]["slideshow"]).length) {
-        return true;
-      }
-      return false;
-    },
-
-    getUiMode: function(studyData) {
-      if ("ui" in studyData && "mode" in studyData["ui"]) {
-        return studyData["ui"]["mode"];
-      }
-      return null;
-    },
-
     getOutputValue: function(studyData, nodeId, portId) {
       if ("workbench" in studyData &&
         nodeId in studyData["workbench"] &&
@@ -353,17 +339,6 @@ qx.Class.define("osparc.data.model.Study", {
         "STARTED",
         "RETRY"
       ].includes(state);
-    },
-
-    __isAnyLinkedNodeMissing: function(studyData) {
-      const existingNodeIds = Object.keys(studyData["workbench"]);
-      const linkedNodeIds = osparc.data.model.Workbench.getLinkedNodeIds(studyData["workbench"]);
-      const allExist = linkedNodeIds.every(linkedNodeId => existingNodeIds.includes(linkedNodeId));
-      return !allExist;
-    },
-
-    isCorrupt: function(studyData) {
-      return this.__isAnyLinkedNodeMissing(studyData);
     },
   },
 
