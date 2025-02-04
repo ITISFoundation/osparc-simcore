@@ -6,7 +6,7 @@ from ._utils import set_parent_app
 from .routes import router
 
 
-def setup_frontend(app: FastAPI) -> None:
+def initialize_frontend(app: FastAPI) -> None:
     settings: ApplicationSettings = app.state.settings
 
     nicegui.app.include_router(router)
