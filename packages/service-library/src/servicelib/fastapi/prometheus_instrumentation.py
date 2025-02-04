@@ -22,12 +22,12 @@ def initialize_prometheus_instrumentation(app: FastAPI) -> None:
     app.state.prometheus_instrumentator.instrument(app)
 
 
-def _startup(app: FastAPI) -> None:
+async def _startup(app: FastAPI) -> None:
     assert isinstance(app.state.prometheus_instrumentator, Instrumentator)  # nosec
     app.state.prometheus_instrumentator.expose(app, include_in_schema=False)
 
 
-def _shutdown(app: FastAPI) -> None:
+async def _shutdown(app: FastAPI) -> None:
     assert isinstance(app.state.prometheus_registry, CollectorRegistry)  # nosec
     registry = app.state.prometheus_registry
     for collector in list(registry._collector_to_names.keys()):  # noqa: SLF001
@@ -51,6 +51,6 @@ def setup_prometheus_instrumentation(app: FastAPI) -> Instrumentator:
 async def lifespan_prometheus_instrumentation(app: FastAPI) -> AsyncIterator[State]:
     # NOTE: requires ``initialize_prometheus_instrumentation`` to be called before the
     # lifespan of the applicaiton runs, usually rigth after the ``FastAPI`` instance is created
-    _startup(app)
+    await _startup(app)
     yield {}
-    _shutdown(app)
+    await _shutdown(app)
