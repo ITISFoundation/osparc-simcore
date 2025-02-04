@@ -2,7 +2,8 @@ import logging
 
 import sqlalchemy as sa
 from models_library.projects import NodesDict, ProjectID
-from models_library.projects_nodes import Node, NodeID
+from models_library.projects_nodes import Node
+from models_library.projects_nodes_io import NodeID
 from simcore_postgres_database.utils_projects_nodes import (
     ProjectNode,
     ProjectNodesNodeNotFoundError,
