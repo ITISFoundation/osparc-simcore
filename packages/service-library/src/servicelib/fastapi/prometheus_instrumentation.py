@@ -22,7 +22,7 @@ def initialize_prometheus_instrumentation(app: FastAPI) -> None:
     app.state.prometheus_instrumentator.instrument(app)
 
 
-def _setup(app: FastAPI) -> None:
+def _startup(app: FastAPI) -> None:
     assert isinstance(app.state.prometheus_instrumentator, Instrumentator)  # nosec
     app.state.prometheus_instrumentator.expose(app, include_in_schema=False)
 
@@ -42,14 +42,8 @@ def get_prometheus_instrumentator(app: FastAPI) -> Instrumentator:
 def setup_prometheus_instrumentation(app: FastAPI) -> Instrumentator:
     initialize_prometheus_instrumentation(app)
 
-    async def _on_startup() -> None:
-        _setup(app)
-
-    def _unregister() -> None:
-        _shutdown(app)
-
-    app.add_event_handler("startup", _on_startup)
-    app.add_event_handler("shutdown", _unregister)
+    app.add_event_handler("startup", _startup)
+    app.add_event_handler("shutdown", _shutdown)
 
     return get_prometheus_instrumentator(app)
 
@@ -57,6 +51,6 @@ def setup_prometheus_instrumentation(app: FastAPI) -> Instrumentator:
 async def lifespan_prometheus_instrumentation(app: FastAPI) -> AsyncIterator[State]:
     # NOTE: requires ``initialize_prometheus_instrumentation`` to be called before the
     # lifespan of the applicaiton runs, usually rigth after the ``FastAPI`` instance is created
-    _setup(app)
+    _startup(app)
     yield {}
     _shutdown(app)
