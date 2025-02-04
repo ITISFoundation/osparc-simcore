@@ -134,6 +134,7 @@ _UNKNOWN_NODE: Final[str] = "unknown node"
 @log_decorator(_logger)
 async def _get_project_metadata(
     project_id: ProjectID,
+    workbench: NodesDict,
     project_repo: ProjectsRepository,
     projects_metadata_repo: ProjectsMetadataRepository,
 ) -> ProjectMetadataDict:
@@ -154,7 +155,7 @@ async def _get_project_metadata(
         ) -> tuple[str, str]:
             prj = await project_repo.get_project(project_uuid)
             node_id_str = f"{node_id}"
-            if node_id_str not in prj.workbench:
+            if node_id_str not in workbench:
                 _logger.error(
                     "%s not found in %s. it is an ancestor of %s. Please check!",
                     f"{node_id=}",
@@ -162,7 +163,7 @@ async def _get_project_metadata(
                     f"{project_id=}",
                 )
                 return prj.name, _UNKNOWN_NODE
-            return prj.name, prj.workbench[node_id_str].label
+            return prj.name, workbench[node_id_str].label
 
         parent_project_name, parent_node_name = await _get_project_node_names(
             project_ancestors.parent_project_uuid, project_ancestors.parent_node_id
@@ -239,7 +240,7 @@ async def _try_start_pipeline(
             wallet_id=wallet_id,
             wallet_name=wallet_name,
             project_metadata=await _get_project_metadata(
-                computation.project_id, project_repo, projects_metadata_repo
+                computation.project_id, workbench, project_repo, projects_metadata_repo
             ),
         )
         or {},
