@@ -60,8 +60,8 @@ from .....modules.instrumentation import (
     track_duration,
 )
 from .....utils.db import get_repository
-from ....db.repositories.projects import ProjectsRepository
 from ....db.repositories.projects_networks import ProjectsNetworksRepository
+from ....db.repositories.projects_nodes import ProjectsNodesRepository
 from ....db.repositories.user_preferences_frontend import (
     UserPreferencesFrontendRepository,
 )
@@ -321,12 +321,12 @@ async def attempt_pod_removal_and_data_saving(
         # to try and save the data, nodeports will raise errors
         # and sidecar will hang
 
-        projects_repository: ProjectsRepository = get_repository(
-            app, ProjectsRepository
+        projects_nodes_repo: ProjectsNodesRepository = get_repository(
+            app, ProjectsNodesRepository
         )
 
-        can_really_save = await projects_repository.is_node_present_in_workbench(
-            project_id=scheduler_data.project_id, node_uuid=scheduler_data.node_uuid
+        can_really_save = await projects_nodes_repo.exists_node(
+            project_id=scheduler_data.project_id, node_id=scheduler_data.node_uuid
         )
 
     if can_really_save and scheduler_data.dynamic_sidecar.were_containers_created:

@@ -16,6 +16,9 @@ from simcore_postgres_database.utils_projects_nodes import ProjectNodesNodeNotFo
 from simcore_service_director_v2.modules.db.repositories.projects import (
     ProjectsRepository,
 )
+from simcore_service_director_v2.modules.db.repositories.projects_nodes import (
+    ProjectsNodesRepository,
+)
 from simcore_service_director_v2.utils.db import get_repository
 
 pytest_simcore_core_services_selection = [
@@ -79,23 +82,26 @@ async def project(
 
 
 async def test_is_node_present_in_workbench(
-    initialized_app: FastAPI, project: ProjectAtDB, faker: Faker
+    initialized_app: FastAPI,
+    project: ProjectAtDB,
+    workbench: dict[str, Any],
+    faker: Faker,
 ):
-    project_repository = get_repository(initialized_app, ProjectsRepository)
+    project_nodes_repo = get_repository(initialized_app, ProjectsNodesRepository)
 
-    for node_uuid in project.workbench:
+    for node_uuid in workbench:
         assert (
-            await project_repository.is_node_present_in_workbench(
-                project_id=project.uuid, node_uuid=NodeID(node_uuid)
+            await project_nodes_repo.exists_node(
+                project_id=project.uuid, node_id=NodeID(node_uuid)
             )
             is True
         )
 
     not_existing_node = faker.uuid4(cast_to=None)
-    assert not_existing_node not in project.workbench
+    assert not_existing_node not in workbench
     assert (
-        await project_repository.is_node_present_in_workbench(
-            project_id=project.uuid, node_uuid=not_existing_node
+        await project_nodes_repo.exists_node(
+            project_id=project.uuid, node_id=not_existing_node
         )
         is False
     )
@@ -103,8 +109,8 @@ async def test_is_node_present_in_workbench(
     not_existing_project = faker.uuid4(cast_to=None)
     assert not_existing_project != project.uuid
     assert (
-        await project_repository.is_node_present_in_workbench(
-            project_id=not_existing_project, node_uuid=not_existing_node
+        await project_nodes_repo.exists_node(
+            project_id=not_existing_project, node_id=not_existing_node
         )
         is False
     )
