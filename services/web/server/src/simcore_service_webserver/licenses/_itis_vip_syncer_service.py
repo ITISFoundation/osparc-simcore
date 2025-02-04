@@ -4,7 +4,7 @@ from datetime import timedelta
 
 from aiohttp import web
 from httpx import AsyncClient
-from models_library.licensed_items import LicensedResourceType
+from models_library.licenses import LicensedResourceType
 from pydantic import ValidationError
 from servicelib.async_utils import cancel_wait_task
 from servicelib.background_task_utils import exclusive_periodic

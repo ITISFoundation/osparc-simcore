@@ -2,6 +2,7 @@ import re
 from typing import Annotated, Any, Literal, NamedTuple, TypeAlias
 
 from models_library.basic_types import IDStr
+from models_library.licenses import FeaturesDict
 from pydantic import (
     BaseModel,
     BeforeValidator,
@@ -10,7 +11,6 @@ from pydantic import (
     StringConstraints,
     TypeAdapter,
 )
-from typing_extensions import TypedDict
 
 _max_str_adapter = TypeAdapter(
     Annotated[str, StringConstraints(strip_whitespace=True, max_length=1_000)]
@@ -23,19 +23,6 @@ def _feature_descriptor_to_dict(descriptor: str) -> dict[str, Any]:
     pattern = r"(\w{1,100}): ([^,]{1,100})"
     matches = re.findall(pattern, descriptor)
     return dict(matches)
-
-
-class FeaturesDict(TypedDict, total=False):
-    # All optional (for now)
-    name: str
-    version: str
-    sex: str
-    age: str
-    weight: str
-    height: str
-    date: str
-    ethnicity: str
-    functionality: str
 
 
 class ItisVipData(BaseModel):

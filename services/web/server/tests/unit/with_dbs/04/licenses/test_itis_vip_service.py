@@ -11,7 +11,7 @@ import respx
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from httpx import AsyncClient
-from models_library.licensed_items import LicensedResourceType
+from models_library.licenses import LicensedResourceType
 from pydantic import ValidationError
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.faker_factories import (

@@ -1,16 +1,12 @@
 from datetime import datetime
 from enum import auto
-from typing import Any, NamedTuple, TypeAlias, cast
+from typing import Any, NamedTuple, NotRequired, TypeAlias, cast
 from uuid import UUID
 
-from models_library.licensed_items import (
-    VIP_DETAILS_EXAMPLE,
-    LicensedItemID,
-    LicensedResourceType,
-)
 from models_library.resource_tracker import PricingPlanId
 from pydantic import BaseModel, ConfigDict, PositiveInt
 from pydantic.config import JsonDict
+from typing_extensions import TypedDict
 
 from .products import ProductName
 from .resource_tracker import PricingPlanId
@@ -23,7 +19,7 @@ class LicensedResourceType(StrAutoEnum):
     VIP_MODEL = auto()
 
 
-VIP_FEAUTES_EXAMPLE = {
+VIP_FEATURES_EXAMPLE = {
     "name": "Duke",
     "version": "V2.0",
     "sex": "Male",
@@ -36,11 +32,24 @@ VIP_FEAUTES_EXAMPLE = {
     "additional_field": "allowed",
 }
 
+
+class FeaturesDict(TypedDict):
+    name: NotRequired[str]
+    version: NotRequired[str]
+    sex: NotRequired[str]
+    age: NotRequired[str]
+    weight: NotRequired[str]
+    height: NotRequired[str]
+    date: str
+    ethnicity: NotRequired[str]
+    functionality: NotRequired[str]
+
+
 VIP_DETAILS_EXAMPLE = {
     "id": 1,
     "description": "custom description",
     "thumbnail": "custom description",
-    "features": VIP_FEAUTES_EXAMPLE,
+    "features": VIP_FEATURES_EXAMPLE,
     "doi": "custom value",
     "license_key": "custom value",
     "license_version": "custom value",
@@ -114,5 +123,5 @@ class LicensedItem(BaseModel):
 
 
 class LicensedItemPage(NamedTuple):
-    items: list[LicensedItem]
     total: PositiveInt
+    items: list[LicensedItem]

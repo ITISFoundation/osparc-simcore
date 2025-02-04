@@ -8,7 +8,7 @@ import logging
 from typing import Any, Literal, cast
 
 from aiohttp import web
-from models_library.licensed_items import (
+from models_library.licenses import (
     LicensedItemDB,
     LicensedItemID,
     LicensedItemUpdateDB,

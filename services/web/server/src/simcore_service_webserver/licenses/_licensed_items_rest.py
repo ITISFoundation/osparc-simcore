@@ -2,7 +2,7 @@ import logging
 
 from aiohttp import web
 from models_library.api_schemas_webserver.licensed_items import LicensedItemRestGet
-from models_library.licensed_items import LicensedItem, LicensedItemPage
+from models_library.licenses import LicensedItem, LicensedItemPage
 from models_library.rest_ordering import OrderBy
 from models_library.rest_pagination import Page
 from models_library.rest_pagination_utils import paginate_data

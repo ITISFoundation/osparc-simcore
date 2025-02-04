@@ -1,18 +1,18 @@
 from datetime import datetime
 from typing import Any, NamedTuple, Self, cast
 
-from models_library.licensed_items import (
+from models_library.basic_types import IDStr
+from models_library.resource_tracker import PricingPlanId
+from pydantic import BaseModel, ConfigDict, HttpUrl, PositiveInt
+from pydantic.config import JsonDict
+
+from ..licenses import (
     VIP_DETAILS_EXAMPLE,
+    FeaturesDict,
+    LicensedItem,
     LicensedItemID,
     LicensedResourceType,
 )
-from models_library.resource_tracker import PricingPlanId
-from models_library.utils.common_validators import to_camel_recursive
-from pydantic import AfterValidator, BaseModel, ConfigDict, PositiveInt
-from pydantic.config import JsonDict
-from typing_extensions import Annotated
-
-from ..licensed_items import LicensedItem
 from ._base import OutputSchema
 
 # RPC
@@ -51,13 +51,25 @@ class LicensedItemRpcGetPage(NamedTuple):
 # Rest
 
 
+class _ItisVipRestData(BaseModel):
+    description: str
+    thumbnail: str
+    features: FeaturesDict
+    doi: str
+
+
+class _ItisVipResourceRestData(OutputSchema):
+    category_id: IDStr
+    category_display: str
+    source: _ItisVipRestData
+    terms_of_use_url: HttpUrl | None = None
+
+
 class LicensedItemRestGet(OutputSchema):
     licensed_item_id: LicensedItemID
     display_name: str
     licensed_resource_type: LicensedResourceType
-    licensed_resource_data: Annotated[
-        dict[str, Any], AfterValidator(to_camel_recursive)
-    ]
+    licensed_resource_data: _ItisVipResourceRestData
     pricing_plan_id: PricingPlanId
 
     created_at: datetime
@@ -81,14 +93,17 @@ class LicensedItemRestGet(OutputSchema):
 
     @classmethod
     def from_domain_model(cls, item: LicensedItem) -> Self:
-        return cls(
-            licensed_item_id=item.licensed_item_id,
-            display_name=item.display_name,
-            licensed_resource_type=item.licensed_resource_type,
-            licensed_resource_data=item.licensed_resource_data,
-            pricing_plan_id=item.pricing_plan_id,
-            created_at=item.created_at,
-            modified_at=item.modified_at,
+
+        return cls.model_validate(
+            {
+                "licensed_item_id": item.licensed_item_id,
+                "display_name": item.display_name,
+                "licensed_resource_type": item.licensed_resource_type,
+                "licensed_resource_data": item.licensed_resource_data,
+                "pricing_plan_id": item.pricing_plan_id,
+                "created_at": item.created_at,
+                "modified_at": item.modified_at,
+            }
         )
 
 

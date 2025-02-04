@@ -8,7 +8,7 @@ from typing import NamedTuple
 
 from aiohttp import web
 from deepdiff import DeepDiff
-from models_library.licensed_items import (
+from models_library.licenses import (
     LicensedItem,
     LicensedItemDB,
     LicensedItemID,

@@ -12,7 +12,7 @@ from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
 )
 from models_library.api_schemas_webserver.licensed_items import LicensedItemRestGet
 from models_library.api_schemas_webserver.wallets import WalletGetWithAvailableCredits
-from models_library.licensed_items import VIP_DETAILS_EXAMPLE, LicensedResourceType
+from models_library.licenses import VIP_DETAILS_EXAMPLE, LicensedResourceType
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import UserInfoDict
