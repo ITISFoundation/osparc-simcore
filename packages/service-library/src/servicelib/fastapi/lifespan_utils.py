@@ -7,7 +7,7 @@ from fastapi_lifespan_manager import LifespanManager, State
 SetupGenerator: TypeAlias = Callable[[FastAPI], AsyncIterator[State]]
 
 
-def combine_setups(*generators: SetupGenerator) -> LifespanManager:
+def combine_lifespans(*generators: SetupGenerator) -> LifespanManager:
 
     manager = LifespanManager()
 
