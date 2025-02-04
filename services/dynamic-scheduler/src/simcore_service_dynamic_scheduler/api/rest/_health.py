@@ -8,7 +8,7 @@ from models_library.errors import (
     RABBITMQ_CLIENT_UNHEALTHY_MSG,
     REDIS_CLIENT_UNHEALTHY_MSG,
 )
-from servicelib.docker_utils import is_docker_api_proxy_ready
+from servicelib.fastapi.docker import is_docker_api_proxy_ready
 from servicelib.rabbitmq import RabbitMQClient, RabbitMQRPCClient
 from servicelib.redis import RedisClientSDK
 from settings_library.redis import RedisDatabase

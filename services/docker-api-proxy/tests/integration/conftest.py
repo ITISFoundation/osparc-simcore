@@ -10,7 +10,7 @@ from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
 from pydantic import Field
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
-from servicelib.docker_utils import (
+from servicelib.fastapi.docker import (
     get_lifespan_remote_docker_client,
     get_remote_docker_client,
 )

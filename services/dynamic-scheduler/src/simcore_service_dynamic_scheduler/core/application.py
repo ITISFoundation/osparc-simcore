@@ -2,7 +2,7 @@ from collections.abc import AsyncIterator
 
 from fastapi import FastAPI
 from fastapi_lifespan_manager import State
-from servicelib.docker_utils import get_lifespan_remote_docker_client
+from servicelib.fastapi.docker import get_lifespan_remote_docker_client
 from servicelib.fastapi.lifespan_utils import LifespanGenerator, combine_lifespans
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
 from servicelib.fastapi.profiler import initialize_profiler

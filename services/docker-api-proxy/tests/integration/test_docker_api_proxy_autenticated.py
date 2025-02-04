@@ -48,7 +48,7 @@ def caddy_file() -> str:
 
 @pytest.fixture
 def mock_wait_till_docker_api_proxy_is_responsive(mocker: MockerFixture) -> None:
-    mocker.patch("servicelib.docker_utils.wait_till_docker_api_proxy_is_responsive")
+    mocker.patch("servicelib.fastapi.docker.wait_till_docker_api_proxy_is_responsive")
 
 
 @pytest.fixture

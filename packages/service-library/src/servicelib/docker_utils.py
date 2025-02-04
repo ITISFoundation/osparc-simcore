@@ -1,6 +1,5 @@
-import asyncio
 import logging
-from collections.abc import AsyncIterator, Awaitable, Callable
+from collections.abc import Awaitable, Callable
 from contextlib import AsyncExitStack
 from dataclasses import dataclass
 from datetime import datetime
@@ -8,25 +7,11 @@ from functools import cached_property
 from typing import Any, Final, Literal
 
 import aiodocker
-import aiohttp
 import arrow
-import tenacity
-from aiohttp import ClientSession
-from fastapi import FastAPI
-from fastapi_lifespan_manager import State
 from models_library.docker import DockerGenericTag
 from models_library.generated_models.docker_rest_api import ProgressDetail
 from models_library.utils.change_case import snake_to_camel
-from pydantic import (
-    BaseModel,
-    ByteSize,
-    ConfigDict,
-    NonNegativeInt,
-    TypeAdapter,
-    ValidationError,
-)
-from servicelib.fastapi.lifespan_utils import LifespanGenerator
-from settings_library.docker_api_proxy import DockerApiProxysettings
+from pydantic import BaseModel, ByteSize, ConfigDict, TypeAdapter, ValidationError
 from settings_library.docker_registry import RegistrySettings
 from yarl import URL
 
@@ -34,8 +19,6 @@ from .logging_utils import LogLevelInt
 from .progress_bar import ProgressBarData
 
 _logger = logging.getLogger(__name__)
-
-_DEFAULT_DOCKER_API_PROXY_HEALTH_TIMEOUT: Final[NonNegativeInt] = 5
 
 
 def to_datetime(docker_timestamp: str) -> datetime:
@@ -298,79 +281,3 @@ async def pull_image(
                 f"pulling {image_short_name}: {pull_progress}...",
                 logging.DEBUG,
             )
-
-
-def get_lifespan_remote_docker_client(
-    docker_api_proxy_settings_property_name: str,
-) -> LifespanGenerator:
-    """Ensures `setup` and `teardown` for the remote docker client.
-
-    Arguments:
-        docker_api_proxy_settings_property_name -- if the name is `PROP_NAME`
-        then it should be accessible as `app.state.settings.PROP_NAME`
-
-    Returns:
-        docker client lifespan manager
-    """
-
-    async def _(app: FastAPI) -> AsyncIterator[State]:
-        settings: DockerApiProxysettings = getattr(
-            app.state.settings, docker_api_proxy_settings_property_name
-        )
-
-        session: ClientSession | None = None
-        if settings.DOCKER_API_PROXY_USER and settings.DOCKER_API_PROXY_PASSWORD:
-            session = ClientSession(
-                auth=aiohttp.BasicAuth(
-                    login=settings.DOCKER_API_PROXY_USER,
-                    password=settings.DOCKER_API_PROXY_PASSWORD.get_secret_value(),
-                )
-            )
-
-        async with AsyncExitStack() as exit_stack:
-            if settings.DOCKER_API_PROXY_USER and settings.DOCKER_API_PROXY_PASSWORD:
-                await exit_stack.enter_async_context(
-                    ClientSession(
-                        auth=aiohttp.BasicAuth(
-                            login=settings.DOCKER_API_PROXY_USER,
-                            password=settings.DOCKER_API_PROXY_PASSWORD.get_secret_value(),
-                        )
-                    )
-                )
-
-            client = await exit_stack.enter_async_context(
-                aiodocker.Docker(url=settings.base_url, session=session)
-            )
-
-            app.state.remote_docker_client = client
-
-            await wait_till_docker_api_proxy_is_responsive(app)
-
-            yield {}
-
-    return _
-
-
-@tenacity.retry(
-    wait=tenacity.wait_fixed(5),
-    stop=tenacity.stop_after_delay(60),
-    before_sleep=tenacity.before_sleep_log(_logger, logging.INFO),
-    reraise=True,
-)
-async def wait_till_docker_api_proxy_is_responsive(app: FastAPI) -> None:
-    await is_docker_api_proxy_ready(app)
-
-
-async def is_docker_api_proxy_ready(
-    app: FastAPI, *, timeout=_DEFAULT_DOCKER_API_PROXY_HEALTH_TIMEOUT  # noqa: ASYNC109
-) -> bool:
-    try:
-        await asyncio.wait_for(get_remote_docker_client(app).version(), timeout=timeout)
-    except (aiodocker.DockerError, TimeoutError):
-        return False
-    return True
-
-
-def get_remote_docker_client(app: FastAPI) -> aiodocker.Docker:
-    assert isinstance(app.state.remote_docker_client, aiodocker.Docker)  # nosec
-    return app.state.remote_docker_client
