@@ -144,6 +144,8 @@ qx.Class.define("osparc.file.FolderContent", {
         };
         datas.push(data);
       });
+      // folders first
+      datas.sort((a, b) => osparc.file.FilesTree.isFile(a.entry) - osparc.file.FilesTree.isFile(b.entry));
       const items = [];
       if (this.getMode() === "list") {
         datas.forEach(data => {
