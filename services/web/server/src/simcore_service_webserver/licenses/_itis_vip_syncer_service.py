@@ -1,11 +1,11 @@
 import asyncio
+import datetime
 import logging
 from datetime import timedelta
 
 from aiohttp import web
 from httpx import AsyncClient
 from models_library.licenses import LicensedResourceType
-from pydantic import ValidationError
 from servicelib.async_utils import cancel_wait_task
 from servicelib.background_task_utils import exclusive_periodic
 from servicelib.logging_utils import log_catch, log_context
@@ -89,46 +89,42 @@ async def sync_resources_with_licensed_items(
 _BACKGROUND_TASK_NAME = f"{__name__}.itis_vip_syncer_cleanup_ctx._periodic_sync"
 
 
-def setup_itis_vip_syncer(app: web.Application):
-    categories = []
-
-    try:
-        settings = ItisVipSettings.create_from_envs()
-        categories = settings.to_categories()
-
-    except ValidationError as err:
-        _logger.warning("IT'IS VIP syncer disabled. Skipping. %s", err)
+def setup_itis_vip_syncer(
+    app: web.Application, settings: ItisVipSettings, resync_after: datetime.timedelta
+):
+    categories = settings.to_categories()
+    if not categories:
+        _logger.warning(
+            "Skipping setup_itis_vip_syncer. %s did not provide any category", settings
+        )
         return
 
-    if categories:
+    setup_redis(app)
 
-        async def _cleanup_ctx(app_: web.Application):
-            with (
-                log_context(
-                    _logger,
-                    logging.INFO,
-                    f"IT'IS VIP syncing {len(categories)} categories",
-                ),
-                log_catch(_logger, reraise=False),
-            ):
+    async def _lifespan(app_: web.Application):
+        with (
+            log_context(
+                _logger,
+                logging.INFO,
+                f"IT'IS VIP syncing {len(categories)} categories",
+            ),
+            log_catch(_logger, reraise=False),
+        ):
 
-                @exclusive_periodic(
-                    get_redis_lock_manager_client_sdk(app_),
-                    task_interval=timedelta(minutes=1),
-                    retry_after=timedelta(minutes=2),
-                )
-                async def _periodic_sync() -> None:
-                    await sync_resources_with_licensed_items(
-                        app_, categories=categories
-                    )
+            @exclusive_periodic(
+                get_redis_lock_manager_client_sdk(app_),
+                task_interval=resync_after,
+                retry_after=timedelta(minutes=2),
+            )
+            async def _periodic_sync() -> None:
+                await sync_resources_with_licensed_items(app_, categories=categories)
 
-                background_task = asyncio.create_task(
-                    _periodic_sync(), name=_BACKGROUND_TASK_NAME
-                )
+            background_task = asyncio.create_task(
+                _periodic_sync(), name=_BACKGROUND_TASK_NAME
+            )
 
-                yield
+            yield
 
-                await cancel_wait_task(background_task)
+            await cancel_wait_task(background_task)
 
-        setup_redis(app)
-        app.cleanup_ctx.append(_cleanup_ctx)
+    app.cleanup_ctx.append(_lifespan)

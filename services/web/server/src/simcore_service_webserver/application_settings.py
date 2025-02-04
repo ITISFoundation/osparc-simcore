@@ -26,6 +26,7 @@ from settings_library.redis import RedisSettings
 from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
 from settings_library.utils_service import DEFAULT_AIOHTTP_PORT
+from simcore_service_webserver.licenses.settings import LicensesSettings
 
 from ._constants import APP_SETTINGS_KEY
 from ._meta import API_VERSION, API_VTAG, APP_NAME
@@ -231,6 +232,13 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         ),
     ]
 
+    WEBSERVER_LICENSES: Annotated[
+        LicensesSettings | None,
+        Field(
+            json_schema_extra={"auto_default_from_env": True},
+        ),
+    ]
+
     WEBSERVER_LOGIN: Annotated[
         LoginSettings | None,
         Field(
@@ -349,7 +357,6 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     WEBSERVER_DB_LISTENER: bool = True
     WEBSERVER_FOLDERS: bool = True
     WEBSERVER_GROUPS: bool = True
-    WEBSERVER_LICENSES: bool = False
     WEBSERVER_META_MODELING: bool = True
     WEBSERVER_NOTIFICATIONS: bool = True
     WEBSERVER_PRODUCTS: bool = True
@@ -520,7 +527,6 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
                 "SIMCORE_VCS_RELEASE_TAG": True,
                 "SIMCORE_VCS_RELEASE_URL": True,
                 "SWARM_STACK_NAME": True,
-                "WEBSERVER_LICENSES": True,
                 "WEBSERVER_LOGIN": {
                     "LOGIN_ACCOUNT_DELETION_RETENTION_DAYS",
                     "LOGIN_2FA_REQUIRED",
