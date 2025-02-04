@@ -1,13 +1,16 @@
-from collections.abc import AsyncIterator, Callable
-from typing import TypeAlias
+from collections.abc import AsyncIterator
+from typing import Protocol
 
 from fastapi import FastAPI
 from fastapi_lifespan_manager import LifespanManager, State
 
-SetupGenerator: TypeAlias = Callable[[FastAPI], AsyncIterator[State]]
+
+class LifespanGenerator(Protocol):
+    def __call__(self, app: FastAPI) -> AsyncIterator["State"]:
+        ...
 
 
-def combine_lifespans(*generators: SetupGenerator) -> LifespanManager:
+def combine_lifespans(*generators: LifespanGenerator) -> LifespanManager:
 
     manager = LifespanManager()
 

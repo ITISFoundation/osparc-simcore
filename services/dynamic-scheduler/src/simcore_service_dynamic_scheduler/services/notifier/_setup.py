@@ -1,7 +1,7 @@
-from servicelib.fastapi.lifespan_utils import SetupGenerator
+from servicelib.fastapi.lifespan_utils import LifespanGenerator
 
 from . import _notifier, _socketio
 
 
-def get_notifier_lifespans() -> list[SetupGenerator]:
+def get_notifier_lifespans() -> list[LifespanGenerator]:
     return [_socketio.lifespan, _notifier.lifespan]

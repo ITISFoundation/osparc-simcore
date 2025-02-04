@@ -17,7 +17,7 @@ from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
-from servicelib.fastapi.lifespan_utils import SetupGenerator
+from servicelib.fastapi.lifespan_utils import LifespanGenerator
 from servicelib.logging_utils import log_context
 from settings_library.tracing import TracingSettings
 from yarl import URL
@@ -136,7 +136,7 @@ def setup_tracing(
 
 def get_lifespan_tracing(
     tracing_settings: TracingSettings, service_name: str
-) -> SetupGenerator:
+) -> LifespanGenerator:
     async def _(app: FastAPI) -> AsyncIterator[State]:
         setup_tracing(app, tracing_settings, service_name)
         yield {}

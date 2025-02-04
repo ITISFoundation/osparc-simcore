@@ -2,7 +2,7 @@ from collections.abc import AsyncIterator
 
 from fastapi import FastAPI
 from fastapi_lifespan_manager import State
-from servicelib.fastapi.lifespan_utils import SetupGenerator, combine_lifespans
+from servicelib.fastapi.lifespan_utils import LifespanGenerator, combine_lifespans
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
 from servicelib.fastapi.profiler import initialize_profiler
 from servicelib.fastapi.prometheus_instrumentation import (
@@ -43,7 +43,7 @@ async def _lifespan_banner(_: FastAPI) -> AsyncIterator[State]:
 def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
     app_settings = settings or ApplicationSettings.create_from_envs()
 
-    lifespans: list[SetupGenerator] = [
+    lifespans: list[LifespanGenerator] = [
         lifespan_director_v2,
         lifespan_director_v0,
         lifespan_rabbitmq,
