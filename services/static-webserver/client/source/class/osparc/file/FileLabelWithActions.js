@@ -108,23 +108,11 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
 
     setItemSelected: function(selectedItem) {
       if (selectedItem) {
+        this.__selection = [selectedItem];
         const isFile = osparc.file.FilesTree.isFile(selectedItem);
         this.getChildControl("download-button").setEnabled(isFile);
-        this.getChildControl("delete-button").setEnabled(isFile);
-        const selectedLabel = this.getChildControl("selected-label");
-        if (isFile) {
-          this.__selection = [selectedItem];
-          selectedLabel.set({
-            value: selectedItem.getLabel(),
-            toolTipText: selectedItem.getFileId()
-          });
-        } else {
-          this.__selection = [];
-          selectedLabel.set({
-            value: "",
-            toolTipText: ""
-          });
-        }
+        this.getChildControl("delete-button").setEnabled(true); // folders can also be deleted
+        this.getChildControl("selected-label").setValue(selectedItem.getLabel());
       } else {
         this.resetSelection();
       }
@@ -138,7 +126,7 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
         } else {
           const selectedLabel = this.getChildControl("selected-label");
           selectedLabel.set({
-            value: multiSelectionData.length + " files"
+            value: multiSelectionData.length + " items"
           });
         }
       } else {
@@ -172,8 +160,13 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
       if (this.isMultiSelect()) {
         const requests = [];
         this.__selection.forEach(selection => {
-          if (selection && osparc.file.FilesTree.isFile(selection)) {
-            const request = this.__deleteFile(selection);
+          if (selection) {
+            let request = null;
+            if (osparc.file.FilesTree.isFile(selection)) {
+              request = this.__deleteFile(selection);
+            } else {
+              request = this.__deleteFolder(selection);
+            }
             if (request) {
               requests.push(request);
             }
@@ -189,8 +182,13 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
         requests
       } else if (this.__selection.length) {
         const selection = this.__selection[0];
-        if (selection && osparc.file.FilesTree.isFile(selection)) {
-          const request = this.__deleteFile(selection);
+        if (selection) {
+          let request = null;
+          if (osparc.file.FilesTree.isFile(selection)) {
+            request = this.__deleteFile(selection);
+          } else {
+            request = this.__deleteFolder(selection);
+          }
           if (request) {
             request
               .then(data => {
@@ -217,11 +215,22 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
       const fileId = file.getFileId();
       const locationId = file.getLocation();
       if (locationId !== 0 && locationId !== "0") {
-        osparc.FlashMessenger.getInstance().logAs(this.tr("Only files in simcore.s3 can be deleted"));
+        osparc.FlashMessenger.getInstance().logAs(this.tr("Only items in simcore.s3 can be deleted"));
         return null;
       }
       const dataStore = osparc.store.Data.getInstance();
       return dataStore.deleteFile(locationId, fileId);
+    },
+
+    __deleteFolder: function(folder) {
+      const path = folder.getPath();
+      const locationId = folder.getLocation();
+      if (locationId !== 0 && locationId !== "0") {
+        osparc.FlashMessenger.getInstance().logAs(this.tr("Only items in simcore.s3 can be deleted"));
+        return null;
+      }
+      const dataStore = osparc.store.Data.getInstance();
+      return dataStore.deleteFile(locationId, path);
     },
   }
 });
