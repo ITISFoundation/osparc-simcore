@@ -176,7 +176,7 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
           .then(datas => {
             if (datas.length) {
               this.fireDataEvent("fileDeleted", datas[0]);
-              osparc.FlashMessenger.getInstance().logAs(this.tr("Files successfully deleted"), "INFO");
+              osparc.FlashMessenger.getInstance().logAs(this.tr("Items successfully deleted"), "INFO");
             }
           });
         requests
@@ -193,7 +193,7 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
             request
               .then(data => {
                 this.fireDataEvent("fileDeleted", data);
-                osparc.FlashMessenger.getInstance().logAs(this.tr("File successfully deleted"), "INFO");
+                osparc.FlashMessenger.getInstance().logAs(this.tr("Item successfully deleted"), "INFO");
               });
           }
         }
