@@ -60,6 +60,7 @@ from .....utils.computations import to_node_class
 from ....catalog import CatalogClient
 from ....comp_scheduler._utils import COMPLETED_STATES
 from ...tables import NodeClass
+from ..projects_nodes import NodesDict
 
 _logger = logging.getLogger(__name__)
 
@@ -331,6 +332,7 @@ async def _update_project_node_resources_from_hardware_info(
 async def generate_tasks_list_from_project(
     *,
     project: ProjectAtDB,
+    workbench: NodesDict,
     catalog_client: CatalogClient,
     published_nodes: list[NodeID],
     user_id: UserID,
@@ -346,7 +348,7 @@ async def generate_tasks_list_from_project(
         ServiceKeyVersion(
             key=node.key, version=node.version
         )  # the service key version is frozen
-        for node in project.workbench.values()
+        for node in workbench.values()
     }
 
     key_version_to_node_infos = {
@@ -359,8 +361,8 @@ async def generate_tasks_list_from_project(
         for key_version in unique_service_key_versions
     }
 
-    for internal_id, node_id in enumerate(project.workbench, 1):
-        node: Node = project.workbench[node_id]
+    for internal_id, node_id in enumerate(workbench, start=1):
+        node: Node = workbench[node_id]
         node_key_version = ServiceKeyVersion(key=node.key, version=node.version)
         node_details, node_extras, node_labels = key_version_to_node_infos.get(
             node_key_version,

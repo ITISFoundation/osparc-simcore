@@ -27,7 +27,7 @@ from models_library.api_schemas_directorv2.comp_tasks import (
     ComputationGet,
     ComputationStop,
 )
-from models_library.projects import ProjectAtDB, ProjectID
+from models_library.projects import NodesDict, ProjectAtDB, ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
 from models_library.services import ServiceKeyVersion
@@ -38,6 +38,9 @@ from servicelib.async_utils import run_sequentially_in_context
 from servicelib.logging_utils import log_decorator
 from servicelib.rabbitmq import RabbitMQRPCClient
 from simcore_postgres_database.utils_projects_metadata import DBProjectNotFoundError
+from simcore_service_director_v2.modules.db.repositories.projects_nodes import (
+    ProjectsNodesRepository,
+)
 from starlette import status
 from starlette.requests import Request
 from tenacity import retry
@@ -196,6 +199,7 @@ async def _try_start_pipeline(
     complete_dag: nx.DiGraph,
     minimal_dag: nx.DiGraph,
     project: ProjectAtDB,
+    workbench: NodesDict,
     users_repo: UsersRepository,
     projects_metadata_repo: ProjectsMetadataRepository,
 ) -> None:
@@ -226,7 +230,7 @@ async def _try_start_pipeline(
         run_metadata=RunMetadataDict(
             node_id_names_map={
                 NodeID(node_idstr): node_data.label
-                for node_idstr, node_data in project.workbench.items()
+                for node_idstr, node_data in workbench.items()
             },
             product_name=computation.product_name,
             project_name=project.name,
@@ -273,6 +277,9 @@ async def create_computation(  # noqa: PLR0913 # pylint: disable=too-many-positi
     project_repo: Annotated[
         ProjectsRepository, Depends(get_repository(ProjectsRepository))
     ],
+    project_nodes_repo: Annotated[
+        ProjectsNodesRepository, Depends(get_repository(ProjectsNodesRepository))
+    ],
     comp_pipelines_repo: Annotated[
         CompPipelinesRepository, Depends(get_repository(CompPipelinesRepository))
     ],
@@ -302,8 +309,12 @@ async def create_computation(  # noqa: PLR0913 # pylint: disable=too-many-positi
         # check if current state allow to modify the computation
         await _check_pipeline_not_running_or_raise_409(comp_tasks_repo, computation)
 
+        workbench: NodesDict = await project_nodes_repo.get_nodes(
+            computation.project_id
+        )
+
         # create the complete DAG graph
-        complete_dag = create_complete_dag(project.workbench)
+        complete_dag = create_complete_dag(workbench)
         # find the minimal viable graph to be run
         minimal_computational_dag: nx.DiGraph = (
             await create_minimal_computational_graph_based_on_selection(
@@ -330,6 +341,7 @@ async def create_computation(  # noqa: PLR0913 # pylint: disable=too-many-positi
         ]
         comp_tasks = await comp_tasks_repo.upsert_tasks_from_project(
             project=project,
+            workbench=workbench,
             catalog_client=catalog_client,
             published_nodes=min_computation_nodes if computation.start_pipeline else [],
             user_id=computation.user_id,
@@ -347,6 +359,7 @@ async def create_computation(  # noqa: PLR0913 # pylint: disable=too-many-positi
                 complete_dag=complete_dag,
                 minimal_dag=minimal_computational_dag,
                 project=project,
+                workbench=workbench,
                 users_repo=users_repo,
                 projects_metadata_repo=projects_metadata_repo,
             )
