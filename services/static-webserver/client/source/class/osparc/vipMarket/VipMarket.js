@@ -275,9 +275,11 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
       const sortModel = sortBy => {
         models.sort((a, b) => {
           // first criteria
-          if (b["purchases"].length !== a["purchases"].length) {
-            // leased first
-            return b["purchases"].length - a["purchases"].length;
+          const nASeats = osparc.store.LicensedItems.purchasesToNSeats(a["purchases"]);
+          const nBSeats = osparc.store.LicensedItems.purchasesToNSeats(b["purchases"]);
+          if (nASeats !== nBSeats) {
+            // nSeats first
+            return nASeats - nBSeats;
           }
           // second criteria
           if (sortBy) {

@@ -174,10 +174,7 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelListItem", {
 
     __applyPurchases: function(purchases) {
       const nSeatsLabel = this.getChildControl("n-seats");
-      let nSeats = 0;
-      purchases.forEach(purchase => {
-        nSeats += purchase.getNumberOfSeats();
-      });
+      const nSeats = osparc.store.LicensedItems.purchasesToNSeats(purchases);
       if (nSeats) {
         nSeatsLabel.setValue(`(${nSeats})`);
       } else {
