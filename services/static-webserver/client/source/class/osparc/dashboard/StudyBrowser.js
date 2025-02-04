@@ -1725,16 +1725,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       return renameButton;
     },
 
-    __updateName: function(studyData, name) {
-      osparc.info.StudyUtils.patchStudyData(studyData, "name", name)
-        .then(() => this._updateStudyData(studyData))
-        .catch(err => {
-          console.error(err);
-          const msg = err.message || this.tr("Something went wrong Renaming");
-          osparc.FlashMessenger.logAs(msg, "ERROR");
-        });
-    },
-
     __getThumbnailStudyMenuButton: function(studyData) {
       const thumbButton = new qx.ui.menu.Button(this.tr("Thumbnail..."), "@FontAwesome5Solid/image/12");
       thumbButton.addListener("execute", () => {
@@ -1756,8 +1746,18 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       return thumbButton;
     },
 
+    __updateName: function(studyData, name) {
+      osparc.store.Study.patchStudyData(studyData, "name", name)
+        .then(() => this._updateStudyData(studyData))
+        .catch(err => {
+          console.error(err);
+          const msg = err.message || this.tr("Something went wrong Renaming");
+          osparc.FlashMessenger.logAs(msg, "ERROR");
+        });
+    },
+
     __updateThumbnail: function(studyData, url) {
-      osparc.info.StudyUtils.patchStudyData(studyData, "thumbnail", url)
+      osparc.store.Study.patchStudyData(studyData, "thumbnail", url)
         .then(() => this._updateStudyData(studyData))
         .catch(err => {
           console.error(err);
@@ -1866,7 +1866,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __getConvertToPipelineMenuButton: function(studyData) {
       const convertToPipelineButton = new qx.ui.menu.Button(this.tr("Convert to Pipeline"), null);
       convertToPipelineButton["convertToPipelineButton"] = true;
-      const uiMode = osparc.data.model.Study.getUiMode(studyData);
+      const uiMode = osparc.study.Utils.getUiMode(studyData);
       convertToPipelineButton.setVisibility(uiMode === "standalone" ? "visible" : "excluded");
       convertToPipelineButton.addListener("execute", () => {
         this.__updateUIMode(studyData, "workbench")
@@ -2165,7 +2165,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       // remove me from collaborators
       const myGid = osparc.auth.Data.getInstance().getGroupId();
       delete arCopy[myGid];
-      return osparc.info.StudyUtils.patchStudyData(studyData, "accessRights", arCopy);
+      return osparc.store.Study.patchStudyData(studyData, "accessRights", arCopy);
     },
 
     __doDeleteStudy: function(studyData) {

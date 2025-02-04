@@ -34,9 +34,9 @@ qx.Class.define("osparc.auth.LoginPageS4L", {
     _getBackgroundImage: function() {
       let backgroundImage = "";
 
-      const defaultBG = `url(${osparc.product.Utils.getProductBackgroundUrl("Sim4Life-head-default.png")}), url(${osparc.product.Utils.getProductBackgroundUrl("clouds_11.png")})`;
-      const liteBG = `url(${osparc.product.Utils.getProductBackgroundUrl("Sim4Life-head-lite.png")}), url(${osparc.product.Utils.getProductBackgroundUrl("clouds_11.png")})`;
-      const academyBG = `url(${osparc.product.Utils.getProductBackgroundUrl("Sim4Life-head-academy.png")}), url(${osparc.product.Utils.getProductBackgroundUrl("clouds_11.png")})`;
+      const defaultBG = `url(${osparc.product.Utils.getBackgroundUrl("Sim4Life-head-default.png")}), url(${osparc.product.Utils.getBackgroundUrl("clouds_11.png")})`;
+      const liteBG = `url(${osparc.product.Utils.getBackgroundUrl("Sim4Life-head-lite.png")}), url(${osparc.product.Utils.getBackgroundUrl("clouds_11.png")})`;
+      const academyBG = `url(${osparc.product.Utils.getBackgroundUrl("Sim4Life-head-academy.png")}), url(${osparc.product.Utils.getBackgroundUrl("clouds_11.png")})`;
 
       switch (osparc.product.Utils.getProductName()) {
         case "s4llite":

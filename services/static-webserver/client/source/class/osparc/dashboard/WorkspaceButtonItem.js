@@ -161,7 +161,7 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
       workspace.bind("workspaceId", this, "workspaceId");
       workspace.bind("name", this, "title");
       workspace.bind("description", this, "description");
-      workspace.bind("thumbnail", this, "icon", {
+      workspace.bind("thumbnail", this, "thumbnail", {
         converter: thumbnail => thumbnail ? thumbnail : osparc.store.Workspaces.iconPath(-1)
       });
       workspace.bind("accessRights", this, "accessRights");

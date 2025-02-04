@@ -61,7 +61,7 @@ qx.Class.define("osparc.dashboard.GridButtonNew", {
       descLabel.setValue(description.toString());
     }
 
-    this.setIcon(osparc.dashboard.CardBase.NEW_ICON);
+    this.setThumbnail(osparc.dashboard.CardBase.NEW_ICON);
 
     this.getChildControl("footer").exclude();
   },

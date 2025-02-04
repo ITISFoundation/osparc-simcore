@@ -51,11 +51,11 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonBase", {
       nullable: true
     },
 
-    icon: {
+    thumbnail: {
       check: "String",
       init: null,
       nullable: true,
-      apply: "_applyIcon",
+      apply: "__applyThumbnail",
     },
 
     resourceType: {
@@ -184,7 +184,7 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonBase", {
             flex: 1
           });
           break;
-        case "icon": {
+        case "thumbnail": {
           layout = this.getChildControl("body");
           const maxWidth = this.self().ITEM_WIDTH;
           control = new osparc.ui.basic.Thumbnail(null, maxWidth, 124);
@@ -269,9 +269,8 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonBase", {
       return layout;
     },
 
-    // overridden
-    _applyIcon: function(value) {
-      const image = this.getChildControl("icon").getChildControl("image");
+    __applyThumbnail: function(value) {
+      const image = this.getChildControl("thumbnail").getChildControl("image");
       if (
         value.includes("@FontAwesome5Solid/") ||
         value.includes("@MaterialIcons/")

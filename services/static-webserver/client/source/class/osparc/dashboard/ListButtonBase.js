@@ -66,7 +66,7 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
       let control;
       switch (id) {
         case "icon": {
-          control = new osparc.ui.basic.Thumbnail(null, this.self().ITEM_HEIGHT, this.self().ITEM_HEIGHT-2*5).set({
+          control = new osparc.ui.basic.Thumbnail(null, this.self().ITEM_HEIGHT, this.self().ITEM_HEIGHT).set({
             minHeight: this.self().ITEM_HEIGHT,
             minWidth: this.self().ITEM_HEIGHT
           });
@@ -135,13 +135,20 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
     },
 
     _applyIcon: function(value, old) {
-      if (value.includes("@FontAwesome5Solid/")) {
-        value += "22";
+      if (value) {
+        if (value.includes("@FontAwesome5Solid/")) {
+          value += "22";
+        }
+        const image = this.getChildControl("icon").getChildControl("image");
+        image.set({
+          source: value
+        });
       }
-      const image = this.getChildControl("icon").getChildControl("image");
-      image.set({
-        source: value
-      });
+    },
+
+    _applyThumbnail: function(value, old) {
+      // do not shot thumbnail in list button, icon takes over
+      return;
     },
 
     _applyTitle: function(value, old) {
@@ -150,7 +157,7 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
     },
 
     _applyDescription: function(value, old) {
-      return
+      return;
     }
   },
 

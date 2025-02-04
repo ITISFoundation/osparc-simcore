@@ -33,10 +33,10 @@ qx.Class.define("osparc.desktop.credits.CreditsServiceListItem", {
     const name = this.getChildControl("title");
     const serviceMetadata = osparc.service.Utils.getLatest(serviceKey);
     if (serviceMetadata) {
-      icon.setSource(serviceMetadata["thumbnail"] ? serviceMetadata["thumbnail"] : osparc.dashboard.CardBase.PRODUCT_ICON);
+      icon.setSource(serviceMetadata["thumbnail"] ? serviceMetadata["thumbnail"] : osparc.dashboard.CardBase.PRODUCT_THUMBNAIL);
       name.setValue(serviceMetadata["name"]);
     } else {
-      icon.setSource(osparc.dashboard.CardBase.PRODUCT_ICON);
+      icon.setSource(osparc.dashboard.CardBase.PRODUCT_THUMBNAIL);
       const serviceName = serviceKey.split("/").pop();
       name.setValue(serviceName);
     }

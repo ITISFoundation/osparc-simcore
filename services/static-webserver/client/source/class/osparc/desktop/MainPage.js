@@ -236,7 +236,7 @@ qx.Class.define("osparc.desktop.MainPage", {
           }
           task.addListener("resultReceived", e => {
             const templateData = e.getData();
-            osparc.info.StudyUtils.addCollaborators(templateData, data["accessRights"]);
+            osparc.store.Study.addCollaborators(templateData, data["accessRights"]);
           });
         })
         .catch(errMsg => {
