@@ -1,24 +1,20 @@
-from collections.abc import AsyncGenerator, Callable
-from contextlib import AsyncExitStack, asynccontextmanager
-from typing import AsyncContextManager, TypeAlias
+from collections.abc import AsyncIterator
+from typing import Protocol
 
 from fastapi import FastAPI
+from fastapi_lifespan_manager import LifespanManager, State
 
-LifespanContextManager: TypeAlias = Callable[[FastAPI], AsyncContextManager[None]]
+
+class LifespanGenerator(Protocol):
+    def __call__(self, app: FastAPI) -> AsyncIterator["State"]:
+        ...
 
 
-def combine_lfiespan_context_managers(
-    *context_managers: LifespanContextManager,
-) -> LifespanContextManager:
-    """the first entry has its `setup` called first and its `teardown` called last
-    With `setup` and `teardown` referring to the code before and after the `yield`
-    """
+def combine_lifespans(*generators: LifespanGenerator) -> LifespanManager:
 
-    @asynccontextmanager
-    async def _(app: FastAPI) -> AsyncGenerator[None, None]:
-        async with AsyncExitStack() as stack:
-            for context_manager in context_managers:
-                await stack.enter_async_context(context_manager(app))
-            yield
+    manager = LifespanManager()
 
-    return _
+    for generator in generators:
+        manager.add(generator)
+
+    return manager

@@ -1,32 +1,30 @@
 from collections.abc import AsyncIterator
-from contextlib import asynccontextmanager
 
+import asgi_lifespan
 import pytest
-from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
-from servicelib.fastapi.lifespan_utils import combine_lfiespan_context_managers
+from fastapi_lifespan_manager import State
+from servicelib.fastapi.lifespan_utils import combine_lifespans
 
 
 async def test_multiple_lifespan_managers(capsys: pytest.CaptureFixture):
-    @asynccontextmanager
-    async def database_lifespan(_: FastAPI) -> AsyncIterator[None]:
+    async def database_lifespan(app: FastAPI) -> AsyncIterator[State]:
+        _ = app
         print("setup DB")
-        yield
+        yield {}
         print("shutdown  DB")
 
-    @asynccontextmanager
-    async def cache_lifespan(_: FastAPI) -> AsyncIterator[None]:
+    async def cache_lifespan(app: FastAPI) -> AsyncIterator[State]:
+        _ = app
         print("setup CACHE")
-        yield
+        yield {}
         print("shutdown CACHE")
 
-    app = FastAPI(
-        lifespan=combine_lfiespan_context_managers(database_lifespan, cache_lifespan)
-    )
+    app = FastAPI(lifespan=combine_lifespans(database_lifespan, cache_lifespan))
 
     capsys.readouterr()
 
-    async with LifespanManager(app):
+    async with asgi_lifespan.LifespanManager(app):
         messages = capsys.readouterr().out
 
         assert "setup DB" in messages

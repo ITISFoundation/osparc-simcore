@@ -37,7 +37,7 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonNew", {
     const title = this.getChildControl("title");
     title.setValue(this.tr("New Workspace"));
 
-    this.setIcon(osparc.dashboard.CardBase.NEW_ICON);
+    this.setThumbnail(osparc.dashboard.CardBase.NEW_ICON);
 
     this.getChildControl("header").set({
       opacity: 1

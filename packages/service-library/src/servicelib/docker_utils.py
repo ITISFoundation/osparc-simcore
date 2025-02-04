@@ -1,11 +1,11 @@
 import asyncio
 import logging
 from collections.abc import AsyncIterator, Awaitable, Callable
-from contextlib import AsyncExitStack, asynccontextmanager
+from contextlib import AsyncExitStack
 from dataclasses import dataclass
 from datetime import datetime
 from functools import cached_property
-from typing import Any, AsyncContextManager, Final, Literal
+from typing import Any, Final, Literal
 
 import aiodocker
 import aiohttp
@@ -13,6 +13,7 @@ import arrow
 import tenacity
 from aiohttp import ClientSession
 from fastapi import FastAPI
+from fastapi_lifespan_manager import State
 from models_library.docker import DockerGenericTag
 from models_library.generated_models.docker_rest_api import ProgressDetail
 from models_library.utils.change_case import snake_to_camel
@@ -24,6 +25,7 @@ from pydantic import (
     TypeAdapter,
     ValidationError,
 )
+from servicelib.fastapi.lifespan_utils import LifespanGenerator
 from settings_library.docker_api_proxy import DockerApiProxysettings
 from settings_library.docker_registry import RegistrySettings
 from yarl import URL
@@ -300,7 +302,7 @@ async def pull_image(
 
 def get_lifespan_remote_docker_client(
     docker_api_proxy_settings_property_name: str,
-) -> Callable[[FastAPI], AsyncContextManager[None]]:
+) -> LifespanGenerator:
     """Ensures `setup` and `teardown` for the remote docker client.
 
     Arguments:
@@ -311,8 +313,7 @@ def get_lifespan_remote_docker_client(
         docker client lifespan manager
     """
 
-    @asynccontextmanager
-    async def _(app: FastAPI) -> AsyncIterator[None]:
+    async def _(app: FastAPI) -> AsyncIterator[State]:
         settings: DockerApiProxysettings = getattr(
             app.state.settings, docker_api_proxy_settings_property_name
         )
@@ -345,7 +346,7 @@ def get_lifespan_remote_docker_client(
 
             await wait_till_docker_api_proxy_is_responsive(app)
 
-            yield
+            yield {}
 
     return _
 

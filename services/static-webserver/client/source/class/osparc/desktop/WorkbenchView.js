@@ -70,7 +70,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     "expandNavBar": "qx.event.type.Event",
     "backToDashboardPressed": "qx.event.type.Event",
     "slidesEdit": "qx.event.type.Event",
-    "slidesAppStart": "qx.event.type.Event",
     "annotationRectStart": "qx.event.type.Event",
     "takeSnapshot": "qx.event.type.Event",
     "showSnapshots": "qx.event.type.Event",
@@ -81,7 +80,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
   properties: {
     study: {
       check: "osparc.data.model.Study",
-      apply: "_applyStudy",
+      apply: "__applyStudy",
       nullable: false
     },
 
@@ -244,7 +243,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       return sidePanelsNewWidth;
     },
 
-    _applyStudy: function(study) {
+    __applyStudy: function(study) {
       if (study) {
         this.__initViews();
         this.__connectEvents();
@@ -302,9 +301,12 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       if (study === null) {
         return;
       }
+
       this.__initPrimaryColumn();
       this.__initSecondaryColumn();
       this.__initMainView();
+
+      this.setMaximized(false);
     },
 
     __initPrimaryColumn: function() {
@@ -448,7 +450,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         marginTop: 7,
         ...osparc.navigation.NavigationBar.BUTTON_OPTIONS
       });
-      startAppButtonTB.addListener("execute", () => this.fireEvent("slidesAppStart"));
+      startAppButtonTB.addListener("execute", () => study.getUi().setMode("app"));
       topBar.add(startAppButtonTB);
 
       const collapseWithUserMenu = this.__collapseWithUserMenu = new osparc.desktop.CollapseWithUserMenu();
@@ -497,10 +499,9 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
       studyTreeItem.addListener("changeSelectedNode", () => {
         nodesTree.resetSelection();
-        this.__populateSecondaryColumn(this.getStudy());
-        this.__evalIframe();
-        this.__openWorkbenchTab();
-        this.__loggerView.setCurrentNodeId(null);
+        this.showPipeline();
+
+        this.getStudy().getUi().setCurrentNodeId(this.getStudy().getUuid());
       });
       nodesTree.addListener("changeSelectedNode", e => {
         studyTreeItem.resetSelection();
@@ -514,6 +515,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         this.__loggerView.setCurrentNodeId(nodeId);
         this.__workbenchUI.nodeSelected(nodeId);
         this.fireDataEvent("changeSelectedNode", nodeId);
+
+        this.getStudy().getUi().setCurrentNodeId(nodeId);
       });
 
       if (this.__workbenchUIConnected === null) {
@@ -529,9 +532,13 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
             this.__evalIframe(node);
             this.__loggerView.setCurrentNodeId(nodeId);
             this.fireDataEvent("changeSelectedNode", nodeId);
+
+            this.getStudy().getUi().setCurrentNodeId(nodeId);
           } else {
             // empty selection
             this.__studyTreeItem.selectStudyItem();
+
+            this.getStudy().getUi().setCurrentNodeId(this.getStudy().getUuid());
           }
         });
         workbenchUI.addListener("nodeSelected", e => {
@@ -545,6 +552,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
             this.__populateSecondaryColumn(node);
             this.__openIframeTab(node);
             this.__loggerView.setCurrentNodeId(nodeId);
+
+            this.getStudy().getUi().setCurrentNodeId(nodeId);
           }
         }, this);
       }
@@ -553,16 +562,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         const nodeId = e.getData();
         if (nodeId) {
           studyTreeItem.resetSelection();
-          const workbench = this.getStudy().getWorkbench();
-          const node = workbench.getNode(nodeId);
-          if (node) {
-            this.__populateSecondaryColumn(node);
-            this.__openIframeTab(node);
-            node.getLoadingPage().maximizeIFrame(true);
-            node.getIFrame().maximizeIFrame(true);
-          }
-          this.__loggerView.setCurrentNodeId(nodeId);
-          this.__workbenchUI.nodeSelected(nodeId);
+          this.fullscreenNode(nodeId);
+          this.getStudy().getUi().setCurrentNodeId(nodeId);
         }
       }, this);
       nodesTree.addListener("removeNode", e => {
@@ -843,7 +844,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         toolTipText: this.tr("Start App Mode"),
         height: buttonsHeight
       });
-      startAppBtn.addListener("execute", () => this.fireEvent("slidesAppStart"), this);
+      startAppBtn.addListener("execute", () => this.getStudy().getUi().setMode("app"), this);
       slideshowButtons.add(startAppBtn);
 
       this.__evalSlidesButtons();
@@ -1183,21 +1184,38 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.__nodesTree.nodeSelected(this.__currentNodeId);
     },
 
+    showPipeline: function() {
+      this.__populateSecondaryColumn(this.getStudy());
+      this.__evalIframe();
+      this.__openWorkbenchTab();
+      this.__loggerView.setCurrentNodeId(null);
+
+      this.getStudy().getUi().setCurrentNodeId(this.getStudy().getUuid());
+    },
+
+    fullscreenNode: function(nodeId) {
+      const node = this.getStudy().getWorkbench().getNode(nodeId);
+      if (node && node.isDynamic()) {
+        qx.event.Timer.once(() => {
+          this.__populateSecondaryColumn(node);
+          this.__openIframeTab(node);
+          node.getIFrame().maximizeIFrame(true);
+        }, this, 10);
+      }
+      this.__loggerView.setCurrentNodeId(nodeId);
+      this.__workbenchUI.nodeSelected(nodeId);
+    },
+
     openFirstNode: function() {
-      const nodes = this.getStudy().getWorkbench().getNodes();
-      const validNodes = Object.values(nodes).filter(node => node.isComputational() || node.isDynamic());
+      const validNodes = this.getStudy().getNonFrontendNodes();
       if (validNodes.length === 1 && validNodes[0].isDynamic()) {
         const dynamicNode = validNodes[0];
-        this.nodeSelected(dynamicNode.getNodeId());
-        qx.event.Timer.once(() => {
-          this.__openIframeTab(dynamicNode);
-          dynamicNode.getLoadingPage().maximizeIFrame(true);
-          dynamicNode.getIFrame().maximizeIFrame(true);
-        }, this, 10);
-        return;
+        this.fullscreenNode(dynamicNode.getNodeId());
+        this.getStudy().getUi().setCurrentNodeId(dynamicNode.getNodeId());
+      } else {
+        this.setMaximized(false);
+        this.nodeSelected(this.getStudy().getUuid());
       }
-      this.setMaximized(false);
-      this.nodeSelected(this.getStudy().getUuid());
     }
   }
 });

@@ -1,7 +1,9 @@
 import datetime
+from collections.abc import AsyncIterator
 from typing import Any
 
 from fastapi import FastAPI, status
+from fastapi_lifespan_manager import State
 from models_library.api_schemas_directorv2.dynamic_services import (
     DynamicServiceGet,
     GetProjectInactivityResponse,
@@ -141,6 +143,8 @@ class DirectorV2Client(SingletonInAppStateMixin, AttachLifespanMixin):
         await self.thin_client.patch_projects_networks(project_id=project_id)
 
 
-def setup_director_v2(app: FastAPI) -> None:
+async def lifespan_director_v2(app: FastAPI) -> AsyncIterator[State]:
     public_client = DirectorV2Client(app)
     public_client.set_to_app_state(app)
+
+    yield {}
