@@ -77,10 +77,13 @@ async def create_tasks(
     created_task_ids: list[int] = []
 
     async def _(
-        user: dict[str, Any], project: ProjectAtDB, **overrides_kwargs
+        user: dict[str, Any],
+        project: ProjectAtDB,
+        workbench: dict[str, Any],
+        **overrides_kwargs,
     ) -> list[CompTaskAtDB]:
         created_tasks: list[CompTaskAtDB] = []
-        for internal_id, (node_id, node_data) in enumerate(project.workbench.items()):
+        for internal_id, (node_id, node_data) in enumerate(workbench.items(), start=1):
             task_config = {
                 "project_id": f"{project.uuid}",
                 "node_id": f"{node_id}",
@@ -94,9 +97,9 @@ async def create_tasks(
                             if isinstance(value, BaseModel)
                             else value
                         )
-                        for key, value in node_data.inputs.items()
+                        for key, value in node_data["inputs"].items()
                     }
-                    if node_data.inputs
+                    if "inputs" in node_data
                     else {}
                 ),
                 "outputs": (
@@ -108,19 +111,19 @@ async def create_tasks(
                             if isinstance(value, BaseModel)
                             else value
                         )
-                        for key, value in node_data.outputs.items()
+                        for key, value in node_data["outputs"].items()
                     }
-                    if node_data.outputs
+                    if "outputs" in node_data
                     else {}
                 ),
-                "image": Image(name=node_data.key, tag=node_data.version).model_dump(
-                    by_alias=True, exclude_unset=True
-                ),
-                "node_class": to_node_class(node_data.key),
-                "internal_id": internal_id + 1,
+                "image": Image(
+                    name=node_data["key"], tag=node_data["version"]
+                ).model_dump(by_alias=True, exclude_unset=True),
+                "node_class": to_node_class(node_data["key"]),
+                "internal_id": internal_id,
                 "job_id": generate_dask_job_id(
-                    service_key=node_data.key,
-                    service_version=node_data.version,
+                    service_key=node_data["key"],
+                    service_version=node_data["version"],
                     user_id=user["id"],
                     project_id=project.uuid,
                     node_id=NodeID(node_id),
@@ -238,7 +241,10 @@ async def publish_project(
                 dag_adjacency_list=fake_workbench_adjacency,
             ),
             tasks=await create_tasks(
-                user=user, project=created_project, state=StateType.PUBLISHED
+                user=user,
+                project=created_project,
+                workbench=fake_workbench_without_outputs,
+                state=StateType.PUBLISHED,
             ),
         )
 

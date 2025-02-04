@@ -877,7 +877,9 @@ async def test_get_computation_from_not_started_computation_task(
     assert response.status_code == status.HTTP_409_CONFLICT, response.text
 
     # now create the expected tasks and the state is good again
-    comp_tasks = await create_tasks(user=user, project=proj)
+    comp_tasks = await create_tasks(
+        user=user, project=proj, workbench=fake_workbench_without_outputs
+    )
     response = await async_client.get(get_computation_url)
     assert response.status_code == status.HTTP_200_OK, response.text
     returned_computation = ComputationGet.model_validate(response.json())
