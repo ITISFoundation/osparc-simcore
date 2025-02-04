@@ -17,8 +17,6 @@
 
 /**
  * Widget used mainly by StudyBrowser for displaying Studies
- *
- * It consists of a thumbnail and creator and last change as caption
  */
 
 qx.Class.define("osparc.dashboard.ListButtonItem", {
