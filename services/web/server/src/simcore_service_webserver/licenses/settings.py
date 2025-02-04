@@ -12,7 +12,11 @@ from ._itis_vip_settings import ItisVipSettings
 class LicensesSettings(BaseCustomSettings):
     # ITIS - VIP
     LICENSES_ITIS_VIP: Annotated[
-        ItisVipSettings | None, Field(description="Settings for VIP license models")
+        ItisVipSettings | None,
+        Field(
+            description="Settings for VIP license models",
+            json_schema_extra={"auto_default_from_env": True},
+        ),
     ]
     LICENSES_ITIS_VIP_SYNCER_ENABLED: bool = False
     LICENSES_ITIS_VIP_SYNCER_PERIODICITY: datetime.timedelta = datetime.timedelta(

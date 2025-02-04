@@ -84,7 +84,7 @@ def test_settings_to_client_statics_plugins(
 
     assert settings.WEBSERVER_LOGIN
 
-    assert statics["webserverLicenses"] == settings.WEBSERVER_LICENSES
+    assert "webserverLicenses" not in statics
 
     assert (
         statics["webserverLogin"]["LOGIN_ACCOUNT_DELETION_RETENTION_DAYS"]
