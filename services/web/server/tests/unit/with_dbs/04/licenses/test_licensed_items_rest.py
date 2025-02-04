@@ -64,11 +64,11 @@ async def test_licensed_items_listing(
 
     # <-- Testing nested camel case
     source = data[0]["licensedResourceData"]["source"]
-    assert source["license"]
+    assert all("_" not in key for key in source), f"got {source=}"
 
     # Testing trimmed
-    assert "additionalField" not in source["features"]
-    assert "additional_field" not in source["features"]
+    assert "additionalField" not in source
+    assert "additional_field" not in source
 
     # get
     url = client.app.router["get_licensed_item"].url_for(
@@ -84,7 +84,9 @@ def mock_licensed_items_purchase_functions(mocker: MockerFixture) -> tuple:
     mock_wallet_credits = mocker.patch(
         "simcore_service_webserver.licenses._licensed_items_service.get_wallet_with_available_credits_by_user_and_wallet",
         spec=True,
-        return_value=WalletGetWithAvailableCredits.model_json_schema()["examples"][0],
+        return_value=WalletGetWithAvailableCredits.model_validate(
+            WalletGetWithAvailableCredits.model_json_schema()["examples"][0]
+        ),
     )
     mock_get_pricing_unit = mocker.patch(
         "simcore_service_webserver.licenses._licensed_items_service.get_pricing_plan_unit",
