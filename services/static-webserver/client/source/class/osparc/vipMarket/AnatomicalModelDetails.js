@@ -53,8 +53,8 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
       this._removeAll();
 
       const anatomicalModelsData = this.getAnatomicalModelsData();
-      if (anatomicalModelsData) {
-        const modelInfo = this.__createModelInfo(anatomicalModelsData["licensedResourceData"]);
+      if (anatomicalModelsData && anatomicalModelsData["licensedResourceData"]) {
+        const modelInfo = this.__createModelInfo(anatomicalModelsData["licensedResourceData"]["source"]);
         const pricingUnits = this.__createPricingUnits(anatomicalModelsData);
         const importButton = this.__createImportSection(anatomicalModelsData);
         this._add(modelInfo);

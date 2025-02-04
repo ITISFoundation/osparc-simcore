@@ -185,18 +185,16 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
             anatomicalModel["modelId"] = licensedItem["licensedItemId"];
             anatomicalModel["thumbnail"] = "";
             anatomicalModel["date"] = null;
-            if (anatomicalModel["licensedResourceData"]) {
-              if (anatomicalModel["licensedResourceData"]["id"]) {
-                anatomicalModel["modelId"] = anatomicalModel["licensedResourceData"]["id"];
+            if (anatomicalModel["licensedResourceData"] && anatomicalModel["licensedResourceData"]["source"]) {
+              const anatomicalModelSource = anatomicalModel["licensedResourceData"]["source"];
+              if (anatomicalModelSource["id"]) {
+                anatomicalModel["modelId"] = anatomicalModelSource["id"];
               }
-              if (anatomicalModel["licensedResourceData"]["thumbnail"]) {
-                anatomicalModel["thumbnail"] = anatomicalModel["licensedResourceData"]["thumbnail"];
+              if (anatomicalModelSource["thumbnail"]) {
+                anatomicalModel["thumbnail"] = anatomicalModelSource["thumbnail"];
               }
-              if (
-                anatomicalModel["licensedResourceData"]["features"] &&
-                anatomicalModel["licensedResourceData"]["features"]["date"]
-              ) {
-                anatomicalModel["date"] = new Date(anatomicalModel["licensedResourceData"]["features"]["date"]);
+              if (anatomicalModelSource["features"] && anatomicalModelSource["features"]["date"]) {
+                anatomicalModel["date"] = new Date(anatomicalModelSource["features"]["date"]);
               }
             }
             // attach license data
