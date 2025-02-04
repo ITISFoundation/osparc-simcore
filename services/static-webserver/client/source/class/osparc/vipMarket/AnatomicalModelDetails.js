@@ -161,13 +161,22 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
         row: idx,
       });
 
-      const doiValue = new qx.ui.basic.Label().set({
-        value: anatomicalModelsData["doi"] ? anatomicalModelsData["doi"] : "-",
-        font: "text-14",
-        alignX: "left",
-        marginTop: 16,
-      });
-      featuresLayout.add(doiValue, {
+      const doiToLink = doi => {
+        const doiLabel = new osparc.ui.basic.LinkLabel("-").set({
+          font: "text-14",
+          alignX: "left",
+          marginTop: 16,
+        });
+        if (doi) {
+          doiLabel.set({
+            value: doi,
+            url: "https://doi.org/" + doi,
+            font: "link-label-14",
+          });
+        }
+        return doiLabel;
+      };
+      featuresLayout.add(doiToLink(anatomicalModelsData["doi"]), {
         column: 1,
         row: idx,
       });
