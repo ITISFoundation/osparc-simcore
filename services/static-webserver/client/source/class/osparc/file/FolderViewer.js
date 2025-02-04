@@ -147,6 +147,7 @@ qx.Class.define("osparc.file.FolderViewer", {
           break;
         case "view-options-icons": {
           control = new qx.ui.form.ToggleButton(null, "@MaterialIcons/apps/18");
+          osparc.utils.Utils.setIdToWidget(control, "folderGridView");
           const group = this.getChildControl("view-options-radio-group");
           group.add(control);
           const header = this.getChildControl("header");
