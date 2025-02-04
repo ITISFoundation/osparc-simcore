@@ -314,7 +314,7 @@ qx.Class.define("osparc.file.FolderContent", {
         selectionRanges.forEach(range => {
           for (let i=range.minIndex; i<=range.maxIndex; i++) {
             const row = table.getTableModel().getRowData(i);
-            if (osparc.file.FilesTree.isFile(row.entry)) {
+            if ("entry" in row && osparc.file.FilesTree.isFile(row.entry)) {
               selectedFiles.push(row.entry);
             }
           }
@@ -323,9 +323,9 @@ qx.Class.define("osparc.file.FolderContent", {
       }, this);
       table.addListener("cellDbltap", e => {
         const selectedRow = e.getRow();
-        const rowData = table.getTableModel().getRowData(selectedRow);
-        if ("entry" in rowData) {
-          this.__itemDblTapped(rowData.entry);
+        const row = table.getTableModel().getRowData(selectedRow);
+        if ("entry" in row) {
+          this.__itemDblTapped(row.entry);
         }
       }, this);
     }
