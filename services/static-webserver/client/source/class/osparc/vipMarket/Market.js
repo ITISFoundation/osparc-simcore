@@ -43,8 +43,8 @@ qx.Class.define("osparc.vipMarket.Market", {
         const licensedItems = values[0];
         const categories = {};
         licensedItems.forEach(licensedItem => {
-          if (licensedItem["licensedResourceData"] && licensedItem["licensedResourceData"]["category"]) {
-            const category = licensedItem["licensedResourceData"]["category"];
+          if (licensedItem["licensedResourceData"] && licensedItem["licensedResourceData"]["categoryId"]) {
+            const category = licensedItem["licensedResourceData"]["categoryId"];
             if (!(category in categories)) {
               categories[category] = [];
             }
@@ -53,24 +53,25 @@ qx.Class.define("osparc.vipMarket.Market", {
         });
 
         const expectedCategories = [{
-          category: "HumanWholeBody",
+          categoryId: "HumanWholeBody",
           label: "Humans",
           icon: "@FontAwesome5Solid/users/20",
         }, {
-          category: "HumanBodyRegion",
+          categoryId: "HumanBodyRegion",
           label: "Humans (Region)",
           icon: "@FontAwesome5Solid/users/20",
         }, {
-          category: "AnimalWholeBody",
+          categoryId: "AnimalWholeBody",
           label: "Animals",
           icon: "@FontAwesome5Solid/users/20",
         }, {
-          category: "ComputationalPhantom",
+          categoryId: "ComputationalPhantom",
           label: "Phantoms",
           icon: "@FontAwesome5Solid/users/20",
         }]
         expectedCategories.forEach(expectedCategory => {
-          this.__buildViPMarketPage(expectedCategory, categories[expectedCategory["category"]]);
+          const items = categories[expectedCategory["categoryId"]];
+          this.__buildViPMarketPage(expectedCategory, items);
         });
 
         if (openCategory) {
@@ -96,12 +97,12 @@ qx.Class.define("osparc.vipMarket.Market", {
     __buildViPMarketPage: function(marketTabInfo, licensedItems = []) {
       const vipMarketView = new osparc.vipMarket.VipMarket(licensedItems);
       vipMarketView.set({
-        category: marketTabInfo["category"],
+        category: marketTabInfo["categoryId"],
       });
       this.bind("openBy", vipMarketView, "openBy");
       vipMarketView.addListener("importMessageSent", () => this.fireEvent("importMessageSent"));
       const page = this.addTab(marketTabInfo["label"], marketTabInfo["icon"], vipMarketView);
-      page.category = marketTabInfo["category"];
+      page.category = marketTabInfo["categoryId"];
       return page;
     },
 
