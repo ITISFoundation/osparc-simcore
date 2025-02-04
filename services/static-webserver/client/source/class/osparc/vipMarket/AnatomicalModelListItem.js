@@ -24,11 +24,12 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelListItem", {
     this.base(arguments);
 
     const layout = new qx.ui.layout.Grid(5, 5);
-    layout.setColumnWidth(0, 64);
     layout.setRowFlex(0, 1);
-    layout.setColumnFlex(1, 1);
+    layout.setColumnFlex(1, 1); // flex display name
+    layout.setColumnWidth(0, 48);
     layout.setColumnAlign(0, "center", "middle");
     layout.setColumnAlign(1, "left", "middle");
+    layout.setColumnAlign(2, "center", "middle");
     this._setLayout(layout);
 
     this.set({
@@ -145,6 +146,16 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelListItem", {
             column: 1
           });
           break;
+        case "n-seats":
+          control = new qx.ui.basic.Label().set({
+            font: "text-14",
+            alignY: "middle",
+          });
+          this._add(control, {
+            row: 0,
+            column: 2
+          });
+          break;
       }
       control.set({
         anonymous: true, // pass the tap action over
@@ -162,11 +173,15 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelListItem", {
     },
 
     __applyPurchases: function(purchases) {
-      if (purchases.length) {
-        this.set({
-          textColor: "default-button-text",
-          backgroundColor: "strong-main",
-        })
+      const nSeatsLabel = this.getChildControl("n-seats");
+      let nSeats = 0;
+      purchases.forEach(purchase => {
+        nSeats += purchase.getNumberOfSeats();
+      });
+      if (nSeats) {
+        nSeatsLabel.setValue(`(${nSeats})`);
+      } else {
+        nSeatsLabel.resetValue();
       }
     },
 
