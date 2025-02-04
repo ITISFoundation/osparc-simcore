@@ -1,8 +1,7 @@
-from fastapi import FastAPI
+from servicelib.fastapi.lifespan_utils import LifespanGenerator
 
 from . import _notifier, _socketio
 
 
-def setup_notifier(app: FastAPI):
-    _socketio.setup(app)
-    _notifier.setup(app)
+def get_notifier_lifespans() -> list[LifespanGenerator]:
+    return [_socketio.lifespan, _notifier.lifespan]

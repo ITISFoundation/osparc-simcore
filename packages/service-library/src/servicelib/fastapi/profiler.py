@@ -1,5 +1,6 @@
 from typing import Any, Final
 
+from fastapi import FastAPI
 from servicelib.aiohttp import status
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from starlette.requests import Request
@@ -13,7 +14,7 @@ from ..utils_profiling_middleware import (
 )
 
 
-def is_last_response(response_headers: dict[bytes, bytes], message: dict[str, Any]):
+def _is_last_response(response_headers: dict[bytes, bytes], message: dict[str, Any]):
     if (
         content_type := response_headers.get(b"content-type")
     ) and content_type == MIMETYPE_APPLICATION_JSON.encode():
@@ -79,7 +80,7 @@ class ProfilerMiddleware:
                         response_headers = dict(message.get("headers"))
                         message["headers"] = check_response_headers(response_headers)
                     elif message["type"] == "http.response.body":
-                        if is_last_response(response_headers, message):
+                        if _is_last_response(response_headers, message):
                             _profiler.stop()
                             profile_text = _profiler.output_text(
                                 unicode=True, color=True, show_all=True
@@ -96,3 +97,8 @@ class ProfilerMiddleware:
 
         finally:
             _profiler.reset()
+
+
+def initialize_profiler(app: FastAPI) -> None:
+    # NOTE: this cannot be ran once the application is started
+    app.add_middleware(ProfilerMiddleware)

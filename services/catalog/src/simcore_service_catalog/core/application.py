@@ -5,7 +5,7 @@ from fastapi.middleware.gzip import GZipMiddleware
 from models_library.basic_types import BootModeEnum
 from servicelib.fastapi import timing_middleware
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
-from servicelib.fastapi.profiler_middleware import ProfilerMiddleware
+from servicelib.fastapi.profiler import initialize_profiler
 from servicelib.fastapi.prometheus_instrumentation import (
     setup_prometheus_instrumentation,
 )
@@ -61,7 +61,7 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
 
     # MIDDLEWARES
     if app.state.settings.CATALOG_PROFILING:
-        app.add_middleware(ProfilerMiddleware)
+        initialize_profiler(app)
 
     if settings.SC_BOOT_MODE != BootModeEnum.PRODUCTION:
         # middleware to time requests (ONLY for development)

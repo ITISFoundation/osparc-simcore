@@ -23,6 +23,10 @@ deprecated==1.2.17
     #   opentelemetry-api
     #   opentelemetry-semantic-conventions
 fastapi==0.115.7
+    # via
+    #   -r requirements/_fastapi.in
+    #   fastapi-lifespan-manager
+fastapi-lifespan-manager==0.1.4
     # via -r requirements/_fastapi.in
 h11==0.14.0
     # via

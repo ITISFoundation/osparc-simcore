@@ -52,10 +52,10 @@ pytest_simcore_ops_services_selection = [
 
 @pytest.fixture
 def app_environment(
-    disable_rabbitmq_setup: None,
-    disable_deferred_manager_setup: None,
-    disable_notifier_setup: None,
-    disable_status_monitor_setup: None,
+    disable_rabbitmq_lifespan: None,
+    disable_deferred_manager_lifespan: None,
+    disable_notifier_lifespan: None,
+    disable_status_monitor_lifespan: None,
     app_environment: EnvVarsDict,
     redis_service: RedisSettings,
     remove_redis_data: None,
