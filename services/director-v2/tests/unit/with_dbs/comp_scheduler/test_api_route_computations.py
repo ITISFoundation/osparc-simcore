@@ -540,8 +540,8 @@ async def test_create_computation_with_wallet(
             == len(
                 [
                     v
-                    for v in proj.workbench.values()
-                    if to_node_class(v.key) != NodeClass.FRONTEND
+                    for v in fake_workbench_without_outputs.values()
+                    if to_node_class(v["key"]) != NodeClass.FRONTEND
                 ]
             )
             * 2
@@ -551,7 +551,9 @@ async def test_create_computation_with_wallet(
             project_nodes_repo = ProjectNodesRepo(project_uuid=proj.uuid)
             for node in await project_nodes_repo.list(connection):
                 if (
-                    to_node_class(proj.workbench[f"{node.node_id}"].key)
+                    to_node_class(
+                        fake_workbench_without_outputs[f"{node.node_id}"]["key"]
+                    )
                     != NodeClass.FRONTEND
                 ):
                     assert node.required_resources
