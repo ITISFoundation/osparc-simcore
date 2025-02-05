@@ -59,7 +59,7 @@ jobs:
       - name: check api-server backwards compatibility
         run: |
           ./scripts/openapi-diff.bash breaking --fail-on ERR\
-            https://raw.githubusercontent.com/${{ github.event.pull_request.base.repo.full_name }}${{ github.event.after }}/services/api-server/openapi.json \
+            https://raw.githubusercontent.com/${{ github.event.pull_request.base.repo.full_name }}/${{ github.event.after }}/services/api-server/openapi.json \
             /specs/services/api-server/openapi.json
 
   all-oas-breaking:
@@ -78,5 +78,5 @@ jobs:
       - name: Check openapi-specs backwards compatibility
         run: |
           ./ci/github/helpers/openapi-specs-diff.bash breaking \
-            https://raw.githubusercontent.com/${{ github.event.pull_request.base.repo.full_name }}${{ github.event.after }} \
+            https://raw.githubusercontent.com/${{ github.event.pull_request.base.repo.full_name }}/${{ github.event.after }} \
             .
