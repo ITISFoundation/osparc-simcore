@@ -205,7 +205,9 @@ qx.Class.define("osparc.info.StudyUtils", {
       * @param study {osparc.data.model.Study} Study Model
       */
     createTags: function(study) {
-      const tagsContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+      const tagsContainer = new qx.ui.container.Composite(new qx.ui.layout.Flow(5, 5)).set({
+        maxWidth: 420
+      });
 
       const addTags = model => {
         tagsContainer.removeAll();
@@ -331,7 +333,9 @@ qx.Class.define("osparc.info.StudyUtils", {
                 marginRight: 15
               });
             }
-            titleLayout.add(extraInfo.view);
+            titleLayout.add(extraInfo.view, {
+              flex: 1
+            });
             extraInfoLayout.add(titleLayout, {
               row: row2,
               column: gridInfo.column
