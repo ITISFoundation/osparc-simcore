@@ -70,7 +70,9 @@ qx.Class.define("osparc.form.tag.TagManager", {
       this._add(filter);
 
       const tagsContainer = this.__tagsContainer = new qx.ui.container.Composite(new qx.ui.layout.VBox());
-      this._add(tagsContainer, {
+      const scrollView = new qx.ui.container.Scroll();
+      scrollView.add(tagsContainer);
+      this._add(scrollView, {
         flex: 1
       });
 
