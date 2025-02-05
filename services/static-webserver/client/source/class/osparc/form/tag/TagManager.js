@@ -84,7 +84,6 @@ qx.Class.define("osparc.form.tag.TagManager", {
         allowGrowX: false
       });
       addTagButton.addListener("execute", () => {
-        console.log(scrollTags);
         this.__repopulateTags();
         const newItem = new osparc.form.tag.TagItem().set({
           mode: osparc.form.tag.TagItem.modes.EDIT
