@@ -160,6 +160,7 @@ class ProjectDBAPI(BaseProjectDB):
                 raise err
 
         selected_values: ProjectDict = {}
+        workbench = insert_values.pop("workbench", {})
         async with self.engine.acquire() as conn:
             async for attempt in AsyncRetrying(retry=retry_if_exception_type(TryAgain)):
                 with attempt:
@@ -183,6 +184,8 @@ class ProjectDBAPI(BaseProjectDB):
                             assert row  # nosec
 
                             selected_values = ProjectDict(row.items())
+                            if workbench:
+                                selected_values["workbench"] = workbench
                             project_index = selected_values.pop("id")
 
                         except UniqueViolation as err:
