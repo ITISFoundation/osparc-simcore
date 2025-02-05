@@ -5,7 +5,7 @@ from fastapi_pagination import add_pagination
 from models_library.basic_types import BootModeEnum
 from packaging.version import Version
 from servicelib.fastapi.profiler import initialize_profiler
-from servicelib.fastapi.tracing import setup_tracing
+from servicelib.fastapi.tracing import initialize_tracing
 from servicelib.logging_utils import config_all_loggers
 
 from .. import exceptions
@@ -84,7 +84,7 @@ def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
     setup_rabbitmq(app)
 
     if settings.API_SERVER_TRACING:
-        setup_tracing(app, settings.API_SERVER_TRACING, APP_NAME)
+        initialize_tracing(app, settings.API_SERVER_TRACING, APP_NAME)
 
     if settings.API_SERVER_WEBSERVER:
         webserver.setup(
