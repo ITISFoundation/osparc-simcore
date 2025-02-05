@@ -419,7 +419,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
         appearance: "filter-toggle-button"
       });
       editTagsButton.addListener("execute", () => {
-        const preferencesWindow = osparc.desktop.preferences.PreferencesWindow.openWindow();
+        const preferencesWindow = osparc.desktop.account.MyAccountWindow.openWindow();
         preferencesWindow.openTags();
       });
       layout.add(editTagsButton);
