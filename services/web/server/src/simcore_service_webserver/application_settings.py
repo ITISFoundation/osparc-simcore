@@ -233,9 +233,10 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     ]
 
     WEBSERVER_LICENSES: Annotated[
-        LicensesSettings | None,
+        LicensesSettings | None | bool,
         Field(
             json_schema_extra={"auto_default_from_env": True},
+            # NOTE: `bool` is to keep backwards compatibility
         ),
     ]
 

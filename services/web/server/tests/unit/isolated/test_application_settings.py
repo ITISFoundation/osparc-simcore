@@ -138,3 +138,37 @@ def test_avoid_sensitive_info_in_public(app_settings: ApplicationSettings):
     assert not any("token" in key for key in app_settings.public_dict())
     assert not any("secret" in key for key in app_settings.public_dict())
     assert not any("private" in key for key in app_settings.public_dict())
+
+
+def test_backwards_compatibility_with_bool_env_vars_turned_into_objects(
+    monkeypatch: pytest.MonkeyPatch,
+    mock_webserver_service_environment: EnvVarsDict,
+):
+    # Sometimes we turn `WEBSERVER_VAR: bool` into `WEBSERVER_VAR: VarSettings`
+    with monkeypatch.context() as patch:
+        patch.setenv("WEBSERVER_LICENSES", "true")
+
+        settings = ApplicationSettings.create_from_envs()
+        assert settings.WEBSERVER_LICENSES is True
+
+    with monkeypatch.context() as patch:
+        patch.setenv("WEBSERVER_LICENSES", "{}")
+        patch.setenv("LICENSES_ITIS_VIP_SYNCER_ENABLED", "1")
+        patch.setenv("LICENSES_ITIS_VIP_API_URL", "https://some-api/{category}")
+        patch.setenv(
+            "LICENSES_ITIS_VIP_CATEGORIES",
+            '{"HumanWholeBody": "Humans", "HumanBodyRegion": "Humans (Region)", "AnimalWholeBody": "Animal"}',
+        )
+
+        settings = ApplicationSettings.create_from_envs()
+        assert settings.WEBSERVER_LICENSES is not None
+        assert not isinstance(settings.WEBSERVER_LICENSES, bool)
+        assert settings.WEBSERVER_LICENSES.LICENSES_ITIS_VIP
+        assert settings.WEBSERVER_LICENSES.LICENSES_ITIS_VIP.LICENSES_ITIS_VIP_API_URL
+        assert settings.WEBSERVER_LICENSES.LICENSES_ITIS_VIP_SYNCER_ENABLED
+
+    with monkeypatch.context() as patch:
+        patch.setenv("WEBSERVER_LICENSES", "null")
+
+        settings = ApplicationSettings.create_from_envs()
+        assert settings.WEBSERVER_LICENSES is None
