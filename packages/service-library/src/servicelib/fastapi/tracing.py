@@ -61,7 +61,7 @@ except ImportError:
     HAS_REQUESTS = False
 
 
-def setup_tracing(
+def initialize_tracing(
     app: FastAPI, tracing_settings: TracingSettings, service_name: str
 ) -> None:
     if (
@@ -129,12 +129,6 @@ def setup_tracing(
             msg="Attempting to add requests opentelemetry autoinstrumentation...",
         ):
             RequestsInstrumentor().instrument()
-
-
-def initialize_tracing(
-    app: FastAPI, tracing_settings: TracingSettings, service_name: str
-):
-    setup_tracing(app, tracing_settings, service_name)
 
 
 def setup_httpx_client_tracing(client: AsyncClient | Client):
