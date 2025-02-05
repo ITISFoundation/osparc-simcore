@@ -35,7 +35,6 @@ async def sync_resources_with_licensed_items(
             ), log_catch(_logger, reraise=True):
                 vip_data_items: list[
                     ItisVipData
-                    # TODO: handle errors to avoid disrupting other categories?
                 ] = await _itis_vip_service.get_category_items(
                     http_client, category_url
                 )
@@ -48,7 +47,6 @@ async def sync_resources_with_licensed_items(
                 with log_context(
                     _logger, logging.INFO, "Registering %s", licensed_resource_name
                 ), log_catch(_logger, reraise=False):
-                    # TODO: handle error to avoid disrupting other vip_data_items?
                     result = await _licensed_items_service.register_resource_as_licensed_item(
                         app,
                         licensed_item_display_name=f"{vip_data.features.get('name', 'UNNAMED!!')} "
