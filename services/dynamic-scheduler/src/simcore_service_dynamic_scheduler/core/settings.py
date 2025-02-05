@@ -8,6 +8,7 @@ from settings_library.basic_types import LogLevel, VersionTag
 from settings_library.director_v0 import DirectorV0Settings
 from settings_library.director_v2 import DirectorV2Settings
 from settings_library.http_client_request import ClientRequestSettings
+from settings_library.postgres import PostgresSettings
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from settings_library.tracing import TracingSettings
@@ -143,6 +144,14 @@ class ApplicationSettings(_BaseApplicationSettings):
         json_schema_extra={"auto_default_from_env": True},
         description="settings for director-v2 service",
     )
+
+    DYNAMIC_SCHEDULER_POSTGRES: Annotated[
+        PostgresSettings,
+        Field(
+            json_schema_extra={"auto_default_from_env": True},
+            description="settings for postgres service",
+        ),
+    ]
 
     DYNAMIC_SCHEDULER_PROMETHEUS_INSTRUMENTATION_ENABLED: bool = True
 

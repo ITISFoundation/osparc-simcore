@@ -27,6 +27,7 @@ from ..services.deferred_manager import lifespan_deferred_manager
 from ..services.director_v0 import lifespan_director_v0
 from ..services.director_v2 import lifespan_director_v2
 from ..services.notifier import get_notifier_lifespans
+from ..services.postgres import lifespan_postgres
 from ..services.rabbitmq import lifespan_rabbitmq
 from ..services.redis import lifespan_redis
 from ..services.service_tracker import lifespan_service_tracker
@@ -50,6 +51,7 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
         lifespan_rabbitmq,
         lifespan_rpc_api_routes,
         lifespan_redis,
+        lifespan_postgres,
         *get_notifier_lifespans(),
         lifespan_service_tracker,
         lifespan_deferred_manager,
