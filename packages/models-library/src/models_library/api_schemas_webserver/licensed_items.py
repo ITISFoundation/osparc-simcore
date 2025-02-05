@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, NamedTuple, Self, cast
+from typing import Any, Literal, NamedTuple, Self, cast
 
 from models_library.basic_types import IDStr
 from models_library.resource_tracker import PricingPlanId
@@ -52,14 +52,15 @@ class LicensedItemRpcGetPage(NamedTuple):
 # Rest
 
 
-class _ItisVipRestData(BaseModel):
+class _ItisVipRestData(OutputSchema):
     description: str
     thumbnail: str
-    features: FeaturesDict
+    features: FeaturesDict  # NOTE: here there is a bit of coupling with domain model
     doi: str
 
 
 class _ItisVipResourceRestData(OutputSchema):
+    licensed_resource_type: Literal[LicensedResourceType.VIP_MODEL]
     category_id: IDStr
     category_display: str
     source: _ItisVipRestData
@@ -71,7 +72,7 @@ class LicensedItemRestGet(OutputSchema):
     display_name: str
     # NOTE: to put here a discriminator we have to embed it one more layer
     licensed_resource_type: LicensedResourceType
-    licensed_resource_data: _ItisVipResourceRestData
+    licensed_resource_data: _ItisVipResourceRestData | ...
     pricing_plan_id: PricingPlanId
 
     created_at: datetime
