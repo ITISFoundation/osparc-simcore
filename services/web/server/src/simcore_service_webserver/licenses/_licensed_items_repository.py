@@ -18,7 +18,7 @@ from models_library.products import ProductName
 from models_library.resource_tracker import PricingPlanId
 from models_library.rest_ordering import OrderBy, OrderDirection
 from pydantic import NonNegativeInt
-from simcore_postgres_database.models.licensed_items import licensed_items
+from simcore_postgres_database.models.licensed_items import licensed_resources
 from simcore_postgres_database.utils_repos import (
     get_columns_from_db_model,
     pass_or_acquire_connection,
@@ -35,7 +35,7 @@ from .errors import LicensedItemNotFoundError
 _logger = logging.getLogger(__name__)
 
 
-_SELECTION_ARGS = get_columns_from_db_model(licensed_items, LicensedItemDB)
+_SELECTION_ARGS = get_columns_from_db_model(licensed_resources, LicensedItemDB)
 
 
 def _create_insert_query(
@@ -47,7 +47,7 @@ def _create_insert_query(
     pricing_plan_id: PricingPlanId | None,
 ) -> postgresql.Insert:
     return (
-        postgresql.insert(licensed_items)
+        postgresql.insert(licensed_resources)
         .values(
             licensed_resource_name=licensed_resource_name,
             licensed_resource_type=licensed_resource_type,
@@ -115,8 +115,11 @@ async def create_if_not_exists(
 
         if row is None:
             select_query = select(*_SELECTION_ARGS).where(
-                (licensed_items.c.licensed_resource_name == licensed_resource_name)
-                & (licensed_items.c.licensed_resource_type == licensed_resource_type)
+                (licensed_resources.c.licensed_resource_name == licensed_resource_name)
+                & (
+                    licensed_resources.c.licensed_resource_type
+                    == licensed_resource_type
+                )
             )
 
             result = await conn.execute(select_query)
@@ -141,25 +144,25 @@ async def list_(
 
     base_query = (
         select(*_SELECTION_ARGS)
-        .select_from(licensed_items)
-        .where(licensed_items.c.product_name == product_name)
+        .select_from(licensed_resources)
+        .where(licensed_resources.c.product_name == product_name)
     )
 
     # Apply trashed filter
     if trashed == "exclude":
-        base_query = base_query.where(licensed_items.c.trashed.is_(None))
+        base_query = base_query.where(licensed_resources.c.trashed.is_(None))
     elif trashed == "only":
-        base_query = base_query.where(licensed_items.c.trashed.is_not(None))
+        base_query = base_query.where(licensed_resources.c.trashed.is_not(None))
 
     if inactive == "only":
         base_query = base_query.where(
-            licensed_items.c.product_name.is_(None)
-            | licensed_items.c.licensed_item_id.is_(None)
+            licensed_resources.c.product_name.is_(None)
+            | licensed_resources.c.licensed_item_id.is_(None)
         )
     elif inactive == "exclude":
         base_query = base_query.where(
-            licensed_items.c.product_name.is_not(None)
-            & licensed_items.c.licensed_item_id.is_not(None)
+            licensed_resources.c.product_name.is_not(None)
+            & licensed_resources.c.licensed_item_id.is_not(None)
         )
 
     # Select total count from base_query
@@ -168,10 +171,12 @@ async def list_(
 
     # Ordering and pagination
     if order_by.direction == OrderDirection.ASC:
-        list_query = base_query.order_by(asc(getattr(licensed_items.c, order_by.field)))
+        list_query = base_query.order_by(
+            asc(getattr(licensed_resources.c, order_by.field))
+        )
     else:
         list_query = base_query.order_by(
-            desc(getattr(licensed_items.c, order_by.field))
+            desc(getattr(licensed_resources.c, order_by.field))
         )
     list_query = list_query.offset(offset).limit(limit)
 
@@ -195,10 +200,10 @@ async def get(
 ) -> LicensedItemDB:
     select_query = (
         select(*_SELECTION_ARGS)
-        .select_from(licensed_items)
+        .select_from(licensed_resources)
         .where(
-            (licensed_items.c.licensed_item_id == licensed_item_id)
-            & (licensed_items.c.product_name == product_name)
+            (licensed_resources.c.licensed_item_id == licensed_item_id)
+            & (licensed_resources.c.product_name == product_name)
         )
     )
 
@@ -218,8 +223,8 @@ async def get_by_resource_identifier(
     licensed_resource_type: LicensedResourceType,
 ) -> LicensedItemDB:
     select_query = select(*_SELECTION_ARGS).where(
-        (licensed_items.c.licensed_resource_name == licensed_resource_name)
-        & (licensed_items.c.licensed_resource_type == licensed_resource_type)
+        (licensed_resources.c.licensed_resource_name == licensed_resource_name)
+        & (licensed_resources.c.licensed_resource_type == licensed_resource_type)
     )
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
@@ -245,21 +250,21 @@ async def update(
     # NOTE: at least 'touch' if updated_values is empty
     _updates = {
         **updates.model_dump(exclude_unset=True),
-        licensed_items.c.modified.name: func.now(),
+        licensed_resources.c.modified.name: func.now(),
     }
 
     # trashing
     assert "trash" in dict(LicensedItemUpdateDB.model_fields)  # nosec
     if trash := _updates.pop("trash", None):
-        _updates[licensed_items.c.trashed.name] = func.now() if trash else None
+        _updates[licensed_resources.c.trashed.name] = func.now() if trash else None
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         result = await conn.execute(
-            licensed_items.update()
+            licensed_resources.update()
             .values(**_updates)
             .where(
-                (licensed_items.c.licensed_item_id == licensed_item_id)
-                & (licensed_items.c.product_name == product_name)
+                (licensed_resources.c.licensed_item_id == licensed_item_id)
+                & (licensed_resources.c.product_name == product_name)
             )
             .returning(*_SELECTION_ARGS)
         )
@@ -278,8 +283,71 @@ async def delete(
 ) -> None:
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         await conn.execute(
-            licensed_items.delete().where(
-                (licensed_items.c.licensed_item_id == licensed_item_id)
-                & (licensed_items.c.product_name == product_name)
+            licensed_resources.delete().where(
+                (licensed_resources.c.licensed_item_id == licensed_item_id)
+                & (licensed_resources.c.product_name == product_name)
             )
         )
+
+
+#### DOMAIN MODEL
+
+
+# async def list_licensed_resources_v2(
+#     app: web.Application,
+#     connection: AsyncConnection | None = None,
+#     *,
+#     product_name: ProductName,
+#     offset: NonNegativeInt,
+#     limit: NonNegativeInt,
+#     order_by: OrderBy,
+# ) -> tuple[int, list[License]]:
+
+#     base_query = (
+#         select(*_SELECTION_ARGS)
+#         .select_from(licenses)
+#         .where(licenses.c.product_name == product_name)
+#     )
+
+#     # Select total count from base_query
+#     subquery = base_query.subquery()
+#     count_query = select(func.count()).select_from(subquery)
+
+#     # Ordering and pagination
+#     if order_by.direction == OrderDirection.ASC:
+#         list_query = base_query.order_by(asc(getattr(licenses.c, order_by.field)))
+#     else:
+#         list_query = base_query.order_by(desc(getattr(licenses.c, order_by.field)))
+#     list_query = list_query.offset(offset).limit(limit)
+
+#     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
+#         total_count = await conn.scalar(count_query)
+
+#         result = await conn.stream(list_query)
+#         items: list[License] = [License.model_validate(row) async for row in result]
+
+#         return cast(int, total_count), items
+
+
+# async def get_licensed_resource_v2(
+#     app: web.Application,
+#     connection: AsyncConnection | None = None,
+#     *,
+#     license_id: LicenseID,
+#     product_name: ProductName,
+# ) -> License:
+#     base_query = (
+#         select(*_SELECTION_ARGS)
+#         .select_from(licenses)
+#         .where(
+#             (licenses.c.license_id == license_id)
+#             & (licenses.c.product_name == product_name)
+#         )
+#     )
+
+#     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
+#         result = await conn.stream(base_query)
+#         row = await result.first()
+#         if row is None:
+#             raise LicenseNotFoundError(license_id=license_id)
+#         return License.model_validate(row)

@@ -5,6 +5,10 @@ class LicensesValueError(WebServerBaseError, ValueError):
     ...
 
 
+class LicenseNotFoundError(LicensesValueError):
+    msg_template = "License {license_id} not found"
+
+
 class LicensedItemNotFoundError(LicensesValueError):
     msg_template = "License good {licensed_item_id} not found"
 

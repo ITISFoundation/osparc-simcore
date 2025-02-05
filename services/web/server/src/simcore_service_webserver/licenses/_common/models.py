@@ -8,6 +8,7 @@ from models_library.licensed_items import (
     LicensedItemID,
     LicensedResourceType,
 )
+from models_library.licenses import License
 from models_library.resource_tracker import PricingPlanId, PricingUnitId
 from models_library.resource_tracker_licensed_items_purchases import (
     LicensedItemPurchaseID,
@@ -64,6 +65,11 @@ class LicensedItem(BaseModel):
 
 class LicensedItemPage(NamedTuple):
     items: list[LicensedItem]
+    total: PositiveInt
+
+
+class LicensePage(NamedTuple):
+    items: list[License]
     total: PositiveInt
 
 
