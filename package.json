@@ -4,9 +4,10 @@
     "linter-fix": "npx eslint ./services/*/client/source/class/*/ --fix"
   },
   "devDependencies": {
+    "@pact-foundation/pact-cli": "^16.0.4",
     "babel-eslint": "^10.1.0",
     "eslint": "^6.8.0",
-    "eslint-config-qx": "^0.1.0",
+    "eslint-config-qx": "^0.0.1",
     "eslint-plugin-qx-rules": "^0.1.0",
     "puppeteer": "^1.19.0",
     "puppeteer-to-istanbul": "^1.2.2",
