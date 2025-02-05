@@ -368,14 +368,6 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
       thumbnailLayout.recheckSize();
     },
 
-    replaceIcon: function(newIcon) {
-      const plusIcon = this.getChildControl("icon");
-      plusIcon.exclude();
-
-      const bodyLayout = this.getChildControl("body");
-      bodyLayout.add(newIcon, {flex: 1});
-    },
-
     /**
      * Event handler for the pointer over event.
      */
