@@ -52,9 +52,9 @@ def app_environment(
     return app_environment | setenvs_from_dict(
         monkeypatch,
         {
-            "ITIS_VIP_API_URL": f"{fake_api_base_url}/PD_DirectDownload/getDownloadableItems/{{category}}",
+            "LICENSES_ITIS_VIP_API_URL": f"{fake_api_base_url}/PD_DirectDownload/getDownloadableItems/{{category}}",
             # NOTE: ItisVipSettings will decode with json.dumps(). Use " and not ' the json keys!!
-            "ITIS_VIP_CATEGORIES": '{"ComputationalPantom": "Phantoms", "HumanBodyRegion": "Humans (Regions)"}',
+            "LICENSES_ITIS_VIP_CATEGORIES": '{"ComputationalPantom": "Phantoms", "HumanBodyRegion": "Humans (Regions)"}',
         },
     )
 
@@ -104,11 +104,11 @@ async def test_get_category_items(
     app_environment: EnvVarsDict,
 ):
     settings = ItisVipSettings.create_from_envs()
-    assert settings.ITIS_VIP_CATEGORIES
+    assert settings.LICENSES_ITIS_VIP_CATEGORIES
 
     async with AsyncClient() as client:
         for url, category in zip(
-            settings.get_urls(), settings.ITIS_VIP_CATEGORIES, strict=True
+            settings.get_urls(), settings.LICENSES_ITIS_VIP_CATEGORIES, strict=True
         ):
             assert f"{url}".endswith(category)
 
@@ -126,11 +126,11 @@ async def test_sync_itis_vip_as_licensed_items(
     assert client.app
 
     settings = ItisVipSettings.create_from_envs()
-    assert settings.ITIS_VIP_CATEGORIES
+    assert settings.LICENSES_ITIS_VIP_CATEGORIES
 
     async with AsyncClient() as http_client:
         for url, category in zip(
-            settings.get_urls(), settings.ITIS_VIP_CATEGORIES, strict=True
+            settings.get_urls(), settings.LICENSES_ITIS_VIP_CATEGORIES, strict=True
         ):
             assert f"{url}".endswith(category)
 
@@ -205,7 +205,7 @@ async def test_itis_vip_syncer_service(
     assert client.app
 
     settings = ItisVipSettings.create_from_envs()
-    assert settings.ITIS_VIP_CATEGORIES
+    assert settings.LICENSES_ITIS_VIP_CATEGORIES
 
     categories = settings.to_categories()
 

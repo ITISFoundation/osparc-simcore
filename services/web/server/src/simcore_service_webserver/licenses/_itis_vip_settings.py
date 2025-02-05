@@ -14,21 +14,25 @@ def _validate_url_contains_category(url: str) -> str:
 
 
 class ItisVipSettings(BaseCustomSettings):
-    ITIS_VIP_API_URL: Annotated[str, AfterValidator(_validate_url_contains_category)]
-    ITIS_VIP_CATEGORIES: dict[CategoryID, CategoryDisplay]
+    LICENSES_ITIS_VIP_API_URL: Annotated[
+        str, AfterValidator(_validate_url_contains_category)
+    ]
+    LICENSES_ITIS_VIP_CATEGORIES: dict[CategoryID, CategoryDisplay]
 
     def get_urls(self) -> list[HttpUrl]:
         return [
-            HttpUrl(self.ITIS_VIP_API_URL.format(category=category))
-            for category in self.ITIS_VIP_CATEGORIES
+            HttpUrl(self.LICENSES_ITIS_VIP_API_URL.format(category=category))
+            for category in self.LICENSES_ITIS_VIP_CATEGORIES
         ]
 
     def to_categories(self) -> list[CategoryTuple]:
         return [
             CategoryTuple(
-                url=HttpUrl(self.ITIS_VIP_API_URL.format(category=category_id)),
+                url=HttpUrl(
+                    self.LICENSES_ITIS_VIP_API_URL.format(category=category_id)
+                ),
                 id=category_id,
                 display=category_display,
             )
-            for category_id, category_display in self.ITIS_VIP_CATEGORIES.items()
+            for category_id, category_display in self.LICENSES_ITIS_VIP_CATEGORIES.items()
         ]
