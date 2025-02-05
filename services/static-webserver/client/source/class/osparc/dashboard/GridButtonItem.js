@@ -245,10 +245,12 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
 
     _applyTags: function(tags) {
       if (osparc.data.Permissions.getInstance().canDo("study.tag")) {
+        const maxTags = 2;
         const tagsContainer = this.getChildControl("tags");
         tagsContainer.setVisibility(tags.length ? "visible" : "excluded");
         tagsContainer.removeAll();
-        tags.forEach(tag => {
+        for (let i=0; i<=tags.length && i<maxTags; i++) {
+          const tag = tags[i];
           const tagUI = new osparc.ui.basic.Tag(tag, "searchBarFilter");
           tagUI.set({
             font: "text-12",
@@ -256,7 +258,15 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
           });
           tagUI.addListener("tap", () => this.fireDataEvent("tagClicked", tag));
           tagsContainer.add(tagUI);
-        });
+        }
+        if (tags.length > maxTags) {
+          const moreButton = new qx.ui.basic.Label(this.tr("More...")).set({
+            font: "text-12",
+            backgroundColor: "strong-main",
+            appearance: "tag",
+          });
+          tagsContainer.add(moreButton);
+        }
       }
     },
 
