@@ -26,18 +26,20 @@ qx.Class.define("osparc.desktop.preferences.pages.TagsPage", {
 
     this._add(new qx.ui.core.Spacer(null, 10));
 
-    this.__container = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
-    this.__container.set({
+    this.__tagsContainer = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+    this.__tagsContainer.set({
       paddingLeft: 10
     });
-    const scroll = new qx.ui.container.Scroll(this.__container);
-    this._add(scroll);
+    const scroll = new qx.ui.container.Scroll(this.__tagsContainer);
+    this._add(scroll, {
+      flex: 1
+    });
 
     this.__createComponents();
   },
 
   members: {
-    __container: null,
+    __tagsContainer: null,
     __addTagButton: null,
     __tagItems: null,
 
@@ -55,35 +57,34 @@ qx.Class.define("osparc.desktop.preferences.pages.TagsPage", {
     },
 
     __renderLayout: function() {
-      this.__container.removeAll();
+      this.__tagsContainer.removeAll();
 
       // Print tag items
-      this.__tagItems.forEach(tagItem => this.__container.add(tagItem));
+      this.__tagItems.forEach(tagItem => this.__tagsContainer.add(tagItem));
 
       // New tag button
       const buttonContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
         alignX: "center"
       }));
-      buttonContainer.add(new qx.ui.core.Spacer(null, 10));
       buttonContainer.add(this.__addTagButton);
-      this.__container.add(buttonContainer);
+      this._add(buttonContainer);
     },
 
     __attachEventHandlers: function() {
       this.__addTagButton.addListener("execute", () => {
-        const itemCount = this.__container.getChildren().length;
+        const itemCount = this.__tagsContainer.getChildren().length;
         const newItem = new osparc.form.tag.TagItem().set({
           mode: osparc.form.tag.TagItem.modes.EDIT
         });
         this.__attachTagItemEvents(newItem);
-        this.__container.addAt(newItem, Math.max(0, itemCount - 1));
+        this.__tagsContainer.addAt(newItem, Math.max(0, itemCount - 1));
       });
       this.__tagItems.forEach(tagItem => this.__attachTagItemEvents(tagItem));
     },
 
     __attachTagItemEvents: function(tagItem) {
-      tagItem.addListener("cancelNewTag", e => this.__container.remove(e.getTarget()), this);
-      tagItem.addListener("deleteTag", e => this.__container.remove(e.getTarget()));
+      tagItem.addListener("cancelNewTag", e => this.__tagsContainer.remove(e.getTarget()), this);
+      tagItem.addListener("deleteTag", e => this.__tagsContainer.remove(e.getTarget()));
     }
   }
 });
