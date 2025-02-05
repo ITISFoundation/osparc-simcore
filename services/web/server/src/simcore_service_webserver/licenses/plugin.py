@@ -10,11 +10,13 @@ from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setu
 from ..rabbitmq import setup_rabbitmq
 from ..rest.plugin import setup_rest
 from . import (
+    _itis_vip_syncer_service,
     _licensed_items_checkouts_rest,
     _licensed_items_purchases_rest,
     _licensed_items_rest,
     _rpc,
 )
+from .settings import LicensesSettings, get_plugin_settings
 
 _logger = logging.getLogger(__name__)
 
@@ -26,7 +28,7 @@ _logger = logging.getLogger(__name__)
     logger=_logger,
 )
 def setup_licenses(app: web.Application):
-    assert app[APP_SETTINGS_KEY].WEBSERVER_LICENSES  # nosec
+    settings: LicensesSettings = get_plugin_settings(app)
 
     # routes
     setup_rest(app)
@@ -37,3 +39,10 @@ def setup_licenses(app: web.Application):
     setup_rabbitmq(app)
     if app[APP_SETTINGS_KEY].WEBSERVER_RABBITMQ:
         app.on_startup.append(_rpc.register_rpc_routes_on_startup)
+
+    if settings.LICENSES_ITIS_VIP_SYNCER_ENABLED and settings.LICENSES_ITIS_VIP:
+        _itis_vip_syncer_service.setup_itis_vip_syncer(
+            app,
+            settings=settings.LICENSES_ITIS_VIP,
+            resync_after=settings.LICENSES_ITIS_VIP_SYNCER_PERIODICITY,
+        )

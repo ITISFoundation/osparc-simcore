@@ -5,7 +5,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
 
-from .licensed_items import LicensedItemID
+from .licenses import LicensedItemID
 from .products import ProductName
 from .resource_tracker import PricingPlanId, PricingUnitCostId, PricingUnitId
 from .users import UserID
