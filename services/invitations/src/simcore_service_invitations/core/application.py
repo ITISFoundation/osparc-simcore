@@ -3,7 +3,7 @@ from servicelib.fastapi.openapi import override_fastapi_openapi_method
 from servicelib.fastapi.prometheus_instrumentation import (
     setup_prometheus_instrumentation,
 )
-from servicelib.fastapi.tracing import setup_tracing
+from servicelib.fastapi.tracing import initialize_tracing
 
 from .._meta import (
     API_VERSION,
@@ -41,7 +41,7 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
     if app.state.settings.INVITATIONS_PROMETHEUS_INSTRUMENTATION_ENABLED:
         setup_prometheus_instrumentation(app)
     if app.state.settings.INVITATIONS_TRACING:
-        setup_tracing(app, app.state.settings.INVITATIONS_TRACING, APP_NAME)
+        initialize_tracing(app, app.state.settings.INVITATIONS_TRACING, APP_NAME)
 
     # ERROR HANDLERS
     exceptions_handlers.setup(app)

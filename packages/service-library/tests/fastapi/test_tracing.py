@@ -11,7 +11,7 @@ import pip
 import pytest
 from fastapi import FastAPI
 from pydantic import ValidationError
-from servicelib.fastapi.tracing import setup_tracing
+from servicelib.fastapi.tracing import initialize_tracing
 from settings_library.tracing import TracingSettings
 
 
@@ -54,13 +54,13 @@ async def test_valid_tracing_settings(
     uninstrument_opentelemetry: Iterator[None],
 ):
     tracing_settings = TracingSettings()
-    setup_tracing(
+    initialize_tracing(
         mocked_app,
         tracing_settings=tracing_settings,
         service_name="Mock-Openetlemetry-Pytest",
     )
     # idempotency
-    setup_tracing(
+    initialize_tracing(
         mocked_app,
         tracing_settings=tracing_settings,
         service_name="Mock-Openetlemetry-Pytest",
@@ -92,7 +92,7 @@ async def test_invalid_tracing_settings(
     app = mocked_app
     with pytest.raises((BaseException, ValidationError, TypeError)):  # noqa: PT012
         tracing_settings = TracingSettings()
-        setup_tracing(
+        initialize_tracing(
             app,
             tracing_settings=tracing_settings,
             service_name="Mock-Openetlemetry-Pytest",
@@ -146,13 +146,13 @@ async def test_tracing_setup_package_detection(
     importlib.import_module(package_name)
     #
     tracing_settings = TracingSettings()
-    setup_tracing(
+    initialize_tracing(
         mocked_app,
         tracing_settings=tracing_settings,
         service_name="Mock-Openetlemetry-Pytest",
     )
     # idempotency
-    setup_tracing(
+    initialize_tracing(
         mocked_app,
         tracing_settings=tracing_settings,
         service_name="Mock-Openetlemetry-Pytest",
