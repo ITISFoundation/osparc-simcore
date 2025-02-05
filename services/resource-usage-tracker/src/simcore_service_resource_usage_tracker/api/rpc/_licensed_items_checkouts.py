@@ -3,7 +3,7 @@ from models_library.api_schemas_resource_usage_tracker.licensed_items_checkouts 
     LicensedItemCheckoutGet,
     LicensedItemsCheckoutsPage,
 )
-from models_library.licensed_items import LicensedItemID
+from models_library.licenses import LicensedItemID
 from models_library.products import ProductName
 from models_library.resource_tracker_licensed_items_checkouts import (
     LicensedItemCheckoutID,

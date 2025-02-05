@@ -2,7 +2,7 @@ from aiohttp import web
 from models_library.api_schemas_resource_usage_tracker import (
     licensed_items_checkouts as rut_licensed_items_checkouts,
 )
-from models_library.licensed_items import LicensedItemID
+from models_library.licenses import LicensedItemID
 from models_library.products import ProductName
 from models_library.resource_tracker_licensed_items_checkouts import (
     LicensedItemCheckoutID,

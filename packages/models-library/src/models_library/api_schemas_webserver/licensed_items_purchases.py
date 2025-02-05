@@ -5,7 +5,7 @@ from typing import NamedTuple
 from models_library.emails import LowerCaseEmailStr
 from pydantic import PositiveInt
 
-from ..licensed_items import LicensedItemID
+from ..licenses import LicensedItemID
 from ..products import ProductName
 from ..resource_tracker import PricingUnitCostId
 from ..resource_tracker_licensed_items_purchases import LicensedItemPurchaseID

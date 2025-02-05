@@ -8,7 +8,7 @@ from models_library.api_schemas_webserver.licensed_items_checkouts import (
     LicensedItemCheckoutRpcGet,
 )
 from models_library.basic_types import IDStr
-from models_library.licensed_items import LicensedItemID
+from models_library.licenses import LicensedItemID, LicensedItemPage
 from models_library.products import ProductName
 from models_library.resource_tracker_licensed_items_checkouts import (
     LicensedItemCheckoutID,
@@ -28,7 +28,6 @@ from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
 
 from ..rabbitmq import get_rabbitmq_rpc_server
 from . import _licensed_items_checkouts_service, _licensed_items_service
-from ._common.models import LicensedItemPage
 
 router = RPCRouter()
 

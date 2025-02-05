@@ -2,7 +2,7 @@ import logging
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, status
-from models_library.licensed_items import LicensedItemID
+from models_library.licenses import LicensedItemID
 from pydantic import PositiveInt
 
 from ...api.dependencies.authentication import get_current_user_id, get_product_name

@@ -5,10 +5,10 @@
 """
 
 import logging
-from typing import Literal, cast
+from typing import Any, Literal, cast
 
 from aiohttp import web
-from models_library.licensed_items import (
+from models_library.licenses import (
     LicensedItemDB,
     LicensedItemID,
     LicensedItemUpdateDB,
@@ -25,6 +25,7 @@ from simcore_postgres_database.utils_repos import (
     transaction_context,
 )
 from sqlalchemy import asc, desc, func
+from sqlalchemy.dialects import postgresql
 from sqlalchemy.ext.asyncio import AsyncConnection
 from sqlalchemy.sql import select
 
@@ -37,6 +38,30 @@ _logger = logging.getLogger(__name__)
 _SELECTION_ARGS = get_columns_from_db_model(licensed_items, LicensedItemDB)
 
 
+def _create_insert_query(
+    display_name: str,
+    licensed_resource_name: str,
+    licensed_resource_type: LicensedResourceType,
+    licensed_resource_data: dict[str, Any] | None,
+    product_name: ProductName | None,
+    pricing_plan_id: PricingPlanId | None,
+):
+    return (
+        postgresql.insert(licensed_items)
+        .values(
+            licensed_resource_name=licensed_resource_name,
+            licensed_resource_type=licensed_resource_type,
+            licensed_resource_data=licensed_resource_data,
+            display_name=display_name,
+            pricing_plan_id=pricing_plan_id,
+            product_name=product_name,
+            created=func.now(),
+            modified=func.now(),
+        )
+        .returning(*_SELECTION_ARGS)
+    )
+
+
 async def create(
     app: web.Application,
     connection: AsyncConnection | None = None,
@@ -44,26 +69,60 @@ async def create(
     display_name: str,
     licensed_resource_name: str,
     licensed_resource_type: LicensedResourceType,
-    licensed_resource_data: dict | None,
-    product_name: ProductName | None,
-    pricing_plan_id: PricingPlanId | None,
+    licensed_resource_data: dict[str, Any] | None = None,
+    product_name: ProductName | None = None,
+    pricing_plan_id: PricingPlanId | None = None,
 ) -> LicensedItemDB:
+
+    query = _create_insert_query(
+        display_name,
+        licensed_resource_name,
+        licensed_resource_type,
+        licensed_resource_data,
+        product_name,
+        pricing_plan_id,
+    )
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
-        result = await conn.execute(
-            licensed_items.insert()
-            .values(
-                product_name=product_name,
-                display_name=display_name,
-                licensed_resource_name=licensed_resource_name,
-                licensed_resource_type=licensed_resource_type,
-                licensed_resource_data=licensed_resource_data,
-                pricing_plan_id=pricing_plan_id,
-                created=func.now(),
-                modified=func.now(),
-            )
-            .returning(*_SELECTION_ARGS)
-        )
+        result = await conn.execute(query)
         row = result.one()
+        return LicensedItemDB.model_validate(row)
+
+
+async def create_if_not_exists(
+    app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
+    display_name: str,
+    licensed_resource_name: str,
+    licensed_resource_type: LicensedResourceType,
+    licensed_resource_data: dict[str, Any] | None = None,
+    product_name: ProductName | None = None,
+    pricing_plan_id: PricingPlanId | None = None,
+) -> LicensedItemDB:
+
+    insert_or_none_query = _create_insert_query(
+        display_name,
+        licensed_resource_name,
+        licensed_resource_type,
+        licensed_resource_data,
+        product_name,
+        pricing_plan_id,
+    ).on_conflict_do_nothing()
+
+    async with transaction_context(get_asyncpg_engine(app), connection) as conn:
+        result = await conn.execute(insert_or_none_query)
+        row = result.one_or_none()
+
+        if row is None:
+            select_query = select(*_SELECTION_ARGS).where(
+                (licensed_items.c.licensed_resource_name == licensed_resource_name)
+                & (licensed_items.c.licensed_resource_type == licensed_resource_type)
+            )
+
+            result = await conn.execute(select_query)
+            row = result.one()
+
+        assert row is not None  # nosec
         return LicensedItemDB.model_validate(row)
 
 
@@ -134,7 +193,7 @@ async def get(
     licensed_item_id: LicensedItemID,
     product_name: ProductName,
 ) -> LicensedItemDB:
-    base_query = (
+    select_query = (
         select(*_SELECTION_ARGS)
         .select_from(licensed_items)
         .where(
@@ -144,10 +203,34 @@ async def get(
     )
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-        result = await conn.stream(base_query)
-        row = await result.first()
+        result = await conn.execute(select_query)
+        row = result.one_or_none()
         if row is None:
             raise LicensedItemNotFoundError(licensed_item_id=licensed_item_id)
+        return LicensedItemDB.model_validate(row)
+
+
+async def get_by_resource_identifier(
+    app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
+    licensed_resource_name: str,
+    licensed_resource_type: LicensedResourceType,
+) -> LicensedItemDB:
+    select_query = select(*_SELECTION_ARGS).where(
+        (licensed_items.c.licensed_resource_name == licensed_resource_name)
+        & (licensed_items.c.licensed_resource_type == licensed_resource_type)
+    )
+
+    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
+        result = await conn.execute(select_query)
+        row = result.one_or_none()
+        if row is None:
+            raise LicensedItemNotFoundError(
+                licensed_item_id="Unkown",
+                licensed_resource_name=licensed_resource_name,
+                licensed_resource_type=licensed_resource_type,
+            )
         return LicensedItemDB.model_validate(row)
 
 

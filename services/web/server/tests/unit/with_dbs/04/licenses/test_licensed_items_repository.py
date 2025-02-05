@@ -7,7 +7,7 @@
 import arrow
 import pytest
 from aiohttp.test_utils import TestClient
-from models_library.licensed_items import (
+from models_library.licenses import (
     VIP_DETAILS_EXAMPLE,
     LicensedItemUpdateDB,
     LicensedResourceType,

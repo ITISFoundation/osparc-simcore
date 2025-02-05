@@ -5,7 +5,7 @@ from typing import cast
 from fastapi import FastAPI
 from fastapi_pagination import create_page
 from models_library.api_schemas_webserver.licensed_items import LicensedItemRpcGetPage
-from models_library.licensed_items import LicensedItemID
+from models_library.licenses import LicensedItemID
 from models_library.resource_tracker_licensed_items_checkouts import (
     LicensedItemCheckoutID,
 )
