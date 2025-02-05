@@ -3,7 +3,7 @@ from typing import Final
 
 from fastapi import FastAPI
 from servicelib.async_utils import cancel_sequential_workers
-from servicelib.fastapi.tracing import setup_tracing
+from servicelib.fastapi.tracing import initialize_tracing
 
 from .._meta import (
     API_VERSION,
@@ -51,7 +51,7 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
     setup_api_routes(app)
 
     if app.state.settings.DIRECTOR_TRACING:
-        setup_tracing(app, app.state.settings.DIRECTOR_TRACING, APP_NAME)
+        initialize_tracing(app, app.state.settings.DIRECTOR_TRACING, APP_NAME)
 
     # replace by httpx client
     setup_client_session(app)
