@@ -46,8 +46,8 @@ qx.Class.define("osparc.desktop.account.MyAccountWindow", {
   members: {
     __myAccount: null,
 
-    openProfile: function() {
-      return this.__myAccount.openProfile();
-    }
+    openTags: function() {
+      this.__myAccount.openTags();
+    },
   }
 });

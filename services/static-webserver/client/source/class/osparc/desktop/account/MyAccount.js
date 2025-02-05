@@ -154,11 +154,6 @@ qx.Class.define("osparc.desktop.account.MyAccount", {
       osparc.utils.Utils.setIdToWidget(page.getChildControl("button"), "preferencesTagsTabBtn");
     },
 
-    openProfile: function() {
-      this._openPage(this.__profilePage);
-      return true;
-    },
-
     openTags: function() {
       if (this.__tagsPage) {
         this._openPage(this.__tagsPage);
