@@ -1,3 +1,4 @@
+# pylint:disable=redefined-outer-name
 # pylint:disable=unused-argument
 
 import os
@@ -29,8 +30,30 @@ def test_cli_help_and_version(cli_runner: CliRunner):
     assert result.stdout.strip() == API_VERSION
 
 
-def test_echo_dotenv(cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch):
+@pytest.fixture
+def app_environment(
+    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
+) -> EnvVarsDict:
+    return setenvs_from_dict(
+        monkeypatch,
+        {
+            **app_environment,
+            "DYNAMIC_SCHEDULER_TRACING": "{}",
+            "TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT": "http://replace-with-opentelemetry-collector",
+            "TRACING_OPENTELEMETRY_COLLECTOR_PORT": "4318",
+            "RABBIT_HOST": "test",
+            "RABBIT_SECURE": "0",
+            "RABBIT_USER": "test",
+            "RABBIT_PASSWORD": "test",
+        },
+    )
+
+
+def test_echo_dotenv(
+    app_environment: EnvVarsDict, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+):
     # simcore-service-dynamic-scheduler echo-dotenv
+    ApplicationSettings.create_from_envs()
     result = cli_runner.invoke(cli_main, "echo-dotenv")
     assert result.exit_code == os.EX_OK, _format_cli_error(result)
 
@@ -41,25 +64,10 @@ def test_echo_dotenv(cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch):
         ApplicationSettings.create_from_envs()
 
 
-def test_list_settings(
-    cli_runner: CliRunner, app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
-):
-    with monkeypatch.context() as patch:
-        setenvs_from_dict(
-            patch,
-            {
-                **app_environment,
-                "DYNAMIC_SCHEDULER_TRACING": "{}",
-                "TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT": "http://replace-with-opentelemetry-collector",
-                "TRACING_OPENTELEMETRY_COLLECTOR_PORT": "4318",
-            },
-        )
-
-        # simcore-service-dynamic-scheduler settings --show-secrets --as-json
-        result = cli_runner.invoke(
-            cli_main, ["settings", "--show-secrets", "--as-json"]
-        )
-        assert result.exit_code == os.EX_OK, _format_cli_error(result)
+def test_list_settings(cli_runner: CliRunner, app_environment: EnvVarsDict):
+    # simcore-service-dynamic-scheduler settings --show-secrets --as-json
+    result = cli_runner.invoke(cli_main, ["settings", "--show-secrets", "--as-json"])
+    assert result.exit_code == os.EX_OK, _format_cli_error(result)
 
     print(result.output)
     settings = ApplicationSettings(result.output)
