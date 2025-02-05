@@ -24,7 +24,7 @@ qx.Class.define("osparc.desktop.credits.BillingCenter", {
     const miniWallet = this.self().createMiniWalletView().set({
       paddingRight: 10
     });
-    this.addWidgetOnTopOfTheTabs(miniWallet);
+    this.addWidgetToTabs(miniWallet);
 
     this.__walletsPage = this.__addWalletsPage();
     this.__paymentMethodsPage = this.__addPaymentMethodsPage();

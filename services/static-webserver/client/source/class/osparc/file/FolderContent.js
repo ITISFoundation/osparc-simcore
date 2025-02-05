@@ -36,7 +36,7 @@ qx.Class.define("osparc.file.FolderContent", {
 
     mode: {
       check: ["list", "icons"],
-      init: "icons",
+      init: "list",
       nullable: false,
       event: "changeMode",
       apply: "__reloadFolderContent"
@@ -80,7 +80,7 @@ qx.Class.define("osparc.file.FolderContent", {
     T_POS: {
       TYPE: 0,
       NAME: 1,
-      DATE: 2,
+      MODIFIED_DATE: 2,
       SIZE: 3,
       ID: 4
     }
@@ -105,9 +105,9 @@ qx.Class.define("osparc.file.FolderContent", {
           });
           control.getTableColumnModel().setDataCellRenderer(this.self().T_POS.TYPE, new qx.ui.table.cellrenderer.Image());
           control.setColumnWidth(this.self().T_POS.TYPE, 30);
-          control.setColumnWidth(this.self().T_POS.NAME, 360);
-          control.setColumnWidth(this.self().T_POS.DATE, 170);
-          control.setColumnWidth(this.self().T_POS.SIZE, 70);
+          control.setColumnWidth(this.self().T_POS.NAME, 250);
+          control.setColumnWidth(this.self().T_POS.MODIFIED_DATE, 125);
+          control.setColumnWidth(this.self().T_POS.SIZE, 80);
           this.bind("mode", control, "visibility", {
             converter: mode => mode === "list" ? "visible" : "excluded"
           });
@@ -144,6 +144,8 @@ qx.Class.define("osparc.file.FolderContent", {
         };
         datas.push(data);
       });
+      // folders first
+      datas.sort((a, b) => osparc.file.FilesTree.isFile(a.entry) - osparc.file.FilesTree.isFile(b.entry));
       const items = [];
       if (this.getMode() === "list") {
         datas.forEach(data => {
@@ -278,14 +280,14 @@ qx.Class.define("osparc.file.FolderContent", {
         }
         if (this.isMultiSelect()) {
           // pass all buttons that are selected
-          const selectedFiles = [];
+          const selectedItems = [];
           const iconsLayout = this.getChildControl("icons-layout");
           iconsLayout.getChildren().forEach(btn => {
-            if (osparc.file.FilesTree.isFile(btn.entry) && btn.getValue()) {
-              selectedFiles.push(btn.entry);
+            if (btn.getValue() && "entry" in btn) {
+              selectedItems.push(btn.entry);
             }
           });
-          this.__selectionChanged(selectedFiles);
+          this.__selectionChanged(selectedItems);
         } else {
           // unselect the other items
           const iconsLayout = this.getChildControl("icons-layout");
@@ -309,23 +311,23 @@ qx.Class.define("osparc.file.FolderContent", {
         if (e.getNativeEvent().ctrlKey) {
           this.setMultiSelect(true);
         }
-        const selectedFiles = [];
+        const selectedItems = [];
         const selectionRanges = table.getSelectionModel().getSelectedRanges();
         selectionRanges.forEach(range => {
           for (let i=range.minIndex; i<=range.maxIndex; i++) {
             const row = table.getTableModel().getRowData(i);
-            if (osparc.file.FilesTree.isFile(row.entry)) {
-              selectedFiles.push(row.entry);
+            if (row && "entry" in row) {
+              selectedItems.push(row.entry);
             }
           }
         });
-        this.__selectionChanged(selectedFiles);
+        this.__selectionChanged(selectedItems);
       }, this);
       table.addListener("cellDbltap", e => {
         const selectedRow = e.getRow();
-        const rowData = table.getTableModel().getRowData(selectedRow);
-        if ("entry" in rowData) {
-          this.__itemDblTapped(rowData.entry);
+        const row = table.getTableModel().getRowData(selectedRow);
+        if (row && "entry" in row) {
+          this.__itemDblTapped(row.entry);
         }
       }, this);
     }

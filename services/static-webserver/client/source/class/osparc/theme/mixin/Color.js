@@ -54,6 +54,29 @@ qx.Theme.define("osparc.theme.mixin.Color", {
     "logger-warning-message": "warning-yellow",
     "logger-error-message": "failed-red",
 
-    "workbench-edge-selected": "busy-orange"
+    "workbench-edge-selected": "busy-orange",
+
+
+    // table
+    "table-header": "transparent",
+    "table-header-foreground": "text", // text color
+    "table-header-border": "text", // header underline
+    "table-header-cell": "transparent",
+
+    // used in table code
+    "table-focus-indicator": "transparent",
+    "table-row-background-even": "transparent",
+    "table-row-background-odd": "transparent",
+    "table-row-background-focused": "transparent",
+    "table-row-background-focused-selected": "background-main-2",
+    "table-row-background-selected": "background-main-2",
+
+    // foreground
+    "table-row-selected": "text",
+    "table-row": "text",
+
+    // table grid color
+    "table-row-line": "transparent",
+    "table-column-line": "transparent",
   }
 });

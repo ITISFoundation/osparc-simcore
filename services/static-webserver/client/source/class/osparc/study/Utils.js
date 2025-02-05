@@ -330,7 +330,7 @@ qx.Class.define("osparc.study.Utils", {
 
     canShowStudyData: function(studyData) {
       const blocked = this.__getBlockedState(studyData);
-      return [false].includes(blocked);
+      return ["UNKNOWN_SERVICES", false].includes(blocked);
     },
 
     canShowPreview: function(studyData) {

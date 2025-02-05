@@ -24,7 +24,7 @@ qx.Class.define("osparc.admin.AdminCenter", {
     const miniProfile = osparc.desktop.account.MyAccount.createMiniProfileView().set({
       paddingRight: 10
     });
-    this.addWidgetOnTopOfTheTabs(miniProfile);
+    this.addWidgetToTabs(miniProfile);
 
     this.__addPricingPlansPage();
     this.__addMaintenancePage();

@@ -963,8 +963,8 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     openData: function() {
-      const moreOpts = this.__openMoreOptions();
-      moreOpts.openData();
+      const resourceData = this.getResourceData();
+      osparc.widget.StudyDataManager.popUpInWindow(resourceData["uuid"]);
     },
 
     openBilling: function() {

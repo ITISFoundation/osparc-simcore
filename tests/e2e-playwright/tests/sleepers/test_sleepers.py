@@ -67,6 +67,7 @@ def _get_expected_file_names_for_version(version: Version) -> list[str]:
 )
 def _get_file_names(page: Page) -> list[str]:
     file_names_found = []
+    page.get_by_test_id("folderGridView").click()
     for file in page.get_by_test_id("FolderViewerItem").all():
         file_name = file.text_content()
         assert file_name
