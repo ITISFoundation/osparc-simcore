@@ -66,6 +66,7 @@ qx.Class.define("osparc.desktop.preferences.Preferences", {
     openTags: function() {
       if (this.__tagsPage) {
         this._openPage(this.__tagsPage);
+        return true;
       }
     },
   }

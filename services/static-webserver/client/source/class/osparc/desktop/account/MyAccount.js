@@ -28,11 +28,8 @@ qx.Class.define("osparc.desktop.account.MyAccount", {
 
     this.__profilePage = this.__addProfilePage();
 
-    // show Usage in My Account if wallets are not enabled. If they are enabled it will be in the BIlling Center
-    if (!osparc.desktop.credits.Utils.areWalletsEnabled()) {
-      if (osparc.data.Permissions.getInstance().canDo("usage.all.read")) {
-        this.__usagePage = this.__addUsagePage();
-      }
+    if (osparc.data.Permissions.getInstance().canDo("usage.all.read")) {
+      this.__usagePage = this.__addUsagePage();
     }
   },
 

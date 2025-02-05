@@ -48,7 +48,7 @@ qx.Class.define("osparc.desktop.preferences.PreferencesWindow", {
     __preferences: null,
 
     openTags: function() {
-      this.__preferences.openTags();
+      return this.__preferences.openTags();
     }
   }
 });
