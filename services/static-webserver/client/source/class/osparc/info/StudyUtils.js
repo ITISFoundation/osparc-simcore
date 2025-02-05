@@ -205,7 +205,9 @@ qx.Class.define("osparc.info.StudyUtils", {
       * @param study {osparc.data.model.Study} Study Model
       */
     createTags: function(study) {
-      const tagsContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+      const tagsContainer = new qx.ui.container.Composite(new qx.ui.layout.Flow(5, 5)).set({
+        maxWidth: 420
+      });
 
       const addTags = model => {
         tagsContainer.removeAll();
@@ -308,14 +310,14 @@ qx.Class.define("osparc.info.StudyUtils", {
         },
       };
 
-      const grid1 = new qx.ui.layout.Grid(15, 5);
-      grid1.setColumnAlign(0, "left", "top");
-      grid1.setColumnFlex(0, 1);
-      const mainInfoLayout = new qx.ui.container.Composite(grid1);
+      const mainInfoGrid = new qx.ui.layout.Grid(15, 5);
+      mainInfoGrid.setColumnAlign(0, "left", "top");
+      mainInfoGrid.setColumnFlex(0, 1);
+      const mainInfoLayout = new qx.ui.container.Composite(mainInfoGrid);
 
-      const grid2 = new qx.ui.layout.Grid(15, 5);
-      const extraInfoLayout = new qx.ui.container.Composite(grid2);
-      grid2.setColumnFlex(0, 1);
+      const extraInfoGrid = new qx.ui.layout.Grid(15, 5);
+      const extraInfoLayout = new qx.ui.container.Composite(extraInfoGrid);
+      extraInfoGrid.setColumnFlex(0, 1);
 
       let row = 0;
       let row2 = 0;
@@ -331,13 +333,15 @@ qx.Class.define("osparc.info.StudyUtils", {
                 marginRight: 15
               });
             }
-            titleLayout.add(extraInfo.view);
+            titleLayout.add(extraInfo.view, {
+              flex: 1
+            });
             extraInfoLayout.add(titleLayout, {
               row: row2,
               column: gridInfo.column
             });
             row2++;
-            grid2.setRowHeight(row2, 5); // spacer
+            extraInfoGrid.setRowHeight(row2, 5); // spacer
             row2++;
           } else {
             const titleLayout = this.__titleWithEditLayout(extraInfo);
@@ -351,7 +355,7 @@ qx.Class.define("osparc.info.StudyUtils", {
               column: gridInfo.column
             });
             row++;
-            grid1.setRowHeight(row, 5); // spacer
+            mainInfoGrid.setRowHeight(row, 5); // spacer
             row++;
           }
         }
