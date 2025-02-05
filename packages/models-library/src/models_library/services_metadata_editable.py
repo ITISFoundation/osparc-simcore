@@ -2,7 +2,8 @@
 from datetime import datetime
 from typing import Annotated, Any
 
-from pydantic import ConfigDict, Field, HttpUrl
+from pydantic import AfterValidator, ConfigDict, Field, HttpUrl
+from pydantic.config import JsonDict
 
 from .services_base import ServiceBaseDisplay
 from .services_constants import LATEST_INTEGRATION_VERSION
@@ -19,7 +20,8 @@ assert ServiceVersion  # nosec
 class ServiceMetaDataEditable(ServiceBaseDisplay):
     # Overrides ServiceBaseDisplay fields to Optional for a partial update
     name: str | None  # type: ignore[assignment]
-    thumbnail: Annotated[str, HttpUrl] | None
+    thumbnail: Annotated[str, HttpUrl] | None = None
+    icon: Annotated[HttpUrl, AfterValidator(str)] | None = None
     description: str | None  # type: ignore[assignment]
     description_ui: bool = False
     version_display: str | None = None
@@ -37,32 +39,37 @@ class ServiceMetaDataEditable(ServiceBaseDisplay):
         dict[str, Any], Field(default_factory=dict, json_schema_extra={"default": {}})
     ]
 
-    model_config = ConfigDict(
-        json_schema_extra={
-            "example": {
-                "key": "simcore/services/dynamic/sim4life",
-                "version": "1.0.9",
-                "name": "sim4life",
-                "description": "s4l web",
-                "thumbnail": "https://thumbnailit.org/image",
-                "quality": {
-                    "enabled": True,
-                    "tsr_target": {
-                        f"r{n:02d}": {"level": 4, "references": ""}
-                        for n in range(1, 11)
+    @staticmethod
+    def _update_json_schema_extra(schema: JsonDict) -> None:
+        schema.update(
+            {
+                "example": {
+                    "key": "simcore/services/dynamic/sim4life",
+                    "version": "1.0.9",
+                    "name": "sim4life",
+                    "description": "s4l web",
+                    "thumbnail": "https://thumbnailit.org/image",
+                    "icon": "https://cdn-icons-png.flaticon.com/512/25/25231.png",
+                    "quality": {
+                        "enabled": True,
+                        "tsr_target": {
+                            f"r{n:02d}": {"level": 4, "references": ""}
+                            for n in range(1, 11)
+                        },
+                        "annotations": {
+                            "vandv": "",
+                            "limitations": "",
+                            "certificationLink": "",
+                            "certificationStatus": "Uncertified",
+                        },
+                        "tsr_current": {
+                            f"r{n:02d}": {"level": 0, "references": ""}
+                            for n in range(1, 11)
+                        },
                     },
-                    "annotations": {
-                        "vandv": "",
-                        "limitations": "",
-                        "certificationLink": "",
-                        "certificationStatus": "Uncertified",
-                    },
-                    "tsr_current": {
-                        f"r{n:02d}": {"level": 0, "references": ""}
-                        for n in range(1, 11)
-                    },
-                },
-                "classifiers": [],
+                    "classifiers": [],
+                }
             }
-        }
-    )
+        )
+
+    model_config = ConfigDict(json_schema_extra=_update_json_schema_extra)

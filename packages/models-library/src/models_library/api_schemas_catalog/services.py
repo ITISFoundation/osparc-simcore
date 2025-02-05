@@ -129,6 +129,7 @@ _EXAMPLE_SLEEPER: dict[str, Any] = {
     "thumbnail": None,
     "description": "A service which awaits for time to pass, two times.",
     "description_ui": True,
+    "icon": "https://cdn-icons-png.flaticon.com/512/25/25231.png",
     "classifiers": [],
     "quality": {},
     "accessRights": {"1": {"execute": True, "write": False}},
@@ -231,6 +232,7 @@ class ServiceGetV2(BaseModel):
 
     name: str
     thumbnail: HttpUrl | None = None
+    icon: HttpUrl | None = None
     description: str
 
     description_ui: bool = False
@@ -341,6 +343,7 @@ ServiceResourcesGet: TypeAlias = ServiceResourcesDict
 class ServiceUpdateV2(BaseModel):
     name: str | None = None
     thumbnail: HttpUrl | None = None
+    icon: HttpUrl | None = None
 
     description: str | None = None
     description_ui: bool = False
