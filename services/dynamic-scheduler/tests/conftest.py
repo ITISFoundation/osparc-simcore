@@ -116,6 +116,11 @@ def disable_status_monitor_lifespan(mocker: MockerFixture) -> None:
     mocker.patch(f"{_PATH_APPLICATION}.lifespan_status_monitor")
 
 
+@pytest.fixture
+def disable_postgres_lifespan(mocker: MockerFixture) -> None:
+    mocker.patch(f"{_PATH_APPLICATION}.lifespan_postgres")
+
+
 MAX_TIME_FOR_APP_TO_STARTUP: Final[float] = 10
 MAX_TIME_FOR_APP_TO_SHUTDOWN: Final[float] = 10
 

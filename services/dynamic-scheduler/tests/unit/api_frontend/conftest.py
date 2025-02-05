@@ -65,7 +65,12 @@ def app_environment(
     remove_redis_data: None,
     monkeypatch: pytest.MonkeyPatch,
 ) -> EnvVarsDict:
-    setenvs_from_dict(monkeypatch, {"POSTGRES_CLIENT_NAME": "test_postgres_client"})
+    setenvs_from_dict(
+        monkeypatch,
+        {
+            "POSTGRES_CLIENT_NAME": "test_postgres_client",
+        },
+    )
     return app_environment
 
 
