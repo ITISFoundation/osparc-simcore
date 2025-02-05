@@ -26,64 +26,60 @@ qx.Class.define("osparc.desktop.preferences.pages.TagsPage", {
 
     this._add(new qx.ui.core.Spacer(null, 10));
 
-    this.__container = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
-    this.__container.set({
-      paddingLeft: 10
-    });
-    const scroll = new qx.ui.container.Scroll(this.__container);
-    this._add(scroll);
-
-    this.__createComponents();
+    this.__renderLayout();
   },
 
   members: {
-    __container: null,
-    __addTagButton: null,
-    __tagItems: null,
+    __tagsContainer: null,
 
-    __createComponents: function() {
-      this.__addTagButton = new qx.ui.form.Button().set({
+    __renderLayout: function() {
+      // Tags
+      this.__tagsContainer = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+      this.__tagsContainer.set({
+        paddingLeft: 10
+      });
+      const tagContainerScroll = new qx.ui.container.Scroll(this.__tagsContainer);
+      this._add(tagContainerScroll, {
+        flex: 1
+      });
+
+      const tags = osparc.store.Tags.getInstance().getTags();
+      const tagItems = tags.map(tag => new osparc.form.tag.TagItem().set({tag}));
+      tagItems.forEach(tagItem => {
+        this.__tagsContainer.add(tagItem);
+        this.__attachTagItemEvents(tagItem);
+      });
+
+      // New tag Button
+      const addTagButton = new qx.ui.form.Button().set({
         appearance: "form-button-outlined",
         label: this.tr("New Tag"),
         icon: "@FontAwesome5Solid/plus/14"
       });
-      osparc.utils.Utils.setIdToWidget(this.__addTagButton, "addTagBtn");
-      const tags = osparc.store.Tags.getInstance().getTags();
-      this.__tagItems = tags.map(tag => new osparc.form.tag.TagItem().set({tag}));
-      this.__renderLayout();
-      this.__attachEventHandlers();
-    },
+      osparc.utils.Utils.setIdToWidget(addTagButton, "addTagBtn");
+      addTagButton.addListener("execute", () => {
+        const newItem = new osparc.form.tag.TagItem().set({
+          mode: osparc.form.tag.TagItem.modes.EDIT
+        });
+        this.__tagsContainer.add(newItem);
+        this.__attachTagItemEvents(newItem);
 
-    __renderLayout: function() {
-      this.__container.removeAll();
-
-      // Print tag items
-      this.__tagItems.forEach(tagItem => this.__container.add(tagItem));
+        // scroll down
+        const height = tagContainerScroll.getSizeHint().height;
+        tagContainerScroll.scrollToY(height);
+      });
 
       // New tag button
       const buttonContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
         alignX: "center"
       }));
-      buttonContainer.add(new qx.ui.core.Spacer(null, 10));
-      buttonContainer.add(this.__addTagButton);
-      this.__container.add(buttonContainer);
-    },
-
-    __attachEventHandlers: function() {
-      this.__addTagButton.addListener("execute", () => {
-        const itemCount = this.__container.getChildren().length;
-        const newItem = new osparc.form.tag.TagItem().set({
-          mode: osparc.form.tag.TagItem.modes.EDIT
-        });
-        this.__attachTagItemEvents(newItem);
-        this.__container.addAt(newItem, Math.max(0, itemCount - 1));
-      });
-      this.__tagItems.forEach(tagItem => this.__attachTagItemEvents(tagItem));
+      buttonContainer.add(addTagButton);
+      this._add(buttonContainer);
     },
 
     __attachTagItemEvents: function(tagItem) {
-      tagItem.addListener("cancelNewTag", e => this.__container.remove(e.getTarget()), this);
-      tagItem.addListener("deleteTag", e => this.__container.remove(e.getTarget()));
+      tagItem.addListener("cancelNewTag", e => this.__tagsContainer.remove(e.getTarget()), this);
+      tagItem.addListener("deleteTag", e => this.__tagsContainer.remove(e.getTarget()));
     }
   }
 });
