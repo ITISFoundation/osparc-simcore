@@ -722,7 +722,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
             this.__workbenchView.showPipeline();
           } else {
             const currentNodeId = this.getStudy().getUi().getCurrentNodeId();
-            if (currentNodeId) {
+            if (currentNodeId && this.getStudy().getWorkbench().getNode(currentNodeId)) {
               const node = this.getStudy().getWorkbench().getNode(currentNodeId);
               if (node && node.isDynamic()) {
                 this.__workbenchView.fullscreenNode(currentNodeId);

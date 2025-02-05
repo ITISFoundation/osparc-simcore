@@ -25,12 +25,12 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let dataManager = new osparc.widget.NodeDataManager(null, nodeId);
+ *   let dataManager = new osparc.widget.StudyDataManager(null, nodeId);
  *   this.getRoot().add(dataManager);
  * </pre>
  */
 
-qx.Class.define("osparc.widget.NodeDataManager", {
+qx.Class.define("osparc.widget.StudyDataManager", {
   extend: qx.ui.core.Widget,
 
   /**
@@ -56,6 +56,16 @@ qx.Class.define("osparc.widget.NodeDataManager", {
 
     this.__buildLayout();
     this.__reloadTree();
+  },
+
+  statics: {
+    popUpInWindow: function(studyId, nodeId, title) {
+      const studyDataManager = new osparc.widget.StudyDataManager(studyId, nodeId);
+      if (!title) {
+        title = osparc.product.Utils.getStudyAlias({firstUpperCase: true}) + qx.locale.Manager.tr(" Files");
+      }
+      return osparc.ui.window.Window.popUpInWindow(studyDataManager, title, osparc.dashboard.ResourceDetails.WIDTH, osparc.dashboard.ResourceDetails.HEIGHT);
+    },
   },
 
   properties: {
