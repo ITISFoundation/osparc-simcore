@@ -83,8 +83,6 @@ async def sync_resources_with_licensed_items(
                             result.registered.licensed_item_id,
                         )
 
-            # TODO: check delete!?
-
 
 _BACKGROUND_TASK_NAME = f"{__name__}.itis_vip_syncer_cleanup_ctx._periodic_sync"
 
