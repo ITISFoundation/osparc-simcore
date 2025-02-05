@@ -4,11 +4,9 @@ anyio==4.3.0
     #   httpx
 asgi-lifespan==2.1.0
     # via -r requirements/_test.in
-boto3-stubs==1.35.25
-    # via types-boto3
-botocore-stubs==1.35.25
+botocore-stubs==1.36.6
     # via
-    #   boto3-stubs
+    #   types-boto3
     #   types-botocore
 certifi==2024.2.2
     # via
@@ -21,13 +19,13 @@ charset-normalizer==3.3.2
     # via
     #   -c requirements/_base.txt
     #   requests
-coverage==7.6.1
+coverage==7.6.10
     # via
     #   -r requirements/_test.in
     #   pytest-cov
 execnet==2.1.1
     # via pytest-xdist
-faker==29.0.0
+faker==35.0.0
     # via -r requirements/_test.in
 h11==0.14.0
     # via
@@ -52,7 +50,7 @@ idna==3.6
     #   requests
 iniconfig==2.0.0
     # via pytest
-packaging==24.1
+packaging==24.2
     # via
     #   pytest
     #   pytest-sugar
@@ -60,7 +58,7 @@ pluggy==1.5.0
     # via pytest
 pprintpp==0.4.0
     # via pytest-icdiff
-pytest==8.3.3
+pytest==8.3.4
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
@@ -74,7 +72,7 @@ pytest-asyncio==0.23.8
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_test.in
-pytest-cov==5.0.0
+pytest-cov==6.0.0
     # via -r requirements/_test.in
 pytest-icdiff==0.9
     # via -r requirements/_test.in
@@ -96,7 +94,7 @@ requests==2.32.3
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-respx==0.21.1
+respx==0.22.0
     # via -r requirements/_test.in
 six==1.16.0
     # via
@@ -108,20 +106,21 @@ sniffio==1.3.1
     #   anyio
     #   asgi-lifespan
     #   httpx
-termcolor==2.4.0
+termcolor==2.5.0
     # via pytest-sugar
-types-awscrt==0.21.5
+types-awscrt==0.23.7
     # via botocore-stubs
-types-boto3==1.0.2
+types-boto3==1.36.6
     # via -r requirements/_test.in
 types-botocore==1.0.2
     # via -r requirements/_test.in
-types-s3transfer==0.10.2
-    # via boto3-stubs
+types-s3transfer==0.11.2
+    # via types-boto3
 typing-extensions==4.12.2
     # via
     #   -c requirements/_base.txt
-    #   boto3-stubs
+    #   faker
+    #   types-boto3
 urllib3==2.2.3
     # via
     #   -c requirements/../../../requirements/constraints.txt

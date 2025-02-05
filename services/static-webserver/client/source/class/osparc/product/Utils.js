@@ -114,23 +114,6 @@ qx.Class.define("osparc.product.Utils", {
       return resourceType;
     },
 
-    __linkExists: function(url) {
-      return new Promise((resolve, reject) => {
-        const reqSvg = new XMLHttpRequest();
-        reqSvg.open("GET", url, true);
-        reqSvg.onreadystatechange = () => {
-          if (reqSvg.readyState === 4) {
-            if (reqSvg.status === 404) {
-              reject();
-            } else {
-              resolve();
-            }
-          }
-        };
-        reqSvg.send();
-      });
-    },
-
     getLogoPath: function(longLogo = true) {
       let logosPath = null;
       const colorManager = qx.theme.manager.Color.getInstance();
@@ -269,14 +252,29 @@ qx.Class.define("osparc.product.Utils", {
     },
 
     showS4LStore: function() {
-      const platformName = osparc.store.StaticInfo.getInstance().getPlatformName();
-      if (platformName !== "master") {
-        return false;
-      }
-      return this.isS4LProduct();
+      const licensesEnabled = osparc.store.StaticInfo.getInstance().areLicensesEnabled();
+      return this.isS4LProduct() && licensesEnabled;
     },
 
-    getProductThumbUrl: function(asset = "Default.png") {
+    getIconUrl: function(asset = "Default.png") {
+      const base = "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/icons/"
+      let url;
+      switch (osparc.product.Utils.getProductName()) {
+        case "osparc":
+          url = `${base}/osparc/${asset}`;
+          break;
+        case "tis":
+        case "tiplite":
+          url = `${base}/tip/${asset}`;
+          break;
+        default:
+          url = `${base}/s4l/${asset}`;
+          break;
+      }
+      return url;
+    },
+
+    getThumbnailUrl: function(asset = "Default.png") {
       const base = "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails"
       let url;
       switch (osparc.product.Utils.getProductName()) {
@@ -294,7 +292,7 @@ qx.Class.define("osparc.product.Utils", {
       return url;
     },
 
-    getProductBackgroundUrl: function(asset = "Thumbnail-01.png") {
+    getBackgroundUrl: function(asset = "Thumbnail-01.png") {
       const base = "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/background-images"
       let url;
       switch (osparc.product.Utils.getProductName()) {
@@ -310,6 +308,17 @@ qx.Class.define("osparc.product.Utils", {
           break;
       }
       return url;
-    }
+    },
+
+    hasNewPlusButton: function() {
+      return [
+        "osparc",
+        "s4l",
+        "s4lacad",
+        "s4llite",
+        // "tis",
+        // "tiplite",
+      ].includes(osparc.product.Utils.getProductName());
+    },
   }
 });

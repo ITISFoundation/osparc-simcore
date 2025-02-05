@@ -29,12 +29,13 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
     this.__tagButtons = [];
     this.__serviceTypeButtons = [];
 
-    this._setLayout(new qx.ui.layout.VBox(20));
+    this._setLayout(new qx.ui.layout.VBox(15));
     this.__buildLayout();
   },
 
   events: {
     "trashContext": "qx.event.type.Event",
+    "changeTab": "qx.event.type.Data",
     "trashStudyRequested": "qx.event.type.Data",
     "trashFolderRequested": "qx.event.type.Data",
     "changeSharedWith": "qx.event.type.Data",
@@ -51,19 +52,27 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
     __serviceTypeButtons: null,
 
     __buildLayout: function() {
-      if (this.__resourceType === "study") {
-        this._add(this.__createWorkspacesAndFoldersTree());
-        this._add(this.__createTrashBin());
-      } else {
-        this._add(this.__createSharedWithFilterLayout());
-      }
-
-      if (this.__resourceType !== "service") {
-        this._add(this.__createTagsFilterLayout());
-      }
-
-      if (this.__resourceType === "service") {
-        this._add(this.__createServiceTypeFilterLayout());
+      const filtersSpacer = new qx.ui.core.Spacer(10, 10);
+      switch (this.__resourceType) {
+        case "study":
+          this._add(this.__createWorkspacesAndFoldersTree());
+          this._add(this.__createTrashBin());
+          this._add(this.__createResourceTypeContextButtons());
+          this._add(filtersSpacer);
+          this._add(this.__createTagsFilterLayout());
+          break;
+        case "template":
+          this._add(this.__createResourceTypeContextButtons());
+          this._add(filtersSpacer);
+          this._add(this.__createSharedWithFilterLayout());
+          this._add(this.__createTagsFilterLayout());
+          break;
+        case "service":
+          this._add(this.__createResourceTypeContextButtons());
+          this._add(filtersSpacer);
+          this._add(this.__createSharedWithFilterLayout());
+          this._add(this.__createServiceTypeFilterLayout());
+          break;
       }
     },
 
@@ -83,14 +92,14 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
       osparc.utils.Utils.setIdToWidget(workspacesAndFoldersTree, "contextTree");
       // Height needs to be calculated manually to make it flexible
       workspacesAndFoldersTree.set({
-        minHeight: 60,
+        minHeight: 60, // two entries
         maxHeight: 400,
         height: 60,
       });
       workspacesAndFoldersTree.addListener("openChanged", () => {
         const rowConfig = workspacesAndFoldersTree.getPane().getRowConfig();
         const totalHeight = rowConfig.itemCount * rowConfig.defaultItemSize;
-        workspacesAndFoldersTree.setHeight(totalHeight + 10);
+        workspacesAndFoldersTree.setHeight(totalHeight + 2);
       });
       return workspacesAndFoldersTree;
     },
@@ -203,9 +212,94 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
     },
     /* /TRASH BIN */
 
+    /* RESOURCE TYPE CONTEXT */
+    __createResourceTypeContextButtons: function() {
+      const resourceTypeContextButtons = new qx.ui.container.Composite(new qx.ui.layout.VBox(2));
+
+      const studiesButton = this.__createStudiesButton().set({
+        value: this.__resourceType === "study",
+        visibility: this.__resourceType === "study" ? "excluded" : "visible",
+      });
+      resourceTypeContextButtons.add(studiesButton);
+
+      const permissions = osparc.data.Permissions.getInstance();
+      const templatesButton = this.__createTemplatesButton().set({
+        value: this.__resourceType === "template",
+      });
+      if (permissions.canDo("dashboard.templates.read")) {
+        resourceTypeContextButtons.add(templatesButton);
+      }
+
+      const servicesButton = this.__createServicesButton().set({
+        value: this.__resourceType === "service",
+      });
+      if (permissions.canDo("dashboard.services.read")) {
+        resourceTypeContextButtons.add(servicesButton);
+      }
+
+      return resourceTypeContextButtons;
+    },
+
+    __createStudiesButton: function() {
+      const studyAlias = osparc.product.Utils.getStudyAlias({
+        firstUpperCase: true,
+        plural: true
+      });
+      const studiesButton = new qx.ui.toolbar.RadioButton().set({
+        value: false,
+        appearance: "filter-toggle-button",
+        label: studyAlias,
+        icon: "@FontAwesome5Solid/file/16",
+        paddingLeft: 10, // align it with the context
+      });
+      osparc.utils.Utils.setIdToWidget(studiesButton, "studiesTabBtn");
+      studiesButton.addListener("tap", () => {
+        studiesButton.setValue(this.__resourceType === "study");
+        this.fireDataEvent("changeTab", "studiesTab");
+      });
+      return studiesButton;
+    },
+
+    __createTemplatesButton: function() {
+      const templateAlias = osparc.product.Utils.getTemplateAlias({
+        firstUpperCase: true,
+        plural: true
+      });
+      const templatesButton = new qx.ui.toolbar.RadioButton().set({
+        value: false,
+        appearance: "filter-toggle-button",
+        label: templateAlias,
+        icon: "@FontAwesome5Solid/copy/16",
+        paddingLeft: 10, // align it with the context
+      });
+      osparc.utils.Utils.setIdToWidget(templatesButton, "templatesTabBtn");
+      templatesButton.addListener("tap", () => {
+        templatesButton.setValue(this.__resourceType === "template");
+        this.fireDataEvent("changeTab", "templatesTab");
+      });
+      return templatesButton;
+    },
+
+    __createServicesButton: function() {
+      const servicesButton = new qx.ui.toolbar.RadioButton().set({
+        value: false,
+        appearance: "filter-toggle-button",
+        label: this.tr("Services"),
+        icon: "@FontAwesome5Solid/cogs/16",
+        paddingLeft: 10, // align it with the context
+      });
+      osparc.utils.Utils.setIdToWidget(servicesButton, "servicesTabBtn");
+      servicesButton.addListener("tap", () => {
+        servicesButton.setValue(this.__resourceType === "service");
+        this.fireDataEvent("changeTab", "servicesTab");
+      });
+      return servicesButton;
+    },
+    /* /RESOURCE TYPE CONTEXT */
+
     /* SHARED WITH */
     __createSharedWithFilterLayout: function() {
-      const sharedWithLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+      const sharedWithLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(2));
 
       const sharedWithRadioGroup = new qx.ui.form.RadioGroup();
       sharedWithRadioGroup.setAllowEmptySelection(false);
@@ -325,8 +419,8 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
         appearance: "filter-toggle-button"
       });
       editTagsButton.addListener("execute", () => {
-        const preferencesWindow = osparc.desktop.preferences.PreferencesWindow.openWindow();
-        preferencesWindow.openTags();
+        const myAccountWindow = osparc.desktop.account.MyAccountWindow.openWindow();
+        myAccountWindow.openTags();
       });
       layout.add(editTagsButton);
 
@@ -338,7 +432,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
 
     /* SERVICE TYPE */
     __createServiceTypeFilterLayout: function() {
-      const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+      const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(2));
 
       const radioGroup = new qx.ui.form.RadioGroup();
       radioGroup.setAllowEmptySelection(true);

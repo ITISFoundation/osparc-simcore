@@ -55,8 +55,9 @@ qx.Class.define("osparc.dashboard.CardBase", {
     MODE_APP: "@FontAwesome5Solid/desktop/13",
     NEW_ICON: "@FontAwesome5Solid/plus/",
     LOADING_ICON: "@FontAwesome5Solid/circle-notch/",
-    // Get the default thumbnail for each product else add the image and extension osparc.product.Utils.getProductThumbUrl(Thumbnail-01.png)
-    PRODUCT_ICON: osparc.product.Utils.getProductThumbUrl(),
+    PRODUCT_ICON: osparc.product.Utils.getIconUrl(),
+    // Get the default thumbnail for each product else add the image and extension osparc.product.Utils.getThumbnailUrl(Thumbnail-01.png)
+    PRODUCT_THUMBNAIL: osparc.product.Utils.getThumbnailUrl(),
 
     CARD_PRIORITY: {
       NEW: 0,
@@ -269,6 +270,13 @@ qx.Class.define("osparc.dashboard.CardBase", {
       apply: "_applyIcon",
     },
 
+    thumbnail: {
+      check: "String",
+      init: null,
+      nullable: true,
+      apply: "_applyThumbnail",
+    },
+
     resourceData: {
       check: "Object",
       nullable: false,
@@ -352,7 +360,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     uiMode: {
-      check: ["workbench", "guided", "app"],
+      check: ["workbench", "guided", "app", "standalone"], // "guided" is no longer used
       nullable: true,
       apply: "__applyUiMode"
     },
@@ -481,7 +489,8 @@ qx.Class.define("osparc.dashboard.CardBase", {
         lastChangeDate: resourceData.lastChangeDate ? new Date(resourceData.lastChangeDate) : null,
         trashedAt: resourceData.trashedAt ? new Date(resourceData.trashedAt) : null,
         trashedBy: resourceData.trashedBy || null,
-        icon: resourceData.thumbnail || this.self().PRODUCT_ICON,
+        icon: ["study", "template"].includes(resourceData.resourceType) ? osparc.study.Utils.guessIcon(resourceData) : null,
+        thumbnail: resourceData.thumbnail || this.self().PRODUCT_THUMBNAIL,
         state: resourceData.state ? resourceData.state : {},
         classifiers: resourceData.classifiers && resourceData.classifiers ? resourceData.classifiers : [],
         quality: resourceData.quality ? resourceData.quality : null,
@@ -528,6 +537,10 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     _applyIcon: function(value, old) {
+      throw new Error("Abstract method called!");
+    },
+
+    _applyThumbnail: function(value, old) {
       throw new Error("Abstract method called!");
     },
 
@@ -582,21 +595,16 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     __applyUiMode: function(uiMode) {
-      let source = null;
-      let toolTipText = null;
       switch (uiMode) {
         case "guided":
-        case "app":
-          source = osparc.dashboard.CardBase.MODE_APP;
-          toolTipText = this.tr("App mode");
+        case "app": {
+          const uiModeIcon = this.getChildControl("workbench-mode");
+          uiModeIcon.set({
+            source: osparc.dashboard.CardBase.MODE_APP,
+            toolTipText: this.tr("App mode"),
+          });
           break;
-      }
-      if (source) {
-        const uiModeIcon = this.getChildControl("workbench-mode");
-        uiModeIcon.set({
-          source,
-          toolTipText,
-        });
+        }
       }
     },
 
@@ -882,6 +890,10 @@ qx.Class.define("osparc.dashboard.CardBase", {
         if (duplicateButton) {
           duplicateButton.setEnabled(osparc.study.Utils.canBeDuplicated(resourceData));
         }
+        const convertToPipelineButton = menuButtons.find(menuBtn => "convertToPipelineButton" in menuBtn);
+        if (convertToPipelineButton) {
+          convertToPipelineButton.setEnabled(osparc.study.Utils.canBeDuplicated(resourceData));
+        }
         const exportCMISButton = menuButtons.find(menuBtn => "exportCMISButton" in menuBtn);
         if (exportCMISButton) {
           exportCMISButton.setEnabled(osparc.study.Utils.canBeExported(resourceData));
@@ -951,8 +963,8 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     openData: function() {
-      const moreOpts = this.__openMoreOptions();
-      moreOpts.openData();
+      const resourceData = this.getResourceData();
+      osparc.widget.StudyDataManager.popUpInWindow(resourceData["uuid"]);
     },
 
     openBilling: function() {

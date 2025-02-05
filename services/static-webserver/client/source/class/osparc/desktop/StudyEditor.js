@@ -37,8 +37,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     });
 
     workbenchView.addListener("slidesEdit", () => this.__editSlides(), this);
-    workbenchView.addListener("slidesAppStart", () => this.setPageContext(osparc.navigation.NavigationBar.PAGE_CONTEXT[2]), this);
-    slideshowView.addListener("slidesStop", () => this.setPageContext(osparc.navigation.NavigationBar.PAGE_CONTEXT[1]), this);
 
     workbenchView.addListener("takeSnapshot", () => this.__takeSnapshot(), this);
     workbenchView.addListener("takeSnapshot", () => this.__takeSnapshot(), this);
@@ -72,7 +70,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     const startStopButtons = workbenchView.getStartStopButtons();
     startStopButtons.addListener("startPipeline", () => this.__startPipeline([]), this);
     startStopButtons.addListener("startPartialPipeline", () => {
-      const partialPipeline = this.getPageContext() === "workbench" ? this.__workbenchView.getSelectedNodeIDs() : this.__slideshowView.getSelectedNodeIDs();
+      const partialPipeline = this.getStudy().getUi().getMode() === "app" ? this.__slideshowView.getSelectedNodeIDs() : this.__workbenchView.getSelectedNodeIDs();
       this.__startPipeline(partialPipeline);
     }, this);
     startStopButtons.addListener("stopPipeline", () => this.__stopPipeline(), this);
@@ -103,23 +101,14 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       apply: "__applyStudy",
       event: "changeStudy"
     },
-
-    pageContext: {
-      check: ["workbench", "guided", "app"],
-      init: null,
-      nullable: false,
-      event: "changePageContext",
-      apply: "__applyPageContext"
-    }
   },
 
   statics: {
     AUTO_SAVE_INTERVAL: 3000,
-    READ_ONLY_TEXT: qx.locale.Manager.tr("You do not have writing permissions.<br>Your changes will not be saved.")
+    READ_ONLY_TEXT: qx.locale.Manager.tr("You do not have writing permissions.<br>Your changes will not be saved."),
   },
 
   members: {
-    __study: null,
     __settingStudy: null,
     __viewsStack: null,
     __workbenchView: null,
@@ -179,6 +168,10 @@ qx.Class.define("osparc.desktop.StudyEditor", {
               }
             }, this);
           }
+
+          study.getUi().addListener("changeMode", e => {
+            this.__uiModeChanged(e.getData(), e.getOldData());
+          });
         })
         .catch(err => {
           console.error(err);
@@ -251,21 +244,9 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         osparc.FlashMessenger.getInstance().logAs(msg, "WARNING");
       }
 
-      const pageContext = study.getUi().getMode();
-      switch (pageContext) {
-        case "guided":
-        case "app":
-          this.__slideshowView.startSlides();
-          break;
-        default:
-          this.__workbenchView.openFirstNode();
-          break;
-      }
-      this.addListener("changePageContext", e => {
-        const pageCxt = e.getData();
-        study.getUi().setMode(pageCxt);
-      });
-      this.setPageContext(pageContext);
+
+      const uiMode = study.getUi().getMode();
+      this.__uiModeChanged(uiMode);
 
       const workbench = study.getWorkbench();
       workbench.addListener("retrieveInputs", e => {
@@ -556,7 +537,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     },
 
     __editSlides: function() {
-      if (this.getPageContext() !== osparc.navigation.NavigationBar.PAGE_CONTEXT[1]) {
+      if (this.getStudy().getUi().getMode() !== "workbench") {
+        // if the user is not in "workbench" mode, return
         return;
       }
 
@@ -719,21 +701,40 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       return this.__workbenchView.getLogger();
     },
 
-    __applyPageContext: function(newCtxt) {
-      switch (newCtxt) {
-        case "workbench":
-          this.__viewsStack.setSelection([this.__workbenchView]);
-          if (this.getStudy() && this.getStudy().getUi()) {
-            this.__workbenchView.nodeSelected(this.getStudy().getUi().getCurrentNodeId());
-          }
-          break;
+    __uiModeChanged: function(newUIMode, oldUIMode) {
+      switch (newUIMode) {
         case "guided":
         case "app":
           this.__viewsStack.setSelection([this.__slideshowView]);
-          if (this.getStudy() && this.getStudy().getUi()) {
-            this.__slideshowView.startSlides();
+          this.__slideshowView.startSlides();
+          break;
+        case "standalone": {
+          this.__viewsStack.setSelection([this.__workbenchView]);
+          this.__workbenchView.openFirstNode();
+          break;
+        }
+        case "workbench":
+        default: {
+          this.__viewsStack.setSelection([this.__workbenchView]);
+          if (oldUIMode === "standalone") {
+            // in this transition, show workbenchUI
+            this.__workbenchView.setMaximized(false);
+            this.__workbenchView.showPipeline();
+          } else {
+            const currentNodeId = this.getStudy().getUi().getCurrentNodeId();
+            if (currentNodeId && this.getStudy().getWorkbench().getNode(currentNodeId)) {
+              const node = this.getStudy().getWorkbench().getNode(currentNodeId);
+              if (node && node.isDynamic()) {
+                this.__workbenchView.fullscreenNode(currentNodeId);
+              } else {
+                this.__workbenchView.nodeSelected(currentNodeId);
+              }
+            } else {
+              this.__workbenchView.openFirstNode();
+            }
           }
           break;
+        }
       }
     },
 

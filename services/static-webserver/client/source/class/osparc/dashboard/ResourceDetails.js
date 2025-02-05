@@ -93,7 +93,6 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
     __resourceData: null,
     __resourceModel: null,
     __infoPage: null,
-    __dataPage: null,
     __servicesUpdatePage: null,
     __permissionsPage: null,
     __tagsPage: null,
@@ -126,7 +125,9 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         toolbar.add(serviceVersionSelector);
       }
 
-      const openButton = new osparc.ui.form.FetchButton(this.tr("Open")).set({
+      const studyAlias = osparc.product.Utils.getStudyAlias({firstUpperCase: true});
+      const openText = (this.__resourceData["resourceType"] === "study") ? this.tr("Open") : this.tr("New") + " " + studyAlias;
+      const openButton = new osparc.ui.form.FetchButton(openText).set({
         enabled: true
       });
       page.openButton = openButton;
@@ -212,10 +213,6 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
 
     __openInfo: function() {
       this._openPage(this.__infoPage);
-    },
-
-    openData: function() {
-      this._openPage(this.__dataPage);
     },
 
     openUpdateServices: function() {
@@ -304,7 +301,6 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         this.__getBillingPage,
         this.__getServicesUpdatePage,
         this.__getServicesBootOptionsPage,
-        this.__getDataPage,
         this.__getCommentsPage,
         this.__getPermissionsPage,
         this.__getSaveAsTemplatePage,
@@ -320,6 +316,28 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
           }
         }
       });
+
+      const resourceData = this.__resourceData;
+      if (!osparc.utils.Resources.isService(resourceData)) {
+        const title = osparc.product.Utils.getStudyAlias({firstUpperCase: true}) + this.tr(" Files...");
+        const iconSrc = "@FontAwesome5Solid/file/22";
+        const dataAccess = new qx.ui.basic.Atom().set({
+          label: title,
+          icon: iconSrc,
+          font: "text-14",
+          padding: 8,
+          paddingLeft: 12,
+          gap: 14,
+          cursor: "pointer",
+        });
+        dataAccess.addListener("tap", () => osparc.widget.StudyDataManager.popUpInWindow(resourceData["uuid"]));
+        this.addWidgetToTabs(dataAccess);
+
+        if (resourceData["resourceType"] === "study") {
+          const canShowData = osparc.study.Utils.canShowStudyData(resourceData);
+          dataAccess.setEnabled(canShowData);
+        }
+      }
 
       if (selectedTabId) {
         const pageFound = tabsView.getChildren().find(page => page.tabId === selectedTabId);
@@ -429,7 +447,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       if (
         osparc.utils.Resources.isService(resourceData) ||
         !osparc.product.Utils.showStudyPreview() ||
-        osparc.data.model.Study.getUiMode(resourceData) === "app"
+        !osparc.study.Utils.getUiMode(resourceData) === "workbench"
       ) {
         // there is no pipelining or don't show it
         return null;
@@ -478,33 +496,6 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
           addComment.addListener("commentAdded", () => commentsList.fetchComments());
           page.addToFooter(addComment);
         }
-      }
-      page.addListenerOnce("appear", lazyLoadContent, this);
-
-      return page;
-    },
-
-    __getDataPage: function() {
-      const resourceData = this.__resourceData;
-      if (osparc.utils.Resources.isService(resourceData)) {
-        return null;
-      }
-
-      const id = "Data";
-      const title = osparc.product.Utils.getStudyAlias({firstUpperCase: true}) + this.tr(" Files");
-      const iconSrc = "@FontAwesome5Solid/file/22";
-      const page = this.__dataPage = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
-      this.__addOpenButton(page);
-
-      if (this.__resourceData["resourceType"] === "study") {
-        const studyData = this.__resourceData;
-        const canBeOpened = osparc.study.Utils.canShowStudyData(studyData);
-        page.setEnabled(canBeOpened);
-      }
-
-      const lazyLoadContent = () => {
-        const studyDataManager = new osparc.widget.NodeDataManager(resourceData["uuid"]);
-        page.addToContent(studyDataManager);
       }
       page.addListenerOnce("appear", lazyLoadContent, this);
 

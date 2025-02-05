@@ -252,7 +252,7 @@ qx.Class.define("osparc.info.StudyUtils", {
       return titleLayout;
     },
 
-    createExtraInfoGrid: function(extraInfos) {
+    infoElementsToLayout: function(extraInfos) {
       const positions = {
         TITLE: {
           column: 0,
@@ -308,17 +308,14 @@ qx.Class.define("osparc.info.StudyUtils", {
         },
       };
 
-      const grid = new qx.ui.layout.Grid(15, 5);
-      const grid2 = new qx.ui.layout.Grid(15, 5);
-      grid.setColumnAlign(0, "left", "top");
-      const container = new qx.ui.container.Composite(new qx.ui.layout.VBox());
-      const moreInfo = new qx.ui.container.Composite(grid);
-      const otherInfo = new qx.ui.container.Composite(grid2);
-      grid.setColumnFlex(0, 1);
-      grid2.setColumnFlex(0, 1);
+      const grid1 = new qx.ui.layout.Grid(15, 5);
+      grid1.setColumnAlign(0, "left", "top");
+      grid1.setColumnFlex(0, 1);
+      const mainInfoLayout = new qx.ui.container.Composite(grid1);
 
-      const box = this.__createSectionBox(qx.locale.Manager.tr("Details"));
-      const box2 = this.__createSectionBox(qx.locale.Manager.tr("Meta details"));
+      const grid2 = new qx.ui.layout.Grid(15, 5);
+      const extraInfoLayout = new qx.ui.container.Composite(grid2);
+      grid2.setColumnFlex(0, 1);
 
       let row = 0;
       let row2 = 0;
@@ -335,7 +332,7 @@ qx.Class.define("osparc.info.StudyUtils", {
               });
             }
             titleLayout.add(extraInfo.view);
-            otherInfo.add(titleLayout, {
+            extraInfoLayout.add(titleLayout, {
               row: row2,
               column: gridInfo.column
             });
@@ -344,25 +341,30 @@ qx.Class.define("osparc.info.StudyUtils", {
             row2++;
           } else {
             const titleLayout = this.__titleWithEditLayout(extraInfo);
-            moreInfo.add(titleLayout, {
+            mainInfoLayout.add(titleLayout, {
               row,
               column: gridInfo.column
             });
             row++;
-            moreInfo.add(extraInfo.view, {
+            mainInfoLayout.add(extraInfo.view, {
               row,
               column: gridInfo.column
             });
             row++;
-            grid.setRowHeight(row, 5); // spacer
+            grid1.setRowHeight(row, 5); // spacer
             row++;
           }
         }
       });
 
-      box.add(moreInfo);
-      box2.add(otherInfo);
-      container.addAt(box, 0);
+
+      const container = new qx.ui.container.Composite(new qx.ui.layout.VBox());
+      const box1 = this.__createSectionBox(qx.locale.Manager.tr("Details"));
+      box1.add(mainInfoLayout);
+      container.addAt(box1, 0);
+
+      const box2 = this.__createSectionBox(qx.locale.Manager.tr("Meta details"));
+      box2.add(extraInfoLayout);
       container.addAt(box2, 1);
 
       return container;
@@ -402,115 +404,6 @@ qx.Class.define("osparc.info.StudyUtils", {
       });
       box.setLayout(new qx.ui.layout.VBox(10));
       return box;
-    },
-
-    patchStudyData: function(studyData, fieldKey, value) {
-      if (osparc.data.model.Study.OwnPatch.includes(fieldKey)) {
-        console.error(fieldKey, "has it's own PATCH path");
-        return null;
-      }
-
-      const patchData = {};
-      patchData[fieldKey] = value;
-      const params = {
-        url: {
-          "studyId": studyData["uuid"]
-        },
-        data: patchData
-      };
-      return osparc.data.Resources.fetch("studies", "patch", params)
-        .then(() => {
-          studyData[fieldKey] = value;
-          // A bit hacky, but it's not sent back to the backend
-          studyData["lastChangeDate"] = new Date().toISOString();
-        });
-    },
-
-    patchNodeData: function(studyData, nodeId, patchData) {
-      const params = {
-        url: {
-          "studyId": studyData["uuid"],
-          "nodeId": nodeId
-        },
-        data: patchData
-      };
-      return osparc.data.Resources.fetch("studies", "patchNode", params)
-        .then(() => {
-          Object.keys(patchData).forEach(key => {
-            studyData["workbench"][nodeId][key] = patchData[key];
-          });
-          // A bit hacky, but it's not sent back to the backend
-          studyData["lastChangeDate"] = new Date().toISOString();
-        });
-    },
-
-    addCollaborator: function(studyData, gid, permissions) {
-      const params = {
-        url: {
-          "studyId": studyData["uuid"],
-          "gId": gid
-        },
-        data: permissions
-      };
-      return osparc.data.Resources.fetch("studies", "postAccessRights", params)
-        .then(() => {
-          studyData["accessRights"][gid] = permissions;
-          studyData["lastChangeDate"] = new Date().toISOString();
-        })
-        .catch(err => osparc.FlashMessenger.logAs(err.message, "ERROR"));
-    },
-
-    addCollaborators: function(studyData, newCollaborators) {
-      const promises = [];
-      Object.keys(newCollaborators).forEach(gid => {
-        const params = {
-          url: {
-            "studyId": studyData["uuid"],
-            "gId": gid
-          },
-          data: newCollaborators[gid]
-        };
-        promises.push(osparc.data.Resources.fetch("studies", "postAccessRights", params));
-      });
-      return Promise.all(promises)
-        .then(() => {
-          Object.keys(newCollaborators).forEach(gid => {
-            studyData["accessRights"][gid] = newCollaborators[gid];
-          });
-          studyData["lastChangeDate"] = new Date().toISOString();
-        })
-        .catch(err => osparc.FlashMessenger.logAs(err.message, "ERROR"));
-    },
-
-    removeCollaborator: function(studyData, gid) {
-      const params = {
-        url: {
-          "studyId": studyData["uuid"],
-          "gId": gid
-        }
-      };
-      return osparc.data.Resources.fetch("studies", "deleteAccessRights", params)
-        .then(() => {
-          delete studyData["accessRights"][gid];
-          studyData["lastChangeDate"] = new Date().toISOString();
-        })
-        .catch(err => osparc.FlashMessenger.logAs(err.message, "ERROR"));
-    },
-
-    updateCollaborator: function(studyData, gid, newPermissions) {
-      const params = {
-        url: {
-          "studyId": studyData["uuid"],
-          "gId": gid
-        },
-        data: newPermissions
-      };
-      return osparc.data.Resources.fetch("studies", "putAccessRights", params)
-        .then(() => {
-          studyData["accessRights"][gid] = newPermissions;
-          studyData["lastChangeDate"] = new Date().toISOString();
-        })
-        .catch(err => osparc.FlashMessenger.logAs(err.message, "ERROR"));
     },
   }
 });

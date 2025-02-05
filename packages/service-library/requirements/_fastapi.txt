@@ -1,12 +1,12 @@
 annotated-types==0.7.0
     # via pydantic
-anyio==4.6.0
+anyio==4.8.0
     # via
     #   httpx
     #   starlette
 asgiref==3.8.1
     # via opentelemetry-instrumentation-asgi
-certifi==2024.8.30
+certifi==2024.12.14
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -16,23 +16,25 @@ certifi==2024.8.30
     #   -c requirements/../../../requirements/constraints.txt
     #   httpcore
     #   httpx
-click==8.1.7
+click==8.1.8
     # via uvicorn
-deprecated==1.2.14
+deprecated==1.2.17
     # via
     #   opentelemetry-api
     #   opentelemetry-semantic-conventions
-fastapi==0.115.5
+fastapi==0.115.7
     # via
     #   -r requirements/_fastapi.in
-    #   prometheus-fastapi-instrumentator
+    #   fastapi-lifespan-manager
+fastapi-lifespan-manager==0.1.4
+    # via -r requirements/_fastapi.in
 h11==0.14.0
     # via
     #   httpcore
     #   uvicorn
-httpcore==1.0.5
+httpcore==1.0.7
     # via httpx
-httpx==0.27.2
+httpx==0.28.1
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -45,43 +47,46 @@ idna==3.10
     # via
     #   anyio
     #   httpx
-importlib-metadata==8.4.0
+importlib-metadata==8.5.0
     # via opentelemetry-api
-opentelemetry-api==1.27.0
+opentelemetry-api==1.29.0
     # via
     #   opentelemetry-instrumentation
     #   opentelemetry-instrumentation-asgi
     #   opentelemetry-instrumentation-fastapi
     #   opentelemetry-instrumentation-httpx
     #   opentelemetry-semantic-conventions
-opentelemetry-instrumentation==0.48b0
+opentelemetry-instrumentation==0.50b0
     # via
     #   opentelemetry-instrumentation-asgi
     #   opentelemetry-instrumentation-fastapi
     #   opentelemetry-instrumentation-httpx
-opentelemetry-instrumentation-asgi==0.48b0
+opentelemetry-instrumentation-asgi==0.50b0
     # via opentelemetry-instrumentation-fastapi
-opentelemetry-instrumentation-fastapi==0.48b0
+opentelemetry-instrumentation-fastapi==0.50b0
     # via -r requirements/_fastapi.in
-opentelemetry-instrumentation-httpx==0.48b0
+opentelemetry-instrumentation-httpx==0.50b0
     # via -r requirements/_fastapi.in
-opentelemetry-semantic-conventions==0.48b0
+opentelemetry-semantic-conventions==0.50b0
+    # via
+    #   opentelemetry-instrumentation
+    #   opentelemetry-instrumentation-asgi
+    #   opentelemetry-instrumentation-fastapi
+    #   opentelemetry-instrumentation-httpx
+opentelemetry-util-http==0.50b0
     # via
     #   opentelemetry-instrumentation-asgi
     #   opentelemetry-instrumentation-fastapi
     #   opentelemetry-instrumentation-httpx
-opentelemetry-util-http==0.48b0
-    # via
-    #   opentelemetry-instrumentation-asgi
-    #   opentelemetry-instrumentation-fastapi
-    #   opentelemetry-instrumentation-httpx
-prometheus-client==0.21.0
+packaging==24.2
+    # via opentelemetry-instrumentation
+prometheus-client==0.21.1
     # via
     #   -r requirements/_fastapi.in
     #   prometheus-fastapi-instrumentator
-prometheus-fastapi-instrumentator==6.1.0
+prometheus-fastapi-instrumentator==7.0.2
     # via -r requirements/_fastapi.in
-pydantic==2.10.3
+pydantic==2.10.6
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -90,15 +95,11 @@ pydantic==2.10.3
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   fastapi
-pydantic-core==2.27.1
+pydantic-core==2.27.2
     # via pydantic
-setuptools==75.1.0
-    # via opentelemetry-instrumentation
 sniffio==1.3.1
-    # via
-    #   anyio
-    #   httpx
-starlette==0.41.2
+    # via anyio
+starlette==0.45.3
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -107,16 +108,19 @@ starlette==0.41.2
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   fastapi
+    #   prometheus-fastapi-instrumentator
 typing-extensions==4.12.2
     # via
+    #   anyio
     #   fastapi
     #   pydantic
     #   pydantic-core
-uvicorn==0.30.6
+uvicorn==0.34.0
     # via -r requirements/_fastapi.in
-wrapt==1.16.0
+wrapt==1.17.2
     # via
     #   deprecated
     #   opentelemetry-instrumentation
-zipp==3.20.2
+    #   opentelemetry-instrumentation-httpx
+zipp==3.21.0
     # via importlib-metadata

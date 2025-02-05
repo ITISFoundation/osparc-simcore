@@ -88,6 +88,7 @@ anyio==4.3.0
     # via
     #   fast-depends
     #   faststream
+    #   httpx
 appdirs==1.4.4
     # via pint
 arrow==1.2.3
@@ -145,6 +146,8 @@ certifi==2023.7.22
     #   -c requirements/../../../../packages/simcore-sdk/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../requirements/constraints.txt
+    #   httpcore
+    #   httpx
     #   requests
 cffi==1.17.1
     # via cryptography
@@ -186,6 +189,8 @@ cryptography==41.0.7
     #   -c requirements/../../../../requirements/constraints.txt
     #   -r requirements/_base.in
     #   aiohttp-session
+deepdiff==8.1.1
+    # via -r requirements/_base.in
 deprecated==1.2.14
     # via
     #   opentelemetry-api
@@ -225,10 +230,46 @@ grpcio==1.66.0
     # via opentelemetry-exporter-otlp-proto-grpc
 gunicorn==23.0.0
     # via -r requirements/_base.in
+h11==0.14.0
+    # via httpcore
+httpcore==1.0.7
+    # via httpx
+httpx==0.28.1
+    # via
+    #   -c requirements/../../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/postgres-database/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/service-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/simcore-sdk/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/simcore-sdk/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/simcore-sdk/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../requirements/constraints.txt
+    #   -r requirements/_base.in
 idna==3.3
     # via
     #   anyio
     #   email-validator
+    #   httpx
     #   requests
     #   yarl
 importlib-metadata==8.0.0
@@ -416,6 +457,8 @@ opentelemetry-util-http==0.48b0
     #   opentelemetry-instrumentation-aiohttp-client
     #   opentelemetry-instrumentation-aiohttp-server
     #   opentelemetry-instrumentation-requests
+orderly-set==5.2.3
+    # via deepdiff
 orjson==3.10.0
     # via
     #   -c requirements/../../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -465,6 +508,7 @@ orjson==3.10.0
     #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/_base.in
+    #   deepdiff
 packaging==24.1
     # via
     #   -r requirements/../../../../packages/simcore-sdk/requirements/_base.in

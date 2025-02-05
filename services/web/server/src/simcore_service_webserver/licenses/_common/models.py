@@ -1,7 +1,5 @@
-import logging
-
 from models_library.basic_types import IDStr
-from models_library.licensed_items import LicensedItemID
+from models_library.licenses import LicensedItemID
 from models_library.resource_tracker import PricingPlanId, PricingUnitId
 from models_library.resource_tracker_licensed_items_purchases import (
     LicensedItemPurchaseID,
@@ -20,8 +18,6 @@ from servicelib.request_keys import RQT_USERID_KEY
 
 from ..._constants import RQ_PRODUCT_KEY
 
-_logger = logging.getLogger(__name__)
-
 
 class LicensedItemsRequestContext(RequestParameters):
     user_id: UserID = Field(..., alias=RQT_USERID_KEY)  # type: ignore[literal-required]
@@ -36,10 +32,10 @@ _LicensedItemsListOrderQueryParams: type[
     RequestParameters
 ] = create_ordering_query_model_class(
     ordering_fields={
+        "display_name",
         "modified_at",
-        "name",
     },
-    default=OrderBy(field=IDStr("modified_at"), direction=OrderDirection.DESC),
+    default=OrderBy(field=IDStr("display_name"), direction=OrderDirection.DESC),
     ordering_fields_api_to_column_map={"modified_at": "modified"},
 )
 

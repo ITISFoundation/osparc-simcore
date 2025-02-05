@@ -12,11 +12,16 @@ would still have these invariants.
 
 """
 
+from typing import Annotated
+
+import pytest
+from common_library.basic_types import LogLevel
 from common_library.pydantic_fields_extension import is_nullable
-from pydantic import ValidationInfo, field_validator
+from pydantic import AliasChoices, Field, ValidationInfo, field_validator
 from pydantic_core import PydanticUndefined
 from pydantic_settings import BaseSettings
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
+from settings_library.application import BaseApplicationSettings
 
 
 def assert_field_specs(
@@ -56,9 +61,10 @@ class Settings(BaseSettings):
     @classmethod
     def parse_none(cls, v, info: ValidationInfo):
         # WARNING: In nullable fields, envs equal to null or none are parsed as None !!
+
         if (
             info.field_name
-            and is_nullable(cls.model_fields[info.field_name])
+            and is_nullable(dict(cls.model_fields)[info.field_name])
             and isinstance(v, str)
             and v.lower() in ("null", "none")
         ):
@@ -167,3 +173,28 @@ def test_construct(monkeypatch):
     assert settings_from_both == settings_from_init.model_copy(
         update={"VALUE_NULLABLE_REQUIRED": 3}
     )
+
+
+class _TestSettings(BaseApplicationSettings):
+    APP_LOGLEVEL: Annotated[
+        LogLevel,
+        Field(
+            validation_alias=AliasChoices("APP_LOGLEVEL", "LOG_LEVEL"),
+        ),
+    ] = LogLevel.WARNING
+
+
+@pytest.mark.filterwarnings("error")
+def test_pydantic_serialization_user_warning(monkeypatch: pytest.MonkeyPatch):
+    # This test is exploring the reason for `UserWarning`
+    #
+    # /python3.11/site-packages/pydantic/main.py:477: UserWarning: Pydantic serializer warnings:
+    #     Expected `enum` but got `str` with value `'WARNING'` - serialized value may not be as expected
+    #     return self.__pydantic_serializer__.to_json(
+    #
+    # NOTE: it seems settings.model_dump_json(warnings='none') is not the cause here of `UserWarning`
+    monkeypatch.setenv("LOG_LEVEL", "DEBUG")
+
+    settings = _TestSettings.create_from_envs()
+    assert settings.APP_LOGLEVEL == LogLevel.DEBUG
+    assert settings.model_dump_json(indent=2)

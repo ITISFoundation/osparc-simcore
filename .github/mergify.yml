@@ -1,9 +1,6 @@
-# NOTE: the PR is added to the queue when all checks have passed
-# and the CI is fully green.
-# If the PR is behind the queue will take care of updating it
 queue_rules:
   - name: default
-    queue_conditions:
+    queue_conditions: # condtions to be met to add the PR to the queue (manually or automatically)
       # general prerequisits fo accept the PR in the queue
       - label=🤖-automerge # let Mergify know that the PR can be merged (added manually)
       - label!=🤖-do-not-merge # block Mergify from merging the PR (added manually)
@@ -16,28 +13,57 @@ queue_rules:
       - "#changes-requested-reviews-by=0" # No changes requested
       - "#review-threads-unresolved=0" # All review threads resolved
 
-    merge_conditions:
+    merge_conditions: # conditions to be met before being able to merge
       # list of CI checks that need to pass
+      - check-success=system-test-environment-setup
+      - check-success=changes
+      - check-success=build-test-images
+      - check-success=build-test-images-frontend
       - check-success=unit-tests
       - check-success=integration-tests
       - check-success=system-tests
 
-# NOTE: in case of flaky tests you above checks will fail
-# the PR will be removed from the queue.
-# This retries the checks, as soon as they become green,
-# the PR will be pusehd to the queu again
+
 pull_request_rules:
-  - name: retry CI on fails (used for flaky tests)
+  - name: retry flaky tests (when PR is approved)
     conditions:
       - label=🤖-automerge
       - label!=🤖-do-not-merge
       - base=master
+
+      - -draft # PR is not in draft state
+      - -conflict # No merge conflicts
+      - "#approved-reviews-by>=2" # Requires 2 approving reviews
+      - "#changes-requested-reviews-by=0" # No changes requested
+      - "#review-threads-unresolved=0" # All review threads resolved
+
       - or:
+          - check-failure=system-test-environment-setup
+          - check-failure=changes
+          - check-failure=build-test-images
+          - check-failure=build-test-images-frontend
           - check-failure=unit-tests
           - check-failure=integration-tests
           - check-failure=system-tests
     actions:
+      comment:
+        message: "Restarted CI due to failing tests"
       github_actions:
         workflow:
           dispatch:
-            - workflow: .github/workflows/ci-testing-deploy.yml
+            - workflow: ci-testing-deploy.yml
+
+  - name: Automatically add PR to queue if it meets conditions
+    conditions:
+      - "label=🤖-automerge"
+      - "label!=🤖-do-not-merge"
+      - "base=master"
+
+      - "-draft" # PR is not in draft state
+      - "-conflict" # PR has no conflicts
+      - "#approved-reviews-by>=2" # Requires 2 approvals
+      - "#changes-requested-reviews-by=0" # No requested changes
+      - "#review-threads-unresolved=0" # All review threads resolved
+    actions:
+      queue:
+        name: default
