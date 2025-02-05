@@ -26,23 +26,23 @@ qx.Class.define("osparc.desktop.preferences.pages.TagsPage", {
 
     this._add(new qx.ui.core.Spacer(null, 10));
 
-    this.__tagsContainer = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
-    this.__tagsContainer.set({
-      paddingLeft: 10
-    });
-    const scroll = new qx.ui.container.Scroll(this.__tagsContainer);
-    this._add(scroll, {
-      flex: 1
-    });
-
     this.__renderLayout();
   },
 
   members: {
     __tagsContainer: null,
-    __addTagButton: null,
 
     __renderLayout: function() {
+      // Tags
+      this.__tagsContainer = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+      this.__tagsContainer.set({
+        paddingLeft: 10
+      });
+      const tagContainerScroll = new qx.ui.container.Scroll(this.__tagsContainer);
+      this._add(tagContainerScroll, {
+        flex: 1
+      });
+
       const tags = osparc.store.Tags.getInstance().getTags();
       const tagItems = tags.map(tag => new osparc.form.tag.TagItem().set({tag}));
       tagItems.forEach(tagItem => {
@@ -50,25 +50,30 @@ qx.Class.define("osparc.desktop.preferences.pages.TagsPage", {
         this.__attachTagItemEvents(tagItem);
       });
 
-      this.__addTagButton = new qx.ui.form.Button().set({
+      // New tag Button
+      const addTagButton = new qx.ui.form.Button().set({
         appearance: "form-button-outlined",
         label: this.tr("New Tag"),
         icon: "@FontAwesome5Solid/plus/14"
       });
-      osparc.utils.Utils.setIdToWidget(this.__addTagButton, "addTagBtn");
-      this.__addTagButton.addListener("execute", () => {
+      osparc.utils.Utils.setIdToWidget(addTagButton, "addTagBtn");
+      addTagButton.addListener("execute", () => {
         const newItem = new osparc.form.tag.TagItem().set({
           mode: osparc.form.tag.TagItem.modes.EDIT
         });
         this.__tagsContainer.add(newItem);
         this.__attachTagItemEvents(newItem);
+
+        // scroll down
+        const height = tagContainerScroll.getSizeHint().height;
+        tagContainerScroll.scrollToY(height);
       });
 
       // New tag button
       const buttonContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
         alignX: "center"
       }));
-      buttonContainer.add(this.__addTagButton);
+      buttonContainer.add(addTagButton);
       this._add(buttonContainer);
     },
 

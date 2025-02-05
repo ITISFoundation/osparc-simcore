@@ -92,6 +92,10 @@ qx.Class.define("osparc.form.tag.TagManager", {
         newItem.addListener("cancelNewTag", e => tagsContainer.remove(e.getTarget()), this);
         newItem.addListener("deleteTag", e => tagsContainer.remove(e.getTarget()), this);
         tagsContainer.add(newItem);
+
+        // scroll down
+        const height = scrollTags.getSizeHint().height;
+        scrollTags.scrollToY(height);
       });
       this._add(addTagButton);
 
