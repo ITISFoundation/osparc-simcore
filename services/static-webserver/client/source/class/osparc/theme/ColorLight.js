@@ -124,28 +124,6 @@ qx.Theme.define("osparc.theme.ColorLight", {
     "tooltip-text": "text",
 
 
-    // table
-    "table-header": "background-main",
-    "table-header-foreground": "c09",
-    "table-header-border": "c07",
-    "table-focus-indicator": "background-main-5",
-
-    // used in table code
-    "table-header-cell": "background-main",
-    "table-row-background-even": "background-main",
-    "table-row-background-odd": "background-main",
-    "table-row-background-focused": "background-main-1",
-    "table-row-background-focused-selected": "background-main-2",
-    "table-row-background-selected": "background-main-2",
-
-    // foreground
-    "table-row-selected": "c12",
-    "table-row": "c09",
-
-    // table grid color
-    "table-row-line": "background-main",
-    "table-column-line": "background-main",
-
     // used in progressive code
     "progressive-table-header": "c08",
     "progressive-table-row-background-even": "background-main",
