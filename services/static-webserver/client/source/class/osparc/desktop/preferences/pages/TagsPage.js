@@ -35,32 +35,34 @@ qx.Class.define("osparc.desktop.preferences.pages.TagsPage", {
       flex: 1
     });
 
-    this.__createComponents();
+    this.__renderLayout();
   },
 
   members: {
     __tagsContainer: null,
     __addTagButton: null,
-    __tagItems: null,
 
-    __createComponents: function() {
+    __renderLayout: function() {
+      const tags = osparc.store.Tags.getInstance().getTags();
+      const tagItems = tags.map(tag => new osparc.form.tag.TagItem().set({tag}));
+      tagItems.forEach(tagItem => {
+        this.__tagsContainer.add(tagItem);
+        this.__attachTagItemEvents(tagItem);
+      });
+
       this.__addTagButton = new qx.ui.form.Button().set({
         appearance: "form-button-outlined",
         label: this.tr("New Tag"),
         icon: "@FontAwesome5Solid/plus/14"
       });
       osparc.utils.Utils.setIdToWidget(this.__addTagButton, "addTagBtn");
-      const tags = osparc.store.Tags.getInstance().getTags();
-      this.__tagItems = tags.map(tag => new osparc.form.tag.TagItem().set({tag}));
-      this.__renderLayout();
-      this.__attachEventHandlers();
-    },
-
-    __renderLayout: function() {
-      this.__tagsContainer.removeAll();
-
-      // Print tag items
-      this.__tagItems.forEach(tagItem => this.__tagsContainer.add(tagItem));
+      this.__addTagButton.addListener("execute", () => {
+        const newItem = new osparc.form.tag.TagItem().set({
+          mode: osparc.form.tag.TagItem.modes.EDIT
+        });
+        this.__tagsContainer.add(newItem);
+        this.__attachTagItemEvents(newItem);
+      });
 
       // New tag button
       const buttonContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
@@ -68,18 +70,6 @@ qx.Class.define("osparc.desktop.preferences.pages.TagsPage", {
       }));
       buttonContainer.add(this.__addTagButton);
       this._add(buttonContainer);
-    },
-
-    __attachEventHandlers: function() {
-      this.__addTagButton.addListener("execute", () => {
-        const itemCount = this.__tagsContainer.getChildren().length;
-        const newItem = new osparc.form.tag.TagItem().set({
-          mode: osparc.form.tag.TagItem.modes.EDIT
-        });
-        this.__attachTagItemEvents(newItem);
-        this.__tagsContainer.addAt(newItem, Math.max(0, itemCount - 1));
-      });
-      this.__tagItems.forEach(tagItem => this.__attachTagItemEvents(tagItem));
     },
 
     __attachTagItemEvents: function(tagItem) {
