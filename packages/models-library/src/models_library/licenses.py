@@ -47,14 +47,14 @@ class FeaturesDict(TypedDict):
 
 VIP_DETAILS_EXAMPLE = {
     "id": 1,
-    "description": "custom description",
-    "thumbnail": "custom description",
+    "description": "A detailed description of the VIP model",
+    "thumbnail": "https://example.com/thumbnail.jpg",
     "features": VIP_FEATURES_EXAMPLE,
-    "doi": "custom value",
-    "license_key": "custom value",
-    "license_version": "custom value",
-    "protection": "custom value",
-    "available_from_url": "custom value",
+    "doi": "10.1000/xyz123",
+    "license_key": "ABC123XYZ",
+    "license_version": "1.0",
+    "protection": "Encrypted",
+    "available_from_url": "https://example.com/download",
     "additional_field": "trimmed if rest",
 }
 
