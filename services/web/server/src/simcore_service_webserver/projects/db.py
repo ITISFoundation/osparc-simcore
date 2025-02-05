@@ -773,7 +773,6 @@ class ProjectDBAPI(BaseProjectDB):
             result = await conn.execute(
                 sa.select(
                     *PROJECT_DB_COLS,
-                    projects.c.workbench,
                 ).where(projects.c.uuid == f"{project_uuid}")
             )
             row = await result.fetchone()
