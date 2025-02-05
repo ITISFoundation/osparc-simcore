@@ -332,6 +332,11 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         });
         dataAccess.addListener("tap", () => osparc.widget.StudyDataManager.popUpInWindow(resourceData["uuid"]));
         this.addWidgetToTabs(dataAccess);
+
+        if (resourceData["resourceType"] === "study") {
+          const canShowData = osparc.study.Utils.canShowStudyData(resourceData);
+          dataAccess.setEnabled(canShowData);
+        }
       }
 
       if (selectedTabId) {
