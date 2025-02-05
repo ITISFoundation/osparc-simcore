@@ -1,11 +1,14 @@
 from aiohttp import web
 from models_library.api_schemas_webserver import WEBSERVER_RPC_NAMESPACE
-from models_library.api_schemas_webserver.licensed_items import LicensedItemGetPage
+from models_library.api_schemas_webserver.licensed_items import (
+    LicensedItemRpcGet,
+    LicensedItemRpcGetPage,
+)
 from models_library.api_schemas_webserver.licensed_items_checkouts import (
     LicensedItemCheckoutRpcGet,
 )
 from models_library.basic_types import IDStr
-from models_library.licensed_items import LicensedItemID
+from models_library.licenses import LicensedItemID, LicensedItemPage
 from models_library.products import ProductName
 from models_library.resource_tracker_licensed_items_checkouts import (
     LicensedItemCheckoutID,
@@ -36,15 +39,31 @@ async def get_licensed_items(
     product_name: ProductName,
     offset: int,
     limit: int,
-) -> LicensedItemGetPage:
-    licensed_item_get_page: LicensedItemGetPage = (
+) -> LicensedItemRpcGetPage:
+    licensed_item_page: LicensedItemPage = (
         await _licensed_items_service.list_licensed_items(
             app=app,
             product_name=product_name,
             offset=offset,
             limit=limit,
-            order_by=OrderBy(field=IDStr("name")),
+            order_by=OrderBy(field=IDStr("licensed_resource_name")),
         )
+    )
+
+    licensed_item_get_page: LicensedItemRpcGetPage = LicensedItemRpcGetPage(
+        items=[
+            LicensedItemRpcGet.model_construct(
+                licensed_item_id=licensed_item.licensed_item_id,
+                display_name=licensed_item.display_name,
+                licensed_resource_type=licensed_item.licensed_resource_type,
+                licensed_resource_data=licensed_item.licensed_resource_data,
+                pricing_plan_id=licensed_item.pricing_plan_id,
+                created_at=licensed_item.created_at,
+                modified_at=licensed_item.modified_at,
+            )
+            for licensed_item in licensed_item_page.items
+        ],
+        total=licensed_item_page.total,
     )
     return licensed_item_get_page
 
@@ -58,7 +77,7 @@ async def get_available_licensed_items_for_wallet(
     wallet_id: WalletID,
     offset: int,
     limit: int,
-) -> LicensedItemGetPage:
+) -> LicensedItemRpcGetPage:
     raise NotImplementedError
 
 

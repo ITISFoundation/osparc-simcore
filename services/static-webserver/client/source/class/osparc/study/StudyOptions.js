@@ -91,7 +91,7 @@ qx.Class.define("osparc.study.StudyOptions", {
     },
 
     updateName: function(studyData, name) {
-      return osparc.info.StudyUtils.patchStudyData(studyData, "name", name)
+      return osparc.store.Study.patchStudyData(studyData, "name", name)
         .catch(err => {
           console.error(err);
           const msg = err.message || qx.locale.Manager.tr("Something went wrong Renaming");
@@ -277,6 +277,7 @@ qx.Class.define("osparc.study.StudyOptions", {
             walletSelector.setSelection([selectable]);
           }
         });
+        osparc.utils.Utils.growSelectBox(walletSelector, 220);
       }
     },
 

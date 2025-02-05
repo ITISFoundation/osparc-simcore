@@ -251,7 +251,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         })
         .catch(console.error)
         .finally(() => {
-          this.__addNewFolderButton();
+          // In favor of the NewPlusButton
+          if (!osparc.product.Utils.hasNewPlusButton()) {
+            this.__addNewFolderButton();
+          }
           this.__loadingFolders = null;
         });
     },
@@ -882,6 +885,45 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
     },
 
+    __addNewPlusButton: function() {
+      const newPlusButton = new osparc.dashboard.NewPlusButton();
+      this._leftFilters.add(newPlusButton);
+
+      const newPlusButtonMenu = newPlusButton.getMenu();
+
+      newPlusButtonMenu.addListener("createFolder", e => {
+        const data = e.getData();
+        this.__createFolder(data);
+      }, this);
+
+      newPlusButtonMenu.addListener("newEmptyStudyClicked", e => {
+        const {
+          newStudyLabel,
+        } = e.getData();
+        this.__newEmptyStudyBtnClicked(newStudyLabel);
+      }, this);
+
+      newPlusButtonMenu.addListener("newStudyFromTemplateClicked", e => {
+        const {
+          templateData,
+          newStudyLabel,
+        } = e.getData();
+        if (templateData) {
+          this.__newPlanBtnClicked(templateData, newStudyLabel);
+        }
+      }, this);
+
+      newPlusButtonMenu.addListener("newStudyFromServiceClicked", e => {
+        const {
+          serviceMetadata,
+          newStudyLabel,
+        } = e.getData();
+        if (serviceMetadata) {
+          this.__newStudyFromServiceBtnClicked(serviceMetadata["key"], serviceMetadata["version"], newStudyLabel);
+        }
+      }, this);
+    },
+
     __addNewStudyButtons: function() {
       if (this.getCurrentContext() !== "studiesAndFolders") {
         return;
@@ -895,19 +937,21 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         }
       }
 
-      switch (osparc.product.Utils.getProductName()) {
-        case "osparc":
-          this.__addEmptyStudyPlusButton();
-          break;
-        case "tis":
-        case "tiplite":
-          this.__addTIPPlusButton();
-          break;
-        case "s4l":
-        case "s4lacad":
-        case "s4llite":
-          this.__addPlusButtonsFromServices();
-          break;
+      if (!osparc.product.Utils.hasNewPlusButton()) {
+        switch (osparc.product.Utils.getProductName()) {
+          case "osparc":
+            this.__addEmptyStudyPlusButton();
+            break;
+          case "tis":
+          case "tiplite":
+            this.__addTIPPlusButton();
+            break;
+          case "s4l":
+          case "s4lacad":
+          case "s4llite":
+            this.__addPlusButtonsFromServices();
+            break;
+        }
       }
     },
 
@@ -917,31 +961,31 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         firstUpperCase: true
       })
       const desc = this.tr("Start with an empty study");
-      const newStudyBtn = (mode === "grid") ? new osparc.dashboard.GridButtonNew(title, desc) : new osparc.dashboard.ListButtonNew(title, desc);
-      newStudyBtn.setCardKey("new-study");
-      newStudyBtn.subscribeToFilterGroup("searchBarFilter");
-      osparc.utils.Utils.setIdToWidget(newStudyBtn, "newStudyBtn");
-      newStudyBtn.addListener("tap", () => this.__newStudyBtnClicked(newStudyBtn));
-      this._resourcesContainer.addNonResourceCard(newStudyBtn);
+      const newEmptyStudyBtn = (mode === "grid") ? new osparc.dashboard.GridButtonNew(title, desc) : new osparc.dashboard.ListButtonNew(title, desc);
+      newEmptyStudyBtn.setCardKey("new-study");
+      newEmptyStudyBtn.subscribeToFilterGroup("searchBarFilter");
+      osparc.utils.Utils.setIdToWidget(newEmptyStudyBtn, "emptyStudyBtn");
+      newEmptyStudyBtn.addListener("tap", () => this.__newEmptyStudyBtnClicked("New Study"));
+      this._resourcesContainer.addNonResourceCard(newEmptyStudyBtn);
     },
 
     __addTIPPlusButton: function() {
       const mode = this._resourcesContainer.getMode();
       const title = this.tr("New Plan");
-      const newStudyBtn = (mode === "grid") ? new osparc.dashboard.GridButtonNew(title) : new osparc.dashboard.ListButtonNew(title);
-      newStudyBtn.setCardKey("new-study");
-      newStudyBtn.subscribeToFilterGroup("searchBarFilter");
-      osparc.utils.Utils.setIdToWidget(newStudyBtn, "newStudyBtn");
-      this._resourcesContainer.addNonResourceCard(newStudyBtn);
-      newStudyBtn.setEnabled(false);
+      const newPlansBtn = (mode === "grid") ? new osparc.dashboard.GridButtonNew(title) : new osparc.dashboard.ListButtonNew(title);
+      newPlansBtn.setCardKey("new-study");
+      newPlansBtn.subscribeToFilterGroup("searchBarFilter");
+      osparc.utils.Utils.setIdToWidget(newPlansBtn, "newPlansBtn");
+      this._resourcesContainer.addNonResourceCard(newPlansBtn);
+      newPlansBtn.setEnabled(false);
 
       osparc.utils.Utils.fetchJSON("/resource/osparc/new_studies.json")
         .then(newStudiesData => {
           const product = osparc.product.Utils.getProductName()
           if (product in newStudiesData) {
-            newStudyBtn.setEnabled(true);
+            newPlansBtn.setEnabled(true);
 
-            newStudyBtn.addListener("tap", () => {
+            newPlansBtn.addListener("tap", () => {
               osparc.data.Resources.get("templates")
                 .then(templates => {
                   if (templates) {
@@ -990,7 +1034,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             const newStudyFromServiceButton = (mode === "grid") ? new osparc.dashboard.GridButtonNew(title, desc) : new osparc.dashboard.ListButtonNew(title, desc);
             newStudyFromServiceButton.setCardKey("new-"+key);
             osparc.utils.Utils.setIdToWidget(newStudyFromServiceButton, newButtonInfo.idToWidget);
-            newStudyFromServiceButton.addListener("tap", () => this.__newStudyFromServiceBtnClicked(newStudyFromServiceButton, latestMetadata["key"], latestMetadata["version"], newButtonInfo.newStudyLabel));
+            newStudyFromServiceButton.addListener("tap", () => this.__newStudyFromServiceBtnClicked(latestMetadata["key"], latestMetadata["version"], newButtonInfo.newStudyLabel));
             this._resourcesContainer.addNonResourceCard(newStudyFromServiceButton);
           })
       }
@@ -1044,6 +1088,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this.__addSortByButton();
       this._addViewModeButton();
 
+      if (osparc.product.Utils.hasNewPlusButton()) {
+        this.__addNewPlusButton();
+      }
+
       this._addResourceFilter();
 
       this.__connectContexts();
@@ -1071,17 +1119,17 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
         studiesMoveButton.set({
           visibility: selection.length && currentContext === "studiesAndFolders" ? "visible" : "excluded",
-          label: this.tr("Move") + (selection.length > 1 ? this.tr(" selected ") + `(${selection.length})` : ""),
+          label: this.tr("Move") + (selection.length > 1 ? ` (${selection.length})` : ""),
         });
 
         studiesTrashButton.set({
           visibility: selection.length && currentContext === "studiesAndFolders" ? "visible" : "excluded",
-          label: this.tr("Move to Bin") + (selection.length > 1 ? this.tr(" selected ") + `(${selection.length})` : ""),
+          label: this.tr("Move to Bin") + (selection.length > 1 ? ` (${selection.length})` : ""),
         });
 
         studiesDeleteButton.set({
           visibility: selection.length && currentContext === "trash" ? "visible" : "excluded",
-          label: this.tr("Delete permanently") + (selection.length > 1 ? this.tr(" selected ") + `(${selection.length})` : ""),
+          label: this.tr("Delete permanently") + (selection.length > 1 ? ` (${selection.length})` : ""),
         });
       });
 
@@ -1463,10 +1511,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
     },
 
-    __newStudyBtnClicked: function(button) {
-      const minStudyData = osparc.data.model.Study.createMinStudyObject();
+    __newEmptyStudyBtnClicked: function(newStudyLabel) {
       const existingNames = this._resourcesList.map(study => study["name"]);
-      const title = osparc.utils.Utils.getUniqueName(minStudyData.name, existingNames);
+      const title = osparc.utils.Utils.getUniqueName(newStudyLabel, existingNames);
+      const minStudyData = osparc.data.model.Study.createMinStudyObject();
       minStudyData["name"] = title;
       minStudyData["workspaceId"] = this.getCurrentWorkspaceId();
       minStudyData["folderId"] = this.getCurrentFolderId();
@@ -1503,7 +1551,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         });
     },
 
-    __newStudyFromServiceBtnClicked: function(button, key, version, newStudyLabel) {
+    __newStudyFromServiceBtnClicked: function(key, version, newStudyLabel) {
       this._showLoadingPage(this.tr("Creating ") + osparc.product.Utils.getStudyAlias());
       const contextProps = {
         workspaceId: this.getCurrentWorkspaceId(),
@@ -1599,6 +1647,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       const duplicateStudyButton = this.__getDuplicateMenuButton(studyData);
       menu.add(duplicateStudyButton);
+
+      const convertToPipelineButton = this.__getConvertToPipelineMenuButton(studyData);
+      menu.add(convertToPipelineButton);
 
       if (osparc.product.Utils.isProduct("osparc")) {
         const exportStudyButton = this.__getExportMenuButton(studyData);
@@ -1696,7 +1747,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __updateName: function(studyData, name) {
-      osparc.info.StudyUtils.patchStudyData(studyData, "name", name)
+      osparc.store.Study.patchStudyData(studyData, "name", name)
         .then(() => this._updateStudyData(studyData))
         .catch(err => {
           console.error(err);
@@ -1706,7 +1757,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __updateThumbnail: function(studyData, url) {
-      osparc.info.StudyUtils.patchStudyData(studyData, "thumbnail", url)
+      osparc.store.Study.patchStudyData(studyData, "thumbnail", url)
         .then(() => this._updateStudyData(studyData))
         .catch(err => {
           console.error(err);
@@ -1810,6 +1861,29 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       duplicateButton["duplicateButton"] = true;
       duplicateButton.addListener("execute", () => this.__duplicateStudy(studyData), this);
       return duplicateButton;
+    },
+
+    __getConvertToPipelineMenuButton: function(studyData) {
+      const convertToPipelineButton = new qx.ui.menu.Button(this.tr("Convert to Pipeline"), null);
+      convertToPipelineButton["convertToPipelineButton"] = true;
+      const uiMode = osparc.study.Utils.getUiMode(studyData);
+      convertToPipelineButton.setVisibility(uiMode === "standalone" ? "visible" : "excluded");
+      convertToPipelineButton.addListener("execute", () => {
+        this.__updateUIMode(studyData, "workbench")
+          .catch(err => {
+            console.error(err);
+            const msg = err.message || this.tr("Something went wrong Converting to Pipeline");
+            osparc.FlashMessenger.logAs(msg, "ERROR");
+          });
+      }, this);
+      return convertToPipelineButton;
+    },
+
+    __updateUIMode: function(studyData, uiMode) {
+      const studyUI = osparc.utils.Utils.deepCloneObject(studyData["ui"]);
+      studyUI["mode"] = uiMode;
+      return osparc.info.StudyUtils.patchStudyData(studyData, "ui", studyUI)
+        .then(() => this._updateStudyData(studyData))
     },
 
     __getExportMenuButton: function(studyData) {
@@ -2091,7 +2165,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       // remove me from collaborators
       const myGid = osparc.auth.Data.getInstance().getGroupId();
       delete arCopy[myGid];
-      return osparc.info.StudyUtils.patchStudyData(studyData, "accessRights", arCopy);
+      return osparc.store.Study.patchStudyData(studyData, "accessRights", arCopy);
     },
 
     __doDeleteStudy: function(studyData) {

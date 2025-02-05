@@ -2,7 +2,7 @@ from datetime import UTC, datetime
 from typing import cast
 
 import sqlalchemy as sa
-from models_library.licensed_items import LicensedItemID
+from models_library.licenses import LicensedItemID
 from models_library.products import ProductName
 from models_library.resource_tracker_licensed_items_purchases import (
     LicensedItemPurchaseID,
@@ -37,6 +37,7 @@ _SELECTION_ARGS = (
     resource_tracker_licensed_items_purchases.c.expire_at,
     resource_tracker_licensed_items_purchases.c.num_of_seats,
     resource_tracker_licensed_items_purchases.c.purchased_by_user,
+    resource_tracker_licensed_items_purchases.c.user_email,
     resource_tracker_licensed_items_purchases.c.purchased_at,
     resource_tracker_licensed_items_purchases.c.modified,
 )
@@ -66,6 +67,7 @@ async def create(
                 expire_at=data.expire_at,
                 num_of_seats=data.num_of_seats,
                 purchased_by_user=data.purchased_by_user,
+                user_email=data.user_email,
                 purchased_at=data.purchased_at,
                 modified=sa.func.now(),
             )

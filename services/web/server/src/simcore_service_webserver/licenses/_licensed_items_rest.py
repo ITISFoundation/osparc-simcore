@@ -1,10 +1,8 @@
 import logging
 
 from aiohttp import web
-from models_library.api_schemas_webserver.licensed_items import (
-    LicensedItemGet,
-    LicensedItemGetPage,
-)
+from models_library.api_schemas_webserver.licensed_items import LicensedItemRestGet
+from models_library.licenses import LicensedItem, LicensedItemPage
 from models_library.rest_ordering import OrderBy
 from models_library.rest_pagination import Page
 from models_library.rest_pagination_utils import paginate_data
@@ -22,8 +20,8 @@ from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
 from . import _licensed_items_service
-from ._exceptions_handlers import handle_plugin_requests_exceptions
-from ._models import (
+from ._common.exceptions_handlers import handle_plugin_requests_exceptions
+from ._common.models import (
     LicensedItemsBodyParams,
     LicensedItemsListQueryParams,
     LicensedItemsPathParams,
@@ -46,7 +44,7 @@ async def list_licensed_items(request: web.Request):
         LicensedItemsListQueryParams, request
     )
 
-    licensed_item_get_page: LicensedItemGetPage = (
+    licensed_item_page: LicensedItemPage = (
         await _licensed_items_service.list_licensed_items(
             app=request.app,
             product_name=req_ctx.product_name,
@@ -56,13 +54,16 @@ async def list_licensed_items(request: web.Request):
         )
     )
 
-    page = Page[LicensedItemGet].model_validate(
+    page = Page[LicensedItemRestGet].model_validate(
         paginate_data(
-            chunk=licensed_item_get_page.items,
-            request_url=request.url,
-            total=licensed_item_get_page.total,
+            chunk=[
+                LicensedItemRestGet.from_domain_model(licensed_item)
+                for licensed_item in licensed_item_page.items
+            ],
+            total=licensed_item_page.total,
             limit=query_params.limit,
             offset=query_params.offset,
+            request_url=request.url,
         )
     )
     return web.Response(
@@ -81,15 +82,12 @@ async def get_licensed_item(request: web.Request):
     req_ctx = LicensedItemsRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(LicensedItemsPathParams, request)
 
-    licensed_item_get: LicensedItemGet = (
-        await _licensed_items_service.get_licensed_item(
-            app=request.app,
-            licensed_item_id=path_params.licensed_item_id,
-            product_name=req_ctx.product_name,
-        )
+    licensed_item: LicensedItem = await _licensed_items_service.get_licensed_item(
+        app=request.app,
+        licensed_item_id=path_params.licensed_item_id,
+        product_name=req_ctx.product_name,
     )
-
-    return envelope_json_response(licensed_item_get)
+    return envelope_json_response(LicensedItemRestGet.from_domain_model(licensed_item))
 
 
 @routes.post(

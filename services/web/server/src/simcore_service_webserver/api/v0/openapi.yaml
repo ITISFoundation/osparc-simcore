@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: simcore-service-webserver
   description: Main service with an interface (http-API & websockets) to the web front-end
-  version: 0.50.0
+  version: 0.52.0
 servers:
 - url: ''
   description: webserver
@@ -3077,7 +3077,7 @@ paths:
           type: string
           contentMediaType: application/json
           contentSchema: {}
-          default: '{"field":"modified","direction":"desc"}'
+          default: '{"field":"display_name","direction":"desc"}'
           title: Order By
       - name: limit
         in: query
@@ -3099,7 +3099,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_list_LicensedItemGet__'
+                $ref: '#/components/schemas/Page_LicensedItemRestGet_'
         '404':
           content:
             application/json:
@@ -3145,7 +3145,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_LicensedItemGet_'
+                $ref: '#/components/schemas/Envelope_LicensedItemRestGet_'
         '404':
           content:
             application/json:
@@ -5289,7 +5289,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_list_ServiceRunGet__'
+                $ref: '#/components/schemas/Page_ServiceRunGet_'
   /v0/services/-/aggregated-usages:
     get:
       tags:
@@ -5335,7 +5335,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_list_OsparcCreditsAggregatedByServiceGet__'
+                $ref: '#/components/schemas/Page_OsparcCreditsAggregatedByServiceGet_'
   /v0/services/-/usage-report:
     get:
       tags:
@@ -5384,7 +5384,7 @@ paths:
     get:
       tags:
       - pricing-plans
-      summary: Retrieve detail information about pricing unit
+      summary: Get Pricing Plan Unit
       operationId: get_pricing_plan_unit
       parameters:
       - name: pricing_plan_id
@@ -5410,31 +5410,97 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_PricingUnitGet_'
-  /v0/admin/pricing-plans:
+  /v0/pricing-plans:
     get:
       tags:
-      - admin
-      summary: List pricing plans
+      - pricing-plans
+      summary: List Pricing Plans
       description: To keep the listing lightweight, the pricingUnits field is None.
       operationId: list_pricing_plans
+      parameters:
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 20
+          title: Limit
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+          title: Offset
       responses:
         '200':
           description: Successful Response
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_list_PricingPlanAdminGet__'
+                $ref: '#/components/schemas/Page_PricingPlanGet_'
+  /v0/pricing-plans/{pricing_plan_id}:
+    get:
+      tags:
+      - pricing-plans
+      summary: Get Pricing Plan
+      operationId: get_pricing_plan
+      parameters:
+      - name: pricing_plan_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          exclusiveMinimum: true
+          title: Pricing Plan Id
+          minimum: 0
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_PricingPlanGet_'
+  /v0/admin/pricing-plans:
+    get:
+      tags:
+      - admin
+      summary: List Pricing Plans For Admin User
+      description: To keep the listing lightweight, the pricingUnits field is None.
+      operationId: list_pricing_plans_for_admin_user
+      parameters:
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 20
+          title: Limit
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+          title: Offset
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Page_PricingPlanAdminGet_'
     post:
       tags:
       - admin
-      summary: Create pricing plan
+      summary: Create Pricing Plan
       operationId: create_pricing_plan
       requestBody:
+        required: true
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/CreatePricingPlanBodyParams'
-        required: true
       responses:
         '200':
           description: Successful Response
@@ -5446,8 +5512,8 @@ paths:
     get:
       tags:
       - admin
-      summary: Retrieve detail information about pricing plan
-      operationId: get_pricing_plan
+      summary: Get Pricing Plan For Admin User
+      operationId: get_pricing_plan_for_admin_user
       parameters:
       - name: pricing_plan_id
         in: path
@@ -5467,7 +5533,7 @@ paths:
     put:
       tags:
       - admin
-      summary: Update detail information about pricing plan
+      summary: Update Pricing Plan
       operationId: update_pricing_plan
       parameters:
       - name: pricing_plan_id
@@ -5495,7 +5561,7 @@ paths:
     get:
       tags:
       - admin
-      summary: Retrieve detail information about pricing unit
+      summary: Get Pricing Unit
       operationId: get_pricing_unit
       parameters:
       - name: pricing_plan_id
@@ -5524,7 +5590,7 @@ paths:
     put:
       tags:
       - admin
-      summary: Update detail information about pricing plan
+      summary: Update Pricing Unit
       operationId: update_pricing_unit
       parameters:
       - name: pricing_plan_id
@@ -5560,7 +5626,7 @@ paths:
     post:
       tags:
       - admin
-      summary: Create pricing unit
+      summary: Create Pricing Unit
       operationId: create_pricing_unit
       parameters:
       - name: pricing_plan_id
@@ -5588,7 +5654,7 @@ paths:
     get:
       tags:
       - admin
-      summary: List services that are connected to the provided pricing plan
+      summary: List Connected Services To Pricing Plan
       operationId: list_connected_services_to_pricing_plan
       parameters:
       - name: pricing_plan_id
@@ -5609,7 +5675,7 @@ paths:
     post:
       tags:
       - admin
-      summary: Connect service with pricing plan
+      summary: Connect Service To Pricing Plan
       operationId: connect_service_to_pricing_plan
       parameters:
       - name: pricing_plan_id
@@ -8348,19 +8414,6 @@ components:
           title: Error
       type: object
       title: Envelope[InvitationInfo]
-    Envelope_LicensedItemGet_:
-      properties:
-        data:
-          anyOf:
-          - $ref: '#/components/schemas/LicensedItemGet'
-          - type: 'null'
-        error:
-          anyOf:
-          - {}
-          - type: 'null'
-          title: Error
-      type: object
-      title: Envelope[LicensedItemGet]
     Envelope_LicensedItemPurchaseGet_:
       properties:
         data:
@@ -8374,6 +8427,19 @@ components:
           title: Error
       type: object
       title: Envelope[LicensedItemPurchaseGet]
+    Envelope_LicensedItemRestGet_:
+      properties:
+        data:
+          anyOf:
+          - $ref: '#/components/schemas/LicensedItemRestGet'
+          - type: 'null'
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[LicensedItemRestGet]
     Envelope_Log_:
       properties:
         data:
@@ -8517,6 +8583,19 @@ components:
           title: Error
       type: object
       title: Envelope[PricingPlanAdminGet]
+    Envelope_PricingPlanGet_:
+      properties:
+        data:
+          anyOf:
+          - $ref: '#/components/schemas/PricingPlanGet'
+          - type: 'null'
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[PricingPlanGet]
     Envelope_PricingPlanToServiceAdminGet_:
       properties:
         data:
@@ -9155,22 +9234,6 @@ components:
           title: Error
       type: object
       title: Envelope[list[GroupUserGet]]
-    Envelope_list_LicensedItemGet__:
-      properties:
-        data:
-          anyOf:
-          - items:
-              $ref: '#/components/schemas/LicensedItemGet'
-            type: array
-          - type: 'null'
-          title: Data
-        error:
-          anyOf:
-          - {}
-          - type: 'null'
-          title: Error
-      type: object
-      title: Envelope[list[LicensedItemGet]]
     Envelope_list_MyPermissionGet__:
       properties:
         data:
@@ -9203,22 +9266,6 @@ components:
           title: Error
       type: object
       title: Envelope[list[MyTokenGet]]
-    Envelope_list_OsparcCreditsAggregatedByServiceGet__:
-      properties:
-        data:
-          anyOf:
-          - items:
-              $ref: '#/components/schemas/OsparcCreditsAggregatedByServiceGet'
-            type: array
-          - type: 'null'
-          title: Data
-        error:
-          anyOf:
-          - {}
-          - type: 'null'
-          title: Error
-      type: object
-      title: Envelope[list[OsparcCreditsAggregatedByServiceGet]]
     Envelope_list_PaymentMethodGet__:
       properties:
         data:
@@ -9235,22 +9282,6 @@ components:
           title: Error
       type: object
       title: Envelope[list[PaymentMethodGet]]
-    Envelope_list_PricingPlanAdminGet__:
-      properties:
-        data:
-          anyOf:
-          - items:
-              $ref: '#/components/schemas/PricingPlanAdminGet'
-            type: array
-          - type: 'null'
-          title: Data
-        error:
-          anyOf:
-          - {}
-          - type: 'null'
-          title: Error
-      type: object
-      title: Envelope[list[PricingPlanAdminGet]]
     Envelope_list_PricingPlanToServiceAdminGet__:
       properties:
         data:
@@ -9379,22 +9410,6 @@ components:
           title: Error
       type: object
       title: Envelope[list[ServiceOutputGet]]
-    Envelope_list_ServiceRunGet__:
-      properties:
-        data:
-          anyOf:
-          - items:
-              $ref: '#/components/schemas/ServiceRunGet'
-            type: array
-          - type: 'null'
-          title: Data
-        error:
-          anyOf:
-          - {}
-          - type: 'null'
-          title: Error
-      type: object
-      title: Envelope[list[ServiceRunGet]]
     Envelope_list_TagGet__:
       properties:
         data:
@@ -9716,6 +9731,39 @@ components:
             in_1: 1
           d76fca06-f050-4790-88a8-0aac10c87b39:
             out_1: true
+    FeaturesDict:
+      properties:
+        name:
+          type: string
+          title: Name
+        version:
+          type: string
+          title: Version
+        sex:
+          type: string
+          title: Sex
+        age:
+          type: string
+          title: Age
+        weight:
+          type: string
+          title: Weight
+        height:
+          type: string
+          title: Height
+        date:
+          type: string
+          title: Date
+        ethnicity:
+          type: string
+          title: Ethnicity
+        functionality:
+          type: string
+          title: Functionality
+      type: object
+      required:
+      - date
+      title: FeaturesDict
     FileMetaData:
       properties:
         file_uuid:
@@ -10011,6 +10059,14 @@ components:
             format: date-time
           - type: 'null'
           title: Trashedat
+        trashedBy:
+          anyOf:
+          - type: integer
+            exclusiveMinimum: true
+            minimum: 0
+          - type: 'null'
+          title: Trashedby
+          description: The primary gid of the user who trashed
         owner:
           type: integer
           exclusiveMinimum: true
@@ -10032,6 +10088,7 @@ components:
       - createdAt
       - modifiedAt
       - trashedAt
+      - trashedBy
       - owner
       - workspaceId
       - myAccessRights
@@ -10595,45 +10652,6 @@ components:
       additionalProperties: false
       type: object
       title: InvitationInfo
-    LicensedItemGet:
-      properties:
-        licensedItemId:
-          type: string
-          format: uuid
-          title: Licenseditemid
-        name:
-          type: string
-          title: Name
-        licenseKey:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Licensekey
-        licensedResourceType:
-          $ref: '#/components/schemas/LicensedResourceType'
-        pricingPlanId:
-          type: integer
-          exclusiveMinimum: true
-          title: Pricingplanid
-          minimum: 0
-        createdAt:
-          type: string
-          format: date-time
-          title: Createdat
-        modifiedAt:
-          type: string
-          format: date-time
-          title: Modifiedat
-      type: object
-      required:
-      - licensedItemId
-      - name
-      - licenseKey
-      - licensedResourceType
-      - pricingPlanId
-      - createdAt
-      - modifiedAt
-      title: LicensedItemGet
     LicensedItemPurchaseGet:
       properties:
         licensedItemPurchaseId:
@@ -10676,6 +10694,10 @@ components:
           exclusiveMinimum: true
           title: Purchasedbyuser
           minimum: 0
+        userEmail:
+          type: string
+          format: email
+          title: Useremail
         purchasedAt:
           type: string
           format: date-time
@@ -10696,9 +10718,46 @@ components:
       - expireAt
       - numOfSeats
       - purchasedByUser
+      - userEmail
       - purchasedAt
       - modifiedAt
       title: LicensedItemPurchaseGet
+    LicensedItemRestGet:
+      properties:
+        licensedItemId:
+          type: string
+          format: uuid
+          title: Licenseditemid
+        displayName:
+          type: string
+          title: Displayname
+        licensedResourceType:
+          $ref: '#/components/schemas/LicensedResourceType'
+        licensedResourceData:
+          $ref: '#/components/schemas/_ItisVipResourceRestData'
+        pricingPlanId:
+          type: integer
+          exclusiveMinimum: true
+          title: Pricingplanid
+          minimum: 0
+        createdAt:
+          type: string
+          format: date-time
+          title: Createdat
+        modifiedAt:
+          type: string
+          format: date-time
+          title: Modifiedat
+      type: object
+      required:
+      - licensedItemId
+      - displayName
+      - licensedResourceType
+      - licensedResourceData
+      - pricingPlanId
+      - createdAt
+      - modifiedAt
+      title: LicensedItemRestGet
     LicensedItemsBodyParams:
       properties:
         wallet_id:
@@ -11843,6 +11902,42 @@ components:
       - _links
       - data
       title: Page[LicensedItemPurchaseGet]
+    Page_LicensedItemRestGet_:
+      properties:
+        _meta:
+          $ref: '#/components/schemas/PageMetaInfoLimitOffset'
+        _links:
+          $ref: '#/components/schemas/PageLinks'
+        data:
+          items:
+            $ref: '#/components/schemas/LicensedItemRestGet'
+          type: array
+          title: Data
+      additionalProperties: false
+      type: object
+      required:
+      - _meta
+      - _links
+      - data
+      title: Page[LicensedItemRestGet]
+    Page_OsparcCreditsAggregatedByServiceGet_:
+      properties:
+        _meta:
+          $ref: '#/components/schemas/PageMetaInfoLimitOffset'
+        _links:
+          $ref: '#/components/schemas/PageLinks'
+        data:
+          items:
+            $ref: '#/components/schemas/OsparcCreditsAggregatedByServiceGet'
+          type: array
+          title: Data
+      additionalProperties: false
+      type: object
+      required:
+      - _meta
+      - _links
+      - data
+      title: Page[OsparcCreditsAggregatedByServiceGet]
     Page_PaymentTransaction_:
       properties:
         _meta:
@@ -11861,6 +11956,42 @@ components:
       - _links
       - data
       title: Page[PaymentTransaction]
+    Page_PricingPlanAdminGet_:
+      properties:
+        _meta:
+          $ref: '#/components/schemas/PageMetaInfoLimitOffset'
+        _links:
+          $ref: '#/components/schemas/PageLinks'
+        data:
+          items:
+            $ref: '#/components/schemas/PricingPlanAdminGet'
+          type: array
+          title: Data
+      additionalProperties: false
+      type: object
+      required:
+      - _meta
+      - _links
+      - data
+      title: Page[PricingPlanAdminGet]
+    Page_PricingPlanGet_:
+      properties:
+        _meta:
+          $ref: '#/components/schemas/PageMetaInfoLimitOffset'
+        _links:
+          $ref: '#/components/schemas/PageLinks'
+        data:
+          items:
+            $ref: '#/components/schemas/PricingPlanGet'
+          type: array
+          title: Data
+      additionalProperties: false
+      type: object
+      required:
+      - _meta
+      - _links
+      - data
+      title: Page[PricingPlanGet]
     Page_ProjectIterationItem_:
       properties:
         _meta:
@@ -11933,6 +12064,24 @@ components:
       - _links
       - data
       title: Page[RepoApiModel]
+    Page_ServiceRunGet_:
+      properties:
+        _meta:
+          $ref: '#/components/schemas/PageMetaInfoLimitOffset'
+        _links:
+          $ref: '#/components/schemas/PageLinks'
+        data:
+          items:
+            $ref: '#/components/schemas/ServiceRunGet'
+          type: array
+          title: Data
+      additionalProperties: false
+      type: object
+      required:
+      - _meta
+      - _links
+      - data
+      title: Page[ServiceRunGet]
     ParentMetaProjectRef:
       properties:
         project_id:
@@ -12289,7 +12438,7 @@ components:
         pricingUnits:
           anyOf:
           - items:
-              $ref: '#/components/schemas/PricingUnitGet'
+              $ref: '#/components/schemas/PricingUnitAdminGet'
             type: array
           - type: 'null'
           title: Pricingunits
@@ -12313,6 +12462,49 @@ components:
       - TIER
       - LICENSE
       title: PricingPlanClassification
+    PricingPlanGet:
+      properties:
+        pricingPlanId:
+          type: integer
+          exclusiveMinimum: true
+          title: Pricingplanid
+          minimum: 0
+        displayName:
+          type: string
+          title: Displayname
+        description:
+          type: string
+          title: Description
+        classification:
+          $ref: '#/components/schemas/PricingPlanClassification'
+        createdAt:
+          type: string
+          format: date-time
+          title: Createdat
+        pricingPlanKey:
+          type: string
+          title: Pricingplankey
+        pricingUnits:
+          anyOf:
+          - items:
+              $ref: '#/components/schemas/PricingUnitGet'
+            type: array
+          - type: 'null'
+          title: Pricingunits
+        isActive:
+          type: boolean
+          title: Isactive
+      type: object
+      required:
+      - pricingPlanId
+      - displayName
+      - description
+      - classification
+      - createdAt
+      - pricingPlanKey
+      - pricingUnits
+      - isActive
+      title: PricingPlanGet
     PricingPlanToServiceAdminGet:
       properties:
         pricingPlanId:
@@ -12600,6 +12792,14 @@ components:
             format: date-time
           - type: 'null'
           title: Trashedat
+        trashedBy:
+          anyOf:
+          - type: integer
+            exclusiveMinimum: true
+            minimum: 0
+          - type: 'null'
+          title: Trashedby
+          description: The primary gid of the user who trashed
       type: object
       required:
       - uuid
@@ -12616,6 +12816,7 @@ components:
       - workspaceId
       - folderId
       - trashedAt
+      - trashedBy
       title: ProjectGet
     ProjectGroupGet:
       properties:
@@ -12848,6 +13049,14 @@ components:
             format: date-time
           - type: 'null'
           title: Trashedat
+        trashedBy:
+          anyOf:
+          - type: integer
+            exclusiveMinimum: true
+            minimum: 0
+          - type: 'null'
+          title: Trashedby
+          description: The primary gid of the user who trashed
       type: object
       required:
       - uuid
@@ -12864,6 +13073,7 @@ components:
       - workspaceId
       - folderId
       - trashedAt
+      - trashedBy
       title: ProjectListItem
     ProjectLocked:
       properties:
@@ -15187,6 +15397,7 @@ components:
             minimum: 0
           - type: 'null'
           title: Trashedby
+          description: The primary gid of the user who trashed
         myAccessRights:
           $ref: '#/components/schemas/AccessRights'
         accessRights:
@@ -15297,6 +15508,49 @@ components:
       required:
       - pipeline_id
       title: _ComputationStarted
+    _ItisVipResourceRestData:
+      properties:
+        categoryId:
+          type: string
+          maxLength: 100
+          minLength: 1
+          title: Categoryid
+        categoryDisplay:
+          type: string
+          title: Categorydisplay
+        source:
+          $ref: '#/components/schemas/_ItisVipRestData'
+        termsOfUseUrl:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Termsofuseurl
+      type: object
+      required:
+      - categoryId
+      - categoryDisplay
+      - source
+      title: _ItisVipResourceRestData
+    _ItisVipRestData:
+      properties:
+        description:
+          type: string
+          title: Description
+        thumbnail:
+          type: string
+          title: Thumbnail
+        features:
+          $ref: '#/components/schemas/FeaturesDict'
+        doi:
+          type: string
+          title: Doi
+      type: object
+      required:
+      - description
+      - thumbnail
+      - features
+      - doi
+      title: _ItisVipRestData
     _PageParams:
       properties:
         expiration_2fa:

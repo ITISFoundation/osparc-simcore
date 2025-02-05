@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import NamedTuple
 
 from models_library.basic_types import IDStr
-from models_library.licensed_items import LicensedItemID
+from models_library.licenses import LicensedItemID
 from models_library.products import ProductName
 from models_library.resource_tracker_licensed_items_checkouts import (
     LicensedItemCheckoutID,
@@ -24,6 +24,7 @@ class LicensedItemCheckoutGet(BaseModel):
     licensed_item_id: LicensedItemID
     wallet_id: WalletID
     user_id: UserID
+    user_email: str
     product_name: ProductName
     started_at: datetime
     stopped_at: datetime | None

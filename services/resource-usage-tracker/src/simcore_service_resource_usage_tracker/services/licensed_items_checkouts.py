@@ -6,7 +6,7 @@ from models_library.api_schemas_resource_usage_tracker.licensed_items_checkouts 
     LicensedItemCheckoutGet,
     LicensedItemsCheckoutsPage,
 )
-from models_library.licensed_items import LicensedItemID
+from models_library.licenses import LicensedItemID
 from models_library.products import ProductName
 from models_library.resource_tracker import ServiceRunStatus
 from models_library.resource_tracker_licensed_items_checkouts import (
@@ -60,6 +60,7 @@ async def list_licensed_items_checkouts(
                 licensed_item_id=licensed_item_checkout_db.licensed_item_id,
                 wallet_id=licensed_item_checkout_db.wallet_id,
                 user_id=licensed_item_checkout_db.user_id,
+                user_email=licensed_item_checkout_db.user_email,
                 product_name=licensed_item_checkout_db.product_name,
                 service_run_id=licensed_item_checkout_db.service_run_id,
                 started_at=licensed_item_checkout_db.started_at,
@@ -90,6 +91,7 @@ async def get_licensed_item_checkout(
         licensed_item_id=licensed_item_checkout_db.licensed_item_id,
         wallet_id=licensed_item_checkout_db.wallet_id,
         user_id=licensed_item_checkout_db.user_id,
+        user_email=licensed_item_checkout_db.user_email,
         product_name=licensed_item_checkout_db.product_name,
         service_run_id=licensed_item_checkout_db.service_run_id,
         started_at=licensed_item_checkout_db.started_at,
@@ -171,6 +173,7 @@ async def checkout_licensed_item(
         licensed_item_id=licensed_item_checkout_db.licensed_item_id,
         wallet_id=licensed_item_checkout_db.wallet_id,
         user_id=licensed_item_checkout_db.user_id,
+        user_email=licensed_item_checkout_db.user_email,
         product_name=licensed_item_checkout_db.product_name,
         service_run_id=licensed_item_checkout_db.service_run_id,
         started_at=licensed_item_checkout_db.started_at,
@@ -200,6 +203,7 @@ async def release_licensed_item(
         licensed_item_id=licensed_item_checkout_db.licensed_item_id,
         wallet_id=licensed_item_checkout_db.wallet_id,
         user_id=licensed_item_checkout_db.user_id,
+        user_email=licensed_item_checkout_db.user_email,
         product_name=licensed_item_checkout_db.product_name,
         service_run_id=licensed_item_checkout_db.service_run_id,
         started_at=licensed_item_checkout_db.started_at,

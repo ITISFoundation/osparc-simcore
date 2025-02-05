@@ -10,12 +10,15 @@ from typing import Annotated
 
 from _common import as_query
 from fastapi import APIRouter, Depends, status
-from models_library.api_schemas_webserver.licensed_items import LicensedItemGet
+from models_library.api_schemas_webserver.licensed_items import LicensedItemRestGet
 from models_library.generics import Envelope
 from models_library.rest_error import EnvelopedError
+from models_library.rest_pagination import Page
 from simcore_service_webserver._meta import API_VTAG
-from simcore_service_webserver.licenses._exceptions_handlers import _TO_HTTP_ERROR_MAP
-from simcore_service_webserver.licenses._models import (
+from simcore_service_webserver.licenses._common.exceptions_handlers import (
+    _TO_HTTP_ERROR_MAP,
+)
+from simcore_service_webserver.licenses._common.models import (
     LicensedItemsBodyParams,
     LicensedItemsListQueryParams,
     LicensedItemsPathParams,
@@ -35,7 +38,7 @@ router = APIRouter(
 
 @router.get(
     "/catalog/licensed-items",
-    response_model=Envelope[list[LicensedItemGet]],
+    response_model=Page[LicensedItemRestGet],
 )
 async def list_licensed_items(
     _query: Annotated[as_query(LicensedItemsListQueryParams), Depends()],
@@ -45,7 +48,7 @@ async def list_licensed_items(
 
 @router.get(
     "/catalog/licensed-items/{licensed_item_id}",
-    response_model=Envelope[LicensedItemGet],
+    response_model=Envelope[LicensedItemRestGet],
 )
 async def get_licensed_item(
     _path: Annotated[LicensedItemsPathParams, Depends()],

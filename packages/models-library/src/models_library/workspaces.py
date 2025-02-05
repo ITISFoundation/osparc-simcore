@@ -47,7 +47,7 @@ class Workspace(BaseModel):
     workspace_id: WorkspaceID
     name: str
     description: str | None
-    owner_primary_gid: PositiveInt = Field(
+    owner_primary_gid: GroupID = Field(
         ...,
         description="GID of the group that owns this wallet",
     )
@@ -62,6 +62,14 @@ class Workspace(BaseModel):
     )
     trashed: datetime | None
     trashed_by: UserID | None
+    trashed_by_primary_gid: GroupID | None = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class UserWorkspaceWithAccessRights(Workspace):
+    my_access_rights: AccessRights
+    access_rights: dict[GroupID, AccessRights]
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -72,10 +80,3 @@ class WorkspaceUpdates(BaseModel):
     thumbnail: str | None = None
     trashed: datetime | None = None
     trashed_by: UserID | None = None
-
-
-class UserWorkspaceWithAccessRights(Workspace):
-    my_access_rights: AccessRights
-    access_rights: dict[GroupID, AccessRights]
-
-    model_config = ConfigDict(from_attributes=True)

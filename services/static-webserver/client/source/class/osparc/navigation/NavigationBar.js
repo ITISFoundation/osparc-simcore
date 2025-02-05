@@ -80,12 +80,6 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       minWidth: 30,
       minHeight: 30
     },
-
-    PAGE_CONTEXT: {
-      0: "dashboard",
-      1: "workbench",
-      2: "app"
-    }
   },
 
   members: {
@@ -328,15 +322,6 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       const registerButton = new qx.ui.form.Button(this.tr("Log in"), "@FontAwesome5Solid/edit/14");
       registerButton.addListener("execute", () => window.open(window.location.href, "_blank"));
       return registerButton;
-    },
-
-    addDashboardTabButtons: function(tabButtons) {
-      this.__tabButtons = tabButtons;
-      this.getChildControl("center-items").add(tabButtons);
-      this.bind("study", this.__tabButtons, "visibility", {
-        converter: s => s ? "excluded" : "visible"
-      });
-      this.__navBarResized();
     },
 
     __applyStudy: function(study) {

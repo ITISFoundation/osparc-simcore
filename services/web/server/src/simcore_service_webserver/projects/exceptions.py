@@ -239,11 +239,11 @@ class ProjectGroupNotFoundError(BaseProjectError):
 
 
 class ProjectInDebtCanNotChangeWalletError(BaseProjectError):
-    msg_template = "Can not change wallet on a project that is in debt. Project debt {debt_amount} credits. Project wallet {wallet_id}"
+    msg_template = "Unable to change the credit account linked to the project. The project is embargoed because the last transaction of {debt_amount} resulted in the credit account going negative."
 
 
 class ProjectInDebtCanNotOpenError(BaseProjectError):
-    msg_template = "Can not open project that is in debt. Project debt {debt_amount} credits. Project wallet {wallet_id}"
+    msg_template = "Unable to open the project. The project is embargoed because the last transaction of {debt_amount} resulted in the credit account going negative."
 
 
 class ProjectWalletPendingTransactionError(BaseProjectError):

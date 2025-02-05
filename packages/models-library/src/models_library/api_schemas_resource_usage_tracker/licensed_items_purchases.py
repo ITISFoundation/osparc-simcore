@@ -2,7 +2,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import NamedTuple
 
-from models_library.licensed_items import LicensedItemID
+from models_library.licenses import LicensedItemID
 from models_library.products import ProductName
 from models_library.resource_tracker import PricingUnitCostId
 from models_library.resource_tracker_licensed_items_purchases import (
@@ -25,6 +25,7 @@ class LicensedItemPurchaseGet(BaseModel):
     expire_at: datetime
     num_of_seats: int
     purchased_by_user: UserID
+    user_email: str
     purchased_at: datetime
     modified: datetime
 
@@ -43,6 +44,7 @@ class LicensedItemPurchaseGet(BaseModel):
                     "expire_at": "2023-01-11 13:11:47.293595",
                     "num_of_seats": 1,
                     "purchased_by_user": 1,
+                    "user_email": "test@test.com",
                     "purchased_at": "2023-01-11 13:11:47.293595",
                     "modified": "2023-01-11 13:11:47.293595",
                 }

@@ -719,16 +719,28 @@ qx.Theme.define("osparc.theme.Appearance", {
       }
     },
 
+    "menu-wider": {
+      include: "menu",
+      style: () => {
+        return {
+          decorator: "border-simple",
+          font: "text-14",
+          padding: 4,
+        };
+      }
+    },
+
     "menu-button": {
       alias: "atom",
 
-      style: function(states) {
+      style: states => {
         return {
+          decorator: "rounded",
           cursor: states.disabled ? "not-allowed" : "pointer",
-          backgroundColor: states.selected ? "background-selected-dark" : undefined,
+          backgroundColor: states.selected || states.hovered ? "pb-new" : undefined,
           textColor: states.selected ? "default-button-text" : "text",
-          padding: [2, 6]
-        };
+          padding: [4, 8]
+        }
       }
     },
 

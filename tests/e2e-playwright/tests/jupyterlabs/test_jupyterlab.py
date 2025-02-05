@@ -70,6 +70,7 @@ def test_jupyterlab(
     large_file_size: ByteSize,
     large_file_block_size: ByteSize,
     product_url: AnyUrl,
+    is_service_legacy: bool,
 ):
     # NOTE: this waits for the jupyter to send message, but is not quite enough
     with (
@@ -101,6 +102,7 @@ def test_jupyterlab(
             timeout=_WAITING_FOR_SERVICE_TO_START,
             press_start_button=False,
             product_url=product_url,
+            is_service_legacy=is_service_legacy,
         )
 
     iframe = page.frame_locator("iframe")

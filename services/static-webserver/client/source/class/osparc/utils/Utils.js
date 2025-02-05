@@ -89,7 +89,7 @@ qx.Class.define("osparc.utils.Utils", {
       }
     },
 
-    FLOATING_Z_INDEX: 110000,
+    FLOATING_Z_INDEX: 1000001 + 1,
 
     updateTabName: function(name) {
       document.title = name;
@@ -253,18 +253,11 @@ qx.Class.define("osparc.utils.Utils", {
     },
 
     prettifyMenu: function(menu) {
-      menu.set({
-        font: "text-14",
-        padding: 4
-      });
+      menu.setAppearance("menu-wider");
       menu.getChildren().forEach(menuItem => {
         if (menuItem.classname !== "qx.ui.menu.Separator") {
           menuItem.setPadding(4);
         }
-      });
-
-      menu.getContentElement().setStyles({
-        "border-radius": "4px"
       });
     },
 
@@ -958,10 +951,10 @@ qx.Class.define("osparc.utils.Utils", {
     },
 
     cookie: {
-      setCookie: (cname, cvalue, exdays) => {
-        if (exdays) {
+      setCookie: (cname, cvalue, expDays) => {
+        if (expDays) {
           const d = new Date();
-          d.setTime(d.getTime() + (exdays * 24 * 60 * 60 * 1000));
+          d.setTime(d.getTime() + (expDays * 24 * 60 * 60 * 1000));
           document.cookie = cname + "=" + cvalue + ";Expires=" + d.toUTCString() + ";path=/";
         } else {
           document.cookie = cname + "=" + cvalue + ";path=/";

@@ -24,7 +24,7 @@ qx.Class.define("osparc.tester.TesterCenter", {
     const miniProfile = osparc.desktop.account.MyAccount.createMiniProfileView().set({
       paddingRight: 10
     });
-    this.addWidgetOnTopOfTheTabs(miniProfile);
+    this.addWidgetToTabs(miniProfile);
 
     this.__addSocketMessagesPage();
     this.__addConsoleErrorsPage();

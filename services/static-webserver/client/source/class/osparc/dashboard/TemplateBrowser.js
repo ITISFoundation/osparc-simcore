@@ -144,6 +144,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
         // they will be patched once the study is created
         studyOptions.setPatchStudy(false);
         studyOptions.setStudyData(templateData);
+        studyOptions.getChildControl("open-button").setLabel(this.tr("New"));
         const win = osparc.study.StudyOptions.popUpInWindow(studyOptions);
         win.moveItUp();
         const cancelStudyOptions = () => {
@@ -334,7 +335,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
             if (node["version"] !== latestCompatible["version"]) {
               patchData["version"] = latestCompatible["version"];
             }
-            templatePromises.push(osparc.info.StudyUtils.patchNodeData(uniqueTemplateData, nodeId, patchData));
+            templatePromises.push(osparc.store.Study.patchNodeData(uniqueTemplateData, nodeId, patchData));
           }
         }
         Promise.all(templatePromises)
@@ -449,7 +450,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
         const arCopy = osparc.utils.Utils.deepCloneObject(studyData["accessRights"]);
         // remove collaborator
         delete arCopy[myGid];
-        operationPromise = osparc.info.StudyUtils.patchStudyData(studyData, "accessRights", arCopy);
+        operationPromise = osparc.store.Study.patchStudyData(studyData, "accessRights", arCopy);
       } else {
         // delete study
         operationPromise = osparc.store.Store.getInstance().deleteStudy(studyData.uuid);

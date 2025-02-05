@@ -484,6 +484,7 @@ class TutorialBase {
 
   async __checkNItemsInFolder(fileNames, openOutputsFolder = false) {
     await this.takeScreenshot("checkNodeOutputs_before");
+    await this.waitAndClick("folderGridView");
     console.log("N items in folder. Expected:", fileNames);
     if (openOutputsFolder) {
       const itemTexts = await this.__page.$$eval('[osparc-test-id="FolderViewerItem"]',
@@ -506,8 +507,7 @@ class TutorialBase {
       }
       if (outputsFound) {
         await this.takeScreenshot("outputs_folder");
-      }
-      else {
+      } else {
         throw ("outputs folder not found");
       }
     }
@@ -577,7 +577,6 @@ class TutorialBase {
   }
 
   async removeStudy(studyId, waitFor = 5000) {
-    await auto.dashboardStudiesBrowser(this.__page);
     await this.waitFor(waitFor, 'Wait to be unlocked');
     await this.takeScreenshot("deleteFirstStudy_before");
     const intervalWait = 3000;

@@ -18,12 +18,16 @@
 qx.Class.define("osparc.vipMarket.VipMarket", {
   extend: qx.ui.core.Widget,
 
-  construct: function() {
+  construct: function(anatomicalModels) {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.HBox(10));
 
     this.__buildLayout();
+
+    if (anatomicalModels) {
+      this.setLicensedItems(anatomicalModels);
+    }
   },
 
   events: {
@@ -38,11 +42,10 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
       event: "changeOpenBy",
     },
 
-    vipSubset: {
-      check: ["HUMAN_BODY", "HUMAN_BODY_REGION", "ANIMAL", "PHANTOM"],
+    category: {
+      check: ["HumanWholeBody", "HumanBodyRegion", "AnimalWholeBody", "ComputationalPhantom"],
       init: null,
       nullable: true,
-      apply: "__fetchModels",
     },
   },
 
@@ -125,13 +128,13 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
       const modelsUIList = this.getChildControl("models-list");
 
       const anatomicalModelsModel = this.__anatomicalModelsModel = new qx.data.Array();
-      const membersCtrl = new qx.data.controller.List(anatomicalModelsModel, modelsUIList, "name");
+      const membersCtrl = new qx.data.controller.List(anatomicalModelsModel, modelsUIList, "displayName");
       membersCtrl.setDelegate({
         createItem: () => new osparc.vipMarket.AnatomicalModelListItem(),
         bindItem: (ctrl, item, id) => {
           ctrl.bindProperty("modelId", "modelId", null, item, id);
           ctrl.bindProperty("thumbnail", "thumbnail", null, item, id);
-          ctrl.bindProperty("name", "name", null, item, id);
+          ctrl.bindProperty("displayName", "displayName", null, item, id);
           ctrl.bindProperty("date", "date", null, item, id);
           ctrl.bindProperty("licensedItemId", "licensedItemId", null, item, id);
           ctrl.bindProperty("pricingPlanId", "pricingPlanId", null, item, id);
@@ -165,104 +168,106 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
       }, this);
     },
 
-    __fetchModels: function(vipSubset) {
+    setLicensedItems: function(licensedItems) {
+      const store = osparc.store.Store.getInstance();
+      const contextWallet = store.getContextWallet();
+      if (!contextWallet) {
+        return;
+      }
+
       const licensedItemsStore = osparc.store.LicensedItems.getInstance();
-      licensedItemsStore.getVipModels(vipSubset)
-        .then(allAnatomicalModels => {
-          const store = osparc.store.Store.getInstance();
-          const contextWallet = store.getContextWallet();
-          if (!contextWallet) {
-            return;
-          }
-          const walletId = contextWallet.getWalletId();
-          Promise.all([
-            licensedItemsStore.getLicensedItems(),
-            licensedItemsStore.getPurchasedLicensedItems(walletId),
-          ])
-            .then(values => {
-              const licensedItems = values[0];
-              const purchasesItems = values[1];
-
-              this.__anatomicalModels = [];
-              allAnatomicalModels.forEach(model => {
-                const modelId = model["modelId"];
-                const licensedItem = licensedItems.find(licItem => licItem["name"] == modelId);
-                if (licensedItem) {
-                  const anatomicalModel = osparc.utils.Utils.deepCloneObject(model);
-                  anatomicalModel["date"] = new Date(anatomicalModel["date"]);
-                  // attach license data
-                  anatomicalModel["licensedItemId"] = licensedItem["licensedItemId"];
-                  anatomicalModel["pricingPlanId"] = licensedItem["pricingPlanId"];
-                  // attach leased data
-                  anatomicalModel["purchases"] = []; // default
-                  const purchasesItemsFound = purchasesItems.filter(purchasesItem => purchasesItem["licensedItemId"] === licensedItem["licensedItemId"]);
-                  if (purchasesItemsFound.length) {
-                    purchasesItemsFound.forEach(purchasesItemFound => {
-                      anatomicalModel["purchases"].push({
-                        expiresAt: new Date(purchasesItemFound["expireAt"]),
-                        numberOfSeats: purchasesItemFound["numOfSeats"],
-                      })
-                    });
-                  }
-                  this.__anatomicalModels.push(anatomicalModel);
-                }
+      const walletId = contextWallet.getWalletId();
+      licensedItemsStore.getPurchasedLicensedItems(walletId)
+        .then(purchasesItems => {
+          this.__anatomicalModels = [];
+          licensedItems.forEach(licensedItem => {
+            const anatomicalModel = osparc.utils.Utils.deepCloneObject(licensedItem);
+            anatomicalModel["modelId"] = licensedItem["licensedItemId"];
+            anatomicalModel["thumbnail"] = "";
+            anatomicalModel["date"] = null;
+            if (anatomicalModel["licensedResourceData"]) {
+              if (anatomicalModel["licensedResourceData"]["id"]) {
+                anatomicalModel["modelId"] = anatomicalModel["licensedResourceData"]["id"];
+              }
+              if (anatomicalModel["licensedResourceData"]["thumbnail"]) {
+                anatomicalModel["thumbnail"] = anatomicalModel["licensedResourceData"]["thumbnail"];
+              }
+              if (
+                anatomicalModel["licensedResourceData"]["features"] &&
+                anatomicalModel["licensedResourceData"]["features"]["date"]
+              ) {
+                anatomicalModel["date"] = new Date(anatomicalModel["licensedResourceData"]["features"]["date"]);
+              }
+            }
+            // attach license data
+            anatomicalModel["licensedItemId"] = licensedItem["licensedItemId"];
+            anatomicalModel["pricingPlanId"] = licensedItem["pricingPlanId"];
+            // attach leased data
+            anatomicalModel["purchases"] = []; // default
+            const purchasesItemsFound = purchasesItems.filter(purchasesItem => purchasesItem["licensedItemId"] === licensedItem["licensedItemId"]);
+            if (purchasesItemsFound.length) {
+              purchasesItemsFound.forEach(purchasesItemFound => {
+                anatomicalModel["purchases"].push({
+                  expiresAt: new Date(purchasesItemFound["expireAt"]),
+                  numberOfSeats: purchasesItemFound["numOfSeats"],
+                })
               });
+            }
+            this.__anatomicalModels.push(anatomicalModel);
+          });
 
-              this.__populateModels();
+          this.__populateModels();
 
-              const anatomicModelDetails = this.getChildControl("models-details");
-              anatomicModelDetails.addListener("modelPurchaseRequested", e => {
-                if (!contextWallet) {
-                  return;
+          const anatomicModelDetails = this.getChildControl("models-details");
+          anatomicModelDetails.addListener("modelPurchaseRequested", e => {
+            if (!contextWallet) {
+              return;
+            }
+            const {
+              modelId,
+              licensedItemId,
+              pricingPlanId,
+              pricingUnitId,
+            } = e.getData();
+            let numberOfSeats = null;
+            const pricingUnit = osparc.store.Pricing.getInstance().getPricingUnit(pricingPlanId, pricingUnitId);
+            if (pricingUnit) {
+              const split = pricingUnit.getName().split(" ");
+              numberOfSeats = parseInt(split[0]);
+            }
+            licensedItemsStore.purchaseLicensedItem(licensedItemId, walletId, pricingPlanId, pricingUnitId, numberOfSeats)
+              .then(() => {
+                const expirationDate = osparc.study.PricingUnitLicense.getExpirationDate();
+                const purchaseData = {
+                  expiresAt: expirationDate, // get this info from the response
+                  numberOfSeats, // get this info from the response
+                };
+
+                let msg = numberOfSeats;
+                msg += " seat" + (purchaseData["numberOfSeats"] > 1 ? "s" : "");
+                msg += " rented until " + osparc.utils.Utils.formatDate(purchaseData["expiresAt"]);
+                osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
+
+                const found = this.__anatomicalModels.find(model => model["modelId"] === modelId);
+                if (found) {
+                  found["purchases"].push(purchaseData);
+                  this.__populateModels(modelId);
+                  anatomicModelDetails.setAnatomicalModelsData(found);
                 }
-                const {
-                  modelId,
-                  licensedItemId,
-                  pricingPlanId,
-                  pricingUnitId,
-                } = e.getData();
-                let numberOfSeats = null;
-                const pricingUnit = osparc.store.Pricing.getInstance().getPricingUnit(pricingPlanId, pricingUnitId);
-                if (pricingUnit) {
-                  const split = pricingUnit.getName().split(" ");
-                  numberOfSeats = parseInt(split[0]);
-                }
-                licensedItemsStore.purchaseLicensedItem(licensedItemId, walletId, pricingPlanId, pricingUnitId, numberOfSeats)
-                  .then(() => {
-                    const expirationDate = new Date();
-                    expirationDate.setMonth(expirationDate.getMonth() + 1); // rented for one month
-                    const purchaseData = {
-                      expiresAt: expirationDate, // get this info from the response
-                      numberOfSeats, // get this info from the response
-                    };
+              })
+              .catch(err => {
+                const msg = err.message || this.tr("Cannot purchase model");
+                osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
+              });
+          }, this);
 
-                    let msg = numberOfSeats;
-                    msg += " seat" + (purchaseData["numberOfSeats"] > 1 ? "s" : "");
-                    msg += " rented until " + osparc.utils.Utils.formatDate(purchaseData["expiresAt"]);
-                    osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
-
-                    const found = this.__anatomicalModels.find(model => model["modelId"] === modelId);
-                    if (found) {
-                      found["purchases"].push(purchaseData);
-                      this.__populateModels(modelId);
-                      anatomicModelDetails.setAnatomicalModelsData(found);
-                    }
-                  })
-                  .catch(err => {
-                    const msg = err.message || this.tr("Cannot purchase model");
-                    osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
-                  });
-              }, this);
-
-              anatomicModelDetails.addListener("modelImportRequested", e => {
-                const {
-                  modelId
-                } = e.getData();
-                this.__sendImportModelMessage(modelId);
-              }, this);
-            });
-        })
-        .catch(err => console.error(err));
+          anatomicModelDetails.addListener("modelImportRequested", e => {
+            const {
+              modelId
+            } = e.getData();
+            this.__sendImportModelMessage(modelId);
+          }, this);
+        });
     },
 
     __populateModels: function(selectModelId) {
@@ -281,9 +286,9 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
             if (sortBy["sort"] === "name") {
               if (sortBy["order"] === "down") {
                 // A -> Z
-                return a["name"].localeCompare(b["name"]);
+                return a["displayName"].localeCompare(b["displayName"]);
               }
-              return b["name"].localeCompare(a["name"]);
+              return b["displayName"].localeCompare(a["displayName"]);
             } else if (sortBy["sort"] === "date") {
               if (sortBy["order"] === "down") {
                 // Now -> Yesterday
@@ -294,7 +299,7 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
           }
           // default criteria
           // A -> Z
-          return a["name"].localeCompare(b["name"]);
+          return a["displayName"].localeCompare(b["displayName"]);
         });
       };
       sortModel();

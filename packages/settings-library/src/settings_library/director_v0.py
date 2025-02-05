@@ -1,4 +1,5 @@
 from functools import cached_property
+from typing import Annotated
 
 from pydantic import AnyHttpUrl, Field, TypeAdapter
 from settings_library.base import BaseCustomSettings
@@ -10,9 +11,9 @@ class DirectorV0Settings(BaseCustomSettings):
 
     DIRECTOR_HOST: str = "director"
     DIRECTOR_PORT: PortInt = TypeAdapter(PortInt).validate_python(8000)
-    DIRECTOR_VTAG: VersionTag = Field(
-        default="v0", description="Director-v0 service API's version tag"
-    )
+    DIRECTOR_VTAG: Annotated[
+        VersionTag, Field(description="Director-v0 service API's version tag")
+    ] = "v0"
 
     @cached_property
     def endpoint(self) -> str:

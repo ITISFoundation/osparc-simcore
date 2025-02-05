@@ -80,7 +80,7 @@ qx.Class.define("osparc.desktop.credits.CheckoutsTable", {
         id: "user",
         column: 6,
         label: qx.locale.Manager.tr("User"),
-        width: 100
+        width: 150
       },
     }
   }

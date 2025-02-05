@@ -8,22 +8,22 @@ import os
 import shutil
 import subprocess
 import sys
-from collections.abc import AsyncGenerator, AsyncIterator, Callable
+from collections.abc import AsyncGenerator, AsyncIterator, Callable, Iterable
 from pathlib import Path
+from typing import TypedDict
 
-import aiopg.sa
-import aiopg.sa.engine as aiopg_sa_engine
 import httpx
 import pytest
 import simcore_postgres_database.cli as pg_cli
 import sqlalchemy as sa
-import sqlalchemy.engine as sa_engine
+import sqlalchemy.engine
 import yaml
 from aiopg.sa.connection import SAConnection
 from fastapi import FastAPI
 from models_library.api_schemas_api_server.api_keys import ApiKeyInDB
 from pydantic import PositiveInt
 from pytest_mock import MockerFixture
+from pytest_simcore.helpers import postgres_tools
 from pytest_simcore.helpers.faker_factories import (
     random_api_key,
     random_product,
@@ -32,7 +32,6 @@ from pytest_simcore.helpers.faker_factories import (
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_postgres_database.models.api_keys import api_keys
-from simcore_postgres_database.models.base import metadata
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.users import users
 from simcore_service_api_server.core.application import init_app
@@ -41,7 +40,9 @@ from simcore_service_api_server.core.settings import PostgresSettings
 ## POSTGRES -----
 
 
-CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
+_CURRENT_DIR = (
+    Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
+)
 
 
 @pytest.fixture(scope="session")
@@ -54,7 +55,7 @@ def docker_compose_file(
     environ = dict(os.environ)
     environ.update(default_app_env_vars)
 
-    src_path = CURRENT_DIR / "data" / "docker-compose.yml"
+    src_path = _CURRENT_DIR / "data" / "docker-compose.yml"
     assert src_path.exists
 
     dst_path = Path(str(tmpdir_factory.mktemp("config").join("docker-compose.yml")))
@@ -73,8 +74,19 @@ def docker_compose_file(
     return dst_path
 
 
+class PostgreServiceInfoDict(TypedDict):
+    dsn: str
+    user: str
+    password: str
+    host: str
+    port: int
+    datbase: str
+
+
 @pytest.fixture(scope="session")
-def postgres_service(docker_services, docker_ip, docker_compose_file: Path) -> dict:
+def postgres_service(
+    docker_services, docker_ip, docker_compose_file: Path
+) -> PostgreServiceInfoDict:
     # check docker-compose's environ is resolved properly
     config = yaml.safe_load(docker_compose_file.read_text())
     environ = config["services"]["postgres"]["environment"]
@@ -110,23 +122,20 @@ def postgres_service(docker_services, docker_ip, docker_compose_file: Path) -> d
     )
 
     config["dsn"] = dsn
-    return config
+    return PostgreServiceInfoDict(**config)
 
 
 @pytest.fixture(scope="session")
-def make_engine(postgres_service: dict) -> Callable:
-    dsn = postgres_service["dsn"]  # session scope freezes dsn
-
-    def maker(*, is_async=True) -> aiopg_sa_engine.Engine | sa_engine.Engine:
-        if is_async:
-            return aiopg.sa.create_engine(dsn)
-        return sa.create_engine(dsn)
-
-    return maker
+def sync_engine(
+    postgres_service: PostgreServiceInfoDict,
+) -> Iterable[sqlalchemy.engine.Engine]:
+    _engine: sqlalchemy.engine.Engine = sa.create_engine(url=postgres_service["dsn"])
+    yield _engine
+    _engine.dispose()
 
 
 @pytest.fixture
-def migrated_db(postgres_service: dict, make_engine: Callable):
+def migrated_db(postgres_service: dict, sync_engine: sqlalchemy.engine.Engine):
     # NOTE: this is equivalent to packages/pytest-simcore/src/pytest_simcore/postgres_service.py::postgres_db
     # but we do override postgres_dsn -> postgres_engine -> postgres_db because we want the latter
     # fixture to have local scope
@@ -140,9 +149,8 @@ def migrated_db(postgres_service: dict, make_engine: Callable):
 
     pg_cli.downgrade.callback("base")
     pg_cli.clean.callback()
-    # FIXME: deletes all because downgrade is not reliable!
-    engine = make_engine(is_async=False)
-    metadata.drop_all(engine)
+
+    postgres_tools.force_drop_all_tables(sync_engine)
 
 
 @pytest.fixture

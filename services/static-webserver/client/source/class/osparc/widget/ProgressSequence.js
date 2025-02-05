@@ -25,7 +25,8 @@ qx.Class.define("osparc.widget.ProgressSequence", {
 
     this.set({
       backgroundColor: "window-popup-background",
-      paddingBottom: 8
+      paddingBottom: 8,
+      minWidth: 400,
     });
 
     this.__initLayout(title);

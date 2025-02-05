@@ -30,7 +30,7 @@ from pytest_simcore.simcore_webserver_projects_rest_api import (
 
 @pytest.mark.parametrize(
     "api_call",
-    (NEW_PROJECT, CREATE_FROM_SERVICE, CREATE_FROM_TEMPLATE),
+    [NEW_PROJECT, CREATE_FROM_SERVICE, CREATE_FROM_TEMPLATE],
     ids=lambda c: c.name,
 )
 def test_create_project_schemas(api_call: HttpApiCallCapture):
@@ -45,7 +45,7 @@ def test_create_project_schemas(api_call: HttpApiCallCapture):
 
 @pytest.mark.parametrize(
     "api_call",
-    (LIST_PROJECTS,),
+    [LIST_PROJECTS],
     ids=lambda c: c.name,
 )
 def test_list_project_schemas(api_call: HttpApiCallCapture):
@@ -59,7 +59,7 @@ def test_list_project_schemas(api_call: HttpApiCallCapture):
 
 @pytest.mark.parametrize(
     "api_call",
-    (GET_PROJECT, CREATE_FROM_TEMPLATE__TASK_RESULT),
+    [GET_PROJECT, CREATE_FROM_TEMPLATE__TASK_RESULT],
     ids=lambda c: c.name,
 )
 def test_get_project_schemas(api_call: HttpApiCallCapture):
@@ -74,7 +74,7 @@ def test_get_project_schemas(api_call: HttpApiCallCapture):
 
 @pytest.mark.parametrize(
     "api_call",
-    (REPLACE_PROJECT, REPLACE_PROJECT_ON_MODIFIED),
+    [REPLACE_PROJECT, REPLACE_PROJECT_ON_MODIFIED],
     ids=lambda c: c.name,
 )
 def test_replace_project_schemas(api_call: HttpApiCallCapture):

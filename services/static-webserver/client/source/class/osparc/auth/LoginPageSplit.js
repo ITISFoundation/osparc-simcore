@@ -25,6 +25,9 @@ qx.Class.define("osparc.auth.LoginPageSplit", {
     const layout = new qx.ui.layout.HBox();
     this._setLayout(layout);
 
+    const loginPage = this.__loginPage = new osparc.auth.LoginWithDecorators();
+    loginPage.addListener("done", e => this.fireDataEvent("done", e.getData()));
+
     this.__rebuildLayout();
 
     setTimeout(() => this.__resized(), 100);
@@ -51,6 +54,8 @@ qx.Class.define("osparc.auth.LoginPageSplit", {
   },
 
   members: {
+    __loginPage: null,
+
     _getBackgroundImage: function() {
       throw new Error("Abstract method called!");
     },
@@ -67,10 +72,13 @@ qx.Class.define("osparc.auth.LoginPageSplit", {
     __rebuildLayout: function() {
       this._removeAll();
 
-      const loginPage = new osparc.auth.LoginWithDecorators();
-      loginPage.addListener("done", e => this.fireDataEvent("done", e.getData()));
+      const loginPage = this.__loginPage;
       const container = new qx.ui.container.Scroll();
       container.add(loginPage);
+      const spacers = [
+        loginPage.getChildControl("top-spacer"),
+        loginPage.getChildControl("bottom-spacer"),
+      ];
       const hideableItems = loginPage.getChildControl("login-view").getHideableItems();
       if (this.isCompactVersion()) {
         // no split-image
@@ -79,6 +87,7 @@ qx.Class.define("osparc.auth.LoginPageSplit", {
         this._add(container, {
           flex: 1
         });
+        spacers.forEach(spacer => spacer.setMinHeight(0));
         hideableItems.forEach(hideableItem => hideableItem.exclude());
       } else {
         // split-image on the left
@@ -90,6 +99,7 @@ qx.Class.define("osparc.auth.LoginPageSplit", {
         this._add(container, {
           width: "50%"
         });
+        spacers.forEach(spacer => spacer.setMinHeight(50));
         hideableItems.forEach(hideableItem => hideableItem.show());
       }
     },

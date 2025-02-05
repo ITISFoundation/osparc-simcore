@@ -227,7 +227,12 @@ def random_product(
         "short_name": suffix[:4],
         "host_regex": r"[a-zA-Z0-9]+\.com",
         "support_email": f"support@{suffix}.io",
-        "twilio_messaging_sid": fake.random_element(elements=(None, fake.uuid4()[:34])),
+        "product_owners_email": fake.random_element(
+            elements=[f"product-onwers@{suffix}.io", None]
+        ),
+        "twilio_messaging_sid": fake.random_element(
+            elements=(None, f"{fake.uuid4()}"[:34])
+        ),
         "vendor": Vendor(
             name=fake.company(),
             copyright=fake.company_suffix(),
@@ -429,6 +434,38 @@ def random_service_access_rights(
     assert set(data.keys()).issubset(  # nosec
         {c.name for c in services_access_rights.columns}
     )
+
+    data.update(**overrides)
+    return data
+
+
+def random_itis_vip_available_download_item(
+    identifier: int,
+    fake: Faker = DEFAULT_FAKER,
+    features_functionality: str = "Posable",
+    **overrides,
+):
+    features_str = (
+        "{"
+        f"name: {fake.name()} Right Hand,"  # w/o spaces
+        f" version: V{fake.pyint()}.0,   "  # w/ x2 spaces
+        f"sex: Male, age: 8 years,"  # w/o spaces
+        f"date: {fake.date()}, "  # w/ x1 spaces
+        f"ethnicity: Caucasian, functionality: {features_functionality}  "
+        "}"
+    )
+
+    data = {
+        "ID": identifier,
+        "Description": fake.sentence(),
+        "Thumbnail": fake.image_url(),
+        "Features": features_str,
+        "DOI": fake.bothify(text="10.####/ViP#####-##-#"),
+        "LicenseKey": fake.bothify(text="MODEL_????_V#"),
+        "LicenseVersion": fake.bothify(text="V#.0"),
+        "Protection": fake.random_element(elements=["Code", "PayPal"]),
+        "AvailableFromURL": fake.random_element(elements=[None, fake.url()]),
+    }
 
     data.update(**overrides)
     return data

@@ -2,7 +2,7 @@ from aiohttp import web
 from models_library.api_schemas_resource_usage_tracker import (
     licensed_items_checkouts as rut_licensed_items_checkouts,
 )
-from models_library.licensed_items import LicensedItemID
+from models_library.licenses import LicensedItemID
 from models_library.products import ProductName
 from models_library.resource_tracker_licensed_items_checkouts import (
     LicensedItemCheckoutID,
@@ -62,6 +62,7 @@ async def list_licensed_items_checkouts_for_wallet(
                 licensed_item_id=checkout_item.licensed_item_id,
                 wallet_id=checkout_item.wallet_id,
                 user_id=checkout_item.user_id,
+                user_email=checkout_item.user_email,
                 product_name=checkout_item.product_name,
                 started_at=checkout_item.started_at,
                 stopped_at=checkout_item.stopped_at,
@@ -101,6 +102,7 @@ async def get_licensed_item_checkout(
         licensed_item_id=checkout_item.licensed_item_id,
         wallet_id=checkout_item.wallet_id,
         user_id=checkout_item.user_id,
+        user_email=checkout_item.user_email,
         product_name=checkout_item.product_name,
         started_at=checkout_item.started_at,
         stopped_at=checkout_item.stopped_at,
@@ -149,6 +151,7 @@ async def checkout_licensed_item_for_wallet(
         licensed_item_id=licensed_item_get.licensed_item_id,
         wallet_id=licensed_item_get.wallet_id,
         user_id=licensed_item_get.user_id,
+        user_email=licensed_item_get.user_email,
         product_name=licensed_item_get.product_name,
         started_at=licensed_item_get.started_at,
         stopped_at=licensed_item_get.stopped_at,
@@ -194,6 +197,7 @@ async def release_licensed_item_for_wallet(
         licensed_item_id=licensed_item_get.licensed_item_id,
         wallet_id=licensed_item_get.wallet_id,
         user_id=licensed_item_get.user_id,
+        user_email=licensed_item_get.user_email,
         product_name=licensed_item_get.product_name,
         started_at=licensed_item_get.started_at,
         stopped_at=licensed_item_get.stopped_at,

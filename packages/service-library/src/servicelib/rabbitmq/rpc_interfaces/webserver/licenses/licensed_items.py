@@ -1,14 +1,11 @@
 import logging
 
 from models_library.api_schemas_webserver import WEBSERVER_RPC_NAMESPACE
-from models_library.api_schemas_webserver.licensed_items import (
-    LicensedItemGet,
-    LicensedItemGetPage,
-)
+from models_library.api_schemas_webserver.licensed_items import LicensedItemRpcGetPage
 from models_library.api_schemas_webserver.licensed_items_checkouts import (
     LicensedItemCheckoutRpcGet,
 )
-from models_library.licensed_items import LicensedItemID
+from models_library.licenses import LicensedItemID
 from models_library.products import ProductName
 from models_library.rabbitmq_basic_types import RPCMethodName
 from models_library.resource_tracker_licensed_items_checkouts import (
@@ -31,15 +28,15 @@ async def get_licensed_items(
     product_name: str,
     offset: int = 0,
     limit: int = 20,
-) -> LicensedItemGetPage:
-    result: LicensedItemGetPage = await rabbitmq_rpc_client.request(
+) -> LicensedItemRpcGetPage:
+    result: LicensedItemRpcGetPage = await rabbitmq_rpc_client.request(
         WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("get_licensed_items"),
         product_name=product_name,
         offset=offset,
         limit=limit,
     )
-    assert isinstance(result, LicensedItemGetPage)  # nosec
+    assert isinstance(result, LicensedItemRpcGetPage)  # nosec
     return result
 
 
@@ -52,8 +49,8 @@ async def get_available_licensed_items_for_wallet(
     user_id: UserID,
     offset: int = 0,
     limit: int = 20,
-) -> LicensedItemGetPage:
-    result: LicensedItemGet = await rabbitmq_rpc_client.request(
+) -> LicensedItemRpcGetPage:
+    result: LicensedItemRpcGetPage = await rabbitmq_rpc_client.request(
         WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python(
             "get_available_licensed_items_for_wallet"
@@ -64,7 +61,7 @@ async def get_available_licensed_items_for_wallet(
         offset=offset,
         limit=limit,
     )
-    assert isinstance(result, LicensedItemGetPage)  # nosec
+    assert isinstance(result, LicensedItemRpcGetPage)  # nosec
     return result
 
 
