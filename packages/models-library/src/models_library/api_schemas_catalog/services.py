@@ -113,8 +113,8 @@ _EXAMPLE_FILEPICKER: dict[str, Any] = {
 _EXAMPLE_FILEPICKER_V2 = {
     **_EXAMPLE_FILEPICKER,
     "accessRights": {
-        "1": ServiceGroupAccessRightsV2(execute=True, write=False),
-        "4": ServiceGroupAccessRightsV2(execute=True, write=True),
+        "1": {"execute": True, "write": False},
+        "4": {"execute": True, "write": True},
     },
 }
 
@@ -126,7 +126,7 @@ _EXAMPLE_SLEEPER: dict[str, Any] = {
     "description_ui": True,
     "classifiers": [],
     "quality": {},
-    "accessRights": {"1": ServiceGroupAccessRightsV2(execute=True, write=False)},
+    "accessRights": {"1": {"execute": True, "write": False}},
     "key": "simcore/services/comp/itis/sleeper",
     "version": "2.2.1",
     "version_display": "2 Xtreme",
