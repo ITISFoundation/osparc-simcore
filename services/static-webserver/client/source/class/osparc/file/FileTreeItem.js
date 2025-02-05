@@ -79,7 +79,7 @@ qx.Class.define("osparc.file.FileTreeItem", {
     itemId: {
       check: "String",
       event: "changeItemId",
-      apply: "_applyItemId",
+      apply: "__applyItemId",
       nullable: true
     },
 
@@ -144,7 +144,6 @@ qx.Class.define("osparc.file.FileTreeItem", {
 
       // Add lastModified
       const lastModifiedWidget = new qx.ui.basic.Label().set({
-        width: 140,
         maxWidth: 140,
         textAlign: "right"
       });
@@ -162,7 +161,6 @@ qx.Class.define("osparc.file.FileTreeItem", {
 
       // Add size
       const sizeWidget = new qx.ui.basic.Label().set({
-        width: 70,
         maxWidth: 70,
         textAlign: "right"
       });
@@ -175,39 +173,13 @@ qx.Class.define("osparc.file.FileTreeItem", {
         }
       });
       this.addWidget(sizeWidget);
-
-
-      const permissions = osparc.data.Permissions.getInstance();
-      // Add Path
-      const pathWidget = new qx.ui.basic.Label().set({
-        width: 300,
-        maxWidth: 300,
-        textAlign: "right"
-      });
-      this.bind("path", pathWidget, "value");
-      this.addWidget(pathWidget);
-      permissions.bind("role", pathWidget, "visibility", {
-        converter: () => permissions.canDo("study.nodestree.uuid.read") ? "visible" : "excluded"
-      });
-
-      // Add NodeId
-      const fileIdWidget = new qx.ui.basic.Label().set({
-        width: 300,
-        maxWidth: 300,
-        textAlign: "right"
-      });
-      this.bind("fileId", fileIdWidget, "value");
-      this.addWidget(fileIdWidget);
-      permissions.bind("role", fileIdWidget, "visibility", {
-        converter: () => permissions.canDo("study.nodestree.uuid.read") ? "visible" : "excluded"
-      });
     },
 
-    // override
-    _applyItemId: function(value, old) {
+    __applyItemId: function(value, old) {
       osparc.utils.Utils.setIdToWidget(this, "fileTreeItem_" + value);
     },
 
+    // override
     _applyIcon: function(value, old) {
       this.base(arguments, value, old);
       const icon = this.getChildControl("icon", true);

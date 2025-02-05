@@ -79,7 +79,7 @@ qx.Class.define("osparc.ui.window.TabbedView", {
       return control || this.base(arguments, id);
     },
 
-    addWidgetOnTopOfTheTabs: function(widget) {
+    addWidgetToTabs: function(widget) {
       this.getChildControl("tabs-view").getChildControl("bar").add(widget);
     },
 
