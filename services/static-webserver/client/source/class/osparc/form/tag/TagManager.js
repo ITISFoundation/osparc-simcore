@@ -84,6 +84,7 @@ qx.Class.define("osparc.form.tag.TagManager", {
         allowGrowX: false
       });
       addTagButton.addListener("execute", () => {
+        console.log(scrollTags);
         this.__repopulateTags();
         const newItem = new osparc.form.tag.TagItem().set({
           mode: osparc.form.tag.TagItem.modes.EDIT
@@ -122,7 +123,11 @@ qx.Class.define("osparc.form.tag.TagManager", {
     __repopulateTags: function() {
       this.__tagsContainer.removeAll();
       const tags = osparc.store.Tags.getInstance().getTags();
-      tags.forEach(tag => this.__tagsContainer.add(this.__tagButton(tag)));
+      const tagButtons = [];
+      tags.forEach(tag => tagButtons.push(this.__tagButton(tag)));
+      // list the selected tags first
+      tagButtons.sort((a, b) => b.getValue() - a.getValue());
+      tagButtons.forEach(tagButton => this.__tagsContainer.add(tagButton));
     },
 
     __tagButton: function(tag) {
