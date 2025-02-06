@@ -13,7 +13,6 @@ from simcore_service_webserver.licenses import (
     _itis_vip_service,
     _licensed_items_service,
 )
-from simcore_service_webserver.licenses._itis_vip_settings import ItisVipSettings
 
 from ..redis import get_redis_lock_manager_client_sdk, setup_redis
 from ._itis_vip_models import CategoryTuple, ItisVipData, ItisVipResourceData
@@ -86,15 +85,10 @@ _BACKGROUND_TASK_NAME = f"{__name__}.itis_vip_syncer_cleanup_ctx._periodic_sync"
 
 
 def setup_itis_vip_syncer(
-    app: web.Application, settings: ItisVipSettings, resync_after: datetime.timedelta
+    app: web.Application,
+    categories: list[CategoryTuple],
+    resync_after: datetime.timedelta,
 ):
-    categories = settings.to_categories()
-    if not categories:
-        _logger.warning(
-            "Skipping setup_itis_vip_syncer. %s did not provide any category", settings
-        )
-        return
-
     setup_redis(app)
 
     async def _lifespan(app_: web.Application):

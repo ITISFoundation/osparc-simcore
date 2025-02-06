@@ -6,7 +6,7 @@ from pydantic import Field
 from servicelib.aiohttp.application_keys import APP_SETTINGS_KEY
 from settings_library.base import BaseCustomSettings
 
-from ._itis_vip_settings import ItisVipSettings
+from ._itis_vip_settings import ItisVipSettings, SpeagPhantomsSettings
 
 
 class LicensesSettings(BaseCustomSettings):
@@ -14,7 +14,7 @@ class LicensesSettings(BaseCustomSettings):
     LICENSES_ITIS_VIP: Annotated[
         ItisVipSettings | None,
         Field(
-            description="Settings for VIP license models",
+            description="Settings for VIP licensed models",
             json_schema_extra={"auto_default_from_env": True},
         ),
     ]
@@ -22,6 +22,15 @@ class LicensesSettings(BaseCustomSettings):
     LICENSES_ITIS_VIP_SYNCER_PERIODICITY: datetime.timedelta = datetime.timedelta(
         days=1
     )
+
+    # SPEAG - PHANTOMS
+    LICENSES_SPEAG_PHANTOMS: Annotated[
+        SpeagPhantomsSettings | None,
+        Field(
+            description="Settings for SPEAG licensed phantoms",
+            json_schema_extra={"auto_default_from_env": True},
+        ),
+    ]
 
     # other licensed resources come here ...
 
