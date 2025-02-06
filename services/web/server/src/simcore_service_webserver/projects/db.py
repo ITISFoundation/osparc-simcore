@@ -78,6 +78,7 @@ from ._db_utils import (
     ANY_USER_ID_SENTINEL,
     BaseProjectDB,
     ProjectAccessRights,
+    _build_workbench_subquery,
     assemble_array_groups,
     convert_to_db_names,
     convert_to_schema_names,
@@ -387,10 +388,11 @@ class ProjectDBAPI(BaseProjectDB):
                 ).group_by(project_to_groups.c.project_uuid)
             ).subquery("access_rights_subquery")
 
+            workbench_subquery = _build_workbench_subquery()
             private_workspace_query = (
                 sa.select(
                     *PROJECT_DB_COLS,
-                    projects.c.workbench,
+                    workbench_subquery.c.workbench,
                     access_rights_subquery.c.access_rights,
                     projects_to_products.c.product_name,
                     projects_to_folders.c.folder_id,
@@ -411,6 +413,10 @@ class ProjectDBAPI(BaseProjectDB):
                         isouter=True,
                     )
                     .join(project_tags_subquery, isouter=True)
+                    .outerjoin(
+                        workbench_subquery,
+                        projects.c.uuid == workbench_subquery.c.project_uuid,
+                    )
                 )
                 .where(
                     (
@@ -469,10 +475,11 @@ class ProjectDBAPI(BaseProjectDB):
                 ).group_by(workspaces_access_rights.c.workspace_id)
             ).subquery("workspace_access_rights_subquery")
 
+            workbench_subquery = _build_workbench_subquery()
             shared_workspace_query = (
                 sa.select(
                     *PROJECT_DB_COLS,
-                    projects.c.workbench,
+                    workbench_subquery.c.workbench,
                     workspace_access_rights_subquery.c.access_rights,
                     projects_to_products.c.product_name,
                     projects_to_folders.c.folder_id,
@@ -497,6 +504,10 @@ class ProjectDBAPI(BaseProjectDB):
                         isouter=True,
                     )
                     .join(project_tags_subquery, isouter=True)
+                    .outerjoin(
+                        workbench_subquery,
+                        projects.c.uuid == workbench_subquery.c.project_uuid,
+                    )
                 )
                 .where(
                     (
