@@ -201,7 +201,7 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelListItem", {
     _shouldApplyFilter: function(data) {
       if (data.text) {
         const checks = [
-          this.getName(),
+          this.getDisplayName(),
         ];
         if (checks.filter(check => check && check.toLowerCase().trim().includes(data.text)).length == 0) {
           return true;
