@@ -30,21 +30,6 @@ def test_cli_help_and_version(cli_runner: CliRunner):
     assert result.stdout.strip() == API_VERSION
 
 
-@pytest.fixture
-def app_environment(
-    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
-) -> EnvVarsDict:
-    return setenvs_from_dict(
-        monkeypatch,
-        {
-            **app_environment,
-            "DYNAMIC_SCHEDULER_TRACING": "{}",
-            "TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT": "http://replace-with-opentelemetry-collector",
-            "TRACING_OPENTELEMETRY_COLLECTOR_PORT": "4318",
-        },
-    )
-
-
 def test_echo_dotenv(
     app_environment: EnvVarsDict, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
 ):
