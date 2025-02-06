@@ -41,10 +41,6 @@ def app_environment(
             "DYNAMIC_SCHEDULER_TRACING": "{}",
             "TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT": "http://replace-with-opentelemetry-collector",
             "TRACING_OPENTELEMETRY_COLLECTOR_PORT": "4318",
-            "RABBIT_HOST": "test",
-            "RABBIT_SECURE": "0",
-            "RABBIT_USER": "test",
-            "RABBIT_PASSWORD": "test",
         },
     )
 
