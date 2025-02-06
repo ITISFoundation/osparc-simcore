@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Annotated, Any, TypeAlias
+from typing import Any, TypeAlias
 
 from models_library.rpc_pagination import PageRpc
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl, NonNegativeInt
@@ -21,68 +21,6 @@ from ..services_metadata_published import (
 from ..services_resources import ServiceResourcesDict
 from ..services_types import ServiceKey, ServiceVersion
 from ..utils.change_case import snake_to_camel
-
-
-class ServiceUpdate(ServiceMetaDataEditable, ServiceAccessRights):
-
-    thumbnail: Annotated[str, HttpUrl] | None = None
-    icon: HttpUrl | None = None
-
-    @staticmethod
-    def _update_json_schema_extra(schema: JsonDict) -> None:
-        schema.update(
-            {
-                "example": {
-                    # ServiceAccessRights
-                    "accessRights": {
-                        1: {
-                            "execute_access": False,
-                            "write_access": False,
-                        },  # type: ignore[dict-item]
-                        2: {
-                            "execute_access": True,
-                            "write_access": True,
-                        },  # type: ignore[dict-item]
-                        44: {
-                            "execute_access": False,
-                            "write_access": False,
-                        },  # type: ignore[dict-item]
-                    },
-                    # ServiceMetaData = ServiceCommonData +
-                    "name": "My Human Readable Service Name",
-                    "thumbnail": None,
-                    "description": "An interesting service that does something",
-                    "classifiers": ["RRID:SCR_018997", "RRID:SCR_019001"],
-                    "quality": {
-                        "tsr": {
-                            "r01": {"level": 3, "references": ""},
-                            "r02": {"level": 2, "references": ""},
-                            "r03": {"level": 0, "references": ""},
-                            "r04": {"level": 0, "references": ""},
-                            "r05": {"level": 2, "references": ""},
-                            "r06": {"level": 0, "references": ""},
-                            "r07": {"level": 0, "references": ""},
-                            "r08": {"level": 1, "references": ""},
-                            "r09": {"level": 0, "references": ""},
-                            "r10": {"level": 0, "references": ""},
-                        },
-                        "enabled": True,
-                        "annotations": {
-                            "vandv": "",
-                            "purpose": "",
-                            "standards": "",
-                            "limitations": "",
-                            "documentation": "",
-                            "certificationLink": "",
-                            "certificationStatus": "Uncertified",
-                        },
-                    },
-                }
-            }
-        )
-
-    model_config = ConfigDict(json_schema_extra=_update_json_schema_extra)
-
 
 _EXAMPLE_FILEPICKER: dict[str, Any] = {
     "name": "File Picker",
