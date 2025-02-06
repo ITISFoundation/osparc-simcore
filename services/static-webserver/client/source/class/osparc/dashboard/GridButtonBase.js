@@ -44,6 +44,7 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
     ITEM_WIDTH: 190,
     ITEM_HEIGHT: 220,
     PADDING: 10,
+    TITLE_PADDING: 6,
     SPACING_IN: 5,
     SPACING: 15,
     ICON_SIZE: 32,
@@ -202,8 +203,8 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
           control = new qx.ui.basic.Label().set({
             textColor: "contrasted-text-light",
             font: "text-14",
-            padding: this.self().PADDING,
-            maxWidth: this.self().ITEM_WIDTH - 2*this.self().PADDING,
+            padding: this.self().TITLE_PADDING,
+            maxWidth: this.self().ITEM_WIDTH,
             maxHeight: this.self().TITLE_MAX_HEIGHT,
           });
           layout = this.getChildControl("header");
@@ -366,14 +367,6 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
       thumbnailLayout.getChildControl("image").setMaxHeight(maxHeight);
       thumbnailLayout.setMaxHeight(maxHeight);
       thumbnailLayout.recheckSize();
-    },
-
-    replaceIcon: function(newIcon) {
-      const plusIcon = this.getChildControl("icon");
-      plusIcon.exclude();
-
-      const bodyLayout = this.getChildControl("body");
-      bodyLayout.add(newIcon, {flex: 1});
     },
 
     /**

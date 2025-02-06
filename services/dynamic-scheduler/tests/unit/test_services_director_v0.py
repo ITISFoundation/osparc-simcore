@@ -20,12 +20,12 @@ from simcore_service_dynamic_scheduler.services.director_v0 import (
 
 @pytest.fixture
 def app_environment(
-    disable_redis_setup: None,
-    disable_rabbitmq_setup: None,
-    disable_service_tracker_setup: None,
-    disable_deferred_manager_setup: None,
-    disable_notifier_setup: None,
-    disable_status_monitor_setup: None,
+    disable_redis_lifespan: None,
+    disable_rabbitmq_lifespan: None,
+    disable_service_tracker_lifespan: None,
+    disable_deferred_manager_lifespan: None,
+    disable_notifier_lifespan: None,
+    disable_status_monitor_lifespan: None,
     app_environment: EnvVarsDict,
 ) -> EnvVarsDict:
     return app_environment

@@ -70,13 +70,6 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
     });
   },
 
-  statics: {
-    openPreferences: function() {
-      const preferencesWindow = osparc.desktop.preferences.PreferencesWindow.openWindow();
-      return preferencesWindow;
-    }
-  },
-
   members: {
     __forceNullColor: null,
 

@@ -2,7 +2,7 @@ from datetime import datetime
 from decimal import Decimal
 
 from models_library.emails import LowerCaseEmailStr
-from models_library.licensed_items import LicensedItemID
+from models_library.licenses import LicensedItemID
 from models_library.products import ProductName
 from models_library.resource_tracker import PricingUnitCostId
 from models_library.resource_tracker_licensed_items_purchases import (
