@@ -10,7 +10,7 @@
 #
 --constraint _base.txt
 
-
+aiopg[sa]
 asgi_lifespan
 coverage
 docker
