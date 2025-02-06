@@ -461,7 +461,8 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
             "WEBSERVER_SCICRUNCH",
         }
         return [_ for _ in public_plugin_candidates if not self.is_enabled(_)] + [
-            # Permanently disabled
+            # NOTE: Permanently retired in https://github.com/ITISFoundation/osparc-simcore/pull/7182
+            # Kept here to disable front-end
             "WEBSERVER_META_MODELING",
             "WEBSERVER_VERSION_CONTROL",
         ]
