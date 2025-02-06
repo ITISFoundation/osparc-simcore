@@ -4,14 +4,12 @@ from typing import Annotated, Any, Final
 
 from aiohttp import web
 from common_library.basic_types import DEFAULT_FACTORY
-from common_library.pydantic_fields_extension import is_nullable
 from models_library.basic_types import LogLevel, PortInt, VersionTag
 from models_library.utils.change_case import snake_to_camel
 from pydantic import (
     AliasChoices,
     AnyHttpUrl,
     TypeAdapter,
-    ValidationInfo,
     field_validator,
     model_validator,
 )
@@ -358,7 +356,6 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     WEBSERVER_DB_LISTENER: bool = True
     WEBSERVER_FOLDERS: bool = True
     WEBSERVER_GROUPS: bool = True
-    WEBSERVER_META_MODELING: bool = False
     WEBSERVER_NOTIFICATIONS: bool = True
     WEBSERVER_PRODUCTS: bool = True
     WEBSERVER_PROFILING: bool = False
@@ -366,7 +363,6 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     WEBSERVER_REMOTE_DEBUG: bool = True
     WEBSERVER_SOCKETIO: bool = True
     WEBSERVER_TAGS: bool = True
-    WEBSERVER_VERSION_CONTROL: bool = False
     WEBSERVER_WALLETS: bool = True
     WEBSERVER_WORKSPACES: bool = True
 
@@ -397,31 +393,31 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
 
         return values
 
-    @field_validator(
-        # List of plugins under-development (keep up-to-date)
-        # TODO: consider mark as dev-feature in field extras of Config attr.
-        # Then they can be automtically advertised
-        "WEBSERVER_META_MODELING",
-        "WEBSERVER_VERSION_CONTROL",
-        mode="before",
-    )
-    @classmethod
-    def _enable_only_if_dev_features_allowed(cls, v, info: ValidationInfo):
-        """Ensures that plugins 'under development' get programatically
-        disabled if WEBSERVER_DEV_FEATURES_ENABLED=False
-        """
-        if info.data["WEBSERVER_DEV_FEATURES_ENABLED"]:
-            return v
-        if v:
-            _logger.warning(
-                "%s still under development and will be disabled.", info.field_name
-            )
+    # @field_validator(
+    #     # List of plugins under-development (keep up-to-date)
+    #     # TODO: consider mark as dev-feature in field extras of Config attr.
+    #     # Then they can be automtically advertised
+    #     "WEBSERVER_META_MODELING",
+    #     "WEBSERVER_VERSION_CONTROL",
+    #     mode="before",
+    # )
+    # @classmethod
+    # def _enable_only_if_dev_features_allowed(cls, v, info: ValidationInfo):
+    #     """Ensures that plugins 'under development' get programatically
+    #     disabled if WEBSERVER_DEV_FEATURES_ENABLED=False
+    #     """
+    #     if info.data["WEBSERVER_DEV_FEATURES_ENABLED"]:
+    #         return v
+    #     if v:
+    #         _logger.warning(
+    #             "%s still under development and will be disabled.", info.field_name
+    #         )
 
-        return (
-            None
-            if info.field_name and is_nullable(dict(cls.model_fields)[info.field_name])
-            else False
-        )
+    #     return (
+    #         None
+    #         if info.field_name and is_nullable(dict(cls.model_fields)[info.field_name])
+    #         else False
+    #     )
 
     @field_validator("WEBSERVER_LOGLEVEL")
     @classmethod
@@ -461,12 +457,14 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
             "WEBSERVER_EXPORTER",
             "WEBSERVER_FOLDERS",
             "WEBSERVER_LICENSES",
-            "WEBSERVER_META_MODELING",
             "WEBSERVER_PAYMENTS",
             "WEBSERVER_SCICRUNCH",
-            "WEBSERVER_VERSION_CONTROL",
         }
-        return [_ for _ in public_plugin_candidates if not self.is_enabled(_)]
+        return [_ for _ in public_plugin_candidates if not self.is_enabled(_)] + [
+            # Permanently disabled
+            "WEBSERVER_META_MODELING",
+            "WEBSERVER_VERSION_CONTROL",
+        ]
 
     def _export_by_alias(self, **kwargs) -> dict[str, Any]:
         #  This is a small helper to assist export functions since aliases are no longer used by
