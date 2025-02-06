@@ -53,6 +53,7 @@ class LicensedItemRpcGetPage(NamedTuple):
 
 
 class _ItisVipRestData(OutputSchema):
+    id: int
     description: str
     thumbnail: str
     features: FeaturesDict  # NOTE: here there is a bit of coupling with domain model
@@ -85,7 +86,6 @@ class LicensedItemRestGet(OutputSchema):
                     {
                         "licensedItemId": "0362b88b-91f8-4b41-867c-35544ad1f7a1",
                         "displayName": "my best model",
-                        "licensedResourceName": "best-model",
                         "licensedResourceType": f"{LicensedResourceType.VIP_MODEL}",
                         "licensedResourceData": cast(
                             JsonDict,

@@ -2,15 +2,17 @@ import re
 from typing import Annotated, Any, Literal, NamedTuple, TypeAlias
 
 from models_library.basic_types import IDStr
-from models_library.licenses import FeaturesDict
+from models_library.licenses import VIP_DETAILS_EXAMPLE, FeaturesDict
 from pydantic import (
     BaseModel,
     BeforeValidator,
+    ConfigDict,
     Field,
     HttpUrl,
     StringConstraints,
     TypeAdapter,
 )
+from pydantic.config import JsonDict
 
 _max_str_adapter: TypeAdapter[str] = TypeAdapter(
     Annotated[str, StringConstraints(strip_whitespace=True, max_length=1_000)]
@@ -52,6 +54,31 @@ class ItisVipData(BaseModel):
     ]
     protection: Annotated[Literal["Code", "PayPal"], Field(alias="Protection")]
     available_from_url: Annotated[HttpUrl | None, Field(alias="AvailableFromURL")]
+
+    @staticmethod
+    def _update_json_schema_extra(schema: JsonDict) -> None:
+        schema.update(
+            {
+                "examples": [
+                    # complete
+                    VIP_DETAILS_EXAMPLE,
+                    # minimal
+                    {
+                        "id": 1,
+                        "description": "A detailed description of the VIP model",
+                        "thumbnail": "https://example.com/thumbnail.jpg",
+                        "features": {"date": "2013-02-01"},
+                        "doi": "null",
+                        "license_key": "ABC123XYZ",
+                        "license_version": "1.0",
+                        "protection": "Code",
+                        "available_from_url": "null",
+                    },
+                ]
+            }
+        )
+
+    model_config = ConfigDict(json_schema_extra=_update_json_schema_extra)
 
 
 class ItisVipResourceData(BaseModel):
