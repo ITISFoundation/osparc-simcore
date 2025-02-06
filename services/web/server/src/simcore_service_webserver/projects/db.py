@@ -1099,7 +1099,13 @@ class ProjectDBAPI(BaseProjectDB):
 
             # After moving workbench from project DB table to project_nodes table:
             workbench = new_project_data.pop("workbench")
-            # TODO: UPDATE project_nodes table
+
+            project_nodes_repo = ProjectNodesRepo(project_uuid=ProjectID(project_uuid))
+
+            for node_id, node_data in workbench.items():
+                await project_nodes_repo.update(
+                    db_connection, node_id=node_id, **node_data
+                )
 
             result = await db_connection.execute(
                 projects.update()
