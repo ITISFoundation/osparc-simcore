@@ -73,11 +73,11 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
       }
     },
 
-    __createModelInfo: function(anatomicalModelsData) {
+    __createModelInfo: function(anatomicalModelsDataSource) {
       const cardGrid = new qx.ui.layout.Grid(16, 16);
       const cardLayout = new qx.ui.container.Composite(cardGrid);
 
-      const description = anatomicalModelsData["description"] || "";
+      const description = anatomicalModelsDataSource["description"] || "";
       description.split(" - ").forEach((desc, idx) => {
         const titleLabel = new qx.ui.basic.Label().set({
           value: desc,
@@ -95,7 +95,7 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
       });
 
       const thumbnail = new qx.ui.basic.Image().set({
-        source: anatomicalModelsData["thumbnail"],
+        source: anatomicalModelsDataSource["thumbnail"],
         alignY: "middle",
         scale: true,
         allowGrowX: true,
@@ -110,7 +110,7 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
         row: 2,
       });
 
-      const features = anatomicalModelsData["features"];
+      const features = anatomicalModelsDataSource["features"];
       const featuresGrid = new qx.ui.layout.Grid(8, 8);
       const featuresLayout = new qx.ui.container.Composite(featuresGrid);
       let idx = 0;
@@ -176,7 +176,7 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
         }
         return doiLabel;
       };
-      featuresLayout.add(doiToLink(anatomicalModelsData["doi"]), {
+      featuresLayout.add(doiToLink(anatomicalModelsDataSource["doi"]), {
         column: 1,
         row: idx,
       });
