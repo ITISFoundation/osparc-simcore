@@ -32,7 +32,7 @@ class ServiceGroupAccessRightsV2(BaseModel):
 
 class ServiceAccessRights(BaseModel):
     access_rights: Annotated[
-        dict[GroupID, ServiceGroupAccessRightsV2] | None,
+        dict[GroupID, ServiceGroupAccessRights] | None,
         Field(
             alias="accessRights",
             description="service access rights per group id",

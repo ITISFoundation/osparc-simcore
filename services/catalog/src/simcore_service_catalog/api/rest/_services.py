@@ -2,13 +2,12 @@
 
 import asyncio
 import logging
-import urllib.parse
 from typing import Annotated, Any, TypeAlias, cast
 
 from aiocache import cached  # type: ignore[import-untyped]
 from fastapi import APIRouter, Depends, Header, HTTPException, status
-from models_library.api_schemas_catalog.services import ServiceGet, ServiceUpdate
-from models_library.services import ServiceKey, ServiceType, ServiceVersion
+from models_library.api_schemas_catalog.services import ServiceGet
+from models_library.services import ServiceType
 from models_library.services_authoring import Author
 from models_library.services_metadata_published import ServiceMetaDataPublished
 from pydantic import ValidationError
@@ -25,7 +24,6 @@ from ...db.repositories.groups import GroupsRepository
 from ...db.repositories.services import ServicesRepository
 from ...models.services_db import ServiceAccessRightsAtDB, ServiceMetaDataAtDB
 from ...services.director import DirectorApi
-from ...services.function_services import is_function_service
 from ..dependencies.database import get_repository
 from ..dependencies.director import get_director_api
 from ..dependencies.services import get_service_from_manifest
@@ -266,121 +264,3 @@ async def get_service(
         | service_in_db.model_dump(exclude_unset=True, exclude={"owner"})
     )
     return service_data
-
-
-# @router.patch(
-#     "/{service_key:path}/{service_version}",
-#     response_model=ServiceGet,
-#     **RESPONSE_MODEL_POLICY,
-# )
-async def update_service(
-    # pylint: disable=too-many-arguments
-    user_id: int,
-    service_key: ServiceKey,
-    service_version: ServiceVersion,
-    updated_service: ServiceUpdate,
-    director_client: Annotated[DirectorApi, Depends(get_director_api)],
-    groups_repository: Annotated[
-        GroupsRepository, Depends(get_repository(GroupsRepository))
-    ],
-    services_repo: Annotated[
-        ServicesRepository, Depends(get_repository(ServicesRepository))
-    ],
-    x_simcore_products_name: Annotated[str | None, Header()] = None,
-):
-    if is_function_service(service_key):
-        # NOTE: this is a temporary decision after discussing with OM
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Cannot update front-end services",
-        )
-
-    # check the service exists
-    await director_client.get(
-        f"/services/{urllib.parse.quote_plus(service_key)}/{service_version}"
-    )
-    # the director client already raises an exception if not found
-
-    # get the user groups
-    user_groups = await groups_repository.list_user_groups(user_id)
-    if not user_groups:
-        # deny access
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You have unsufficient rights to access the service",
-        )
-    # check the user has write access to this service
-    writable_service = await services_repo.get_service(
-        service_key,
-        service_version,
-        gids=[group.gid for group in user_groups],
-        write_access=True,
-        product_name=x_simcore_products_name,
-    )
-    if not writable_service:
-        # deny access
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You have unsufficient rights to modify the service",
-        )
-
-    # let's modify the service then
-    await services_repo.update_service(
-        ServiceMetaDataAtDB(
-            key=service_key,
-            version=service_version,
-            **updated_service.model_dump(exclude_unset=True),
-        )
-    )
-    # let's modify the service access rights (they can be added/removed/modified)
-    current_gids_in_db = [
-        r.gid
-        for r in await services_repo.get_service_access_rights(
-            service_key, service_version, product_name=x_simcore_products_name
-        )
-    ]
-
-    if updated_service.access_rights:
-        # start by updating/inserting new entries
-        assert x_simcore_products_name  # nosec
-        new_access_rights = [
-            ServiceAccessRightsAtDB(
-                key=service_key,
-                version=service_version,
-                gid=gid,
-                execute_access=rights.execute_access,
-                write_access=rights.write_access,
-                product_name=x_simcore_products_name,
-            )
-            for gid, rights in updated_service.access_rights.items()
-        ]
-        await services_repo.upsert_service_access_rights(new_access_rights)
-
-        # then delete the ones that were removed
-        removed_gids = [
-            gid
-            for gid in current_gids_in_db
-            if gid not in updated_service.access_rights
-        ]
-        deleted_access_rights = [
-            ServiceAccessRightsAtDB(
-                key=service_key,
-                version=service_version,
-                gid=gid,
-                product_name=x_simcore_products_name,
-            )
-            for gid in removed_gids
-        ]
-        await services_repo.delete_service_access_rights(deleted_access_rights)
-
-    # now return the service
-    assert x_simcore_products_name  # nosec
-    return await get_service(
-        user_id=user_id,
-        service_in_manifest=await get_service_from_manifest(
-            service_key, service_version, director_client
-        ),
-        groups_repository=groups_repository,
-        services_repo=services_repo,
-        x_simcore_products_name=x_simcore_products_name,
-    )
