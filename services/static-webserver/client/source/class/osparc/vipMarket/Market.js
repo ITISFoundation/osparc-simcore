@@ -41,37 +41,26 @@ qx.Class.define("osparc.vipMarket.Market", {
     ])
       .then(values => {
         const licensedItems = values[0];
-        const categories = {};
+        const categories = [];
         licensedItems.forEach(licensedItem => {
           if (licensedItem["licensedResourceData"] && licensedItem["licensedResourceData"]["categoryId"]) {
-            const category = licensedItem["licensedResourceData"]["categoryId"];
-            if (!(category in categories)) {
-              categories[category] = [];
+            const categoryId = licensedItem["licensedResourceData"]["categoryId"];
+            let category = categories.find(cat => cat["categoryId"] === categoryId);
+            if (!category) {
+              category = {
+                categoryId,
+                label: licensedItem["licensedResourceData"]["categoryDisplay"] || "Category",
+                icon: licensedItem["licensedResourceData"]["categoryIcon"] || "@FontAwesome5Solid/users/20",
+                items: [],
+              };
+              categories.push(category);
             }
-            categories[category].push(licensedItem);
+            category["items"].push(licensedItem);
           }
         });
 
-        const expectedCategories = [{
-          categoryId: "HumanWholeBody",
-          label: "Humans",
-          icon: "@FontAwesome5Solid/users/20",
-        }, {
-          categoryId: "HumanBodyRegion",
-          label: "Humans (Region)",
-          icon: "@FontAwesome5Solid/users/20",
-        }, {
-          categoryId: "AnimalWholeBody",
-          label: "Animals",
-          icon: "@FontAwesome5Solid/users/20",
-        }, {
-          categoryId: "ComputationalPhantom",
-          label: "Phantoms",
-          icon: "@FontAwesome5Solid/users/20",
-        }]
-        expectedCategories.forEach(expectedCategory => {
-          const items = categories[expectedCategory["categoryId"]];
-          this.__buildViPMarketPage(expectedCategory, items);
+        categories.forEach(category => {
+          this.__buildViPMarketPage(category, category["items"]);
         });
 
         if (openCategory) {
