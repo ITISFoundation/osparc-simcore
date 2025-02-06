@@ -105,13 +105,9 @@ async def project_in_db(
         yield row
 
 
-async def test_no_project_networks_for_project(
-    engine: AsyncEngine, project_in_db: dict[str, Any], project_id: ProjectID
-):
-    repo = ProjectNetworksRepo(engine)
-
-    with pytest.raises(ProjectNetworkNotFoundError):
-        await repo.get_projects_networks(project_id=project_id)
+@pytest.fixture()
+def project_networks_repo(engine: AsyncEngine) -> ProjectNetworksRepo:
+    return ProjectNetworksRepo(engine)
 
 
 @pytest.fixture
@@ -121,20 +117,30 @@ def networks_with_aliases() -> NetworksWithAliases:
     )
 
 
+async def test_no_project_networks_for_project(
+    project_networks_repo: ProjectNetworksRepo,
+    project_in_db: dict[str, Any],
+    project_id: ProjectID,
+):
+    with pytest.raises(ProjectNetworkNotFoundError):
+        await project_networks_repo.get_projects_networks(project_id=project_id)
+
+
 async def test_upsert_projects_networks(
-    engine: AsyncEngine,
+    project_networks_repo: ProjectNetworksRepo,
     project_in_db: dict[str, Any],
     project_id: ProjectID,
     networks_with_aliases: NetworksWithAliases,
 ):
-    repo = ProjectNetworksRepo(engine)
 
     # allows ot test the upsert capabilities
     for _ in range(2):
-        await repo.upsert_projects_networks(
+        await project_networks_repo.upsert_projects_networks(
             project_id=project_id, networks_with_aliases=networks_with_aliases
         )
 
-    project_networks = await repo.get_projects_networks(project_id=project_id)
+    project_networks = await project_networks_repo.get_projects_networks(
+        project_id=project_id
+    )
     assert project_networks.project_uuid == project_id
     assert project_networks.networks_with_aliases == networks_with_aliases
