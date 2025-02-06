@@ -245,7 +245,7 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
       });
       importButton.addListener("execute", () => {
         this.fireDataEvent("modelImportRequested", {
-          modelId: anatomicalModelsData["modelId"]
+          modelId: anatomicalModelsData["licensedResourceData"]["source"]["id"]
         });
       }, this);
       if (anatomicalModelsData["purchases"].length) {
