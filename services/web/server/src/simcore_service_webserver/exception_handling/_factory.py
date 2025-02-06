@@ -94,6 +94,7 @@ def create_exception_handler_from_http_info(
                         "request.remote": f"{request.remote}",
                         "request.method": f"{request.method}",
                         "request.path": f"{request.path}",
+                        "error_code": oec,
                     },
                 )
             )
