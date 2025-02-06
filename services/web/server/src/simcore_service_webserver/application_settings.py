@@ -358,7 +358,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     WEBSERVER_DB_LISTENER: bool = True
     WEBSERVER_FOLDERS: bool = True
     WEBSERVER_GROUPS: bool = True
-    WEBSERVER_META_MODELING: bool = True
+    WEBSERVER_META_MODELING: bool = False
     WEBSERVER_NOTIFICATIONS: bool = True
     WEBSERVER_PRODUCTS: bool = True
     WEBSERVER_PROFILING: bool = False
@@ -366,7 +366,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     WEBSERVER_REMOTE_DEBUG: bool = True
     WEBSERVER_SOCKETIO: bool = True
     WEBSERVER_TAGS: bool = True
-    WEBSERVER_VERSION_CONTROL: bool = True
+    WEBSERVER_VERSION_CONTROL: bool = False
     WEBSERVER_WALLETS: bool = True
     WEBSERVER_WORKSPACES: bool = True
 
