@@ -182,7 +182,7 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
           this.__anatomicalModels = [];
           licensedItems.forEach(licensedItem => {
             const anatomicalModel = osparc.utils.Utils.deepCloneObject(licensedItem);
-            anatomicalModel["modelId"] = licensedItem["licensedItemId"];
+            anatomicalModel["modelId"] = anatomicalModel["licensedResourceData"]["source"]["id"];
             anatomicalModel["thumbnail"] = "";
             anatomicalModel["date"] = null;
             if (anatomicalModel["licensedResourceData"] && anatomicalModel["licensedResourceData"]["source"]) {
