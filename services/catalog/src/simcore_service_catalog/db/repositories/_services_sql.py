@@ -181,6 +181,7 @@ def list_latest_services_with_history_stmt(
             services_meta_data.c.description,
             services_meta_data.c.description_ui,
             services_meta_data.c.thumbnail,
+            services_meta_data.c.icon,
             services_meta_data.c.version_display,
             services_meta_data.c.classifiers,
             services_meta_data.c.created,
@@ -374,6 +375,7 @@ def get_service_stmt(
             services_meta_data.c.description,
             services_meta_data.c.description_ui,
             services_meta_data.c.thumbnail,
+            services_meta_data.c.icon,
             services_meta_data.c.version_display,
             # ownership
             owner_subquery.label("owner_email"),
