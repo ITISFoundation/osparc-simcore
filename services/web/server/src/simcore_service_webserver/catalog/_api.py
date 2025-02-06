@@ -1,5 +1,4 @@
 import logging
-import warnings
 from collections.abc import Iterator
 from typing import Any, cast
 
@@ -183,55 +182,6 @@ async def list_services(
     return services
 
 
-async def get_service(
-    service_key: ServiceKey, service_version: ServiceVersion, ctx: CatalogRequestContext
-) -> dict[str, Any]:
-
-    warnings.warn(
-        "`get_service` is deprecated, use `get_service_v2` instead",
-        DeprecationWarning,
-        stacklevel=1,
-    )
-
-    service = await client.get_service(
-        ctx.app, ctx.user_id, service_key, service_version, ctx.product_name
-    )
-    await replace_service_input_outputs(
-        service,
-        unit_registry=ctx.unit_registry,
-        **RESPONSE_MODEL_POLICY,
-    )
-    return service
-
-
-async def update_service(
-    service_key: ServiceKey,
-    service_version: ServiceVersion,
-    update_data: dict[str, Any],
-    ctx: CatalogRequestContext,
-):
-    warnings.warn(
-        "`update_service_v2` is deprecated, use `update_service_v2` instead",
-        DeprecationWarning,
-        stacklevel=1,
-    )
-
-    service = await client.update_service(
-        ctx.app,
-        ctx.user_id,
-        service_key,
-        service_version,
-        ctx.product_name,
-        update_data,
-    )
-    await replace_service_input_outputs(
-        service,
-        unit_registry=ctx.unit_registry,
-        **RESPONSE_MODEL_POLICY,
-    )
-    return service
-
-
 async def list_service_inputs(
     service_key: ServiceKey, service_version: ServiceVersion, ctx: CatalogRequestContext
 ) -> list[ServiceInputGet]:
@@ -294,7 +244,7 @@ async def get_compatible_inputs_given_source_output(
     def iter_service_inputs() -> Iterator[tuple[ServiceInputKey, ServiceInput]]:
         for service_input in service_inputs:
             yield service_input.key_id, ServiceInput.model_construct(
-                **service_input.model_dump(include=ServiceInput.model_fields.keys())    # type: ignore[arg-type]
+                **service_input.model_dump(include=ServiceInput.model_fields.keys())  # type: ignore[arg-type]
             )
 
     # check
@@ -361,7 +311,7 @@ async def get_compatible_outputs_given_target_input(
         to_service_key, to_service_version, to_input_key, ctx
     )
     to_input: ServiceInput = ServiceInput.model_construct(
-        **service_input.model_dump(include=ServiceInput.model_fields.keys())    # type: ignore[arg-type]
+        **service_input.model_dump(include=ServiceInput.model_fields.keys())  # type: ignore[arg-type]
     )
 
     # check
