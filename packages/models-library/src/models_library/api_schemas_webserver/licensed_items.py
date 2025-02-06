@@ -56,7 +56,7 @@ class _ItisVipRestData(OutputSchema):
     description: str
     thumbnail: str
     features: FeaturesDict  # NOTE: here there is a bit of coupling with domain model
-    doi: str
+    doi: str | None
 
 
 class _ItisVipResourceRestData(OutputSchema):
@@ -92,13 +92,14 @@ class LicensedItemRestGet(OutputSchema):
                             {
                                 "categoryId": "HumanWholeBody",
                                 "categoryDisplay": "Humans",
-                                "source": VIP_DETAILS_EXAMPLE,
+                                "source": {**VIP_DETAILS_EXAMPLE, "doi": doi},
                             },
                         ),
                         "pricingPlanId": "15",
                         "createdAt": "2024-12-12 09:59:26.422140",
                         "modifiedAt": "2024-12-12 09:59:26.422140",
                     }
+                    for doi in ["10.1000/xyz123", None]
                 ]
             }
         )
