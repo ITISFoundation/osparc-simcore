@@ -15542,7 +15542,9 @@ components:
         features:
           $ref: '#/components/schemas/FeaturesDict'
         doi:
-          type: string
+          anyOf:
+          - type: string
+          - type: 'null'
           title: Doi
       type: object
       required:
