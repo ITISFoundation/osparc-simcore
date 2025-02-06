@@ -77,12 +77,6 @@ qx.Class.define("osparc.navigation.UserMenu", {
           }, this);
           this.add(control);
           break;
-        case "preferences":
-          control = new qx.ui.menu.Button(this.tr("Preferences"));
-          control.addListener("execute", () => osparc.navigation.UserMenuButton.openPreferences(), this);
-          osparc.utils.Utils.setIdToWidget(control, "userMenuPreferencesBtn");
-          this.add(control);
-          break;
         case "organizations":
           control = new qx.ui.menu.Button(this.tr("Organizations")).set({
             visibility: osparc.data.Permissions.getInstance().canDo("user.organizations.create") ? "visible" :"excluded"
@@ -162,7 +156,6 @@ qx.Class.define("osparc.navigation.UserMenu", {
         if (osparc.desktop.credits.Utils.areWalletsEnabled()) {
           this.getChildControl("billing-center");
         }
-        this.getChildControl("preferences");
         this.getChildControl("organizations");
       }
       this.addSeparator();
@@ -217,7 +210,6 @@ qx.Class.define("osparc.navigation.UserMenu", {
         if (osparc.desktop.credits.Utils.areWalletsEnabled()) {
           this.getChildControl("billing-center");
         }
-        this.getChildControl("preferences");
         this.getChildControl("organizations");
       }
       this.addSeparator();

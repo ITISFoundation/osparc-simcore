@@ -70,7 +70,9 @@ qx.Class.define("osparc.form.tag.TagManager", {
       this._add(filter);
 
       const tagsContainer = this.__tagsContainer = new qx.ui.container.Composite(new qx.ui.layout.VBox());
-      this._add(tagsContainer, {
+      const scrollTags = new qx.ui.container.Scroll();
+      scrollTags.add(tagsContainer);
+      this._add(scrollTags, {
         flex: 1
       });
 
@@ -90,6 +92,10 @@ qx.Class.define("osparc.form.tag.TagManager", {
         newItem.addListener("cancelNewTag", e => tagsContainer.remove(e.getTarget()), this);
         newItem.addListener("deleteTag", e => tagsContainer.remove(e.getTarget()), this);
         tagsContainer.add(newItem);
+
+        // scroll down
+        const height = scrollTags.getSizeHint().height;
+        scrollTags.scrollToY(height);
       });
       this._add(addTagButton);
 
@@ -120,7 +126,11 @@ qx.Class.define("osparc.form.tag.TagManager", {
     __repopulateTags: function() {
       this.__tagsContainer.removeAll();
       const tags = osparc.store.Tags.getInstance().getTags();
-      tags.forEach(tag => this.__tagsContainer.add(this.__tagButton(tag)));
+      const tagButtons = [];
+      tags.forEach(tag => tagButtons.push(this.__tagButton(tag)));
+      // list the selected tags first
+      tagButtons.sort((a, b) => b.getValue() - a.getValue());
+      tagButtons.forEach(tagButton => this.__tagsContainer.add(tagButton));
     },
 
     __tagButton: function(tag) {

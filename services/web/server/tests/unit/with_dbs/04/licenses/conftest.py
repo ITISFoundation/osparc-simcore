@@ -33,7 +33,7 @@ async def pricing_plan_id(
             )
             .returning(resource_tracker_pricing_plans.c.pricing_plan_id)
         )
-        row = result.first()
+        row = result.one()
 
     assert row
 
@@ -42,3 +42,17 @@ async def pricing_plan_id(
     async with transaction_context(get_asyncpg_engine(client.app)) as conn:
         await conn.execute(licensed_items.delete())
         await conn.execute(resource_tracker_pricing_plans.delete())
+
+
+@pytest.fixture
+async def ensure_empty_licensed_items(client: TestClient):
+    async def _cleanup():
+        assert client.app
+        async with transaction_context(get_asyncpg_engine(client.app)) as conn:
+            await conn.execute(licensed_items.delete())
+
+    await _cleanup()
+
+    yield
+
+    await _cleanup()
