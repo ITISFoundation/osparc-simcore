@@ -205,7 +205,9 @@ qx.Class.define("osparc.info.StudyUtils", {
       * @param study {osparc.data.model.Study} Study Model
       */
     createTags: function(study) {
-      const tagsContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+      const tagsContainer = new qx.ui.container.Composite(new qx.ui.layout.Flow(5, 5)).set({
+        maxWidth: 420
+      });
 
       const addTags = model => {
         tagsContainer.removeAll();
@@ -252,7 +254,7 @@ qx.Class.define("osparc.info.StudyUtils", {
       return titleLayout;
     },
 
-    createExtraInfoGrid: function(extraInfos) {
+    infoElementsToLayout: function(extraInfos) {
       const positions = {
         TITLE: {
           column: 0,
@@ -308,17 +310,14 @@ qx.Class.define("osparc.info.StudyUtils", {
         },
       };
 
-      const grid = new qx.ui.layout.Grid(15, 5);
-      const grid2 = new qx.ui.layout.Grid(15, 5);
-      grid.setColumnAlign(0, "left", "top");
-      const container = new qx.ui.container.Composite(new qx.ui.layout.VBox());
-      const moreInfo = new qx.ui.container.Composite(grid);
-      const otherInfo = new qx.ui.container.Composite(grid2);
-      grid.setColumnFlex(0, 1);
-      grid2.setColumnFlex(0, 1);
+      const mainInfoGrid = new qx.ui.layout.Grid(15, 5);
+      mainInfoGrid.setColumnAlign(0, "left", "top");
+      mainInfoGrid.setColumnFlex(0, 1);
+      const mainInfoLayout = new qx.ui.container.Composite(mainInfoGrid);
 
-      const box = this.__createSectionBox(qx.locale.Manager.tr("Details"));
-      const box2 = this.__createSectionBox(qx.locale.Manager.tr("Meta details"));
+      const extraInfoGrid = new qx.ui.layout.Grid(15, 5);
+      const extraInfoLayout = new qx.ui.container.Composite(extraInfoGrid);
+      extraInfoGrid.setColumnFlex(0, 1);
 
       let row = 0;
       let row2 = 0;
@@ -334,35 +333,42 @@ qx.Class.define("osparc.info.StudyUtils", {
                 marginRight: 15
               });
             }
-            titleLayout.add(extraInfo.view);
-            otherInfo.add(titleLayout, {
+            titleLayout.add(extraInfo.view, {
+              flex: 1
+            });
+            extraInfoLayout.add(titleLayout, {
               row: row2,
               column: gridInfo.column
             });
             row2++;
-            grid2.setRowHeight(row2, 5); // spacer
+            extraInfoGrid.setRowHeight(row2, 5); // spacer
             row2++;
           } else {
             const titleLayout = this.__titleWithEditLayout(extraInfo);
-            moreInfo.add(titleLayout, {
+            mainInfoLayout.add(titleLayout, {
               row,
               column: gridInfo.column
             });
             row++;
-            moreInfo.add(extraInfo.view, {
+            mainInfoLayout.add(extraInfo.view, {
               row,
               column: gridInfo.column
             });
             row++;
-            grid.setRowHeight(row, 5); // spacer
+            mainInfoGrid.setRowHeight(row, 5); // spacer
             row++;
           }
         }
       });
 
-      box.add(moreInfo);
-      box2.add(otherInfo);
-      container.addAt(box, 0);
+
+      const container = new qx.ui.container.Composite(new qx.ui.layout.VBox());
+      const box1 = this.__createSectionBox(qx.locale.Manager.tr("Details"));
+      box1.add(mainInfoLayout);
+      container.addAt(box1, 0);
+
+      const box2 = this.__createSectionBox(qx.locale.Manager.tr("Meta details"));
+      box2.add(extraInfoLayout);
       container.addAt(box2, 1);
 
       return container;

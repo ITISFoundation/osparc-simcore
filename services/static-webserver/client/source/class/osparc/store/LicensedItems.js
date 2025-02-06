@@ -25,6 +25,20 @@ qx.Class.define("osparc.store.LicensedItems", {
     this.__licensedItems = null;
   },
 
+  statics: {
+    purchasesToNSeats: function(purchases) {
+      let nSeats = 0;
+      purchases.forEach(purchase => {
+        if ("numberOfSeats" in purchase) {
+          nSeats += purchase["numberOfSeats"];
+        } else if ("getNumberOfSeats" in purchase) {
+          nSeats += purchase.getNumberOfSeats();
+        }
+      });
+      return nSeats;
+    },
+  },
+
   members: {
     __licensedItems: null,
 

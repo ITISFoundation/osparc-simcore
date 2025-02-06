@@ -489,7 +489,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
         lastChangeDate: resourceData.lastChangeDate ? new Date(resourceData.lastChangeDate) : null,
         trashedAt: resourceData.trashedAt ? new Date(resourceData.trashedAt) : null,
         trashedBy: resourceData.trashedBy || null,
-        icon: ["study", "template"].includes(resourceData.resourceType) ? osparc.study.Utils.guessIcon(resourceData) : null,
+        icon: ["study", "template"].includes(resourceData.resourceType) ? osparc.study.Utils.guessIcon(resourceData) : osparc.dashboard.CardBase.PRODUCT_ICON,
         thumbnail: resourceData.thumbnail || this.self().PRODUCT_THUMBNAIL,
         state: resourceData.state ? resourceData.state : {},
         classifiers: resourceData.classifiers && resourceData.classifiers ? resourceData.classifiers : [],
@@ -963,8 +963,8 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     openData: function() {
-      const moreOpts = this.__openMoreOptions();
-      moreOpts.openData();
+      const resourceData = this.getResourceData();
+      osparc.widget.StudyDataManager.popUpInWindow(resourceData["uuid"]);
     },
 
     openBilling: function() {
