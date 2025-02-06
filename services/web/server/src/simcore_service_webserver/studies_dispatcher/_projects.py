@@ -195,6 +195,8 @@ async def _add_new_project(
     )
 
     # update metadata (uuid, timestamps, ownership) and save
+    project_in.pop("workbench", {})
+    assert project_in.get("workbench", None) == None  # nosec
     _project_db: dict = await db.insert_project(
         project_in,
         user.id,

@@ -1,7 +1,7 @@
 import datetime
 import uuid
 from dataclasses import dataclass
-from typing import Any
+from typing import Annotated, Any
 
 import sqlalchemy
 from aiopg.sa.connection import SAConnection
@@ -45,7 +45,7 @@ class ProjectNodeCreate(BaseModel):
     label: str
     progress: float | None = None
     thumbnail: str | None = None
-    input_access: dict[str, Any] | None = None
+    input_access: Annotated[dict[str, Any] | None, Field(alias="inputAccess")] = None
     input_nodes: list[str] | None = None
     inputs: dict[str, Any] | None = None
     inputs_units: dict[str, Any] | None = None

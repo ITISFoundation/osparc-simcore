@@ -184,7 +184,7 @@ class ProjectDBAPI(BaseProjectDB):
                             assert row  # nosec
 
                             selected_values = ProjectDict(row.items())
-                            # if workbench:
+
                             selected_values["workbench"] = workbench
                             project_index = selected_values.pop("id")
 
@@ -225,9 +225,7 @@ class ProjectDBAPI(BaseProjectDB):
                                     NodeID(node_id): ProjectNodeCreate(
                                         node_id=NodeID(node_id),
                                         required_resources={},
-                                        key=node_info.get("key"),
-                                        version=node_info.get("version"),
-                                        label=node_info.get("label"),
+                                        **node_info,
                                     )
                                     for node_id, node_info in selected_values[
                                         "workbench"
@@ -240,9 +238,7 @@ class ProjectDBAPI(BaseProjectDB):
                                     ProjectNodeCreate(
                                         node_id=NodeID(node_id),
                                         required_resources={},
-                                        key=node_info.get("key"),
-                                        version=node_info.get("version"),
-                                        label=node_info.get("label"),
+                                        **node_info,
                                     ),
                                 )
                                 for node_id, node_info in selected_values[
@@ -309,7 +305,7 @@ class ProjectDBAPI(BaseProjectDB):
         # ensure we have the minimal amount of data here
         # All non-default in projects table
         insert_values.setdefault("name", "New Study")
-        insert_values.setdefault("workbench", {})
+        # insert_values.setdefault("workbench", {})
 
         insert_values.setdefault("workspace_id", None)
 
@@ -321,6 +317,7 @@ class ProjectDBAPI(BaseProjectDB):
                 raise
             insert_values["uuid"] = f"{uuid1()}"
 
+        assert insert_values.get("workbench", None) == None
         inserted_project = await self._insert_project_in_db(
             insert_values,
             force_project_uuid=force_project_uuid,

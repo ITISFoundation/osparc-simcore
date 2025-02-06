@@ -372,6 +372,20 @@ class BaseProjectDB:
             )
             project["tags"] = tags
 
+        # NOTE: experiment TODO: remove Nones from workbench
+        workbench = project["workbench"]
+        _temp_workbench = {}
+        for node_id, node_data in workbench.items():
+            _temp_workbench[node_id] = {}
+            for item, value in node_data.items():
+                if value is None:
+                    if item in ["outputs", "inputs"]:
+                        _temp_workbench[node_id][item] = {}
+                    if item in ["inputNodes"]:
+                        _temp_workbench[node_id][item] = []
+                    continue
+                _temp_workbench[node_id][item] = value
+        project["workbench"] = _temp_workbench
         return project
 
 

@@ -186,6 +186,8 @@ async def copy_study_to_account(
             )
         # add project model + copy data TODO: guarantee order and atomicity
         product_name = get_product_name(request)
+        project.pop("workbench", {})
+        assert project.get("workbench", None) == None  # nosec
         await db.insert_project(
             project,
             user["id"],

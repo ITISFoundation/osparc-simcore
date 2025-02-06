@@ -69,6 +69,8 @@ async def create_project(
 
     db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
 
+    workbench = project_data.pop("workbench", {})
+    assert project_data.get("workbench", None) == None  # nosec
     new_project = await db.insert_project(
         project_data,
         user_id,
@@ -82,13 +84,13 @@ async def create_project(
                 required_resources=ServiceResourcesDictHelpers.model_config[
                     "json_schema_extra"
                 ]["examples"][0],
-                key=node_info.get("key"),
-                version=node_info.get("version"),
-                label=node_info.get("label"),
+                **node_info,
             )
-            for node_id, node_info in project_data.get("workbench", {}).items()
+            for node_id, node_info in workbench.items()
         },
     )
+
+    # Update project_nodes
 
     if params_override and (
         params_override.get("access_rights") or params_override.get("accessRights")

@@ -223,9 +223,7 @@ async def _compose_project_data(
                         app, user_id, node_data["key"], node_data["version"]
                     )
                 ),
-                key=node_data.get("key"),
-                version=node_data.get("version"),
-                label=node_data.get("label"),
+                **node_data,
             )
             for node_id, node_data in predefined_project.get("workbench", {}).items()
         }
@@ -349,8 +347,11 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
             )
 
         # 3.1 save new project in DB
+        _prj_without_workbench = jsonable_encoder(new_project)
+        _prj_without_workbench.pop("workbench", {})
+        assert _prj_without_workbench.get("workbench", None) == None  # nosec
         new_project = await _projects_repository.insert_project(
-            project=jsonable_encoder(new_project),
+            project=_prj_without_workbench,
             user_id=user_id,
             product_name=product_name,
             force_as_template=as_template,
