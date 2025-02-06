@@ -55,7 +55,7 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelListItem", {
     },
 
     modelId: {
-      check: "Number",
+      check: "String",
       init: null,
       nullable: false,
       event: "changeModelId",
