@@ -184,8 +184,8 @@ class ProjectDBAPI(BaseProjectDB):
                             assert row  # nosec
 
                             selected_values = ProjectDict(row.items())
-                            if workbench:
-                                selected_values["workbench"] = workbench
+                            # if workbench:
+                            selected_values["workbench"] = workbench
                             project_index = selected_values.pop("id")
 
                         except UniqueViolation as err:
@@ -1097,13 +1097,19 @@ class ProjectDBAPI(BaseProjectDB):
             # update timestamps
             new_project_data["lastChangeDate"] = now_str()
 
+            # After moving workbench from project DB table to project_nodes table:
+            workbench = new_project_data.pop("workbench")
+            # TODO: UPDATE project_nodes table
+
             result = await db_connection.execute(
                 projects.update()
                 .values(**convert_to_db_names(new_project_data))
                 .where(projects.c.id == current_project[projects.c.id.key])
                 .returning(literal_column("*"))
             )
+
             project = await result.fetchone()
+
             assert project  # nosec
             if product_name:
                 await self.upsert_project_linked_product(
@@ -1115,7 +1121,9 @@ class ProjectDBAPI(BaseProjectDB):
                 db_connection, project_id=project[projects.c.id]
             )
             return (
-                convert_to_schema_names(project, user_email, tags=tags),
+                convert_to_schema_names(
+                    project, user_email, tags=tags, workbench=workbench
+                ),
                 changed_entries,
             )
         msg = "linter unhappy without this"

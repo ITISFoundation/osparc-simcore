@@ -315,16 +315,23 @@ class BaseProjectDB:
             .group_by(project_to_groups.c.project_uuid)
         ).subquery("access_rights_subquery")
 
+        _workbench_subquery = _build_workbench_subquery()
+
         query = (
             sa.select(
                 *PROJECT_DB_COLS,
-                _build_workbench_subquery().c.workbench,
+                sa.func.coalesce(_workbench_subquery.c.workbench, "{}").label(
+                    "workbench"
+                ),
                 users.c.primary_gid.label("trashed_by_primary_gid"),
                 access_rights_subquery.c.access_rights,
             )
             .select_from(
-                projects.join(access_rights_subquery, isouter=True).outerjoin(
-                    users, projects.c.trashed_by == users.c.id
+                projects.join(access_rights_subquery, isouter=True)
+                .outerjoin(users, projects.c.trashed_by == users.c.id)
+                .outerjoin(
+                    _workbench_subquery,
+                    projects.c.uuid == _workbench_subquery.c.project_uuid,
                 )
             )
             .where(
