@@ -268,11 +268,11 @@ async def get_service(
     return service_data
 
 
-@router.patch(
-    "/{service_key:path}/{service_version}",
-    response_model=ServiceGet,
-    **RESPONSE_MODEL_POLICY,
-)
+# @router.patch(
+#     "/{service_key:path}/{service_version}",
+#     response_model=ServiceGet,
+#     **RESPONSE_MODEL_POLICY,
+# )
 async def update_service(
     # pylint: disable=too-many-arguments
     user_id: int,
