@@ -20,11 +20,14 @@ def test_licensed_item_from_domain_model():
         # date is required
         assert got.licensed_resource_data.source.features["date"]
 
-        #
+        # id is required
         assert (
             got.licensed_resource_data.source.id
             == item.licensed_resource_data["source"]["id"]
         )
+
+        # checks unset fields
+        assert "category_icon" not in got.licensed_resource_data.model_fields_set
 
 
 def test_strict_check_of_examples():
