@@ -39,7 +39,6 @@ openapi_modules = [
         "_licensed_items",
         "_licensed_items_purchases",
         "_licensed_items_checkouts",
-        "_metamodeling",
         "_nih_sparc",
         "_nih_sparc_redirections",
         "_projects_crud",
