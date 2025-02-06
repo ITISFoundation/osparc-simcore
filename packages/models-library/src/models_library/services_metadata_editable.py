@@ -2,7 +2,8 @@
 from datetime import datetime
 from typing import Annotated, Any
 
-from pydantic import AfterValidator, ConfigDict, Field, HttpUrl
+from common_library.basic_types import DEFAULT_FACTORY
+from pydantic import ConfigDict, Field, HttpUrl
 from pydantic.config import JsonDict
 
 from .services_base import ServiceBaseDisplay
@@ -20,8 +21,8 @@ assert ServiceVersion  # nosec
 class ServiceMetaDataEditable(ServiceBaseDisplay):
     # Overrides ServiceBaseDisplay fields to Optional for a partial update
     name: str | None  # type: ignore[assignment]
-    thumbnail: Annotated[str, HttpUrl] | None = None
-    icon: Annotated[HttpUrl, AfterValidator(str)] | None = None
+    thumbnail: Annotated[str, HttpUrl] | None  # type: ignore[assignment]
+    icon: HttpUrl | None  # type: ignore[assignment]
     description: str | None  # type: ignore[assignment]
     description_ui: bool = False
     version_display: str | None = None
@@ -37,7 +38,7 @@ class ServiceMetaDataEditable(ServiceBaseDisplay):
     classifiers: list[str] | None
     quality: Annotated[
         dict[str, Any], Field(default_factory=dict, json_schema_extra={"default": {}})
-    ]
+    ] = DEFAULT_FACTORY
 
     @staticmethod
     def _update_json_schema_extra(schema: JsonDict) -> None:

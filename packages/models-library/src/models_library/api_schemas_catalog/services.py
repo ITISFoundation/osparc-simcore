@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, TypeAlias
+from typing import Annotated, Any, TypeAlias
 
 from models_library.rpc_pagination import PageRpc
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl, NonNegativeInt
@@ -24,6 +24,10 @@ from ..utils.change_case import snake_to_camel
 
 
 class ServiceUpdate(ServiceMetaDataEditable, ServiceAccessRights):
+
+    thumbnail: Annotated[str, HttpUrl] | None = None
+    icon: HttpUrl | None = None
+
     @staticmethod
     def _update_json_schema_extra(schema: JsonDict) -> None:
         schema.update(

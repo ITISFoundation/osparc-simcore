@@ -2,6 +2,8 @@
 
 """
 
+from typing import Annotated
+
 from pydantic import BaseModel, ConfigDict, Field
 
 from .groups import GroupID
@@ -9,13 +11,12 @@ from .utils.change_case import snake_to_camel
 
 
 class ServiceGroupAccessRights(BaseModel):
-    execute_access: bool = Field(
-        default=False,
-        description="defines whether the group can execute the service",
-    )
-    write_access: bool = Field(
-        default=False, description="defines whether the group can modify the service"
-    )
+    execute_access: Annotated[
+        bool, Field(description="defines whether the group can execute the service")
+    ] = False
+    write_access: Annotated[
+        bool, Field(description="defines whether the group can modify the service")
+    ] = False
 
 
 class ServiceGroupAccessRightsV2(BaseModel):
@@ -23,13 +24,17 @@ class ServiceGroupAccessRightsV2(BaseModel):
     write: bool = False
 
     model_config = ConfigDict(
-        alias_generator=snake_to_camel, populate_by_name=True, extra="forbid"
+        alias_generator=snake_to_camel,
+        populate_by_name=True,
+        extra="forbid",
     )
 
 
 class ServiceAccessRights(BaseModel):
-    access_rights: dict[GroupID, ServiceGroupAccessRights] | None = Field(
-        None,
-        alias="accessRights",
-        description="service access rights per group id",
-    )
+    access_rights: Annotated[
+        dict[GroupID, ServiceGroupAccessRightsV2] | None,
+        Field(
+            alias="accessRights",
+            description="service access rights per group id",
+        ),
+    ] = None

@@ -274,6 +274,7 @@ def list_latest_services_with_history_stmt(
             latest_query.c.description,
             latest_query.c.description_ui,
             latest_query.c.thumbnail,
+            latest_query.c.icon,
             latest_query.c.version_display,
             # ownership
             latest_query.c.owner_email,
@@ -313,6 +314,7 @@ def list_latest_services_with_history_stmt(
             latest_query.c.description,
             latest_query.c.description_ui,
             latest_query.c.thumbnail,
+            latest_query.c.icon,
             latest_query.c.version_display,
             latest_query.c.classifiers,
             latest_query.c.created,
