@@ -15518,6 +15518,11 @@ components:
         categoryDisplay:
           type: string
           title: Categorydisplay
+        categoryIcon:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Categoryicon
         source:
           $ref: '#/components/schemas/_ItisVipRestData'
         termsOfUseUrl:

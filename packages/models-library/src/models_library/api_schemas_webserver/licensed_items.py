@@ -63,8 +63,9 @@ class _ItisVipRestData(OutputSchema):
 class _ItisVipResourceRestData(OutputSchema):
     category_id: IDStr
     category_display: str
+    category_icon: HttpUrl | None = None  # NOTE: Placeholder until provide @odeimaiz
     source: _ItisVipRestData
-    terms_of_use_url: HttpUrl | None = None
+    terms_of_use_url: HttpUrl | None = None  # NOTE: Placeholder until provided @mguidon
 
 
 class LicensedItemRestGet(OutputSchema):
