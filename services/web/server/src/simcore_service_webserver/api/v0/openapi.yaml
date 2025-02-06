@@ -15533,6 +15533,9 @@ components:
       title: _ItisVipResourceRestData
     _ItisVipRestData:
       properties:
+        id:
+          type: integer
+          title: Id
         description:
           type: string
           title: Description
@@ -15548,6 +15551,7 @@ components:
           title: Doi
       type: object
       required:
+      - id
       - description
       - thumbnail
       - features

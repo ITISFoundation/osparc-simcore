@@ -1,5 +1,5 @@
 import re
-from typing import Annotated, Any, Literal, NamedTuple, TypeAlias
+from typing import Annotated, Any, Literal, NamedTuple, TypeAlias, cast
 
 from models_library.basic_types import IDStr
 from models_library.licenses import VIP_DETAILS_EXAMPLE, FeaturesDict
@@ -61,7 +61,7 @@ class ItisVipData(BaseModel):
             {
                 "examples": [
                     # complete
-                    VIP_DETAILS_EXAMPLE,
+                    cast(JsonDict, VIP_DETAILS_EXAMPLE),
                     # minimal
                     {
                         "id": 1,
