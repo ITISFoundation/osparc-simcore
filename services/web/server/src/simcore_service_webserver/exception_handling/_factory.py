@@ -90,6 +90,8 @@ def create_exception_handler_from_http_info(
                     error=exception,
                     error_code=oec,
                     error_context={
+                        # NOTE: context is also used to substitute tokens in the error message
+                        # e.g. "support error is {error_code}"
                         "request": request,
                         "request.remote": f"{request.remote}",
                         "request.method": f"{request.method}",
