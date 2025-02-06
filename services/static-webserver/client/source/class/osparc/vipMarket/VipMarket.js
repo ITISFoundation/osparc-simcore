@@ -187,9 +187,6 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
             anatomicalModel["date"] = null;
             if (anatomicalModel["licensedResourceData"] && anatomicalModel["licensedResourceData"]["source"]) {
               const anatomicalModelSource = anatomicalModel["licensedResourceData"]["source"];
-              if (anatomicalModelSource["id"]) {
-                anatomicalModel["modelId"] = anatomicalModelSource["id"];
-              }
               if (anatomicalModelSource["thumbnail"]) {
                 anatomicalModel["thumbnail"] = anatomicalModelSource["thumbnail"];
               }
