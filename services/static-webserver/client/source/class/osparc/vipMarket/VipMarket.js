@@ -43,7 +43,7 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
     },
 
     category: {
-      check: ["HumanWholeBody", "HumanBodyRegion", "AnimalWholeBody", "ComputationalPhantom"],
+      check: "String",
       init: null,
       nullable: true,
     },

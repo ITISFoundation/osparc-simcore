@@ -64,7 +64,7 @@ qx.Class.define("osparc.vipMarket.Market", {
         });
 
         if (openCategory) {
-          this.openCategory(openCategory);
+          this.__openCategory(openCategory);
         }
       });
   },
@@ -95,7 +95,7 @@ qx.Class.define("osparc.vipMarket.Market", {
       return page;
     },
 
-    openCategory: function(category) {
+    __openCategory: function(category) {
       const viewFound = this.getChildControl("tabs-view").getChildren().find(view => view.category === category);
       if (viewFound) {
         this._openPage(viewFound);
