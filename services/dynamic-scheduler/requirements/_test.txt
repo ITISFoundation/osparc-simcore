@@ -1,9 +1,13 @@
+aiopg==1.4.0
+    # via -r requirements/_test.in
 anyio==4.6.2.post1
     # via
     #   -c requirements/_base.txt
     #   httpx
 asgi-lifespan==2.1.0
     # via -r requirements/_test.in
+async-timeout==4.0.3
+    # via aiopg
 certifi==2024.8.30
     # via
     #   -c requirements/../../../requirements/constraints.txt
@@ -27,6 +31,7 @@ greenlet==3.1.1
     # via
     #   -c requirements/_base.txt
     #   playwright
+    #   sqlalchemy
 h11==0.14.0
     # via
     #   -c requirements/_base.txt
@@ -73,6 +78,11 @@ pprintpp==0.4.0
     # via pytest-icdiff
 priority==2.0.0
     # via hypercorn
+psycopg2-binary==2.9.10
+    # via
+    #   -c requirements/_base.txt
+    #   aiopg
+    #   sqlalchemy
 pyee==12.0.0
     # via playwright
 pytest==8.3.4
@@ -121,6 +131,11 @@ sniffio==1.3.1
     #   anyio
     #   asgi-lifespan
     #   httpx
+sqlalchemy==1.4.54
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -c requirements/_base.txt
+    #   aiopg
 termcolor==2.5.0
     # via pytest-sugar
 typing-extensions==4.12.2

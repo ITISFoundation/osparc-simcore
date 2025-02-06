@@ -35,6 +35,7 @@ def disable_monitor_task(mocker: MockerFixture) -> None:
 
 @pytest.fixture
 def app_environment(
+    disable_postgres_lifespan: None,
     disable_monitor_task: None,
     disable_rabbitmq_lifespan: None,
     disable_deferred_manager_lifespan: None,

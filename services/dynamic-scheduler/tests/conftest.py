@@ -25,6 +25,8 @@ pytest_plugins = [
     "pytest_simcore.docker_swarm",
     "pytest_simcore.environment_configs",
     "pytest_simcore.faker_projects_data",
+    "pytest_simcore.faker_users_data",
+    "pytest_simcore.postgres_service",
     "pytest_simcore.rabbit_service",
     "pytest_simcore.redis_service",
     "pytest_simcore.repository_paths",
@@ -113,6 +115,11 @@ def disable_notifier_lifespan(mocker: MockerFixture) -> None:
 @pytest.fixture
 def disable_status_monitor_lifespan(mocker: MockerFixture) -> None:
     mocker.patch(f"{_PATH_APPLICATION}.lifespan_status_monitor")
+
+
+@pytest.fixture
+def disable_postgres_lifespan(mocker: MockerFixture) -> None:
+    mocker.patch(f"{_PATH_APPLICATION}.lifespan_postgres")
 
 
 MAX_TIME_FOR_APP_TO_STARTUP: Final[float] = 10

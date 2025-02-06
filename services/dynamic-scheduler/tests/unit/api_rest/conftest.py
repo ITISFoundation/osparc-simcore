@@ -11,6 +11,7 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 
 @pytest.fixture
 def app_environment(
+    disable_postgres_lifespan: None,
     disable_rabbitmq_lifespan: None,
     disable_redis_lifespan: None,
     disable_service_tracker_lifespan: None,
