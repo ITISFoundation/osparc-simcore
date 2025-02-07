@@ -2,21 +2,19 @@ from datetime import datetime
 from decimal import Decimal
 
 from models_library.emails import LowerCaseEmailStr
-from models_library.licenses import LicensedItemID
+from models_library.licenses import LicenseID
 from models_library.products import ProductName
 from models_library.resource_tracker import PricingUnitCostId
-from models_library.resource_tracker_licensed_items_purchases import (
-    LicensedItemPurchaseID,
-)
+from models_library.resource_tracker_license_purchases import LicensePurchaseID
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import BaseModel, ConfigDict
 
 
-class LicensedItemsPurchasesDB(BaseModel):
-    licensed_item_purchase_id: LicensedItemPurchaseID
+class LicensesPurchasesDB(BaseModel):
+    licensed_item_purchase_id: LicensePurchaseID
     product_name: ProductName
-    licensed_item_id: LicensedItemID
+    license_id: LicenseID
     wallet_id: WalletID
     wallet_name: str
     pricing_unit_cost_id: PricingUnitCostId
@@ -32,9 +30,9 @@ class LicensedItemsPurchasesDB(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-class CreateLicensedItemsPurchasesDB(BaseModel):
+class CreateLicensesPurchasesDB(BaseModel):
     product_name: ProductName
-    licensed_item_id: LicensedItemID
+    license_id: LicenseID
     wallet_id: WalletID
     wallet_name: str
     pricing_unit_cost_id: PricingUnitCostId

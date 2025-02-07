@@ -1,13 +1,13 @@
-from models_library.api_schemas_webserver.licensed_items import LicensedItemRestGet
-from models_library.licenses import LicensedItem
+from models_library.api_schemas_webserver.licensed_items import LicenseRestGet
+from models_library.licenses import LicensedResource
 from pydantic import ConfigDict
 
 
 def test_licensed_item_from_domain_model():
-    for example in LicensedItem.model_json_schema()["examples"]:
-        item = LicensedItem.model_validate(example)
+    for example in LicensedResource.model_json_schema()["examples"]:
+        item = LicensedResource.model_validate(example)
 
-        got = LicensedItemRestGet.from_domain_model(item)
+        got = LicenseRestGet.from_domain_model(item)
 
         assert item.display_name == got.display_name
 
@@ -31,8 +31,8 @@ def test_licensed_item_from_domain_model():
 
 
 def test_strict_check_of_examples():
-    class TestLicensedItemRestGet(LicensedItemRestGet):
+    class TestLicenseRestGet(LicenseRestGet):
         model_config = ConfigDict(extra="forbid")
 
-    for example in LicensedItemRestGet.model_json_schema()["examples"]:
-        TestLicensedItemRestGet.model_validate(example)
+    for example in LicenseRestGet.model_json_schema()["examples"]:
+        TestLicenseRestGet.model_validate(example)

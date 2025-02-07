@@ -1,24 +1,21 @@
-""" resource_tracker_service_runs table
-"""
-
+import enum
 
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
-from ._common import (
-    RefActions,
-    column_created_datetime,
-    column_modified_datetime,
-    column_trashed_datetime,
-)
+from ._common import RefActions, column_created_datetime, column_modified_datetime
 from .base import metadata
-from .licenses import LicensedResourceType
 
-licensed_items = sa.Table(
-    "licensed_items",
+
+class LicensedResourceType(str, enum.Enum):
+    VIP_MODEL = "VIP_MODEL"
+
+
+licenses = sa.Table(
+    "licenses",
     metadata,
     sa.Column(
-        "licensed_item_id",
+        "license_id",
         postgresql.UUID(as_uuid=True),
         nullable=False,
         primary_key=True,
@@ -31,22 +28,10 @@ licensed_items = sa.Table(
         doc="Display name for front-end",
     ),
     sa.Column(
-        "licensed_resource_name",
-        sa.String,
-        nullable=False,
-        doc="Resource name identifier",
-    ),
-    sa.Column(
         "licensed_resource_type",
         sa.Enum(LicensedResourceType),
         nullable=False,
         doc="Resource type, ex. VIP_MODEL",
-    ),
-    sa.Column(
-        "licensed_resource_data",
-        postgresql.JSONB,
-        nullable=True,
-        doc="Resource metadata. Used for read-only purposes",
     ),
     sa.Column(
         "pricing_plan_id",
@@ -57,7 +42,7 @@ licensed_items = sa.Table(
             onupdate=RefActions.CASCADE,
             ondelete=RefActions.RESTRICT,
         ),
-        nullable=True,
+        nullable=False,
     ),
     sa.Column(
         "product_name",
@@ -68,15 +53,8 @@ licensed_items = sa.Table(
             ondelete=RefActions.CASCADE,
             name="fk_resource_tracker_license_packages_product_name",
         ),
-        nullable=True,
-        doc="Product name identifier. If None, then the item is not exposed",
+        nullable=False,
     ),
     column_created_datetime(timezone=True),
     column_modified_datetime(timezone=True),
-    column_trashed_datetime("licensed_item"),
-    sa.UniqueConstraint(
-        "licensed_resource_name",
-        "licensed_resource_type",
-        name="uq_licensed_resource_name_type",
-    ),
 )

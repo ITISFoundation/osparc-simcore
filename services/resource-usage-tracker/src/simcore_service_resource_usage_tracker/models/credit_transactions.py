@@ -10,9 +10,7 @@ from models_library.resource_tracker import (
     PricingUnitCostId,
     PricingUnitId,
 )
-from models_library.resource_tracker_licensed_items_purchases import (
-    LicensedItemPurchaseID,
-)
+from models_library.resource_tracker_license_purchases import LicensePurchaseID
 from models_library.services_types import ServiceRunID
 from models_library.users import UserID
 from models_library.wallets import WalletID
@@ -35,7 +33,7 @@ class CreditTransactionCreate(BaseModel):
     payment_transaction_id: str | None
     created_at: datetime
     last_heartbeat_at: datetime
-    licensed_item_purchase_id: LicensedItemPurchaseID | None
+    licensed_item_purchase_id: LicensePurchaseID | None
 
 
 class CreditTransactionCreditsUpdate(BaseModel):

@@ -1,20 +1,18 @@
 from datetime import datetime
 from typing import NamedTuple
 
-from models_library.licenses import LicensedItemID
+from models_library.licenses import LicenseID
 from models_library.products import ProductName
-from models_library.resource_tracker_licensed_items_checkouts import (
-    LicensedItemCheckoutID,
-)
+from models_library.resource_tracker_license_checkouts import LicenseCheckoutID
 from models_library.services_types import ServiceRunID
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import BaseModel, ConfigDict, PositiveInt
 
 
-class LicensedItemCheckoutGet(BaseModel):
-    licensed_item_checkout_id: LicensedItemCheckoutID
-    licensed_item_id: LicensedItemID
+class LicenseCheckoutGet(BaseModel):
+    license_checkout_id: LicenseCheckoutID
+    license_id: LicenseID
     wallet_id: WalletID
     user_id: UserID
     user_email: str
@@ -28,8 +26,8 @@ class LicensedItemCheckoutGet(BaseModel):
         json_schema_extra={
             "examples": [
                 {
-                    "licensed_item_checkout_id": "beb16d18-d57d-44aa-a638-9727fa4a72ef",
-                    "licensed_item_id": "303942ef-6d31-4ba8-afbe-dbb1fce2a953",
+                    "license_checkout_id": "beb16d18-d57d-44aa-a638-9727fa4a72ef",
+                    "license_id": "303942ef-6d31-4ba8-afbe-dbb1fce2a953",
                     "wallet_id": 1,
                     "user_id": 1,
                     "user_email": "test@test.com",
@@ -44,6 +42,6 @@ class LicensedItemCheckoutGet(BaseModel):
     )
 
 
-class LicensedItemsCheckoutsPage(NamedTuple):
-    items: list[LicensedItemCheckoutGet]
+class LicenseCheckoutsPage(NamedTuple):
+    items: list[LicenseCheckoutGet]
     total: PositiveInt

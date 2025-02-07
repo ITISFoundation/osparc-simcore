@@ -10,22 +10,22 @@ class NotEnoughAvailableSeatsError(LicensesBaseError):
 
 
 class CanNotCheckoutNotEnoughAvailableSeatsError(LicensesBaseError):
-    msg_template = "Can not checkout license item {licensed_item_id} with num of seats {num_of_seats}. Currently available seats {available_num_of_seats}"
+    msg_template = "Can not checkout license item {license_id} with num of seats {num_of_seats}. Currently available seats {available_num_of_seats}"
 
 
 class CanNotCheckoutServiceIsNotRunningError(LicensesBaseError):
-    msg_template = "Can not checkout license item {licensed_item_id} as dynamic service is not running. Current service {service_run}"
+    msg_template = "Can not checkout license item {license_id} as dynamic service is not running. Current service {service_run}"
 
 
-class LicensedItemCheckoutNotFoundError(LicensesBaseError):
-    msg_template = "Licensed item checkout {licensed_item_checkout_id} not found."
+class LicenseCheckoutNotFoundError(LicensesBaseError):
+    msg_template = "Licensed item checkout {license_checkout_id} not found."
 
 
 LICENSES_ERRORS = (
     NotEnoughAvailableSeatsError,
     CanNotCheckoutNotEnoughAvailableSeatsError,
     CanNotCheckoutServiceIsNotRunningError,
-    LicensedItemCheckoutNotFoundError,
+    LicenseCheckoutNotFoundError,
 )
 
 

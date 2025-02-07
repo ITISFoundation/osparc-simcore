@@ -10,8 +10,8 @@ from servicelib.rabbitmq import RPCRouter
 from ...services.modules.rabbitmq import get_rabbitmq_rpc_server
 from . import (
     _credit_transactions,
-    _licensed_items_checkouts,
-    _licensed_items_purchases,
+    _license_checkouts,
+    _license_purchases,
     _pricing_plans,
     _service_runs,
 )
@@ -23,8 +23,8 @@ ROUTERS: list[RPCRouter] = [
     _credit_transactions.router,
     _service_runs.router,
     _pricing_plans.router,
-    _licensed_items_purchases.router,
-    _licensed_items_checkouts.router,
+    _license_purchases.router,
+    _license_checkouts.router,
 ]
 
 

@@ -1,7 +1,5 @@
 from common_library.errors_classes import OsparcErrorMixin
-from models_library.resource_tracker_licensed_items_purchases import (
-    LicensedItemPurchaseID,
-)
+from models_library.resource_tracker_license_purchases import LicensePurchaseID
 
 
 class ResourceUsageTrackerBaseError(OsparcErrorMixin, Exception):
@@ -73,5 +71,5 @@ class PricingPlanNotFoundForServiceError(RutNotFoundError):
     )
 
 
-class LicensedItemPurchaseNotFoundError(RutNotFoundError):
-    licensed_item_purchase_id: LicensedItemPurchaseID
+class LicensePurchaseNotFoundError(RutNotFoundError):
+    licensed_item_purchase_id: LicensePurchaseID
