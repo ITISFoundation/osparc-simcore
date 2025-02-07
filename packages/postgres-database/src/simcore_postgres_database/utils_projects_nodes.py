@@ -46,15 +46,15 @@ class ProjectNodeCreate(BaseModel):
     progress: float | None = None
     thumbnail: str | None = None
     input_access: Annotated[dict[str, Any] | None, Field(alias="inputAccess")] = None
-    input_nodes: list[str] | None = None
+    input_nodes: Annotated[list[str] | None, Field(alias="inputNodes")] = None
     inputs: dict[str, Any] | None = None
-    inputs_units: dict[str, Any] | None = None
-    output_nodes: list[str] | None = None
+    inputs_units: Annotated[dict[str, Any] | None, Field(alias="inputUnits")] = None
+    output_nodes: Annotated[list[str] | None, Field(alias="outputNodes")] = None
     outputs: dict[str, Any] | None = None
-    run_hash: str | None = None
+    run_hash: Annotated[str | None, Field(alias="runHash")] = None
     state: dict[str, Any] | None = None
     parent: str | None = None
-    boot_options: dict[str, Any] | None = None
+    boot_options: Annotated[dict[str, Any] | None, Field(alias="bootOptions")] = None
 
     @classmethod
     def get_field_names(cls, *, exclude: set[str]) -> set[str]:
@@ -98,7 +98,7 @@ class ProjectNodesRepo:
                 [
                     {
                         "project_uuid": f"{self.project_uuid}",
-                        **node.model_dump(exclude_unset=True),
+                        **node.model_dump(),
                     }
                     for node in nodes
                 ]
