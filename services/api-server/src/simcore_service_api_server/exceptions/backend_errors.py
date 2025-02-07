@@ -108,7 +108,7 @@ class ProjectAlreadyStartedError(BaseBackEndError):
 
 
 class InsufficientNumberOfSeatsError(BaseBackEndError):
-    msg_template = "Not enough available seats. Current available seats {num_of_seats} for license item {licensed_item_id}"
+    msg_template = "Not enough available seats. Current available seats {available_num_of_seats} for license item {licensed_item_id}"
     status_code = status.HTTP_409_CONFLICT
 
 
