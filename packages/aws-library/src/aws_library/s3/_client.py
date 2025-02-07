@@ -65,14 +65,6 @@ class CopiedBytesTransferredCallback(Protocol):
         ...
 
 
-class AsyncFileProtocol(Protocol):
-    async def read(self, chunk_size: int) -> bytes:
-        ...
-
-    async def write(self, data: bytes) -> None:
-        ...
-
-
 @dataclass(frozen=True)
 class SimcoreS3API:  # pylint: disable=too-many-public-methods
     _client: S3Client
