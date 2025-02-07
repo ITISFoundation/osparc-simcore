@@ -243,7 +243,9 @@ async def update_service(
         service_key,
         service_version,
         ServiceMetaDataDBPatch.model_validate(
-            **update.model_dump(exclude_unset=True),
+            update.model_dump(
+                exclude_unset=True, exclude={"access_rights"}, mode="json"
+            ),
         ),
     )
 
