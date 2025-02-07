@@ -1027,7 +1027,7 @@ async def test_abort_multipart_upload(
 
 @pytest.mark.parametrize(
     "file_size",
-    [parametrized_file_size("1Mib")],
+    [parametrized_file_size("500Mib")],
     ids=byte_size_ids,
 )
 async def test_upload_file(
