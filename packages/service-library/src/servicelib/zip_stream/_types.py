@@ -1,8 +1,8 @@
-from collections.abc import AsyncIterator, Callable
+from collections.abc import AsyncIterable, Callable
 from typing import TypeAlias
 
 FileNameInArchive: TypeAlias = str
-FileStream: TypeAlias = AsyncIterator[bytes]
+FileStream: TypeAlias = AsyncIterable[bytes]
 
 ArchiveFileEntry: TypeAlias = tuple[FileNameInArchive, Callable[[], FileStream]]
 ArchiveEntries: TypeAlias = list[ArchiveFileEntry]
