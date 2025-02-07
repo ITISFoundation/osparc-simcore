@@ -6,7 +6,7 @@ from stream_zip import ZIP_32, AsyncMemberFile, async_stream_zip
 
 from ..progress_bar import ProgressBarData
 from ._constants import DEFAULT_READ_CHUNK_SIZE
-from ._types import ArchiveEntries, FileStream
+from ._types import ArchiveEntries, FileSize, FileStream
 
 
 async def _member_files_iter(
@@ -27,17 +27,20 @@ async def get_zip_archive_stream(
     archive_files: ArchiveEntries,
     *,
     progress_bar: ProgressBarData | None = None,
-    chunk_size: int = DEFAULT_READ_CHUNK_SIZE
+    chunk_size: int = DEFAULT_READ_CHUNK_SIZE,
 ) -> FileStream:
     # NOTE: this is CPU bound task, even though the loop is not blocked,
     # the CPU is still used for compressing the content.
     if progress_bar is None:
         progress_bar = ProgressBarData(num_steps=1, description="zip archive stream")
 
-    total_stream_lenth = sum(file_size for _, (file_size, _) in archive_files)
+    total_stream_lenth = FileSize(sum(file_size for _, (file_size, _) in archive_files))
+    description = (
+        f"STATS: count={len(archive_files)}, size={total_stream_lenth.human_readable()}"
+    )
 
     async with progress_bar.sub_progress(
-        steps=total_stream_lenth, description="streams_reader", progress_unit="Byte"
+        steps=total_stream_lenth, description=description, progress_unit="Byte"
     ) as sub_progress:
         # NOTE: do not disable compression or the streams will be
         # loaded fully in memory before yielding their content

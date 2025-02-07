@@ -4,19 +4,18 @@
 # pylint:disable=no-name-in-module
 
 import asyncio
-import hashlib
 import os
 import secrets
 import string
 import tempfile
 from collections.abc import Callable, Iterable
-from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 
 import pytest
 from faker import Faker
 from pydantic import ByteSize, TypeAdapter
 from pytest_benchmark.plugin import BenchmarkFixture
+from pytest_simcore.helpers.comparing import compute_hashes
 from servicelib.archiving_utils import archive_dir, unarchive_dir
 
 
@@ -90,32 +89,6 @@ def get_all_files_in_dir(dir_path: Path) -> set[Path]:
         for x in dir_path.rglob("*")
         if x.is_file()
     }
-
-
-def _compute_hash(file_path: Path) -> tuple[Path, str]:
-    with Path.open(file_path, "rb") as file_to_hash:
-        file_hash = hashlib.md5()  # noqa: S324
-        chunk = file_to_hash.read(8192)
-        while chunk:
-            file_hash.update(chunk)
-            chunk = file_to_hash.read(8192)
-
-    return file_path, file_hash.hexdigest()
-
-
-async def compute_hashes(file_paths: list[Path]) -> dict[Path, str]:
-    """given a list of files computes hashes for the files on a process pool"""
-
-    loop = asyncio.get_event_loop()
-
-    with ProcessPoolExecutor() as prcess_pool_executor:
-        tasks = [
-            loop.run_in_executor(prcess_pool_executor, _compute_hash, file_path)
-            for file_path in file_paths
-        ]
-        # pylint: disable=unnecessary-comprehension
-        # see return value of _compute_hash it is a tuple, mapping list[Tuple[Path,str]] to Dict[Path, str] here
-        return dict(await asyncio.gather(*tasks))
 
 
 def full_file_path_from_dir_and_subdirs(dir_path: Path) -> list[Path]:

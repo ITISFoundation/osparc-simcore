@@ -1526,6 +1526,7 @@ def _get_s3_object_keys(files: set[Path]) -> set[S3ObjectKey]:
 @pytest.mark.parametrize(
     "file_size, local_count, remote_count",
     [
+        pytest.param(TypeAdapter(ByteSize).validate_python("2Mib"), 10, 10, id="micro"),
         pytest.param(
             TypeAdapter(ByteSize).validate_python("10Mib"), 10, 10, id="small"
         ),

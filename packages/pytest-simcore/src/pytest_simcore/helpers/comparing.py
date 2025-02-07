@@ -1,10 +1,12 @@
+import asyncio
+import hashlib
 from collections.abc import Iterable
+from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 from typing import TypeAlias
 
 import aiofiles
 from servicelib.file_utils import create_sha256_checksum
-from servicelib.utils import limited_gather
 
 _FilesInfo: TypeAlias = dict[str, Path]
 
@@ -28,13 +30,37 @@ def get_files_info_from_itrable(items: Iterable[Path]) -> _FilesInfo:
     return {f.name: f for f in items if f.is_file()}
 
 
+def _compute_hash(file_path: Path) -> tuple[Path, str]:
+    with Path.open(file_path, "rb") as file_to_hash:
+        file_hash = hashlib.md5()  # noqa: S324
+        chunk = file_to_hash.read(8192)
+        while chunk:
+            file_hash.update(chunk)
+            chunk = file_to_hash.read(8192)
+
+    return file_path, file_hash.hexdigest()
+
+
+async def compute_hashes(file_paths: list[Path]) -> dict[Path, str]:
+    """given a list of files computes hashes for the files on a process pool"""
+
+    loop = asyncio.get_event_loop()
+
+    with ProcessPoolExecutor() as prcess_pool_executor:
+        tasks = [
+            loop.run_in_executor(prcess_pool_executor, _compute_hash, file_path)
+            for file_path in file_paths
+        ]
+        # pylint: disable=unnecessary-comprehension
+        # see return value of _compute_hash it is a tuple, mapping list[Tuple[Path,str]] to Dict[Path, str] here
+        return dict(await asyncio.gather(*tasks))
+
+
 async def assert_same_contents(file_info1: _FilesInfo, file_info2: _FilesInfo) -> None:
     assert set(file_info1.keys()) == set(file_info2.keys())
 
-    await limited_gather(
-        *(
-            assert_same_file_content(file_info1[file_name], file_info2[file_name])
-            for file_name in file_info1
-        ),
-        limit=10,
-    )
+    hashes_1 = await compute_hashes(list(file_info1.values()))
+    hashes_2 = await compute_hashes(list(file_info2.values()))
+
+    for key in file_info1:
+        assert hashes_1[file_info1[key]] == hashes_2[file_info2[key]]
