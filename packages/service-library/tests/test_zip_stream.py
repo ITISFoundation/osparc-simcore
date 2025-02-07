@@ -4,15 +4,18 @@
 import secrets
 from collections.abc import AsyncIterable
 from pathlib import Path
-from typing import TypeAlias
 from unittest.mock import Mock
 
-import aiofiles
 import pytest
 from faker import Faker
 from pytest_mock import MockerFixture
+from pytest_simcore.helpers.comparing import (
+    assert_same_folder_contents,
+    get_files_in_folder,
+    get_relative_to,
+)
 from servicelib.archiving_utils import unarchive_dir
-from servicelib.file_utils import create_sha256_checksum, remove_directory
+from servicelib.file_utils import remove_directory
 from servicelib.progress_bar import ProgressBarData
 from servicelib.zip_stream import (
     ArchiveEntries,
@@ -74,33 +77,6 @@ def _generate_files_in_path(faker: Faker, base_dir: Path, *, prefix: str = "") -
         (base_dir / "fancy-names" / fancy_name).write_text(faker.text())
 
 
-_FilesInFolder: TypeAlias = dict[str, Path]
-
-
-def _get_relative(folder: Path, file: Path) -> str:
-    return f"{file.relative_to(folder)}"
-
-
-def _get_files_in_folder(folder: Path) -> _FilesInFolder:
-    return {_get_relative(folder, f): f for f in folder.rglob("*") if f.is_file()}
-
-
-async def _same_file_content(file_1: Path, file_2: Path):
-    async with aiofiles.open(file_1, "rb") as f1, aiofiles.open(file_2, "rb") as f2:
-        checksum_1 = await create_sha256_checksum(f1)
-        checksum_2 = await create_sha256_checksum(f2)
-    assert checksum_1 == checksum_2
-
-
-async def _assert_same_folder_contents(
-    fif1: _FilesInFolder, fif2: _FilesInFolder
-) -> None:
-    assert set(fif1.keys()) == set(fif2.keys())
-
-    for file_name in fif1:
-        await _same_file_content(fif1[file_name], fif2[file_name])
-
-
 @pytest.fixture
 async def prepare_content(local_files_dir: Path, faker: Faker) -> AsyncIterable[None]:
     _generate_files_in_path(faker, local_files_dir, prefix="local_")
@@ -126,7 +102,7 @@ async def test_get_zip_archive_stream(
     # 1. generate archive form soruces
     archive_files: ArchiveEntries = []
     for file in (x for x in local_files_dir.rglob("*") if x.is_file()):
-        archive_name = _get_relative(local_files_dir, file)
+        archive_name = get_relative_to(local_files_dir, file)
 
         archive_files.append((archive_name, DiskStreamReader(file).get_stream))
 
@@ -145,7 +121,7 @@ async def test_get_zip_archive_stream(
     await unarchive_dir(local_archive_path, local_unpacked_archive)
 
     # 3. compare files in directories (same paths & sizes)
-    await _assert_same_folder_contents(
-        _get_files_in_folder(local_files_dir),
-        _get_files_in_folder(local_unpacked_archive),
+    await assert_same_folder_contents(
+        get_files_in_folder(local_files_dir),
+        get_files_in_folder(local_unpacked_archive),
     )
