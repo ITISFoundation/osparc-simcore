@@ -104,7 +104,7 @@ async def test_get_zip_archive_stream(
     for file in (x for x in local_files_dir.rglob("*") if x.is_file()):
         archive_name = get_relative_to(local_files_dir, file)
 
-        archive_files.append((archive_name, DiskStreamReader(file).get_stream))
+        archive_files.append((archive_name, DiskStreamReader(file).get_stream_data()))
 
     writer = DiskStreamWriter(local_archive_path)
 
@@ -114,7 +114,7 @@ async def test_get_zip_archive_stream(
         description="root_bar",
     ) as root:
         await writer.write_stream(
-            get_zip_archive_stream(archive_files, progress_bar=root)
+            get_zip_archive_stream(archive_files, progress_bar=root, chunk_size=1024)
         )
 
     # 2. extract archive using exiting tools

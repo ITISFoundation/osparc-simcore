@@ -3,7 +3,7 @@ import contextlib
 import functools
 import logging
 import urllib.parse
-from collections.abc import AsyncGenerator, Callable, Sequence
+from collections.abc import AsyncGenerator, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Final, Protocol, cast
@@ -18,7 +18,12 @@ from models_library.basic_types import SHA256Str
 from pydantic import AnyUrl, ByteSize, TypeAdapter
 from servicelib.logging_utils import log_catch, log_context
 from servicelib.utils import limited_gather
-from servicelib.zip_stream import DEFAULT_CHUNK_SIZE, FileStream
+from servicelib.zip_stream import (
+    DEFAULT_READ_CHUNK_SIZE,
+    FileSize,
+    FileStream,
+    FileStreamCallable,
+)
 from settings_library.s3 import S3Settings
 from types_aiobotocore_s3 import S3Client
 from types_aiobotocore_s3.literals import BucketLocationConstraintType
@@ -484,36 +489,43 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
         bucket_name: S3BucketName,
         object_key: S3ObjectKey,
         *,
-        chunk_size: int = DEFAULT_CHUNK_SIZE,
-    ) -> FileStream:
-        response = await self._client.head_object(Bucket=bucket_name, Key=object_key)
-        file_size = response["ContentLength"]
+        chunk_size: int = DEFAULT_READ_CHUNK_SIZE,
+    ) -> tuple[FileSize, FileStreamCallable]:
 
-        # Download the file in chunks
-        position = 0
-        while position < file_size:
-            # Calculate the range for this chunk
-            end = min(position + chunk_size - 1, file_size - 1)
-            range_header = f"bytes={position}-{end}"
+        # below is a quick call
+        head_response = await self._client.head_object(
+            Bucket=bucket_name, Key=object_key
+        )
+        file_size = FileSize(head_response["ContentLength"])
 
-            # Download the chunk
-            response = await self._client.get_object(
-                Bucket=bucket_name, Key=object_key, Range=range_header
-            )
+        async def _() -> FileStream:
+            # Download the file in chunks
+            position = 0
+            while position < file_size:
+                # Calculate the range for this chunk
+                end = min(position + chunk_size - 1, file_size - 1)
+                range_header = f"bytes={position}-{end}"
 
-            chunk = await response["Body"].read()
+                # Download the chunk
+                response = await self._client.get_object(
+                    Bucket=bucket_name, Key=object_key, Range=range_header
+                )
 
-            # Yield the chunk for processing
-            yield chunk
+                chunk = await response["Body"].read()
 
-            position += chunk_size
+                # Yield the chunk for processing
+                yield chunk
+
+                position += chunk_size
+
+        return file_size, _
 
     @s3_exception_handler(_logger)
     async def upload_object_from_file_stream(
         self,
         bucket_name: S3BucketName,
         object_key: S3ObjectKey,
-        file_stream: Callable[[], FileStream],
+        file_stream: FileStream,
     ) -> None:
         # Create a multipart upload
         multipart_response = await self._client.create_multipart_upload(
@@ -525,7 +537,7 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
             parts = []
             part_number = 1
 
-            async for chunk in file_stream():
+            async for chunk in file_stream:
                 part_response = await self._client.upload_part(
                     Bucket=bucket_name,
                     Key=object_key,

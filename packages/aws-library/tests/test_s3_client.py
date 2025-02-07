@@ -1502,8 +1502,13 @@ async def extracted_archive_path(tmp_path: Path, faker: Faker) -> AsyncIterator[
     assert not path.is_dir()
 
 
-def _get_s3_object_keys(files: set[Path]) -> set[S3ObjectKey]:
-    return {f.name for f in files}
+@pytest.fixture
+async def archive_s3_object_key(
+    with_s3_bucket: S3BucketName, simcore_s3_api: SimcoreS3API
+) -> AsyncIterator[S3ObjectKey]:
+    s3_object_key = "read_from_s3_write_to_s3"
+    yield s3_object_key
+    await simcore_s3_api.delete_object(bucket=with_s3_bucket, object_key=s3_object_key)
 
 
 @pytest.fixture
@@ -1514,13 +1519,8 @@ def mocked_progress_bar_cb(mocker: MockerFixture) -> Mock:
     return mocker.Mock(side_effect=_progress_cb)
 
 
-@pytest.fixture
-async def archive_s3_object_key(
-    with_s3_bucket: S3BucketName, simcore_s3_api: SimcoreS3API
-) -> AsyncIterator[S3ObjectKey]:
-    s3_object_key = "read_from_s3_write_to_s3"
-    yield s3_object_key
-    await simcore_s3_api.delete_object(bucket=with_s3_bucket, object_key=s3_object_key)
+def _get_s3_object_keys(files: set[Path]) -> set[S3ObjectKey]:
+    return {f.name for f in files}
 
 
 @pytest.mark.parametrize(
@@ -1540,8 +1540,8 @@ async def test_workflow_compress_s3_objects_and_local_files_in_a_single_archive_
     simcore_s3_api: SimcoreS3API,
     with_s3_bucket: S3BucketName,
     s3_client: S3Client,
-    mocked_progress_bar_cb: Mock,
     archive_s3_object_key: S3ObjectKey,
+    mocked_progress_bar_cb: Mock,
 ):
     # In this test:
     # - files are read form disk and S3
@@ -1556,15 +1556,18 @@ async def test_workflow_compress_s3_objects_and_local_files_in_a_single_archive_
         archive_file_entries.append(
             (
                 file.name,
-                DiskStreamReader(file).get_stream,
+                DiskStreamReader(file).get_stream_data(),
             )
         )
 
-    for s3_object_key in _get_s3_object_keys(files_stored_in_s3):
+    s3_object_keys = _get_s3_object_keys(files_stored_in_s3)
+    assert len(s3_object_keys) == len(files_stored_in_s3)
+
+    for s3_object_key in s3_object_keys:
         archive_file_entries.append(
             (
                 s3_object_key,
-                lambda: simcore_s3_api.get_object_file_stream(
+                await simcore_s3_api.get_object_file_stream(
                     with_s3_bucket, s3_object_key
                 ),
             )
@@ -1574,23 +1577,24 @@ async def test_workflow_compress_s3_objects_and_local_files_in_a_single_archive_
     # some will be read from S3 and some from the disk
     random.shuffle(archive_file_entries)
 
+    started = time.time()
+
     async with ProgressBarData(
         num_steps=1,
         progress_report_cb=mocked_progress_bar_cb,
         description="root_bar",
-    ) as root:
-        started = time.time()
+    ) as progress_bar:
         await simcore_s3_api.upload_object_from_file_stream(
             with_s3_bucket,
             archive_s3_object_key,
-            lambda: get_zip_archive_stream(
+            get_zip_archive_stream(
                 archive_file_entries,
-                progress_bar=root,
+                progress_bar=progress_bar,
                 chunk_size=MIN_MULTIPART_UPLOAD_CHUNK_SIZE,
             ),
         )
-        duration = time.time() - started
-        print(f"Zip created on S3 in {duration:.2f} seconds")
+    duration = time.time() - started
+    print(f"Zip created on S3 in {duration:.2f} seconds")
 
     # 2. download zip archive form S3
     print(f"downloading {archive_download_path}")
@@ -1606,7 +1610,7 @@ async def test_workflow_compress_s3_objects_and_local_files_in_a_single_archive_
     all_files_in_zip = get_files_info_from_itrable(
         files_stored_locally
     ) | get_files_info_from_itrable(files_stored_in_s3)
-    assert len(all_files_in_zip) == 20
+
     await assert_same_contents(
         all_files_in_zip, get_files_info_from_path(extracted_archive_path)
     )
