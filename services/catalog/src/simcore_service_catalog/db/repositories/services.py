@@ -22,12 +22,12 @@ from sqlalchemy.sql import and_, or_
 from sqlalchemy.sql.expression import tuple_
 
 from ...models.services_db import (
-    ReleaseFromDB,
+    ReleaseDBGet,
     ServiceAccessRightsAtDB,
     ServiceMetaDataDBCreate,
     ServiceMetaDataDBGet,
     ServiceMetaDataDBPatch,
-    ServiceWithHistoryFromDB,
+    ServiceWithHistoryDBGet,
 )
 from ...models.services_specifications import ServiceSpecificationsAtDB
 from ..tables import services_access_rights, services_meta_data, services_specifications
@@ -320,7 +320,7 @@ class ServicesRepository(BaseRepository):
         # get args
         key: ServiceKey,
         version: ServiceVersion,
-    ) -> ServiceWithHistoryFromDB | None:
+    ) -> ServiceWithHistoryDBGet | None:
 
         stmt_get = get_service_stmt(
             product_name=product_name,
@@ -345,7 +345,7 @@ class ServicesRepository(BaseRepository):
                 result = await conn.execute(stmt_history)
                 row_h = result.one_or_none()
 
-            return ServiceWithHistoryFromDB(
+            return ServiceWithHistoryDBGet(
                 key=row.key,
                 version=row.version,
                 # display
@@ -378,7 +378,7 @@ class ServicesRepository(BaseRepository):
         # list args: pagination
         limit: int | None = None,
         offset: int | None = None,
-    ) -> tuple[PositiveInt, list[ServiceWithHistoryFromDB]]:
+    ) -> tuple[PositiveInt, list[ServiceWithHistoryDBGet]]:
 
         # get page
         stmt_total = total_count_stmt(
@@ -404,7 +404,7 @@ class ServicesRepository(BaseRepository):
 
         # compose history with latest
         items_page = [
-            ServiceWithHistoryFromDB(
+            ServiceWithHistoryDBGet(
                 key=r.key,
                 version=r.version,
                 # display
@@ -438,7 +438,7 @@ class ServicesRepository(BaseRepository):
         user_id: UserID,
         # get args
         key: ServiceKey,
-    ) -> list[ReleaseFromDB] | None:
+    ) -> list[ReleaseDBGet] | None:
 
         stmt_history = get_service_history_stmt(
             product_name=product_name,
@@ -451,7 +451,7 @@ class ServicesRepository(BaseRepository):
             row = result.one_or_none()
 
         return (
-            TypeAdapter(list[ReleaseFromDB]).validate_python(row.history)
+            TypeAdapter(list[ReleaseDBGet]).validate_python(row.history)
             if row
             else None
         )

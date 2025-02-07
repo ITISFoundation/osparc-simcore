@@ -43,7 +43,7 @@ class ServiceMetaDataDBGet(BaseModel):
         schema.update(
             {
                 "example": {
-                    "key": "simcore/services/dynamic/sim4life",
+                    "key": "simcore/services/dynamic/reading",
                     "version": "1.0.9",
                     "owner": 8,
                     "name": "sim4life",
@@ -112,7 +112,7 @@ class ServiceMetaDataDBCreate(BaseModel):
                 "examples": [
                     # minimal w/ required values
                     {
-                        "key": "simcore/services/dynamic/sim4life",
+                        "key": "simcore/services/dynamic/creating",
                         "version": "1.0.9",
                         "name": "sim4life",
                         "description": "s4l web",
@@ -160,7 +160,7 @@ class ServiceMetaDataDBPatch(BaseModel):
     model_config = ConfigDict(json_schema_extra=_update_json_schema_extra)
 
 
-class ReleaseFromDB(BaseModel):
+class ReleaseDBGet(BaseModel):
     version: ServiceVersion
     version_display: str | None
     deprecated: datetime | None
@@ -168,7 +168,7 @@ class ReleaseFromDB(BaseModel):
     compatibility_policy: CompatiblePolicyDict | None
 
 
-class ServiceWithHistoryFromDB(BaseModel):
+class ServiceWithHistoryDBGet(BaseModel):
     key: ServiceKey
     version: ServiceVersion
     # display
@@ -188,13 +188,13 @@ class ServiceWithHistoryFromDB(BaseModel):
     modified: datetime
     deprecated: datetime | None
     # releases
-    history: list[ReleaseFromDB]
+    history: list[ReleaseDBGet]
 
 
 assert (  # nosec
-    set(ReleaseFromDB.model_fields)
+    set(ReleaseDBGet.model_fields)
     .difference({"compatibility_policy"})
-    .issubset(set(ServiceWithHistoryFromDB.model_fields))
+    .issubset(set(ServiceWithHistoryDBGet.model_fields))
 )
 
 
