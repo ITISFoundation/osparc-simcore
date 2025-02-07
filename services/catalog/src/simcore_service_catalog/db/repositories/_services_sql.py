@@ -4,17 +4,23 @@ import sqlalchemy as sa
 from models_library.products import ProductName
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
+from simcore_postgres_database.utils_repos import get_columns_from_db_model
 from sqlalchemy.dialects.postgresql import ARRAY, INTEGER, array_agg
 from sqlalchemy.sql import and_, or_
 from sqlalchemy.sql.expression import func
 from sqlalchemy.sql.selectable import Select
 
+from ...models.services_db import ServiceMetaDataDBGet
 from ..tables import (
     services_access_rights,
     services_compatibility,
     services_meta_data,
     user_to_groups,
     users,
+)
+
+SERVICES_META_DATA_COLS = get_columns_from_db_model(
+    services_meta_data, ServiceMetaDataDBGet
 )
 
 
@@ -26,7 +32,7 @@ def list_services_stmt(
     combine_access_with_and: bool | None = True,
     product_name: str | None = None,
 ) -> Select:
-    stmt = sa.select(services_meta_data)
+    stmt = sa.select(SERVICES_META_DATA_COLS)
     if gids or execute_access or write_access:
         conditions: list[Any] = []
 
@@ -50,13 +56,9 @@ def list_services_stmt(
         if product_name:
             conditions.append(services_access_rights.c.product_name == product_name)
 
-        stmt = (
-            sa.select(
-                services_meta_data,
-            )
-            .distinct(services_meta_data.c.key, services_meta_data.c.version)
-            .select_from(services_meta_data.join(services_access_rights))
-        )
+        stmt = stmt.distinct(
+            services_meta_data.c.key, services_meta_data.c.version
+        ).select_from(services_meta_data.join(services_access_rights))
         if conditions:
             stmt = stmt.where(and_(*conditions))
         stmt = stmt.order_by(services_meta_data.c.key, services_meta_data.c.version)

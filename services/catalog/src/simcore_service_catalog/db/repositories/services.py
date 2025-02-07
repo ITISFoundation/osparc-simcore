@@ -17,7 +17,6 @@ from models_library.users import UserID
 from psycopg2.errors import ForeignKeyViolation
 from pydantic import PositiveInt, TypeAdapter, ValidationError
 from simcore_postgres_database.utils_services import create_select_latest_services_query
-from sqlalchemy import literal_column
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.sql import and_, or_
 from sqlalchemy.sql.expression import tuple_
@@ -25,13 +24,16 @@ from sqlalchemy.sql.expression import tuple_
 from ...models.services_db import (
     ReleaseFromDB,
     ServiceAccessRightsAtDB,
-    ServiceMetaDataAtDB,
+    ServiceMetaDataDBCreate,
+    ServiceMetaDataDBGet,
+    ServiceMetaDataDBPatch,
     ServiceWithHistoryFromDB,
 )
 from ...models.services_specifications import ServiceSpecificationsAtDB
 from ..tables import services_access_rights, services_meta_data, services_specifications
 from ._base import BaseRepository
 from ._services_sql import (
+    SERVICES_META_DATA_COLS,
     AccessRightsClauses,
     can_get_service_stmt,
     get_service_history_stmt,
@@ -79,11 +81,11 @@ class ServicesRepository(BaseRepository):
         write_access: bool | None = None,
         combine_access_with_and: bool | None = True,
         product_name: str | None = None,
-    ) -> list[ServiceMetaDataAtDB]:
+    ) -> list[ServiceMetaDataDBGet]:
 
         async with self.db_engine.connect() as conn:
             return [
-                ServiceMetaDataAtDB.model_validate(row)
+                ServiceMetaDataDBGet.model_validate(row)
                 async for row in await conn.stream(
                     list_services_stmt(
                         gids=gids,
@@ -102,7 +104,7 @@ class ServicesRepository(BaseRepository):
         major: int | None = None,
         minor: int | None = None,
         limit_count: int | None = None,
-    ) -> list[ServiceMetaDataAtDB]:
+    ) -> list[ServiceMetaDataDBGet]:
         """Lists LAST n releases of a given service, sorted from latest first
 
         major, minor is used to filter as major.minor.* or major.*
@@ -124,7 +126,7 @@ class ServicesRepository(BaseRepository):
                 search_condition &= services_meta_data.c.version.like(f"{major}.%")
 
         query = (
-            sa.select(services_meta_data)
+            sa.select(SERVICES_META_DATA_COLS)
             .where(search_condition)
             .order_by(sa.desc(services_meta_data.c.version))
         )
@@ -134,22 +136,22 @@ class ServicesRepository(BaseRepository):
 
         async with self.db_engine.connect() as conn:
             releases = [
-                ServiceMetaDataAtDB.model_validate(row)
+                ServiceMetaDataDBGet.model_validate(row)
                 async for row in await conn.stream(query)
             ]
 
         # Now sort naturally from latest first: (This is lame, the sorting should be done in the db)
-        def _by_version(x: ServiceMetaDataAtDB) -> packaging.version.Version:
+        def _by_version(x: ServiceMetaDataDBGet) -> packaging.version.Version:
             return packaging.version.parse(x.version)
 
         return sorted(releases, key=_by_version, reverse=True)
 
-    async def get_latest_release(self, key: str) -> ServiceMetaDataAtDB | None:
+    async def get_latest_release(self, key: str) -> ServiceMetaDataDBGet | None:
         """Returns last release or None if service was never released"""
         services_latest = create_select_latest_services_query().alias("services_latest")
 
         query = (
-            sa.select(services_meta_data)
+            sa.select(SERVICES_META_DATA_COLS)
             .select_from(
                 services_latest.join(
                     services_meta_data,
@@ -163,7 +165,7 @@ class ServicesRepository(BaseRepository):
             result = await conn.execute(query)
             row = result.first()
         if row:
-            return ServiceMetaDataAtDB.model_validate(row)
+            return ServiceMetaDataDBGet.model_validate(row)
         return None  # mypy
 
     async def get_service(
@@ -175,18 +177,11 @@ class ServicesRepository(BaseRepository):
         execute_access: bool | None = None,
         write_access: bool | None = None,
         product_name: str | None = None,
-    ) -> ServiceMetaDataAtDB | None:
+    ) -> ServiceMetaDataDBGet | None:
 
-        query = sa.select(services_meta_data).where(
-            (services_meta_data.c.key == key)
-            & (services_meta_data.c.version == version)
-        )
+        query = sa.select(SERVICES_META_DATA_COLS)
+
         if gids or execute_access or write_access:
-
-            query = sa.select(services_meta_data).select_from(
-                services_meta_data.join(services_access_rights)
-            )
-
             conditions = [
                 services_meta_data.c.key == key,
                 services_meta_data.c.version == version,
@@ -202,20 +197,27 @@ class ServicesRepository(BaseRepository):
             if product_name:
                 conditions.append(services_access_rights.c.product_name == product_name)
 
-            query = query.where(and_(*conditions))
+            query = query.select_from(
+                services_meta_data.join(services_access_rights)
+            ).where(and_(*conditions))
+        else:
+            query = query.where(
+                (services_meta_data.c.key == key)
+                & (services_meta_data.c.version == version)
+            )
 
         async with self.db_engine.connect() as conn:
             result = await conn.execute(query)
             row = result.first()
         if row:
-            return ServiceMetaDataAtDB.model_validate(row)
+            return ServiceMetaDataDBGet.model_validate(row)
         return None  # mypy
 
     async def create_or_update_service(
         self,
-        new_service: ServiceMetaDataAtDB,
+        new_service: ServiceMetaDataDBCreate,
         new_service_access_rights: list[ServiceAccessRightsAtDB],
-    ) -> ServiceMetaDataAtDB:
+    ) -> ServiceMetaDataDBGet:
         for access_rights in new_service_access_rights:
             if (
                 access_rights.key != new_service.key
@@ -229,12 +231,12 @@ class ServicesRepository(BaseRepository):
             result = await conn.execute(
                 # pylint: disable=no-value-for-parameter
                 services_meta_data.insert()
-                .values(**new_service.model_dump(by_alias=True))
-                .returning(literal_column("*"))
+                .values(**new_service.model_dump(by_alias=True, exclude_unset=True))
+                .returning(*SERVICES_META_DATA_COLS)
             )
             row = result.first()
             assert row  # nosec
-            created_service = ServiceMetaDataAtDB.model_validate(row)
+            created_service = ServiceMetaDataDBGet.model_validate(row)
 
             for access_rights in new_service_access_rights:
                 insert_stmt = pg_insert(services_access_rights).values(
@@ -243,13 +245,18 @@ class ServicesRepository(BaseRepository):
                 await conn.execute(insert_stmt)
         return created_service
 
-    async def update_service(self, patched_service: ServiceMetaDataAtDB) -> None:
+    async def update_service(
+        self,
+        service_key: ServiceKey,
+        service_version: ServiceVersion,
+        patched_service: ServiceMetaDataDBPatch,
+    ) -> None:
 
         stmt_update = (
             services_meta_data.update()
             .where(
-                (services_meta_data.c.key == patched_service.key)
-                & (services_meta_data.c.version == patched_service.version)
+                (services_meta_data.c.key == service_key)
+                & (services_meta_data.c.version == service_version)
             )
             .values(
                 **patched_service.model_dump(

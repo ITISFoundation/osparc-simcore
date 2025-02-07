@@ -17,7 +17,7 @@ from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
 from ..db.repositories.services import ServicesRepository
 from ..models.services_db import (
     ServiceAccessRightsAtDB,
-    ServiceMetaDataAtDB,
+    ServiceMetaDataDBPatch,
     ServiceWithHistoryFromDB,
 )
 from ..services import manifest
@@ -41,7 +41,7 @@ def _db_to_api_model(
         version=service_db.version,
         name=service_db.name,
         thumbnail=HttpUrl(service_db.thumbnail) if service_db.thumbnail else None,
-        icon=service_db.icon,
+        icon=HttpUrl(service_db.icon) if service_db.icon else None,
         description=service_db.description,
         description_ui=service_db.description_ui,
         version_display=service_db.version_display,
@@ -240,11 +240,11 @@ async def update_service(
 
     # Updates service_meta_data
     await repo.update_service(
-        ServiceMetaDataAtDB(
-            key=service_key,
-            version=service_version,
+        service_key,
+        service_version,
+        ServiceMetaDataDBPatch.model_validate(
             **update.model_dump(exclude_unset=True),
-        )
+        ),
     )
 
     # Updates service_access_rights (they can be added/removed/modified)

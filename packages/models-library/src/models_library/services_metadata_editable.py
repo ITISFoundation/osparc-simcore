@@ -28,13 +28,15 @@ class ServiceMetaDataEditable(ServiceBaseDisplay):
     version_display: str | None = None
 
     # Below fields only in the database ----
-    deprecated: datetime | None = Field(
-        default=None,
-        description="Owner can set the date to retire the service. Three possibilities:"
-        "If None, the service is marked as `published`;"
-        "If now<deprecated the service is marked as deprecated;"
-        "If now>=deprecated, the service is retired",
-    )
+    deprecated: Annotated[
+        datetime | None,
+        Field(
+            description="Owner can set the date to retire the service. Three possibilities:"
+            "If None, the service is marked as `published`;"
+            "If now<deprecated the service is marked as deprecated;"
+            "If now>=deprecated, the service is retired",
+        ),
+    ] = None
     classifiers: list[str] | None
     quality: Annotated[
         dict[str, Any], Field(default_factory=dict, json_schema_extra={"default": {}})
