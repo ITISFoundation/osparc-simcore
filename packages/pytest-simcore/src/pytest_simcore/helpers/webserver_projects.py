@@ -90,6 +90,8 @@ async def create_project(
         },
     )
 
+    new_project["workbench"] = workbench
+
     # Update project_nodes
 
     if params_override and (

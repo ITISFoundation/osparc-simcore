@@ -276,6 +276,22 @@ class BaseProjectDB:
                 conn, project_id=db_prj["id"]
             )
             user_email = await self._get_user_email(conn, db_prj["prj_owner"])
+
+            # NOTE: experiment TODO: remove Nones from workbench
+            workbench = db_prj["workbench"]
+            _temp_workbench = {}
+            for node_id, node_data in workbench.items():
+                _temp_workbench[node_id] = {}
+                for item, value in node_data.items():
+                    if value is None:
+                        if item in ["outputs", "inputs"]:
+                            _temp_workbench[node_id][item] = {}
+                        if item in ["inputNodes"]:
+                            _temp_workbench[node_id][item] = []
+                        continue
+                    _temp_workbench[node_id][item] = value
+            db_prj["workbench"] = _temp_workbench
+
             api_projects.append(convert_to_schema_names(db_prj, user_email))
             project_types.append(db_prj["type"])
 

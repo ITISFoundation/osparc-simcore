@@ -217,36 +217,14 @@ class ProjectDBAPI(BaseProjectDB):
                         selected_values["tags"] = project_tag_ids
 
                         # NOTE: this will at some point completely replace workbench in the DB
-                        if selected_values["workbench"]:
+                        if project_nodes:
                             project_nodes_repo = ProjectNodesRepo(
                                 project_uuid=project_uuid
                             )
-                            if project_nodes is None:
-                                project_nodes = {
-                                    NodeID(node_id): ProjectNodeCreate(
-                                        node_id=NodeID(node_id),
-                                        required_resources={},
-                                        **node_info,
-                                    )
-                                    for node_id, node_info in selected_values[
-                                        "workbench"
-                                    ].items()
-                                }
 
-                            nodes = [
-                                project_nodes.get(
-                                    NodeID(node_id),
-                                    ProjectNodeCreate(
-                                        node_id=NodeID(node_id),
-                                        required_resources={},
-                                        **node_info,
-                                    ),
-                                )
-                                for node_id, node_info in selected_values[
-                                    "workbench"
-                                ].items()
-                            ]
-                            await project_nodes_repo.add(conn, nodes=nodes)
+                            await project_nodes_repo.add(
+                                conn, nodes=list(project_nodes.values())
+                            )
         return selected_values
 
     async def insert_project(
@@ -392,7 +370,9 @@ class ProjectDBAPI(BaseProjectDB):
             private_workspace_query = (
                 sa.select(
                     *PROJECT_DB_COLS,
-                    workbench_subquery.c.workbench,
+                    sa.func.coalesce(workbench_subquery.c.workbench, "{}").label(
+                        "workbench"
+                    ),
                     access_rights_subquery.c.access_rights,
                     projects_to_products.c.product_name,
                     projects_to_folders.c.folder_id,
@@ -479,7 +459,9 @@ class ProjectDBAPI(BaseProjectDB):
             shared_workspace_query = (
                 sa.select(
                     *PROJECT_DB_COLS,
-                    workbench_subquery.c.workbench,
+                    sa.func.coalesce(workbench_subquery.c.workbench, "{}").label(
+                        "workbench"
+                    ),
                     workspace_access_rights_subquery.c.access_rights,
                     projects_to_products.c.product_name,
                     projects_to_folders.c.folder_id,
