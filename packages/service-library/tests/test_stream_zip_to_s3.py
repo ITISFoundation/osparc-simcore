@@ -1,0 +1,131 @@
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+
+import secrets
+from collections.abc import AsyncIterable
+from pathlib import Path
+from typing import TypeAlias
+
+import aiofiles
+import pytest
+from faker import Faker
+from servicelib.archiving_utils import unarchive_dir
+from servicelib.file_utils import create_sha256_checksum, remove_directory
+from servicelib.stream_zip import (
+    ArchiveEntries,
+    DiskStreamReader,
+    DiskStreamWriter,
+    get_zip_archive_stream,
+)
+
+
+def _ensure_dir(path: Path) -> Path:
+    path.mkdir(parents=True, exist_ok=True)
+    assert path.exists()
+    assert path.is_dir()
+    return path
+
+
+@pytest.fixture
+def local_files_dir(tmp_path: Path) -> Path:
+    # Cotent to add to the zip
+    return _ensure_dir(tmp_path / "local_files_dir")
+
+
+@pytest.fixture
+def local_archive_path(tmp_path: Path) -> Path:
+    # local destination of archive (either form S3 or archived locally)
+    return tmp_path / "archive.zip"
+
+
+@pytest.fixture
+def local_unpacked_archive(tmp_path: Path) -> Path:
+    # contents of unpacked archive
+    return _ensure_dir(tmp_path / "unpacked_archive")
+
+
+def _rand_range(lower: int, upper: int) -> int:
+    return secrets.randbelow(upper) + (upper - lower) + 1
+
+
+def _generate_files_in_path(faker: Faker, base_dir: Path, *, prefix: str = "") -> None:
+    # mixed small text files and binary files
+    (base_dir / "empty").mkdir()
+
+    (base_dir / "d1").mkdir()
+    for i in range(_rand_range(10, 40)):
+        (base_dir / "d1" / f"{prefix}f{i}.txt").write_text(faker.text())
+        (base_dir / "d1" / f"{prefix}b{i}.bin").write_bytes(faker.json_bytes())
+
+    (base_dir / "d1" / "sd1").mkdir()
+    for i in range(_rand_range(10, 40)):
+        (base_dir / "d1" / "sd1" / f"{prefix}f{i}.txt").write_text(faker.text())
+        (base_dir / "d1" / "sd1" / f"{prefix}b{i}.bin").write_bytes(faker.json_bytes())
+
+    (base_dir / "fancy-names").mkdir()
+    for fancy_name in (
+        "i have some spaces in my name",
+        "(%$)&%$()",
+        " ",
+    ):
+        (base_dir / "fancy-names" / fancy_name).write_text(faker.text())
+
+
+_FilesInFolder: TypeAlias = dict[str, Path]
+
+
+def _get_relative(folder: Path, file: Path) -> str:
+    return f"{file.relative_to(folder)}"
+
+
+def _get_files_in_folder(folder: Path) -> _FilesInFolder:
+    return {_get_relative(folder, f): f for f in folder.rglob("*") if f.is_file()}
+
+
+async def _same_file_content(file_1: Path, file_2: Path):
+    async with aiofiles.open(file_1, "rb") as f1, aiofiles.open(file_2, "rb") as f2:
+        checksum_1 = await create_sha256_checksum(f1)
+        checksum_2 = await create_sha256_checksum(f2)
+    assert checksum_1 == checksum_2
+
+
+async def _assert_same_folder_contents(
+    fif1: _FilesInFolder, fif2: _FilesInFolder
+) -> None:
+    assert set(fif1.keys()) == set(fif2.keys())
+
+    for file_name in fif1:
+        await _same_file_content(fif1[file_name], fif2[file_name])
+
+
+@pytest.fixture
+async def prepare_content(local_files_dir: Path, faker: Faker) -> AsyncIterable[None]:
+    _generate_files_in_path(faker, local_files_dir, prefix="local_")
+    yield
+    await remove_directory(local_files_dir, only_children=True)
+
+
+async def test_get_zip_archive_stream(
+    prepare_content: None,
+    local_files_dir: Path,
+    local_archive_path: Path,
+    local_unpacked_archive: Path,
+):
+    # 1. generate archive form soruces
+    archive_files: ArchiveEntries = []
+    for file in (x for x in local_files_dir.rglob("*") if x.is_file()):
+        archive_name = _get_relative(local_files_dir, file)
+
+        archive_files.append((archive_name, DiskStreamReader(file).get_stream))
+
+    writer = DiskStreamWriter(local_archive_path)
+    await writer.write_stream(get_zip_archive_stream(archive_files))
+
+    # 2. extract archive using exiting tools
+    await unarchive_dir(local_archive_path, local_unpacked_archive)
+
+    # 3. compare files in directories (same paths & sizes)
+    await _assert_same_folder_contents(
+        _get_files_in_folder(local_files_dir),
+        _get_files_in_folder(local_unpacked_archive),
+    )
