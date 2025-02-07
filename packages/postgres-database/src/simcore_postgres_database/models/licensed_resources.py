@@ -6,7 +6,6 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 from ._common import (
-    RefActions,
     column_created_datetime,
     column_modified_datetime,
     column_trashed_datetime,
@@ -14,11 +13,11 @@ from ._common import (
 from .base import metadata
 from .licenses import LicensedResourceType
 
-licensed_items = sa.Table(
-    "licensed_items",
+licensed_resources = sa.Table(
+    "licensed_resources",
     metadata,
     sa.Column(
-        "licensed_item_id",
+        "licensed_resource_id",
         postgresql.UUID(as_uuid=True),
         nullable=False,
         primary_key=True,
@@ -48,35 +47,12 @@ licensed_items = sa.Table(
         nullable=True,
         doc="Resource metadata. Used for read-only purposes",
     ),
-    sa.Column(
-        "pricing_plan_id",
-        sa.BigInteger,
-        sa.ForeignKey(
-            "resource_tracker_pricing_plans.pricing_plan_id",
-            name="fk_resource_tracker_license_packages_pricing_plan_id",
-            onupdate=RefActions.CASCADE,
-            ondelete=RefActions.RESTRICT,
-        ),
-        nullable=True,
-    ),
-    sa.Column(
-        "product_name",
-        sa.String,
-        sa.ForeignKey(
-            "products.name",
-            onupdate=RefActions.CASCADE,
-            ondelete=RefActions.CASCADE,
-            name="fk_resource_tracker_license_packages_product_name",
-        ),
-        nullable=True,
-        doc="Product name identifier. If None, then the item is not exposed",
-    ),
     column_created_datetime(timezone=True),
     column_modified_datetime(timezone=True),
     column_trashed_datetime("licensed_item"),
     sa.UniqueConstraint(
         "licensed_resource_name",
         "licensed_resource_type",
-        name="uq_licensed_resource_name_type",
+        name="uq_licensed_resource_name_type2",
     ),
 )

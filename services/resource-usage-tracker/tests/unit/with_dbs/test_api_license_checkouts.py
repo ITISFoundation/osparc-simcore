@@ -10,20 +10,18 @@ from typing import Generator
 
 import pytest
 import sqlalchemy as sa
-from models_library.api_schemas_resource_usage_tracker.licensed_items_checkouts import (
-    LicensedItemCheckoutGet,
-    LicensedItemsCheckoutsPage,
+from models_library.api_schemas_resource_usage_tracker.license_checkouts import (
+    LicenseCheckoutGet,
+    LicenseCheckoutsPage,
 )
-from models_library.resource_tracker_licensed_items_purchases import (
-    LicensedItemsPurchasesCreate,
-)
+from models_library.resource_tracker_license_purchases import LicensePurchasesCreate
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker import (
-    licensed_items_checkouts,
-    licensed_items_purchases,
+    license_checkouts,
+    license_purchases,
 )
-from simcore_postgres_database.models.resource_tracker_licensed_items_checkouts import (
-    resource_tracker_licensed_items_checkouts,
+from simcore_postgres_database.models.resource_tracker_license_checkouts import (
+    resource_tracker_license_checkouts,
 )
 from simcore_postgres_database.models.resource_tracker_service_runs import (
     resource_tracker_service_runs,
@@ -61,17 +59,17 @@ def resource_tracker_service_run_id(
 
         yield row[0]
 
-        con.execute(resource_tracker_licensed_items_checkouts.delete())
+        con.execute(resource_tracker_license_checkouts.delete())
         con.execute(resource_tracker_service_runs.delete())
 
 
-async def test_rpc_licensed_items_checkouts_workflow(
+async def test_rpc_license_checkouts_workflow(
     mocked_redis_server: None,
     resource_tracker_service_run_id: str,
     rpc_client: RabbitMQRPCClient,
 ):
     # List licensed items checkouts
-    output = await licensed_items_checkouts.get_licensed_items_checkouts_page(
+    output = await license_checkouts.get_license_checkouts_page(
         rpc_client,
         product_name="osparc",
         filter_wallet_id=_WALLET_ID,
@@ -80,9 +78,9 @@ async def test_rpc_licensed_items_checkouts_workflow(
     assert output.items == []
 
     # Purchase license item
-    _create_data = LicensedItemsPurchasesCreate(
+    _create_data = LicensePurchasesCreate(
         product_name="osparc",
-        licensed_item_id="beb16d18-d57d-44aa-a638-9727fa4a72ef",
+        license_id="beb16d18-d57d-44aa-a638-9727fa4a72ef",
         wallet_id=_WALLET_ID,
         wallet_name="My Wallet",
         pricing_plan_id=1,
@@ -96,14 +94,14 @@ async def test_rpc_licensed_items_checkouts_workflow(
         user_email="test@test.com",
         purchased_at=datetime.now(tz=UTC),
     )
-    created_item = await licensed_items_purchases.create_licensed_item_purchase(
+    created_item = await license_purchases.create_license_purchase(
         rpc_client, data=_create_data
     )
 
     # Checkout with num of seats
-    checkout = await licensed_items_checkouts.checkout_licensed_item(
+    checkout = await license_checkouts.checkout_license(
         rpc_client,
-        licensed_item_id=created_item.licensed_item_id,
+        license_id=created_item.license_id,
         wallet_id=_WALLET_ID,
         product_name="osparc",
         num_of_seats=3,
@@ -113,26 +111,26 @@ async def test_rpc_licensed_items_checkouts_workflow(
     )
 
     # List licensed items checkouts
-    output = await licensed_items_checkouts.get_licensed_items_checkouts_page(
+    output = await license_checkouts.get_license_checkouts_page(
         rpc_client,
         product_name="osparc",
         filter_wallet_id=_WALLET_ID,
     )
     assert output.total == 1
-    assert isinstance(output, LicensedItemsCheckoutsPage)
+    assert isinstance(output, LicenseCheckoutsPage)
 
     # Get licensed items checkouts
-    output = await licensed_items_checkouts.get_licensed_item_checkout(
+    output = await license_checkouts.get_license_checkout(
         rpc_client,
         product_name="osparc",
-        licensed_item_checkout_id=output.items[0].licensed_item_checkout_id,
+        license_checkout_id=output.items[0].license_checkout_id,
     )
-    assert isinstance(output, LicensedItemCheckoutGet)
+    assert isinstance(output, LicenseCheckoutGet)
 
     # Release num of seats
-    license_item_checkout = await licensed_items_checkouts.release_licensed_item(
+    license_item_checkout = await license_checkouts.release_license(
         rpc_client,
-        licensed_item_checkout_id=checkout.licensed_item_checkout_id,
+        license_checkout_id=checkout.license_checkout_id,
         product_name="osparc",
     )
     assert license_item_checkout

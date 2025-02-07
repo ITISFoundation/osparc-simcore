@@ -15,11 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 from ..core.settings import ApplicationSettings
 from ..models.credit_transactions import CreditTransactionCreditsAndStatusUpdate
 from ..models.service_runs import ServiceRunStoppedAtUpdate
-from .modules.db import (
-    credit_transactions_db,
-    licensed_items_checkouts_db,
-    service_runs_db,
-)
+from .modules.db import credit_transactions_db, license_checkouts_db, service_runs_db
 from .utils import compute_service_run_credit_costs, make_negative
 
 _logger = logging.getLogger(__name__)
@@ -149,7 +145,7 @@ async def _close_unhealthy_service(
                 )
 
     # 4. Release license seats in case some were checked out but not properly released.
-    await licensed_items_checkouts_db.force_release_license_seats_by_run_id(
+    await license_checkouts_db.force_release_license_seats_by_run_id(
         db_engine, service_run_id=service_run_id
     )
 

@@ -8,8 +8,8 @@ from sqlalchemy.dialects.postgresql import UUID
 from ._common import NUMERIC_KWARGS, column_modified_datetime
 from .base import metadata
 
-resource_tracker_licensed_items_purchases = sa.Table(
-    "resource_tracker_licensed_items_purchases",
+resource_tracker_license_purchases = sa.Table(
+    "resource_tracker_license_purchases",
     metadata,
     sa.Column(
         "licensed_item_purchase_id",
@@ -25,7 +25,7 @@ resource_tracker_licensed_items_purchases = sa.Table(
         doc="Product name",
     ),
     sa.Column(
-        "licensed_item_id",
+        "license_id",
         UUID(as_uuid=True),
         nullable=False,
     ),

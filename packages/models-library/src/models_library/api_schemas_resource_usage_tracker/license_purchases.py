@@ -2,21 +2,19 @@ from datetime import datetime
 from decimal import Decimal
 from typing import NamedTuple
 
-from models_library.licenses import LicensedItemID
+from models_library.licenses import LicenseID
 from models_library.products import ProductName
 from models_library.resource_tracker import PricingUnitCostId
-from models_library.resource_tracker_licensed_items_purchases import (
-    LicensedItemPurchaseID,
-)
+from models_library.resource_tracker_license_purchases import LicensePurchaseID
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import BaseModel, ConfigDict, PositiveInt
 
 
-class LicensedItemPurchaseGet(BaseModel):
-    licensed_item_purchase_id: LicensedItemPurchaseID
+class LicensePurchaseGet(BaseModel):
+    licensed_item_purchase_id: LicensePurchaseID
     product_name: ProductName
-    licensed_item_id: LicensedItemID
+    license_id: LicenseID
     wallet_id: WalletID
     wallet_name: str
     pricing_unit_cost_id: PricingUnitCostId
@@ -35,7 +33,7 @@ class LicensedItemPurchaseGet(BaseModel):
                 {
                     "licensed_item_purchase_id": "beb16d18-d57d-44aa-a638-9727fa4a72ef",
                     "product_name": "osparc",
-                    "licensed_item_id": "303942ef-6d31-4ba8-afbe-dbb1fce2a953",
+                    "license_id": "303942ef-6d31-4ba8-afbe-dbb1fce2a953",
                     "wallet_id": 1,
                     "wallet_name": "My Wallet",
                     "pricing_unit_cost_id": 1,
@@ -53,6 +51,6 @@ class LicensedItemPurchaseGet(BaseModel):
     )
 
 
-class LicensedItemsPurchasesPage(NamedTuple):
-    items: list[LicensedItemPurchaseGet]
+class LicensesPurchasesPage(NamedTuple):
+    items: list[LicensePurchaseGet]
     total: PositiveInt

@@ -7,17 +7,13 @@ from datetime import UTC, datetime
 from decimal import Decimal
 
 import sqlalchemy as sa
-from models_library.api_schemas_resource_usage_tracker.licensed_items_purchases import (
-    LicensedItemPurchaseGet,
-    LicensedItemsPurchasesPage,
+from models_library.api_schemas_resource_usage_tracker.license_purchases import (
+    LicensePurchaseGet,
+    LicensesPurchasesPage,
 )
-from models_library.resource_tracker_licensed_items_purchases import (
-    LicensedItemsPurchasesCreate,
-)
+from models_library.resource_tracker_license_purchases import LicensePurchasesCreate
 from servicelib.rabbitmq import RabbitMQRPCClient
-from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker import (
-    licensed_items_purchases,
-)
+from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker import license_purchases
 
 pytest_simcore_core_services_selection = [
     "postgres",
@@ -28,21 +24,21 @@ pytest_simcore_ops_services_selection = [
 ]
 
 
-async def test_rpc_licensed_items_purchases_workflow(
+async def test_rpc_license_purchases_workflow(
     mocked_redis_server: None,
     postgres_db: sa.engine.Engine,
     rpc_client: RabbitMQRPCClient,
 ):
-    result = await licensed_items_purchases.get_licensed_items_purchases_page(
+    result = await license_purchases.get_license_purchases_page(
         rpc_client, product_name="osparc", wallet_id=1
     )
-    assert isinstance(result, LicensedItemsPurchasesPage)  # nosec
+    assert isinstance(result, LicensesPurchasesPage)  # nosec
     assert result.items == []
     assert result.total == 0
 
-    _create_data = LicensedItemsPurchasesCreate(
+    _create_data = LicensePurchasesCreate(
         product_name="osparc",
-        licensed_item_id="beb16d18-d57d-44aa-a638-9727fa4a72ef",
+        license_id="beb16d18-d57d-44aa-a638-9727fa4a72ef",
         wallet_id=1,
         wallet_name="My Wallet",
         pricing_plan_id=1,
@@ -57,22 +53,22 @@ async def test_rpc_licensed_items_purchases_workflow(
         purchased_at=datetime.now(tz=UTC),
     )
 
-    created_item = await licensed_items_purchases.create_licensed_item_purchase(
+    created_item = await license_purchases.create_license_purchase(
         rpc_client, data=_create_data
     )
-    assert isinstance(created_item, LicensedItemPurchaseGet)  # nosec
+    assert isinstance(created_item, LicensePurchaseGet)  # nosec
 
-    result = await licensed_items_purchases.get_licensed_item_purchase(
+    result = await license_purchases.get_license_purchase(
         rpc_client,
         product_name="osparc",
         licensed_item_purchase_id=created_item.licensed_item_purchase_id,
     )
-    assert isinstance(result, LicensedItemPurchaseGet)  # nosec
+    assert isinstance(result, LicensePurchaseGet)  # nosec
     assert result.licensed_item_purchase_id == created_item.licensed_item_purchase_id
 
-    result = await licensed_items_purchases.get_licensed_items_purchases_page(
+    result = await license_purchases.get_license_purchases_page(
         rpc_client, product_name="osparc", wallet_id=_create_data.wallet_id
     )
-    assert isinstance(result, LicensedItemsPurchasesPage)  # nosec
+    assert isinstance(result, LicensesPurchasesPage)  # nosec
     assert len(result.items) == 1
     assert result.total == 1

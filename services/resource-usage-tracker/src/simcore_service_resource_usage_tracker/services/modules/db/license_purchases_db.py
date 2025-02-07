@@ -2,16 +2,14 @@ from datetime import UTC, datetime
 from typing import cast
 
 import sqlalchemy as sa
-from models_library.licenses import LicensedItemID
+from models_library.licenses import LicenseID
 from models_library.products import ProductName
-from models_library.resource_tracker_licensed_items_purchases import (
-    LicensedItemPurchaseID,
-)
+from models_library.resource_tracker_license_purchases import LicensePurchaseID
 from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.wallets import WalletID
 from pydantic import NonNegativeInt
-from simcore_postgres_database.models.resource_tracker_licensed_items_purchases import (
-    resource_tracker_licensed_items_purchases,
+from simcore_postgres_database.models.resource_tracker_license_purchases import (
+    resource_tracker_license_purchases,
 )
 from simcore_postgres_database.utils_repos import (
     pass_or_acquire_connection,
@@ -19,30 +17,27 @@ from simcore_postgres_database.utils_repos import (
 )
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
-from ....exceptions.errors import LicensedItemPurchaseNotFoundError
-from ....models.licensed_items_purchases import (
-    CreateLicensedItemsPurchasesDB,
-    LicensedItemsPurchasesDB,
-)
+from ....exceptions.errors import LicensePurchaseNotFoundError
+from ....models.license_purchases import CreateLicensesPurchasesDB, LicensesPurchasesDB
 
 _SELECTION_ARGS = (
-    resource_tracker_licensed_items_purchases.c.licensed_item_purchase_id,
-    resource_tracker_licensed_items_purchases.c.product_name,
-    resource_tracker_licensed_items_purchases.c.licensed_item_id,
-    resource_tracker_licensed_items_purchases.c.wallet_id,
-    resource_tracker_licensed_items_purchases.c.wallet_name,
-    resource_tracker_licensed_items_purchases.c.pricing_unit_cost_id,
-    resource_tracker_licensed_items_purchases.c.pricing_unit_cost,
-    resource_tracker_licensed_items_purchases.c.start_at,
-    resource_tracker_licensed_items_purchases.c.expire_at,
-    resource_tracker_licensed_items_purchases.c.num_of_seats,
-    resource_tracker_licensed_items_purchases.c.purchased_by_user,
-    resource_tracker_licensed_items_purchases.c.user_email,
-    resource_tracker_licensed_items_purchases.c.purchased_at,
-    resource_tracker_licensed_items_purchases.c.modified,
+    resource_tracker_license_purchases.c.licensed_item_purchase_id,
+    resource_tracker_license_purchases.c.product_name,
+    resource_tracker_license_purchases.c.license_id,
+    resource_tracker_license_purchases.c.wallet_id,
+    resource_tracker_license_purchases.c.wallet_name,
+    resource_tracker_license_purchases.c.pricing_unit_cost_id,
+    resource_tracker_license_purchases.c.pricing_unit_cost,
+    resource_tracker_license_purchases.c.start_at,
+    resource_tracker_license_purchases.c.expire_at,
+    resource_tracker_license_purchases.c.num_of_seats,
+    resource_tracker_license_purchases.c.purchased_by_user,
+    resource_tracker_license_purchases.c.user_email,
+    resource_tracker_license_purchases.c.purchased_at,
+    resource_tracker_license_purchases.c.modified,
 )
 
-assert set(LicensedItemsPurchasesDB.model_fields) == {
+assert set(LicensesPurchasesDB.model_fields) == {
     c.name for c in _SELECTION_ARGS
 }  # nosec
 
@@ -51,14 +46,14 @@ async def create(
     engine: AsyncEngine,
     connection: AsyncConnection | None = None,
     *,
-    data: CreateLicensedItemsPurchasesDB,
-) -> LicensedItemsPurchasesDB:
+    data: CreateLicensesPurchasesDB,
+) -> LicensesPurchasesDB:
     async with transaction_context(engine, connection) as conn:
         result = await conn.execute(
-            resource_tracker_licensed_items_purchases.insert()
+            resource_tracker_license_purchases.insert()
             .values(
                 product_name=data.product_name,
-                licensed_item_id=data.licensed_item_id,
+                license_id=data.license_id,
                 wallet_id=data.wallet_id,
                 wallet_name=data.wallet_name,
                 pricing_unit_cost_id=data.pricing_unit_cost_id,
@@ -74,7 +69,7 @@ async def create(
             .returning(*_SELECTION_ARGS)
         )
         row = result.first()
-        return LicensedItemsPurchasesDB.model_validate(row)
+        return LicensesPurchasesDB.model_validate(row)
 
 
 async def list_(
@@ -86,16 +81,13 @@ async def list_(
     offset: NonNegativeInt,
     limit: NonNegativeInt,
     order_by: OrderBy,
-) -> tuple[int, list[LicensedItemsPurchasesDB]]:
+) -> tuple[int, list[LicensesPurchasesDB]]:
     base_query = (
         sa.select(*_SELECTION_ARGS)
-        .select_from(resource_tracker_licensed_items_purchases)
+        .select_from(resource_tracker_license_purchases)
         .where(
-            (resource_tracker_licensed_items_purchases.c.product_name == product_name)
-            & (
-                resource_tracker_licensed_items_purchases.c.wallet_id
-                == filter_wallet_id
-            )
+            (resource_tracker_license_purchases.c.product_name == product_name)
+            & (resource_tracker_license_purchases.c.wallet_id == filter_wallet_id)
         )
     )
 
@@ -106,13 +98,11 @@ async def list_(
     # Ordering and pagination
     if order_by.direction == OrderDirection.ASC:
         list_query = base_query.order_by(
-            sa.asc(getattr(resource_tracker_licensed_items_purchases.c, order_by.field))
+            sa.asc(getattr(resource_tracker_license_purchases.c, order_by.field))
         )
     else:
         list_query = base_query.order_by(
-            sa.desc(
-                getattr(resource_tracker_licensed_items_purchases.c, order_by.field)
-            )
+            sa.desc(getattr(resource_tracker_license_purchases.c, order_by.field))
         )
     list_query = list_query.offset(offset).limit(limit)
 
@@ -122,8 +112,8 @@ async def list_(
             total_count = 0
 
         result = await conn.stream(list_query)
-        items: list[LicensedItemsPurchasesDB] = [
-            LicensedItemsPurchasesDB.model_validate(row) async for row in result
+        items: list[LicensesPurchasesDB] = [
+            LicensesPurchasesDB.model_validate(row) async for row in result
         ]
 
         return cast(int, total_count), items
@@ -133,18 +123,18 @@ async def get(
     engine: AsyncEngine,
     connection: AsyncConnection | None = None,
     *,
-    licensed_item_purchase_id: LicensedItemPurchaseID,
+    licensed_item_purchase_id: LicensePurchaseID,
     product_name: ProductName,
-) -> LicensedItemsPurchasesDB:
+) -> LicensesPurchasesDB:
     base_query = (
         sa.select(*_SELECTION_ARGS)
-        .select_from(resource_tracker_licensed_items_purchases)
+        .select_from(resource_tracker_license_purchases)
         .where(
             (
-                resource_tracker_licensed_items_purchases.c.licensed_item_purchase_id
+                resource_tracker_license_purchases.c.licensed_item_purchase_id
                 == licensed_item_purchase_id
             )
-            & (resource_tracker_licensed_items_purchases.c.product_name == product_name)
+            & (resource_tracker_license_purchases.c.product_name == product_name)
         )
     )
 
@@ -152,17 +142,17 @@ async def get(
         result = await conn.stream(base_query)
         row = await result.first()
         if row is None:
-            raise LicensedItemPurchaseNotFoundError(
+            raise LicensePurchaseNotFoundError(
                 licensed_item_purchase_id=licensed_item_purchase_id
             )
-        return LicensedItemsPurchasesDB.model_validate(row)
+        return LicensesPurchasesDB.model_validate(row)
 
 
 async def get_active_purchased_seats_for_item_and_wallet(
     engine: AsyncEngine,
     connection: AsyncConnection | None = None,
     *,
-    licensed_item_id: LicensedItemID,
+    license_id: LicenseID,
     wallet_id: WalletID,
     product_name: ProductName,
 ) -> int:
@@ -172,16 +162,13 @@ async def get_active_purchased_seats_for_item_and_wallet(
     _current_time = datetime.now(tz=UTC)
 
     sum_stmt = sa.select(
-        sa.func.sum(resource_tracker_licensed_items_purchases.c.num_of_seats)
+        sa.func.sum(resource_tracker_license_purchases.c.num_of_seats)
     ).where(
-        (resource_tracker_licensed_items_purchases.c.wallet_id == wallet_id)
-        & (
-            resource_tracker_licensed_items_purchases.c.licensed_item_id
-            == licensed_item_id
-        )
-        & (resource_tracker_licensed_items_purchases.c.product_name == product_name)
-        & (resource_tracker_licensed_items_purchases.c.start_at <= _current_time)
-        & (resource_tracker_licensed_items_purchases.c.expire_at >= _current_time)
+        (resource_tracker_license_purchases.c.wallet_id == wallet_id)
+        & (resource_tracker_license_purchases.c.license_id == license_id)
+        & (resource_tracker_license_purchases.c.product_name == product_name)
+        & (resource_tracker_license_purchases.c.start_at <= _current_time)
+        & (resource_tracker_license_purchases.c.expire_at >= _current_time)
     )
 
     async with pass_or_acquire_connection(engine, connection) as conn:

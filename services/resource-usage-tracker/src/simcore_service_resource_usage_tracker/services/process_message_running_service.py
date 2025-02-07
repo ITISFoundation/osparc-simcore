@@ -35,7 +35,7 @@ from ..models.service_runs import (
 )
 from .modules.db import (
     credit_transactions_db,
-    licensed_items_checkouts_db,
+    license_checkouts_db,
     pricing_plans_db,
     service_runs_db,
 )
@@ -277,7 +277,7 @@ async def _process_stop_event(
     running_service = await service_runs_db.update_service_run_stopped_at(
         db_engine, data=update_service_run_stopped_at
     )
-    await licensed_items_checkouts_db.force_release_license_seats_by_run_id(
+    await license_checkouts_db.force_release_license_seats_by_run_id(
         db_engine, service_run_id=msg.service_run_id
     )
 
