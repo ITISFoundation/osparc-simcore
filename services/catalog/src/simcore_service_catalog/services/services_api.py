@@ -41,7 +41,7 @@ def _db_to_api_model(
         version=service_db.version,
         name=service_db.name,
         thumbnail=HttpUrl(service_db.thumbnail) if service_db.thumbnail else None,
-        icon=None,
+        icon=service_db.icon,
         description=service_db.description,
         description_ui=service_db.description_ui,
         version_display=service_db.version_display,
