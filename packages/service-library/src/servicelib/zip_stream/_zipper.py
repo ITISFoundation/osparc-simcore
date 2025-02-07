@@ -38,7 +38,6 @@ async def get_zip_archive_stream(
         f"STATS: count={len(archive_files)}, size={total_stream_lenth.human_readable()}"
     )
 
-    # NOTE: progress bars, can be doen in two ways, eitehr by the read amount from each stream
     async with progress_bar.sub_progress(
         steps=total_stream_lenth, description=description, progress_unit="Byte"
     ) as sub_progress:
