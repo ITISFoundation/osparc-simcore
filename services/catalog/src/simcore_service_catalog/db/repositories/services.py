@@ -231,7 +231,7 @@ class ServicesRepository(BaseRepository):
             result = await conn.execute(
                 # pylint: disable=no-value-for-parameter
                 services_meta_data.insert()
-                .values(**new_service.model_dump(by_alias=True, exclude_unset=True))
+                .values(**new_service.model_dump(exclude_unset=True))
                 .returning(*SERVICES_META_DATA_COLS)
             )
             row = result.first()

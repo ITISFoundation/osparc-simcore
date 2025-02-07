@@ -28,7 +28,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 from ..db.repositories.groups import GroupsRepository
 from ..db.repositories.projects import ProjectsRepository
 from ..db.repositories.services import ServicesRepository
-from ..models.services_db import ServiceAccessRightsAtDB, ServiceMetaDataDBGet
+from ..models.services_db import ServiceAccessRightsAtDB, ServiceMetaDataDBCreate
 from ..services import access_rights
 
 _logger = logging.getLogger(__name__)
@@ -89,7 +89,9 @@ async def _create_services_in_database(
 
             # set the service in the DB
             await services_repo.create_or_update_service(
-                ServiceMetaDataDBGet(**service_metadata.model_dump(), owner=owner_gid),
+                ServiceMetaDataDBCreate(
+                    **service_metadata.model_dump(exclude_unset=True), owner=owner_gid
+                ),
                 service_access_rights,
             )
 
