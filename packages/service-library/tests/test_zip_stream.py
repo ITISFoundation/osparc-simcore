@@ -10,8 +10,8 @@ import pytest
 from faker import Faker
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.comparing import (
-    assert_same_folder_contents,
-    get_files_in_folder,
+    assert_same_contents,
+    get_files_info_from_path,
     get_relative_to,
 )
 from servicelib.archiving_utils import unarchive_dir
@@ -121,7 +121,7 @@ async def test_get_zip_archive_stream(
     await unarchive_dir(local_archive_path, local_unpacked_archive)
 
     # 3. compare files in directories (same paths & sizes)
-    await assert_same_folder_contents(
-        get_files_in_folder(local_files_dir),
-        get_files_in_folder(local_unpacked_archive),
+    await assert_same_contents(
+        get_files_info_from_path(local_files_dir),
+        get_files_info_from_path(local_unpacked_archive),
     )

@@ -1,5 +1,5 @@
 from typing import Final
 
-_KB: Final[int] = 1024
+from pydantic import ByteSize, TypeAdapter
 
-DEFAULT_CHUNK_SIZE: Final[int] = 64 * _KB
+DEFAULT_CHUNK_SIZE: Final[int] = TypeAdapter(ByteSize).validate_python("1MiB")

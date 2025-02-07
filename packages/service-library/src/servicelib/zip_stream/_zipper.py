@@ -27,11 +27,19 @@ async def _iter_files(
 
 
 async def get_zip_archive_stream(
-    archive_files: ArchiveEntries, *, progress_bar: ProgressBarData | None = None
+    archive_files: ArchiveEntries,
+    *,
+    progress_bar: ProgressBarData | None = None,
+    chunk_size: int = DEFAULT_CHUNK_SIZE
 ) -> FileStream:
+    # NOTE: this is CPU bound task, even though the loop is not blocked,
+    # the CPU is still used for compressing the content
     if progress_bar is None:
         progress_bar = ProgressBarData(num_steps=1, description="stream archiver")
+
+    # NOTE: do not disable compression or the streams will be
+    # loaded fully in memory before yielding their content
     async for chunk in async_stream_zip(
-        _iter_files(archive_files, progress_bar), chunk_size=DEFAULT_CHUNK_SIZE
+        _iter_files(archive_files, progress_bar), chunk_size=chunk_size
     ):
         yield chunk
