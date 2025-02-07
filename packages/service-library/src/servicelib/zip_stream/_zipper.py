@@ -4,6 +4,7 @@ from stat import S_IFREG
 
 from stream_zip import ZIP_32, AsyncMemberFile, async_stream_zip
 
+from ._constants import DEFAULT_CHUNK_SIZE
 from ._types import ArchiveEntries, FileStream
 
 
@@ -21,5 +22,8 @@ async def _iter_member_files(
 
 
 async def get_zip_archive_stream(archive_files: ArchiveEntries) -> FileStream:
-    async for chunk in async_stream_zip(_iter_member_files(archive_files)):
+    # with relative progress... (just computes some progress and then completeswhen the stream is done)
+    async for chunk in async_stream_zip(
+        _iter_member_files(archive_files), chunk_size=DEFAULT_CHUNK_SIZE
+    ):
         yield chunk

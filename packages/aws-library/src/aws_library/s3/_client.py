@@ -212,6 +212,9 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
                         Delete={"Objects": objects_to_delete},
                     )
 
+    # TODO: streamable file download
+    # TODO: streamable file output
+
     @s3_exception_handler(_logger)
     async def delete_object(
         self, *, bucket: S3BucketName, object_key: S3ObjectKey
