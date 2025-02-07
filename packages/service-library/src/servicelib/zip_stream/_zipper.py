@@ -9,7 +9,7 @@ from ._constants import DEFAULT_CHUNK_SIZE
 from ._types import ArchiveEntries, FileStream
 
 
-async def _iter_member_files(
+async def _iter_files(
     file_streams: ArchiveEntries, progress_bar: ProgressBarData
 ) -> AsyncIterable[AsyncMemberFile]:
     async with progress_bar.sub_progress(
@@ -30,8 +30,8 @@ async def get_zip_archive_stream(
     archive_files: ArchiveEntries, *, progress_bar: ProgressBarData | None = None
 ) -> FileStream:
     if progress_bar is None:
-        progress_bar = ProgressBarData(num_steps=1, description="archiving file")
+        progress_bar = ProgressBarData(num_steps=1, description="stream archiver")
     async for chunk in async_stream_zip(
-        _iter_member_files(archive_files, progress_bar), chunk_size=DEFAULT_CHUNK_SIZE
+        _iter_files(archive_files, progress_bar), chunk_size=DEFAULT_CHUNK_SIZE
     ):
         yield chunk
