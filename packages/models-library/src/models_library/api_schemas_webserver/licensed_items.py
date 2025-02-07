@@ -53,6 +53,7 @@ class LicensedItemRpcGetPage(NamedTuple):
 
 
 class _ItisVipRestData(OutputSchema):
+    id: int
     description: str
     thumbnail: str
     features: FeaturesDict  # NOTE: here there is a bit of coupling with domain model
@@ -62,8 +63,9 @@ class _ItisVipRestData(OutputSchema):
 class _ItisVipResourceRestData(OutputSchema):
     category_id: IDStr
     category_display: str
+    category_icon: HttpUrl | None = None  # NOTE: Placeholder until provide @odeimaiz
     source: _ItisVipRestData
-    terms_of_use_url: HttpUrl | None = None
+    terms_of_use_url: HttpUrl | None = None  # NOTE: Placeholder until provided @mguidon
 
 
 class LicensedItemRestGet(OutputSchema):
@@ -85,7 +87,6 @@ class LicensedItemRestGet(OutputSchema):
                     {
                         "licensedItemId": "0362b88b-91f8-4b41-867c-35544ad1f7a1",
                         "displayName": "my best model",
-                        "licensedResourceName": "best-model",
                         "licensedResourceType": f"{LicensedResourceType.VIP_MODEL}",
                         "licensedResourceData": cast(
                             JsonDict,
@@ -108,18 +109,22 @@ class LicensedItemRestGet(OutputSchema):
 
     @classmethod
     def from_domain_model(cls, item: LicensedItem) -> Self:
-
         return cls.model_validate(
             {
-                "licensed_item_id": item.licensed_item_id,
-                "display_name": item.display_name,
-                "licensed_resource_type": item.licensed_resource_type,
+                **item.model_dump(
+                    include={
+                        "licensed_item_id",
+                        "display_name",
+                        "licensed_resource_type",
+                        "pricing_plan_id",
+                        "created_at",
+                        "modified_at",
+                    },
+                    exclude_unset=True,
+                ),
                 "licensed_resource_data": {
                     **item.licensed_resource_data,
                 },
-                "pricing_plan_id": item.pricing_plan_id,
-                "created_at": item.created_at,
-                "modified_at": item.modified_at,
             }
         )
 
