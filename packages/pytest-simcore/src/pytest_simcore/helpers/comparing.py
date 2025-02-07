@@ -4,6 +4,7 @@ from typing import TypeAlias
 
 import aiofiles
 from servicelib.file_utils import create_sha256_checksum
+from servicelib.utils import limited_gather
 
 _FilesInfo: TypeAlias = dict[str, Path]
 
@@ -30,5 +31,10 @@ def get_files_info_from_itrable(items: Iterable[Path]) -> _FilesInfo:
 async def assert_same_contents(file_info1: _FilesInfo, file_info2: _FilesInfo) -> None:
     assert set(file_info1.keys()) == set(file_info2.keys())
 
-    for file_name in file_info1:
-        await assert_same_file_content(file_info1[file_name], file_info2[file_name])
+    await limited_gather(
+        *(
+            assert_same_file_content(file_info1[file_name], file_info2[file_name])
+            for file_name in file_info1
+        ),
+        limit=10,
+    )

@@ -11,6 +11,7 @@ import filecmp
 import json
 import logging
 import random
+import time
 from collections import defaultdict
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from dataclasses import dataclass
@@ -1446,11 +1447,10 @@ async def test_upload_object_from_file_stream(
 @pytest.fixture
 def files_stored_locally(
     create_file_of_size: Callable[[ByteSize], Path],
+    file_size: ByteSize,
+    local_count: int,
 ) -> Iterator[set[Path]]:
-    files = {
-        create_file_of_size(TypeAdapter(ByteSize).validate_python("10Mib"))
-        for _ in range(10)
-    }
+    files = {create_file_of_size(file_size) for _ in range(local_count)}
 
     yield files
 
@@ -1461,13 +1461,12 @@ def files_stored_locally(
 @pytest.fixture
 async def files_stored_in_s3(
     create_file_of_size: Callable[[ByteSize], Path],
+    file_size: ByteSize,
+    remote_count: int,
     s3_client: S3Client,
     with_s3_bucket: S3BucketName,
 ) -> AsyncIterator[set[Path]]:
-    files = {
-        create_file_of_size(TypeAdapter(ByteSize).validate_python("10Mib"))
-        for _ in range(10)
-    }
+    files = {create_file_of_size(file_size) for _ in range(remote_count)}
     for file in files:
         await s3_client.upload_file(
             Filename=f"{file}",
@@ -1524,6 +1523,14 @@ async def archive_s3_object_key(
     await simcore_s3_api.delete_object(bucket=with_s3_bucket, object_key=s3_object_key)
 
 
+@pytest.mark.parametrize(
+    "file_size, local_count, remote_count",
+    [
+        pytest.param(
+            TypeAdapter(ByteSize).validate_python("10Mib"), 10, 10, id="small"
+        ),
+    ],
+)
 async def test_workflow_compress_s3_objects_and_local_files_in_a_single_archive_then_upload_to_s3(
     mocked_s3_server_envs: EnvVarsDict,
     files_stored_locally: set[Path],
@@ -1554,7 +1561,6 @@ async def test_workflow_compress_s3_objects_and_local_files_in_a_single_archive_
         )
 
     for s3_object_key in _get_s3_object_keys(files_stored_in_s3):
-        print(f"will upload {s3_object_key=}")
         archive_file_entries.append(
             (
                 s3_object_key,
@@ -1573,6 +1579,7 @@ async def test_workflow_compress_s3_objects_and_local_files_in_a_single_archive_
         progress_report_cb=mocked_progress_bar_cb,
         description="root_bar",
     ) as root:
+        started = time.time()
         await simcore_s3_api.upload_object_from_file_stream(
             with_s3_bucket,
             archive_s3_object_key,
@@ -1582,9 +1589,11 @@ async def test_workflow_compress_s3_objects_and_local_files_in_a_single_archive_
                 chunk_size=MIN_MULTIPART_UPLOAD_CHUNK_SIZE,
             ),
         )
+        duration = time.time() - started
+        print(f"Zip created on S3 in {duration:.2f} seconds")
 
     # 2. download zip archive form S3
-
+    print(f"downloading {archive_download_path}")
     await s3_client.download_file(
         with_s3_bucket, archive_s3_object_key, f"{archive_download_path}"
     )
@@ -1593,7 +1602,6 @@ async def test_workflow_compress_s3_objects_and_local_files_in_a_single_archive_
     await unarchive_dir(archive_download_path, extracted_archive_path)
 
     # 4. compare
-
     print("comparing files")
     all_files_in_zip = get_files_info_from_itrable(
         files_stored_locally
