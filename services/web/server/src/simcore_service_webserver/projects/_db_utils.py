@@ -78,6 +78,8 @@ def _build_workbench_subquery():
                     "outputs",
                     projects_nodes.c.outputs,
                     "run_hash",
+                    projects_nodes.c.progress,
+                    "progress",
                     projects_nodes.c.run_hash,
                     "state",
                     projects_nodes.c.state,
