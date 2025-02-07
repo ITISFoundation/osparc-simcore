@@ -5,7 +5,7 @@ from stat import S_IFREG
 from stream_zip import ZIP_32, AsyncMemberFile, async_stream_zip
 
 from ..progress_bar import ProgressBarData
-from ._constants import MULTIPART_UPLOADS_MIN_TOTAL_SIZE
+from ._constants import MIN_MULTIPART_UPLOAD_CHUNK_SIZE
 from ._types import ArchiveEntries, FileSize, FileStream
 
 
@@ -26,7 +26,7 @@ async def get_zip_archive_stream(
     archive_files: ArchiveEntries,
     *,
     progress_bar: ProgressBarData | None = None,
-    chunk_size: int = MULTIPART_UPLOADS_MIN_TOTAL_SIZE,
+    chunk_size: int = MIN_MULTIPART_UPLOAD_CHUNK_SIZE,
 ) -> FileStream:
     # NOTE: this is CPU bound task, even though the loop is not blocked,
     # the CPU is still used for compressing the content.

@@ -24,6 +24,7 @@ import botocore.exceptions
 import pytest
 from aiohttp import ClientSession
 from aws_library.s3._client import S3ObjectKey, SimcoreS3API
+from aws_library.s3._constants import MULTIPART_UPLOADS_MIN_TOTAL_SIZE
 from aws_library.s3._errors import (
     S3BucketInvalidError,
     S3DestinationNotEmptyError,
@@ -59,7 +60,6 @@ from servicelib.file_utils import remove_directory
 from servicelib.progress_bar import ProgressBarData
 from servicelib.utils import limited_as_completed
 from servicelib.zip_stream import (
-    MULTIPART_UPLOADS_MIN_TOTAL_SIZE,
     ArchiveEntries,
     DiskStreamReader,
     get_zip_archive_stream,

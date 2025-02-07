@@ -21,7 +21,6 @@ from servicelib.progress_bar import ProgressBarData
 from servicelib.utils import limited_gather
 from servicelib.zip_stream import (
     DEFAULT_READ_CHUNK_SIZE,
-    MULTIPART_UPLOADS_MIN_TOTAL_SIZE,
     FileSize,
     FileStream,
     FileStreamCallable,
@@ -31,7 +30,7 @@ from types_aiobotocore_s3 import S3Client
 from types_aiobotocore_s3.literals import BucketLocationConstraintType
 from types_aiobotocore_s3.type_defs import ObjectIdentifierTypeDef
 
-from ._constants import MULTIPART_COPY_THRESHOLD
+from ._constants import MULTIPART_UPLOADS_MIN_TOTAL_SIZE
 from ._error_handler import s3_exception_handler, s3_exception_handler_async_gen
 from ._errors import S3DestinationNotEmptyError, S3KeyNotFoundError
 from ._models import (
