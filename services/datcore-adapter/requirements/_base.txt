@@ -289,6 +289,8 @@ protobuf==4.25.4
     #   opentelemetry-proto
 psutil==6.0.0
     # via -r requirements/../../../packages/service-library/requirements/_base.in
+pycryptodome==3.21.0
+    # via stream-zip
 pydantic==2.10.2
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -437,6 +439,8 @@ starlette==0.41.0
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   fastapi
+stream-zip==0.0.83
+    # via -r requirements/../../../packages/service-library/requirements/_base.in
 tenacity==8.5.0
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 toolz==0.12.1
