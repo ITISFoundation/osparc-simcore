@@ -3,7 +3,11 @@ from ._client import (
     SimcoreS3API,
     UploadedBytesTransferredCallback,
 )
-from ._constants import PRESIGNED_LINK_MAX_SIZE, S3_MAX_FILE_SIZE
+from ._constants import (
+    MIN_MULTIPART_UPLOAD_CHUNK_SIZE,
+    PRESIGNED_LINK_MAX_SIZE,
+    S3_MAX_FILE_SIZE,
+)
 from ._errors import (
     S3AccessError,
     S3BucketInvalidError,
@@ -23,6 +27,7 @@ from ._models import (
 
 __all__: tuple[str, ...] = (
     "CopiedBytesTransferredCallback",
+    "MIN_MULTIPART_UPLOAD_CHUNK_SIZE",
     "MultiPartUploadLinks",
     "PRESIGNED_LINK_MAX_SIZE",
     "S3_MAX_FILE_SIZE",
