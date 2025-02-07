@@ -27,10 +27,3 @@ class S3UploadNotFoundError(S3AccessError):
 
 class S3DestinationNotEmptyError(S3AccessError):
     msg_template: str = "The destination {dst_prefix} is not empty"
-
-
-class S3MultipartUploadMinChunkSizeError(S3RuntimeError):
-    msg_template: str = (
-        "chunk_size='{current_chunk_size}' must be grater of equal "
-        "to min_chunk_size='{min_chunk_size}'"
-    )
