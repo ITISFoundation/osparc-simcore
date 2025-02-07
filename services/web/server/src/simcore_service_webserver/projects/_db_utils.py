@@ -281,7 +281,7 @@ class BaseProjectDB:
 
             # NOTE: experiment TODO: remove Nones from workbench
             workbench = db_prj["workbench"]
-            _temp_workbench = {}
+            _temp_workbench: dict[str, Any] = {}
             for node_id, node_data in workbench.items():
                 _temp_workbench[node_id] = {}
                 for item, value in node_data.items():
@@ -392,7 +392,7 @@ class BaseProjectDB:
 
         # NOTE: experiment TODO: remove Nones from workbench
         workbench = project["workbench"]
-        _temp_workbench = {}
+        _temp_workbench: dict[str, Any] = {}
         for node_id, node_data in workbench.items():
             _temp_workbench[node_id] = {}
             for item, value in node_data.items():
