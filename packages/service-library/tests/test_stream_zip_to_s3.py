@@ -5,13 +5,16 @@ import secrets
 from collections.abc import AsyncIterable
 from pathlib import Path
 from typing import TypeAlias
+from unittest.mock import Mock
 
 import aiofiles
 import pytest
 from faker import Faker
+from pytest_mock import MockerFixture
 from servicelib.archiving_utils import unarchive_dir
 from servicelib.file_utils import create_sha256_checksum, remove_directory
-from servicelib.stream_zip import (
+from servicelib.progress_bar import ProgressBarData
+from servicelib.zip_stream import (
     ArchiveEntries,
     DiskStreamReader,
     DiskStreamWriter,
@@ -105,7 +108,16 @@ async def prepare_content(local_files_dir: Path, faker: Faker) -> AsyncIterable[
     await remove_directory(local_files_dir, only_children=True)
 
 
+@pytest.fixture
+def mocked_progress_bar_cb(mocker: MockerFixture) -> Mock:
+    def _progress_cb(*args, **kwargs) -> None:
+        print(f"received progress: {args}, {kwargs}")
+
+    return mocker.Mock(side_effect=_progress_cb)
+
+
 async def test_get_zip_archive_stream(
+    mocked_progress_bar_cb: Mock,
     prepare_content: None,
     local_files_dir: Path,
     local_archive_path: Path,
@@ -119,7 +131,15 @@ async def test_get_zip_archive_stream(
         archive_files.append((archive_name, DiskStreamReader(file).get_stream))
 
     writer = DiskStreamWriter(local_archive_path)
-    await writer.write_stream(get_zip_archive_stream(archive_files))
+
+    async with ProgressBarData(
+        num_steps=1,
+        progress_report_cb=mocked_progress_bar_cb,
+        description="root_bar",
+    ) as root:
+        await writer.write_stream(
+            get_zip_archive_stream(archive_files, progress_bar=root)
+        )
 
     # 2. extract archive using exiting tools
     await unarchive_dir(local_archive_path, local_unpacked_archive)
