@@ -74,26 +74,36 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
     },
 
     __createModelInfo: function(anatomicalModelsDataSource) {
-      const cardGrid = new qx.ui.layout.Grid(16, 16);
-      const cardLayout = new qx.ui.container.Composite(cardGrid);
+      const cardLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(16));
 
       const description = anatomicalModelsDataSource["description"] || "";
-      description.split(" - ").forEach((desc, idx) => {
+      const delimiter = " - ";
+      let titleAndSubtitle = description.split(delimiter);
+      if (titleAndSubtitle.length > 0) {
         const titleLabel = new qx.ui.basic.Label().set({
-          value: desc,
+          value: titleAndSubtitle[0],
           font: "text-16",
-          alignX: "center",
           alignY: "middle",
           allowGrowX: true,
           allowGrowY: true,
         });
-        cardLayout.add(titleLabel, {
-          column: 0,
-          row: idx,
-          colSpan: 2,
+        cardLayout.add(titleLabel);
+        titleAndSubtitle.shift();
+      }
+      if (titleAndSubtitle.length > 0) {
+        titleAndSubtitle = titleAndSubtitle.join(delimiter);
+        const subtitleLabel = new qx.ui.basic.Label().set({
+          value: titleAndSubtitle,
+          font: "text-16",
+          alignY: "middle",
+          allowGrowX: true,
+          allowGrowY: true,
         });
-      });
+        cardLayout.add(subtitleLabel);
+      }
 
+
+      const middleLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(16));
       const thumbnail = new qx.ui.basic.Image().set({
         source: anatomicalModelsDataSource["thumbnail"],
         alignY: "middle",
@@ -105,10 +115,7 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
         maxWidth: 256,
         maxHeight: 256,
       });
-      cardLayout.add(thumbnail, {
-        column: 0,
-        row: 2,
-      });
+      middleLayout.add(thumbnail);
 
       const features = anatomicalModelsDataSource["features"];
       const featuresGrid = new qx.ui.layout.Grid(8, 8);
@@ -181,10 +188,9 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
         row: idx,
       });
 
-      cardLayout.add(featuresLayout, {
-        column: 1,
-        row: 2,
-      });
+      middleLayout.add(featuresLayout);
+
+      cardLayout.add(middleLayout);
 
       return cardLayout;
     },
