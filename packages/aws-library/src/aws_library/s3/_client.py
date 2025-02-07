@@ -17,9 +17,11 @@ from models_library.api_schemas_storage import ETag, S3BucketName, UploadedPart
 from models_library.basic_types import SHA256Str
 from pydantic import AnyUrl, ByteSize, TypeAdapter
 from servicelib.logging_utils import log_catch, log_context
+from servicelib.progress_bar import ProgressBarData
 from servicelib.utils import limited_gather
 from servicelib.zip_stream import (
     DEFAULT_READ_CHUNK_SIZE,
+    MULTIPART_UPLOADS_MIN_TOTAL_SIZE,
     FileSize,
     FileStream,
     FileStreamCallable,
@@ -29,7 +31,7 @@ from types_aiobotocore_s3 import S3Client
 from types_aiobotocore_s3.literals import BucketLocationConstraintType
 from types_aiobotocore_s3.type_defs import ObjectIdentifierTypeDef
 
-from ._constants import MULTIPART_COPY_THRESHOLD, MULTIPART_UPLOADS_MIN_TOTAL_SIZE
+from ._constants import MULTIPART_COPY_THRESHOLD
 from ._error_handler import s3_exception_handler, s3_exception_handler_async_gen
 from ._errors import S3DestinationNotEmptyError, S3KeyNotFoundError
 from ._models import (
@@ -498,7 +500,7 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
         )
         file_size = FileSize(head_response["ContentLength"])
 
-        async def _() -> FileStream:
+        async def _(progress_bar: ProgressBarData) -> FileStream:
             # Download the file in chunks
             position = 0
             while position < file_size:
@@ -514,6 +516,8 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
                 chunk = await response["Body"].read()
 
                 # Yield the chunk for processing
+
+                await progress_bar.update(len(chunk))
                 yield chunk
 
                 position += chunk_size

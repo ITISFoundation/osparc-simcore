@@ -23,9 +23,7 @@ import aiofiles
 import botocore.exceptions
 import pytest
 from aiohttp import ClientSession
-from aws_library.s3 import MIN_MULTIPART_UPLOAD_CHUNK_SIZE
 from aws_library.s3._client import S3ObjectKey, SimcoreS3API
-from aws_library.s3._constants import MULTIPART_UPLOADS_MIN_TOTAL_SIZE
 from aws_library.s3._errors import (
     S3BucketInvalidError,
     S3DestinationNotEmptyError,
@@ -61,6 +59,7 @@ from servicelib.file_utils import remove_directory
 from servicelib.progress_bar import ProgressBarData
 from servicelib.utils import limited_as_completed
 from servicelib.zip_stream import (
+    MULTIPART_UPLOADS_MIN_TOTAL_SIZE,
     ArchiveEntries,
     DiskStreamReader,
     get_zip_archive_stream,
@@ -1588,11 +1587,7 @@ async def test_workflow_compress_s3_objects_and_local_files_in_a_single_archive_
         await simcore_s3_api.upload_object_from_file_stream(
             with_s3_bucket,
             archive_s3_object_key,
-            get_zip_archive_stream(
-                archive_file_entries,
-                progress_bar=progress_bar,
-                chunk_size=MIN_MULTIPART_UPLOAD_CHUNK_SIZE,
-            ),
+            get_zip_archive_stream(archive_file_entries, progress_bar=progress_bar),
         )
     duration = time.time() - started
     print(f"Zip created on S3 in {duration:.2f} seconds")
