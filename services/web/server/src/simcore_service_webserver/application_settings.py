@@ -1,9 +1,10 @@
 import logging
 from functools import cached_property
-from typing import Annotated, Any, Final
+from typing import Annotated, Any, Final, Self
 
 from aiohttp import web
 from common_library.basic_types import DEFAULT_FACTORY
+from common_library.pydantic_fields_extension import is_nullable
 from models_library.basic_types import LogLevel, PortInt, VersionTag
 from models_library.utils.change_case import snake_to_camel
 from pydantic import (
@@ -50,6 +51,12 @@ from .trash.settings import TrashSettings
 from .users.settings import UsersSettings
 
 _logger = logging.getLogger(__name__)
+
+
+# NOTE: to mark a plugin as a DEV-FEATURE annotated it with
+#    `Field(json_schema_extra={_X_DEV_FEATURE_FLAG: True})`
+# This will force it to be disabled when WEBSERVER_DEV_FEATURES_ENABLED=False
+_X_DEV_FEATURE_FLAG: Final[str] = "x-dev-feature"
 
 
 class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
@@ -393,31 +400,30 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
 
         return values
 
-    # @field_validator(
-    #     # List of plugins under-development (keep up-to-date)
-    #     # TODO: consider mark as dev-feature in field extras of Config attr.
-    #     # Then they can be automtically advertised
-    #     "WEBSERVER_META_MODELING",
-    #     "WEBSERVER_VERSION_CONTROL",
-    #     mode="before",
-    # )
-    # @classmethod
-    # def _enable_only_if_dev_features_allowed(cls, v, info: ValidationInfo):
-    #     """Ensures that plugins 'under development' get programatically
-    #     disabled if WEBSERVER_DEV_FEATURES_ENABLED=False
-    #     """
-    #     if info.data["WEBSERVER_DEV_FEATURES_ENABLED"]:
-    #         return v
-    #     if v:
-    #         _logger.warning(
-    #             "%s still under development and will be disabled.", info.field_name
-    #         )
+    @model_validator(mode="before")
+    @classmethod
+    def _enable_only_if_dev_features_allowed(cls, data: Any) -> Self:
+        """Force disables plugins marked 'under development' when WEBSERVER_DEV_FEATURES_ENABLED=False"""
 
-    #     return (
-    #         None
-    #         if info.field_name and is_nullable(dict(cls.model_fields)[info.field_name])
-    #         else False
-    #     )
+        dev_features_allowed = TypeAdapter(bool).validate_python(
+            data.get("WEBSERVER_DEV_FEATURES_ENABLED", False)
+        )
+
+        if not dev_features_allowed:
+            for field_name, field in cls.model_fields.items():
+                if field.json_schema_extra and field.json_schema_extra.get(
+                    _X_DEV_FEATURE_FLAG
+                ):
+                    _logger.warning(
+                        "'%s' is still under development and will be forcibly disabled [WEBSERVER_DEV_FEATURES_ENABLED=%s].",
+                        field_name,
+                        dev_features_allowed,
+                    )
+                    data[field_name] = (
+                        None if field_name and is_nullable(field) else False
+                    )
+
+        return data
 
     @field_validator("WEBSERVER_LOGLEVEL")
     @classmethod

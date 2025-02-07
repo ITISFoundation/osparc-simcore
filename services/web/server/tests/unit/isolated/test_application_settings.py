@@ -3,13 +3,16 @@
 # pylint:disable=no-name-in-module
 
 import json
+from typing import Annotated
 
 import pytest
 from aiohttp import web
 from common_library.json_serialization import json_dumps
-from pydantic import HttpUrl, TypeAdapter
+from pydantic import Field, HttpUrl, TypeAdapter
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_service_webserver.application_settings import (
+    _X_DEV_FEATURE_FLAG,
     APP_SETTINGS_KEY,
     ApplicationSettings,
     setup_settings,
@@ -61,13 +64,21 @@ def test_settings_to_client_statics(app_settings: ApplicationSettings):
 
     # special alias
     assert statics["stackName"] == "master-simcore"
-    assert statics["pluginsDisabled"] == []
+    assert statics["pluginsDisabled"] == [
+        "WEBSERVER_META_MODELING",
+        "WEBSERVER_VERSION_CONTROL",
+    ]
 
 
 def test_settings_to_client_statics_plugins(
     mock_webserver_service_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
 ):
-    disable_plugins = {"WEBSERVER_EXPORTER", "WEBSERVER_SCICRUNCH"}
+    disable_plugins = {
+        "WEBSERVER_EXPORTER",
+        "WEBSERVER_SCICRUNCH",
+        "WEBSERVER_META_MODELING",
+        "WEBSERVER_VERSION_CONTROL",
+    }
     for name in disable_plugins:
         monkeypatch.setenv(name, "null")
 
@@ -102,30 +113,35 @@ def test_settings_to_client_statics_plugins(
     assert set(statics["pluginsDisabled"]) == (disable_plugins)
 
 
-# @pytest.mark.parametrize("is_dev_feature_enabled", [True, False])
-# @pytest.mark.parametrize(
-#     "plugin_name",
-#     ["WEBSERVER_META_MODELING", "WEBSERVER_VERSION_CONTROL"],
-#     # NOTE: this is the list in _enable_only_if_dev_features_allowed
-# )
-# def test_disabled_plugins_settings_to_client_statics(
-#     is_dev_feature_enabled: bool,
-#     mock_webserver_service_environment: EnvVarsDict,
-#     monkeypatch: pytest.MonkeyPatch,
-#     plugin_name: str,
-# ):
-#     monkeypatch.setenv(
-#         "WEBSERVER_DEV_FEATURES_ENABLED", f"{is_dev_feature_enabled}".lower()
-#     )
+@pytest.mark.parametrize("is_dev_feature_enabled", [True, False])
+def test_disabled_plugins_settings_to_client_statics(
+    is_dev_feature_enabled: bool,
+    mock_webserver_service_environment: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    setenvs_from_dict(
+        monkeypatch,
+        {
+            "WEBSERVER_DEV_FEATURES_ENABLED": f"{is_dev_feature_enabled}".lower(),
+            "TEST_FOO": "1",
+            "TEST_BAR": "42",
+        },
+    )
 
-#     settings = ApplicationSettings.create_from_envs()
-#     statics = settings.to_client_statics()
+    class DevSettings(ApplicationSettings):
+        TEST_FOO: Annotated[bool, Field(json_schema_extra={_X_DEV_FEATURE_FLAG: True})]
+        TEST_BAR: Annotated[
+            int | None, Field(json_schema_extra={_X_DEV_FEATURE_FLAG: True})
+        ]
 
-#     # checks whether it is shown to the front-end depending on the value of WEBSERVER_DEV_FEATURES_ENABLED
-#     if is_dev_feature_enabled:
-#         assert plugin_name not in set(statics["pluginsDisabled"])
-#     else:
-#         assert plugin_name in set(statics["pluginsDisabled"])
+    settings = DevSettings.create_from_envs()
+
+    if is_dev_feature_enabled:
+        assert settings.TEST_FOO is True
+        assert settings.TEST_BAR == 42
+    else:
+        assert settings.TEST_FOO is False
+        assert settings.TEST_BAR is None
 
 
 @pytest.mark.filterwarnings("error")
