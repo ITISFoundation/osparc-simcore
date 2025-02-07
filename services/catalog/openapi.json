@@ -2692,7 +2692,7 @@
             "anyOf": [
               {
                 "additionalProperties": {
-                  "$ref": "#/components/schemas/ServiceGroupAccessRightsV2"
+                  "$ref": "#/components/schemas/ServiceGroupAccessRights"
                 },
                 "type": "object"
               },
@@ -2877,22 +2877,23 @@
         ],
         "title": "ServiceGet"
       },
-      "ServiceGroupAccessRightsV2": {
+      "ServiceGroupAccessRights": {
         "properties": {
-          "execute": {
+          "execute_access": {
             "type": "boolean",
-            "title": "Execute",
+            "title": "Execute Access",
+            "description": "defines whether the group can execute the service",
             "default": false
           },
-          "write": {
+          "write_access": {
             "type": "boolean",
-            "title": "Write",
+            "title": "Write Access",
+            "description": "defines whether the group can modify the service",
             "default": false
           }
         },
-        "additionalProperties": false,
         "type": "object",
-        "title": "ServiceGroupAccessRightsV2"
+        "title": "ServiceGroupAccessRights"
       },
       "ServiceInput": {
         "properties": {
