@@ -44,6 +44,7 @@ from pytest_simcore.helpers.webserver_parametrizations import (
 from servicelib.aiohttp import status
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from simcore_postgres_database.models.projects import projects as projects_db_model
+from simcore_postgres_database.models.projects_nodes import projects_nodes
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects._nodes_handlers import _ProjectNodePreview
 from simcore_service_webserver.projects.models import ProjectDict
@@ -358,13 +359,15 @@ async def test_create_node(
         create_node_id = data["node_id"]
         with postgres_db.connect() as conn:
             result = conn.execute(
-                sa.select(projects_db_model.c.workbench).where(
-                    projects_db_model.c.uuid == user_project["uuid"]
+                sa.select(projects_nodes).where(
+                    sa.and_(
+                        (projects_nodes.c.node_id == create_node_id),
+                        (projects_nodes.c.project_uuid == user_project["uuid"]),
+                    )
                 )
             )
         assert result
-        workbench = result.one()[projects_db_model.c.workbench]
-        assert create_node_id in workbench
+        assert result.one()
     else:
         assert error
 

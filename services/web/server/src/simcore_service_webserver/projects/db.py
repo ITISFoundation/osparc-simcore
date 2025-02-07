@@ -1140,13 +1140,6 @@ class ProjectDBAPI(BaseProjectDB):
                 exclude_unset=True,
             ),
         }
-        await self._update_project_workbench(
-            partial_workbench_data,
-            user_id=user_id,
-            project_uuid=f"{project_id}",
-            product_name=product_name,
-            allow_workbench_changes=True,
-        )
         project_nodes_repo = ProjectNodesRepo(project_uuid=project_id)
         async with self.engine.acquire() as conn:
             await project_nodes_repo.add(conn, nodes=[node])
