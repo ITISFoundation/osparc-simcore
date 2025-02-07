@@ -53,7 +53,7 @@ VIP_DETAILS_EXAMPLE = {
     "doi": "10.1000/xyz123",
     "license_key": "ABC123XYZ",
     "license_version": "1.0",
-    "protection": "Encrypted",
+    "protection": "Code",
     "available_from_url": "https://example.com/download",
     "additional_field": "trimmed if rest",
 }

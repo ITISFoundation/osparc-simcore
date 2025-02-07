@@ -13,6 +13,19 @@ def _validate_url_contains_category(url: str) -> str:
     return url
 
 
+def _to_categories(
+    api_url: str, category_map: dict[CategoryID, CategoryDisplay]
+) -> list[CategoryTuple]:
+    return [
+        CategoryTuple(
+            url=HttpUrl(api_url.format(category=category_id)),
+            id=category_id,
+            display=category_display,
+        )
+        for category_id, category_display in category_map.items()
+    ]
+
+
 class ItisVipSettings(BaseCustomSettings):
     LICENSES_ITIS_VIP_API_URL: Annotated[
         str, AfterValidator(_validate_url_contains_category)
@@ -26,13 +39,20 @@ class ItisVipSettings(BaseCustomSettings):
         ]
 
     def to_categories(self) -> list[CategoryTuple]:
-        return [
-            CategoryTuple(
-                url=HttpUrl(
-                    self.LICENSES_ITIS_VIP_API_URL.format(category=category_id)
-                ),
-                id=category_id,
-                display=category_display,
-            )
-            for category_id, category_display in self.LICENSES_ITIS_VIP_CATEGORIES.items()
-        ]
+        return _to_categories(
+            self.LICENSES_ITIS_VIP_API_URL,
+            self.LICENSES_ITIS_VIP_CATEGORIES,
+        )
+
+
+class SpeagPhantomsSettings(BaseCustomSettings):
+    LICENSES_SPEAG_PHANTOMS_API_URL: Annotated[
+        str, AfterValidator(_validate_url_contains_category)
+    ]
+    LICENSES_SPEAG_PHANTOMS_CATEGORIES: dict[CategoryID, CategoryDisplay]
+
+    def to_categories(self) -> list[CategoryTuple]:
+        return _to_categories(
+            self.LICENSES_SPEAG_PHANTOMS_API_URL,
+            self.LICENSES_SPEAG_PHANTOMS_CATEGORIES,
+        )
