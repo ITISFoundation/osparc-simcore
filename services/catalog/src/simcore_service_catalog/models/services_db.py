@@ -7,7 +7,7 @@ from models_library.services_access import ServiceGroupAccessRights
 from models_library.services_base import ServiceKeyVersion
 from models_library.services_metadata_editable import ServiceMetaDataEditable
 from models_library.services_types import ServiceKey, ServiceVersion
-from pydantic import AfterValidator, BaseModel, ConfigDict, Field, HttpUrl
+from pydantic import BaseModel, ConfigDict, Field
 from pydantic.config import JsonDict
 from pydantic.types import PositiveInt
 from simcore_postgres_database.models.services_compatibility import CompatiblePolicyDict
@@ -16,12 +16,13 @@ from simcore_postgres_database.models.services_compatibility import CompatiblePo
 class ServiceMetaDataAtDB(ServiceKeyVersion, ServiceMetaDataEditable):
     # for a partial update all Editable members must be Optional
     name: str | None = None
-    thumbnail: Annotated[str, HttpUrl] | None = None
-    icon: Annotated[HttpUrl, AfterValidator(str)] | None = None
+    thumbnail: str | None = None
+    icon: str | None = None
     description: str | None = None
 
     classifiers: Annotated[
-        list[str] | None, Field(default_factory=list)
+        list[str] | None,
+        Field(default_factory=list),
     ] = DEFAULT_FACTORY
 
     owner: PositiveInt | None = None
