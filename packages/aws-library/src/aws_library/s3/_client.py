@@ -526,8 +526,6 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
             part_number = 1
 
             async for chunk in file_stream():
-                print(f"partsizze={len(chunk)}")
-
                 part_response = await self._client.upload_part(
                     Bucket=bucket_name,
                     Key=object_key,
