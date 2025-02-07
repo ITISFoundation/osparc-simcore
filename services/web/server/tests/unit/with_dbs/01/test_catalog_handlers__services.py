@@ -56,7 +56,7 @@ def mocked_rpc_catalog_service_api(mocker: MockerFixture) -> dict[str, MagicMock
         assert user_id
 
         items = TypeAdapter(list[ServiceGetV2]).validate_python(
-            ServiceGetV2.model_config["json_schema_extra"]["examples"],
+            ServiceGetV2.model_json_schema()["examples"],
         )
         total_count = len(items)
 
@@ -80,7 +80,7 @@ def mocked_rpc_catalog_service_api(mocker: MockerFixture) -> dict[str, MagicMock
         assert user_id
 
         got = ServiceGetV2.model_validate(
-            ServiceGetV2.model_config["json_schema_extra"]["examples"][0]
+            ServiceGetV2.model_json_schema()["examples"][0]
         )
         got.version = service_version
         got.key = service_key
@@ -101,7 +101,7 @@ def mocked_rpc_catalog_service_api(mocker: MockerFixture) -> dict[str, MagicMock
         assert user_id
 
         got = ServiceGetV2.model_validate(
-            ServiceGetV2.model_config["json_schema_extra"]["examples"][0]
+            ServiceGetV2.model_json_schema()["examples"][0]
         )
         got.version = service_version
         got.key = service_key

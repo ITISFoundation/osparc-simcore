@@ -56,9 +56,9 @@ async def test_list_services_with_details(
     url = URL("/v0/services").with_query({"user_id": user_id, "details": "true"})
 
     # now fake the director such that it returns half the services
-    fake_registry_service_data = ServiceMetaDataPublished.model_config[
-        "json_schema_extra"
-    ]["examples"][0]
+    fake_registry_service_data = ServiceMetaDataPublished.model_json_schema()[
+        "examples"
+    ][0]
 
     mocked_director_service_api_base.get("/services", name="list_services").respond(
         200,
@@ -262,9 +262,9 @@ async def test_list_services_that_are_deprecated(
     assert received_service.deprecated == deprecation_date
 
     # for details, the director must return the same service
-    fake_registry_service_data = ServiceMetaDataPublished.model_config[
-        "json_schema_extra"
-    ]["examples"][0]
+    fake_registry_service_data = ServiceMetaDataPublished.model_json_schema()[
+        "examples"
+    ][0]
     mocked_director_service_api_base.get("/services", name="list_services").respond(
         200,
         json={

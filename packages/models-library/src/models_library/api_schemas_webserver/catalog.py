@@ -1,6 +1,7 @@
 from typing import Any, TypeAlias
 
 from pydantic import ConfigDict, Field
+from pydantic.config import JsonDict
 from pydantic.main import BaseModel
 
 from ..api_schemas_catalog import services as api_schemas_catalog_services
@@ -35,37 +36,42 @@ class ServiceInputGet(ServiceInput, _BaseCommonApiExtension):
         ..., description="Unique name identifier for this input"
     )
 
+    @staticmethod
+    def _update_json_schema_extra(schema: JsonDict) -> None:
+        schema.update(
+            {
+                "example": {
+                    "displayOrder": 2,
+                    "label": "Sleep Time",
+                    "description": "Time to wait before completion",
+                    "type": "number",
+                    "defaultValue": 0,
+                    "unit": "second",
+                    "widget": {"type": "TextArea", "details": {"minHeight": 1}},
+                    "keyId": "input_2",
+                    "unitLong": "seconds",
+                    "unitShort": "sec",
+                },
+                "examples": [
+                    {
+                        "label": "Acceleration",
+                        "description": "acceleration with units",
+                        "type": "ref_contentSchema",
+                        "contentSchema": {
+                            "title": "Acceleration",
+                            "type": "number",
+                            "x_unit": "m/s**2",
+                        },
+                        "keyId": "input_1",
+                        "unitLong": "meter/second<sup>3</sup>",
+                        "unitShort": "m/s<sup>3</sup>",
+                    }
+                ],
+            }
+        )
+
     model_config = ConfigDict(
-        json_schema_extra={
-            "example": {
-                "displayOrder": 2,
-                "label": "Sleep Time",
-                "description": "Time to wait before completion",
-                "type": "number",
-                "defaultValue": 0,
-                "unit": "second",
-                "widget": {"type": "TextArea", "details": {"minHeight": 1}},
-                "keyId": "input_2",
-                "unitLong": "seconds",
-                "unitShort": "sec",
-            },
-            "examples": [
-                # uses content-schema
-                {
-                    "label": "Acceleration",
-                    "description": "acceleration with units",
-                    "type": "ref_contentSchema",
-                    "contentSchema": {
-                        "title": "Acceleration",
-                        "type": "number",
-                        "x_unit": "m/s**2",
-                    },
-                    "keyId": "input_1",
-                    "unitLong": "meter/second<sup>3</sup>",
-                    "unitShort": "m/s<sup>3</sup>",
-                }
-            ],
-        }
+        json_schema_extra=_update_json_schema_extra,
     )
 
 
@@ -76,19 +82,25 @@ class ServiceOutputGet(ServiceOutput, _BaseCommonApiExtension):
         ..., description="Unique name identifier for this input"
     )
 
-    model_config = ConfigDict(
-        json_schema_extra={
-            "example": {
-                "displayOrder": 2,
-                "label": "Time Slept",
-                "description": "Time the service waited before completion",
-                "type": "number",
-                "unit": "second",
-                "unitLong": "seconds",
-                "unitShort": "sec",
-                "keyId": "output_2",
+    @staticmethod
+    def _update_json_schema_extra(schema: JsonDict) -> None:
+        schema.update(
+            {
+                "example": {
+                    "displayOrder": 2,
+                    "label": "Time Slept",
+                    "description": "Time the service waited before completion",
+                    "type": "number",
+                    "unit": "second",
+                    "unitLong": "seconds",
+                    "unitShort": "sec",
+                    "keyId": "output_2",
+                }
             }
-        }
+        )
+
+    model_config = ConfigDict(
+        json_schema_extra=_update_json_schema_extra,
     )
 
 
@@ -97,7 +109,7 @@ ServiceOutputsGetDict: TypeAlias = dict[ServicePortKey, ServiceOutputGet]
 
 
 _EXAMPLE_FILEPICKER: dict[str, Any] = {
-    **api_schemas_catalog_services.ServiceGet.model_config["json_schema_extra"]["examples"][1],  # type: ignore [index,dict-item]
+    **api_schemas_catalog_services.ServiceGet.model_json_schema()["examples"][1],
     "inputs": {},
     "outputs": {
         "outFile": {
@@ -112,7 +124,7 @@ _EXAMPLE_FILEPICKER: dict[str, Any] = {
 }
 
 _EXAMPLE_SLEEPER: dict[str, Any] = {
-    **api_schemas_catalog_services.ServiceGet.model_config["json_schema_extra"]["examples"][0],  # type: ignore[index,dict-item]
+    **api_schemas_catalog_services.ServiceGet.model_json_schema()["examples"][0],
     "inputs": {
         "input_1": {
             "displayOrder": 1,
@@ -222,9 +234,13 @@ class ServiceGet(api_schemas_catalog_services.ServiceGet):
         ..., description="outputs with extended information"
     )
 
+    @staticmethod
+    def _update_json_schema_extra(schema: JsonDict) -> None:
+        schema.update({"examples": [_EXAMPLE_FILEPICKER, _EXAMPLE_SLEEPER]})
+
     model_config = ConfigDict(
         **OutputSchema.model_config,
-        json_schema_extra={"examples": [_EXAMPLE_FILEPICKER, _EXAMPLE_SLEEPER]},
+        json_schema_extra=_update_json_schema_extra,
     )
 
 
@@ -242,24 +258,30 @@ class CatalogServiceGet(api_schemas_catalog_services.ServiceGetV2):
         ..., description="outputs with extended information"
     )
 
+    @staticmethod
+    def _update_json_schema_extra(schema: JsonDict) -> None:
+        schema.update(
+            {
+                "example": {
+                    **api_schemas_catalog_services.ServiceGetV2.model_json_schema()[
+                        "examples"
+                    ][0],
+                    "inputs": {
+                        f"input{i}": example
+                        for i, example in enumerate(
+                            ServiceInputGet.model_json_schema()["examples"]
+                        )
+                    },
+                    "outputs": {
+                        "outFile": ServiceOutputGet.model_json_schema()["example"]
+                    },
+                }
+            }
+        )
+
     model_config = ConfigDict(
         **OutputSchema.model_config,
-        json_schema_extra={
-            "example": {
-                **api_schemas_catalog_services.ServiceGetV2.model_config["json_schema_extra"]["examples"][0],  # type: ignore [index,dict-item]
-                "inputs": {
-                    f"input{i}": example
-                    for i, example in enumerate(
-                        ServiceInputGet.model_config["json_schema_extra"]["examples"]  # type: ignore[index,arg-type]
-                    )
-                },
-                "outputs": {
-                    "outFile": ServiceOutputGet.model_config["json_schema_extra"][
-                        "example"
-                    ]  # type: ignore[index]
-                },
-            }
-        },
+        json_schema_extra=_update_json_schema_extra,
     )
 
 

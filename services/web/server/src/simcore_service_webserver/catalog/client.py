@@ -169,27 +169,3 @@ async def get_service_access_rights(
             resp.raise_for_status()
             body = await resp.json()
             return ServiceAccessRightsGet.model_validate(body)
-
-
-async def update_service(
-    app: web.Application,
-    user_id: UserID,
-    service_key: str,
-    service_version: str,
-    product_name: str,
-    update_data: dict[str, Any],
-) -> dict[str, Any]:
-    settings: CatalogSettings = get_plugin_settings(app)
-
-    url = URL(
-        f"{settings.api_base_url}/services/{urllib.parse.quote_plus(service_key)}/{service_version}",
-        encoded=True,
-    ).with_query({"user_id": user_id})
-
-    with _handle_client_exceptions(app) as session:
-        async with session.patch(
-            url, headers={X_PRODUCT_NAME_HEADER: product_name}, json=update_data
-        ) as resp:
-            resp.raise_for_status()
-            body: dict[str, Any] = await resp.json()
-            return body
