@@ -168,7 +168,6 @@ async def _assert_get_same_project(
 
         for node, node_data in project["workbench"].items():
             project["workbench"][node].pop("position", None)
-            project["workbench"][node].pop("progress", None)
 
         assert data == {k: project[k] for k in data}
 
