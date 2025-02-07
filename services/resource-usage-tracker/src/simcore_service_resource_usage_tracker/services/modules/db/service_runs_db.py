@@ -265,7 +265,7 @@ async def list_service_runs_by_product_and_user_and_wallet(
                     isouter=True,
                 ).join(
                     _project_tags_subquery,
-                    resource_tracker_service_runs.c.project_id
+                    resource_tracker_service_runs.c.root_parent_project_id
                     == _project_tags_subquery.c.project_uuid_for_rut,
                     isouter=True,
                 )
@@ -545,7 +545,7 @@ async def export_service_runs_table_to_s3(
                     isouter=True,
                 ).join(
                     _project_tags_subquery,
-                    resource_tracker_service_runs.c.project_id
+                    resource_tracker_service_runs.c.root_parent_project_id
                     == _project_tags_subquery.c.project_uuid_for_rut,
                     isouter=True,
                 )
