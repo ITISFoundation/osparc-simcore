@@ -16,11 +16,7 @@
       "label": "File Picker 0D",
       "inputs": {},
       "inputNodes": [],
-      "outputs": {},
-      "position": {
-        "x": 50,
-        "y": 150
-      }
+      "outputs": {}
     },
     "5739e377-17f7-4f09-a6ad-62659fb7fdec": {
       "key": "simcore/services/comp/ucdavis-singlecell-cardiac-model",
@@ -49,11 +45,7 @@
       "inputNodes": [
         "b4b20476-e7c0-47c2-8cc4-f66ac21a13bf"
       ],
-      "outputs": {},
-      "position": {
-        "x": 300,
-        "y": 150
-      }
+      "outputs": {}
     },
     "351fd505-1ee3-466d-ad6c-ea2915ffd364": {
       "key": "simcore/services/dynamic/raw-graphs",
@@ -61,10 +53,6 @@
       "label": "2D plot",
       "inputs": {},
       "outputs": {},
-      "position": {
-        "x": 1073,
-        "y": 307
-      },
       "progress": 100
     }
   },
