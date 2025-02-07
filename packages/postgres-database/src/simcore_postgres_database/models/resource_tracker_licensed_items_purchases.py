@@ -75,7 +75,7 @@ resource_tracker_licensed_items_purchases = sa.Table(
     sa.Column(
         "user_email",
         sa.String,
-        nullable=True,
+        nullable=False,
     ),
     sa.Column(
         "purchased_at",

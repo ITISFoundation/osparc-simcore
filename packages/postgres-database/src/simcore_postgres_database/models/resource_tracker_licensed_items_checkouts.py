@@ -36,7 +36,7 @@ resource_tracker_licensed_items_checkouts = sa.Table(
     sa.Column(
         "user_email",
         sa.String,
-        nullable=True,
+        nullable=False,
     ),
     sa.Column("product_name", sa.String, nullable=False, doc="Product name"),
     sa.Column(
