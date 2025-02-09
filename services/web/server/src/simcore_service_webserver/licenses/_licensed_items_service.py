@@ -32,7 +32,7 @@ from ..resource_usage.service import get_pricing_plan_unit
 from ..users.api import get_user
 from ..wallets.api import get_wallet_with_available_credits_by_user_and_wallet
 from ..wallets.errors import WalletNotEnoughCreditsError
-from . import _licensed_items_repository
+from . import _licensed_items_repository, _licensed_resources_repository
 from ._common.models import LicensedItemsBodyParams
 from .errors import LicensedItemNotFoundError, LicensedItemPricingPlanMatchError
 
@@ -51,7 +51,7 @@ class RegistrationResult(NamedTuple):
     message: str | None
 
 
-async def register_resource_as_licensed_item(
+async def register_resource_as_licensed_resource(
     app: web.Application,
     *,
     licensed_resource_name: str,
@@ -81,6 +81,22 @@ async def register_resource_as_licensed_item(
             licensed_resource_name=licensed_resource_name,
             licensed_resource_type=licensed_resource_type,
         )
+        licensed_resource = (
+            await _licensed_resources_repository.get_by_resource_identifier(
+                app,
+                licensed_resource_name=licensed_resource_name,
+                licensed_resource_type=licensed_resource_type,
+            )
+        )
+        # NOTE: MD: This is temporaty, we are splitting the licensed_item and licensed_resource
+        assert (
+            licensed_resource.licensed_resource_name
+            == licensed_item.licensed_resource_name
+        )  # nosec
+        assert (
+            licensed_resource.licensed_resource_type
+            == licensed_item.licensed_resource_type
+        )  # nosec
 
         if licensed_item.licensed_resource_data != new_licensed_resource_data:
             ddiff = DeepDiff(
@@ -110,6 +126,22 @@ async def register_resource_as_licensed_item(
             product_name=None,
             pricing_plan_id=None,
         )
+        licensed_resource = await _licensed_resources_repository.create_if_not_exists(
+            app,
+            display_name=licensed_item_display_name,
+            licensed_resource_name=licensed_resource_name,
+            licensed_resource_type=licensed_resource_type,
+            licensed_resource_data=new_licensed_resource_data,
+        )
+        # NOTE: MD: This is temporaty, we are splitting the licensed_item and licensed_resource
+        assert (
+            licensed_resource.licensed_resource_name
+            == licensed_item.licensed_resource_name
+        )  # nosec
+        assert (
+            licensed_resource.licensed_resource_type
+            == licensed_item.licensed_resource_type
+        )  # nosec
 
         return RegistrationResult(
             licensed_item,

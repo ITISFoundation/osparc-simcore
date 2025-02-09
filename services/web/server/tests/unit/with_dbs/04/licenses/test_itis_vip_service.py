@@ -146,7 +146,7 @@ async def test_sync_itis_vip_as_licensed_items(
                     licensed_item1,
                     state1,
                     _,
-                ) = await _licensed_items_service.register_resource_as_licensed_item(
+                ) = await _licensed_items_service.register_resource_as_licensed_resource(
                     client.app,
                     licensed_resource_name=f"{category}/{vip.id}",
                     licensed_resource_type=LicensedResourceType.VIP_MODEL,
@@ -160,7 +160,7 @@ async def test_sync_itis_vip_as_licensed_items(
                     licensed_item2,
                     state2,
                     _,
-                ) = await _licensed_items_service.register_resource_as_licensed_item(
+                ) = await _licensed_items_service.register_resource_as_licensed_resource(
                     client.app,
                     licensed_resource_name=f"{category}/{vip.id}",
                     licensed_resource_type=LicensedResourceType.VIP_MODEL,
@@ -176,7 +176,7 @@ async def test_sync_itis_vip_as_licensed_items(
                     licensed_item3,
                     state3,
                     msg,
-                ) = await _licensed_items_service.register_resource_as_licensed_item(
+                ) = await _licensed_items_service.register_resource_as_licensed_resource(
                     client.app,
                     licensed_resource_name=f"{category}/{vip.id}",
                     licensed_resource_type=LicensedResourceType.VIP_MODEL,
