@@ -4,9 +4,7 @@ from typing import NamedTuple
 from models_library.basic_types import IDStr
 from models_library.licenses import LicensedItemID
 from models_library.products import ProductName
-from models_library.resource_tracker_licensed_items_checkouts import (
-    LicensedItemCheckoutID,
-)
+from models_library.resource_tracker_license_checkouts import LicenseCheckoutID
 from models_library.rest_base import RequestParameters, StrictRequestParameters
 from models_library.rest_ordering import (
     OrderBy,
@@ -20,7 +18,7 @@ from pydantic import BaseModel, PositiveInt
 
 
 class LicensedItemCheckoutGet(BaseModel):
-    licensed_item_checkout_id: LicensedItemCheckoutID
+    licensed_item_checkout_id: LicenseCheckoutID
     licensed_item_id: LicensedItemID
     wallet_id: WalletID
     user_id: UserID
@@ -37,7 +35,7 @@ class LicensedItemCheckoutGetPage(NamedTuple):
 
 
 class LicensedItemCheckoutPathParams(StrictRequestParameters):
-    licensed_item_checkout_id: LicensedItemCheckoutID
+    licensed_item_checkout_id: LicenseCheckoutID
 
 
 _LicensedItemsCheckoutsListOrderQueryParams: type[

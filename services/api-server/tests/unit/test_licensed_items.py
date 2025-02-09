@@ -11,8 +11,8 @@ import pytest
 from faker import Faker
 from fastapi import FastAPI, status
 from httpx import AsyncClient, BasicAuth
-from models_library.api_schemas_resource_usage_tracker.licensed_items_checkouts import (
-    LicensedItemCheckoutGet,
+from models_library.api_schemas_resource_usage_tracker.license_checkouts import (
+    LicenseCheckoutGet,
 )
 from models_library.api_schemas_webserver.licensed_items import (
     LicensedItemRpcGet,
@@ -22,9 +22,7 @@ from models_library.api_schemas_webserver.licensed_items_checkouts import (
     LicensedItemCheckoutRpcGet,
 )
 from models_library.licenses import LicensedItemID
-from models_library.resource_tracker_licensed_items_checkouts import (
-    LicensedItemCheckoutID,
-)
+from models_library.resource_tracker_license_checkouts import LicenseCheckoutID
 from models_library.services_types import ServiceRunID
 from models_library.users import UserID
 from models_library.wallets import WalletID
@@ -35,7 +33,7 @@ from servicelib.rabbitmq._errors import RemoteMethodNotRegisteredError
 from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
     CanNotCheckoutNotEnoughAvailableSeatsError,
     CanNotCheckoutServiceIsNotRunningError,
-    LicensedItemCheckoutNotFoundError,
+    LicenseCheckoutNotFoundError,
     NotEnoughAvailableSeatsError,
 )
 from simcore_service_api_server._meta import API_VTAG
@@ -245,8 +243,8 @@ async def test_checkout_licensed_item(
 @pytest.mark.parametrize(
     "wb_api_exception_to_raise,rut_exception_to_raise,expected_api_server_status_code,valid_license_checkout_id",
     [
-        (LicensedItemCheckoutNotFoundError, None, status.HTTP_404_NOT_FOUND, True),
-        (None, LicensedItemCheckoutNotFoundError, status.HTTP_404_NOT_FOUND, True),
+        (LicenseCheckoutNotFoundError, None, status.HTTP_404_NOT_FOUND, True),
+        (None, LicenseCheckoutNotFoundError, status.HTTP_404_NOT_FOUND, True),
         (None, None, status.HTTP_200_OK, True),
         (None, None, status.HTTP_422_UNPROCESSABLE_ENTITY, False),
     ],
@@ -262,33 +260,33 @@ async def test_release_checked_out_licensed_item(
     valid_license_checkout_id: bool,
     faker: Faker,
 ):
-    _licensed_item_id = cast(UUID, faker.uuid4())
-    _licensed_item_checkout_id = cast(UUID, faker.uuid4())
+    _license_id = cast(UUID, faker.uuid4())
+    _licensed_checkout_id = cast(UUID, faker.uuid4())
 
     async def get_licensed_item_checkout(
         rabbitmq_rpc_client: RabbitMQRPCClient,
         product_name: str,
-        licensed_item_checkout_id: LicensedItemCheckoutID,
-    ) -> LicensedItemCheckoutGet:
+        licensed_item_checkout_id: LicenseCheckoutID,
+    ) -> LicenseCheckoutGet:
         if rut_exception_to_raise is not None:
             raise rut_exception_to_raise
-        extra = LicensedItemCheckoutGet.model_config.get("json_schema_extra")
+        extra = LicenseCheckoutGet.model_config.get("json_schema_extra")
         assert isinstance(extra, dict)
         examples = extra.get("examples")
         assert isinstance(examples, list)
         assert len(examples) > 0
         example = examples[0]
         assert isinstance(example, dict)
-        licensed_item_checkout_get = LicensedItemCheckoutGet.model_validate(example)
+        licensed_item_checkout_get = LicenseCheckoutGet.model_validate(example)
         if valid_license_checkout_id:
-            licensed_item_checkout_get.licensed_item_id = _licensed_item_id
+            licensed_item_checkout_get.license_id = _license_id
         return licensed_item_checkout_get
 
     async def release_licensed_item_for_wallet(
         rabbitmq_rpc_client: RabbitMQRPCClient,
         product_name: str,
         user_id: int,
-        licensed_item_checkout_id: LicensedItemCheckoutID,
+        licensed_item_checkout_id: LicenseCheckoutID,
     ) -> LicensedItemCheckoutRpcGet:
         if wb_api_exception_to_raise is not None:
             raise wb_api_exception_to_raise
@@ -311,7 +309,7 @@ async def test_release_checked_out_licensed_item(
     )
 
     resp = await client.post(
-        f"{API_VTAG}/licensed-items/{_licensed_item_id}/checked-out-items/{_licensed_item_checkout_id}/release",
+        f"{API_VTAG}/licensed-items/{_license_id}/checked-out-items/{_licensed_checkout_id}/release",
         auth=auth,
     )
     assert resp.status_code == expected_api_server_status_code

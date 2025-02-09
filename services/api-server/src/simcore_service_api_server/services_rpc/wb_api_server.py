@@ -6,9 +6,7 @@ from fastapi import FastAPI
 from fastapi_pagination import create_page
 from models_library.api_schemas_webserver.licensed_items import LicensedItemRpcGetPage
 from models_library.licenses import LicensedItemID
-from models_library.resource_tracker_licensed_items_checkouts import (
-    LicensedItemCheckoutID,
-)
+from models_library.resource_tracker_license_checkouts import LicenseCheckoutID
 from models_library.services_types import ServiceRunID
 from models_library.users import UserID
 from models_library.wallets import WalletID
@@ -21,7 +19,7 @@ from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
     CanNotCheckoutServiceIsNotRunningError as _CanNotCheckoutServiceIsNotRunningError,
 )
 from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
-    LicensedItemCheckoutNotFoundError as _LicensedItemCheckoutNotFoundError,
+    LicenseCheckoutNotFoundError as _LicensedItemCheckoutNotFoundError,
 )
 from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
     NotEnoughAvailableSeatsError,
@@ -160,7 +158,7 @@ class WbApiRpcClient(SingletonInAppStateMixin):
         *,
         product_name: str,
         user_id: UserID,
-        licensed_item_checkout_id: LicensedItemCheckoutID,
+        licensed_item_checkout_id: LicenseCheckoutID,
     ) -> LicensedItemCheckoutGet:
         licensed_item_checkout_get = await _release_licensed_item_for_wallet(
             self._client,

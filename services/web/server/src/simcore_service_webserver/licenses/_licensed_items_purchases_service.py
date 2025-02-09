@@ -2,21 +2,17 @@ import logging
 
 from aiohttp import web
 from models_library.api_schemas_resource_usage_tracker import (
-    licensed_items_purchases as rut_licensed_items_purchases,
+    license_purchases as rut_license_purchases,
 )
 from models_library.api_schemas_webserver import (
     licensed_items_purchases as webserver_licensed_items_purchases,
 )
 from models_library.products import ProductName
-from models_library.resource_tracker_licensed_items_purchases import (
-    LicensedItemPurchaseID,
-)
+from models_library.resource_tracker_license_purchases import LicensePurchaseID
 from models_library.rest_ordering import OrderBy
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker import (
-    licensed_items_purchases,
-)
+from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker import license_purchases
 
 from ..rabbitmq import get_rabbitmq_rpc_client
 from ..wallets.api import get_wallet_by_user
@@ -41,8 +37,8 @@ async def list_licensed_items_purchases(
     )
 
     rpc_client = get_rabbitmq_rpc_client(app)
-    result: rut_licensed_items_purchases.LicensedItemsPurchasesPage = (
-        await licensed_items_purchases.get_licensed_items_purchases_page(
+    result: rut_license_purchases.LicensesPurchasesPage = (
+        await license_purchases.get_license_purchases_page(
             rpc_client,
             product_name=product_name,
             wallet_id=wallet_id,
@@ -57,7 +53,7 @@ async def list_licensed_items_purchases(
             webserver_licensed_items_purchases.LicensedItemPurchaseGet(
                 licensed_item_purchase_id=item.licensed_item_purchase_id,
                 product_name=item.product_name,
-                licensed_item_id=item.licensed_item_id,
+                licensed_item_id=item.license_id,  # <-- mapping license_id <-> licensed_item_id
                 wallet_id=item.wallet_id,
                 pricing_unit_cost_id=item.pricing_unit_cost_id,
                 pricing_unit_cost=item.pricing_unit_cost,
@@ -79,14 +75,14 @@ async def get_licensed_item_purchase(
     *,
     product_name: ProductName,
     user_id: UserID,
-    licensed_item_purchase_id: LicensedItemPurchaseID,
+    licensed_item_purchase_id: LicensePurchaseID,
 ) -> webserver_licensed_items_purchases.LicensedItemPurchaseGet:
     rpc_client = get_rabbitmq_rpc_client(app)
-    licensed_item_get: rut_licensed_items_purchases.LicensedItemPurchaseGet = (
-        await licensed_items_purchases.get_licensed_item_purchase(
+    licensed_item_get: rut_license_purchases.LicensePurchaseGet = (
+        await license_purchases.get_license_purchase(
             rpc_client,
             product_name=product_name,
-            licensed_item_purchase_id=licensed_item_purchase_id,
+            licensed_purchase_id=licensed_item_purchase_id,
         )
     )
 

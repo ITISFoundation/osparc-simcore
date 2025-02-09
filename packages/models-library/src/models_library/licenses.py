@@ -12,7 +12,7 @@ from .products import ProductName
 from .resource_tracker import PricingPlanId
 from .utils.enums import StrAutoEnum
 
-LicensedItemID: TypeAlias = UUID  # <-- LicensedItemID == LicenseID
+LicensedItemID: TypeAlias = UUID
 LicenseID: TypeAlias = UUID
 LicensedResourceID: TypeAlias = UUID
 
@@ -66,8 +66,8 @@ VIP_DETAILS_EXAMPLE = {
 #
 
 
-class LicenseDB(BaseModel):
-    licensed_resource_id: LicensedResourceID
+class LicensedItemDB(BaseModel):
+    licensed_item_id: LicensedItemID
     display_name: str
 
     licensed_resource_name: str
@@ -85,15 +85,15 @@ class LicenseDB(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-class LicenseUpdateDB(BaseModel):
+class LicensedItemUpdateDB(BaseModel):
     display_name: str | None = None
     licensed_resource_name: str | None = None
     pricing_plan_id: PricingPlanId | None = None
     trash: bool | None = None
 
 
-class LicensedResource(BaseModel):
-    licensed_resource_id: LicensedResourceID
+class LicensedItem(BaseModel):
+    licensed_item_id: LicensedItemID
     display_name: str
     licensed_resource_name: str
     licensed_resource_type: LicensedResourceType
@@ -108,7 +108,7 @@ class LicensedResource(BaseModel):
             {
                 "examples": [
                     {
-                        "licensed_resource_id": "0362b88b-91f8-4b41-867c-35544ad1f7a1",
+                        "licensed_item_id": "0362b88b-91f8-4b41-867c-35544ad1f7a1",
                         "display_name": "my best model",
                         "licensed_resource_name": "best-model",
                         "licensed_resource_type": f"{LicensedResourceType.VIP_MODEL}",
@@ -131,6 +131,6 @@ class LicensedResource(BaseModel):
     model_config = ConfigDict(json_schema_extra=_update_json_schema_extra)
 
 
-class LicensedResourcePage(NamedTuple):
+class LicensedItemPage(NamedTuple):
     total: PositiveInt
-    items: list[LicensedResource]
+    items: list[LicensedItem]

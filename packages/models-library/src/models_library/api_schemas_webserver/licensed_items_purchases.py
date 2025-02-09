@@ -8,14 +8,14 @@ from pydantic import PositiveInt
 from ..licenses import LicensedItemID
 from ..products import ProductName
 from ..resource_tracker import PricingUnitCostId
-from ..resource_tracker_licensed_items_purchases import LicensedItemPurchaseID
+from ..resource_tracker_license_purchases import LicensePurchaseID
 from ..users import UserID
 from ..wallets import WalletID
 from ._base import OutputSchema
 
 
 class LicensedItemPurchaseGet(OutputSchema):
-    licensed_item_purchase_id: LicensedItemPurchaseID
+    licensed_item_purchase_id: LicensePurchaseID
     product_name: ProductName
     licensed_item_id: LicensedItemID
     wallet_id: WalletID

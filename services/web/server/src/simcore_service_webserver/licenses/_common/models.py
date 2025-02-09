@@ -1,9 +1,7 @@
 from models_library.basic_types import IDStr
 from models_library.licenses import LicensedItemID
 from models_library.resource_tracker import PricingPlanId, PricingUnitId
-from models_library.resource_tracker_licensed_items_purchases import (
-    LicensedItemPurchaseID,
-)
+from models_library.resource_tracker_license_purchases import LicensePurchaseID
 from models_library.rest_base import RequestParameters, StrictRequestParameters
 from models_library.rest_ordering import (
     OrderBy,
@@ -57,7 +55,7 @@ class LicensedItemsBodyParams(BaseModel):
 
 
 class LicensedItemsPurchasesPathParams(StrictRequestParameters):
-    licensed_item_purchase_id: LicensedItemPurchaseID
+    licensed_item_purchase_id: LicensePurchaseID
 
 
 _LicensedItemsPurchasesListOrderQueryParams: type[

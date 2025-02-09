@@ -6,7 +6,7 @@ from pydantic import BaseModel, ConfigDict, PositiveInt
 
 from ..licenses import LicensedItemID
 from ..products import ProductName
-from ..resource_tracker_licensed_items_checkouts import LicensedItemCheckoutID
+from ..resource_tracker_license_checkouts import LicenseCheckoutID
 from ..users import UserID
 from ..wallets import WalletID
 from ._base import OutputSchema
@@ -15,7 +15,7 @@ from ._base import OutputSchema
 
 
 class LicensedItemCheckoutRpcGet(BaseModel):
-    licensed_item_checkout_id: LicensedItemCheckoutID
+    licensed_item_checkout_id: LicenseCheckoutID
     licensed_item_id: LicensedItemID
     wallet_id: WalletID
     user_id: UserID
@@ -50,7 +50,7 @@ class LicensedItemCheckoutRpcGetPage(NamedTuple):
 
 
 class LicensedItemCheckoutRestGet(OutputSchema):
-    licensed_item_checkout_id: LicensedItemCheckoutID
+    licensed_item_checkout_id: LicenseCheckoutID
     licensed_item_id: LicensedItemID
     wallet_id: WalletID
     user_id: UserID

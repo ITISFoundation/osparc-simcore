@@ -2,16 +2,14 @@ from dataclasses import dataclass
 from functools import partial
 
 from fastapi import FastAPI
-from models_library.resource_tracker_licensed_items_checkouts import (
-    LicensedItemCheckoutID,
-)
+from models_library.resource_tracker_license_checkouts import LicenseCheckoutID
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
-    LicensedItemCheckoutNotFoundError as _LicensedItemCheckoutNotFoundError,
+    LicenseCheckoutNotFoundError as _LicensedItemCheckoutNotFoundError,
 )
-from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.licensed_items_checkouts import (
-    get_licensed_item_checkout as _get_licensed_item_checkout,
+from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.license_checkouts import (
+    get_license_checkout as _get_licensed_item_checkout,
 )
 
 from ..exceptions.backend_errors import LicensedItemCheckoutNotFoundError
@@ -34,16 +32,16 @@ class ResourceUsageTrackerClient(SingletonInAppStateMixin):
         }
     )
     async def get_licensed_item_checkout(
-        self, *, product_name: str, licensed_item_checkout_id: LicensedItemCheckoutID
+        self, *, product_name: str, licensed_item_checkout_id: LicenseCheckoutID
     ) -> LicensedItemCheckoutGet:
         _licensed_item_checkout = await _get_licensed_item_checkout(
             rabbitmq_rpc_client=self._client,
             product_name=product_name,
-            licensed_item_checkout_id=licensed_item_checkout_id,
+            license_checkout_id=licensed_item_checkout_id,
         )
         return LicensedItemCheckoutGet(
-            licensed_item_checkout_id=_licensed_item_checkout.licensed_item_checkout_id,
-            licensed_item_id=_licensed_item_checkout.licensed_item_id,
+            licensed_item_checkout_id=_licensed_item_checkout.license_checkout_id,
+            licensed_item_id=_licensed_item_checkout.license_id,
             wallet_id=_licensed_item_checkout.wallet_id,
             user_id=_licensed_item_checkout.user_id,
             product_name=_licensed_item_checkout.product_name,

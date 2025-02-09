@@ -1,19 +1,15 @@
 from aiohttp import web
 from models_library.api_schemas_resource_usage_tracker import (
-    licensed_items_checkouts as rut_licensed_items_checkouts,
+    license_checkouts as rut_license_checkouts,
 )
 from models_library.licenses import LicensedItemID
 from models_library.products import ProductName
-from models_library.resource_tracker_licensed_items_checkouts import (
-    LicensedItemCheckoutID,
-)
+from models_library.resource_tracker_license_checkouts import LicenseCheckoutID
 from models_library.rest_ordering import OrderBy
 from models_library.services_types import ServiceRunID
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker import (
-    licensed_items_checkouts,
-)
+from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker import license_checkouts
 
 from ..rabbitmq import get_rabbitmq_rpc_client
 from ..users.api import get_user
@@ -45,7 +41,7 @@ async def list_licensed_items_checkouts_for_wallet(
 
     rpc_client = get_rabbitmq_rpc_client(app)
 
-    result = await licensed_items_checkouts.get_licensed_items_checkouts_page(
+    result = await license_checkouts.get_license_checkouts_page(
         rpc_client,
         product_name=product_name,
         filter_wallet_id=wallet_id,
@@ -58,8 +54,8 @@ async def list_licensed_items_checkouts_for_wallet(
         total=result.total,
         items=[
             LicensedItemCheckoutGet.model_construct(
-                licensed_item_checkout_id=checkout_item.licensed_item_checkout_id,
-                licensed_item_id=checkout_item.licensed_item_id,
+                licensed_item_checkout_id=checkout_item.license_checkout_id,  # <-- mapping license_checkout_id <-> licensed_item_checkout_id
+                licensed_item_id=checkout_item.license_id,  # <-- mapping license_id <-> licensed_item_id
                 wallet_id=checkout_item.wallet_id,
                 user_id=checkout_item.user_id,
                 user_email=checkout_item.user_email,
@@ -79,14 +75,14 @@ async def get_licensed_item_checkout(
     # access context
     product_name: ProductName,
     user_id: UserID,
-    licensed_item_checkout_id: LicensedItemCheckoutID,
+    licensed_item_checkout_id: LicenseCheckoutID,
 ) -> LicensedItemCheckoutGet:
     rpc_client = get_rabbitmq_rpc_client(app)
 
-    checkout_item = await licensed_items_checkouts.get_licensed_item_checkout(
+    checkout_item = await license_checkouts.get_license_checkout(
         rpc_client,
         product_name=product_name,
-        licensed_item_checkout_id=licensed_item_checkout_id,
+        license_checkout_id=licensed_item_checkout_id,
     )
 
     # Check whether user has access to the wallet
@@ -98,8 +94,8 @@ async def get_licensed_item_checkout(
     )
 
     return LicensedItemCheckoutGet.model_construct(
-        licensed_item_checkout_id=checkout_item.licensed_item_checkout_id,
-        licensed_item_id=checkout_item.licensed_item_id,
+        licensed_item_checkout_id=checkout_item.license_checkout_id,
+        licensed_item_id=checkout_item.license_id,
         wallet_id=checkout_item.wallet_id,
         user_id=checkout_item.user_id,
         user_email=checkout_item.user_email,
@@ -133,10 +129,10 @@ async def checkout_licensed_item_for_wallet(
     user = await get_user(app, user_id=user_id)
 
     rpc_client = get_rabbitmq_rpc_client(app)
-    licensed_item_get: rut_licensed_items_checkouts.LicensedItemCheckoutGet = (
-        await licensed_items_checkouts.checkout_licensed_item(
+    licensed_item_get: rut_license_checkouts.LicenseCheckoutGet = (
+        await license_checkouts.checkout_license(
             rpc_client,
-            licensed_item_id=licensed_item_id,
+            license_id=licensed_item_id,  # <-- mapping license_id <-> licensed_item_id
             wallet_id=wallet_id,
             product_name=product_name,
             num_of_seats=num_of_seats,
@@ -147,8 +143,8 @@ async def checkout_licensed_item_for_wallet(
     )
 
     return LicensedItemCheckoutGet.model_construct(
-        licensed_item_checkout_id=licensed_item_get.licensed_item_checkout_id,
-        licensed_item_id=licensed_item_get.licensed_item_id,
+        licensed_item_checkout_id=licensed_item_get.license_checkout_id,  # <-- mapping license_checkout_id <-> licensed_item_checkout_id
+        licensed_item_id=licensed_item_get.license_id,  # <-- mapping license_id <-> licensed_item_id
         wallet_id=licensed_item_get.wallet_id,
         user_id=licensed_item_get.user_id,
         user_email=licensed_item_get.user_email,
@@ -166,14 +162,14 @@ async def release_licensed_item_for_wallet(
     product_name: ProductName,
     user_id: UserID,
     # release args
-    licensed_item_checkout_id: LicensedItemCheckoutID,
+    licensed_item_checkout_id: LicenseCheckoutID,
 ) -> LicensedItemCheckoutGet:
     rpc_client = get_rabbitmq_rpc_client(app)
 
-    checkout_item = await licensed_items_checkouts.get_licensed_item_checkout(
+    checkout_item = await license_checkouts.get_license_checkout(
         rpc_client,
         product_name=product_name,
-        licensed_item_checkout_id=licensed_item_checkout_id,
+        license_checkout_id=licensed_item_checkout_id,  # <-- mapping license_checkout_id <-> licensed_item_checkout_id
     )
 
     # Check whether user has access to the wallet
@@ -184,17 +180,15 @@ async def release_licensed_item_for_wallet(
         product_name=product_name,
     )
 
-    licensed_item_get: rut_licensed_items_checkouts.LicensedItemCheckoutGet = (
-        await licensed_items_checkouts.release_licensed_item(
-            rpc_client,
-            product_name=product_name,
-            licensed_item_checkout_id=licensed_item_checkout_id,
-        )
+    licensed_item_get: rut_license_checkouts.LicenseCheckoutGet = await license_checkouts.release_license(
+        rpc_client,
+        product_name=product_name,
+        license_checkout_id=licensed_item_checkout_id,  # <-- mapping license_checkout_id <-> licensed_item_checkout_id
     )
 
     return LicensedItemCheckoutGet.model_construct(
-        licensed_item_checkout_id=licensed_item_get.licensed_item_checkout_id,
-        licensed_item_id=licensed_item_get.licensed_item_id,
+        licensed_item_checkout_id=licensed_item_get.license_checkout_id,  # <-- mapping license_checkout_id <-> licensed_item_checkout_id
+        licensed_item_id=licensed_item_get.license_id,  # <-- mapping license_id <-> licensed_item_id
         wallet_id=licensed_item_get.wallet_id,
         user_id=licensed_item_get.user_id,
         user_email=licensed_item_get.user_email,

@@ -17,15 +17,11 @@ from models_library.licenses import (
     LicensedResourceType,
 )
 from models_library.products import ProductName
-from models_library.resource_tracker_licensed_items_purchases import (
-    LicensedItemsPurchasesCreate,
-)
+from models_library.resource_tracker_license_purchases import LicensePurchasesCreate
 from models_library.rest_ordering import OrderBy
 from models_library.users import UserID
 from pydantic import BaseModel, NonNegativeInt
-from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker import (
-    licensed_items_purchases,
-)
+from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker import license_purchases
 
 from ..rabbitmq import get_rabbitmq_rpc_client
 from ..resource_usage.service import get_pricing_plan_unit
@@ -241,9 +237,9 @@ async def purchase_licensed_item(
 
     user = await get_user(app, user_id=user_id)
 
-    _data = LicensedItemsPurchasesCreate(
+    _data = LicensePurchasesCreate(
         product_name=product_name,
-        licensed_item_id=licensed_item_id,
+        license_id=licensed_item_id,  # <-- mapping license_id <-> licensed_item_id
         wallet_id=wallet.wallet_id,
         wallet_name=wallet.name,
         pricing_plan_id=body_params.pricing_plan_id,
@@ -259,4 +255,4 @@ async def purchase_licensed_item(
         purchased_at=datetime.now(tz=UTC),
     )
     rpc_client = get_rabbitmq_rpc_client(app)
-    await licensed_items_purchases.create_licensed_item_purchase(rpc_client, data=_data)
+    await license_purchases.create_license_purchase(rpc_client, data=_data)

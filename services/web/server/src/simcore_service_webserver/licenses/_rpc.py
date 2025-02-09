@@ -10,9 +10,7 @@ from models_library.api_schemas_webserver.licensed_items_checkouts import (
 from models_library.basic_types import IDStr
 from models_library.licenses import LicensedItemID, LicensedItemPage
 from models_library.products import ProductName
-from models_library.resource_tracker_licensed_items_checkouts import (
-    LicensedItemCheckoutID,
-)
+from models_library.resource_tracker_license_checkouts import LicenseCheckoutID
 from models_library.rest_ordering import OrderBy
 from models_library.services_types import ServiceRunID
 from models_library.users import UserID
@@ -22,7 +20,7 @@ from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
     LICENSES_ERRORS,
     CanNotCheckoutNotEnoughAvailableSeatsError,
     CanNotCheckoutServiceIsNotRunningError,
-    LicensedItemCheckoutNotFoundError,
+    LicenseCheckoutNotFoundError,
     NotEnoughAvailableSeatsError,
 )
 
@@ -121,13 +119,13 @@ async def checkout_licensed_item_for_wallet(
     )
 
 
-@router.expose(reraise_if_error_type=(LicensedItemCheckoutNotFoundError,))
+@router.expose(reraise_if_error_type=(LicenseCheckoutNotFoundError,))
 async def release_licensed_item_for_wallet(
     app: web.Application,
     *,
     product_name: ProductName,
     user_id: UserID,
-    licensed_item_checkout_id: LicensedItemCheckoutID,
+    licensed_item_checkout_id: LicenseCheckoutID,
 ) -> LicensedItemCheckoutRpcGet:
     licensed_item_get = (
         await _licensed_items_checkouts_service.release_licensed_item_for_wallet(

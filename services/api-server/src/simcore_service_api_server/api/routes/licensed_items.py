@@ -2,9 +2,7 @@ from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from models_library.licenses import LicensedItemID
-from models_library.resource_tracker_licensed_items_checkouts import (
-    LicensedItemCheckoutID,
-)
+from models_library.resource_tracker_license_checkouts import LicenseCheckoutID
 from pydantic import PositiveInt
 from simcore_service_api_server.api.dependencies.resource_usage_tracker_rpc import (
     get_resource_usage_tracker_client,
@@ -57,7 +55,7 @@ async def release_licensed_item(
     product_name: Annotated[str, Depends(get_product_name)],
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     licensed_item_id: LicensedItemID,
-    licensed_item_checkout_id: LicensedItemCheckoutID,
+    licensed_item_checkout_id: LicenseCheckoutID,
 ):
     _licensed_item_checkout = await rut_rpc.get_licensed_item_checkout(
         product_name=product_name, licensed_item_checkout_id=licensed_item_checkout_id
