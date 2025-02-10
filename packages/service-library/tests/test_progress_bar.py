@@ -275,7 +275,7 @@ async def test_reset_progress(caplog: pytest.LogCaptureFixture, faker: Faker):
         assert "already reached maximum" in caplog.text
 
         caplog.clear()
-        root.reset_progress()
+        root.reset()
 
         assert root._current_steps == pytest.approx(-1)  # noqa: SLF001
         assert "already reached maximum" not in caplog.text

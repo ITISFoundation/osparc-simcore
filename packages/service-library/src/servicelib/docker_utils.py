@@ -276,7 +276,7 @@ async def pull_image(
         )
         async def _pull_image_with_retry() -> None:
             # for each attempt rest the progress
-            progress_bar.reset_progress()
+            progress_bar.reset()
             _reset_progress_from_previous_attempt()
 
             _logger.info("trying to pull image='%s'", image)
