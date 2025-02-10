@@ -182,17 +182,15 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
           this.__anatomicalModels = [];
           licensedItems.forEach(licensedItem => {
             const anatomicalModel = osparc.utils.Utils.deepCloneObject(licensedItem);
-            anatomicalModel["modelId"] = anatomicalModel["licensedResourceData"]["source"]["id"];
+            const anatomicalModelDataSource = anatomicalModel["licensedResourceData"]["source"];
+            anatomicalModel["modelId"] = anatomicalModelDataSource["id"];
             anatomicalModel["thumbnail"] = "";
             anatomicalModel["date"] = null;
-            if (anatomicalModel["licensedResourceData"] && anatomicalModel["licensedResourceData"]["source"]) {
-              const anatomicalModelSource = anatomicalModel["licensedResourceData"]["source"];
-              if (anatomicalModelSource["thumbnail"]) {
-                anatomicalModel["thumbnail"] = anatomicalModelSource["thumbnail"];
-              }
-              if (anatomicalModelSource["features"] && anatomicalModelSource["features"]["date"]) {
-                anatomicalModel["date"] = new Date(anatomicalModelSource["features"]["date"]);
-              }
+            if (anatomicalModelDataSource["thumbnail"]) {
+              anatomicalModel["thumbnail"] = anatomicalModelDataSource["thumbnail"];
+            }
+            if (anatomicalModelDataSource["features"] && anatomicalModelDataSource["features"]["date"]) {
+              anatomicalModel["date"] = new Date(anatomicalModelDataSource["features"]["date"]);
             }
             // attach license data
             anatomicalModel["licensedItemId"] = licensedItem["licensedItemId"];

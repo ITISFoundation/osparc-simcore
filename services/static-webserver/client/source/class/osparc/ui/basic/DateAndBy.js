@@ -96,9 +96,12 @@ qx.Class.define("osparc.ui.basic.DateAndBy", {
         const atom = this.getChildControl("last-touching");
         const myGroupId = osparc.auth.Data.getInstance().getGroupId();
         if (groupId === myGroupId) {
-          atom.setLabel("by me");
+          atom.set({
+            label: "by me",
+            icon: null,
+          })
         } else {
-          atom.setLabel("by");
+          atom.setLabel("by ");
           osparc.dashboard.CardBase.addHintFromGids(atom, [groupId]);
         }
       }

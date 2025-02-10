@@ -549,7 +549,9 @@ qx.Class.define("osparc.data.model.Node", {
       return this.getIframeHandler() ? this.getIframeHandler().getLoadingPage() : null;
     },
 
-    __applyPropsForm: function() {
+    __applyPropsForm: function(propsForm) {
+      osparc.utils.Utils.setIdToWidget(propsForm, "settingsForm_" + this.getNodeId());
+
       const checkIsPipelineRunning = () => {
         const isPipelineRunning = this.getStudy().isPipelineRunning();
         this.getPropsForm().setEnabled(!isPipelineRunning);
