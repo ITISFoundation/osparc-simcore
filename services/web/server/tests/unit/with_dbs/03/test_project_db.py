@@ -100,6 +100,7 @@ def _assert_added_project(
         "creationDate",
         "lastChangeDate",
         "accessRights",  # NOTE: access rights were moved away from the projects table
+        "workbench",
         "trashed",
         "trashedBy",
         "trashedExplicitly",
@@ -192,8 +193,7 @@ async def insert_project_in_db(
     async def _inserter(prj: dict[str, Any], **overrides) -> dict[str, Any]:
         # add project without user id -> by default creates a template
 
-        workbench = prj.pop("workbench", {})
-        assert prj.get("workbench", None) == None  # nosec
+        workbench = prj.pop("workbench", None)
 
         project_nodes = None
         if workbench:
@@ -224,6 +224,8 @@ async def insert_project_in_db(
                 )
 
         inserted_projects.append(new_project["uuid"])
+        if workbench:
+            new_project["workbench"] = workbench
         return new_project
 
     yield _inserter
