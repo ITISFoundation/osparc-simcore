@@ -69,6 +69,12 @@ services_meta_data = sa.Table(
         doc="Link to image to us as service thumbnail (editable)",
     ),
     sa.Column(
+        "icon",
+        sa.String,
+        nullable=True,
+        doc="Link to icon (editable)",
+    ),
+    sa.Column(
         "version_display",
         sa.String,
         nullable=True,
