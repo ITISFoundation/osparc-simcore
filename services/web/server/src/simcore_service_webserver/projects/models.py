@@ -36,7 +36,7 @@ class ProjectTypeAPI(str, Enum):
         }[api_type]
 
 
-class ProjectDB(BaseModel):
+class ProjectDBGet(BaseModel):
     # NOTE: model intented to read one-to-one columns of the `projects` table
     id: int
     type: ProjectType
@@ -44,6 +44,7 @@ class ProjectDB(BaseModel):
     name: str
     description: str
     thumbnail: HttpUrl | None
+    icon: HttpUrl | None
     prj_owner: UserID  # == user.id (who created)
     creation_date: datetime
     last_change_date: datetime
@@ -71,12 +72,12 @@ class ProjectDB(BaseModel):
     )
 
 
-class ProjectWithTrashExtra(ProjectDB):
+class ProjectWithTrashExtra(ProjectDBGet):
     # This field is not part of the tables
     trashed_by_primary_gid: GroupID | None = None
 
 
-class UserSpecificProjectDataDB(ProjectDB):
+class UserSpecificProjectDataDBGet(ProjectDBGet):
     folder_id: FolderID | None
 
     model_config = ConfigDict(from_attributes=True)
