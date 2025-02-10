@@ -409,26 +409,22 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
             data.get("WEBSERVER_DEV_FEATURES_ENABLED", False)
         )
 
-        if not dev_features_allowed:
-            for field_name, field in cls.model_fields.items():
-                if field.json_schema_extra:
-                    json_schema: dict[str, Any] = {}
-                    if callable(field.json_schema_extra):
-                        field.json_schema_extra(json_schema)
-                    else:
-                        json_schema = field.json_schema_extra
+        if dev_features_allowed:
+            return data
 
-                    assert isinstance(json_schema, dict)  # nosec
+        for field_name, field in cls.model_fields.items():
+            json_schema = field.json_schema_extra or {}
+            if callable(field.json_schema_extra):
+                json_schema = {}
+                field.json_schema_extra(json_schema)
 
-                    if json_schema.get(_X_DEV_FEATURE_FLAG):
-                        _logger.warning(
-                            "'%s' is still under development and will be forcibly disabled [WEBSERVER_DEV_FEATURES_ENABLED=%s].",
-                            field_name,
-                            dev_features_allowed,
-                        )
-                        data[field_name] = (
-                            None if field_name and is_nullable(field) else False
-                        )
+            if json_schema.get(_X_DEV_FEATURE_FLAG):
+                _logger.warning(
+                    "'%s' is still under development and will be forcibly disabled [WEBSERVER_DEV_FEATURES_ENABLED=%s].",
+                    field_name,
+                    dev_features_allowed,
+                )
+                data[field_name] = None if is_nullable(field) else False
 
         return data
 
