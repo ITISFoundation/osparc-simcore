@@ -67,7 +67,7 @@ class _ProjectCreateHeaderParams(BaseModel):
 @router.post(
     "/projects",
     response_model=Envelope[TaskGet],
-    summary="Creates a new project or copies an existing one",
+    description="Creates a new project or copies an existing one",
     status_code=status.HTTP_201_CREATED,
 )
 async def create_project(
