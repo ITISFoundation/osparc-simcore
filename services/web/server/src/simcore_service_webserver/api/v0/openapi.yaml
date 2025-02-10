@@ -6826,7 +6826,7 @@ components:
       - stats
       - limits
       title: Activity
-    Annotation:
+    AnnotationUI:
       properties:
         type:
           type: string
@@ -6849,7 +6849,7 @@ components:
       - type
       - color
       - attributes
-      title: Annotation
+      title: AnnotationUI
     Announcement:
       properties:
         id:
@@ -10436,7 +10436,7 @@ components:
       additionalProperties: false
       type: object
       title: LogoutBody
-    Marker:
+    MarkerUI:
       properties:
         color:
           type: string
@@ -10446,7 +10446,7 @@ components:
       type: object
       required:
       - color
-      title: Marker
+      title: MarkerUI
     MyGroupsGet:
       properties:
         me:
@@ -10804,7 +10804,7 @@ components:
           description: Parent's (group-nodes') node ID s. Used to group
         position:
           anyOf:
-          - $ref: '#/components/schemas/Position'
+          - $ref: '#/components/schemas/PositionUI'
           - type: 'null'
           description: Use projects_ui.WorkbenchUI.position instead
           deprecated: true
@@ -10933,7 +10933,7 @@ components:
           description: Parent's (group-nodes') node ID s. Used to group
         position:
           anyOf:
-          - $ref: '#/components/schemas/Position'
+          - $ref: '#/components/schemas/PositionUI'
           - type: 'null'
           description: Use projects_ui.WorkbenchUI.position instead
           deprecated: true
@@ -11745,7 +11745,7 @@ components:
       title: PortLink
       description: I/O port type to reference to an output port of another node in
         the same project
-    Position:
+    PositionUI:
       properties:
         x:
           type: integer
@@ -11760,7 +11760,7 @@ components:
       required:
       - x
       - y
-      title: Position
+      title: PositionUI
     PreRegisteredUserGet:
       properties:
         firstName:
@@ -13541,7 +13541,7 @@ components:
       - path
       title: SimCoreFileLink
       description: I/O port type to hold a link to a file in simcore S3 storage
-    Slideshow:
+    SlideshowUI:
       properties:
         position:
           type: integer
@@ -13554,7 +13554,7 @@ components:
       type: object
       required:
       - position
-      title: Slideshow
+      title: SlideshowUI
     SpecificInfo:
       properties:
         aws_ec2_instances:
@@ -14638,11 +14638,11 @@ components:
     WorkbenchUI:
       properties:
         position:
-          $ref: '#/components/schemas/Position'
+          $ref: '#/components/schemas/PositionUI'
           description: The node position in the workbench
         marker:
           anyOf:
-          - $ref: '#/components/schemas/Marker'
+          - $ref: '#/components/schemas/MarkerUI'
           - type: 'null'
       additionalProperties: false
       type: object
