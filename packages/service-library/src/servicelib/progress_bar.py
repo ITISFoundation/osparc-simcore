@@ -17,6 +17,7 @@ _logger = logging.getLogger(__name__)
 _MIN_PROGRESS_UPDATE_PERCENT: Final[float] = 0.01
 _INITIAL_VALUE: Final[float] = -1.0
 _FINAL_VALUE: Final[float] = 1.0
+_PROGRESS_ALREADY_REACGED_MAXIMUM: Final[str] = "Progress already reached maximum of"
 
 
 @runtime_checkable
@@ -177,7 +178,7 @@ class ProgressBarData:  # pylint: disable=too-many-instance-attributes
             if new_steps_value > self.num_steps:
                 _logger.warning(
                     "%s",
-                    f"Progress already reached maximum of {self.num_steps=}, "
+                    f"{_PROGRESS_ALREADY_REACGED_MAXIMUM} {self.num_steps=}, "
                     f"cause: {self._current_steps=} is updated by {steps=}"
                     "TIP: sub progresses are not created correctly please check the stack trace",
                     stack_info=True,
