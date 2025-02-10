@@ -1,8 +1,8 @@
-aiohappyeyeballs==2.4.4
+aiohappyeyeballs==2.4.6
     # via
     #   -c requirements/_base.txt
     #   aiohttp
-aiohttp==3.11.11
+aiohttp==3.11.12
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -54,7 +54,7 @@ botocore==1.35.81
     #   boto3
     #   moto
     #   s3transfer
-certifi==2024.12.14
+certifi==2025.1.31
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -64,7 +64,7 @@ certifi==2024.12.14
     #   simcore-service-storage-sdk
 cffi==1.17.1
     # via cryptography
-cfn-lint==1.23.0
+cfn-lint==1.24.0
     # via moto
 charset-normalizer==3.4.1
     # via
@@ -74,7 +74,7 @@ click==8.1.8
     # via
     #   -c requirements/_base.txt
     #   flask
-coverage==7.6.10
+coverage==7.6.11
     # via
     #   -r requirements/_test.in
     #   pytest-cov
@@ -87,7 +87,7 @@ docker==7.1.0
     # via
     #   -r requirements/_test.in
     #   moto
-faker==35.0.0
+faker==35.2.0
     # via -r requirements/_test.in
 fakeredis==2.26.2
     # via -r requirements/_test.in
@@ -147,7 +147,7 @@ jmespath==1.0.1
     #   -c requirements/_base.txt
     #   boto3
     #   botocore
-joserfc==1.0.2
+joserfc==1.0.3
     # via moto
 jsondiff==2.2.1
     # via moto
@@ -192,7 +192,7 @@ multidict==6.1.0
     #   -c requirements/_base.txt
     #   aiohttp
     #   yarl
-mypy==1.14.1
+mypy==1.15.0
     # via sqlalchemy
 mypy-extensions==1.0.0
     # via mypy
@@ -276,7 +276,7 @@ python-dotenv==1.0.1
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-pytz==2024.2
+pytz==2025.1
     # via pandas
 pyyaml==6.0.2
     # via

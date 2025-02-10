@@ -20,7 +20,7 @@ distlib==0.3.9
     # via virtualenv
 filelock==3.17.0
     # via virtualenv
-identify==2.6.6
+identify==2.6.7
     # via pre-commit
 isort==6.0.0
     # via
@@ -28,7 +28,7 @@ isort==6.0.0
     #   pylint
 mccabe==0.7.0
     # via pylint
-mypy==1.14.1
+mypy==1.15.0
     # via
     #   -c requirements/_test.txt
     #   -r requirements/../../../requirements/devenv.txt
@@ -47,7 +47,7 @@ packaging==24.2
     #   build
 pathspec==0.12.1
     # via black
-pip==25.0
+pip==25.0.1
     # via pip-tools
 pip-tools==7.4.1
     # via -r requirements/../../../requirements/devenv.txt
@@ -71,7 +71,7 @@ pyyaml==6.0.2
     #   -c requirements/_test.txt
     #   pre-commit
     #   watchdog
-ruff==0.9.3
+ruff==0.9.5
     # via -r requirements/../../../requirements/devenv.txt
 setuptools==75.8.0
     # via
