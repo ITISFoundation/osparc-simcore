@@ -11,7 +11,7 @@ from packaging.version import Version
 from simcore_service_catalog.utils.versioning import as_version
 
 from ..db.repositories.services import ServicesRepository
-from ..models.services_db import ReleaseFromDB
+from ..models.services_db import ReleaseDBGet
 
 
 def _get_default_compatibility_specs(target: ServiceVersion | Version) -> SpecifierSet:
@@ -41,7 +41,7 @@ def _get_latest_compatible_version(
     return max(compatible_versions, default=None)
 
 
-def _convert_to_versions(service_history: list[ReleaseFromDB]) -> list[Version]:
+def _convert_to_versions(service_history: list[ReleaseDBGet]) -> list[Version]:
     return sorted(
         (as_version(h.version) for h in service_history if not h.deprecated),
         reverse=True,  # latest first
@@ -94,7 +94,7 @@ async def evaluate_service_compatibility_map(
     repo: ServicesRepository,
     product_name: ProductName,
     user_id: UserID,
-    service_release_history: list[ReleaseFromDB],
+    service_release_history: list[ReleaseDBGet],
 ) -> dict[ServiceVersion, Compatibility | None]:
     released_versions = _convert_to_versions(service_release_history)
     result: dict[ServiceVersion, Compatibility | None] = {}
