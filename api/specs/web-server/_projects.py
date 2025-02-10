@@ -31,7 +31,7 @@ from models_library.rest_pagination import Page
 from pydantic import BaseModel
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.projects._common.models import ProjectPathParams
-from simcore_service_webserver.projects._crud_handlers import ProjectCreateParams
+from simcore_service_webserver.projects._crud_handlers import ProjectCreateQueryParams
 from simcore_service_webserver.projects._crud_handlers_models import (
     ProjectActiveQueryParams,
     ProjectsListQueryParams,
@@ -72,7 +72,7 @@ class _ProjectCreateHeaderParams(BaseModel):
 )
 async def create_project(
     _h: Annotated[_ProjectCreateHeaderParams, Depends()],
-    _path: Annotated[ProjectCreateParams, Depends()],
+    _path: Annotated[ProjectCreateQueryParams, Depends()],
     _body: ProjectCreateNew | ProjectCopyOverride,
 ):
     ...

@@ -56,7 +56,7 @@ from ._common.models import ProjectPathParams, RequestContext
 from ._crud_handlers_models import (
     ProjectActiveQueryParams,
     ProjectCreateHeaders,
-    ProjectCreateParams,
+    ProjectCreateQueryParams,
     ProjectFilters,
     ProjectsListQueryParams,
     ProjectsSearchQueryParams,
@@ -121,8 +121,8 @@ async def create_project(request: web.Request):
     # - Create https://google.aip.dev/133
     #
     req_ctx = RequestContext.model_validate(request)
-    query_params: ProjectCreateParams = parse_request_query_parameters_as(
-        ProjectCreateParams, request
+    query_params: ProjectCreateQueryParams = parse_request_query_parameters_as(
+        ProjectCreateQueryParams, request
     )
     header_params = parse_request_headers_as(ProjectCreateHeaders, request)
     if query_params.as_template:  # create template from

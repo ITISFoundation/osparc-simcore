@@ -52,8 +52,10 @@ class ProjectCreateNew(InputSchema):
 
     access_rights: dict[GroupIDStr, AccessRights]
 
-    tags: list[int] = Field(default_factory=list)
-    classifiers: list[ClassifierID] = Field(default_factory=list)
+    tags: Annotated[list[int], Field(default_factory=list)] = DEFAULT_FACTORY
+    classifiers: Annotated[
+        list[ClassifierID], Field(default_factory=list)
+    ] = DEFAULT_FACTORY
 
     ui: StudyUI | None = None
 
@@ -119,9 +121,11 @@ class ProjectGet(OutputSchema):
 
     # labeling
     tags: list[int]
-    classifiers: list[ClassifierID] = Field(
-        default_factory=list, json_schema_extra={"default": []}
-    )
+    classifiers: Annotated[
+        list[ClassifierID],
+        Field(default_factory=list, json_schema_extra={"default": []}),
+    ] = DEFAULT_FACTORY
+
     quality: Annotated[
         dict[str, Any], Field(default_factory=dict, json_schema_extra={"default": {}})
     ] = DEFAULT_FACTORY

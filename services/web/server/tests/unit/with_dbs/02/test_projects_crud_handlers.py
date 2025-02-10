@@ -18,6 +18,7 @@ from faker import Faker
 from models_library.api_schemas_directorv2.dynamic_services import (
     GetProjectInactivityResponse,
 )
+from models_library.api_schemas_webserver.projects import ProjectCreateNew
 from models_library.products import ProductName
 from models_library.projects_state import ProjectState
 from pydantic import TypeAdapter
@@ -413,6 +414,51 @@ async def test_get_project(
 
 
 # POST --------
+
+
+@pytest.mark.parametrize(
+    "user_role",
+    [UserRole.USER],
+)
+async def test_create_get_patch_project_icon(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    primary_group: dict[str, str],
+):
+    # Step 1: Create a new project with a specific ui.icon
+    project_data = ProjectCreateNew.model_validate(
+        {
+            "name": "Test Project",
+            "description": "A project to test ui.icon",
+            "ui": {"icon": "http://example.com/icon.png"},
+            "workbench": {},
+            "acess_rights": primary_group,
+        }
+    ).model_dump(mode="json", exclude_defaults=True, by_alias=True)
+
+    url = client.app.router["create_project"].url_for()
+    resp = await client.post(f"{url}", json=project_data)
+    new_project, _ = await assert_status(resp, status.HTTP_201_CREATED)
+    assert new_project
+
+    project_id = new_project["uuid"]
+
+    # Step 2: Get the project and check the ui.icon
+    url = client.app.router["get_project"].url_for(project_id=project_id)
+    resp = await client.get(f"{url}")
+    got_project, _ = await assert_status(resp, status.HTTP_200_OK)
+    assert got_project["ui"]["icon"] == "http://example.com/icon.png"
+
+    # Step 3: Patch the project to set ui.icon to null
+    patch_data = {"ui": {"icon": None}}
+    url = client.app.router["update_project"].url_for(project_id=project_id)
+    resp = await client.patch(f"{url}", json=patch_data)
+    await assert_status(resp, status.HTTP_204_NO_CONTENT)
+
+    # Step 4: Get the project again and check the ui.icon is now null
+    resp = await client.get(f"{url}")
+    got_project, _ = await assert_status(resp, status.HTTP_200_OK)
+    assert got_project["ui"]["icon"] is None
 
 
 @pytest.mark.parametrize(*standard_role_response())
