@@ -181,18 +181,25 @@ class ProjectNodesRepo:
         Raises:
             ProjectsNodesNodeNotFound: _description_
         """
-        update_stmt = (
-            projects_nodes.update()
-            .values(**values)
-            .where(
-                (projects_nodes.c.project_uuid == f"{self.project_uuid}")
-                & (projects_nodes.c.node_id == f"{node_id}")
-            )
-            .returning(
-                *[c for c in projects_nodes.c if c is not projects_nodes.c.project_uuid]
-            )
+        # Build the insert statement
+        stmt = pg_insert(projects_nodes).values(
+            project_uuid=self.project_uuid,
+            node_id=node_id,
+            **values,
         )
-        result = await connection.execute(update_stmt)
+
+        # Define the conflict target and update if there is a conflict
+        stmt = stmt.on_conflict_do_update(
+            index_elements=[
+                "project_uuid",
+                "node_id",
+            ],  # The columns that define the conflict
+            set_=values,  # Columns to be updated if there's a conflict
+        )
+        stmt = stmt.returning(
+            *[c for c in projects_nodes.c if c is not projects_nodes.c.project_uuid]
+        )
+        result = await connection.execute(stmt)
         row = await result.first()
         if not row:
             raise ProjectNodesNodeNotFoundError(
