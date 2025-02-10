@@ -418,6 +418,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
                 json_schema = {}
                 field.json_schema_extra(json_schema)
 
+            assert isinstance(json_schema, dict)  # nosec
             if json_schema.get(_X_DEV_FEATURE_FLAG):
                 _logger.warning(
                     "'%s' is still under development and will be forcibly disabled [WEBSERVER_DEV_FEATURES_ENABLED=%s].",
