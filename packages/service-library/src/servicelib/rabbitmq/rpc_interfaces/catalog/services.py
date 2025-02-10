@@ -1,6 +1,4 @@
-""" RPC client-side for the RPC server at the payments service
-
-"""
+"""RPC client-side for the RPC server at the payments service"""
 
 import logging
 from typing import Any, cast
@@ -25,7 +23,6 @@ from ..._client_rpc import RabbitMQRPCClient
 _logger = logging.getLogger(__name__)
 
 
-@log_decorator(_logger, level=logging.DEBUG)
 async def list_services_paginated(  # pylint: disable=too-many-arguments
     rpc_client: RabbitMQRPCClient,
     *,
