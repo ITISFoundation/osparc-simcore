@@ -11,11 +11,11 @@ from fastapi.middleware.gzip import GZipMiddleware
 from servicelib.fastapi import timing_middleware
 from servicelib.fastapi.client_session import setup_client_session
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
-from servicelib.fastapi.profiler_middleware import ProfilerMiddleware
+from servicelib.fastapi.profiler import ProfilerMiddleware
 from servicelib.fastapi.prometheus_instrumentation import (
     setup_prometheus_instrumentation,
 )
-from servicelib.fastapi.tracing import setup_tracing
+from servicelib.fastapi.tracing import initialize_tracing
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from .._meta import (
@@ -98,7 +98,7 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
     app.add_middleware(GZipMiddleware)
 
     if settings.STORAGE_TRACING:
-        setup_tracing(app, settings.STORAGE_TRACING, APP_NAME)
+        initialize_tracing(app, settings.STORAGE_TRACING, APP_NAME)
     if settings.STORAGE_MONITORING_ENABLED:
         setup_prometheus_instrumentation(app)
 
