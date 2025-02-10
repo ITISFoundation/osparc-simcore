@@ -545,7 +545,7 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
                 Bucket=bucket_name,
                 Key=object_key,
                 UploadId=upload_id,
-                MultipartUpload={"Parts": parts},
+                MultipartUpload={"Parts": parts},  # type: ignore[typeddict-item]
             )
         except Exception:
             # Abort the multipart upload if something goes wrong
