@@ -53,7 +53,7 @@ VIP_DETAILS_EXAMPLE = {
     "doi": "10.1000/xyz123",
     "license_key": "ABC123XYZ",
     "license_version": "1.0",
-    "protection": "Encrypted",
+    "protection": "Code",
     "available_from_url": "https://example.com/download",
     "additional_field": "trimmed if rest",
 }
@@ -110,7 +110,14 @@ class LicensedItem(BaseModel):
                         "display_name": "my best model",
                         "licensed_resource_name": "best-model",
                         "licensed_resource_type": f"{LicensedResourceType.VIP_MODEL}",
-                        "licensed_resource_data": cast(JsonDict, VIP_DETAILS_EXAMPLE),
+                        "licensed_resource_data": cast(
+                            JsonDict,
+                            {
+                                "category_id": "HumanWholeBody",
+                                "category_display": "Humans",
+                                "source": VIP_DETAILS_EXAMPLE,
+                            },
+                        ),
                         "pricing_plan_id": "15",
                         "created_at": "2024-12-12 09:59:26.422140",
                         "modified_at": "2024-12-12 09:59:26.422140",

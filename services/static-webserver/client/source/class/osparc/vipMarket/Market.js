@@ -41,40 +41,30 @@ qx.Class.define("osparc.vipMarket.Market", {
     ])
       .then(values => {
         const licensedItems = values[0];
-        const categories = {};
+        const categories = [];
         licensedItems.forEach(licensedItem => {
-          if (licensedItem["licensedResourceData"] && licensedItem["licensedResourceData"]["category"]) {
-            const category = licensedItem["licensedResourceData"]["category"];
-            if (!(category in categories)) {
-              categories[category] = [];
+          if (licensedItem["licensedResourceData"] && licensedItem["licensedResourceData"]["categoryId"]) {
+            const categoryId = licensedItem["licensedResourceData"]["categoryId"];
+            let category = categories.find(cat => cat["categoryId"] === categoryId);
+            if (!category) {
+              category = {
+                categoryId,
+                label: licensedItem["licensedResourceData"]["categoryDisplay"] || "Category",
+                icon: licensedItem["licensedResourceData"]["categoryIcon"] || "@FontAwesome5Solid/users/20",
+                items: [],
+              };
+              categories.push(category);
             }
-            categories[category].push(licensedItem);
+            category["items"].push(licensedItem);
           }
         });
 
-        const expectedCategories = [{
-          category: "HumanWholeBody",
-          label: "Humans",
-          icon: "@FontAwesome5Solid/users/20",
-        }, {
-          category: "HumanBodyRegion",
-          label: "Humans (Region)",
-          icon: "@FontAwesome5Solid/users/20",
-        }, {
-          category: "AnimalWholeBody",
-          label: "Animals",
-          icon: "@FontAwesome5Solid/users/20",
-        }, {
-          category: "ComputationalPhantom",
-          label: "Phantoms",
-          icon: "@FontAwesome5Solid/users/20",
-        }]
-        expectedCategories.forEach(expectedCategory => {
-          this.__buildViPMarketPage(expectedCategory, categories[expectedCategory["category"]]);
+        categories.forEach(category => {
+          this.__buildViPMarketPage(category, category["items"]);
         });
 
         if (openCategory) {
-          this.openCategory(openCategory);
+          this.__openCategory(openCategory);
         }
       });
   },
@@ -96,16 +86,16 @@ qx.Class.define("osparc.vipMarket.Market", {
     __buildViPMarketPage: function(marketTabInfo, licensedItems = []) {
       const vipMarketView = new osparc.vipMarket.VipMarket(licensedItems);
       vipMarketView.set({
-        category: marketTabInfo["category"],
+        category: marketTabInfo["categoryId"],
       });
       this.bind("openBy", vipMarketView, "openBy");
       vipMarketView.addListener("importMessageSent", () => this.fireEvent("importMessageSent"));
       const page = this.addTab(marketTabInfo["label"], marketTabInfo["icon"], vipMarketView);
-      page.category = marketTabInfo["category"];
+      page.category = marketTabInfo["categoryId"];
       return page;
     },
 
-    openCategory: function(category) {
+    __openCategory: function(category) {
       const viewFound = this.getChildControl("tabs-view").getChildren().find(view => view.category === category);
       if (viewFound) {
         this._openPage(viewFound);

@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: simcore-service-webserver
   description: Main service with an interface (http-API & websockets) to the web front-end
-  version: 0.52.0
+  version: 0.53.0
 servers:
 - url: ''
   description: webserver
@@ -15518,6 +15518,11 @@ components:
         categoryDisplay:
           type: string
           title: Categorydisplay
+        categoryIcon:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Categoryicon
         source:
           $ref: '#/components/schemas/_ItisVipRestData'
         termsOfUseUrl:
@@ -15533,6 +15538,9 @@ components:
       title: _ItisVipResourceRestData
     _ItisVipRestData:
       properties:
+        id:
+          type: integer
+          title: Id
         description:
           type: string
           title: Description
@@ -15542,10 +15550,13 @@ components:
         features:
           $ref: '#/components/schemas/FeaturesDict'
         doi:
-          type: string
+          anyOf:
+          - type: string
+          - type: 'null'
           title: Doi
       type: object
       required:
+      - id
       - description
       - thumbnail
       - features
