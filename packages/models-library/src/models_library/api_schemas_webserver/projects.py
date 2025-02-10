@@ -69,6 +69,13 @@ class ProjectCreateNew(InputSchema):
         null_or_none_str_to_none_validator
     )
 
+    def to_domain_model(self) -> dict[str, Any]:
+        return self.model_dump(
+            exclude_unset=True,
+            by_alias=True,
+            exclude_none=True,
+        )
+
 
 # NOTE: based on OVERRIDABLE_DOCUMENT_KEYS
 class ProjectCopyOverride(InputSchema):
@@ -80,6 +87,13 @@ class ProjectCopyOverride(InputSchema):
     _empty_is_none = field_validator("thumbnail", mode="before")(
         empty_str_to_none_pre_validator
     )
+
+    def to_domain_model(self) -> dict[str, Any]:
+        return self.model_dump(
+            exclude_unset=True,
+            by_alias=True,
+            exclude_none=True,
+        )
 
 
 class ProjectGet(OutputSchema):
