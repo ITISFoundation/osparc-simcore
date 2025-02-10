@@ -159,7 +159,7 @@ class UploadLinks:
 
 class StorageQueryParamsBase(BaseModel):
     user_id: UserID
-    model_config = ConfigDict(populate_by_name=True, extra="forbid")
+    model_config = ConfigDict(populate_by_name=True)
 
 
 class FilesMetadataDatasetQueryParams(StorageQueryParamsBase):
