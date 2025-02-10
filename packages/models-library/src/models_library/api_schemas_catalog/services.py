@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Any, TypeAlias
 
 from models_library.rpc_pagination import PageRpc
-from pydantic import BaseModel, ConfigDict, Field, HttpUrl, NonNegativeInt
+from pydantic import ConfigDict, Field, HttpUrl, NonNegativeInt
 from pydantic.config import JsonDict
 
 from ..boot_options import BootOptions
@@ -21,6 +21,7 @@ from ..services_metadata_published import (
 from ..services_resources import ServiceResourcesDict
 from ..services_types import ServiceKey, ServiceVersion
 from ..utils.change_case import snake_to_camel
+from ._base import CatalogInputSchema, CatalogOutputSchema
 
 _EXAMPLE_FILEPICKER: dict[str, Any] = {
     "name": "File Picker",
@@ -71,6 +72,7 @@ _EXAMPLE_SLEEPER: dict[str, Any] = {
     "thumbnail": None,
     "description": "A service which awaits for time to pass, two times.",
     "description_ui": True,
+    "icon": "https://cdn-icons-png.flaticon.com/512/25/25231.png",
     "classifiers": [],
     "quality": {},
     "accessRights": {"1": {"execute": True, "write": False}},
@@ -167,12 +169,14 @@ class ServiceGet(
     )
 
 
-class ServiceGetV2(BaseModel):
+class ServiceGetV2(CatalogOutputSchema):
+    # Model used in catalog's rpc and rest interfaces
     key: ServiceKey
     version: ServiceVersion
 
     name: str
     thumbnail: HttpUrl | None = None
+    icon: HttpUrl | None = None
     description: str
 
     description_ui: bool = False
@@ -280,9 +284,10 @@ PageRpcServicesGetV2: TypeAlias = PageRpc[
 ServiceResourcesGet: TypeAlias = ServiceResourcesDict
 
 
-class ServiceUpdateV2(BaseModel):
+class ServiceUpdateV2(CatalogInputSchema):
     name: str | None = None
     thumbnail: HttpUrl | None = None
+    icon: HttpUrl | None = None
 
     description: str | None = None
     description_ui: bool = False
