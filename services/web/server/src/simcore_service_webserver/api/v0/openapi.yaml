@@ -12077,6 +12077,14 @@ components:
             format: uri
           - type: 'null'
           title: Thumbnail
+        icon:
+          anyOf:
+          - type: string
+            maxLength: 2083
+            minLength: 1
+            format: uri
+          - type: 'null'
+          title: Icon
         workbench:
           type: object
           title: Workbench
@@ -12140,14 +12148,11 @@ components:
           - type: string
             const: ''
           title: Thumbnail
-        creationDate:
-          type: string
-          pattern: \d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[0-9])(:(\d|[0-5]\d)){2}(\.\d{3})?Z
-          title: Creationdate
-        lastChangeDate:
-          type: string
-          pattern: \d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[0-9])(:(\d|[0-5]\d)){2}(\.\d{3})?Z
-          title: Lastchangedate
+        icon:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Icon
         workbench:
           type: object
           title: Workbench
@@ -12163,6 +12168,32 @@ components:
             minLength: 1
           type: object
           title: Accessrights
+        creationDate:
+          type: string
+          pattern: \d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[0-9])(:(\d|[0-5]\d)){2}(\.\d{3})?Z
+          title: Creationdate
+        lastChangeDate:
+          type: string
+          pattern: \d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[0-9])(:(\d|[0-5]\d)){2}(\.\d{3})?Z
+          title: Lastchangedate
+        state:
+          anyOf:
+          - $ref: '#/components/schemas/ProjectState'
+          - type: 'null'
+        trashedAt:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Trashedat
+        trashedBy:
+          anyOf:
+          - type: integer
+            exclusiveMinimum: true
+            minimum: 0
+          - type: 'null'
+          title: Trashedby
+          description: The primary gid of the user who trashed
         tags:
           items:
             type: integer
@@ -12174,20 +12205,16 @@ components:
           type: array
           title: Classifiers
           default: []
-        state:
-          anyOf:
-          - $ref: '#/components/schemas/ProjectState'
-          - type: 'null'
+        quality:
+          type: object
+          title: Quality
+          default: {}
         ui:
           anyOf:
           - $ref: '#/components/schemas/EmptyModel'
           - $ref: '#/components/schemas/StudyUI-Output'
           - type: 'null'
           title: Ui
-        quality:
-          type: object
-          title: Quality
-          default: {}
         dev:
           anyOf:
           - type: object
@@ -12211,37 +12238,23 @@ components:
             minimum: 0
           - type: 'null'
           title: Folderid
-        trashedAt:
-          anyOf:
-          - type: string
-            format: date-time
-          - type: 'null'
-          title: Trashedat
-        trashedBy:
-          anyOf:
-          - type: integer
-            exclusiveMinimum: true
-            minimum: 0
-          - type: 'null'
-          title: Trashedby
-          description: The primary gid of the user who trashed
       type: object
       required:
       - uuid
       - name
       - description
       - thumbnail
-      - creationDate
-      - lastChangeDate
       - workbench
       - prjOwner
       - accessRights
+      - creationDate
+      - lastChangeDate
+      - trashedAt
+      - trashedBy
       - tags
       - dev
       - workspaceId
       - folderId
-      - trashedAt
-      - trashedBy
       title: ProjectGet
     ProjectGroupGet:
       properties:
@@ -12330,14 +12343,11 @@ components:
           - type: string
             const: ''
           title: Thumbnail
-        creationDate:
-          type: string
-          pattern: \d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[0-9])(:(\d|[0-5]\d)){2}(\.\d{3})?Z
-          title: Creationdate
-        lastChangeDate:
-          type: string
-          pattern: \d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[0-9])(:(\d|[0-5]\d)){2}(\.\d{3})?Z
-          title: Lastchangedate
+        icon:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Icon
         workbench:
           type: object
           title: Workbench
@@ -12353,6 +12363,32 @@ components:
             minLength: 1
           type: object
           title: Accessrights
+        creationDate:
+          type: string
+          pattern: \d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[0-9])(:(\d|[0-5]\d)){2}(\.\d{3})?Z
+          title: Creationdate
+        lastChangeDate:
+          type: string
+          pattern: \d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[0-9])(:(\d|[0-5]\d)){2}(\.\d{3})?Z
+          title: Lastchangedate
+        state:
+          anyOf:
+          - $ref: '#/components/schemas/ProjectState'
+          - type: 'null'
+        trashedAt:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Trashedat
+        trashedBy:
+          anyOf:
+          - type: integer
+            exclusiveMinimum: true
+            minimum: 0
+          - type: 'null'
+          title: Trashedby
+          description: The primary gid of the user who trashed
         tags:
           items:
             type: integer
@@ -12364,20 +12400,16 @@ components:
           type: array
           title: Classifiers
           default: []
-        state:
-          anyOf:
-          - $ref: '#/components/schemas/ProjectState'
-          - type: 'null'
+        quality:
+          type: object
+          title: Quality
+          default: {}
         ui:
           anyOf:
           - $ref: '#/components/schemas/EmptyModel'
           - $ref: '#/components/schemas/StudyUI-Output'
           - type: 'null'
           title: Ui
-        quality:
-          type: object
-          title: Quality
-          default: {}
         dev:
           anyOf:
           - type: object
@@ -12401,37 +12433,23 @@ components:
             minimum: 0
           - type: 'null'
           title: Folderid
-        trashedAt:
-          anyOf:
-          - type: string
-            format: date-time
-          - type: 'null'
-          title: Trashedat
-        trashedBy:
-          anyOf:
-          - type: integer
-            exclusiveMinimum: true
-            minimum: 0
-          - type: 'null'
-          title: Trashedby
-          description: The primary gid of the user who trashed
       type: object
       required:
       - uuid
       - name
       - description
       - thumbnail
-      - creationDate
-      - lastChangeDate
       - workbench
       - prjOwner
       - accessRights
+      - creationDate
+      - lastChangeDate
+      - trashedAt
+      - trashedBy
       - tags
       - dev
       - workspaceId
       - folderId
-      - trashedAt
-      - trashedBy
       title: ProjectListItem
     ProjectLocked:
       properties:
@@ -12553,6 +12571,14 @@ components:
             format: uri
           - type: 'null'
           title: Thumbnail
+        icon:
+          anyOf:
+          - type: string
+            maxLength: 2083
+            minLength: 1
+            format: uri
+          - type: 'null'
+          title: Icon
         accessRights:
           anyOf:
           - additionalProperties:
