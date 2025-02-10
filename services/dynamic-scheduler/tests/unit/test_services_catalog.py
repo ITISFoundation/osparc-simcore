@@ -21,12 +21,12 @@ from simcore_service_dynamic_scheduler.services.catalog import CatalogPublicClie
 
 @pytest.fixture
 def app_environment(
-    disable_redis_setup: None,
-    disable_rabbitmq_setup: None,
-    disable_service_tracker_setup: None,
-    disable_deferred_manager_setup: None,
-    disable_notifier_setup: None,
-    disable_status_monitor_setup: None,
+    disable_redis_lifespan: None,
+    disable_rabbitmq_lifespan: None,
+    disable_service_tracker_lifespan: None,
+    disable_deferred_manager_lifespan: None,
+    disable_notifier_lifespan: None,
+    disable_status_monitor_lifespan: None,
     app_environment: EnvVarsDict,
 ) -> EnvVarsDict:
     return app_environment
@@ -42,11 +42,6 @@ def simcore_service_labels() -> SimcoreServiceLabels:
 @pytest.fixture
 def service_specifications() -> ServiceSpecifications:
     return TypeAdapter(ServiceSpecifications).validate_python({})
-
-
-@pytest.fixture
-def user_id() -> UserID:
-    return 1
 
 
 @pytest.fixture
