@@ -18,8 +18,10 @@ from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import DownloadLink, NodeID, PortLink
 from models_library.projects_ui import StudyUI
 from models_library.services import ServiceKey, ServiceVersion
+from models_library.services_resources import ServiceResourcesDictHelpers
 from pydantic import AnyUrl, HttpUrl, TypeAdapter
 from servicelib.logging_utils import log_decorator
+from simcore_postgres_database.utils_projects_nodes import ProjectNodeCreate
 
 from ..projects.db import ProjectDBAPI
 from ..projects.exceptions import ProjectInvalidRightsError, ProjectNotFoundError
@@ -195,14 +197,23 @@ async def _add_new_project(
     )
 
     # update metadata (uuid, timestamps, ownership) and save
-    project_in.pop("workbench", {})
+    workbench = project_in.pop("workbench", {})
     assert project_in.get("workbench", None) == None  # nosec
     _project_db: dict = await db.insert_project(
         project_in,
         user.id,
         product_name=product_name,
         force_as_template=False,
-        project_nodes=None,
+        project_nodes={
+            NodeID(node_id): ProjectNodeCreate(
+                node_id=NodeID(node_id),
+                required_resources=ServiceResourcesDictHelpers.model_config[
+                    "json_schema_extra"
+                ]["examples"][0],
+                **node_info,
+            )
+            for node_id, node_info in workbench.items()
+        },
     )
     assert _project_db["uuid"] == str(project.uuid)  # nosec
 
