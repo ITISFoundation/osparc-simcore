@@ -101,15 +101,15 @@ def _assert_progress_report_values(
     # NOTE: we exclude the message part here as this is already tested in servicelib
     # check first progress
     assert mocked_progress_cb.call_args_list[0].args[0].dict(
-        exclude={"message"}
+        exclude={"message", "attempt"}
     ) == ProgressReport(actual_value=0, total=total, unit="Byte").model_dump(
-        exclude={"message"}
+        exclude={"message", "attempt"}
     )
     # check last progress
     assert mocked_progress_cb.call_args_list[-1].args[0].dict(
-        exclude={"message"}
+        exclude={"message", "attempt"}
     ) == ProgressReport(actual_value=total, total=total, unit="Byte").model_dump(
-        exclude={"message"}
+        exclude={"message", "attempt"}
     )
 
 
