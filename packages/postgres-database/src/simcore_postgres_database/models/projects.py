@@ -56,12 +56,6 @@ projects = sa.Table(
         nullable=True,
         doc="Link to thumbnail image",
     ),
-    sa.Column(
-        "icon",
-        sa.String,
-        nullable=True,
-        doc="Link to project's icon",
-    ),
     # OWNERSHIP ----------------------------
     sa.Column(
         "prj_owner",

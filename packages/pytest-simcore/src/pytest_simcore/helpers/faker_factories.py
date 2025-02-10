@@ -138,11 +138,14 @@ def random_project(fake: Faker = DEFAULT_FAKER, **overrides) -> dict[str, Any]:
         "description": fake.sentence(),
         "prj_owner": fake.pyint(),
         "thumbnail": fake.image_url(width=120, height=120),
-        "icon": fake.random_element([random_icon_url(fake), None]),  # nullable
         "access_rights": {},
         "workbench": {},
         "published": False,
     }
+
+    icon = fake.random_element([random_icon_url(fake), None])  # nullable
+    if icon:
+        data["ui"] = {"icon": icon}
 
     assert set(data.keys()).issubset({c.name for c in projects.columns})
 
