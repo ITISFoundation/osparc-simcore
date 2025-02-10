@@ -29,7 +29,6 @@ from .invitations.plugin import setup_invitations
 from .licenses.plugin import setup_licenses
 from .login.plugin import setup_login
 from .long_running_tasks import setup_long_running_tasks
-from .meta_modeling.plugin import setup_meta_modeling
 from .notifications.plugin import setup_notifications
 from .payments.plugin import setup_payments
 from .products.plugin import setup_products
@@ -51,7 +50,6 @@ from .tags.plugin import setup_tags
 from .tracing import setup_app_tracing
 from .trash.plugin import setup_trash
 from .users.plugin import setup_users
-from .version_control.plugin import setup_version_control
 from .wallets.plugin import setup_wallets
 from .workspaces.plugin import setup_workspaces
 
@@ -137,9 +135,6 @@ def create_application() -> web.Application:
 
     # projects
     setup_projects(app)
-    # project add-ons
-    setup_version_control(app)
-    setup_meta_modeling(app)
 
     # licenses
     setup_licenses(app)
