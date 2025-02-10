@@ -78,6 +78,7 @@ from ._db_utils import (
     ANY_USER_ID_SENTINEL,
     BaseProjectDB,
     ProjectAccessRights,
+    _build_workbench_subquery,
     assemble_array_groups,
     convert_to_db_names,
     convert_to_schema_names,
@@ -160,6 +161,7 @@ class ProjectDBAPI(BaseProjectDB):
                 raise err
 
         selected_values: ProjectDict = {}
+        workbench = insert_values.pop("workbench", {})
         async with self.engine.acquire() as conn:
             async for attempt in AsyncRetrying(retry=retry_if_exception_type(TryAgain)):
                 with attempt:
@@ -183,6 +185,8 @@ class ProjectDBAPI(BaseProjectDB):
                             assert row  # nosec
 
                             selected_values = ProjectDict(row.items())
+
+                            selected_values["workbench"] = workbench
                             project_index = selected_values.pop("id")
 
                         except UniqueViolation as err:
@@ -213,40 +217,14 @@ class ProjectDBAPI(BaseProjectDB):
                         selected_values["tags"] = project_tag_ids
 
                         # NOTE: this will at some point completely replace workbench in the DB
-                        if selected_values["workbench"]:
+                        if project_nodes:
                             project_nodes_repo = ProjectNodesRepo(
                                 project_uuid=project_uuid
                             )
-                            if project_nodes is None:
-                                project_nodes = {
-                                    NodeID(node_id): ProjectNodeCreate(
-                                        node_id=NodeID(node_id),
-                                        required_resources={},
-                                        key=node_info.get("key"),
-                                        version=node_info.get("version"),
-                                        label=node_info.get("label"),
-                                    )
-                                    for node_id, node_info in selected_values[
-                                        "workbench"
-                                    ].items()
-                                }
 
-                            nodes = [
-                                project_nodes.get(
-                                    NodeID(node_id),
-                                    ProjectNodeCreate(
-                                        node_id=NodeID(node_id),
-                                        required_resources={},
-                                        key=node_info.get("key"),
-                                        version=node_info.get("version"),
-                                        label=node_info.get("label"),
-                                    ),
-                                )
-                                for node_id, node_info in selected_values[
-                                    "workbench"
-                                ].items()
-                            ]
-                            await project_nodes_repo.add(conn, nodes=nodes)
+                            await project_nodes_repo.add(
+                                conn, nodes=list(project_nodes.values())
+                            )
         return selected_values
 
     async def insert_project(
@@ -306,7 +284,7 @@ class ProjectDBAPI(BaseProjectDB):
         # ensure we have the minimal amount of data here
         # All non-default in projects table
         insert_values.setdefault("name", "New Study")
-        insert_values.setdefault("workbench", {})
+        # insert_values.setdefault("workbench", {})
 
         insert_values.setdefault("workspace_id", None)
 
@@ -318,6 +296,7 @@ class ProjectDBAPI(BaseProjectDB):
                 raise
             insert_values["uuid"] = f"{uuid1()}"
 
+        assert insert_values.get("workbench", None) == None
         inserted_project = await self._insert_project_in_db(
             insert_values,
             force_project_uuid=force_project_uuid,
@@ -387,10 +366,13 @@ class ProjectDBAPI(BaseProjectDB):
                 ).group_by(project_to_groups.c.project_uuid)
             ).subquery("access_rights_subquery")
 
+            workbench_subquery = _build_workbench_subquery()
             private_workspace_query = (
                 sa.select(
                     *PROJECT_DB_COLS,
-                    projects.c.workbench,
+                    sa.func.coalesce(workbench_subquery.c.workbench, "{}").label(
+                        "workbench"
+                    ),
                     access_rights_subquery.c.access_rights,
                     projects_to_products.c.product_name,
                     projects_to_folders.c.folder_id,
@@ -411,6 +393,10 @@ class ProjectDBAPI(BaseProjectDB):
                         isouter=True,
                     )
                     .join(project_tags_subquery, isouter=True)
+                    .outerjoin(
+                        workbench_subquery,
+                        projects.c.uuid == workbench_subquery.c.project_uuid,
+                    )
                 )
                 .where(
                     (
@@ -469,10 +455,13 @@ class ProjectDBAPI(BaseProjectDB):
                 ).group_by(workspaces_access_rights.c.workspace_id)
             ).subquery("workspace_access_rights_subquery")
 
+            workbench_subquery = _build_workbench_subquery()
             shared_workspace_query = (
                 sa.select(
                     *PROJECT_DB_COLS,
-                    projects.c.workbench,
+                    sa.func.coalesce(workbench_subquery.c.workbench, "{}").label(
+                        "workbench"
+                    ),
                     workspace_access_rights_subquery.c.access_rights,
                     projects_to_products.c.product_name,
                     projects_to_folders.c.folder_id,
@@ -497,6 +486,10 @@ class ProjectDBAPI(BaseProjectDB):
                         isouter=True,
                     )
                     .join(project_tags_subquery, isouter=True)
+                    .outerjoin(
+                        workbench_subquery,
+                        projects.c.uuid == workbench_subquery.c.project_uuid,
+                    )
                 )
                 .where(
                     (
@@ -770,7 +763,6 @@ class ProjectDBAPI(BaseProjectDB):
             result = await conn.execute(
                 sa.select(
                     *PROJECT_DB_COLS,
-                    projects.c.workbench,
                 ).where(projects.c.uuid == f"{project_uuid}")
             )
             row = await result.fetchone()
@@ -1095,13 +1087,25 @@ class ProjectDBAPI(BaseProjectDB):
             # update timestamps
             new_project_data["lastChangeDate"] = now_str()
 
+            # After moving workbench from project DB table to project_nodes table:
+            workbench = new_project_data.pop("workbench")
+
+            project_nodes_repo = ProjectNodesRepo(project_uuid=ProjectID(project_uuid))
+
+            for node_id, node_data in workbench.items():
+                await project_nodes_repo.update(
+                    db_connection, node_id=node_id, **node_data
+                )
+
             result = await db_connection.execute(
                 projects.update()
                 .values(**convert_to_db_names(new_project_data))
                 .where(projects.c.id == current_project[projects.c.id.key])
                 .returning(literal_column("*"))
             )
+
             project = await result.fetchone()
+
             assert project  # nosec
             if product_name:
                 await self.upsert_project_linked_product(
@@ -1113,7 +1117,9 @@ class ProjectDBAPI(BaseProjectDB):
                 db_connection, project_id=project[projects.c.id]
             )
             return (
-                convert_to_schema_names(project, user_email, tags=tags),
+                convert_to_schema_names(
+                    project, user_email, tags=tags, workbench=workbench
+                ),
                 changed_entries,
             )
         msg = "linter unhappy without this"
@@ -1134,13 +1140,6 @@ class ProjectDBAPI(BaseProjectDB):
                 exclude_unset=True,
             ),
         }
-        await self._update_project_workbench(
-            partial_workbench_data,
-            user_id=user_id,
-            project_uuid=f"{project_id}",
-            product_name=product_name,
-            allow_workbench_changes=True,
-        )
         project_nodes_repo = ProjectNodesRepo(project_uuid=project_id)
         async with self.engine.acquire() as conn:
             await project_nodes_repo.add(conn, nodes=[node])

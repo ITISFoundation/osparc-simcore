@@ -42,8 +42,7 @@ def create_complete_dag(workbench: NodesDict) -> nx.DiGraph:
         )
         if node.input_nodes:
             for input_node_id in node.input_nodes:
-                predecessor_node = workbench.get(NodeIDStr(input_node_id))
-                if predecessor_node:
+                if f"{input_node_id}" in workbench:  # predecessor node
                     dag_graph.add_edge(str(input_node_id), node_id)
 
     return dag_graph
@@ -188,7 +187,7 @@ def compute_pipeline_started_timestamp(
     if not pipeline_dag.nodes:
         return None
     node_id_to_comp_task: dict[NodeIDStr, CompTaskAtDB] = {
-        NodeIDStr(f"{task.node_id}"): task for task in comp_tasks
+        f"{task.node_id}": task for task in comp_tasks
     }
     TOMORROW = arrow.utcnow().shift(days=1).datetime
     pipeline_started_at: datetime.datetime | None = min(
@@ -206,7 +205,7 @@ def compute_pipeline_stopped_timestamp(
     if not pipeline_dag.nodes:
         return None
     node_id_to_comp_task: dict[NodeIDStr, CompTaskAtDB] = {
-        NodeIDStr(f"{task.node_id}"): task for task in comp_tasks
+        f"{task.node_id}": task for task in comp_tasks
     }
     TOMORROW = arrow.utcnow().shift(days=1).datetime
     pipeline_stopped_at: datetime.datetime | None = max(
@@ -227,7 +226,7 @@ async def compute_pipeline_details(
 
     # NOTE: the latest progress is available in comp_tasks only
     node_id_to_comp_task: dict[NodeIDStr, CompTaskAtDB] = {
-        NodeIDStr(f"{task.node_id}"): task for task in comp_tasks
+        f"{task.node_id}": task for task in comp_tasks
     }
     pipeline_progress = None
     if len(pipeline_dag.nodes) > 0:

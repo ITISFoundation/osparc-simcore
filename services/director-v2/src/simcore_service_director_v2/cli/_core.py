@@ -8,7 +8,7 @@ import typer
 from fastapi import FastAPI, status
 from httpx import AsyncClient, HTTPError
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
-from models_library.projects import ProjectID
+from models_library.projects import NodesDict, ProjectID
 from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.services import ServiceType
 from models_library.services_enums import ServiceBootType, ServiceState
@@ -26,6 +26,7 @@ from ..core.settings import AppSettings
 from ..models.dynamic_services_scheduler import DynamicSidecarNamesHelper
 from ..modules import db, director_v0, dynamic_sidecar
 from ..modules.db.repositories.projects import ProjectsRepository
+from ..modules.db.repositories.projects_nodes import ProjectsNodesRepository
 from ..modules.dynamic_sidecar import api_client
 from ..modules.projects_networks import requires_dynamic_sidecar
 from ..utils.db import get_repository
@@ -94,9 +95,14 @@ async def async_project_save_state(project_id: ProjectID, save_attempts: int) ->
         )
         project_at_db = await projects_repository.get_project(project_id)
 
+        project_nodes_repo: ProjectsNodesRepository = get_repository(
+            app, ProjectsNodesRepository
+        )
+        workbench: NodesDict = await project_nodes_repo.get_nodes(project_id)
+
         typer.echo(f"Saving project '{project_at_db.uuid}' - '{project_at_db.name}'")
         nodes_failed_to_save: list[NodeIDStr] = []
-        for node_uuid, node_content in project_at_db.workbench.items():
+        for node_uuid, node_content in workbench.items():
             # onl dynamic-sidecars are used
             if not await requires_dynamic_sidecar(
                 service_key=node_content.key,
@@ -226,13 +232,15 @@ async def _get_nodes_render_data(
     app: FastAPI,
     project_id: ProjectID,
 ) -> list[RenderData]:
-    projects_repository: ProjectsRepository = get_repository(app, ProjectsRepository)
+    project_nodes_repo: ProjectsNodesRepository = get_repository(
+        app, ProjectsNodesRepository
+    )
 
-    project_at_db = await projects_repository.get_project(project_id)
+    workbench: NodesDict = await project_nodes_repo.get_nodes(project_id)
 
     render_data: list[RenderData] = []
     async with AsyncClient() as client:
-        for node_uuid, node_content in project_at_db.workbench.items():
+        for node_uuid, node_content in workbench.items():
             service_type = get_service_from_key(service_key=node_content.key)
             render_data.append(
                 await _to_render_data(

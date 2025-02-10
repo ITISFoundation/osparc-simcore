@@ -67,9 +67,10 @@ async def project(
 ) -> AsyncIterator[Callable[..., Awaitable[ProjectAtDB]]]:
     created_project_ids: list[str] = []
 
-    async def creator(
+    async def _(
         user: dict[str, Any],
         *,
+        workbench: dict[str, Any] | None = None,
         project_nodes_overrides: dict[str, Any] | None = None,
         **project_overrides,
     ) -> ProjectAtDB:
@@ -83,7 +84,6 @@ async def project(
             "prj_owner": user["id"],
             "access_rights": {"1": {"read": True, "write": True, "delete": True}},
             "thumbnail": "",
-            "workbench": {},
         }
         project_config.update(**project_overrides)
         async with aiopg_engine.acquire() as con, con.begin():
@@ -94,23 +94,31 @@ async def project(
             )
 
             inserted_project = ProjectAtDB.model_validate(await result.first())
-            project_nodes_repo = ProjectNodesRepo(project_uuid=project_uuid)
-            # NOTE: currently no resources is passed until it becomes necessary
-            default_node_config = {"required_resources": {}, "key": faker.pystr(), "version": faker.pystr(), "label": faker.pystr()}
-            if project_nodes_overrides:
-                default_node_config.update(project_nodes_overrides)
-            await project_nodes_repo.add(
-                con,
-                nodes=[
-                    ProjectNodeCreate(node_id=NodeID(node_id), **default_node_config)
-                    for node_id in inserted_project.workbench
-                ],
-            )
+            if workbench:
+                project_nodes_repo = ProjectNodesRepo(project_uuid=project_uuid)
+                # NOTE: currently no resources is passed until it becomes necessary
+                default_node_config = {
+                    "required_resources": {},
+                    "key": faker.pystr(),
+                    "version": faker.pystr(),
+                    "label": faker.pystr(),
+                }
+                if project_nodes_overrides:
+                    default_node_config.update(project_nodes_overrides)
+                await project_nodes_repo.add(
+                    con,
+                    nodes=[
+                        ProjectNodeCreate(
+                            node_id=NodeID(node_id), **default_node_config | node_data
+                        )
+                        for node_id, node_data in workbench.items()
+                    ],
+                )
         print(f"--> created {inserted_project=}")
         created_project_ids.append(f"{inserted_project.uuid}")
         return inserted_project
 
-    yield creator
+    yield _
 
     # cleanup
     async with aiopg_engine.acquire() as con:

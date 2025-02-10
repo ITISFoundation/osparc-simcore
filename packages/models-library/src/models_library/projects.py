@@ -1,5 +1,5 @@
 """
-    Models a study's project document
+Models a study's project document
 """
 
 from datetime import datetime
@@ -11,7 +11,14 @@ from common_library.basic_types import DEFAULT_FACTORY
 from models_library.basic_types import ConstrainedStr
 from models_library.folders import FolderID
 from models_library.workspaces import WorkspaceID
-from pydantic import BaseModel, ConfigDict, Field, HttpUrl, field_validator
+from pydantic import (
+    BaseModel,
+    BeforeValidator,
+    ConfigDict,
+    Field,
+    HttpUrl,
+    field_validator,
+)
 
 from .basic_regex import DATE_RE, UUID_RE_BASE
 from .emails import LowerCaseEmailStr
@@ -54,56 +61,103 @@ class ProjectType(str, Enum):
 
 class BaseProjectModel(BaseModel):
     # Description of the project
-    uuid: ProjectID = Field(
-        ...,
-        description="project unique identifier",
-        examples=[
-            "07640335-a91f-468c-ab69-a374fa82078d",
-            "9bcf8feb-c1b1-41b6-b201-639cd6ccdba8",
-        ],
-    )
-    name: str = Field(
-        ..., description="project name", examples=["Temporal Distortion Simulator"]
-    )
-    description: str = Field(
-        ...,
-        description="longer one-line description about the project",
-        examples=["Dabbling in temporal transitions ..."],
-    )
-    thumbnail: HttpUrl | None = Field(
-        ...,
-        description="url of the project thumbnail",
-        examples=["https://placeimg.com/171/96/tech/grayscale/?0.jpg"],
-    )
+    uuid: Annotated[
+        ProjectID,
+        Field(
+            ...,
+            description="project unique identifier",
+            examples=[
+                "07640335-a91f-468c-ab69-a374fa82078d",
+                "9bcf8feb-c1b1-41b6-b201-639cd6ccdba8",
+            ],
+        ),
+    ]
+    name: Annotated[
+        str,
+        Field(
+            ..., description="project name", examples=["Temporal Distortion Simulator"]
+        ),
+    ]
+    description: Annotated[
+        str,
+        BeforeValidator(none_to_empty_str_pre_validator),
+        Field(
+            ...,
+            description="longer one-line description about the project",
+            examples=["Dabbling in temporal transitions ..."],
+        ),
+    ]
+    thumbnail: Annotated[
+        HttpUrl | None,
+        BeforeValidator(empty_str_to_none_pre_validator),
+        Field(
+            ...,
+            description="url of the project thumbnail",
+            examples=["https://placeimg.com/171/96/tech/grayscale/?0.jpg"],
+        ),
+    ]
 
-    creation_date: datetime = Field(...)
-    last_change_date: datetime = Field(...)
+    creation_date: datetime
+    last_change_date: datetime
 
     # Pipeline of nodes (SEE projects_nodes.py)
     workbench: Annotated[NodesDict, Field(..., description="Project's pipeline")]
 
-    # validators
-    _empty_thumbnail_is_none = field_validator("thumbnail", mode="before")(
-        empty_str_to_none_pre_validator
-    )
 
-    _none_description_is_empty = field_validator("description", mode="before")(
-        none_to_empty_str_pre_validator
-    )
+class ProjectAtDB(BaseModel):
+    # Model used to READ from database (will be removed)
 
+    uuid: Annotated[
+        ProjectID,
+        Field(
+            ...,
+            description="project unique identifier",
+            examples=[
+                "07640335-a91f-468c-ab69-a374fa82078d",
+                "9bcf8feb-c1b1-41b6-b201-639cd6ccdba8",
+            ],
+        ),
+    ]
+    name: Annotated[
+        str,
+        Field(
+            ..., description="project name", examples=["Temporal Distortion Simulator"]
+        ),
+    ]
+    description: Annotated[
+        str,
+        BeforeValidator(none_to_empty_str_pre_validator),
+        Field(
+            ...,
+            description="longer one-line description about the project",
+            examples=["Dabbling in temporal transitions ..."],
+        ),
+    ]
+    thumbnail: Annotated[
+        HttpUrl | None,
+        BeforeValidator(empty_str_to_none_pre_validator),
+        Field(
+            ...,
+            description="url of the project thumbnail",
+            examples=["https://placeimg.com/171/96/tech/grayscale/?0.jpg"],
+        ),
+    ]
 
-class ProjectAtDB(BaseProjectModel):
-    # Model used to READ from database
+    creation_date: datetime
+    last_change_date: datetime
 
-    id: int = Field(..., description="The table primary index")
+    id: Annotated[int, Field(..., description="The table primary index")]
 
-    project_type: ProjectType = Field(..., alias="type", description="The project type")
+    project_type: Annotated[
+        ProjectType, Field(..., alias="type", description="The project type")
+    ]
 
-    prj_owner: int | None = Field(..., description="The project owner id")
+    prj_owner: Annotated[int | None, Field(..., description="The project owner id")]
 
-    published: bool | None = Field(
-        default=False, description="Defines if a study is available publicly"
-    )
+    published: Annotated[
+        bool | None,
+        Field(default=False, description="Defines if a study is available publicly"),
+    ]
 
     @field_validator("project_type", mode="before")
     @classmethod

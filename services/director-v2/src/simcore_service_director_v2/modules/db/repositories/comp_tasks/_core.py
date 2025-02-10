@@ -7,7 +7,7 @@ import sqlalchemy as sa
 from aiopg.sa.result import ResultProxy, RowProxy
 from models_library.basic_types import IDStr
 from models_library.errors import ErrorDict
-from models_library.projects import ProjectAtDB, ProjectID
+from models_library.projects import NodesDict, ProjectAtDB, ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
 from models_library.users import UserID
@@ -89,6 +89,7 @@ class CompTasksRepository(BaseRepository):
         self,
         *,
         project: ProjectAtDB,
+        workbench: NodesDict,
         catalog_client: CatalogClient,
         published_nodes: list[NodeID],
         user_id: UserID,
@@ -103,6 +104,7 @@ class CompTasksRepository(BaseRepository):
                 CompTaskAtDB
             ] = await _utils.generate_tasks_list_from_project(
                 project=project,
+                workbench=workbench,
                 catalog_client=catalog_client,
                 published_nodes=published_nodes,
                 user_id=user_id,
@@ -121,7 +123,7 @@ class CompTasksRepository(BaseRepository):
             # remove the tasks that were removed from project workbench
             if all_nodes := await result.fetchall():
                 node_ids_to_delete = [
-                    t.node_id for t in all_nodes if t.node_id not in project.workbench
+                    t.node_id for t in all_nodes if t.node_id not in workbench
                 ]
                 for node_id in node_ids_to_delete:
                     await conn.execute(

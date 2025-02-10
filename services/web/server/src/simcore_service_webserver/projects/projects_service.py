@@ -555,8 +555,9 @@ async def _check_project_node_has_all_required_inputs(
         if output_entry is None:
             unset_outputs_in_upstream.append((source_output_key, source_node.label))
 
-    for required_input in node.inputs_required:
-        _check_required_input(required_input)
+    if node.inputs_required is not None:
+        for required_input in node.inputs_required:
+            _check_required_input(required_input)
 
     node_with_required_inputs = node.label
     if unset_required_inputs:
@@ -1000,7 +1001,7 @@ async def update_project_node_state(
         new_node_data={"state": {"currentStatus": new_state}},
     )
 
-    await _projects_nodes_repository.update(
+    await _projects_nodes_repository.update_node(
         app,
         project_id=project_id,
         node_id=node_id,
@@ -1072,7 +1073,7 @@ async def patch_project_node(
         new_node_data=_node_patch_exclude_unset,
     )
 
-    await _projects_nodes_repository.update(
+    await _projects_nodes_repository.update_node(
         app,
         project_id=project_id,
         node_id=node_id,
@@ -1140,7 +1141,7 @@ async def update_project_node_outputs(
         new_node_data={"outputs": new_outputs, "runHash": new_run_hash},
     )
 
-    await _projects_nodes_repository.update(
+    await _projects_nodes_repository.update_node(
         app,
         project_id=project_id,
         node_id=node_id,
@@ -1573,15 +1574,20 @@ async def add_project_states_for_user(
             node_id,
             node_state,
         ) in computation_task.pipeline_details.node_states.items():
-            prj_node = project["workbench"].get(str(node_id))
-            if prj_node is None:
+            try:
+                # TODO: add UoW
+                node = await _projects_nodes_repository.get_node(
+                    app, project_id=project["uuid"], node_id=node_id
+                )
+            except NodeNotFoundError:
                 continue
             node_state_dict = json.loads(
                 node_state.model_dump_json(by_alias=True, exclude_unset=True)
             )
-            prj_node.setdefault("state", {}).update(node_state_dict)
-            prj_node_progress = node_state_dict.get("progress", None) or 0
-            prj_node.update({"progress": round(prj_node_progress * 100.0)})
+            if node.state is None:
+                node.state = NodeState()
+            node.state = node.state.model_copy(update=node_state_dict)
+            node.progress = round((node.state.progress or 0) * 100)
 
     project["state"] = ProjectState(
         locked=lock_state, state=ProjectRunningState(value=running_state)

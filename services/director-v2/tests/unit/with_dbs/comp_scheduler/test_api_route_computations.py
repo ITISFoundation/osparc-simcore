@@ -533,8 +533,8 @@ async def test_create_computation_with_wallet(
             == len(
                 [
                     v
-                    for v in proj.workbench.values()
-                    if to_node_class(v.key) != NodeClass.FRONTEND
+                    for v in fake_workbench_without_outputs.values()
+                    if to_node_class(v["key"]) != NodeClass.FRONTEND
                 ]
             )
             * 2
@@ -544,7 +544,9 @@ async def test_create_computation_with_wallet(
             project_nodes_repo = ProjectNodesRepo(project_uuid=proj.uuid)
             for node in await project_nodes_repo.list(connection):
                 if (
-                    to_node_class(proj.workbench[f"{node.node_id}"].key)
+                    to_node_class(
+                        fake_workbench_without_outputs[f"{node.node_id}"]["key"]
+                    )
                     != NodeClass.FRONTEND
                 ):
                     assert node.required_resources
@@ -870,7 +872,9 @@ async def test_get_computation_from_not_started_computation_task(
     assert response.status_code == status.HTTP_409_CONFLICT, response.text
 
     # now create the expected tasks and the state is good again
-    comp_tasks = await create_tasks(user=user, project=proj)
+    comp_tasks = await create_tasks(
+        user=user, project=proj, workbench=fake_workbench_without_outputs
+    )
     response = await async_client.get(get_computation_url)
     assert response.status_code == status.HTTP_200_OK, response.text
     returned_computation = ComputationGet.model_validate(response.json())
@@ -929,7 +933,11 @@ async def test_get_computation_from_published_computation_task(
         dag_adjacency_list=fake_workbench_adjacency,
     )
     comp_tasks = await create_tasks(
-        user=user, project=proj, state=StateType.PUBLISHED, progress=0
+        user=user,
+        project=proj,
+        workbench=fake_workbench_without_outputs,
+        state=StateType.PUBLISHED,
+        progress=0,
     )
     comp_runs = await create_comp_run(
         user=user, project=proj, result=StateType.PUBLISHED

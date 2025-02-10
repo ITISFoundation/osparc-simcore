@@ -1,7 +1,7 @@
 import datetime
 import uuid
 from dataclasses import dataclass
-from typing import Any
+from typing import Annotated, Any
 
 import sqlalchemy
 from aiopg.sa.connection import SAConnection
@@ -45,16 +45,16 @@ class ProjectNodeCreate(BaseModel):
     label: str
     progress: float | None = None
     thumbnail: str | None = None
-    input_access: dict[str, Any] | None = None
-    input_nodes: list[str] | None = None
+    input_access: Annotated[dict[str, Any] | None, Field(alias="inputAccess")] = None
+    input_nodes: Annotated[list[str] | None, Field(alias="inputNodes")] = None
     inputs: dict[str, Any] | None = None
-    inputs_units: dict[str, Any] | None = None
-    output_nodes: list[str] | None = None
+    inputs_units: Annotated[dict[str, Any] | None, Field(alias="inputUnits")] = None
+    output_nodes: Annotated[list[str] | None, Field(alias="outputNodes")] = None
     outputs: dict[str, Any] | None = None
-    run_hash: str | None = None
+    run_hash: Annotated[str | None, Field(alias="runHash")] = None
     state: dict[str, Any] | None = None
     parent: str | None = None
-    boot_options: dict[str, Any] | None = None
+    boot_options: Annotated[dict[str, Any] | None, Field(alias="bootOptions")] = None
 
     @classmethod
     def get_field_names(cls, *, exclude: set[str]) -> set[str]:
@@ -98,7 +98,7 @@ class ProjectNodesRepo:
                 [
                     {
                         "project_uuid": f"{self.project_uuid}",
-                        **node.model_dump(exclude_unset=True),
+                        **node.model_dump(),
                     }
                     for node in nodes
                 ]
@@ -181,18 +181,25 @@ class ProjectNodesRepo:
         Raises:
             ProjectsNodesNodeNotFound: _description_
         """
-        update_stmt = (
-            projects_nodes.update()
-            .values(**values)
-            .where(
-                (projects_nodes.c.project_uuid == f"{self.project_uuid}")
-                & (projects_nodes.c.node_id == f"{node_id}")
-            )
-            .returning(
-                *[c for c in projects_nodes.c if c is not projects_nodes.c.project_uuid]
-            )
+        # Build the insert statement
+        stmt = pg_insert(projects_nodes).values(
+            project_uuid=self.project_uuid,
+            node_id=node_id,
+            **values,
         )
-        result = await connection.execute(update_stmt)
+
+        # Define the conflict target and update if there is a conflict
+        stmt = stmt.on_conflict_do_update(
+            index_elements=[
+                "project_uuid",
+                "node_id",
+            ],  # The columns that define the conflict
+            set_=values,  # Columns to be updated if there's a conflict
+        )
+        stmt = stmt.returning(
+            *[c for c in projects_nodes.c if c is not projects_nodes.c.project_uuid]
+        )
+        result = await connection.execute(stmt)
         row = await result.first()
         if not row:
             raise ProjectNodesNodeNotFoundError(

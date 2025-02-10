@@ -7,6 +7,7 @@ from simcore_postgres_database.models.groups_extra_properties import (
 )
 from simcore_postgres_database.models.projects import ProjectType, projects
 from simcore_postgres_database.models.projects_networks import projects_networks
+from simcore_postgres_database.models.projects_nodes import projects_nodes
 
 __all__ = [
     "comp_pipeline",
@@ -15,6 +16,7 @@ __all__ = [
     "groups_extra_properties",
     "NodeClass",
     "projects_networks",
+    "projects_nodes",
     "projects",
     "ProjectType",
     "StateType",

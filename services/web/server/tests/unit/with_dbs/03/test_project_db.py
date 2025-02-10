@@ -28,7 +28,10 @@ from servicelib.utils import logged_gather
 from simcore_postgres_database.models.projects import ProjectType, projects
 from simcore_postgres_database.models.projects_to_products import projects_to_products
 from simcore_postgres_database.models.users import UserRole
-from simcore_postgres_database.utils_projects_nodes import ProjectNodesRepo
+from simcore_postgres_database.utils_projects_nodes import (
+    ProjectNodeCreate,
+    ProjectNodesRepo,
+)
 from simcore_service_webserver.projects._db_utils import PermissionStr
 from simcore_service_webserver.projects._groups_db import update_or_insert_project_group
 from simcore_service_webserver.projects.api import has_user_project_access_rights
@@ -97,6 +100,7 @@ def _assert_added_project(
         "creationDate",
         "lastChangeDate",
         "accessRights",  # NOTE: access rights were moved away from the projects table
+        "workbench",
         "trashed",
         "trashedBy",
         "trashedExplicitly",
@@ -161,7 +165,6 @@ def _assert_project_db_row(
         "description": project["description"],
         "thumbnail": project["thumbnail"],
         "prj_owner": None,
-        "workbench": project["workbench"],
         "published": False,
         "dev": project["dev"],
         "classifiers": project["classifiers"],
@@ -189,11 +192,21 @@ async def insert_project_in_db(
 
     async def _inserter(prj: dict[str, Any], **overrides) -> dict[str, Any]:
         # add project without user id -> by default creates a template
+
+        workbench = prj.pop("workbench", None)
+
+        project_nodes = None
+        if workbench:
+            project_nodes = {
+                NodeID(node_id): ProjectNodeCreate(node_id=NodeID(node_id), **node_info)
+                for node_id, node_info in workbench.items()
+            }
+
         default_config: dict[str, Any] = {
             "project": prj,
             "user_id": None,
             "product_name": osparc_product_name,
-            "project_nodes": None,
+            "project_nodes": project_nodes,
         }
         default_config.update(**overrides)
         new_project = await db_api.insert_project(**default_config)
@@ -211,6 +224,8 @@ async def insert_project_in_db(
                 )
 
         inserted_projects.append(new_project["uuid"])
+        if workbench:
+            new_project["workbench"] = workbench
         return new_project
 
     yield _inserter

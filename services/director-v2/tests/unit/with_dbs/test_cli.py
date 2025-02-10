@@ -193,6 +193,7 @@ def test_project_save_state_ok(
     mock_save_service_state: None,
     cli_runner: CliRunner,
     project_at_db: ProjectAtDB,
+    fake_workbench_without_outputs: dict[str, Any],
     capsys: pytest.CaptureFixture,
 ):
     with capsys.disabled() as _disabled:
@@ -204,8 +205,8 @@ def test_project_save_state_ok(
     print(result.stdout)
     assert result.exit_code == os.EX_OK, _format_cli_error(result)
     assert result.stdout.endswith(f"Save complete for project {project_at_db.uuid}\n")
-    for node_uuid, node_content in project_at_db.workbench.items():
-        assert f"Saving state for {node_uuid} {node_content.label}" in result.stdout
+    for node_uuid, node_content in fake_workbench_without_outputs.items():
+        assert f"Saving state for {node_uuid} {node_content['label']}" in result.stdout
 
     assert (
         f"Saving project '{project_at_db.uuid}' - '{project_at_db.name}'"
@@ -219,6 +220,7 @@ def test_project_save_state_retry_3_times_and_fails(
     mock_save_service_state_as_failing: None,
     cli_runner: CliRunner,
     project_at_db: ProjectAtDB,
+    fake_workbench_without_outputs: dict[str, Any],
     capsys: pytest.CaptureFixture,
 ):
     with capsys.disabled() as _disabled:
@@ -230,7 +232,7 @@ def test_project_save_state_retry_3_times_and_fails(
     print(result.stdout)
     assert result.exit_code == 1, _format_cli_error(result)
     assert "The following nodes failed to save:" in result.stdout
-    for node_uuid in project_at_db.workbench:
+    for node_uuid in fake_workbench_without_outputs:
         assert (
             result.stdout.count(f"Attempting to save {node_uuid}")
             == DEFAULT_NODE_SAVE_ATTEMPTS

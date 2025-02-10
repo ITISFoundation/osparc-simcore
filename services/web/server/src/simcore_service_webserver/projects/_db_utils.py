@@ -16,6 +16,7 @@ from models_library.users import UserID
 from models_library.utils.change_case import camel_to_snake, snake_to_camel
 from pydantic import ValidationError
 from simcore_postgres_database.models.project_to_groups import project_to_groups
+from simcore_postgres_database.models.projects_nodes import projects_nodes
 from simcore_postgres_database.models.projects_to_products import projects_to_products
 from simcore_postgres_database.webserver_models import ProjectType, projects
 from sqlalchemy.dialects.postgresql import insert as pg_insert
@@ -49,6 +50,47 @@ class ProjectAccessRights(Enum):
     OWNER = {"read": True, "write": True, "delete": True}
     COLLABORATOR = {"read": True, "write": True, "delete": False}
     VIEWER = {"read": True, "write": False, "delete": False}
+
+
+def _build_workbench_subquery():
+    return (
+        sa.select(
+            projects_nodes.c.project_uuid,
+            sa.func.jsonb_object_agg(
+                projects_nodes.c.node_id,
+                sa.func.jsonb_build_object(
+                    "key",
+                    projects_nodes.c.key,
+                    "version",
+                    projects_nodes.c.version,
+                    "label",
+                    projects_nodes.c.label,
+                    "input_access",
+                    projects_nodes.c.input_access,
+                    "input_nodes",
+                    projects_nodes.c.input_nodes,
+                    "inputs",
+                    projects_nodes.c.inputs,
+                    "inputs_required",
+                    projects_nodes.c.inputs_required,
+                    "output_nodes",
+                    projects_nodes.c.output_nodes,
+                    "outputs",
+                    projects_nodes.c.outputs,
+                    "progress",
+                    projects_nodes.c.progress,
+                    "run_hash",
+                    projects_nodes.c.run_hash,
+                    "state",
+                    projects_nodes.c.state,
+                    "parent",
+                    projects_nodes.c.parent,
+                    "boot_options",
+                    projects_nodes.c.boot_options,
+                ),
+            ).label("workbench"),
+        ).group_by(projects_nodes.c.project_uuid)
+    ).subquery("workbench_subquery")
 
 
 def create_project_access_rights(
@@ -236,6 +278,22 @@ class BaseProjectDB:
                 conn, project_id=db_prj["id"]
             )
             user_email = await self._get_user_email(conn, db_prj["prj_owner"])
+
+            # NOTE: experiment TODO: remove Nones from workbench
+            workbench = db_prj["workbench"]
+            _temp_workbench: dict[str, Any] = {}
+            for node_id, node_data in workbench.items():
+                _temp_workbench[node_id] = {}
+                for item, value in node_data.items():
+                    if value is None:
+                        if item in ["outputs", "inputs"]:
+                            _temp_workbench[node_id][item] = {}
+                        if item in ["inputNodes"]:
+                            _temp_workbench[node_id][item] = []
+                        continue
+                    _temp_workbench[node_id][item] = value
+            db_prj["workbench"] = _temp_workbench
+
             api_projects.append(convert_to_schema_names(db_prj, user_email))
             project_types.append(db_prj["type"])
 
@@ -275,16 +333,23 @@ class BaseProjectDB:
             .group_by(project_to_groups.c.project_uuid)
         ).subquery("access_rights_subquery")
 
+        _workbench_subquery = _build_workbench_subquery()
+
         query = (
             sa.select(
                 *PROJECT_DB_COLS,
-                projects.c.workbench,
+                sa.func.coalesce(_workbench_subquery.c.workbench, "{}").label(
+                    "workbench"
+                ),
                 users.c.primary_gid.label("trashed_by_primary_gid"),
                 access_rights_subquery.c.access_rights,
             )
             .select_from(
-                projects.join(access_rights_subquery, isouter=True).outerjoin(
-                    users, projects.c.trashed_by == users.c.id
+                projects.join(access_rights_subquery, isouter=True)
+                .outerjoin(users, projects.c.trashed_by == users.c.id)
+                .outerjoin(
+                    _workbench_subquery,
+                    projects.c.uuid == _workbench_subquery.c.project_uuid,
                 )
             )
             .where(
@@ -325,6 +390,20 @@ class BaseProjectDB:
             )
             project["tags"] = tags
 
+        # NOTE: experiment TODO: remove Nones from workbench
+        workbench = project["workbench"]
+        _temp_workbench: dict[str, Any] = {}
+        for node_id, node_data in workbench.items():
+            _temp_workbench[node_id] = {}
+            for item, value in node_data.items():
+                if value is None:
+                    if item in ["outputs", "inputs"]:
+                        _temp_workbench[node_id][item] = {}
+                    if item in ["inputNodes"]:
+                        _temp_workbench[node_id][item] = []
+                    continue
+                _temp_workbench[node_id][item] = value
+        project["workbench"] = _temp_workbench
         return project
 
 

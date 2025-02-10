@@ -20,6 +20,9 @@ from models_library.users import UserID
 from pydantic import TypeAdapter, ValidationError
 from servicelib.rabbitmq import RabbitMQClient
 from servicelib.utils import logged_gather
+from simcore_service_director_v2.modules.db.repositories.projects_nodes import (
+    ProjectsNodesRepository,
+)
 
 from ..core.errors import ProjectNetworkNotFoundError
 from ..modules.catalog import CatalogClient
@@ -227,9 +230,7 @@ async def _get_networks_with_aliases_for_default_network(
             await rabbitmq_client.publish(message.channel_name, message)
             continue
 
-        new_networks_with_aliases[default_network][
-            NodeIDStr(f"{node_uuid}")
-        ] = network_alias
+        new_networks_with_aliases[default_network][f"{node_uuid}"] = network_alias
 
     return new_networks_with_aliases
 
@@ -237,6 +238,7 @@ async def _get_networks_with_aliases_for_default_network(
 async def update_from_workbench(
     projects_networks_repository: ProjectsNetworksRepository,
     projects_repository: ProjectsRepository,
+    projects_nodes_repository: ProjectsNodesRepository,
     scheduler: DynamicSidecarsScheduler,
     catalog_client: CatalogClient,
     rabbitmq_client: RabbitMQClient,
@@ -262,11 +264,12 @@ async def update_from_workbench(
     # NOTE: when UI is in place this is no longer required
     # for now all services are placed on the same default network
     project: ProjectAtDB = await projects_repository.get_project(project_id)
+    workbench: NodesDict = await projects_nodes_repository.get_nodes(project_id)
     assert project.prj_owner  # nosec
     new_networks_with_aliases = await _get_networks_with_aliases_for_default_network(
         project_id=project_id,
         user_id=project.prj_owner,
-        new_workbench=project.workbench,
+        new_workbench=workbench,
         catalog_client=catalog_client,
         rabbitmq_client=rabbitmq_client,
     )
