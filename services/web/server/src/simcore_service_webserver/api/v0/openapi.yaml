@@ -5640,7 +5640,7 @@ paths:
       - storage
       summary: Get available storage locations
       description: Returns the list of available storage locations
-      operationId: get_storage_locations
+      operationId: list_storage_locations
       responses:
         '200':
           description: Successful Response
@@ -5650,50 +5650,14 @@ paths:
                 items:
                   $ref: '#/components/schemas/DatasetMetaData'
                 type: array
-                title: Response Get Storage Locations
-  /v0/storage/locations/{location_id}:sync:
-    post:
-      tags:
-      - storage
-      summary: Manually triggers the synchronisation of the file meta data table in
-        the database
-      description: Returns an object containing added, changed and removed paths
-      operationId: synchronise_meta_data_table
-      parameters:
-      - name: location_id
-        in: path
-        required: true
-        schema:
-          type: integer
-          title: Location Id
-      - name: dry_run
-        in: query
-        required: false
-        schema:
-          type: boolean
-          default: false
-          title: Dry Run
-      - name: fire_and_forget
-        in: query
-        required: false
-        schema:
-          type: boolean
-          default: false
-          title: Fire And Forget
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_TableSynchronisation_'
+                title: Response List Storage Locations
   /v0/storage/locations/{location_id}/datasets:
     get:
       tags:
       - storage
       summary: Get datasets metadata
       description: returns all the top level datasets a user has access to
-      operationId: get_datasets_metadata
+      operationId: list_datasets_metadata
       parameters:
       - name: location_id
         in: path
@@ -5754,7 +5718,7 @@ paths:
       - storage
       summary: Get Files Metadata
       description: returns all the file meta data inside dataset with dataset_id
-      operationId: get_files_metadata_dataset
+      operationId: list_dataset_files_metadata
       parameters:
       - name: location_id
         in: path
@@ -8380,19 +8344,6 @@ components:
           title: Error
       type: object
       title: Envelope[StatusDiagnosticsGet]
-    Envelope_TableSynchronisation_:
-      properties:
-        data:
-          anyOf:
-          - $ref: '#/components/schemas/TableSynchronisation'
-          - type: 'null'
-        error:
-          anyOf:
-          - {}
-          - type: 'null'
-          title: Error
-      type: object
-      title: Envelope[TableSynchronisation]
     Envelope_TagGet_:
       properties:
         data:
@@ -9557,6 +9508,7 @@ components:
           title: Urls
         links:
           $ref: '#/components/schemas/FileUploadLinks'
+      additionalProperties: false
       type: object
       required:
       - chunk_size
@@ -13757,27 +13709,6 @@ components:
       additionalProperties: true
       type: object
       title: StudyUI
-    TableSynchronisation:
-      properties:
-        dry_run:
-          anyOf:
-          - type: boolean
-          - type: 'null'
-          title: Dry Run
-        fire_and_forget:
-          anyOf:
-          - type: boolean
-          - type: 'null'
-          title: Fire And Forget
-        removed:
-          items:
-            type: string
-          type: array
-          title: Removed
-      type: object
-      required:
-      - removed
-      title: TableSynchronisation
     TagAccessRights:
       properties:
         read:

@@ -1,4 +1,4 @@
-""" Parses and validation aiohttp requests against pydantic models
+"""Parses and validation aiohttp requests against pydantic models
 
 Rationale: These functions follow an interface analogous to ``pydantic.tools``'s
 
@@ -10,7 +10,7 @@ but adapted to parse&validate path, query and body of an aiohttp's request
 import json.decoder
 from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import TypeAlias, TypeVar, Union
+from typing import TypeVar
 
 from aiohttp import web
 from common_library.json_serialization import json_dumps
@@ -21,7 +21,6 @@ from . import status
 
 ModelClass = TypeVar("ModelClass", bound=BaseModel)
 ModelOrListOrDictType = TypeVar("ModelOrListOrDictType", bound=BaseModel | list | dict)
-UnionOfModelTypes: TypeAlias = Union[type[ModelClass], type[ModelClass]]  # noqa: UP007
 
 
 @contextmanager
@@ -132,7 +131,7 @@ def parse_request_path_parameters_as(
 
 
 def parse_request_query_parameters_as(
-    parameters_schema_cls: type[ModelClass] | UnionOfModelTypes,
+    parameters_schema_cls: type[ModelClass],
     request: web.Request,
     *,
     use_enveloped_error_v1: bool = True,
