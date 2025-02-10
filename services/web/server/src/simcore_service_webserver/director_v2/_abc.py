@@ -1,9 +1,10 @@
 from abc import ABC, abstractmethod
+from typing import TypeAlias
 
 from aiohttp import web
 from models_library.projects import ProjectID
 
-CommitID = int
+CommitID: TypeAlias = int
 _APP_PROJECT_RUN_POLICY_KEY = f"{__name__}.ProjectRunPolicy"
 
 
