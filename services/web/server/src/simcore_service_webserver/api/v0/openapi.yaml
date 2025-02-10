@@ -9508,6 +9508,7 @@ components:
           title: Urls
         links:
           $ref: '#/components/schemas/FileUploadLinks'
+      additionalProperties: false
       type: object
       required:
       - chunk_size

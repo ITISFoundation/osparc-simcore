@@ -3,7 +3,7 @@
   "info": {
     "title": "simcore_service_storage",
     "description": "Service to auto-scale swarm",
-    "version": "0.5.0"
+    "version": "0.6.0"
   },
   "paths": {
     "/v0/": {
@@ -2145,6 +2145,7 @@
             "$ref": "#/components/schemas/FileUploadLinks"
           }
         },
+        "additionalProperties": false,
         "type": "object",
         "required": [
           "chunk_size",
