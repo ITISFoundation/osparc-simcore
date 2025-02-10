@@ -51,7 +51,7 @@ class RegistrationResult(NamedTuple):
     message: str | None
 
 
-async def register_resource_as_licensed_resource(
+async def register_licensed_resource(
     app: web.Application,
     *,
     licensed_resource_name: str,

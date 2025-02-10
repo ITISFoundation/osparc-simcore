@@ -107,7 +107,7 @@ class LicensedResourceDB(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-class LicensedResourceUpdateDB(BaseModel):
+class LicensedResourcePatchDB(BaseModel):
     display_name: str | None = None
     licensed_resource_name: str | None = None
     trash: bool | None = None
