@@ -192,7 +192,6 @@ def app_environment(
             "WEBSERVER_DIAGNOSTICS": "null",
             "WEBSERVER_EXPORTER": "null",
             "WEBSERVER_GARBAGE_COLLECTOR": "null",
-            "WEBSERVER_META_MODELING": "0",
             "WEBSERVER_NOTIFICATIONS": "0",
             "WEBSERVER_PUBLICATIONS": "0",
             "WEBSERVER_REMOTE_DEBUG": "0",
@@ -200,7 +199,6 @@ def app_environment(
             "WEBSERVER_STUDIES_ACCESS_ENABLED": "0",
             "WEBSERVER_TAGS": "0",
             "WEBSERVER_TRACING": "null",
-            "WEBSERVER_VERSION_CONTROL": "0",
             "WEBSERVER_WALLETS": "0",
             # set INVITATIONS_* variables using those in .env-devel
             **{
