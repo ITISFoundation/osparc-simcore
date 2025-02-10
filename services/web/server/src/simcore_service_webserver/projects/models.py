@@ -44,7 +44,6 @@ class ProjectDBGet(BaseModel):
     name: str
     description: str
     thumbnail: HttpUrl | None
-    icon: HttpUrl | None
     prj_owner: UserID  # == user.id (who created)
     creation_date: datetime
     last_change_date: datetime

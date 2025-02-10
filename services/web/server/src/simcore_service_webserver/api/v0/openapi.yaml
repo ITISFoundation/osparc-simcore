@@ -12077,14 +12077,6 @@ components:
             format: uri
           - type: 'null'
           title: Thumbnail
-        icon:
-          anyOf:
-          - type: string
-            maxLength: 2083
-            minLength: 1
-            format: uri
-          - type: 'null'
-          title: Icon
         workbench:
           type: object
           title: Workbench
@@ -12148,11 +12140,6 @@ components:
           - type: string
             const: ''
           title: Thumbnail
-        icon:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Icon
         workbench:
           type: object
           title: Workbench
@@ -12343,11 +12330,6 @@ components:
           - type: string
             const: ''
           title: Thumbnail
-        icon:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Icon
         workbench:
           type: object
           title: Workbench
@@ -12571,14 +12553,6 @@ components:
             format: uri
           - type: 'null'
           title: Thumbnail
-        icon:
-          anyOf:
-          - type: string
-            maxLength: 2083
-            minLength: 1
-            format: uri
-          - type: 'null'
-          title: Icon
         accessRights:
           anyOf:
           - additionalProperties:
@@ -13685,6 +13659,14 @@ components:
       title: Structure
     StudyUI-Input:
       properties:
+        icon:
+          anyOf:
+          - type: string
+            maxLength: 2083
+            minLength: 1
+            format: uri
+          - type: 'null'
+          title: Icon
         workbench:
           anyOf:
           - type: object
@@ -13711,6 +13693,11 @@ components:
       title: StudyUI
     StudyUI-Output:
       properties:
+        icon:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Icon
         workbench:
           anyOf:
           - type: object
