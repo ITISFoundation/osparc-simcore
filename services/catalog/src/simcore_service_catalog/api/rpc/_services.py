@@ -52,7 +52,6 @@ def _profile_rpc_call(coro):
 
 
 @router.expose(reraise_if_error_type=(CatalogForbiddenError,))
-@log_decorator(_logger, level=logging.DEBUG)
 @_profile_rpc_call
 async def list_services_paginated(
     app: FastAPI,

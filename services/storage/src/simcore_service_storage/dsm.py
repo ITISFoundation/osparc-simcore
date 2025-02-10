@@ -1,17 +1,18 @@
 import logging
+from typing import cast
 
-from aiohttp import web
+from fastapi import FastAPI
 
-from .constants import APP_DSM_KEY
 from .datcore_dsm import DatCoreDataManager, create_datcore_data_manager
 from .dsm_factory import DataManagerProvider
+from .exceptions.errors import ConfigurationError
 from .simcore_s3_dsm import SimcoreS3DataManager, create_simcore_s3_data_manager
 
 logger = logging.getLogger(__name__)
 
 
-def setup_dsm(app: web.Application):
-    async def _cleanup_context(app: web.Application):
+def setup_dsm(app: FastAPI) -> None:
+    async def _on_startup() -> None:
         dsm_provider = DataManagerProvider(app)
         dsm_provider.register_builder(
             SimcoreS3DataManager.get_location_id(),
@@ -23,17 +24,22 @@ def setup_dsm(app: web.Application):
             create_datcore_data_manager,
             DatCoreDataManager,
         )
-        app[APP_DSM_KEY] = dsm_provider
+        app.state.dsm_provider = dsm_provider
 
-        yield
-
-        logger.info("Shuting down %s", f"{dsm_provider=}")
+    async def _on_shutdown() -> None:
+        if app.state.dsm_provider:
+            # nothing to do
+            ...
 
     # ------
 
-    app.cleanup_ctx.append(_cleanup_context)
+    app.add_event_handler("startup", _on_startup)
+    app.add_event_handler("shutdown", _on_shutdown)
 
 
-def get_dsm_provider(app: web.Application) -> DataManagerProvider:
-    dsm_provider: DataManagerProvider = app[APP_DSM_KEY]
-    return dsm_provider
+def get_dsm_provider(app: FastAPI) -> DataManagerProvider:
+    if not app.state.dsm_provider:
+        raise ConfigurationError(
+            msg="DSM provider not available. Please check the configuration."
+        )
+    return cast(DataManagerProvider, app.state.dsm_provider)
