@@ -6,4 +6,4 @@ router = RPCRouter()
 
 @router.expose()
 async def start_zipping(paths: list[str]) -> ZipTask:
-    return ZipTask(msg=f"Started zipping [ { ','.join(paths) } ]")
+    return ZipTask(msg="".join(paths))
