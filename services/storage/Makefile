@@ -4,27 +4,18 @@
 include ../../scripts/common.Makefile
 include ../../scripts/common-service.Makefile
 
-APP_OPENAPI_RELPATH=src/$(APP_PACKAGE_NAME)/api/v0/openapi.yaml
 
+.env-ignore:
+	$(APP_CLI_NAME) echo-dotenv > $@
 
-.PHONY: openapi-specs
-openapi-specs: ## updates and validates openapi specifications
-	$(MAKE_C) $(REPO_BASE_DIR)/api/specs/$(APP_NAME) all
-	# validates OAS file: $(APP_OPENAPI_RELPATH)
-	$(call validate_openapi_specs,$(APP_OPENAPI_RELPATH))
+.PHONY: openapi.json
+openapi-specs: openapi.json
+openapi.json: .env-ignore
+	# generating openapi specs file (need to have the environment set for this)
+	@set -o allexport; \
+	source $<; \
+	set +o allexport; \
+	python3 -c "import json; from $(APP_PACKAGE_NAME).main import *; print( json.dumps(the_app.openapi(), indent=2) )" > $@
 
-
-.PHONY: tests
-tests: ## runs unit tests
-	# running unit tests
-	@pytest -vv --asyncio-mode=auto --failed-first --durations=10 --pdb $(CURDIR)/tests
-
-
-# DEVELOPMENT ########
-.env:
-	cp .env-devel $@
-
-run-devel: .env
-	# start app (within $<) in prod mode
-	export $(shell grep -v '^#' .env-devel | xargs -0); \
-	$(APP_CLI_NAME)
+	# validates OAS file: $@
+	$(call validate_openapi_specs,$@)

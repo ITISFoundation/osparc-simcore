@@ -1,9 +1,3 @@
-""" Database API
-
-    - Adds a layer to the postgres API with a focus on the projects comments
-
-"""
-
 import logging
 from datetime import datetime
 
