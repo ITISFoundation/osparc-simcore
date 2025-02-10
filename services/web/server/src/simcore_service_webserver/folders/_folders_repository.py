@@ -566,7 +566,10 @@ async def get_folders_recursively(
 
 
 def _select_trashed_by_primary_gid_query():
-    return sa.select(users.c.primary_gid.label("trashed_by_primary_gid")).select_from(
+    return sa.select(
+        folders_v2.c.folder_id,
+        users.c.primary_gid.label("trashed_by_primary_gid"),
+    ).select_from(
         folders_v2.outerjoin(users, folders_v2.c.trashed_by == users.c.id),
     )
 
@@ -583,7 +586,7 @@ async def get_trashed_by_primary_gid(
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         result = await conn.execute(query)
-        row = result.first()
+        row = result.one_or_none()
         return row.trashed_by_primary_gid if row else None
 
 
@@ -611,4 +614,6 @@ async def batch_get_trashed_by_primary_gid(
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         result = await conn.stream(query)
-        return [row.trashed_by_primary_gid async for row in result]
+        rows = {row.folder_id: row.trashed_by_primary_gid async for row in result}
+
+    return [rows.get(folder_id) for folder_id in folders_ids]
