@@ -1,7 +1,7 @@
 """add licensed resources
 
 Revision ID: 68777fdf9539
-Revises: e71ea59858f4
+Revises: 3fe27ff48f73
 Create Date: 2025-02-09 10:24:50.533653+00:00
 
 """
@@ -11,7 +11,7 @@ from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision = "68777fdf9539"
-down_revision = "e71ea59858f4"
+down_revision = "3fe27ff48f73"
 branch_labels = None
 depends_on = None
 
