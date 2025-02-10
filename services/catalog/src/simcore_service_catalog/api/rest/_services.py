@@ -22,7 +22,7 @@ from ..._constants import (
 )
 from ...db.repositories.groups import GroupsRepository
 from ...db.repositories.services import ServicesRepository
-from ...models.services_db import ServiceAccessRightsAtDB, ServiceMetaDataAtDB
+from ...models.services_db import ServiceAccessRightsAtDB, ServiceMetaDataDBGet
 from ...services.director import DirectorApi
 from ..dependencies.database import get_repository
 from ..dependencies.director import get_director_api
@@ -35,7 +35,7 @@ ServicesSelection: TypeAlias = set[tuple[str, str]]
 
 def _compose_service_details(
     service_in_registry: dict[str, Any],  # published part
-    service_in_db: ServiceMetaDataAtDB,  # editable part
+    service_in_db: ServiceMetaDataDBGet,  # editable part
     service_access_rights_in_db: list[ServiceAccessRightsAtDB],
     service_owner: str | None,
 ) -> ServiceGet | None:

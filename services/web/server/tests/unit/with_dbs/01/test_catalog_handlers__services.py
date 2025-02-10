@@ -8,6 +8,7 @@ from unittest.mock import MagicMock
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
+from faker import Faker
 from models_library.api_schemas_catalog.services import ServiceGetV2
 from models_library.api_schemas_webserver.catalog import (
     CatalogServiceGet,
@@ -22,6 +23,7 @@ from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import NonNegativeInt, TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
+from pytest_simcore.helpers.faker_factories import random_icon_url
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_login import UserInfoDict
@@ -162,6 +164,7 @@ async def test_get_and_patch_service(
     client: TestClient,
     logged_user: UserInfoDict,
     mocked_rpc_catalog_service_api: dict[str, MagicMock],
+    faker: Faker,
 ):
     assert client.app
     assert client.app.router
@@ -190,8 +193,8 @@ async def test_get_and_patch_service(
     # PATCH
     update = CatalogServiceUpdate(
         name="foo",
-        thumbnail=None,
         description="bar",
+        icon=random_icon_url(faker),
         classifiers=None,
         versionDisplay="Some nice name",
         descriptionUi=True,
@@ -209,6 +212,7 @@ async def test_get_and_patch_service(
     assert model.key == service_key
     assert model.version == service_version
     assert model.name == update.name
+    assert model.icon == update.icon
     assert model.description == update.description
     assert model.description_ui == update.description_ui
     assert model.version_display == update.version_display

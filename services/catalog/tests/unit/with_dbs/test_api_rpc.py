@@ -16,7 +16,7 @@ from models_library.rest_pagination import MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from pydantic import ValidationError
-from pytest_simcore.helpers.faker_factories import random_user
+from pytest_simcore.helpers.faker_factories import random_icon_url, random_user
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.postgres_tools import insert_and_get_row_lifespan
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -134,6 +134,7 @@ async def test_rpc_catalog_client(
     product_name: ProductName,
     user_id: UserID,
     app: FastAPI,
+    faker: Faker,
 ):
     assert app
 
@@ -178,6 +179,7 @@ async def test_rpc_catalog_client(
         update={
             "name": "foo",
             "description": "bar",
+            "icon": random_icon_url(faker),
             "version_display": "this is a nice version",
             "description_ui": True,  # owner activates wiki view
         },  # type: ignore
@@ -189,6 +191,7 @@ async def test_rpc_catalog_client(
     assert updated.description == "bar"
     assert updated.description_ui
     assert updated.version_display == "this is a nice version"
+    assert updated.icon is not None
     assert not updated.classifiers
 
     got = await get_service(

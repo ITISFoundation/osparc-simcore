@@ -3,7 +3,7 @@
   "info": {
     "title": "simcore-service-catalog",
     "description": "Manages and maintains a catalog of all published components (e.g. macro-algorithms, scripts, etc)",
-    "version": "0.7.0"
+    "version": "0.8.0"
   },
   "paths": {
     "/": {
@@ -2617,6 +2617,21 @@
             ],
             "title": "Thumbnail",
             "description": "URL to the service thumbnail"
+          },
+          "icon": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2083,
+                "minLength": 1,
+                "format": "uri"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Icon",
+            "description": "URL to the service icon"
           },
           "description": {
             "type": "string",
