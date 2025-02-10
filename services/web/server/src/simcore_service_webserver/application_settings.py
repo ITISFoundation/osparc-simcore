@@ -1,6 +1,6 @@
 import logging
 from functools import cached_property
-from typing import Annotated, Any, Final, Self
+from typing import Annotated, Any, Final
 
 from aiohttp import web
 from common_library.basic_types import DEFAULT_FACTORY
@@ -402,7 +402,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
 
     @model_validator(mode="before")
     @classmethod
-    def _enable_only_if_dev_features_allowed(cls, data: Any) -> Self:
+    def _enable_only_if_dev_features_allowed(cls, data: Any) -> Any:
         """Force disables plugins marked 'under development' when WEBSERVER_DEV_FEATURES_ENABLED=False"""
 
         dev_features_allowed = TypeAdapter(bool).validate_python(
@@ -411,17 +411,24 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
 
         if not dev_features_allowed:
             for field_name, field in cls.model_fields.items():
-                if field.json_schema_extra and field.json_schema_extra.get(
-                    _X_DEV_FEATURE_FLAG
-                ):
-                    _logger.warning(
-                        "'%s' is still under development and will be forcibly disabled [WEBSERVER_DEV_FEATURES_ENABLED=%s].",
-                        field_name,
-                        dev_features_allowed,
-                    )
-                    data[field_name] = (
-                        None if field_name and is_nullable(field) else False
-                    )
+                if field.json_schema_extra:
+                    json_schema: dict[str, Any] = {}
+                    if callable(field.json_schema_extra):
+                        field.json_schema_extra(json_schema)
+                    else:
+                        json_schema = field.json_schema_extra
+
+                    assert isinstance(json_schema, dict)  # nosec
+
+                    if json_schema.get(_X_DEV_FEATURE_FLAG):
+                        _logger.warning(
+                            "'%s' is still under development and will be forcibly disabled [WEBSERVER_DEV_FEATURES_ENABLED=%s].",
+                            field_name,
+                            dev_features_allowed,
+                        )
+                        data[field_name] = (
+                            None if field_name and is_nullable(field) else False
+                        )
 
         return data
 
