@@ -17,7 +17,7 @@ from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
-from unittest.mock import Mock
+from unittest.mock import AsyncMock, Mock
 
 import aiofiles
 import botocore.exceptions
@@ -1415,9 +1415,10 @@ async def test_read_object_file_stream(
     stream_read_file_from_s3: Path,
 ):
     async with aiofiles.open(stream_read_file_from_s3, "wb") as f:
-        async for chunk in simcore_s3_api.get_object_file_stream(
+        _, file_stream = await simcore_s3_api.get_object_file_stream(
             with_s3_bucket, with_uploaded_file_on_s3.s3_key, chunk_size=1024
-        ):
+        )
+        async for chunk in file_stream(AsyncMock()):
             await f.write(chunk)
 
     await assert_same_file_content(
@@ -1432,12 +1433,11 @@ async def test_upload_object_from_file_stream(
     with_s3_bucket: S3BucketName,
 ):
     object_key = "read_from_s3_write_to_s3"
+    _, file_stream = await simcore_s3_api.get_object_file_stream(
+        with_s3_bucket, with_uploaded_file_on_s3.s3_key
+    )
     await simcore_s3_api.upload_object_from_file_stream(
-        with_s3_bucket,
-        object_key,
-        lambda: simcore_s3_api.get_object_file_stream(
-            with_s3_bucket, with_uploaded_file_on_s3.s3_key
-        ),
+        with_s3_bucket, object_key, file_stream(AsyncMock())
     )
 
     await simcore_s3_api.delete_object(bucket=with_s3_bucket, object_key=object_key)
