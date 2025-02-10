@@ -32,7 +32,6 @@ def app_environment(
             "WEBSERVER_EXPORTER": "null",
             "WEBSERVER_GARBAGE_COLLECTOR": "null",
             "WEBSERVER_GROUPS": "1",
-            "WEBSERVER_META_MODELING": "0",
             "WEBSERVER_NOTIFICATIONS": "0",
             "WEBSERVER_PRODUCTS": "1",
             "WEBSERVER_PUBLICATIONS": "0",
@@ -40,7 +39,6 @@ def app_environment(
             "WEBSERVER_SOCKETIO": "1",  # for login notifications
             "WEBSERVER_STUDIES_DISPATCHER": "null",
             "WEBSERVER_TAGS": "1",
-            "WEBSERVER_VERSION_CONTROL": "0",
             "WEBSERVER_WALLETS": "1",
             "WEBSERVER_TRACING": "null",
         },

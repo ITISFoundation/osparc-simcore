@@ -11,7 +11,7 @@ import aiohttp
 from aiohttp import ClientTimeout, web
 from models_library.projects import ProjectID
 
-from ._abc import AbstractProjectRunPolicy
+from ._abc import AbstractProjectRunPolicy, CommitID
 from .settings import DirectorV2Settings, get_client_session, get_plugin_settings
 
 log = logging.getLogger(__name__)
@@ -54,7 +54,7 @@ class DefaultProjectRunPolicy(AbstractProjectRunPolicy):
         self,
         request: web.Request,
         project_uuid: ProjectID,
-    ) -> tuple[list[ProjectID], list[int]]:
+    ) -> tuple[list[ProjectID], list[CommitID]]:
         """
         Returns ids and refid of projects that can run
         If project_uuid is a std-project, then it returns itself

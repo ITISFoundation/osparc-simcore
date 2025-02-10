@@ -3448,98 +3448,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Bad Request
-  /v0/projects/{project_uuid}/checkpoint/{ref_id}/iterations:
-    get:
-      tags:
-      - projects
-      - metamodeling
-      summary: List Project Iterations
-      operationId: list_project_iterations
-      parameters:
-      - name: project_uuid
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
-          title: Project Uuid
-      - name: ref_id
-        in: path
-        required: true
-        schema:
-          type: integer
-          title: Ref Id
-      - name: limit
-        in: query
-        required: false
-        schema:
-          type: integer
-          minimum: 1
-          exclusiveMaximum: true
-          default: 20
-          title: Limit
-          maximum: 50
-      - name: offset
-        in: query
-        required: false
-        schema:
-          type: integer
-          minimum: 0
-          default: 0
-          title: Offset
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Page_ProjectIterationItem_'
-  /v0/projects/{project_uuid}/checkpoint/{ref_id}/iterations/-/results:
-    get:
-      tags:
-      - projects
-      - metamodeling
-      summary: List Project Iterations Results
-      operationId: list_project_iterations_results
-      parameters:
-      - name: project_uuid
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
-          title: Project Uuid
-      - name: ref_id
-        in: path
-        required: true
-        schema:
-          type: integer
-          title: Ref Id
-      - name: limit
-        in: query
-        required: false
-        schema:
-          type: integer
-          minimum: 1
-          exclusiveMaximum: true
-          default: 20
-          title: Limit
-          maximum: 50
-      - name: offset
-        in: query
-        required: false
-        schema:
-          type: integer
-          minimum: 0
-          default: 0
-          title: Offset
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Page_ProjectIterationResultItem_'
   /v0/services:
     get:
       tags:
@@ -6271,227 +6179,6 @@ paths:
       responses:
         '204':
           description: Successful Response
-  /v0/repos/projects:
-    get:
-      tags:
-      - repository
-      summary: List Repos
-      operationId: list_repos
-      parameters:
-      - name: limit
-        in: query
-        required: false
-        schema:
-          type: integer
-          minimum: 1
-          exclusiveMaximum: true
-          default: 20
-          title: Limit
-          maximum: 50
-      - name: offset
-        in: query
-        required: false
-        schema:
-          type: integer
-          minimum: 0
-          default: 0
-          title: Offset
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Page_RepoApiModel_'
-  /v0/repos/projects/{project_uuid}/checkpoints:
-    get:
-      tags:
-      - repository
-      summary: List Checkpoints
-      operationId: list_checkpoints
-      parameters:
-      - name: project_uuid
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
-          title: Project Uuid
-      - name: limit
-        in: query
-        required: false
-        schema:
-          type: integer
-          minimum: 1
-          exclusiveMaximum: true
-          default: 20
-          title: Limit
-          maximum: 50
-      - name: offset
-        in: query
-        required: false
-        schema:
-          type: integer
-          minimum: 0
-          default: 0
-          title: Offset
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Page_CheckpointApiModel_'
-    post:
-      tags:
-      - repository
-      summary: Create Checkpoint
-      operationId: create_checkpoint
-      parameters:
-      - name: project_uuid
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
-          title: Project Uuid
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CheckpointNew'
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_CheckpointApiModel_'
-  /v0/repos/projects/{project_uuid}/checkpoints/{ref_id}:
-    get:
-      tags:
-      - repository
-      summary: Get Checkpoint
-      operationId: get_checkpoint
-      parameters:
-      - name: ref_id
-        in: path
-        required: true
-        schema:
-          anyOf:
-          - type: integer
-          - type: string
-          - const: HEAD
-            type: string
-          title: Ref Id
-      - name: project_uuid
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
-          title: Project Uuid
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_CheckpointApiModel_'
-    patch:
-      tags:
-      - repository
-      summary: Update Checkpoint
-      description: Update Checkpoint Annotations
-      operationId: update_checkpoint
-      parameters:
-      - name: ref_id
-        in: path
-        required: true
-        schema:
-          anyOf:
-          - type: integer
-          - type: string
-          title: Ref Id
-      - name: project_uuid
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
-          title: Project Uuid
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CheckpointAnnotations'
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_CheckpointApiModel_'
-  /v0/repos/projects/{project_uuid}/checkpoints/{ref_id}/workbench/view:
-    get:
-      tags:
-      - repository
-      summary: View Project Workbench
-      operationId: view_project_workbench
-      parameters:
-      - name: ref_id
-        in: path
-        required: true
-        schema:
-          anyOf:
-          - type: integer
-          - type: string
-          title: Ref Id
-      - name: project_uuid
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
-          title: Project Uuid
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_WorkbenchViewApiModel_'
-  /v0/repos/projects/{project_uuid}/checkpoints/{ref_id}:checkout:
-    post:
-      tags:
-      - repository
-      summary: Checkout
-      operationId: checkout
-      parameters:
-      - name: ref_id
-        in: path
-        required: true
-        schema:
-          anyOf:
-          - type: integer
-          - type: string
-          title: Ref Id
-      - name: project_uuid
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
-          title: Project Uuid
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_CheckpointApiModel_'
   /v0/workspaces:
     post:
       tags:
@@ -7702,79 +7389,6 @@ components:
       - new
       - confirm
       title: ChangePasswordBody
-    CheckpointAnnotations:
-      properties:
-        tag:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Tag
-        message:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Message
-      type: object
-      title: CheckpointAnnotations
-    CheckpointApiModel:
-      properties:
-        id:
-          type: integer
-          exclusiveMinimum: true
-          title: Id
-          minimum: 0
-        checksum:
-          type: string
-          pattern: ^[a-fA-F0-9]{40}$
-          title: Checksum
-        created_at:
-          type: string
-          format: date-time
-          title: Created At
-        tags:
-          items:
-            type: string
-          type: array
-          title: Tags
-        message:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Message
-        parents_ids:
-          anyOf:
-          - items:
-              type: integer
-              exclusiveMinimum: true
-              minimum: 0
-            type: array
-          - type: 'null'
-          title: Parents Ids
-        url:
-          type: string
-          title: Url
-      type: object
-      required:
-      - id
-      - checksum
-      - created_at
-      - tags
-      - url
-      title: CheckpointApiModel
-    CheckpointNew:
-      properties:
-        tag:
-          type: string
-          title: Tag
-        message:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Message
-      type: object
-      required:
-      - tag
-      title: CheckpointNew
     CodePageParams:
       properties:
         message:
@@ -8207,19 +7821,6 @@ components:
           title: Error
       type: object
       title: Envelope[CatalogServiceGet]
-    Envelope_CheckpointApiModel_:
-      properties:
-        data:
-          anyOf:
-          - $ref: '#/components/schemas/CheckpointApiModel'
-          - type: 'null'
-        error:
-          anyOf:
-          - {}
-          - type: 'null'
-          title: Error
-      type: object
-      title: Envelope[CheckpointApiModel]
     Envelope_ComputationGet_:
       properties:
         data:
@@ -8955,19 +8556,6 @@ components:
           title: Error
       type: object
       title: Envelope[WalletPaymentInitiated]
-    Envelope_WorkbenchViewApiModel_:
-      properties:
-        data:
-          anyOf:
-          - $ref: '#/components/schemas/WorkbenchViewApiModel'
-          - type: 'null'
-        error:
-          anyOf:
-          - {}
-          - type: 'null'
-          title: Error
-      type: object
-      title: Envelope[WorkbenchViewApiModel]
     Envelope_WorkspaceGet_:
       properties:
         data:
@@ -9704,47 +9292,6 @@ components:
       - resource
       - field
       title: ErrorItemType
-    ExtractedResults:
-      properties:
-        progress:
-          type: object
-          title: Progress
-          description: Progress in each computational node
-        labels:
-          type: object
-          title: Labels
-          description: Maps captured node with a label
-        values:
-          type: object
-          title: Values
-          description: Captured outputs per node
-      type: object
-      required:
-      - progress
-      - labels
-      - values
-      title: ExtractedResults
-      example:
-        labels:
-          0f1e38c9-dcb7-443c-a745-91b97ac28ccc: Integer iterator
-          2d0ce8b9-c9c3-43ce-ad2f-ad493898de37: Probe Sensor - Integer
-          445b44d1-59b3-425c-ac48-7c13e0f2ea5b: Probe Sensor - Integer_2
-          d76fca06-f050-4790-88a8-0aac10c87b39: Boolean Parameter
-        progress:
-          4c08265a-427b-4ac3-9eab-1d11c822ada4: 0
-          e33c6880-1b1d-4419-82d7-270197738aa9: 100
-        values:
-          0f1e38c9-dcb7-443c-a745-91b97ac28ccc:
-            out_1: 1
-            out_2:
-            - 3
-            - 4
-          2d0ce8b9-c9c3-43ce-ad2f-ad493898de37:
-            in_1: 7
-          445b44d1-59b3-425c-ac48-7c13e0f2ea5b:
-            in_1: 1
-          d76fca06-f050-4790-88a8-0aac10c87b39:
-            out_1: true
     FeaturesDict:
       properties:
         name:
@@ -11880,24 +11427,6 @@ components:
       - _links
       - data
       title: Page[CatalogServiceGet]
-    Page_CheckpointApiModel_:
-      properties:
-        _meta:
-          $ref: '#/components/schemas/PageMetaInfoLimitOffset'
-        _links:
-          $ref: '#/components/schemas/PageLinks'
-        data:
-          items:
-            $ref: '#/components/schemas/CheckpointApiModel'
-          type: array
-          title: Data
-      additionalProperties: false
-      type: object
-      required:
-      - _meta
-      - _links
-      - data
-      title: Page[CheckpointApiModel]
     Page_LicensedItemPurchaseGet_:
       properties:
         _meta:
@@ -12006,42 +11535,6 @@ components:
       - _links
       - data
       title: Page[PricingPlanGet]
-    Page_ProjectIterationItem_:
-      properties:
-        _meta:
-          $ref: '#/components/schemas/PageMetaInfoLimitOffset'
-        _links:
-          $ref: '#/components/schemas/PageLinks'
-        data:
-          items:
-            $ref: '#/components/schemas/ProjectIterationItem'
-          type: array
-          title: Data
-      additionalProperties: false
-      type: object
-      required:
-      - _meta
-      - _links
-      - data
-      title: Page[ProjectIterationItem]
-    Page_ProjectIterationResultItem_:
-      properties:
-        _meta:
-          $ref: '#/components/schemas/PageMetaInfoLimitOffset'
-        _links:
-          $ref: '#/components/schemas/PageLinks'
-        data:
-          items:
-            $ref: '#/components/schemas/ProjectIterationResultItem'
-          type: array
-          title: Data
-      additionalProperties: false
-      type: object
-      required:
-      - _meta
-      - _links
-      - data
-      title: Page[ProjectIterationResultItem]
     Page_ProjectListItem_:
       properties:
         _meta:
@@ -12060,24 +11553,6 @@ components:
       - _links
       - data
       title: Page[ProjectListItem]
-    Page_RepoApiModel_:
-      properties:
-        _meta:
-          $ref: '#/components/schemas/PageMetaInfoLimitOffset'
-        _links:
-          $ref: '#/components/schemas/PageLinks'
-        data:
-          items:
-            $ref: '#/components/schemas/RepoApiModel'
-          type: array
-          title: Data
-      additionalProperties: false
-      type: object
-      required:
-      - _meta
-      - _links
-      - data
-      title: Page[RepoApiModel]
     Page_ServiceRunGet_:
       properties:
         _meta:
@@ -12096,22 +11571,6 @@ components:
       - _links
       - data
       title: Page[ServiceRunGet]
-    ParentMetaProjectRef:
-      properties:
-        project_id:
-          type: string
-          format: uuid
-          title: Project Id
-        ref_id:
-          type: integer
-          exclusiveMinimum: true
-          title: Ref Id
-          minimum: 0
-      type: object
-      required:
-      - project_id
-      - ref_id
-      title: ParentMetaProjectRef
     PatchRequestBody:
       properties:
         value:
@@ -12901,73 +12360,6 @@ components:
       - key
       - value
       title: ProjectInputUpdate
-    ProjectIterationItem:
-      properties:
-        name:
-          type: string
-          title: Name
-          description: Iteration's resource API name
-        parent:
-          $ref: '#/components/schemas/ParentMetaProjectRef'
-          description: Reference to the the meta-project that created this iteration
-        iteration_index:
-          type: integer
-          exclusiveMinimum: true
-          title: Iteration Index
-          minimum: 0
-        workcopy_project_id:
-          type: string
-          format: uuid
-          title: Workcopy Project Id
-          description: ID to this iteration's working copy.A working copy is a real
-            project where this iteration is run
-        workcopy_project_url:
-          type: string
-          title: Workcopy Project Url
-          description: reference to a working copy project
-      type: object
-      required:
-      - name
-      - parent
-      - iteration_index
-      - workcopy_project_id
-      - workcopy_project_url
-      title: ProjectIterationItem
-    ProjectIterationResultItem:
-      properties:
-        name:
-          type: string
-          title: Name
-          description: Iteration's resource API name
-        parent:
-          $ref: '#/components/schemas/ParentMetaProjectRef'
-          description: Reference to the the meta-project that created this iteration
-        iteration_index:
-          type: integer
-          exclusiveMinimum: true
-          title: Iteration Index
-          minimum: 0
-        workcopy_project_id:
-          type: string
-          format: uuid
-          title: Workcopy Project Id
-          description: ID to this iteration's working copy.A working copy is a real
-            project where this iteration is run
-        workcopy_project_url:
-          type: string
-          title: Workcopy Project Url
-          description: reference to a working copy project
-        results:
-          $ref: '#/components/schemas/ExtractedResults'
-      type: object
-      required:
-      - name
-      - parent
-      - iteration_index
-      - workcopy_project_id
-      - workcopy_project_url
-      - results
-      title: ProjectIterationResultItem
     ProjectListItem:
       properties:
         uuid:
@@ -13472,20 +12864,6 @@ components:
       - topUpAmountInUsd
       - monthlyLimitInUsd
       title: ReplaceWalletAutoRecharge
-    RepoApiModel:
-      properties:
-        project_uuid:
-          type: string
-          format: uuid
-          title: Project Uuid
-        url:
-          type: string
-          title: Url
-      type: object
-      required:
-      - project_uuid
-      - url
-      title: RepoApiModel
     ResearchResource:
       properties:
         rrid:
@@ -15327,29 +14705,6 @@ components:
       required:
       - position
       title: WorkbenchUI
-    WorkbenchViewApiModel:
-      properties:
-        workbench:
-          additionalProperties:
-            $ref: '#/components/schemas/Node-Output'
-          type: object
-          title: Workbench
-        ui:
-          type: object
-          title: Ui
-          default: {}
-        url:
-          type: string
-          title: Url
-        checkpoint_url:
-          type: string
-          title: Checkpoint Url
-      type: object
-      required:
-      - workbench
-      - url
-      - checkpoint_url
-      title: WorkbenchViewApiModel
     WorkspaceCreateBodyParams:
       properties:
         name:

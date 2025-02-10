@@ -26,7 +26,6 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatc
             "WEBSERVER_DIAGNOSTICS": "null",
             "WEBSERVER_EXPORTER": "null",
             "WEBSERVER_GROUPS": "1",
-            "WEBSERVER_META_MODELING": "0",
             "WEBSERVER_PRODUCTS": "1",
             "WEBSERVER_PUBLICATIONS": "0",
             "WEBSERVER_RABBITMQ": "null",
@@ -35,7 +34,6 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatc
             "WEBSERVER_STORAGE": "null",
             "WEBSERVER_TAGS": "1",
             "WEBSERVER_TRACING": "null",
-            "WEBSERVER_VERSION_CONTROL": "0",
             "WEBSERVER_WALLETS": "0",
         },
     )
