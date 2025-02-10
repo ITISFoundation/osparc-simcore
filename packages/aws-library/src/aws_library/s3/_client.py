@@ -19,12 +19,8 @@ from pydantic import AnyUrl, ByteSize, TypeAdapter
 from servicelib.logging_utils import log_catch, log_context
 from servicelib.progress_bar import ProgressBarData
 from servicelib.utils import limited_gather
-from servicelib.zip_stream import (
-    DEFAULT_READ_CHUNK_SIZE,
-    FileSize,
-    FileStream,
-    FileStreamCallable,
-)
+from servicelib.zip_stream import DEFAULT_READ_CHUNK_SIZE, FileSize, FileStream
+from servicelib.zip_stream._types import StreamData
 from settings_library.s3 import S3Settings
 from types_aiobotocore_s3 import S3Client
 from types_aiobotocore_s3.literals import BucketLocationConstraintType
@@ -480,7 +476,7 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
         object_key: S3ObjectKey,
         *,
         chunk_size: int = DEFAULT_READ_CHUNK_SIZE,
-    ) -> tuple[FileSize, FileStreamCallable]:
+    ) -> StreamData:
 
         # below is a quick call
         head_response = await self._client.head_object(
