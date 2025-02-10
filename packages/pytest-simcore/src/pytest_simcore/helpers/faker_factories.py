@@ -27,6 +27,14 @@ from faker import Faker
 DEFAULT_FAKER: Final = faker.Faker()
 
 
+def random_icon_url(fake: Faker):
+    return fake.image_url(width=16, height=16)
+
+
+def random_thumbnail_url(fake: Faker):
+    return fake.image_url(width=32, height=32)
+
+
 def _compute_hash(password: str) -> str:
     try:
         # 'passlib' will be used only if already installed.
@@ -395,7 +403,8 @@ def random_service_meta_data(
         # optional
         "description_ui": fake.pybool(),
         "owner": owner_primary_gid,
-        "thumbnail": _pick_from([fake.image_url(), None]),  # nullable
+        "thumbnail": _pick_from([random_thumbnail_url(fake), None]),  # nullable
+        "icon": _pick_from([random_icon_url(fake), None]),  # nullable
         "version_display": _pick_from([f"v{_version}", None]),  # nullable
         "classifiers": [],  # has default
         "quality": {},  # has default
