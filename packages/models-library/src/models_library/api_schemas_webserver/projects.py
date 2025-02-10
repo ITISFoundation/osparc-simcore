@@ -47,7 +47,6 @@ class ProjectCreateNew(InputSchema):
     name: str
     description: str | None = None
     thumbnail: HttpUrl | None = None
-    icon: HttpUrl | None = None
 
     workbench: NodesDict
 
@@ -103,7 +102,6 @@ class ProjectGet(OutputSchema):
     name: str
     description: str
     thumbnail: HttpUrl | Literal[""]
-    icon: HttpUrl | None = None
 
     workbench: NodesDict
 
@@ -179,7 +177,6 @@ class ProjectReplace(InputSchema):
         HttpUrl | None,
         BeforeValidator(empty_str_to_none_pre_validator),
     ] = None
-    icon: HttpUrl | None = None
 
     creation_date: DateTimeStr
     last_change_date: DateTimeStr
@@ -210,7 +207,7 @@ class ProjectPatch(InputSchema):
         BeforeValidator(empty_str_to_none_pre_validator),
         PlainSerializer(lambda x: str(x) if x is not None else None),
     ] = None
-    icon: HttpUrl | None = None
+
     access_rights: dict[GroupIDStr, AccessRights] | None = None
     classifiers: list[ClassifierID] | None = None
     dev: dict | None = None
