@@ -1,7 +1,7 @@
 """drop projects_version_control
 
 Revision ID: 061607911a22
-Revises: 611f956aa3e3
+Revises: 3fe27ff48f73
 Create Date: 2025-02-06 19:28:49.918139+00:00
 
 """
@@ -11,7 +11,7 @@ from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision = "061607911a22"
-down_revision = "611f956aa3e3"
+down_revision = "3fe27ff48f73"
 branch_labels = None
 depends_on = None
 
