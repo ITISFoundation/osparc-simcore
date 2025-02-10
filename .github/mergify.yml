@@ -27,6 +27,25 @@ queue_rules:
 pull_request_rules:
   - name: retry flaky tests (when PR is approved)
     conditions:
+      - "label=🤖-automerge"
+      - "label!=🤖-do-not-merge"
+      - "base=master"
+
+      - "-draft" # PR is not in draft state
+      - "-conflict" # PR has no conflicts
+      - "#approved-reviews-by>=2" # Requires 2 approvals
+      - "#changes-requested-reviews-by=0" # No requested changes
+      - "#review-threads-unresolved=0" # All review threads resolved
+    actions:
+      comment:
+        message: "Restarted CI due to failing tests"
+      github_actions:
+        workflow:
+          dispatch:
+            - workflow: ci-testing-deploy.yml
+
+  - name: Automatically add PR to queue if it meets conditions
+    conditions:
       - label=🤖-automerge
       - label!=🤖-do-not-merge
       - base=master
@@ -45,25 +64,6 @@ pull_request_rules:
           - check-failure=unit-tests
           - check-failure=integration-tests
           - check-failure=system-tests
-    actions:
-      comment:
-        message: "Restarted CI due to failing tests"
-      github_actions:
-        workflow:
-          dispatch:
-            - workflow: ci-testing-deploy.yml
-
-  - name: Automatically add PR to queue if it meets conditions
-    conditions:
-      - "label=🤖-automerge"
-      - "label!=🤖-do-not-merge"
-      - "base=master"
-
-      - "-draft" # PR is not in draft state
-      - "-conflict" # PR has no conflicts
-      - "#approved-reviews-by>=2" # Requires 2 approvals
-      - "#changes-requested-reviews-by=0" # No requested changes
-      - "#review-threads-unresolved=0" # All review threads resolved
     actions:
       queue:
         name: default
