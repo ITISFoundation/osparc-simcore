@@ -75,22 +75,20 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     SIMCORE_VCS_RELEASE_TAG: Annotated[
         str | None,
         Field(
-            default=None,
             description="Name of the tag that marks this release, or None if undefined",
             examples=["ResistanceIsFutile10"],
         ),
-    ]
+    ] = None
 
     SIMCORE_VCS_RELEASE_URL: Annotated[
         AnyHttpUrl | None,
         Field(
-            default=None,
             description="URL to release notes",
             examples=[
                 "https://github.com/ITISFoundation/osparc-simcore/releases/tag/staging_ResistanceIsFutile10"
             ],
         ),
-    ]
+    ] = None
 
     SWARM_STACK_NAME: Annotated[
         str | None,
@@ -100,13 +98,12 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     WEBSERVER_DEV_FEATURES_ENABLED: Annotated[
         bool,
         Field(
-            default=False,
             description="Enables development features. WARNING: make sure it is disabled in production .env file!",
         ),
-    ]
+    ] = False
     WEBSERVER_CREDIT_COMPUTATION_ENABLED: Annotated[
-        bool, Field(default=False, description="Enables credit computation features.")
-    ]
+        bool, Field(description="Enables credit computation features.")
+    ] = False
 
     WEBSERVER_LOGLEVEL: Annotated[
         LogLevel,
@@ -121,13 +118,12 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     WEBSERVER_LOG_FORMAT_LOCAL_DEV_ENABLED: Annotated[
         bool,
         Field(
-            default=False,
             validation_alias=AliasChoices(
                 "WEBSERVER_LOG_FORMAT_LOCAL_DEV_ENABLED", "LOG_FORMAT_LOCAL_DEV_ENABLED"
             ),
             description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
         ),
-    ]
+    ] = False
 
     WEBSERVER_LOG_FILTER_MAPPING: Annotated[
         dict[LoggerName, list[MessageSubstring]],
@@ -376,11 +372,10 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     WEBSERVER_SECURITY: Annotated[
         bool,
         Field(
-            default=True,
             description="This is a place-holder for future settings."
             "Currently this is a system plugin and cannot be disabled",
         ),
-    ]
+    ] = True
 
     @model_validator(mode="before")
     @classmethod
