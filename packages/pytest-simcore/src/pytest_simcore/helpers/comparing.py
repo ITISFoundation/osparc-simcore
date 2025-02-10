@@ -30,7 +30,7 @@ def get_files_info_from_itrable(items: Iterable[Path]) -> _FilesInfo:
     return {f.name: f for f in items if f.is_file()}
 
 
-def _compute_hash(file_path: Path) -> tuple[Path, str]:
+def compute_hash(file_path: Path) -> tuple[Path, str]:
     with Path.open(file_path, "rb") as file_to_hash:
         file_hash = hashlib.md5()  # noqa: S324
         chunk = file_to_hash.read(8192)
@@ -48,7 +48,7 @@ async def compute_hashes(file_paths: list[Path]) -> dict[Path, str]:
 
     with ProcessPoolExecutor() as prcess_pool_executor:
         tasks = [
-            loop.run_in_executor(prcess_pool_executor, _compute_hash, file_path)
+            loop.run_in_executor(prcess_pool_executor, compute_hash, file_path)
             for file_path in file_paths
         ]
         # pylint: disable=unnecessary-comprehension

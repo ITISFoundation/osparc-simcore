@@ -15,7 +15,7 @@ import pytest
 from faker import Faker
 from pydantic import ByteSize, TypeAdapter
 from pytest_benchmark.plugin import BenchmarkFixture
-from pytest_simcore.helpers.comparing import compute_hashes
+from pytest_simcore.helpers.comparing import compute_hash, compute_hashes
 from servicelib.archiving_utils import archive_dir, unarchive_dir
 
 
@@ -396,8 +396,8 @@ async def test_regression_archive_hash_does_not_change(
     await archive_dir(mixed_file_types, second_archive, compress=compress)
     assert second_archive.exists()
 
-    _, first_hash = _compute_hash(first_archive)
-    _, second_hash = _compute_hash(second_archive)
+    _, first_hash = compute_hash(first_archive)
+    _, second_hash = compute_hash(second_archive)
     assert first_hash == second_hash
 
 
