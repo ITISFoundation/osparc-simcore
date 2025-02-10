@@ -187,8 +187,11 @@ fastapi==0.115.6
     # via
     #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
     #   -r requirements/_base.in
+    #   fastapi-lifespan-manager
 fastapi-cli==0.0.6
     # via fastapi
+fastapi-lifespan-manager==0.1.4
+    # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
 fastapi-pagination==0.12.32
     # via -r requirements/_base.in
 faststream==0.5.33
@@ -249,7 +252,6 @@ httpx==0.27.2
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
-    #   -c requirements/./constraints.txt
     #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
     #   -r requirements/_base.in
     #   fastapi

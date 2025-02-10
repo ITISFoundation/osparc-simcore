@@ -17,8 +17,6 @@
 
 /**
  * Widget used mainly by StudyBrowser for displaying Studies
- *
- * It consists of a thumbnail and creator and last change as caption
  */
 
 qx.Class.define("osparc.dashboard.ListButtonItem", {
@@ -255,9 +253,11 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
 
     _applyTags: function(tags) {
       if (osparc.data.Permissions.getInstance().canDo("study.tag")) {
+        const maxTags = 2;
         const tagsContainer = this.getChildControl("tags");
         tagsContainer.removeAll();
-        tags.forEach(tag => {
+        for (let i=0; i<=tags.length && i<maxTags; i++) {
+          const tag = tags[i];
           const tagUI = new osparc.ui.basic.Tag(tag, "searchBarFilter");
           tagUI.set({
             alignY: "middle",
@@ -266,7 +266,15 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
           });
           tagUI.addListener("tap", () => this.fireDataEvent("tagClicked", tag));
           tagsContainer.add(tagUI);
-        });
+        }
+        if (tags.length > maxTags) {
+          const moreButton = new qx.ui.basic.Label(this.tr("More...")).set({
+            font: "text-12",
+            backgroundColor: "strong-main",
+            appearance: "tag",
+          });
+          tagsContainer.add(moreButton);
+        }
         this.__makeItemResponsive(tagsContainer);
       }
     },

@@ -103,7 +103,7 @@ qx.Class.define("osparc.desktop.MainPageHandler", {
       }
 
       // check if it's corrupt
-      if (osparc.data.model.Study.isCorrupt(studyData)) {
+      if (osparc.study.Utils.isCorrupt(studyData)) {
         const msg = `${qx.locale.Manager.tr("We encountered an issue with the")} ${studyAlias} <br>${qx.locale.Manager.tr("Please contact support.")}`;
         throw new Error(msg);
       }

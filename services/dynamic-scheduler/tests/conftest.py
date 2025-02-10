@@ -85,34 +85,34 @@ _PATH_APPLICATION: Final[str] = "simcore_service_dynamic_scheduler.core.applicat
 
 
 @pytest.fixture
-def disable_rabbitmq_setup(mocker: MockerFixture) -> None:
-    mocker.patch(f"{_PATH_APPLICATION}.setup_rabbitmq")
-    mocker.patch(f"{_PATH_APPLICATION}.setup_rpc_api_routes")
+def disable_rabbitmq_lifespan(mocker: MockerFixture) -> None:
+    mocker.patch(f"{_PATH_APPLICATION}.lifespan_rabbitmq")
+    mocker.patch(f"{_PATH_APPLICATION}.lifespan_rpc_api_routes")
 
 
 @pytest.fixture
-def disable_redis_setup(mocker: MockerFixture) -> None:
-    mocker.patch(f"{_PATH_APPLICATION}.setup_redis")
+def disable_redis_lifespan(mocker: MockerFixture) -> None:
+    mocker.patch(f"{_PATH_APPLICATION}.lifespan_redis")
 
 
 @pytest.fixture
-def disable_service_tracker_setup(mocker: MockerFixture) -> None:
-    mocker.patch(f"{_PATH_APPLICATION}.setup_service_tracker")
+def disable_service_tracker_lifespan(mocker: MockerFixture) -> None:
+    mocker.patch(f"{_PATH_APPLICATION}.lifespan_service_tracker")
 
 
 @pytest.fixture
-def disable_deferred_manager_setup(mocker: MockerFixture) -> None:
-    mocker.patch(f"{_PATH_APPLICATION}.setup_deferred_manager")
+def disable_deferred_manager_lifespan(mocker: MockerFixture) -> None:
+    mocker.patch(f"{_PATH_APPLICATION}.lifespan_deferred_manager")
 
 
 @pytest.fixture
-def disable_notifier_setup(mocker: MockerFixture) -> None:
-    mocker.patch(f"{_PATH_APPLICATION}.setup_notifier")
+def disable_notifier_lifespan(mocker: MockerFixture) -> None:
+    mocker.patch(f"{_PATH_APPLICATION}.get_notifier_lifespans")
 
 
 @pytest.fixture
-def disable_status_monitor_setup(mocker: MockerFixture) -> None:
-    mocker.patch(f"{_PATH_APPLICATION}.setup_status_monitor")
+def disable_status_monitor_lifespan(mocker: MockerFixture) -> None:
+    mocker.patch(f"{_PATH_APPLICATION}.lifespan_status_monitor")
 
 
 MAX_TIME_FOR_APP_TO_STARTUP: Final[float] = 10

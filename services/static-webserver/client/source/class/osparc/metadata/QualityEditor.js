@@ -472,7 +472,7 @@ qx.Class.define("osparc.metadata.QualityEditor", {
             })
             .finally(() => btn.setFetching(false));
         } else {
-          osparc.info.StudyUtils.patchStudyData(this.__resourceData, "quality", newQuality)
+          osparc.store.Study.patchStudyData(this.__resourceData, "quality", newQuality)
             .then(() => {
               this.__initResourceData(this.__resourceData);
               this.fireDataEvent("updateQuality", this.__resourceData);

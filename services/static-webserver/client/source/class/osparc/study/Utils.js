@@ -23,7 +23,18 @@ qx.Class.define("osparc.study.Utils", {
   type: "static",
 
   statics: {
-    extractServices: function(workbench) {
+    __isAnyLinkedNodeMissing: function(studyData) {
+      const existingNodeIds = Object.keys(studyData["workbench"]);
+      const linkedNodeIds = osparc.data.model.Workbench.getLinkedNodeIds(studyData["workbench"]);
+      const allExist = linkedNodeIds.every(linkedNodeId => existingNodeIds.includes(linkedNodeId));
+      return !allExist;
+    },
+
+    isCorrupt: function(studyData) {
+      return this.__isAnyLinkedNodeMissing(studyData);
+    },
+
+    extractUniqueServices: function(workbench) {
       const services = [];
       Object.values(workbench).forEach(srv => {
         services.push({
@@ -37,7 +48,7 @@ qx.Class.define("osparc.study.Utils", {
     getInaccessibleServices: function(workbench) {
       const allServices = osparc.store.Services.servicesCached;
       const unaccessibleServices = [];
-      const wbServices = new Set(this.extractServices(workbench));
+      const wbServices = new Set(this.extractUniqueServices(workbench));
       wbServices.forEach(srv => {
         if (srv.key in allServices && srv.version in allServices[srv.key]) {
           return;
@@ -64,14 +75,14 @@ qx.Class.define("osparc.study.Utils", {
     },
 
     isWorkbenchUpdatable: function(workbench) {
-      const services = new Set(this.extractServices(workbench));
+      const services = new Set(this.extractUniqueServices(workbench));
       const isUpdatable = Array.from(services).some(srv => osparc.service.Utils.isUpdatable(srv));
       return isUpdatable;
     },
 
     isWorkbenchRetired: function(workbench) {
       const allServices = osparc.store.Services.servicesCached;
-      const services = new Set(this.extractServices(workbench));
+      const services = new Set(this.extractUniqueServices(workbench));
       const isRetired = Array.from(services).some(srv => {
         if (srv.key in allServices && srv.version in allServices[srv.key]) {
           const serviceMD = allServices[srv.key][srv.version];
@@ -89,7 +100,7 @@ qx.Class.define("osparc.study.Utils", {
 
     isWorkbenchDeprecated: function(workbench) {
       const allServices = osparc.store.Services.servicesCached;
-      const services = new Set(this.extractServices(workbench));
+      const services = new Set(this.extractUniqueServices(workbench));
       const isRetired = Array.from(services).some(srv => {
         if (srv.key in allServices && srv.version in allServices[srv.key]) {
           const serviceMD = allServices[srv.key][srv.version];
@@ -274,6 +285,13 @@ qx.Class.define("osparc.study.Utils", {
       return Boolean("debt" in studyData && studyData["debt"] < 0);
     },
 
+    getUiMode: function(studyData) {
+      if ("ui" in studyData && "mode" in studyData["ui"]) {
+        return studyData["ui"]["mode"];
+      }
+      return null;
+    },
+
     __getBlockedState: function(studyData) {
       if (studyData["workbench"]) {
         const unaccessibleServices = osparc.study.Utils.getInaccessibleServices(studyData["workbench"])
@@ -312,7 +330,7 @@ qx.Class.define("osparc.study.Utils", {
 
     canShowStudyData: function(studyData) {
       const blocked = this.__getBlockedState(studyData);
-      return [false].includes(blocked);
+      return ["UNKNOWN_SERVICES", false].includes(blocked);
     },
 
     canShowPreview: function(studyData) {
@@ -338,6 +356,76 @@ qx.Class.define("osparc.study.Utils", {
     canMoveTo: function(studyData) {
       const blocked = this.__getBlockedState(studyData);
       return ["UNKNOWN_SERVICES", false].includes(blocked);
+    },
+
+    guessIcon: function(studyData) {
+      if (osparc.product.Utils.isProduct("osparc")) {
+        return this.__guessOsparcIcon(studyData);
+      }
+      if (osparc.product.Utils.isS4LProduct() || osparc.product.Utils.isProduct("s4llite")) {
+        return this.__guessS4LIcon(studyData);
+      }
+      if (osparc.product.Utils.isProduct("tis") || osparc.product.Utils.isProduct("tiplite")) {
+        return this.__guessTIPIcon(studyData);
+      }
+      return osparc.dashboard.CardBase.PRODUCT_ICON;
+    },
+
+    __guessOsparcIcon: function(studyData) {
+      // the was to guess the TI type is to check the boot mode of the ti-postpro in the pipeline
+      const wbServices = Object.values(studyData["workbench"]);
+      if (wbServices.length > 1) {
+        return "osparc/icons/diagram.png";
+      }
+      return osparc.dashboard.CardBase.PRODUCT_ICON;
+    },
+
+    __guessS4LIcon: function(studyData) {
+      // the was to guess the TI type is to check the boot mode of the ti-postpro in the pipeline
+      const wbServices = Object.values(studyData["workbench"]);
+      if (wbServices.length === 1) {
+        if (wbServices[0]["key"].includes("iseg")) {
+          return "https://raw.githubusercontent.com/ITISFoundation/osparc-iseg/master/iSeg/images/isegicon.png";
+        }
+        if (wbServices[0]["key"].includes("jupyter")) {
+          return "https://images.seeklogo.com/logo-png/35/1/jupyter-logo-png_seeklogo-354673.png";
+        }
+        if (wbServices[0]["key"].includes("s4l-ui")) {
+          return "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/refs/heads/main/app/icons/s4l/Sim4Life.png";
+        }
+      }
+      return osparc.dashboard.CardBase.PRODUCT_ICON;
+    },
+
+    __guessTIPIcon: function(studyData) {
+      // the was to guess the TI type is to check the boot mode of the ti-postpro in the pipeline
+      const tiPostpro = Object.values(studyData["workbench"]).find(srv => srv.key.includes("ti-postpro"));
+      if (tiPostpro && tiPostpro["bootOptions"]) {
+        console.log(tiPostpro);
+        switch (tiPostpro["bootOptions"]["boot_mode"]) {
+          case "0":
+            // classic TI
+            return "osparc/icons/TI.png";
+          case "1":
+            // multichannel
+            return "osparc/icons/MC.png";
+          case "2":
+            // phase-modulation
+            return "osparc/icons/PM.png";
+          case "3":
+            // personalized TI
+            return "osparc/icons/pTI.png";
+          case "4":
+            // personalized multichannel
+            return "osparc/icons/pMC.png";
+          case "5":
+            // personalized phase-modulation
+            return "osparc/icons/pPM.png";
+          default:
+            return "osparc/icons/TI.png";
+        }
+      }
+      return "osparc/icons/TI.png";
     },
   }
 });

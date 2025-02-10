@@ -60,6 +60,11 @@ def periodic(
     def _decorator(
         func: Callable[P, Coroutine[Any, Any, None]],
     ) -> Callable[P, Coroutine[Any, Any, None]]:
+        class _InternalTryAgain(TryAgain):
+            # Local exception to prevent reacting to similarTryAgain exceptions raised by the wrapped func
+            # e.g. when this decorators is used twice on the same function
+            ...
+
         nap = (
             asyncio.sleep
             if early_wake_up_event is None
@@ -71,7 +76,7 @@ def periodic(
             wait=wait_fixed(interval.total_seconds()),
             reraise=True,
             retry=(
-                retry_if_exception_type(TryAgain)
+                retry_if_exception_type(_InternalTryAgain)
                 if raise_on_error
                 else retry_if_exception_type()
             ),
@@ -80,7 +85,7 @@ def periodic(
         @functools.wraps(func)
         async def _wrapper(*args: P.args, **kwargs: P.kwargs) -> None:
             await func(*args, **kwargs)
-            raise TryAgain
+            raise _InternalTryAgain
 
         return _wrapper
 

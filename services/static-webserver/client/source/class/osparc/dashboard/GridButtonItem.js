@@ -93,7 +93,7 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
           break;
         case "menu-button":
           this.getChildControl("title").set({
-            maxWidth: osparc.dashboard.GridButtonBase.ITEM_WIDTH - 2*osparc.dashboard.GridButtonBase.PADDING - this.self().MENU_BTN_DIMENSIONS
+            maxWidth: osparc.dashboard.GridButtonBase.ITEM_WIDTH - osparc.dashboard.GridButtonBase.ICON_SIZE - this.self().MENU_BTN_DIMENSIONS,
           });
           control = new qx.ui.form.MenuButton().set({
             appearance: "form-button-outlined",
@@ -111,8 +111,8 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
           });
           osparc.utils.Utils.setIdToWidget(control, "studyItemMenuButton");
           this._add(control, {
-            top: 8,
-            right: 8
+            top: 6,
+            right: 6,
           });
           break;
         case "tick-unselected":
@@ -244,10 +244,12 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
 
     _applyTags: function(tags) {
       if (osparc.data.Permissions.getInstance().canDo("study.tag")) {
+        const maxTags = 2;
         const tagsContainer = this.getChildControl("tags");
         tagsContainer.setVisibility(tags.length ? "visible" : "excluded");
         tagsContainer.removeAll();
-        tags.forEach(tag => {
+        for (let i=0; i<=tags.length && i<maxTags; i++) {
+          const tag = tags[i];
           const tagUI = new osparc.ui.basic.Tag(tag, "searchBarFilter");
           tagUI.set({
             font: "text-12",
@@ -255,7 +257,15 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
           });
           tagUI.addListener("tap", () => this.fireDataEvent("tagClicked", tag));
           tagsContainer.add(tagUI);
-        });
+        }
+        if (tags.length > maxTags) {
+          const moreButton = new qx.ui.basic.Label(this.tr("More...")).set({
+            font: "text-12",
+            backgroundColor: "strong-main",
+            appearance: "tag",
+          });
+          tagsContainer.add(moreButton);
+        }
       }
     },
 

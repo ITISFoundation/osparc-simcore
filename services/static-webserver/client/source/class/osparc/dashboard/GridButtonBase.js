@@ -44,11 +44,13 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
     ITEM_WIDTH: 190,
     ITEM_HEIGHT: 220,
     PADDING: 10,
+    TITLE_PADDING: 6,
     SPACING_IN: 5,
     SPACING: 15,
+    ICON_SIZE: 32,
     // TITLE_MAX_HEIGHT: 34, // two lines in Roboto
     TITLE_MAX_HEIGHT: 40, // two lines in Manrope
-    ICON_SIZE: 50,
+    THUMBNAIL_SIZE: 50,
     POS: {
       TITLE: {
         row: 0,
@@ -138,18 +140,21 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
           });
           break;
         }
-        case "header":
-          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5)).set({
-            anonymous: true,
-            allowGrowX: true,
-            allowShrinkX: false,
-            alignY: "middle",
-            padding: this.self().PADDING
+        case "header": {
+          const hGrid = new qx.ui.layout.Grid().set({
+            spacing: 0, // the sub-elements will take care of the padding
           });
-          control.set({
-            backgroundColor: "background-card-overlay"
+          hGrid.setColumnFlex(1, 1);
+          hGrid.setRowAlign(0, "left", "middle");
+          control = new qx.ui.container.Composite().set({
+            backgroundColor: "background-card-overlay",
+            padding: 0,
+            maxWidth: this.self().ITEM_WIDTH,
+            maxHeight: this.self().ITEM_HEIGHT
           });
+          control.setLayout(hGrid);
           break;
+        }
         case "body":
           control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5)).set({
             decorator: "main",
@@ -163,48 +168,63 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
           });
           break;
         case "footer": {
-          const fgrid = new qx.ui.layout.Grid();
-          fgrid.setSpacing(2);
-          fgrid.setColumnFlex(0, 1);
+          const fGrid = new qx.ui.layout.Grid();
+          fGrid.setSpacing(2);
+          fGrid.setColumnFlex(0, 1);
           control = new qx.ui.container.Composite().set({
             backgroundColor: "background-card-overlay",
             padding: this.self().PADDING - 2,
             maxWidth: this.self().ITEM_WIDTH,
             maxHeight: this.self().ITEM_HEIGHT
           });
-          control.setLayout(fgrid);
+          control.setLayout(fGrid);
           break;
         }
-        case "title-row":
-          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(6)).set({
+        case "icon": {
+          control = new osparc.ui.basic.Thumbnail(null, this.self().ICON_SIZE, this.self().ICON_SIZE).set({
+            minHeight: this.self().ICON_SIZE,
+            minWidth: this.self().ICON_SIZE,
+          });
+          control.getChildControl("image").set({
             anonymous: true,
-            maxWidth: this.self().ITEM_WIDTH - 2*this.self().PADDING
+            alignY: "top",
+            alignX: "left",
+            allowGrowX: true,
+            allowGrowY: true,
           });
           layout = this.getChildControl("header");
-          layout.addAt(control, 1, {
-            flex: 1
+          layout.add(control, {
+            column: 0,
+            row: 0,
           });
           break;
+        }
         case "title":
           control = new qx.ui.basic.Label().set({
             textColor: "contrasted-text-light",
             font: "text-14",
-            maxWidth: this.self().ITEM_WIDTH - 2*this.self().PADDING,
-            maxHeight: this.self().TITLE_MAX_HEIGHT
+            padding: this.self().TITLE_PADDING,
+            maxWidth: this.self().ITEM_WIDTH,
+            maxHeight: this.self().TITLE_MAX_HEIGHT,
           });
-          layout = this.getChildControl("title-row");
+          layout = this.getChildControl("header");
           layout.addAt(control, 0, {
-            flex: 1
+            column: 1,
+            row: 0,
           });
           break;
         case "subtitle":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(6)).set({
             anonymous: true,
-            height: 20
+            height: 20,
+            padding: 6,
+            paddingLeft: 20, // align with icon
           });
-          layout = this.getChildControl("title-row");
-          layout.addAt(control, 1, {
-            flex: 1
+          layout = this.getChildControl("header");
+          layout.addAt(control, 0, {
+            column: 0,
+            row: 1,
+            colSpan: 2,
           });
           break;
         case "subtitle-icon": {
@@ -234,7 +254,7 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
           });
           break;
         }
-        case "icon": {
+        case "thumbnail": {
           layout = this.getChildControl("body");
           const maxWidth = this.self().ITEM_WIDTH;
           control = new osparc.ui.basic.Thumbnail(null, maxWidth, 124);
@@ -276,18 +296,29 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
 
     // overridden
     _applyIcon: function(value, old) {
-      if (value.includes("@FontAwesome5Solid/")) {
-        value += this.self().ICON_SIZE;
+      if (value) {
         const image = this.getChildControl("icon").getChildControl("image");
         image.set({
-          source: value
+          source: value,
+          decorator: "rounded",
+        });
+      }
+    },
+
+    // overridden
+    _applyThumbnail: function(value, old) {
+      if (value.includes("@FontAwesome5Solid/")) {
+        value += this.self().THUMBNAIL_SIZE;
+        const image = this.getChildControl("thumbnail").getChildControl("image");
+        image.set({
+          source: value,
         });
 
         [
           "appear",
           "loaded"
         ].forEach(eventName => {
-          image.addListener(eventName, () => this.__fitIconHeight(), this);
+          image.addListener(eventName, () => this.__fitThumbnailHeight(), this);
         });
       } else {
         this.getContentElement().setStyles({
@@ -312,8 +343,8 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
       return;
     },
 
-    __fitIconHeight: function() {
-      const iconLayout = this.getChildControl("icon");
+    __fitThumbnailHeight: function() {
+      const thumbnailLayout = this.getChildControl("thumbnail");
       let maxHeight = this.getHeight() - this.getPaddingTop() - this.getPaddingBottom() - 5;
       const checkThis = [
         "title",
@@ -333,17 +364,9 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
       });
       // maxHeight -= 4; // for Roboto
       maxHeight -= 18; // for Manrope
-      iconLayout.getChildControl("image").setMaxHeight(maxHeight);
-      iconLayout.setMaxHeight(maxHeight);
-      iconLayout.recheckSize();
-    },
-
-    replaceIcon: function(newIcon) {
-      const plusIcon = this.getChildControl("icon");
-      plusIcon.exclude();
-
-      const bodyLayout = this.getChildControl("body");
-      bodyLayout.add(newIcon, {flex: 1});
+      thumbnailLayout.getChildControl("image").setMaxHeight(maxHeight);
+      thumbnailLayout.setMaxHeight(maxHeight);
+      thumbnailLayout.recheckSize();
     },
 
     /**
