@@ -9,6 +9,7 @@ import copy
 from datetime import datetime
 from typing import Annotated, Any, Literal, Self, TypeAlias
 
+from common_library.basic_types import DEFAULT_FACTORY
 from common_library.dict_tools import remap_keys
 from pydantic import (
     BeforeValidator,
@@ -41,14 +42,22 @@ from .permalinks import ProjectPermalink
 
 class ProjectCreateNew(InputSchema):
     uuid: ProjectID | None = None  # NOTE: suggested uuid! but could be different!
+
+    # display
     name: str
     description: str | None = None
     thumbnail: HttpUrl | None = None
+    icon: HttpUrl | None = None
+
     workbench: NodesDict
+
     access_rights: dict[GroupIDStr, AccessRights]
+
     tags: list[int] = Field(default_factory=list)
     classifiers: list[ClassifierID] = Field(default_factory=list)
+
     ui: StudyUI | None = None
+
     workspace_id: WorkspaceID | None = None
     folder_id: FolderID | None = None
 
@@ -75,32 +84,44 @@ class ProjectCopyOverride(InputSchema):
 
 class ProjectGet(OutputSchema):
     uuid: ProjectID
+
+    # display
     name: str
     description: str
     thumbnail: HttpUrl | Literal[""]
-    creation_date: DateTimeStr
-    last_change_date: DateTimeStr
+    icon: HttpUrl | None = None
+
     workbench: NodesDict
+
     prj_owner: LowerCaseEmailStr
     access_rights: dict[GroupIDStr, AccessRights]
-    tags: list[int]
-    classifiers: list[ClassifierID] = Field(
-        default_factory=list, json_schema_extra={"default": []}
-    )
-    state: ProjectState | None = None
-    ui: EmptyModel | StudyUI | None = None
-    quality: Annotated[
-        dict[str, Any], Field(default_factory=dict, json_schema_extra={"default": {}})
-    ]
-    dev: dict | None
-    permalink: ProjectPermalink | None = None
-    workspace_id: WorkspaceID | None
-    folder_id: FolderID | None
 
+    # state
+    creation_date: DateTimeStr
+    last_change_date: DateTimeStr
+    state: ProjectState | None = None
     trashed_at: datetime | None
     trashed_by: Annotated[
         GroupID | None, Field(description="The primary gid of the user who trashed")
     ]
+
+    # labeling
+    tags: list[int]
+    classifiers: list[ClassifierID] = Field(
+        default_factory=list, json_schema_extra={"default": []}
+    )
+    quality: Annotated[
+        dict[str, Any], Field(default_factory=dict, json_schema_extra={"default": {}})
+    ] = DEFAULT_FACTORY
+
+    # front-end
+    ui: EmptyModel | StudyUI | None = None
+    dev: dict | None
+
+    permalink: ProjectPermalink | None = None
+
+    workspace_id: WorkspaceID | None
+    folder_id: FolderID | None
 
     _empty_description = field_validator("description", mode="before")(
         none_to_empty_str_pre_validator
@@ -110,9 +131,9 @@ class ProjectGet(OutputSchema):
 
     @classmethod
     def from_domain_model(cls, project_data: dict[str, Any]) -> Self:
-        trimmed_data = copy.copy(project_data)
-        # project_data["trashed_by"] is a UserID
-        # project_data["trashed_by_primary_gid"] is a GroupID
+        trimmed_data = copy.deepcopy(project_data)
+        # NOTE: project_data["trashed_by"] is a UserID
+        # NOTE: project_data["trashed_by_primary_gid"] is a GroupID
         trimmed_data.pop("trashed_by", None)
         trimmed_data.pop("trashedBy", None)
 
@@ -137,43 +158,48 @@ class ProjectListItem(ProjectGet):
 
 class ProjectReplace(InputSchema):
     uuid: ProjectID
+
     name: ShortTruncatedStr
     description: LongTruncatedStr
     thumbnail: Annotated[
         HttpUrl | None,
         BeforeValidator(empty_str_to_none_pre_validator),
-    ] = Field(default=None)
+    ] = None
+    icon: HttpUrl | None = None
+
     creation_date: DateTimeStr
     last_change_date: DateTimeStr
     workbench: NodesDict
     access_rights: dict[GroupIDStr, AccessRights]
+
     tags: Annotated[
         list[int] | None, Field(default_factory=list, json_schema_extra={"default": []})
-    ]
+    ] = DEFAULT_FACTORY
 
     classifiers: Annotated[
         list[ClassifierID] | None,
         Field(default_factory=list, json_schema_extra={"default": []}),
-    ]
+    ] = DEFAULT_FACTORY
 
     ui: StudyUI | None = None
 
     quality: Annotated[
         dict[str, Any], Field(default_factory=dict, json_schema_extra={"default": {}})
-    ]
+    ] = DEFAULT_FACTORY
 
 
 class ProjectPatch(InputSchema):
-    name: ShortTruncatedStr | None = Field(default=None)
-    description: LongTruncatedStr | None = Field(default=None)
+    name: ShortTruncatedStr | None = None
+    description: LongTruncatedStr | None = None
     thumbnail: Annotated[
         HttpUrl | None,
         BeforeValidator(empty_str_to_none_pre_validator),
         PlainSerializer(lambda x: str(x) if x is not None else None),
     ] = None
-    access_rights: dict[GroupIDStr, AccessRights] | None = Field(default=None)
-    classifiers: list[ClassifierID] | None = Field(default=None)
-    dev: dict | None = Field(default=None)
+    icon: HttpUrl | None = None
+    access_rights: dict[GroupIDStr, AccessRights] | None = None
+    classifiers: list[ClassifierID] | None = None
+    dev: dict | None = None
     ui: Annotated[
         StudyUI | None,
         BeforeValidator(empty_str_to_none_pre_validator),
@@ -182,8 +208,8 @@ class ProjectPatch(InputSchema):
                 obj, exclude_unset=True, by_alias=False
             )  # For the sake of backward compatibility
         ),
-    ] = Field(default=None)
-    quality: dict[str, Any] | None = Field(default=None)
+    ] = None
+    quality: dict[str, Any] | None = None
 
     def to_domain_model(self) -> dict[str, Any]:
         return self.model_dump(exclude_unset=True, by_alias=False)
