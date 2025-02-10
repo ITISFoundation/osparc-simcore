@@ -46,8 +46,8 @@ class ServiceMetaDataDBGet(BaseModel):
                     "key": "simcore/services/dynamic/reading",
                     "version": "1.0.9",
                     "owner": 8,
-                    "name": "sim4life",
-                    "description": "s4l web",
+                    "name": "reading",
+                    "description": "example for service metadata db GET",
                     "description_ui": False,
                     "thumbnail": None,
                     "icon": "https://picsum.photos/50",
@@ -114,8 +114,8 @@ class ServiceMetaDataDBCreate(BaseModel):
                     {
                         "key": "simcore/services/dynamic/creating",
                         "version": "1.0.9",
-                        "name": "sim4life",
-                        "description": "s4l web",
+                        "name": "creating",
+                        "description": "example for service metadata db CREATE",
                     }
                 ]
             }
@@ -148,8 +148,8 @@ class ServiceMetaDataDBPatch(BaseModel):
         schema.update(
             {
                 "example": {
-                    "name": "sim4life",
-                    "description": "s4l web",
+                    "name": "patching",
+                    "description": "example for service metadata db PATCH",
                     "thumbnail": "https://picsum.photos/200",
                     "icon": "https://picsum.photos/50",
                     "version_display": "S4L X",
