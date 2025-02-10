@@ -128,8 +128,8 @@ _path_prefix = f"/{API_VTAG}/storage/locations"
 @login_required
 @permission_required("storage.files.*")
 async def list_storage_locations(request: web.Request) -> web.Response:
-    payload, status = await _forward_request_to_storage(request, "GET", body=None)
-    return create_data_response(payload, status=status)
+    payload, resp_status = await _forward_request_to_storage(request, "GET", body=None)
+    return create_data_response(payload, status=resp_status)
 
 
 @routes.get(_path_prefix + "/{location_id}/datasets", name="list_datasets_metadata")
@@ -141,8 +141,8 @@ async def list_datasets_metadata(request: web.Request) -> web.Response:
 
     parse_request_path_parameters_as(_PathParams, request)
 
-    payload, status = await _forward_request_to_storage(request, "GET", body=None)
-    return create_data_response(payload, status=status)
+    payload, resp_status = await _forward_request_to_storage(request, "GET", body=None)
+    return create_data_response(payload, status=resp_status)
 
 
 @routes.get(
@@ -163,8 +163,8 @@ async def get_files_metadata(request: web.Request) -> web.Response:
 
     parse_request_query_parameters_as(_QueryParams, request)
 
-    payload, status = await _forward_request_to_storage(request, "GET", body=None)
-    return create_data_response(payload, status=status)
+    payload, resp_status = await _forward_request_to_storage(request, "GET", body=None)
+    return create_data_response(payload, status=resp_status)
 
 
 _LIST_ALL_DATASETS_TIMEOUT_S: Final[int] = 60
@@ -189,13 +189,13 @@ async def list_dataset_files_metadata(request: web.Request) -> web.Response:
 
     parse_request_query_parameters_as(_QueryParams, request)
 
-    payload, status = await _forward_request_to_storage(
+    payload, resp_status = await _forward_request_to_storage(
         request,
         "GET",
         body=None,
         timeout=ClientTimeout(total=_LIST_ALL_DATASETS_TIMEOUT_S),
     )
-    return create_data_response(payload, status=status)
+    return create_data_response(payload, status=resp_status)
 
 
 @routes.get(
@@ -211,8 +211,8 @@ async def get_file_metadata(request: web.Request) -> web.Response:
 
     parse_request_path_parameters_as(_PathParams, request)
 
-    payload, status = await _forward_request_to_storage(request, "GET")
-    return create_data_response(payload, status=status)
+    payload, resp_status = await _forward_request_to_storage(request, "GET")
+    return create_data_response(payload, status=resp_status)
 
 
 @routes.get(
@@ -233,8 +233,8 @@ async def download_file(request: web.Request) -> web.Response:
 
     parse_request_query_parameters_as(_QueryParams, request)
 
-    payload, status = await _forward_request_to_storage(request, "GET", body=None)
-    return create_data_response(payload, status=status)
+    payload, resp_status = await _forward_request_to_storage(request, "GET", body=None)
+    return create_data_response(payload, status=resp_status)
 
 
 @routes.put(
@@ -257,7 +257,7 @@ async def upload_file(request: web.Request) -> web.Response:
 
     parse_request_query_parameters_as(_QueryParams, request)
 
-    payload, status = await _forward_request_to_storage(request, "PUT", body=None)
+    payload, resp_status = await _forward_request_to_storage(request, "PUT", body=None)
     data, _ = unwrap_envelope(payload)
     file_upload_schema = FileUploadSchema.model_validate(data)
     # NOTE: since storage is fastapi-based it returns file_id not url encoded and aiohttp does not like it
@@ -273,7 +273,9 @@ async def upload_file(request: web.Request) -> web.Response:
         file_upload_schema.links.abort_upload,
         url_encode=storage_encoded_file_id,
     )
-    return create_data_response(jsonable_encoder(file_upload_schema), status=status)
+    return create_data_response(
+        jsonable_encoder(file_upload_schema), status=resp_status
+    )
 
 
 @routes.post(
@@ -290,7 +292,7 @@ async def complete_upload_file(request: web.Request) -> web.Response:
     path_params = parse_request_path_parameters_as(_PathParams, request)
     body_item = await parse_request_body_as(FileUploadCompletionBody, request)
 
-    payload, status = await _forward_request_to_storage(
+    payload, resp_status = await _forward_request_to_storage(
         request, "POST", body=body_item.model_dump()
     )
     data, _ = unwrap_envelope(payload)
@@ -299,7 +301,9 @@ async def complete_upload_file(request: web.Request) -> web.Response:
     file_upload_complete.links.state = _from_storage_url(
         request, file_upload_complete.links.state, url_encode=storage_encoded_file_id
     )
-    return create_data_response(jsonable_encoder(file_upload_complete), status=status)
+    return create_data_response(
+        jsonable_encoder(file_upload_complete), status=resp_status
+    )
 
 
 @routes.post(
@@ -315,8 +319,8 @@ async def abort_upload_file(request: web.Request) -> web.Response:
 
     parse_request_path_parameters_as(_PathParams, request)
 
-    payload, status = await _forward_request_to_storage(request, "POST", body=None)
-    return create_data_response(payload, status=status)
+    payload, resp_status = await _forward_request_to_storage(request, "POST", body=None)
+    return create_data_response(payload, status=resp_status)
 
 
 @routes.post(
@@ -333,8 +337,8 @@ async def is_completed_upload_file(request: web.Request) -> web.Response:
 
     parse_request_path_parameters_as(_PathParams, request)
 
-    payload, status = await _forward_request_to_storage(request, "POST", body=None)
-    return create_data_response(payload, status=status)
+    payload, resp_status = await _forward_request_to_storage(request, "POST", body=None)
+    return create_data_response(payload, status=resp_status)
 
 
 @routes.delete(
@@ -350,5 +354,7 @@ async def delete_file(request: web.Request) -> web.Response:
 
     parse_request_path_parameters_as(_PathParams, request)
 
-    payload, status = await _forward_request_to_storage(request, "DELETE", body=None)
-    return create_data_response(payload, status=status)
+    payload, resp_status = await _forward_request_to_storage(
+        request, "DELETE", body=None
+    )
+    return create_data_response(payload, status=resp_status)
