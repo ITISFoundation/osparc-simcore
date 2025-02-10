@@ -3,11 +3,11 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
+import asyncio
 import functools
 import io
 import json
 import textwrap
-import time
 from contextlib import suppress
 from pathlib import Path
 from typing import TypedDict
@@ -293,7 +293,7 @@ async def test_run_study_workflow(
         )
         print(f"Status: [{job_status.state}]")
 
-        time.sleep(1)
+        await asyncio.sleep(1)
 
     print(await studies_api.inspect_study_job(study_id=template_id, job_id=new_job.id))
 

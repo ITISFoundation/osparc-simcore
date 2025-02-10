@@ -23,15 +23,14 @@ import logging
 from datetime import timedelta
 from typing import cast
 
-from aiohttp import web
+from fastapi import FastAPI
 from servicelib.async_utils import cancel_wait_task
 from servicelib.background_task_utils import exclusive_periodic
-from servicelib.logging_utils import log_catch, log_context
+from servicelib.logging_utils import log_context
 
-from .constants import APP_CONFIG_KEY, APP_DSM_KEY
-from .dsm_factory import DataManagerProvider
-from .redis import get_redis_client
-from .settings import Settings
+from .core.settings import get_application_settings
+from .dsm import get_dsm_provider
+from .modules.redis import get_redis_client
 from .simcore_s3_dsm import SimcoreS3DataManager
 
 _logger = logging.getLogger(__name__)
@@ -39,37 +38,35 @@ _logger = logging.getLogger(__name__)
 _TASK_NAME_PERIODICALY_CLEAN_DSM = "periodic_cleanup_of_dsm"
 
 
-async def dsm_cleaner_task(app: web.Application) -> None:
-    _logger.info("starting dsm cleaner task...")
-    dsm: DataManagerProvider = app[APP_DSM_KEY]
-    simcore_s3_dsm: SimcoreS3DataManager = cast(
-        SimcoreS3DataManager, dsm.get(SimcoreS3DataManager.get_location_id())
-    )
-    await simcore_s3_dsm.clean_expired_uploads()
+async def dsm_cleaner_task(app: FastAPI) -> None:
+    with log_context(_logger, logging.INFO, "dsm cleaner task"):
+        dsm = get_dsm_provider(app)
+        simcore_s3_dsm: SimcoreS3DataManager = cast(
+            SimcoreS3DataManager, dsm.get(SimcoreS3DataManager.get_location_id())
+        )
+        await simcore_s3_dsm.clean_expired_uploads()
 
 
-def setup_dsm_cleaner(app: web.Application):
-    async def _setup(app: web.Application):
-        with (
-            log_context(_logger, logging.INFO, msg="setup dsm cleaner"),
-            log_catch(_logger, reraise=False),
-        ):
-            cfg: Settings = app[APP_CONFIG_KEY]
-            assert cfg.STORAGE_CLEANER_INTERVAL_S  # nosec
+def setup_dsm_cleaner(app: FastAPI) -> None:
+    async def _on_startup() -> None:
+        cfg = get_application_settings(app)
+        assert cfg.STORAGE_CLEANER_INTERVAL_S  # nosec
 
-            @exclusive_periodic(
-                get_redis_client(app),
-                task_interval=timedelta(seconds=cfg.STORAGE_CLEANER_INTERVAL_S),
-                retry_after=timedelta(minutes=5),
-            )
-            async def _periodic_dsm_clean() -> None:
-                await dsm_cleaner_task(app)
+        @exclusive_periodic(
+            get_redis_client(app),
+            task_interval=timedelta(seconds=cfg.STORAGE_CLEANER_INTERVAL_S),
+            retry_after=timedelta(minutes=5),
+        )
+        async def _periodic_dsm_clean() -> None:
+            await dsm_cleaner_task(app)
 
-            storage_background_task = asyncio.create_task(
-                _periodic_dsm_clean(), name=_TASK_NAME_PERIODICALY_CLEAN_DSM
-            )
-            yield
+        app.state.dsm_cleaner_task = asyncio.create_task(
+            _periodic_dsm_clean(), name=_TASK_NAME_PERIODICALY_CLEAN_DSM
+        )
 
-            await cancel_wait_task(storage_background_task)
+    async def _on_shutdown() -> None:
+        assert isinstance(app.state.dsm_cleaner_task, asyncio.Task)  # nosec
+        await cancel_wait_task(app.state.dsm_cleaner_task)
 
-    app.cleanup_ctx.append(_setup)
+    app.add_event_handler("startup", _on_startup)
+    app.add_event_handler("shutdown", _on_shutdown)

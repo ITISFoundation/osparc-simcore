@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Callable
 from dataclasses import dataclass, field
 
-from aiohttp import web
+from fastapi import FastAPI
 from models_library.api_schemas_storage import LinkType, UploadedPart
 from models_library.basic_types import SHA256Str
 from models_library.projects import ProjectID
@@ -105,17 +105,17 @@ class BaseDataManager(ABC):
 
 @dataclass
 class DataManagerProvider:
-    app: web.Application
+    app: FastAPI
     _builders: dict[
         LocationID,
-        tuple[Callable[[web.Application], BaseDataManager], type[BaseDataManager]],
+        tuple[Callable[[FastAPI], BaseDataManager], type[BaseDataManager]],
     ] = field(default_factory=dict)
     _services: list[BaseDataManager] = field(default_factory=list)
 
     def register_builder(
         self,
         location_id: LocationID,
-        builder: Callable[[web.Application], BaseDataManager],
+        builder: Callable[[FastAPI], BaseDataManager],
         dsm_type: type[BaseDataManager],
     ):
         self._builders[location_id] = (builder, dsm_type)

@@ -15,6 +15,7 @@ click
 coverage
 docker
 Faker
+fastapi[standard]
 flaky
 hypothesis
 jsonref

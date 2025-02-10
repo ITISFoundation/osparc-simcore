@@ -369,7 +369,6 @@ def mock_env(
                     "STORAGE_PORT": local_settings.STORAGE_PORT,
                 }
             ),
-            "STORAGE_ENDPOINT": "storage:8080",
             "DYNAMIC_SIDECAR_IMAGE": image_name,
             "DYNAMIC_SIDECAR_PROMETHEUS_SERVICE_LABELS": "{}",
             "TRAEFIK_SIMCORE_ZONE": "test_traefik_zone",

@@ -1,9 +1,12 @@
-""" Handlers exposed by storage subsystem
+"""Handlers exposed by storage subsystem
 
-    Mostly resolves and redirect to storage API
+Mostly resolves and redirect to storage API
 """
+
 import logging
+import urllib.parse
 from typing import Any, Final, NamedTuple
+from urllib.parse import quote, unquote
 
 from aiohttp import ClientTimeout, web
 from models_library.api_schemas_storage import (
@@ -15,15 +18,17 @@ from models_library.api_schemas_storage import (
 from models_library.projects_nodes_io import LocationID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import AnyUrl, BaseModel, ByteSize, TypeAdapter
+from servicelib.aiohttp import status
 from servicelib.aiohttp.client_session import get_client_session
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
     parse_request_query_parameters_as,
 )
-from servicelib.aiohttp.rest_responses import create_data_response, unwrap_envelope
+from servicelib.aiohttp.rest_responses import create_data_response
 from servicelib.common_headers import X_FORWARDED_PROTO
 from servicelib.request_keys import RQT_USERID_KEY
+from servicelib.rest_responses import unwrap_envelope
 from yarl import URL
 
 from .._meta import API_VTAG
@@ -56,23 +61,38 @@ def _to_storage_url(request: web.Request) -> URL:
     basepath_index = 3
     # strip basepath from webserver API path (i.e. webserver api version)
     # >>> URL('http://storage:1234/v5/storage/asdf/').raw_parts[3:]
-    suffix = "/".join(request.url.raw_parts[basepath_index:])
+    suffix = "/".join(request.url.parts[basepath_index:])
+    # we need to quote anything before the column, but not the column
+    if (column_index := suffix.find(":")) > 0:
+        fastapi_encoded_suffix = (
+            urllib.parse.quote(suffix[:column_index], safe="/") + suffix[column_index:]
+        )
+    else:
+        fastapi_encoded_suffix = urllib.parse.quote(suffix, safe="/")
 
     return (
-        url.joinpath(suffix, encoded=True)
+        url.joinpath(fastapi_encoded_suffix, encoded=True)
         .with_query(request.query)
         .update_query(user_id=userid)
     )
 
 
-def _from_storage_url(request: web.Request, storage_url: AnyUrl) -> AnyUrl:
+def _from_storage_url(
+    request: web.Request, storage_url: AnyUrl, url_encode: str | None
+) -> AnyUrl:
     """Converts storage-api url to web-api url"""
     assert storage_url.path  # nosec
 
     prefix = f"/{_get_storage_vtag(request.app)}"
-    converted_url = request.url.with_path(
-        f"/v0/storage{storage_url.path.removeprefix(prefix)}", encoded=True
-    ).with_scheme(request.headers.get(X_FORWARDED_PROTO, request.url.scheme))
+    converted_url = str(
+        request.url.with_path(
+            f"/v0/storage{storage_url.path.removeprefix(prefix)}", encoded=True
+        ).with_scheme(request.headers.get(X_FORWARDED_PROTO, request.url.scheme))
+    )
+    if url_encode:
+        converted_url = converted_url.replace(
+            url_encode, quote(unquote(url_encode), safe="")
+        )
 
     webserver_url: AnyUrl = TypeAdapter(AnyUrl).validate_python(f"{converted_url}")
     return webserver_url
@@ -92,6 +112,8 @@ async def _forward_request_to_storage(
     async with session.request(
         method.upper(), url, ssl=False, json=body, **kwargs
     ) as resp:
+        if resp.status >= status.HTTP_400_BAD_REQUEST:
+            raise web.HTTPException(reason=await resp.text())
         payload = await resp.json()
         return _ResponseTuple(payload=payload, status_code=resp.status)
 
@@ -102,25 +124,25 @@ routes = web.RouteTableDef()
 _path_prefix = f"/{API_VTAG}/storage/locations"
 
 
-@routes.get(_path_prefix, name="get_storage_locations")
+@routes.get(_path_prefix, name="list_storage_locations")
 @login_required
 @permission_required("storage.files.*")
-async def get_storage_locations(request: web.Request) -> web.Response:
-    payload, status = await _forward_request_to_storage(request, "GET", body=None)
-    return create_data_response(payload, status=status)
+async def list_storage_locations(request: web.Request) -> web.Response:
+    payload, resp_status = await _forward_request_to_storage(request, "GET", body=None)
+    return create_data_response(payload, status=resp_status)
 
 
-@routes.get(_path_prefix + "/{location_id}/datasets", name="get_datasets_metadata")
+@routes.get(_path_prefix + "/{location_id}/datasets", name="list_datasets_metadata")
 @login_required
 @permission_required("storage.files.*")
-async def get_datasets_metadata(request: web.Request) -> web.Response:
+async def list_datasets_metadata(request: web.Request) -> web.Response:
     class _PathParams(BaseModel):
         location_id: LocationID
 
     parse_request_path_parameters_as(_PathParams, request)
 
-    payload, status = await _forward_request_to_storage(request, "GET", body=None)
-    return create_data_response(payload, status=status)
+    payload, resp_status = await _forward_request_to_storage(request, "GET", body=None)
+    return create_data_response(payload, status=resp_status)
 
 
 @routes.get(
@@ -141,8 +163,8 @@ async def get_files_metadata(request: web.Request) -> web.Response:
 
     parse_request_query_parameters_as(_QueryParams, request)
 
-    payload, status = await _forward_request_to_storage(request, "GET", body=None)
-    return create_data_response(payload, status=status)
+    payload, resp_status = await _forward_request_to_storage(request, "GET", body=None)
+    return create_data_response(payload, status=resp_status)
 
 
 _LIST_ALL_DATASETS_TIMEOUT_S: Final[int] = 60
@@ -150,11 +172,11 @@ _LIST_ALL_DATASETS_TIMEOUT_S: Final[int] = 60
 
 @routes.get(
     _path_prefix + "/{location_id}/datasets/{dataset_id}/metadata",
-    name="get_files_metadata_dataset",
+    name="list_dataset_files_metadata",
 )
 @login_required
 @permission_required("storage.files.*")
-async def get_files_metadata_dataset(request: web.Request) -> web.Response:
+async def list_dataset_files_metadata(request: web.Request) -> web.Response:
     class _PathParams(BaseModel):
         location_id: LocationID
         dataset_id: str
@@ -167,13 +189,13 @@ async def get_files_metadata_dataset(request: web.Request) -> web.Response:
 
     parse_request_query_parameters_as(_QueryParams, request)
 
-    payload, status = await _forward_request_to_storage(
+    payload, resp_status = await _forward_request_to_storage(
         request,
         "GET",
         body=None,
         timeout=ClientTimeout(total=_LIST_ALL_DATASETS_TIMEOUT_S),
     )
-    return create_data_response(payload, status=status)
+    return create_data_response(payload, status=resp_status)
 
 
 @routes.get(
@@ -189,8 +211,8 @@ async def get_file_metadata(request: web.Request) -> web.Response:
 
     parse_request_path_parameters_as(_PathParams, request)
 
-    payload, status = await _forward_request_to_storage(request, "GET")
-    return create_data_response(payload, status=status)
+    payload, resp_status = await _forward_request_to_storage(request, "GET")
+    return create_data_response(payload, status=resp_status)
 
 
 @routes.get(
@@ -211,8 +233,8 @@ async def download_file(request: web.Request) -> web.Response:
 
     parse_request_query_parameters_as(_QueryParams, request)
 
-    payload, status = await _forward_request_to_storage(request, "GET", body=None)
-    return create_data_response(payload, status=status)
+    payload, resp_status = await _forward_request_to_storage(request, "GET", body=None)
+    return create_data_response(payload, status=resp_status)
 
 
 @routes.put(
@@ -226,7 +248,7 @@ async def upload_file(request: web.Request) -> web.Response:
         location_id: LocationID
         file_id: StorageFileIDStr
 
-    parse_request_path_parameters_as(_PathParams, request)
+    path_params = parse_request_path_parameters_as(_PathParams, request)
 
     class _QueryParams(BaseModel):
         file_size: ByteSize | None = None
@@ -235,16 +257,25 @@ async def upload_file(request: web.Request) -> web.Response:
 
     parse_request_query_parameters_as(_QueryParams, request)
 
-    payload, status = await _forward_request_to_storage(request, "PUT", body=None)
+    payload, resp_status = await _forward_request_to_storage(request, "PUT", body=None)
     data, _ = unwrap_envelope(payload)
     file_upload_schema = FileUploadSchema.model_validate(data)
+    # NOTE: since storage is fastapi-based it returns file_id not url encoded and aiohttp does not like it
+    # /v0/locations/{location_id}/files/{file_id:non-encoded-containing-slashes}:complete --> /v0/storage/locations/{location_id}/files/{file_id:non-encode}:complete
+    storage_encoded_file_id = quote(path_params.file_id, safe="/")
     file_upload_schema.links.complete_upload = _from_storage_url(
-        request, file_upload_schema.links.complete_upload
+        request,
+        file_upload_schema.links.complete_upload,
+        url_encode=storage_encoded_file_id,
     )
     file_upload_schema.links.abort_upload = _from_storage_url(
-        request, file_upload_schema.links.abort_upload
+        request,
+        file_upload_schema.links.abort_upload,
+        url_encode=storage_encoded_file_id,
     )
-    return create_data_response(jsonable_encoder(file_upload_schema), status=status)
+    return create_data_response(
+        jsonable_encoder(file_upload_schema), status=resp_status
+    )
 
 
 @routes.post(
@@ -258,18 +289,21 @@ async def complete_upload_file(request: web.Request) -> web.Response:
         location_id: LocationID
         file_id: StorageFileIDStr
 
-    parse_request_path_parameters_as(_PathParams, request)
+    path_params = parse_request_path_parameters_as(_PathParams, request)
     body_item = await parse_request_body_as(FileUploadCompletionBody, request)
 
-    payload, status = await _forward_request_to_storage(
+    payload, resp_status = await _forward_request_to_storage(
         request, "POST", body=body_item.model_dump()
     )
     data, _ = unwrap_envelope(payload)
+    storage_encoded_file_id = quote(path_params.file_id, safe="/")
     file_upload_complete = FileUploadCompleteResponse.model_validate(data)
     file_upload_complete.links.state = _from_storage_url(
-        request, file_upload_complete.links.state
+        request, file_upload_complete.links.state, url_encode=storage_encoded_file_id
     )
-    return create_data_response(jsonable_encoder(file_upload_complete), status=status)
+    return create_data_response(
+        jsonable_encoder(file_upload_complete), status=resp_status
+    )
 
 
 @routes.post(
@@ -285,8 +319,8 @@ async def abort_upload_file(request: web.Request) -> web.Response:
 
     parse_request_path_parameters_as(_PathParams, request)
 
-    payload, status = await _forward_request_to_storage(request, "POST", body=None)
-    return create_data_response(payload, status=status)
+    payload, resp_status = await _forward_request_to_storage(request, "POST", body=None)
+    return create_data_response(payload, status=resp_status)
 
 
 @routes.post(
@@ -303,8 +337,8 @@ async def is_completed_upload_file(request: web.Request) -> web.Response:
 
     parse_request_path_parameters_as(_PathParams, request)
 
-    payload, status = await _forward_request_to_storage(request, "POST", body=None)
-    return create_data_response(payload, status=status)
+    payload, resp_status = await _forward_request_to_storage(request, "POST", body=None)
+    return create_data_response(payload, status=resp_status)
 
 
 @routes.delete(
@@ -320,27 +354,7 @@ async def delete_file(request: web.Request) -> web.Response:
 
     parse_request_path_parameters_as(_PathParams, request)
 
-    payload, status = await _forward_request_to_storage(request, "DELETE", body=None)
-    return create_data_response(payload, status=status)
-
-
-@routes.post(
-    _path_prefix + "/{location_id}:sync",
-    name="synchronise_meta_data_table",
-)
-@login_required
-@permission_required("storage.files.sync")
-async def synchronise_meta_data_table(request: web.Request) -> web.Response:
-    class _PathParams(BaseModel):
-        location_id: LocationID
-
-    parse_request_path_parameters_as(_PathParams, request)
-
-    class _QueryParams(BaseModel):
-        dry_run: bool = False
-        fire_and_forget: bool = False
-
-    parse_request_query_parameters_as(_QueryParams, request)
-
-    payload, status = await _forward_request_to_storage(request, "POST", body=None)
-    return create_data_response(payload, status=status)
+    payload, resp_status = await _forward_request_to_storage(
+        request, "DELETE", body=None
+    )
+    return create_data_response(payload, status=resp_status)

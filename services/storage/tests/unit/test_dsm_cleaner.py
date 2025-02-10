@@ -6,7 +6,7 @@ import asyncio
 from unittest import mock
 
 import pytest
-from aiohttp.test_utils import TestClient
+from fastapi import FastAPI
 from pytest_mock import MockerFixture
 from simcore_service_storage.dsm_cleaner import _TASK_NAME_PERIODICALY_CLEAN_DSM
 
@@ -34,7 +34,7 @@ def short_dsm_cleaner_interval(monkeypatch: pytest.MonkeyPatch) -> int:
     return 1
 
 
-async def test_setup_dsm_cleaner(client: TestClient):
+async def test_setup_dsm_cleaner(initialized_app: FastAPI):
     all_tasks = asyncio.all_tasks()
     assert any(
         t.get_name().startswith(f"{_TASK_NAME_PERIODICALY_CLEAN_DSM}")
@@ -42,7 +42,7 @@ async def test_setup_dsm_cleaner(client: TestClient):
     )
 
 
-async def test_disable_dsm_cleaner(disable_dsm_cleaner, client: TestClient):
+async def test_disable_dsm_cleaner(disable_dsm_cleaner, initialized_app: FastAPI):
     all_tasks = asyncio.all_tasks()
     assert not any(
         t.get_name().startswith(f"{_TASK_NAME_PERIODICALY_CLEAN_DSM}")
@@ -51,7 +51,9 @@ async def test_disable_dsm_cleaner(disable_dsm_cleaner, client: TestClient):
 
 
 async def test_dsm_cleaner_task_restarts_if_error(
-    mocked_dsm_clean: mock.Mock, short_dsm_cleaner_interval: int, client: TestClient
+    mocked_dsm_clean: mock.Mock,
+    short_dsm_cleaner_interval: int,
+    initialized_app: FastAPI,
 ):
     num_calls = mocked_dsm_clean.call_count
     await asyncio.sleep(short_dsm_cleaner_interval + 1)

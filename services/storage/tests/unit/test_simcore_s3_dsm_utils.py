@@ -1,5 +1,5 @@
 import pytest
-from simcore_service_storage.simcore_s3_dsm_utils import compute_file_id_prefix
+from simcore_service_storage.utils.simcore_s3_dsm_utils import compute_file_id_prefix
 
 
 @pytest.mark.parametrize(

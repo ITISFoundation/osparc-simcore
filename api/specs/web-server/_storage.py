@@ -15,7 +15,6 @@ from models_library.api_schemas_storage import (
     FileUploadSchema,
     LinkType,
     PresignedLink,
-    TableSynchronisation,
 )
 from models_library.generics import Envelope
 from models_library.projects_nodes_io import LocationID
@@ -41,19 +40,8 @@ StorageFileIDStr: TypeAlias = str
     response_model=list[DatasetMetaData],
     summary="Get available storage locations",
 )
-async def get_storage_locations():
+async def list_storage_locations():
     """Returns the list of available storage locations"""
-
-
-@router.post(
-    "/storage/locations/{location_id}:sync",
-    response_model=Envelope[TableSynchronisation],
-    summary="Manually triggers the synchronisation of the file meta data table in the database",
-)
-async def synchronise_meta_data_table(
-    location_id: LocationID, dry_run: bool = False, fire_and_forget: bool = False
-):
-    """Returns an object containing added, changed and removed paths"""
 
 
 @router.get(
@@ -61,7 +49,7 @@ async def synchronise_meta_data_table(
     response_model=Envelope[list[DatasetMetaData]],
     summary="Get datasets metadata",
 )
-async def get_datasets_metadata(location_id: LocationID):
+async def list_datasets_metadata(location_id: LocationID):
     """returns all the top level datasets a user has access to"""
 
 
@@ -88,7 +76,7 @@ async def get_files_metadata(
     response_model=Envelope[list[FileMetaDataGet]],
     summary="Get Files Metadata",
 )
-async def get_files_metadata_dataset(
+async def list_dataset_files_metadata(
     location_id: LocationID,
     dataset_id: str,
     expand_dirs: bool = Query(

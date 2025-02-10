@@ -6,25 +6,28 @@
 
 import pytest
 import sqlalchemy as sa
-from aiopg.sa.engine import Engine
 from models_library.projects import ProjectID
 from models_library.users import UserID
 from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.models.users import users
 from simcore_postgres_database.models.workspaces import workspaces
-from simcore_service_storage.db_access_layer import (
+from simcore_service_storage.modules.db.access_layer import (
     AccessRights,
     get_file_access_rights,
     get_project_access_rights,
 )
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 pytest_simcore_core_services_selection = ["postgres"]
+pytest_simcore_ops_services_selection = [
+    "adminer",
+]
 
 
 async def test_access_rights_on_owned_project(
-    user_id: UserID, project_id: ProjectID, aiopg_engine: Engine
+    user_id: UserID, project_id: ProjectID, sqlalchemy_async_engine: AsyncEngine
 ):
-    async with aiopg_engine.acquire() as conn:
+    async with sqlalchemy_async_engine.connect() as conn:
         access = await get_project_access_rights(conn, user_id, project_id)
         assert access == AccessRights.all()
 
@@ -36,12 +39,14 @@ async def test_access_rights_on_owned_project(
 
 
 @pytest.fixture
-async def prepare_db(user_id: UserID, project_id: ProjectID, aiopg_engine: Engine):
-    async with aiopg_engine.acquire() as conn:
+async def prepare_db(
+    user_id: UserID, project_id: ProjectID, sqlalchemy_async_engine: AsyncEngine
+):
+    async with sqlalchemy_async_engine.connect() as conn:
         result = await conn.execute(
             sa.select(users.c.primary_gid).where(users.c.id == user_id)
         )
-        row = await result.first()
+        row = result.one()
         user_primary_id = row[0]
 
         result = await conn.execute(
@@ -57,7 +62,7 @@ async def prepare_db(user_id: UserID, project_id: ProjectID, aiopg_engine: Engin
             )
             .returning(workspaces.c.workspace_id)
         )
-        row = await result.first()
+        row = result.one()
         workspace_id = row[0]
 
         await conn.execute(
@@ -72,9 +77,12 @@ async def prepare_db(user_id: UserID, project_id: ProjectID, aiopg_engine: Engin
 
 
 async def test_access_rights_based_on_workspace(
-    user_id: UserID, project_id: ProjectID, aiopg_engine: Engine, prepare_db
+    user_id: UserID,
+    project_id: ProjectID,
+    sqlalchemy_async_engine: AsyncEngine,
+    prepare_db,
 ):
-    async with aiopg_engine.acquire() as conn:
+    async with sqlalchemy_async_engine.connect() as conn:
         access = await get_project_access_rights(conn, user_id, project_id)
         assert access == AccessRights.all()
 

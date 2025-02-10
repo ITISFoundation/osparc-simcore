@@ -6,7 +6,7 @@ import logging
 from pathlib import Path
 
 import pytest
-from simcore_service_storage.resources import storage_resources
+from simcore_service_storage.core.resources import storage_resources
 
 log = logging.getLogger(__name__)
 
