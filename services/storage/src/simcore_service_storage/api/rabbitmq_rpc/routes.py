@@ -19,7 +19,7 @@ def setup_rpc_api_routes(app: FastAPI) -> None:
         with log_context(
             _logger,
             logging.INFO,
-            msg="RUT startup RPC API Routes",
+            msg="Storage startup RPC API Routes",
         ):
             rpc_server = get_rabbitmq_rpc_server(app)
             for router in ROUTERS:
