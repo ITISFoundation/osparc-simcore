@@ -307,7 +307,6 @@ class ProjectDBAPI(BaseProjectDB):
         # All non-default in projects table
         insert_values.setdefault("name", "New Study")
         insert_values.setdefault("workbench", {})
-
         insert_values.setdefault("workspace_id", None)
 
         # must be valid uuid

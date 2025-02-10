@@ -39,6 +39,7 @@ from servicelib.common_headers import (
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.redis import get_project_locked_state
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
+from simcore_service_webserver.projects.models import ProjectDict
 
 from .._meta import API_VTAG as VTAG
 from ..catalog.client import get_services_for_user_in_product
@@ -143,7 +144,9 @@ async def create_project(request: web.Request):
             ProjectCreateNew | ProjectCopyOverride | EmptyModel,  # type: ignore[arg-type] # from pydantic v2 --> https://github.com/pydantic/pydantic/discussions/4950
             request,
         )
-        predefined_project = project_create.to_domain_model() or None
+        predefined_project: ProjectDict | None = (
+            project_create.to_domain_model() or None
+        )
 
     return await start_long_running_task(
         request,

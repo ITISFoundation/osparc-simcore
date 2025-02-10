@@ -13,11 +13,6 @@ from .users import users
 
 
 class ProjectType(enum.Enum):
-    """
-    template: template project
-    standard: standard project
-    """
-
     TEMPLATE = "TEMPLATE"
     STANDARD = "STANDARD"
 
@@ -42,6 +37,7 @@ projects = sa.Table(
         unique=True,
         doc="Unique global identifier",
     ),
+    # DISPLAY ----------------------------
     sa.Column(
         "name",
         sa.String,
@@ -61,6 +57,13 @@ projects = sa.Table(
         doc="Link to thumbnail image",
     ),
     sa.Column(
+        "icon",
+        sa.String,
+        nullable=True,
+        doc="Link to project's icon",
+    ),
+    # OWNERSHIP ----------------------------
+    sa.Column(
         "prj_owner",
         sa.BigInteger,
         sa.ForeignKey(
@@ -73,6 +76,57 @@ projects = sa.Table(
         doc="Project's owner",
         index=True,
     ),
+    # PARENTHOOD ----------------------------
+    sa.Column(
+        "workspace_id",
+        sa.BigInteger,
+        sa.ForeignKey(
+            "workspaces.workspace_id",
+            onupdate=RefActions.CASCADE,
+            ondelete=RefActions.CASCADE,
+            name="fk_projects_to_workspaces_id",
+        ),
+        nullable=True,
+        default=None,
+    ),
+    # CHILDREN/CONTENT--------------------------
+    sa.Column(
+        "workbench",
+        sa.JSON,
+        nullable=False,
+        doc="Pipeline with the project's workflow. Schema in models_library.projects.Workbench",
+    ),
+    # FRONT-END ----------------------------
+    sa.Column(
+        "ui",
+        JSONB,
+        nullable=False,
+        server_default=sa.text("'{}'::jsonb"),
+        doc="UI components. Schema in models_library.projects_ui",
+    ),
+    sa.Column(
+        "dev",
+        JSONB,
+        nullable=False,
+        server_default=sa.text("'{}'::jsonb"),
+        doc="Free JSON to use as sandbox. Development only",
+    ),
+    # FLAGS ----------------------------
+    sa.Column(
+        "published",
+        sa.Boolean,
+        nullable=False,
+        default=False,
+        doc="If true, the project is publicaly accessible via the studies dispatcher (i.e. no registration required)",
+    ),
+    sa.Column(
+        "hidden",
+        sa.Boolean,
+        nullable=False,
+        default=False,
+        doc="If true, the project is by default not listed in the API",
+    ),
+    # LIFECYCLE ----------------------------
     sa.Column(
         "creation_date",
         sa.DateTime(),
@@ -88,61 +142,6 @@ projects = sa.Table(
         onupdate=func.now(),
         doc="Timestamp with last update",
     ),
-    sa.Column(
-        "access_rights",
-        JSONB,
-        nullable=False,
-        server_default=sa.text("'{}'::jsonb"),
-        doc="DEPRECATED: Read/write/delete access rights of each group (gid) on this project",
-    ),
-    sa.Column(
-        "workbench",
-        sa.JSON,
-        nullable=False,
-        doc="Pipeline with the project's workflow. Schema in models_library.projects.Workbench",
-    ),
-    sa.Column(
-        "ui",
-        JSONB,
-        nullable=False,
-        server_default=sa.text("'{}'::jsonb"),
-        doc="UI components. Schema in models_library.projects_ui",
-    ),
-    sa.Column(
-        "classifiers",
-        ARRAY(sa.String, dimensions=1),
-        nullable=False,
-        server_default="{}",  # NOTE: I found this strange but https://stackoverflow.com/questions/30933266/empty-array-as-postgresql-array-column-default-value
-        doc="A list of standard labels to classify this project",
-    ),
-    sa.Column(
-        "dev",
-        JSONB,
-        nullable=False,
-        server_default=sa.text("'{}'::jsonb"),
-        doc="Free JSON to use as sandbox. Development only",
-    ),
-    sa.Column(
-        "quality",
-        JSONB,
-        nullable=False,
-        server_default=sa.text("'{}'::jsonb"),
-        doc="Free JSON with quality assesment based on TSR",
-    ),
-    sa.Column(
-        "published",
-        sa.Boolean,
-        nullable=False,
-        default=False,
-        doc="If true, the project is publicaly accessible via the studies dispatcher (i.e. no registration required)",
-    ),
-    sa.Column(
-        "hidden",
-        sa.Boolean,
-        nullable=False,
-        default=False,
-        doc="If true, the project is by default not listed in the API",
-    ),
     column_trashed_datetime("projects"),
     column_trashed_by_user("projects", users_table=users),
     sa.Column(
@@ -153,17 +152,30 @@ projects = sa.Table(
         comment="Indicates whether the project was explicitly trashed by the user (true)"
         " or inherited its trashed status from a parent (false) [default].",
     ),
+    # TAGGING ----------------------------
     sa.Column(
-        "workspace_id",
-        sa.BigInteger,
-        sa.ForeignKey(
-            "workspaces.workspace_id",
-            onupdate=RefActions.CASCADE,
-            ondelete=RefActions.CASCADE,
-            name="fk_projects_to_workspaces_id",
-        ),
-        nullable=True,
-        default=None,
+        "classifiers",
+        ARRAY(sa.String, dimensions=1),
+        nullable=False,
+        server_default="{}",
+        # NOTE: I found this strange but
+        # https://stackoverflow.com/questions/30933266/empty-array-as-postgresql-array-column-default-value
+        doc="A list of standard labels to classify this project",
+    ),
+    sa.Column(
+        "quality",
+        JSONB,
+        nullable=False,
+        server_default=sa.text("'{}'::jsonb"),
+        doc="Free JSON with quality assesment based on TSR",
+    ),
+    # DEPRECATED ----------------------------
+    sa.Column(
+        "access_rights",
+        JSONB,
+        nullable=False,
+        server_default=sa.text("'{}'::jsonb"),
+        doc="DEPRECATED: Read/write/delete access rights of each group (gid) on this project",
     ),
 )
 
