@@ -57,7 +57,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
 
   events: {
     "backToDashboardPressed": "qx.event.type.Event",
-    "downloadStudyLogs": "qx.event.type.Event"
+    "openLogger": "qx.event.type.Event"
   },
 
   properties: {
@@ -200,7 +200,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           break;
         case "study-title-options":
           control = new osparc.navigation.StudyTitleWOptions();
-          control.addListener("downloadStudyLogs", () => this.fireEvent("downloadStudyLogs"));
+          control.addListener("openLogger", () => this.fireEvent("openLogger"));
           this.getChildControl("left-items").add(control);
           break;
         case "read-only-info": {
