@@ -20,6 +20,7 @@ from servicelib.logging_utils import log_catch, log_context
 from servicelib.progress_bar import ProgressBarData
 from servicelib.utils import limited_gather
 from servicelib.zip_stream import DEFAULT_READ_CHUNK_SIZE, FileSize, FileStream
+from servicelib.zip_stream._file_like import FileLikeFileStreamReader
 from servicelib.zip_stream._types import StreamData
 from settings_library.s3 import S3Settings
 from types_aiobotocore_s3 import S3Client
@@ -516,42 +517,9 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
         self,
         bucket_name: S3BucketName,
         object_key: S3ObjectKey,
-        file_stream: FileStream,
+        file_like_reader: FileLikeFileStreamReader,
     ) -> None:
-        # Create a multipart upload
-        multipart_response = await self._client.create_multipart_upload(
-            Bucket=bucket_name, Key=object_key
-        )
-        upload_id = multipart_response["UploadId"]
-
-        try:
-            parts = []
-            part_number = 1
-
-            async for chunk in file_stream:
-                part_response = await self._client.upload_part(
-                    Bucket=bucket_name,
-                    Key=object_key,
-                    PartNumber=part_number,
-                    UploadId=upload_id,
-                    Body=chunk,
-                )
-                parts.append({"ETag": part_response["ETag"], "PartNumber": part_number})
-                part_number += 1
-
-            # Complete the multipart upload
-            await self._client.complete_multipart_upload(
-                Bucket=bucket_name,
-                Key=object_key,
-                UploadId=upload_id,
-                MultipartUpload={"Parts": parts},  # type: ignore[typeddict-item]
-            )
-        except Exception:
-            # Abort the multipart upload if something goes wrong
-            await self._client.abort_multipart_upload(
-                Bucket=bucket_name, Key=object_key, UploadId=upload_id
-            )
-            raise
+        await self._client.upload_fileobj(file_like_reader, bucket_name, object_key)  # type: ignore[arg-type]
 
     @staticmethod
     def is_multipart(file_size: ByteSize) -> bool:

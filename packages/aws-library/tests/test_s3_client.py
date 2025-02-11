@@ -64,6 +64,7 @@ from servicelib.zip_stream import (
     DiskStreamReader,
     get_zip_archive_stream,
 )
+from servicelib.zip_stream._file_like import FileLikeFileStreamReader
 from settings_library.s3 import S3Settings
 from types_aiobotocore_s3 import S3Client
 from types_aiobotocore_s3.literals import BucketLocationConstraintType
@@ -1436,8 +1437,9 @@ async def test_upload_object_from_file_stream(
     _, file_stream = await simcore_s3_api.get_object_file_stream(
         with_s3_bucket, with_uploaded_file_on_s3.s3_key
     )
+
     await simcore_s3_api.upload_object_from_file_stream(
-        with_s3_bucket, object_key, file_stream(AsyncMock())
+        with_s3_bucket, object_key, FileLikeFileStreamReader(file_stream(AsyncMock()))
     )
 
     await simcore_s3_api.delete_object(bucket=with_s3_bucket, object_key=object_key)
@@ -1587,8 +1589,11 @@ async def test_workflow_compress_s3_objects_and_local_files_in_a_single_archive_
         await simcore_s3_api.upload_object_from_file_stream(
             with_s3_bucket,
             archive_s3_object_key,
-            get_zip_archive_stream(archive_file_entries, progress_bar=progress_bar),
+            FileLikeFileStreamReader(
+                get_zip_archive_stream(archive_file_entries, progress_bar=progress_bar)
+            ),
         )
+
     duration = time.time() - started
     print(f"Zip created on S3 in {duration:.2f} seconds")
 
