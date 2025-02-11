@@ -143,9 +143,14 @@ qx.Class.define("osparc.info.ServiceLarge", {
         // Show description only
         vBox.add(description.getChildren()[1]);
       } else {
-        const title = this.__createTitle();
+        const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
+        const icon = this.__createIcon();
+        const iconLayout = this.__createViewWithEdit(icon, this.__openIconEditor);
+        hBox.add(iconLayout);
+        const title = this.__createName();
         const titleLayout = this.__createViewWithEdit(title, this.__openTitleEditor);
-        vBox.add(titleLayout);
+        hBox.add(titleLayout);
+        vBox.add(hBox);
 
         const extraInfo = this.__extraInfo();
         const extraInfoLayout = this.__createExtraInfo(extraInfo);
@@ -218,7 +223,17 @@ qx.Class.define("osparc.info.ServiceLarge", {
       return null;
     },
 
-    __createTitle: function() {
+    __createIcon: function() {
+      const serviceIcon = this.getService()["icon"];
+      const iconSize = osparc.dashboard.GridButtonBase.ICON_SIZE;
+      const icon = new osparc.ui.basic.Thumbnail(serviceIcon, iconSize, iconSize).set({
+        minHeight: iconSize,
+        minWidth: iconSize,
+      });
+      return icon;
+    },
+
+    __createName: function() {
       const serviceName = this.getService()["name"];
       let text = "";
       if (this.getInstanceLabel()) {
@@ -443,9 +458,19 @@ qx.Class.define("osparc.info.ServiceLarge", {
       return container;
     },
 
+    __openIconEditor: function() {
+      const iconEditor = new osparc.widget.Renamer(this.getService()["icon"], null, this.tr("Edit Icon"));
+      iconEditor.addListener("labelChanged", e => {
+        iconEditor.close();
+        const newIcon = e.getData()["newLabel"];
+        this.__patchService("icon", newIcon);
+      }, this);
+      iconEditor.center();
+      iconEditor.open();
+    },
+
     __openTitleEditor: function() {
-      const title = this.tr("Edit Title");
-      const titleEditor = new osparc.widget.Renamer(this.getService()["name"], null, title);
+      const titleEditor = new osparc.widget.Renamer(this.getService()["name"], null, this.tr("Edit Name"));
       titleEditor.addListener("labelChanged", e => {
         titleEditor.close();
         const newLabel = e.getData()["newLabel"];
