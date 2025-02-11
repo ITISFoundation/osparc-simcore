@@ -1,8 +1,8 @@
 # pylint: disable=R6301
 from pathlib import Path
 
+from models_library.api_schemas_long_running_tasks.base import TaskId
 from pydantic import BaseModel, model_validator
-from simcore_service_storage.api.rabbitmq_rpc._zipping import TaskId
 
 
 class ZipTaskStartInput(BaseModel):
