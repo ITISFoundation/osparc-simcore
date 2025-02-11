@@ -64,7 +64,6 @@ from servicelib.zip_stream import (
     DiskStreamReader,
     get_zip_archive_file_stream,
 )
-from servicelib.zip_stream._file_like import FileLikeFileStreamReader
 from settings_library.s3 import S3Settings
 from types_aiobotocore_s3 import S3Client
 from types_aiobotocore_s3.literals import BucketLocationConstraintType
@@ -1439,7 +1438,7 @@ async def test_upload_object_from_file_stream(
     )
 
     await simcore_s3_api.upload_object_from_file_stream(
-        with_s3_bucket, object_key, FileLikeFileStreamReader(file_stream(AsyncMock()))
+        with_s3_bucket, object_key, file_stream(AsyncMock())
     )
 
     await simcore_s3_api.delete_object(bucket=with_s3_bucket, object_key=object_key)
