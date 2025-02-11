@@ -3,8 +3,8 @@ import logging
 from typing import Annotated, cast
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
-from fastapi_pagination import create_page
-from fastapi_pagination.links import Page
+from fastapi_pagination import LimitOffsetPage, create_page
+from fastapi_pagination.limit_offset import LimitOffsetParams
 from models_library.generics import Envelope
 from models_library.projects_nodes_io import LocationID, StorageFileID
 from models_library.storage_schemas import (
@@ -55,21 +55,20 @@ router = APIRouter(
 
 @router.get(
     "/locations/{location_id}/paths",
-    response_model=Page[FileMetaDataGet],
+    response_model=LimitOffsetPage[FileMetaDataGet],
 )
 async def list_paths(
-    location_id: LocationID,
     query_params: Annotated[ListPathsQueryParams, Depends()],
+    page_params: Annotated[LimitOffsetParams, Depends()],
     dsm: Annotated[BaseDataManager, Depends(get_data_manager)],
 ):
-    assert location_id  # nosec
-    data: list[FileMetaData] = await dsm.list_files_paginated(
+    data = await dsm.list_files_paginated(
         user_id=query_params.user_id,
         file_filter=query_params.file_filter,
-        limit=20,
-        offset=0,
+        limit=page_params.limit,
+        offset=page_params.offset,
     )
-    return create_page(data, total=20)
+    return create_page(data, total=20, params=page_params)
 
 
 @router.get(

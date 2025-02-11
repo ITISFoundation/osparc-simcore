@@ -26,6 +26,7 @@ from aws_library.s3 import S3KeyNotFoundError, S3ObjectKey, SimcoreS3API
 from aws_library.s3._constants import MULTIPART_UPLOADS_MIN_TOTAL_SIZE
 from faker import Faker
 from fastapi import FastAPI
+from fastapi_pagination import LimitOffsetPage
 from models_library.basic_types import SHA256Str
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import LocationID, NodeID, SimcoreS3FileID
@@ -61,9 +62,10 @@ from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
-from tests.helpers.utils_file_meta_data import assert_file_meta_data_in_db
 from types_aiobotocore_s3 import S3Client
 from yarl import URL
+
+from tests.helpers.utils_file_meta_data import assert_file_meta_data_in_db
 
 pytest_simcore_core_services_selection = ["postgres"]
 pytest_simcore_ops_services_selection = ["adminer"]
@@ -90,14 +92,14 @@ async def assert_multipart_uploads_in_progress(
         tuple[UploadID, S3ObjectKey]
     ] = await storage_s3_client.list_ongoing_multipart_uploads(bucket=storage_s3_bucket)
     if expected_upload_ids is None:
-        assert (
-            not list_uploads
-        ), f"expected NO multipart uploads in progress, got {list_uploads}"
+        assert not list_uploads, (
+            f"expected NO multipart uploads in progress, got {list_uploads}"
+        )
     else:
         for upload_id, _ in list_uploads:
-            assert (
-                upload_id in expected_upload_ids
-            ), f"{upload_id=} is in progress but was not expected!"
+            assert upload_id in expected_upload_ids, (
+                f"{upload_id=} is in progress but was not expected!"
+            )
 
 
 @dataclass
@@ -208,9 +210,9 @@ async def create_upload_file_link_v1(
             location_id=f"{location_id}",
             file_id=file_id,
         ).with_query(**query_kwargs, user_id=user_id)
-        assert (
-            "file_size" not in url.query
-        ), "v1 call to upload_file MUST NOT contain file_size field, this is reserved for v2 call"
+        assert "file_size" not in url.query, (
+            "v1 call to upload_file MUST NOT contain file_size field, this is reserved for v2 call"
+        )
         response = await client.put(f"{url}")
         received_file_upload_link, error = assert_status(
             response, status.HTTP_200_OK, PresignedLink
@@ -389,9 +391,9 @@ async def test_create_upload_file_presigned_with_file_size_returns_multipart_lin
         file_size=f"{test_param.file_size}",
     )
     # number of links
-    assert (
-        len(received_file_upload.urls) == test_param.expected_num_links
-    ), f"{len(received_file_upload.urls)} vs {test_param.expected_num_links=}"
+    assert len(received_file_upload.urls) == test_param.expected_num_links, (
+        f"{len(received_file_upload.urls)} vs {test_param.expected_num_links=}"
+    )
     # all links are unique
     assert len(set(received_file_upload.urls)) == len(received_file_upload.urls)
     assert received_file_upload.chunk_size == test_param.expected_chunk_size
@@ -546,9 +548,9 @@ async def test_upload_same_file_uuid_aborts_previous_upload(
         expected_sha256_checksum=None,
     )
     if expect_upload_id and link_type == LinkType.PRESIGNED:
-        assert (
-            upload_id != new_upload_id
-        ), "There shall be a new upload id after a new call to create_upload_file"
+        assert upload_id != new_upload_id, (
+            "There shall be a new upload id after a new call to create_upload_file"
+        )
     elif expect_upload_id and link_type == LinkType.S3:
         assert upload_id == new_upload_id
         assert upload_id == S3_UNDEFINED_OR_EXTERNAL_MULTIPART_ID
@@ -1533,4 +1535,21 @@ async def test_list_paths(
     location_id: LocationID,
     user_id: UserID,
 ):
-    ...
+    query = {
+        "user_id": user_id,
+        "file_filter": None,
+    }
+    url = url_from_operation_id(
+        client, initialized_app, "list_paths", location_id=f"{location_id}"
+    ).with_query(**{k: v for k, v in query.items() if v is not None})
+    response = await client.get(f"{url}")
+
+    page_of_files, _ = assert_status(
+        response,
+        status.HTTP_200_OK,
+        LimitOffsetPage[FileMetaDataGet],
+        expect_envelope=False,
+    )
+    assert page_of_files
+    assert page_of_files.items == []
+    assert page_of_files.total == 0
