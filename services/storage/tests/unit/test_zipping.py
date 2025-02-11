@@ -2,9 +2,12 @@ from typing import Awaitable, Callable
 
 import pytest
 from fastapi import FastAPI
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.storage import zipping
 from settings_library.rabbit import RabbitSettings
+from simcore_service_storage.core.settings import ApplicationSettings
 
 pytest_plugins = [
     "pytest_simcore.rabbit_service",
@@ -18,8 +21,31 @@ pytest_simcore_core_services_selection = [
 
 
 @pytest.fixture
-async def rpc_client(
+async def app_environment(
+    app_environment: EnvVarsDict,
     rabbit_service: RabbitSettings,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    new_envs = setenvs_from_dict(
+        monkeypatch,
+        {
+            **app_environment,
+            "RABBIT_HOST": rabbit_service.RABBIT_HOST,
+            "RABBIT_PORT": f"{rabbit_service.RABBIT_PORT}",
+            "RABBIT_USER": rabbit_service.RABBIT_USER,
+            "RABBIT_SECURE": f"{rabbit_service.RABBIT_SECURE}",
+            "RABBIT_PASSWORD": rabbit_service.RABBIT_PASSWORD.get_secret_value(),
+        },
+    )
+
+    settings = ApplicationSettings.create_from_envs()
+    assert settings.STORAGE_RABBITMQ
+
+    return new_envs
+
+
+@pytest.fixture
+async def rpc_client(
     initialized_app: FastAPI,
     rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
 ) -> RabbitMQRPCClient:
