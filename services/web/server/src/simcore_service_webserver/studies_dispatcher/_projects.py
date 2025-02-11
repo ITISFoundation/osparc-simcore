@@ -12,7 +12,8 @@ from pathlib import Path
 from typing import NamedTuple
 
 from aiohttp import web
-from models_library.projects import DateTimeStr, Project, ProjectID, StudyUIDict
+from models_library.api_schemas_webserver.projects_ui import StudyUI
+from models_library.projects import DateTimeStr, Project, ProjectID
 from models_library.projects_access import AccessRights, GroupIDStr
 from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import DownloadLink, NodeID, PortLink
@@ -96,12 +97,16 @@ def _create_project(
         name=name,
         description=description,
         thumbnail=thumbnail,
-        prjOwner=owner.email,
-        accessRights={GroupIDStr(owner.primary_gid): access_rights},
-        creationDate=DateTimeStr(now_str()),
-        lastChangeDate=DateTimeStr(now_str()),
+        prj_owner=owner.email,
+        access_rights={GroupIDStr(owner.primary_gid): access_rights},
+        creation_date=DateTimeStr(now_str()),
+        last_change_date=DateTimeStr(now_str()),
         workbench=workbench,
-        ui=StudyUIDict(workbench=workbench_ui),  # type: ignore[arg-type]
+        ui=StudyUI.model_validate(
+            {
+                "workbench": workbench_ui,
+            }
+        ).model_dump(mode="json", exclude_unset=True),
     )
 
 

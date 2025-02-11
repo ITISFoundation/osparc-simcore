@@ -144,17 +144,17 @@ class Project(BaseProjectModel):
     ]
 
     # Lifecycle
-    creation_date: Annotated[
+    creation_date: Annotated[  # type: ignore[assignment]
         DateTimeStr,
-        Field(  # type: ignore[assignment]
+        Field(
             description="project creation date",
             examples=["2018-07-01T11:13:43Z"],
             alias="creationDate",
         ),
     ]
-    last_change_date: Annotated[
+    last_change_date: Annotated[  # type: ignore[assignment]
         DateTimeStr,
-        Field(  # type: ignore[assignment]
+        Field(
             description="last save date",
             examples=["2018-07-01T11:13:43Z"],
             alias="lastChangeDate",
@@ -214,4 +214,5 @@ class Project(BaseProjectModel):
     model_config = ConfigDict(
         # NOTE: this is a security measure until we get rid of the ProjectDict variants
         extra="forbid",
+        populate_by_name=True,
     )
