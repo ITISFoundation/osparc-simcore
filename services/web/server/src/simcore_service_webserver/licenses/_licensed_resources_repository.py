@@ -97,7 +97,7 @@ async def get_by_resource_identifier(
         row = result.one_or_none()
         if row is None:
             raise LicensedResourceNotFoundError(
-                licensed_item_id="Unkown",  # <-- NOTE: will be changed for licensed_resource_id
+                licensed_resource_id="Unknown",
                 licensed_resource_name=licensed_resource_name,
                 licensed_resource_type=licensed_resource_type,
             )
