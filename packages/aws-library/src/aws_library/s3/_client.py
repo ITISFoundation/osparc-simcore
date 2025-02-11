@@ -481,6 +481,11 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
         *,
         chunk_size: int = DEFAULT_READ_CHUNK_SIZE,
     ) -> StreamData:
+        """stream read an object in S3 chunk by chunk"""
+
+        # NOTE `download_fileobj` cannot be used to implement this because
+        # it will buffer the entire file in memory instead of reading it
+        # chunk by chunk
 
         # below is a quick call
         head_response = await self._client.head_object(
@@ -519,6 +524,7 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
         object_key: S3ObjectKey,
         file_stream: FileStream,
     ) -> None:
+        """streams write an object in S3 from an AsyncIterable[bytes]"""
         await self._client.upload_fileobj(FileLikeFileStreamReader(file_stream), bucket_name, object_key)  # type: ignore[arg-type]
 
     @staticmethod
