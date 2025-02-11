@@ -51,4 +51,5 @@ async def get_zipping_status(app: FastAPI, task_id: TaskId) -> TaskStatus:
 @router.expose()
 async def get_zipping_result(app: FastAPI, task_id: TaskId) -> TaskResult:
     assert app  # nosec
+    assert task_id  # nosec
     return TaskResult(result="Here's your result.", error=None)

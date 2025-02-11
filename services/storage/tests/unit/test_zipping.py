@@ -1,4 +1,5 @@
 # pylint: disable=W0621
+# pylint: disable=W0613
 from pathlib import Path
 from typing import Awaitable, Callable
 
