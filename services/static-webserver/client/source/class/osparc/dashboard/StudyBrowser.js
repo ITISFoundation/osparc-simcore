@@ -1648,11 +1648,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const duplicateStudyButton = this.__getDuplicateMenuButton(studyData);
       menu.add(duplicateStudyButton);
 
-      const convertToPipelineButton = this.__getConvertToPipelineMenuButton(studyData);
-      menu.add(convertToPipelineButton);
+      if (osparc.product.Utils.hasConvertToPipelineEnabled()) {
+        const convertToPipelineButton = this.__getConvertToPipelineMenuButton(studyData);
+        menu.add(convertToPipelineButton);
+      }
 
-      if (osparc.product.Utils.isProduct("osparc")) {
-        const exportStudyButton = this.__getExportMenuButton(studyData);
+      if (osparc.product.Utils.hasExportCMisEnabled()) {
+        const exportStudyButton = this.__getExportCMisMenuButton(studyData);
         menu.add(exportStudyButton);
       }
 
@@ -1886,7 +1888,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .then(() => this._updateStudyData(studyData))
     },
 
-    __getExportMenuButton: function(studyData) {
+    __getExportCMisMenuButton: function(studyData) {
       const exportButton = new qx.ui.menu.Button(this.tr("Export cMIS"), "@FontAwesome5Solid/cloud-download-alt/12");
       exportButton["exportCMISButton"] = true;
       const isDisabled = osparc.utils.DisabledPlugins.isExportDisabled();
