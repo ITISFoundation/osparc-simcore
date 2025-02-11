@@ -8,13 +8,12 @@ from models_library.api_schemas_long_running_tasks.base import (
 )
 from models_library.api_schemas_long_running_tasks.tasks import TaskStatus
 from models_library.api_schemas_storage.zipping_tasks import ZipTaskStart
-from pydantic import ValidationError
 from servicelib.rabbitmq import RPCRouter
 
 router = RPCRouter()
 
 
-@router.expose(reraise_if_error_type=(ValidationError,))
+@router.expose()
 async def start_zipping(app: FastAPI, paths: ZipTaskStart) -> TaskStatus:
 
     progress = TaskProgress(

@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import Awaitable, Callable
 
 import pytest
+from faker import Faker
 from fastapi import FastAPI
 from models_library.api_schemas_long_running_tasks.tasks import TaskStatus
 from models_library.api_schemas_storage.zipping_tasks import ZipTaskStart
@@ -55,9 +56,8 @@ async def rpc_client(
     return await rabbitmq_rpc_client("client")
 
 
-async def test_start_zipping(rpc_client: RabbitMQRPCClient):
-    _path = "the/path/to/myfile"
+async def test_start_zipping(rpc_client: RabbitMQRPCClient, faker: Faker):
     result = await zipping.start_zipping(
-        rpc_client, paths=ZipTaskStart(paths=[Path(_path)])
+        rpc_client, paths=ZipTaskStart(paths=[Path(faker.file_path())])
     )
     assert isinstance(result, TaskStatus)
