@@ -10,7 +10,6 @@ from pathlib import Path
 from typing import Final
 
 import tqdm
-from models_library.basic_types import IDStr
 from pydantic import NonNegativeInt
 from servicelib.logging_utils import log_catch
 from tqdm.contrib.logging import tqdm_logging_redirect
@@ -199,7 +198,7 @@ async def archive_dir(
 ) -> None:
     if progress_bar is None:
         progress_bar = ProgressBarData(
-            num_steps=1, description=IDStr(f"compressing {dir_to_compress.name}")
+            num_steps=1, description=f"compressing {dir_to_compress.name}"
         )
 
     options = " ".join(
@@ -223,7 +222,7 @@ async def archive_dir(
 
     async with AsyncExitStack() as exit_stack:
         sub_progress = await exit_stack.enter_async_context(
-            progress_bar.sub_progress(folder_size_bytes, description=IDStr("..."))
+            progress_bar.sub_progress(folder_size_bytes, description="...")
         )
 
         tqdm_progress = exit_stack.enter_context(
@@ -290,7 +289,7 @@ async def unarchive_dir(
 ) -> set[Path]:
     if progress_bar is None:
         progress_bar = ProgressBarData(
-            num_steps=1, description=IDStr(f"extracting {archive_to_extract.name}")
+            num_steps=1, description=f"extracting {archive_to_extract.name}"
         )
 
     # get archive information
@@ -304,7 +303,7 @@ async def unarchive_dir(
 
     async with AsyncExitStack() as exit_stack:
         sub_prog = await exit_stack.enter_async_context(
-            progress_bar.sub_progress(steps=total_bytes, description=IDStr("..."))
+            progress_bar.sub_progress(steps=total_bytes, description="...")
         )
 
         tqdm_progress = exit_stack.enter_context(

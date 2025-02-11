@@ -3,9 +3,9 @@ Provides a convenient way to return the result given a TaskId.
 """
 
 import asyncio
-from collections.abc import AsyncGenerator, Coroutine
-from dataclasses import dataclass
-from typing import Any, Final, TypeAlias
+import logging
+from collections.abc import AsyncGenerator
+from typing import Any
 
 import httpx
 from fastapi import status
@@ -14,6 +14,7 @@ from models_library.api_schemas_long_running_tasks.tasks import TaskGet, TaskSta
 from tenacity import (
     AsyncRetrying,
     TryAgain,
+    before_sleep_log,
     retry,
     retry_if_exception_type,
     stop_after_delay,
@@ -21,32 +22,34 @@ from tenacity import (
 )
 from yarl import URL
 
+from ...long_running_tasks._constants import DEFAULT_POLL_INTERVAL_S, HOUR
 from ...long_running_tasks._errors import TaskClientResultError
 from ...long_running_tasks._models import (
     ClientConfiguration,
+    LRTask,
     ProgressCallback,
     ProgressMessage,
     ProgressPercent,
+    RequestBody,
 )
 from ...long_running_tasks._task import TaskId, TaskResult
 from ...rest_responses import unwrap_envelope_if_required
 from ._client import DEFAULT_HTTP_REQUESTS_TIMEOUT, Client, setup
 from ._context_manager import periodic_task_result
 
-RequestBody: TypeAlias = Any
+_logger = logging.getLogger(__name__)
 
-_MINUTE: Final[int] = 60  # in secs
-_HOUR: Final[int] = 60 * _MINUTE  # in secs
-_DEFAULT_POLL_INTERVAL_S: Final[float] = 1
-_DEFAULT_AIOHTTP_RETRY_POLICY: dict[str, Any] = {
+
+_DEFAULT_FASTAPI_RETRY_POLICY: dict[str, Any] = {
     "retry": retry_if_exception_type(httpx.RequestError),
     "wait": wait_random_exponential(max=20),
     "stop": stop_after_delay(60),
     "reraise": True,
+    "before_sleep": before_sleep_log(_logger, logging.INFO),
 }
 
 
-@retry(**_DEFAULT_AIOHTTP_RETRY_POLICY)
+@retry(**_DEFAULT_FASTAPI_RETRY_POLICY)
 async def _start(
     session: httpx.AsyncClient, url: URL, json: RequestBody | None
 ) -> TaskGet:
@@ -56,7 +59,7 @@ async def _start(
     return TaskGet.model_validate(data)
 
 
-@retry(**_DEFAULT_AIOHTTP_RETRY_POLICY)
+@retry(**_DEFAULT_FASTAPI_RETRY_POLICY)
 async def _wait_for_completion(
     session: httpx.AsyncClient,
     task_id: TaskId,
@@ -68,6 +71,7 @@ async def _wait_for_completion(
             stop=stop_after_delay(client_timeout),
             reraise=True,
             retry=retry_if_exception_type(TryAgain),
+            before_sleep=before_sleep_log(_logger, logging.DEBUG),
         ):
             with attempt:
                 response = await session.get(f"{status_url}")
@@ -79,9 +83,7 @@ async def _wait_for_completion(
                 if not task_status.done:
                     await asyncio.sleep(
                         float(
-                            response.headers.get(
-                                "retry-after", _DEFAULT_POLL_INTERVAL_S
-                            )
+                            response.headers.get("retry-after", DEFAULT_POLL_INTERVAL_S)
                         )
                     )
                     msg = f"{task_id=}, {task_status.started=} has status: '{task_status.task_progress.message}' {task_status.task_progress.percent}%"
@@ -93,7 +95,7 @@ async def _wait_for_completion(
         raise TimeoutError(msg) from exc
 
 
-@retry(**_DEFAULT_AIOHTTP_RETRY_POLICY)
+@retry(**_DEFAULT_FASTAPI_RETRY_POLICY)
 async def _task_result(session: httpx.AsyncClient, result_url: URL) -> Any:
     response = await session.get(f"{result_url}", params={"return_exception": True})
     response.raise_for_status()
@@ -102,32 +104,17 @@ async def _task_result(session: httpx.AsyncClient, result_url: URL) -> Any:
     return None
 
 
-@retry(**_DEFAULT_AIOHTTP_RETRY_POLICY)
+@retry(**_DEFAULT_FASTAPI_RETRY_POLICY)
 async def _abort_task(session: httpx.AsyncClient, abort_url: URL) -> None:
     response = await session.delete(f"{abort_url}")
     response.raise_for_status()
-
-
-@dataclass(frozen=True)
-class LRTask:
-    progress: TaskProgress
-    _result: Coroutine[Any, Any, Any] | None = None
-
-    def done(self) -> bool:
-        return self._result is not None
-
-    async def result(self) -> Any:
-        if not self._result:
-            msg = "No result ready!"
-            raise ValueError(msg)
-        return await self._result
 
 
 async def long_running_task_request(
     session: httpx.AsyncClient,
     url: URL,
     json: RequestBody | None = None,
-    client_timeout: int = 1 * _HOUR,
+    client_timeout: int = 1 * HOUR,
 ) -> AsyncGenerator[LRTask, None]:
     """Will use the passed `httpx.AsyncClient` to call an oSparc long
     running task `url` passing `json` as request body.
@@ -164,6 +151,7 @@ __all__: tuple[str, ...] = (
     "DEFAULT_HTTP_REQUESTS_TIMEOUT",
     "Client",
     "ClientConfiguration",
+    "LRTask",
     "ProgressCallback",
     "ProgressMessage",
     "ProgressPercent",
