@@ -63,13 +63,14 @@ def with_project_locked(
                 return await func(*args, **kwargs)
 
             try:
-                result = await _exclusive_func(*args, **kwargs)
+                return await _exclusive_func(*args, **kwargs)
+
+            except CouldNotAcquireLockError as e:
+                raise ProjectLockError from e
+            finally:
                 # we are now unlocked
                 if notification_cb is not None:
                     await notification_cb()
-                return result
-            except CouldNotAcquireLockError as e:
-                raise ProjectLockError from e
 
         return _wrapper
 
