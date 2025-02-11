@@ -12,8 +12,7 @@ from pathlib import Path
 from typing import NamedTuple
 
 from aiohttp import web
-from models_library.api_schemas_webserver.projects_ui import StudyUI
-from models_library.projects import DateTimeStr, Project, ProjectID
+from models_library.projects import DateTimeStr, Project, ProjectID, StudyUIDict
 from models_library.projects_access import AccessRights, GroupIDStr
 from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import DownloadLink, NodeID, PortLink
@@ -102,7 +101,7 @@ def _create_project(
         creationDate=DateTimeStr(now_str()),
         lastChangeDate=DateTimeStr(now_str()),
         workbench=workbench,
-        ui=StudyUI(workbench=workbench_ui),  # type: ignore[arg-type]
+        ui=StudyUIDict(workbench=workbench_ui),  # type: ignore[arg-type]
     )
 
 

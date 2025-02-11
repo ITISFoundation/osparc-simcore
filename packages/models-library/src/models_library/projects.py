@@ -12,6 +12,7 @@ from models_library.basic_types import ConstrainedStr
 from models_library.folders import FolderID
 from models_library.workspaces import WorkspaceID
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl, field_validator
+from typing_extensions import TypedDict
 
 from .basic_regex import DATE_RE, UUID_RE_BASE
 from .emails import LowerCaseEmailStr
@@ -116,7 +117,9 @@ class ProjectAtDB(BaseProjectModel):
     )
 
 
-StudyUIDict: TypeAlias = dict[str, Any]
+class StudyUIDict(TypedDict, total=False):
+    icon: HttpUrl | None
+    workbench: dict[str, Any]
 
 
 class Project(BaseProjectModel):
