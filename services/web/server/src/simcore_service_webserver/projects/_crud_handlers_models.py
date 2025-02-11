@@ -73,7 +73,7 @@ class ProjectCreateHeaders(BaseModel):
     model_config = ConfigDict(populate_by_name=False)
 
 
-class ProjectCreateParams(BaseModel):
+class ProjectCreateQueryParams(BaseModel):
     from_study: ProjectID | None = Field(
         None,
         description="Option to create a project from existing template or study: from_study={study_uuid}",

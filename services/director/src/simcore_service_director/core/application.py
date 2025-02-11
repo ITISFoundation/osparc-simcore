@@ -3,6 +3,7 @@ from typing import Final
 
 from fastapi import FastAPI
 from servicelib.async_utils import cancel_sequential_workers
+from servicelib.fastapi.client_session import setup_client_session
 from servicelib.fastapi.tracing import initialize_tracing
 
 from .._meta import (
@@ -13,7 +14,6 @@ from .._meta import (
     APP_STARTED_BANNER_MSG,
 )
 from ..api.rest.routes import setup_api_routes
-from ..client_session import setup_client_session
 from ..instrumentation import setup as setup_instrumentation
 from ..registry_proxy import setup as setup_registry
 from .settings import ApplicationSettings

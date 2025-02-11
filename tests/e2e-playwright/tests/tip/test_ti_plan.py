@@ -152,6 +152,10 @@ def test_classic_ti_plan(  # noqa: PLR0915
         page.wait_for_timeout(_ELECTRODE_SELECTOR_FLICKERING_WAIT_TIME)
 
         with log_context(logging.INFO, "Configure selector"):
+            assert (
+                page.get_by_test_id("settingsForm_" + node_ids[0]).count() == 0
+            ), "service settings should not be visible"
+
             electrode_selector_iframe.get_by_test_id("TargetStructure_Selector").click()
             electrode_selector_iframe.get_by_test_id(
                 "TargetStructure_Target_(Targets_combined) Hypothalamus"
