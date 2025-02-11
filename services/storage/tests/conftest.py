@@ -141,10 +141,18 @@ async def storage_s3_bucket(app_settings: ApplicationSettings) -> str:
 
 
 @pytest.fixture
+async def mock_rabbit_setup(mocker: MockerFixture) -> MockerFixture:
+    mocker.patch("simcore_service_storage.core.application.setup_rabbitmq")
+    mocker.patch("simcore_service_storage.core.application.setup_rpc_api_routes")
+    return mocker
+
+
+@pytest.fixture
 def app_environment(
     mock_env_devel_environment: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
     external_envfile_dict: EnvVarsDict,
+    mock_rabbit_setup: MockerFixture,
 ) -> EnvVarsDict:
     if external_envfile_dict:
         delenvs_from_dict(monkeypatch, mock_env_devel_environment, raising=False)
