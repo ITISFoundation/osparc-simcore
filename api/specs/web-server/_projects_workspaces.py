@@ -26,7 +26,7 @@ router = APIRouter(
 @router.post(
     "/projects/{project_id}/workspaces/{workspace_id}:move",
     status_code=status.HTTP_204_NO_CONTENT,
-    summary="Move project to the workspace",
+    description="Move project to the workspace",
 )
 async def move_project_to_workspace(
     _path: Annotated[_ProjectWorkspacesPathParams, Depends()],

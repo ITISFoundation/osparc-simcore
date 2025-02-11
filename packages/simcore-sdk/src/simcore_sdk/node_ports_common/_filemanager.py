@@ -34,7 +34,7 @@ async def _get_location_id_from_location_name(
     store: LocationName,
     session: ClientSession,
 ) -> LocationID:
-    resp = await storage_client.get_storage_locations(session=session, user_id=user_id)
+    resp = await storage_client.list_storage_locations(session=session, user_id=user_id)
     for location in resp:
         if location.name == store:
             return cast(LocationID, location.id)  # mypy wants it

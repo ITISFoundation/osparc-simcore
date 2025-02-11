@@ -13,6 +13,7 @@ from .resource_tracker import PricingPlanId
 from .utils.enums import StrAutoEnum
 
 LicensedItemID: TypeAlias = UUID
+LicensedResourceID: TypeAlias = UUID
 
 
 class LicensedResourceType(StrAutoEnum):
@@ -87,6 +88,28 @@ class LicensedItemUpdateDB(BaseModel):
     display_name: str | None = None
     licensed_resource_name: str | None = None
     pricing_plan_id: PricingPlanId | None = None
+    trash: bool | None = None
+
+
+class LicensedResourceDB(BaseModel):
+    licensed_resource_id: LicensedResourceID
+    display_name: str
+
+    licensed_resource_name: str
+    licensed_resource_type: LicensedResourceType
+    licensed_resource_data: dict[str, Any] | None
+
+    # states
+    created: datetime
+    modified: datetime
+    trashed: datetime | None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class LicensedResourcePatchDB(BaseModel):
+    display_name: str | None = None
+    licensed_resource_name: str | None = None
     trash: bool | None = None
 
 
