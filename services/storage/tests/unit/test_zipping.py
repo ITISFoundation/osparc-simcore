@@ -4,13 +4,17 @@ from typing import Awaitable, Callable
 import pytest
 from faker import Faker
 from fastapi import FastAPI
-from models_library.api_schemas_long_running_tasks.tasks import TaskStatus
-from models_library.api_schemas_storage.zipping_tasks import ZipTaskStart
+from models_library.api_schemas_long_running_tasks.tasks import TaskGet
+from models_library.api_schemas_storage.zipping_tasks import (
+    ZipTaskAbortOutput,
+    ZipTaskStartInput,
+)
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.storage import zipping
 from settings_library.rabbit import RabbitSettings
+from simcore_service_storage.api.rabbitmq_rpc._zipping import TaskId
 from simcore_service_storage.core.settings import ApplicationSettings
 
 pytest_plugins = [
@@ -58,6 +62,13 @@ async def rpc_client(
 
 async def test_start_zipping(rpc_client: RabbitMQRPCClient, faker: Faker):
     result = await zipping.start_zipping(
-        rpc_client, paths=ZipTaskStart(paths=[Path(faker.file_path())])
+        rpc_client, paths=ZipTaskStartInput(paths=[Path(faker.file_path())])
     )
-    assert isinstance(result, TaskStatus)
+    assert isinstance(result, TaskGet)
+
+
+async def test_abort_zipping(rpc_client: RabbitMQRPCClient, faker: Faker):
+    _task_id = TaskId(f"{faker.uuid4()}")
+    result = await zipping.abort_zipping(rpc_client, task_id=_task_id)
+    assert isinstance(result, ZipTaskAbortOutput)
+    assert result.task_id == _task_id

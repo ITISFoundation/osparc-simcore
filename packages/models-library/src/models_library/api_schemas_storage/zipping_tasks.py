@@ -1,9 +1,10 @@
 from pathlib import Path
 
 from pydantic import BaseModel, model_validator
+from simcore_service_storage.api.rabbitmq_rpc._zipping import TaskId
 
 
-class ZipTaskStart(BaseModel):
+class ZipTaskStartInput(BaseModel):
     paths: list[Path]
 
     @model_validator(mode="after")
@@ -11,3 +12,8 @@ class ZipTaskStart(BaseModel):
         if not value:
             raise ValueError("Empty paths error")
         return value
+
+
+class ZipTaskAbortOutput(BaseModel):
+    result: bool
+    task_id: TaskId
