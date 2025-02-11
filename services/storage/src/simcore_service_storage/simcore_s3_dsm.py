@@ -136,6 +136,17 @@ class SimcoreS3DataManager(BaseDataManager):
         )
         return data
 
+    async def list_files_paginated(
+        self,
+        user_id: UserID,
+        *,
+        file_filter: Path | None,
+        limit: NonNegativeInt,
+        offset: NonNegativeInt,
+    ) -> list[FileMetaData]:
+        """returns a page of the file meta data a user has access to"""
+        return []
+
     async def list_files(  # noqa C901
         self,
         user_id: UserID,

@@ -1,6 +1,7 @@
 import datetime
 import urllib.parse
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Annotated, Any, Literal, NamedTuple
 from uuid import UUID
 
@@ -160,6 +161,10 @@ class UploadLinks:
 class StorageQueryParamsBase(BaseModel):
     user_id: UserID
     model_config = ConfigDict(populate_by_name=True)
+
+
+class ListPathsQueryParams(StorageQueryParamsBase):
+    file_filter: Path | None = None
 
 
 class FilesMetadataDatasetQueryParams(StorageQueryParamsBase):

@@ -3,6 +3,8 @@ import logging
 from typing import Annotated, cast
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
+from fastapi_pagination import create_page
+from fastapi_pagination.links import Page
 from models_library.generics import Envelope
 from models_library.projects_nodes_io import LocationID, StorageFileID
 from models_library.storage_schemas import (
@@ -21,6 +23,8 @@ from pydantic import AnyUrl, ByteSize, TypeAdapter
 from servicelib.aiohttp import status
 from yarl import URL
 
+from simcore_service_storage.dsm_factory import BaseDataManager
+
 from ...dsm import get_dsm_provider
 from ...exceptions.errors import FileMetaDataNotFoundError
 from ...models import (
@@ -30,6 +34,7 @@ from ...models import (
     FileMetadataListQueryParams,
     FileUploadQueryParams,
     FileUploadResponseV1,
+    ListPathsQueryParams,
     StorageQueryParamsBase,
     UploadLinks,
 )
@@ -44,6 +49,25 @@ router = APIRouter(
         "files",
     ],
 )
+
+
+@router.get(
+    "/locations/{location_id}/paths",
+    response_model=Page[FileMetaDataGet],
+)
+async def list_paths(
+    location_id: LocationID,
+    query_params: Annotated[ListPathsQueryParams, Depends()],
+    dsm: Annotated[BaseDataManager, Depends(get_dsm_provider)],
+):
+    assert location_id  # nosec
+    data: list[FileMetaData] = await dsm.list_files_paginated(
+        user_id=query_params.user_id,
+        file_filter=query_params.file_filter,
+        limit=20,
+        offset=0,
+    )
+    return create_page(data, 20)
 
 
 @router.get(

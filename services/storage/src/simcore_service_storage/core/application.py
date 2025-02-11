@@ -8,6 +8,7 @@ import logging
 from common_library.basic_types import BootModeEnum
 from fastapi import FastAPI
 from fastapi.middleware.gzip import GZipMiddleware
+from fastapi_pagination import add_pagination
 from servicelib.fastapi import timing_middleware
 from servicelib.fastapi.client_session import setup_client_session
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
@@ -71,6 +72,7 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
         redoc_url=None,  # default disabled
     )
     override_fastapi_openapi_method(app)
+    add_pagination(app)
 
     # STATE
     app.state.settings = settings

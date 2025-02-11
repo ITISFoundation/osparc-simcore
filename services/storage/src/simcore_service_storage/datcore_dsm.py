@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from pathlib import Path
 
 from fastapi import FastAPI
 from models_library.basic_types import SHA256Str
@@ -6,7 +7,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import LocationID, LocationName, StorageFileID
 from models_library.storage_schemas import DatCoreDatasetName, LinkType, UploadedPart
 from models_library.users import UserID
-from pydantic import AnyUrl, ByteSize
+from pydantic import AnyUrl, ByteSize, NonNegativeInt
 
 from .constants import DATCORE_ID, DATCORE_STR
 from .dsm_factory import BaseDataManager
@@ -52,6 +53,17 @@ class DatCoreDataManager(BaseDataManager):
         return await datcore_adapter.list_all_files_metadatas_in_dataset(
             self.app, user_id, api_token, api_secret, DatCoreDatasetName(dataset_id)
         )
+
+    async def list_files_paginated(
+        self,
+        user_id: UserID,
+        *,
+        file_filter: Path | None,
+        limit: NonNegativeInt,
+        offset: NonNegativeInt,
+    ) -> list[FileMetaData]:
+        """returns a page of the file meta data a user has access to"""
+        return []
 
     async def list_files(
         self,
