@@ -123,3 +123,6 @@ async def long_running_task_request(
         if task:
             await _abort_task(session, URL(task.abort_href))
         raise
+
+
+__all__: tuple[str, ...] = ("LRTask",)
