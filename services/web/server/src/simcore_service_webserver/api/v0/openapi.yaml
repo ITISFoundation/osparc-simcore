@@ -3605,7 +3605,9 @@ paths:
       tags:
       - projects
       summary: Create Project
-      description: Creates a new project or copies an existing one
+      description: 'Creates a new project or copies an existing one. NOTE: implemented
+        as a long running task, i.e. requires polling `status_href` (HTTP_200_OK)
+        to get status and `result_href` (HTTP_201_CREATED) to get created project'
       operationId: create_project
       parameters:
       - name: x_simcore_user_agent
@@ -3675,7 +3677,7 @@ paths:
               - $ref: '#/components/schemas/ProjectCopyOverride'
               title: ' Body'
       responses:
-        '201':
+        '202':
           description: Successful Response
           content:
             application/json:
@@ -5658,15 +5660,9 @@ paths:
     get:
       tags:
       - storage
-<<<<<<< HEAD
-      summary: Get available storage locations
-      description: Returns the list of available storage locations
-      operationId: list_storage_locations
-=======
-      summary: Get Storage Locations
+      summary: List Storage Locations
       description: Get available storage locations
-      operationId: get_storage_locations
->>>>>>> 1b28d5f99 (improves oas)
+      operationId: list_storage_locations
       responses:
         '200':
           description: Successful Response
@@ -5676,60 +5672,14 @@ paths:
                 items:
                   $ref: '#/components/schemas/DatasetMetaData'
                 type: array
-<<<<<<< HEAD
                 title: Response List Storage Locations
-=======
-                title: Response Get Storage Locations
-  /v0/storage/locations/{location_id}:sync:
-    post:
-      tags:
-      - storage
-      summary: Synchronise Meta Data Table
-      description: Manually triggers the synchronisation of the file meta data table
-        in the database
-      operationId: synchronise_meta_data_table
-      parameters:
-      - name: location_id
-        in: path
-        required: true
-        schema:
-          type: integer
-          title: Location Id
-      - name: dry_run
-        in: query
-        required: false
-        schema:
-          type: boolean
-          default: false
-          title: Dry Run
-      - name: fire_and_forget
-        in: query
-        required: false
-        schema:
-          type: boolean
-          default: false
-          title: Fire And Forget
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_TableSynchronisation_'
->>>>>>> 1b28d5f99 (improves oas)
   /v0/storage/locations/{location_id}/datasets:
     get:
       tags:
       - storage
-<<<<<<< HEAD
-      summary: Get datasets metadata
-      description: returns all the top level datasets a user has access to
-      operationId: list_datasets_metadata
-=======
-      summary: Get Datasets Metadata
+      summary: List Datasets Metadata
       description: Get datasets metadata
-      operationId: get_datasets_metadata
->>>>>>> 1b28d5f99 (improves oas)
+      operationId: list_datasets_metadata
       parameters:
       - name: location_id
         in: path
@@ -5787,8 +5737,8 @@ paths:
     get:
       tags:
       - storage
-      summary: Get Files Metadata
-      description: returns all the file meta data inside dataset with dataset_id
+      summary: List Dataset Files Metadata
+      description: Get Files Metadata
       operationId: list_dataset_files_metadata
       parameters:
       - name: location_id
