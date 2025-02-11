@@ -18,6 +18,7 @@ class RedisDatabase(IntEnum):
     DISTRIBUTED_IDENTIFIERS = 6
     DEFERRED_TASKS = 7
     DYNAMIC_SERVICES = 8
+    JOB_SCHEDULER = 9
 
 
 class RedisSettings(BaseCustomSettings):
