@@ -2,17 +2,11 @@
 from pathlib import Path
 
 from models_library.api_schemas_long_running_tasks.base import TaskId
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, Field
 
 
 class ZipTaskStartInput(BaseModel):
-    paths: list[Path]
-
-    @model_validator(mode="after")
-    def _check_paths(self, value):
-        if not value:
-            raise ValueError("Empty paths error")
-        return value
+    paths: list[Path] = Field(..., min_length=1)
 
 
 class ZipTaskAbortOutput(BaseModel):
