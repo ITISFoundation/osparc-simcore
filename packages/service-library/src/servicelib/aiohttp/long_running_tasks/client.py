@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from collections.abc import AsyncGenerator, Coroutine
 from dataclasses import dataclass
 from typing import Any, Final, TypeAlias
@@ -6,14 +7,17 @@ from typing import Any, Final, TypeAlias
 from aiohttp import ClientConnectionError, ClientSession
 from tenacity import TryAgain, retry
 from tenacity.asyncio import AsyncRetrying
+from tenacity.before_sleep import before_sleep_log
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_random_exponential
 from yarl import URL
 
-from ...rest_responses import unwrap_envelope
+from ...rest_responses import unwrap_envelope_if_required
 from .. import status
 from .server import TaskGet, TaskId, TaskProgress, TaskStatus
+
+_logger = logging.getLogger(__name__)
 
 RequestBody: TypeAlias = Any
 
@@ -25,6 +29,7 @@ _DEFAULT_AIOHTTP_RETRY_POLICY: dict[str, Any] = {
     "wait": wait_random_exponential(max=20),
     "stop": stop_after_delay(60),
     "reraise": True,
+    "before_sleep": before_sleep_log(_logger, logging.INFO),
 }
 
 
@@ -32,9 +37,7 @@ _DEFAULT_AIOHTTP_RETRY_POLICY: dict[str, Any] = {
 async def _start(session: ClientSession, url: URL, json: RequestBody | None) -> TaskGet:
     async with session.post(url, json=json) as response:
         response.raise_for_status()
-        data, error = unwrap_envelope(await response.json())
-    assert not error  # nosec
-    assert data is not None  # nosec
+        data = unwrap_envelope_if_required(await response.json())
     return TaskGet.model_validate(data)
 
 
@@ -54,9 +57,7 @@ async def _wait_for_completion(
             with attempt:
                 async with session.get(status_url) as response:
                     response.raise_for_status()
-                    data, error = unwrap_envelope(await response.json())
-                    assert not error  # nosec
-                    assert data is not None  # nosec
+                    data = unwrap_envelope_if_required(await response.json())
                 task_status = TaskStatus.model_validate(data)
                 yield task_status.task_progress
                 if not task_status.done:
@@ -81,10 +82,7 @@ async def _task_result(session: ClientSession, result_url: URL) -> Any:
     async with session.get(result_url) as response:
         response.raise_for_status()
         if response.status != status.HTTP_204_NO_CONTENT:
-            data, error = unwrap_envelope(await response.json())
-            assert not error  # nosec
-            assert data  # nosec
-            return data
+            return unwrap_envelope_if_required(await response.json())
         return None
 
 
@@ -92,9 +90,6 @@ async def _task_result(session: ClientSession, result_url: URL) -> Any:
 async def _abort_task(session: ClientSession, abort_url: URL) -> None:
     async with session.delete(abort_url) as response:
         response.raise_for_status()
-        data, error = unwrap_envelope(await response.json())
-        assert not error  # nosec
-        assert not data  # nosec
 
 
 @dataclass(frozen=True)
