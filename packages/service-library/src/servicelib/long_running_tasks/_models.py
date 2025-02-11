@@ -1,6 +1,7 @@
 # mypy: disable-error-code=truthy-function
 from asyncio import Task
 from collections.abc import Awaitable, Callable, Coroutine
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, TypeAlias
 
@@ -24,6 +25,8 @@ TaskType: TypeAlias = Callable[..., Coroutine[Any, Any, Any]]
 ProgressCallback: TypeAlias = Callable[
     [ProgressMessage, ProgressPercent | None, TaskId], Awaitable[None]
 ]
+
+RequestBody: TypeAlias = Any
 
 
 class TrackedTask(BaseModel):
@@ -56,6 +59,21 @@ class ClientConfiguration(BaseModel):
     default_timeout: PositiveFloat
 
 
+@dataclass(frozen=True)
+class LRTask:
+    progress: TaskProgress
+    _result: Coroutine[Any, Any, Any] | None = None
+
+    def done(self) -> bool:
+        return self._result is not None
+
+    async def result(self) -> Any:
+        if not self._result:
+            msg = "No result ready!"
+            raise ValueError(msg)
+        return await self._result
+
+
 # explicit export of models for api-schemas
 
 assert TaskResult  # nosec
@@ -63,11 +81,11 @@ assert TaskGet  # nosec
 assert TaskStatus  # nosec
 
 __all__: tuple[str, ...] = (
+    "ProgressMessage",
+    "ProgressPercent",
     "TaskGet",
     "TaskId",
+    "TaskProgress",
     "TaskResult",
     "TaskStatus",
-    "TaskProgress",
-    "ProgressPercent",
-    "ProgressMessage",
 )

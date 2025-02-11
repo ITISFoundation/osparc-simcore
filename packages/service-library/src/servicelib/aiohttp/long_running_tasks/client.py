@@ -1,30 +1,32 @@
 import asyncio
-from collections.abc import AsyncGenerator, Coroutine
-from dataclasses import dataclass
-from typing import Any, Final, TypeAlias
+import logging
+from collections.abc import AsyncGenerator
+from typing import Any
 
 from aiohttp import ClientConnectionError, ClientSession
 from tenacity import TryAgain, retry
 from tenacity.asyncio import AsyncRetrying
+from tenacity.before_sleep import before_sleep_log
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_random_exponential
 from yarl import URL
 
-from ...rest_responses import unwrap_envelope
+from ...long_running_tasks._constants import DEFAULT_POLL_INTERVAL_S, HOUR
+from ...long_running_tasks._models import LRTask, RequestBody
+from ...rest_responses import unwrap_envelope_if_required
 from .. import status
 from .server import TaskGet, TaskId, TaskProgress, TaskStatus
 
-RequestBody: TypeAlias = Any
+_logger = logging.getLogger(__name__)
 
-_MINUTE: Final[int] = 60  # in secs
-_HOUR: Final[int] = 60 * _MINUTE  # in secs
-_DEFAULT_POLL_INTERVAL_S: Final[float] = 1
+
 _DEFAULT_AIOHTTP_RETRY_POLICY: dict[str, Any] = {
     "retry": retry_if_exception_type(ClientConnectionError),
     "wait": wait_random_exponential(max=20),
     "stop": stop_after_delay(60),
     "reraise": True,
+    "before_sleep": before_sleep_log(_logger, logging.INFO),
 }
 
 
@@ -32,9 +34,7 @@ _DEFAULT_AIOHTTP_RETRY_POLICY: dict[str, Any] = {
 async def _start(session: ClientSession, url: URL, json: RequestBody | None) -> TaskGet:
     async with session.post(url, json=json) as response:
         response.raise_for_status()
-        data, error = unwrap_envelope(await response.json())
-    assert not error  # nosec
-    assert data is not None  # nosec
+        data = unwrap_envelope_if_required(await response.json())
     return TaskGet.model_validate(data)
 
 
@@ -50,21 +50,18 @@ async def _wait_for_completion(
             stop=stop_after_delay(client_timeout),
             reraise=True,
             retry=retry_if_exception_type(TryAgain),
+            before_sleep=before_sleep_log(_logger, logging.DEBUG),
         ):
             with attempt:
                 async with session.get(status_url) as response:
                     response.raise_for_status()
-                    data, error = unwrap_envelope(await response.json())
-                    assert not error  # nosec
-                    assert data is not None  # nosec
+                    data = unwrap_envelope_if_required(await response.json())
                 task_status = TaskStatus.model_validate(data)
                 yield task_status.task_progress
                 if not task_status.done:
                     await asyncio.sleep(
                         float(
-                            response.headers.get(
-                                "retry-after", _DEFAULT_POLL_INTERVAL_S
-                            )
+                            response.headers.get("retry-after", DEFAULT_POLL_INTERVAL_S)
                         )
                     )
                     msg = f"{task_id=}, {task_status.started=} has status: '{task_status.task_progress.message}' {task_status.task_progress.percent}%"
@@ -81,10 +78,7 @@ async def _task_result(session: ClientSession, result_url: URL) -> Any:
     async with session.get(result_url) as response:
         response.raise_for_status()
         if response.status != status.HTTP_204_NO_CONTENT:
-            data, error = unwrap_envelope(await response.json())
-            assert not error  # nosec
-            assert data  # nosec
-            return data
+            return unwrap_envelope_if_required(await response.json())
         return None
 
 
@@ -92,31 +86,13 @@ async def _task_result(session: ClientSession, result_url: URL) -> Any:
 async def _abort_task(session: ClientSession, abort_url: URL) -> None:
     async with session.delete(abort_url) as response:
         response.raise_for_status()
-        data, error = unwrap_envelope(await response.json())
-        assert not error  # nosec
-        assert not data  # nosec
-
-
-@dataclass(frozen=True)
-class LRTask:
-    progress: TaskProgress
-    _result: Coroutine[Any, Any, Any] | None = None
-
-    def done(self) -> bool:
-        return self._result is not None
-
-    async def result(self) -> Any:
-        if not self._result:
-            msg = "No result ready!"
-            raise ValueError(msg)
-        return await self._result
 
 
 async def long_running_task_request(
     session: ClientSession,
     url: URL,
     json: RequestBody | None = None,
-    client_timeout: int = 1 * _HOUR,
+    client_timeout: int = 1 * HOUR,
 ) -> AsyncGenerator[LRTask, None]:
     """Will use the passed `ClientSession` to call an oSparc long
     running task `url` passing `json` as request body.
@@ -147,3 +123,6 @@ async def long_running_task_request(
         if task:
             await _abort_task(session, URL(task.abort_href))
         raise
+
+
+__all__: tuple[str, ...] = ("LRTask",)

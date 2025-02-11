@@ -41,7 +41,7 @@ def setup_s3(app: FastAPI) -> None:
                     f"{client=}",
                     json_dumps(attempt.retry_state.retry_object.statistics),
                 )
-            assert client  # nosec
+                assert client  # nosec
         app.state.s3_client = client
 
         with log_context(_logger, logging.DEBUG, msg="setup.s3_bucket.cleanup_ctx"):
