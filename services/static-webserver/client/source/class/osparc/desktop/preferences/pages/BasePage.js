@@ -39,6 +39,7 @@ qx.Class.define("osparc.desktop.preferences.pages.BasePage", {
         minHeight: 24,
         scale: true,
       });
+      osparc.ui.basic.SVGImage.setColorToImage(tabButton.getChildControl("icon"), "text");
     }
   },
 
