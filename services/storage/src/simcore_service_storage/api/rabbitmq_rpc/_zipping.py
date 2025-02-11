@@ -2,10 +2,13 @@ from datetime import datetime
 from uuid import uuid4
 
 from fastapi import FastAPI
-from models_library.api_schemas_long_running_tasks.base import ProgressPercent
+from models_library.api_schemas_long_running_tasks.base import (
+    ProgressPercent,
+    TaskId,
+    TaskProgress,
+)
 from models_library.api_schemas_long_running_tasks.tasks import (
     TaskGet,
-    TaskId,
     TaskResult,
     TaskStatus,
 )
@@ -14,7 +17,6 @@ from models_library.api_schemas_storage.zipping_tasks import (
     ZipTaskStartInput,
 )
 from servicelib.rabbitmq import RPCRouter
-from simcore_service_storage.simcore_s3_dsm import TaskProgress
 
 router = RPCRouter()
 
