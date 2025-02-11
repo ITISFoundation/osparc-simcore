@@ -53,6 +53,7 @@ async def _wait_for_completion(
             stop=stop_after_delay(client_timeout),
             reraise=True,
             retry=retry_if_exception_type(TryAgain),
+            before_sleep=before_sleep_log(_logger, logging.DEBUG),
         ):
             with attempt:
                 async with session.get(status_url) as response:
