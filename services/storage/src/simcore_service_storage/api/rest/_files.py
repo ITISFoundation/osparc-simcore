@@ -67,7 +67,7 @@ async def list_paths(
         limit=20,
         offset=0,
     )
-    return create_page(data, 20)
+    return create_page(data, total=20)
 
 
 @router.get(
