@@ -124,11 +124,6 @@
       "idToWidget": "startS4LButton"
     }, {
       "resourceType": "service",
-      "expectedKey": "simcore/services/dynamic/iseg-web",
-      "title": "iSEG",
-      "newStudyLabel": "New iSEG project"
-    }, {
-      "resourceType": "service",
       "expectedKey": "simcore/services/dynamic/s4l-jupyter",
       "title": "Jupyter Lab",
       "icon": "https://upload.wikimedia.org/wikipedia/commons/3/38/Jupyter_logo.svg",
@@ -142,11 +137,6 @@
       "title": "Sim4Life",
       "newStudyLabel": "New S4L project",
       "idToWidget": "startS4LButton"
-    }, {
-      "resourceType": "service",
-      "expectedKey": "simcore/services/dynamic/iseg-web",
-      "title": "iSEG",
-      "newStudyLabel": "New iSEG project"
     }, {
       "resourceType": "service",
       "expectedKey": "simcore/services/dynamic/s4l-jupyter",
