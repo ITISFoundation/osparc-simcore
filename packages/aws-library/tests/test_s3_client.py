@@ -62,7 +62,7 @@ from servicelib.utils import limited_as_completed
 from servicelib.zip_stream import (
     ArchiveEntries,
     DiskStreamReader,
-    get_zip_archive_stream,
+    get_zip_archive_file_stream,
 )
 from servicelib.zip_stream._file_like import FileLikeFileStreamReader
 from settings_library.s3 import S3Settings
@@ -1589,8 +1589,8 @@ async def test_workflow_compress_s3_objects_and_local_files_in_a_single_archive_
         await simcore_s3_api.upload_object_from_file_stream(
             with_s3_bucket,
             archive_s3_object_key,
-            FileLikeFileStreamReader(
-                get_zip_archive_stream(archive_file_entries, progress_bar=progress_bar)
+            get_zip_archive_file_stream(
+                archive_file_entries, progress_bar=progress_bar
             ),
         )
 

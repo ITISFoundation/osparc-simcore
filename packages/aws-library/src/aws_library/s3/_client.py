@@ -517,9 +517,9 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
         self,
         bucket_name: S3BucketName,
         object_key: S3ObjectKey,
-        file_like_reader: FileLikeFileStreamReader,
+        file_stream: FileStream,
     ) -> None:
-        await self._client.upload_fileobj(file_like_reader, bucket_name, object_key)  # type: ignore[arg-type]
+        await self._client.upload_fileobj(FileLikeFileStreamReader(file_stream), bucket_name, object_key)  # type: ignore[arg-type]
 
     @staticmethod
     def is_multipart(file_size: ByteSize) -> bool:
