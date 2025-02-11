@@ -1396,25 +1396,14 @@ def test_copy_recurively_performance(
     benchmark.pedantic(run_async_test, setup=dst_folder_setup, rounds=4)
 
 
-@pytest.fixture
-def stream_read_file_from_s3(tmp_path: Path, faker: Faker) -> Iterator[Path]:
-    path = tmp_path / f"object_stream_{faker.uuid4()}.file"
-
-    yield path
-
-    if path.exists():
-        path.unlink()
-    assert not path.exists()
-
-
 async def test_read_object_file_stream(
     mocked_s3_server_envs: EnvVarsDict,
     with_uploaded_file_on_s3: UploadedFile,
     simcore_s3_api: SimcoreS3API,
     with_s3_bucket: S3BucketName,
-    stream_read_file_from_s3: Path,
+    random_file_path: Path,
 ):
-    async with aiofiles.open(stream_read_file_from_s3, "wb") as f:
+    async with aiofiles.open(random_file_path, "wb") as f:
         _, file_stream = await simcore_s3_api.get_object_file_stream(
             with_s3_bucket, with_uploaded_file_on_s3.s3_key, chunk_size=1024
         )
@@ -1422,7 +1411,7 @@ async def test_read_object_file_stream(
             await f.write(chunk)
 
     await assert_same_file_content(
-        with_uploaded_file_on_s3.local_path, stream_read_file_from_s3
+        with_uploaded_file_on_s3.local_path, random_file_path
     )
 
 

@@ -1,11 +1,23 @@
 import logging
 from collections.abc import Callable
 from pathlib import Path
+from typing import Iterable
 
 import pytest
 from faker import Faker
 from pydantic import ByteSize
 from pytest_simcore.helpers.logging_tools import log_context
+
+
+@pytest.fixture
+def random_file_path(tmp_path: Path, faker: Faker) -> Iterable[Path]:
+    file = tmp_path / faker.file_name()
+
+    yield file
+
+    if file.exists():
+        file.unlink()
+    assert not file.exists()
 
 
 @pytest.fixture
