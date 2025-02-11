@@ -64,7 +64,7 @@ async def test_long_running_task_request_raises_400(
 def short_poll_interval(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr(
         lr_client,
-        "_DEFAULT_POLL_INTERVAL_S",
+        "DEFAULT_POLL_INTERVAL_S",
         0.01,
     )
 
