@@ -10824,7 +10824,7 @@ components:
           description: Parent's (group-nodes') node ID s. Used to group
         position:
           anyOf:
-          - $ref: '#/components/schemas/PositionUI'
+          - $ref: '#/components/schemas/Position'
           - type: 'null'
           description: Use projects_ui.WorkbenchUI.position instead
           deprecated: true
@@ -10953,7 +10953,7 @@ components:
           description: Parent's (group-nodes') node ID s. Used to group
         position:
           anyOf:
-          - $ref: '#/components/schemas/PositionUI'
+          - $ref: '#/components/schemas/Position'
           - type: 'null'
           description: Use projects_ui.WorkbenchUI.position instead
           deprecated: true
@@ -11765,7 +11765,7 @@ components:
       title: PortLink
       description: I/O port type to reference to an output port of another node in
         the same project
-    PositionUI:
+    Position:
       properties:
         x:
           type: integer
@@ -11780,7 +11780,7 @@ components:
       required:
       - x
       - y
-      title: PositionUI
+      title: Position
     PreRegisteredUserGet:
       properties:
         firstName:
@@ -14658,7 +14658,7 @@ components:
     WorkbenchUI:
       properties:
         position:
-          $ref: '#/components/schemas/PositionUI'
+          $ref: '#/components/schemas/Position'
           description: The node position in the workbench
         marker:
           anyOf:
