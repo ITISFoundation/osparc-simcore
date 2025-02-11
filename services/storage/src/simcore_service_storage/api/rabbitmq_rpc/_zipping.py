@@ -21,7 +21,7 @@ router = RPCRouter()
 
 @router.expose()
 async def start_zipping(app: FastAPI, paths: ZipTaskStartInput) -> TaskGet:
-
+    assert app  # nosec
     return TaskGet(
         task_id=f"{uuid4()}",
         task_name=", ".join(str(p) for p in paths.paths),
@@ -33,11 +33,13 @@ async def start_zipping(app: FastAPI, paths: ZipTaskStartInput) -> TaskGet:
 
 @router.expose()
 async def abort_zipping(app: FastAPI, task_id: TaskId) -> ZipTaskAbortOutput:
+    assert app  # nosec
     return ZipTaskAbortOutput(result=True, task_id=task_id)
 
 
 @router.expose()
 async def get_zipping_status(app: FastAPI, task_id: TaskId) -> TaskStatus:
+    assert app  # nosec
     progress = TaskProgress(
         task_id=task_id,
         message="Here's a status for you. You are welcome",
@@ -48,4 +50,5 @@ async def get_zipping_status(app: FastAPI, task_id: TaskId) -> TaskStatus:
 
 @router.expose()
 async def get_zipping_result(app: FastAPI, task_id: TaskId) -> TaskResult:
+    assert app  # nosec
     return TaskResult(result="Here's your result.", error=None)
