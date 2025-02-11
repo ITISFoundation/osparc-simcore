@@ -64,6 +64,7 @@ from servicelib.zip_stream import (
     DiskStreamReader,
     get_zip_archive_file_stream,
 )
+from servicelib.zip_stream._types import FileSize
 from settings_library.s3 import S3Settings
 from types_aiobotocore_s3 import S3Client
 from types_aiobotocore_s3.literals import BucketLocationConstraintType
@@ -1404,11 +1405,14 @@ async def test_read_object_file_stream(
     random_file_path: Path,
 ):
     async with aiofiles.open(random_file_path, "wb") as f:
-        _, file_stream = await simcore_s3_api.get_object_file_stream(
+        file_size, file_stream = await simcore_s3_api.get_object_file_stream(
             with_s3_bucket, with_uploaded_file_on_s3.s3_key, chunk_size=1024
         )
+        assert isinstance(file_size, FileSize)
         async for chunk in file_stream(AsyncMock()):
             await f.write(chunk)
+
+    assert file_size == random_file_path.stat().st_size
 
     await assert_same_file_content(
         with_uploaded_file_on_s3.local_path, random_file_path
@@ -1422,9 +1426,10 @@ async def test_upload_object_from_file_stream(
     with_s3_bucket: S3BucketName,
 ):
     object_key = "read_from_s3_write_to_s3"
-    _, file_stream = await simcore_s3_api.get_object_file_stream(
+    file_size, file_stream = await simcore_s3_api.get_object_file_stream(
         with_s3_bucket, with_uploaded_file_on_s3.s3_key
     )
+    assert isinstance(file_size, FileSize)
 
     await simcore_s3_api.upload_object_from_file_stream(
         with_s3_bucket, object_key, file_stream(AsyncMock())
