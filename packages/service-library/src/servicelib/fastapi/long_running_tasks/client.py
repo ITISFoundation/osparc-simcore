@@ -4,8 +4,7 @@ Provides a convenient way to return the result given a TaskId.
 
 import asyncio
 import logging
-from collections.abc import AsyncGenerator, Coroutine
-from dataclasses import dataclass
+from collections.abc import AsyncGenerator
 from typing import Any
 
 import httpx
