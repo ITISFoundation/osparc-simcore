@@ -1,7 +1,10 @@
+from pathlib import Path
 from typing import Awaitable, Callable
 
 import pytest
 from fastapi import FastAPI
+from models_library.api_schemas_long_running_tasks.tasks import TaskStatus
+from models_library.api_schemas_storage.zipping_tasks import ZipTaskStart
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.rabbitmq import RabbitMQRPCClient
@@ -54,5 +57,7 @@ async def rpc_client(
 
 async def test_start_zipping(rpc_client: RabbitMQRPCClient):
     _path = "the/path/to/myfile"
-    result = await zipping.start_zipping(rpc_client, paths=[_path])
-    assert "".join(result.msg) == _path
+    result = await zipping.start_zipping(
+        rpc_client, paths=ZipTaskStart(paths=[Path(_path)])
+    )
+    assert isinstance(result, TaskStatus)
