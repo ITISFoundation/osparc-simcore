@@ -74,7 +74,11 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Envelope_list_FileLocation__"
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FileLocation"
+                  },
+                  "title": "Response List Storage Locations V0 Locations Get"
                 }
               }
             }
@@ -200,6 +204,76 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Envelope_list_FileMetaDataGet__"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/locations/{location_id}/paths": {
+      "get": {
+        "tags": [
+          "files"
+        ],
+        "summary": "List Paths",
+        "operationId": "list_paths_v0_locations__location_id__paths_get",
+        "parameters": [
+          {
+            "name": "location_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Location Id"
+            }
+          },
+          {
+            "name": "user_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": true,
+              "title": "User Id",
+              "minimum": 0
+            }
+          },
+          {
+            "name": "file_filter",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "path"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "File Filter"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_FileMetaDataGet_"
                 }
               }
             }
@@ -1678,35 +1752,6 @@
         "type": "object",
         "title": "Envelope[list[DatasetMetaDataGet]]"
       },
-      "Envelope_list_FileLocation__": {
-        "properties": {
-          "data": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/FileLocation"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Data"
-          },
-          "error": {
-            "anyOf": [
-              {},
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Error"
-          }
-        },
-        "type": "object",
-        "title": "Envelope[list[FileLocation]]"
-      },
       "Envelope_list_FileMetaDataGet__": {
         "properties": {
           "data": {
@@ -2255,6 +2300,145 @@
           "S3"
         ],
         "title": "LinkType"
+      },
+      "Links": {
+        "properties": {
+          "first": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First"
+          },
+          "last": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last"
+          },
+          "self": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Self"
+          },
+          "next": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next"
+          },
+          "prev": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prev"
+          }
+        },
+        "type": "object",
+        "required": [
+          "first",
+          "last",
+          "self",
+          "next",
+          "prev"
+        ],
+        "title": "Links"
+      },
+      "Page_FileMetaDataGet_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/FileMetaDataGet"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total"
+          },
+          "page": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page"
+          },
+          "size": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Size"
+          },
+          "pages": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pages"
+          },
+          "links": {
+            "$ref": "#/components/schemas/Links"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "page",
+          "size",
+          "links"
+        ],
+        "title": "Page[FileMetaDataGet]"
       },
       "S3Settings": {
         "properties": {
