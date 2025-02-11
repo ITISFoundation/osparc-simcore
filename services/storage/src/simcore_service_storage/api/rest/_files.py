@@ -26,6 +26,7 @@ from yarl import URL
 from simcore_service_storage.dsm_factory import BaseDataManager
 
 from ...dsm import get_dsm_provider
+from ...dsm_factory import BaseDataManager
 from ...exceptions.errors import FileMetaDataNotFoundError
 from ...models import (
     FileDownloadQueryParams,
