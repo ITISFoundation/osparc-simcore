@@ -85,8 +85,11 @@ qx.Class.define("osparc.study.PricingUnitLicense", {
     },
 
     __rentUnit: function() {
+      const nCredits = this.getUnitData().getCost();
       const expirationDate = osparc.study.PricingUnitLicense.getExpirationDate();
-      const msg = this.getUnitData().getName() + this.tr(" will be available until ") + osparc.utils.Utils.formatDate(expirationDate);
+      let msg = this.getUnitData().getName() + this.tr(" will be available until ") + osparc.utils.Utils.formatDate(expirationDate);
+      msg += "<br>";
+      msg += `The rental will cost ${nCredits} credits: ${osparc.store.Store.getInstance().getCreditPrice()*nCredits}$`;
       const confirmationWin = new osparc.ui.window.Confirmation(msg).set({
         caption: this.tr("Rent"),
         confirmText: this.tr("Rent"),
