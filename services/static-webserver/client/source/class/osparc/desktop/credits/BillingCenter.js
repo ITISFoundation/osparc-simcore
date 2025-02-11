@@ -103,7 +103,7 @@ qx.Class.define("osparc.desktop.credits.BillingCenter", {
 
     __addPurchasesPage: function() {
       const title = this.tr("Purchases");
-      const iconSrc = "@FontAwesome5Solid/list/22";
+      const iconSrc = "@FontAwesome5Solid/shopping-bag/22";
       const purchases = new osparc.desktop.credits.Purchases();
       const page = this.addTab(title, iconSrc, purchases);
       return page;
