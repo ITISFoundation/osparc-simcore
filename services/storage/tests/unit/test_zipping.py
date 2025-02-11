@@ -11,6 +11,7 @@ from models_library.api_schemas_storage.zipping_tasks import (
     ZipTaskAbortOutput,
     ZipTaskStartInput,
 )
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.rabbitmq import RabbitMQRPCClient
@@ -28,6 +29,12 @@ pytest_simcore_core_services_selection = [
     "rabbit",
     "postgres",
 ]
+
+
+@pytest.fixture
+async def mock_rabbit_setup(mocker: MockerFixture):
+    # fixture to avoid mocking the rabbit
+    pass
 
 
 @pytest.fixture
