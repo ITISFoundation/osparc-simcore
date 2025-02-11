@@ -1,8 +1,8 @@
 from pathlib import Path
 
 import aiofiles
-from servicelib.zip_stream._file_like import FileLikeFileStreamReader
 
+from ._file_like import FileLikeFileStreamReader
 from ._types import FileStream
 
 

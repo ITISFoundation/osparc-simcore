@@ -1,8 +1,8 @@
 from pathlib import Path
 
 import aiofiles
-from servicelib.progress_bar import ProgressBarData
 
+from ..progress_bar import ProgressBarData
 from ._constants import DEFAULT_READ_CHUNK_SIZE
 from ._types import FileSize, FileStream, StreamData
 

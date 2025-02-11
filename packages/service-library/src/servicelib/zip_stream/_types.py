@@ -2,7 +2,8 @@ from collections.abc import AsyncIterable, Callable
 from typing import TypeAlias
 
 from pydantic import ByteSize
-from servicelib.progress_bar import ProgressBarData
+
+from ..progress_bar import ProgressBarData
 
 FileNameInArchive: TypeAlias = str
 FileStream: TypeAlias = AsyncIterable[bytes]
