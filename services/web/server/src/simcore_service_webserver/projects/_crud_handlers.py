@@ -132,6 +132,7 @@ async def create_project(request: web.Request):
     # this entrypoint are in reality multiple entrypoints in one, namely
     # :create, :copy (w/ and w/o override)
     # NOTE: see clone_project
+    predefined_project: ProjectDict | None
 
     if not request.can_read_body:
         # request w/o body
@@ -144,9 +145,7 @@ async def create_project(request: web.Request):
             ProjectCreateNew | ProjectCopyOverride | EmptyModel,  # type: ignore[arg-type] # from pydantic v2 --> https://github.com/pydantic/pydantic/discussions/4950
             request,
         )
-        predefined_project: ProjectDict | None = (
-            project_create.to_domain_model() or None
-        )
+        predefined_project = project_create.to_domain_model() or None
 
     return await start_long_running_task(
         request,
