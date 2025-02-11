@@ -1,3 +1,4 @@
+# pylint: disable=R6301
 from pathlib import Path
 
 from pydantic import BaseModel, model_validator
