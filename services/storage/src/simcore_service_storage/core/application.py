@@ -25,6 +25,7 @@ from .._meta import (
     APP_NAME,
     APP_STARTED_BANNER_MSG,
 )
+from ..api.rabbitmq_rpc.routes import setup_rpc_api_routes
 from ..api.rest.routes import setup_rest_api_routes
 from ..dsm import setup_dsm
 from ..dsm_cleaner import setup_dsm_cleaner
@@ -79,6 +80,7 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
     setup_client_session(app)
 
     setup_rabbitmq(app)
+    setup_rpc_api_routes(app)
     setup_rest_api_long_running_tasks_for_uploads(app)
     setup_rest_api_routes(app, API_VTAG)
     set_exception_handlers(app)
