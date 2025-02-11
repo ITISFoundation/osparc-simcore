@@ -21,6 +21,7 @@ from servicelib.zip_stream import (
     ArchiveEntries,
     DiskStreamReader,
     DiskStreamWriter,
+    FileLikeFileStreamReader,
     get_zip_archive_stream,
 )
 
@@ -92,12 +93,14 @@ def mocked_progress_bar_cb(mocker: MockerFixture) -> Mock:
     return mocker.Mock(side_effect=_progress_cb)
 
 
+@pytest.mark.parametrize("use_file_like", [True, False])
 async def test_get_zip_archive_stream(
     mocked_progress_bar_cb: Mock,
     prepare_content: None,
     local_files_dir: Path,
     local_archive_path: Path,
     local_unpacked_archive: Path,
+    use_file_like: bool,
 ):
     # 1. generate archive form soruces
     archive_files: ArchiveEntries = []
@@ -113,9 +116,14 @@ async def test_get_zip_archive_stream(
         progress_report_cb=mocked_progress_bar_cb,
         description="root_bar",
     ) as root:
-        await writer.write_stream(
-            get_zip_archive_stream(archive_files, progress_bar=root, chunk_size=1024)
+        file_stream = get_zip_archive_stream(
+            archive_files, progress_bar=root, chunk_size=1024
         )
+
+        if use_file_like:
+            await writer.write_from_file_like(FileLikeFileStreamReader(file_stream))
+        else:
+            await writer.write_from_stream(file_stream)
 
     # 2. extract archive using exiting tools
     await unarchive_dir(local_archive_path, local_unpacked_archive)
