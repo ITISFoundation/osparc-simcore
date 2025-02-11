@@ -41,6 +41,7 @@ from ...models import (
 from ...modules.long_running_tasks import get_completed_upload_tasks
 from ...simcore_s3_dsm import SimcoreS3DataManager
 from ...utils.utils import create_upload_completion_task_name
+from .dependencies.dsm_prodiver import get_data_manager
 
 _logger = logging.getLogger(__name__)
 
@@ -58,7 +59,7 @@ router = APIRouter(
 async def list_paths(
     location_id: LocationID,
     query_params: Annotated[ListPathsQueryParams, Depends()],
-    dsm: Annotated[BaseDataManager, Depends(get_dsm_provider)],
+    dsm: Annotated[BaseDataManager, Depends(get_data_manager)],
 ):
     assert location_id  # nosec
     data: list[FileMetaData] = await dsm.list_files_paginated(

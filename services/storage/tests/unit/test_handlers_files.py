@@ -1525,3 +1525,12 @@ async def test_listing_with_project_id_filter(
         assert project_file_name == list_of_files[0].file_name
     else:
         assert project_files_in_db == {file.file_uuid for file in list_of_files}
+
+
+async def test_list_paths(
+    initialized_app: FastAPI,
+    client: httpx.AsyncClient,
+    location_id: LocationID,
+    user_id: UserID,
+):
+    ...
