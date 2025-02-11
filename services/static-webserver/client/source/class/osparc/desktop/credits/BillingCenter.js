@@ -36,7 +36,8 @@ qx.Class.define("osparc.desktop.credits.BillingCenter", {
 
     if (osparc.product.Utils.showS4LStore()) {
       this.__addPurchasesPage();
-      this.__addCheckoutsPage();
+      // For now, do not add checkouts page
+      // this.__addCheckoutsPage();
     }
   },
 
