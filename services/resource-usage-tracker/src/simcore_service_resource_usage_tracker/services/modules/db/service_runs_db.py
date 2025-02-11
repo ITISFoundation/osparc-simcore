@@ -9,7 +9,6 @@ import sqlalchemy as sa
 from models_library.api_schemas_resource_usage_tracker.credit_transactions import (
     WalletTotalCredits,
 )
-from models_library.api_schemas_storage import S3BucketName
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.resource_tracker import (
@@ -19,6 +18,7 @@ from models_library.resource_tracker import (
 )
 from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.services_types import ServiceRunID
+from models_library.storage_schemas import S3BucketName
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import PositiveInt

@@ -5,7 +5,7 @@ import pytest
 from faker import Faker
 from fastapi import FastAPI
 from models_library.api_schemas_long_running_tasks.tasks import TaskGet, TaskStatus
-from models_library.api_schemas_storage.zipping_tasks import (
+from models_library.storage_schemas.zipping_tasks import (
     ZipTaskAbortOutput,
     ZipTaskStartInput,
 )

@@ -13,12 +13,12 @@ from aiobotocore.session import AioBaseClient, get_session
 from aiohttp import ClientResponse, ClientSession, TCPConnector
 from aioresponses import aioresponses
 from faker import Faker
-from models_library.api_schemas_storage import (
+from models_library.basic_types import IDStr
+from models_library.storage_schemas import (
     FileUploadLinks,
     FileUploadSchema,
     UploadedPart,
 )
-from models_library.basic_types import IDStr
 from moto.server import ThreadedMotoServer
 from pydantic import AnyUrl, ByteSize, TypeAdapter
 from pytest_mock import MockerFixture

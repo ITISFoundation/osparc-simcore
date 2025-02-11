@@ -6,12 +6,12 @@ from models_library.api_schemas_long_running_tasks.tasks import (
     TaskResult,
     TaskStatus,
 )
-from models_library.api_schemas_storage import STORAGE_RPC_NAMESPACE
-from models_library.api_schemas_storage.zipping_tasks import (
+from models_library.rabbitmq_basic_types import RPCMethodName
+from models_library.storage_schemas import STORAGE_RPC_NAMESPACE
+from models_library.storage_schemas.zipping_tasks import (
     ZipTaskAbortOutput,
     ZipTaskStartInput,
 )
-from models_library.rabbitmq_basic_types import RPCMethodName
 from pydantic import NonNegativeInt, TypeAdapter
 
 from ... import RabbitMQRPCClient

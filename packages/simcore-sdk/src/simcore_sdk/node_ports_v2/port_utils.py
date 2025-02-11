@@ -4,9 +4,9 @@ from collections.abc import Callable, Coroutine
 from pathlib import Path
 from typing import Any
 
-from models_library.api_schemas_storage import FileUploadSchema, LinkType
 from models_library.basic_types import IDStr, SHA256Str
 from models_library.services_types import FileName, ServicePortKey
+from models_library.storage_schemas import FileUploadSchema, LinkType
 from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize, TypeAdapter
 from servicelib.progress_bar import ProgressBarData

@@ -19,9 +19,9 @@ from async_asgi_testclient import TestClient
 from botocore.client import Config
 from botocore.exceptions import ClientError
 from fastapi import FastAPI
-from models_library.api_schemas_storage import S3BucketName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
+from models_library.storage_schemas import S3BucketName
 from models_library.users import UserID
 from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
