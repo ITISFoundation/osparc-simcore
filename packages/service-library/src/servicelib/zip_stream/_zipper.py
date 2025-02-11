@@ -22,7 +22,7 @@ async def _member_files_iter(
         )
 
 
-async def get_zip_archive_stream(
+async def get_zip_archive_file_stream(
     archive_files: ArchiveEntries,
     *,
     progress_bar: ProgressBarData | None = None,

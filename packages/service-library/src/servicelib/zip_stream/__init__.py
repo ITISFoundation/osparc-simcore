@@ -9,7 +9,7 @@ from ._types import (
     FileStream,
     FileStreamCallable,
 )
-from ._zipper import get_zip_archive_stream
+from ._zipper import get_zip_archive_file_stream
 
 __all__: tuple[str, ...] = (
     "ArchiveEntries",
@@ -21,6 +21,6 @@ __all__: tuple[str, ...] = (
     "FileSize",
     "FileStream",
     "FileStreamCallable",
-    "get_zip_archive_stream",
+    "get_zip_archive_file_stream",
     "MIN_MULTIPART_UPLOAD_CHUNK_SIZE",
 )

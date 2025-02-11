@@ -22,7 +22,7 @@ from servicelib.zip_stream import (
     DiskStreamReader,
     DiskStreamWriter,
     FileLikeFileStreamReader,
-    get_zip_archive_stream,
+    get_zip_archive_file_stream,
 )
 
 
@@ -94,7 +94,7 @@ def mocked_progress_bar_cb(mocker: MockerFixture) -> Mock:
 
 
 @pytest.mark.parametrize("use_file_like", [True, False])
-async def test_get_zip_archive_stream(
+async def test_get_zip_archive_file_stream(
     mocked_progress_bar_cb: Mock,
     prepare_content: None,
     local_files_dir: Path,
@@ -116,7 +116,7 @@ async def test_get_zip_archive_stream(
         progress_report_cb=mocked_progress_bar_cb,
         description="root_bar",
     ) as root:
-        file_stream = get_zip_archive_stream(
+        file_stream = get_zip_archive_file_stream(
             archive_files, progress_bar=root, chunk_size=1024
         )
 
