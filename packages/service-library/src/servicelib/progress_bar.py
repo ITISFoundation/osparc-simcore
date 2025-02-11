@@ -4,7 +4,6 @@ from dataclasses import dataclass, field
 from inspect import isawaitable
 from typing import Final, Optional, Protocol, runtime_checkable
 
-from models_library.basic_types import IDStr
 from models_library.progress_bar import (
     ProgressReport,
     ProgressStructuredMessage,
@@ -18,6 +17,7 @@ _logger = logging.getLogger(__name__)
 _MIN_PROGRESS_UPDATE_PERCENT: Final[float] = 0.01
 _INITIAL_VALUE: Final[float] = -1.0
 _FINAL_VALUE: Final[float] = 1.0
+_PROGRESS_ALREADY_REACGED_MAXIMUM: Final[str] = "Progress already reached maximum of"
 
 
 @runtime_checkable
@@ -84,10 +84,11 @@ class ProgressBarData:  # pylint: disable=too-many-instance-attributes
             "description": "Optionally defines the step relative weight (defaults to steps of equal weights)"
         },
     )
-    description: IDStr = field(metadata={"description": "define the progress name"})
+    description: str = field(metadata={"description": "define the progress name"})
     progress_unit: ProgressUnit | None = None
     progress_report_cb: AsyncReportCB | ReportCB | None = None
     _current_steps: float = _INITIAL_VALUE
+    _currnet_attempt: int = 0
     _children: list["ProgressBarData"] = field(default_factory=list)
     _parent: Optional["ProgressBarData"] = None
     _continuous_value_lock: asyncio.Lock = field(init=False)
@@ -147,6 +148,7 @@ class ProgressBarData:  # pylint: disable=too-many-instance-attributes
                         # NOTE: here we convert back to actual value since this is possibly weighted
                         actual_value=value * self.num_steps,
                         total=self.num_steps,
+                        attempt=self._currnet_attempt,
                         unit=self.progress_unit,
                         message=self.compute_report_message_stuct(),
                     ),
@@ -176,7 +178,7 @@ class ProgressBarData:  # pylint: disable=too-many-instance-attributes
             if new_steps_value > self.num_steps:
                 _logger.warning(
                     "%s",
-                    f"Progress already reached maximum of {self.num_steps=}, "
+                    f"{_PROGRESS_ALREADY_REACGED_MAXIMUM} {self.num_steps=}, "
                     f"cause: {self._current_steps=} is updated by {steps=}"
                     "TIP: sub progresses are not created correctly please check the stack trace",
                     stack_info=True,
@@ -197,6 +199,11 @@ class ProgressBarData:  # pylint: disable=too-many-instance-attributes
             await self._update_parent(parent_update_value)
         await self._report_external(new_progress_value)
 
+    def reset(self) -> None:
+        self._currnet_attempt += 1
+        self._current_steps = _INITIAL_VALUE
+        self._last_report_value = _INITIAL_VALUE
+
     async def set_(self, new_value: float) -> None:
         await self.update(new_value - self._current_steps)
 
@@ -207,7 +214,7 @@ class ProgressBarData:  # pylint: disable=too-many-instance-attributes
     def sub_progress(
         self,
         steps: int,
-        description: IDStr,
+        description: str,
         step_weights: list[float] | None = None,
         progress_unit: ProgressUnit | None = None,
     ) -> "ProgressBarData":

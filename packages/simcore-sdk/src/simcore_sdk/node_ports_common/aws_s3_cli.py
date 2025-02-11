@@ -6,10 +6,8 @@ import shlex
 from asyncio.streams import StreamReader
 from pathlib import Path
 
-from common_library.errors_classes import OsparcErrorMixin
-
 from aiocache import cached  # type: ignore[import-untyped]
-from models_library.basic_types import IDStr
+from common_library.errors_classes import OsparcErrorMixin
 from pydantic import AnyUrl, ByteSize
 from servicelib.progress_bar import ProgressBarData
 from servicelib.utils import logged_gather
@@ -242,7 +240,7 @@ async def _sync_sources(
     async with progress_bar.sub_progress(
         steps=folder_size,
         progress_unit="Byte",
-        description=IDStr(f"transferring {local_dir.name}"),
+        description=f"transferring {local_dir.name}",
     ) as sub_progress:
         aws_s3_cli_log_parsers: list[BaseLogParser] = (
             [DebugLogParser()] if debug_logs else []

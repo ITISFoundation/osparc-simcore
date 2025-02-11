@@ -11,7 +11,6 @@ from typing import Final
 from aiocache import cached  # type: ignore[import-untyped]
 from aiofiles import tempfile
 from common_library.errors_classes import OsparcErrorMixin
-from models_library.basic_types import IDStr
 from pydantic import AnyUrl, BaseModel, ByteSize
 from servicelib.progress_bar import ProgressBarData
 from servicelib.utils import logged_gather
@@ -224,7 +223,7 @@ async def _sync_sources(
         async with progress_bar.sub_progress(
             steps=folder_size,
             progress_unit="Byte",
-            description=IDStr(f"transferring {local_dir.name}"),
+            description=f"transferring {local_dir.name}",
         ) as sub_progress:
             r_clone_log_parsers: list[BaseLogParser] = (
                 [DebugLogParser()] if debug_logs else []

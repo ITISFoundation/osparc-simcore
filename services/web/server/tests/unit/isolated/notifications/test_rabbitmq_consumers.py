@@ -42,6 +42,7 @@ from simcore_service_webserver.socketio.models import WebSocketNodeProgress
                     "progress_type": ProgressType.SERVICE_OUTPUTS_PULLING.value,
                     "progress_report": {
                         "actual_value": 0.4,
+                        "attempt": 0,
                         "total": 1.0,
                         "unit": None,
                         "message": None,
@@ -65,6 +66,7 @@ from simcore_service_webserver.socketio.models import WebSocketNodeProgress
                     "progress_type": ProgressType.PROJECT_CLOSING.value,
                     "progress_report": {
                         "actual_value": 0.4,
+                        "attempt": 0,
                         "total": 1.0,
                         "unit": None,
                         "message": None,

@@ -10,7 +10,6 @@ from models_library.api_schemas_long_running_tasks.base import (
     ProgressPercent,
     TaskProgress,
 )
-from models_library.basic_types import IDStr
 from models_library.generated_models.docker_rest_api import ContainerState
 from models_library.rabbitmq_messages import ProgressType, SimcorePlatformStatus
 from pydantic import PositiveInt
@@ -178,7 +177,7 @@ async def task_create_service_containers(
             app,
             ProgressType.SERVICE_CONTAINERS_STARTING,
         ),
-        description=IDStr("starting software"),
+        description="starting software",
     ) as progress_bar:
         with log_context(_logger, logging.INFO, "load user services preferences"):
             if user_services_preferences.is_feature_enabled(app):
@@ -382,7 +381,7 @@ async def task_restore_state(
             app,
             ProgressType.SERVICE_STATE_PULLING,
         ),
-        description=IDStr("pulling states"),
+        description="pulling states",
     ) as root_progress:
         await logged_gather(
             *(
@@ -446,7 +445,7 @@ async def task_save_state(
             app,
             ProgressType.SERVICE_STATE_PUSHING,
         ),
-        description=IDStr("pushing state"),
+        description="pushing state",
     ) as root_progress:
         await logged_gather(
             *[
@@ -494,7 +493,7 @@ async def task_ports_inputs_pull(
             app,
             ProgressType.SERVICE_INPUTS_PULLING,
         ),
-        description=IDStr("pulling inputs"),
+        description="pulling inputs",
     ) as root_progress:
         with log_directory_changes(
             mounted_volumes.disk_inputs_path, _logger, logging.INFO
@@ -539,7 +538,7 @@ async def task_ports_outputs_pull(
             app,
             ProgressType.SERVICE_OUTPUTS_PULLING,
         ),
-        description=IDStr("pulling outputs"),
+        description="pulling outputs",
     ) as root_progress:
         transferred_bytes = await nodeports.download_target_ports(
             nodeports.PortTypeName.OUTPUTS,
