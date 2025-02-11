@@ -124,7 +124,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
       const trashButton = this.__trashButton = new qx.ui.toolbar.RadioButton().set({
         value: false,
         appearance: "filter-toggle-button",
-        label: this.tr("Bin"),
+        label: this.tr("Recently Deleted"),
         icon: "@FontAwesome5Solid/trash-alt/16",
         paddingLeft: 10, // align it with the context
       });

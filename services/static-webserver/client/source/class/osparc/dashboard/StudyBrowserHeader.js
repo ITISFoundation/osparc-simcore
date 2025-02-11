@@ -276,10 +276,10 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
           break;
         case "trash": {
           this.__setIcon("@FontAwesome5Solid/trash/20");
-          title.setValue(this.tr("Bin"));
+          title.setValue(this.tr("Recently Deleted"));
           const trashDays = osparc.store.StaticInfo.getInstance().getTrashRetentionDays();
           description.set({
-            value: this.tr(`Items in the Bin will be permanently deleted after ${trashDays} days.`),
+            value: this.tr(`Items here will be permanently deleted after ${trashDays} days.`),
             visibility: "visible",
           });
           break;
