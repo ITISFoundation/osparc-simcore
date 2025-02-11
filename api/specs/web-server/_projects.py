@@ -67,8 +67,10 @@ class _ProjectCreateHeaderParams(BaseModel):
 @router.post(
     "/projects",
     response_model=Envelope[TaskGet],
-    description="Creates a new project or copies an existing one",
-    status_code=status.HTTP_201_CREATED,
+    description="Creates a new project or copies an existing one. "
+    "NOTE: implemented as a long running task, "
+    "i.e. requires polling `status_href` (HTTP_200_OK) to get status and `result_href` (HTTP_201_CREATED) to get created project",
+    status_code=status.HTTP_202_ACCEPTED,
 )
 async def create_project(
     _h: Annotated[_ProjectCreateHeaderParams, Depends()],
