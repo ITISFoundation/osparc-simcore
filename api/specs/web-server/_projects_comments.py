@@ -40,7 +40,7 @@ router = APIRouter(
 @router.post(
     "/projects/{project_uuid}/comments",
     response_model=Envelope[dict[Literal["comment_id"], CommentID]],
-    summary="Create a new comment for a specific project. The request body should contain the comment contents and user information.",
+    description="Create a new comment for a specific project. The request body should contain the comment contents and user information.",
     status_code=201,
 )
 async def create_project_comment(
@@ -57,7 +57,7 @@ assert_handler_signature_against_model(
 @router.get(
     "/projects/{project_uuid}/comments",
     response_model=Envelope[list[ProjectsCommentsAPI]],
-    summary="Retrieve all comments for a specific project.",
+    description="Retrieve all comments for a specific project.",
 )
 async def list_project_comments(
     project_uuid: ProjectID, limit: int = 20, offset: NonNegativeInt = 0
@@ -73,7 +73,7 @@ assert_handler_signature_against_model(
 @router.put(
     "/projects/{project_uuid}/comments/{comment_id}",
     response_model=Envelope[ProjectsCommentsAPI],
-    summary="Update the contents of a specific comment for a project. The request body should contain the updated comment contents.",
+    description="Update the contents of a specific comment for a project. The request body should contain the updated comment contents.",
 )
 async def update_project_comment(
     project_uuid: ProjectID,
@@ -90,7 +90,7 @@ assert_handler_signature_against_model(
 
 @router.delete(
     "/projects/{project_uuid}/comments/{comment_id}",
-    summary="Delete a specific comment associated with a project.",
+    description="Delete a specific comment associated with a project.",
     status_code=204,
 )
 async def delete_project_comment(project_uuid: ProjectID, comment_id: CommentID):
@@ -105,7 +105,7 @@ assert_handler_signature_against_model(
 @router.get(
     "/projects/{project_uuid}/comments/{comment_id}",
     response_model=Envelope[ProjectsCommentsAPI],
-    summary="Retrieve a specific comment by its ID within a project.",
+    description="Retrieve a specific comment by its ID within a project.",
 )
 async def get_project_comment(project_uuid: ProjectID, comment_id: CommentID):
     ...
