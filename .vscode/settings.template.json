@@ -62,6 +62,7 @@
   "ruff.path": [
     "${workspaceFolder}/.venv/bin/ruff"
   ],
+  "ruff.configuration": "${workspace_folder}/.ruff.toml",
   "shellcheck.executablePath": "${workspaceFolder}/scripts/shellcheck.bash",
   "shellcheck.run": "onSave",
   "shellcheck.enableQuickFix": true
