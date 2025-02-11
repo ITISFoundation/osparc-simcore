@@ -394,8 +394,8 @@ async def test_errors_upon_invalid_file_identifiers(
     assert file_path.exists()
 
     store = s3_simcore_location
-    with pytest.raises(exceptions.S3InvalidPathError):  # noqa: PT012
-        invalid_s3_path = SimcoreS3FileID("")
+    with pytest.raises(exceptions.StorageInvalidCall):  # noqa: PT012
+        invalid_s3_path = ""
         await filemanager.upload_path(
             user_id=user_id,
             store_id=store,
@@ -406,7 +406,7 @@ async def test_errors_upon_invalid_file_identifiers(
         )
 
     with pytest.raises(exceptions.StorageInvalidCall):  # noqa: PT012
-        invalid_file_id = SimcoreS3FileID("file_id")
+        invalid_file_id = "file_id"
         await filemanager.upload_path(
             user_id=user_id,
             store_id=store,
@@ -417,11 +417,11 @@ async def test_errors_upon_invalid_file_identifiers(
         )
 
     download_folder = Path(tmpdir) / "downloads"
-    with pytest.raises(exceptions.S3InvalidPathError):  # noqa: PT012
+    with pytest.raises(exceptions.StorageInvalidCall):  # noqa: PT012
         async with ProgressBarData(
             num_steps=1, description=IDStr(faker.pystr())
         ) as progress_bar:
-            invalid_s3_path = SimcoreS3FileID("")
+            invalid_s3_path = ""
             await filemanager.download_path_from_s3(
                 user_id=user_id,
                 store_id=store,
@@ -594,13 +594,19 @@ async def test_invalid_call_raises_exception(
 
     with pytest.raises(exceptions.StorageInvalidCall):
         await fct(
-            user_id=None, store_id=s3_simcore_location, s3_object=file_id, **extra_kwargs  # type: ignore
+            user_id=None,
+            store_id=s3_simcore_location,
+            s3_object=file_id,
+            **extra_kwargs,  # type: ignore
         )
     with pytest.raises(exceptions.StorageInvalidCall):
         await fct(user_id=user_id, store_id=None, s3_object=file_id, **extra_kwargs)  # type: ignore
     with pytest.raises(exceptions.StorageInvalidCall):
         await fct(
-            user_id=user_id, store_id=s3_simcore_location, s3_object="bing", **extra_kwargs  # type: ignore
+            user_id=user_id,
+            store_id=s3_simcore_location,
+            s3_object="bing",
+            **extra_kwargs,  # type: ignore
         )
 
 

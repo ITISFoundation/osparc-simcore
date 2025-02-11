@@ -401,7 +401,6 @@ qx.Class.define("osparc.study.Utils", {
       // the was to guess the TI type is to check the boot mode of the ti-postpro in the pipeline
       const tiPostpro = Object.values(studyData["workbench"]).find(srv => srv.key.includes("ti-postpro"));
       if (tiPostpro && tiPostpro["bootOptions"]) {
-        console.log(tiPostpro);
         switch (tiPostpro["bootOptions"]["boot_mode"]) {
           case "0":
             // classic TI
