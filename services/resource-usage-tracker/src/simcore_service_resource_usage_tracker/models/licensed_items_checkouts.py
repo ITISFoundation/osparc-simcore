@@ -14,6 +14,8 @@ from pydantic import BaseModel, ConfigDict
 class LicensedItemCheckoutDB(BaseModel):
     licensed_item_checkout_id: LicensedItemCheckoutID
     licensed_item_id: LicensedItemID
+    key: str
+    version: str
     wallet_id: WalletID
     user_id: UserID
     user_email: str
@@ -29,6 +31,8 @@ class LicensedItemCheckoutDB(BaseModel):
 
 class CreateLicensedItemCheckoutDB(BaseModel):
     licensed_item_id: LicensedItemID
+    key: str
+    version: str
     wallet_id: WalletID
     user_id: UserID
     user_email: str

@@ -95,6 +95,8 @@ async def checkout_licensed_item_for_wallet(
     user_id: UserID,
     wallet_id: WalletID,
     licensed_item_id: LicensedItemID,
+    key: str,
+    version: str,
     num_of_seats: int,
     service_run_id: ServiceRunID,
 ) -> LicensedItemCheckoutRpcGet:
@@ -102,6 +104,8 @@ async def checkout_licensed_item_for_wallet(
         await _licensed_items_checkouts_service.checkout_licensed_item_for_wallet(
             app,
             licensed_item_id=licensed_item_id,
+            key=key,
+            version=version,
             wallet_id=wallet_id,
             product_name=product_name,
             num_of_seats=num_of_seats,
@@ -112,6 +116,8 @@ async def checkout_licensed_item_for_wallet(
     return LicensedItemCheckoutRpcGet.model_construct(
         licensed_item_checkout_id=licensed_item_get.licensed_item_checkout_id,
         licensed_item_id=licensed_item_get.licensed_item_id,
+        key=licensed_item_get.key,
+        version=licensed_item_get.version,
         wallet_id=licensed_item_get.wallet_id,
         user_id=licensed_item_get.user_id,
         product_name=licensed_item_get.product_name,

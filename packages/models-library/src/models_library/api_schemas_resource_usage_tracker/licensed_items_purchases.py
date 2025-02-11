@@ -17,6 +17,8 @@ class LicensedItemPurchaseGet(BaseModel):
     licensed_item_purchase_id: LicensedItemPurchaseID
     product_name: ProductName
     licensed_item_id: LicensedItemID
+    key: str
+    version: str
     wallet_id: WalletID
     wallet_name: str
     pricing_unit_cost_id: PricingUnitCostId

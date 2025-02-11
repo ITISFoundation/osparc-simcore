@@ -17,7 +17,10 @@ depends_on = None
 
 
 # Reuse the existing Enum type
-existing_enum = sa.Enum("VIP_MODEL", name="licensedresourcetype", native_enum=False)
+# existing_enum = sa.Enum("VIP_MODEL", name="licensedresourcetype", native_enum=False)
+licensed_resource_type = postgresql.ENUM(
+    "VIP_MODEL", name="licensedresourcetype", create_type=False
+)
 
 
 def upgrade():
@@ -34,7 +37,7 @@ def upgrade():
         sa.Column("licensed_resource_name", sa.String(), nullable=False),
         sa.Column(
             "licensed_resource_type",
-            existing_enum,  # Reuse existing Enum instead of redefining it
+            licensed_resource_type,  # Reuse existing Enum instead of redefining it
             nullable=False,
         ),
         sa.Column(

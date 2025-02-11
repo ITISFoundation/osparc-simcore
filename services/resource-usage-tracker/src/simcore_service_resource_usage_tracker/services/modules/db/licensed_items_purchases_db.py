@@ -2,7 +2,6 @@ from datetime import UTC, datetime
 from typing import cast
 
 import sqlalchemy as sa
-from models_library.licenses import LicensedItemID
 from models_library.products import ProductName
 from models_library.resource_tracker_licensed_items_purchases import (
     LicensedItemPurchaseID,
@@ -17,6 +16,7 @@ from simcore_postgres_database.utils_repos import (
     pass_or_acquire_connection,
     transaction_context,
 )
+from sqlalchemy.dialects.postgresql import ARRAY, INTEGER
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
 from ....exceptions.errors import LicensedItemPurchaseNotFoundError
@@ -29,6 +29,8 @@ _SELECTION_ARGS = (
     resource_tracker_licensed_items_purchases.c.licensed_item_purchase_id,
     resource_tracker_licensed_items_purchases.c.product_name,
     resource_tracker_licensed_items_purchases.c.licensed_item_id,
+    resource_tracker_licensed_items_purchases.c.key,
+    resource_tracker_licensed_items_purchases.c.version,
     resource_tracker_licensed_items_purchases.c.wallet_id,
     resource_tracker_licensed_items_purchases.c.wallet_name,
     resource_tracker_licensed_items_purchases.c.pricing_unit_cost_id,
@@ -59,6 +61,8 @@ async def create(
             .values(
                 product_name=data.product_name,
                 licensed_item_id=data.licensed_item_id,
+                key=data.key,
+                version=data.version,
                 wallet_id=data.wallet_id,
                 wallet_name=data.wallet_name,
                 pricing_unit_cost_id=data.pricing_unit_cost_id,
@@ -158,11 +162,13 @@ async def get(
         return LicensedItemsPurchasesDB.model_validate(row)
 
 
-async def get_active_purchased_seats_for_item_and_wallet(
+async def get_active_purchased_seats_for_key_version_wallet(
     engine: AsyncEngine,
     connection: AsyncConnection | None = None,
     *,
-    licensed_item_id: LicensedItemID,
+    # licensed_item_id: LicensedItemID,
+    key: str,
+    version: str,
     wallet_id: WalletID,
     product_name: ProductName,
 ) -> int:
@@ -171,13 +177,23 @@ async def get_active_purchased_seats_for_item_and_wallet(
     """
     _current_time = datetime.now(tz=UTC)
 
+    def _version(column_or_value):
+        # converts version value string to array[integer] that can be compared
+        return sa.func.string_to_array(column_or_value, ".").cast(ARRAY(INTEGER))
+
     sum_stmt = sa.select(
         sa.func.sum(resource_tracker_licensed_items_purchases.c.num_of_seats)
     ).where(
         (resource_tracker_licensed_items_purchases.c.wallet_id == wallet_id)
+        # & (
+        #     resource_tracker_licensed_items_purchases.c.licensed_item_id
+        #     == licensed_item_id
+        # )
+        & (resource_tracker_licensed_items_purchases.c.key == key)
+        # If purchased version >= requested version, it covers that version
         & (
-            resource_tracker_licensed_items_purchases.c.licensed_item_id
-            == licensed_item_id
+            _version(resource_tracker_licensed_items_purchases.c.version)
+            >= _version(version)
         )
         & (resource_tracker_licensed_items_purchases.c.product_name == product_name)
         & (resource_tracker_licensed_items_purchases.c.start_at <= _current_time)

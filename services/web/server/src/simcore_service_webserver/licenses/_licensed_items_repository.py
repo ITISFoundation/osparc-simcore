@@ -1,18 +1,23 @@
 import logging
-from typing import Any, Literal, cast
+from typing import Literal, cast
 
 from aiohttp import web
 from models_library.licenses import (
+    LicensedItem,
     LicensedItemDB,
     LicensedItemID,
-    LicensedItemUpdateDB,
+    LicensedItemPatchDB,
     LicensedResourceType,
 )
 from models_library.products import ProductName
 from models_library.resource_tracker import PricingPlanId
 from models_library.rest_ordering import OrderBy, OrderDirection
 from pydantic import NonNegativeInt
+from simcore_postgres_database.models.licensed_item_to_resource import (
+    licensed_item_to_resource,
+)
 from simcore_postgres_database.models.licensed_items import licensed_items
+from simcore_postgres_database.models.licensed_resources import licensed_resources
 from simcore_postgres_database.utils_repos import (
     get_columns_from_db_model,
     pass_or_acquire_connection,
@@ -34,18 +39,14 @@ _SELECTION_ARGS = get_columns_from_db_model(licensed_items, LicensedItemDB)
 
 def _create_insert_query(
     display_name: str,
-    licensed_resource_name: str,
     licensed_resource_type: LicensedResourceType,
-    licensed_resource_data: dict[str, Any] | None,
-    product_name: ProductName | None,
-    pricing_plan_id: PricingPlanId | None,
+    product_name: ProductName,
+    pricing_plan_id: PricingPlanId,
 ):
     return (
         postgresql.insert(licensed_items)
         .values(
-            licensed_resource_name=licensed_resource_name,
             licensed_resource_type=licensed_resource_type,
-            licensed_resource_data=licensed_resource_data,
             display_name=display_name,
             pricing_plan_id=pricing_plan_id,
             product_name=product_name,
@@ -61,62 +62,20 @@ async def create(
     connection: AsyncConnection | None = None,
     *,
     display_name: str,
-    licensed_resource_name: str,
     licensed_resource_type: LicensedResourceType,
-    licensed_resource_data: dict[str, Any] | None = None,
-    product_name: ProductName | None = None,
-    pricing_plan_id: PricingPlanId | None = None,
+    product_name: ProductName,
+    pricing_plan_id: PricingPlanId,
 ) -> LicensedItemDB:
 
     query = _create_insert_query(
         display_name,
-        licensed_resource_name,
         licensed_resource_type,
-        licensed_resource_data,
         product_name,
         pricing_plan_id,
     )
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         result = await conn.execute(query)
         row = result.one()
-        return LicensedItemDB.model_validate(row)
-
-
-async def create_if_not_exists(
-    app: web.Application,
-    connection: AsyncConnection | None = None,
-    *,
-    display_name: str,
-    licensed_resource_name: str,
-    licensed_resource_type: LicensedResourceType,
-    licensed_resource_data: dict[str, Any] | None = None,
-    product_name: ProductName | None = None,
-    pricing_plan_id: PricingPlanId | None = None,
-) -> LicensedItemDB:
-
-    insert_or_none_query = _create_insert_query(
-        display_name,
-        licensed_resource_name,
-        licensed_resource_type,
-        licensed_resource_data,
-        product_name,
-        pricing_plan_id,
-    ).on_conflict_do_nothing()
-
-    async with transaction_context(get_asyncpg_engine(app), connection) as conn:
-        result = await conn.execute(insert_or_none_query)
-        row = result.one_or_none()
-
-        if row is None:
-            select_query = select(*_SELECTION_ARGS).where(
-                (licensed_items.c.licensed_resource_name == licensed_resource_name)
-                & (licensed_items.c.licensed_resource_type == licensed_resource_type)
-            )
-
-            result = await conn.execute(select_query)
-            row = result.one()
-
-        assert row is not None  # nosec
         return LicensedItemDB.model_validate(row)
 
 
@@ -204,37 +163,13 @@ async def get(
         return LicensedItemDB.model_validate(row)
 
 
-async def get_by_resource_identifier(
-    app: web.Application,
-    connection: AsyncConnection | None = None,
-    *,
-    licensed_resource_name: str,
-    licensed_resource_type: LicensedResourceType,
-) -> LicensedItemDB:
-    select_query = select(*_SELECTION_ARGS).where(
-        (licensed_items.c.licensed_resource_name == licensed_resource_name)
-        & (licensed_items.c.licensed_resource_type == licensed_resource_type)
-    )
-
-    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-        result = await conn.execute(select_query)
-        row = result.one_or_none()
-        if row is None:
-            raise LicensedItemNotFoundError(
-                licensed_item_id="Unkown",
-                licensed_resource_name=licensed_resource_name,
-                licensed_resource_type=licensed_resource_type,
-            )
-        return LicensedItemDB.model_validate(row)
-
-
 async def update(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
     product_name: ProductName,
     licensed_item_id: LicensedItemID,
-    updates: LicensedItemUpdateDB,
+    updates: LicensedItemPatchDB,
 ) -> LicensedItemDB:
     # NOTE: at least 'touch' if updated_values is empty
     _updates = {
@@ -243,7 +178,7 @@ async def update(
     }
 
     # trashing
-    assert "trash" in dict(LicensedItemUpdateDB.model_fields)  # nosec
+    assert "trash" in dict(LicensedItemPatchDB.model_fields)  # nosec
     if trash := _updates.pop("trash", None):
         _updates[licensed_items.c.trashed.name] = func.now() if trash else None
 
@@ -277,3 +212,75 @@ async def delete(
                 & (licensed_items.c.product_name == product_name)
             )
         )
+
+
+### LICENSED ITEMS DOMAIN
+
+
+_SELECTION_LICENSED_ITEM_ARGS = (
+    licensed_items.c.licensed_item_id,
+    licensed_items.c.display_name,
+    licensed_items.c.licensed_resource_type,
+    licensed_resources.c.licensed_resource_data,
+    licensed_items.c.pricing_plan_id,
+    licensed_items.c.created,
+    licensed_items.c.modified,
+)
+
+
+async def get_licensed_item(
+    app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
+    licensed_item_id: LicensedItemID,
+    product_name: ProductName,
+    filter_by_license_resource_type: LicensedResourceType | None = None,
+) -> LicensedItem:
+
+    licensed_resource_subquery = (
+        select(
+            licensed_resources.c.licensed_resource_id,
+            func.jsonb_object_agg(
+                workspaces_access_rights.c.gid,
+                func.jsonb_build_object(
+                    "read",
+                    workspaces_access_rights.c.read,
+                    "write",
+                    workspaces_access_rights.c.write,
+                    "delete",
+                    workspaces_access_rights.c.delete,
+                ),
+            ).label("access_rights"),
+        ).group_by(licensed_resources.c.licensed_resource_id)
+    ).subquery("licensed_resource_subquery")
+
+    select_query = (
+        select(*_SELECTION_LICENSED_ITEM_ARGS)
+        .select_from(
+            licensed_items.join(
+                licensed_item_to_resource,
+                licensed_items.c.licensed_item_id
+                == licensed_item_to_resource.c.licensed_item_id,
+            ).join(
+                licensed_resource_subquery,
+                licensed_item_to_resource.c.licensed_resource_id
+                == licensed_resource_subquery.c.licensed_resource_id,
+            )
+        )
+        .where(
+            (licensed_items.c.licensed_item_id == licensed_item_id)
+            & (licensed_items.c.product_name == product_name)
+        )
+    )
+
+    if filter_by_license_resource_type:
+        select_query = select_query.where(
+            licensed_items.c.licensed_resource_type == filter_by_license_resource_type
+        )
+
+    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
+        result = await conn.execute(select_query)
+        row = result.one_or_none()
+        if row is None:
+            raise LicensedItemNotFoundError(licensed_item_id=licensed_item_id)
+        return LicensedItem.model_validate(row)

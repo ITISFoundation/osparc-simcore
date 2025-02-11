@@ -23,6 +23,16 @@ resource_tracker_licensed_items_checkouts = sa.Table(
         nullable=True,
     ),
     sa.Column(
+        "key",
+        sa.String,
+        nullable=False,
+    ),
+    sa.Column(
+        "version",
+        sa.String,
+        nullable=False,
+    ),
+    sa.Column(
         "wallet_id",
         sa.BigInteger,
         nullable=False,

@@ -83,6 +83,8 @@ async def test_rpc_licensed_items_checkouts_workflow(
     _create_data = LicensedItemsPurchasesCreate(
         product_name="osparc",
         licensed_item_id="beb16d18-d57d-44aa-a638-9727fa4a72ef",
+        key="Duke",
+        version="1.0.0",
         wallet_id=_WALLET_ID,
         wallet_name="My Wallet",
         pricing_plan_id=1,
@@ -104,6 +106,8 @@ async def test_rpc_licensed_items_checkouts_workflow(
     checkout = await licensed_items_checkouts.checkout_licensed_item(
         rpc_client,
         licensed_item_id=created_item.licensed_item_id,
+        key=created_item.key,
+        version=created_item.version,
         wallet_id=_WALLET_ID,
         product_name="osparc",
         num_of_seats=3,

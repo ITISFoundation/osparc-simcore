@@ -10,10 +10,10 @@ from aiohttp import web
 from deepdiff import DeepDiff  # type: ignore[attr-defined]
 from models_library.licenses import (
     LicensedItem,
-    LicensedItemDB,
     LicensedItemID,
     LicensedItemPage,
-    LicensedItemUpdateDB,
+    LicensedItemPatchDB,
+    LicensedResourceDB,
     LicensedResourceType,
 )
 from models_library.products import ProductName
@@ -46,7 +46,7 @@ class RegistrationState(Enum):
 
 
 class RegistrationResult(NamedTuple):
-    registered: LicensedItemDB
+    registered: LicensedResourceDB
     state: RegistrationState
     message: str | None
 
@@ -76,11 +76,6 @@ async def register_licensed_resource(
     )
 
     try:
-        licensed_item = await _licensed_items_repository.get_by_resource_identifier(
-            app,
-            licensed_resource_name=licensed_resource_name,
-            licensed_resource_type=licensed_resource_type,
-        )
         licensed_resource = (
             await _licensed_resources_repository.get_by_resource_identifier(
                 app,
@@ -88,44 +83,26 @@ async def register_licensed_resource(
                 licensed_resource_type=licensed_resource_type,
             )
         )
-        # NOTE: MD: This is temporaty, we are splitting the licensed_item and licensed_resource
-        assert (
-            licensed_resource.licensed_resource_name
-            == licensed_item.licensed_resource_name
-        )  # nosec
-        assert (
-            licensed_resource.licensed_resource_type
-            == licensed_item.licensed_resource_type
-        )  # nosec
 
-        if licensed_item.licensed_resource_data != new_licensed_resource_data:
+        if licensed_resource.licensed_resource_data != new_licensed_resource_data:
             ddiff = DeepDiff(
-                licensed_item.licensed_resource_data, new_licensed_resource_data
+                licensed_resource.licensed_resource_data, new_licensed_resource_data
             )
             msg = (
-                f"DIFFERENT_RESOURCE: {resource_key=} found in licensed_item_id={licensed_item.licensed_item_id} with different data. "
+                f"DIFFERENT_RESOURCE: {resource_key=} found in licensed_resource_id={licensed_resource.licensed_resource_id} with different data. "
                 f"Diff:\n\t{pformat(ddiff, indent=2, width=200)}"
             )
             return RegistrationResult(
-                licensed_item, RegistrationState.DIFFERENT_RESOURCE, msg
+                licensed_resource, RegistrationState.DIFFERENT_RESOURCE, msg
             )
 
         return RegistrationResult(
-            licensed_item,
+            licensed_resource,
             RegistrationState.ALREADY_REGISTERED,
-            f"ALREADY_REGISTERED: {resource_key=} found in licensed_item_id={licensed_item.licensed_item_id}",
+            f"ALREADY_REGISTERED: {resource_key=} found in licensed_resource_id={licensed_resource.licensed_resource_id}",
         )
 
     except LicensedItemNotFoundError:
-        licensed_item = await _licensed_items_repository.create_if_not_exists(
-            app,
-            display_name=licensed_item_display_name,
-            licensed_resource_name=licensed_resource_name,
-            licensed_resource_type=licensed_resource_type,
-            licensed_resource_data=new_licensed_resource_data,
-            product_name=None,
-            pricing_plan_id=None,
-        )
         licensed_resource = await _licensed_resources_repository.create_if_not_exists(
             app,
             display_name=licensed_item_display_name,
@@ -133,20 +110,11 @@ async def register_licensed_resource(
             licensed_resource_type=licensed_resource_type,
             licensed_resource_data=new_licensed_resource_data,
         )
-        # NOTE: MD: This is temporaty, we are splitting the licensed_item and licensed_resource
-        assert (
-            licensed_resource.licensed_resource_name
-            == licensed_item.licensed_resource_name
-        )  # nosec
-        assert (
-            licensed_resource.licensed_resource_type
-            == licensed_item.licensed_resource_type
-        )  # nosec
 
         return RegistrationResult(
-            licensed_item,
+            licensed_resource,
             RegistrationState.NEWLY_REGISTERED,
-            f"NEWLY_REGISTERED: {resource_key=} registered with licensed_item_id={licensed_item.licensed_item_id}",
+            f"NEWLY_REGISTERED: {resource_key=} registered with licensed_resource_id={licensed_resource.licensed_resource_id}",
         )
 
 
@@ -160,6 +128,7 @@ async def get_licensed_item(
     licensed_item_db = await _licensed_items_repository.get(
         app, licensed_item_id=licensed_item_id, product_name=product_name
     )
+
     return LicensedItem.model_construct(
         licensed_item_id=licensed_item_db.licensed_item_id,
         display_name=licensed_item_db.display_name,
@@ -217,7 +186,7 @@ async def trash_licensed_item(
         app,
         product_name=product_name,
         licensed_item_id=licensed_item_id,
-        updates=LicensedItemUpdateDB(trash=True),
+        updates=LicensedItemPatchDB(trash=True),
     )
 
 
@@ -231,7 +200,7 @@ async def untrash_licensed_item(
         app,
         product_name=product_name,
         licensed_item_id=licensed_item_id,
-        updates=LicensedItemUpdateDB(trash=True),
+        updates=LicensedItemPatchDB(trash=True),
     )
 
 

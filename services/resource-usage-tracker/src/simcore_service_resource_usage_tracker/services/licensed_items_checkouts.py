@@ -58,6 +58,8 @@ async def list_licensed_items_checkouts(
             LicensedItemCheckoutGet(
                 licensed_item_checkout_id=licensed_item_checkout_db.licensed_item_checkout_id,
                 licensed_item_id=licensed_item_checkout_db.licensed_item_id,
+                key=licensed_item_checkout_db.key,
+                version=licensed_item_checkout_db.version,
                 wallet_id=licensed_item_checkout_db.wallet_id,
                 user_id=licensed_item_checkout_db.user_id,
                 user_email=licensed_item_checkout_db.user_email,
@@ -89,6 +91,8 @@ async def get_licensed_item_checkout(
     return LicensedItemCheckoutGet(
         licensed_item_checkout_id=licensed_item_checkout_db.licensed_item_checkout_id,
         licensed_item_id=licensed_item_checkout_db.licensed_item_id,
+        key=licensed_item_checkout_db.key,
+        version=licensed_item_checkout_db.version,
         wallet_id=licensed_item_checkout_db.wallet_id,
         user_id=licensed_item_checkout_db.user_id,
         user_email=licensed_item_checkout_db.user_email,
@@ -103,7 +107,9 @@ async def get_licensed_item_checkout(
 async def checkout_licensed_item(
     db_engine: Annotated[AsyncEngine, Depends(get_resource_tracker_db_engine)],
     *,
-    licensed_item_id: LicensedItemID,
+    licensed_item_id: LicensedItemID,  # MD: maybe not needed?
+    key: str,
+    version: str,
     wallet_id: WalletID,
     product_name: ProductName,
     num_of_seats: int,
@@ -112,20 +118,22 @@ async def checkout_licensed_item(
     user_email: str,
 ) -> LicensedItemCheckoutGet:
 
-    _active_purchased_seats: int = await licensed_items_purchases_db.get_active_purchased_seats_for_item_and_wallet(
+    _active_purchased_seats: int = await licensed_items_purchases_db.get_active_purchased_seats_for_key_version_wallet(
         db_engine,
-        licensed_item_id=licensed_item_id,
+        # licensed_item_id=licensed_item_id,
+        key=key,
+        version=version,
         wallet_id=wallet_id,
         product_name=product_name,
     )
 
-    _currently_used_seats = (
-        await licensed_items_checkouts_db.get_currently_used_seats_for_item_and_wallet(
-            db_engine,
-            licensed_item_id=licensed_item_id,
-            wallet_id=wallet_id,
-            product_name=product_name,
-        )
+    _currently_used_seats = await licensed_items_checkouts_db.get_currently_used_seats_for_key_version_wallet(
+        db_engine,
+        # licensed_item_id=licensed_item_id,
+        key=key,
+        version=version,
+        wallet_id=wallet_id,
+        product_name=product_name,
     )
 
     available_seats = _active_purchased_seats - _currently_used_seats
@@ -155,6 +163,8 @@ async def checkout_licensed_item(
 
     _create_item_checkout = CreateLicensedItemCheckoutDB(
         licensed_item_id=licensed_item_id,
+        key=key,
+        version=version,
         wallet_id=wallet_id,
         user_id=user_id,
         user_email=user_email,
@@ -171,6 +181,8 @@ async def checkout_licensed_item(
     return LicensedItemCheckoutGet(
         licensed_item_checkout_id=licensed_item_checkout_db.licensed_item_checkout_id,
         licensed_item_id=licensed_item_checkout_db.licensed_item_id,
+        key=licensed_item_checkout_db.key,
+        version=licensed_item_checkout_db.version,
         wallet_id=licensed_item_checkout_db.wallet_id,
         user_id=licensed_item_checkout_db.user_id,
         user_email=licensed_item_checkout_db.user_email,
@@ -201,6 +213,8 @@ async def release_licensed_item(
     return LicensedItemCheckoutGet(
         licensed_item_checkout_id=licensed_item_checkout_db.licensed_item_checkout_id,
         licensed_item_id=licensed_item_checkout_db.licensed_item_id,
+        key=licensed_item_checkout_db.key,
+        version=licensed_item_checkout_db.version,
         wallet_id=licensed_item_checkout_db.wallet_id,
         user_id=licensed_item_checkout_db.user_id,
         user_email=licensed_item_checkout_db.user_email,

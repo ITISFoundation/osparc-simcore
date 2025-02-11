@@ -17,6 +17,8 @@ from ._base import OutputSchema
 class LicensedItemCheckoutRpcGet(BaseModel):
     licensed_item_checkout_id: LicensedItemCheckoutID
     licensed_item_id: LicensedItemID
+    key: str
+    version: str
     wallet_id: WalletID
     user_id: UserID
     product_name: ProductName
@@ -29,6 +31,8 @@ class LicensedItemCheckoutRpcGet(BaseModel):
                 {
                     "licensed_item_checkout_id": "633ef980-6f3e-4b1a-989a-bd77bf9a5d6b",
                     "licensed_item_id": "0362b88b-91f8-4b41-867c-35544ad1f7a1",
+                    "key": "Duke",
+                    "version": "1.0.0",
                     "wallet_id": 6,
                     "user_id": 27845,
                     "product_name": "osparc",

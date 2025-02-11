@@ -62,6 +62,8 @@ async def checkout_licensed_item(
     app: FastAPI,
     *,
     licensed_item_id: LicensedItemID,
+    key: str,
+    version: str,
     wallet_id: WalletID,
     product_name: ProductName,
     num_of_seats: int,
@@ -72,6 +74,8 @@ async def checkout_licensed_item(
     return await licensed_items_checkouts.checkout_licensed_item(
         db_engine=app.state.engine,
         licensed_item_id=licensed_item_id,
+        key=key,
+        version=version,
         wallet_id=wallet_id,
         product_name=product_name,
         num_of_seats=num_of_seats,

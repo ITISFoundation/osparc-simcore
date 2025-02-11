@@ -119,6 +119,8 @@ async def checkout_licensed_item_for_wallet(
     user_id: UserID,
     # checkout args
     licensed_item_id: LicensedItemID,
+    key: str,
+    version: str,
     num_of_seats: int,
     service_run_id: ServiceRunID,
 ) -> LicensedItemCheckoutGet:
@@ -137,6 +139,8 @@ async def checkout_licensed_item_for_wallet(
         await licensed_items_checkouts.checkout_licensed_item(
             rpc_client,
             licensed_item_id=licensed_item_id,
+            key=key,
+            version=version,
             wallet_id=wallet_id,
             product_name=product_name,
             num_of_seats=num_of_seats,

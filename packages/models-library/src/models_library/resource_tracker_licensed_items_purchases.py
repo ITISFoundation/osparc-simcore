@@ -17,6 +17,8 @@ LicensedItemPurchaseID: TypeAlias = UUID
 class LicensedItemsPurchasesCreate(BaseModel):
     product_name: ProductName
     licensed_item_id: LicensedItemID
+    key: str
+    version: str
     wallet_id: WalletID
     wallet_name: str
     pricing_plan_id: PricingPlanId

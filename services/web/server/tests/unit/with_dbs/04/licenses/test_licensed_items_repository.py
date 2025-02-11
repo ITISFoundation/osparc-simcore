@@ -9,7 +9,7 @@ import pytest
 from aiohttp.test_utils import TestClient
 from models_library.licenses import (
     VIP_DETAILS_EXAMPLE,
-    LicensedItemUpdateDB,
+    LicensedItemPatchDB,
     LicensedResourceType,
 )
 from models_library.rest_ordering import OrderBy
@@ -75,7 +75,7 @@ async def test_licensed_items_db_crud(
         client.app,
         licensed_item_id=licensed_item_id,
         product_name=osparc_product_name,
-        updates=LicensedItemUpdateDB(licensed_resource_name="Model B"),
+        updates=LicensedItemPatchDB(licensed_resource_name="Model B"),
     )
 
     got = await _licensed_items_repository.get(
@@ -128,7 +128,7 @@ async def test_licensed_items_db_trash(
         client.app,
         licensed_item_id=licensed_item_ids[0],
         product_name=osparc_product_name,
-        updates=LicensedItemUpdateDB(trash=True),
+        updates=LicensedItemPatchDB(trash=True),
     )
 
     assert trashed_item.licensed_item_id == licensed_item_ids[0]
