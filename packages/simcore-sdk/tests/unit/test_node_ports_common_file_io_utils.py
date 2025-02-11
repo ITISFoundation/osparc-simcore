@@ -18,7 +18,6 @@ from models_library.api_schemas_storage import (
     FileUploadSchema,
     UploadedPart,
 )
-from models_library.basic_types import IDStr
 from moto.server import ThreadedMotoServer
 from pydantic import AnyUrl, ByteSize, TypeAdapter
 from pytest_mock import MockerFixture
@@ -279,7 +278,7 @@ async def test_upload_file_to_presigned_links(
     assert effective_chunk_size <= used_chunk_size
     upload_links = await create_upload_links(num_links, used_chunk_size)
     assert len(upload_links.urls) == num_links
-    async with ProgressBarData(num_steps=1, description=IDStr("")) as progress_bar:
+    async with ProgressBarData(num_steps=1, description="") as progress_bar:
         uploaded_parts: list[UploadedPart] = await upload_file_to_presigned_links(
             session=client_session,
             file_upload_links=upload_links,

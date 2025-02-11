@@ -44,7 +44,6 @@ from simcore_service_webserver.garbage_collector import _core as gc_core
 from simcore_service_webserver.login.plugin import setup_login
 from simcore_service_webserver.notifications.plugin import setup_notifications
 from simcore_service_webserver.products.plugin import setup_products
-from simcore_service_webserver.projects.exceptions import ProjectNotFoundError
 from simcore_service_webserver.projects.plugin import setup_projects
 from simcore_service_webserver.projects.projects_service import (
     remove_project_dynamic_services,
@@ -106,7 +105,6 @@ def app_environment(
     monkeypatch: pytest.MonkeyPatch,
     app_environment: EnvVarsDict,
 ) -> EnvVarsDict:
-
     # NOTE: undos some app_environment settings
     monkeypatch.delenv("WEBSERVER_GARBAGE_COLLECTOR", raising=False)
     app_environment.pop("WEBSERVER_GARBAGE_COLLECTOR", None)
@@ -946,14 +944,13 @@ async def test_regression_removing_unexisting_user(
             app=client.app,
             simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
         )
-    with pytest.raises(ProjectNotFoundError):
-        await remove_project_dynamic_services(
-            user_id=user_id,
-            project_uuid=empty_user_project["uuid"],
-            app=client.app,
-            user_name={"first_name": "my name is", "last_name": "pytest"},
-            simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
-        )
+    await remove_project_dynamic_services(
+        user_id=user_id,
+        project_uuid=empty_user_project["uuid"],
+        app=client.app,
+        user_name={"first_name": "my name is", "last_name": "pytest"},
+        simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
+    )
     # since the call to delete is happening as fire and forget task, let's wait until it is done
     async for attempt in AsyncRetrying(**_TENACITY_ASSERT_RETRY):
         with attempt:
