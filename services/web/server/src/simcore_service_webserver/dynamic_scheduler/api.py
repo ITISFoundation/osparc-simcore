@@ -17,7 +17,6 @@ from models_library.api_schemas_webserver.projects_nodes import (
     NodeGetIdle,
     NodeGetUnknown,
 )
-from models_library.basic_types import IDStr
 from models_library.progress_bar import ProgressReport
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -132,7 +131,7 @@ async def stop_dynamic_services_in_project(
                     user_id,
                     project_id,
                 ),
-                description=IDStr("stopping services"),
+                description="stopping services",
             )
         )
 
@@ -147,7 +146,7 @@ async def stop_dynamic_services_in_project(
                     save_state=save_state,
                 ),
                 progress=progress_bar.sub_progress(
-                    1, description=IDStr(f"{service.node_uuid}")
+                    1, description=f"{service.node_uuid}"
                 ),
             )
             for service in running_dynamic_services

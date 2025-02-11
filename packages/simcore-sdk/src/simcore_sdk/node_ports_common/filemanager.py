@@ -12,7 +12,7 @@ from models_library.api_schemas_storage import (
     LinkType,
     UploadedPart,
 )
-from models_library.basic_types import IDStr, SHA256Str
+from models_library.basic_types import SHA256Str
 from models_library.projects_nodes_io import LocationID, LocationName, StorageFileID
 from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize, TypeAdapter
@@ -369,7 +369,7 @@ async def _upload_path(  # pylint: disable=too-many-arguments
     )
 
     if not progress_bar:
-        progress_bar = ProgressBarData(num_steps=1, description=IDStr("uploading"))
+        progress_bar = ProgressBarData(num_steps=1, description="uploading")
 
     is_directory: bool = isinstance(path_to_upload, Path) and path_to_upload.is_dir()
     if (
