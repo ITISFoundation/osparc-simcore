@@ -14,7 +14,7 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.storage import zipping
 from settings_library.rabbit import RabbitSettings
-from simcore_service_storage.api.rabbitmq_rpc._zipping import TaskId
+from simcore_service_storage.api.rabbitmq_rpc._zipping import TaskId, TaskResult
 from simcore_service_storage.core.settings import ApplicationSettings
 
 pytest_plugins = [
@@ -79,3 +79,9 @@ async def test_get_zipping_status(rpc_client: RabbitMQRPCClient, faker: Faker):
     result = await zipping.get_zipping_status(rpc_client, task_id=_task_id)
     assert isinstance(result, TaskStatus)
     assert result.task_progress.task_id == _task_id
+
+
+async def test_get_zipping_result(rpc_client: RabbitMQRPCClient, faker: Faker):
+    _task_id = TaskId(f"{faker.uuid4()}")
+    result = await zipping.get_zipping_result(rpc_client, task_id=_task_id)
+    assert isinstance(result, TaskResult)

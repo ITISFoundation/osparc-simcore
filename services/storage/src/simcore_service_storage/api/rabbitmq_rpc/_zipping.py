@@ -6,6 +6,7 @@ from models_library.api_schemas_long_running_tasks.base import ProgressPercent
 from models_library.api_schemas_long_running_tasks.tasks import (
     TaskGet,
     TaskId,
+    TaskResult,
     TaskStatus,
 )
 from models_library.api_schemas_storage.zipping_tasks import (
@@ -43,3 +44,8 @@ async def get_zipping_status(app: FastAPI, task_id: TaskId) -> TaskStatus:
         percent=ProgressPercent(0.5),
     )
     return TaskStatus(task_progress=progress, done=False, started=datetime.now())
+
+
+@router.expose()
+async def get_zipping_result(app: FastAPI, task_id: TaskId) -> TaskResult:
+    return TaskResult(result="Here's your result.", error=None)
