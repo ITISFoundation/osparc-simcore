@@ -57,7 +57,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
         case "study": {
           this._add(this.__createWorkspacesAndFoldersTree());
           this._add(this.__createTrashBin());
-          this._add(this.__createResourceTypeContextButtons());
+          // this._add(this.__createResourceTypeContextButtons());
           this._add(filtersSpacer);
           const scrollView = new qx.ui.container.Scroll();
           scrollView.add(this.__createTagsFilterLayout());
@@ -67,7 +67,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
           break;
         }
         case "template": {
-          this._add(this.__createResourceTypeContextButtons());
+          // this._add(this.__createResourceTypeContextButtons());
           this._add(filtersSpacer);
           this._add(this.__createSharedWithFilterLayout());
           const scrollView = new qx.ui.container.Scroll();
@@ -78,7 +78,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
           break;
         }
         case "service":
-          this._add(this.__createResourceTypeContextButtons());
+          // this._add(this.__createResourceTypeContextButtons());
           this._add(filtersSpacer);
           this._add(this.__createSharedWithFilterLayout());
           this._add(this.__createServiceTypeFilterLayout());

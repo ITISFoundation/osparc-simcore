@@ -199,6 +199,11 @@ qx.Class.define("osparc.desktop.MainPage", {
 
     __createDashboardLayout: function() {
       const dashboard = this.__dashboard = new osparc.dashboard.Dashboard();
+      const tabsBar = dashboard.getChildControl("bar");
+      tabsBar.set({
+        paddingBottom: 6
+      });
+      this.__navBar.addDashboardTabButtons(tabsBar);
       const dashboardLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
       dashboardLayout.add(dashboard, {
         flex: 1
