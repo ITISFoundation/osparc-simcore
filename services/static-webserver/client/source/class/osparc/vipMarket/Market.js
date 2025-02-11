@@ -41,8 +41,19 @@ qx.Class.define("osparc.vipMarket.Market", {
     ])
       .then(values => {
         const licensedItems = values[0];
+        const purchasedItems = values[1];
         const categories = [];
+        const rentedCategory = {
+          categoryId: "rentedModels",
+          label: this.tr("Rented"),
+          icon: "osparc/market/RentedModels.svg",
+          items: [],
+        };
+        categories.push(rentedCategory);
         licensedItems.forEach(licensedItem => {
+          if (purchasedItems.find(purchasedItem => purchasedItem["licensedItemId"] === licensedItem["licensedItemId"])) {
+            rentedCategory["items"].push(licensedItem);
+          }
           if (licensedItem["licensedResourceData"] && licensedItem["licensedResourceData"]["categoryId"]) {
             const categoryId = licensedItem["licensedResourceData"]["categoryId"];
             let category = categories.find(cat => cat["categoryId"] === categoryId);
@@ -50,7 +61,7 @@ qx.Class.define("osparc.vipMarket.Market", {
               category = {
                 categoryId,
                 label: licensedItem["licensedResourceData"]["categoryDisplay"] || "Category",
-                icon: licensedItem["licensedResourceData"]["categoryIcon"] || "@FontAwesome5Solid/users/20",
+                icon: licensedItem["licensedResourceData"]["categoryIcon"] || `osparc/market/${categoryId}.svg`,
                 items: [],
               };
               categories.push(category);
