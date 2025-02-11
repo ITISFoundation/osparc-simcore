@@ -193,7 +193,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
           break;
         }
         case "empty-trash-button": {
-          control = new qx.ui.form.Button(this.tr("Empty Bin"), "@FontAwesome5Solid/trash/14").set({
+          control = new qx.ui.form.Button(this.tr("Delete all"), "@FontAwesome5Solid/trash/14").set({
             appearance: "danger-button",
             allowGrowY: false,
             alignY: "middle",
