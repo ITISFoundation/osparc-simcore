@@ -2,7 +2,6 @@ import logging
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from models_library.basic_types import IDStr
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, StorageFileID
 from models_library.users import UserID
@@ -105,7 +104,7 @@ async def _pull_legacy_archive(
 ) -> None:
     # NOTE: the legacy way of storing states was as zip archives
     async with progress_bar.sub_progress(
-        steps=2, description=IDStr(f"pulling {destination_path.name}")
+        steps=2, description=f"pulling {destination_path.name}"
     ) as sub_prog:
         with TemporaryDirectory() as tmp_dir_name:
             archive_file = Path(tmp_dir_name) / __get_s3_name(
