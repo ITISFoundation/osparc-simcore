@@ -268,6 +268,8 @@ async def pull_image(
                 pulled_status.downloaded = 0
                 pulled_status.extracted = 0
 
+        attempt: NonNegativeInt = 1
+
         @retry(
             wait=wait_random_exponential(),
             stop=stop_after_attempt(retry_upon_error_count),
@@ -275,11 +277,14 @@ async def pull_image(
             retry=retry_if_exception_type(asyncio.TimeoutError),
         )
         async def _pull_image_with_retry() -> None:
-            # for each attempt rest the progress
-            progress_bar.reset()
-            _reset_progress_from_previous_attempt()
+            nonlocal attempt
+            if attempt > 1:
+                # for each attempt rest the progress
+                progress_bar.reset()
+                _reset_progress_from_previous_attempt()
+            attempt += 1
 
-            _logger.info("trying to pull image='%s'", image)
+            _logger.info("attempt '%s' trying to pull image='%s'", attempt, image)
 
             reported_progress = 0.0
             async for pull_progress in client.images.pull(
