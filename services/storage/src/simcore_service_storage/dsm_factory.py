@@ -11,7 +11,7 @@ from models_library.storage_schemas import LinkType, UploadedPart
 from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize, NonNegativeInt
 
-from .models import DatasetMetaData, FileMetaData, UploadLinks
+from .models import DatasetMetaData, FileMetaData, TotalNumber, UploadLinks
 
 
 class BaseDataManager(ABC):
@@ -70,7 +70,7 @@ class BaseDataManager(ABC):
         file_filter: Path | None,
         limit: NonNegativeInt,
         offset: NonNegativeInt,
-    ) -> list[FileMetaData]:
+    ) -> tuple[list[FileMetaData], TotalNumber]:
         """returns a page of the file meta data a user has access to"""
 
     @abstractmethod

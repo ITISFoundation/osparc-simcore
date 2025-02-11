@@ -63,6 +63,7 @@ from .models import (
     DatasetMetaData,
     FileMetaData,
     FileMetaDataAtDB,
+    TotalNumber,
     UploadLinks,
     UserOrProjectFilter,
 )
@@ -143,9 +144,9 @@ class SimcoreS3DataManager(BaseDataManager):
         file_filter: Path | None,
         limit: NonNegativeInt,
         offset: NonNegativeInt,
-    ) -> list[FileMetaData]:
+    ) -> tuple[list[FileMetaData], TotalNumber]:
         """returns a page of the file meta data a user has access to"""
-        return []
+        return [], 0
 
     async def list_files(  # noqa C901
         self,

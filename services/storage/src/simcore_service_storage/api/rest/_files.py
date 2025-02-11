@@ -62,13 +62,13 @@ async def list_paths(
     page_params: Annotated[LimitOffsetParams, Depends()],
     dsm: Annotated[BaseDataManager, Depends(get_data_manager)],
 ):
-    data = await dsm.list_files_paginated(
+    items, total_number = await dsm.list_files_paginated(
         user_id=query_params.user_id,
         file_filter=query_params.file_filter,
         limit=page_params.limit,
         offset=page_params.offset,
     )
-    return create_page(data, total=20, params=page_params)
+    return create_page(items, total=total_number, params=page_params)
 
 
 @router.get(

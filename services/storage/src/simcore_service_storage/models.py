@@ -2,7 +2,7 @@ import datetime
 import urllib.parse
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Annotated, Any, Literal, NamedTuple
+from typing import Annotated, Any, Literal, NamedTuple, TypeAlias
 from uuid import UUID
 
 import arrow
@@ -37,6 +37,7 @@ from pydantic import (
     ByteSize,
     ConfigDict,
     Field,
+    NonNegativeInt,
     PlainSerializer,
     TypeAdapter,
     field_validator,
@@ -308,3 +309,6 @@ class AccessRights:
     @classmethod
     def none(cls) -> "AccessRights":
         return cls(read=False, write=False, delete=False)
+
+
+TotalNumber: TypeAlias = NonNegativeInt
