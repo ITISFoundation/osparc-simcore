@@ -1,7 +1,7 @@
 from typing import Final
 
 from models_library.api_schemas_long_running_tasks.base import TaskId
-from models_library.api_schemas_long_running_tasks.tasks import TaskGet
+from models_library.api_schemas_long_running_tasks.tasks import TaskGet, TaskStatus
 from models_library.api_schemas_storage import STORAGE_RPC_NAMESPACE
 from models_library.api_schemas_storage.zipping_tasks import (
     ZipTaskAbortOutput,
@@ -40,4 +40,17 @@ async def abort_zipping(
         timeout_s=_DEFAULT_TIMEOUT_S,
     )
     assert isinstance(result, ZipTaskAbortOutput)
+    return result
+
+
+async def get_zipping_status(
+    rabbitmq_rpc_client: RabbitMQRPCClient, *, task_id: TaskId
+) -> TaskStatus:
+    result = await rabbitmq_rpc_client.request(
+        STORAGE_RPC_NAMESPACE,
+        _RPC_METHOD_NAME_ADAPTER.validate_python("get_zipping_status"),
+        task_id=task_id,
+        timeout_s=_DEFAULT_TIMEOUT_S,
+    )
+    assert isinstance(result, TaskStatus)
     return result

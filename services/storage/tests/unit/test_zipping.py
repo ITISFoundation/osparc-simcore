@@ -4,7 +4,7 @@ from typing import Awaitable, Callable
 import pytest
 from faker import Faker
 from fastapi import FastAPI
-from models_library.api_schemas_long_running_tasks.tasks import TaskGet
+from models_library.api_schemas_long_running_tasks.tasks import TaskGet, TaskStatus
 from models_library.api_schemas_storage.zipping_tasks import (
     ZipTaskAbortOutput,
     ZipTaskStartInput,
@@ -72,3 +72,10 @@ async def test_abort_zipping(rpc_client: RabbitMQRPCClient, faker: Faker):
     result = await zipping.abort_zipping(rpc_client, task_id=_task_id)
     assert isinstance(result, ZipTaskAbortOutput)
     assert result.task_id == _task_id
+
+
+async def test_get_zipping_status(rpc_client: RabbitMQRPCClient, faker: Faker):
+    _task_id = TaskId(f"{faker.uuid4()}")
+    result = await zipping.get_zipping_status(rpc_client, task_id=_task_id)
+    assert isinstance(result, TaskStatus)
+    assert result.task_progress.task_id == _task_id

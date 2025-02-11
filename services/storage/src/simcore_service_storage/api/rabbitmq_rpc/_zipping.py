@@ -1,12 +1,19 @@
+from datetime import datetime
 from uuid import uuid4
 
 from fastapi import FastAPI
-from models_library.api_schemas_long_running_tasks.tasks import TaskGet, TaskId
+from models_library.api_schemas_long_running_tasks.base import ProgressPercent
+from models_library.api_schemas_long_running_tasks.tasks import (
+    TaskGet,
+    TaskId,
+    TaskStatus,
+)
 from models_library.api_schemas_storage.zipping_tasks import (
     ZipTaskAbortOutput,
     ZipTaskStartInput,
 )
 from servicelib.rabbitmq import RPCRouter
+from simcore_service_storage.simcore_s3_dsm import TaskProgress
 
 router = RPCRouter()
 
@@ -26,3 +33,13 @@ async def start_zipping(app: FastAPI, paths: ZipTaskStartInput) -> TaskGet:
 @router.expose()
 async def abort_zipping(app: FastAPI, task_id: TaskId) -> ZipTaskAbortOutput:
     return ZipTaskAbortOutput(result=True, task_id=task_id)
+
+
+@router.expose()
+async def get_zipping_status(app: FastAPI, task_id: TaskId) -> TaskStatus:
+    progress = TaskProgress(
+        task_id=task_id,
+        message="Here's a status for you. You are welcome",
+        percent=ProgressPercent(0.5),
+    )
+    return TaskStatus(task_progress=progress, done=False, started=datetime.now())
