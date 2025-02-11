@@ -358,41 +358,32 @@ qx.Class.define("osparc.study.Utils", {
       return ["UNKNOWN_SERVICES", false].includes(blocked);
     },
 
+    getNonFrontendNodes: function(studyData) {
+      return Object.values(studyData["workbench"]).filter(node => !osparc.data.model.Node.isFrontend(node));
+    },
+
     guessIcon: function(studyData) {
-      if (osparc.product.Utils.isProduct("osparc")) {
-        return this.__guessOsparcIcon(studyData);
-      }
-      if (osparc.product.Utils.isS4LProduct() || osparc.product.Utils.isProduct("s4llite")) {
-        return this.__guessS4LIcon(studyData);
-      }
       if (osparc.product.Utils.isProduct("tis") || osparc.product.Utils.isProduct("tiplite")) {
         return this.__guessTIPIcon(studyData);
       }
-      return osparc.dashboard.CardBase.PRODUCT_ICON;
+      return this.__guessIcon(studyData);
     },
 
-    __guessOsparcIcon: function(studyData) {
+    __guessIcon: function(studyData) {
       // the was to guess the TI type is to check the boot mode of the ti-postpro in the pipeline
-      const wbServices = Object.values(studyData["workbench"]);
+      const wbServices = this.self().getNonFrontendNodes(studyData);
+      if (wbServices.length === 1) {
+        const wbService = wbServices[0];
+        const allServices = osparc.store.Services.servicesCached;
+        if (wbService.key in allServices && wbService.version in allServices[wbService.key]) {
+          const serviceMetadata = allServices[wbService.key][wbService.version];
+          if (serviceMetadata["icon"]) {
+            return serviceMetadata["icon"];
+          }
+        }
+      }
       if (wbServices.length > 1) {
         return "osparc/icons/diagram.png";
-      }
-      return osparc.dashboard.CardBase.PRODUCT_ICON;
-    },
-
-    __guessS4LIcon: function(studyData) {
-      // the was to guess the TI type is to check the boot mode of the ti-postpro in the pipeline
-      const wbServices = Object.values(studyData["workbench"]);
-      if (wbServices.length === 1) {
-        if (wbServices[0]["key"].includes("iseg")) {
-          return "https://raw.githubusercontent.com/ITISFoundation/osparc-iseg/master/iSeg/images/isegicon.png";
-        }
-        if (wbServices[0]["key"].includes("jupyter")) {
-          return "https://images.seeklogo.com/logo-png/35/1/jupyter-logo-png_seeklogo-354673.png";
-        }
-        if (wbServices[0]["key"].includes("s4l-ui")) {
-          return "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/refs/heads/main/app/icons/s4l/Sim4Life.png";
-        }
       }
       return osparc.dashboard.CardBase.PRODUCT_ICON;
     },
