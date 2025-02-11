@@ -2,7 +2,7 @@
 # pylint: disable=unused-argument
 
 import asyncio
-from typing import Callable
+from collections.abc import Callable
 
 import pytest
 from aiohttp import ClientResponseError, web
@@ -36,7 +36,6 @@ def client(
     unused_tcp_port_factory: Callable,
     app: web.Application,
 ) -> TestClient:
-
     return event_loop.run_until_complete(
         aiohttp_client(app, server_kwargs={"port": unused_tcp_port_factory()})
     )

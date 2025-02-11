@@ -6,7 +6,7 @@ import asyncio
 import logging
 from collections.abc import AsyncGenerator, Coroutine
 from dataclasses import dataclass
-from typing import Any, Final, TypeAlias
+from typing import Any
 
 import httpx
 from fastapi import status
@@ -23,12 +23,15 @@ from tenacity import (
 )
 from yarl import URL
 
+from ...long_running_tasks._constants import DEFAULT_POLL_INTERVAL_S, HOUR
 from ...long_running_tasks._errors import TaskClientResultError
 from ...long_running_tasks._models import (
     ClientConfiguration,
+    LRTask,
     ProgressCallback,
     ProgressMessage,
     ProgressPercent,
+    RequestBody,
 )
 from ...long_running_tasks._task import TaskId, TaskResult
 from ...rest_responses import unwrap_envelope_if_required
@@ -37,11 +40,7 @@ from ._context_manager import periodic_task_result
 
 _logger = logging.getLogger(__name__)
 
-RequestBody: TypeAlias = Any
 
-_MINUTE: Final[int] = 60  # in secs
-_HOUR: Final[int] = 60 * _MINUTE  # in secs
-_DEFAULT_POLL_INTERVAL_S: Final[float] = 1
 _DEFAULT_FASTAPI_RETRY_POLICY: dict[str, Any] = {
     "retry": retry_if_exception_type(httpx.RequestError),
     "wait": wait_random_exponential(max=20),
@@ -85,9 +84,7 @@ async def _wait_for_completion(
                 if not task_status.done:
                     await asyncio.sleep(
                         float(
-                            response.headers.get(
-                                "retry-after", _DEFAULT_POLL_INTERVAL_S
-                            )
+                            response.headers.get("retry-after", DEFAULT_POLL_INTERVAL_S)
                         )
                     )
                     msg = f"{task_id=}, {task_status.started=} has status: '{task_status.task_progress.message}' {task_status.task_progress.percent}%"
@@ -114,26 +111,11 @@ async def _abort_task(session: httpx.AsyncClient, abort_url: URL) -> None:
     response.raise_for_status()
 
 
-@dataclass(frozen=True)
-class LRTask:
-    progress: TaskProgress
-    _result: Coroutine[Any, Any, Any] | None = None
-
-    def done(self) -> bool:
-        return self._result is not None
-
-    async def result(self) -> Any:
-        if not self._result:
-            msg = "No result ready!"
-            raise ValueError(msg)
-        return await self._result
-
-
 async def long_running_task_request(
     session: httpx.AsyncClient,
     url: URL,
     json: RequestBody | None = None,
-    client_timeout: int = 1 * _HOUR,
+    client_timeout: int = 1 * HOUR,
 ) -> AsyncGenerator[LRTask, None]:
     """Will use the passed `httpx.AsyncClient` to call an oSparc long
     running task `url` passing `json` as request body.
@@ -167,16 +149,17 @@ async def long_running_task_request(
 
 
 __all__: tuple[str, ...] = (
-    "DEFAULT_HTTP_REQUESTS_TIMEOUT",
     "Client",
     "ClientConfiguration",
+    "DEFAULT_HTTP_REQUESTS_TIMEOUT",
+    "LRTask",
+    "periodic_task_result",
     "ProgressCallback",
     "ProgressMessage",
     "ProgressPercent",
+    "setup",
     "TaskClientResultError",
     "TaskId",
     "TaskResult",
-    "periodic_task_result",
-    "setup",
 )
 # nopycln: file
