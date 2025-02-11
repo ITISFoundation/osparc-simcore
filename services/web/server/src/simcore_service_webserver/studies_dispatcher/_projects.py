@@ -12,11 +12,11 @@ from pathlib import Path
 from typing import NamedTuple
 
 from aiohttp import web
+from models_library.api_schemas_webserver.projects_ui import StudyUI
 from models_library.projects import DateTimeStr, Project, ProjectID
 from models_library.projects_access import AccessRights, GroupIDStr
 from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import DownloadLink, NodeID, PortLink
-from models_library.projects_ui import StudyUI
 from models_library.services import ServiceKey, ServiceVersion
 from pydantic import AnyUrl, HttpUrl, TypeAdapter
 from servicelib.logging_utils import log_decorator

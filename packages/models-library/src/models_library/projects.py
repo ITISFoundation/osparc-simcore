@@ -20,7 +20,6 @@ from .projects_access import AccessRights, GroupIDStr
 from .projects_nodes import Node
 from .projects_nodes_io import NodeIDStr
 from .projects_state import ProjectState
-from .projects_ui import StudyUI
 from .users import UserID
 from .utils.common_validators import (
     empty_str_to_none_pre_validator,
@@ -117,6 +116,9 @@ class ProjectAtDB(BaseProjectModel):
     )
 
 
+StudyUIDict: TypeAlias = dict[str, Any]
+
+
 class Project(BaseProjectModel):
     # NOTE: This is the pydantic pendant of project-v0.0.1.json used in the API of the webserver/webclient
     # NOT for usage with DB!!
@@ -160,7 +162,7 @@ class Project(BaseProjectModel):
     state: ProjectState | None = None
 
     # UI front-end setup (SEE projects_ui.py)
-    ui: StudyUI | None = None
+    ui: StudyUIDict | None = None
 
     # Quality
     quality: dict[str, Any] = Field(
