@@ -159,7 +159,7 @@ def replace_node_resources(
 @router.get(
     "/projects/{project_id}/nodes/-/services:access",
     response_model=Envelope[_ProjectGroupAccess],
-    summary="Check whether provided group has access to the project services",
+    description="Check whether provided group has access to the project services",
 )
 async def get_project_services_access_for_gid(
     project_id: ProjectID, for_gid: GroupID  # noqa: ARG001
@@ -180,7 +180,7 @@ assert_handler_signature_against_model(
 @router.get(
     "/projects/{project_id}/nodes/-/preview",
     response_model=Envelope[list[_ProjectNodePreview]],
-    summary="Lists all previews in the node's project",
+    description="Lists all previews in the node's project",
 )
 async def list_project_nodes_previews(project_id: ProjectID):  # noqa: ARG001
     ...
@@ -192,7 +192,7 @@ assert_handler_signature_against_model(list_project_nodes_previews, ProjectPathP
 @router.get(
     "/projects/{project_id}/nodes/{node_id}/preview",
     response_model=Envelope[_ProjectNodePreview],
-    summary="Gets a give node's preview",
+    description="Gets a give node's preview",
     responses={status.HTTP_404_NOT_FOUND: {"description": "Node has no preview"}},
 )
 async def get_project_node_preview(
