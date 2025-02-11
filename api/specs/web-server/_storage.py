@@ -38,7 +38,7 @@ StorageFileIDStr: TypeAlias = str
 @router.get(
     "/storage/locations",
     response_model=list[DatasetMetaData],
-    summary="Get available storage locations",
+    description="Get available storage locations",
 )
 async def list_storage_locations():
     """Returns the list of available storage locations"""
@@ -47,7 +47,7 @@ async def list_storage_locations():
 @router.get(
     "/storage/locations/{location_id}/datasets",
     response_model=Envelope[list[DatasetMetaData]],
-    summary="Get datasets metadata",
+    description="Get datasets metadata",
 )
 async def list_datasets_metadata(location_id: LocationID):
     """returns all the top level datasets a user has access to"""
@@ -56,7 +56,7 @@ async def list_datasets_metadata(location_id: LocationID):
 @router.get(
     "/storage/locations/{location_id}/files/metadata",
     response_model=Envelope[list[DatasetMetaData]],
-    summary="Get datasets metadata",
+    description="Get datasets metadata",
 )
 async def get_files_metadata(
     location_id: LocationID,
@@ -74,7 +74,7 @@ async def get_files_metadata(
 @router.get(
     "/storage/locations/{location_id}/datasets/{dataset_id}/metadata",
     response_model=Envelope[list[FileMetaDataGet]],
-    summary="Get Files Metadata",
+    description="Get Files Metadata",
 )
 async def list_dataset_files_metadata(
     location_id: LocationID,
@@ -92,7 +92,7 @@ async def list_dataset_files_metadata(
 @router.get(
     "/storage/locations/{location_id}/files/{file_id}/metadata",
     response_model=FileMetaData | Envelope[FileMetaDataGet],
-    summary="Get File Metadata",
+    description="Get File Metadata",
 )
 async def get_file_metadata(location_id: LocationID, file_id: StorageFileIDStr):
     """returns the file meta data of file_id if user_id has the rights to"""
@@ -101,7 +101,7 @@ async def get_file_metadata(location_id: LocationID, file_id: StorageFileIDStr):
 @router.get(
     "/storage/locations/{location_id}/files/{file_id}",
     response_model=Envelope[PresignedLink],
-    summary="Returns download link for requested file",
+    description="Returns download link for requested file",
 )
 async def download_file(
     location_id: LocationID,
@@ -114,7 +114,7 @@ async def download_file(
 @router.put(
     "/storage/locations/{location_id}/files/{file_id}",
     response_model=Envelope[FileUploadSchema] | Envelope[AnyUrl],
-    summary="Returns upload link",
+    description="Returns upload link",
 )
 async def upload_file(
     location_id: LocationID,
@@ -129,7 +129,7 @@ async def upload_file(
 @router.delete(
     "/storage/locations/{location_id}/files/{file_id}",
     status_code=status.HTTP_204_NO_CONTENT,
-    summary="Deletes File",
+    description="Deletes File",
 )
 async def delete_file(location_id: LocationID, file_id: StorageFileIDStr):
     """deletes file if user has the rights to"""
@@ -160,7 +160,7 @@ async def complete_upload_file(
 @router.post(
     "/storage/locations/{location_id}/files/{file_id}:complete/futures/{future_id}",
     response_model=Envelope[FileUploadCompleteFutureResponse],
-    summary="Check for upload completion",
+    description="Check for upload completion",
 )
 async def is_completed_upload_file(
     location_id: LocationID, file_id: StorageFileIDStr, future_id: str

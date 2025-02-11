@@ -41,7 +41,7 @@ openapi_modules = [
         "_licensed_items_checkouts",
         "_nih_sparc",
         "_nih_sparc_redirections",
-        "_projects_crud",
+        "_projects",
         "_projects_comments",
         "_projects_folders",
         "_projects_groups",

@@ -36,7 +36,7 @@ async def healthcheck_liveness_probe():
 
 @router.get(
     "/config",
-    summary="Front end runtime configuration",
+    description="Front end runtime configuration",
     response_model=Envelope[dict[str, Any]],
 )
 async def get_config():
@@ -53,7 +53,7 @@ async def get_scheduled_maintenance():
 
 @router.get(
     "/status",
-    summary="checks status of self and connected services",
+    description="checks status of self and connected services",
     response_model=Envelope[AppStatusCheck],
     response_description="Returns app status check",
 )

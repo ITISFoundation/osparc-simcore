@@ -138,7 +138,7 @@ def get_service_resources(
 @router.get(
     "/catalog/services/{service_key:path}/{service_version}/pricing-plan",
     response_model=Envelope[ServicePricingPlanGet],
-    summary="Retrieve default pricing plan for provided service",
+    description="Retrieve default pricing plan for provided service",
     tags=["pricing-plans"],
 )
 async def get_service_pricing_plan(

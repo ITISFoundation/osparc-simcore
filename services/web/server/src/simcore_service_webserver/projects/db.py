@@ -93,10 +93,10 @@ from .exceptions import (
     ProjectNotFoundError,
 )
 from .models import (
-    ProjectDB,
+    ProjectDBGet,
     ProjectDict,
     UserProjectAccessRightsDB,
-    UserSpecificProjectDataDB,
+    UserSpecificProjectDataDBGet,
 )
 
 _logger = logging.getLogger(__name__)
@@ -307,7 +307,6 @@ class ProjectDBAPI(BaseProjectDB):
         # All non-default in projects table
         insert_values.setdefault("name", "New Study")
         insert_values.setdefault("workbench", {})
-
         insert_values.setdefault("workspace_id", None)
 
         # must be valid uuid
@@ -765,7 +764,7 @@ class ProjectDBAPI(BaseProjectDB):
                 project_type,
             )
 
-    async def get_project_db(self, project_uuid: ProjectID) -> ProjectDB:
+    async def get_project_db(self, project_uuid: ProjectID) -> ProjectDBGet:
         async with self.engine.acquire() as conn:
             result = await conn.execute(
                 sa.select(
@@ -776,11 +775,11 @@ class ProjectDBAPI(BaseProjectDB):
             row = await result.fetchone()
             if row is None:
                 raise ProjectNotFoundError(project_uuid=project_uuid)
-            return ProjectDB.model_validate(row)
+            return ProjectDBGet.model_validate(row)
 
     async def get_user_specific_project_data_db(
         self, project_uuid: ProjectID, private_workspace_user_id_or_none: UserID | None
-    ) -> UserSpecificProjectDataDB:
+    ) -> UserSpecificProjectDataDBGet:
         async with self.engine.acquire() as conn:
             result = await conn.execute(
                 sa.select(
@@ -805,7 +804,7 @@ class ProjectDBAPI(BaseProjectDB):
             row = await result.fetchone()
             if row is None:
                 raise ProjectNotFoundError(project_uuid=project_uuid)
-            return UserSpecificProjectDataDB.model_validate(row)
+            return UserSpecificProjectDataDBGet.model_validate(row)
 
     async def get_pure_project_access_rights_without_workspace(
         self, user_id: UserID, project_uuid: ProjectID

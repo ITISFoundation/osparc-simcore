@@ -39,6 +39,7 @@ from servicelib.common_headers import (
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.redis import get_project_locked_state
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
+from simcore_service_webserver.projects.models import ProjectDict
 
 from .._meta import API_VTAG as VTAG
 from ..catalog.client import get_services_for_user_in_product
@@ -55,7 +56,7 @@ from ._common.models import ProjectPathParams, RequestContext
 from ._crud_handlers_models import (
     ProjectActiveQueryParams,
     ProjectCreateHeaders,
-    ProjectCreateParams,
+    ProjectCreateQueryParams,
     ProjectFilters,
     ProjectsListQueryParams,
     ProjectsSearchQueryParams,
@@ -120,8 +121,8 @@ async def create_project(request: web.Request):
     # - Create https://google.aip.dev/133
     #
     req_ctx = RequestContext.model_validate(request)
-    query_params: ProjectCreateParams = parse_request_query_parameters_as(
-        ProjectCreateParams, request
+    query_params: ProjectCreateQueryParams = parse_request_query_parameters_as(
+        ProjectCreateQueryParams, request
     )
     header_params = parse_request_headers_as(ProjectCreateHeaders, request)
     if query_params.as_template:  # create template from
@@ -131,6 +132,7 @@ async def create_project(request: web.Request):
     # this entrypoint are in reality multiple entrypoints in one, namely
     # :create, :copy (w/ and w/o override)
     # NOTE: see clone_project
+    predefined_project: ProjectDict | None
 
     if not request.can_read_body:
         # request w/o body
@@ -143,14 +145,7 @@ async def create_project(request: web.Request):
             ProjectCreateNew | ProjectCopyOverride | EmptyModel,  # type: ignore[arg-type] # from pydantic v2 --> https://github.com/pydantic/pydantic/discussions/4950
             request,
         )
-        predefined_project = (
-            project_create.model_dump(
-                exclude_unset=True,
-                by_alias=True,
-                exclude_none=True,
-            )
-            or None
-        )
+        predefined_project = project_create.to_domain_model() or None
 
     return await start_long_running_task(
         request,

@@ -167,7 +167,7 @@ def create_new_project_for_job(
                 },
             },
             slideshow={},
-            currentNodeId=solver_id,  # type: ignore[arg-type]
+            current_node_id=solver_id,  # type: ignore[arg-type]
             annotations={},
         ),
         accessRights={},  # type: ignore[call-arg]  # This MUST be called with alias
