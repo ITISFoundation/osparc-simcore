@@ -23,10 +23,10 @@ def test_itis_vip_syncer_settings(
     assert settings
 
     with monkeypatch.context() as patch:
-        patch.setenv("LICENSES_ITIS_VIP_SYNCER_PERIODICITY", "1D00:00:00")
+        patch.setenv("LICENSES_ITIS_VIP_SYNCER_PERIODICITY", "1D02:03:04")
 
         settings: LicensesSettings = LicensesSettings.create_from_envs()
         assert settings
         assert settings.LICENSES_ITIS_VIP_SYNCER_PERIODICITY == datetime.timedelta(
-            days=1
+            days=1, hours=2, minutes=3, seconds=4
         )
