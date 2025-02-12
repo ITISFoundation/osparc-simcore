@@ -194,7 +194,7 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
           const dateBy = this.getChildControl("date-by");
           dateBy.set({
             date: value,
-            toolTipText: this.tr("Moved to the bin"),
+            toolTipText: this.tr("Deleted"),
           });
         }
       }
