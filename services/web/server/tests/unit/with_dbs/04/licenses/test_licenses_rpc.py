@@ -192,11 +192,10 @@ async def test_license_checkout_workflow(
 
     checkout = await checkout_licensed_item_for_wallet(
         rpc_client,
-        key=licensed_item_db.key,
-        version=licensed_item_db.version,
         product_name=osparc_product_name,
         user_id=logged_user["id"],
         wallet_id=1,
+        licensed_item_id=licensed_item_db.licensed_item_id,
         num_of_seats=1,
         service_run_id="run_1",
     )

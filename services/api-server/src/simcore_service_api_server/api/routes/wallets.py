@@ -8,10 +8,12 @@ from pydantic import PositiveInt
 from ...api.dependencies.authentication import get_current_user_id, get_product_name
 from ...api.dependencies.webserver_rpc import get_wb_api_rpc_client
 from ...exceptions.service_errors_utils import DEFAULT_BACKEND_SERVICE_STATUS_CODES
+from ...models.pagination import Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
 from ...models.schemas.licensed_items import LicensedItemCheckoutData
 from ...models.schemas.model_adapter import (
     LicensedItemCheckoutGet,
+    LicensedItemGet,
     WalletGetWithAvailableCreditsLegacy,
 )
 from ...services_rpc.wb_api_server import WbApiRpcClient
@@ -60,26 +62,26 @@ async def get_wallet(
     return await webserver_api.get_wallet(wallet_id=wallet_id)
 
 
-# @router.get(
-#     "/{wallet_id}/licensed-items",
-#     response_model=Page[LicensedItemGet],
-#     status_code=status.HTTP_200_OK,
-#     responses=WALLET_STATUS_CODES,
-#     description="Get all available licensed items for a given wallet",
-# )
-# async def get_available_licensed_items_for_wallet(
-#     wallet_id: int,
-#     page_params: Annotated[PaginationParams, Depends()],
-#     web_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
-#     product_name: Annotated[str, Depends(get_product_name)],
-#     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
-# ):
-#     return await web_api_rpc.get_available_licensed_items_for_wallet(
-#         product_name=product_name,
-#         wallet_id=wallet_id,
-#         user_id=user_id,
-#         page_params=page_params,
-#     )
+@router.get(
+    "/{wallet_id}/licensed-items",
+    response_model=Page[LicensedItemGet],
+    status_code=status.HTTP_200_OK,
+    responses=WALLET_STATUS_CODES,
+    description="Get all available licensed items for a given wallet",
+)
+async def get_available_licensed_items_for_wallet(
+    wallet_id: int,
+    page_params: Annotated[PaginationParams, Depends()],
+    web_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
+    product_name: Annotated[str, Depends(get_product_name)],
+    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+):
+    return await web_api_rpc.get_available_licensed_items_for_wallet(
+        product_name=product_name,
+        wallet_id=wallet_id,
+        user_id=user_id,
+        page_params=page_params,
+    )
 
 
 @router.post(
