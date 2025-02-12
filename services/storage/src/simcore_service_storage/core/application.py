@@ -29,6 +29,7 @@ from ..api.rest.routes import setup_rest_api_routes
 from ..dsm import setup_dsm
 from ..dsm_cleaner import setup_dsm_cleaner
 from ..exceptions.handlers import set_exception_handlers
+from ..modules.celery.celery import setup_celery
 from ..modules.db import setup_db
 from ..modules.long_running_tasks import setup_rest_api_long_running_tasks_for_uploads
 from ..modules.redis import setup as setup_redis
@@ -81,10 +82,13 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
     setup_rest_api_routes(app, API_VTAG)
     set_exception_handlers(app)
 
+    setup_redis(app)
+
     setup_dsm(app)
     if settings.STORAGE_CLEANER_INTERVAL_S:
-        setup_redis(app)
         setup_dsm_cleaner(app)
+
+    setup_celery(app)
 
     if settings.STORAGE_PROFILING:
         app.add_middleware(ProfilerMiddleware)
