@@ -170,7 +170,6 @@ async def get_active_purchased_seats_for_key_version_wallet(
     engine: AsyncEngine,
     connection: AsyncConnection | None = None,
     *,
-    # licensed_item_id: LicensedItemID,
     key: str,
     version: str,
     wallet_id: WalletID,
