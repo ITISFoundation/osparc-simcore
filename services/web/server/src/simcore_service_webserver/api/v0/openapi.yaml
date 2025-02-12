@@ -5670,7 +5670,7 @@ paths:
             application/json:
               schema:
                 items:
-                  $ref: '#/components/schemas/DatasetMetaData'
+                  $ref: '#/components/schemas/FileLocation'
                 type: array
                 title: Response List Storage Locations
   /v0/storage/locations/{location_id}/datasets:
@@ -9296,6 +9296,20 @@ components:
       required:
       - date
       title: FeaturesDict
+    FileLocation:
+      properties:
+        name:
+          type: string
+          title: Name
+        id:
+          type: integer
+          title: Id
+      additionalProperties: false
+      type: object
+      required:
+      - name
+      - id
+      title: FileLocation
     FileMetaData:
       properties:
         file_uuid:
