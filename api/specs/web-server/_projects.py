@@ -74,7 +74,7 @@ class _ProjectCreateHeaderParams(BaseModel):
 )
 async def create_project(
     _h: Annotated[_ProjectCreateHeaderParams, Depends()],
-    _path: Annotated[ProjectCreateQueryParams, Depends()],
+    _query: Annotated[ProjectCreateQueryParams, Depends()],
     _body: ProjectCreateNew | ProjectCopyOverride,
 ):
     ...

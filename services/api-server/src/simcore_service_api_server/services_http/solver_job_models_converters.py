@@ -11,12 +11,13 @@ from functools import lru_cache
 
 import arrow
 from models_library.api_schemas_webserver.projects import ProjectCreateNew, ProjectGet
+from models_library.api_schemas_webserver.projects_ui import StudyUI
 from models_library.basic_types import KeyIDStr
 from models_library.projects_nodes import InputID
 from pydantic import TypeAdapter
 
 from ..models.basic_types import VersionStr
-from ..models.domain.projects import InputTypes, Node, SimCoreFileLink, StudyUI
+from ..models.domain.projects import InputTypes, Node, SimCoreFileLink
 from ..models.schemas.files import File
 from ..models.schemas.jobs import (
     ArgumentTypes,

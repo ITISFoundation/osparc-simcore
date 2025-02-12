@@ -5,10 +5,10 @@ from typing import Any, TypeAlias
 from aiopg.sa.result import RowProxy
 from common_library.dict_tools import remap_keys
 from models_library.api_schemas_webserver.projects import ProjectPatch
+from models_library.api_schemas_webserver.projects_ui import StudyUI
 from models_library.folders import FolderID
 from models_library.groups import GroupID
 from models_library.projects import ClassifierID, ProjectID
-from models_library.projects_ui import StudyUI
 from models_library.users import UserID
 from models_library.utils.common_validators import (
     empty_str_to_none_pre_validator,
