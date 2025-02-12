@@ -1,3 +1,4 @@
+from datetime import timedelta
 from typing import Annotated, Self
 
 from fastapi import FastAPI
@@ -94,6 +95,11 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
             "STORAGE_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"
         ),
         description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') to a list of _logger message patterns that should be filtered out.",
+    )
+
+    STORAGE_EXPORT_DURATION: timedelta = Field(
+        default=timedelta(weeks=1),
+        description="time after which the crated export in S3 will expire and should be removed",
     )
 
     @field_validator("LOG_LEVEL", mode="before")

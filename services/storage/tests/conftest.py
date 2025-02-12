@@ -528,26 +528,28 @@ async def populate_directory(
     storage_s3_bucket: S3BucketName,
     project_id: ProjectID,
     node_id: NodeID,
-) -> Callable[..., Awaitable[None]]:
+) -> Callable[..., Awaitable[set[SimcoreS3FileID]]]:
     async def _create_content(
         file_size_in_dir: ByteSize,
         dir_name: str,
         subdir_count: int = 4,
         file_count: int = 5,
-    ) -> None:
+    ) -> set[SimcoreS3FileID]:
         file = create_file_of_size(file_size_in_dir, "some_file")
+
+        object_keys: set[SimcoreS3FileID] = set()
 
         async def _create_file(s: int, f: int):
             file_name = f"{dir_name}/sub-dir-{s}/file-{f}"
             clean_path = Path(f"{project_id}/{node_id}/{file_name}")
+            object_key = TypeAdapter(SimcoreS3FileID).validate_python(f"{clean_path}")
             await storage_s3_client.upload_file(
                 bucket=storage_s3_bucket,
                 file=file,
-                object_key=TypeAdapter(SimcoreS3FileID).validate_python(
-                    f"{clean_path}"
-                ),
+                object_key=object_key,
                 bytes_transfered_cb=None,
             )
+            object_keys.add(object_key)
 
         tasks = [
             _create_file(s, f) for f in range(file_count) for s in range(subdir_count)
@@ -556,6 +558,8 @@ async def populate_directory(
         await asyncio.gather(*tasks)
 
         file.unlink()
+
+        return object_keys
 
     return _create_content
 
@@ -600,7 +604,7 @@ async def delete_directory(
 @pytest.fixture
 async def create_directory_with_files(
     create_empty_directory: Callable[..., Awaitable[FileUploadSchema]],
-    populate_directory: Callable[..., Awaitable[None]],
+    populate_directory: Callable[..., Awaitable[set[SimcoreS3FileID]]],
     delete_directory: Callable[..., Awaitable[None]],
 ) -> Callable[..., AbstractAsyncContextManager[FileUploadSchema]]:
     @asynccontextmanager
