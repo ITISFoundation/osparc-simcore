@@ -7,7 +7,12 @@ from typing import NamedTuple
 
 from aiohttp import web
 from deepdiff import DeepDiff  # type: ignore[attr-defined]
-from models_library.licenses import LicensedResourceDB, LicensedResourceType
+from models_library.licenses import (
+    LicensedResourceDB,
+    LicensedResourceID,
+    LicensedResourcePatchDB,
+    LicensedResourceType,
+)
 from pydantic import BaseModel
 
 from . import _licensed_resources_repository
@@ -93,3 +98,27 @@ async def register_licensed_resource(
             RegistrationState.NEWLY_REGISTERED,
             f"NEWLY_REGISTERED: {resource_key=} registered with licensed_resource_id={licensed_resource.licensed_resource_id}",
         )
+
+
+async def trash_licensed_resource(
+    app: web.Application,
+    *,
+    licensed_resource_id: LicensedResourceID,
+) -> None:
+    await _licensed_resources_repository.update(
+        app,
+        licensed_resource_id=licensed_resource_id,
+        updates=LicensedResourcePatchDB(trash=True),
+    )
+
+
+async def untrash_licensed_resource(
+    app: web.Application,
+    *,
+    licensed_resource_id: LicensedResourceID,
+) -> None:
+    await _licensed_resources_repository.update(
+        app,
+        licensed_resource_id=licensed_resource_id,
+        updates=LicensedResourcePatchDB(trash=True),
+    )

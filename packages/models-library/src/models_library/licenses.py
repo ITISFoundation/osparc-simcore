@@ -88,6 +88,10 @@ class LicensedItemPatchDB(BaseModel):
     pricing_plan_id: PricingPlanId | None = None
 
 
+class LicensedResourcePatchDB(BaseModel):
+    trash: bool | None = None
+
+
 class LicensedResourceDB(BaseModel):
     licensed_resource_id: LicensedResourceID
     display_name: str
