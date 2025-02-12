@@ -12,6 +12,7 @@ from pydantic import (
 from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
 from settings_library.application import BaseApplicationSettings
 from settings_library.basic_types import LogLevel, PortInt
+from settings_library.celery import CelerySettings
 from settings_library.postgres import PostgresSettings
 from settings_library.redis import RedisSettings
 from settings_library.s3 import S3Settings
@@ -51,6 +52,10 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     )
 
     STORAGE_S3: S3Settings | None = Field(
+        json_schema_extra={"auto_default_from_env": True}
+    )
+
+    STORAGE_CELERY: CelerySettings | None = Field(
         json_schema_extra={"auto_default_from_env": True}
     )
 
