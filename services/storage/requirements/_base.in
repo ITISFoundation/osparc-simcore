@@ -18,7 +18,7 @@ aioboto3 # s3 storage
 aiofiles # i/o
 asgi_lifespan
 asyncpg # database
-celery[redis]
+celery
 httpx
 opentelemetry-instrumentation-botocore
 packaging
