@@ -17,7 +17,6 @@ depends_on = None
 
 
 # Reuse the existing Enum type
-# existing_enum = sa.Enum("VIP_MODEL", name="licensedresourcetype", native_enum=False)
 licensed_resource_type = postgresql.ENUM(
     "VIP_MODEL", name="licensedresourcetype", create_type=False
 )

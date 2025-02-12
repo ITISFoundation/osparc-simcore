@@ -20,9 +20,11 @@ from ._base import OutputSchema
 
 class LicensedItemRpcGet(BaseModel):
     licensed_item_id: LicensedItemID
+    key: str
+    version: str
     display_name: str
     licensed_resource_type: LicensedResourceType
-    licensed_resource_data: dict[str, Any]
+    licensed_resources: list[dict[str, Any]]
     pricing_plan_id: PricingPlanId
     created_at: datetime
     modified_at: datetime
@@ -32,9 +34,11 @@ class LicensedItemRpcGet(BaseModel):
             "examples": [
                 {
                     "licensed_item_id": "0362b88b-91f8-4b41-867c-35544ad1f7a1",
+                    "key": "Duke",
+                    "version": "1.0.0",
                     "display_name": "best-model",
                     "licensed_resource_type": f"{LicensedResourceType.VIP_MODEL}",
-                    "licensed_resource_data": cast(JsonDict, VIP_DETAILS_EXAMPLE),
+                    "licensed_resources": [cast(JsonDict, VIP_DETAILS_EXAMPLE)],
                     "pricing_plan_id": "15",
                     "created_at": "2024-12-12 09:59:26.422140",
                     "modified_at": "2024-12-12 09:59:26.422140",
@@ -58,6 +62,7 @@ class _ItisVipRestData(OutputSchema):
     thumbnail: str
     features: FeaturesDict  # NOTE: here there is a bit of coupling with domain model
     doi: str | None
+    license_version: str
 
 
 class _ItisVipResourceRestData(OutputSchema):

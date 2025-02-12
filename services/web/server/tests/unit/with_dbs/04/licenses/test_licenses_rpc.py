@@ -25,9 +25,17 @@ from servicelib.rabbitmq.rpc_interfaces.webserver.licenses.licensed_items import
     release_licensed_item_for_wallet,
 )
 from settings_library.rabbit import RabbitSettings
+from simcore_postgres_database.models.licensed_item_to_resource import (
+    licensed_item_to_resource,
+)
 from simcore_postgres_database.models.users import UserRole
+from simcore_postgres_database.utils_repos import transaction_context
 from simcore_service_webserver.application_settings import ApplicationSettings
-from simcore_service_webserver.licenses import _licensed_items_repository
+from simcore_service_webserver.db.plugin import get_asyncpg_engine
+from simcore_service_webserver.licenses import (
+    _licensed_items_repository,
+    _licensed_resources_repository,
+)
 
 pytest_simcore_core_services_selection = [
     "rabbit",
@@ -133,15 +141,39 @@ async def test_license_checkout_workflow(
     assert len(result.items) == 0
     assert result.total == 0
 
-    license_item_db = await _licensed_items_repository.create(
+    licensed_item_db = await _licensed_items_repository.create(
         client.app,
+        key="Duke",
+        version="1.0.0",
         product_name=osparc_product_name,
         display_name="Model A display name",
-        licensed_resource_name="Model A",
         licensed_resource_type=LicensedResourceType.VIP_MODEL,
         pricing_plan_id=pricing_plan_id,
-        licensed_resource_data=VIP_DETAILS_EXAMPLE,
     )
+    _licensed_item_id = licensed_item_db.licensed_item_id
+
+    got_licensed_resource_duke = (
+        await _licensed_resources_repository.create_if_not_exists(
+            client.app,
+            display_name="Duke",
+            licensed_resource_name="Duke",
+            licensed_resource_type=LicensedResourceType.VIP_MODEL,
+            licensed_resource_data={
+                "category_id": "HumanWholeBody",
+                "category_display": "Humans",
+                "source": VIP_DETAILS_EXAMPLE,
+            },
+        )
+    )
+
+    # Connect them via licensed_item_to_resorce DB table
+    async with transaction_context(get_asyncpg_engine(client.app)) as conn:
+        await conn.execute(
+            licensed_item_to_resource.insert().values(
+                licensed_item_id=_licensed_item_id,
+                licensed_resource_id=got_licensed_resource_duke.licensed_resource_id,
+            )
+        )
 
     result = await get_licensed_items(
         rpc_client, product_name=osparc_product_name, offset=0, limit=20
@@ -160,10 +192,11 @@ async def test_license_checkout_workflow(
 
     checkout = await checkout_licensed_item_for_wallet(
         rpc_client,
+        key=licensed_item_db.key,
+        version=licensed_item_db.version,
         product_name=osparc_product_name,
         user_id=logged_user["id"],
         wallet_id=1,
-        licensed_item_id=license_item_db.licensed_item_id,
         num_of_seats=1,
         service_run_id="run_1",
     )
