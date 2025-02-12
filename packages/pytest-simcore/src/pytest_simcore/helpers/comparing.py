@@ -1,6 +1,5 @@
 import asyncio
 import hashlib
-from collections.abc import Iterable
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 from typing import TypeAlias
@@ -24,10 +23,6 @@ async def assert_same_file_content(path_1: Path, path_2: Path):
 
 def get_files_info_from_path(folder: Path) -> _FilesInfo:
     return {get_relative_to(folder, f): f for f in folder.rglob("*") if f.is_file()}
-
-
-def get_files_info_from_itrable(items: Iterable[Path]) -> _FilesInfo:
-    return {f.name: f for f in items if f.is_file()}
 
 
 def compute_hash(file_path: Path) -> tuple[Path, str]:

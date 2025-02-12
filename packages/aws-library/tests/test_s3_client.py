@@ -1,9 +1,10 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
+# pylint:disable=contextmanager-generator-missing-cleanup
+# pylint:disable=no-name-in-module
+# pylint:disable=protected-access
 # pylint:disable=redefined-outer-name
 # pylint:disable=too-many-arguments
-# pylint:disable=protected-access
-# pylint:disable=no-name-in-module
+# pylint:disable=unused-argument
+# pylint:disable=unused-variable
 
 
 import asyncio
@@ -14,6 +15,7 @@ import random
 import time
 from collections import defaultdict
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -42,7 +44,6 @@ from pytest_mock import MockerFixture
 from pytest_simcore.helpers.comparing import (
     assert_same_contents,
     assert_same_file_content,
-    get_files_info_from_itrable,
     get_files_info_from_path,
 )
 from pytest_simcore.helpers.logging_tools import log_context
@@ -58,7 +59,7 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.archiving_utils import unarchive_dir
 from servicelib.file_utils import remove_directory
 from servicelib.progress_bar import ProgressBarData
-from servicelib.utils import limited_as_completed
+from servicelib.utils import limited_as_completed, limited_gather
 from servicelib.zip_stream import (
     ArchiveEntries,
     DiskStreamReader,
@@ -366,7 +367,7 @@ def set_log_levels_for_noisy_libraries() -> None:
 @pytest.fixture
 async def with_uploaded_folder_on_s3(
     create_folder_of_size_with_multiple_files: Callable[
-        [ByteSize, ByteSize, ByteSize], Path
+        [ByteSize, ByteSize, ByteSize, Path | None], Path
     ],
     upload_file: Callable[[Path, Path], Awaitable[UploadedFile]],
     directory_size: ByteSize,
@@ -375,7 +376,7 @@ async def with_uploaded_folder_on_s3(
 ) -> list[UploadedFile]:
     # create random files of random size and upload to S3
     folder = create_folder_of_size_with_multiple_files(
-        ByteSize(directory_size), ByteSize(min_file_size), ByteSize(max_file_size)
+        ByteSize(directory_size), ByteSize(min_file_size), ByteSize(max_file_size), None
     )
     list_uploaded_files = []
 
@@ -1438,44 +1439,68 @@ async def test_upload_object_from_file_stream(
     await simcore_s3_api.delete_object(bucket=with_s3_bucket, object_key=object_key)
 
 
+@contextmanager
+def _folder_with_files(
+    create_folder_of_size_with_multiple_files: Callable[
+        [ByteSize, ByteSize, ByteSize, Path | None], Path
+    ],
+    target_folder: Path,
+) -> Iterator[dict[str, Path]]:
+    target_folder.mkdir(parents=True, exist_ok=True)
+    folder_path = create_folder_of_size_with_multiple_files(
+        TypeAdapter(ByteSize).validate_python("10MiB"),
+        TypeAdapter(ByteSize).validate_python("10KiB"),
+        TypeAdapter(ByteSize).validate_python("100KiB"),
+        target_folder,
+    )
+
+    s3_keys_to_files = get_files_info_from_path(folder_path)
+
+    yield s3_keys_to_files
+
+    for file in s3_keys_to_files.values():
+        file.unlink()
+
+
 @pytest.fixture
 def files_stored_locally(
-    create_file_of_size: Callable[[ByteSize], Path],
-    file_size: ByteSize,
-    local_count: int,
-) -> Iterator[set[Path]]:
-    files = {create_file_of_size(file_size) for _ in range(local_count)}
-
-    yield files
-
-    for file in files:
-        file.unlink()
+    tmp_path: Path,
+    create_folder_of_size_with_multiple_files: Callable[
+        [ByteSize, ByteSize, ByteSize, Path | None], Path
+    ],
+) -> Iterator[Path]:
+    dir_path = tmp_path / "not_uploaded"
+    with _folder_with_files(create_folder_of_size_with_multiple_files, dir_path):
+        yield dir_path
 
 
 @pytest.fixture
 async def files_stored_in_s3(
-    create_file_of_size: Callable[[ByteSize], Path],
-    file_size: ByteSize,
-    remote_count: int,
+    tmp_path: Path,
+    create_folder_of_size_with_multiple_files: Callable[
+        [ByteSize, ByteSize, ByteSize, Path | None], Path
+    ],
     s3_client: S3Client,
     with_s3_bucket: S3BucketName,
-) -> AsyncIterator[set[Path]]:
-    files = {create_file_of_size(file_size) for _ in range(remote_count)}
-    for file in files:
-        await s3_client.upload_file(
-            Filename=f"{file}",
-            Bucket=with_s3_bucket,
-            Key=file.name,
+) -> AsyncIterator[Path]:
+    dir_path = tmp_path / "stored_in_s3"
+    with _folder_with_files(
+        create_folder_of_size_with_multiple_files, dir_path
+    ) as s3_keys_to_files:
+        await limited_gather(
+            *(
+                s3_client.upload_file(
+                    Filename=f"{file_path}", Bucket=with_s3_bucket, Key=s3_key
+                )
+                for s3_key, file_path in s3_keys_to_files.items()
+            ),
+            limit=10,
         )
+        yield dir_path
 
-    yield files
-
-    await delete_all_object_versions(
-        s3_client, with_s3_bucket, {file.name for file in files}
-    )
-
-    for file in files:
-        file.unlink()
+        await delete_all_object_versions(
+            s3_client, with_s3_bucket, s3_keys_to_files.keys()
+        )
 
 
 @pytest.fixture
@@ -1513,23 +1538,10 @@ def mocked_progress_bar_cb(mocker: MockerFixture) -> Mock:
     return mocker.Mock(side_effect=_progress_cb)
 
 
-def _get_s3_object_keys(files: set[Path]) -> set[S3ObjectKey]:
-    return {f.name for f in files}
-
-
-@pytest.mark.parametrize(
-    "file_size, local_count, remote_count",
-    [
-        pytest.param(TypeAdapter(ByteSize).validate_python("2Mib"), 10, 10, id="micro"),
-        pytest.param(
-            TypeAdapter(ByteSize).validate_python("10Mib"), 10, 10, id="small"
-        ),
-    ],
-)
 async def test_workflow_compress_s3_objects_and_local_files_in_a_single_archive_then_upload_to_s3(
     mocked_s3_server_envs: EnvVarsDict,
-    files_stored_locally: set[Path],
-    files_stored_in_s3: set[Path],
+    files_stored_locally: Path,
+    files_stored_in_s3: Path,
     archive_download_path: Path,
     extracted_archive_path: Path,
     simcore_s3_api: SimcoreS3API,
@@ -1547,18 +1559,19 @@ async def test_workflow_compress_s3_objects_and_local_files_in_a_single_archive_
     # 1. assemble and upload zip archive
 
     archive_file_entries: ArchiveEntries = []
-    for file in files_stored_locally:
+
+    local_files = get_files_info_from_path(files_stored_locally)
+    for file_name, file_path in local_files.items():
         archive_file_entries.append(
             (
-                file.name,
-                DiskStreamReader(file).get_stream_data(),
+                file_name,
+                DiskStreamReader(file_path).get_stream_data(),
             )
         )
 
-    s3_object_keys = _get_s3_object_keys(files_stored_in_s3)
-    assert len(s3_object_keys) == len(files_stored_in_s3)
+    s3_files = get_files_info_from_path(files_stored_in_s3)
 
-    for s3_object_key in s3_object_keys:
+    for s3_object_key in s3_files:
         archive_file_entries.append(
             (
                 s3_object_key,
@@ -1601,9 +1614,9 @@ async def test_workflow_compress_s3_objects_and_local_files_in_a_single_archive_
 
     # 4. compare
     print("comparing files")
-    all_files_in_zip = get_files_info_from_itrable(
+    all_files_in_zip = get_files_info_from_path(
         files_stored_locally
-    ) | get_files_info_from_itrable(files_stored_in_s3)
+    ) | get_files_info_from_path(files_stored_in_s3)
 
     await assert_same_contents(
         all_files_in_zip, get_files_info_from_path(extracted_archive_path)
