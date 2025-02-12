@@ -15,7 +15,6 @@ import aioboto3
 import aiofiles
 import pytest
 from faker import Faker
-from models_library.basic_types import IDStr
 from models_library.progress_bar import ProgressReport
 from pydantic import AnyUrl, ByteSize, TypeAdapter
 from servicelib.file_utils import remove_directory
@@ -162,7 +161,7 @@ async def _upload_local_dir_to_s3(
     async with ProgressBarData(
         num_steps=1,
         progress_report_cb=_report_progress_upload,
-        description=IDStr(faker.pystr()),
+        description=faker.pystr(),
     ) as progress_bar:
         await r_clone.sync_local_to_s3(
             r_clone_settings,
@@ -189,7 +188,7 @@ async def _download_from_s3_to_local_dir(
     async with ProgressBarData(
         num_steps=1,
         progress_report_cb=_report_progress_download,
-        description=IDStr(faker.pystr()),
+        description=faker.pystr(),
     ) as progress_bar:
         await r_clone.sync_s3_to_local(
             r_clone_settings,

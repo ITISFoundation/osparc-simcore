@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: simcore-service-webserver
   description: Main service with an interface (http-API & websockets) to the web front-end
-  version: 0.54.0
+  version: 0.56.0
 servers:
 - url: ''
   description: webserver
@@ -2367,7 +2367,8 @@ paths:
       tags:
       - catalog
       - pricing-plans
-      summary: Retrieve default pricing plan for provided service
+      summary: Get Service Pricing Plan
+      description: Retrieve default pricing plan for provided service
       operationId: get_service_pricing_plan
       parameters:
       - name: service_key
@@ -2947,7 +2948,8 @@ paths:
       tags:
       - folders
       - workspaces
-      summary: Move folder to the workspace
+      summary: Move Folder To Workspace
+      description: Move folder to the workspace
       operationId: move_folder_to_workspace
       parameters:
       - name: folder_id
@@ -3560,7 +3562,10 @@ paths:
     post:
       tags:
       - projects
-      summary: Creates a new project or copies an existing one
+      summary: Create Project
+      description: 'Creates a new project or copies an existing one. NOTE: implemented
+        as a long running task, i.e. requires polling `status_href` (HTTP_200_OK)
+        to get status and `result_href` (HTTP_201_CREATED) to get created project'
       operationId: create_project
       parameters:
       - name: x_simcore_user_agent
@@ -3630,7 +3635,7 @@ paths:
               - $ref: '#/components/schemas/ProjectCopyOverride'
               title: ' Body'
       responses:
-        '201':
+        '202':
           description: Successful Response
           content:
             application/json:
@@ -3912,7 +3917,8 @@ paths:
       tags:
       - projects
       - comments
-      summary: Create a new comment for a specific project. The request body should
+      summary: Create Project Comment
+      description: Create a new comment for a specific project. The request body should
         contain the comment contents and user information.
       operationId: create_project_comment
       parameters:
@@ -3940,7 +3946,8 @@ paths:
       tags:
       - projects
       - comments
-      summary: Retrieve all comments for a specific project.
+      summary: List Project Comments
+      description: Retrieve all comments for a specific project.
       operationId: list_project_comments
       parameters:
       - name: project_uuid
@@ -3977,7 +3984,8 @@ paths:
       tags:
       - projects
       - comments
-      summary: Update the contents of a specific comment for a project. The request
+      summary: Update Project Comment
+      description: Update the contents of a specific comment for a project. The request
         body should contain the updated comment contents.
       operationId: update_project_comment
       parameters:
@@ -4013,7 +4021,8 @@ paths:
       tags:
       - projects
       - comments
-      summary: Delete a specific comment associated with a project.
+      summary: Delete Project Comment
+      description: Delete a specific comment associated with a project.
       operationId: delete_project_comment
       parameters:
       - name: project_uuid
@@ -4038,7 +4047,8 @@ paths:
       tags:
       - projects
       - comments
-      summary: Retrieve a specific comment by its ID within a project.
+      summary: Get Project Comment
+      description: Retrieve a specific comment by its ID within a project.
       operationId: get_project_comment
       parameters:
       - name: project_uuid
@@ -4068,7 +4078,8 @@ paths:
       tags:
       - projects
       - folders
-      summary: Move project to the folder
+      summary: Replace Project Folder
+      description: Move project to the folder
       operationId: replace_project_folder
       parameters:
       - name: project_id
@@ -4564,7 +4575,8 @@ paths:
       tags:
       - projects
       - nodes
-      summary: Check whether provided group has access to the project services
+      summary: Get Project Services Access For Gid
+      description: Check whether provided group has access to the project services
       operationId: get_project_services_access_for_gid
       parameters:
       - name: project_id
@@ -4594,7 +4606,8 @@ paths:
       tags:
       - projects
       - nodes
-      summary: Lists all previews in the node's project
+      summary: List Project Nodes Previews
+      description: Lists all previews in the node's project
       operationId: list_project_nodes_previews
       parameters:
       - name: project_id
@@ -4616,7 +4629,8 @@ paths:
       tags:
       - projects
       - nodes
-      summary: Gets a give node's preview
+      summary: Get Project Node Preview
+      description: Gets a give node's preview
       operationId: get_project_node_preview
       parameters:
       - name: project_id
@@ -4646,7 +4660,8 @@ paths:
     get:
       tags:
       - projects
-      summary: Get currently connected pricing unit to the project node.
+      summary: Get Project Node Pricing Unit
+      description: Get currently connected pricing unit to the project node.
       operationId: get_project_node_pricing_unit
       parameters:
       - name: project_id
@@ -4674,8 +4689,9 @@ paths:
     put:
       tags:
       - projects
-      summary: Connect pricing unit to the project node (Project node can have only
-        one pricing unit)
+      summary: Connect Pricing Unit To Project Node
+      description: Connect pricing unit to the project node (Project node can have
+        only one pricing unit)
       operationId: connect_pricing_unit_to_project_node
       parameters:
       - name: project_id
@@ -4973,7 +4989,8 @@ paths:
     get:
       tags:
       - projects
-      summary: Get current connected wallet to the project.
+      summary: Get Project Wallet
+      description: Get current connected wallet to the project.
       operationId: get_project_wallet
       parameters:
       - name: project_id
@@ -4994,7 +5011,8 @@ paths:
     put:
       tags:
       - projects
-      summary: Connect wallet to the project (Project can have only one wallet)
+      summary: Connect Wallet To Project
+      description: Connect wallet to the project (Project can have only one wallet)
       operationId: connect_wallet_to_project
       parameters:
       - name: project_id
@@ -5059,7 +5077,8 @@ paths:
       tags:
       - projects
       - workspaces
-      summary: Move project to the workspace
+      summary: Move Project To Workspace
+      description: Move project to the workspace
       operationId: move_project_to_workspace
       parameters:
       - name: project_id
@@ -5102,8 +5121,9 @@ paths:
     get:
       tags:
       - usage
-      summary: Retrieve finished and currently running user services (user and product
-        are taken from context, optionally wallet_id parameter might be provided).
+      summary: List Resource Usage Services
+      description: Retrieve finished and currently running user services (user and
+        product are taken from context, optionally wallet_id parameter might be provided).
       operationId: list_resource_usage_services
       parameters:
       - name: order_by
@@ -5160,7 +5180,8 @@ paths:
     get:
       tags:
       - usage
-      summary: Used credits based on aggregate by type, currently supported `services`.
+      summary: List Osparc Credits Aggregated Usages
+      description: Used credits based on aggregate by type, currently supported `services`.
         (user and product are taken from context, optionally wallet_id parameter might
         be provided).
       operationId: list_osparc_credits_aggregated_usages
@@ -5206,7 +5227,8 @@ paths:
     get:
       tags:
       - usage
-      summary: Redirects to download CSV link. CSV obtains finished and currently
+      summary: Export Resource Usage Services
+      description: Redirects to download CSV link. CSV obtains finished and currently
         running user services (user and product are taken from context, optionally
         wallet_id parameter might be provided).
       operationId: export_resource_usage_services
@@ -5596,8 +5618,8 @@ paths:
     get:
       tags:
       - storage
-      summary: Get available storage locations
-      description: Returns the list of available storage locations
+      summary: List Storage Locations
+      description: Get available storage locations
       operationId: list_storage_locations
       responses:
         '200':
@@ -5606,15 +5628,15 @@ paths:
             application/json:
               schema:
                 items:
-                  $ref: '#/components/schemas/DatasetMetaData'
+                  $ref: '#/components/schemas/FileLocation'
                 type: array
                 title: Response List Storage Locations
   /v0/storage/locations/{location_id}/datasets:
     get:
       tags:
       - storage
-      summary: Get datasets metadata
-      description: returns all the top level datasets a user has access to
+      summary: List Datasets Metadata
+      description: Get datasets metadata
       operationId: list_datasets_metadata
       parameters:
       - name: location_id
@@ -5634,9 +5656,8 @@ paths:
     get:
       tags:
       - storage
-      summary: Get datasets metadata
-      description: returns all the file meta data a user has access to (uuid_filter
-        may be used)
+      summary: Get Files Metadata
+      description: Get datasets metadata
       operationId: get_files_metadata
       parameters:
       - name: location_id
@@ -5674,8 +5695,8 @@ paths:
     get:
       tags:
       - storage
-      summary: Get Files Metadata
-      description: returns all the file meta data inside dataset with dataset_id
+      summary: List Dataset Files Metadata
+      description: Get Files Metadata
       operationId: list_dataset_files_metadata
       parameters:
       - name: location_id
@@ -5713,8 +5734,7 @@ paths:
       tags:
       - storage
       summary: Get File Metadata
-      description: returns the file meta data of file_id if user_id has the rights
-        to
+      description: Get File Metadata
       operationId: get_file_metadata
       parameters:
       - name: location_id
@@ -5743,8 +5763,8 @@ paths:
     get:
       tags:
       - storage
-      summary: Returns download link for requested file
-      description: creates a download file link if user has the rights to
+      summary: Download File
+      description: Returns download link for requested file
       operationId: download_file
       parameters:
       - name: location_id
@@ -5775,9 +5795,8 @@ paths:
     put:
       tags:
       - storage
-      summary: Returns upload link
-      description: creates one or more upload file links if user has the rights to,
-        expects the client to complete/abort upload
+      summary: Upload File
+      description: Returns upload link
       operationId: upload_file
       parameters:
       - name: location_id
@@ -5829,8 +5848,8 @@ paths:
     delete:
       tags:
       - storage
-      summary: Deletes File
-      description: deletes file if user has the rights to
+      summary: Delete File
+      description: Deletes File
       operationId: delete_file
       parameters:
       - name: location_id
@@ -5910,8 +5929,8 @@ paths:
     post:
       tags:
       - storage
-      summary: Check for upload completion
-      description: Returns state of upload completion
+      summary: Is Completed Upload File
+      description: Check for upload completion
       operationId: is_completed_upload_file
       parameters:
       - name: location_id
@@ -6630,8 +6649,8 @@ paths:
     get:
       tags:
       - maintenance
-      summary: Front end runtime configuration
-      description: Returns app and products configs
+      summary: Get Config
+      description: Front end runtime configuration
       operationId: get_config
       responses:
         '200':
@@ -6657,7 +6676,8 @@ paths:
     get:
       tags:
       - maintenance
-      summary: checks status of self and connected services
+      summary: Get App Status
+      description: checks status of self and connected services
       operationId: get_app_status
       responses:
         '200':
@@ -6784,7 +6804,7 @@ components:
       - stats
       - limits
       title: Activity
-    Annotation:
+    AnnotationUI:
       properties:
         type:
           type: string
@@ -6807,7 +6827,7 @@ components:
       - type
       - color
       - attributes
-      title: Annotation
+      title: AnnotationUI
     Announcement:
       properties:
         id:
@@ -9221,6 +9241,20 @@ components:
       required:
       - date
       title: FeaturesDict
+    FileLocation:
+      properties:
+        name:
+          type: string
+          title: Name
+        id:
+          type: integer
+          title: Id
+      additionalProperties: false
+      type: object
+      required:
+      - name
+      - id
+      title: FileLocation
     FileMetaData:
       properties:
         file_uuid:
@@ -10420,7 +10454,7 @@ components:
       additionalProperties: false
       type: object
       title: LogoutBody
-    Marker:
+    MarkerUI:
       properties:
         color:
           type: string
@@ -10430,7 +10464,7 @@ components:
       type: object
       required:
       - color
-      title: Marker
+      title: MarkerUI
     MyGroupsGet:
       properties:
         me:
@@ -12124,14 +12158,6 @@ components:
           - type: string
             const: ''
           title: Thumbnail
-        creationDate:
-          type: string
-          pattern: \d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[0-9])(:(\d|[0-5]\d)){2}(\.\d{3})?Z
-          title: Creationdate
-        lastChangeDate:
-          type: string
-          pattern: \d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[0-9])(:(\d|[0-5]\d)){2}(\.\d{3})?Z
-          title: Lastchangedate
         workbench:
           type: object
           title: Workbench
@@ -12147,6 +12173,32 @@ components:
             minLength: 1
           type: object
           title: Accessrights
+        creationDate:
+          type: string
+          pattern: \d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[0-9])(:(\d|[0-5]\d)){2}(\.\d{3})?Z
+          title: Creationdate
+        lastChangeDate:
+          type: string
+          pattern: \d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[0-9])(:(\d|[0-5]\d)){2}(\.\d{3})?Z
+          title: Lastchangedate
+        state:
+          anyOf:
+          - $ref: '#/components/schemas/ProjectState'
+          - type: 'null'
+        trashedAt:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Trashedat
+        trashedBy:
+          anyOf:
+          - type: integer
+            exclusiveMinimum: true
+            minimum: 0
+          - type: 'null'
+          title: Trashedby
+          description: The primary gid of the user who trashed
         tags:
           items:
             type: integer
@@ -12158,20 +12210,16 @@ components:
           type: array
           title: Classifiers
           default: []
-        state:
-          anyOf:
-          - $ref: '#/components/schemas/ProjectState'
-          - type: 'null'
+        quality:
+          type: object
+          title: Quality
+          default: {}
         ui:
           anyOf:
           - $ref: '#/components/schemas/EmptyModel'
           - $ref: '#/components/schemas/StudyUI-Output'
           - type: 'null'
           title: Ui
-        quality:
-          type: object
-          title: Quality
-          default: {}
         dev:
           anyOf:
           - type: object
@@ -12195,37 +12243,23 @@ components:
             minimum: 0
           - type: 'null'
           title: Folderid
-        trashedAt:
-          anyOf:
-          - type: string
-            format: date-time
-          - type: 'null'
-          title: Trashedat
-        trashedBy:
-          anyOf:
-          - type: integer
-            exclusiveMinimum: true
-            minimum: 0
-          - type: 'null'
-          title: Trashedby
-          description: The primary gid of the user who trashed
       type: object
       required:
       - uuid
       - name
       - description
       - thumbnail
-      - creationDate
-      - lastChangeDate
       - workbench
       - prjOwner
       - accessRights
+      - creationDate
+      - lastChangeDate
+      - trashedAt
+      - trashedBy
       - tags
       - dev
       - workspaceId
       - folderId
-      - trashedAt
-      - trashedBy
       title: ProjectGet
     ProjectGroupGet:
       properties:
@@ -12314,14 +12348,6 @@ components:
           - type: string
             const: ''
           title: Thumbnail
-        creationDate:
-          type: string
-          pattern: \d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[0-9])(:(\d|[0-5]\d)){2}(\.\d{3})?Z
-          title: Creationdate
-        lastChangeDate:
-          type: string
-          pattern: \d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[0-9])(:(\d|[0-5]\d)){2}(\.\d{3})?Z
-          title: Lastchangedate
         workbench:
           type: object
           title: Workbench
@@ -12337,6 +12363,32 @@ components:
             minLength: 1
           type: object
           title: Accessrights
+        creationDate:
+          type: string
+          pattern: \d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[0-9])(:(\d|[0-5]\d)){2}(\.\d{3})?Z
+          title: Creationdate
+        lastChangeDate:
+          type: string
+          pattern: \d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[0-9])(:(\d|[0-5]\d)){2}(\.\d{3})?Z
+          title: Lastchangedate
+        state:
+          anyOf:
+          - $ref: '#/components/schemas/ProjectState'
+          - type: 'null'
+        trashedAt:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Trashedat
+        trashedBy:
+          anyOf:
+          - type: integer
+            exclusiveMinimum: true
+            minimum: 0
+          - type: 'null'
+          title: Trashedby
+          description: The primary gid of the user who trashed
         tags:
           items:
             type: integer
@@ -12348,20 +12400,16 @@ components:
           type: array
           title: Classifiers
           default: []
-        state:
-          anyOf:
-          - $ref: '#/components/schemas/ProjectState'
-          - type: 'null'
+        quality:
+          type: object
+          title: Quality
+          default: {}
         ui:
           anyOf:
           - $ref: '#/components/schemas/EmptyModel'
           - $ref: '#/components/schemas/StudyUI-Output'
           - type: 'null'
           title: Ui
-        quality:
-          type: object
-          title: Quality
-          default: {}
         dev:
           anyOf:
           - type: object
@@ -12385,37 +12433,23 @@ components:
             minimum: 0
           - type: 'null'
           title: Folderid
-        trashedAt:
-          anyOf:
-          - type: string
-            format: date-time
-          - type: 'null'
-          title: Trashedat
-        trashedBy:
-          anyOf:
-          - type: integer
-            exclusiveMinimum: true
-            minimum: 0
-          - type: 'null'
-          title: Trashedby
-          description: The primary gid of the user who trashed
       type: object
       required:
       - uuid
       - name
       - description
       - thumbnail
-      - creationDate
-      - lastChangeDate
       - workbench
       - prjOwner
       - accessRights
+      - creationDate
+      - lastChangeDate
+      - trashedAt
+      - trashedBy
       - tags
       - dev
       - workspaceId
       - folderId
-      - trashedAt
-      - trashedBy
       title: ProjectListItem
     ProjectLocked:
       properties:
@@ -13525,7 +13559,7 @@ components:
       - path
       title: SimCoreFileLink
       description: I/O port type to hold a link to a file in simcore S3 storage
-    Slideshow:
+    SlideshowUI:
       properties:
         position:
           type: integer
@@ -13538,7 +13572,7 @@ components:
       type: object
       required:
       - position
-      title: Slideshow
+      title: SlideshowUI
     SpecificInfo:
       properties:
         aws_ec2_instances:
@@ -13643,6 +13677,14 @@ components:
       title: Structure
     StudyUI-Input:
       properties:
+        icon:
+          anyOf:
+          - type: string
+            maxLength: 2083
+            minLength: 1
+            format: uri
+          - type: 'null'
+          title: Icon
         workbench:
           anyOf:
           - type: object
@@ -13669,6 +13711,11 @@ components:
       title: StudyUI
     StudyUI-Output:
       properties:
+        icon:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Icon
         workbench:
           anyOf:
           - type: object
@@ -14613,7 +14660,7 @@ components:
           description: The node position in the workbench
         marker:
           anyOf:
-          - $ref: '#/components/schemas/Marker'
+          - $ref: '#/components/schemas/MarkerUI'
           - type: 'null'
       additionalProperties: false
       type: object
