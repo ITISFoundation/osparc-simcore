@@ -315,10 +315,14 @@ async def list_licensed_items(
 
     # Ordering and pagination
     if order_by.direction == OrderDirection.ASC:
-        list_query = base_query.order_by(asc(getattr(licensed_items.c, order_by.field)))
+        list_query = base_query.order_by(
+            asc(getattr(licensed_items.c, order_by.field)),
+            licensed_items.c.licensed_item_id,
+        )
     else:
         list_query = base_query.order_by(
-            desc(getattr(licensed_items.c, order_by.field))
+            desc(getattr(licensed_items.c, order_by.field)),
+            licensed_items.c.licensed_item_id,
         )
     list_query = list_query.offset(offset).limit(limit)
 

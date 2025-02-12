@@ -424,7 +424,10 @@ async def get_osparc_credits_aggregated_by_service(
 
         # Default ordering and pagination
         list_query = (
-            base_query.order_by(resource_tracker_service_runs.c.service_key.asc())
+            base_query.order_by(
+                resource_tracker_service_runs.c.service_key.asc(),
+                resource_tracker_service_runs.c.service_run_id,
+            )
             .offset(offset)
             .limit(limit)
         )

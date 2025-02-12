@@ -110,13 +110,17 @@ async def list_(
     # Ordering and pagination
     if order_by.direction == OrderDirection.ASC:
         list_query = base_query.order_by(
-            sa.asc(getattr(resource_tracker_licensed_items_purchases.c, order_by.field))
+            sa.asc(
+                getattr(resource_tracker_licensed_items_purchases.c, order_by.field)
+            ),
+            resource_tracker_licensed_items_purchases.c.licensed_item_purchase_id,
         )
     else:
         list_query = base_query.order_by(
             sa.desc(
                 getattr(resource_tracker_licensed_items_purchases.c, order_by.field)
-            )
+            ),
+            resource_tracker_licensed_items_purchases.c.licensed_item_purchase_id,
         )
     list_query = list_query.offset(offset).limit(limit)
 
