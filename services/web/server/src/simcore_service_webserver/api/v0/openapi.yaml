@@ -3146,8 +3146,12 @@ paths:
             schema:
               $ref: '#/components/schemas/LicensedItemsBodyParams'
       responses:
-        '204':
+        '200':
           description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LicensedItemPurchaseGet'
         '404':
           content:
             application/json:

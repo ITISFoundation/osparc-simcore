@@ -2,11 +2,13 @@ import logging
 
 from aiohttp import web
 from models_library.api_schemas_webserver.licensed_items import LicensedItemRestGet
+from models_library.api_schemas_webserver.licensed_items_purchases import (
+    LicensedItemPurchaseGet,
+)
 from models_library.licenses import LicensedItemPage
 from models_library.rest_ordering import OrderBy
 from models_library.rest_pagination import Page
 from models_library.rest_pagination_utils import paginate_data
-from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
@@ -18,6 +20,7 @@ from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 from .._meta import API_VTAG as VTAG
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
+from ..utils_aiohttp import envelope_json_response
 from . import _licensed_items_service
 from ._common.exceptions_handlers import handle_plugin_requests_exceptions
 from ._common.models import (
@@ -101,11 +104,14 @@ async def purchase_licensed_item(request: web.Request):
     path_params = parse_request_path_parameters_as(LicensedItemsPathParams, request)
     body_params = await parse_request_body_as(LicensedItemsBodyParams, request)
 
-    await _licensed_items_service.purchase_licensed_item(
-        app=request.app,
-        user_id=req_ctx.user_id,
-        licensed_item_id=path_params.licensed_item_id,
-        product_name=req_ctx.product_name,
-        body_params=body_params,
+    licensed_item_purchase_get: LicensedItemPurchaseGet = (
+        await _licensed_items_service.purchase_licensed_item(
+            app=request.app,
+            user_id=req_ctx.user_id,
+            licensed_item_id=path_params.licensed_item_id,
+            product_name=req_ctx.product_name,
+            body_params=body_params,
+        )
     )
-    return web.json_response(status=status.HTTP_204_NO_CONTENT)
+
+    return envelope_json_response(licensed_item_purchase_get)
