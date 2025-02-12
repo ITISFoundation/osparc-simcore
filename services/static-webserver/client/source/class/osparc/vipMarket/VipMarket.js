@@ -18,20 +18,20 @@
 qx.Class.define("osparc.vipMarket.VipMarket", {
   extend: qx.ui.core.Widget,
 
-  construct: function(anatomicalModels) {
+  construct: function(licensedItems) {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.HBox(10));
 
     this.__buildLayout();
 
-    if (anatomicalModels) {
-      this.setLicensedItems(anatomicalModels);
+    if (licensedItems) {
+      this.__setLicensedItems(licensedItems);
     }
   },
 
   events: {
-    "importMessageSent": "qx.event.type.Data"
+    "importMessageSent": "qx.event.type.Data",
   },
 
   properties: {
@@ -168,7 +168,7 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
       }, this);
     },
 
-    setLicensedItems: function(licensedItems) {
+    __setLicensedItems: function(licensedItems) {
       const store = osparc.store.Store.getInstance();
       const contextWallet = store.getContextWallet();
       if (!contextWallet) {

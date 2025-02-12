@@ -43,16 +43,16 @@ qx.Class.define("osparc.vipMarket.Market", {
         const licensedItems = values[0];
         const purchasedItems = values[1];
         const categories = [];
-        const rentedCategory = {
-          categoryId: "rentedModels",
+        const purchasedCategory = {
+          categoryId: "purchasedModels",
           label: this.tr("Rented"),
           icon: "osparc/market/RentedModels.svg",
           items: [],
         };
-        categories.push(rentedCategory);
+        categories.push(purchasedCategory);
         licensedItems.forEach(licensedItem => {
           if (purchasedItems.find(purchasedItem => purchasedItem["licensedItemId"] === licensedItem["licensedItemId"])) {
-            rentedCategory["items"].push(licensedItem);
+            purchasedCategory["items"].push(licensedItem);
           }
           if (licensedItem["licensedResourceData"] && licensedItem["licensedResourceData"]["categoryId"]) {
             const categoryId = licensedItem["licensedResourceData"]["categoryId"];
