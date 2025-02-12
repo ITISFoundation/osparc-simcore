@@ -20,27 +20,27 @@ qx.Class.define("osparc.store.Products", {
   type: "singleton",
 
   members: {
-    __newStudyConfig: null,
+    __plusButtonUiConfig: null,
 
-    fetchNewStudyConfig: function() {
+    fetchPlusButtonUiConfig: function() {
       return osparc.utils.Utils.fetchJSON("/resource/osparc/ui_config.json")
         .then(newStudiesData => {
           const product = osparc.product.Utils.getProductName()
           if (product in newStudiesData) {
-            this.__newStudyConfig = newStudiesData[product];
-            return this.__newStudyConfig;
+            this.__plusButtonUiConfig = newStudiesData[product];
+            return this.__plusButtonUiConfig;
           }
           return {};
         })
         .catch(console.error);
     },
 
-    getNewStudyConfig: function() {
+    getPlusButtonUiConfig: function() {
       return new Promise(resolve => {
-        if (this.__newStudyConfig) {
-          resolve(this.__newStudyConfig);
+        if (this.__plusButtonUiConfig) {
+          resolve(this.__plusButtonUiConfig);
         } else {
-          resolve(this.fetchNewStudyConfig())
+          resolve(this.fetchPlusButtonUiConfig())
         }
       });
     },

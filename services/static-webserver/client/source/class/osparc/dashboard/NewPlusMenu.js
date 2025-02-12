@@ -117,7 +117,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
 
     __addNewStudyItems: async function() {
       await Promise.all([
-        osparc.store.Products.getInstance().getNewStudyConfig(),
+        osparc.store.Products.getInstance().getPlusButtonUiConfig(),
         osparc.data.Resources.get("templates")
       ]).then(values => {
         const newStudiesData = values[0];
