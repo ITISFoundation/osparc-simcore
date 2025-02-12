@@ -83,4 +83,5 @@ resource_tracker_licensed_items_checkouts = sa.Table(
         onupdate=RefActions.CASCADE,
         ondelete=RefActions.RESTRICT,
     ),
+    sa.Index("idx_licensed_items_checkouts_key_version", "key", "version"),
 )

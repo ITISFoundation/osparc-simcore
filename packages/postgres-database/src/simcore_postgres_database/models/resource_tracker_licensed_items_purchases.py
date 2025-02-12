@@ -94,4 +94,5 @@ resource_tracker_licensed_items_purchases = sa.Table(
         server_default=sa.sql.func.now(),
     ),
     column_modified_datetime(timezone=True),
+    sa.Index("idx_licensed_items_purchases_key_version", "key", "version"),
 )
