@@ -83,7 +83,7 @@ class CatalogClient:
     ) -> dict[str, Any]:
         resp = await self.request(
             "GET",
-            f"/services/{urllib.parse.quote( service_key, safe='')}/{service_version}",
+            f"/services/{urllib.parse.quote(service_key, safe='')}/{service_version}",
             params={"user_id": user_id},
             headers={"X-Simcore-Products-Name": product_name},
         )
@@ -98,7 +98,7 @@ class CatalogClient:
     ) -> ServiceResourcesDict:
         resp = await self.request(
             "GET",
-            f"/services/{urllib.parse.quote( service_key, safe='')}/{service_version}/resources",
+            f"/services/{urllib.parse.quote(service_key, safe='')}/{service_version}/resources",
             params={"user_id": user_id},
         )
         resp.raise_for_status()
@@ -114,7 +114,7 @@ class CatalogClient:
     ) -> SimcoreServiceLabels:
         resp = await self.request(
             "GET",
-            f"/services/{urllib.parse.quote( service_key, safe='')}/{service_version}/labels",
+            f"/services/{urllib.parse.quote(service_key, safe='')}/{service_version}/labels",
         )
         resp.raise_for_status()
         if resp.status_code == status.HTTP_200_OK:
@@ -137,7 +137,7 @@ class CatalogClient:
     ) -> dict[str, Any]:
         resp = await self.request(
             "GET",
-            f"/services/{urllib.parse.quote( service_key, safe='')}/{service_version}/specifications",
+            f"/services/{urllib.parse.quote(service_key, safe='')}/{service_version}/specifications",
             params={"user_id": user_id},
         )
         resp.raise_for_status()
