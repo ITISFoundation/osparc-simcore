@@ -27,7 +27,7 @@ from .projects_nodes_io import (
     PortLink,
     SimCoreFileLink,
 )
-from .projects_nodes_ui import PositionUI
+from .projects_nodes_layout import Position
 from .projects_state import RunningState
 from .services import ServiceKey, ServiceVersion
 
@@ -224,7 +224,7 @@ class Node(BaseModel):
     ] = None
 
     position: Annotated[
-        PositionUI | None,
+        Position | None,
         Field(
             deprecated=True,
             description="Use projects_ui.WorkbenchUI.position instead",

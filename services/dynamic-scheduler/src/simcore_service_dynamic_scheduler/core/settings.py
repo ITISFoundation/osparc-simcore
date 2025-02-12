@@ -5,6 +5,7 @@ from pydantic import AliasChoices, Field, SecretStr, TypeAdapter, field_validato
 from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
 from settings_library.application import BaseApplicationSettings
 from settings_library.basic_types import LogLevel, VersionTag
+from settings_library.catalog import CatalogSettings
 from settings_library.director_v0 import DirectorV0Settings
 from settings_library.director_v2 import DirectorV2Settings
 from settings_library.docker_api_proxy import DockerApiProxysettings
@@ -143,6 +144,11 @@ class ApplicationSettings(_BaseApplicationSettings):
     DYNAMIC_SCHEDULER_DIRECTOR_V2_SETTINGS: DirectorV2Settings = Field(
         json_schema_extra={"auto_default_from_env": True},
         description="settings for director-v2 service",
+    )
+
+    DYNAMIC_SCHEDULER_CATALOG_SETTINGS: CatalogSettings = Field(
+        json_schema_extra={"auto_default_from_env": True},
+        description="settings for catalog service",
     )
 
     DYNAMIC_SCHEDULER_PROMETHEUS_INSTRUMENTATION_ENABLED: bool = True
