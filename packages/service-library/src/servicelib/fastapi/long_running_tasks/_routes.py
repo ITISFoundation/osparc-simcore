@@ -31,6 +31,7 @@ async def list_tasks(
 
 @router.get(
     "/{task_id}",
+    response_model=TaskStatus,
     responses={
         status.HTTP_404_NOT_FOUND: {"description": "Task does not exist"},
     },
