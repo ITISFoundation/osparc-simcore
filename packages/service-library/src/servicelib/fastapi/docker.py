@@ -61,7 +61,7 @@ def get_lifespan_remote_docker_client(
 @tenacity.retry(
     wait=tenacity.wait_fixed(5),
     stop=tenacity.stop_after_delay(60),
-    before_sleep=tenacity.before_sleep_log(_logger, logging.INFO),
+    before_sleep=tenacity.before_sleep_log(_logger, logging.WARNING),
     reraise=True,
 )
 async def wait_till_docker_api_proxy_is_responsive(app: FastAPI) -> None:

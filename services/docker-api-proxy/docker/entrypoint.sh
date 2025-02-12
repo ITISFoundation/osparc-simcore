@@ -16,7 +16,7 @@ echo "$INFO" "User :$(id "$(whoami)")"
 
 # Appends docker group
 DOCKER_MOUNT=/var/run/docker.sock
-echo "INFO: detected docker socket is mounted, adding user to group..."
+echo "INFO: adding user to group..."
 GROUPID=$(stat -c %g $DOCKER_MOUNT) # Alpine uses `-c` instead of `--format`
 GROUPNAME=scdocker
 
