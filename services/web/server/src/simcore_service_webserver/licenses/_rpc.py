@@ -8,7 +8,7 @@ from models_library.api_schemas_webserver.licensed_items_checkouts import (
     LicensedItemCheckoutRpcGet,
 )
 from models_library.basic_types import IDStr
-from models_library.licenses import LicensedItemPage
+from models_library.licenses import LicensedItemID, LicensedItemPage
 from models_library.products import ProductName
 from models_library.resource_tracker_licensed_items_checkouts import (
     LicensedItemCheckoutID,
@@ -96,18 +96,16 @@ async def checkout_licensed_item_for_wallet(
     product_name: ProductName,
     user_id: UserID,
     wallet_id: WalletID,
-    key: str,
-    version: str,
+    licensed_item_id: LicensedItemID,
     num_of_seats: int,
     service_run_id: ServiceRunID,
 ) -> LicensedItemCheckoutRpcGet:
     licensed_item_get = (
         await _licensed_items_checkouts_service.checkout_licensed_item_for_wallet(
             app,
-            key=key,
-            version=version,
             wallet_id=wallet_id,
             product_name=product_name,
+            licensed_item_id=licensed_item_id,
             num_of_seats=num_of_seats,
             service_run_id=service_run_id,
             user_id=user_id,

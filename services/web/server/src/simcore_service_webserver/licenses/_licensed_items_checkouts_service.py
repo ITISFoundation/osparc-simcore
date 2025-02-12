@@ -2,6 +2,7 @@ from aiohttp import web
 from models_library.api_schemas_resource_usage_tracker import (
     licensed_items_checkouts as rut_licensed_items_checkouts,
 )
+from models_library.licenses import LicensedItemID
 from models_library.products import ProductName
 from models_library.resource_tracker_licensed_items_checkouts import (
     LicensedItemCheckoutID,
@@ -122,8 +123,7 @@ async def checkout_licensed_item_for_wallet(
     wallet_id: WalletID,
     user_id: UserID,
     # checkout args
-    key: str,
-    version: str,
+    licensed_item_id: LicensedItemID,
     num_of_seats: int,
     service_run_id: ServiceRunID,
 ) -> LicensedItemCheckoutGet:
@@ -137,17 +137,17 @@ async def checkout_licensed_item_for_wallet(
 
     user = await get_user(app, user_id=user_id)
 
-    licensed_item = await _licensed_items_repository.get_licensed_item_by_key_version(
-        app, key=key, version=version, product_name=product_name
+    licensed_item_db = await _licensed_items_repository.get(
+        app, licensed_item_id=licensed_item_id, product_name=product_name
     )
 
     rpc_client = get_rabbitmq_rpc_client(app)
     licensed_item_get: rut_licensed_items_checkouts.LicensedItemCheckoutGet = (
         await licensed_items_checkouts.checkout_licensed_item(
             rpc_client,
-            licensed_item_id=licensed_item.licensed_item_id,
-            key=key,
-            version=version,
+            licensed_item_id=licensed_item_db.licensed_item_id,
+            key=licensed_item_db.key,
+            version=licensed_item_db.version,
             wallet_id=wallet_id,
             product_name=product_name,
             num_of_seats=num_of_seats,

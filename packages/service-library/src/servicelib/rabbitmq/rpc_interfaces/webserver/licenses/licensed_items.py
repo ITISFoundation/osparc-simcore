@@ -5,6 +5,7 @@ from models_library.api_schemas_webserver.licensed_items import LicensedItemRpcG
 from models_library.api_schemas_webserver.licensed_items_checkouts import (
     LicensedItemCheckoutRpcGet,
 )
+from models_library.licenses import LicensedItemID
 from models_library.products import ProductName
 from models_library.rabbitmq_basic_types import RPCMethodName
 from models_library.resource_tracker_licensed_items_checkouts import (
@@ -71,16 +72,14 @@ async def checkout_licensed_item_for_wallet(
     product_name: ProductName,
     user_id: UserID,
     wallet_id: WalletID,
-    key: str,
-    version: str,
+    licensed_item_id: LicensedItemID,
     num_of_seats: int,
     service_run_id: ServiceRunID,
 ) -> LicensedItemCheckoutRpcGet:
     result = await rabbitmq_rpc_client.request(
         WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("checkout_licensed_item_for_wallet"),
-        key=key,
-        version=version,
+        licensed_item_id=licensed_item_id,
         product_name=product_name,
         user_id=user_id,
         wallet_id=wallet_id,

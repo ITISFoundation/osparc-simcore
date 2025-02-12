@@ -137,9 +137,11 @@ assert set(ServicePricingPlanGetLegacy.model_fields.keys()) == set(
 
 class LicensedItemGet(BaseModel):
     licensed_item_id: LicensedItemID
+    key: str
+    version: str
     display_name: str
     licensed_resource_type: LicensedResourceType
-    licensed_resource_data: dict[str, Any]
+    licensed_resources: list[dict[str, Any]]
     pricing_plan_id: PricingPlanId
     created_at: datetime
     modified_at: datetime
@@ -156,6 +158,8 @@ assert set(LicensedItemGet.model_fields.keys()) == set(
 class LicensedItemCheckoutGet(BaseModel):
     licensed_item_checkout_id: LicensedItemCheckoutID
     licensed_item_id: LicensedItemID
+    key: str
+    version: str
     wallet_id: WalletID
     user_id: UserID
     product_name: ProductName

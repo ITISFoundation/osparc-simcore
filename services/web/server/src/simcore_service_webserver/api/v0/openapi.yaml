@@ -14865,6 +14865,9 @@ components:
           - type: string
           - type: 'null'
           title: Doi
+        licenseVersion:
+          type: string
+          title: Licenseversion
       type: object
       required:
       - id
@@ -14872,6 +14875,7 @@ components:
       - thumbnail
       - features
       - doi
+      - licenseVersion
       title: _ItisVipRestData
     _PageParams:
       properties:
