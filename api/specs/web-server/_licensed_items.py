@@ -48,16 +48,6 @@ async def list_licensed_items(
     ...
 
 
-# @router.get(
-#     "/catalog/licensed-items/{licensed_item_id}",
-#     response_model=Envelope[LicensedItemRestGet],
-# )
-# async def get_licensed_item(
-#     _path: Annotated[LicensedItemsPathParams, Depends()],
-# ):
-#     ...
-
-
 @router.post(
     "/catalog/licensed-items/{licensed_item_id}:purchase",
     response_model=LicensedItemPurchaseGet,

@@ -207,19 +207,6 @@ async def delete(
 ### LICENSED ITEMS DOMAIN
 
 
-# _SELECTION_LICENSED_ITEM_ARGS = (
-#     licensed_items.c.licensed_item_id,
-#     licensed_items.c.key,
-#     licensed_items.c.version,
-#     licensed_items.c.display_name,
-#     licensed_items.c.licensed_resource_type,
-#     licensed_resources.c.licensed_resource_data,
-#     licensed_items.c.pricing_plan_id,
-#     licensed_items.c.created,
-#     licensed_items.c.modified,
-# )
-
-
 _licensed_resource_subquery = (
     select(
         licensed_item_to_resource.c.licensed_item_id,

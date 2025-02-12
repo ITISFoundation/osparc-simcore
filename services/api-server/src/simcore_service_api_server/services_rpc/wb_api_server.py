@@ -120,6 +120,7 @@ class WbApiRpcClient(SingletonInAppStateMixin):
             NotEnoughAvailableSeatsError: InsufficientNumberOfSeatsError,
             CanNotCheckoutNotEnoughAvailableSeatsError: InsufficientNumberOfSeatsError,
             _CanNotCheckoutServiceIsNotRunningError: CanNotCheckoutServiceIsNotRunningError,
+            # NOTE: missing WalletAccessForbiddenError
         }
     )
     async def checkout_licensed_item_for_wallet(

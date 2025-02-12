@@ -66,11 +66,7 @@ class _ItisVipRestData(OutputSchema):
 
 
 class _ItisVipResourceRestData(OutputSchema):
-    # category_id: IDStr
-    # category_display: str
-    # category_icon: HttpUrl | None = None  # NOTE: Placeholder until provide @odeimaiz
     source: _ItisVipRestData
-    # terms_of_use_url: HttpUrl | None = None  # NOTE: Placeholder until provided @mguidon
 
 
 class LicensedItemRestGet(OutputSchema):
@@ -141,7 +137,14 @@ class LicensedItemRestGet(OutputSchema):
                     exclude_unset=True,
                 ),
                 "licensed_resources": [
-                    _ItisVipResourceRestData(**x) for x in item.licensed_resources
+                    _ItisVipResourceRestData(**x)
+                    for x in sorted(
+                        item.licensed_resources,
+                        key=lambda x: datetime.strptime(
+                            x["source"]["features"]["date"], "%Y-%m-%d"
+                        ),
+                        reverse=True,
+                    )
                 ],
                 "category_id": item.licensed_resources[0]["category_id"],
                 "category_display": item.licensed_resources[0]["category_display"],

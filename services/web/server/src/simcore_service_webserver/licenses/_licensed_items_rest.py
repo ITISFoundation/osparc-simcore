@@ -74,24 +74,6 @@ async def list_licensed_items(request: web.Request):
     )
 
 
-# @routes.get(
-#     f"/{VTAG}/catalog/licensed-items/{{licensed_item_id}}", name="get_licensed_item"
-# )
-# @login_required
-# @permission_required("catalog/licensed-items.*")
-# @handle_plugin_requests_exceptions
-# async def get_licensed_item(request: web.Request):
-#     req_ctx = LicensedItemsRequestContext.model_validate(request)
-#     path_params = parse_request_path_parameters_as(LicensedItemsPathParams, request)
-
-#     licensed_item: LicensedItem = await _licensed_items_service.get_licensed_item(
-#         app=request.app,
-#         licensed_item_id=path_params.licensed_item_id,
-#         product_name=req_ctx.product_name,
-#     )
-#     return envelope_json_response(LicensedItemRestGet.from_domain_model(licensed_item))
-
-
 @routes.post(
     f"/{VTAG}/catalog/licensed-items/{{licensed_item_id}}:purchase",
     name="purchase_licensed_item",

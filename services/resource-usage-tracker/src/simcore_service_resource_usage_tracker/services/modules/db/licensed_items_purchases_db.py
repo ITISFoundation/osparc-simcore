@@ -16,7 +16,6 @@ from simcore_postgres_database.utils_repos import (
     pass_or_acquire_connection,
     transaction_context,
 )
-from sqlalchemy.dialects.postgresql import ARRAY, INTEGER
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
 from ....exceptions.errors import LicensedItemPurchaseNotFoundError
@@ -24,6 +23,7 @@ from ....models.licensed_items_purchases import (
     CreateLicensedItemsPurchasesDB,
     LicensedItemsPurchasesDB,
 )
+from . import utils as db_utils
 
 _SELECTION_ARGS = (
     resource_tracker_licensed_items_purchases.c.licensed_item_purchase_id,
@@ -177,23 +177,15 @@ async def get_active_purchased_seats_for_key_version_wallet(
     """
     _current_time = datetime.now(tz=UTC)
 
-    def _version(column_or_value):
-        # converts version value string to array[integer] that can be compared
-        return sa.func.string_to_array(column_or_value, ".").cast(ARRAY(INTEGER))
-
     sum_stmt = sa.select(
         sa.func.sum(resource_tracker_licensed_items_purchases.c.num_of_seats)
     ).where(
         (resource_tracker_licensed_items_purchases.c.wallet_id == wallet_id)
-        # & (
-        #     resource_tracker_licensed_items_purchases.c.licensed_item_id
-        #     == licensed_item_id
-        # )
         & (resource_tracker_licensed_items_purchases.c.key == key)
         # If purchased version >= requested version, it covers that version
         & (
-            _version(resource_tracker_licensed_items_purchases.c.version)
-            >= _version(version)
+            db_utils.version(resource_tracker_licensed_items_purchases.c.version)
+            >= db_utils.version(version)
         )
         & (resource_tracker_licensed_items_purchases.c.product_name == product_name)
         & (resource_tracker_licensed_items_purchases.c.start_at <= _current_time)
