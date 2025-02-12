@@ -11,7 +11,9 @@ from models_library.projects_nodes_io import (
     DatCoreFileLink,
     SimCoreFileLink,
     SimcoreS3DirectoryID,
+    SimcoreS3FileID,
 )
+from models_library.users import UserID
 from pydantic import TypeAdapter, ValidationError
 
 
@@ -180,3 +182,21 @@ def test_simcore_s3_directory_get_parent():
         SimcoreS3DirectoryID._get_parent(  # noqa SLF001
             "/hello/object/", parent_index=4
         )
+
+
+USER_ID_0: UserID = 0
+
+
+@pytest.mark.parametrize(
+    "object_key",
+    [
+        f"api/{UUID_0}/some-random-file.png",
+        f"exports/{USER_ID_0}/some-random-file.png",
+        f"{UUID_0}/{UUID_0}/some-random-file.png",
+        f"api/{UUID_0}/some-path/some-random-file.png",
+        f"exports/{USER_ID_0}/some-path/some-random-file.png",
+        f"{UUID_0}/{UUID_0}/some-path/some-random-file.png",
+    ],
+)
+def test_simcore_s3_file_id_accepted_patterns(object_key: str):
+    assert TypeAdapter(SimcoreS3FileID).validate_python(object_key)
