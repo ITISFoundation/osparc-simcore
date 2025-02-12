@@ -1454,16 +1454,16 @@ def _folder_with_files(
         target_folder,
     )
 
-    s3_keys_to_files = get_files_info_from_path(folder_path)
+    relative_names_to_paths = get_files_info_from_path(folder_path)
 
-    yield s3_keys_to_files
+    yield relative_names_to_paths
 
-    for file in s3_keys_to_files.values():
+    for file in relative_names_to_paths.values():
         file.unlink()
 
 
 @pytest.fixture
-def files_stored_locally(
+def path_local_files_for_archive(
     tmp_path: Path,
     create_folder_of_size_with_multiple_files: Callable[
         [ByteSize, ByteSize, ByteSize, Path | None], Path
@@ -1475,7 +1475,7 @@ def files_stored_locally(
 
 
 @pytest.fixture
-async def files_stored_in_s3(
+async def path_s3_files_for_archive(
     tmp_path: Path,
     create_folder_of_size_with_multiple_files: Callable[
         [ByteSize, ByteSize, ByteSize, Path | None], Path
@@ -1486,20 +1486,20 @@ async def files_stored_in_s3(
     dir_path = tmp_path / "stored_in_s3"
     with _folder_with_files(
         create_folder_of_size_with_multiple_files, dir_path
-    ) as s3_keys_to_files:
+    ) as relative_names_to_paths:
         await limited_gather(
             *(
                 s3_client.upload_file(
-                    Filename=f"{file_path}", Bucket=with_s3_bucket, Key=s3_key
+                    Filename=f"{file}", Bucket=with_s3_bucket, Key=s3_object_key
                 )
-                for s3_key, file_path in s3_keys_to_files.items()
+                for s3_object_key, file in relative_names_to_paths.items()
             ),
             limit=10,
         )
         yield dir_path
 
         await delete_all_object_versions(
-            s3_client, with_s3_bucket, s3_keys_to_files.keys()
+            s3_client, with_s3_bucket, relative_names_to_paths.keys()
         )
 
 
@@ -1540,8 +1540,8 @@ def mocked_progress_bar_cb(mocker: MockerFixture) -> Mock:
 
 async def test_workflow_compress_s3_objects_and_local_files_in_a_single_archive_then_upload_to_s3(
     mocked_s3_server_envs: EnvVarsDict,
-    files_stored_locally: Path,
-    files_stored_in_s3: Path,
+    path_local_files_for_archive: Path,
+    path_s3_files_for_archive: Path,
     archive_download_path: Path,
     extracted_archive_path: Path,
     simcore_s3_api: SimcoreS3API,
@@ -1560,7 +1560,7 @@ async def test_workflow_compress_s3_objects_and_local_files_in_a_single_archive_
 
     archive_file_entries: ArchiveEntries = []
 
-    local_files = get_files_info_from_path(files_stored_locally)
+    local_files = get_files_info_from_path(path_local_files_for_archive)
     for file_name, file_path in local_files.items():
         archive_file_entries.append(
             (
@@ -1569,7 +1569,7 @@ async def test_workflow_compress_s3_objects_and_local_files_in_a_single_archive_
             )
         )
 
-    s3_files = get_files_info_from_path(files_stored_in_s3)
+    s3_files = get_files_info_from_path(path_s3_files_for_archive)
 
     for s3_object_key in s3_files:
         archive_file_entries.append(
@@ -1614,9 +1614,7 @@ async def test_workflow_compress_s3_objects_and_local_files_in_a_single_archive_
 
     # 4. compare
     print("comparing files")
-    all_files_in_zip = get_files_info_from_path(
-        files_stored_locally
-    ) | get_files_info_from_path(files_stored_in_s3)
+    all_files_in_zip = get_files_info_from_path(path_local_files_for_archive) | s3_files
 
     await assert_same_contents(
         all_files_in_zip, get_files_info_from_path(extracted_archive_path)
