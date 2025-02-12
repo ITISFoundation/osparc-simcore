@@ -51,7 +51,7 @@ router = APIRouter(prefix=f"/{API_VTAG}")
 @router.get(
     "/services/-/resource-usages",
     response_model=Page[ServiceRunGet],
-    summary="Retrieve finished and currently running user services"
+    description="Retrieve finished and currently running user services"
     " (user and product are taken from context, optionally wallet_id parameter might be provided).",
     tags=["usage"],
 )
@@ -64,7 +64,7 @@ async def list_resource_usage_services(
 @router.get(
     "/services/-/aggregated-usages",
     response_model=Page[OsparcCreditsAggregatedByServiceGet],
-    summary="Used credits based on aggregate by type, currently supported `services`"
+    description="Used credits based on aggregate by type, currently supported `services`"
     ". (user and product are taken from context, optionally wallet_id parameter might be provided).",
     tags=["usage"],
 )
@@ -83,7 +83,7 @@ async def list_osparc_credits_aggregated_usages(
         }
     },
     tags=["usage"],
-    summary="Redirects to download CSV link. CSV obtains finished and currently running "
+    description="Redirects to download CSV link. CSV obtains finished and currently running "
     "user services (user and product are taken from context, optionally wallet_id parameter might be provided).",
 )
 async def export_resource_usage_services(

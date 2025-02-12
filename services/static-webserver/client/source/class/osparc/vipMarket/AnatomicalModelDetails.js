@@ -53,8 +53,8 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
       this._removeAll();
 
       const anatomicalModelsData = this.getAnatomicalModelsData();
-      if (anatomicalModelsData) {
-        const modelInfo = this.__createModelInfo(anatomicalModelsData["licensedResourceData"]);
+      if (anatomicalModelsData && anatomicalModelsData["licensedResourceData"]) {
+        const modelInfo = this.__createModelInfo(anatomicalModelsData["licensedResourceData"]["source"]);
         const pricingUnits = this.__createPricingUnits(anatomicalModelsData);
         const importButton = this.__createImportSection(anatomicalModelsData);
         this._add(modelInfo);
@@ -73,29 +73,39 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
       }
     },
 
-    __createModelInfo: function(anatomicalModelsData) {
-      const cardGrid = new qx.ui.layout.Grid(16, 16);
-      const cardLayout = new qx.ui.container.Composite(cardGrid);
+    __createModelInfo: function(anatomicalModelsDataSource) {
+      const cardLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(16));
 
-      const description = anatomicalModelsData["description"] || "";
-      description.split(" - ").forEach((desc, idx) => {
+      const description = anatomicalModelsDataSource["description"] || "";
+      const delimiter = " - ";
+      let titleAndSubtitle = description.split(delimiter);
+      if (titleAndSubtitle.length > 0) {
         const titleLabel = new qx.ui.basic.Label().set({
-          value: desc,
+          value: titleAndSubtitle[0],
           font: "text-16",
-          alignX: "center",
           alignY: "middle",
           allowGrowX: true,
           allowGrowY: true,
         });
-        cardLayout.add(titleLabel, {
-          column: 0,
-          row: idx,
-          colSpan: 2,
+        cardLayout.add(titleLabel);
+        titleAndSubtitle.shift();
+      }
+      if (titleAndSubtitle.length > 0) {
+        titleAndSubtitle = titleAndSubtitle.join(delimiter);
+        const subtitleLabel = new qx.ui.basic.Label().set({
+          value: titleAndSubtitle,
+          font: "text-16",
+          alignY: "middle",
+          allowGrowX: true,
+          allowGrowY: true,
         });
-      });
+        cardLayout.add(subtitleLabel);
+      }
 
+
+      const middleLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(16));
       const thumbnail = new qx.ui.basic.Image().set({
-        source: anatomicalModelsData["thumbnail"],
+        source: anatomicalModelsDataSource["thumbnail"],
         alignY: "middle",
         scale: true,
         allowGrowX: true,
@@ -105,12 +115,9 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
         maxWidth: 256,
         maxHeight: 256,
       });
-      cardLayout.add(thumbnail, {
-        column: 0,
-        row: 2,
-      });
+      middleLayout.add(thumbnail);
 
-      const features = anatomicalModelsData["features"];
+      const features = anatomicalModelsDataSource["features"];
       const featuresGrid = new qx.ui.layout.Grid(8, 8);
       const featuresLayout = new qx.ui.container.Composite(featuresGrid);
       let idx = 0;
@@ -161,21 +168,29 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
         row: idx,
       });
 
-      const doiValue = new qx.ui.basic.Label().set({
-        value: anatomicalModelsData["doi"] ? anatomicalModelsData["doi"] : "-",
-        font: "text-14",
-        alignX: "left",
-        marginTop: 16,
-      });
-      featuresLayout.add(doiValue, {
+      const doiToLink = doi => {
+        const doiLabel = new osparc.ui.basic.LinkLabel("-").set({
+          font: "text-14",
+          alignX: "left",
+          marginTop: 16,
+        });
+        if (doi) {
+          doiLabel.set({
+            value: doi,
+            url: "https://doi.org/" + doi,
+            font: "link-label-14",
+          });
+        }
+        return doiLabel;
+      };
+      featuresLayout.add(doiToLink(anatomicalModelsDataSource["doi"]), {
         column: 1,
         row: idx,
       });
 
-      cardLayout.add(featuresLayout, {
-        column: 1,
-        row: 2,
-      });
+      middleLayout.add(featuresLayout);
+
+      cardLayout.add(middleLayout);
 
       return cardLayout;
     },
@@ -196,7 +211,7 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
             });
             pUnit.addListener("rentPricingUnit", () => {
               this.fireDataEvent("modelPurchaseRequested", {
-                modelId: anatomicalModelsData["modelId"],
+                modelId: anatomicalModelsData["licensedResourceData"]["source"]["id"],
                 licensedItemId: anatomicalModelsData["licensedItemId"],
                 pricingPlanId: anatomicalModelsData["pricingPlanId"],
                 pricingUnitId: pricingUnit.getPricingUnitId(),
@@ -236,7 +251,7 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
       });
       importButton.addListener("execute", () => {
         this.fireDataEvent("modelImportRequested", {
-          modelId: anatomicalModelsData["modelId"]
+          modelId: anatomicalModelsData["licensedResourceData"]["source"]["id"]
         });
       }, this);
       if (anatomicalModelsData["purchases"].length) {

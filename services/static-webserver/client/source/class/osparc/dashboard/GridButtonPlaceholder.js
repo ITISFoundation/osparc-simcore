@@ -105,7 +105,7 @@ qx.Class.define("osparc.dashboard.GridButtonPlaceholder", {
         title.setValue(titleText);
       }
       if (icon) {
-        this.setIcon(icon);
+        this.setThumbnail(icon);
       }
 
       const stateLabel = this.getChildControl("state-label");

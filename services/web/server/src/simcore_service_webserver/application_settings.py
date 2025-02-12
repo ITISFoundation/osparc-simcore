@@ -11,7 +11,6 @@ from pydantic import (
     AliasChoices,
     AnyHttpUrl,
     TypeAdapter,
-    ValidationInfo,
     field_validator,
     model_validator,
 )
@@ -26,6 +25,7 @@ from settings_library.redis import RedisSettings
 from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
 from settings_library.utils_service import DEFAULT_AIOHTTP_PORT
+from simcore_service_webserver.licenses.settings import LicensesSettings
 
 from ._constants import APP_SETTINGS_KEY
 from ._meta import API_VERSION, API_VTAG, APP_NAME
@@ -53,6 +53,12 @@ from .users.settings import UsersSettings
 _logger = logging.getLogger(__name__)
 
 
+# NOTE: to mark a plugin as a DEV-FEATURE annotated it with
+#    `Field(json_schema_extra={_X_DEV_FEATURE_FLAG: True})`
+# This will force it to be disabled when WEBSERVER_DEV_FEATURES_ENABLED=False
+_X_DEV_FEATURE_FLAG: Final[str] = "x-dev-feature"
+
+
 class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     # CODE STATICS ---------------------------------------------------------
     API_VERSION: str = API_VERSION
@@ -69,22 +75,20 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     SIMCORE_VCS_RELEASE_TAG: Annotated[
         str | None,
         Field(
-            default=None,
             description="Name of the tag that marks this release, or None if undefined",
             examples=["ResistanceIsFutile10"],
         ),
-    ]
+    ] = None
 
     SIMCORE_VCS_RELEASE_URL: Annotated[
         AnyHttpUrl | None,
         Field(
-            default=None,
             description="URL to release notes",
             examples=[
                 "https://github.com/ITISFoundation/osparc-simcore/releases/tag/staging_ResistanceIsFutile10"
             ],
         ),
-    ]
+    ] = None
 
     SWARM_STACK_NAME: Annotated[
         str | None,
@@ -94,13 +98,12 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     WEBSERVER_DEV_FEATURES_ENABLED: Annotated[
         bool,
         Field(
-            default=False,
             description="Enables development features. WARNING: make sure it is disabled in production .env file!",
         ),
-    ]
+    ] = False
     WEBSERVER_CREDIT_COMPUTATION_ENABLED: Annotated[
-        bool, Field(default=False, description="Enables credit computation features.")
-    ]
+        bool, Field(description="Enables credit computation features.")
+    ] = False
 
     WEBSERVER_LOGLEVEL: Annotated[
         LogLevel,
@@ -115,13 +118,12 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     WEBSERVER_LOG_FORMAT_LOCAL_DEV_ENABLED: Annotated[
         bool,
         Field(
-            default=False,
             validation_alias=AliasChoices(
                 "WEBSERVER_LOG_FORMAT_LOCAL_DEV_ENABLED", "LOG_FORMAT_LOCAL_DEV_ENABLED"
             ),
             description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
         ),
-    ]
+    ] = False
 
     WEBSERVER_LOG_FILTER_MAPPING: Annotated[
         dict[LoggerName, list[MessageSubstring]],
@@ -228,6 +230,14 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         Field(
             json_schema_extra={"auto_default_from_env": True},
             description="invitations plugin",
+        ),
+    ]
+
+    WEBSERVER_LICENSES: Annotated[
+        LicensesSettings | None | bool,
+        Field(
+            json_schema_extra={"auto_default_from_env": True},
+            # NOTE: `bool` is to keep backwards compatibility
         ),
     ]
 
@@ -349,8 +359,6 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     WEBSERVER_DB_LISTENER: bool = True
     WEBSERVER_FOLDERS: bool = True
     WEBSERVER_GROUPS: bool = True
-    WEBSERVER_LICENSES: bool = False
-    WEBSERVER_META_MODELING: bool = True
     WEBSERVER_NOTIFICATIONS: bool = True
     WEBSERVER_PRODUCTS: bool = True
     WEBSERVER_PROFILING: bool = False
@@ -358,18 +366,16 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     WEBSERVER_REMOTE_DEBUG: bool = True
     WEBSERVER_SOCKETIO: bool = True
     WEBSERVER_TAGS: bool = True
-    WEBSERVER_VERSION_CONTROL: bool = True
     WEBSERVER_WALLETS: bool = True
     WEBSERVER_WORKSPACES: bool = True
 
     WEBSERVER_SECURITY: Annotated[
         bool,
         Field(
-            default=True,
             description="This is a place-holder for future settings."
             "Currently this is a system plugin and cannot be disabled",
         ),
-    ]
+    ] = True
 
     @model_validator(mode="before")
     @classmethod
@@ -389,31 +395,34 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
 
         return values
 
-    @field_validator(
-        # List of plugins under-development (keep up-to-date)
-        # TODO: consider mark as dev-feature in field extras of Config attr.
-        # Then they can be automtically advertised
-        "WEBSERVER_META_MODELING",
-        "WEBSERVER_VERSION_CONTROL",
-        mode="before",
-    )
+    @model_validator(mode="before")
     @classmethod
-    def _enable_only_if_dev_features_allowed(cls, v, info: ValidationInfo):
-        """Ensures that plugins 'under development' get programatically
-        disabled if WEBSERVER_DEV_FEATURES_ENABLED=False
-        """
-        if info.data["WEBSERVER_DEV_FEATURES_ENABLED"]:
-            return v
-        if v:
-            _logger.warning(
-                "%s still under development and will be disabled.", info.field_name
-            )
+    def _enable_only_if_dev_features_allowed(cls, data: Any) -> Any:
+        """Force disables plugins marked 'under development' when WEBSERVER_DEV_FEATURES_ENABLED=False"""
 
-        return (
-            None
-            if info.field_name and is_nullable(dict(cls.model_fields)[info.field_name])
-            else False
+        dev_features_allowed = TypeAdapter(bool).validate_python(
+            data.get("WEBSERVER_DEV_FEATURES_ENABLED", False)
         )
+
+        if dev_features_allowed:
+            return data
+
+        for field_name, field in cls.model_fields.items():
+            json_schema = field.json_schema_extra or {}
+            if callable(field.json_schema_extra):
+                json_schema = {}
+                field.json_schema_extra(json_schema)
+
+            assert isinstance(json_schema, dict)  # nosec
+            if json_schema.get(_X_DEV_FEATURE_FLAG):
+                _logger.warning(
+                    "'%s' is still under development and will be forcibly disabled [WEBSERVER_DEV_FEATURES_ENABLED=%s].",
+                    field_name,
+                    dev_features_allowed,
+                )
+                data[field_name] = None if is_nullable(field) else False
+
+        return data
 
     @field_validator("WEBSERVER_LOGLEVEL")
     @classmethod
@@ -453,12 +462,15 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
             "WEBSERVER_EXPORTER",
             "WEBSERVER_FOLDERS",
             "WEBSERVER_LICENSES",
-            "WEBSERVER_META_MODELING",
             "WEBSERVER_PAYMENTS",
             "WEBSERVER_SCICRUNCH",
-            "WEBSERVER_VERSION_CONTROL",
         }
-        return [_ for _ in public_plugin_candidates if not self.is_enabled(_)]
+        return [_ for _ in public_plugin_candidates if not self.is_enabled(_)] + [
+            # NOTE: Permanently retired in https://github.com/ITISFoundation/osparc-simcore/pull/7182
+            # Kept here to disable front-end
+            "WEBSERVER_META_MODELING",
+            "WEBSERVER_VERSION_CONTROL",
+        ]
 
     def _export_by_alias(self, **kwargs) -> dict[str, Any]:
         #  This is a small helper to assist export functions since aliases are no longer used by
@@ -520,7 +532,6 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
                 "SIMCORE_VCS_RELEASE_TAG": True,
                 "SIMCORE_VCS_RELEASE_URL": True,
                 "SWARM_STACK_NAME": True,
-                "WEBSERVER_LICENSES": True,
                 "WEBSERVER_LOGIN": {
                     "LOGIN_ACCOUNT_DELETION_RETENTION_DAYS",
                     "LOGIN_2FA_REQUIRED",

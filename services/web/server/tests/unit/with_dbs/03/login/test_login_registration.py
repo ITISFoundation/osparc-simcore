@@ -16,7 +16,7 @@ from pytest_simcore.helpers.assert_checks import assert_error, assert_status
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.webserver_login import NewInvitation, NewUser, parse_link
 from servicelib.aiohttp import status
-from servicelib.aiohttp.rest_responses import unwrap_envelope
+from servicelib.rest_responses import unwrap_envelope
 from simcore_service_webserver.db.models import UserStatus
 from simcore_service_webserver.groups.api import auto_add_user_to_product_group
 from simcore_service_webserver.login._confirmation import _url_for_confirmation

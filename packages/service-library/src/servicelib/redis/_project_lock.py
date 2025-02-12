@@ -1,10 +1,12 @@
 import functools
+import logging
 from collections.abc import Awaitable, Callable, Coroutine
 from typing import Any, Final, ParamSpec, TypeVar
 
 from models_library.projects import ProjectID
 from models_library.projects_access import Owner
 from models_library.projects_state import ProjectLocked, ProjectStatus
+from servicelib.logging_utils import log_catch
 
 from ._client import RedisClientSDK
 from ._decorators import exclusive
@@ -12,6 +14,7 @@ from ._errors import CouldNotAcquireLockError, ProjectLockError
 
 _PROJECT_REDIS_LOCK_KEY: Final[str] = "project_lock:{}"
 
+_logger = logging.getLogger(__name__)
 
 P = ParamSpec("P")
 R = TypeVar("R")
@@ -59,17 +62,20 @@ def with_project_locked(
             )
             async def _exclusive_func(*args, **kwargs) -> R:
                 if notification_cb is not None:
-                    await notification_cb()
+                    with log_catch(_logger, reraise=False):
+                        await notification_cb()
                 return await func(*args, **kwargs)
 
             try:
-                result = await _exclusive_func(*args, **kwargs)
-                # we are now unlocked
-                if notification_cb is not None:
-                    await notification_cb()
-                return result
+                return await _exclusive_func(*args, **kwargs)
+
             except CouldNotAcquireLockError as e:
                 raise ProjectLockError from e
+            finally:
+                # we are now unlocked
+                if notification_cb is not None:
+                    with log_catch(_logger, reraise=False):
+                        await notification_cb()
 
         return _wrapper
 

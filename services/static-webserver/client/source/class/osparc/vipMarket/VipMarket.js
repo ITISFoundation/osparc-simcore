@@ -43,7 +43,7 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
     },
 
     category: {
-      check: ["HumanWholeBody", "HumanBodyRegion", "AnimalWholeBody", "ComputationalPhantom"],
+      check: "String",
       init: null,
       nullable: true,
     },
@@ -182,22 +182,15 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
           this.__anatomicalModels = [];
           licensedItems.forEach(licensedItem => {
             const anatomicalModel = osparc.utils.Utils.deepCloneObject(licensedItem);
-            anatomicalModel["modelId"] = licensedItem["licensedItemId"];
+            const anatomicalModelDataSource = anatomicalModel["licensedResourceData"]["source"];
+            anatomicalModel["modelId"] = anatomicalModelDataSource["id"];
             anatomicalModel["thumbnail"] = "";
             anatomicalModel["date"] = null;
-            if (anatomicalModel["licensedResourceData"]) {
-              if (anatomicalModel["licensedResourceData"]["id"]) {
-                anatomicalModel["modelId"] = anatomicalModel["licensedResourceData"]["id"];
-              }
-              if (anatomicalModel["licensedResourceData"]["thumbnail"]) {
-                anatomicalModel["thumbnail"] = anatomicalModel["licensedResourceData"]["thumbnail"];
-              }
-              if (
-                anatomicalModel["licensedResourceData"]["features"] &&
-                anatomicalModel["licensedResourceData"]["features"]["date"]
-              ) {
-                anatomicalModel["date"] = new Date(anatomicalModel["licensedResourceData"]["features"]["date"]);
-              }
+            if (anatomicalModelDataSource["thumbnail"]) {
+              anatomicalModel["thumbnail"] = anatomicalModelDataSource["thumbnail"];
+            }
+            if (anatomicalModelDataSource["features"] && anatomicalModelDataSource["features"]["date"]) {
+              anatomicalModel["date"] = new Date(anatomicalModelDataSource["features"]["date"]);
             }
             // attach license data
             anatomicalModel["licensedItemId"] = licensedItem["licensedItemId"];
@@ -277,9 +270,11 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
       const sortModel = sortBy => {
         models.sort((a, b) => {
           // first criteria
-          if (b["purchases"].length !== a["purchases"].length) {
-            // leased first
-            return b["purchases"].length - a["purchases"].length;
+          const nASeats = osparc.store.LicensedItems.purchasesToNSeats(a["purchases"]);
+          const nBSeats = osparc.store.LicensedItems.purchasesToNSeats(b["purchases"]);
+          if (nBSeats !== nASeats) {
+            // nSeats first
+            return nBSeats - nASeats;
           }
           // second criteria
           if (sortBy) {

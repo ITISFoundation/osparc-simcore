@@ -16,7 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncConnection
 
 from ..db.plugin import get_asyncpg_engine
 from .exceptions import ProjectNotFoundError
-from .models import ProjectDB
+from .models import ProjectDBGet
 
 _logger = logging.getLogger(__name__)
 
@@ -26,7 +26,7 @@ PROJECT_DB_COLS = get_columns_from_db_model(  # noqa: RUF012
     # for the workbench, and at some point, this column should be removed from the table.
     # The same holds true for access_rights/ui/classifiers/quality, but we have decided to proceed step by step.
     projects,
-    ProjectDB,
+    ProjectDBGet,
 )
 
 
@@ -36,7 +36,7 @@ async def patch_project(
     *,
     project_uuid: ProjectID,
     new_partial_project_data: dict,
-) -> ProjectDB:
+) -> ProjectDBGet:
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         result = await conn.stream(
@@ -48,11 +48,12 @@ async def patch_project(
         row = await result.first()
         if row is None:
             raise ProjectNotFoundError(project_uuid=project_uuid)
-        return ProjectDB.model_validate(row)
+        return ProjectDBGet.model_validate(row)
 
 
 def _select_trashed_by_primary_gid_query() -> sql.Select:
     return sa.select(
+        projects.c.uuid,
         users.c.primary_gid.label("trashed_by_primary_gid"),
     ).select_from(projects.outerjoin(users, projects.c.trashed_by == users.c.id))
 
@@ -106,4 +107,6 @@ async def batch_get_trashed_by_primary_gid(
     )
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         result = await conn.stream(query)
-        return [row.trashed_by_primary_gid async for row in result]
+        rows = {row.uuid: row.trashed_by_primary_gid async for row in result}
+
+    return [rows.get(uuid) for uuid in projects_uuids_str]

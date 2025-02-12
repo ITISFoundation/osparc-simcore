@@ -24,7 +24,7 @@ from models_library.api_schemas_webserver.wallets import (
 )
 from models_library.basic_types import IDStr, NonNegativeDecimal
 from models_library.groups import GroupID
-from models_library.licensed_items import LicensedItemID, LicensedResourceType
+from models_library.licenses import LicensedItemID, LicensedResourceType
 from models_library.products import ProductName
 from models_library.resource_tracker import (
     PricingPlanClassification,

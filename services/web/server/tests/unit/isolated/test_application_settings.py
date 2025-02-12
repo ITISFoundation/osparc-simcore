@@ -3,13 +3,16 @@
 # pylint:disable=no-name-in-module
 
 import json
+from typing import Annotated
 
 import pytest
 from aiohttp import web
 from common_library.json_serialization import json_dumps
-from pydantic import HttpUrl, TypeAdapter
+from pydantic import Field, HttpUrl, TypeAdapter
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_service_webserver.application_settings import (
+    _X_DEV_FEATURE_FLAG,
     APP_SETTINGS_KEY,
     ApplicationSettings,
     setup_settings,
@@ -61,18 +64,23 @@ def test_settings_to_client_statics(app_settings: ApplicationSettings):
 
     # special alias
     assert statics["stackName"] == "master-simcore"
-    assert statics["pluginsDisabled"] == []
+    assert statics["pluginsDisabled"] == [
+        "WEBSERVER_META_MODELING",
+        "WEBSERVER_VERSION_CONTROL",
+    ]
 
 
 def test_settings_to_client_statics_plugins(
     mock_webserver_service_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
 ):
-    disable_plugins = {"WEBSERVER_EXPORTER", "WEBSERVER_SCICRUNCH"}
+    disable_plugins = {
+        "WEBSERVER_EXPORTER",
+        "WEBSERVER_SCICRUNCH",
+        "WEBSERVER_META_MODELING",
+        "WEBSERVER_VERSION_CONTROL",
+    }
     for name in disable_plugins:
         monkeypatch.setenv(name, "null")
-
-    monkeypatch.setenv("WEBSERVER_VERSION_CONTROL", "0")
-    disable_plugins.add("WEBSERVER_VERSION_CONTROL")
 
     monkeypatch.setenv("WEBSERVER_FOLDERS", "0")
     disable_plugins.add("WEBSERVER_FOLDERS")
@@ -84,7 +92,7 @@ def test_settings_to_client_statics_plugins(
 
     assert settings.WEBSERVER_LOGIN
 
-    assert statics["webserverLicenses"] == settings.WEBSERVER_LICENSES
+    assert "webserverLicenses" not in statics
 
     assert (
         statics["webserverLogin"]["LOGIN_ACCOUNT_DELETION_RETENTION_DAYS"]
@@ -106,29 +114,34 @@ def test_settings_to_client_statics_plugins(
 
 
 @pytest.mark.parametrize("is_dev_feature_enabled", [True, False])
-@pytest.mark.parametrize(
-    "plugin_name",
-    ["WEBSERVER_META_MODELING", "WEBSERVER_VERSION_CONTROL"],
-    # NOTE: this is the list in _enable_only_if_dev_features_allowed
-)
 def test_disabled_plugins_settings_to_client_statics(
     is_dev_feature_enabled: bool,
     mock_webserver_service_environment: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
-    plugin_name: str,
 ):
-    monkeypatch.setenv(
-        "WEBSERVER_DEV_FEATURES_ENABLED", f"{is_dev_feature_enabled}".lower()
+    setenvs_from_dict(
+        monkeypatch,
+        {
+            "WEBSERVER_DEV_FEATURES_ENABLED": f"{is_dev_feature_enabled}".lower(),
+            "TEST_FOO": "1",
+            "TEST_BAR": "42",
+        },
     )
 
-    settings = ApplicationSettings.create_from_envs()
-    statics = settings.to_client_statics()
+    class DevSettings(ApplicationSettings):
+        TEST_FOO: Annotated[bool, Field(json_schema_extra={_X_DEV_FEATURE_FLAG: True})]
+        TEST_BAR: Annotated[
+            int | None, Field(json_schema_extra={_X_DEV_FEATURE_FLAG: True})
+        ]
 
-    # checks whether it is shown to the front-end depending on the value of WEBSERVER_DEV_FEATURES_ENABLED
+    settings = DevSettings.create_from_envs()
+
     if is_dev_feature_enabled:
-        assert plugin_name not in set(statics["pluginsDisabled"])
+        assert settings.TEST_FOO is True
+        assert settings.TEST_BAR == 42
     else:
-        assert plugin_name in set(statics["pluginsDisabled"])
+        assert settings.TEST_FOO is False
+        assert settings.TEST_BAR is None
 
 
 @pytest.mark.filterwarnings("error")
@@ -138,3 +151,37 @@ def test_avoid_sensitive_info_in_public(app_settings: ApplicationSettings):
     assert not any("token" in key for key in app_settings.public_dict())
     assert not any("secret" in key for key in app_settings.public_dict())
     assert not any("private" in key for key in app_settings.public_dict())
+
+
+def test_backwards_compatibility_with_bool_env_vars_turned_into_objects(
+    monkeypatch: pytest.MonkeyPatch,
+    mock_webserver_service_environment: EnvVarsDict,
+):
+    # Sometimes we turn `WEBSERVER_VAR: bool` into `WEBSERVER_VAR: VarSettings`
+    with monkeypatch.context() as patch:
+        patch.setenv("WEBSERVER_LICENSES", "true")
+
+        settings = ApplicationSettings.create_from_envs()
+        assert settings.WEBSERVER_LICENSES is True
+
+    with monkeypatch.context() as patch:
+        patch.setenv("WEBSERVER_LICENSES", "{}")
+        patch.setenv("LICENSES_ITIS_VIP_SYNCER_ENABLED", "1")
+        patch.setenv("LICENSES_ITIS_VIP_API_URL", "https://some-api/{category}")
+        patch.setenv(
+            "LICENSES_ITIS_VIP_CATEGORIES",
+            '{"HumanWholeBody": "Humans", "HumanBodyRegion": "Humans (Region)", "AnimalWholeBody": "Animal"}',
+        )
+
+        settings = ApplicationSettings.create_from_envs()
+        assert settings.WEBSERVER_LICENSES is not None
+        assert not isinstance(settings.WEBSERVER_LICENSES, bool)
+        assert settings.WEBSERVER_LICENSES.LICENSES_ITIS_VIP
+        assert settings.WEBSERVER_LICENSES.LICENSES_ITIS_VIP.LICENSES_ITIS_VIP_API_URL
+        assert settings.WEBSERVER_LICENSES.LICENSES_ITIS_VIP_SYNCER_ENABLED
+
+    with monkeypatch.context() as patch:
+        patch.setenv("WEBSERVER_LICENSES", "null")
+
+        settings = ApplicationSettings.create_from_envs()
+        assert settings.WEBSERVER_LICENSES is None

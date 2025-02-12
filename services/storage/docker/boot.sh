@@ -6,11 +6,16 @@ IFS=$(printf '\n\t')
 
 INFO="INFO: [$(basename "$0")] "
 
-# BOOTING application ---------------------------------------------
 echo "$INFO" "Booting in ${SC_BOOT_MODE} mode ..."
 echo "$INFO" "User :$(id "$(whoami)")"
 echo "$INFO" "Workdir : $(pwd)"
 
+#
+# DEVELOPMENT MODE
+#
+# - prints environ info
+# - installs requirements in mounted volume
+#
 if [ "${SC_BUILD_TARGET}" = "development" ]; then
   echo "$INFO" "Environment :"
   printenv | sed 's/=/: /' | sed 's/^/    /' | sort
@@ -23,12 +28,6 @@ if [ "${SC_BUILD_TARGET}" = "development" ]; then
   cd -
   echo "$INFO" "PIP :"
   uv pip list
-
-  echo "$INFO" "Setting entrypoint to use watchmedo autorestart..."
-  entrypoint='watchmedo auto-restart --recursive --pattern="*.py;*/src/*" --ignore-patterns="*test*;pytest_simcore/*;setup.py;*ignore*" --ignore-directories --'
-
-elif [ "${SC_BUILD_TARGET}" = "production" ]; then
-  entrypoint=""
 fi
 
 if [ "${SC_BOOT_MODE}" = "debug" ]; then
@@ -36,18 +35,29 @@ if [ "${SC_BOOT_MODE}" = "debug" ]; then
   uv pip install --no-cache-dir debugpy
 fi
 
+#
+# RUNNING application
+#
 APP_LOG_LEVEL=${STORAGE_LOGLEVEL:-${LOG_LEVEL:-${LOGLEVEL:-INFO}}}
 SERVER_LOG_LEVEL=$(echo "${APP_LOG_LEVEL}" | tr '[:upper:]' '[:lower:]')
-
-# RUNNING application ----------------------------------------
-echo "$INFO" "Selected config ${SC_BUILD_TARGET}"
 echo "$INFO" "Log-level app/server: $APP_LOG_LEVEL/$SERVER_LOG_LEVEL"
 
 if [ "${SC_BOOT_MODE}" = "debug" ]; then
-  # NOTE: needs debupgy installed
-  echo "$INFO" "Debugpy initializing in port ${STORAGE_REMOTE_DEBUGGING_PORT} with ${SC_BUILD_TARGET}"
-  eval "$entrypoint" python3 -m debugpy --listen 0.0.0.0:"${STORAGE_REMOTE_DEBUGGING_PORT}" -m \
-    simcore_service_storage run
+  reload_dir_packages=$(find /devel/packages -maxdepth 3 -type d -path "*/src/*" ! -path "*.*" -exec echo '--reload-dir {} \' \;)
+
+  exec sh -c "
+    cd services/storage/src/simcore_service_storage && \
+    python -m debugpy --listen 0.0.0.0:${STORAGE_REMOTE_DEBUGGING_PORT} -m uvicorn main:the_app \
+      --host 0.0.0.0 \
+      --port ${STORAGE_PORT} \
+      --reload \
+      $reload_dir_packages
+      --reload-dir . \
+      --log-level \"${SERVER_LOG_LEVEL}\"
+  "
 else
-  exec simcore-service-storage run
+  exec uvicorn simcore_service_storage.main:the_app \
+    --host 0.0.0.0 \
+    --port ${STORAGE_PORT} \
+    --log-level "${SERVER_LOG_LEVEL}"
 fi

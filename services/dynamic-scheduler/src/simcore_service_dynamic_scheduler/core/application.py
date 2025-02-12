@@ -10,7 +10,7 @@ from servicelib.fastapi.prometheus_instrumentation import (
     initialize_prometheus_instrumentation,
     lifespan_prometheus_instrumentation,
 )
-from servicelib.fastapi.tracing import get_lifespan_tracing
+from servicelib.fastapi.tracing import initialize_tracing
 
 from .._meta import (
     API_VERSION,
@@ -63,11 +63,6 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
     if app_settings.DYNAMIC_SCHEDULER_PROMETHEUS_INSTRUMENTATION_ENABLED:
         lifespans.append(lifespan_prometheus_instrumentation)
 
-    if app_settings.DYNAMIC_SCHEDULER_TRACING:
-        lifespans.append(
-            get_lifespan_tracing(app_settings.DYNAMIC_SCHEDULER_TRACING, APP_NAME)
-        )
-
     app = FastAPI(
         title=f"{PROJECT_NAME} web API",
         description=SUMMARY,
@@ -90,6 +85,9 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
     initialize_prometheus_instrumentation(app)
 
     initialize_frontend(app)
+
+    if app_settings.DYNAMIC_SCHEDULER_TRACING:
+        initialize_tracing(app, app_settings.DYNAMIC_SCHEDULER_TRACING, APP_NAME)
 
     if app_settings.DYNAMIC_SCHEDULER_PROFILING:
         initialize_profiler(app)

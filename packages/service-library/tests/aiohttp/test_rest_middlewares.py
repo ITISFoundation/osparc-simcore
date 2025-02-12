@@ -21,7 +21,7 @@ from servicelib.aiohttp.rest_middlewares import (
     envelope_middleware_factory,
     error_middleware_factory,
 )
-from servicelib.aiohttp.rest_responses import is_enveloped, unwrap_envelope
+from servicelib.rest_responses import is_enveloped, unwrap_envelope
 
 
 @dataclass

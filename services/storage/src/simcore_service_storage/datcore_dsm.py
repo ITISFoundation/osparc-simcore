@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from aiohttp import web
+from fastapi import FastAPI
 from models_library.api_schemas_storage import (
     DatCoreDatasetName,
     LinkType,
@@ -13,16 +13,18 @@ from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize
 
 from .constants import DATCORE_ID, DATCORE_STR
-from .datcore_adapter import datcore_adapter
-from .datcore_adapter.datcore_adapter_exceptions import DatcoreAdapterMultipleFilesError
-from .db_tokens import get_api_token_and_secret
 from .dsm_factory import BaseDataManager
 from .models import DatasetMetaData, FileMetaData, UploadLinks
+from .modules.datcore_adapter import datcore_adapter
+from .modules.datcore_adapter.datcore_adapter_exceptions import (
+    DatcoreAdapterMultipleFilesError,
+)
+from .modules.db.tokens import get_api_token_and_secret
 
 
 @dataclass
 class DatCoreDataManager(BaseDataManager):
-    app: web.Application
+    app: FastAPI
 
     async def _get_datcore_tokens(self, user_id: UserID):
         return await get_api_token_and_secret(self.app, user_id)
@@ -135,5 +137,5 @@ class DatCoreDataManager(BaseDataManager):
         await datcore_adapter.delete_file(self.app, api_token, api_secret, file_id)
 
 
-def create_datcore_data_manager(app: web.Application) -> DatCoreDataManager:
+def create_datcore_data_manager(app: FastAPI) -> DatCoreDataManager:
     return DatCoreDataManager(app)
