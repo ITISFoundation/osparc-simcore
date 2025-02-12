@@ -53,6 +53,9 @@ qx.Class.define("osparc.vipMarket.Market", {
         licensedItems.forEach(licensedItem => {
           if (purchasedItems.find(purchasedItem => purchasedItem["licensedItemId"] === licensedItem["licensedItemId"])) {
             purchasedCategory["items"].push(licensedItem);
+            if (!openCategory) {
+              openCategory = purchasedCategory["categoryId"];
+            }
           }
           if (licensedItem["licensedResourceData"] && licensedItem["licensedResourceData"]["categoryId"]) {
             const categoryId = licensedItem["licensedResourceData"]["categoryId"];
@@ -64,6 +67,9 @@ qx.Class.define("osparc.vipMarket.Market", {
                 icon: licensedItem["licensedResourceData"]["categoryIcon"] || `osparc/market/${categoryId}.svg`,
                 items: [],
               };
+              if (!openCategory) {
+                openCategory = categoryId;
+              }
               categories.push(category);
             }
             category["items"].push(licensedItem);
@@ -103,6 +109,9 @@ qx.Class.define("osparc.vipMarket.Market", {
       vipMarketView.addListener("importMessageSent", () => this.fireEvent("importMessageSent"));
       const page = this.addTab(marketTabInfo["label"], marketTabInfo["icon"], vipMarketView);
       page.category = marketTabInfo["categoryId"];
+      if (page.category === "purchasedModels") {
+        page.getChildControl("button").setVisibility(licensedItems.length ? "visible" : "excluded");
+      }
       return page;
     },
 
