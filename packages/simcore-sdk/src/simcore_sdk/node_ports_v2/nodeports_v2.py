@@ -6,7 +6,6 @@ from collections.abc import Callable, Coroutine
 from pathlib import Path
 from typing import Any
 
-from models_library.basic_types import IDStr
 from models_library.projects import ProjectIDStr
 from models_library.projects_nodes_io import NodeIDStr
 from models_library.services_types import ServicePortKey
@@ -229,7 +228,7 @@ class Nodeports(BaseModel):
 
         tasks = []
         async with progress_bar.sub_progress(
-            steps=len(port_values.items()), description=IDStr("set multiple")
+            steps=len(port_values.items()), description="set multiple"
         ) as sub_progress:
             for port_key, (value, set_kwargs) in port_values.items():
                 tasks.append(

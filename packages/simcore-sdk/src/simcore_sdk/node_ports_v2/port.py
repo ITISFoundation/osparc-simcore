@@ -6,7 +6,6 @@ from pathlib import Path
 from pprint import pformat
 from typing import Any
 
-from models_library.basic_types import IDStr
 from models_library.services_io import BaseServiceIOModel
 from models_library.services_types import ServicePortKey
 from models_library.storage_schemas import LinkType
@@ -384,7 +383,7 @@ class Port(BaseServiceIOModel):
             new_concrete_value=new_value,
             **set_kwargs,
             progress_bar=progress_bar
-            or ProgressBarData(num_steps=1, description=IDStr("set")),
+            or ProgressBarData(num_steps=1, description="set"),
         )
         await self._node_ports.save_to_db_cb(self._node_ports)
 
