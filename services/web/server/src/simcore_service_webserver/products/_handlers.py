@@ -2,7 +2,7 @@ import logging
 from typing import Literal
 
 from aiohttp import web
-from models_library.api_schemas_webserver.product import GetCreditPrice, GetProduct
+from models_library.api_schemas_webserver.product import GetCreditPrice, ProductGet
 from models_library.basic_types import IDStr
 from models_library.rest_base import RequestParameters, StrictRequestParameters
 from models_library.users import UserID
@@ -69,9 +69,9 @@ async def _get_product(request: web.Request):
     except KeyError as err:
         raise web.HTTPNotFound(reason=f"{product_name=} not found") from err
 
-    assert "extra" in GetProduct.model_config  # nosec
-    assert GetProduct.model_config["extra"] == "ignore"  # nosec
-    data = GetProduct(**product.model_dump(), templates=[])
+    assert "extra" in ProductGet.model_config  # nosec
+    assert ProductGet.model_config["extra"] == "ignore"  # nosec
+    data = ProductGet(**product.model_dump(), templates=[])
     return envelope_json_response(data)
 
 

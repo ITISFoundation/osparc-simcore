@@ -60,31 +60,34 @@ class UpdateProductTemplate(InputSchema):
     content: str
 
 
-class GetProduct(OutputSchema):
+class ProductGet(OutputSchema):
     name: ProductName
     display_name: str
-    short_name: str | None = Field(
-        default=None, description="Short display name for SMS"
-    )
+    short_name: Annotated[
+        str | None, Field(description="Short display name for SMS")
+    ] = None
 
-    vendor: dict | None = Field(default=None, description="vendor attributes")
-    issues: list[dict] | None = Field(
-        default=None, description="Reference to issues tracker"
-    )
-    manuals: list[dict] | None = Field(default=None, description="List of manuals")
-    support: list[dict] | None = Field(
-        default=None, description="List of support resources"
-    )
+    vendor: Annotated[dict | None, Field(description="vendor attributes")] = None
+    issues: Annotated[
+        list[dict] | None, Field(description="Reference to issues tracker")
+    ] = None
+    manuals: Annotated[list[dict] | None, Field(description="List of manuals")] = None
+    support: Annotated[
+        list[dict] | None, Field(description="List of support resources")
+    ] = None
 
     login_settings: dict
     max_open_studies_per_user: PositiveInt | None
     is_payment_enabled: bool
     credits_per_usd: NonNegativeDecimal | None
 
-    templates: list[GetProductTemplate] = Field(
-        default_factory=list,
-        description="List of templates available to this product for communications (e.g. emails, sms, etc)",
-    )
+    templates: Annotated[
+        list[GetProductTemplate],
+        Field(
+            description="List of templates available to this product for communications (e.g. emails, sms, etc)",
+            default_factory=list,
+        ),
+    ]
 
 
 ExtraCreditsUsdRangeInt: TypeAlias = Annotated[int, Field(ge=0, lt=500)]
