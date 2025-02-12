@@ -2,7 +2,11 @@ import logging
 from typing import Literal
 
 from aiohttp import web
-from models_library.api_schemas_webserver.product import GetCreditPrice, ProductGet
+from models_library.api_schemas_webserver.product import (
+    GetCreditPrice,
+    ProductGet,
+    ProductUIGet,
+)
 from models_library.basic_types import IDStr
 from models_library.rest_base import RequestParameters, StrictRequestParameters
 from models_library.users import UserID
@@ -72,6 +76,17 @@ async def _get_product(request: web.Request):
     assert "extra" in ProductGet.model_config  # nosec
     assert ProductGet.model_config["extra"] == "ignore"  # nosec
     data = ProductGet(**product.model_dump(), templates=[])
+    return envelope_json_response(data)
+
+
+@routes.get(f"/{VTAG}/products/current/ui", name="get_current_product_ui")
+@login_required
+@permission_required("product.ui.read")
+async def _get_current_product_ui(request: web.Request):
+    req_ctx = _ProductsRequestContext.model_validate(request)
+    product_name = req_ctx.product_name
+
+    data = ProductUIGet(product_name=product_name, ui={})
     return envelope_json_response(data)
 
 

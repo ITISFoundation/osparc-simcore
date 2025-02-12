@@ -13,6 +13,7 @@ from models_library.api_schemas_webserver.product import (
     GetCreditPrice,
     InvitationGenerated,
     ProductGet,
+    ProductUIGet,
     UpdateProductTemplate,
 )
 from models_library.generics import Envelope
@@ -47,6 +48,14 @@ async def get_current_product_price():
     ],
 )
 async def get_product(_params: Annotated[_ProductsRequestParams, Depends()]):
+    ...
+
+
+@router.get(
+    "/products/current/ui",
+    response_model=Envelope[ProductUIGet],
+)
+async def get_current_product_ui():
     ...
 
 

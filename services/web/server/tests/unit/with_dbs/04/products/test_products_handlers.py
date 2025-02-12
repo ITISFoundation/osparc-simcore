@@ -10,7 +10,7 @@ from http import HTTPStatus
 
 import pytest
 from aiohttp.test_utils import TestClient
-from models_library.api_schemas_webserver.product import ProductGet
+from models_library.api_schemas_webserver.product import ProductGet, ProductUIGet
 from models_library.products import ProductName
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import UserInfoDict
@@ -96,8 +96,8 @@ async def test_get_product(
         client.app, user_id=logged_user["id"], product_name=product_name
     )
 
-    current_project_headers = {X_PRODUCT_NAME_HEADER: product_name}
-    response = await client.get("/v0/products/current", headers=current_project_headers)
+    current_product_headers = {X_PRODUCT_NAME_HEADER: product_name}
+    response = await client.get("/v0/products/current", headers=current_product_headers)
     data, error = await assert_status(response, status.HTTP_200_OK)
 
     got_product = ProductGet(**data)
@@ -134,7 +134,7 @@ async def test_get_current_product_ui(
     user_role: UserRole,
     expected_status_code: int,
 ):
-    assert logged_user["role"] == f"{user_role}"
+    assert logged_user["role"] == user_role.value
 
     # give access to user to this product
     assert client.app
@@ -142,9 +142,12 @@ async def test_get_current_product_ui(
         client.app, user_id=logged_user["id"], product_name=product_name
     )
 
-    current_project_headers = {X_PRODUCT_NAME_HEADER: product_name}
+    assert (
+        client.app.router["get_current_product_ui"].url_for().path
+        == "/v0/products/current/ui"
+    )
     response = await client.get(
-        "/v0/products/current/ui", headers=current_project_headers
+        "/v0/products/current/ui", headers={X_PRODUCT_NAME_HEADER: product_name}
     )
 
     data, error = await assert_status(response, expected_status_code)
@@ -154,8 +157,10 @@ async def test_get_current_product_ui(
         # Will be something like the data stored in this file
         # https://github.com/itisfoundation/osparc-simcore/blob/1dcd369717959348099cc6241822a1f0aff0382c/services/static-webserver/client/source/resource/osparc/new_studies.json
         assert not error
-        assert data is not None
-        assert isinstance(data, dict)
+        assert data
+
+        product_ui = ProductUIGet.model_validate(data)
+        assert product_ui.product_name == product_name
     else:
         assert error
         assert not data

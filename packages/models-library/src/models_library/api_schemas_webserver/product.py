@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Annotated, TypeAlias
+from typing import Annotated, Any, TypeAlias
 
 from pydantic import (
     ConfigDict,
@@ -87,6 +87,13 @@ class ProductGet(OutputSchema):
             description="List of templates available to this product for communications (e.g. emails, sms, etc)",
             default_factory=list,
         ),
+    ]
+
+
+class ProductUIGet(OutputSchema):
+    product_name: ProductName
+    ui: Annotated[
+        dict[str, Any], Field(description="Front-end owned ui product configuration")
     ]
 
 
