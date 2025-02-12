@@ -1,6 +1,6 @@
 {
   "tis": {
-    "NO_plus_button": {
+    "NO_plusButton": {
       "categories": [{
         "id": "precomputed",
         "title": "Precomputed"
@@ -55,7 +55,7 @@
     }
   },
   "tiplite": {
-    "NO_plus_button": {
+    "NO_plusButton": {
       "categories": [{
         "id": "precomputed",
         "title": "Precomputed"
@@ -120,7 +120,7 @@
     }
   },
   "s4l": {
-    "plus_button": {
+    "plusButton": {
       "resources": [{
         "resourceType": "service",
         "expectedKey": "simcore/services/dynamic/s4l-ui",
@@ -137,7 +137,7 @@
     }
   },
   "s4lacad": {
-    "plus_button": {
+    "plusButton": {
       "resources": [{
         "resourceType": "service",
         "expectedKey": "simcore/services/dynamic/s4l-ui",
@@ -154,7 +154,7 @@
     }
   },
   "s4llite": {
-    "plus_button": {
+    "plusButton": {
       "resources": [{
         "resourceType": "service",
         "expectedKey": "simcore/services/dynamic/s4l-ui-lite",
@@ -165,7 +165,7 @@
     }
   },
   "osparc": {
-    "plus_button": {
+    "plusButton": {
       "resources": [{
         "resourceType": "study",
         "icon": "@FontAwesome5Solid/file/18",
