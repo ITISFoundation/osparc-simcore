@@ -31,23 +31,13 @@ _logger = logging.getLogger(__name__)
 async def get_licensed_item(
     app: web.Application,
     *,
-    licensed_item_id: LicensedItemID,
+    key: str,
+    version: str,
     product_name: ProductName,
 ) -> LicensedItem:
 
-    licensed_item_db = await _licensed_items_repository.get(
-        app, licensed_item_id=licensed_item_id, product_name=product_name
-    )
-
-    return LicensedItem.model_construct(
-        licensed_item_id=licensed_item_db.licensed_item_id,
-        display_name=licensed_item_db.display_name,
-        licensed_resource_name=licensed_item_db.licensed_resource_name,
-        licensed_resource_type=licensed_item_db.licensed_resource_type,
-        licensed_resource_data=licensed_item_db.licensed_resource_data,
-        pricing_plan_id=licensed_item_db.pricing_plan_id,
-        created_at=licensed_item_db.created,
-        modified_at=licensed_item_db.modified,
+    return await _licensed_items_repository.get_licensed_item_by_key_version(
+        app, key=key, version=version, product_name=product_name
     )
 
 
@@ -59,59 +49,17 @@ async def list_licensed_items(
     limit: int,
     order_by: OrderBy,
 ) -> LicensedItemPage:
-    total_count, items = await _licensed_items_repository.list_(
+    total_count, items = await _licensed_items_repository.list_licensed_items(
         app,
         product_name=product_name,
         offset=offset,
         limit=limit,
         order_by=order_by,
-        trashed="exclude",
-        inactive="exclude",
     )
     return LicensedItemPage(
-        items=[
-            LicensedItem.model_construct(
-                licensed_item_id=licensed_item_db.licensed_item_id,
-                display_name=licensed_item_db.display_name,
-                licensed_resource_name=licensed_item_db.licensed_resource_name,
-                licensed_resource_type=licensed_item_db.licensed_resource_type,
-                licensed_resource_data=licensed_item_db.licensed_resource_data,
-                pricing_plan_id=licensed_item_db.pricing_plan_id,
-                created_at=licensed_item_db.created,
-                modified_at=licensed_item_db.modified,
-            )
-            for licensed_item_db in items
-        ],
+        items=items,
         total=total_count,
     )
-
-
-# async def trash_licensed_item(
-#     app: web.Application,
-#     *,
-#     product_name: ProductName,
-#     licensed_item_id: LicensedItemID,
-# ):
-#     await _licensed_items_repository.update(
-#         app,
-#         product_name=product_name,
-#         licensed_item_id=licensed_item_id,
-#         updates=LicensedItemPatchDB(trash=True),
-#     )
-
-
-# async def untrash_licensed_item(
-#     app: web.Application,
-#     *,
-#     product_name: ProductName,
-#     licensed_item_id: LicensedItemID,
-# ):
-#     await _licensed_items_repository.update(
-#         app,
-#         product_name=product_name,
-#         licensed_item_id=licensed_item_id,
-#         updates=LicensedItemPatchDB(trash=True),
-#     )
 
 
 async def purchase_licensed_item(
@@ -120,8 +68,6 @@ async def purchase_licensed_item(
     product_name: ProductName,
     user_id: UserID,
     licensed_item_id: LicensedItemID,
-    key: str,
-    version: str,
     body_params: LicensedItemsBodyParams,
 ) -> None:
     # Check user wallet permissions
@@ -129,14 +75,20 @@ async def purchase_licensed_item(
         app, user_id=user_id, wallet_id=body_params.wallet_id, product_name=product_name
     )
 
-    licensed_item = await get_licensed_item(
+    licensed_item_db = await _licensed_items_repository.get(
         app, licensed_item_id=licensed_item_id, product_name=product_name
+    )
+    licensed_item = await get_licensed_item(
+        app,
+        key=licensed_item_db.key,
+        version=licensed_item_db.version,
+        product_name=product_name,
     )
 
     if licensed_item.pricing_plan_id != body_params.pricing_plan_id:
         raise LicensedItemPricingPlanMatchError(
             pricing_plan_id=body_params.pricing_plan_id,
-            licensed_item_id=licensed_item_id,
+            licensed_item_id=licensed_item.licensed_item_id,
         )
 
     pricing_unit = await get_pricing_plan_unit(
@@ -156,9 +108,9 @@ async def purchase_licensed_item(
 
     _data = LicensedItemsPurchasesCreate(
         product_name=product_name,
-        licensed_item_id=licensed_item_id,
-        key=key,
-        version=version,
+        licensed_item_id=licensed_item.licensed_item_id,
+        key=licensed_item_db.key,
+        version=licensed_item_db.version,
         wallet_id=wallet.wallet_id,
         wallet_name=wallet.name,
         pricing_plan_id=body_params.pricing_plan_id,
@@ -166,9 +118,8 @@ async def purchase_licensed_item(
         pricing_unit_cost_id=pricing_unit.current_cost_per_unit_id,
         pricing_unit_cost=pricing_unit.current_cost_per_unit,
         start_at=datetime.now(tz=UTC),
-        expire_at=datetime.now(tz=UTC)
-        + timedelta(days=30),  # <-- Temporary agreement with OM for proof of concept
-        num_of_seats=body_params.num_of_seats,
+        expire_at=datetime.now(tz=UTC) + timedelta(days=365),
+        num_of_seats=body_params.num_of_seats,  # <-- TODO: MD: this needs to be taken from the Pricing UNIT !!!
         purchased_by_user=user_id,
         user_email=user["email"],
         purchased_at=datetime.now(tz=UTC),

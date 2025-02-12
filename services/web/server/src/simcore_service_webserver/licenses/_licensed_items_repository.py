@@ -1,5 +1,5 @@
 import logging
-from typing import Literal, cast
+from typing import cast
 
 from aiohttp import web
 from models_library.licenses import (
@@ -29,7 +29,7 @@ from sqlalchemy.ext.asyncio import AsyncConnection
 from sqlalchemy.sql import select
 
 from ..db.plugin import get_asyncpg_engine
-from .errors import LicensedItemNotFoundError
+from .errors import LicensedItemNotFoundError, LicensedKeyVersionNotFoundError
 
 _logger = logging.getLogger(__name__)
 
@@ -39,6 +39,8 @@ _SELECTION_ARGS = get_columns_from_db_model(licensed_items, LicensedItemDB)
 
 def _create_insert_query(
     display_name: str,
+    key: str,
+    version: str,
     licensed_resource_type: LicensedResourceType,
     product_name: ProductName,
     pricing_plan_id: PricingPlanId,
@@ -48,6 +50,8 @@ def _create_insert_query(
         .values(
             licensed_resource_type=licensed_resource_type,
             display_name=display_name,
+            key=key,
+            version=version,
             pricing_plan_id=pricing_plan_id,
             product_name=product_name,
             created=func.now(),
@@ -61,6 +65,8 @@ async def create(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
+    key: str,
+    version: str,
     display_name: str,
     licensed_resource_type: LicensedResourceType,
     product_name: ProductName,
@@ -69,6 +75,8 @@ async def create(
 
     query = _create_insert_query(
         display_name,
+        key,
+        version,
         licensed_resource_type,
         product_name,
         pricing_plan_id,
@@ -88,8 +96,7 @@ async def list_(
     limit: NonNegativeInt,
     order_by: OrderBy,
     # filters
-    trashed: Literal["exclude", "only", "include"] = "exclude",
-    inactive: Literal["exclude", "only", "include"] = "exclude",
+    filter_by_licensed_resource_type: LicensedResourceType | None = None,
 ) -> tuple[int, list[LicensedItemDB]]:
 
     base_query = (
@@ -98,21 +105,9 @@ async def list_(
         .where(licensed_items.c.product_name == product_name)
     )
 
-    # Apply trashed filter
-    if trashed == "exclude":
-        base_query = base_query.where(licensed_items.c.trashed.is_(None))
-    elif trashed == "only":
-        base_query = base_query.where(licensed_items.c.trashed.is_not(None))
-
-    if inactive == "only":
-        base_query = base_query.where(
-            licensed_items.c.product_name.is_(None)
-            | licensed_items.c.licensed_item_id.is_(None)
-        )
-    elif inactive == "exclude":
-        base_query = base_query.where(
-            licensed_items.c.product_name.is_not(None)
-            & licensed_items.c.licensed_item_id.is_not(None)
+    if filter_by_licensed_resource_type:
+        base_query.where(
+            licensed_items.c.licensed_resource_type == filter_by_licensed_resource_type
         )
 
     # Select total count from base_query
@@ -177,11 +172,6 @@ async def update(
         licensed_items.c.modified.name: func.now(),
     }
 
-    # trashing
-    assert "trash" in dict(LicensedItemPatchDB.model_fields)  # nosec
-    if trash := _updates.pop("trash", None):
-        _updates[licensed_items.c.trashed.name] = func.now() if trash else None
-
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         result = await conn.execute(
             licensed_items.update()
@@ -217,70 +207,140 @@ async def delete(
 ### LICENSED ITEMS DOMAIN
 
 
-_SELECTION_LICENSED_ITEM_ARGS = (
-    licensed_items.c.licensed_item_id,
-    licensed_items.c.display_name,
-    licensed_items.c.licensed_resource_type,
-    licensed_resources.c.licensed_resource_data,
-    licensed_items.c.pricing_plan_id,
-    licensed_items.c.created,
-    licensed_items.c.modified,
-)
+# _SELECTION_LICENSED_ITEM_ARGS = (
+#     licensed_items.c.licensed_item_id,
+#     licensed_items.c.key,
+#     licensed_items.c.version,
+#     licensed_items.c.display_name,
+#     licensed_items.c.licensed_resource_type,
+#     licensed_resources.c.licensed_resource_data,
+#     licensed_items.c.pricing_plan_id,
+#     licensed_items.c.created,
+#     licensed_items.c.modified,
+# )
 
 
-async def get_licensed_item(
+_licensed_resource_subquery = (
+    select(
+        licensed_item_to_resource.c.licensed_item_id,
+        func.array_agg(licensed_resources.c.licensed_resource_data).label(
+            "array_of_licensed_resource_data"
+        ),
+    )
+    .select_from(
+        licensed_item_to_resource.join(
+            licensed_resources,
+            licensed_resources.c.licensed_resource_id
+            == licensed_item_to_resource.c.licensed_resource_id,
+        )
+    )
+    .group_by(
+        licensed_item_to_resource.c.licensed_item_id,
+    )
+).subquery("licensed_resource_subquery")
+
+
+async def get_licensed_item_by_key_version(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
-    licensed_item_id: LicensedItemID,
+    key: str,
+    version: str,
     product_name: ProductName,
-    filter_by_license_resource_type: LicensedResourceType | None = None,
 ) -> LicensedItem:
 
-    licensed_resource_subquery = (
-        select(
-            licensed_resources.c.licensed_resource_id,
-            func.jsonb_object_agg(
-                workspaces_access_rights.c.gid,
-                func.jsonb_build_object(
-                    "read",
-                    workspaces_access_rights.c.read,
-                    "write",
-                    workspaces_access_rights.c.write,
-                    "delete",
-                    workspaces_access_rights.c.delete,
-                ),
-            ).label("access_rights"),
-        ).group_by(licensed_resources.c.licensed_resource_id)
-    ).subquery("licensed_resource_subquery")
-
     select_query = (
-        select(*_SELECTION_LICENSED_ITEM_ARGS)
+        select(
+            licensed_items.c.licensed_item_id,
+            licensed_items.c.key,
+            licensed_items.c.version,
+            licensed_items.c.display_name,
+            licensed_items.c.licensed_resource_type,
+            _licensed_resource_subquery.c.array_of_licensed_resource_data,
+            licensed_items.c.pricing_plan_id,
+            licensed_items.c.created.label("created_at"),
+            licensed_items.c.modified.label("modified_at"),
+        )
         .select_from(
             licensed_items.join(
-                licensed_item_to_resource,
+                _licensed_resource_subquery,
                 licensed_items.c.licensed_item_id
-                == licensed_item_to_resource.c.licensed_item_id,
-            ).join(
-                licensed_resource_subquery,
-                licensed_item_to_resource.c.licensed_resource_id
-                == licensed_resource_subquery.c.licensed_resource_id,
+                == _licensed_resource_subquery.c.licensed_item_id,
             )
         )
         .where(
-            (licensed_items.c.licensed_item_id == licensed_item_id)
+            (licensed_items.c.key == key)
+            & (licensed_items.c.version == version)
             & (licensed_items.c.product_name == product_name)
         )
     )
-
-    if filter_by_license_resource_type:
-        select_query = select_query.where(
-            licensed_items.c.licensed_resource_type == filter_by_license_resource_type
-        )
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         result = await conn.execute(select_query)
         row = result.one_or_none()
         if row is None:
-            raise LicensedItemNotFoundError(licensed_item_id=licensed_item_id)
-        return LicensedItem.model_validate(row)
+            raise LicensedKeyVersionNotFoundError(key=key, version=version)
+        return LicensedItem.model_validate(dict(row))
+
+
+async def list_licensed_items(
+    app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
+    product_name: ProductName,
+    offset: NonNegativeInt,
+    limit: NonNegativeInt,
+    order_by: OrderBy,
+    # filters
+    filter_by_licensed_resource_type: LicensedResourceType | None = None,
+) -> tuple[int, list[LicensedItem]]:
+
+    base_query = (
+        select(
+            licensed_items.c.licensed_item_id,
+            licensed_items.c.key,
+            licensed_items.c.version,
+            licensed_items.c.display_name,
+            licensed_items.c.licensed_resource_type,
+            _licensed_resource_subquery.c.array_of_licensed_resource_data,
+            licensed_items.c.pricing_plan_id,
+            licensed_items.c.created.label("created_at"),
+            licensed_items.c.modified.label("modified_at"),
+        )
+        .select_from(
+            licensed_items.join(
+                _licensed_resource_subquery,
+                licensed_items.c.licensed_item_id
+                == _licensed_resource_subquery.c.licensed_item_id,
+            )
+        )
+        .where(licensed_items.c.product_name == product_name)
+    )
+
+    if filter_by_licensed_resource_type:
+        base_query.where(
+            licensed_items.c.licensed_resource_type == filter_by_licensed_resource_type
+        )
+
+    # Select total count from base_query
+    subquery = base_query.subquery()
+    count_query = select(func.count()).select_from(subquery)
+
+    # Ordering and pagination
+    if order_by.direction == OrderDirection.ASC:
+        list_query = base_query.order_by(asc(getattr(licensed_items.c, order_by.field)))
+    else:
+        list_query = base_query.order_by(
+            desc(getattr(licensed_items.c, order_by.field))
+        )
+    list_query = list_query.offset(offset).limit(limit)
+
+    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
+        total_count = await conn.scalar(count_query)
+
+        result = await conn.stream(list_query)
+        items: list[LicensedItem] = [
+            LicensedItem.model_validate(dict(row)) async for row in result
+        ]
+
+        return cast(int, total_count), items

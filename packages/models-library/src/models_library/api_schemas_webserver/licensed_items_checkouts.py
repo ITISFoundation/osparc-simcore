@@ -56,6 +56,8 @@ class LicensedItemCheckoutRpcGetPage(NamedTuple):
 class LicensedItemCheckoutRestGet(OutputSchema):
     licensed_item_checkout_id: LicensedItemCheckoutID
     licensed_item_id: LicensedItemID
+    key: str
+    version: str
     wallet_id: WalletID
     user_id: UserID
     user_email: LowerCaseEmailStr

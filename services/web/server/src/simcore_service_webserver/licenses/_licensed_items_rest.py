@@ -2,7 +2,7 @@ import logging
 
 from aiohttp import web
 from models_library.api_schemas_webserver.licensed_items import LicensedItemRestGet
-from models_library.licenses import LicensedItem, LicensedItemPage
+from models_library.licenses import LicensedItemPage
 from models_library.rest_ordering import OrderBy
 from models_library.rest_pagination import Page
 from models_library.rest_pagination_utils import paginate_data
@@ -18,7 +18,6 @@ from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 from .._meta import API_VTAG as VTAG
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
-from ..utils_aiohttp import envelope_json_response
 from . import _licensed_items_service
 from ._common.exceptions_handlers import handle_plugin_requests_exceptions
 from ._common.models import (
@@ -72,22 +71,22 @@ async def list_licensed_items(request: web.Request):
     )
 
 
-@routes.get(
-    f"/{VTAG}/catalog/licensed-items/{{licensed_item_id}}", name="get_licensed_item"
-)
-@login_required
-@permission_required("catalog/licensed-items.*")
-@handle_plugin_requests_exceptions
-async def get_licensed_item(request: web.Request):
-    req_ctx = LicensedItemsRequestContext.model_validate(request)
-    path_params = parse_request_path_parameters_as(LicensedItemsPathParams, request)
+# @routes.get(
+#     f"/{VTAG}/catalog/licensed-items/{{licensed_item_id}}", name="get_licensed_item"
+# )
+# @login_required
+# @permission_required("catalog/licensed-items.*")
+# @handle_plugin_requests_exceptions
+# async def get_licensed_item(request: web.Request):
+#     req_ctx = LicensedItemsRequestContext.model_validate(request)
+#     path_params = parse_request_path_parameters_as(LicensedItemsPathParams, request)
 
-    licensed_item: LicensedItem = await _licensed_items_service.get_licensed_item(
-        app=request.app,
-        licensed_item_id=path_params.licensed_item_id,
-        product_name=req_ctx.product_name,
-    )
-    return envelope_json_response(LicensedItemRestGet.from_domain_model(licensed_item))
+#     licensed_item: LicensedItem = await _licensed_items_service.get_licensed_item(
+#         app=request.app,
+#         licensed_item_id=path_params.licensed_item_id,
+#         product_name=req_ctx.product_name,
+#     )
+#     return envelope_json_response(LicensedItemRestGet.from_domain_model(licensed_item))
 
 
 @routes.post(

@@ -112,10 +112,11 @@ class LicensedResourcePatchDB(BaseModel):
 
 class LicensedItem(BaseModel):
     licensed_item_id: LicensedItemID
+    key: str
+    version: str
     display_name: str
-    licensed_resource_name: str
     licensed_resource_type: LicensedResourceType
-    licensed_resource_data: dict[str, Any]
+    array_of_licensed_resource_data: list[dict[str, Any]]
     pricing_plan_id: PricingPlanId
     created_at: datetime
     modified_at: datetime
@@ -127,17 +128,20 @@ class LicensedItem(BaseModel):
                 "examples": [
                     {
                         "licensed_item_id": "0362b88b-91f8-4b41-867c-35544ad1f7a1",
+                        "key": "Duke",
+                        "version": "1.0.0",
                         "display_name": "my best model",
-                        "licensed_resource_name": "best-model",
                         "licensed_resource_type": f"{LicensedResourceType.VIP_MODEL}",
-                        "licensed_resource_data": cast(
-                            JsonDict,
-                            {
-                                "category_id": "HumanWholeBody",
-                                "category_display": "Humans",
-                                "source": VIP_DETAILS_EXAMPLE,
-                            },
-                        ),
+                        "array_of_licensed_resource_data": [
+                            cast(
+                                JsonDict,
+                                {
+                                    "category_id": "HumanWholeBody",
+                                    "category_display": "Humans",
+                                    "source": VIP_DETAILS_EXAMPLE,
+                                },
+                            )
+                        ],
                         "pricing_plan_id": "15",
                         "created_at": "2024-12-12 09:59:26.422140",
                         "modified_at": "2024-12-12 09:59:26.422140",

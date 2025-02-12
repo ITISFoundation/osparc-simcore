@@ -60,6 +60,8 @@ async def list_licensed_items_checkouts_for_wallet(
             LicensedItemCheckoutGet.model_construct(
                 licensed_item_checkout_id=checkout_item.licensed_item_checkout_id,
                 licensed_item_id=checkout_item.licensed_item_id,
+                key=checkout_item.key,
+                version=checkout_item.version,
                 wallet_id=checkout_item.wallet_id,
                 user_id=checkout_item.user_id,
                 user_email=checkout_item.user_email,
@@ -100,6 +102,8 @@ async def get_licensed_item_checkout(
     return LicensedItemCheckoutGet.model_construct(
         licensed_item_checkout_id=checkout_item.licensed_item_checkout_id,
         licensed_item_id=checkout_item.licensed_item_id,
+        key=checkout_item.key,
+        version=checkout_item.version,
         wallet_id=checkout_item.wallet_id,
         user_id=checkout_item.user_id,
         user_email=checkout_item.user_email,
@@ -153,6 +157,8 @@ async def checkout_licensed_item_for_wallet(
     return LicensedItemCheckoutGet.model_construct(
         licensed_item_checkout_id=licensed_item_get.licensed_item_checkout_id,
         licensed_item_id=licensed_item_get.licensed_item_id,
+        key=licensed_item_get.key,
+        version=licensed_item_get.version,
         wallet_id=licensed_item_get.wallet_id,
         user_id=licensed_item_get.user_id,
         user_email=licensed_item_get.user_email,
@@ -199,6 +205,8 @@ async def release_licensed_item_for_wallet(
     return LicensedItemCheckoutGet.model_construct(
         licensed_item_checkout_id=licensed_item_get.licensed_item_checkout_id,
         licensed_item_id=licensed_item_get.licensed_item_id,
+        key=licensed_item_get.key,
+        version=licensed_item_get.version,
         wallet_id=licensed_item_get.wallet_id,
         user_id=licensed_item_get.user_id,
         user_email=licensed_item_get.user_email,

@@ -18,6 +18,8 @@ class LicensedItemPurchaseGet(OutputSchema):
     licensed_item_purchase_id: LicensedItemPurchaseID
     product_name: ProductName
     licensed_item_id: LicensedItemID
+    key: str
+    version: str
     wallet_id: WalletID
     pricing_unit_cost_id: PricingUnitCostId
     pricing_unit_cost: Decimal
