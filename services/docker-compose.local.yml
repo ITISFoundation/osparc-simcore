@@ -107,6 +107,10 @@ services:
     deploy:
       replicas: 2
 
+  docker-api-proxy:
+    ports:
+     - "8014:8888"
+
   resource-usage-tracker:
     environment:
       RESOURCE_USAGE_TRACKER_REMOTE_DEBUGGING_PORT : 3000
