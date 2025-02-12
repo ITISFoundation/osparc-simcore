@@ -366,7 +366,9 @@ typing-extensions==4.12.2
     #   pydantic-core
     #   sqlalchemy2-stubs
 tzdata==2025.1
-    # via pandas
+    # via
+    #   -c requirements/_base.txt
+    #   pandas
 urllib3==2.3.0
     # via
     #   -c requirements/../../../requirements/constraints.txt

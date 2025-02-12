@@ -17,7 +17,7 @@
 aioboto3 # s3 storage
 aiofiles # i/o
 asyncpg # database
-celery
+celery[redis]
 httpx
 opentelemetry-instrumentation-botocore
 packaging
