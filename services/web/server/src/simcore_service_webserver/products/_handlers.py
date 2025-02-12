@@ -13,6 +13,7 @@ from models_library.users import UserID
 from pydantic import Field
 from servicelib.aiohttp.requests_validation import parse_request_path_parameters_as
 from servicelib.request_keys import RQT_USERID_KEY
+from simcore_service_webserver.products._db import ProductRepository
 
 from .._constants import RQ_PRODUCT_KEY
 from .._meta import API_VTAG as VTAG
@@ -86,7 +87,11 @@ async def _get_current_product_ui(request: web.Request):
     req_ctx = _ProductsRequestContext.model_validate(request)
     product_name = req_ctx.product_name
 
-    data = ProductUIGet(product_name=product_name, ui={})
+    ui = await api.get_product_ui(
+        ProductRepository.create_from_request(request), product_name=product_name
+    )
+
+    data = ProductUIGet(product_name=product_name, ui=ui)
     return envelope_json_response(data)
 
 

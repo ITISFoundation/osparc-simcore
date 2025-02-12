@@ -1,6 +1,7 @@
 from decimal import Decimal
+from itertools import product
 from pathlib import Path
-from typing import cast
+from typing import Any, cast
 
 import aiofiles
 from aiohttp import web
@@ -12,7 +13,11 @@ from .._resources import webserver_resources
 from ._db import ProductRepository
 from ._events import APP_PRODUCTS_TEMPLATES_DIR_KEY
 from ._model import Product
-from .errors import BelowMinimumPaymentError, ProductPriceNotDefinedError
+from .errors import (
+    BelowMinimumPaymentError,
+    ProductNotFoundError,
+    ProductPriceNotDefinedError,
+)
 
 
 def get_product_name(request: web.Request) -> str:
@@ -54,6 +59,16 @@ async def get_current_product_credit_price_info(
         ProductPriceInfo | None,
         await repo.get_product_latest_price_info_or_none(current_product_name),
     )
+
+
+async def get_product_ui(
+    repo: ProductRepository, product_name: ProductName
+) -> dict[str, Any]:
+    ui = await repo.get_product_ui(product_name=product_name)
+    if ui is not None:
+        return ui
+
+    raise ProductNotFoundError(product_name=product_name)
 
 
 async def get_credit_amount(
