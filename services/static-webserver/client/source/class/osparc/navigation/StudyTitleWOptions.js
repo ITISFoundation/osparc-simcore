@@ -31,7 +31,7 @@ qx.Class.define("osparc.navigation.StudyTitleWOptions", {
   },
 
   events: {
-    "downloadStudyLogs": "qx.event.type.Event"
+    "openLogger": "qx.event.type.Event"
   },
 
   properties: {
@@ -93,12 +93,12 @@ qx.Class.define("osparc.navigation.StudyTitleWOptions", {
             this.getStudy().getUi().setMode("standalone");
           });
           break;
-        case "study-menu-download-logs":
+        case "study-menu-open-logger":
           control = new qx.ui.menu.Button().set({
-            label: this.tr("Download logs"),
+            label: this.tr("Platform Logs..."),
             icon: "@FontAwesome5Solid/download/14"
           });
-          control.addListener("execute", () => this.fireEvent("downloadStudyLogs"));
+          control.addListener("execute", () => this.fireEvent("openLogger"));
           break;
         case "study-menu-button": {
           const optionsMenu = new qx.ui.menu.Menu();
@@ -107,7 +107,7 @@ qx.Class.define("osparc.navigation.StudyTitleWOptions", {
           optionsMenu.add(this.getChildControl("study-menu-reload"));
           optionsMenu.add(this.getChildControl("study-menu-convert-to-pipeline"));
           optionsMenu.add(this.getChildControl("study-menu-convert-to-standalone"));
-          optionsMenu.add(this.getChildControl("study-menu-download-logs"));
+          optionsMenu.add(this.getChildControl("study-menu-open-logger"));
           control = new qx.ui.form.MenuButton().set({
             appearance: "fab-button",
             menu: optionsMenu,
@@ -152,17 +152,22 @@ qx.Class.define("osparc.navigation.StudyTitleWOptions", {
         });
 
         const convertToPipelineButton = this.getChildControl("study-menu-convert-to-pipeline");
-        study.getUi().bind("mode", convertToPipelineButton, "visibility", {
-          converter: mode => mode === "standalone" ? "visible" : "excluded"
-        });
-
         const convertToStandaloneButton = this.getChildControl("study-menu-convert-to-standalone");
-        const evaluateConvertToPipelineButton = () => {
-          // exclude until we have the export to standalone backend functionality
+        if (osparc.product.Utils.hasConvertToPipelineEnabled()) {
+          study.getUi().bind("mode", convertToPipelineButton, "visibility", {
+            converter: mode => mode === "standalone" ? "visible" : "excluded"
+          });
+
+          const evaluateConvertToStandaloneButton = () => {
+            // exclude until we have the export to standalone backend functionality
+            convertToStandaloneButton.exclude();
+          };
+          study.getWorkbench().addListener("pipelineChanged", () => evaluateConvertToStandaloneButton());
+          study.getUi().addListener("changeMode", () => evaluateConvertToStandaloneButton());
+        } else {
+          convertToPipelineButton.exclude();
           convertToStandaloneButton.exclude();
-        };
-        study.getWorkbench().addListener("pipelineChanged", () => evaluateConvertToPipelineButton());
-        study.getUi().addListener("changeMode", () => evaluateConvertToPipelineButton());
+        }
       } else {
         this.exclude();
       }

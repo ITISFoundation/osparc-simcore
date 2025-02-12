@@ -57,7 +57,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
 
   events: {
     "backToDashboardPressed": "qx.event.type.Event",
-    "downloadStudyLogs": "qx.event.type.Event"
+    "openLogger": "qx.event.type.Event"
   },
 
   properties: {
@@ -200,7 +200,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           break;
         case "study-title-options":
           control = new osparc.navigation.StudyTitleWOptions();
-          control.addListener("downloadStudyLogs", () => this.fireEvent("downloadStudyLogs"));
+          control.addListener("openLogger", () => this.fireEvent("openLogger"));
           this.getChildControl("left-items").add(control);
           break;
         case "read-only-info": {
@@ -322,6 +322,15 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       const registerButton = new qx.ui.form.Button(this.tr("Log in"), "@FontAwesome5Solid/edit/14");
       registerButton.addListener("execute", () => window.open(window.location.href, "_blank"));
       return registerButton;
+    },
+
+    addDashboardTabButtons: function(tabButtons) {
+      this.__tabButtons = tabButtons;
+      this.getChildControl("center-items").add(tabButtons);
+      this.bind("study", this.__tabButtons, "visibility", {
+        converter: s => s ? "excluded" : "visible"
+      });
+      this.__navBarResized();
     },
 
     __applyStudy: function(study) {

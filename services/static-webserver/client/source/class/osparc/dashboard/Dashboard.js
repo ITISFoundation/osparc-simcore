@@ -38,9 +38,8 @@ qx.Class.define("osparc.dashboard.Dashboard", {
   construct: function() {
     this.base(arguments);
 
-    this.getChildControl("bar").set({
-      visibility: "excluded",
-    });
+    osparc.utils.Utils.setIdToWidget(this.getChildControl("bar"), "dashboardTabs");
+    osparc.utils.Utils.setIdToWidget(this, "dashboard");
 
     this.set({
       contentPadding: this.self().PADDING,

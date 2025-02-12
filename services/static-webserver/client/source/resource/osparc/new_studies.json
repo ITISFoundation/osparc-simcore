@@ -116,77 +116,33 @@
     }]
   },
   "s4l": {
-    "categories": [{
-      "id": "apps",
-      "title": "Apps"
-    }, {
-      "id": "osparc",
-      "title": "oSPARC"
-    }],
     "resources": [{
-      "category": "apps",
       "resourceType": "service",
       "expectedKey": "simcore/services/dynamic/s4l-ui",
       "title": "Sim4Life",
       "newStudyLabel": "New S4L project",
       "idToWidget": "startS4LButton"
     }, {
-      "category": "apps",
-      "resourceType": "service",
-      "expectedKey": "simcore/services/dynamic/iseg-web",
-      "title": "iSEG",
-      "newStudyLabel": "New iSEG project"
-    }, {
-      "category": "apps",
       "resourceType": "service",
       "expectedKey": "simcore/services/dynamic/s4l-jupyter",
       "title": "Jupyter Lab",
       "icon": "https://upload.wikimedia.org/wikipedia/commons/3/38/Jupyter_logo.svg",
       "newStudyLabel": "New S4L Jupyter Lab"
-    }, {
-      "category": "osparc",
-      "resourceType": "study",
-      "icon": "@FontAwesome5Solid/file/18",
-      "title": "Empty Pipeline",
-      "newStudyLabel": "New Pipeline",
-      "idToWidget": "emptyStudyBtn"
     }]
   },
   "s4lacad": {
-    "categories": [{
-      "id": "apps",
-      "title": "Apps"
-    }, {
-      "id": "osparc",
-      "title": "oSPARC"
-    }],
     "resources": [{
-      "category": "apps",
       "resourceType": "service",
       "expectedKey": "simcore/services/dynamic/s4l-ui",
       "title": "Sim4Life",
       "newStudyLabel": "New S4L project",
       "idToWidget": "startS4LButton"
     }, {
-      "category": "apps",
-      "resourceType": "service",
-      "expectedKey": "simcore/services/dynamic/iseg-web",
-      "title": "iSEG",
-      "newStudyLabel": "New iSEG project"
-    }, {
-      "category": "apps",
       "resourceType": "service",
       "expectedKey": "simcore/services/dynamic/s4l-jupyter",
       "icon": "https://upload.wikimedia.org/wikipedia/commons/3/38/Jupyter_logo.svg",
       "title": "Jupyter Lab",
       "newStudyLabel": "New S4L Jupyter Lab"
-    }, {
-      "category": "osparc",
-      "resourceType": "study",
-      "icon": "@FontAwesome5Solid/file/18",
-      "title": "Empty Pipeline",
-      "newStudyLabel": "New Pipeline",
-      "idToWidget": "emptyStudyBtn"
     }]
   },
   "s4llite": {

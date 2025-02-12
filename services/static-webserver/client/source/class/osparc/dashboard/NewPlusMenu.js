@@ -23,6 +23,10 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
 
     osparc.utils.Utils.prettifyMenu(this);
 
+    this.getContentElement().setStyles({
+      "border-color": qx.theme.manager.Color.getInstance().resolve("strong-main"),
+    });
+
     this.set({
       position: "bottom-left",
       spacingX: 20,
