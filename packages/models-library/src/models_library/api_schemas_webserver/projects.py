@@ -28,7 +28,6 @@ from ..groups import GroupID
 from ..projects import ClassifierID, DateTimeStr, NodesDict, ProjectID
 from ..projects_access import AccessRights, GroupIDStr
 from ..projects_state import ProjectState
-from ..projects_ui import StudyUI
 from ..utils._original_fastapi_encoders import jsonable_encoder
 from ..utils.common_validators import (
     empty_str_to_none_pre_validator,
@@ -38,6 +37,7 @@ from ..utils.common_validators import (
 from ..workspaces import WorkspaceID
 from ._base import EmptyModel, InputSchema, OutputSchema
 from .permalinks import ProjectPermalink
+from .projects_ui import StudyUI
 
 
 class ProjectCreateNew(InputSchema):
