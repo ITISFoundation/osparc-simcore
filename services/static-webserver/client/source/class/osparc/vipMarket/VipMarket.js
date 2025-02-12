@@ -26,7 +26,7 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
     this.__buildLayout();
 
     if (licensedItems) {
-      this.__setLicensedItems(licensedItems);
+      this.setLicensedItems(licensedItems);
     }
   },
 
@@ -168,7 +168,7 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
       }, this);
     },
 
-    __setLicensedItems: function(licensedItems) {
+    setLicensedItems: function(licensedItems) {
       const store = osparc.store.Store.getInstance();
       const contextWallet = store.getContextWallet();
       if (!contextWallet) {
