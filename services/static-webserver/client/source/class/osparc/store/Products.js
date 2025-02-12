@@ -15,29 +15,35 @@
 
 ************************************************************************ */
 
+/**
+ * @asset(osparc/ui_config.json")
+ */
+
 qx.Class.define("osparc.store.Products", {
   extend: qx.core.Object,
   type: "singleton",
 
   members: {
-    __plusButtonUiConfig: null,
+    __uiConfig: null,
 
-    fetchPlusButtonUiConfig: function() {
+    fetchUiConfig: function() {
       return osparc.utils.Utils.fetchJSON("/resource/osparc/ui_config.json")
         .then(uiConfig => {
           const product = osparc.product.Utils.getProductName()
-          if (product in uiConfig && "plusButton" in uiConfig[product]) {
-            this.__plusButtonUiConfig = uiConfig[product]["plusButton"];
-          } else {
-            this.__plusButtonUiConfig = false;
+          if (product in uiConfig) {
+            this.__uiConfig = uiConfig[product];
           }
-          return this.__plusButtonUiConfig;
+          return this.__uiConfig;
         })
         .catch(console.error);
     },
 
     getPlusButtonUiConfig: function() {
-      return this.__plusButtonUiConfig;
+      return this.__uiConfig["plusButton"];
+    },
+
+    getNewStudiesUiConfig: function() {
+      return this.__uiConfig["newStudies"];
     },
   }
 });

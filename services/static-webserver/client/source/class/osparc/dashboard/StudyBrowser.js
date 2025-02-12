@@ -16,10 +16,6 @@
 ************************************************************************ */
 
 /**
- * @asset(osparc/ui_config.json")
- */
-
-/**
  * Widget that shows lists user's studies.
  *
  * It is the entry point to start editing or creating a new study.
@@ -979,39 +975,36 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this._resourcesContainer.addNonResourceCard(newPlansBtn);
       newPlansBtn.setEnabled(false);
 
-      osparc.utils.Utils.fetchJSON("/resource/osparc/ui_config.json")
-        .then(newStudiesData => {
-          const product = osparc.product.Utils.getProductName()
-          if (product in newStudiesData) {
-            newPlansBtn.setEnabled(true);
+      const newStudiesData = osparc.store.Products.getInstance().getNewStudiesUiConfig();
+      if (newStudiesData) {
+        newPlansBtn.setEnabled(true);
 
-            newPlansBtn.addListener("tap", () => {
-              osparc.data.Resources.get("templates")
-                .then(templates => {
-                  if (templates) {
-                    const newStudies = new osparc.dashboard.NewStudies(newStudiesData[product]);
-                    newStudies.addListener("templatesLoaded", () => {
-                      newStudies.setGroupBy("category");
-                      const winTitle = this.tr("New Plan");
-                      const win = osparc.ui.window.Window.popUpInWindow(newStudies, winTitle, osparc.dashboard.NewStudies.WIDTH+40, 300).set({
-                        clickAwayClose: false,
-                        resizable: true
-                      });
-                      newStudies.addListener("newStudyClicked", e => {
-                        win.close();
-                        const templateInfo = e.getData();
-                        const templateData = templates.find(t => t.name === templateInfo.expectedTemplateLabel);
-                        if (templateData) {
-                          this.__newPlanBtnClicked(templateData, templateInfo.newStudyLabel);
-                        }
-                      });
-                      osparc.utils.Utils.setIdToWidget(win, "newStudiesWindow");
-                    });
-                  }
+        newPlansBtn.addListener("tap", () => {
+          osparc.data.Resources.get("templates")
+            .then(templates => {
+              if (templates) {
+                const newStudies = new osparc.dashboard.NewStudies(newStudiesData);
+                newStudies.addListener("templatesLoaded", () => {
+                  newStudies.setGroupBy("category");
+                  const winTitle = this.tr("New Plan");
+                  const win = osparc.ui.window.Window.popUpInWindow(newStudies, winTitle, osparc.dashboard.NewStudies.WIDTH+40, 300).set({
+                    clickAwayClose: false,
+                    resizable: true
+                  });
+                  newStudies.addListener("newStudyClicked", e => {
+                    win.close();
+                    const templateInfo = e.getData();
+                    const templateData = templates.find(t => t.name === templateInfo.expectedTemplateLabel);
+                    if (templateData) {
+                      this.__newPlanBtnClicked(templateData, templateInfo.newStudyLabel);
+                    }
+                  });
+                  osparc.utils.Utils.setIdToWidget(win, "newStudiesWindow");
                 });
+              }
             });
-          }
         });
+      }
     },
 
     // Used in S4L products
@@ -1042,16 +1035,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __addPlusButtonsFromServices: function() {
       // add new plus buttons if key services exists
-      osparc.utils.Utils.fetchJSON("/resource/osparc/ui_config.json")
-        .then(newStudiesData => {
-          const product = osparc.product.Utils.getProductName()
-          if (product in newStudiesData) {
-            const newButtonsInfo = newStudiesData[product].resources;
-            newButtonsInfo.forEach(newButtonInfo => {
-              this.__addNewStudyFromServiceButtons(newButtonInfo.expectedKey, newButtonInfo);
-            });
-          }
+      const newStudiesData = osparc.store.Products.getInstance().getNewStudiesUiConfig();
+      if (newStudiesData) {
+        const newButtonsInfo = newStudiesData["resources"];
+        newButtonsInfo.forEach(newButtonInfo => {
+          this.__addNewStudyFromServiceButtons(newButtonInfo.expectedKey, newButtonInfo);
         });
+      }
     },
 
     // LAYOUT //

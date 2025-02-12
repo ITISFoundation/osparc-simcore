@@ -67,7 +67,7 @@ qx.Class.define("osparc.desktop.MainPage", {
     }
     preloadPromises.push(store.getAllClassifiers(true));
     preloadPromises.push(osparc.store.Tags.getInstance().fetchTags());
-    preloadPromises.push(osparc.store.Products.getInstance().fetchPlusButtonUiConfig());
+    preloadPromises.push(osparc.store.Products.getInstance().fetchUiConfig());
     Promise.all(preloadPromises)
       .then(() => {
         const mainStack = this.__createMainStack();

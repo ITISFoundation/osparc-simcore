@@ -118,11 +118,11 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
     __addNewStudyItems: async function() {
       await osparc.data.Resources.get("templates")
         .then(templates => {
-          const newStudiesData = osparc.store.Products.getInstance().getPlusButtonUiConfig();
-          if (newStudiesData["categories"]) {
-            this.__addCategories(newStudiesData["categories"]);
+          const plusButtonConfig = osparc.store.Products.getInstance().getPlusButtonUiConfig();
+          if (plusButtonConfig["categories"]) {
+            this.__addCategories(plusButtonConfig["categories"]);
           }
-          newStudiesData["resources"].forEach(newStudyData => {
+          plusButtonConfig["resources"].forEach(newStudyData => {
             if (newStudyData["showDisabled"]) {
               this.__addDisabledButton(newStudyData);
             } else if (newStudyData["resourceType"] === "study") {

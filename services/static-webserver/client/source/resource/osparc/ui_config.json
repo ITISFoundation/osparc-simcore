@@ -1,6 +1,6 @@
 {
   "tis": {
-    "NO_plusButton": {
+    "newStudies": {
       "categories": [{
         "id": "precomputed",
         "title": "Precomputed"
@@ -55,7 +55,7 @@
     }
   },
   "tiplite": {
-    "NO_plusButton": {
+    "newStudies": {
       "categories": [{
         "id": "precomputed",
         "title": "Precomputed"
