@@ -71,10 +71,5 @@ licensed_items = sa.Table(
     ),
     column_created_datetime(timezone=True),
     column_modified_datetime(timezone=True),
-    # sa.UniqueConstraint(
-    #     "key",
-    #     "version",
-    #     name="uq_licensed_items_key_version",
-    # ),
     sa.Index("idx_licensed_items_key_version", "key", "version", unique=True),
 )
