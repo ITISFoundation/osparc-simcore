@@ -24,6 +24,7 @@ from .._meta import (
 from ..api.frontend import initialize_frontend
 from ..api.rest.routes import initialize_rest_api
 from ..api.rpc.routes import lifespan_rpc_api_routes
+from ..services.catalog import lifespan_catalog
 from ..services.deferred_manager import lifespan_deferred_manager
 from ..services.director_v0 import lifespan_director_v0
 from ..services.director_v2 import lifespan_director_v2
@@ -48,6 +49,7 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
     lifespans: list[LifespanGenerator] = [
         lifespan_director_v2,
         lifespan_director_v0,
+        lifespan_catalog,
         lifespan_rabbitmq,
         lifespan_rpc_api_routes,
         lifespan_redis,
