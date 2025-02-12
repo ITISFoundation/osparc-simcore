@@ -1,5 +1,5 @@
 import pytest
-from models_library.projects_ui import AnnotationUI
+from models_library.api_schemas_webserver.projects_ui import AnnotationUI
 from pydantic_extra_types.color import Color
 
 

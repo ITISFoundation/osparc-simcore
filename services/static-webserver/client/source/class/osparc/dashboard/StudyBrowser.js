@@ -476,7 +476,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       osparc.store.Workspaces.getInstance().trashWorkspace(workspaceId)
         .then(() => {
           this.__reloadWorkspaces();
-          const msg = this.tr("Successfully moved to Bin");
+          const msg = this.tr("Successfully deleted");
           osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
           this._resourceFilter.setTrashEmpty(false);
         })
@@ -614,7 +614,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       osparc.store.Folders.getInstance().trashFolder(folderId, this.getCurrentWorkspaceId())
         .then(() => {
           this.__reloadFolders();
-          const msg = this.tr("Successfully moved to Bin");
+          const msg = this.tr("Successfully deleted");
           osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
           this._resourceFilter.setTrashEmpty(false);
         })
@@ -626,11 +626,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     _trashFolderRequested: function(folderId) {
       const trashDays = osparc.store.StaticInfo.getInstance().getTrashRetentionDays();
-      let msg = this.tr("Are you sure you want to move the Folder and all its content to the Bin?");
+      let msg = this.tr("Are you sure you want to delete the Folder and all its content?");
       msg += "<br><br>" + this.tr("It will be permanently deleted after ") + trashDays + " days.";
       const confirmationWin = new osparc.ui.window.Confirmation(msg).set({
-        caption: this.tr("Move to Bin"),
-        confirmText: this.tr("Move to Bin"),
+        caption: this.tr("Delete"),
+        confirmText: this.tr("Delete"),
         confirmAction: "warning",
       });
       confirmationWin.center();
@@ -1124,7 +1124,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
         studiesTrashButton.set({
           visibility: selection.length && currentContext === "studiesAndFolders" ? "visible" : "excluded",
-          label: this.tr("Move to Bin") + (selection.length > 1 ? ` (${selection.length})` : ""),
+          label: this.tr("Delete") + (selection.length > 1 ? ` (${selection.length})` : ""),
         });
 
         studiesDeleteButton.set({
@@ -1388,7 +1388,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __createTrashStudiesButton: function() {
-      const trashButton = new qx.ui.form.Button(this.tr("Move to Bin"), "@FontAwesome5Solid/trash/14").set({
+      const trashButton = new qx.ui.form.Button(this.tr("Delete"), "@FontAwesome5Solid/trash/14").set({
         appearance: "warning-button",
         visibility: "excluded"
       });
@@ -1648,11 +1648,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const duplicateStudyButton = this.__getDuplicateMenuButton(studyData);
       menu.add(duplicateStudyButton);
 
-      const convertToPipelineButton = this.__getConvertToPipelineMenuButton(studyData);
-      menu.add(convertToPipelineButton);
+      if (osparc.product.Utils.hasConvertToPipelineEnabled()) {
+        const convertToPipelineButton = this.__getConvertToPipelineMenuButton(studyData);
+        menu.add(convertToPipelineButton);
+      }
 
-      if (osparc.product.Utils.isProduct("osparc")) {
-        const exportStudyButton = this.__getExportMenuButton(studyData);
+      if (osparc.product.Utils.hasExportCMisEnabled()) {
+        const exportStudyButton = this.__getExportCMisMenuButton(studyData);
         menu.add(exportStudyButton);
       }
 
@@ -1886,7 +1888,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .then(() => this._updateStudyData(studyData))
     },
 
-    __getExportMenuButton: function(studyData) {
+    __getExportCMisMenuButton: function(studyData) {
       const exportButton = new qx.ui.menu.Button(this.tr("Export cMIS"), "@FontAwesome5Solid/cloud-download-alt/12");
       exportButton["exportCMISButton"] = true;
       const isDisabled = osparc.utils.DisabledPlugins.isExportDisabled();
@@ -1936,7 +1938,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __getTrashStudyMenuButton: function(studyData) {
-      const trashButton = new qx.ui.menu.Button(this.tr("Move to Bin"), "@FontAwesome5Solid/trash/12");
+      const trashButton = new qx.ui.menu.Button(this.tr("Delete"), "@FontAwesome5Solid/trash/12");
       trashButton["trashButton"] = true;
       trashButton.set({
         appearance: "menu-button"
@@ -2137,7 +2139,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       osparc.store.Store.getInstance().trashStudy(studyData.uuid)
         .then(() => {
           this.__removeFromStudyList(studyData.uuid);
-          const msg = this.tr("Successfully moved to Bin");
+          const msg = this.tr("Successfully deleted");
           osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
           this._resourceFilter.setTrashEmpty(false);
         })
@@ -2190,19 +2192,18 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __createConfirmTrashWindow: function(studyNames) {
-      let msg = this.tr("Are you sure you want to move");
+      let msg = this.tr("Are you sure you want to delete");
       if (studyNames.length > 1) {
         const studiesText = osparc.product.Utils.getStudyAlias({plural: true});
         msg += ` ${studyNames.length} ${studiesText} `
       } else {
         msg += ` '${studyNames[0]}' `;
       }
-      msg += this.tr("to the Bin?");
       const trashDays = osparc.store.StaticInfo.getInstance().getTrashRetentionDays();
       msg += "<br><br>" + (studyNames.length > 1 ? "They" : "It") + this.tr(` will be permanently deleted after ${trashDays} days.`);
       const confirmationWin = new osparc.ui.window.Confirmation(msg).set({
-        caption: this.tr("Move to Bin"),
-        confirmText: this.tr("Move to Bin"),
+        caption: this.tr("Delete"),
+        confirmText: this.tr("Delete"),
         confirmAction: "warning",
       });
       osparc.utils.Utils.setIdToWidget(confirmationWin.getConfirmButton(), "confirmDeleteStudyBtn");
@@ -2234,7 +2235,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __createConfirmEmptyTrashWindow: function() {
-      const msg = this.tr("Items in the bin will be permanently deleted");
+      const msg = this.tr("All items will be permanently deleted");
       const confirmationWin = new osparc.ui.window.Confirmation(msg).set({
         caption: this.tr("Delete"),
         confirmText: this.tr("Delete permanently"),
