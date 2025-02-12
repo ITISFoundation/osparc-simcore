@@ -1238,7 +1238,7 @@ services:
         "--loglevel",
         "verbose",
         "--databases",
-        "9",
+        "10",
         "--appendonly",
         "yes",
         "--requirepass",
