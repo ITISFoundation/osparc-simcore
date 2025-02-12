@@ -8,6 +8,7 @@ from typing import TypeAlias
 
 from fastapi import APIRouter, Query, status
 from models_library.api_schemas_storage import (
+    FileLocation,
     FileMetaDataGet,
     FileUploadCompleteFutureResponse,
     FileUploadCompleteResponse,
@@ -37,7 +38,7 @@ StorageFileIDStr: TypeAlias = str
 
 @router.get(
     "/storage/locations",
-    response_model=list[DatasetMetaData],
+    response_model=list[FileLocation],
     description="Get available storage locations",
 )
 async def list_storage_locations():
