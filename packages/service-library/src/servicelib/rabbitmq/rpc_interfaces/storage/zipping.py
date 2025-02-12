@@ -2,6 +2,7 @@ from typing import Final
 
 from models_library.api_schemas_rpc_long_running_tasks.tasks import (
     TaskRpcGet,
+    TaskRpcId,
     TaskRpcResult,
     TaskRpcStatus,
 )
@@ -12,7 +13,6 @@ from models_library.api_schemas_storage.zipping_tasks import (
 )
 from models_library.rabbitmq_basic_types import RPCMethodName
 from pydantic import NonNegativeInt, TypeAdapter
-from simcore_service_storage.api.rpc._zipping import TaskRpcId
 
 from ... import RabbitMQRPCClient
 
