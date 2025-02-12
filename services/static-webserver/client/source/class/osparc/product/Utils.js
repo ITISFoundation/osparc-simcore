@@ -188,6 +188,18 @@ qx.Class.define("osparc.product.Utils", {
       return "REGISTER";
     },
 
+    // oSPARC only
+    hasConvertToPipelineEnabled: function() {
+      const product = this.getProductName();
+      return product === "osparc";
+    },
+
+    // oSPARC only
+    hasExportCMisEnabled: function() {
+      const product = this.getProductName();
+      return product === "osparc";
+    },
+
     // All products except oSPARC
     hasIdlingTrackerEnabled: function() {
       const product = this.getProductName();
