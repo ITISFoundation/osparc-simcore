@@ -141,13 +141,10 @@ class LicensedItemRestGet(OutputSchema):
                     exclude_unset=True,
                 ),
                 "licensed_resources": [
-                    _ItisVipResourceRestData(**x)
-                    for x in item.array_of_licensed_resource_data
+                    _ItisVipResourceRestData(**x) for x in item.licensed_resources
                 ],
-                "category_id": item.array_of_licensed_resource_data[0]["category_id"],
-                "category_display": item.array_of_licensed_resource_data[0][
-                    "category_display"
-                ],
+                "category_id": item.licensed_resources[0]["category_id"],
+                "category_display": item.licensed_resources[0]["category_display"],
             }
         )
 

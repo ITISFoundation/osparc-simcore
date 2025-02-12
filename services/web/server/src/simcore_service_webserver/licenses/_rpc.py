@@ -58,7 +58,7 @@ async def get_licensed_items(
                 version=licensed_item.version,
                 display_name=licensed_item.display_name,
                 licensed_resource_type=licensed_item.licensed_resource_type,
-                licensed_resources=licensed_item.array_of_licensed_resource_data,
+                licensed_resources=licensed_item.licensed_resources,
                 pricing_plan_id=licensed_item.pricing_plan_id,
                 created_at=licensed_item.created_at,
                 modified_at=licensed_item.modified_at,

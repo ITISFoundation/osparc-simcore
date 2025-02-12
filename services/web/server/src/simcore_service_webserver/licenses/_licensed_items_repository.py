@@ -224,7 +224,7 @@ _licensed_resource_subquery = (
     select(
         licensed_item_to_resource.c.licensed_item_id,
         func.array_agg(licensed_resources.c.licensed_resource_data).label(
-            "array_of_licensed_resource_data"
+            "licensed_resources"
         ),
     )
     .select_from(
@@ -256,7 +256,7 @@ async def get_licensed_item_by_key_version(
             licensed_items.c.version,
             licensed_items.c.display_name,
             licensed_items.c.licensed_resource_type,
-            _licensed_resource_subquery.c.array_of_licensed_resource_data,
+            _licensed_resource_subquery.c.licensed_resources,
             licensed_items.c.pricing_plan_id,
             licensed_items.c.created.label("created_at"),
             licensed_items.c.modified.label("modified_at"),
@@ -302,7 +302,7 @@ async def list_licensed_items(
             licensed_items.c.version,
             licensed_items.c.display_name,
             licensed_items.c.licensed_resource_type,
-            _licensed_resource_subquery.c.array_of_licensed_resource_data,
+            _licensed_resource_subquery.c.licensed_resources,
             licensed_items.c.pricing_plan_id,
             licensed_items.c.created.label("created_at"),
             licensed_items.c.modified.label("modified_at"),

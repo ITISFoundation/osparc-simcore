@@ -116,7 +116,7 @@ class LicensedItem(BaseModel):
     version: str
     display_name: str
     licensed_resource_type: LicensedResourceType
-    array_of_licensed_resource_data: list[dict[str, Any]]
+    licensed_resources: list[dict[str, Any]]
     pricing_plan_id: PricingPlanId
     created_at: datetime
     modified_at: datetime
@@ -132,7 +132,7 @@ class LicensedItem(BaseModel):
                         "version": "1.0.0",
                         "display_name": "my best model",
                         "licensed_resource_type": f"{LicensedResourceType.VIP_MODEL}",
-                        "array_of_licensed_resource_data": [
+                        "licensed_resources": [
                             cast(
                                 JsonDict,
                                 {

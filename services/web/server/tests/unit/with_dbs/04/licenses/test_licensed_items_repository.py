@@ -226,9 +226,9 @@ async def test_licensed_items_domain_listing(
     )
     assert total_count == 2
     assert items[0].licensed_item_id == got_duke1.licensed_item_id
-    assert len(items[0].array_of_licensed_resource_data) == 2
+    assert len(items[0].licensed_resources) == 2
     assert items[1].licensed_item_id == got_duke2.licensed_item_id
-    assert len(items[1].array_of_licensed_resource_data) == 1
+    assert len(items[1].licensed_resources) == 1
 
     got = await _licensed_items_repository.get_licensed_item_by_key_version(
         client.app, key="Duke", version="1.0.0", product_name=osparc_product_name
