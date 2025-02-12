@@ -14,7 +14,6 @@
 
 import itertools
 import json
-import random
 from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
 from typing import Any, Final
@@ -25,6 +24,14 @@ import faker
 from faker import Faker
 
 DEFAULT_FAKER: Final = faker.Faker()
+
+
+def random_icon_url(fake: Faker):
+    return fake.image_url(width=16, height=16)
+
+
+def random_thumbnail_url(fake: Faker):
+    return fake.image_url(width=32, height=32)
 
 
 def _compute_hash(password: str) -> str:
@@ -135,6 +142,11 @@ def random_project(fake: Faker = DEFAULT_FAKER, **overrides) -> dict[str, Any]:
         "workbench": {},
         "published": False,
     }
+
+    icon = fake.random_element([random_icon_url(fake), None])  # nullable
+    if icon:
+        data["ui"] = {"icon": icon}
+
     assert set(data.keys()).issubset({c.name for c in projects.columns})
 
     data.update(overrides)
@@ -169,16 +181,19 @@ def _get_comp_pipeline_test_states():
     ]
 
 
-def fake_pipeline(**overrides) -> dict[str, Any]:
+def fake_pipeline(fake: Faker = DEFAULT_FAKER, **overrides) -> dict[str, Any]:
     data = {
         "dag_adjacency_list": json.dumps({}),
-        "state": random.choice(_get_comp_pipeline_test_states()),
+        "state": fake.random_element(_get_comp_pipeline_test_states()),
     }
     data.update(overrides)
     return data
 
 
-def fake_task_factory(first_internal_id=1) -> Callable:
+def fake_task_factory(
+    first_internal_id=1,
+    fake: Faker = DEFAULT_FAKER,
+) -> Callable:
     # Each new instance of fake_task will get a copy
     _index_in_sequence = itertools.count(start=first_internal_id)
 
@@ -193,7 +208,7 @@ def fake_task_factory(first_internal_id=1) -> Callable:
             "inputs": json.dumps({}),
             "outputs": json.dumps({}),
             "image": json.dumps({}),
-            "state": random.choice(_get_comp_pipeline_test_states()),
+            "state": fake.random_element(_get_comp_pipeline_test_states()),
             "start": t0 + timedelta(seconds=1),
             "end": t0 + timedelta(minutes=5),
         }
@@ -319,13 +334,16 @@ def random_payment_transaction(
 
 
 def random_payment_autorecharge(
-    primary_payment_method_id: str = DEFAULT_FAKER.uuid4(),
+    primary_payment_method_id: str = "UNDEFINED__",
     fake: Faker = DEFAULT_FAKER,
     **overrides,
 ) -> dict[str, Any]:
     from simcore_postgres_database.models.payments_autorecharge import (
         payments_autorecharge,
     )
+
+    if primary_payment_method_id == "UNDEFINED__":
+        primary_payment_method_id = fake.uuid4()
 
     data = {
         "wallet_id": fake.pyint(),
@@ -383,21 +401,23 @@ def random_service_meta_data(
 ) -> dict[str, Any]:
     from simcore_postgres_database.models.services import services_meta_data
 
-    _pick_from = random.choice
     _version = ".".join([str(fake.pyint()) for _ in range(3)])
     _name = fake.name()
 
     data: dict[str, Any] = {
         # required
-        "key": f"simcore/services/{_pick_from(['dynamic', 'computational'])}/{_name}",
+        "key": f"simcore/services/{fake.random_element(['dynamic', 'computational'])}/{_name}",
         "version": _version,
         "name": f"the-{_name}-service",  # display
         "description": fake.sentence(),
         # optional
         "description_ui": fake.pybool(),
         "owner": owner_primary_gid,
-        "thumbnail": _pick_from([fake.image_url(), None]),  # nullable
-        "version_display": _pick_from([f"v{_version}", None]),  # nullable
+        "thumbnail": fake.random_element(
+            [random_thumbnail_url(fake), None]
+        ),  # nullable
+        "icon": fake.random_element([random_icon_url(fake), None]),  # nullable
+        "version_display": fake.random_element([f"v{_version}", None]),  # nullable
         "classifiers": [],  # has default
         "quality": {},  # has default
         "deprecated": None,  # nullable

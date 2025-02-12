@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: simcore-service-webserver
   description: Main service with an interface (http-API & websockets) to the web front-end
-  version: 0.53.0
+  version: 0.56.0
 servers:
 - url: ''
   description: webserver
@@ -2367,7 +2367,8 @@ paths:
       tags:
       - catalog
       - pricing-plans
-      summary: Retrieve default pricing plan for provided service
+      summary: Get Service Pricing Plan
+      description: Retrieve default pricing plan for provided service
       operationId: get_service_pricing_plan
       parameters:
       - name: service_key
@@ -2947,7 +2948,8 @@ paths:
       tags:
       - folders
       - workspaces
-      summary: Move folder to the workspace
+      summary: Move Folder To Workspace
+      description: Move folder to the workspace
       operationId: move_folder_to_workspace
       parameters:
       - name: folder_id
@@ -3448,98 +3450,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Bad Request
-  /v0/projects/{project_uuid}/checkpoint/{ref_id}/iterations:
-    get:
-      tags:
-      - projects
-      - metamodeling
-      summary: List Project Iterations
-      operationId: list_project_iterations
-      parameters:
-      - name: project_uuid
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
-          title: Project Uuid
-      - name: ref_id
-        in: path
-        required: true
-        schema:
-          type: integer
-          title: Ref Id
-      - name: limit
-        in: query
-        required: false
-        schema:
-          type: integer
-          minimum: 1
-          exclusiveMaximum: true
-          default: 20
-          title: Limit
-          maximum: 50
-      - name: offset
-        in: query
-        required: false
-        schema:
-          type: integer
-          minimum: 0
-          default: 0
-          title: Offset
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Page_ProjectIterationItem_'
-  /v0/projects/{project_uuid}/checkpoint/{ref_id}/iterations/-/results:
-    get:
-      tags:
-      - projects
-      - metamodeling
-      summary: List Project Iterations Results
-      operationId: list_project_iterations_results
-      parameters:
-      - name: project_uuid
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
-          title: Project Uuid
-      - name: ref_id
-        in: path
-        required: true
-        schema:
-          type: integer
-          title: Ref Id
-      - name: limit
-        in: query
-        required: false
-        schema:
-          type: integer
-          minimum: 1
-          exclusiveMaximum: true
-          default: 20
-          title: Limit
-          maximum: 50
-      - name: offset
-        in: query
-        required: false
-        schema:
-          type: integer
-          minimum: 0
-          default: 0
-          title: Offset
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Page_ProjectIterationResultItem_'
   /v0/services:
     get:
       tags:
@@ -3694,7 +3604,10 @@ paths:
     post:
       tags:
       - projects
-      summary: Creates a new project or copies an existing one
+      summary: Create Project
+      description: 'Creates a new project or copies an existing one. NOTE: implemented
+        as a long running task, i.e. requires polling `status_href` (HTTP_200_OK)
+        to get status and `result_href` (HTTP_201_CREATED) to get created project'
       operationId: create_project
       parameters:
       - name: x_simcore_user_agent
@@ -3764,7 +3677,7 @@ paths:
               - $ref: '#/components/schemas/ProjectCopyOverride'
               title: ' Body'
       responses:
-        '201':
+        '202':
           description: Successful Response
           content:
             application/json:
@@ -4046,7 +3959,8 @@ paths:
       tags:
       - projects
       - comments
-      summary: Create a new comment for a specific project. The request body should
+      summary: Create Project Comment
+      description: Create a new comment for a specific project. The request body should
         contain the comment contents and user information.
       operationId: create_project_comment
       parameters:
@@ -4074,7 +3988,8 @@ paths:
       tags:
       - projects
       - comments
-      summary: Retrieve all comments for a specific project.
+      summary: List Project Comments
+      description: Retrieve all comments for a specific project.
       operationId: list_project_comments
       parameters:
       - name: project_uuid
@@ -4111,7 +4026,8 @@ paths:
       tags:
       - projects
       - comments
-      summary: Update the contents of a specific comment for a project. The request
+      summary: Update Project Comment
+      description: Update the contents of a specific comment for a project. The request
         body should contain the updated comment contents.
       operationId: update_project_comment
       parameters:
@@ -4147,7 +4063,8 @@ paths:
       tags:
       - projects
       - comments
-      summary: Delete a specific comment associated with a project.
+      summary: Delete Project Comment
+      description: Delete a specific comment associated with a project.
       operationId: delete_project_comment
       parameters:
       - name: project_uuid
@@ -4172,7 +4089,8 @@ paths:
       tags:
       - projects
       - comments
-      summary: Retrieve a specific comment by its ID within a project.
+      summary: Get Project Comment
+      description: Retrieve a specific comment by its ID within a project.
       operationId: get_project_comment
       parameters:
       - name: project_uuid
@@ -4202,7 +4120,8 @@ paths:
       tags:
       - projects
       - folders
-      summary: Move project to the folder
+      summary: Replace Project Folder
+      description: Move project to the folder
       operationId: replace_project_folder
       parameters:
       - name: project_id
@@ -4698,7 +4617,8 @@ paths:
       tags:
       - projects
       - nodes
-      summary: Check whether provided group has access to the project services
+      summary: Get Project Services Access For Gid
+      description: Check whether provided group has access to the project services
       operationId: get_project_services_access_for_gid
       parameters:
       - name: project_id
@@ -4728,7 +4648,8 @@ paths:
       tags:
       - projects
       - nodes
-      summary: Lists all previews in the node's project
+      summary: List Project Nodes Previews
+      description: Lists all previews in the node's project
       operationId: list_project_nodes_previews
       parameters:
       - name: project_id
@@ -4750,7 +4671,8 @@ paths:
       tags:
       - projects
       - nodes
-      summary: Gets a give node's preview
+      summary: Get Project Node Preview
+      description: Gets a give node's preview
       operationId: get_project_node_preview
       parameters:
       - name: project_id
@@ -4780,7 +4702,8 @@ paths:
     get:
       tags:
       - projects
-      summary: Get currently connected pricing unit to the project node.
+      summary: Get Project Node Pricing Unit
+      description: Get currently connected pricing unit to the project node.
       operationId: get_project_node_pricing_unit
       parameters:
       - name: project_id
@@ -4808,8 +4731,9 @@ paths:
     put:
       tags:
       - projects
-      summary: Connect pricing unit to the project node (Project node can have only
-        one pricing unit)
+      summary: Connect Pricing Unit To Project Node
+      description: Connect pricing unit to the project node (Project node can have
+        only one pricing unit)
       operationId: connect_pricing_unit_to_project_node
       parameters:
       - name: project_id
@@ -5107,7 +5031,8 @@ paths:
     get:
       tags:
       - projects
-      summary: Get current connected wallet to the project.
+      summary: Get Project Wallet
+      description: Get current connected wallet to the project.
       operationId: get_project_wallet
       parameters:
       - name: project_id
@@ -5128,7 +5053,8 @@ paths:
     put:
       tags:
       - projects
-      summary: Connect wallet to the project (Project can have only one wallet)
+      summary: Connect Wallet To Project
+      description: Connect wallet to the project (Project can have only one wallet)
       operationId: connect_wallet_to_project
       parameters:
       - name: project_id
@@ -5193,7 +5119,8 @@ paths:
       tags:
       - projects
       - workspaces
-      summary: Move project to the workspace
+      summary: Move Project To Workspace
+      description: Move project to the workspace
       operationId: move_project_to_workspace
       parameters:
       - name: project_id
@@ -5236,8 +5163,9 @@ paths:
     get:
       tags:
       - usage
-      summary: Retrieve finished and currently running user services (user and product
-        are taken from context, optionally wallet_id parameter might be provided).
+      summary: List Resource Usage Services
+      description: Retrieve finished and currently running user services (user and
+        product are taken from context, optionally wallet_id parameter might be provided).
       operationId: list_resource_usage_services
       parameters:
       - name: order_by
@@ -5294,7 +5222,8 @@ paths:
     get:
       tags:
       - usage
-      summary: Used credits based on aggregate by type, currently supported `services`.
+      summary: List Osparc Credits Aggregated Usages
+      description: Used credits based on aggregate by type, currently supported `services`.
         (user and product are taken from context, optionally wallet_id parameter might
         be provided).
       operationId: list_osparc_credits_aggregated_usages
@@ -5340,7 +5269,8 @@ paths:
     get:
       tags:
       - usage
-      summary: Redirects to download CSV link. CSV obtains finished and currently
+      summary: Export Resource Usage Services
+      description: Redirects to download CSV link. CSV obtains finished and currently
         running user services (user and product are taken from context, optionally
         wallet_id parameter might be provided).
       operationId: export_resource_usage_services
@@ -5730,9 +5660,9 @@ paths:
     get:
       tags:
       - storage
-      summary: Get available storage locations
-      description: Returns the list of available storage locations
-      operationId: get_storage_locations
+      summary: List Storage Locations
+      description: Get available storage locations
+      operationId: list_storage_locations
       responses:
         '200':
           description: Successful Response
@@ -5740,52 +5670,16 @@ paths:
             application/json:
               schema:
                 items:
-                  $ref: '#/components/schemas/DatasetMetaData'
+                  $ref: '#/components/schemas/FileLocation'
                 type: array
-                title: Response Get Storage Locations
-  /v0/storage/locations/{location_id}:sync:
-    post:
-      tags:
-      - storage
-      summary: Manually triggers the synchronisation of the file meta data table in
-        the database
-      description: Returns an object containing added, changed and removed paths
-      operationId: synchronise_meta_data_table
-      parameters:
-      - name: location_id
-        in: path
-        required: true
-        schema:
-          type: integer
-          title: Location Id
-      - name: dry_run
-        in: query
-        required: false
-        schema:
-          type: boolean
-          default: false
-          title: Dry Run
-      - name: fire_and_forget
-        in: query
-        required: false
-        schema:
-          type: boolean
-          default: false
-          title: Fire And Forget
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_TableSynchronisation_'
+                title: Response List Storage Locations
   /v0/storage/locations/{location_id}/datasets:
     get:
       tags:
       - storage
-      summary: Get datasets metadata
-      description: returns all the top level datasets a user has access to
-      operationId: get_datasets_metadata
+      summary: List Datasets Metadata
+      description: Get datasets metadata
+      operationId: list_datasets_metadata
       parameters:
       - name: location_id
         in: path
@@ -5804,9 +5698,8 @@ paths:
     get:
       tags:
       - storage
-      summary: Get datasets metadata
-      description: returns all the file meta data a user has access to (uuid_filter
-        may be used)
+      summary: Get Files Metadata
+      description: Get datasets metadata
       operationId: get_files_metadata
       parameters:
       - name: location_id
@@ -5844,9 +5737,9 @@ paths:
     get:
       tags:
       - storage
-      summary: Get Files Metadata
-      description: returns all the file meta data inside dataset with dataset_id
-      operationId: get_files_metadata_dataset
+      summary: List Dataset Files Metadata
+      description: Get Files Metadata
+      operationId: list_dataset_files_metadata
       parameters:
       - name: location_id
         in: path
@@ -5883,8 +5776,7 @@ paths:
       tags:
       - storage
       summary: Get File Metadata
-      description: returns the file meta data of file_id if user_id has the rights
-        to
+      description: Get File Metadata
       operationId: get_file_metadata
       parameters:
       - name: location_id
@@ -5913,8 +5805,8 @@ paths:
     get:
       tags:
       - storage
-      summary: Returns download link for requested file
-      description: creates a download file link if user has the rights to
+      summary: Download File
+      description: Returns download link for requested file
       operationId: download_file
       parameters:
       - name: location_id
@@ -5945,9 +5837,8 @@ paths:
     put:
       tags:
       - storage
-      summary: Returns upload link
-      description: creates one or more upload file links if user has the rights to,
-        expects the client to complete/abort upload
+      summary: Upload File
+      description: Returns upload link
       operationId: upload_file
       parameters:
       - name: location_id
@@ -5999,8 +5890,8 @@ paths:
     delete:
       tags:
       - storage
-      summary: Deletes File
-      description: deletes file if user has the rights to
+      summary: Delete File
+      description: Deletes File
       operationId: delete_file
       parameters:
       - name: location_id
@@ -6080,8 +5971,8 @@ paths:
     post:
       tags:
       - storage
-      summary: Check for upload completion
-      description: Returns state of upload completion
+      summary: Is Completed Upload File
+      description: Check for upload completion
       operationId: is_completed_upload_file
       parameters:
       - name: location_id
@@ -6271,227 +6162,6 @@ paths:
       responses:
         '204':
           description: Successful Response
-  /v0/repos/projects:
-    get:
-      tags:
-      - repository
-      summary: List Repos
-      operationId: list_repos
-      parameters:
-      - name: limit
-        in: query
-        required: false
-        schema:
-          type: integer
-          minimum: 1
-          exclusiveMaximum: true
-          default: 20
-          title: Limit
-          maximum: 50
-      - name: offset
-        in: query
-        required: false
-        schema:
-          type: integer
-          minimum: 0
-          default: 0
-          title: Offset
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Page_RepoApiModel_'
-  /v0/repos/projects/{project_uuid}/checkpoints:
-    get:
-      tags:
-      - repository
-      summary: List Checkpoints
-      operationId: list_checkpoints
-      parameters:
-      - name: project_uuid
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
-          title: Project Uuid
-      - name: limit
-        in: query
-        required: false
-        schema:
-          type: integer
-          minimum: 1
-          exclusiveMaximum: true
-          default: 20
-          title: Limit
-          maximum: 50
-      - name: offset
-        in: query
-        required: false
-        schema:
-          type: integer
-          minimum: 0
-          default: 0
-          title: Offset
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Page_CheckpointApiModel_'
-    post:
-      tags:
-      - repository
-      summary: Create Checkpoint
-      operationId: create_checkpoint
-      parameters:
-      - name: project_uuid
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
-          title: Project Uuid
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CheckpointNew'
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_CheckpointApiModel_'
-  /v0/repos/projects/{project_uuid}/checkpoints/{ref_id}:
-    get:
-      tags:
-      - repository
-      summary: Get Checkpoint
-      operationId: get_checkpoint
-      parameters:
-      - name: ref_id
-        in: path
-        required: true
-        schema:
-          anyOf:
-          - type: integer
-          - type: string
-          - const: HEAD
-            type: string
-          title: Ref Id
-      - name: project_uuid
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
-          title: Project Uuid
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_CheckpointApiModel_'
-    patch:
-      tags:
-      - repository
-      summary: Update Checkpoint
-      description: Update Checkpoint Annotations
-      operationId: update_checkpoint
-      parameters:
-      - name: ref_id
-        in: path
-        required: true
-        schema:
-          anyOf:
-          - type: integer
-          - type: string
-          title: Ref Id
-      - name: project_uuid
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
-          title: Project Uuid
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CheckpointAnnotations'
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_CheckpointApiModel_'
-  /v0/repos/projects/{project_uuid}/checkpoints/{ref_id}/workbench/view:
-    get:
-      tags:
-      - repository
-      summary: View Project Workbench
-      operationId: view_project_workbench
-      parameters:
-      - name: ref_id
-        in: path
-        required: true
-        schema:
-          anyOf:
-          - type: integer
-          - type: string
-          title: Ref Id
-      - name: project_uuid
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
-          title: Project Uuid
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_WorkbenchViewApiModel_'
-  /v0/repos/projects/{project_uuid}/checkpoints/{ref_id}:checkout:
-    post:
-      tags:
-      - repository
-      summary: Checkout
-      operationId: checkout
-      parameters:
-      - name: ref_id
-        in: path
-        required: true
-        schema:
-          anyOf:
-          - type: integer
-          - type: string
-          title: Ref Id
-      - name: project_uuid
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
-          title: Project Uuid
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_CheckpointApiModel_'
   /v0/workspaces:
     post:
       tags:
@@ -7021,8 +6691,8 @@ paths:
     get:
       tags:
       - maintenance
-      summary: Front end runtime configuration
-      description: Returns app and products configs
+      summary: Get Config
+      description: Front end runtime configuration
       operationId: get_config
       responses:
         '200':
@@ -7048,7 +6718,8 @@ paths:
     get:
       tags:
       - maintenance
-      summary: checks status of self and connected services
+      summary: Get App Status
+      description: checks status of self and connected services
       operationId: get_app_status
       responses:
         '200':
@@ -7175,7 +6846,7 @@ components:
       - stats
       - limits
       title: Activity
-    Annotation:
+    AnnotationUI:
       properties:
         type:
           type: string
@@ -7198,7 +6869,7 @@ components:
       - type
       - color
       - attributes
-      title: Annotation
+      title: AnnotationUI
     Announcement:
       properties:
         id:
@@ -7450,6 +7121,11 @@ components:
           - type: string
           - type: 'null'
           title: Thumbnail
+        icon:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Icon
         description:
           type: string
           title: Description
@@ -7580,6 +7256,7 @@ components:
           version: 0.9.0
         - version: 0.8.0
         - version: 0.1.0
+        icon: https://cdn-icons-png.flaticon.com/512/25/25231.png
         inputs:
           input0:
             contentSchema:
@@ -7624,6 +7301,14 @@ components:
             format: uri
           - type: 'null'
           title: Thumbnail
+        icon:
+          anyOf:
+          - type: string
+            maxLength: 2083
+            minLength: 1
+            format: uri
+          - type: 'null'
+          title: Icon
         description:
           anyOf:
           - type: string
@@ -7688,79 +7373,6 @@ components:
       - new
       - confirm
       title: ChangePasswordBody
-    CheckpointAnnotations:
-      properties:
-        tag:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Tag
-        message:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Message
-      type: object
-      title: CheckpointAnnotations
-    CheckpointApiModel:
-      properties:
-        id:
-          type: integer
-          exclusiveMinimum: true
-          title: Id
-          minimum: 0
-        checksum:
-          type: string
-          pattern: ^[a-fA-F0-9]{40}$
-          title: Checksum
-        created_at:
-          type: string
-          format: date-time
-          title: Created At
-        tags:
-          items:
-            type: string
-          type: array
-          title: Tags
-        message:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Message
-        parents_ids:
-          anyOf:
-          - items:
-              type: integer
-              exclusiveMinimum: true
-              minimum: 0
-            type: array
-          - type: 'null'
-          title: Parents Ids
-        url:
-          type: string
-          title: Url
-      type: object
-      required:
-      - id
-      - checksum
-      - created_at
-      - tags
-      - url
-      title: CheckpointApiModel
-    CheckpointNew:
-      properties:
-        tag:
-          type: string
-          title: Tag
-        message:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Message
-      type: object
-      required:
-      - tag
-      title: CheckpointNew
     CodePageParams:
       properties:
         message:
@@ -8193,19 +7805,6 @@ components:
           title: Error
       type: object
       title: Envelope[CatalogServiceGet]
-    Envelope_CheckpointApiModel_:
-      properties:
-        data:
-          anyOf:
-          - $ref: '#/components/schemas/CheckpointApiModel'
-          - type: 'null'
-        error:
-          anyOf:
-          - {}
-          - type: 'null'
-          title: Error
-      type: object
-      title: Envelope[CheckpointApiModel]
     Envelope_ComputationGet_:
       properties:
         data:
@@ -8765,19 +8364,6 @@ components:
           title: Error
       type: object
       title: Envelope[StatusDiagnosticsGet]
-    Envelope_TableSynchronisation_:
-      properties:
-        data:
-          anyOf:
-          - $ref: '#/components/schemas/TableSynchronisation'
-          - type: 'null'
-        error:
-          anyOf:
-          - {}
-          - type: 'null'
-          title: Error
-      type: object
-      title: Envelope[TableSynchronisation]
     Envelope_TagGet_:
       properties:
         data:
@@ -8941,19 +8527,6 @@ components:
           title: Error
       type: object
       title: Envelope[WalletPaymentInitiated]
-    Envelope_WorkbenchViewApiModel_:
-      properties:
-        data:
-          anyOf:
-          - $ref: '#/components/schemas/WorkbenchViewApiModel'
-          - type: 'null'
-        error:
-          anyOf:
-          - {}
-          - type: 'null'
-          title: Error
-      type: object
-      title: Envelope[WorkbenchViewApiModel]
     Envelope_WorkspaceGet_:
       properties:
         data:
@@ -9690,47 +9263,6 @@ components:
       - resource
       - field
       title: ErrorItemType
-    ExtractedResults:
-      properties:
-        progress:
-          type: object
-          title: Progress
-          description: Progress in each computational node
-        labels:
-          type: object
-          title: Labels
-          description: Maps captured node with a label
-        values:
-          type: object
-          title: Values
-          description: Captured outputs per node
-      type: object
-      required:
-      - progress
-      - labels
-      - values
-      title: ExtractedResults
-      example:
-        labels:
-          0f1e38c9-dcb7-443c-a745-91b97ac28ccc: Integer iterator
-          2d0ce8b9-c9c3-43ce-ad2f-ad493898de37: Probe Sensor - Integer
-          445b44d1-59b3-425c-ac48-7c13e0f2ea5b: Probe Sensor - Integer_2
-          d76fca06-f050-4790-88a8-0aac10c87b39: Boolean Parameter
-        progress:
-          4c08265a-427b-4ac3-9eab-1d11c822ada4: 0
-          e33c6880-1b1d-4419-82d7-270197738aa9: 100
-        values:
-          0f1e38c9-dcb7-443c-a745-91b97ac28ccc:
-            out_1: 1
-            out_2:
-            - 3
-            - 4
-          2d0ce8b9-c9c3-43ce-ad2f-ad493898de37:
-            in_1: 7
-          445b44d1-59b3-425c-ac48-7c13e0f2ea5b:
-            in_1: 1
-          d76fca06-f050-4790-88a8-0aac10c87b39:
-            out_1: true
     FeaturesDict:
       properties:
         name:
@@ -9764,6 +9296,20 @@ components:
       required:
       - date
       title: FeaturesDict
+    FileLocation:
+      properties:
+        name:
+          type: string
+          title: Name
+        id:
+          type: integer
+          title: Id
+      additionalProperties: false
+      type: object
+      required:
+      - name
+      - id
+      title: FileLocation
     FileMetaData:
       properties:
         file_uuid:
@@ -9996,6 +9542,7 @@ components:
           title: Urls
         links:
           $ref: '#/components/schemas/FileUploadLinks'
+      additionalProperties: false
       type: object
       required:
       - chunk_size
@@ -10923,7 +10470,7 @@ components:
       additionalProperties: false
       type: object
       title: LogoutBody
-    Marker:
+    MarkerUI:
       properties:
         color:
           type: string
@@ -10933,7 +10480,7 @@ components:
       type: object
       required:
       - color
-      title: Marker
+      title: MarkerUI
     MyGroupsGet:
       properties:
         me:
@@ -11866,24 +11413,6 @@ components:
       - _links
       - data
       title: Page[CatalogServiceGet]
-    Page_CheckpointApiModel_:
-      properties:
-        _meta:
-          $ref: '#/components/schemas/PageMetaInfoLimitOffset'
-        _links:
-          $ref: '#/components/schemas/PageLinks'
-        data:
-          items:
-            $ref: '#/components/schemas/CheckpointApiModel'
-          type: array
-          title: Data
-      additionalProperties: false
-      type: object
-      required:
-      - _meta
-      - _links
-      - data
-      title: Page[CheckpointApiModel]
     Page_LicensedItemPurchaseGet_:
       properties:
         _meta:
@@ -11992,42 +11521,6 @@ components:
       - _links
       - data
       title: Page[PricingPlanGet]
-    Page_ProjectIterationItem_:
-      properties:
-        _meta:
-          $ref: '#/components/schemas/PageMetaInfoLimitOffset'
-        _links:
-          $ref: '#/components/schemas/PageLinks'
-        data:
-          items:
-            $ref: '#/components/schemas/ProjectIterationItem'
-          type: array
-          title: Data
-      additionalProperties: false
-      type: object
-      required:
-      - _meta
-      - _links
-      - data
-      title: Page[ProjectIterationItem]
-    Page_ProjectIterationResultItem_:
-      properties:
-        _meta:
-          $ref: '#/components/schemas/PageMetaInfoLimitOffset'
-        _links:
-          $ref: '#/components/schemas/PageLinks'
-        data:
-          items:
-            $ref: '#/components/schemas/ProjectIterationResultItem'
-          type: array
-          title: Data
-      additionalProperties: false
-      type: object
-      required:
-      - _meta
-      - _links
-      - data
-      title: Page[ProjectIterationResultItem]
     Page_ProjectListItem_:
       properties:
         _meta:
@@ -12046,24 +11539,6 @@ components:
       - _links
       - data
       title: Page[ProjectListItem]
-    Page_RepoApiModel_:
-      properties:
-        _meta:
-          $ref: '#/components/schemas/PageMetaInfoLimitOffset'
-        _links:
-          $ref: '#/components/schemas/PageLinks'
-        data:
-          items:
-            $ref: '#/components/schemas/RepoApiModel'
-          type: array
-          title: Data
-      additionalProperties: false
-      type: object
-      required:
-      - _meta
-      - _links
-      - data
-      title: Page[RepoApiModel]
     Page_ServiceRunGet_:
       properties:
         _meta:
@@ -12082,22 +11557,6 @@ components:
       - _links
       - data
       title: Page[ServiceRunGet]
-    ParentMetaProjectRef:
-      properties:
-        project_id:
-          type: string
-          format: uuid
-          title: Project Id
-        ref_id:
-          type: integer
-          exclusiveMinimum: true
-          title: Ref Id
-          minimum: 0
-      type: object
-      required:
-      - project_id
-      - ref_id
-      title: ParentMetaProjectRef
     PatchRequestBody:
       properties:
         value:
@@ -12715,14 +12174,6 @@ components:
           - type: string
             const: ''
           title: Thumbnail
-        creationDate:
-          type: string
-          pattern: \d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[0-9])(:(\d|[0-5]\d)){2}(\.\d{3})?Z
-          title: Creationdate
-        lastChangeDate:
-          type: string
-          pattern: \d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[0-9])(:(\d|[0-5]\d)){2}(\.\d{3})?Z
-          title: Lastchangedate
         workbench:
           type: object
           title: Workbench
@@ -12738,6 +12189,32 @@ components:
             minLength: 1
           type: object
           title: Accessrights
+        creationDate:
+          type: string
+          pattern: \d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[0-9])(:(\d|[0-5]\d)){2}(\.\d{3})?Z
+          title: Creationdate
+        lastChangeDate:
+          type: string
+          pattern: \d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[0-9])(:(\d|[0-5]\d)){2}(\.\d{3})?Z
+          title: Lastchangedate
+        state:
+          anyOf:
+          - $ref: '#/components/schemas/ProjectState'
+          - type: 'null'
+        trashedAt:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Trashedat
+        trashedBy:
+          anyOf:
+          - type: integer
+            exclusiveMinimum: true
+            minimum: 0
+          - type: 'null'
+          title: Trashedby
+          description: The primary gid of the user who trashed
         tags:
           items:
             type: integer
@@ -12749,20 +12226,16 @@ components:
           type: array
           title: Classifiers
           default: []
-        state:
-          anyOf:
-          - $ref: '#/components/schemas/ProjectState'
-          - type: 'null'
+        quality:
+          type: object
+          title: Quality
+          default: {}
         ui:
           anyOf:
           - $ref: '#/components/schemas/EmptyModel'
           - $ref: '#/components/schemas/StudyUI-Output'
           - type: 'null'
           title: Ui
-        quality:
-          type: object
-          title: Quality
-          default: {}
         dev:
           anyOf:
           - type: object
@@ -12786,37 +12259,23 @@ components:
             minimum: 0
           - type: 'null'
           title: Folderid
-        trashedAt:
-          anyOf:
-          - type: string
-            format: date-time
-          - type: 'null'
-          title: Trashedat
-        trashedBy:
-          anyOf:
-          - type: integer
-            exclusiveMinimum: true
-            minimum: 0
-          - type: 'null'
-          title: Trashedby
-          description: The primary gid of the user who trashed
       type: object
       required:
       - uuid
       - name
       - description
       - thumbnail
-      - creationDate
-      - lastChangeDate
       - workbench
       - prjOwner
       - accessRights
+      - creationDate
+      - lastChangeDate
+      - trashedAt
+      - trashedBy
       - tags
       - dev
       - workspaceId
       - folderId
-      - trashedAt
-      - trashedBy
       title: ProjectGet
     ProjectGroupGet:
       properties:
@@ -12887,73 +12346,6 @@ components:
       - key
       - value
       title: ProjectInputUpdate
-    ProjectIterationItem:
-      properties:
-        name:
-          type: string
-          title: Name
-          description: Iteration's resource API name
-        parent:
-          $ref: '#/components/schemas/ParentMetaProjectRef'
-          description: Reference to the the meta-project that created this iteration
-        iteration_index:
-          type: integer
-          exclusiveMinimum: true
-          title: Iteration Index
-          minimum: 0
-        workcopy_project_id:
-          type: string
-          format: uuid
-          title: Workcopy Project Id
-          description: ID to this iteration's working copy.A working copy is a real
-            project where this iteration is run
-        workcopy_project_url:
-          type: string
-          title: Workcopy Project Url
-          description: reference to a working copy project
-      type: object
-      required:
-      - name
-      - parent
-      - iteration_index
-      - workcopy_project_id
-      - workcopy_project_url
-      title: ProjectIterationItem
-    ProjectIterationResultItem:
-      properties:
-        name:
-          type: string
-          title: Name
-          description: Iteration's resource API name
-        parent:
-          $ref: '#/components/schemas/ParentMetaProjectRef'
-          description: Reference to the the meta-project that created this iteration
-        iteration_index:
-          type: integer
-          exclusiveMinimum: true
-          title: Iteration Index
-          minimum: 0
-        workcopy_project_id:
-          type: string
-          format: uuid
-          title: Workcopy Project Id
-          description: ID to this iteration's working copy.A working copy is a real
-            project where this iteration is run
-        workcopy_project_url:
-          type: string
-          title: Workcopy Project Url
-          description: reference to a working copy project
-        results:
-          $ref: '#/components/schemas/ExtractedResults'
-      type: object
-      required:
-      - name
-      - parent
-      - iteration_index
-      - workcopy_project_id
-      - workcopy_project_url
-      - results
-      title: ProjectIterationResultItem
     ProjectListItem:
       properties:
         uuid:
@@ -12972,14 +12364,6 @@ components:
           - type: string
             const: ''
           title: Thumbnail
-        creationDate:
-          type: string
-          pattern: \d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[0-9])(:(\d|[0-5]\d)){2}(\.\d{3})?Z
-          title: Creationdate
-        lastChangeDate:
-          type: string
-          pattern: \d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[0-9])(:(\d|[0-5]\d)){2}(\.\d{3})?Z
-          title: Lastchangedate
         workbench:
           type: object
           title: Workbench
@@ -12995,6 +12379,32 @@ components:
             minLength: 1
           type: object
           title: Accessrights
+        creationDate:
+          type: string
+          pattern: \d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[0-9])(:(\d|[0-5]\d)){2}(\.\d{3})?Z
+          title: Creationdate
+        lastChangeDate:
+          type: string
+          pattern: \d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[0-9])(:(\d|[0-5]\d)){2}(\.\d{3})?Z
+          title: Lastchangedate
+        state:
+          anyOf:
+          - $ref: '#/components/schemas/ProjectState'
+          - type: 'null'
+        trashedAt:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Trashedat
+        trashedBy:
+          anyOf:
+          - type: integer
+            exclusiveMinimum: true
+            minimum: 0
+          - type: 'null'
+          title: Trashedby
+          description: The primary gid of the user who trashed
         tags:
           items:
             type: integer
@@ -13006,20 +12416,16 @@ components:
           type: array
           title: Classifiers
           default: []
-        state:
-          anyOf:
-          - $ref: '#/components/schemas/ProjectState'
-          - type: 'null'
+        quality:
+          type: object
+          title: Quality
+          default: {}
         ui:
           anyOf:
           - $ref: '#/components/schemas/EmptyModel'
           - $ref: '#/components/schemas/StudyUI-Output'
           - type: 'null'
           title: Ui
-        quality:
-          type: object
-          title: Quality
-          default: {}
         dev:
           anyOf:
           - type: object
@@ -13043,37 +12449,23 @@ components:
             minimum: 0
           - type: 'null'
           title: Folderid
-        trashedAt:
-          anyOf:
-          - type: string
-            format: date-time
-          - type: 'null'
-          title: Trashedat
-        trashedBy:
-          anyOf:
-          - type: integer
-            exclusiveMinimum: true
-            minimum: 0
-          - type: 'null'
-          title: Trashedby
-          description: The primary gid of the user who trashed
       type: object
       required:
       - uuid
       - name
       - description
       - thumbnail
-      - creationDate
-      - lastChangeDate
       - workbench
       - prjOwner
       - accessRights
+      - creationDate
+      - lastChangeDate
+      - trashedAt
+      - trashedBy
       - tags
       - dev
       - workspaceId
       - folderId
-      - trashedAt
-      - trashedBy
       title: ProjectListItem
     ProjectLocked:
       properties:
@@ -13458,20 +12850,6 @@ components:
       - topUpAmountInUsd
       - monthlyLimitInUsd
       title: ReplaceWalletAutoRecharge
-    RepoApiModel:
-      properties:
-        project_uuid:
-          type: string
-          format: uuid
-          title: Project Uuid
-        url:
-          type: string
-          title: Url
-      type: object
-      required:
-      - project_uuid
-      - url
-      title: RepoApiModel
     ResearchResource:
       properties:
         rrid:
@@ -14197,7 +13575,7 @@ components:
       - path
       title: SimCoreFileLink
       description: I/O port type to hold a link to a file in simcore S3 storage
-    Slideshow:
+    SlideshowUI:
       properties:
         position:
           type: integer
@@ -14210,7 +13588,7 @@ components:
       type: object
       required:
       - position
-      title: Slideshow
+      title: SlideshowUI
     SpecificInfo:
       properties:
         aws_ec2_instances:
@@ -14315,6 +13693,14 @@ components:
       title: Structure
     StudyUI-Input:
       properties:
+        icon:
+          anyOf:
+          - type: string
+            maxLength: 2083
+            minLength: 1
+            format: uri
+          - type: 'null'
+          title: Icon
         workbench:
           anyOf:
           - type: object
@@ -14341,6 +13727,11 @@ components:
       title: StudyUI
     StudyUI-Output:
       properties:
+        icon:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Icon
         workbench:
           anyOf:
           - type: object
@@ -14365,27 +13756,6 @@ components:
       additionalProperties: true
       type: object
       title: StudyUI
-    TableSynchronisation:
-      properties:
-        dry_run:
-          anyOf:
-          - type: boolean
-          - type: 'null'
-          title: Dry Run
-        fire_and_forget:
-          anyOf:
-          - type: boolean
-          - type: 'null'
-          title: Fire And Forget
-        removed:
-          items:
-            type: string
-          type: array
-          title: Removed
-      type: object
-      required:
-      - removed
-      title: TableSynchronisation
     TagAccessRights:
       properties:
         read:
@@ -15306,36 +14676,13 @@ components:
           description: The node position in the workbench
         marker:
           anyOf:
-          - $ref: '#/components/schemas/Marker'
+          - $ref: '#/components/schemas/MarkerUI'
           - type: 'null'
       additionalProperties: false
       type: object
       required:
       - position
       title: WorkbenchUI
-    WorkbenchViewApiModel:
-      properties:
-        workbench:
-          additionalProperties:
-            $ref: '#/components/schemas/Node-Output'
-          type: object
-          title: Workbench
-        ui:
-          type: object
-          title: Ui
-          default: {}
-        url:
-          type: string
-          title: Url
-        checkpoint_url:
-          type: string
-          title: Checkpoint Url
-      type: object
-      required:
-      - workbench
-      - url
-      - checkpoint_url
-      title: WorkbenchViewApiModel
     WorkspaceCreateBodyParams:
       properties:
         name:

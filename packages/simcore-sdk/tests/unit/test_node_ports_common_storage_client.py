@@ -3,7 +3,7 @@
 
 import datetime
 from collections.abc import AsyncIterable
-from typing import Final
+from typing import Any, Final
 
 import pytest
 from aiohttp import ClientResponseError, ClientSession
@@ -14,12 +14,14 @@ from simcore_sdk.node_ports_common.storage_client import retry_request
 
 _ROUTE_ALWAYS_200_OK: Final[str] = "http://always-200-ok"
 
-_MOCK_RESPONSE_BODY: Final[str] = "mock_body"
+_MOCK_RESPONSE_BODY: Final[dict[str, Any]] = {"data": "mock_body"}
 
 
 @pytest.fixture
 def mock_responses(aioresponses_mocker: aioresponses) -> None:
-    aioresponses_mocker.get(_ROUTE_ALWAYS_200_OK, status=200, body=_MOCK_RESPONSE_BODY)
+    aioresponses_mocker.get(
+        _ROUTE_ALWAYS_200_OK, status=200, payload=_MOCK_RESPONSE_BODY
+    )
 
 
 @pytest.fixture
@@ -46,7 +48,7 @@ async def test_retry_request_ok(mock_responses: None, session: ClientSession):
         session, "GET", _ROUTE_ALWAYS_200_OK, expected_status=200
     ) as response:
         assert response.status == 200
-        assert await response.text() == _MOCK_RESPONSE_BODY
+        assert await response.json() == _MOCK_RESPONSE_BODY
 
 
 async def test_retry_request_unexpected_code(

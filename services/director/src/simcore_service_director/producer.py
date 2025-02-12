@@ -17,13 +17,13 @@ from fastapi import FastAPI, status
 from packaging.version import Version
 from servicelib.async_utils import run_sequentially_in_context
 from servicelib.docker_utils import to_datetime
+from servicelib.fastapi.client_session import get_client_session
 from settings_library.docker_registry import RegistrySettings
 from tenacity import retry, wait_random_exponential
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_attempt
 
 from . import docker_utils, registry_proxy
-from .client_session import get_client_session
 from .constants import (
     CPU_RESOURCE_LIMIT_KEY,
     MEM_RESOURCE_LIMIT_KEY,
@@ -465,7 +465,7 @@ async def _create_docker_service_params(
 
 
 def _get_service_entrypoint(
-    service_boot_parameters_labels: list[dict[str, Any]]
+    service_boot_parameters_labels: list[dict[str, Any]],
 ) -> str:
     _logger.debug("Getting service entrypoint")
     for param in service_boot_parameters_labels:
@@ -1157,7 +1157,6 @@ async def _save_service_state(
         response.raise_for_status()
 
     except httpx.HTTPStatusError as err:
-
         if err.response.status_code in (
             status.HTTP_405_METHOD_NOT_ALLOWED,
             status.HTTP_404_NOT_FOUND,
@@ -1237,7 +1236,6 @@ async def stop_service(app: FastAPI, *, node_uuid: str, save_state: bool) -> Non
                     service_host_name, session=get_client_session(app)
                 )
             except httpx.HTTPStatusError as err:
-
                 raise ServiceStateSaveError(
                     service_uuid=node_uuid,
                     reason=f"service {service_host_name} rejected to save state, "

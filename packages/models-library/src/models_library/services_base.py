@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl, field_validator
 
 from .services_types import ServiceKey, ServiceVersion
 from .utils.common_validators import empty_str_to_none_pre_validator
@@ -41,6 +41,7 @@ class ServiceBaseDisplay(BaseModel):
             validate_default=True,
         ),
     ] = None
+    icon: Annotated[HttpUrl | None, Field(description="URL to the service icon")] = None
     description: Annotated[
         str,
         Field(

@@ -1,0 +1,22 @@
+--constraint ../../../requirements/constraints.txt
+
+--requirement ../../../packages/common-library/requirements/_base.in
+--requirement ../../../packages/models-library/requirements/_base.in
+--requirement ../../../packages/settings-library/requirements/_base.in
+--requirement ../../../packages/service-library/requirements/_base.in
+
+aiodocker
+arrow
+asgi_lifespan
+docker
+faker
+fastapi
+fastapi-lifespan-manager
+flaky
+pytest
+pytest-asyncio
+pytest-cov
+pytest-mock
+python-dotenv
+PyYAML
+tenacity

@@ -6,7 +6,7 @@ import urllib.parse
 from collections.abc import AsyncGenerator, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Final, Protocol, cast
+from typing import Any, Final, Literal, Protocol, cast
 
 import aioboto3
 from aiobotocore.session import ClientCreatorContext
@@ -97,7 +97,10 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
 
     @s3_exception_handler(_logger)
     async def create_bucket(
-        self, *, bucket: S3BucketName, region: BucketLocationConstraintType
+        self,
+        *,
+        bucket: S3BucketName,
+        region: BucketLocationConstraintType | Literal["us-east-1"],
     ) -> None:
         with log_context(
             _logger, logging.INFO, msg=f"Create bucket {bucket} in {region}"
