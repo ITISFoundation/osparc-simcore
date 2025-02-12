@@ -67,14 +67,7 @@ async def test_workflow(
     user_id: UserID,
     paths_for_export: set[StorageFileID],
 ):
-
     selection_to_export = _get_folder_and_files_selection(paths_for_export)
-
-    # TODO: generate some content in S3, both single files and
-    # also some folders
-    # let's select files form different folders
-    # also let's send the same file selected in the same fodler (we avoid path duplication by default)
-    # also send over multiple times the same file
 
     file_id = await create_s3_export(initialized_app, user_id, selection_to_export)
 
