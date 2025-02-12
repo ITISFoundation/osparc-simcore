@@ -323,14 +323,8 @@ qx.Class.define("osparc.product.Utils", {
     },
 
     hasNewPlusButton: function() {
-      return [
-        "osparc",
-        "s4l",
-        "s4lacad",
-        "s4llite",
-        // "tis",
-        // "tiplite",
-      ].includes(osparc.product.Utils.getProductName());
+      const newStudiesData = osparc.store.Products.getInstance().getPlusButtonUiConfig();
+      return Boolean(newStudiesData);
     },
   }
 });
