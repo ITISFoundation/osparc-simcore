@@ -6,7 +6,12 @@ from typing import Awaitable, Callable
 import pytest
 from faker import Faker
 from fastapi import FastAPI
-from models_library.api_schemas_long_running_tasks.tasks import TaskGet, TaskStatus
+from models_library.api_schemas_rpc_long_running_tasks.tasks import (
+    TaskRpcGet,
+    TaskRpcId,
+    TaskRpcResult,
+    TaskRpcStatus,
+)
 from models_library.api_schemas_storage.zipping_tasks import (
     ZipTaskAbortOutput,
     ZipTaskStartInput,
@@ -17,7 +22,6 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.storage import zipping
 from settings_library.rabbit import RabbitSettings
-from simcore_service_storage.api.rabbitmq_rpc._zipping import TaskId, TaskResult
 from simcore_service_storage.core.settings import ApplicationSettings
 
 pytest_plugins = [
@@ -73,24 +77,24 @@ async def test_start_zipping(rpc_client: RabbitMQRPCClient, faker: Faker):
     result = await zipping.start_zipping(
         rpc_client, paths=ZipTaskStartInput(paths=[Path(faker.file_path())])
     )
-    assert isinstance(result, TaskGet)
+    assert isinstance(result, TaskRpcGet)
 
 
 async def test_abort_zipping(rpc_client: RabbitMQRPCClient, faker: Faker):
-    _task_id = TaskId(f"{faker.uuid4()}")
+    _task_id = TaskRpcId(faker.uuid4())
     result = await zipping.abort_zipping(rpc_client, task_id=_task_id)
     assert isinstance(result, ZipTaskAbortOutput)
     assert result.task_id == _task_id
 
 
 async def test_get_zipping_status(rpc_client: RabbitMQRPCClient, faker: Faker):
-    _task_id = TaskId(f"{faker.uuid4()}")
+    _task_id = TaskRpcId(faker.uuid4())
     result = await zipping.get_zipping_status(rpc_client, task_id=_task_id)
-    assert isinstance(result, TaskStatus)
-    assert result.task_progress.task_id == _task_id
+    assert isinstance(result, TaskRpcStatus)
+    assert result.task_id == _task_id
 
 
 async def test_get_zipping_result(rpc_client: RabbitMQRPCClient, faker: Faker):
-    _task_id = TaskId(f"{faker.uuid4()}")
+    _task_id = TaskRpcId(faker.uuid4())
     result = await zipping.get_zipping_result(rpc_client, task_id=_task_id)
-    assert isinstance(result, TaskResult)
+    assert isinstance(result, TaskRpcResult)

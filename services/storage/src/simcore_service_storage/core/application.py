@@ -25,8 +25,8 @@ from .._meta import (
     APP_NAME,
     APP_STARTED_BANNER_MSG,
 )
-from ..api.rabbitmq_rpc.routes import setup_rpc_api_routes
 from ..api.rest.routes import setup_rest_api_routes
+from ..api.rpc.routes import setup_rpc_api_routes
 from ..dsm import setup_dsm
 from ..dsm_cleaner import setup_dsm_cleaner
 from ..exceptions.handlers import set_exception_handlers

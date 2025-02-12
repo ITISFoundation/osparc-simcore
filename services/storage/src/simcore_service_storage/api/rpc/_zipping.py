@@ -2,15 +2,11 @@ from datetime import datetime
 from uuid import uuid4
 
 from fastapi import FastAPI
-from models_library.api_schemas_long_running_tasks.base import (
-    ProgressPercent,
-    TaskId,
-    TaskProgress,
-)
-from models_library.api_schemas_long_running_tasks.tasks import (
-    TaskGet,
-    TaskResult,
-    TaskStatus,
+from models_library.api_schemas_rpc_long_running_tasks.tasks import (
+    TaskRpcGet,
+    TaskRpcId,
+    TaskRpcResult,
+    TaskRpcStatus,
 )
 from models_library.api_schemas_storage.zipping_tasks import (
     ZipTaskAbortOutput,
@@ -22,36 +18,34 @@ router = RPCRouter()
 
 
 @router.expose()
-async def start_zipping(app: FastAPI, paths: ZipTaskStartInput) -> TaskGet:
+async def start_zipping(app: FastAPI, paths: ZipTaskStartInput) -> TaskRpcGet:
     assert app  # nosec
-    return TaskGet(
-        task_id=f"{uuid4()}",
+    return TaskRpcGet(
+        task_id=uuid4(),
         task_name=", ".join(str(p) for p in paths.paths),
-        status_href="status_url",
-        result_href="result url",
-        abort_href="abort url",
     )
 
 
 @router.expose()
-async def abort_zipping(app: FastAPI, task_id: TaskId) -> ZipTaskAbortOutput:
+async def abort_zipping(app: FastAPI, task_id: TaskRpcId) -> ZipTaskAbortOutput:
     assert app  # nosec
     return ZipTaskAbortOutput(result=True, task_id=task_id)
 
 
 @router.expose()
-async def get_zipping_status(app: FastAPI, task_id: TaskId) -> TaskStatus:
+async def get_zipping_status(app: FastAPI, task_id: TaskRpcId) -> TaskRpcStatus:
     assert app  # nosec
-    progress = TaskProgress(
+    return TaskRpcStatus(
         task_id=task_id,
-        message="Here's a status for you. You are welcome",
-        percent=ProgressPercent(0.5),
+        task_progress=0.5,
+        done=False,
+        started=datetime.now(),
+        stopped=None,
     )
-    return TaskStatus(task_progress=progress, done=False, started=datetime.now())
 
 
 @router.expose()
-async def get_zipping_result(app: FastAPI, task_id: TaskId) -> TaskResult:
+async def get_zipping_result(app: FastAPI, task_id: TaskRpcId) -> TaskRpcResult:
     assert app  # nosec
     assert task_id  # nosec
-    return TaskResult(result="Here's your result.", error=None)
+    return TaskRpcResult(result="Here's your result.", error=None)
