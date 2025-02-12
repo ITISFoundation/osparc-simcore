@@ -116,27 +116,24 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
     },
 
     __addNewStudyItems: async function() {
-      await Promise.all([
-        osparc.store.Products.getInstance().getPlusButtonUiConfig(),
-        osparc.data.Resources.get("templates")
-      ]).then(values => {
-        const newStudiesData = values[0];
-        const templates = values[1];
-        if (newStudiesData["categories"]) {
-          this.__addCategories(newStudiesData["categories"]);
-        }
-        newStudiesData["resources"].forEach(newStudyData => {
-          if (newStudyData["showDisabled"]) {
-            this.__addDisabledButton(newStudyData);
-          } else if (newStudyData["resourceType"] === "study") {
-            this.__addEmptyStudyButton(newStudyData);
-          } else if (newStudyData["resourceType"] === "template") {
-            this.__addFromTemplateButton(newStudyData, templates);
-          } else if (newStudyData["resourceType"] === "service") {
-            this.__addFromServiceButton(newStudyData);
+      await osparc.data.Resources.get("templates")
+        .then(templates => {
+          const newStudiesData = osparc.store.Products.getInstance().getPlusButtonUiConfig();
+          if (newStudiesData["categories"]) {
+            this.__addCategories(newStudiesData["categories"]);
           }
+          newStudiesData["resources"].forEach(newStudyData => {
+            if (newStudyData["showDisabled"]) {
+              this.__addDisabledButton(newStudyData);
+            } else if (newStudyData["resourceType"] === "study") {
+              this.__addEmptyStudyButton(newStudyData);
+            } else if (newStudyData["resourceType"] === "template") {
+              this.__addFromTemplateButton(newStudyData, templates);
+            } else if (newStudyData["resourceType"] === "service") {
+              this.__addFromServiceButton(newStudyData);
+            }
+          });
         });
-      });
     },
 
     __getLastIdxFromCategory: function(categoryId) {
