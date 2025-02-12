@@ -31,7 +31,8 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
   },
 
   events: {
-    "importMessageSent": "qx.event.type.Data",
+    "modelPurchased": "qx.event.type.Event",
+    "importMessageSent": "qx.event.type.Event",
   },
 
   properties: {
@@ -322,6 +323,7 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
             const anatomicModelDetails = this.getChildControl("models-details");
             anatomicModelDetails.setAnatomicalModelsData(found);
           }
+          this.fireEvent("modelPurchased");
         })
         .catch(err => {
           const msg = err.message || this.tr("Cannot purchase model");

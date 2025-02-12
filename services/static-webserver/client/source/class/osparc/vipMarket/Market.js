@@ -87,7 +87,7 @@ qx.Class.define("osparc.vipMarket.Market", {
   },
 
   events: {
-    "importMessageSent": "qx.event.type.Data",
+    "importMessageSent": "qx.event.type.Event",
   },
 
   properties: {
@@ -100,19 +100,48 @@ qx.Class.define("osparc.vipMarket.Market", {
   },
 
   members: {
+    __purchasedCategoryButton: null,
+    __purchasedCategoryMarket: null,
+
     __buildViPMarketPage: function(marketTabInfo, licensedItems = []) {
       const vipMarketView = new osparc.vipMarket.VipMarket(licensedItems);
       vipMarketView.set({
         category: marketTabInfo["categoryId"],
       });
       this.bind("openBy", vipMarketView, "openBy");
+      vipMarketView.addListener("modelPurchased", () => this.__repopulatePurchasedCategory());
       vipMarketView.addListener("importMessageSent", () => this.fireEvent("importMessageSent"));
       const page = this.addTab(marketTabInfo["label"], marketTabInfo["icon"], vipMarketView);
       page.category = marketTabInfo["categoryId"];
       if (page.category === "purchasedModels") {
-        page.getChildControl("button").setVisibility(licensedItems.length ? "visible" : "excluded");
+        this.__purchasedCategoryMarket = vipMarketView;
+        this.__purchasedCategoryButton = page.getChildControl("button");
+        this.__purchasedCategoryButton.setVisibility(licensedItems.length ? "visible" : "excluded");
       }
       return page;
+    },
+
+    __repopulatePurchasedCategory: function() {
+      const store = osparc.store.Store.getInstance();
+      const contextWallet = store.getContextWallet();
+      const walletId = contextWallet.getWalletId();
+      const licensedItemsStore = osparc.store.LicensedItems.getInstance();
+      Promise.all([
+        licensedItemsStore.getLicensedItems(),
+        licensedItemsStore.getPurchasedLicensedItems(walletId),
+      ])
+        .then(values => {
+          const licensedItems = values[0];
+          const purchasedItems = values[1];
+          let items = [];
+          licensedItems.forEach(licensedItem => {
+            if (purchasedItems.find(purchasedItem => purchasedItem["licensedItemId"] === licensedItem["licensedItemId"])) {
+              items.push(licensedItem);
+            }
+          });
+          this.__purchasedCategoryButton.setVisibility(items.length ? "visible" : "excluded");
+          this.__purchasedCategoryMarket.setLicensedItems(items);
+        });
     },
 
     __openCategory: function(category) {
