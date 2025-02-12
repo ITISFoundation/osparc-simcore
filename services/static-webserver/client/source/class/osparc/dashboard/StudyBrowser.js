@@ -16,7 +16,7 @@
 ************************************************************************ */
 
 /**
- * @asset(osparc/new_studies.json")
+ * @asset(osparc/ui_config.json")
  */
 
 /**
@@ -979,7 +979,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this._resourcesContainer.addNonResourceCard(newPlansBtn);
       newPlansBtn.setEnabled(false);
 
-      osparc.utils.Utils.fetchJSON("/resource/osparc/new_studies.json")
+      osparc.utils.Utils.fetchJSON("/resource/osparc/ui_config.json")
         .then(newStudiesData => {
           const product = osparc.product.Utils.getProductName()
           if (product in newStudiesData) {
@@ -1042,7 +1042,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __addPlusButtonsFromServices: function() {
       // add new plus buttons if key services exists
-      osparc.utils.Utils.fetchJSON("/resource/osparc/new_studies.json")
+      osparc.utils.Utils.fetchJSON("/resource/osparc/ui_config.json")
         .then(newStudiesData => {
           const product = osparc.product.Utils.getProductName()
           if (product in newStudiesData) {

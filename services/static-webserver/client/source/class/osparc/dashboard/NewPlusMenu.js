@@ -165,7 +165,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
     __addIcon: function(menuButton, resourceInfo, resourceMetadata) {
       let source = null;
       if (resourceInfo && "icon" in resourceInfo) {
-        // first the one set in the new_studies
+        // first the one set in the ui_config
         source = resourceInfo["icon"];
       } else if (resourceMetadata && "thumbnail" in resourceMetadata) {
         // second the one from the resource

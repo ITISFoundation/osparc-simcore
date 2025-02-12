@@ -23,7 +23,7 @@ qx.Class.define("osparc.store.Products", {
     __newStudyConfig: null,
 
     fetchNewStudyConfig: function() {
-      return osparc.utils.Utils.fetchJSON("/resource/osparc/new_studies.json")
+      return osparc.utils.Utils.fetchJSON("/resource/osparc/ui_config.json")
         .then(newStudiesData => {
           const product = osparc.product.Utils.getProductName()
           if (product in newStudiesData) {
