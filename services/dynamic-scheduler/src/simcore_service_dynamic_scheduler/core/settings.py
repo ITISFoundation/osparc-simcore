@@ -7,6 +7,7 @@ from settings_library.application import BaseApplicationSettings
 from settings_library.basic_types import LogLevel, VersionTag
 from settings_library.director_v0 import DirectorV0Settings
 from settings_library.director_v2 import DirectorV2Settings
+from settings_library.docker_api_proxy import DockerApiProxysettings
 from settings_library.http_client_request import ClientRequestSettings
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
@@ -151,6 +152,11 @@ class ApplicationSettings(_BaseApplicationSettings):
         json_schema_extra={"auto_default_from_env": True},
         description="settings for opentelemetry tracing",
     )
+
+    DYNAMIC_SCHEDULER_DOCKER_API_PROXY: Annotated[
+        DockerApiProxysettings,
+        Field(json_schema_extra={"auto_default_from_env": True}),
+    ]
 
     @field_validator("DYNAMIC_SCHEDULER_UI_MOUNT_PATH", mode="before")
     @classmethod
