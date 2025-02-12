@@ -120,7 +120,6 @@ async def checkout_licensed_item(
 
     _active_purchased_seats: int = await licensed_items_purchases_db.get_active_purchased_seats_for_key_version_wallet(
         db_engine,
-        # licensed_item_id=licensed_item_id,
         key=key,
         version=version,
         wallet_id=wallet_id,
@@ -129,7 +128,6 @@ async def checkout_licensed_item(
 
     _currently_used_seats = await licensed_items_checkouts_db.get_currently_used_seats_for_key_version_wallet(
         db_engine,
-        # licensed_item_id=licensed_item_id,
         key=key,
         version=version,
         wallet_id=wallet_id,
