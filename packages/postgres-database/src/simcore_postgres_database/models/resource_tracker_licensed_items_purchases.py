@@ -30,6 +30,16 @@ resource_tracker_licensed_items_purchases = sa.Table(
         nullable=False,
     ),
     sa.Column(
+        "key",
+        sa.String,
+        nullable=False,
+    ),
+    sa.Column(
+        "version",
+        sa.String,
+        nullable=False,
+    ),
+    sa.Column(
         "wallet_id",
         sa.BigInteger,
         nullable=False,
@@ -84,4 +94,5 @@ resource_tracker_licensed_items_purchases = sa.Table(
         server_default=sa.sql.func.now(),
     ),
     column_modified_datetime(timezone=True),
+    sa.Index("idx_licensed_items_purchases_key_version", "key", "version"),
 )

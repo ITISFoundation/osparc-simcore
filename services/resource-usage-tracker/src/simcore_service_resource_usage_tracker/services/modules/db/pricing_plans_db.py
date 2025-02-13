@@ -208,7 +208,10 @@ async def list_pricing_plans_by_product(
         count_query = sa.select(sa.func.count()).select_from(subquery)
 
         # Default ordering
-        list_query = base_query.order_by(resource_tracker_pricing_plans.c.created.asc())
+        list_query = base_query.order_by(
+            resource_tracker_pricing_plans.c.created.asc(),
+            resource_tracker_pricing_plans.c.pricing_plan_id,
+        )
 
         total_count = await conn.scalar(count_query)
         if total_count is None:

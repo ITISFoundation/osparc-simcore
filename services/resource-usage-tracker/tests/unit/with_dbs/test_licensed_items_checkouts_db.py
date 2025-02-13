@@ -71,6 +71,8 @@ async def test_licensed_items_checkouts_db__force_release_license_seats_by_run_i
     # SETUP
     _create_license_item_checkout_db_1 = CreateLicensedItemCheckoutDB(
         licensed_item_id="beb16d18-d57d-44aa-a638-9727fa4a72ef",
+        key="Duke",
+        version="1.0.0",
         wallet_id=_WALLET_ID,
         user_id=_USER_ID_1,
         user_email="test@test.com",

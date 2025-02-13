@@ -23,12 +23,14 @@ from servicelib.aiohttp import status
 from simcore_service_webserver.licenses import (
     _itis_vip_service,
     _itis_vip_syncer_service,
-    _licensed_items_service,
+    _licensed_resources_service,
 )
 from simcore_service_webserver.licenses._itis_vip_models import ItisVipData
 from simcore_service_webserver.licenses._itis_vip_service import _ItisVipApiResponse
 from simcore_service_webserver.licenses._itis_vip_settings import ItisVipSettings
-from simcore_service_webserver.licenses._licensed_items_service import RegistrationState
+from simcore_service_webserver.licenses._licensed_resources_service import (
+    RegistrationState,
+)
 
 
 @pytest.fixture(scope="session")
@@ -117,11 +119,11 @@ async def test_get_category_items(
             assert items[0].features.get("functionality") == "Posable"
 
 
-async def test_sync_itis_vip_as_licensed_items(
+async def test_sync_itis_vip_as_licensed_resources(
     mock_itis_vip_downloadables_api: respx.MockRouter,
     app_environment: EnvVarsDict,
     client: TestClient,
-    ensure_empty_licensed_items: None,
+    ensure_empty_licensed_resources: None,
 ):
     assert client.app
 
@@ -143,10 +145,10 @@ async def test_sync_itis_vip_as_licensed_items(
 
                 # register a NEW resource
                 (
-                    licensed_item1,
+                    licensed_resource1,
                     state1,
                     _,
-                ) = await _licensed_items_service.register_licensed_resource(
+                ) = await _licensed_resources_service.register_licensed_resource(
                     client.app,
                     licensed_resource_name=f"{category}/{vip.id}",
                     licensed_resource_type=LicensedResourceType.VIP_MODEL,
@@ -157,10 +159,10 @@ async def test_sync_itis_vip_as_licensed_items(
 
                 # register the SAME resource
                 (
-                    licensed_item2,
+                    licensed_resource2,
                     state2,
                     _,
-                ) = await _licensed_items_service.register_licensed_resource(
+                ) = await _licensed_resources_service.register_licensed_resource(
                     client.app,
                     licensed_resource_name=f"{category}/{vip.id}",
                     licensed_resource_type=LicensedResourceType.VIP_MODEL,
@@ -169,14 +171,14 @@ async def test_sync_itis_vip_as_licensed_items(
                 )
 
                 assert state2 == RegistrationState.ALREADY_REGISTERED
-                assert licensed_item1 == licensed_item2
+                assert licensed_resource1 == licensed_resource2
 
                 # register a MODIFIED version of the same resource
                 (
                     licensed_item3,
                     state3,
                     msg,
-                ) = await _licensed_items_service.register_licensed_resource(
+                ) = await _licensed_resources_service.register_licensed_resource(
                     client.app,
                     licensed_resource_name=f"{category}/{vip.id}",
                     licensed_resource_type=LicensedResourceType.VIP_MODEL,
@@ -191,7 +193,7 @@ async def test_sync_itis_vip_as_licensed_items(
                     licensed_item_display_name="foo",
                 )
                 assert state3 == RegistrationState.DIFFERENT_RESOURCE
-                assert licensed_item2 == licensed_item3
+                assert licensed_resource2 == licensed_item3
                 # {'values_changed': {"root['features']['functionality']": {'new_value': 'Non-Posable', 'old_value': 'Posable'}}}
                 assert "functionality" in msg
 
@@ -200,7 +202,7 @@ async def test_itis_vip_syncer_service(
     mock_itis_vip_downloadables_api: respx.MockRouter,
     app_environment: EnvVarsDict,
     client: TestClient,
-    ensure_empty_licensed_items: None,
+    ensure_empty_licensed_resources: None,
 ):
     assert client.app
 
@@ -210,11 +212,7 @@ async def test_itis_vip_syncer_service(
     categories = settings.to_categories()
 
     # one round
-    await _itis_vip_syncer_service.sync_resources_with_licensed_items(
-        client.app, categories
-    )
+    await _itis_vip_syncer_service.sync_licensed_resources(client.app, categories)
 
     # second round
-    await _itis_vip_syncer_service.sync_resources_with_licensed_items(
-        client.app, categories
-    )
+    await _itis_vip_syncer_service.sync_licensed_resources(client.app, categories)

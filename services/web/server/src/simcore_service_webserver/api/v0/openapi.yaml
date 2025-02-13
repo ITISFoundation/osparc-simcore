@@ -3141,52 +3141,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Bad Request
-  /v0/catalog/licensed-items/{licensed_item_id}:
-    get:
-      tags:
-      - licenses
-      - catalog
-      summary: Get Licensed Item
-      operationId: get_licensed_item
-      parameters:
-      - name: licensed_item_id
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
-          title: Licensed Item Id
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_LicensedItemRestGet_'
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
-          description: Not Found
-        '403':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
-          description: Forbidden
-        '402':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
-          description: Payment Required
-        '400':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
-          description: Bad Request
   /v0/catalog/licensed-items/{licensed_item_id}:purchase:
     post:
       tags:
@@ -3209,8 +3163,12 @@ paths:
             schema:
               $ref: '#/components/schemas/LicensedItemsBodyParams'
       responses:
-        '204':
+        '200':
           description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LicensedItemPurchaseGet'
         '404':
           content:
             application/json:
@@ -8028,19 +7986,6 @@ components:
           title: Error
       type: object
       title: Envelope[LicensedItemPurchaseGet]
-    Envelope_LicensedItemRestGet_:
-      properties:
-        data:
-          anyOf:
-          - $ref: '#/components/schemas/LicensedItemRestGet'
-          - type: 'null'
-        error:
-          anyOf:
-          - {}
-          - type: 'null'
-          title: Error
-      type: object
-      title: Envelope[LicensedItemRestGet]
     Envelope_Log_:
       properties:
         data:
@@ -10162,6 +10107,13 @@ components:
           type: string
           format: uuid
           title: Licenseditemid
+        key:
+          type: string
+          title: Key
+        version:
+          type: string
+          pattern: ^\d+\.\d+\.\d+$
+          title: Version
         walletId:
           type: integer
           exclusiveMinimum: true
@@ -10208,6 +10160,8 @@ components:
       - licensedItemPurchaseId
       - productName
       - licensedItemId
+      - key
+      - version
       - walletId
       - pricingUnitCostId
       - pricingUnitCost
@@ -10225,18 +10179,46 @@ components:
           type: string
           format: uuid
           title: Licenseditemid
+        key:
+          type: string
+          title: Key
+        version:
+          type: string
+          pattern: ^\d+\.\d+\.\d+$
+          title: Version
         displayName:
           type: string
           title: Displayname
         licensedResourceType:
           $ref: '#/components/schemas/LicensedResourceType'
-        licensedResourceData:
-          $ref: '#/components/schemas/_ItisVipResourceRestData'
+        licensedResources:
+          items:
+            $ref: '#/components/schemas/_ItisVipResourceRestData'
+          type: array
+          title: Licensedresources
         pricingPlanId:
           type: integer
           exclusiveMinimum: true
           title: Pricingplanid
           minimum: 0
+        categoryId:
+          type: string
+          maxLength: 100
+          minLength: 1
+          title: Categoryid
+        categoryDisplay:
+          type: string
+          title: Categorydisplay
+        categoryIcon:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Categoryicon
+        termsOfUseUrl:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Termsofuseurl
         createdAt:
           type: string
           format: date-time
@@ -10248,10 +10230,14 @@ components:
       type: object
       required:
       - licensedItemId
+      - key
+      - version
       - displayName
       - licensedResourceType
-      - licensedResourceData
+      - licensedResources
       - pricingPlanId
+      - categoryId
+      - categoryDisplay
       - createdAt
       - modifiedAt
       title: LicensedItemRestGet
@@ -14899,30 +14885,10 @@ components:
       title: _ComputationStarted
     _ItisVipResourceRestData:
       properties:
-        categoryId:
-          type: string
-          maxLength: 100
-          minLength: 1
-          title: Categoryid
-        categoryDisplay:
-          type: string
-          title: Categorydisplay
-        categoryIcon:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Categoryicon
         source:
           $ref: '#/components/schemas/_ItisVipRestData'
-        termsOfUseUrl:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Termsofuseurl
       type: object
       required:
-      - categoryId
-      - categoryDisplay
       - source
       title: _ItisVipResourceRestData
     _ItisVipRestData:
@@ -14943,6 +14909,9 @@ components:
           - type: string
           - type: 'null'
           title: Doi
+        licenseVersion:
+          type: string
+          title: Licenseversion
       type: object
       required:
       - id
@@ -14950,6 +14919,7 @@ components:
       - thumbnail
       - features
       - doi
+      - licenseVersion
       title: _ItisVipRestData
     _PageParams:
       properties:

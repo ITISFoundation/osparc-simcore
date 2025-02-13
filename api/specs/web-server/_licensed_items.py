@@ -9,9 +9,11 @@
 from typing import Annotated
 
 from _common import as_query
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends
 from models_library.api_schemas_webserver.licensed_items import LicensedItemRestGet
-from models_library.generics import Envelope
+from models_library.api_schemas_webserver.licensed_items_purchases import (
+    LicensedItemPurchaseGet,
+)
 from models_library.rest_error import EnvelopedError
 from models_library.rest_pagination import Page
 from simcore_service_webserver._meta import API_VTAG
@@ -46,19 +48,9 @@ async def list_licensed_items(
     ...
 
 
-@router.get(
-    "/catalog/licensed-items/{licensed_item_id}",
-    response_model=Envelope[LicensedItemRestGet],
-)
-async def get_licensed_item(
-    _path: Annotated[LicensedItemsPathParams, Depends()],
-):
-    ...
-
-
 @router.post(
     "/catalog/licensed-items/{licensed_item_id}:purchase",
-    status_code=status.HTTP_204_NO_CONTENT,
+    response_model=LicensedItemPurchaseGet,
 )
 async def purchase_licensed_item(
     _path: Annotated[LicensedItemsPathParams, Depends()],

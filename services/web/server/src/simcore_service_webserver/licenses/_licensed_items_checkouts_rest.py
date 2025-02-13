@@ -61,6 +61,8 @@ async def get_licensed_item_checkout(request: web.Request):
     output = LicensedItemCheckoutRestGet.model_construct(
         licensed_item_checkout_id=checkout_item.licensed_item_checkout_id,
         licensed_item_id=checkout_item.licensed_item_id,
+        key=checkout_item.key,
+        version=checkout_item.version,
         wallet_id=checkout_item.wallet_id,
         user_id=checkout_item.user_id,
         user_email=checkout_item.user_email,
@@ -105,6 +107,8 @@ async def list_licensed_item_checkouts_for_wallet(request: web.Request):
             LicensedItemCheckoutRestGet.model_construct(
                 licensed_item_checkout_id=checkout_item.licensed_item_checkout_id,
                 licensed_item_id=checkout_item.licensed_item_id,
+                key=checkout_item.key,
+                version=checkout_item.version,
                 wallet_id=checkout_item.wallet_id,
                 user_id=checkout_item.user_id,
                 user_email=checkout_item.user_email,
