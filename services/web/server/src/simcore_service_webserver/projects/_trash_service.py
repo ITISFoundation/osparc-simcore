@@ -22,7 +22,7 @@ from .exceptions import (
     ProjectNotTrashedError,
     ProjectRunningConflictError,
 )
-from .models import ProjectPatchInternalExtended
+from .models import ProjectDict, ProjectPatchInternalExtended
 
 _logger = logging.getLogger(__name__)
 
@@ -128,6 +128,13 @@ async def untrash_project(
     )
 
 
+def _get_trashed_fields(project: ProjectDict):
+    trashed_at = project.get("trashed")
+    trashed_by = project.get("trashedBy")
+    trashed_explicitly = project.get("trashedExplicitly")
+    return trashed_at, trashed_by, trashed_explicitly
+
+
 async def list_trashed_projects(
     app: web.Application,
     *,
@@ -155,9 +162,7 @@ async def list_trashed_projects(
     # by defining a custom trash_filter that permits some flexibility in the filtering options
     trashed_projects = []
     for project in projects:
-        trashed_at = project.get("trashed_at")
-        trashed_by = project.get("trashed_by")
-        trashed_explicitly = project.get("trashed_explicitly")
+        trashed_at, trashed_by, trashed_explicitly = _get_trashed_fields(project)
 
         if (
             trashed_at
@@ -191,9 +196,7 @@ async def delete_trashed_project(
     if not project:
         raise ProjectNotFoundError(project_uuid=project_id, user_id=user_id)
 
-    trashed_at = project.get("trashed_at")
-    trashed_by = project.get("trashed_by")
-    trashed_explicitly = project.get("trashed_explicitly")
+    trashed_at, trashed_by, trashed_explicitly = _get_trashed_fields(project)
 
     if (
         not trashed_at
