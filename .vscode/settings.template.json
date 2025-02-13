@@ -59,9 +59,7 @@
   },
   "hadolint.hadolintPath": "${workspaceFolder}/scripts/hadolint.bash",
   "hadolint.cliOptions": [],
-  "ruff.lint.args": [
-    "--config=${workspaceFolder}/.ruff.toml"
-  ],
+  "ruff.configuration": "${workspaceFolder}/.ruff.toml",
   "ruff.path": [
     "${workspaceFolder}/.venv/bin/ruff"
   ],
