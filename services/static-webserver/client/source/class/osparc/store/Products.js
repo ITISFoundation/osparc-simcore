@@ -34,7 +34,7 @@ qx.Class.define("osparc.store.Products", {
         });
       }
 
-      return osparc.utils.Utils.fetchJSON("/resource/osparc/ui_config.json")
+      return osparc.data.Resources.fetch("productMetadata", "getUiConfig")
         .then(uiConfig => {
           const product = osparc.product.Utils.getProductName()
           if (product in uiConfig) {

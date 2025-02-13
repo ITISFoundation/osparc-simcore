@@ -981,7 +981,11 @@ qx.Class.define("osparc.data.Resources", {
           updateEmailTemplate: {
             method: "PUT",
             url: statics.API + "/products/{productName}/templates/{templateId}"
-          }
+          },
+          getUiConfig: {
+            method: "GET",
+            url: statics.API + "/products/current/ui"
+          },
         }
       },
       "invitations": {
