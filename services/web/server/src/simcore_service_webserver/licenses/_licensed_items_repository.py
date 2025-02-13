@@ -99,6 +99,7 @@ async def list_(
     order_by: OrderBy,
     # filters
     filter_by_licensed_resource_type: LicensedResourceType | None = None,
+    include_hidden_items_on_market: bool = False,
 ) -> tuple[int, list[LicensedItemDB]]:
 
     base_query = (
@@ -111,6 +112,8 @@ async def list_(
         base_query.where(
             licensed_items.c.licensed_resource_type == filter_by_licensed_resource_type
         )
+    if not include_hidden_items_on_market:
+        base_query.where(licensed_items.c.is_hidden_on_market.is_(False))
 
     # Select total count from base_query
     subquery = base_query.subquery()
@@ -247,6 +250,7 @@ async def get_licensed_item_by_key_version(
             licensed_items.c.licensed_resource_type,
             _licensed_resource_subquery.c.licensed_resources,
             licensed_items.c.pricing_plan_id,
+            licensed_items.c.is_hidden_on_market,
             licensed_items.c.created.label("created_at"),
             licensed_items.c.modified.label("modified_at"),
         )
@@ -282,6 +286,7 @@ async def list_licensed_items(
     order_by: OrderBy,
     # filters
     filter_by_licensed_resource_type: LicensedResourceType | None = None,
+    include_hidden_items_on_market: bool = False,
 ) -> tuple[int, list[LicensedItem]]:
 
     base_query = (
@@ -293,6 +298,7 @@ async def list_licensed_items(
             licensed_items.c.licensed_resource_type,
             _licensed_resource_subquery.c.licensed_resources,
             licensed_items.c.pricing_plan_id,
+            licensed_items.c.is_hidden_on_market,
             licensed_items.c.created.label("created_at"),
             licensed_items.c.modified.label("modified_at"),
         )
@@ -310,6 +316,8 @@ async def list_licensed_items(
         base_query.where(
             licensed_items.c.licensed_resource_type == filter_by_licensed_resource_type
         )
+    if not include_hidden_items_on_market:
+        base_query.where(licensed_items.c.is_hidden_on_market.is_(False))
 
     # Select total count from base_query
     subquery = base_query.subquery()

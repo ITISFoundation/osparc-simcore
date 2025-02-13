@@ -81,6 +81,7 @@ class LicensedItemDB(BaseModel):
 
     pricing_plan_id: PricingPlanId
     product_name: ProductName
+    is_hidden_on_market: bool
 
     # states
     created: datetime
@@ -124,6 +125,7 @@ class LicensedItem(BaseModel):
     licensed_resource_type: LicensedResourceType
     licensed_resources: list[dict[str, Any]]
     pricing_plan_id: PricingPlanId
+    is_hidden_on_market: bool
     created_at: datetime
     modified_at: datetime
 
@@ -149,6 +151,7 @@ class LicensedItem(BaseModel):
                             )
                         ],
                         "pricing_plan_id": "15",
+                        "is_hidden_on_market": False,
                         "created_at": "2024-12-12 09:59:26.422140",
                         "modified_at": "2024-12-12 09:59:26.422140",
                     }

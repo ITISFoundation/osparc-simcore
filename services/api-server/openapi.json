@@ -6716,6 +6716,10 @@
             "title": "Pricing Plan Id",
             "minimum": 0
           },
+          "is_hidden_on_market": {
+            "type": "boolean",
+            "title": "Is Hidden On Market"
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -6736,6 +6740,7 @@
           "licensed_resource_type",
           "licensed_resources",
           "pricing_plan_id",
+          "is_hidden_on_market",
           "created_at",
           "modified_at"
         ],
