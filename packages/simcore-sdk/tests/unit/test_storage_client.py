@@ -24,7 +24,7 @@ from pydantic import AnyUrl, ByteSize, TypeAdapter
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.aiohttp import status
 from simcore_sdk.node_ports_common import exceptions
-from simcore_sdk.node_ports_common.filemanager_utils import (
+from simcore_sdk.node_ports_common._filemanager_utils import (
     _get_https_link_if_storage_secure,
 )
 from simcore_sdk.node_ports_common.storage_client import (

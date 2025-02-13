@@ -30,7 +30,7 @@ from tenacity.wait import wait_random_exponential
 from yarl import URL
 
 from ..node_ports_common.client_session_manager import ClientSessionContextManager
-from . import aws_s3_cli, exceptions, filemanager_utils, r_clone, storage_client
+from . import _filemanager_utils, aws_s3_cli, exceptions, r_clone, storage_client
 from .file_io_utils import (
     LogRedirectCB,
     UploadableFileObject,
@@ -47,7 +47,7 @@ async def complete_file_upload(
     client_session: ClientSession | None = None,
 ) -> ETag:
     async with ClientSessionContextManager(client_session) as session:
-        e_tag: ETag | None = await filemanager_utils.complete_upload(
+        e_tag: ETag | None = await _filemanager_utils.complete_upload(
             session=session,
             upload_completion_link=upload_completion_link,
             parts=uploaded_parts,
@@ -74,7 +74,7 @@ async def get_download_link_from_s3(
     :raises exceptions.StorageServerIssue
     """
     async with ClientSessionContextManager(client_session) as session:
-        store_id = await filemanager_utils.resolve_location_id(
+        store_id = await _filemanager_utils.resolve_location_id(
             session, user_id, store_name, store_id
         )
         file_link = await storage_client.get_download_file_link(
@@ -100,7 +100,7 @@ async def get_upload_links_from_s3(
     sha256_checksum: SHA256Str | None,
 ) -> tuple[LocationID, FileUploadSchema]:
     async with ClientSessionContextManager(client_session) as session:
-        store_id = await filemanager_utils.resolve_location_id(
+        store_id = await _filemanager_utils.resolve_location_id(
             session, user_id, store_name, store_id
         )
         file_links = await storage_client.get_upload_file_links(
@@ -147,7 +147,7 @@ async def download_path_from_s3(
     )
 
     async with ClientSessionContextManager(client_session) as session:
-        store_id = await filemanager_utils.resolve_location_id(
+        store_id = await _filemanager_utils.resolve_location_id(
             session, user_id, store_name, store_id
         )
         file_meta_data: FileMetaDataGet = await _get_file_meta_data(
@@ -264,7 +264,7 @@ async def abort_upload(
 
     """
     async with ClientSessionContextManager(client_session) as session:
-        await filemanager_utils.abort_upload(
+        await _filemanager_utils.abort_upload(
             session=session,
             abort_upload_link=abort_upload_link,
             reraise_exceptions=True,
@@ -430,13 +430,13 @@ async def _upload_path(  # pylint: disable=too-many-arguments
         ) as exc:
             _logger.exception("The upload failed with an unexpected error:")
             if upload_links:
-                await filemanager_utils.abort_upload(
+                await _filemanager_utils.abort_upload(
                     session, upload_links.links.abort_upload, reraise_exceptions=False
                 )
             raise exceptions.S3TransferError from exc
         except CancelledError:
             if upload_links:
-                await filemanager_utils.abort_upload(
+                await _filemanager_utils.abort_upload(
                     session, upload_links.links.abort_upload, reraise_exceptions=False
                 )
             raise
@@ -490,7 +490,7 @@ async def _upload_to_s3(
             progress_bar=progress_bar,
         )
     # complete the upload
-    e_tag = await filemanager_utils.complete_upload(
+    e_tag = await _filemanager_utils.complete_upload(
         session,
         upload_links.links.complete_upload,
         uploaded_parts,

@@ -53,7 +53,7 @@ async def storage_service(
     assert storage_endpoint.host is not None
     assert storage_endpoint.port is not None
     mocker.patch(
-        "simcore_sdk.node_ports_common.filemanager_utils._get_https_link_if_storage_secure",
+        "simcore_sdk.node_ports_common._filemanager_utils._get_https_link_if_storage_secure",
         replace_storage_endpoint(storage_endpoint.host, storage_endpoint.port),
     )
 
