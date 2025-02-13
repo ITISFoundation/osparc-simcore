@@ -36,7 +36,7 @@ Makefile                                  @pcrespov @sanderegg
 /services/payments/                       @pcrespov @matusdrobuliak66
 /services/resource-usage-tracker/         @matusdrobuliak66
 /services/static-webserver/               @GitHK
-/services/static-webserver/client/        @jsaq007 @odeimaiz @ignapas
+/services/static-webserver/client/        @odeimaiz
 /services/storage/                        @sanderegg
 /services/web/server/                     @pcrespov @sanderegg @GitHK @matusdrobuliak66
 /tests/e2e-frontend/                      @odeimaiz

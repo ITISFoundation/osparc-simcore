@@ -48,8 +48,6 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
     SPACING_IN: 5,
     SPACING: 15,
     ICON_SIZE: 32,
-    // TITLE_MAX_HEIGHT: 34, // two lines in Roboto
-    TITLE_MAX_HEIGHT: 40, // two lines in Manrope
     THUMBNAIL_SIZE: 50,
     POS: {
       TITLE: {
@@ -119,7 +117,6 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
           grid.setSpacing(this.self().SPACING_IN);
           grid.setRowFlex(2, 1);
           grid.setColumnFlex(0, 1);
-          grid.setRowMaxHeight(0, this.self().TITLE_MAX_HEIGHT);
 
           control = new qx.ui.container.Composite().set({
             maxWidth: this.self().ITEM_WIDTH,
@@ -205,7 +202,6 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
             font: "text-14",
             padding: this.self().TITLE_PADDING,
             maxWidth: this.self().ITEM_WIDTH,
-            maxHeight: this.self().TITLE_MAX_HEIGHT,
           });
           layout = this.getChildControl("header");
           layout.addAt(control, 0, {
