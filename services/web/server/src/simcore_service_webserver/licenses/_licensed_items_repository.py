@@ -250,6 +250,7 @@ async def get_licensed_item_by_key_version(
             licensed_items.c.licensed_resource_type,
             _licensed_resource_subquery.c.licensed_resources,
             licensed_items.c.pricing_plan_id,
+            licensed_items.c.is_hidden_on_market,
             licensed_items.c.created.label("created_at"),
             licensed_items.c.modified.label("modified_at"),
         )
@@ -297,6 +298,7 @@ async def list_licensed_items(
             licensed_items.c.licensed_resource_type,
             _licensed_resource_subquery.c.licensed_resources,
             licensed_items.c.pricing_plan_id,
+            licensed_items.c.is_hidden_on_market,
             licensed_items.c.created.label("created_at"),
             licensed_items.c.modified.label("modified_at"),
         )
