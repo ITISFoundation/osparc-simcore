@@ -841,3 +841,7 @@ async def test_trash_project_explitictly_and_empty_trash_bin(
             await assert_status(resp, status.HTTP_200_OK)
             page = Page[ProjectListItem].model_validate(await resp.json())
             assert page.meta.total == 0
+
+    # GET trahsed project
+    resp = await client.get(f"/v0/projects/{project_uuid}")
+    await assert_status(resp, status.HTTP_404_NOT_FOUND)

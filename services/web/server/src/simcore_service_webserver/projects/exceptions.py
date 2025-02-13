@@ -93,6 +93,12 @@ class ProjectRunningConflictError(ProjectTrashError):
     )
 
 
+class ProjectNotTrashedError(ProjectTrashError):
+    msg_template = (
+        "Cannot delete project {project_uuid} since it was not trashed first: {reason}"
+    )
+
+
 class NodeNotFoundError(BaseProjectError):
     msg_template = "Node '{node_uuid}' not found in project '{project_uuid}'"
 
