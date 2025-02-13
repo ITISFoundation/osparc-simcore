@@ -16,7 +16,7 @@ from collections import defaultdict
 from collections.abc import AsyncIterator, Awaitable, Callable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Final
 
 import botocore.exceptions
 import pytest
@@ -520,14 +520,17 @@ async def test_http_check_bucket_connected(
     )
 
 
+_ROOT_LEVEL: Final[int] = -2
+
+
 def _get_paths_with_prefix(
-    uploaded_files: list[UploadedFile], prefix_level: int, path_prefix: Path
+    uploaded_files: list[UploadedFile], *, prefix_level: int, path_prefix: Path
 ) -> tuple[set[Path], set[Path]]:
     def _filter_by_prefix(uploaded_file: UploadedFile) -> bool:
         return Path(uploaded_file.s3_key).is_relative_to(path_prefix)
 
     directories = {
-        Path(file.s3_key).parents[prefix_level]
+        Path(file.s3_key).parents[_ROOT_LEVEL - prefix_level]
         for file in filter(_filter_by_prefix, uploaded_files)
         if Path(file.s3_key).parent != path_prefix
     }
@@ -575,7 +578,7 @@ async def test_list_objects(
     # go one level deeper, will return all the folders + files in the first level
     first_level_prefix = next(iter(top_level_paths))
     first_level_directories, first_level_files = _get_paths_with_prefix(
-        with_uploaded_folder_on_s3, -3, path_prefix=first_level_prefix
+        with_uploaded_folder_on_s3, prefix_level=1, path_prefix=first_level_prefix
     )
     first_level_paths = first_level_directories | first_level_files
 
@@ -593,7 +596,7 @@ async def test_list_objects(
     # we go one more level down under a random first-level directory
     second_level_prefix = random.choice(list(first_level_directories))  # noqa: S311
     second_level_directories, second_level_files = _get_paths_with_prefix(
-        with_uploaded_folder_on_s3, -4, path_prefix=second_level_prefix
+        with_uploaded_folder_on_s3, prefix_level=2, path_prefix=second_level_prefix
     )
     second_level_paths = second_level_directories | second_level_files
 
