@@ -15,15 +15,15 @@ from pytest_simcore.helpers.comparing import (
     get_relative_to,
 )
 from servicelib.archiving_utils import unarchive_dir
-from servicelib.file_utils import remove_directory
-from servicelib.progress_bar import ProgressBarData
-from servicelib.s3_utils import FileLikeFileStreamReader
-from servicelib.zip_stream import (
+from servicelib.data_streams import (
     ArchiveEntries,
     DiskStreamReader,
     DiskStreamWriter,
-    get_zip_archive_file_stream,
+    get_zip_data_stream,
 )
+from servicelib.file_utils import remove_directory
+from servicelib.progress_bar import ProgressBarData
+from servicelib.s3_utils import FileLikeFileStreamReader
 
 
 def _ensure_dir(path: Path) -> Path:
@@ -116,7 +116,7 @@ async def test_get_zip_archive_file_stream(
         progress_report_cb=mocked_progress_bar_cb,
         description="root_bar",
     ) as root:
-        file_stream = get_zip_archive_file_stream(
+        file_stream = get_zip_data_stream(
             archive_files, progress_bar=root, chunk_size=1024
         )
 

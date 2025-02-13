@@ -60,15 +60,15 @@ from pytest_simcore.helpers.s3 import (
 )
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.archiving_utils import unarchive_dir
+from servicelib.data_streams import (
+    ArchiveEntries,
+    DiskStreamReader,
+    get_zip_data_stream,
+)
+from servicelib.data_streams._models import DataSize
 from servicelib.file_utils import remove_directory
 from servicelib.progress_bar import ProgressBarData
 from servicelib.utils import limited_as_completed, limited_gather
-from servicelib.zip_stream import (
-    ArchiveEntries,
-    DiskStreamReader,
-    get_zip_archive_file_stream,
-)
-from servicelib.zip_stream._models import DataSize
 from settings_library.s3 import S3Settings
 from types_aiobotocore_s3 import S3Client
 from types_aiobotocore_s3.literals import BucketLocationConstraintType
@@ -1596,7 +1596,7 @@ async def test_workflow_compress_s3_objects_and_local_files_in_a_single_archive_
         await simcore_s3_api.upload_object_from_file_stream(
             with_s3_bucket,
             archive_s3_object_key,
-            get_zip_archive_file_stream(
+            get_zip_data_stream(
                 archive_file_entries,
                 progress_bar=progress_bar,
                 chunk_size=MULTIPART_COPY_THRESHOLD,
