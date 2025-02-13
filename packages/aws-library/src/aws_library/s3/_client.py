@@ -473,7 +473,7 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
             limit=_MAX_CONCURRENT_COPY,
         )
 
-    async def get_object_data_stream(
+    async def get_object_stream_data(
         self,
         bucket_name: S3BucketName,
         object_key: S3ObjectKey,

@@ -1409,7 +1409,7 @@ async def test_read_object_file_stream(
     tmp_file_name: Path,
 ):
     async with aiofiles.open(tmp_file_name, "wb") as f:
-        stream_data = await simcore_s3_api.get_object_data_stream(
+        stream_data = await simcore_s3_api.get_object_stream_data(
             with_s3_bucket, with_uploaded_file_on_s3.s3_key, chunk_size=1024
         )
         assert isinstance(stream_data.data_size, DataSize)
@@ -1428,7 +1428,7 @@ async def test_upload_object_from_file_stream(
     with_s3_bucket: S3BucketName,
 ):
     object_key = "read_from_s3_write_to_s3"
-    stream_data = await simcore_s3_api.get_object_data_stream(
+    stream_data = await simcore_s3_api.get_object_stream_data(
         with_s3_bucket, with_uploaded_file_on_s3.s3_key
     )
     assert isinstance(stream_data.data_size, DataSize)
@@ -1576,7 +1576,7 @@ async def test_workflow_compress_s3_objects_and_local_files_in_a_single_archive_
         archive_file_entries.append(
             (
                 s3_object_key,
-                await simcore_s3_api.get_object_data_stream(
+                await simcore_s3_api.get_object_stream_data(
                     with_s3_bucket, s3_object_key
                 ),
             )
