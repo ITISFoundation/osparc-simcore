@@ -54,9 +54,9 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
 
       const anatomicalModelsData = this.getAnatomicalModelsData();
       if (anatomicalModelsData && anatomicalModelsData["licensedResources"].length) {
-        this.__addModelsInfo(anatomicalModelsData);
-        this.__addPricingUnits(anatomicalModelsData);
-        this.__addSeatsSection(anatomicalModelsData);
+        this.__addModelsInfo();
+        this.__addPricingUnits();
+        this.__addSeatsSection();
       } else {
         const selectModelLabel = new qx.ui.basic.Label().set({
           value: this.tr("Select a model for more details"),
@@ -70,9 +70,10 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
       }
     },
 
-    __addModelsInfo: function(anatomicalModelsData) {
+    __addModelsInfo: function() {
       const modelLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(16));
 
+      const anatomicalModelsData = this.getAnatomicalModelsData();
       const modelsInfo = anatomicalModelsData["licensedResources"];
       if (modelsInfo.length > 1) {
         const sBox = new qx.ui.form.SelectBox().set({
@@ -100,10 +101,10 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
       this._add(modelLayout);
     },
 
-    __populateModelInfo: function(modelLayout, anatomicalModelsData, idxFound = 0) {
+    __populateModelInfo: function(modelLayout, anatomicalModelsData, selectedIdx = 0) {
       modelLayout.removeAll();
 
-      const anatomicalModel = anatomicalModelsData["licensedResources"][idxFound]["source"];
+      const anatomicalModel = anatomicalModelsData["licensedResources"][selectedIdx]["source"];
       const topGrid = new qx.ui.layout.Grid(8, 8);
       topGrid.setColumnFlex(0, 1);
       const topLayout = new qx.ui.container.Composite(topGrid);
@@ -264,11 +265,38 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
 
       modelLayout.add(middleLayout);
 
-      const importButton = this.__createImportSection(anatomicalModelsData);
+      const importButton = this.__createImportSection(anatomicalModelsData, selectedIdx);
       modelLayout.add(importButton);
     },
 
-    __addPricingUnits: function(anatomicalModelsData) {
+    __createImportSection: function(anatomicalModelsData, selectedIdx) {
+      const importSection = new qx.ui.container.Composite(new qx.ui.layout.VBox(5).set({
+        alignX: "center"
+      }));
+
+      const importButton = new qx.ui.form.Button().set({
+        label: this.tr("Import"),
+        appearance: "strong-button",
+        center: true,
+        maxWidth: 200,
+        alignX: "center",
+      });
+      this.bind("openBy", importButton, "visibility", {
+        converter: openBy => openBy ? "visible" : "excluded"
+      });
+      importButton.addListener("execute", () => {
+        this.fireDataEvent("modelImportRequested", {
+          modelId: anatomicalModelsData["licensedResources"][selectedIdx]["source"]["id"]
+        });
+      }, this);
+      if (anatomicalModelsData["purchases"].length) {
+        importSection.add(importButton);
+      }
+      return importSection;
+    },
+
+    __addPricingUnits: function() {
+      const anatomicalModelsData = this.getAnatomicalModelsData();
       const pricingUnitsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
         alignX: "center"
       }));
@@ -297,33 +325,8 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
       this._add(pricingUnitsLayout);
     },
 
-    __createImportSection: function(anatomicalModelsData) {
-      const importSection = new qx.ui.container.Composite(new qx.ui.layout.VBox(5).set({
-        alignX: "center"
-      }));
-
-      const importButton = new qx.ui.form.Button().set({
-        label: this.tr("Import"),
-        appearance: "strong-button",
-        center: true,
-        maxWidth: 200,
-        alignX: "center",
-      });
-      this.bind("openBy", importButton, "visibility", {
-        converter: openBy => openBy ? "visible" : "excluded"
-      });
-      importButton.addListener("execute", () => {
-        this.fireDataEvent("modelImportRequested", {
-          modelId: anatomicalModelsData["licensedResourceData"]["source"]["id"]
-        });
-      }, this);
-      if (anatomicalModelsData["purchases"].length) {
-        importSection.add(importButton);
-      }
-      return importSection;
-    },
-
-    __addSeatsSection: function(anatomicalModelsData) {
+    __addSeatsSection: function() {
+      const anatomicalModelsData = this.getAnatomicalModelsData();
       const seatsSection = new qx.ui.container.Composite(new qx.ui.layout.VBox(5).set({
         alignX: "center",
       }));
