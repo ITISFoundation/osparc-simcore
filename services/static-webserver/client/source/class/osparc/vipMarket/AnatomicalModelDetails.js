@@ -73,6 +73,8 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
     },
 
     __addModelsInfo: function(modelsInfo) {
+      const modelLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(16));
+
       if (modelsInfo.length > 1) {
         const sBox = new qx.ui.form.SelectBox().set({
           minWidth: 200,
@@ -84,14 +86,23 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
           sBox.add(sbItem);
         });
         this._add(sBox);
-        this.__addModelInfo(modelsInfo[0]["source"]);
+        sBox.addListener("changeSelection", e => {
+          const selection = e.getData();
+          if (selection.length) {
+            const modelFound = modelsInfo.find(mdlInfo => mdlInfo["source"]["id"] === selection[0].modelId)
+            this.__populateModelInfo(modelLayout, modelFound["source"]);
+          }
+        }, this);
+        this.__populateModelInfo(modelLayout, modelsInfo[0]["source"]);
       } else {
-        this.__addModelInfo(modelsInfo[0]["source"]);
+        this.__populateModelInfo(modelLayout, modelsInfo[0]["source"]);
       }
+
+      this._add(modelLayout);
     },
 
-    __addModelInfo: function(anatomicalModel) {
-      const cardLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(16));
+    __populateModelInfo: function(modelLayout, anatomicalModel) {
+      modelLayout.removeAll();
 
       const topGrid = new qx.ui.layout.Grid(8, 8);
       topGrid.setColumnFlex(0, 1);
@@ -150,6 +161,7 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
           maxWidth: 32,
           maxHeight: 32,
           scale: true,
+          decorator: "rounded",
         });
         manufacturerLink.addListener("tap", () => window.open(manufacturerData["link"]));
         topLayout.add(manufacturerLink, {
@@ -158,7 +170,7 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
           rowSpan: 2,
         });
       }
-      cardLayout.add(topLayout);
+      modelLayout.add(topLayout);
 
 
       const middleLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(16));
@@ -248,9 +260,7 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
 
       middleLayout.add(featuresLayout);
 
-      cardLayout.add(middleLayout);
-
-      this._add(cardLayout);
+      modelLayout.add(middleLayout);
     },
 
     __createPricingUnits: function(anatomicalModelsData) {
