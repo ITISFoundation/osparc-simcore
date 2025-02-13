@@ -18,13 +18,12 @@ class TaskRpcStatus(BaseModel):
     @model_validator(mode="after")
     def _check_consistency(self) -> Self:
         progress_done = self.task_progress == 1.0
-        done_done = self.done == True
+        done = self.done
         stopped_done = self.stopped is not None
 
-        if (progress_done != done_done) or (done_done != stopped_done):
-            raise ValueError(
-                f"Inconsistent data: {self.task_progress=}, {self.done=}, {self.stopped=}"
-            )
+        if (progress_done != done) or (done != stopped_done):
+            msg = f"Inconsistent data: {self.task_progress=}, {self.done=}, {self.stopped=}"
+            raise ValueError(msg)
         return self
 
 
