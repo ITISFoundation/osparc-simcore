@@ -7,6 +7,7 @@ from ._api import (
     get_product_name,
     get_product_stripe_info,
     get_product_template_path,
+    get_product_ui,
     list_products,
 )
 from ._model import Product
@@ -17,6 +18,7 @@ __all__: tuple[str, ...] = (
     "get_product_name",
     "get_product_stripe_info",
     "get_product_template_path",
+    "get_product_ui",
     "get_product",
     "list_products",
     "Product",
