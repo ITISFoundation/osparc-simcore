@@ -146,6 +146,7 @@ class SimcoreS3DataManager(BaseDataManager):
         offset: NonNegativeInt,
     ) -> tuple[list[FileMetaData], TotalNumber]:
         """returns a page of the file meta data a user has access to"""
+        get_s3_client(self.app).list_objects_paginated()
         return [], 0
 
     async def list_files(  # noqa C901

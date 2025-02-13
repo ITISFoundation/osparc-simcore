@@ -562,57 +562,36 @@ async def test_list_objects(
     # assert pre-conditions
     assert len(with_uploaded_folder_on_s3) >= 1, "wrong initialization of test!"
 
-    # Start testing from the root, will return only 1 object (the top level folder)
-    top_level_directories, top_level_files = _get_paths_with_prefix(
-        with_uploaded_folder_on_s3, prefix_level=0, path_prefix=None
-    )
-    assert (
-        len(top_level_directories) == 1
-    ), "wrong initialization of test! we expect only one folder here"
-    assert not top_level_files
-    top_level_paths = top_level_directories | top_level_files
+    def find_deepest_file(files: list[UploadedFile]) -> Path:
+        return Path(max(files, key=lambda f: f.s3_key.count("/")).s3_key)
 
-    objects = await simcore_s3_api.list_objects(
-        bucket=with_s3_bucket, prefix=None, start_after=None
-    )
-    assert len(objects) == len(top_level_paths)
-    assert {_.as_path() for _ in objects} == top_level_paths
+    deepest_file_path = find_deepest_file(with_uploaded_folder_on_s3)
+    prefixes = deepest_file_path.parents[0].parts
 
-    # go one level deeper, will return all the folders + files in the first level
-    first_level_prefix = random.choice(list(top_level_directories))  # noqa: S311
-    first_level_directories, first_level_files = _get_paths_with_prefix(
-        with_uploaded_folder_on_s3, prefix_level=1, path_prefix=first_level_prefix
-    )
-    first_level_paths = first_level_directories | first_level_files
+    # Start from the root and go down to the directory containing the deepest file
+    for level in range(len(prefixes)):
+        current_prefix = (
+            Path(prefixes[0]).joinpath(*prefixes[1:level]) if level > 0 else None
+        )
 
-    objects = await simcore_s3_api.list_objects(
-        bucket=with_s3_bucket, prefix=first_level_prefix, start_after=None
-    )
-    assert len(objects) == len(first_level_paths)
-    assert {_.as_path() for _ in objects} == first_level_paths
-    # check files and directories are correctly separated
-    received_files = {_ for _ in objects if isinstance(_, S3MetaData)}
-    received_directories = {_ for _ in objects if isinstance(_, S3DirectoryMetaData)}
-    assert len(received_files) == len(first_level_files)
-    assert len(received_directories) == len(first_level_directories)
+        directories, files = _get_paths_with_prefix(
+            with_uploaded_folder_on_s3, prefix_level=level, path_prefix=current_prefix
+        )
+        all_paths = directories | files
 
-    # we go one more level down under a random first-level directory
-    second_level_prefix = random.choice(list(first_level_directories))  # noqa: S311
-    second_level_directories, second_level_files = _get_paths_with_prefix(
-        with_uploaded_folder_on_s3, prefix_level=2, path_prefix=second_level_prefix
-    )
-    second_level_paths = second_level_directories | second_level_files
+        objects = await simcore_s3_api.list_objects(
+            bucket=with_s3_bucket, prefix=current_prefix, start_after=None
+        )
+        assert len(objects) == len(all_paths)
+        assert {_.as_path() for _ in objects} == all_paths
 
-    objects = await simcore_s3_api.list_objects(
-        bucket=with_s3_bucket, prefix=second_level_prefix, start_after=None
-    )
-    assert len(objects) == len(second_level_paths)
-    assert {_.as_path() for _ in objects} == second_level_paths
-    # check files and directories are correctly separated
-    received_files = {_ for _ in objects if isinstance(_, S3MetaData)}
-    received_directories = {_ for _ in objects if isinstance(_, S3DirectoryMetaData)}
-    assert len(received_files) == len(second_level_files)
-    assert len(received_directories) == len(second_level_directories)
+        # Check files and directories are correctly separated
+        received_files = {_ for _ in objects if isinstance(_, S3MetaData)}
+        received_directories = {
+            _ for _ in objects if isinstance(_, S3DirectoryMetaData)
+        }
+        assert len(received_files) == len(files)
+        assert len(received_directories) == len(directories)
 
 
 async def test_get_file_metadata(
