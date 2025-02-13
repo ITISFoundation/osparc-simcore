@@ -39,6 +39,7 @@ from servicelib.common_headers import (
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.redis import get_project_locked_state
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
+from servicelib.utils import logged_gather
 from simcore_service_webserver.projects.models import ProjectDict
 
 from .._meta import API_VTAG as VTAG
@@ -61,7 +62,10 @@ from ._crud_handlers_models import (
     ProjectsListQueryParams,
     ProjectsSearchQueryParams,
 )
-from ._permalink_api import update_or_pop_permalink_in_project
+from ._permalink_api import (
+    aggregate_permalink_in_project,
+    update_or_pop_permalink_in_project,
+)
 from .exceptions import (
     ProjectDeleteError,
     ProjectInvalidRightsError,
@@ -252,7 +256,7 @@ async def list_projects_full_search(request: web.Request):
     tag_ids_list = query_params.tag_ids_list()
 
     projects, total_number_of_projects = await _crud_api_read.list_projects_full_depth(
-        request,
+        request.app,
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
         trashed=query_params.filters.trashed,
@@ -264,8 +268,20 @@ async def list_projects_full_search(request: web.Request):
         order_by=OrderBy.model_construct(**query_params.order_by.model_dump()),
     )
 
+    updated_projects: list[ProjectDict] = await logged_gather(
+        # AGGREGATE data to the project from other sources and
+        # that depend on the **request**.
+        *(
+            # permalink
+            aggregate_permalink_in_project(request, project=prj)
+            for prj in projects
+        ),
+        reraise=True,
+        max_concurrency=100,
+    )
+
     return _create_page_response(
-        projects=projects,
+        projects=updated_projects,
         request_url=request.url,
         total=total_number_of_projects,
         limit=query_params.limit,
@@ -486,9 +502,9 @@ async def delete_project(request: web.Request):
 
         await projects_service.submit_delete_project_task(
             request.app,
-            path_params.project_id,
-            req_ctx.user_id,
-            request.headers.get(
+            project_uuid=path_params.project_id,
+            user_id=req_ctx.user_id,
+            simcore_user_agent=request.headers.get(
                 X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
             ),
         )
