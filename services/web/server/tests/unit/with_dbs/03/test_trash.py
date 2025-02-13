@@ -24,6 +24,7 @@ from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_login import NewUser, UserInfoDict
+from pytest_simcore.helpers.webserver_parametrizations import MockedStorageSubsystem
 from servicelib.aiohttp import status
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects._groups_api import ProjectGroupGet
@@ -799,6 +800,7 @@ async def test_trash_project_explitictly_and_empty_trash_bin(
     mocked_catalog: None,
     mocked_director_v2: None,
     mocked_dynamic_services_interface: dict[str, MagicMock],
+    storage_subsystem_mock: MockedStorageSubsystem,
 ):
     assert client.app
 
@@ -829,8 +831,11 @@ async def test_trash_project_explitictly_and_empty_trash_bin(
 
     # force EMPTY trash
     resp = await client.delete("/v0/trash")
+    # TODO: POST trash:empty -> logs number of elements and
+    # starts delete in the background ? Assume many many items and can take really long
     await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
+    # waits for deletion
     async for attempt in AsyncRetrying(
         stop=stop_after_attempt(3), wait=wait_fixed(1), reraise=True
     ):
