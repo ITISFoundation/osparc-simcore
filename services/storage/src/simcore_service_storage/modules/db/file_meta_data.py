@@ -136,6 +136,16 @@ async def list_filter_with_partial_file_id(
     ]
 
 
+async def list_direct_children(
+    conn: AsyncConnection,
+    *,
+    user_id: UserID | None = None,
+    limit: int | None = None,
+    offset: int | None = None,
+) -> list[FileMetaDataAtDB]:
+    return []
+
+
 async def list_fmds(
     conn: AsyncConnection,
     *,
