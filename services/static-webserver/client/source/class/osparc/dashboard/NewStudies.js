@@ -182,8 +182,10 @@ qx.Class.define("osparc.dashboard.NewStudies", {
       const title = templateInfo.title;
       const desc = templateInfo.description;
       const newPlanButton = new osparc.dashboard.GridButtonNew(title, desc);
-      newPlanButton.setCardKey(templateInfo.idToWidget);
-      osparc.utils.Utils.setIdToWidget(newPlanButton, templateInfo.idToWidget);
+      if (templateInfo["idToWidget"]) {
+        newPlanButton.setCardKey(templateInfo["idToWidget"]);
+        osparc.utils.Utils.setIdToWidget(newPlanButton, templateInfo["idToWidget"]);
+      }
       newPlanButton.addListener("tap", () => newStudyClicked());
       return newPlanButton;
     },
