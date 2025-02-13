@@ -54,11 +54,25 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelListItem", {
       init: "selectable"
     },
 
-    modelId: {
-      check: "Number",
+    licenseKey: {
+      check: "String",
       init: null,
       nullable: false,
-      event: "changeModelId",
+      event: "changeLicenseKey",
+    },
+
+    licenseVersion: {
+      check: "String",
+      init: null,
+      nullable: false,
+      event: "changeLicenseVersion",
+    },
+
+    licensedItemId: {
+      check: "String",
+      init: null,
+      nullable: false,
+      event: "changeLicensedItemId",
     },
 
     thumbnail: {
@@ -82,13 +96,6 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelListItem", {
       init: null,
       nullable: true,
       event: "changeDate",
-    },
-
-    licensedItemId: {
-      check: "String",
-      init: null,
-      nullable: false,
-      event: "changeLicensedItemId",
     },
 
     pricingPlanId: {
