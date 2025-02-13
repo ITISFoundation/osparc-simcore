@@ -44,26 +44,17 @@ qx.Class.define("osparc.store.Products", {
         ])
           .then(values => {
             let uiConfig = {};
-            if (values[0] && values[0]["ui"] && Object.keys(values[0]["ui"]).length) {
-              uiConfig = values[0]["ui"];
+            const beUiConfig = values[0];
+            const feUiConfig = values[1];
+            const schema = values[2];
+            if (beUiConfig && beUiConfig["ui"] && Object.keys(beUiConfig["ui"]).length) {
+              uiConfig = beUiConfig["ui"];
             } else {
               const product = osparc.product.Utils.getProductName();
-              if (values[1] && product in values[1]) {
-                uiConfig = values[1][product];
+              if (feUiConfig && product in feUiConfig) {
+                uiConfig = feUiConfig[product];
               }
             }
-            // const schema = values[2];
-            const schema = {
-              "type": "object",
-              "properties": {
-                "resourceType": { "type": "string" },
-                "title": { "type": "string" },
-                "icon": { "type": "string" },
-                "newStudyLabel": { "type": "string" },
-                "idToWidget": { "type": "string" }
-              },
-              "required": ["resourceType", "title"],
-            };
             const ajvLoader = new qx.util.DynamicScriptLoader([
               "/resource/ajv/ajv-6-11-0.min.js",
               "/resource/object-path/object-path-0-11-4.min.js"
@@ -81,7 +72,10 @@ qx.Class.define("osparc.store.Products", {
                 this.__uiConfig = uiConfig;
                 resolve(this.__uiConfig);
               } else {
-                console.error("wrong ui_config")
+                console.error("Wrong UI Config");
+                validate.errors.forEach(err => {
+                  console.error(`Error at ${err.dataPath}: ${err.message}`);
+                });
               }
             });
             ajvLoader.addListener("failed", console.error, this);
