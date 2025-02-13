@@ -217,7 +217,7 @@ async def list_projects(request: web.Request):
     assert query_params.filters  # nosec
 
     projects, total_number_of_projects = await _crud_api_read.list_projects(
-        request,
+        request.app,
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
         project_type=query_params.project_type,
@@ -232,8 +232,20 @@ async def list_projects(request: web.Request):
         order_by=OrderBy.model_construct(**query_params.order_by.model_dump()),
     )
 
+    updated_projects: list[ProjectDict] = await logged_gather(
+        # AGGREGATE data to the project from other sources and
+        # that depend on the **request**.
+        *(
+            # permalink
+            aggregate_permalink_in_project(request, project=prj)
+            for prj in projects
+        ),
+        reraise=True,
+        max_concurrency=100,
+    )
+
     return _create_page_response(
-        projects=projects,
+        projects=updated_projects,
         request_url=request.url,
         total=total_number_of_projects,
         limit=query_params.limit,

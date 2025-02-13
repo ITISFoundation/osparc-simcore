@@ -23,7 +23,6 @@ from ..catalog.client import get_services_for_user_in_product
 from ..folders import _folders_repository as _folders_repository
 from ..workspaces._workspaces_service import check_user_workspace_access
 from . import projects_service
-from ._permalink_api import update_or_pop_permalink_in_project
 from .db import ProjectDBAPI
 from .models import ProjectDict, ProjectTypeAPI
 
@@ -45,29 +44,8 @@ async def _batch_update_list_of_project_dict(
     return list_of_project_dict
 
 
-async def _update_and_get_project_dict(
-    request: web.Request,
-    *,
-    user_id: UserID,
-    project: ProjectDict,
-    is_template: bool,
-) -> ProjectDict:
-    # state
-    await projects_service.add_project_states_for_user(
-        user_id=user_id,
-        project=project,
-        is_template=is_template,
-        app=request.app,
-    )
-
-    # permalink
-    await update_or_pop_permalink_in_project(request, project)
-
-    return project
-
-
 async def list_projects(  # pylint: disable=too-many-arguments
-    request: web.Request,
+    app: web.Application,
     user_id: UserID,
     product_name: str,
     *,
@@ -87,7 +65,6 @@ async def list_projects(  # pylint: disable=too-many-arguments
     # ordering
     order_by: OrderBy,
 ) -> tuple[list[ProjectDict], int]:
-    app = request.app
     db = ProjectDBAPI.get_from_app_context(app)
 
     user_available_services: list[dict] = await get_services_for_user_in_product(
@@ -151,11 +128,12 @@ async def list_projects(  # pylint: disable=too-many-arguments
 
     projects: list[ProjectDict] = await logged_gather(
         *(
-            _update_and_get_project_dict(
-                request,
+            # state
+            projects_service.add_project_states_for_user(
                 user_id=user_id,
                 project=prj,
                 is_template=prj_type == ProjectTypeDB.TEMPLATE,
+                app=app,
             )
             for prj, prj_type in zip(db_projects, db_project_types, strict=False)
         ),
@@ -224,13 +202,3 @@ async def list_projects_full_depth(
     )
 
     return projects, total_number_projects
-
-
-async def get_project(
-    request: web.Request,
-    user_id: UserID,
-    product_name: str,
-    project_uuid: ProjectID,
-    project_type: ProjectTypeAPI,
-):
-    raise NotImplementedError
