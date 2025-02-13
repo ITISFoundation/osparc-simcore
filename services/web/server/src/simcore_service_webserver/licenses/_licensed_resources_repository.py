@@ -122,6 +122,11 @@ async def update(
         licensed_resources.c.modified.name: func.now(),
     }
 
+    # trashing
+    assert "trash" in dict(LicensedResourcePatchDB.model_fields)  # nosec
+    if trash := _updates.pop("trash", None):
+        _updates[licensed_resources.c.trashed.name] = func.now() if trash else None
+
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         result = await conn.execute(
             licensed_resources.update()
