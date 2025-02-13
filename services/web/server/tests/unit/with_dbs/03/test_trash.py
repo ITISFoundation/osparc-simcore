@@ -28,6 +28,7 @@ from servicelib.aiohttp import status
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects._groups_api import ProjectGroupGet
 from simcore_service_webserver.projects.models import ProjectDict
+from tenacity import AsyncRetrying, stop_after_attempt, wait_fixed
 from yarl import URL
 
 
@@ -789,3 +790,54 @@ async def test_trash_project_in_subfolder(
     page = Page[ProjectGet].model_validate(await resp.json())
     assert page.meta.total == 1
     assert page.data[0].uuid == project_uuid
+
+
+async def test_trash_project_explitictly_and_empty_trash_bin(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    mocked_catalog: None,
+    mocked_dynamic_services_interface: dict[str, MagicMock],
+):
+    assert client.app
+
+    project_uuid = UUID(user_project["uuid"])
+
+    # TRASH project
+    trashing_at = arrow.utcnow().datetime
+    resp = await client.post(
+        f"/v0/projects/{project_uuid}:trash", params={"force": "true"}
+    )
+    await assert_status(resp, status.HTTP_204_NO_CONTENT)
+
+    # LIST trashed projects
+    resp = await client.get("/v0/projects", params={"filters": '{"trashed": true}'})
+    await assert_status(resp, status.HTTP_200_OK)
+
+    page = Page[ProjectListItem].model_validate(await resp.json())
+    assert page.meta.total == 1
+    assert page.data[0].uuid == project_uuid
+
+    # GET trashed project
+    resp = await client.get(f"/v0/projects/{project_uuid}")
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+    got = ProjectGet.model_validate(data)
+    assert got.uuid == project_uuid
+    assert got.trashed_at is not None
+    assert trashing_at < got.trashed_at < arrow.utcnow().datetime
+
+    # force EMPTY trash
+    resp = await client.delete("/v0/trash")
+    await assert_status(resp, status.HTTP_204_NO_CONTENT)
+
+    async for attempt in AsyncRetrying(
+        stop=stop_after_attempt(3), wait=wait_fixed(1), reraise=True
+    ):
+        with attempt:
+            # LIST trashed projects again
+            resp = await client.get(
+                "/v0/projects", params={"filters": '{"trashed": true}'}
+            )
+            await assert_status(resp, status.HTTP_200_OK)
+            page = Page[ProjectListItem].model_validate(await resp.json())
+            assert page.meta.total == 0
