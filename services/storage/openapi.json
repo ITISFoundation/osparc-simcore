@@ -74,11 +74,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/FileLocation"
-                  },
-                  "title": "Response List Storage Locations V0 Locations Get"
+                  "$ref": "#/components/schemas/Envelope_list_FileLocation__"
                 }
               }
             }
@@ -227,6 +223,7 @@
           "files"
         ],
         "summary": "List Paths",
+        "description": "Returns one level of files (paginated)",
         "operationId": "list_paths_v0_locations__location_id__paths_get",
         "parameters": [
           {
@@ -265,6 +262,29 @@
               ],
               "title": "File Filter"
             }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
           }
         ],
         "responses": {
@@ -273,7 +293,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Page_FileMetaDataGet_"
+                  "$ref": "#/components/schemas/LimitOffsetPage_FileMetaDataGet_"
                 }
               }
             }
@@ -1752,6 +1772,35 @@
         "type": "object",
         "title": "Envelope[list[DatasetMetaDataGet]]"
       },
+      "Envelope_list_FileLocation__": {
+        "properties": {
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/FileLocation"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          },
+          "error": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          }
+        },
+        "type": "object",
+        "title": "Envelope[list[FileLocation]]"
+      },
       "Envelope_list_FileMetaDataGet__": {
         "properties": {
           "data": {
@@ -2293,83 +2342,7 @@
         ],
         "title": "HealthCheck"
       },
-      "LinkType": {
-        "type": "string",
-        "enum": [
-          "PRESIGNED",
-          "S3"
-        ],
-        "title": "LinkType"
-      },
-      "Links": {
-        "properties": {
-          "first": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "First"
-          },
-          "last": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Last"
-          },
-          "self": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Self"
-          },
-          "next": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Next"
-          },
-          "prev": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Prev"
-          }
-        },
-        "type": "object",
-        "required": [
-          "first",
-          "last",
-          "self",
-          "next",
-          "prev"
-        ],
-        "title": "Links"
-      },
-      "Page_FileMetaDataGet_": {
+      "LimitOffsetPage_FileMetaDataGet_": {
         "properties": {
           "items": {
             "items": {
@@ -2390,7 +2363,7 @@
             ],
             "title": "Total"
           },
-          "page": {
+          "limit": {
             "anyOf": [
               {
                 "type": "integer",
@@ -2400,21 +2373,9 @@
                 "type": "null"
               }
             ],
-            "title": "Page"
+            "title": "Limit"
           },
-          "size": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "minimum": 1
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Size"
-          },
-          "pages": {
+          "offset": {
             "anyOf": [
               {
                 "type": "integer",
@@ -2424,21 +2385,25 @@
                 "type": "null"
               }
             ],
-            "title": "Pages"
-          },
-          "links": {
-            "$ref": "#/components/schemas/Links"
+            "title": "Offset"
           }
         },
         "type": "object",
         "required": [
           "items",
           "total",
-          "page",
-          "size",
-          "links"
+          "limit",
+          "offset"
         ],
-        "title": "Page[FileMetaDataGet]"
+        "title": "LimitOffsetPage[FileMetaDataGet]"
+      },
+      "LinkType": {
+        "type": "string",
+        "enum": [
+          "PRESIGNED",
+          "S3"
+        ],
+        "title": "LinkType"
       },
       "S3Settings": {
         "properties": {

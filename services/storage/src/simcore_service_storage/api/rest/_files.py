@@ -62,16 +62,7 @@ async def list_paths(
     user_id: UserID,
     file_filter: Path | None = None,
 ):
-    """Returns one level of files
-
-    Arguments:
-        query_params -- _description_
-        page_params -- _description_
-        dsm -- _description_
-
-    Returns:
-        _description_
-    """
+    """Returns one level of files (paginated)"""
     items, total_number = await dsm.list_files_paginated(
         user_id=user_id,
         file_filter=file_filter,
