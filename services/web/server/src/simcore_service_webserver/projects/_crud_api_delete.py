@@ -78,7 +78,7 @@ async def delete_project(
     app: web.Application,
     project_uuid: ProjectID,
     user_id: UserID,
-    simcore_user_agent,
+    simcore_user_agent: str,
     remove_project_dynamic_services: RemoveProjectServicesCallable,
 ) -> None:
     """Stops dynamic services, deletes data and finally deletes project
