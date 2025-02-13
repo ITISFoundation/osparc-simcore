@@ -6618,6 +6618,15 @@
             "format": "uuid",
             "title": "Licensed Item Id"
           },
+          "key": {
+            "type": "string",
+            "title": "Key"
+          },
+          "version": {
+            "type": "string",
+            "pattern": "^\\d+\\.\\d+\\.\\d+$",
+            "title": "Version"
+          },
           "wallet_id": {
             "type": "integer",
             "exclusiveMinimum": true,
@@ -6660,6 +6669,8 @@
         "required": [
           "licensed_item_checkout_id",
           "licensed_item_id",
+          "key",
+          "version",
           "wallet_id",
           "user_id",
           "product_name",
@@ -6676,6 +6687,15 @@
             "format": "uuid",
             "title": "Licensed Item Id"
           },
+          "key": {
+            "type": "string",
+            "title": "Key"
+          },
+          "version": {
+            "type": "string",
+            "pattern": "^\\d+\\.\\d+\\.\\d+$",
+            "title": "Version"
+          },
           "display_name": {
             "type": "string",
             "title": "Display Name"
@@ -6683,9 +6703,12 @@
           "licensed_resource_type": {
             "$ref": "#/components/schemas/LicensedResourceType"
           },
-          "licensed_resource_data": {
-            "type": "object",
-            "title": "Licensed Resource Data"
+          "licensed_resources": {
+            "items": {
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Licensed Resources"
           },
           "pricing_plan_id": {
             "type": "integer",
@@ -6707,9 +6730,11 @@
         "type": "object",
         "required": [
           "licensed_item_id",
+          "key",
+          "version",
           "display_name",
           "licensed_resource_type",
-          "licensed_resource_data",
+          "licensed_resources",
           "pricing_plan_id",
           "created_at",
           "modified_at"

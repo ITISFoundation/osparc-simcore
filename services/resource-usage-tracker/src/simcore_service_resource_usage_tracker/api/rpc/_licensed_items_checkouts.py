@@ -3,7 +3,7 @@ from models_library.api_schemas_resource_usage_tracker.licensed_items_checkouts 
     LicensedItemCheckoutGet,
     LicensedItemsCheckoutsPage,
 )
-from models_library.licenses import LicensedItemID
+from models_library.licenses import LicensedItemID, LicensedItemKey, LicensedItemVersion
 from models_library.products import ProductName
 from models_library.resource_tracker_licensed_items_checkouts import (
     LicensedItemCheckoutID,
@@ -62,6 +62,8 @@ async def checkout_licensed_item(
     app: FastAPI,
     *,
     licensed_item_id: LicensedItemID,
+    key: LicensedItemKey,
+    version: LicensedItemVersion,
     wallet_id: WalletID,
     product_name: ProductName,
     num_of_seats: int,
@@ -72,6 +74,8 @@ async def checkout_licensed_item(
     return await licensed_items_checkouts.checkout_licensed_item(
         db_engine=app.state.engine,
         licensed_item_id=licensed_item_id,
+        key=key,
+        version=version,
         wallet_id=wallet_id,
         product_name=product_name,
         num_of_seats=num_of_seats,
