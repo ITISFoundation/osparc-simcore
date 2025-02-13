@@ -1,23 +1,25 @@
 import datetime
-from dataclasses import dataclass
+from pathlib import Path
 from typing import TypeAlias
 
 from models_library.basic_types import SHA256Str
 from models_library.storage_schemas import ETag
-from pydantic import AnyUrl, BaseModel, ByteSize
+from pydantic import AnyUrl, BaseModel, ByteSize, ConfigDict, Field
 from types_aiobotocore_s3.type_defs import HeadObjectOutputTypeDef, ObjectTypeDef
 
 S3ObjectKey: TypeAlias = str
+S3ObjectPrefix: TypeAlias = Path
 UploadID: TypeAlias = str
 
 
-@dataclass(frozen=True, slots=True, kw_only=True)
-class S3MetaData:
+class S3MetaData(BaseModel):
     object_key: S3ObjectKey
     last_modified: datetime.datetime
     e_tag: ETag
     sha256_checksum: SHA256Str | None
-    size: int
+    size: ByteSize
+
+    model_config = ConfigDict(frozen=True)
 
     @staticmethod
     def from_botocore_head_object(
@@ -27,12 +29,8 @@ class S3MetaData:
             object_key=object_key,
             last_modified=obj["LastModified"],
             e_tag=obj["ETag"].strip('"'),
-            sha256_checksum=(
-                SHA256Str(obj.get("ChecksumSHA256"))
-                if obj.get("ChecksumSHA256")
-                else None
-            ),
-            size=obj["ContentLength"],
+            sha256_checksum=obj.get("ChecksumSHA256"),
+            size=ByteSize(obj["ContentLength"]),
         )
 
     @staticmethod
@@ -47,18 +45,24 @@ class S3MetaData:
             object_key=obj["Key"],
             last_modified=obj["LastModified"],
             e_tag=obj["ETag"].strip('"'),
-            sha256_checksum=(
-                SHA256Str(obj.get("ChecksumSHA256"))
-                if obj.get("ChecksumSHA256")
-                else None
-            ),
-            size=obj["Size"],
+            sha256_checksum=obj.get("ChecksumSHA256"),
+            size=ByteSize(obj["Size"]),
         )
 
+    def as_path(self) -> Path:
+        return Path(self.object_key)
 
-@dataclass(frozen=True)
-class S3DirectoryMetaData:
-    size: int
+
+class S3DirectoryMetaData(BaseModel):
+    prefix: S3ObjectPrefix
+    size: ByteSize | None = Field(
+        ..., description="Size of the directory if computed, None if unknown"
+    )
+
+    model_config = ConfigDict(frozen=True)
+
+    def as_path(self) -> Path:
+        return self.prefix
 
 
 class MultiPartUploadLinks(BaseModel):

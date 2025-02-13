@@ -495,6 +495,37 @@ async def test_http_check_bucket_connected(
     )
 
 
+@pytest.mark.parametrize(
+    "directory_size, min_file_size, max_file_size",
+    [
+        (
+            TypeAdapter(ByteSize).validate_python("1Mib"),
+            TypeAdapter(ByteSize).validate_python("1B"),
+            TypeAdapter(ByteSize).validate_python("10Kib"),
+        )
+    ],
+    ids=byte_size_ids,
+)
+async def test_list_objects(
+    mocked_s3_server_envs: EnvVarsDict,
+    with_s3_bucket: S3BucketName,
+    with_uploaded_folder_on_s3: list[UploadedFile],
+    simcore_s3_api: SimcoreS3API,
+):
+    top_level_paths = {
+        Path(Path(file.s3_key).parts[0]) for file in with_uploaded_folder_on_s3
+    }
+
+    listed_objects = await simcore_s3_api.list_objects(
+        bucket=with_s3_bucket, prefix="", start_after=""
+    )
+    assert listed_objects is not None
+    assert len(listed_objects) == len(top_level_paths)
+
+    listed_object_paths = {obj.as_path() for obj in listed_objects}
+    assert listed_object_paths == top_level_paths
+
+
 async def test_get_file_metadata(
     mocked_s3_server_envs: EnvVarsDict,
     with_s3_bucket: S3BucketName,
@@ -1327,7 +1358,6 @@ def test_upload_file_performance(
     upload_file: Callable[[Path, Path | None], Awaitable[UploadedFile]],
     benchmark: BenchmarkFixture,
 ):
-
     # create random files of random size and upload to S3
     file = create_file_of_size(file_size)
 

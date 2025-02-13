@@ -31,6 +31,7 @@ from ._models import (
     S3DirectoryMetaData,
     S3MetaData,
     S3ObjectKey,
+    S3ObjectPrefix,
     UploadID,
 )
 from ._utils import compute_num_file_chunks
@@ -160,7 +161,45 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
         size = 0
         async for s3_object in self._list_all_objects(bucket=bucket, prefix=prefix):
             size += s3_object.size
-        return S3DirectoryMetaData(size=size)
+        return S3DirectoryMetaData(prefix=S3ObjectPrefix(prefix), size=ByteSize(size))
+
+    @s3_exception_handler(_logger)
+    async def list_objects(
+        self,
+        *,
+        bucket: S3BucketName,
+        prefix: str,
+        start_after: S3ObjectKey,
+        num_objects: int = _MAX_ITEMS_PER_PAGE,
+    ) -> list[S3MetaData | S3DirectoryMetaData]:
+        if num_objects > _AWS_MAX_ITEMS_PER_PAGE:
+            msg = f"num_objects must be <= {_AWS_MAX_ITEMS_PER_PAGE}"
+            raise ValueError(msg)
+        listed_objects = await self._client.list_objects_v2(
+            Bucket=bucket,
+            Prefix=prefix,
+            MaxKeys=num_objects,
+            StartAfter=start_after,
+            Delimiter="/",
+        )
+        found_objects: list[S3MetaData | S3DirectoryMetaData] = []
+        if "CommonPrefixes" in listed_objects:
+            # we have folders here
+            list_subfolders = listed_objects["CommonPrefixes"]
+            found_objects.extend(
+                S3DirectoryMetaData.model_construct(
+                    prefix=S3ObjectPrefix(subfolder["Prefix"], size=None)
+                )
+                for subfolder in list_subfolders
+                if "Prefix" in subfolder
+            )
+        if "Contents" in listed_objects:
+            found_objects.extend(
+                S3MetaData.from_botocore_list_objects(obj)
+                for obj in listed_objects["Contents"]
+            )
+
+        return found_objects
 
     @s3_exception_handler_async_gen(_logger)
     async def list_objects_paginated(
@@ -452,7 +491,7 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
         dst_metadata = await self.get_directory_metadata(
             bucket=bucket, prefix=dst_prefix
         )
-        if dst_metadata.size > 0:
+        if dst_metadata.size and dst_metadata.size > 0:
             raise S3DestinationNotEmptyError(dst_prefix=dst_prefix)
         await limited_gather(
             *[
