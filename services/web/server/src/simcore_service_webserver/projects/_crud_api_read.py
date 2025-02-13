@@ -89,6 +89,8 @@ async def aggregate_data_to_projects_from_request(
     request: web.Request,
     projects: list[ProjectDict],
 ) -> list[ProjectDict]:
+    # NOTE: this is a helper function that should not belong to the
+    # project's service layer, but rather some utils from the controller
 
     update_permalink_per_project = [
         # permalink
