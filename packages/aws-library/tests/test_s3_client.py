@@ -562,6 +562,8 @@ async def test_list_objects(
     )
     assert listed_objects is not None
     assert len(listed_objects) == len(first_level_paths)
+    listed_object_paths = {obj.as_path() for obj in listed_objects}
+    assert first_level_paths == listed_object_paths
 
 
 async def test_get_file_metadata(
