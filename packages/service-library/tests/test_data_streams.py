@@ -94,7 +94,7 @@ def mocked_progress_bar_cb(mocker: MockerFixture) -> Mock:
 
 
 @pytest.mark.parametrize("use_file_like", [True, False])
-async def test_get_zip_archive_file_stream(
+async def test_get_zip_data_stream(
     mocked_progress_bar_cb: Mock,
     prepare_content: None,
     local_files_dir: Path,

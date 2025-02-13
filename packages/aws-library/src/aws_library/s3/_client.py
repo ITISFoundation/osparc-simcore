@@ -17,10 +17,10 @@ from models_library.api_schemas_storage import ETag, S3BucketName, UploadedPart
 from models_library.basic_types import SHA256Str
 from models_library.data_streams import DataSize, DataStream
 from pydantic import AnyUrl, ByteSize, TypeAdapter
+from servicelib.data_streams import DEFAULT_READ_CHUNK_SIZE, StreamData
 from servicelib.logging_utils import log_catch, log_context
 from servicelib.s3_utils import FileLikeFileStreamReader
 from servicelib.utils import limited_gather
-from servicelib.zip_stream import DEFAULT_READ_CHUNK_SIZE, StreamData
 from settings_library.s3 import S3Settings
 from types_aiobotocore_s3 import S3Client
 from types_aiobotocore_s3.literals import BucketLocationConstraintType
