@@ -6624,6 +6624,7 @@
           },
           "version": {
             "type": "string",
+            "pattern": "^\\d+\\.\\d+\\.\\d+$",
             "title": "Version"
           },
           "wallet_id": {
@@ -6692,6 +6693,7 @@
           },
           "version": {
             "type": "string",
+            "pattern": "^\\d+\\.\\d+\\.\\d+$",
             "title": "Version"
           },
           "display_name": {

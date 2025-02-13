@@ -10162,6 +10162,7 @@ components:
           title: Key
         version:
           type: string
+          pattern: ^\d+\.\d+\.\d+$
           title: Version
         walletId:
           type: integer
@@ -10233,6 +10234,7 @@ components:
           title: Key
         version:
           type: string
+          pattern: ^\d+\.\d+\.\d+$
           title: Version
         displayName:
           type: string
