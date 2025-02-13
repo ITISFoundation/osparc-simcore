@@ -1,10 +1,10 @@
 from datetime import datetime
 from enum import auto
-from typing import Any, NamedTuple, NewType, NotRequired, TypeAlias, cast
+from typing import Annotated, Any, NamedTuple, NewType, NotRequired, TypeAlias, cast
 from uuid import UUID
 
 from models_library.resource_tracker import PricingPlanId
-from pydantic import BaseModel, ConfigDict, PositiveInt
+from pydantic import BaseModel, ConfigDict, PositiveInt, StringConstraints
 from pydantic.config import JsonDict
 from typing_extensions import TypedDict
 
@@ -15,8 +15,11 @@ from .utils.enums import StrAutoEnum
 LicensedItemID: TypeAlias = UUID
 LicensedResourceID: TypeAlias = UUID
 
+LICENSED_ITEM_VERSION_RE = r"^\d+\.\d+\.\d+$"
 LicensedItemKey = NewType("LicensedItemKey", str)
-LicensedItemVersion = NewType("LicensedItemVersion", str)
+LicensedItemVersion = Annotated[
+    str, StringConstraints(pattern=LICENSED_ITEM_VERSION_RE)
+]
 
 
 class LicensedResourceType(StrAutoEnum):

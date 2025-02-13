@@ -163,8 +163,8 @@ assert set(LicensedItemGet.model_fields.keys()) == set(
 class LicensedItemCheckoutGet(BaseModel):
     licensed_item_checkout_id: LicensedItemCheckoutID
     licensed_item_id: LicensedItemID
-    key: str
-    version: str
+    key: LicensedItemKey
+    version: LicensedItemVersion
     wallet_id: WalletID
     user_id: UserID
     product_name: ProductName
