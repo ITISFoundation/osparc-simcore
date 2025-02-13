@@ -60,6 +60,11 @@ def mocked_director_v2(director_v2_service_mock: aioresponses):
     ...
 
 
+@pytest.fixture
+def mocked_storage(storage_subsystem_mock: MockedStorageSubsystem):
+    ...
+
+
 @pytest.mark.acceptance_test(
     "For https://github.com/ITISFoundation/osparc-simcore/pull/6579"
 )
@@ -800,7 +805,7 @@ async def test_trash_project_explitictly_and_empty_trash_bin(
     mocked_catalog: None,
     mocked_director_v2: None,
     mocked_dynamic_services_interface: dict[str, MagicMock],
-    storage_subsystem_mock: MockedStorageSubsystem,
+    mocked_storage: None,
 ):
     assert client.app
 
