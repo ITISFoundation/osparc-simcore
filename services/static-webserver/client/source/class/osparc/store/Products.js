@@ -27,6 +27,13 @@ qx.Class.define("osparc.store.Products", {
     __uiConfig: null,
 
     fetchUiConfig: function() {
+      if (osparc.auth.Data.getInstance().isGuest()) {
+        return new Promise(resolve => {
+          this.__uiConfig = {};
+          resolve(this.__uiConfig);
+        });
+      }
+
       return osparc.utils.Utils.fetchJSON("/resource/osparc/ui_config.json")
         .then(uiConfig => {
           const product = osparc.product.Utils.getProductName()
