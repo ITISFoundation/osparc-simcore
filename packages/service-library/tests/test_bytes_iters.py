@@ -15,7 +15,7 @@ from pytest_simcore.helpers.comparing import (
     get_relative_to,
 )
 from servicelib.archiving_utils import unarchive_dir
-from servicelib.data_streams import (
+from servicelib.bytes_iters import (
     ArchiveEntries,
     DiskStreamReader,
     DiskStreamWriter,

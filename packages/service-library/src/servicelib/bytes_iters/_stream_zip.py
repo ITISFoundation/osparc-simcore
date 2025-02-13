@@ -3,7 +3,7 @@ from datetime import UTC, datetime
 from stat import S_IFREG
 from typing import TypeAlias
 
-from models_library.data_streams import BytesIter, DataSize
+from models_library.bytes_iters import BytesIter, DataSize
 from stream_zip import ZIP_32, AsyncMemberFile, async_stream_zip
 
 from ..progress_bar import ProgressBarData

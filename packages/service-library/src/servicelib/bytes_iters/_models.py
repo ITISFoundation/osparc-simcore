@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from models_library.data_streams import BytesIter, BytesIterCallable, DataSize
+from models_library.bytes_iters import BytesIter, BytesIterCallable, DataSize
 
 from ..progress_bar import ProgressBarData
 

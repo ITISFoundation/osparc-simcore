@@ -1,7 +1,7 @@
 from pathlib import Path
 
 import aiofiles
-from models_library.data_streams import BytesIter, DataSize
+from models_library.bytes_iters import BytesIter, DataSize
 
 from ._constants import DEFAULT_READ_CHUNK_SIZE
 from ._models import StreamData

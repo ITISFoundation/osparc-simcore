@@ -1,4 +1,4 @@
-from models_library.data_streams import BytesIter
+from models_library.bytes_iters import BytesIter
 
 
 class FileLikeBytesIterReader:

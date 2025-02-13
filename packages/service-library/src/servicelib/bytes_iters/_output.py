@@ -1,7 +1,7 @@
 from pathlib import Path
 
 import aiofiles
-from models_library.data_streams import BytesIter
+from models_library.bytes_iters import BytesIter
 
 from ..s3_utils import FileLikeBytesIterReader
 

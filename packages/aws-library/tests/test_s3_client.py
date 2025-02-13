@@ -60,8 +60,8 @@ from pytest_simcore.helpers.s3 import (
 )
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.archiving_utils import unarchive_dir
-from servicelib.data_streams import ArchiveEntries, DiskStreamReader, get_zip_bytes_iter
-from servicelib.data_streams._models import DataSize
+from servicelib.bytes_iters import ArchiveEntries, DiskStreamReader, get_zip_bytes_iter
+from servicelib.bytes_iters._models import DataSize
 from servicelib.file_utils import remove_directory
 from servicelib.progress_bar import ProgressBarData
 from servicelib.utils import limited_as_completed, limited_gather
