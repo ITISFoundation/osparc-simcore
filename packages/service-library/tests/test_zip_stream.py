@@ -17,11 +17,11 @@ from pytest_simcore.helpers.comparing import (
 from servicelib.archiving_utils import unarchive_dir
 from servicelib.file_utils import remove_directory
 from servicelib.progress_bar import ProgressBarData
+from servicelib.s3_utils import FileLikeFileStreamReader
 from servicelib.zip_stream import (
     ArchiveEntries,
     DiskStreamReader,
     DiskStreamWriter,
-    FileLikeFileStreamReader,
     get_zip_archive_file_stream,
 )
 

@@ -1,5 +1,4 @@
 from ._constants import DEFAULT_READ_CHUNK_SIZE, MIN_MULTIPART_UPLOAD_CHUNK_SIZE
-from ._file_like import FileLikeFileStreamReader
 from ._input import DiskStreamReader
 from ._models import (
     ArchiveEntries,
@@ -17,7 +16,6 @@ __all__: tuple[str, ...] = (
     "DEFAULT_READ_CHUNK_SIZE",
     "DiskStreamReader",
     "DiskStreamWriter",
-    "FileLikeFileStreamReader",
     "FileSize",
     "DataStream",
     "DataStreamCallable",

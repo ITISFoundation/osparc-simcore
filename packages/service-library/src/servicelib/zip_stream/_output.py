@@ -2,7 +2,7 @@ from pathlib import Path
 
 import aiofiles
 
-from ._file_like import FileLikeFileStreamReader
+from ..s3_utils import FileLikeFileStreamReader
 from ._models import DataStream
 
 
