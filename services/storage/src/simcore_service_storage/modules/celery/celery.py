@@ -1,6 +1,6 @@
 import logging
 from multiprocessing import Process
-from typing import cast
+from typing import Callable, cast
 
 from celery import Celery
 from celery.apps.worker import Worker
@@ -30,8 +30,8 @@ class CeleryTaskQueue:
     def celery_app(self):
         return self._celery_app
 
-    def create_task(self, task):
-        self._celery_app.task()(task)
+    def create_task(self, task_fn: Callable):
+        self._celery_app.task()(task_fn)
 
     def send_task(self, name: str, **kwargs) -> AsyncResult:
         return self._celery_app.send_task(name, **kwargs)
