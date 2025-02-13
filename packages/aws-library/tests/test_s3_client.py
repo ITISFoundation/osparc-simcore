@@ -8,8 +8,10 @@
 
 import asyncio
 import filecmp
+import itertools
 import json
 import logging
+import random
 from collections import defaultdict
 from collections.abc import AsyncIterator, Awaitable, Callable
 from dataclasses import dataclass
@@ -344,7 +346,7 @@ def set_log_levels_for_noisy_libraries() -> None:
 
 
 @pytest.fixture
-async def with_uploaded_folder_on_s3(
+async def create_folder_on_s3(
     create_folder_of_size_with_multiple_files: Callable[
         [ByteSize, ByteSize, ByteSize], Path
     ],
@@ -352,27 +354,49 @@ async def with_uploaded_folder_on_s3(
     directory_size: ByteSize,
     min_file_size: ByteSize,
     max_file_size: ByteSize,
-) -> list[UploadedFile]:
-    # create random files of random size and upload to S3
-    folder = create_folder_of_size_with_multiple_files(
-        ByteSize(directory_size), ByteSize(min_file_size), ByteSize(max_file_size)
-    )
-    list_uploaded_files = []
+) -> Callable[[], Awaitable[list[UploadedFile]]]:
+    async def _() -> list[UploadedFile]:
+        # create random files of random size and upload to S3
+        folder = create_folder_of_size_with_multiple_files(
+            ByteSize(directory_size), ByteSize(min_file_size), ByteSize(max_file_size)
+        )
+        list_uploaded_files = []
 
-    with log_context(logging.INFO, msg=f"uploading {folder}") as ctx:
-        list_uploaded_files = [
-            await uploaded_file
-            async for uploaded_file in limited_as_completed(
-                (
-                    upload_file(file, folder.parent)
-                    for file in folder.rglob("*")
-                    if file.is_file()
-                ),
-                limit=20,
-            )
-        ]
-        ctx.logger.info("uploaded %s files", len(list_uploaded_files))
-    return list_uploaded_files
+        with log_context(logging.INFO, msg=f"uploading {folder}") as ctx:
+            list_uploaded_files = [
+                await uploaded_file
+                async for uploaded_file in limited_as_completed(
+                    (
+                        upload_file(file, folder.parent)
+                        for file in folder.rglob("*")
+                        if file.is_file()
+                    ),
+                    limit=20,
+                )
+            ]
+            ctx.logger.info("uploaded %s files", len(list_uploaded_files))
+        return list_uploaded_files
+
+    return _
+
+
+@pytest.fixture
+async def with_uploaded_folder_on_s3(
+    create_folder_on_s3: Callable[[], Awaitable[list[UploadedFile]]],
+) -> list[UploadedFile]:
+    return await create_folder_on_s3()
+
+
+@pytest.fixture
+async def with_random_uploaded_folder_and_files_on_s3(
+    create_folder_on_s3: Callable[[], Awaitable[list[UploadedFile]]],
+) -> list[UploadedFile]:
+    # we want a number of folders on s3 and some files in the root as well
+    num_folders = random.randint(2, 2)  # noqa: S311
+    all_files = await asyncio.gather(
+        *[create_folder_on_s3() for _ in range(num_folders)]
+    )
+    return list(itertools.chain(*all_files))
 
 
 @pytest.fixture
@@ -414,9 +438,10 @@ async def copy_files_recursively(
         src_directory_metadata = await simcore_s3_api.get_directory_metadata(
             bucket=with_s3_bucket, prefix=src_prefix
         )
+        assert src_directory_metadata.size is not None
         with log_context(
             logging.INFO,
-            msg=f"copying {src_prefix} [{ByteSize(src_directory_metadata.size).human_readable()}] to {dst_prefix}",
+            msg=f"copying {src_prefix} [{src_directory_metadata.size.human_readable()}] to {dst_prefix}",
         ) as ctx:
             progress_cb = _CopyProgressCallback(
                 file_size=src_directory_metadata.size,
@@ -512,18 +537,31 @@ async def test_list_objects(
     with_uploaded_folder_on_s3: list[UploadedFile],
     simcore_s3_api: SimcoreS3API,
 ):
+    # root
     top_level_paths = {
         Path(file.s3_key).parents[-2] for file in with_uploaded_folder_on_s3
     }
+    assert len(top_level_paths) == 1
 
     listed_objects = await simcore_s3_api.list_objects(
-        bucket=with_s3_bucket, prefix="", start_after=""
+        bucket=with_s3_bucket, prefix=None, start_after=None
     )
     assert listed_objects is not None
     assert len(listed_objects) == len(top_level_paths)
 
     listed_object_paths = {obj.as_path() for obj in listed_objects}
     assert listed_object_paths == top_level_paths
+
+    # go one level deeper
+    first_level_paths = {
+        Path(file.s3_key).parents[-3] for file in with_uploaded_folder_on_s3
+    }
+    first_level_prefix = next(iter(top_level_paths))
+    listed_objects = await simcore_s3_api.list_objects(
+        bucket=with_s3_bucket, prefix=first_level_prefix, start_after=None
+    )
+    assert listed_objects is not None
+    assert len(listed_objects) == len(first_level_paths)
 
 
 async def test_get_file_metadata(

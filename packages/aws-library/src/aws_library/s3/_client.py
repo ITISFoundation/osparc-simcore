@@ -43,7 +43,7 @@ _DEFAULT_AWS_REGION: Final[str] = "us-east-1"
 _MAX_ITEMS_PER_PAGE: Final[int] = 500
 _MAX_CONCURRENT_COPY: Final[int] = 4
 _AWS_MAX_ITEMS_PER_PAGE: Final[int] = 1000
-
+_S3_OBJECT_DELIMITER: Final[str] = "/"
 
 ListAnyUrlTypeAdapter: Final[TypeAdapter[list[AnyUrl]]] = TypeAdapter(list[AnyUrl])
 
@@ -168,8 +168,8 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
         self,
         *,
         bucket: S3BucketName,
-        prefix: str,
-        start_after: S3ObjectKey,
+        prefix: S3ObjectPrefix | None,
+        start_after: S3ObjectKey | None,
         num_objects: int = _MAX_ITEMS_PER_PAGE,
     ) -> list[S3MetaData | S3DirectoryMetaData]:
         if num_objects > _AWS_MAX_ITEMS_PER_PAGE:
@@ -177,10 +177,12 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
             raise ValueError(msg)
         listed_objects = await self._client.list_objects_v2(
             Bucket=bucket,
-            Prefix=prefix,
+            Prefix=f"{str(prefix).rstrip(_S3_OBJECT_DELIMITER)}{_S3_OBJECT_DELIMITER}"
+            if prefix
+            else "",
             MaxKeys=num_objects,
-            StartAfter=start_after,
-            Delimiter="/",
+            StartAfter=start_after or "",
+            Delimiter=_S3_OBJECT_DELIMITER,
         )
         found_objects: list[S3MetaData | S3DirectoryMetaData] = []
         if "CommonPrefixes" in listed_objects:
