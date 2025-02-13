@@ -1026,7 +1026,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             const mode = this._resourcesContainer.getMode();
             const newStudyFromServiceButton = (mode === "grid") ? new osparc.dashboard.GridButtonNew(title, desc) : new osparc.dashboard.ListButtonNew(title, desc);
             newStudyFromServiceButton.setCardKey("new-"+key);
-            osparc.utils.Utils.setIdToWidget(newStudyFromServiceButton, newButtonInfo.idToWidget);
+            if (newButtonInfo["idToWidget"]) {
+              osparc.utils.Utils.setIdToWidget(newStudyFromServiceButton, newButtonInfo["idToWidget"]);
+            }
             newStudyFromServiceButton.addListener("tap", () => this.__newStudyFromServiceBtnClicked(latestMetadata["key"], latestMetadata["version"], newButtonInfo.newStudyLabel));
             this._resourcesContainer.addNonResourceCard(newStudyFromServiceButton);
           })
