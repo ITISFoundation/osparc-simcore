@@ -1,9 +1,9 @@
 from pathlib import Path
 
 import aiofiles
+from models_library.data_streams import DataStream
 
 from ..s3_utils import FileLikeFileStreamReader
-from ._models import DataStream
 
 
 class DiskStreamWriter:

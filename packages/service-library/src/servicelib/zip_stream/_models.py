@@ -1,15 +1,14 @@
-from collections.abc import AsyncIterable, Callable
 from dataclasses import dataclass
 from typing import TypeAlias
 
-from pydantic import ByteSize
-from servicelib.progress_bar import ProgressBarData
+from models_library.data_streams import (
+    DataSize,
+    DataStream,
+    DataStreamCallable,
+    FileNameInArchive,
+)
 
-FileNameInArchive: TypeAlias = str
-DataStream: TypeAlias = AsyncIterable[bytes]
-
-DataStreamCallable: TypeAlias = Callable[[], DataStream]
-DataSize: TypeAlias = ByteSize
+from ..progress_bar import ProgressBarData
 
 
 @dataclass(frozen=True)

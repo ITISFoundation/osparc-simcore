@@ -15,12 +15,12 @@ from botocore import exceptions as botocore_exc
 from botocore.client import Config
 from models_library.api_schemas_storage import ETag, S3BucketName, UploadedPart
 from models_library.basic_types import SHA256Str
+from models_library.data_streams import DataSize, DataStream
 from pydantic import AnyUrl, ByteSize, TypeAdapter
 from servicelib.logging_utils import log_catch, log_context
 from servicelib.s3_utils import FileLikeFileStreamReader
 from servicelib.utils import limited_gather
-from servicelib.zip_stream import DEFAULT_READ_CHUNK_SIZE, DataStream, FileSize
-from servicelib.zip_stream._models import StreamData
+from servicelib.zip_stream import DEFAULT_READ_CHUNK_SIZE, StreamData
 from settings_library.s3 import S3Settings
 from types_aiobotocore_s3 import S3Client
 from types_aiobotocore_s3.literals import BucketLocationConstraintType
@@ -490,14 +490,14 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
         head_response = await self._client.head_object(
             Bucket=bucket_name, Key=object_key
         )
-        file_size = FileSize(head_response["ContentLength"])
+        data_size = DataSize(head_response["ContentLength"])
 
         async def _() -> DataStream:
             # Download the file in chunks
             position = 0
-            while position < file_size:
+            while position < data_size:
                 # Calculate the range for this chunk
-                end = min(position + chunk_size - 1, file_size - 1)
+                end = min(position + chunk_size - 1, data_size - 1)
                 range_header = f"bytes={position}-{end}"
 
                 # Download the chunk
@@ -512,7 +512,7 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
 
                 position += chunk_size
 
-        return StreamData(file_size, _)
+        return StreamData(data_size, _)
 
     @s3_exception_handler(_logger)
     async def upload_object_from_file_stream(

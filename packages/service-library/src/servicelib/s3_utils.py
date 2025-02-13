@@ -1,4 +1,4 @@
-from .zip_stream._models import DataStream
+from models_library.data_streams import DataStream
 
 
 class FileLikeFileStreamReader:

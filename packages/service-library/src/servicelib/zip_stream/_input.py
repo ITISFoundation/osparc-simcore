@@ -1,9 +1,10 @@
 from pathlib import Path
 
 import aiofiles
+from models_library.data_streams import DataSize, DataStream
 
 from ._constants import DEFAULT_READ_CHUNK_SIZE
-from ._models import DataSize, DataStream, StreamData
+from ._models import StreamData
 
 
 class DiskStreamReader:

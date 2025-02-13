@@ -19,14 +19,17 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
-from unittest.mock import Mock
+from unittest.mock import AsyncMock, Mock
 
 import aiofiles
 import botocore.exceptions
 import pytest
 from aiohttp import ClientSession
 from aws_library.s3._client import S3ObjectKey, SimcoreS3API
-from aws_library.s3._constants import MULTIPART_UPLOADS_MIN_TOTAL_SIZE
+from aws_library.s3._constants import (
+    MULTIPART_COPY_THRESHOLD,
+    MULTIPART_UPLOADS_MIN_TOTAL_SIZE,
+)
 from aws_library.s3._errors import (
     S3BucketInvalidError,
     S3DestinationNotEmptyError,
@@ -1406,17 +1409,14 @@ async def test_read_object_file_stream(
     tmp_file_name: Path,
 ):
     async with aiofiles.open(tmp_file_name, "wb") as f:
-        file_size, file_stream = await simcore_s3_api.get_object_data_stream(
-            with_s3_bucket,
-            with_uploaded_file_on_s3.s3_key,
-            chunk_size=1024,
-            progress_bar=None,
+        stream_data = await simcore_s3_api.get_object_data_stream(
+            with_s3_bucket, with_uploaded_file_on_s3.s3_key, chunk_size=1024
         )
-        assert isinstance(file_size, DataSize)
-        async for chunk in file_stream():
+        assert isinstance(stream_data.data_size, DataSize)
+        async for chunk in stream_data.with_progress_data_stream(AsyncMock()):
             await f.write(chunk)
 
-    assert file_size == tmp_file_name.stat().st_size
+    assert stream_data.data_size == tmp_file_name.stat().st_size
 
     await assert_same_file_content(with_uploaded_file_on_s3.local_path, tmp_file_name)
 
@@ -1428,13 +1428,13 @@ async def test_upload_object_from_file_stream(
     with_s3_bucket: S3BucketName,
 ):
     object_key = "read_from_s3_write_to_s3"
-    file_size, file_stream = await simcore_s3_api.get_object_data_stream(
-        with_s3_bucket, with_uploaded_file_on_s3.s3_key, progress_bar=None
+    stream_data = await simcore_s3_api.get_object_data_stream(
+        with_s3_bucket, with_uploaded_file_on_s3.s3_key
     )
-    assert isinstance(file_size, DataSize)
+    assert isinstance(stream_data.data_size, DataSize)
 
     await simcore_s3_api.upload_object_from_file_stream(
-        with_s3_bucket, object_key, file_stream()
+        with_s3_bucket, object_key, stream_data.with_progress_data_stream(AsyncMock())
     )
 
     await simcore_s3_api.delete_object(bucket=with_s3_bucket, object_key=object_key)
@@ -1566,7 +1566,7 @@ async def test_workflow_compress_s3_objects_and_local_files_in_a_single_archive_
         archive_file_entries.append(
             (
                 file_name,
-                DiskStreamReader(file_path).get_stream_info(),
+                DiskStreamReader(file_path).get_stream_data(),
             )
         )
 
@@ -1597,7 +1597,9 @@ async def test_workflow_compress_s3_objects_and_local_files_in_a_single_archive_
             with_s3_bucket,
             archive_s3_object_key,
             get_zip_archive_file_stream(
-                archive_file_entries, progress_bar=progress_bar
+                archive_file_entries,
+                progress_bar=progress_bar,
+                chunk_size=MULTIPART_COPY_THRESHOLD,
             ),
         )
 
