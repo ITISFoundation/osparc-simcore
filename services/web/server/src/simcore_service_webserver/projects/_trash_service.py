@@ -139,7 +139,7 @@ async def list_trashed_projects(
     Lists all projects that were trashed until a specific datetime.
     """
     projects, _ = await _crud_api_read.list_projects_full_depth(
-        request=app,
+        app,
         user_id=user_id,
         product_name=product_name,
         trashed=True,
