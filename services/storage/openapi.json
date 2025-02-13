@@ -217,100 +217,6 @@
         }
       }
     },
-    "/v0/locations/{location_id}/paths": {
-      "get": {
-        "tags": [
-          "files"
-        ],
-        "summary": "List Paths",
-        "description": "Returns one level of files (paginated)",
-        "operationId": "list_paths_v0_locations__location_id__paths_get",
-        "parameters": [
-          {
-            "name": "location_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Location Id"
-            }
-          },
-          {
-            "name": "user_id",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "exclusiveMinimum": true,
-              "title": "User Id",
-              "minimum": 0
-            }
-          },
-          {
-            "name": "file_filter",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "format": "path"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "File Filter"
-            }
-          },
-          {
-            "name": "limit",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "maximum": 100,
-              "minimum": 1,
-              "default": 50,
-              "title": "Limit"
-            }
-          },
-          {
-            "name": "offset",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "minimum": 0,
-              "default": 0,
-              "title": "Offset"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/LimitOffsetPage_FileMetaDataGet_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/v0/locations/{location_id}/files/metadata": {
       "get": {
         "tags": [
@@ -1056,6 +962,100 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Envelope_FileMetaDataGet_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/locations/{location_id}/paths": {
+      "get": {
+        "tags": [
+          "filesV2"
+        ],
+        "summary": "List Paths",
+        "description": "Returns one level of files (paginated)",
+        "operationId": "list_paths_v0_locations__location_id__paths_get",
+        "parameters": [
+          {
+            "name": "location_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Location Id"
+            }
+          },
+          {
+            "name": "user_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": true,
+              "title": "User Id",
+              "minimum": 0
+            }
+          },
+          {
+            "name": "file_filter",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "path"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "File Filter"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LimitOffsetPage_FileMetaDataGet_"
                 }
               }
             }

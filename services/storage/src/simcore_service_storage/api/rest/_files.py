@@ -1,11 +1,8 @@
 import asyncio
 import logging
-from pathlib import Path
 from typing import Annotated, cast
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
-from fastapi_pagination import LimitOffsetPage, create_page
-from fastapi_pagination.limit_offset import LimitOffsetParams
 from models_library.generics import Envelope
 from models_library.projects_nodes_io import LocationID, StorageFileID
 from models_library.storage_schemas import (
@@ -20,13 +17,11 @@ from models_library.storage_schemas import (
     FileUploadSchema,
     SoftCopyBody,
 )
-from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize, TypeAdapter
 from servicelib.aiohttp import status
 from yarl import URL
 
 from ...dsm import get_dsm_provider
-from ...dsm_factory import BaseDataManager
 from ...exceptions.errors import FileMetaDataNotFoundError
 from ...models import (
     FileDownloadQueryParams,
@@ -41,7 +36,6 @@ from ...models import (
 from ...modules.long_running_tasks import get_completed_upload_tasks
 from ...simcore_s3_dsm import SimcoreS3DataManager
 from ...utils.utils import create_upload_completion_task_name
-from .dependencies.dsm_prodiver import get_data_manager
 
 _logger = logging.getLogger(__name__)
 
@@ -50,26 +44,6 @@ router = APIRouter(
         "files",
     ],
 )
-
-
-@router.get(
-    "/locations/{location_id}/paths",
-    response_model=LimitOffsetPage[FileMetaDataGet],
-)
-async def list_paths(
-    page_params: Annotated[LimitOffsetParams, Depends()],
-    dsm: Annotated[BaseDataManager, Depends(get_data_manager)],
-    user_id: UserID,
-    file_filter: Path | None = None,
-):
-    """Returns one level of files (paginated)"""
-    items, total_number = await dsm.list_files_paginated(
-        user_id=user_id,
-        file_filter=file_filter,
-        limit=page_params.limit,
-        offset=page_params.offset,
-    )
-    return create_page(items, total=total_number, params=page_params)
 
 
 @router.get(

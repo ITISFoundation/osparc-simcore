@@ -404,27 +404,6 @@ def set_log_levels_for_noisy_libraries() -> None:
     logging.getLogger("werkzeug").setLevel(logging.WARNING)
 
 
-@pytest.fixture
-async def with_random_project_with_files(
-    random_project_with_files: Callable[
-        ...,
-        Awaitable[
-            tuple[
-                dict[str, Any],
-                dict[NodeID, dict[SimcoreS3FileID, dict[str, Path | str]]],
-            ]
-        ],
-    ],
-) -> tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, dict[str, Path | str]]],]:
-    return await random_project_with_files(
-        file_sizes=(
-            TypeAdapter(ByteSize).validate_python("1Mib"),
-            TypeAdapter(ByteSize).validate_python("2Mib"),
-            TypeAdapter(ByteSize).validate_python("5Mib"),
-        )
-    )
-
-
 async def test_connect_to_external(
     set_log_levels_for_noisy_libraries: None,
     initialized_app: FastAPI,

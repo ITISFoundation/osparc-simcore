@@ -12,7 +12,7 @@ import sys
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import AbstractAsyncContextManager, asynccontextmanager
 from pathlib import Path
-from typing import Final, cast
+from typing import Any, Final, cast
 
 import httpx
 import pytest
@@ -631,3 +631,24 @@ async def create_directory_with_files(
         await delete_directory(directory_file_upload=directory_file_upload)
 
     return _create_context
+
+
+@pytest.fixture
+async def with_random_project_with_files(
+    random_project_with_files: Callable[
+        ...,
+        Awaitable[
+            tuple[
+                dict[str, Any],
+                dict[NodeID, dict[SimcoreS3FileID, dict[str, Path | str]]],
+            ]
+        ],
+    ],
+) -> tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, dict[str, Path | str]]],]:
+    return await random_project_with_files(
+        file_sizes=(
+            TypeAdapter(ByteSize).validate_python("1Mib"),
+            TypeAdapter(ByteSize).validate_python("2Mib"),
+            TypeAdapter(ByteSize).validate_python("5Mib"),
+        )
+    )
