@@ -19,6 +19,8 @@ _logger = logging.getLogger(__name__)
 CleanupContextFunc = Callable[[web.Application], AsyncIterator[None]]
 
 
+# TODO: update to new style? like vip task. and add setup there?
+
 _PERIODIC_TASK_NAME = f"{__name__}"
 _APP_TASK_KEY = f"{_PERIODIC_TASK_NAME}.task"
 
