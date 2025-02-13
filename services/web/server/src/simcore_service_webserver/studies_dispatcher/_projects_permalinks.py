@@ -77,14 +77,14 @@ def create_permalink_for_study(
 
 
 async def permalink_factory(
-    app: web.Application, project_uuid: ProjectID
+    request: web.Request, project_uuid: ProjectID
 ) -> ProjectPermalink:
     """
     - Assumes project_id is up-to-date in the database
 
     """
     # NOTE: next iterations will mobe this as part of the project repository pattern
-    engine = get_database_engine(app)
+    engine = get_database_engine(request.app)
     async with engine.acquire() as conn:
         access_rights_subquery = (
             sa.select(
