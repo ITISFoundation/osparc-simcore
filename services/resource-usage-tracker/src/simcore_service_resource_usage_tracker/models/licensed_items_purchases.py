@@ -2,7 +2,7 @@ from datetime import datetime
 from decimal import Decimal
 
 from models_library.emails import LowerCaseEmailStr
-from models_library.licenses import LicensedItemID
+from models_library.licenses import LicensedItemID, LicensedItemKey, LicensedItemVersion
 from models_library.products import ProductName
 from models_library.resource_tracker import PricingUnitCostId
 from models_library.resource_tracker_licensed_items_purchases import (
@@ -17,6 +17,8 @@ class LicensedItemsPurchasesDB(BaseModel):
     licensed_item_purchase_id: LicensedItemPurchaseID
     product_name: ProductName
     licensed_item_id: LicensedItemID
+    key: LicensedItemKey
+    version: LicensedItemVersion
     wallet_id: WalletID
     wallet_name: str
     pricing_unit_cost_id: PricingUnitCostId
@@ -35,6 +37,8 @@ class LicensedItemsPurchasesDB(BaseModel):
 class CreateLicensedItemsPurchasesDB(BaseModel):
     product_name: ProductName
     licensed_item_id: LicensedItemID
+    key: LicensedItemKey
+    version: LicensedItemVersion
     wallet_id: WalletID
     wallet_name: str
     pricing_unit_cost_id: PricingUnitCostId

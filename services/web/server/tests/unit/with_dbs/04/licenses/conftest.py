@@ -6,6 +6,7 @@ from collections.abc import AsyncIterator
 import pytest
 from aiohttp.test_utils import TestClient
 from simcore_postgres_database.models.licensed_items import licensed_items
+from simcore_postgres_database.models.licensed_resources import licensed_resources
 from simcore_postgres_database.models.resource_tracker_pricing_plans import (
     resource_tracker_pricing_plans,
 )
@@ -45,11 +46,11 @@ async def pricing_plan_id(
 
 
 @pytest.fixture
-async def ensure_empty_licensed_items(client: TestClient):
+async def ensure_empty_licensed_resources(client: TestClient):
     async def _cleanup():
         assert client.app
         async with transaction_context(get_asyncpg_engine(client.app)) as conn:
-            await conn.execute(licensed_items.delete())
+            await conn.execute(licensed_resources.delete())
 
     await _cleanup()
 
