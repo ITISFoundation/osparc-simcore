@@ -3,7 +3,7 @@ from pathlib import Path
 import aiofiles
 from models_library.data_streams import DataStream
 
-from ..s3_utils import FileLikeFileStreamReader
+from ..s3_utils import FileLikeDataStreamReader
 
 
 class DiskStreamWriter:
@@ -17,7 +17,7 @@ class DiskStreamWriter:
                 await f.flush()
 
     async def write_from_file_like(
-        self, file_like_reader: FileLikeFileStreamReader
+        self, file_like_reader: FileLikeDataStreamReader
     ) -> None:
         async with aiofiles.open(self.destination_path, "wb") as f:
             while True:

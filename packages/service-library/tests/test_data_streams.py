@@ -23,7 +23,7 @@ from servicelib.data_streams import (
 )
 from servicelib.file_utils import remove_directory
 from servicelib.progress_bar import ProgressBarData
-from servicelib.s3_utils import FileLikeFileStreamReader
+from servicelib.s3_utils import FileLikeDataStreamReader
 
 
 def _ensure_dir(path: Path) -> Path:
@@ -121,7 +121,7 @@ async def test_get_zip_data_stream(
         )
 
         if use_file_like:
-            await writer.write_from_file_like(FileLikeFileStreamReader(file_stream))
+            await writer.write_from_file_like(FileLikeDataStreamReader(file_stream))
         else:
             await writer.write_from_stream(file_stream)
 
