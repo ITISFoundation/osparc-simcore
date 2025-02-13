@@ -50,6 +50,7 @@ async def list_licensed_items(request: web.Request):
         await _licensed_items_service.list_licensed_items(
             app=request.app,
             product_name=req_ctx.product_name,
+            include_hidden_items_on_market=False,
             offset=query_params.offset,
             limit=query_params.limit,
             order_by=OrderBy.model_construct(**query_params.order_by.model_dump()),
