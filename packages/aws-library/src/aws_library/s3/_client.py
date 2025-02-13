@@ -19,7 +19,7 @@ from models_library.bytes_iters import BytesIter, DataSize
 from pydantic import AnyUrl, ByteSize, TypeAdapter
 from servicelib.bytes_iters import DEFAULT_READ_CHUNK_SIZE, BytesStreamer
 from servicelib.logging_utils import log_catch, log_context
-from servicelib.s3_utils import FileLikeBytesIterReader
+from servicelib.s3_utils import FileLikeReader
 from servicelib.utils import limited_gather
 from settings_library.s3 import S3Settings
 from types_aiobotocore_s3 import S3Client
@@ -515,14 +515,14 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
         return BytesStreamer(data_size, _)
 
     @s3_exception_handler(_logger)
-    async def upload_object_from_bytes_iter(  # TODO: this needs to be based on file interface -> use protocol to expose read
+    async def upload_object_from_file_like(
         self,
         bucket_name: S3BucketName,
         object_key: S3ObjectKey,
-        bytes_iter: BytesIter,
+        file_like_reader: FileLikeReader,
     ) -> None:
         """streams write an object in S3 from an AsyncIterable[bytes]"""
-        await self._client.upload_fileobj(FileLikeBytesIterReader(bytes_iter), bucket_name, object_key)  # type: ignore[arg-type]
+        await self._client.upload_fileobj(file_like_reader, bucket_name, object_key)  # type: ignore[arg-type]
 
     @staticmethod
     def is_multipart(file_size: ByteSize) -> bool:

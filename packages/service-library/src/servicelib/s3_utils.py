@@ -1,7 +1,16 @@
+from typing import Protocol
+
 from models_library.bytes_iters import BytesIter
 
 
-class FileLikeBytesIterReader:
+class FileLikeReader(Protocol):
+    """minimal interface for upload from file objects to S3"""
+
+    async def read(self, size: int) -> bytes:
+        ...
+
+
+class FileLikeBytesIterReader(FileLikeReader):
     def __init__(self, bytes_iter: BytesIter):
         self._bytes_iter = bytes_iter
         self._buffer = bytearray()

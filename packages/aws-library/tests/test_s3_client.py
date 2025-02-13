@@ -64,6 +64,7 @@ from servicelib.bytes_iters import ArchiveEntries, DiskStreamReader, get_zip_byt
 from servicelib.bytes_iters._models import DataSize
 from servicelib.file_utils import remove_directory
 from servicelib.progress_bar import ProgressBarData
+from servicelib.s3_utils import FileLikeBytesIterReader
 from servicelib.utils import limited_as_completed, limited_gather
 from settings_library.s3 import S3Settings
 from types_aiobotocore_s3 import S3Client
@@ -1417,7 +1418,7 @@ async def test_read_object_file_stream(
     await assert_same_file_content(with_uploaded_file_on_s3.local_path, tmp_file_name)
 
 
-async def test_upload_object_from_file_stream(
+async def test_upload_object_from_file_like(
     mocked_s3_server_envs: EnvVarsDict,
     with_uploaded_file_on_s3: UploadedFile,
     simcore_s3_api: SimcoreS3API,
@@ -1429,9 +1430,13 @@ async def test_upload_object_from_file_stream(
     )
     assert isinstance(bytes_streamer.data_size, DataSize)
 
-    await simcore_s3_api.upload_object_from_bytes_iter(
-        with_s3_bucket, object_key, bytes_streamer.with_progress_bytes_iter(AsyncMock())
+    await simcore_s3_api.upload_object_from_file_like(
+        with_s3_bucket,
+        object_key,
+        FileLikeBytesIterReader(bytes_streamer.with_progress_bytes_iter(AsyncMock())),
     )
+
+    # TODO: also add a test uploading form a file instead of S3 since it's possible, open it with aiofiles
 
     await simcore_s3_api.delete_object(bucket=with_s3_bucket, object_key=object_key)
 
@@ -1589,13 +1594,15 @@ async def test_workflow_compress_s3_objects_and_local_files_in_a_single_archive_
         progress_report_cb=mocked_progress_bar_cb,
         description="root_bar",
     ) as progress_bar:
-        await simcore_s3_api.upload_object_from_bytes_iter(
+        await simcore_s3_api.upload_object_from_file_like(
             with_s3_bucket,
             archive_s3_object_key,
-            get_zip_bytes_iter(
-                archive_entries,
-                progress_bar=progress_bar,
-                chunk_size=MULTIPART_COPY_THRESHOLD,
+            FileLikeBytesIterReader(
+                get_zip_bytes_iter(
+                    archive_entries,
+                    progress_bar=progress_bar,
+                    chunk_size=MULTIPART_COPY_THRESHOLD,
+                )
             ),
         )
 
