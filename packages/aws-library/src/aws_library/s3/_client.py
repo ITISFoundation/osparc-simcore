@@ -474,14 +474,15 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
             limit=_MAX_CONCURRENT_COPY,
         )
 
-    async def get_object_file_stream(
+    async def get_object_data_stream(
         self,
         bucket_name: S3BucketName,
         object_key: S3ObjectKey,
         *,
+        progress_bar: ProgressBarData | None,
         chunk_size: int = DEFAULT_READ_CHUNK_SIZE,
     ) -> StreamData:
-        """stream read an object in S3 chunk by chunk"""
+        """stream read an object from S3 chunk by chunk"""
 
         # NOTE `download_fileobj` cannot be used to implement this because
         # it will buffer the entire file in memory instead of reading it
@@ -493,7 +494,7 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
         )
         file_size = FileSize(head_response["ContentLength"])
 
-        async def _(progress_bar: ProgressBarData) -> FileStream:
+        async def _() -> FileStream:
             # Download the file in chunks
             position = 0
             while position < file_size:
@@ -509,8 +510,9 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
                 chunk = await response["Body"].read()
 
                 # Yield the chunk for processing
+                if progress_bar is not None:
+                    await progress_bar.update(len(chunk))
 
-                await progress_bar.update(len(chunk))
                 yield chunk
 
                 position += chunk_size
