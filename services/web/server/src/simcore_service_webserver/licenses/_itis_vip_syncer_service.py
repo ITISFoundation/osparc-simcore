@@ -104,7 +104,7 @@ def setup_itis_vip_syncer(
             @exclusive_periodic(
                 get_redis_lock_manager_client_sdk(app_),
                 task_interval=resync_after,
-                retry_after=timedelta(minutes=2),
+                retry_after=timedelta(minutes=1),
             )
             async def _periodic_sync() -> None:
                 await sync_licensed_resources(app_, categories=categories)
