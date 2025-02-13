@@ -1,6 +1,6 @@
 import logging
 from decimal import Decimal
-from typing import AsyncIterator, NamedTuple
+from typing import Any, AsyncIterator, NamedTuple
 
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
@@ -151,3 +151,11 @@ class ProductRepository(BaseRepository):
                 .where(products.c.name == product_name)
             )
             return f"{content}" if content else None
+
+    async def get_product_ui(self, product_name: ProductName) -> dict[str, Any] | None:
+        async with self.engine.acquire() as conn:
+            result = await conn.execute(
+                sa.select(products.c.ui).where(products.c.name == product_name)
+            )
+            row: RowProxy | None = await result.first()
+            return dict(**row.ui) if row else None
