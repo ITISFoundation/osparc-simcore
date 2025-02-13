@@ -294,7 +294,7 @@ async def get_active_project(request: web.Request) -> web.Response:
             )
 
             # updates project's permalink field
-            await update_or_pop_permalink_in_project(request, project)
+            await update_or_pop_permalink_in_project(request.app, project)
 
             data = ProjectGet.from_domain_model(project).data(exclude_unset=True)
 
@@ -352,7 +352,7 @@ async def get_project(request: web.Request):
             project["uuid"] = new_uuid
 
         # Adds permalink
-        await update_or_pop_permalink_in_project(request, project)
+        await update_or_pop_permalink_in_project(request.app, project)
 
         data = ProjectGet.from_domain_model(project).data(exclude_unset=True)
         return web.json_response({"data": data}, dumps=json_dumps)
