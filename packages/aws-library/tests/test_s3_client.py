@@ -60,11 +60,7 @@ from pytest_simcore.helpers.s3 import (
 )
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.archiving_utils import unarchive_dir
-from servicelib.data_streams import (
-    ArchiveEntries,
-    DiskStreamReader,
-    get_zip_data_stream,
-)
+from servicelib.data_streams import ArchiveEntries, DiskStreamReader, get_zip_bytes_iter
 from servicelib.data_streams._models import DataSize
 from servicelib.file_utils import remove_directory
 from servicelib.progress_bar import ProgressBarData
@@ -1413,7 +1409,7 @@ async def test_read_object_file_stream(
             with_s3_bucket, with_uploaded_file_on_s3.s3_key, chunk_size=1024
         )
         assert isinstance(stream_data.data_size, DataSize)
-        async for chunk in stream_data.with_progress_data_stream(AsyncMock()):
+        async for chunk in stream_data.with_progress_bytes_iter(AsyncMock()):
             await f.write(chunk)
 
     assert stream_data.data_size == tmp_file_name.stat().st_size
@@ -1433,8 +1429,8 @@ async def test_upload_object_from_file_stream(
     )
     assert isinstance(stream_data.data_size, DataSize)
 
-    await simcore_s3_api.upload_object_from_file_stream(
-        with_s3_bucket, object_key, stream_data.with_progress_data_stream(AsyncMock())
+    await simcore_s3_api.upload_object_from_bytes_iter(
+        with_s3_bucket, object_key, stream_data.with_progress_bytes_iter(AsyncMock())
     )
 
     await simcore_s3_api.delete_object(bucket=with_s3_bucket, object_key=object_key)
@@ -1593,10 +1589,10 @@ async def test_workflow_compress_s3_objects_and_local_files_in_a_single_archive_
         progress_report_cb=mocked_progress_bar_cb,
         description="root_bar",
     ) as progress_bar:
-        await simcore_s3_api.upload_object_from_file_stream(
+        await simcore_s3_api.upload_object_from_bytes_iter(
             with_s3_bucket,
             archive_s3_object_key,
-            get_zip_data_stream(
+            get_zip_bytes_iter(
                 archive_file_entries,
                 progress_bar=progress_bar,
                 chunk_size=MULTIPART_COPY_THRESHOLD,

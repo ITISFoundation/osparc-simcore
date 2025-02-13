@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from models_library.data_streams import DataSize, DataStream, DataStreamCallable
+from models_library.data_streams import BytesIter, BytesIterCallable, DataSize
 
 from ..progress_bar import ProgressBarData
 
@@ -8,11 +8,11 @@ from ..progress_bar import ProgressBarData
 @dataclass(frozen=True)
 class StreamData:
     data_size: DataSize
-    data_stream_callable: DataStreamCallable
+    bytes_iter_callable: BytesIterCallable
 
-    async def with_progress_data_stream(
+    async def with_progress_bytes_iter(
         self, progress_bar: ProgressBarData
-    ) -> DataStream:
-        async for chunk in self.data_stream_callable():
+    ) -> BytesIter:
+        async for chunk in self.bytes_iter_callable():
             await progress_bar.update(len(chunk))
             yield chunk

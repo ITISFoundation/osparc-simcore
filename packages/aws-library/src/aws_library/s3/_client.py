@@ -15,11 +15,11 @@ from botocore import exceptions as botocore_exc
 from botocore.client import Config
 from models_library.api_schemas_storage import ETag, S3BucketName, UploadedPart
 from models_library.basic_types import SHA256Str
-from models_library.data_streams import DataSize, DataStream
+from models_library.data_streams import BytesIter, DataSize
 from pydantic import AnyUrl, ByteSize, TypeAdapter
 from servicelib.data_streams import DEFAULT_READ_CHUNK_SIZE, StreamData
 from servicelib.logging_utils import log_catch, log_context
-from servicelib.s3_utils import FileLikeDataStreamReader
+from servicelib.s3_utils import FileLikeBytesIterReader
 from servicelib.utils import limited_gather
 from settings_library.s3 import S3Settings
 from types_aiobotocore_s3 import S3Client
@@ -492,7 +492,7 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
         )
         data_size = DataSize(head_response["ContentLength"])
 
-        async def _() -> DataStream:
+        async def _() -> BytesIter:
             # Download the file in chunks
             position = 0
             while position < data_size:
@@ -515,14 +515,14 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
         return StreamData(data_size, _)
 
     @s3_exception_handler(_logger)
-    async def upload_object_from_file_stream(
+    async def upload_object_from_bytes_iter(  # TODO: this needs to be based on file interface -> use protocol to expose read
         self,
         bucket_name: S3BucketName,
         object_key: S3ObjectKey,
-        file_stream: DataStream,
+        bytes_iter: BytesIter,
     ) -> None:
         """streams write an object in S3 from an AsyncIterable[bytes]"""
-        await self._client.upload_fileobj(FileLikeDataStreamReader(file_stream), bucket_name, object_key)  # type: ignore[arg-type]
+        await self._client.upload_fileobj(FileLikeBytesIterReader(bytes_iter), bucket_name, object_key)  # type: ignore[arg-type]
 
     @staticmethod
     def is_multipart(file_size: ByteSize) -> bool:

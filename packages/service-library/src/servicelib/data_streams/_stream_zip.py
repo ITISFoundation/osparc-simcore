@@ -3,7 +3,7 @@ from datetime import UTC, datetime
 from stat import S_IFREG
 from typing import TypeAlias
 
-from models_library.data_streams import DataSize, DataStream
+from models_library.data_streams import BytesIter, DataSize
 from stream_zip import ZIP_32, AsyncMemberFile, async_stream_zip
 
 from ..progress_bar import ProgressBarData
@@ -23,16 +23,16 @@ async def _member_files_iter(
             datetime.now(UTC),
             S_IFREG | 0o600,
             ZIP_32,
-            stream_info.with_progress_data_stream(progress_bar=progress_bar),
+            stream_info.with_progress_bytes_iter(progress_bar=progress_bar),
         )
 
 
-async def get_zip_data_stream(
+async def get_zip_bytes_iter(
     archive_files: ArchiveEntries,
     *,
     progress_bar: ProgressBarData | None = None,
     chunk_size: int,
-) -> DataStream:
+) -> BytesIter:
     # NOTE: this is CPU bound task, even though the loop is not blocked,
     # the CPU is still used for compressing the content.
     if progress_bar is None:

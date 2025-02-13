@@ -1,14 +1,14 @@
-from models_library.data_streams import DataStream
+from models_library.data_streams import BytesIter
 
 
-class FileLikeDataStreamReader:
-    def __init__(self, data_stream: DataStream):
-        self._data_stream = data_stream
+class FileLikeBytesIterReader:
+    def __init__(self, bytes_iter: BytesIter):
+        self._bytes_iter = bytes_iter
         self._buffer = bytearray()
         self._async_iterator = self._get_iterator()
 
     async def _get_iterator(self):
-        async for chunk in self._data_stream:
+        async for chunk in self._bytes_iter:
             yield chunk
 
     async def read(self, size: int) -> bytes:

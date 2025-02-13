@@ -19,11 +19,11 @@ from servicelib.data_streams import (
     ArchiveEntries,
     DiskStreamReader,
     DiskStreamWriter,
-    get_zip_data_stream,
+    get_zip_bytes_iter,
 )
 from servicelib.file_utils import remove_directory
 from servicelib.progress_bar import ProgressBarData
-from servicelib.s3_utils import FileLikeDataStreamReader
+from servicelib.s3_utils import FileLikeBytesIterReader
 
 
 def _ensure_dir(path: Path) -> Path:
@@ -116,14 +116,14 @@ async def test_get_zip_data_stream(
         progress_report_cb=mocked_progress_bar_cb,
         description="root_bar",
     ) as root:
-        file_stream = get_zip_data_stream(
+        bytes_iter = get_zip_bytes_iter(
             archive_files, progress_bar=root, chunk_size=1024
         )
 
         if use_file_like:
-            await writer.write_from_file_like(FileLikeDataStreamReader(file_stream))
+            await writer.write_from_file_like(FileLikeBytesIterReader(bytes_iter))
         else:
-            await writer.write_from_stream(file_stream)
+            await writer.write_from_bytes_iter(bytes_iter)
 
     # 2. extract archive using exiting tools
     await unarchive_dir(local_archive_path, local_unpacked_archive)

@@ -3,7 +3,7 @@ from typing import TypeAlias
 
 from pydantic import ByteSize
 
-DataStream: TypeAlias = AsyncIterable[bytes]
+BytesIter: TypeAlias = AsyncIterable[bytes]
 
-DataStreamCallable: TypeAlias = Callable[[], DataStream]
+BytesIterCallable: TypeAlias = Callable[[], BytesIter]
 DataSize: TypeAlias = ByteSize
