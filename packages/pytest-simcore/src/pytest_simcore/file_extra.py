@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 from faker import Faker
-from pydantic import ByteSize
+from pydantic import ByteSize, NonNegativeInt
 from pytest_simcore.helpers.logging_tools import log_context
 
 
@@ -33,6 +33,7 @@ def _create_random_content(
     file_min_size: ByteSize,
     file_max_size: ByteSize,
     remaining_size: ByteSize,
+    depth: NonNegativeInt | None,
 ) -> ByteSize:
     if remaining_size <= 0:
         return remaining_size
@@ -43,7 +44,9 @@ def _create_random_content(
             max_value=min(remaining_size, file_max_size),
         )
     )
-    file_path = base_dir / f"{faker.file_path(depth=faker.pyint(0, 5), absolute=False)}"
+    if depth is None:
+        depth = faker.pyint(0, 5)
+    file_path = base_dir / f"{faker.unique.file_path(depth=depth, absolute=False)}"
     file_path.parent.mkdir(parents=True, exist_ok=True)
     assert not file_path.exists()
     with file_path.open("wb") as fp:
@@ -62,6 +65,7 @@ def create_folder_of_size_with_multiple_files(
         directory_size: ByteSize,
         file_min_size: ByteSize,
         file_max_size: ByteSize,
+        depth: NonNegativeInt | None = None,
     ) -> Path:
         # Helper function to create random files and directories
         assert file_min_size > 0
@@ -82,6 +86,7 @@ def create_folder_of_size_with_multiple_files(
                     file_min_size=file_min_size,
                     file_max_size=file_max_size,
                     remaining_size=remaining_size,
+                    depth=depth,
                 )
                 num_files_created += 1
             ctx.logger.info("created %s files", num_files_created)
