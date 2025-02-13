@@ -17,9 +17,6 @@ from pydantic import NonNegativeInt
 from servicelib.utils import logged_gather
 from simcore_postgres_database.models.projects import ProjectType
 from simcore_postgres_database.webserver_models import ProjectType as ProjectTypeDB
-from simcore_service_webserver.projects._permalink_api import (
-    aggregate_permalink_in_project,
-)
 from simcore_service_webserver.projects._projects_db import (
     batch_get_trashed_by_primary_gid,
 )
@@ -82,25 +79,6 @@ async def _aggregate_data_to_projects_from_other_sources(
         *update_state_per_project,
     )
 
-    return updated_projects
-
-
-async def aggregate_data_to_projects_from_request(
-    request: web.Request,
-    projects: list[ProjectDict],
-) -> list[ProjectDict]:
-    # NOTE: this is a helper function that should not belong to the
-    # project's service layer, but rather some utils from the controller
-
-    update_permalink_per_project = [
-        # permalink
-        aggregate_permalink_in_project(request, project=prj)
-        for prj in projects
-    ]
-
-    updated_projects: list[ProjectDict] = await _paralell_update(
-        *update_permalink_per_project,
-    )
     return updated_projects
 
 

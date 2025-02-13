@@ -14,14 +14,11 @@ from models_library.api_schemas_webserver.projects import (
     ProjectCopyOverride,
     ProjectCreateNew,
     ProjectGet,
-    ProjectListItem,
     ProjectPatch,
 )
 from models_library.generics import Envelope
 from models_library.projects_state import ProjectLocked
 from models_library.rest_ordering import OrderBy
-from models_library.rest_pagination import Page
-from models_library.rest_pagination_utils import paginate_data
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from servicelib.aiohttp import status
 from servicelib.aiohttp.long_running_tasks.server import start_long_running_task
@@ -36,9 +33,7 @@ from servicelib.common_headers import (
     UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
     X_SIMCORE_USER_AGENT,
 )
-from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.redis import get_project_locked_state
-from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 from simcore_service_webserver.projects.models import ProjectDict
 
 from .._meta import API_VTAG as VTAG
@@ -51,7 +46,7 @@ from ..security.api import check_user_permission
 from ..security.decorators import permission_required
 from ..users.api import get_user_fullname
 from ..workspaces.errors import WorkspaceAccessForbiddenError, WorkspaceNotFoundError
-from . import _crud_api_create, _crud_api_read, projects_service
+from . import _crud_api_create, _crud_api_read, _crud_handlers_utils, projects_service
 from ._common.models import ProjectPathParams, RequestContext
 from ._crud_handlers_models import (
     ProjectActiveQueryParams,
@@ -167,27 +162,6 @@ async def create_project(request: web.Request):
     )
 
 
-def _create_page_response(projects, request_url, total, limit, offset) -> web.Response:
-    page = Page[ProjectListItem].model_validate(
-        paginate_data(
-            chunk=[
-                ProjectListItem.from_domain_model(prj).model_dump(
-                    by_alias=True, exclude_unset=True
-                )
-                for prj in projects
-            ],
-            request_url=request_url,
-            total=total,
-            limit=limit,
-            offset=offset,
-        )
-    )
-    return web.Response(
-        text=page.model_dump_json(**RESPONSE_MODEL_POLICY),
-        content_type=MIMETYPE_APPLICATION_JSON,
-    )
-
-
 @routes.get(f"/{VTAG}/projects", name="list_projects")
 @login_required
 @permission_required("project.read")
@@ -228,11 +202,11 @@ async def list_projects(request: web.Request):
         order_by=OrderBy.model_construct(**query_params.order_by.model_dump()),
     )
 
-    projects = await _crud_api_read.aggregate_data_to_projects_from_request(
+    projects = await _crud_handlers_utils.aggregate_data_to_projects_from_request(
         request, projects
     )
 
-    return _create_page_response(
+    return _crud_handlers_utils.create_page_response(
         projects=projects,
         request_url=request.url,
         total=total_number_of_projects,
@@ -268,11 +242,11 @@ async def list_projects_full_search(request: web.Request):
         order_by=OrderBy.model_construct(**query_params.order_by.model_dump()),
     )
 
-    projects = await _crud_api_read.aggregate_data_to_projects_from_request(
+    projects = await _crud_handlers_utils.aggregate_data_to_projects_from_request(
         request, projects
     )
 
-    return _create_page_response(
+    return _crud_handlers_utils.create_page_response(
         projects=projects,
         request_url=request.url,
         total=total_number_of_projects,
