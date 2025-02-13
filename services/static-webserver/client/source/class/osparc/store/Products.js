@@ -17,7 +17,7 @@
 
 /**
  * @asset(osparc/ui_config.json")
- * @asset(form/product-ui.json)
+ * @asset(schemas/product-ui.json)
  * @asset(object-path/object-path-0-11-4.min.js)
  * @asset(ajv/ajv-6-11-0.min.js)
  * @ignore(Ajv)
@@ -40,7 +40,7 @@ qx.Class.define("osparc.store.Products", {
         Promise.all([
           osparc.data.Resources.fetch("productMetadata", "getUiConfig"),
           osparc.utils.Utils.fetchJSON("/resource/osparc/ui_config.json"),
-          osparc.utils.Utils.fetchJSON("/resource/form/product-ui.json"),
+          osparc.utils.Utils.fetchJSON("/resource/schemas/product-ui.json"),
         ])
           .then(values => {
             let uiConfig = {};
@@ -52,24 +52,40 @@ qx.Class.define("osparc.store.Products", {
                 uiConfig = values[1][product];
               }
             }
-            const schema = values[2];
+            // const schema = values[2];
+            const schema = {
+              "type": "object",
+              "properties": {
+                "resourceType": { "type": "string" },
+                "title": { "type": "string" },
+                "icon": { "type": "string" },
+                "newStudyLabel": { "type": "string" },
+                "idToWidget": { "type": "string" }
+              },
+              "required": ["resourceType", "title"],
+            };
             const ajvLoader = new qx.util.DynamicScriptLoader([
               "/resource/ajv/ajv-6-11-0.min.js",
               "/resource/object-path/object-path-0-11-4.min.js"
             ]);
             ajvLoader.addListener("ready", () => {
-              this.__ajv = new Ajv();
-              if (this.__validate(schema.$schema, schema)) {
-                // Schema is valid
-                if (this.__validate(schema, uiConfig)) {
-                  // Validate data if present
-                  this.__uiConfig = uiConfig;
-                }
+              const ajv = new Ajv({
+                allErrors: true,
+                strictDefaults: true,
+                useDefaults: true,
+              });
+              const validate = ajv.compile(schema);
+              const valid = validate(uiConfig);
+              if (valid) {
+                // Validate data if present
+                this.__uiConfig = uiConfig;
                 resolve(this.__uiConfig);
               } else {
                 console.error("wrong ui_config")
               }
             });
+            ajvLoader.addListener("failed", console.error, this);
+            ajvLoader.start();
           })
           .catch(console.error);
       });
