@@ -51,6 +51,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
         "replace_me_product_name",
         osparc.store.StaticInfo.getInstance().getDisplayName()
       );
+      title = title.replace(/<br>/g, " ");
       const menuButton = new qx.ui.menu.Button().set({
         icon: icon || null,
         label: title,
