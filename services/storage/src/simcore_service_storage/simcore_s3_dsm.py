@@ -54,6 +54,7 @@ from .core.settings import ApplicationSettings, get_application_settings
 from .dsm_factory import BaseDataManager
 from .exceptions.errors import (
     FileAccessRightError,
+    FileFilterInvalidError,
     FileMetaDataNotFoundError,
     LinkAlreadyExistsError,
     ProjectAccessRightError,
@@ -146,8 +147,51 @@ class SimcoreS3DataManager(BaseDataManager):
         offset: NonNegativeInt,
     ) -> tuple[list[FileMetaData], TotalNumber]:
         """returns a page of the file meta data a user has access to"""
-        get_s3_client(self.app).list_objects_paginated()
-        return [], 0
+
+        # if we have a file_filter, that means that we have at least a partial project ID
+        # TODO: what about api/{uuid} or anything else? this should be handled at some point
+        try:
+            project_id = ProjectID(file_filter.parts[0]) if file_filter else None
+        except ValueError as exc:
+            raise FileFilterInvalidError(
+                user_id=user_id, file_filter=file_filter
+            ) from exc
+
+        async with self.engine.connect() as conn:
+            if project_id:
+                project_access_rights = await get_project_access_rights(
+                    conn=conn, user_id=user_id, project_id=project_id
+                )
+                if not project_access_rights.read:
+                    raise ProjectAccessRightError(
+                        access_right="read", project_id=project_id
+                    )
+                accessible_projects_ids = [project_id]
+            else:
+                accessible_projects_ids = await get_readable_project_ids(conn, user_id)
+
+            file_and_directory_meta_data = await file_meta_data.list_direct_children(
+                conn,
+                filter_by_user_id=user_id,
+                file_id_prefix=None,
+                is_directory=None,
+                partial_file_id=f"{file_filter}" if file_filter else None,
+                sha256_checksum=None,
+                limit=limit,
+                offset=offset,
+            )
+
+        list_s3_objects = await get_s3_client(self.app).list_objects(
+            bucket=self.simcore_bucket_name,
+            prefix=file_filter,
+            start_after=None,
+            limit=limit,
+        )
+        # TODO: computing the total can be expensive, do we want that?
+        total = limit + 1
+        if len(list_s3_objects) < limit:
+            total = len(list_s3_objects)
+        return [], total
 
     async def list_files(  # noqa C901
         self,
