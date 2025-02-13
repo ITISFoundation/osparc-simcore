@@ -8,9 +8,9 @@ from models_library.api_schemas_rpc_long_running_tasks.tasks import (
     TaskRpcResult,
     TaskRpcStatus,
 )
-from models_library.api_schemas_storage.zipping_tasks import (
-    ZipTaskAbortOutput,
-    ZipTaskStartInput,
+from models_library.api_schemas_storage.data_export_tasks import (
+    DataExportTaskAbortOutput,
+    DataExportTaskStartInput,
 )
 from servicelib.rabbitmq import RPCRouter
 
@@ -18,7 +18,9 @@ router = RPCRouter()
 
 
 @router.expose()
-async def start_data_export(app: FastAPI, paths: ZipTaskStartInput) -> TaskRpcGet:
+async def start_data_export(
+    app: FastAPI, paths: DataExportTaskStartInput
+) -> TaskRpcGet:
     assert app  # nosec
     return TaskRpcGet(
         task_id=uuid4(),
@@ -27,9 +29,11 @@ async def start_data_export(app: FastAPI, paths: ZipTaskStartInput) -> TaskRpcGe
 
 
 @router.expose()
-async def abort_data_export(app: FastAPI, task_id: TaskRpcId) -> ZipTaskAbortOutput:
+async def abort_data_export(
+    app: FastAPI, task_id: TaskRpcId
+) -> DataExportTaskAbortOutput:
     assert app  # nosec
-    return ZipTaskAbortOutput(result=True, task_id=task_id)
+    return DataExportTaskAbortOutput(result=True, task_id=task_id)
 
 
 @router.expose()

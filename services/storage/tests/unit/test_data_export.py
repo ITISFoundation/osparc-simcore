@@ -12,9 +12,9 @@ from models_library.api_schemas_rpc_long_running_tasks.tasks import (
     TaskRpcResult,
     TaskRpcStatus,
 )
-from models_library.api_schemas_storage.zipping_tasks import (
-    ZipTaskAbortOutput,
-    ZipTaskStartInput,
+from models_library.api_schemas_storage.data_export_tasks import (
+    DataExportTaskAbortOutput,
+    DataExportTaskStartInput,
 )
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
@@ -75,7 +75,7 @@ async def rpc_client(
 
 async def test_start_data_export(rpc_client: RabbitMQRPCClient, faker: Faker):
     result = await data_export.start_data_export(
-        rpc_client, paths=ZipTaskStartInput(paths=[Path(faker.file_path())])
+        rpc_client, paths=DataExportTaskStartInput(paths=[Path(faker.file_path())])
     )
     assert isinstance(result, TaskRpcGet)
 
@@ -83,7 +83,7 @@ async def test_start_data_export(rpc_client: RabbitMQRPCClient, faker: Faker):
 async def test_abort_data_export(rpc_client: RabbitMQRPCClient, faker: Faker):
     _task_id = TaskRpcId(faker.uuid4())
     result = await data_export.abort_data_export(rpc_client, task_id=_task_id)
-    assert isinstance(result, ZipTaskAbortOutput)
+    assert isinstance(result, DataExportTaskAbortOutput)
     assert result.task_id == _task_id
 
 

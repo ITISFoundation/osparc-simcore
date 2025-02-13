@@ -7,9 +7,9 @@ from models_library.api_schemas_rpc_long_running_tasks.tasks import (
     TaskRpcStatus,
 )
 from models_library.api_schemas_storage import STORAGE_RPC_NAMESPACE
-from models_library.api_schemas_storage.zipping_tasks import (
-    ZipTaskAbortOutput,
-    ZipTaskStartInput,
+from models_library.api_schemas_storage.data_export_tasks import (
+    DataExportTaskAbortOutput,
+    DataExportTaskStartInput,
 )
 from models_library.rabbitmq_basic_types import RPCMethodName
 from pydantic import NonNegativeInt, TypeAdapter
@@ -22,7 +22,7 @@ _RPC_METHOD_NAME_ADAPTER = TypeAdapter(RPCMethodName)
 
 
 async def start_data_export(
-    rabbitmq_rpc_client: RabbitMQRPCClient, *, paths: ZipTaskStartInput
+    rabbitmq_rpc_client: RabbitMQRPCClient, *, paths: DataExportTaskStartInput
 ) -> TaskRpcGet:
     result = await rabbitmq_rpc_client.request(
         STORAGE_RPC_NAMESPACE,
@@ -36,14 +36,14 @@ async def start_data_export(
 
 async def abort_data_export(
     rabbitmq_rpc_client: RabbitMQRPCClient, *, task_id: TaskRpcId
-) -> ZipTaskAbortOutput:
+) -> DataExportTaskAbortOutput:
     result = await rabbitmq_rpc_client.request(
         STORAGE_RPC_NAMESPACE,
         _RPC_METHOD_NAME_ADAPTER.validate_python("abort_data_export"),
         task_id=task_id,
         timeout_s=_DEFAULT_TIMEOUT_S,
     )
-    assert isinstance(result, ZipTaskAbortOutput)
+    assert isinstance(result, DataExportTaskAbortOutput)
     return result
 
 
