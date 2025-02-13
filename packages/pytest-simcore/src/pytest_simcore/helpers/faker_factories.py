@@ -265,6 +265,24 @@ def random_product(
         "group_id": group_id,
     }
 
+    if ui := fake.random_element(
+        [
+            None,
+            # Examples from https://github.com/itisfoundation/osparc-simcore/blob/1dcd369717959348099cc6241822a1f0aff0382c/services/static-webserver/client/source/resource/osparc/new_studies.json
+            {
+                "categories": [
+                    {"id": "precomputed", "title": "Precomputed"},
+                    {
+                        "id": "personalized",
+                        "title": "Personalized",
+                        "description": fake.sentence(),
+                    },
+                ]
+            },
+        ]
+    ):
+        data.update(ui=ui)
+
     assert set(data.keys()).issubset({c.name for c in products.columns})
     data.update(overrides)
     return data
