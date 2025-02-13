@@ -106,7 +106,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
       });
       if (infoText) {
         infoText = osparc.utils.Utils.replaceTokens(
-          title,
+          infoText,
           "replace_me_product_name",
           osparc.store.StaticInfo.getInstance().getDisplayName()
         );
