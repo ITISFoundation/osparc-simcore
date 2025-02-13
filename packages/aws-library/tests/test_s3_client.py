@@ -513,7 +513,7 @@ async def test_list_objects(
     simcore_s3_api: SimcoreS3API,
 ):
     top_level_paths = {
-        Path(Path(file.s3_key).parts[0]) for file in with_uploaded_folder_on_s3
+        Path(file.s3_key).parents[-2] for file in with_uploaded_folder_on_s3
     }
 
     listed_objects = await simcore_s3_api.list_objects(
