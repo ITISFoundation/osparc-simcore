@@ -583,7 +583,7 @@ async def test_list_objects_num_objects_above_limit_raises(
     ],
     ids=byte_size_ids,
 )
-async def test_list_objects_deeply_nested(
+async def test_list_objects_prefix(
     mocked_s3_server_envs: EnvVarsDict,
     with_s3_bucket: S3BucketName,
     with_uploaded_folder_on_s3: list[UploadedFile],
