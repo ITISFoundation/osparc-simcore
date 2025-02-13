@@ -318,6 +318,33 @@ async def patch_project(
 #
 
 
+async def delete_project_by_user(
+    app: web.Application,
+    *,
+    project_uuid: ProjectID,
+    user_id: UserID,
+    simcore_user_agent: str = UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
+    wait_until_completed: bool = True,
+) -> None:
+    task = await submit_delete_project_task(
+        app,
+        project_uuid=project_uuid,
+        user_id=user_id,
+        simcore_user_agent=simcore_user_agent,
+    )
+    if wait_until_completed:
+        await task
+
+
+def get_delete_project_task(
+    project_uuid: ProjectID, user_id: UserID
+) -> asyncio.Task | None:
+    if tasks := _crud_api_delete.get_scheduled_tasks(project_uuid, user_id):
+        assert len(tasks) == 1, f"{tasks=}"  # nosec
+        return tasks[0]
+    return None
+
+
 async def submit_delete_project_task(
     app: web.Application,
     project_uuid: ProjectID,
@@ -351,15 +378,6 @@ async def submit_delete_project_task(
             log,
         )
     return task
-
-
-def get_delete_project_task(
-    project_uuid: ProjectID, user_id: UserID
-) -> asyncio.Task | None:
-    if tasks := _crud_api_delete.get_scheduled_tasks(project_uuid, user_id):
-        assert len(tasks) == 1, f"{tasks=}"  # nosec
-        return tasks[0]
-    return None
 
 
 #
