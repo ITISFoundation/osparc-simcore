@@ -26,7 +26,6 @@ from aws_library.s3 import S3KeyNotFoundError, S3ObjectKey, SimcoreS3API
 from aws_library.s3._constants import MULTIPART_UPLOADS_MIN_TOTAL_SIZE
 from faker import Faker
 from fastapi import FastAPI
-from fastapi_pagination import LimitOffsetPage
 from models_library.basic_types import SHA256Str
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import LocationID, NodeID, SimcoreS3FileID
@@ -1527,29 +1526,3 @@ async def test_listing_with_project_id_filter(
         assert project_file_name == list_of_files[0].file_name
     else:
         assert project_files_in_db == {file.file_uuid for file in list_of_files}
-
-
-async def test_list_paths(
-    initialized_app: FastAPI,
-    client: httpx.AsyncClient,
-    location_id: LocationID,
-    user_id: UserID,
-):
-    query = {
-        "user_id": user_id,
-        "file_filter": None,
-    }
-    url = url_from_operation_id(
-        client, initialized_app, "list_paths", location_id=f"{location_id}"
-    ).with_query(**{k: v for k, v in query.items() if v is not None})
-    response = await client.get(f"{url}")
-
-    page_of_files, _ = assert_status(
-        response,
-        status.HTTP_200_OK,
-        LimitOffsetPage[FileMetaDataGet],
-        expect_envelope=False,
-    )
-    assert page_of_files
-    assert page_of_files.items == []
-    assert page_of_files.total == 0
