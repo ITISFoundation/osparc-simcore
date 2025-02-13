@@ -6,7 +6,7 @@ from models_library.api_schemas_resource_usage_tracker.licensed_items_checkouts 
     LicensedItemCheckoutGet,
     LicensedItemsCheckoutsPage,
 )
-from models_library.licenses import LicensedItemID
+from models_library.licenses import LicensedItemID, LicensedItemKey, LicensedItemVersion
 from models_library.products import ProductName
 from models_library.resource_tracker import ServiceRunStatus
 from models_library.resource_tracker_licensed_items_checkouts import (
@@ -108,8 +108,8 @@ async def checkout_licensed_item(
     db_engine: Annotated[AsyncEngine, Depends(get_resource_tracker_db_engine)],
     *,
     licensed_item_id: LicensedItemID,
-    key: str,
-    version: str,
+    key: LicensedItemKey,
+    version: LicensedItemVersion,
     wallet_id: WalletID,
     product_name: ProductName,
     num_of_seats: int,
