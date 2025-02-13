@@ -86,14 +86,30 @@ async def purchase_licensed_item(request: web.Request):
     path_params = parse_request_path_parameters_as(LicensedItemsPathParams, request)
     body_params = await parse_request_body_as(LicensedItemsBodyParams, request)
 
-    licensed_item_purchase_get: LicensedItemPurchaseGet = (
-        await _licensed_items_service.purchase_licensed_item(
-            app=request.app,
-            user_id=req_ctx.user_id,
-            licensed_item_id=path_params.licensed_item_id,
-            product_name=req_ctx.product_name,
-            body_params=body_params,
-        )
+    purchased_item = await _licensed_items_service.purchase_licensed_item(
+        app=request.app,
+        user_id=req_ctx.user_id,
+        licensed_item_id=path_params.licensed_item_id,
+        product_name=req_ctx.product_name,
+        body_params=body_params,
     )
 
-    return envelope_json_response(licensed_item_purchase_get)
+    output = LicensedItemPurchaseGet(
+        licensed_item_purchase_id=purchased_item.licensed_item_purchase_id,
+        product_name=purchased_item.product_name,
+        licensed_item_id=purchased_item.licensed_item_id,
+        key=purchased_item.key,
+        version=purchased_item.version,
+        wallet_id=purchased_item.wallet_id,
+        pricing_unit_cost_id=purchased_item.pricing_unit_cost_id,
+        pricing_unit_cost=purchased_item.pricing_unit_cost,
+        start_at=purchased_item.start_at,
+        expire_at=purchased_item.expire_at,
+        num_of_seats=purchased_item.num_of_seats,
+        purchased_by_user=purchased_item.purchased_by_user,
+        user_email=purchased_item.user_email,
+        purchased_at=purchased_item.purchased_at,
+        modified_at=purchased_item.modified,
+    )
+
+    return envelope_json_response(output)

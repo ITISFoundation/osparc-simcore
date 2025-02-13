@@ -4,10 +4,20 @@ import logging
 from datetime import UTC, datetime, timedelta
 
 from aiohttp import web
-from models_library.api_schemas_webserver import (
-    licensed_items_purchases as webserver_licensed_items_purchases,
+
+# from models_library.api_schemas_webserver import (
+#     licensed_items_purchases as webserver_licensed_items_purchases,
+# )
+from models_library.api_schemas_resource_usage_tracker.licensed_items_purchases import (
+    LicensedItemPurchaseGet,
 )
-from models_library.licenses import LicensedItem, LicensedItemID, LicensedItemPage
+from models_library.licenses import (
+    LicensedItem,
+    LicensedItemID,
+    LicensedItemKey,
+    LicensedItemPage,
+    LicensedItemVersion,
+)
 from models_library.products import ProductName
 from models_library.resource_tracker_licensed_items_purchases import (
     LicensedItemsPurchasesCreate,
@@ -34,8 +44,8 @@ _logger = logging.getLogger(__name__)
 async def get_licensed_item(
     app: web.Application,
     *,
-    key: str,
-    version: str,
+    key: LicensedItemKey,
+    version: LicensedItemVersion,
     product_name: ProductName,
 ) -> LicensedItem:
 
@@ -72,7 +82,7 @@ async def purchase_licensed_item(
     user_id: UserID,
     licensed_item_id: LicensedItemID,
     body_params: LicensedItemsBodyParams,
-) -> webserver_licensed_items_purchases.LicensedItemPurchaseGet:
+) -> LicensedItemPurchaseGet:
     # Check user wallet permissions
     wallet = await get_wallet_with_available_credits_by_user_and_wallet(
         app, user_id=user_id, wallet_id=body_params.wallet_id, product_name=product_name
@@ -128,23 +138,6 @@ async def purchase_licensed_item(
         purchased_at=datetime.now(tz=UTC),
     )
     rpc_client = get_rabbitmq_rpc_client(app)
-    purchased_item = await licensed_items_purchases.create_licensed_item_purchase(
+    return await licensed_items_purchases.create_licensed_item_purchase(
         rpc_client, data=_data
-    )
-    return webserver_licensed_items_purchases.LicensedItemPurchaseGet(
-        licensed_item_purchase_id=purchased_item.licensed_item_purchase_id,
-        product_name=purchased_item.product_name,
-        licensed_item_id=purchased_item.licensed_item_id,
-        key=purchased_item.key,
-        version=purchased_item.version,
-        wallet_id=purchased_item.wallet_id,
-        pricing_unit_cost_id=purchased_item.pricing_unit_cost_id,
-        pricing_unit_cost=purchased_item.pricing_unit_cost,
-        start_at=purchased_item.start_at,
-        expire_at=purchased_item.expire_at,
-        num_of_seats=purchased_item.num_of_seats,
-        purchased_by_user=purchased_item.purchased_by_user,
-        user_email=purchased_item.user_email,
-        purchased_at=purchased_item.purchased_at,
-        modified_at=purchased_item.modified,
     )
