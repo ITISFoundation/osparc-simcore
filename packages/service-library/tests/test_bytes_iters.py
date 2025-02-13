@@ -94,7 +94,7 @@ def mocked_progress_bar_cb(mocker: MockerFixture) -> Mock:
 
 
 @pytest.mark.parametrize("use_file_like", [True, False])
-async def test_get_zip_data_stream(
+async def test_get_zip_bytes_iter(
     mocked_progress_bar_cb: Mock,
     prepare_content: None,
     local_files_dir: Path,
@@ -107,7 +107,9 @@ async def test_get_zip_data_stream(
     for file in (x for x in local_files_dir.rglob("*") if x.is_file()):
         archive_name = get_relative_to(local_files_dir, file)
 
-        archive_files.append((archive_name, DiskStreamReader(file).get_stream_data()))
+        archive_files.append(
+            (archive_name, DiskStreamReader(file).get_bytes_streamer())
+        )
 
     writer = DiskStreamWriter(local_archive_path)
 

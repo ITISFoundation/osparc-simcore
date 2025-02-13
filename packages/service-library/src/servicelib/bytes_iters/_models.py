@@ -6,7 +6,7 @@ from ..progress_bar import ProgressBarData
 
 
 @dataclass(frozen=True)
-class StreamData:
+class BytesStreamer:
     data_size: DataSize
     bytes_iter_callable: BytesIterCallable
 

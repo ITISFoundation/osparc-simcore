@@ -17,7 +17,7 @@ from models_library.api_schemas_storage import ETag, S3BucketName, UploadedPart
 from models_library.basic_types import SHA256Str
 from models_library.bytes_iters import BytesIter, DataSize
 from pydantic import AnyUrl, ByteSize, TypeAdapter
-from servicelib.bytes_iters import DEFAULT_READ_CHUNK_SIZE, StreamData
+from servicelib.bytes_iters import DEFAULT_READ_CHUNK_SIZE, BytesStreamer
 from servicelib.logging_utils import log_catch, log_context
 from servicelib.s3_utils import FileLikeBytesIterReader
 from servicelib.utils import limited_gather
@@ -473,13 +473,13 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
             limit=_MAX_CONCURRENT_COPY,
         )
 
-    async def get_object_stream_data(
+    async def get_bytes_streamer_from_object(
         self,
         bucket_name: S3BucketName,
         object_key: S3ObjectKey,
         *,
         chunk_size: int = DEFAULT_READ_CHUNK_SIZE,
-    ) -> StreamData:
+    ) -> BytesStreamer:
         """stream read an object from S3 chunk by chunk"""
 
         # NOTE `download_fileobj` cannot be used to implement this because
@@ -512,7 +512,7 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
 
                 position += chunk_size
 
-        return StreamData(data_size, _)
+        return BytesStreamer(data_size, _)
 
     @s3_exception_handler(_logger)
     async def upload_object_from_bytes_iter(  # TODO: this needs to be based on file interface -> use protocol to expose read

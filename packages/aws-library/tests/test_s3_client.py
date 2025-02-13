@@ -1405,14 +1405,14 @@ async def test_read_object_file_stream(
     tmp_file_name: Path,
 ):
     async with aiofiles.open(tmp_file_name, "wb") as f:
-        stream_data = await simcore_s3_api.get_object_stream_data(
+        bytes_streamer = await simcore_s3_api.get_bytes_streamer_from_object(
             with_s3_bucket, with_uploaded_file_on_s3.s3_key, chunk_size=1024
         )
-        assert isinstance(stream_data.data_size, DataSize)
-        async for chunk in stream_data.with_progress_bytes_iter(AsyncMock()):
+        assert isinstance(bytes_streamer.data_size, DataSize)
+        async for chunk in bytes_streamer.with_progress_bytes_iter(AsyncMock()):
             await f.write(chunk)
 
-    assert stream_data.data_size == tmp_file_name.stat().st_size
+    assert bytes_streamer.data_size == tmp_file_name.stat().st_size
 
     await assert_same_file_content(with_uploaded_file_on_s3.local_path, tmp_file_name)
 
@@ -1424,13 +1424,13 @@ async def test_upload_object_from_file_stream(
     with_s3_bucket: S3BucketName,
 ):
     object_key = "read_from_s3_write_to_s3"
-    stream_data = await simcore_s3_api.get_object_stream_data(
+    bytes_streamer = await simcore_s3_api.get_bytes_streamer_from_object(
         with_s3_bucket, with_uploaded_file_on_s3.s3_key
     )
-    assert isinstance(stream_data.data_size, DataSize)
+    assert isinstance(bytes_streamer.data_size, DataSize)
 
     await simcore_s3_api.upload_object_from_bytes_iter(
-        with_s3_bucket, object_key, stream_data.with_progress_bytes_iter(AsyncMock())
+        with_s3_bucket, object_key, bytes_streamer.with_progress_bytes_iter(AsyncMock())
     )
 
     await simcore_s3_api.delete_object(bucket=with_s3_bucket, object_key=object_key)
@@ -1555,24 +1555,24 @@ async def test_workflow_compress_s3_objects_and_local_files_in_a_single_archive_
 
     # 1. assemble and upload zip archive
 
-    archive_file_entries: ArchiveEntries = []
+    archive_entries: ArchiveEntries = []
 
     local_files = get_files_info_from_path(path_local_files_for_archive)
     for file_name, file_path in local_files.items():
-        archive_file_entries.append(
+        archive_entries.append(
             (
                 file_name,
-                DiskStreamReader(file_path).get_stream_data(),
+                DiskStreamReader(file_path).get_bytes_streamer(),
             )
         )
 
     s3_files = get_files_info_from_path(path_s3_files_for_archive)
 
     for s3_object_key in s3_files:
-        archive_file_entries.append(
+        archive_entries.append(
             (
                 s3_object_key,
-                await simcore_s3_api.get_object_stream_data(
+                await simcore_s3_api.get_bytes_streamer_from_object(
                     with_s3_bucket, s3_object_key
                 ),
             )
@@ -1580,7 +1580,7 @@ async def test_workflow_compress_s3_objects_and_local_files_in_a_single_archive_
 
     # shuffle order of files in archive.
     # some will be read from S3 and some from the disk
-    random.shuffle(archive_file_entries)
+    random.shuffle(archive_entries)
 
     started = time.time()
 
@@ -1593,7 +1593,7 @@ async def test_workflow_compress_s3_objects_and_local_files_in_a_single_archive_
             with_s3_bucket,
             archive_s3_object_key,
             get_zip_bytes_iter(
-                archive_file_entries,
+                archive_entries,
                 progress_bar=progress_bar,
                 chunk_size=MULTIPART_COPY_THRESHOLD,
             ),
