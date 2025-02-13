@@ -57,14 +57,14 @@ qx.Class.define("osparc.vipMarket.Market", {
               openCategory = purchasedCategory["categoryId"];
             }
           }
-          if (licensedItem["licensedResourceData"] && licensedItem["licensedResourceData"]["categoryId"]) {
-            const categoryId = licensedItem["licensedResourceData"]["categoryId"];
+          if (licensedItem && licensedItem["categoryId"]) {
+            const categoryId = licensedItem["categoryId"];
             let category = categories.find(cat => cat["categoryId"] === categoryId);
             if (!category) {
               category = {
                 categoryId,
-                label: licensedItem["licensedResourceData"]["categoryDisplay"] || "Category",
-                icon: licensedItem["licensedResourceData"]["categoryIcon"] || `osparc/market/${categoryId}.svg`,
+                label: licensedItem["categoryDisplay"] || "Category",
+                icon: licensedItem["categoryIcon"] || `osparc/market/${categoryId}.svg`,
                 items: [],
               };
               if (!openCategory) {
