@@ -797,6 +797,7 @@ async def test_trash_project_explitictly_and_empty_trash_bin(
     logged_user: UserInfoDict,
     user_project: ProjectDict,
     mocked_catalog: None,
+    mocked_director_v2: None,
     mocked_dynamic_services_interface: dict[str, MagicMock],
 ):
     assert client.app
