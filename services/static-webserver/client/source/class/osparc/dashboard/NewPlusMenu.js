@@ -197,55 +197,55 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
     },
 
     __addDisabledButton: function(newStudyData) {
-      const menuButton = this.self().createMenuButton(null, newStudyData.title, newStudyData.reason);
-      osparc.utils.Utils.setIdToWidget(menuButton, newStudyData.idToWidget);
+      const menuButton = this.self().createMenuButton(null, newStudyData["title"], newStudyData["reason"]);
+      osparc.utils.Utils.setIdToWidget(menuButton, newStudyData["idToWidget"]);
       menuButton.setEnabled(false);
 
       this.__addIcon(menuButton, newStudyData);
-      this.__addFromResourceButton(menuButton, newStudyData.category);
+      this.__addFromResourceButton(menuButton, newStudyData["category"]);
     },
 
     __addEmptyStudyButton: function(newStudyData) {
-      const menuButton = this.self().createMenuButton(null, newStudyData.title);
-      osparc.utils.Utils.setIdToWidget(menuButton, newStudyData.idToWidget);
+      const menuButton = this.self().createMenuButton(null, newStudyData["title"]);
+      osparc.utils.Utils.setIdToWidget(menuButton, newStudyData["idToWidget"]);
 
       menuButton.addListener("tap", () => {
         this.fireDataEvent("newEmptyStudyClicked", {
-          newStudyLabel: newStudyData.newStudyLabel,
+          newStudyLabel: newStudyData["newStudyLabel"],
         });
       });
 
       this.__addIcon(menuButton, newStudyData);
-      this.__addFromResourceButton(menuButton, newStudyData.category);
+      this.__addFromResourceButton(menuButton, newStudyData["category"]);
     },
 
     __addFromTemplateButton: function(newStudyData, templates) {
-      const menuButton = this.self().createMenuButton(null, newStudyData.title);
-      osparc.utils.Utils.setIdToWidget(menuButton, newStudyData.idToWidget);
+      const menuButton = this.self().createMenuButton(null, newStudyData["title"]);
+      osparc.utils.Utils.setIdToWidget(menuButton, newStudyData["idToWidget"]);
       // disable it until found in templates store
       menuButton.setEnabled(false);
 
-      let templateMetadata = templates.find(t => t.name === newStudyData.expectedTemplateLabel);
+      let templateMetadata = templates.find(t => t.name === newStudyData["expectedTemplateLabel"]);
       if (templateMetadata) {
         menuButton.setEnabled(true);
         menuButton.addListener("tap", () => {
           this.fireDataEvent("newStudyFromTemplateClicked", {
             templateData: templateMetadata,
-            newStudyLabel: newStudyData.newStudyLabel,
+            newStudyLabel: newStudyData["newStudyLabel"],
           });
         });
         this.__addIcon(menuButton, newStudyData, templateMetadata);
-        this.__addFromResourceButton(menuButton, newStudyData.category);
+        this.__addFromResourceButton(menuButton, newStudyData["category"]);
       }
     },
 
     __addFromServiceButton: function(newStudyData) {
-      const menuButton = this.self().createMenuButton(null, newStudyData.title);
-      osparc.utils.Utils.setIdToWidget(menuButton, newStudyData.idToWidget);
+      const menuButton = this.self().createMenuButton(null, newStudyData["title"]);
+      osparc.utils.Utils.setIdToWidget(menuButton, newStudyData["idToWidget"]);
       // disable it until found in services store
       menuButton.setEnabled(false);
 
-      const key = newStudyData.expectedKey;
+      const key = newStudyData["expectedKey"];
       // Include deprecated versions, they should all be updatable to a non deprecated version
       const versions = osparc.service.Utils.getVersions(key, false);
       if (versions.length && newStudyData) {
@@ -262,7 +262,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
             menuButton.addListener("tap", () => {
               this.fireDataEvent("newStudyFromServiceClicked", {
                 serviceMetadata: latestMetadata,
-                newStudyLabel: newStudyData.newStudyLabel,
+                newStudyLabel: newStudyData["newStudyLabel"],
               });
             });
 
@@ -280,7 +280,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
             menuButton._add(infoButton, {column: 2});
 
             this.__addIcon(menuButton, newStudyData, latestMetadata);
-            this.__addFromResourceButton(menuButton, newStudyData.category);
+            this.__addFromResourceButton(menuButton, newStudyData["category"]);
           })
       }
     },
