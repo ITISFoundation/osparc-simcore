@@ -32,7 +32,7 @@ from faker import Faker
 from models_library.basic_types import SHA256Str
 from models_library.storage_schemas import S3BucketName, UploadedPart
 from moto.server import ThreadedMotoServer
-from pydantic import AnyUrl, ByteSize, TypeAdapter
+from pydantic import AnyUrl, ByteSize, NonNegativeInt, TypeAdapter
 from pytest_benchmark.plugin import BenchmarkFixture
 from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.parametrizations import (
@@ -346,17 +346,21 @@ def set_log_levels_for_noisy_libraries() -> None:
 @pytest.fixture
 async def create_folder_on_s3(
     create_folder_of_size_with_multiple_files: Callable[
-        [ByteSize, ByteSize, ByteSize], Path
+        [ByteSize, ByteSize, ByteSize, NonNegativeInt | None], Path
     ],
     upload_file: Callable[[Path, Path], Awaitable[UploadedFile]],
     directory_size: ByteSize,
     min_file_size: ByteSize,
     max_file_size: ByteSize,
+    depth: NonNegativeInt | None,
 ) -> Callable[[], Awaitable[list[UploadedFile]]]:
     async def _() -> list[UploadedFile]:
         # create random files of random size and upload to S3
         folder = create_folder_of_size_with_multiple_files(
-            ByteSize(directory_size), ByteSize(min_file_size), ByteSize(max_file_size)
+            ByteSize(directory_size),
+            ByteSize(min_file_size),
+            ByteSize(max_file_size),
+            depth,
         )
         list_uploaded_files = []
 
@@ -529,12 +533,13 @@ def _get_paths_with_prefix(
 
 
 @pytest.mark.parametrize(
-    "directory_size, min_file_size, max_file_size",
+    "directory_size, min_file_size, max_file_size, depth",
     [
         (
             TypeAdapter(ByteSize).validate_python("1Mib"),
             TypeAdapter(ByteSize).validate_python("1B"),
             TypeAdapter(ByteSize).validate_python("10Kib"),
+            None,
         )
     ],
     ids=byte_size_ids,
@@ -603,27 +608,65 @@ async def test_list_objects_pagination_num_objects_limits(
         )
 
 
+@pytest.mark.parametrize(
+    "directory_size, min_file_size, max_file_size, depth",
+    [
+        (
+            TypeAdapter(ByteSize).validate_python("1Mib"),
+            TypeAdapter(ByteSize).validate_python("1B"),
+            TypeAdapter(ByteSize).validate_python("10Kib"),
+            0,
+        )
+    ],
+    ids=byte_size_ids,
+)
+@pytest.mark.parametrize("limit", [10, 50, 300], ids=lambda x: f"limit={x}")
 async def test_list_objects_pagination(
-    faker: Faker,
     mocked_s3_server_envs: EnvVarsDict,
     with_s3_bucket: S3BucketName,
+    with_uploaded_folder_on_s3: list[UploadedFile],
     simcore_s3_api: SimcoreS3API,
+    limit: int,
 ):
+    total_num_files = len(with_uploaded_folder_on_s3)
+    # pre-condition
+    directories, files = _get_paths_with_prefix(
+        with_uploaded_folder_on_s3, prefix_level=0, path_prefix=None
+    )
+    assert len(directories) == 1, "test pre-condition not fulfilled!"
+    assert not files
+
+    first_level_prefix = next(iter(directories))
+    first_level_directories, first_level_files = _get_paths_with_prefix(
+        with_uploaded_folder_on_s3, prefix_level=1, path_prefix=first_level_prefix
+    )
+    assert (
+        not first_level_directories
+    ), "test pre-condition not fulfilled, there should be only files for this test"
+    assert len(first_level_files) == total_num_files
+
+    # now we will fetch the file objects according to the given limit
+    num_fetch = int(round(total_num_files / limit + 0.5))
+    assert num_fetch >= 1
+    start_after_key = None
+    for i in range(num_fetch - 1):
+        objects = await simcore_s3_api.list_objects(
+            bucket=with_s3_bucket,
+            prefix=first_level_prefix,
+            start_after=start_after_key,
+            limit=limit,
+        )
+        assert len(objects) == limit, f"fetch {i} returned a wrong number of objects"
+        assert isinstance(objects[-1], S3MetaData)
+        start_after_key = objects[-1].object_key
+    # last fetch
     objects = await simcore_s3_api.list_objects(
         bucket=with_s3_bucket,
-        prefix=None,
-        start_after=None,
-        num_objects=faker.pyint(max_value=0),
+        prefix=first_level_prefix,
+        start_after=start_after_key,
+        limit=limit,
     )
-    assert objects == []
-
-    with pytest.raises(ValueError, match=r"num_objects must be <= \d+"):
-        await simcore_s3_api.list_objects(
-            bucket=with_s3_bucket,
-            prefix=None,
-            start_after=None,
-            num_objects=_AWS_MAX_ITEMS_PER_PAGE + 1,
-        )
+    assert len(objects) == (total_num_files - (num_fetch - 1) * limit)
 
 
 async def test_get_file_metadata(
@@ -1233,12 +1276,13 @@ async def test_copy_file_invalid_raises(
 
 
 @pytest.mark.parametrize(
-    "directory_size, min_file_size, max_file_size",
+    "directory_size, min_file_size, max_file_size, depth",
     [
         (
             TypeAdapter(ByteSize).validate_python("1Mib"),
             TypeAdapter(ByteSize).validate_python("1B"),
             TypeAdapter(ByteSize).validate_python("10Kib"),
+            None,
         )
     ],
     ids=byte_size_ids,
@@ -1259,12 +1303,13 @@ async def test_get_directory_metadata(
 
 
 @pytest.mark.parametrize(
-    "directory_size, min_file_size, max_file_size",
+    "directory_size, min_file_size, max_file_size, depth",
     [
         (
             TypeAdapter(ByteSize).validate_python("1Mib"),
             TypeAdapter(ByteSize).validate_python("1B"),
             TypeAdapter(ByteSize).validate_python("10Kib"),
+            None,
         )
     ],
     ids=byte_size_ids,
@@ -1291,12 +1336,13 @@ async def test_get_directory_metadata_raises(
 
 
 @pytest.mark.parametrize(
-    "directory_size, min_file_size, max_file_size",
+    "directory_size, min_file_size, max_file_size, depth",
     [
         (
             TypeAdapter(ByteSize).validate_python("1Mib"),
             TypeAdapter(ByteSize).validate_python("1B"),
             TypeAdapter(ByteSize).validate_python("10Kib"),
+            None,
         )
     ],
     ids=byte_size_ids,
@@ -1327,12 +1373,13 @@ async def test_delete_file_recursively(
 
 
 @pytest.mark.parametrize(
-    "directory_size, min_file_size, max_file_size",
+    "directory_size, min_file_size, max_file_size, depth",
     [
         (
             TypeAdapter(ByteSize).validate_python("1Mib"),
             TypeAdapter(ByteSize).validate_python("1B"),
             TypeAdapter(ByteSize).validate_python("10Kib"),
+            None,
         )
     ],
     ids=byte_size_ids,
@@ -1365,12 +1412,13 @@ async def test_delete_file_recursively_raises(
 
 
 @pytest.mark.parametrize(
-    "directory_size, min_file_size, max_file_size",
+    "directory_size, min_file_size, max_file_size, depth",
     [
         (
             TypeAdapter(ByteSize).validate_python("1Mib"),
             TypeAdapter(ByteSize).validate_python("1B"),
             TypeAdapter(ByteSize).validate_python("10Kib"),
+            None,
         )
     ],
     ids=byte_size_ids,
@@ -1468,17 +1516,19 @@ def test_upload_file_performance(
 
 
 @pytest.mark.parametrize(
-    "directory_size, min_file_size, max_file_size",
+    "directory_size, min_file_size, max_file_size, depth",
     [
         (
             TypeAdapter(ByteSize).validate_python("1Mib"),
             TypeAdapter(ByteSize).validate_python("1B"),
             TypeAdapter(ByteSize).validate_python("10Kib"),
+            None,
         ),
         (
             TypeAdapter(ByteSize).validate_python("500Mib"),
             TypeAdapter(ByteSize).validate_python("10Mib"),
             TypeAdapter(ByteSize).validate_python("50Mib"),
+            None,
         ),
     ],
     ids=byte_size_ids,
