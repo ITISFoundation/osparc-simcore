@@ -524,10 +524,10 @@ _ROOT_LEVEL: Final[int] = -2
 
 
 def _get_paths_with_prefix(
-    uploaded_files: list[UploadedFile], *, prefix_level: int, path_prefix: Path
+    uploaded_files: list[UploadedFile], *, prefix_level: int, path_prefix: Path | None
 ) -> tuple[set[Path], set[Path]]:
     def _filter_by_prefix(uploaded_file: UploadedFile) -> bool:
-        return Path(uploaded_file.s3_key).is_relative_to(path_prefix)
+        return Path(uploaded_file.s3_key).is_relative_to(path_prefix or "")
 
     directories = {
         Path(file.s3_key).parents[_ROOT_LEVEL - prefix_level]
@@ -561,14 +561,17 @@ async def test_list_objects(
 ):
     # assert pre-conditions
     assert len(with_uploaded_folder_on_s3) >= 1, "wrong initialization of test!"
-    top_level_paths = {
-        Path(file.s3_key).parents[-2] for file in with_uploaded_folder_on_s3
-    }
-    assert (
-        len(top_level_paths) == 1
-    ), "wrong initialization of test! we expect only one folder here"
 
     # Start testing from the root, will return only 1 object (the top level folder)
+    top_level_directories, top_level_files = _get_paths_with_prefix(
+        with_uploaded_folder_on_s3, prefix_level=0, path_prefix=None
+    )
+    assert (
+        len(top_level_directories) == 1
+    ), "wrong initialization of test! we expect only one folder here"
+    assert not top_level_files
+    top_level_paths = top_level_directories | top_level_files
+
     objects = await simcore_s3_api.list_objects(
         bucket=with_s3_bucket, prefix=None, start_after=None
     )
@@ -576,7 +579,7 @@ async def test_list_objects(
     assert {_.as_path() for _ in objects} == top_level_paths
 
     # go one level deeper, will return all the folders + files in the first level
-    first_level_prefix = next(iter(top_level_paths))
+    first_level_prefix = random.choice(list(top_level_directories))  # noqa: S311
     first_level_directories, first_level_files = _get_paths_with_prefix(
         with_uploaded_folder_on_s3, prefix_level=1, path_prefix=first_level_prefix
     )
@@ -604,8 +607,12 @@ async def test_list_objects(
         bucket=with_s3_bucket, prefix=second_level_prefix, start_after=None
     )
     assert len(objects) == len(second_level_paths)
-    received_paths = {obj.as_path() for obj in objects}
-    assert second_level_paths == received_paths
+    assert {_.as_path() for _ in objects} == second_level_paths
+    # check files and directories are correctly separated
+    received_files = {_ for _ in objects if isinstance(_, S3MetaData)}
+    received_directories = {_ for _ in objects if isinstance(_, S3DirectoryMetaData)}
+    assert len(received_files) == len(second_level_files)
+    assert len(received_directories) == len(second_level_directories)
 
 
 async def test_get_file_metadata(
