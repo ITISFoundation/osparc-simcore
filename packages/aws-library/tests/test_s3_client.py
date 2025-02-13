@@ -21,7 +21,7 @@ from typing import Any, Final
 import botocore.exceptions
 import pytest
 from aiohttp import ClientSession
-from aws_library.s3._client import S3ObjectKey, SimcoreS3API
+from aws_library.s3._client import _AWS_MAX_ITEMS_PER_PAGE, S3ObjectKey, SimcoreS3API
 from aws_library.s3._constants import MULTIPART_UPLOADS_MIN_TOTAL_SIZE
 from aws_library.s3._errors import (
     S3BucketInvalidError,
@@ -540,6 +540,36 @@ def _get_paths_with_prefix(
         if Path(file.s3_key).parent == path_prefix
     }
     return directories, files
+
+
+async def test_list_objects_num_objects_below_one(
+    faker: Faker,
+    mocked_s3_server_envs: EnvVarsDict,
+    with_s3_bucket: S3BucketName,
+    simcore_s3_api: SimcoreS3API,
+):
+    objects = await simcore_s3_api.list_objects(
+        bucket=with_s3_bucket,
+        prefix=None,
+        start_after=None,
+        num_objects=faker.pyint(max_value=0),
+    )
+    assert objects == []
+
+
+async def test_list_objects_num_objects_above_limit_raises(
+    faker: Faker,
+    mocked_s3_server_envs: EnvVarsDict,
+    with_s3_bucket: S3BucketName,
+    simcore_s3_api: SimcoreS3API,
+):
+    with pytest.raises(ValueError, match=r"num_objects must be <= \d+"):
+        await simcore_s3_api.list_objects(
+            bucket=with_s3_bucket,
+            prefix=None,
+            start_after=None,
+            num_objects=_AWS_MAX_ITEMS_PER_PAGE + 1,
+        )
 
 
 @pytest.mark.parametrize(

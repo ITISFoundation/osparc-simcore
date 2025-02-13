@@ -172,6 +172,8 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
         start_after: S3ObjectKey | None,
         num_objects: int = _MAX_ITEMS_PER_PAGE,
     ) -> list[S3MetaData | S3DirectoryMetaData]:
+        if num_objects < 1:
+            return []
         if num_objects > _AWS_MAX_ITEMS_PER_PAGE:
             msg = f"num_objects must be <= {_AWS_MAX_ITEMS_PER_PAGE}"
             raise ValueError(msg)
