@@ -21,7 +21,7 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
   construct: function() {
     this.base(arguments);
 
-    const layout = new qx.ui.layout.VBox(15);
+    const layout = new qx.ui.layout.VBox(10);
     this._setLayout(layout);
 
     this.__populateLayout();
@@ -56,6 +56,7 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
       if (anatomicalModelsData && anatomicalModelsData["licensedResources"].length) {
         this.__addModelsInfo(anatomicalModelsData);
         this.__addPricingUnits(anatomicalModelsData);
+        this.__addSeatsSection(anatomicalModelsData);
       } else {
         const selectModelLabel = new qx.ui.basic.Label().set({
           value: this.tr("Select a model for more details"),
@@ -301,15 +302,6 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
         alignX: "center"
       }));
 
-      anatomicalModelsData["purchases"].forEach(purchase => {
-        const seatsText = "seat" + (purchase["numberOfSeats"] > 1 ? "s" : "");
-        const entry = new qx.ui.basic.Label().set({
-          value: `${purchase["numberOfSeats"]} ${seatsText} available until ${osparc.utils.Utils.formatDate(purchase["expiresAt"])}`,
-          font: "text-14",
-        });
-        importSection.add(entry);
-      });
-
       const importButton = new qx.ui.form.Button().set({
         label: this.tr("Import"),
         appearance: "strong-button",
@@ -329,6 +321,23 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
         importSection.add(importButton);
       }
       return importSection;
+    },
+
+    __addSeatsSection: function(anatomicalModelsData) {
+      const seatsSection = new qx.ui.container.Composite(new qx.ui.layout.VBox(5).set({
+        alignX: "center",
+      }));
+
+      anatomicalModelsData["purchases"].forEach(purchase => {
+        const seatsText = "seat" + (purchase["numberOfSeats"] > 1 ? "s" : "");
+        const entry = new qx.ui.basic.Label().set({
+          value: `${purchase["numberOfSeats"]} ${seatsText} available until ${osparc.utils.Utils.formatDate(purchase["expiresAt"])}`,
+          font: "text-14",
+        });
+        seatsSection.add(entry);
+      });
+
+      this._add(seatsSection);
     },
   }
 });
