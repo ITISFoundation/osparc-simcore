@@ -11,8 +11,9 @@ from fastapi import APIRouter, Depends, status
 from models_library.api_schemas_webserver.product import (
     GenerateInvitation,
     GetCreditPrice,
-    GetProduct,
     InvitationGenerated,
+    ProductGet,
+    ProductUIGet,
     UpdateProductTemplate,
 )
 from models_library.generics import Envelope
@@ -40,12 +41,21 @@ async def get_current_product_price():
 
 @router.get(
     "/products/{product_name}",
-    response_model=Envelope[GetProduct],
+    response_model=Envelope[ProductGet],
+    description="NOTE: `/products/current` is used to define current project w/o naming it",
     tags=[
         "po",
     ],
 )
 async def get_product(_params: Annotated[_ProductsRequestParams, Depends()]):
+    ...
+
+
+@router.get(
+    "/products/current/ui",
+    response_model=Envelope[ProductUIGet],
+)
+async def get_current_product_ui():
     ...
 
 
