@@ -2,11 +2,13 @@ import logging
 
 from aiohttp import web
 from models_library.api_schemas_webserver.licensed_items import LicensedItemRestGet
-from models_library.licenses import LicensedItem, LicensedItemPage
+from models_library.api_schemas_webserver.licensed_items_purchases import (
+    LicensedItemPurchaseGet,
+)
+from models_library.licenses import LicensedItemPage
 from models_library.rest_ordering import OrderBy
 from models_library.rest_pagination import Page
 from models_library.rest_pagination_utils import paginate_data
-from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
@@ -72,24 +74,6 @@ async def list_licensed_items(request: web.Request):
     )
 
 
-@routes.get(
-    f"/{VTAG}/catalog/licensed-items/{{licensed_item_id}}", name="get_licensed_item"
-)
-@login_required
-@permission_required("catalog/licensed-items.*")
-@handle_plugin_requests_exceptions
-async def get_licensed_item(request: web.Request):
-    req_ctx = LicensedItemsRequestContext.model_validate(request)
-    path_params = parse_request_path_parameters_as(LicensedItemsPathParams, request)
-
-    licensed_item: LicensedItem = await _licensed_items_service.get_licensed_item(
-        app=request.app,
-        licensed_item_id=path_params.licensed_item_id,
-        product_name=req_ctx.product_name,
-    )
-    return envelope_json_response(LicensedItemRestGet.from_domain_model(licensed_item))
-
-
 @routes.post(
     f"/{VTAG}/catalog/licensed-items/{{licensed_item_id}}:purchase",
     name="purchase_licensed_item",
@@ -102,11 +86,30 @@ async def purchase_licensed_item(request: web.Request):
     path_params = parse_request_path_parameters_as(LicensedItemsPathParams, request)
     body_params = await parse_request_body_as(LicensedItemsBodyParams, request)
 
-    await _licensed_items_service.purchase_licensed_item(
+    purchased_item = await _licensed_items_service.purchase_licensed_item(
         app=request.app,
         user_id=req_ctx.user_id,
         licensed_item_id=path_params.licensed_item_id,
         product_name=req_ctx.product_name,
         body_params=body_params,
     )
-    return web.json_response(status=status.HTTP_204_NO_CONTENT)
+
+    output = LicensedItemPurchaseGet(
+        licensed_item_purchase_id=purchased_item.licensed_item_purchase_id,
+        product_name=purchased_item.product_name,
+        licensed_item_id=purchased_item.licensed_item_id,
+        key=purchased_item.key,
+        version=purchased_item.version,
+        wallet_id=purchased_item.wallet_id,
+        pricing_unit_cost_id=purchased_item.pricing_unit_cost_id,
+        pricing_unit_cost=purchased_item.pricing_unit_cost,
+        start_at=purchased_item.start_at,
+        expire_at=purchased_item.expire_at,
+        num_of_seats=purchased_item.num_of_seats,
+        purchased_by_user=purchased_item.purchased_by_user,
+        user_email=purchased_item.user_email,
+        purchased_at=purchased_item.purchased_at,
+        modified_at=purchased_item.modified,
+    )
+
+    return envelope_json_response(output)
