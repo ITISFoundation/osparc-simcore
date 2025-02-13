@@ -17,6 +17,9 @@ from pydantic import NonNegativeInt
 from servicelib.utils import logged_gather
 from simcore_postgres_database.models.projects import ProjectType
 from simcore_postgres_database.webserver_models import ProjectType as ProjectTypeDB
+from simcore_service_webserver.projects._permalink_api import (
+    aggregate_permalink_in_project,
+)
 from simcore_service_webserver.projects._projects_db import (
     batch_get_trashed_by_primary_gid,
 )
