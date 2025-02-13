@@ -4,10 +4,6 @@ import logging
 from datetime import UTC, datetime, timedelta
 
 from aiohttp import web
-
-# from models_library.api_schemas_webserver import (
-#     licensed_items_purchases as webserver_licensed_items_purchases,
-# )
 from models_library.api_schemas_resource_usage_tracker.licensed_items_purchases import (
     LicensedItemPurchaseGet,
 )
