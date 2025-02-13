@@ -1,12 +1,17 @@
 from collections.abc import AsyncIterable
 from datetime import UTC, datetime
 from stat import S_IFREG
+from typing import TypeAlias
 
 from models_library.data_streams import DataSize, DataStream
 from stream_zip import ZIP_32, AsyncMemberFile, async_stream_zip
 
 from ..progress_bar import ProgressBarData
-from ._models import ArchiveEntries
+from ._models import StreamData
+
+FileNameInArchive: TypeAlias = str
+ArchiveFileEntry: TypeAlias = tuple[FileNameInArchive, StreamData]
+ArchiveEntries: TypeAlias = list[ArchiveFileEntry]
 
 
 async def _member_files_iter(

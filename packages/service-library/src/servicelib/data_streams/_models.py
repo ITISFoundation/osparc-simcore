@@ -1,12 +1,6 @@
 from dataclasses import dataclass
-from typing import TypeAlias
 
-from models_library.data_streams import (
-    DataSize,
-    DataStream,
-    DataStreamCallable,
-    FileNameInArchive,
-)
+from models_library.data_streams import DataSize, DataStream, DataStreamCallable
 
 from ..progress_bar import ProgressBarData
 
@@ -22,7 +16,3 @@ class StreamData:
         async for chunk in self.data_stream_callable():
             await progress_bar.update(len(chunk))
             yield chunk
-
-
-ArchiveFileEntry: TypeAlias = tuple[FileNameInArchive, StreamData]
-ArchiveEntries: TypeAlias = list[ArchiveFileEntry]
