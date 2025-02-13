@@ -7,15 +7,9 @@
       "items": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "string"
-          },
-          "title": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          }
+          "id": { "type": "string" },
+          "title": { "type": "string" },
+          "description": { "type": "string" }
         },
         "required": ["id", "title"]
       }
@@ -27,75 +21,37 @@
           {
             "type": "object",
             "properties": {
-              "resourceType": {
-                "const": "study"
-              },
-              "title": {
-                "type": "string"
-              },
-              "icon": {
-                "type": "string"
-              },
-              "newStudyLabel": {
-                "type": "string"
-              },
-              "idToWidget": {
-                "type": "string"
-              }
+              "resourceType": { "const": "study" },
+              "title": { "type": "string" },
+              "icon": { "type": "string" },
+              "newStudyLabel": { "type": "string" },
+              "idToWidget": { "type": "string" }
             },
             "required": ["resourceType", "title"]
           },
           {
             "type": "object",
             "properties": {
-              "resourceType": {
-                "const": "template"
-              },
-              "expectedTemplateLabel": {
-                "type": "string"
-              },
-              "title": {
-                "type": "string"
-              },
-              "icon": {
-                "type": "string"
-              },
-              "newStudyLabel": {
-                "type": "string"
-              },
-              "category": {
-                "type": "string"
-              },
-              "idToWidget": {
-                "type": "string"
-              }
+              "resourceType": { "const": "template" },
+              "expectedTemplateLabel": { "type": "string" },
+              "title": { "type": "string" },
+              "icon": { "type": "string" },
+              "newStudyLabel": { "type": "string" },
+              "category": { "type": "string" },
+              "idToWidget": { "type": "string" }
             },
             "required": ["resourceType", "expectedTemplateLabel", "title"]
           },
           {
             "type": "object",
             "properties": {
-              "resourceType": {
-                "const": "service"
-              },
-              "expectedKey": {
-                "type": "string"
-              },
-              "title": {
-                "type": "string"
-              },
-              "icon": {
-                "type": "string"
-              },
-              "newStudyLabel": {
-                "type": "string"
-              },
-              "category": {
-                "type": "string"
-              },
-              "idToWidget": {
-                "type": "string"
-              }
+              "resourceType": { "const": "service" },
+              "expectedKey": { "type": "string" },
+              "title": { "type": "string" },
+              "icon": { "type": "string" },
+              "newStudyLabel": { "type": "string" },
+              "category": { "type": "string" },
+              "idToWidget": { "type": "string" }
             },
             "required": ["resourceType", "expectedKey", "title"]
           },
@@ -106,24 +62,12 @@
                 "type": "boolean",
                 "const": true
               },
-              "title": {
-                "type": "string"
-              },
-              "icon": {
-                "type": "string"
-              },
-              "reason": {
-                "type": "string"
-              },
-              "newStudyLabel": {
-                "type": "string"
-              },
-              "category": {
-                "type": "string"
-              },
-              "idToWidget": {
-                "type": "string"
-              }
+              "title": { "type": "string" },
+              "icon": { "type": "string" },
+              "reason": { "type": "string" },
+              "newStudyLabel": { "type": "string" },
+              "category": { "type": "string" },
+              "idToWidget": { "type": "string" }
             },
             "required": ["showDisabled", "title"]
           }
