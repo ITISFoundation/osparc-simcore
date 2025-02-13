@@ -37,14 +37,12 @@ def _create_random_content(
     if remaining_size <= 0:
         return remaining_size
 
-    # Decide to create a file or a subdirectory
-    # Create a file
     file_size = ByteSize(
         faker.pyint(
             min_value=min(file_min_size, remaining_size),
             max_value=min(remaining_size, file_max_size),
         )
-    )  # max file size 1MB
+    )
     file_path = base_dir / f"{faker.file_path(depth=faker.pyint(0, 5), absolute=False)}"
     file_path.parent.mkdir(parents=True, exist_ok=True)
     assert not file_path.exists()
