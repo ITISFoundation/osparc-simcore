@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: simcore-service-webserver
   description: Main service with an interface (http-API & websockets) to the web front-end
-  version: 0.56.0
+  version: 0.57.0
 servers:
 - url: ''
   description: webserver
@@ -1114,6 +1114,8 @@ paths:
       - products
       - po
       summary: Get Product
+      description: 'NOTE: `/products/current` is used to define current project w/o
+        naming it'
       operationId: get_product
       parameters:
       - name: product_name
@@ -1133,7 +1135,20 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_GetProduct_'
+                $ref: '#/components/schemas/Envelope_ProductGet_'
+  /v0/products/current/ui:
+    get:
+      tags:
+      - products
+      summary: Get Current Product Ui
+      operationId: get_current_product_ui
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_ProductUIGet_'
   /v0/products/{product_name}/templates/{template_id}:
     put:
       tags:
@@ -7867,19 +7882,6 @@ components:
           title: Error
       type: object
       title: Envelope[GetCreditPrice]
-    Envelope_GetProduct_:
-      properties:
-        data:
-          anyOf:
-          - $ref: '#/components/schemas/GetProduct'
-          - type: 'null'
-        error:
-          anyOf:
-          - {}
-          - type: 'null'
-          title: Error
-      type: object
-      title: Envelope[GetProduct]
     Envelope_GetProjectInactivityResponse_:
       properties:
         data:
@@ -8179,6 +8181,32 @@ components:
           title: Error
       type: object
       title: Envelope[PricingUnitGet]
+    Envelope_ProductGet_:
+      properties:
+        data:
+          anyOf:
+          - $ref: '#/components/schemas/ProductGet'
+          - type: 'null'
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[ProductGet]
+    Envelope_ProductUIGet_:
+      properties:
+        data:
+          anyOf:
+          - $ref: '#/components/schemas/ProductUIGet'
+          - type: 'null'
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[ProductUIGet]
     Envelope_ProjectGet_:
       properties:
         data:
@@ -9656,84 +9684,6 @@ components:
       - usdPerCredit
       - minPaymentAmountUsd
       title: GetCreditPrice
-    GetProduct:
-      properties:
-        name:
-          type: string
-          title: Name
-        displayName:
-          type: string
-          title: Displayname
-        shortName:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Shortname
-          description: Short display name for SMS
-        vendor:
-          anyOf:
-          - type: object
-          - type: 'null'
-          title: Vendor
-          description: vendor attributes
-        issues:
-          anyOf:
-          - items:
-              type: object
-            type: array
-          - type: 'null'
-          title: Issues
-          description: Reference to issues tracker
-        manuals:
-          anyOf:
-          - items:
-              type: object
-            type: array
-          - type: 'null'
-          title: Manuals
-          description: List of manuals
-        support:
-          anyOf:
-          - items:
-              type: object
-            type: array
-          - type: 'null'
-          title: Support
-          description: List of support resources
-        loginSettings:
-          type: object
-          title: Loginsettings
-        maxOpenStudiesPerUser:
-          anyOf:
-          - type: integer
-            exclusiveMinimum: true
-            minimum: 0
-          - type: 'null'
-          title: Maxopenstudiesperuser
-        isPaymentEnabled:
-          type: boolean
-          title: Ispaymentenabled
-        creditsPerUsd:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Creditsperusd
-        templates:
-          items:
-            $ref: '#/components/schemas/GetProductTemplate'
-          type: array
-          title: Templates
-          description: List of templates available to this product for communications
-            (e.g. emails, sms, etc)
-      type: object
-      required:
-      - name
-      - displayName
-      - loginSettings
-      - maxOpenStudiesPerUser
-      - isPaymentEnabled
-      - creditsPerUsd
-      title: GetProduct
     GetProductTemplate:
       properties:
         id:
@@ -12046,6 +11996,98 @@ components:
       - currentCostPerUnit
       - default
       title: PricingUnitGet
+    ProductGet:
+      properties:
+        name:
+          type: string
+          title: Name
+        displayName:
+          type: string
+          title: Displayname
+        shortName:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Shortname
+          description: Short display name for SMS
+        vendor:
+          anyOf:
+          - type: object
+          - type: 'null'
+          title: Vendor
+          description: vendor attributes
+        issues:
+          anyOf:
+          - items:
+              type: object
+            type: array
+          - type: 'null'
+          title: Issues
+          description: Reference to issues tracker
+        manuals:
+          anyOf:
+          - items:
+              type: object
+            type: array
+          - type: 'null'
+          title: Manuals
+          description: List of manuals
+        support:
+          anyOf:
+          - items:
+              type: object
+            type: array
+          - type: 'null'
+          title: Support
+          description: List of support resources
+        loginSettings:
+          type: object
+          title: Loginsettings
+        maxOpenStudiesPerUser:
+          anyOf:
+          - type: integer
+            exclusiveMinimum: true
+            minimum: 0
+          - type: 'null'
+          title: Maxopenstudiesperuser
+        isPaymentEnabled:
+          type: boolean
+          title: Ispaymentenabled
+        creditsPerUsd:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Creditsperusd
+        templates:
+          items:
+            $ref: '#/components/schemas/GetProductTemplate'
+          type: array
+          title: Templates
+          description: List of templates available to this product for communications
+            (e.g. emails, sms, etc)
+      type: object
+      required:
+      - name
+      - displayName
+      - loginSettings
+      - maxOpenStudiesPerUser
+      - isPaymentEnabled
+      - creditsPerUsd
+      title: ProductGet
+    ProductUIGet:
+      properties:
+        productName:
+          type: string
+          title: Productname
+        ui:
+          type: object
+          title: Ui
+          description: Front-end owned ui product configuration
+      type: object
+      required:
+      - productName
+      - ui
+      title: ProductUIGet
     ProjectCopyOverride:
       properties:
         name:
