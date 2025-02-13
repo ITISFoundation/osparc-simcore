@@ -283,7 +283,6 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
             });
             pUnit.addListener("rentPricingUnit", () => {
               this.fireDataEvent("modelPurchaseRequested", {
-                modelId: anatomicalModelsData["licensedResourceData"]["source"]["id"],
                 licensedItemId: anatomicalModelsData["licensedItemId"],
                 pricingPlanId: anatomicalModelsData["pricingPlanId"],
                 pricingUnitId: pricingUnit.getPricingUnitId(),
