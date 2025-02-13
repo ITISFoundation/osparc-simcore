@@ -17,11 +17,10 @@ from models_library.api_schemas_storage import ETag, S3BucketName, UploadedPart
 from models_library.basic_types import SHA256Str
 from pydantic import AnyUrl, ByteSize, TypeAdapter
 from servicelib.logging_utils import log_catch, log_context
-from servicelib.progress_bar import ProgressBarData
 from servicelib.utils import limited_gather
-from servicelib.zip_stream import DEFAULT_READ_CHUNK_SIZE, FileSize, FileStream
+from servicelib.zip_stream import DEFAULT_READ_CHUNK_SIZE, DataStream, FileSize
 from servicelib.zip_stream._file_like import FileLikeFileStreamReader
-from servicelib.zip_stream._types import StreamData
+from servicelib.zip_stream._models import StreamData
 from settings_library.s3 import S3Settings
 from types_aiobotocore_s3 import S3Client
 from types_aiobotocore_s3.literals import BucketLocationConstraintType
@@ -479,7 +478,6 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
         bucket_name: S3BucketName,
         object_key: S3ObjectKey,
         *,
-        progress_bar: ProgressBarData | None,
         chunk_size: int = DEFAULT_READ_CHUNK_SIZE,
     ) -> StreamData:
         """stream read an object from S3 chunk by chunk"""
@@ -494,7 +492,7 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
         )
         file_size = FileSize(head_response["ContentLength"])
 
-        async def _() -> FileStream:
+        async def _() -> DataStream:
             # Download the file in chunks
             position = 0
             while position < file_size:
@@ -510,21 +508,18 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
                 chunk = await response["Body"].read()
 
                 # Yield the chunk for processing
-                if progress_bar is not None:
-                    await progress_bar.update(len(chunk))
-
                 yield chunk
 
                 position += chunk_size
 
-        return file_size, _
+        return StreamData(file_size, _)
 
     @s3_exception_handler(_logger)
     async def upload_object_from_file_stream(
         self,
         bucket_name: S3BucketName,
         object_key: S3ObjectKey,
-        file_stream: FileStream,
+        file_stream: DataStream,
     ) -> None:
         """streams write an object in S3 from an AsyncIterable[bytes]"""
         await self._client.upload_fileobj(FileLikeFileStreamReader(file_stream), bucket_name, object_key)  # type: ignore[arg-type]

@@ -3,14 +3,14 @@ from pathlib import Path
 import aiofiles
 
 from ._file_like import FileLikeFileStreamReader
-from ._types import FileStream
+from ._models import DataStream
 
 
 class DiskStreamWriter:
     def __init__(self, destination_path: Path):
         self.destination_path = destination_path
 
-    async def write_from_stream(self, stream: FileStream) -> None:
+    async def write_from_stream(self, stream: DataStream) -> None:
         async with aiofiles.open(self.destination_path, "wb") as f:
             async for chunk in stream:
                 await f.write(chunk)

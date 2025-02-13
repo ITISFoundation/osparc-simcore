@@ -19,7 +19,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
-from unittest.mock import AsyncMock, Mock
+from unittest.mock import Mock
 
 import aiofiles
 import botocore.exceptions
@@ -65,7 +65,7 @@ from servicelib.zip_stream import (
     DiskStreamReader,
     get_zip_archive_file_stream,
 )
-from servicelib.zip_stream._types import FileSize
+from servicelib.zip_stream._models import FileSize
 from settings_library.s3 import S3Settings
 from types_aiobotocore_s3 import S3Client
 from types_aiobotocore_s3.literals import BucketLocationConstraintType
@@ -1406,11 +1406,14 @@ async def test_read_object_file_stream(
     tmp_file_name: Path,
 ):
     async with aiofiles.open(tmp_file_name, "wb") as f:
-        file_size, file_stream = await simcore_s3_api.get_object_file_stream(
-            with_s3_bucket, with_uploaded_file_on_s3.s3_key, chunk_size=1024
+        file_size, file_stream = await simcore_s3_api.get_object_data_stream(
+            with_s3_bucket,
+            with_uploaded_file_on_s3.s3_key,
+            chunk_size=1024,
+            progress_bar=None,
         )
         assert isinstance(file_size, FileSize)
-        async for chunk in file_stream(AsyncMock()):
+        async for chunk in file_stream():
             await f.write(chunk)
 
     assert file_size == tmp_file_name.stat().st_size
@@ -1425,13 +1428,13 @@ async def test_upload_object_from_file_stream(
     with_s3_bucket: S3BucketName,
 ):
     object_key = "read_from_s3_write_to_s3"
-    file_size, file_stream = await simcore_s3_api.get_object_file_stream(
-        with_s3_bucket, with_uploaded_file_on_s3.s3_key
+    file_size, file_stream = await simcore_s3_api.get_object_data_stream(
+        with_s3_bucket, with_uploaded_file_on_s3.s3_key, progress_bar=None
     )
     assert isinstance(file_size, FileSize)
 
     await simcore_s3_api.upload_object_from_file_stream(
-        with_s3_bucket, object_key, file_stream(AsyncMock())
+        with_s3_bucket, object_key, file_stream()
     )
 
     await simcore_s3_api.delete_object(bucket=with_s3_bucket, object_key=object_key)
@@ -1573,7 +1576,7 @@ async def test_workflow_compress_s3_objects_and_local_files_in_a_single_archive_
         archive_file_entries.append(
             (
                 s3_object_key,
-                await simcore_s3_api.get_object_file_stream(
+                await simcore_s3_api.get_object_data_stream(
                     with_s3_bucket, s3_object_key
                 ),
             )

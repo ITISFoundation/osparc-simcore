@@ -1,8 +1,8 @@
-from ._types import FileStream
+from ._models import DataStream
 
 
 class FileLikeFileStreamReader:
-    def __init__(self, file_stream: FileStream):
+    def __init__(self, file_stream: DataStream):
         self.file_stream = file_stream
         self._buffer = bytearray()
         self._async_iterator = self._get_iterator()
