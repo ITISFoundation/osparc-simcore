@@ -55,7 +55,7 @@ async def _create_permalink(
 
 
 async def update_or_pop_permalink_in_project(
-    app: web.Application, project: ProjectDict
+    request: web.Request, project: ProjectDict
 ) -> ProjectPermalink | None:
     """Updates permalink entry in project
 

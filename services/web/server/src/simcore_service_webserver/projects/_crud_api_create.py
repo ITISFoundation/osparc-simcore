@@ -413,7 +413,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
         task_progress.update()
 
         # Adds permalink
-        await update_or_pop_permalink_in_project(request.app, new_project)
+        await update_or_pop_permalink_in_project(request, new_project)
 
         # Adds folderId
         user_specific_project_data_db = (
