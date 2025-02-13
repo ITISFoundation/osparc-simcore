@@ -21,12 +21,12 @@ _DEFAULT_TIMEOUT_S: Final[NonNegativeInt] = 30
 _RPC_METHOD_NAME_ADAPTER = TypeAdapter(RPCMethodName)
 
 
-async def start_zipping(
+async def start_data_export(
     rabbitmq_rpc_client: RabbitMQRPCClient, *, paths: ZipTaskStartInput
 ) -> TaskRpcGet:
     result = await rabbitmq_rpc_client.request(
         STORAGE_RPC_NAMESPACE,
-        _RPC_METHOD_NAME_ADAPTER.validate_python("start_zipping"),
+        _RPC_METHOD_NAME_ADAPTER.validate_python("start_data_export"),
         paths=paths,
         timeout_s=_DEFAULT_TIMEOUT_S,
     )
@@ -34,12 +34,12 @@ async def start_zipping(
     return result
 
 
-async def abort_zipping(
+async def abort_data_export(
     rabbitmq_rpc_client: RabbitMQRPCClient, *, task_id: TaskRpcId
 ) -> ZipTaskAbortOutput:
     result = await rabbitmq_rpc_client.request(
         STORAGE_RPC_NAMESPACE,
-        _RPC_METHOD_NAME_ADAPTER.validate_python("abort_zipping"),
+        _RPC_METHOD_NAME_ADAPTER.validate_python("abort_data_export"),
         task_id=task_id,
         timeout_s=_DEFAULT_TIMEOUT_S,
     )
@@ -47,12 +47,12 @@ async def abort_zipping(
     return result
 
 
-async def get_zipping_status(
+async def get_data_export_status(
     rabbitmq_rpc_client: RabbitMQRPCClient, *, task_id: TaskRpcId
 ) -> TaskRpcStatus:
     result = await rabbitmq_rpc_client.request(
         STORAGE_RPC_NAMESPACE,
-        _RPC_METHOD_NAME_ADAPTER.validate_python("get_zipping_status"),
+        _RPC_METHOD_NAME_ADAPTER.validate_python("get_data_export_status"),
         task_id=task_id,
         timeout_s=_DEFAULT_TIMEOUT_S,
     )
@@ -60,12 +60,12 @@ async def get_zipping_status(
     return result
 
 
-async def get_zipping_result(
+async def get_data_export_result(
     rabbitmq_rpc_client: RabbitMQRPCClient, *, task_id: TaskRpcId
 ) -> TaskRpcResult:
     result = await rabbitmq_rpc_client.request(
         STORAGE_RPC_NAMESPACE,
-        _RPC_METHOD_NAME_ADAPTER.validate_python("get_zipping_result"),
+        _RPC_METHOD_NAME_ADAPTER.validate_python("get_data_export_result"),
         task_id=task_id,
         timeout_s=_DEFAULT_TIMEOUT_S,
     )

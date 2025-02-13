@@ -18,7 +18,7 @@ router = RPCRouter()
 
 
 @router.expose()
-async def start_zipping(app: FastAPI, paths: ZipTaskStartInput) -> TaskRpcGet:
+async def start_data_export(app: FastAPI, paths: ZipTaskStartInput) -> TaskRpcGet:
     assert app  # nosec
     return TaskRpcGet(
         task_id=uuid4(),
@@ -27,13 +27,13 @@ async def start_zipping(app: FastAPI, paths: ZipTaskStartInput) -> TaskRpcGet:
 
 
 @router.expose()
-async def abort_zipping(app: FastAPI, task_id: TaskRpcId) -> ZipTaskAbortOutput:
+async def abort_data_export(app: FastAPI, task_id: TaskRpcId) -> ZipTaskAbortOutput:
     assert app  # nosec
     return ZipTaskAbortOutput(result=True, task_id=task_id)
 
 
 @router.expose()
-async def get_zipping_status(app: FastAPI, task_id: TaskRpcId) -> TaskRpcStatus:
+async def get_data_export_status(app: FastAPI, task_id: TaskRpcId) -> TaskRpcStatus:
     assert app  # nosec
     return TaskRpcStatus(
         task_id=task_id,
@@ -45,7 +45,7 @@ async def get_zipping_status(app: FastAPI, task_id: TaskRpcId) -> TaskRpcStatus:
 
 
 @router.expose()
-async def get_zipping_result(app: FastAPI, task_id: TaskRpcId) -> TaskRpcResult:
+async def get_data_export_result(app: FastAPI, task_id: TaskRpcId) -> TaskRpcResult:
     assert app  # nosec
     assert task_id  # nosec
     return TaskRpcResult(result="Here's your result.", error=None)
