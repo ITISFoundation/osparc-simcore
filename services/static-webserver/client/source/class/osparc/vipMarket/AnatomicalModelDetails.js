@@ -261,10 +261,10 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
 
       middleLayout.add(featuresLayout);
 
+      modelLayout.add(middleLayout);
+
       const importButton = this.__createImportSection(anatomicalModelsData);
       modelLayout.add(importButton);
-
-      modelLayout.add(middleLayout);
     },
 
     __addPricingUnits: function(anatomicalModelsData) {
