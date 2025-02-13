@@ -46,7 +46,7 @@ def create_folder_of_size_with_multiple_files(
         directory_size: ByteSize,
         file_min_size: ByteSize,
         file_max_size: ByteSize,
-        alternaitve_base_dir: Path | None,
+        working_directory: Path | None,
     ) -> Path:
         # Helper function to create random files and directories
         assert file_min_size > 0
@@ -75,7 +75,7 @@ def create_folder_of_size_with_multiple_files(
             return ByteSize(remaining_size - file_size)
 
         # Recursively create content in the temporary directory
-        folder_path = alternaitve_base_dir or tmp_path
+        folder_path = working_directory or tmp_path
         remaining_size = directory_size
         with log_context(
             logging.INFO,
