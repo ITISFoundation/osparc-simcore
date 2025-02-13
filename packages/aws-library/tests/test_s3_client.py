@@ -65,7 +65,7 @@ from servicelib.zip_stream import (
     DiskStreamReader,
     get_zip_archive_file_stream,
 )
-from servicelib.zip_stream._models import FileSize
+from servicelib.zip_stream._models import DataSize
 from settings_library.s3 import S3Settings
 from types_aiobotocore_s3 import S3Client
 from types_aiobotocore_s3.literals import BucketLocationConstraintType
@@ -1412,7 +1412,7 @@ async def test_read_object_file_stream(
             chunk_size=1024,
             progress_bar=None,
         )
-        assert isinstance(file_size, FileSize)
+        assert isinstance(file_size, DataSize)
         async for chunk in file_stream():
             await f.write(chunk)
 
@@ -1431,7 +1431,7 @@ async def test_upload_object_from_file_stream(
     file_size, file_stream = await simcore_s3_api.get_object_data_stream(
         with_s3_bucket, with_uploaded_file_on_s3.s3_key, progress_bar=None
     )
-    assert isinstance(file_size, FileSize)
+    assert isinstance(file_size, DataSize)
 
     await simcore_s3_api.upload_object_from_file_stream(
         with_s3_bucket, object_key, file_stream()
@@ -1566,7 +1566,7 @@ async def test_workflow_compress_s3_objects_and_local_files_in_a_single_archive_
         archive_file_entries.append(
             (
                 file_name,
-                DiskStreamReader(file_path).get_stream_data(),
+                DiskStreamReader(file_path).get_stream_info(),
             )
         )
 

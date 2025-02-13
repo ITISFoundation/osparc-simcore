@@ -9,12 +9,12 @@ FileNameInArchive: TypeAlias = str
 DataStream: TypeAlias = AsyncIterable[bytes]
 
 DataStreamCallable: TypeAlias = Callable[[], DataStream]
-FileSize: TypeAlias = ByteSize
+DataSize: TypeAlias = ByteSize
 
 
 @dataclass(frozen=True)
 class StreamData:
-    file_size: FileSize
+    data_size: DataSize
     data_stream_callable: DataStreamCallable
 
     async def with_progress_data_stream(
