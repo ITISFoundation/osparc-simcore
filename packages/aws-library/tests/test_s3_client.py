@@ -591,20 +591,20 @@ async def test_list_objects_pagination_num_objects_limits(
     with_s3_bucket: S3BucketName,
     simcore_s3_api: SimcoreS3API,
 ):
-    objects = await simcore_s3_api.list_objects(
-        bucket=with_s3_bucket,
-        prefix=None,
-        start_after=None,
-        num_objects=faker.pyint(max_value=0),
-    )
-    assert objects == []
+    with pytest.raises(ValueError, match=r"num_objects must be >= 1"):
+        await simcore_s3_api.list_objects(
+            bucket=with_s3_bucket,
+            prefix=None,
+            start_after=None,
+            limit=faker.pyint(max_value=0),
+        )
 
     with pytest.raises(ValueError, match=r"num_objects must be <= \d+"):
         await simcore_s3_api.list_objects(
             bucket=with_s3_bucket,
             prefix=None,
             start_after=None,
-            num_objects=_AWS_MAX_ITEMS_PER_PAGE + 1,
+            limit=_AWS_MAX_ITEMS_PER_PAGE + 1,
         )
 
 
