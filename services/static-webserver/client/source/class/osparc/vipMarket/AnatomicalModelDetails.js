@@ -54,11 +54,8 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
 
       const anatomicalModelsData = this.getAnatomicalModelsData();
       if (anatomicalModelsData && anatomicalModelsData["licensedResources"].length) {
-        this.__addModelsInfo(anatomicalModelsData["licensedResources"]);
-        const importButton = this.__createImportSection(anatomicalModelsData);
-        this._add(importButton);
-        const pricingUnits = this.__createPricingUnits(anatomicalModelsData);
-        this._add(pricingUnits);
+        this.__addModelsInfo(anatomicalModelsData);
+        this.__addPricingUnits(anatomicalModelsData);
       } else {
         const selectModelLabel = new qx.ui.basic.Label().set({
           value: this.tr("Select a model for more details"),
@@ -72,9 +69,10 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
       }
     },
 
-    __addModelsInfo: function(modelsInfo) {
+    __addModelsInfo: function(anatomicalModelsData) {
       const modelLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(16));
 
+      const modelsInfo = anatomicalModelsData["licensedResources"];
       if (modelsInfo.length > 1) {
         const sBox = new qx.ui.form.SelectBox().set({
           minWidth: 200,
@@ -89,21 +87,22 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
         sBox.addListener("changeSelection", e => {
           const selection = e.getData();
           if (selection.length) {
-            const modelFound = modelsInfo.find(mdlInfo => mdlInfo["source"]["id"] === selection[0].modelId)
-            this.__populateModelInfo(modelLayout, modelFound["source"]);
+            const idxFound = modelsInfo.findIndex(mdlInfo => mdlInfo["source"]["id"] === selection[0].modelId)
+            this.__populateModelInfo(modelLayout, anatomicalModelsData, idxFound);
           }
         }, this);
-        this.__populateModelInfo(modelLayout, modelsInfo[0]["source"]);
+        this.__populateModelInfo(modelLayout, anatomicalModelsData, 0);
       } else {
-        this.__populateModelInfo(modelLayout, modelsInfo[0]["source"]);
+        this.__populateModelInfo(modelLayout, anatomicalModelsData, 0);
       }
 
       this._add(modelLayout);
     },
 
-    __populateModelInfo: function(modelLayout, anatomicalModel) {
+    __populateModelInfo: function(modelLayout, anatomicalModelsData, idxFound = 0) {
       modelLayout.removeAll();
 
+      const anatomicalModel = anatomicalModelsData["licensedResources"][idxFound]["source"];
       const topGrid = new qx.ui.layout.Grid(8, 8);
       topGrid.setColumnFlex(0, 1);
       const topLayout = new qx.ui.container.Composite(topGrid);
@@ -260,10 +259,13 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
 
       middleLayout.add(featuresLayout);
 
+      const importButton = this.__createImportSection(anatomicalModelsData);
+      modelLayout.add(importButton);
+
       modelLayout.add(middleLayout);
     },
 
-    __createPricingUnits: function(anatomicalModelsData) {
+    __addPricingUnits: function(anatomicalModelsData) {
       const pricingUnitsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
         alignX: "center"
       }));
@@ -290,7 +292,7 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
         })
         .catch(err => console.error(err));
 
-      return pricingUnitsLayout;
+      this._add(pricingUnitsLayout);
     },
 
     __createImportSection: function(anatomicalModelsData) {
