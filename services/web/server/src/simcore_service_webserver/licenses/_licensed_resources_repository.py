@@ -2,7 +2,12 @@ import logging
 from typing import Any
 
 from aiohttp import web
-from models_library.licenses import LicensedResourceDB, LicensedResourceType
+from models_library.licenses import (
+    LicensedResourceDB,
+    LicensedResourceID,
+    LicensedResourcePatchDB,
+    LicensedResourceType,
+)
 from simcore_postgres_database.models.licensed_resources import licensed_resources
 from simcore_postgres_database.utils_repos import (
     get_columns_from_db_model,
@@ -97,8 +102,41 @@ async def get_by_resource_identifier(
         row = result.one_or_none()
         if row is None:
             raise LicensedResourceNotFoundError(
-                licensed_item_id="Unkown",  # <-- NOTE: will be changed for licensed_resource_id
+                licensed_resource_id="Unknown",
                 licensed_resource_name=licensed_resource_name,
                 licensed_resource_type=licensed_resource_type,
+            )
+        return LicensedResourceDB.model_validate(row)
+
+
+async def update(
+    app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
+    licensed_resource_id: LicensedResourceID,
+    updates: LicensedResourcePatchDB,
+) -> LicensedResourceDB:
+    # NOTE: at least 'touch' if updated_values is empty
+    _updates = {
+        **updates.model_dump(exclude_unset=True),
+        licensed_resources.c.modified.name: func.now(),
+    }
+
+    # trashing
+    assert "trash" in dict(LicensedResourcePatchDB.model_fields)  # nosec
+    if trash := _updates.pop("trash", None):
+        _updates[licensed_resources.c.trashed.name] = func.now() if trash else None
+
+    async with transaction_context(get_asyncpg_engine(app), connection) as conn:
+        result = await conn.execute(
+            licensed_resources.update()
+            .values(**_updates)
+            .where(licensed_resources.c.licensed_resource_id == licensed_resource_id)
+            .returning(*_SELECTION_ARGS)
+        )
+        row = result.one_or_none()
+        if row is None:
+            raise LicensedResourceNotFoundError(
+                licensed_resource_id=licensed_resource_id
             )
         return LicensedResourceDB.model_validate(row)

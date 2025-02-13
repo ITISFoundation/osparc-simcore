@@ -79,10 +79,10 @@ async def checkout_licensed_item_for_wallet(
     result = await rabbitmq_rpc_client.request(
         WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("checkout_licensed_item_for_wallet"),
+        licensed_item_id=licensed_item_id,
         product_name=product_name,
         user_id=user_id,
         wallet_id=wallet_id,
-        licensed_item_id=licensed_item_id,
         num_of_seats=num_of_seats,
         service_run_id=service_run_id,
     )
