@@ -1,5 +1,5 @@
 import pytest
-from models_library.projects_nodes_ui import MarkerUI
+from models_library.api_schemas_webserver.projects_nodes_ui import MarkerUI
 from pydantic_extra_types.color import Color
 
 

@@ -10,9 +10,9 @@ from models_library.users import UserID
 from pydantic import AnyUrl, TypeAdapter
 from servicelib.fastapi.client_session import get_client_session
 from servicelib.utils import logged_gather
-from simcore_service_storage.core.settings import get_application_settings
 
 from ...constants import DATCORE_ID, DATCORE_STR, MAX_CONCURRENT_REST_CALLS
+from ...core.settings import get_application_settings
 from ...models import DatasetMetaData, FileMetaData
 from .datcore_adapter_exceptions import (
     DatcoreAdapterClientError,
@@ -64,7 +64,7 @@ async def _request(
             **request_kwargs,
         )
         response.raise_for_status()
-        response_data = await response.json()
+        response_data = response.json()
         assert isinstance(response_data, dict | list)  # nosec
         return response_data
 
