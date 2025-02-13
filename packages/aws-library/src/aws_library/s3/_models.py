@@ -1,6 +1,6 @@
 import datetime
 from pathlib import Path
-from typing import TypeAlias
+from typing import TypeAlias, cast
 
 from models_library.basic_types import SHA256Str
 from models_library.storage_schemas import ETag
@@ -43,7 +43,7 @@ class S3MetaData(BaseModel, frozen=True):
             object_key=obj["Key"],
             last_modified=obj["LastModified"],
             e_tag=obj["ETag"].strip('"'),
-            sha256_checksum=obj.get("ChecksumSHA256"),
+            sha256_checksum=cast(SHA256Str | None, obj.get("ChecksumSHA256")),
             size=ByteSize(obj["Size"]),
         )
 
