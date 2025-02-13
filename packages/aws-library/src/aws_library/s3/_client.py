@@ -171,6 +171,7 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
         prefix: S3ObjectPrefix | None,
         start_after: S3ObjectKey | None,
         limit: int = _MAX_ITEMS_PER_PAGE,
+        is_partial_prefix: bool = False,
     ) -> list[S3MetaData | S3DirectoryMetaData]:
         """returns a number of entries in the bucket, defined by limit
         the entries are sorted alphabetically by key
@@ -189,11 +190,16 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
         if limit > _AWS_MAX_ITEMS_PER_PAGE:
             msg = f"num_objects must be <= {_AWS_MAX_ITEMS_PER_PAGE}"
             raise ValueError(msg)
+
+        final_prefix = f"{prefix}" if prefix else ""
+        if prefix and not is_partial_prefix:
+            final_prefix = (
+                f"{final_prefix.rstrip(_S3_OBJECT_DELIMITER)}{_S3_OBJECT_DELIMITER}"
+            )
+
         listed_objects = await self._client.list_objects_v2(
             Bucket=bucket,
-            Prefix=f"{str(prefix).rstrip(_S3_OBJECT_DELIMITER)}{_S3_OBJECT_DELIMITER}"
-            if prefix
-            else "",
+            Prefix=final_prefix,
             MaxKeys=limit,
             StartAfter=start_after or "",
             Delimiter=_S3_OBJECT_DELIMITER,

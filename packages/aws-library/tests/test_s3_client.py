@@ -10,6 +10,7 @@ import asyncio
 import filecmp
 import json
 import logging
+import random
 from collections import defaultdict
 from collections.abc import AsyncIterator, Awaitable, Callable
 from dataclasses import dataclass
@@ -667,6 +668,58 @@ async def test_list_objects_pagination(
         limit=limit,
     )
     assert len(objects) == (total_num_files - (num_fetch - 1) * limit)
+
+
+@pytest.mark.parametrize(
+    "directory_size, min_file_size, max_file_size, depth",
+    [
+        (
+            TypeAdapter(ByteSize).validate_python("1Mib"),
+            TypeAdapter(ByteSize).validate_python("1B"),
+            TypeAdapter(ByteSize).validate_python("10Kib"),
+            0,
+        )
+    ],
+    ids=byte_size_ids,
+)
+async def test_list_objects_partial_prefix(
+    mocked_s3_server_envs: EnvVarsDict,
+    with_s3_bucket: S3BucketName,
+    with_uploaded_folder_on_s3: list[UploadedFile],
+    simcore_s3_api: SimcoreS3API,
+):
+    total_num_files = len(with_uploaded_folder_on_s3)
+    # pre-condition
+    directories, files = _get_paths_with_prefix(
+        with_uploaded_folder_on_s3, prefix_level=0, path_prefix=None
+    )
+    assert len(directories) == 1, "test pre-condition not fulfilled!"
+    assert not files
+
+    first_level_prefix = next(iter(directories))
+    first_level_directories, first_level_files = _get_paths_with_prefix(
+        with_uploaded_folder_on_s3, prefix_level=1, path_prefix=first_level_prefix
+    )
+    assert (
+        not first_level_directories
+    ), "test pre-condition not fulfilled, there should be only files for this test"
+    assert len(first_level_files) == total_num_files
+
+    a_random_file = random.choice(list(first_level_files))  # noqa: S311
+    a_partial_prefix = a_random_file.name[0:1]
+    expected_files = {
+        file for file in first_level_files if file.name.startswith(a_partial_prefix)
+    }
+
+    # now we will fetch the file objects according to the given limit
+    objects = await simcore_s3_api.list_objects(
+        bucket=with_s3_bucket,
+        prefix=first_level_prefix / a_partial_prefix,
+        start_after=None,
+        is_partial_prefix=True,
+    )
+    assert len(objects) == len(expected_files)
+    assert {_.as_path() for _ in objects} == expected_files
 
 
 async def test_get_file_metadata(
