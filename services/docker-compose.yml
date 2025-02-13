@@ -1383,7 +1383,7 @@ networks:
     name: ${SWARM_STACK_NAME}_docker-api-network
     driver: overlay
     attachable: true
-    internal: false
+    internal: true
     driver_opts:
       encrypted: "true"
     labels:
