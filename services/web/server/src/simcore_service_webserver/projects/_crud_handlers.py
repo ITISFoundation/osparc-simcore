@@ -39,7 +39,6 @@ from servicelib.common_headers import (
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.redis import get_project_locked_state
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
-from servicelib.utils import logged_gather
 from simcore_service_webserver.projects.models import ProjectDict
 
 from .._meta import API_VTAG as VTAG
@@ -62,10 +61,7 @@ from ._crud_handlers_models import (
     ProjectsListQueryParams,
     ProjectsSearchQueryParams,
 )
-from ._permalink_api import (
-    aggregate_permalink_in_project,
-    update_or_pop_permalink_in_project,
-)
+from ._permalink_api import update_or_pop_permalink_in_project
 from .exceptions import (
     ProjectDeleteError,
     ProjectInvalidRightsError,
@@ -232,20 +228,12 @@ async def list_projects(request: web.Request):
         order_by=OrderBy.model_construct(**query_params.order_by.model_dump()),
     )
 
-    updated_projects: list[ProjectDict] = await logged_gather(
-        # AGGREGATE data to the project from other sources and
-        # that depend on the **request**.
-        *(
-            # permalink
-            aggregate_permalink_in_project(request, project=prj)
-            for prj in projects
-        ),
-        reraise=True,
-        max_concurrency=100,
+    projects = await _crud_api_read.aggregate_data_to_projects_from_request(
+        request, projects
     )
 
     return _create_page_response(
-        projects=updated_projects,
+        projects=projects,
         request_url=request.url,
         total=total_number_of_projects,
         limit=query_params.limit,
@@ -280,20 +268,12 @@ async def list_projects_full_search(request: web.Request):
         order_by=OrderBy.model_construct(**query_params.order_by.model_dump()),
     )
 
-    updated_projects: list[ProjectDict] = await logged_gather(
-        # AGGREGATE data to the project from other sources and
-        # that depend on the **request**.
-        *(
-            # permalink
-            aggregate_permalink_in_project(request, project=prj)
-            for prj in projects
-        ),
-        reraise=True,
-        max_concurrency=100,
+    projects = await _crud_api_read.aggregate_data_to_projects_from_request(
+        request, projects
     )
 
     return _create_page_response(
-        projects=updated_projects,
+        projects=projects,
         request_url=request.url,
         total=total_number_of_projects,
         limit=query_params.limit,
