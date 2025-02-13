@@ -8,10 +8,8 @@
 
 import asyncio
 import filecmp
-import itertools
 import json
 import logging
-import random
 from collections import defaultdict
 from collections.abc import AsyncIterator, Awaitable, Callable
 from dataclasses import dataclass
@@ -388,18 +386,6 @@ async def with_uploaded_folder_on_s3(
 
 
 @pytest.fixture
-async def with_random_uploaded_folder_and_files_on_s3(
-    create_folder_on_s3: Callable[[], Awaitable[list[UploadedFile]]],
-) -> list[UploadedFile]:
-    # we want a number of folders on s3 and some files in the root as well
-    num_folders = random.randint(2, 2)  # noqa: S311
-    all_files = await asyncio.gather(
-        *[create_folder_on_s3() for _ in range(num_folders)]
-    )
-    return list(itertools.chain(*all_files))
-
-
-@pytest.fixture
 async def copy_file(
     simcore_s3_api: SimcoreS3API, with_s3_bucket: S3BucketName, s3_client: S3Client
 ) -> AsyncIterator[Callable[[S3ObjectKey, S3ObjectKey], Awaitable[S3ObjectKey]]]:
@@ -595,6 +581,29 @@ async def test_list_objects_prefix(
 
 
 async def test_list_objects_pagination_num_objects_limits(
+    faker: Faker,
+    mocked_s3_server_envs: EnvVarsDict,
+    with_s3_bucket: S3BucketName,
+    simcore_s3_api: SimcoreS3API,
+):
+    objects = await simcore_s3_api.list_objects(
+        bucket=with_s3_bucket,
+        prefix=None,
+        start_after=None,
+        num_objects=faker.pyint(max_value=0),
+    )
+    assert objects == []
+
+    with pytest.raises(ValueError, match=r"num_objects must be <= \d+"):
+        await simcore_s3_api.list_objects(
+            bucket=with_s3_bucket,
+            prefix=None,
+            start_after=None,
+            num_objects=_AWS_MAX_ITEMS_PER_PAGE + 1,
+        )
+
+
+async def test_list_objects_pagination(
     faker: Faker,
     mocked_s3_server_envs: EnvVarsDict,
     with_s3_bucket: S3BucketName,
