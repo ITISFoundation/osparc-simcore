@@ -34,12 +34,21 @@ qx.Class.define("osparc.store.Products", {
         });
       }
 
-      return osparc.data.Resources.fetch("productMetadata", "getUiConfig")
-        .then(uiConfig => {
-          const product = osparc.product.Utils.getProductName()
-          if (product in uiConfig) {
-            this.__uiConfig = uiConfig[product];
+      return Promise.all([
+        osparc.data.Resources.fetch("productMetadata", "getUiConfig"),
+        osparc.utils.Utils.fetchJSON("/resource/osparc/ui_config.json"),
+      ])
+        .then(values => {
+          let uiConfig = {};
+          if (values[0] && values[0]["ui"] && Object.keys(values[0]["ui"]).length) {
+            uiConfig = values[0]["ui"];
+          } else {
+            const product = osparc.product.Utils.getProductName();
+            if (values[1] && product in values[1]) {
+              uiConfig = values[1][product];
+            }
           }
+          this.__uiConfig = uiConfig;
           return this.__uiConfig;
         })
         .catch(console.error);
