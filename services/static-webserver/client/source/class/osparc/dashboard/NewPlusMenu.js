@@ -15,6 +15,45 @@
 
 ************************************************************************ */
 
+/**
+  Supports:
+  "categories": [{
+    "id": "string", // required
+    "title": "string", // required
+    "description": "string" // optional
+  }],
+  "resources": [{
+    "resourceType": "study", // it will start an empty study
+    "title": "string", // required
+    "icon": "fontAwesome inner link | url", // optional
+    "newStudyLabel": "string", // optional
+    "idToWidget": "string" // optional
+  }, {
+    "resourceType": "template", // it will create a study from the template
+    "expectedTemplateLabel": "string", // required
+    "title": "string", // required
+    "icon": "fontAwesome inner link | url", // optional
+    "newStudyLabel": "string", // optional
+    "category": "categories.id", // optional
+    "idToWidget": "string" // optional
+  }, {
+    "resourceType": "service", // it will create a study from the service
+    "expectedKey": "service.key", // required
+    "title": "string", // required
+    "icon": "fontAwesome inner link | url", // optional
+    "newStudyLabel": "string", // optional
+    "category": "categories.id", // optional
+    "idToWidget": "string" // optional
+  }, {
+    "showDisabled": true, // it will show a disabled button on the defined item
+    "title": "string", // required
+    "icon": "fontAwesome inner link | url", // optional
+    "reason": "string", // optional
+    "newStudyLabel": "string", // optional
+    "category": "categories.id", // optional
+    "idToWidget": "string" // optional
+  }]
+ */
 qx.Class.define("osparc.dashboard.NewPlusMenu", {
   extend: qx.ui.menu.Menu,
 
