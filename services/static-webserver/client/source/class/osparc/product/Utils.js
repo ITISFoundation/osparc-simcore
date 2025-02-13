@@ -323,8 +323,7 @@ qx.Class.define("osparc.product.Utils", {
     },
 
     hasNewPlusButton: function() {
-      const newStudiesData = osparc.store.Products.getInstance().getPlusButtonUiConfig();
-      return Boolean(newStudiesData);
+      return Boolean(osparc.store.Products.getInstance().getPlusButtonUiConfig());
     },
   }
 });
