@@ -4,30 +4,52 @@ from typing import cast
 
 from celery import Celery
 from celery.apps.worker import Worker
+from celery.result import AsyncResult
 from fastapi import FastAPI
 from settings_library.redis import RedisDatabase
-from simcore_service_storage.modules.celery.tasks import setup_celery_tasks
+from simcore_service_storage.modules.celery.tasks import archive
 
-from ...core.settings import get_application_settings
+from ...core.settings import ApplicationSettings, get_application_settings
 
 _log = logging.getLogger(__name__)
 
 
+class CeleryTaskQueue:
+    def __init__(self, app_settings: ApplicationSettings):
+        assert app_settings.STORAGE_REDIS
+        redis_dsn = app_settings.STORAGE_REDIS.build_redis_dsn(
+            RedisDatabase.CELERY_TASKS,
+        )
+
+        self._celery_app = Celery(
+            broker=redis_dsn,
+            backend=redis_dsn,
+        )
+
+    @property
+    def celery_app(self):
+        return self._celery_app
+
+    def create_task(self, task):
+        self._celery_app.task()(task)
+
+    def send_task(self, name: str, **kwargs) -> AsyncResult:
+        return self._celery_app.send_task(name, **kwargs)
+
+    def cancel_task(self, task_id: str):
+        self._celery_app.control.revoke(task_id)
+
+
+# TODO: use new FastAPI lifespan
 def setup_celery(app: FastAPI) -> None:
     async def on_startup() -> None:
         settings = get_application_settings(app)
         assert settings.STORAGE_REDIS
 
-        redis_dsn = settings.STORAGE_REDIS.build_redis_dsn(
-            RedisDatabase.CELERY_TASKS,
-        )
+        task_queue = CeleryTaskQueue(settings)
+        task_queue.create_task(archive)
 
-        app.state.celery_app = Celery(
-            broker=redis_dsn,
-            backend=redis_dsn,
-        )
-
-        setup_celery_tasks(app.state.celery_app)
+        app.state.task_queue = task_queue
 
         # FIXME: Experiment: to start worker in a separate process
         def worker_process():
@@ -44,5 +66,5 @@ def setup_celery(app: FastAPI) -> None:
     app.add_event_handler("shutdown", on_shutdown)
 
 
-def get_celery_app(app: FastAPI) -> Celery:
-    return cast(Celery, app.state.celery_app)
+def get_celery_task_queue(app: FastAPI) -> CeleryTaskQueue:
+    return cast(CeleryTaskQueue, app.state.task_queue)
