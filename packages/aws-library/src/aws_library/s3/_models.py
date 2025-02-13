@@ -4,7 +4,7 @@ from typing import TypeAlias
 
 from models_library.basic_types import SHA256Str
 from models_library.storage_schemas import ETag
-from pydantic import AnyUrl, BaseModel, ByteSize, ConfigDict, Field
+from pydantic import AnyUrl, BaseModel, ByteSize, Field
 from types_aiobotocore_s3.type_defs import HeadObjectOutputTypeDef, ObjectTypeDef
 
 S3ObjectKey: TypeAlias = str
@@ -12,14 +12,12 @@ S3ObjectPrefix: TypeAlias = Path
 UploadID: TypeAlias = str
 
 
-class S3MetaData(BaseModel):
+class S3MetaData(BaseModel, frozen=True):
     object_key: S3ObjectKey
     last_modified: datetime.datetime
     e_tag: ETag
     sha256_checksum: SHA256Str | None
     size: ByteSize
-
-    model_config = ConfigDict(frozen=True)
 
     @staticmethod
     def from_botocore_head_object(
@@ -53,13 +51,11 @@ class S3MetaData(BaseModel):
         return Path(self.object_key)
 
 
-class S3DirectoryMetaData(BaseModel):
+class S3DirectoryMetaData(BaseModel, frozen=True):
     prefix: S3ObjectPrefix
     size: ByteSize | None = Field(
         ..., description="Size of the directory if computed, None if unknown"
     )
-
-    model_config = ConfigDict(frozen=True)
 
     def as_path(self) -> Path:
         return self.prefix

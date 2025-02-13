@@ -29,7 +29,7 @@ from aws_library.s3._errors import (
     S3KeyNotFoundError,
     S3UploadNotFoundError,
 )
-from aws_library.s3._models import MultiPartUploadLinks
+from aws_library.s3._models import MultiPartUploadLinks, S3DirectoryMetaData, S3MetaData
 from faker import Faker
 from models_library.basic_types import SHA256Str
 from models_library.storage_schemas import S3BucketName, UploadedPart
@@ -537,33 +537,72 @@ async def test_list_objects(
     with_uploaded_folder_on_s3: list[UploadedFile],
     simcore_s3_api: SimcoreS3API,
 ):
-    # root
+    # Start testing from the root, will return only 1 object (the top level folder)
+    assert len(with_uploaded_folder_on_s3) >= 1, "wrong initialization of test!"
     top_level_paths = {
         Path(file.s3_key).parents[-2] for file in with_uploaded_folder_on_s3
     }
     assert len(top_level_paths) == 1
 
-    listed_objects = await simcore_s3_api.list_objects(
+    received_objects = await simcore_s3_api.list_objects(
         bucket=with_s3_bucket, prefix=None, start_after=None
     )
-    assert listed_objects is not None
-    assert len(listed_objects) == len(top_level_paths)
+    assert len(received_objects) == len(top_level_paths)
 
-    listed_object_paths = {obj.as_path() for obj in listed_objects}
+    listed_object_paths = {obj.as_path() for obj in received_objects}
     assert listed_object_paths == top_level_paths
 
-    # go one level deeper
-    first_level_paths = {
-        Path(file.s3_key).parents[-3] for file in with_uploaded_folder_on_s3
-    }
+    # go one level deeper, will return all the folders + files in the first level
     first_level_prefix = next(iter(top_level_paths))
-    listed_objects = await simcore_s3_api.list_objects(
+    first_level_directories = {
+        Path(file.s3_key).parents[-3]
+        for file in with_uploaded_folder_on_s3
+        if Path(file.s3_key).parent != first_level_prefix
+    }
+    first_level_files = {
+        Path(file.s3_key)
+        for file in with_uploaded_folder_on_s3
+        if Path(file.s3_key).parent == first_level_prefix
+    }
+    first_level_paths = first_level_directories | first_level_files
+
+    received_objects = await simcore_s3_api.list_objects(
         bucket=with_s3_bucket, prefix=first_level_prefix, start_after=None
     )
-    assert listed_objects is not None
-    assert len(listed_objects) == len(first_level_paths)
-    listed_object_paths = {obj.as_path() for obj in listed_objects}
+    assert len(received_objects) == len(first_level_paths)
+    listed_object_paths = {obj.as_path() for obj in received_objects}
     assert first_level_paths == listed_object_paths
+    # split the received objects into files and directories
+    received_files = {obj for obj in received_objects if isinstance(obj, S3MetaData)}
+    received_directories = {
+        obj for obj in received_objects if isinstance(obj, S3DirectoryMetaData)
+    }
+    assert len(received_files) == len(first_level_files)
+    assert len(received_directories) == len(first_level_directories)
+
+    # we go one more level down
+    second_level_prefix = random.choice(list(first_level_directories))  # noqa: S311
+
+    def _filter_by_prefix(uploaded_file: UploadedFile) -> bool:
+        return bool(f"{second_level_prefix}" in uploaded_file.s3_key)
+
+    second_level_directories = {
+        Path(file.s3_key).parents[-4]
+        for file in filter(_filter_by_prefix, with_uploaded_folder_on_s3)
+        if Path(file.s3_key).parent != second_level_prefix
+    }
+    second_level_files = {
+        Path(file.s3_key)
+        for file in filter(_filter_by_prefix, with_uploaded_folder_on_s3)
+        if Path(file.s3_key).parent == second_level_prefix
+    }
+    second_level_paths = second_level_directories | second_level_files
+    received_objects = await simcore_s3_api.list_objects(
+        bucket=with_s3_bucket, prefix=second_level_prefix, start_after=None
+    )
+    assert len(received_objects) == len(second_level_paths)
+    listed_object_paths = {obj.as_path() for obj in received_objects}
+    assert second_level_paths == listed_object_paths
 
 
 async def test_get_file_metadata(
