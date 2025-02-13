@@ -226,36 +226,38 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
         }
       });
 
-      const doiTitle = new qx.ui.basic.Label().set({
-        value: "DOI",
-        font: "text-14",
-        alignX: "right",
-        marginTop: 16,
-      });
-      featuresLayout.add(doiTitle, {
-        column: 0,
-        row: idx,
-      });
-
-      const doiToLink = doi => {
-        const doiLabel = new osparc.ui.basic.LinkLabel("-").set({
+      if (anatomicalModel["doi"]) {
+        const doiTitle = new qx.ui.basic.Label().set({
+          value: "DOI",
           font: "text-14",
-          alignX: "left",
+          alignX: "right",
           marginTop: 16,
         });
-        if (doi) {
-          doiLabel.set({
-            value: doi,
-            url: "https://doi.org/" + doi,
-            font: "link-label-14",
+        featuresLayout.add(doiTitle, {
+          column: 0,
+          row: idx,
+        });
+
+        const doiToLink = doi => {
+          const doiLabel = new osparc.ui.basic.LinkLabel("-").set({
+            font: "text-14",
+            alignX: "left",
+            marginTop: 16,
           });
-        }
-        return doiLabel;
-      };
-      featuresLayout.add(doiToLink(anatomicalModel["doi"]), {
-        column: 1,
-        row: idx,
-      });
+          if (doi) {
+            doiLabel.set({
+              value: doi,
+              url: "https://doi.org/" + doi,
+              font: "link-label-14",
+            });
+          }
+          return doiLabel;
+        };
+        featuresLayout.add(doiToLink(anatomicalModel["doi"]), {
+          column: 1,
+          row: idx,
+        });
+      }
 
       middleLayout.add(featuresLayout);
 
