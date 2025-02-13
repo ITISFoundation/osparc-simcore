@@ -107,7 +107,7 @@ async def get_licensed_item_checkout(
 async def checkout_licensed_item(
     db_engine: Annotated[AsyncEngine, Depends(get_resource_tracker_db_engine)],
     *,
-    licensed_item_id: LicensedItemID,  # MD: maybe not needed?
+    licensed_item_id: LicensedItemID,
     key: str,
     version: str,
     wallet_id: WalletID,

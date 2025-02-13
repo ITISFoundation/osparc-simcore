@@ -11,6 +11,8 @@ from ..licenses import (
     FeaturesDict,
     LicensedItem,
     LicensedItemID,
+    LicensedItemKey,
+    LicensedItemVersion,
     LicensedResourceType,
 )
 from ._base import OutputSchema
@@ -71,8 +73,8 @@ class _ItisVipResourceRestData(OutputSchema):
 
 class LicensedItemRestGet(OutputSchema):
     licensed_item_id: LicensedItemID
-    key: str
-    version: str
+    key: LicensedItemKey
+    version: LicensedItemVersion
 
     display_name: str
     licensed_resource_type: LicensedResourceType

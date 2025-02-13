@@ -6,7 +6,9 @@ from models_library.licenses import (
     LicensedItem,
     LicensedItemDB,
     LicensedItemID,
+    LicensedItemKey,
     LicensedItemPatchDB,
+    LicensedItemVersion,
     LicensedResourceType,
 )
 from models_library.products import ProductName
@@ -39,8 +41,8 @@ _SELECTION_ARGS = get_columns_from_db_model(licensed_items, LicensedItemDB)
 
 def _create_insert_query(
     display_name: str,
-    key: str,
-    version: str,
+    key: LicensedItemKey,
+    version: LicensedItemVersion,
     licensed_resource_type: LicensedResourceType,
     product_name: ProductName,
     pricing_plan_id: PricingPlanId,
@@ -65,8 +67,8 @@ async def create(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
-    key: str,
-    version: str,
+    key: LicensedItemKey,
+    version: LicensedItemVersion,
     display_name: str,
     licensed_resource_type: LicensedResourceType,
     product_name: ProductName,
@@ -231,8 +233,8 @@ async def get_licensed_item_by_key_version(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
-    key: str,
-    version: str,
+    key: LicensedItemKey,
+    version: LicensedItemVersion,
     product_name: ProductName,
 ) -> LicensedItem:
 

@@ -4,7 +4,7 @@ from typing import NamedTuple
 from models_library.emails import LowerCaseEmailStr
 from pydantic import BaseModel, ConfigDict, PositiveInt
 
-from ..licenses import LicensedItemID
+from ..licenses import LicensedItemID, LicensedItemKey, LicensedItemVersion
 from ..products import ProductName
 from ..resource_tracker_licensed_items_checkouts import LicensedItemCheckoutID
 from ..users import UserID
@@ -17,8 +17,8 @@ from ._base import OutputSchema
 class LicensedItemCheckoutRpcGet(BaseModel):
     licensed_item_checkout_id: LicensedItemCheckoutID
     licensed_item_id: LicensedItemID
-    key: str
-    version: str
+    key: LicensedItemKey
+    version: LicensedItemVersion
     wallet_id: WalletID
     user_id: UserID
     product_name: ProductName

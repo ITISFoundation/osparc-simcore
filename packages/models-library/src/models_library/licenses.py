@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import auto
-from typing import Any, NamedTuple, NotRequired, TypeAlias, cast
+from typing import Any, NamedTuple, NewType, NotRequired, TypeAlias, cast
 from uuid import UUID
 
 from models_library.resource_tracker import PricingPlanId
@@ -14,6 +14,9 @@ from .utils.enums import StrAutoEnum
 
 LicensedItemID: TypeAlias = UUID
 LicensedResourceID: TypeAlias = UUID
+
+LicensedItemKey = NewType("LicensedItemKey", str)
+LicensedItemVersion = NewType("LicensedItemVersion", str)
 
 
 class LicensedResourceType(StrAutoEnum):
@@ -69,8 +72,8 @@ class LicensedItemDB(BaseModel):
     licensed_item_id: LicensedItemID
     display_name: str
 
-    key: str
-    version: str
+    key: LicensedItemKey
+    version: LicensedItemVersion
     licensed_resource_type: LicensedResourceType
 
     pricing_plan_id: PricingPlanId
@@ -86,10 +89,6 @@ class LicensedItemDB(BaseModel):
 class LicensedItemPatchDB(BaseModel):
     display_name: str | None = None
     pricing_plan_id: PricingPlanId | None = None
-
-
-class LicensedResourcePatchDB(BaseModel):
-    trash: bool | None = None
 
 
 class LicensedResourceDB(BaseModel):
@@ -116,8 +115,8 @@ class LicensedResourcePatchDB(BaseModel):
 
 class LicensedItem(BaseModel):
     licensed_item_id: LicensedItemID
-    key: str
-    version: str
+    key: LicensedItemKey
+    version: LicensedItemVersion
     display_name: str
     licensed_resource_type: LicensedResourceType
     licensed_resources: list[dict[str, Any]]

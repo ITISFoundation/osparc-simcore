@@ -5,7 +5,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
 
-from .licenses import LicensedItemID
+from .licenses import LicensedItemID, LicensedItemKey, LicensedItemVersion
 from .products import ProductName
 from .resource_tracker import PricingPlanId, PricingUnitCostId, PricingUnitId
 from .users import UserID
@@ -17,8 +17,8 @@ LicensedItemPurchaseID: TypeAlias = UUID
 class LicensedItemsPurchasesCreate(BaseModel):
     product_name: ProductName
     licensed_item_id: LicensedItemID
-    key: str
-    version: str
+    key: LicensedItemKey
+    version: LicensedItemVersion
     wallet_id: WalletID
     wallet_name: str
     pricing_plan_id: PricingPlanId
