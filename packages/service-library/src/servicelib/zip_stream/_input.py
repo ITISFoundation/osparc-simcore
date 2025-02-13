@@ -3,7 +3,7 @@ from pathlib import Path
 import aiofiles
 
 from ._constants import DEFAULT_READ_CHUNK_SIZE
-from ._models import DataStream, FileSize, StreamData
+from ._models import DataSize, DataStream, StreamData
 
 
 class DiskStreamReader:
@@ -21,4 +21,4 @@ class DiskStreamReader:
 
                     yield chunk
 
-        return StreamData(FileSize(self.file_path.stat().st_size), _)
+        return StreamData(DataSize(self.file_path.stat().st_size), _)

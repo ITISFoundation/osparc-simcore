@@ -6,19 +6,19 @@ from stream_zip import ZIP_32, AsyncMemberFile, async_stream_zip
 
 from ..progress_bar import ProgressBarData
 from ._constants import MIN_MULTIPART_UPLOAD_CHUNK_SIZE
-from ._models import ArchiveEntries, DataStream, FileSize
+from ._models import ArchiveEntries, DataSize, DataStream
 
 
 async def _member_files_iter(
     file_streams: ArchiveEntries, progress_bar: ProgressBarData
 ) -> AsyncIterable[AsyncMemberFile]:
-    for file_name, stream_data in file_streams:
+    for file_name, stream_info in file_streams:
         yield (
             file_name,
             datetime.now(UTC),
             S_IFREG | 0o600,
             ZIP_32,
-            stream_data.with_progress_data_stream(progress_bar=progress_bar),
+            stream_info.with_progress_data_stream(progress_bar=progress_bar),
         )
 
 
@@ -33,11 +33,11 @@ async def get_zip_archive_file_stream(
     if progress_bar is None:
         progress_bar = ProgressBarData(num_steps=1, description="zip archive stream")
 
-    total_stream_lenth = FileSize(
-        sum(stream_data.file_size for _, stream_data in archive_files)
+    total_stream_lenth = DataSize(
+        sum(stream_info.data_size for _, stream_info in archive_files)
     )
     description = (
-        f"STATS: count={len(archive_files)}, size={total_stream_lenth.human_readable()}"
+        f"files: count={len(archive_files)}, size={total_stream_lenth.human_readable()}"
     )
 
     async with progress_bar.sub_progress(
