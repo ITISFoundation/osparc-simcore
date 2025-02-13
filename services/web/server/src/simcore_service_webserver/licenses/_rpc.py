@@ -44,6 +44,7 @@ async def get_licensed_items(
         await _licensed_items_service.list_licensed_items(
             app=app,
             product_name=product_name,
+            include_hidden_items_on_market=True,
             offset=offset,
             limit=limit,
             order_by=OrderBy(field=IDStr("display_name")),
@@ -60,6 +61,7 @@ async def get_licensed_items(
                 licensed_resource_type=licensed_item.licensed_resource_type,
                 licensed_resources=licensed_item.licensed_resources,
                 pricing_plan_id=licensed_item.pricing_plan_id,
+                is_hidden_on_market=licensed_item.is_hidden_on_market,
                 created_at=licensed_item.created_at,
                 modified_at=licensed_item.modified_at,
             )

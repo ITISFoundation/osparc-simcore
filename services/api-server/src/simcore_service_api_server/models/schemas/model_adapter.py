@@ -148,6 +148,7 @@ class LicensedItemGet(BaseModel):
     licensed_resource_type: LicensedResourceType
     licensed_resources: list[dict[str, Any]]
     pricing_plan_id: PricingPlanId
+    is_hidden_on_market: bool
     created_at: datetime
     modified_at: datetime
     model_config = ConfigDict(

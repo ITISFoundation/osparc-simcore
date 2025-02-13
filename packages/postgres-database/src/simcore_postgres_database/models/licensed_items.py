@@ -69,6 +69,13 @@ licensed_items = sa.Table(
         nullable=False,
         doc="Product name identifier. If None, then the item is not exposed",
     ),
+    sa.Column(
+        "is_hidden_on_market",
+        sa.Boolean(),
+        nullable=False,
+        server_default=sa.text("false"),
+        doc="If true, the item is not listed on the market. (Public API might want to see all of them, even if they are not listed on the Market)",
+    ),
     column_created_datetime(timezone=True),
     column_modified_datetime(timezone=True),
     sa.Index("idx_licensed_items_key_version", "key", "version", unique=True),
