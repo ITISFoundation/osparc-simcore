@@ -21,19 +21,17 @@ pytest_simcore_core_services_selection = ["postgres"]
 pytest_simcore_ops_services_selection = ["adminer"]
 
 
-async def test_list_paths(
+async def test_list_paths_returns_nothing(
     initialized_app: FastAPI,
     client: httpx.AsyncClient,
     location_id: LocationID,
     user_id: UserID,
 ):
-    query = {
-        "user_id": user_id,
-        "file_filter": None,
-    }
     url = url_from_operation_id(
         client, initialized_app, "list_paths", location_id=f"{location_id}"
-    ).with_query(**{k: v for k, v in query.items() if v is not None})
+    ).with_query(
+        user_id=user_id
+    )  # file_filter=None
     response = await client.get(f"{url}")
 
     page_of_files, _ = assert_status(

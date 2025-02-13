@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from pathlib import Path
 from typing import Annotated, cast
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
@@ -19,11 +20,10 @@ from models_library.storage_schemas import (
     FileUploadSchema,
     SoftCopyBody,
 )
+from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize, TypeAdapter
 from servicelib.aiohttp import status
 from yarl import URL
-
-from simcore_service_storage.dsm_factory import BaseDataManager
 
 from ...dsm import get_dsm_provider
 from ...dsm_factory import BaseDataManager
@@ -35,7 +35,6 @@ from ...models import (
     FileMetadataListQueryParams,
     FileUploadQueryParams,
     FileUploadResponseV1,
-    ListPathsQueryParams,
     StorageQueryParamsBase,
     UploadLinks,
 )
@@ -58,13 +57,24 @@ router = APIRouter(
     response_model=LimitOffsetPage[FileMetaDataGet],
 )
 async def list_paths(
-    query_params: Annotated[ListPathsQueryParams, Depends()],
     page_params: Annotated[LimitOffsetParams, Depends()],
     dsm: Annotated[BaseDataManager, Depends(get_data_manager)],
+    user_id: UserID,
+    file_filter: Path | None = None,
 ):
+    """Returns one level of files
+
+    Arguments:
+        query_params -- _description_
+        page_params -- _description_
+        dsm -- _description_
+
+    Returns:
+        _description_
+    """
     items, total_number = await dsm.list_files_paginated(
-        user_id=query_params.user_id,
-        file_filter=query_params.file_filter,
+        user_id=user_id,
+        file_filter=file_filter,
         limit=page_params.limit,
         offset=page_params.offset,
     )
