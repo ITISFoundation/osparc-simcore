@@ -8,7 +8,6 @@ from fastapi.openapi.constants import REF_PREFIX
 from fastapi.openapi.utils import validation_error_response_definition
 from fastapi.requests import Request
 from fastapi.responses import JSONResponse
-from pydantic import ValidationError
 
 validation_error_response_definition["properties"] = {
     "errors": {
@@ -88,14 +87,5 @@ def set_app_default_http_error_handlers(app: FastAPI) -> None:
             RequestValidationError,
             envelope_error=True,
             error_extractor=_request_validation_error_extractor,
-        ),
-    )
-
-    app.add_exception_handler(
-        ValidationError,
-        make_http_error_handler_for_exception(
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
-            ValidationError,
-            envelope_error=True,
         ),
     )
