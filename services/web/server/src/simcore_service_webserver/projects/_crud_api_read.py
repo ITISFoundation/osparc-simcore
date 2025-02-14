@@ -33,13 +33,13 @@ def _batch_update(
     key: str,
     value_per_object: list[Any],
     objects: list[dict[str, Any]],
-):
+) -> list[dict[str, Any]]:
     for obj, value in zip(objects, value_per_object, strict=True):
         obj[key] = value
     return objects
 
 
-async def _paralell_update(*update_per_object: Coroutine):
+async def _paralell_update(*update_per_object: Coroutine) -> list[Any]:
     return await logged_gather(
         *update_per_object,
         reraise=True,
