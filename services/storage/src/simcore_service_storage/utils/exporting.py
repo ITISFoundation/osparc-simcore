@@ -8,7 +8,7 @@ from fastapi import FastAPI
 from models_library.api_schemas_storage import S3BucketName
 from models_library.projects_nodes_io import StorageFileID
 from models_library.users import UserID
-from pydantic import TypeAdapter
+from pydantic import TypeAdapter, validate_call
 
 from ..core.settings import get_application_settings
 from ..models import FileMetaData
@@ -42,6 +42,7 @@ async def _upload_fake_archive(
         )
 
 
+@validate_call
 async def create_s3_export(
     app: FastAPI,
     user_id: UserID,
@@ -66,9 +67,6 @@ async def create_s3_export(
                 selected_object_keys.add(entry.object_key)
 
     _logger.debug("will archive '%s' files", len(selected_object_keys))
-
-    # TODO: use this to add the expiration
-    _ = settings.STORAGE_EXPORT_DURATION.total_seconds()
 
     # TODO: replace me with streaming archive
     await _upload_fake_archive(
