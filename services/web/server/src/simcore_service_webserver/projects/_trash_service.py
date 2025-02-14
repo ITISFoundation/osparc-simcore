@@ -4,6 +4,7 @@ import logging
 
 import arrow
 from aiohttp import web
+from common_library.pagination_tools import iter_pagination_params
 from models_library.basic_types import IDStr
 from models_library.products import ProductName
 from models_library.projects import ProjectID
@@ -145,34 +146,42 @@ async def list_trashed_projects(
     """
     Lists all projects that were trashed until a specific datetime.
     """
-    projects, _ = await _crud_api_read.list_projects_full_depth(
-        app,
-        user_id=user_id,
-        product_name=product_name,
-        trashed=True,
-        tag_ids_list=[],
-        offset=0,
-        limit=100,  # FIXME: this is only the first 100. redo with yield
-        order_by=OrderBy(field=IDStr("trashed"), direction=OrderDirection.ASC),
-        search_by_multi_columns=None,
-        search_by_project_name=None,
-    )
+    trashed_projects: list[ProjectID] = []
 
-    # NOTE; this can be done at the database level when projects_repo is refactored
-    # by defining a custom trash_filter that permits some flexibility in the filtering options
-    trashed_projects = []
-    for project in projects:
-        trashed_at, trashed_by, trashed_explicitly = _get_trashed_fields(project)
+    for page_params in iter_pagination_params(limit=100):
+        (
+            projects,
+            page_params.total_number_of_items,
+        ) = await _crud_api_read.list_projects_full_depth(
+            app,
+            user_id=user_id,
+            product_name=product_name,
+            trashed=True,
+            tag_ids_list=[],
+            offset=page_params.offset,
+            limit=page_params.limit,
+            order_by=OrderBy(field=IDStr("trashed"), direction=OrderDirection.ASC),
+            search_by_multi_columns=None,
+            search_by_project_name=None,
+        )
 
-        if (
-            trashed_at
-            and (until_equal_datetime is None or trashed_at < until_equal_datetime)
-            and trashed_by == user_id
-            and trashed_explicitly
-        ):
-            trashed_projects.append(project)
+        # NOTE: post filtering because for the moment, i do not want ot modify the interface
+        # of _crud_api_read.list_projects_full_depth.
+        # This could not be done at the database level when `projects_repo` is refactored
+        # by defining a custom trash_filter that permits some flexibility in the filtering
+        # options
+        for project in projects:
+            trashed_at, trashed_by, trashed_explicitly = _get_trashed_fields(project)
 
-    return [project["uuid"] for project in trashed_projects]
+            if (
+                trashed_at
+                and (until_equal_datetime is None or trashed_at < until_equal_datetime)
+                and trashed_by == user_id
+                and trashed_explicitly
+            ):
+                trashed_projects.append(project["uuid"])
+
+    return trashed_projects
 
 
 async def delete_trashed_project(
