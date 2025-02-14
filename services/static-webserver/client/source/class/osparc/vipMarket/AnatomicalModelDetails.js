@@ -296,11 +296,15 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
     },
 
     __addPricing: function() {
-      const pricingLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(0).set({
+      const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox().set({
         alignX: "center"
-      })).set({
+      }))
+
+      const pricingLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox()).set({
+        allowGrowX: false,
         decorator: "border",
       });
+      layout.add(pricingLayout)
 
       const pricingUnitsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
         alignX: "center"
@@ -333,18 +337,19 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
         font: "text-14",
         padding: 10,
         rich: true,
+        alignX: "center",
       });
       osparc.store.LicensedItems.getInstance().getLicensedItems()
         .then(licensedItems => {
           const lowerLicensedItems = osparc.store.LicensedItems.getLowerLicensedItems(licensedItems, licensedItemData["key"], licensedItemData["version"])
           if (licensedItemData["licensedResources"].length > 1 || lowerLicensedItems.length) {
-            let text = this.tr("This Rental would give you access to:") + "<br>";
+            let text = this.tr("This Rental will give you access to:") + "<br>";
             licensedItemData["licensedResources"].forEach(licensedResource => {
-              text += ` - ${licensedResource["source"]["features"]["name"]} ${licensedResource["source"]["features"]["version"]} <br>`;
+              text += `- ${licensedResource["source"]["features"]["name"]} ${licensedResource["source"]["features"]["version"]} <br>`;
             });
             lowerLicensedItems.forEach(lowerLicensedItem => {
               lowerLicensedItem["licensedResources"].forEach(licensedResource => {
-                text += ` - ${licensedResource["source"]["features"]["name"]} ${licensedResource["source"]["features"]["version"]} <br>`;
+                text += `- ${licensedResource["source"]["features"]["name"]} ${licensedResource["source"]["features"]["version"]} <br>`;
               });
             })
             poweredByLabel.setValue(text);
@@ -352,7 +357,7 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
           }
         });
 
-      this._add(pricingLayout);
+      this._add(layout);
     },
 
     __addSeatsSection: function() {
