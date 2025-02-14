@@ -12,6 +12,7 @@ from models_library.api_schemas_rpc_data_export.tasks import (
     TaskRpcResult,
     TaskRpcStatus,
 )
+from models_library.api_schemas_storage import STORAGE_RPC_NAMESPACE
 from models_library.api_schemas_storage.data_export_tasks import (
     DataExportTaskAbortOutput,
     DataExportTaskStartInput,
@@ -83,19 +84,25 @@ async def test_start_data_export(rpc_client: RabbitMQRPCClient, faker: Faker):
 
 async def test_abort_data_export(rpc_client: RabbitMQRPCClient, faker: Faker):
     _task_id = TaskRpcId(faker.uuid4())
-    result = await async_jobs.abort(rpc_client, task_id=_task_id)
+    result = await async_jobs.abort(
+        rpc_client, rpc_namespace=STORAGE_RPC_NAMESPACE, task_id=_task_id
+    )
     assert isinstance(result, DataExportTaskAbortOutput)
     assert result.task_id == _task_id
 
 
 async def test_get_data_export_status(rpc_client: RabbitMQRPCClient, faker: Faker):
     _task_id = TaskRpcId(faker.uuid4())
-    result = await async_jobs.get_status(rpc_client, task_id=_task_id)
+    result = await async_jobs.get_status(
+        rpc_client, rpc_namespace=STORAGE_RPC_NAMESPACE, task_id=_task_id
+    )
     assert isinstance(result, TaskRpcStatus)
     assert result.task_id == _task_id
 
 
 async def test_get_data_export_result(rpc_client: RabbitMQRPCClient, faker: Faker):
     _task_id = TaskRpcId(faker.uuid4())
-    result = await async_jobs.get_result(rpc_client, task_id=_task_id)
+    result = await async_jobs.get_result(
+        rpc_client, rpc_namespace=STORAGE_RPC_NAMESPACE, task_id=_task_id
+    )
     assert isinstance(result, TaskRpcResult)
