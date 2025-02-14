@@ -1,5 +1,7 @@
 import datetime
 from collections.abc import AsyncGenerator
+from pathlib import Path
+from typing import Iterable
 
 import sqlalchemy as sa
 from models_library.basic_types import SHA256Str
@@ -136,13 +138,21 @@ async def list_filter_with_partial_file_id(
     ]
 
 
-async def list_direct_children(
+async def list_fmds_children(
     conn: AsyncConnection,
     *,
-    user_id: UserID | None = None,
-    limit: int | None = None,
-    offset: int | None = None,
+    filter_by_user_id: UserID | None,
+    filter_by_project_ids: Iterable[ProjectID] | None,
+    filter_by_file_prefix: Path | None,
+    limit: int | None,
+    offset: int | None,
 ) -> list[FileMetaDataAtDB]:
+    """returns a list of FileMetaDataAtDB that are one level deep.
+    e.g. when no filter is used, these are top level objects
+    """
+    stmt = sa.select(sa.distinct(file_meta_data)).where(
+        sa.func.split_part(file_meta_data.c.file_id, "/", 1)
+    )
     return []
 
 

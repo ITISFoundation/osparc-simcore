@@ -170,7 +170,7 @@ class SimcoreS3DataManager(BaseDataManager):
             else:
                 accessible_projects_ids = await get_readable_project_ids(conn, user_id)
 
-            file_and_directory_meta_data = await file_meta_data.list_direct_children(
+            file_and_directory_meta_data = await file_meta_data.list_fmds_children(
                 conn,
                 filter_by_user_id=user_id,
                 file_id_prefix=None,
