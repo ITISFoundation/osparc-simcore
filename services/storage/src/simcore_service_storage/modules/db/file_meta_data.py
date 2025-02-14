@@ -144,16 +144,30 @@ async def list_fmds_children(
     filter_by_user_id: UserID | None,
     filter_by_project_ids: Iterable[ProjectID] | None,
     filter_by_file_prefix: Path | None,
-    limit: int | None,
-    offset: int | None,
+    limit: int,
+    offset: int,
 ) -> list[FileMetaDataAtDB]:
     """returns a list of FileMetaDataAtDB that are one level deep.
     e.g. when no filter is used, these are top level objects
     """
-    stmt = sa.select(sa.distinct(file_meta_data)).where(
-        sa.func.split_part(file_meta_data.c.file_id, "/", 1)
-    )
-    return []
+
+    # Subquery to rank files within each top-level folder
+    ranked_files = sa.select(
+        file_meta_data,
+        sa.func.row_number()
+        .over(
+            partition_by=sa.func.split_part(file_meta_data.c.file_id, "/", 1),
+            order_by=(file_meta_data.c.last_modified.desc(), file_meta_data.c.file_id),
+        )
+        .label("row_num"),
+    ).cte("ranked_files")
+
+    # Main query to select the top-ranked row for each top-level folder
+    query = sa.select(ranked_files).where(ranked_files.c.row_num == 1)
+
+    return [
+        FileMetaDataAtDB.model_validate(row) async for row in await conn.stream(query)
+    ]
 
 
 async def list_fmds(
