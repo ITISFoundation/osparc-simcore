@@ -141,7 +141,7 @@ async def upload_fake_archive(
     object_keys: set[StorageFileID],
     uploaded_object_key: StorageFileID,
 ) -> None:
-    # NOTE: this will be replaced with the streaming zip archiver
+    # NOTE: this will be replaced with the functionality introduced by https://github.com/ITISFoundation/osparc-simcore/pull/7186
     with tempfile.NamedTemporaryFile(mode="wt", delete=True) as temp_file:
         temp_file.writelines(object_keys)
         temp_file.flush()
