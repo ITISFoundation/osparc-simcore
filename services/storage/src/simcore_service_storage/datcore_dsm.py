@@ -1,14 +1,10 @@
 from dataclasses import dataclass
 
 from fastapi import FastAPI
-from models_library.api_schemas_storage import (
-    DatCoreDatasetName,
-    LinkType,
-    UploadedPart,
-)
 from models_library.basic_types import SHA256Str
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import LocationID, LocationName, StorageFileID
+from models_library.storage_schemas import DatCoreDatasetName, LinkType, UploadedPart
 from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize
 

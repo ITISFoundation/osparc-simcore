@@ -26,11 +26,13 @@ from .._meta import (
     APP_STARTED_BANNER_MSG,
 )
 from ..api.rest.routes import setup_rest_api_routes
+from ..api.rpc.routes import setup_rpc_api_routes
 from ..dsm import setup_dsm
 from ..dsm_cleaner import setup_dsm_cleaner
 from ..exceptions.handlers import set_exception_handlers
 from ..modules.db import setup_db
 from ..modules.long_running_tasks import setup_rest_api_long_running_tasks_for_uploads
+from ..modules.rabbitmq import setup as setup_rabbitmq
 from ..modules.redis import setup as setup_redis
 from ..modules.s3 import setup_s3
 from .settings import ApplicationSettings
@@ -77,6 +79,8 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
     setup_s3(app)
     setup_client_session(app)
 
+    setup_rabbitmq(app)
+    setup_rpc_api_routes(app)
     setup_rest_api_long_running_tasks_for_uploads(app)
     setup_rest_api_routes(app, API_VTAG)
     set_exception_handlers(app)

@@ -29,8 +29,9 @@ from simcore_sdk.node_ports_common.file_io_utils import LogRedirectCB
 pytest_simcore_core_services_selection = [
     "migration",
     "postgres",
-    "storage",
+    "rabbit",
     "redis",
+    "storage",
 ]
 
 pytest_simcore_ops_services_selection = [
