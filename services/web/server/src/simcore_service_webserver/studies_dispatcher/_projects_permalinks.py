@@ -11,8 +11,11 @@ from typing_extensions import (  # https://docs.pydantic.dev/latest/api/standard
 )
 
 from ..db.plugin import get_database_engine
-from ..projects.api import ProjectPermalink, register_permalink_factory
 from ..projects.exceptions import PermalinkNotAllowedError, ProjectNotFoundError
+from ..projects.projects_permalink_service import (
+    ProjectPermalink,
+    register_permalink_factory,
+)
 from ..utils_aiohttp import create_url_for_function
 from .settings import StudiesDispatcherSettings
 
