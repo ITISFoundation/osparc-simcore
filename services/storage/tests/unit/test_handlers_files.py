@@ -1510,7 +1510,7 @@ async def test_listing_with_project_id_filter(
 
     query = {
         "user_id": user_id,
-        "project_id": project_id,
+        "project_id": f"{project_id}",
         "uuid_filter": project_file_name if uuid_filter else None,
     }
 
