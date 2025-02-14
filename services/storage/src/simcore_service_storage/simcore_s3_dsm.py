@@ -64,6 +64,7 @@ from .models import (
     DatasetMetaData,
     FileMetaData,
     FileMetaDataAtDB,
+    PathMetaData,
     TotalNumber,
     UploadLinks,
     UserOrProjectFilter,
@@ -169,14 +170,14 @@ class SimcoreS3DataManager(BaseDataManager):
         )
         return data
 
-    async def list_files_paginated(
+    async def list_paths(
         self,
         user_id: UserID,
         *,
         file_filter: Path | None,
         limit: NonNegativeInt,
         offset: NonNegativeInt,
-    ) -> tuple[list[FileMetaData], TotalNumber]:
+    ) -> tuple[list[PathMetaData], TotalNumber]:
         """returns a page of the file meta data a user has access to"""
 
         # if we have a file_filter, that means that we have at least a partial project ID
@@ -201,7 +202,7 @@ class SimcoreS3DataManager(BaseDataManager):
             else:
                 accessible_projects_ids = await get_readable_project_ids(conn, user_id)
 
-            file_and_directory_meta_data = await file_meta_data.list_fmds_children(
+            paths_metadata = await file_meta_data.list_child_paths(
                 conn,
                 filter_by_user_id=user_id,
                 filter_by_project_ids=accessible_projects_ids,
@@ -218,11 +219,11 @@ class SimcoreS3DataManager(BaseDataManager):
         # )
         # TODO: computing the total can be expensive, do we want that?
         total = limit + 1
-        if len(file_and_directory_meta_data) < limit:
-            total = len(file_and_directory_meta_data)
-        return [convert_db_to_model(_) for _ in file_and_directory_meta_data], total
+        if len(paths_metadata) < limit:
+            total = len(paths_metadata)
+        return paths_metadata, total
 
-    async def list_files(  # noqa C901
+    async def list_files(
         self,
         user_id: UserID,
         *,
