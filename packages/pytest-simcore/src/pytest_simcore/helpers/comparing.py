@@ -14,7 +14,7 @@ def get_relative_to(folder: Path, file: Path) -> str:
     return f"{file.relative_to(folder)}"
 
 
-async def assert_same_file_content(path_1: Path, path_2: Path):
+async def assert_same_file_content(path_1: Path, path_2: Path) -> None:
     async with aiofiles.open(path_1, "rb") as f1, aiofiles.open(path_2, "rb") as f2:
         checksum_1 = await create_sha256_checksum(f1)
         checksum_2 = await create_sha256_checksum(f2)
