@@ -24,7 +24,7 @@ async def abort(
 ) -> DataExportTaskAbortOutput:
     result = await rabbitmq_rpc_client.request(
         STORAGE_RPC_NAMESPACE,
-        _RPC_METHOD_NAME_ADAPTER.validate_python("abort_data_export"),
+        _RPC_METHOD_NAME_ADAPTER.validate_python("abort"),
         task_id=task_id,
         timeout_s=_DEFAULT_TIMEOUT_S,
     )
@@ -37,7 +37,7 @@ async def get_status(
 ) -> TaskRpcStatus:
     result = await rabbitmq_rpc_client.request(
         STORAGE_RPC_NAMESPACE,
-        _RPC_METHOD_NAME_ADAPTER.validate_python("get_data_export_status"),
+        _RPC_METHOD_NAME_ADAPTER.validate_python("get_status"),
         task_id=task_id,
         timeout_s=_DEFAULT_TIMEOUT_S,
     )
@@ -50,7 +50,7 @@ async def get_result(
 ) -> TaskRpcResult:
     result = await rabbitmq_rpc_client.request(
         STORAGE_RPC_NAMESPACE,
-        _RPC_METHOD_NAME_ADAPTER.validate_python("get_data_export_result"),
+        _RPC_METHOD_NAME_ADAPTER.validate_python("get_result"),
         task_id=task_id,
         timeout_s=_DEFAULT_TIMEOUT_S,
     )
