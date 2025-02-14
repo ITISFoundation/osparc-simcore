@@ -310,11 +310,16 @@ async def get_file_access_rights(
         #
         #       - project's data: {project_id}/{node_id}/{filename/with/possible/folders}
         #       - API data:       api/{file_id}/{filename/with/possible/folders}
+        #       - Exporter data:  exporter/{user_id}/{filename/with/possible/folders}
         #
         try:
             parent, _, _ = file_id.split("/", maxsplit=2)
 
             if parent == "api":
+                # ownership still not defined, so we assume it is user_id
+                return AccessRights.all()
+
+            if parent == "exports":
                 # ownership still not defined, so we assume it is user_id
                 return AccessRights.all()
 

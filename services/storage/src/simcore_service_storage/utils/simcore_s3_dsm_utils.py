@@ -1,5 +1,7 @@
+import tempfile
 from contextlib import suppress
 from pathlib import Path
+from uuid import uuid4
 
 from aws_library.s3 import S3MetaData, SimcoreS3API
 from models_library.projects_nodes_io import (
@@ -8,6 +10,7 @@ from models_library.projects_nodes_io import (
     StorageFileID,
 )
 from models_library.storage_schemas import S3BucketName
+from models_library.users import UserID
 from pydantic import ByteSize, NonNegativeInt, TypeAdapter
 from servicelib.utils import ensure_ends_with
 from sqlalchemy.ext.asyncio import AsyncConnection
@@ -124,3 +127,27 @@ async def get_directory_file_id(
 def compute_file_id_prefix(file_id: str, levels: int):
     components = file_id.strip("/").split("/")
     return "/".join(components[:levels])
+
+
+def get_random_export_name(user_id: UserID) -> StorageFileID:
+    return TypeAdapter(StorageFileID).validate_python(
+        f"exports/{user_id}/{uuid4()}.zip"
+    )
+
+
+async def upload_fake_archive(
+    s3_client: SimcoreS3API,
+    bucket: S3BucketName,
+    object_keys: set[StorageFileID],
+    uploaded_object_key: StorageFileID,
+) -> None:
+    # NOTE: this will be replaced with the functionality introduced by https://github.com/ITISFoundation/osparc-simcore/pull/7186
+    with tempfile.NamedTemporaryFile(mode="wt", delete=True) as temp_file:
+        temp_file.writelines(object_keys)
+        temp_file.flush()
+        await s3_client.upload_file(
+            bucket=bucket,
+            file=Path(temp_file.name),
+            object_key=uploaded_object_key,
+            bytes_transfered_cb=None,
+        )

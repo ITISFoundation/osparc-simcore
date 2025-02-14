@@ -1346,7 +1346,7 @@ async def test_ensure_expand_dirs_defaults_true(
 async def test_upload_file_is_directory_and_remove_content(
     initialized_app: FastAPI,
     create_empty_directory: Callable[..., Awaitable[FileUploadSchema]],
-    populate_directory: Callable[..., Awaitable[None]],
+    populate_directory: Callable[..., Awaitable[set[SimcoreS3FileID]]],
     delete_directory: Callable[..., Awaitable[None]],
     client: httpx.AsyncClient,
     location_id: LocationID,
