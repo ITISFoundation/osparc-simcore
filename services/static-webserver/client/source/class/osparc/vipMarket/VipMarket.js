@@ -140,7 +140,7 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
           ctrl.bindProperty("date", "date", null, item, id);
           ctrl.bindProperty("licensedItemId", "licensedItemId", null, item, id);
           ctrl.bindProperty("pricingPlanId", "pricingPlanId", null, item, id);
-          ctrl.bindProperty("purchases", "purchases", null, item, id);
+          ctrl.bindProperty("seats", "seats", null, item, id);
         },
         configureItem: item => {
           item.subscribeToFilterGroup("vipModels");
@@ -198,18 +198,20 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
               }
             }
             // attach license data
-            anatomicalBundle["pricingPlanId"] = licensedBundle["pricingPlanId"];
+            // anatomicalBundle["pricingPlanId"] = licensedBundle["pricingPlanId"];
             // attach purchases data
+            /*
             anatomicalBundle["purchases"] = []; // default
             const purchasesItemsFound = purchasesItems.filter(purchasesItem => purchasesItem["licensedItemId"] === licensedBundle["licensedItemId"]);
             if (purchasesItemsFound.length) {
               purchasesItemsFound.forEach(purchasesItemFound => {
                 anatomicalBundle["purchases"].push({
-                  expiresAt: new Date(purchasesItemFound["expireAt"]),
-                  numberOfSeats: purchasesItemFound["numOfSeats"],
+                  expireAt: new Date(purchasesItemFound["expireAt"]),
+                  numOfSeats: purchasesItemFound["numOfSeats"],
                 })
               });
             }
+              */
             this.__anatomicalBundles.push(anatomicalBundle);
           });
 
@@ -241,8 +243,8 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
       const sortModel = sortBy => {
         models.sort((a, b) => {
           // first criteria
-          const nASeats = osparc.store.LicensedItems.purchasesToNSeats(a["purchases"]);
-          const nBSeats = osparc.store.LicensedItems.purchasesToNSeats(b["purchases"]);
+          const nASeats = osparc.store.LicensedItems.seatsToNSeats(a["seats"]);
+          const nBSeats = osparc.store.LicensedItems.seatsToNSeats(b["seats"]);
           if (nBSeats !== nASeats) {
             // nSeats first
             return nBSeats - nASeats;
@@ -298,29 +300,30 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
         return;
       }
       const walletId = contextWallet.getWalletId();
-      let numberOfSeats = null;
+      let numOfSeats = null;
       const pricingUnit = osparc.store.Pricing.getInstance().getPricingUnit(pricingPlanId, pricingUnitId);
       if (pricingUnit) {
         const split = pricingUnit.getName().split(" ");
-        numberOfSeats = parseInt(split[0]);
+        numOfSeats = parseInt(split[0]);
       }
       const licensedItemsStore = osparc.store.LicensedItems.getInstance();
-      licensedItemsStore.purchaseLicensedItem(licensedItemId, walletId, pricingPlanId, pricingUnitId, numberOfSeats)
+      licensedItemsStore.purchaseLicensedItem(licensedItemId, walletId, pricingPlanId, pricingUnitId, numOfSeats)
         .then(() => {
           const expirationDate = osparc.study.PricingUnitLicense.getExpirationDate();
-          const purchaseData = {
-            expiresAt: expirationDate, // get this info from the response
-            numberOfSeats, // get this info from the response
+          const purchasedSeatsData = {
+            expireAt: expirationDate, // get this info from the response
+            numOfSeats, // get this info from the response
+            // OM continue here
           };
 
-          let msg = numberOfSeats;
-          msg += " seat" + (purchaseData["numberOfSeats"] > 1 ? "s" : "");
-          msg += " rented until " + osparc.utils.Utils.formatDate(purchaseData["expiresAt"]);
+          let msg = numOfSeats;
+          msg += " seat" + (purchasedSeatsData["numOfSeats"] > 1 ? "s" : "");
+          msg += " rented until " + osparc.utils.Utils.formatDate(purchasedSeatsData["expireAt"]);
           osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
 
           const found = this.__anatomicalBundles.find(model => model["licensedItemId"] === licensedItemId);
           if (found) {
-            found["purchases"].push(purchaseData);
+            found["seats"].push(purchasedSeatsData);
             this.__populateModels(licensedItemId);
             const anatomicModelDetails = this.getChildControl("models-details");
             anatomicModelDetails.setAnatomicalModelsData(found);

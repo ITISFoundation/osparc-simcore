@@ -47,13 +47,13 @@ qx.Class.define("osparc.store.LicensedItems", {
       })
     },
 
-    purchasesToNSeats: function(purchases) {
+    seatsToNSeats: function(seats) {
       let nSeats = 0;
-      purchases.forEach(purchase => {
-        if ("numberOfSeats" in purchase) {
-          nSeats += purchase["numberOfSeats"];
-        } else if ("getNumberOfSeats" in purchase) {
-          nSeats += purchase.getNumberOfSeats();
+      seats.forEach(seat => {
+        if ("numOfSeats" in seat) {
+          nSeats += seat["numOfSeats"];
+        } else if ("getNumOfSeats" in seat) {
+          nSeats += seat.getNumOfSeats();
         }
       });
       return nSeats;
@@ -89,7 +89,7 @@ qx.Class.define("osparc.store.LicensedItems", {
       return osparc.data.Resources.fetch("licensedItems", "purchases", purchasesParams, options);
     },
 
-    purchaseLicensedItem: function(licensedItemId, walletId, pricingPlanId, pricingUnitId, numberOfSeats) {
+    purchaseLicensedItem: function(licensedItemId, walletId, pricingPlanId, pricingUnitId, numOfSeats) {
       const params = {
         url: {
           licensedItemId
@@ -98,7 +98,7 @@ qx.Class.define("osparc.store.LicensedItems", {
           "wallet_id": walletId,
           "pricing_plan_id": pricingPlanId,
           "pricing_unit_id": pricingUnitId,
-          "num_of_seats": numberOfSeats, // this should go away
+          "num_of_seats": numOfSeats, // this should go away
         },
       }
       return osparc.data.Resources.fetch("licensedItems", "purchase", params);

@@ -289,7 +289,7 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
           modelId: anatomicalModelsData["licensedResources"][selectedIdx]["source"]["id"]
         });
       }, this);
-      if (anatomicalModelsData["purchases"].length) {
+      if (anatomicalModelsData["seats"].length) {
         importSection.add(importButton);
       }
       return importSection;
@@ -331,10 +331,10 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
         alignX: "center",
       }));
 
-      anatomicalModelsData["purchases"].forEach(purchase => {
-        const seatsText = "seat" + (purchase["numberOfSeats"] > 1 ? "s" : "");
+      anatomicalModelsData["seats"].forEach(seats => {
+        const seatsText = "seat" + (seats["numOfSeats"] > 1 ? "s" : "");
         const entry = new qx.ui.basic.Label().set({
-          value: `${purchase["numberOfSeats"]} ${seatsText} available until ${osparc.utils.Utils.formatDate(purchase["expiresAt"])}`,
+          value: `${seats["numOfSeats"]} ${seatsText} available until ${osparc.utils.Utils.formatDate(seats["expireAt"])}`,
           font: "text-14",
         });
         seatsSection.add(entry);

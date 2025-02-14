@@ -105,12 +105,12 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelListItem", {
       event: "changePricingPlanId",
     },
 
-    purchases: {
+    seats: {
       check: "Array",
       nullable: false,
       init: [],
-      event: "changePurchases",
-      apply: "__applyPurchases",
+      event: "changeSeats",
+      apply: "__applySeats",
     },
   },
 
@@ -179,9 +179,9 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelListItem", {
       this.getChildControl("name").setValue(value);
     },
 
-    __applyPurchases: function(purchases) {
+    __applySeats: function(seats) {
       const nSeatsLabel = this.getChildControl("n-seats");
-      const nSeats = osparc.store.LicensedItems.purchasesToNSeats(purchases);
+      const nSeats = osparc.store.LicensedItems.seatsToNSeats(seats);
       if (nSeats) {
         nSeatsLabel.setValue(`(${nSeats})`);
       } else {
