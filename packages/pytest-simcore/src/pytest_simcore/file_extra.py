@@ -10,7 +10,7 @@ from pytest_simcore.helpers.logging_tools import log_context
 
 
 @pytest.fixture
-def tmp_file_name(tmp_path: Path, faker: Faker) -> Iterable[Path]:
+def fake_file_name(tmp_path: Path, faker: Faker) -> Iterable[Path]:
     file = tmp_path / faker.file_name()
 
     yield file

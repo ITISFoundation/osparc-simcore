@@ -1403,9 +1403,9 @@ async def test_read_object_file_stream(
     with_uploaded_file_on_s3: UploadedFile,
     simcore_s3_api: SimcoreS3API,
     with_s3_bucket: S3BucketName,
-    tmp_file_name: Path,
+    fake_file_name: Path,
 ):
-    async with aiofiles.open(tmp_file_name, "wb") as f:
+    async with aiofiles.open(fake_file_name, "wb") as f:
         bytes_streamer = await simcore_s3_api.get_bytes_streamer_from_object(
             with_s3_bucket, with_uploaded_file_on_s3.s3_key, chunk_size=1024
         )
@@ -1413,9 +1413,9 @@ async def test_read_object_file_stream(
         async for chunk in bytes_streamer.with_progress_bytes_iter(AsyncMock()):
             await f.write(chunk)
 
-    assert bytes_streamer.data_size == tmp_file_name.stat().st_size
+    assert bytes_streamer.data_size == fake_file_name.stat().st_size
 
-    await assert_same_file_content(with_uploaded_file_on_s3.local_path, tmp_file_name)
+    await assert_same_file_content(with_uploaded_file_on_s3.local_path, fake_file_name)
 
 
 async def test_upload_object_from_file_like(
