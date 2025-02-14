@@ -82,27 +82,6 @@ async def _aggregate_data_to_projects_from_other_sources(
     return updated_projects
 
 
-async def _update_and_get_project_dict(
-    request: web.Request,
-    *,
-    user_id: UserID,
-    project: ProjectDict,
-    is_template: bool,
-) -> ProjectDict:
-    # state
-    await projects_service.add_project_states_for_user(
-        user_id=user_id,
-        project=project,
-        is_template=is_template,
-        app=request.app,
-    )
-
-    # permalink
-    await update_or_pop_permalink_in_project(request, project)
-
-    return project
-
-
 async def list_projects(  # pylint: disable=too-many-arguments
     app: web.Application,
     user_id: UserID,
