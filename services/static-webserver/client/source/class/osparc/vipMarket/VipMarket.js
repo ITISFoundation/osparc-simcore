@@ -180,45 +180,40 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
         return;
       }
 
-      const walletId = contextWallet.getWalletId();
-      const licensedItemsStore = osparc.store.LicensedItems.getInstance();
-      licensedItemsStore.getPurchasedLicensedItems(walletId)
-        .then(purchasesItems => {
-          this.__anatomicalBundles = [];
-          licensedBundles.forEach(licensedBundle => {
-            licensedBundle["thumbnail"] = "";
-            licensedBundle["date"] = null;
-            if (licensedBundle["licensedResources"] && licensedBundle["licensedResources"].length) {
-              const firstItem = licensedBundle["licensedResources"][0]["source"];
-              if (firstItem["thumbnail"]) {
-                licensedBundle["thumbnail"] = firstItem["thumbnail"];
-              }
-              if (firstItem["features"] && firstItem["features"]["date"]) {
-                licensedBundle["date"] = new Date(firstItem["features"]["date"]);
-              }
-            }
-            this.__anatomicalBundles.push(licensedBundle);
-          });
+      this.__anatomicalBundles = [];
+      licensedBundles.forEach(licensedBundle => {
+        licensedBundle["thumbnail"] = "";
+        licensedBundle["date"] = null;
+        if (licensedBundle["licensedResources"] && licensedBundle["licensedResources"].length) {
+          const firstItem = licensedBundle["licensedResources"][0]["source"];
+          if (firstItem["thumbnail"]) {
+            licensedBundle["thumbnail"] = firstItem["thumbnail"];
+          }
+          if (firstItem["features"] && firstItem["features"]["date"]) {
+            licensedBundle["date"] = new Date(firstItem["features"]["date"]);
+          }
+        }
+        this.__anatomicalBundles.push(licensedBundle);
+      });
 
-          this.__populateModels();
+      this.__populateModels();
 
-          const anatomicModelDetails = this.getChildControl("models-details");
-          anatomicModelDetails.addListener("modelPurchaseRequested", e => {
-            const {
-              licensedItemId,
-              pricingPlanId,
-              pricingUnitId,
-            } = e.getData();
-            this.__modelPurchaseRequested(licensedItemId, pricingPlanId, pricingUnitId);
-          }, this);
+      const anatomicModelDetails = this.getChildControl("models-details");
+      anatomicModelDetails.addListener("modelPurchaseRequested", e => {
+        const {
+          licensedItemId,
+          pricingPlanId,
+          pricingUnitId,
+        } = e.getData();
+        this.__modelPurchaseRequested(licensedItemId, pricingPlanId, pricingUnitId);
+      }, this);
 
-          anatomicModelDetails.addListener("modelImportRequested", e => {
-            const {
-              modelId
-            } = e.getData();
-            this.__sendImportModelMessage(modelId);
-          }, this);
-        });
+      anatomicModelDetails.addListener("modelImportRequested", e => {
+        const {
+          modelId
+        } = e.getData();
+        this.__sendImportModelMessage(modelId);
+      }, this);
     },
 
     __populateModels: function(selectLicensedItemId) {
@@ -293,18 +288,18 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
       }
       const licensedItemsStore = osparc.store.LicensedItems.getInstance();
       licensedItemsStore.purchaseLicensedItem(licensedItemId, walletId, pricingPlanId, pricingUnitId, numOfSeats)
-        .then(() => {
-          const expirationDate = osparc.study.PricingUnitLicense.getExpirationDate();
-          const purchasedSeatsData = {
-            expireAt: expirationDate, // get this info from the response
-            numOfSeats, // get this info from the response
-            // OM continue here
-          };
-
+        .then(purchaseData => {
           let msg = numOfSeats;
-          msg += " seat" + (purchasedSeatsData["numOfSeats"] > 1 ? "s" : "");
-          msg += " rented until " + osparc.utils.Utils.formatDate(purchasedSeatsData["expireAt"]);
+          msg += " seat" + (purchaseData["numOfSeats"] > 1 ? "s" : "");
+          msg += " rented until " + osparc.utils.Utils.formatDate(purchaseData["expireAt"]);
           osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
+
+          const purchasedSeatsData = {
+            licensedItemId: purchaseData["licensedItemId"],
+            licensedItemPurchaseId: purchaseData["licensedItemPurchaseId"],
+            numOfSeats: purchaseData["numOfSeats"],
+            expireAt: purchaseData["expireAt"],
+          };
 
           const found = this.__anatomicalBundles.find(model => model["licensedItemId"] === licensedItemId);
           if (found) {
