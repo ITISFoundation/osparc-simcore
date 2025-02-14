@@ -18,7 +18,6 @@ from sqlalchemy.ext.asyncio import AsyncConnection
 from ..exceptions.errors import FileMetaDataNotFoundError
 from ..models import FileMetaData, FileMetaDataAtDB
 from ..modules.db import file_meta_data
-from ..modules.s3 import SimcoreS3API
 from .utils import convert_db_to_model
 
 
