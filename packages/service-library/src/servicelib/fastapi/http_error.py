@@ -94,7 +94,7 @@ def set_app_default_http_error_handlers(app: FastAPI) -> None:
     app.add_exception_handler(
         ValidationError,
         make_http_error_handler_for_exception(
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
             ValidationError,
             envelope_error=True,
         ),

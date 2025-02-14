@@ -1,7 +1,8 @@
 import datetime
 import urllib.parse
 from dataclasses import dataclass
-from typing import Annotated, Any, Literal, NamedTuple
+from pathlib import Path
+from typing import Annotated, Any, Literal, NamedTuple, TypeAlias
 from uuid import UUID
 
 import arrow
@@ -26,6 +27,7 @@ from models_library.storage_schemas import (
     ETag,
     FileMetaDataGet,
     LinkType,
+    PathMetaDataGet,
     S3BucketName,
 )
 from models_library.users import UserID
@@ -36,12 +38,14 @@ from pydantic import (
     ByteSize,
     ConfigDict,
     Field,
+    NonNegativeInt,
     PlainSerializer,
     TypeAdapter,
     field_validator,
     model_validator,
     validate_call,
 )
+from simcore_postgres_database.models import file_meta_data
 
 
 class DatasetMetaData(DatasetMetaDataGet):
@@ -159,7 +163,11 @@ class UploadLinks:
 
 class StorageQueryParamsBase(BaseModel):
     user_id: UserID
-    model_config = ConfigDict(populate_by_name=True, extra="forbid")
+    model_config = ConfigDict(populate_by_name=True)
+
+
+class ListPathsQueryParams(StorageQueryParamsBase):
+    file_filter: Path | None = None
 
 
 class FilesMetadataDatasetQueryParams(StorageQueryParamsBase):
@@ -303,3 +311,32 @@ class AccessRights:
     @classmethod
     def none(cls) -> "AccessRights":
         return cls(read=False, write=False, delete=False)
+
+
+TotalNumber: TypeAlias = NonNegativeInt
+
+
+class PathMetaData(BaseModel):
+    path: Path
+    location_id: LocationID
+    location: LocationName
+    bucket_name: str
+
+    project_id: ProjectID | None
+    node_id: NodeID | None
+    user_id: UserID | None
+    created_at: datetime.datetime
+    last_modified: datetime.datetime
+
+    file_meta_data: FileMetaData | None
+
+    model_config = ConfigDict(from_attributes=True)
+
+    def to_api_model(self) -> PathMetaDataGet:
+        return PathMetaDataGet.model_construct(
+            path=self.path,
+            display_path=self.path,
+            created_at=self.created_at,
+            last_modified=self.last_modified,
+            file_meta_data=self.file_meta_data,
+        )

@@ -41,3 +41,7 @@ class AccessLayerError(StorageRuntimeError):
 
 class InvalidFileIdentifierError(AccessLayerError):
     msg_template: str = "Error in {identifier}: {details}"
+
+
+class FileFilterInvalidError(StorageRuntimeError):
+    msg_template: str = "Invalid filter {file_filter} used"

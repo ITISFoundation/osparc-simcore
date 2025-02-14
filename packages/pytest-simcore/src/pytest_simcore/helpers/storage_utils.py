@@ -1,8 +1,10 @@
 import logging
 import os
-from typing import Any
+from pathlib import Path
+from typing import Any, TypedDict
 
 import sqlalchemy as sa
+from models_library.basic_types import SHA256Str
 from simcore_postgres_database.storage_models import projects
 from sqlalchemy.ext.asyncio import AsyncEngine
 
@@ -24,6 +26,10 @@ async def get_updated_project(
         result = await conn.execute(
             sa.select(projects).where(projects.c.uuid == project_id)
         )
-        row = result.fetchone()
-        assert row
+        row = result.one()
         return row._asdict()
+
+
+class FileIDDict(TypedDict):
+    path: Path
+    sha256_checksum: SHA256Str

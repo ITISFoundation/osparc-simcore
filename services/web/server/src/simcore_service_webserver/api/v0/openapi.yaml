@@ -5646,6 +5646,50 @@ paths:
                   $ref: '#/components/schemas/FileLocation'
                 type: array
                 title: Response List Storage Locations
+  /v0/storage/locations/{location_id}/paths:
+    get:
+      tags:
+      - storage
+      summary: List Paths
+      description: Lists the files/directories in WorkingDirectory
+      operationId: list_paths
+      parameters:
+      - name: location_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Location Id
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 20
+          title: Limit
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+          title: Offset
+      - name: fileFilter
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            format: path
+          - type: 'null'
+          title: Filefilter
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Page_FileMetaDataGet_'
   /v0/storage/locations/{location_id}/datasets:
     get:
       tags:
@@ -11349,6 +11393,24 @@ components:
       - _links
       - data
       title: Page[CatalogServiceGet]
+    Page_FileMetaDataGet_:
+      properties:
+        _meta:
+          $ref: '#/components/schemas/PageMetaInfoLimitOffset'
+        _links:
+          $ref: '#/components/schemas/PageLinks'
+        data:
+          items:
+            $ref: '#/components/schemas/FileMetaDataGet'
+          type: array
+          title: Data
+      additionalProperties: false
+      type: object
+      required:
+      - _meta
+      - _links
+      - data
+      title: Page[FileMetaDataGet]
     Page_LicensedItemPurchaseGet_:
       properties:
         _meta:

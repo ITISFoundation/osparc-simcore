@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from pathlib import Path
 
 from fastapi import FastAPI
 from models_library.basic_types import SHA256Str
@@ -6,11 +7,17 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import LocationID, LocationName, StorageFileID
 from models_library.storage_schemas import DatCoreDatasetName, LinkType, UploadedPart
 from models_library.users import UserID
-from pydantic import AnyUrl, ByteSize
+from pydantic import AnyUrl, ByteSize, NonNegativeInt
 
 from .constants import DATCORE_ID, DATCORE_STR
 from .dsm_factory import BaseDataManager
-from .models import DatasetMetaData, FileMetaData, UploadLinks
+from .models import (
+    DatasetMetaData,
+    FileMetaData,
+    PathMetaData,
+    TotalNumber,
+    UploadLinks,
+)
 from .modules.datcore_adapter import datcore_adapter
 from .modules.datcore_adapter.datcore_adapter_exceptions import (
     DatcoreAdapterMultipleFilesError,
@@ -52,6 +59,17 @@ class DatCoreDataManager(BaseDataManager):
         return await datcore_adapter.list_all_files_metadatas_in_dataset(
             self.app, user_id, api_token, api_secret, DatCoreDatasetName(dataset_id)
         )
+
+    async def list_paths(
+        self,
+        user_id: UserID,
+        *,
+        file_filter: Path | None,
+        limit: NonNegativeInt,
+        offset: NonNegativeInt,
+    ) -> tuple[list[PathMetaData], TotalNumber]:
+        """returns a page of the file meta data a user has access to"""
+        return [], 0
 
     async def list_files(
         self,

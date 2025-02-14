@@ -31,6 +31,7 @@ from ._models import (
     S3DirectoryMetaData,
     S3MetaData,
     S3ObjectKey,
+    S3ObjectPrefix,
     UploadID,
 )
 from ._utils import compute_num_file_chunks
@@ -42,7 +43,7 @@ _DEFAULT_AWS_REGION: Final[str] = "us-east-1"
 _MAX_ITEMS_PER_PAGE: Final[int] = 500
 _MAX_CONCURRENT_COPY: Final[int] = 4
 _AWS_MAX_ITEMS_PER_PAGE: Final[int] = 1000
-
+_S3_OBJECT_DELIMITER: Final[str] = "/"
 
 ListAnyUrlTypeAdapter: Final[TypeAdapter[list[AnyUrl]]] = TypeAdapter(list[AnyUrl])
 
@@ -160,7 +161,67 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
         size = 0
         async for s3_object in self._list_all_objects(bucket=bucket, prefix=prefix):
             size += s3_object.size
-        return S3DirectoryMetaData(size=size)
+        return S3DirectoryMetaData(prefix=S3ObjectPrefix(prefix), size=ByteSize(size))
+
+    @s3_exception_handler(_logger)
+    async def list_objects(
+        self,
+        *,
+        bucket: S3BucketName,
+        prefix: S3ObjectPrefix | None,
+        start_after: S3ObjectKey | None,
+        limit: int = _MAX_ITEMS_PER_PAGE,
+        is_partial_prefix: bool = False,
+    ) -> list[S3MetaData | S3DirectoryMetaData]:
+        """returns a number of entries in the bucket, defined by limit
+        the entries are sorted alphabetically by key
+        the first entry is defined by start_after
+        if start_after is None, the first entry is the first one in the bucket
+        if prefix is not None, only entries with the given prefix are returned
+        if prefix is None, all entries in the bucket are returned
+        limit must be >= 1 and <= _AWS_MAX_ITEMS_PER_PAGE
+
+        Raises:
+            ValueError: in case of invalid limit
+        """
+        if limit < 1:
+            msg = "num_objects must be >= 1"
+            raise ValueError(msg)
+        if limit > _AWS_MAX_ITEMS_PER_PAGE:
+            msg = f"num_objects must be <= {_AWS_MAX_ITEMS_PER_PAGE}"
+            raise ValueError(msg)
+
+        final_prefix = f"{prefix}" if prefix else ""
+        if prefix and not is_partial_prefix:
+            final_prefix = (
+                f"{final_prefix.rstrip(_S3_OBJECT_DELIMITER)}{_S3_OBJECT_DELIMITER}"
+            )
+
+        listed_objects = await self._client.list_objects_v2(
+            Bucket=bucket,
+            Prefix=final_prefix,
+            MaxKeys=limit,
+            StartAfter=start_after or "",
+            Delimiter=_S3_OBJECT_DELIMITER,
+        )
+        found_objects: list[S3MetaData | S3DirectoryMetaData] = []
+        if "CommonPrefixes" in listed_objects:
+            # we have folders here
+            list_subfolders = listed_objects["CommonPrefixes"]
+            found_objects.extend(
+                S3DirectoryMetaData.model_construct(
+                    prefix=S3ObjectPrefix(subfolder["Prefix"], size=None)
+                )
+                for subfolder in list_subfolders
+                if "Prefix" in subfolder
+            )
+        if "Contents" in listed_objects:
+            found_objects.extend(
+                S3MetaData.from_botocore_list_objects(obj)
+                for obj in listed_objects["Contents"]
+            )
+
+        return found_objects
 
     @s3_exception_handler_async_gen(_logger)
     async def list_objects_paginated(
@@ -452,7 +513,7 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
         dst_metadata = await self.get_directory_metadata(
             bucket=bucket, prefix=dst_prefix
         )
-        if dst_metadata.size > 0:
+        if dst_metadata.size and dst_metadata.size > 0:
             raise S3DestinationNotEmptyError(dst_prefix=dst_prefix)
         await limited_gather(
             *[

@@ -9,7 +9,7 @@ import httpx
 from fastapi import FastAPI, status
 from models_library.users import UserID
 from pytest_simcore.helpers.fastapi import url_from_operation_id
-from tests.helpers.utils import has_datcore_tokens
+from pytest_simcore.helpers.storage_utils import has_datcore_tokens
 
 pytest_simcore_core_services_selection = ["postgres"]
 pytest_simcore_ops_services_selection = ["adminer"]

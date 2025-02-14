@@ -1,5 +1,7 @@
 import datetime
 from collections.abc import AsyncGenerator
+from pathlib import Path
+from typing import Iterable
 
 import sqlalchemy as sa
 from models_library.basic_types import SHA256Str
@@ -13,7 +15,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncConnection
 
 from ...exceptions.errors import FileMetaDataNotFoundError
-from ...models import FileMetaData, FileMetaDataAtDB, UserOrProjectFilter
+from ...models import FileMetaData, FileMetaDataAtDB, PathMetaData, UserOrProjectFilter
 
 
 async def exists(conn: AsyncConnection, file_id: SimcoreS3FileID) -> bool:
@@ -134,6 +136,45 @@ async def list_filter_with_partial_file_id(
     return [
         FileMetaDataAtDB.model_validate(row) async for row in await conn.stream(stmt)
     ]
+
+
+async def list_child_paths(
+    conn: AsyncConnection,
+    *,
+    filter_by_user_id: UserID | None,
+    filter_by_project_ids: Iterable[ProjectID] | None,
+    filter_by_file_prefix: Path | None,
+    limit: int,
+    offset: int,
+) -> list[PathMetaData]:
+    """returns a list of FileMetaDataAtDB that are one level deep.
+    e.g. when no filter is used, these are top level objects
+    """
+
+    # Subquery to rank files within each top-level folder
+    ranked_files = sa.select(
+        file_meta_data.c.location_id,
+        file_meta_data.c.location,
+        file_meta_data.c.bucket_name,
+        file_meta_data.c.project_id,
+        file_meta_data.c.node_id,
+        file_meta_data.c.user_id,
+        file_meta_data.c.created_at,
+        file_meta_data.c.last_modified,
+        sa.func.split_part(file_meta_data.c.file_id, "/", 1).label("path"),
+        sa.null().label("file_meta_data"),
+        sa.func.row_number()
+        .over(
+            partition_by=sa.func.split_part(file_meta_data.c.file_id, "/", 1),
+            order_by=(file_meta_data.c.last_modified.desc(), file_meta_data.c.file_id),
+        )
+        .label("row_num"),
+    ).cte("ranked_files")
+
+    # Main query to select the top-ranked row for each top-level folder
+    query = sa.select(ranked_files).where(ranked_files.c.row_num == 1)
+
+    return [PathMetaData.model_validate(row) async for row in await conn.stream(query)]
 
 
 async def list_fmds(
