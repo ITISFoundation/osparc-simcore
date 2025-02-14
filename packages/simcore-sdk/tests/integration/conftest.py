@@ -13,9 +13,9 @@ from uuid import uuid4
 import pytest
 import sqlalchemy as sa
 from aiohttp import ClientSession
-from models_library.api_schemas_storage import FileUploadSchema
 from models_library.generics import Envelope
 from models_library.projects_nodes_io import LocationID, NodeIDStr, SimcoreS3FileID
+from models_library.storage_schemas import FileUploadSchema
 from models_library.users import UserID
 from pydantic import TypeAdapter
 from pytest_simcore.helpers.faker_factories import random_project, random_user

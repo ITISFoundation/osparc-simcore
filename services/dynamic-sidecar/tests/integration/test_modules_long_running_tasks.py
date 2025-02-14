@@ -19,9 +19,9 @@ from async_asgi_testclient import TestClient
 from botocore.client import Config
 from botocore.exceptions import ClientError
 from fastapi import FastAPI
-from models_library.api_schemas_storage import S3BucketName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
+from models_library.storage_schemas import S3BucketName
 from models_library.users import UserID
 from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
@@ -47,8 +47,9 @@ from yarl import URL
 pytest_simcore_core_services_selection = [
     "migration",
     "postgres",
-    "storage",
+    "rabbit",
     "redis",
+    "storage",
 ]
 
 pytest_simcore_ops_services_selection = [
@@ -87,6 +88,7 @@ def project_id(user_id: int, postgres_db: sa.engine.Engine) -> Iterable[ProjectI
 def mock_environment(
     mock_storage_check: None,
     mock_rabbit_check: None,
+    rabbit_service,
     postgres_host_config: PostgresTestConfig,
     storage_endpoint: URL,
     minio_s3_settings_envs: EnvVarsDict,
@@ -104,10 +106,7 @@ def mock_environment(
         "DY_SIDECAR_PROJECT_ID": f"{project_id}",
         "R_CLONE_PROVIDER": "MINIO",
         "DY_SIDECAR_CALLBACKS_MAPPING": "{}",
-        "RABBIT_HOST": "test",
-        "RABBIT_PASSWORD": "test",
-        "RABBIT_SECURE": "0",
-        "RABBIT_USER": "test",
+        **{k: f"{v}" for k, v in rabbit_service.dict().items()},
         **base_mock_envs,
     }
 
