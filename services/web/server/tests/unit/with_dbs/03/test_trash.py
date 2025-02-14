@@ -835,7 +835,7 @@ async def test_trash_project_explitictly_and_empty_trash_bin(
     assert trashing_at < got.trashed_at < arrow.utcnow().datetime
 
     # force EMPTY trash
-    resp = await client.delete("/v0/trash")
+    resp = await client.post("/v0/trash:empty")
     await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
     # waits for deletion
