@@ -56,7 +56,7 @@ from ._crud_handlers_models import (
     ProjectsListQueryParams,
     ProjectsSearchQueryParams,
 )
-from ._permalink_api import update_or_pop_permalink_in_project
+from ._permalink_service import update_or_pop_permalink_in_project
 from .exceptions import (
     ProjectDeleteError,
     ProjectInvalidRightsError,
