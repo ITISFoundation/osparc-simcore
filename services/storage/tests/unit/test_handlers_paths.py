@@ -12,9 +12,9 @@ from pathlib import Path
 import httpx
 from fastapi import FastAPI
 from fastapi_pagination import LimitOffsetPage
-from models_library.api_schemas_storage import FileMetaDataGet, PathMetaDataGet
 from models_library.projects import ProjectAtDB
 from models_library.projects_nodes_io import LocationID, NodeID, SimcoreS3FileID
+from models_library.storage_schemas import FileMetaDataGet, PathMetaDataGet
 from models_library.users import UserID
 from pytest_simcore.helpers.fastapi import url_from_operation_id
 from pytest_simcore.helpers.httpx_assert_checks import assert_status

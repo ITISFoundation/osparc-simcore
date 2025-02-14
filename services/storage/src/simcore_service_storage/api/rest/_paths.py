@@ -4,7 +4,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends
 from fastapi_pagination import LimitOffsetPage, LimitOffsetParams, create_page
-from models_library.api_schemas_storage import PathMetaDataGet
+from models_library.storage_schemas import PathMetaDataGet
 from models_library.users import UserID
 
 from ...dsm_factory import BaseDataManager

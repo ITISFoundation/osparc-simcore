@@ -12,8 +12,6 @@ from pathlib import Path
 from typing import Annotated, Any, Literal, Self, TypeAlias
 from uuid import UUID
 
-from models_library.projects import ProjectID
-from models_library.users import UserID
 from pydantic import (
     BaseModel,
     ByteSize,
@@ -30,6 +28,7 @@ from pydantic.networks import AnyUrl
 from .basic_regex import DATCORE_DATASET_NAME_RE, S3_BUCKET_NAME_RE
 from .basic_types import SHA256Str
 from .generics import ListModel
+from .projects import ProjectID
 from .projects_nodes_io import (
     LocationID,
     LocationName,
@@ -37,6 +36,7 @@ from .projects_nodes_io import (
     SimcoreS3FileID,
     StorageFileID,
 )
+from .users import UserID
 
 ETag: TypeAlias = str
 
