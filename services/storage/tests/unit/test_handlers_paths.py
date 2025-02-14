@@ -18,8 +18,8 @@ from models_library.storage_schemas import FileMetaDataGet, PathMetaDataGet
 from models_library.users import UserID
 from pytest_simcore.helpers.fastapi import url_from_operation_id
 from pytest_simcore.helpers.httpx_assert_checks import assert_status
+from pytest_simcore.helpers.storage_utils import FileIDDict
 from servicelib.aiohttp import status
-from tests.fixtures.data_models import FileIDDict
 
 pytest_simcore_core_services_selection = ["postgres"]
 pytest_simcore_ops_services_selection = ["adminer"]

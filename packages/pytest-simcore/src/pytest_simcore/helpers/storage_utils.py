@@ -1,7 +1,10 @@
 import logging
 import os
+from pathlib import Path
+from typing import TypedDict
 
 import sqlalchemy as sa
+from models_library.basic_types import SHA256Str
 from models_library.projects import ProjectAtDB
 from simcore_postgres_database.storage_models import projects
 from sqlalchemy.ext.asyncio import AsyncEngine
@@ -26,3 +29,8 @@ async def get_updated_project(
         )
         row = result.one()
         return ProjectAtDB.model_validate(row)
+
+
+class FileIDDict(TypedDict):
+    path: Path
+    sha256_checksum: SHA256Str

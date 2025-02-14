@@ -7,7 +7,7 @@ from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 from pathlib import Path
 from random import choice, randint
-from typing import Any, TypedDict, cast
+from typing import Any, cast
 
 import pytest
 import sqlalchemy as sa
@@ -17,14 +17,14 @@ from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileID, StorageFileID
 from models_library.users import UserID
 from pydantic import ByteSize, TypeAdapter
-from pytest_simcore.helpers.faker_factories import random_project, random_user
 from servicelib.utils import limited_gather
 from simcore_postgres_database.models.project_to_groups import project_to_groups
 from simcore_postgres_database.storage_models import projects, users
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
-from ..helpers.utils import get_updated_project
+from .helpers.faker_factories import random_project, random_user
+from .helpers.storage_utils import FileIDDict, get_updated_project
 
 
 @asynccontextmanager
@@ -257,11 +257,6 @@ async def create_project_node(
         return new_node_id
 
     return _creator
-
-
-class FileIDDict(TypedDict):
-    path: Path
-    sha256_checksum: SHA256Str
 
 
 async def _upload_file_and_update_project(

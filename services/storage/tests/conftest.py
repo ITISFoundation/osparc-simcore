@@ -46,6 +46,10 @@ from pytest_simcore.helpers.httpx_assert_checks import assert_status
 from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.monkeypatch_envs import delenvs_from_dict, setenvs_from_dict
 from pytest_simcore.helpers.s3 import upload_file_to_presigned_link
+from pytest_simcore.helpers.storage_utils import FileIDDict
+from pytest_simcore.helpers.storage_utils_file_meta_data import (
+    assert_file_meta_data_in_db,
+)
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.aiohttp import status
 from simcore_postgres_database.storage_models import file_meta_data, projects, users
@@ -63,8 +67,6 @@ from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
-from tests.fixtures.data_models import FileIDDict
-from tests.helpers.utils_file_meta_data import assert_file_meta_data_in_db
 from types_aiobotocore_s3 import S3Client
 from yarl import URL
 
@@ -82,8 +84,8 @@ pytest_plugins = [
     "pytest_simcore.postgres_service",
     "pytest_simcore.pytest_global_environs",
     "pytest_simcore.repository_paths",
-    "tests.fixtures.data_models",
-    "tests.fixtures.datcore_adapter",
+    "pytest_simcore.simcore_storage_data_models",
+    "pytest_simcore.simcore_storage_datcore_adapter",
 ]
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
