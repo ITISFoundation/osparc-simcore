@@ -13,7 +13,7 @@ import pytest
 import sqlalchemy as sa
 from faker import Faker
 from models_library.basic_types import SHA256Str
-from models_library.projects import ProjectAtDB, ProjectID
+from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileID, StorageFileID
 from models_library.users import UserID
 from pydantic import ByteSize, TypeAdapter
@@ -304,7 +304,7 @@ async def random_project_with_files(
     faker: Faker,
 ) -> Callable[
     [int, tuple[ByteSize, ...], tuple[SHA256Str, ...]],
-    Awaitable[tuple[ProjectAtDB, dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]],
+    Awaitable[tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]],
 ]:
     async def _creator(
         num_nodes: int = 12,
@@ -324,7 +324,7 @@ async def random_project_with_files(
                 "488f3b57932803bbf644593bd46d95599b1d4da1d63bc020d7ebe6f1c255f7f3"
             ),
         ),
-    ) -> tuple[ProjectAtDB, dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]:
+    ) -> tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]:
         assert len(file_sizes) == len(file_checksums)
         project = await create_project(name="random-project")
         node_to_files_mapping: dict[NodeID, dict[SimcoreS3FileID, FileIDDict]] = {}

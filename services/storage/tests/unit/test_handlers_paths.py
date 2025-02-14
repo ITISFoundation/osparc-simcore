@@ -8,11 +8,11 @@
 
 
 from pathlib import Path
+from typing import Any
 
 import httpx
 from fastapi import FastAPI
 from fastapi_pagination import LimitOffsetPage
-from models_library.projects import ProjectAtDB
 from models_library.projects_nodes_io import LocationID, NodeID, SimcoreS3FileID
 from models_library.storage_schemas import FileMetaDataGet, PathMetaDataGet
 from models_library.users import UserID
@@ -55,7 +55,7 @@ async def test_list_paths_root_folder(
     location_id: LocationID,
     user_id: UserID,
     with_random_project_with_files: tuple[
-        ProjectAtDB,
+        dict[str, Any],
         dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],
     ],
 ):
@@ -77,6 +77,6 @@ async def test_list_paths_root_folder(
     )
     assert page_of_files
     assert len(page_of_files.items) == 1
-    assert page_of_files.items[0].path == Path(f"{project_in_db.uuid}")
+    assert page_of_files.items[0].path == Path(f"{project_in_db['uuid']}")
     assert page_of_files.items[0].file_meta_data is None
     assert page_of_files.total == 1

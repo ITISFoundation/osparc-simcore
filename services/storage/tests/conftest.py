@@ -12,7 +12,7 @@ import sys
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import AbstractAsyncContextManager, asynccontextmanager
 from pathlib import Path
-from typing import Final, cast
+from typing import Any, Final, cast
 
 import httpx
 import pytest
@@ -24,7 +24,7 @@ from faker import Faker
 from fakeredis.aioredis import FakeRedis
 from fastapi import FastAPI
 from models_library.basic_types import SHA256Str
-from models_library.projects import ProjectAtDB, ProjectID
+from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.projects_nodes_io import LocationID, SimcoreS3FileID
 from models_library.storage_schemas import (
@@ -642,12 +642,12 @@ async def with_random_project_with_files(
         ...,
         Awaitable[
             tuple[
-                ProjectAtDB,
+                dict[str, Any],
                 dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],
             ]
         ],
     ],
-) -> tuple[ProjectAtDB, dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],]:
+) -> tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],]:
     return await random_project_with_files(
         file_sizes=(
             TypeAdapter(ByteSize).validate_python("1Mib"),

@@ -1,11 +1,10 @@
 import logging
 import os
 from pathlib import Path
-from typing import TypedDict
+from typing import Any, TypedDict
 
 import sqlalchemy as sa
 from models_library.basic_types import SHA256Str
-from models_library.projects import ProjectAtDB
 from simcore_postgres_database.storage_models import projects
 from sqlalchemy.ext.asyncio import AsyncEngine
 
@@ -22,13 +21,13 @@ def has_datcore_tokens() -> bool:
 
 async def get_updated_project(
     sqlalchemy_async_engine: AsyncEngine, project_id: str
-) -> ProjectAtDB:
+) -> dict[str, Any]:
     async with sqlalchemy_async_engine.connect() as conn:
         result = await conn.execute(
             sa.select(projects).where(projects.c.uuid == project_id)
         )
         row = result.one()
-        return ProjectAtDB.model_validate(row)
+        return row._asdict()
 
 
 class FileIDDict(TypedDict):

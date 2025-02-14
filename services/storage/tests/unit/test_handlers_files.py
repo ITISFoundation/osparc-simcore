@@ -16,7 +16,7 @@ from contextlib import AbstractAsyncContextManager
 from dataclasses import dataclass
 from pathlib import Path
 from random import choice
-from typing import Literal
+from typing import Any, Literal
 from uuid import uuid4
 
 import httpx
@@ -27,7 +27,7 @@ from aws_library.s3._constants import MULTIPART_UPLOADS_MIN_TOTAL_SIZE
 from faker import Faker
 from fastapi import FastAPI
 from models_library.basic_types import SHA256Str
-from models_library.projects import ProjectAtDB, ProjectID
+from models_library.projects import ProjectID
 from models_library.projects_nodes_io import LocationID, NodeID, SimcoreS3FileID
 from models_library.storage_schemas import (
     FileMetaDataGet,
@@ -1484,7 +1484,7 @@ async def test_listing_with_project_id_filter(
         [int, tuple[ByteSize, ...]],
         Awaitable[
             tuple[
-                ProjectAtDB,
+                dict[str, Any],
                 dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],
             ]
         ],
@@ -1505,7 +1505,7 @@ async def test_listing_with_project_id_filter(
     node_id = next(iter(src_projects_list.keys()))
     project_files_in_db = set(src_projects_list[node_id])
     assert len(project_files_in_db) > 0
-    project_id = src_project.uuid
+    project_id = src_project["uuid"]
     project_file_name = Path(choice(list(project_files_in_db))).name  # noqa: S311
 
     query = {
