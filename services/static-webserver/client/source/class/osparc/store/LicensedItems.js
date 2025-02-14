@@ -40,7 +40,7 @@ qx.Class.define("osparc.store.LicensedItems", {
             licensedItem["seats"].push({
               licensedItemPurchaseId: purchase["licensedItemPurchaseId"],
               numOfSeats: purchase["numOfSeats"],
-              expireAt: purchase["expireAt"],
+              expireAt: new Date(purchase["expireAt"]),
             });
           }
         })

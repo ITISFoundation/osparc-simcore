@@ -54,18 +54,18 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelListItem", {
       init: "selectable"
     },
 
-    licenseKey: {
+    key: {
       check: "String",
       init: null,
       nullable: false,
-      event: "changeLicenseKey",
+      event: "changeKey",
     },
 
-    licenseVersion: {
+    version: {
       check: "String",
       init: null,
       nullable: false,
-      event: "changeLicenseVersion",
+      event: "changeVersion",
     },
 
     licensedItemId: {

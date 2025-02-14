@@ -133,8 +133,8 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
       membersCtrl.setDelegate({
         createItem: () => new osparc.vipMarket.AnatomicalModelListItem(),
         bindItem: (ctrl, item, id) => {
-          ctrl.bindProperty("licenseKey", "licenseKey", null, item, id);
-          ctrl.bindProperty("licenseVersion", "licenseVersion", null, item, id);
+          ctrl.bindProperty("key", "key", null, item, id);
+          ctrl.bindProperty("version", "version", null, item, id);
           ctrl.bindProperty("thumbnail", "thumbnail", null, item, id);
           ctrl.bindProperty("displayName", "displayName", null, item, id);
           ctrl.bindProperty("date", "date", null, item, id);
@@ -183,18 +183,15 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
         .then(purchasesItems => {
           this.__anatomicalBundles = [];
           licensedBundles.forEach(licensedBundle => {
-            const anatomicalBundle = osparc.utils.Utils.deepCloneObject(licensedBundle);
-            anatomicalBundle["licenseKey"] = anatomicalBundle["key"];
-            anatomicalBundle["licenseVersion"] = anatomicalBundle["version"];
-            anatomicalBundle["thumbnail"] = "";
-            anatomicalBundle["date"] = null;
-            if (anatomicalBundle["licensedResources"] && anatomicalBundle["licensedResources"].length) {
-              const firstItem = anatomicalBundle["licensedResources"][0]["source"];
+            licensedBundle["thumbnail"] = "";
+            licensedBundle["date"] = null;
+            if (licensedBundle["licensedResources"] && licensedBundle["licensedResources"].length) {
+              const firstItem = licensedBundle["licensedResources"][0]["source"];
               if (firstItem["thumbnail"]) {
-                anatomicalBundle["thumbnail"] = firstItem["thumbnail"];
+                licensedBundle["thumbnail"] = firstItem["thumbnail"];
               }
               if (firstItem["features"] && firstItem["features"]["date"]) {
-                anatomicalBundle["date"] = new Date(firstItem["features"]["date"]);
+                licensedBundle["date"] = new Date(firstItem["features"]["date"]);
               }
             }
             // attach license data
@@ -212,7 +209,7 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
               });
             }
               */
-            this.__anatomicalBundles.push(anatomicalBundle);
+            this.__anatomicalBundles.push(licensedBundle);
           });
 
           this.__populateModels();

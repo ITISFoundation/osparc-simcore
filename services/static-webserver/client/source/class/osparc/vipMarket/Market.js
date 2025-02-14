@@ -134,9 +134,10 @@ qx.Class.define("osparc.vipMarket.Market", {
         .then(values => {
           const licensedItems = values[0];
           const purchasedItems = values[1];
+          osparc.store.LicensedItems.populateSeatsFromPurchases(licensedItems, purchasedItems);
           let items = [];
           licensedItems.forEach(licensedItem => {
-            if (purchasedItems.find(purchasedItem => purchasedItem["licensedItemId"] === licensedItem["licensedItemId"])) {
+            if (licensedItem["seats"].length) {
               items.push(licensedItem);
             }
           });
