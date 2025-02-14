@@ -346,11 +346,11 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
           if (licensedItemData["licensedResources"].length > 1 || lowerLicensedItems.length) {
             let text = this.tr("This Rental will give you access to:") + "<br>";
             licensedItemData["licensedResources"].forEach(licensedResource => {
-              text += `- ${licensedResource["source"]["features"]["name"]} ${licensedResource["source"]["features"]["version"]} <br>`;
+              text += `- ${osparc.store.LicensedItems.licensedResourceNameAndVersion(licensedResource)}<br>`;
             });
             lowerLicensedItems.forEach(lowerLicensedItem => {
               lowerLicensedItem["licensedResources"].forEach(licensedResource => {
-                text += `- ${licensedResource["source"]["features"]["name"]} ${licensedResource["source"]["features"]["version"]} <br>`;
+                text += `- ${osparc.store.LicensedItems.licensedResourceNameAndVersion(licensedResource)} <br>`;
               });
             })
             poweredByLabel.setValue(text);
@@ -362,21 +362,71 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
     },
 
     __addSeatsSection: function() {
-      const anatomicalModelsData = this.getAnatomicalModelsData();
-      const seatsSection = new qx.ui.container.Composite(new qx.ui.layout.VBox(5).set({
-        alignX: "center",
-      }));
+      const licensedItemData = this.getAnatomicalModelsData();
+      if (licensedItemData["seats"].length === 0) {
+        return;
+      }
 
-      anatomicalModelsData["seats"].forEach(seats => {
-        const seatsText = "seat" + (seats["numOfSeats"] > 1 ? "s" : "");
-        const entry = new qx.ui.basic.Label().set({
-          value: `${seats["numOfSeats"]} ${seatsText} available until ${osparc.utils.Utils.formatDate(seats["expireAt"])}`,
-          font: "text-14",
+      osparc.store.LicensedItems.getInstance().getLicensedItems()
+        .then(licensedItems => {
+          const grid = new qx.ui.layout.Grid(15, 5);
+          grid.setColumnAlign(0, "left", "middle");
+          grid.setColumnAlign(1, "center", "middle");
+          grid.setColumnAlign(2, "right", "middle");
+          const seatsSection = new qx.ui.container.Composite(grid).set({
+            alignX: "center",
+          });
+
+          let rowIdx = 0;
+          seatsSection.add(new qx.ui.basic.Label("Model Version"), {
+            column: 0,
+            row: rowIdx,
+          });
+          seatsSection.add(new qx.ui.basic.Label("Seats"), {
+            column: 1,
+            row: rowIdx,
+          });
+          seatsSection.add(new qx.ui.basic.Label("Until"), {
+            column: 2,
+            row: rowIdx,
+          });
+          rowIdx++;
+
+          const entryToGrid = (licensedResource, seat, row) => {
+            const title = osparc.store.LicensedItems.licensedResourceNameAndVersion(licensedResource);
+            seatsSection.add(new qx.ui.basic.Label(title), {
+              column: 0,
+              row,
+            });
+            seatsSection.add(new qx.ui.basic.Label(seat["numOfSeats"].toString()), {
+              column: 1,
+              row,
+            });
+            seatsSection.add(new qx.ui.basic.Label(osparc.utils.Utils.formatDate(seat["expireAt"])), {
+              column: 2,
+              row,
+            });
+          };
+
+          licensedItemData["seats"].forEach(seat => {
+            licensedItemData["licensedResources"].forEach(licensedResource => {
+              entryToGrid(licensedResource, seat, rowIdx);
+              rowIdx++;
+            });
+          });
+
+          const lowerLicensedItems = osparc.store.LicensedItems.getLowerLicensedItems(licensedItems, licensedItemData["key"], licensedItemData["version"])
+          lowerLicensedItems.forEach(lowerLicensedItem => {
+            lowerLicensedItem["seats"].forEach(seat => {
+              lowerLicensedItem["licensedResources"].forEach(licensedResource => {
+                entryToGrid(licensedResource, seat, rowIdx);
+                rowIdx++;
+              });
+            });
+          });
+
+          this._add(seatsSection);
         });
-        seatsSection.add(entry);
-      });
-
-      this._add(seatsSection);
     },
   }
 });

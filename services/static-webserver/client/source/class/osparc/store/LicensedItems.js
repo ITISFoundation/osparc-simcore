@@ -38,6 +38,7 @@ qx.Class.define("osparc.store.LicensedItems", {
         licensedItems.forEach(licensedItem => {
           if (licensedItem["key"] === key && licensedItem["version"] <= version) {
             licensedItem["seats"].push({
+              licensedItemId: purchase["licensedItemId"],
               licensedItemPurchaseId: purchase["licensedItemPurchaseId"],
               numOfSeats: purchase["numOfSeats"],
               expireAt: new Date(purchase["expireAt"]),
@@ -67,6 +68,10 @@ qx.Class.define("osparc.store.LicensedItems", {
         }
       });
       return nSeats;
+    },
+
+    licensedResourceNameAndVersion: function(licensedResource) {
+      return `${licensedResource["source"]["features"]["name"]} ${licensedResource["source"]["features"]["version"]}`;
     },
   },
 
