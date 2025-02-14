@@ -110,15 +110,18 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
             flex: 1
           });
           break;
-        case "models-details":
+        case "models-details": {
           control = new osparc.vipMarket.AnatomicalModelDetails().set({
             padding: 5,
           });
+          const scrollView = new qx.ui.container.Scroll();
+          scrollView.add(control);
           this.bind("openBy", control, "openBy");
-          this.getChildControl("right-side").add(control, {
+          this.getChildControl("right-side").add(scrollView, {
             flex: 1
           });
           break;
+        }
       }
       return control || this.base(arguments, id);
     },
