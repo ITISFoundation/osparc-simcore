@@ -8,6 +8,7 @@ IMPORTANT: DO NOT COUPLE these schemas until storage is refactored
 
 from datetime import datetime
 from enum import Enum
+from pathlib import Path
 from typing import Annotated, Any, Literal, Self, TypeAlias
 from uuid import UUID
 
@@ -368,3 +369,11 @@ class FoldersBody(BaseModel):
 
 class SoftCopyBody(BaseModel):
     link_id: SimcoreS3FileID
+
+
+class PathMetaDataGet(BaseModel):
+    path: Path
+    created_at: datetime
+    last_modified: datetime
+
+    file_meta_data: FileMetaDataGet | None
