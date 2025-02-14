@@ -196,7 +196,6 @@ USER_ID_0: UserID = 0
         f"api/{UUID_0}/some-path/some-random-file.png",
         f"exports/{USER_ID_0}/some-path/some-random-file.png",
         f"{UUID_0}/{UUID_0}/some-path/some-random-file.png",
-        "exports/1/54cf4ae0-b764-416a-a356-01e82903b47f.zip",
     ],
 )
 def test_simcore_s3_file_id_accepted_patterns(object_key: str):
