@@ -7,9 +7,9 @@ from uuid import UUID, uuid3
 
 import aiofiles
 from fastapi import UploadFile
-from models_library.api_schemas_storage import ETag
 from models_library.basic_types import SHA256Str
 from models_library.projects_nodes_io import StorageFileID
+from models_library.storage_schemas import ETag
 from pydantic import (
     AnyHttpUrl,
     BaseModel,
