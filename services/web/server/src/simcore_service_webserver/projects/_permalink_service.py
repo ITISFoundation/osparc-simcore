@@ -1,7 +1,6 @@
 import asyncio
 import logging
-from collections.abc import Callable, Coroutine
-from typing import Any, cast
+from typing import Protocol, cast
 
 from aiohttp import web
 from models_library.api_schemas_webserver.permalinks import ProjectPermalink
@@ -13,21 +12,24 @@ from .models import ProjectDict
 _PROJECT_PERMALINK = f"{__name__}"
 _logger = logging.getLogger(__name__)
 
-_CreateLinkCallable = Callable[
-    [web.Request, ProjectID], Coroutine[Any, Any, ProjectPermalink]
-]
+
+class CreateLinkCoroutine(Protocol):
+    async def __call__(
+        self, request: web.Request, project_uuid: ProjectID
+    ) -> ProjectPermalink:
+        ...
 
 
-def register_factory(app: web.Application, factory_coro: _CreateLinkCallable):
+def register_factory(app: web.Application, factory_coro: CreateLinkCoroutine):
     if _create := app.get(_PROJECT_PERMALINK):
         msg = f"Permalink factory can only be set once: registered {_create}"
         raise PermalinkFactoryError(msg)
     app[_PROJECT_PERMALINK] = factory_coro
 
 
-def _get_factory(app: web.Application) -> _CreateLinkCallable:
+def _get_factory(app: web.Application) -> CreateLinkCoroutine:
     if _create := app.get(_PROJECT_PERMALINK):
-        return cast(_CreateLinkCallable, _create)
+        return cast(CreateLinkCoroutine, _create)
 
     msg = "Undefined permalink factory. Check plugin initialization."
     raise PermalinkFactoryError(msg)
@@ -37,17 +39,18 @@ _PERMALINK_CREATE_TIMEOUT_S = 2
 
 
 async def _create_permalink(
-    request: web.Request, project_id: ProjectID
+    request: web.Request, project_uuid: ProjectID
 ) -> ProjectPermalink:
-    create = _get_factory(request.app)
+    create_coro: CreateLinkCoroutine = _get_factory(request.app)
 
     try:
         permalink: ProjectPermalink = await asyncio.wait_for(
-            create(request, project_id), timeout=_PERMALINK_CREATE_TIMEOUT_S
+            create_coro(request=request, project_uuid=project_uuid),
+            timeout=_PERMALINK_CREATE_TIMEOUT_S,
         )
         return permalink
-    except asyncio.TimeoutError as err:
-        msg = f"Permalink factory callback '{create}' timed out after {_PERMALINK_CREATE_TIMEOUT_S} secs"
+    except TimeoutError as err:
+        msg = f"Permalink factory callback '{create_coro}' timed out after {_PERMALINK_CREATE_TIMEOUT_S} secs"
         raise PermalinkFactoryError(msg) from err
 
 
@@ -61,7 +64,7 @@ async def update_or_pop_permalink_in_project(
     If fails, it pops it from project (so it is not set in the pydantic model. SEE ProjectGet.permalink)
     """
     try:
-        permalink = await _create_permalink(request, project_id=project["uuid"])
+        permalink = await _create_permalink(request, project_uuid=project["uuid"])
 
         assert permalink  # nosec
         project["permalink"] = permalink
@@ -72,6 +75,16 @@ async def update_or_pop_permalink_in_project(
         project.pop("permalink", None)
 
     return None
+
+
+async def aggregate_permalink_in_project(
+    request: web.Request, project: ProjectDict
+) -> ProjectDict:
+    """
+    Adapter to use in parallel aggregation of fields in a project dataset
+    """
+    await update_or_pop_permalink_in_project(request, project)
+    return project
 
 
 __all__: tuple[str, ...] = ("ProjectPermalink",)
