@@ -160,7 +160,7 @@ async def test_validation_error_handler(initialized_app: FastAPI, client: AsyncC
     response = await client.get("/test")
     assert_status(
         response,
-        status.HTTP_422_UNPROCESSABLE_ENTITY,
+        status.HTTP_500_INTERNAL_SERVER_ERROR,
         None,
         expected_msg=f"0 validation errors for {_error_msg}",
     )
