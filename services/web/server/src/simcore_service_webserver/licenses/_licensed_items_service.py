@@ -54,6 +54,7 @@ async def list_licensed_items(
     app: web.Application,
     *,
     product_name: ProductName,
+    include_hidden_items_on_market: bool,
     offset: NonNegativeInt,
     limit: int,
     order_by: OrderBy,
@@ -61,6 +62,7 @@ async def list_licensed_items(
     total_count, items = await _licensed_items_repository.list_licensed_items(
         app,
         product_name=product_name,
+        include_hidden_items_on_market=include_hidden_items_on_market,
         offset=offset,
         limit=limit,
         order_by=order_by,
