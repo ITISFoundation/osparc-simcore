@@ -2,79 +2,88 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
   "properties": {
-    "categories": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "properties": {
-          "id": { "type": "string" },
-          "title": { "type": "string" },
-          "description": { "type": "string" }
-        },
-        "required": ["id", "title"]
-      }
+    "plusButton": {
+      "$ref": "#/definitions/buttonConfig"
     },
-    "resources": {
-      "type": "array",
-      "items": {
-        "oneOf": [
-          {
+    "newStudies": {
+      "$ref": "#/definitions/buttonConfig"
+    }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "buttonConfig": {
+      "type": "object",
+      "properties": {
+        "categories": {
+          "type": "array",
+          "items": {
             "type": "object",
             "properties": {
-              "resourceType": { "enum": ["study"] },
+              "id": { "type": "string" },
               "title": { "type": "string" },
-              "icon": { "type": "string" },
-              "newStudyLabel": { "type": "string" },
-              "idToWidget": { "type": "string" }
+              "description": { "type": "string" }
             },
-            "required": ["resourceType", "title"]
-          },
-          {
-            "type": "object",
-            "properties": {
-              "resourceType": { "enum": ["template"] },
-              "expectedTemplateLabel": { "type": "string" },
-              "title": { "type": "string" },
-              "icon": { "type": "string" },
-              "newStudyLabel": { "type": "string" },
-              "category": { "type": "string" },
-              "idToWidget": { "type": "string" }
-            },
-            "required": ["resourceType", "expectedTemplateLabel", "title"]
-          },
-          {
-            "type": "object",
-            "properties": {
-              "resourceType": { "enum": ["service"] },
-              "expectedKey": { "type": "string" },
-              "title": { "type": "string" },
-              "icon": { "type": "string" },
-              "newStudyLabel": { "type": "string" },
-              "category": { "type": "string" },
-              "idToWidget": { "type": "string" }
-            },
-            "required": ["resourceType", "expectedKey", "title"]
-          },
-          {
-            "type": "object",
-            "properties": {
-              "showDisabled": {
-                "type": "boolean",
-                "enum": [true]
-              },
-              "title": { "type": "string" },
-              "icon": { "type": "string" },
-              "reason": { "type": "string" },
-              "newStudyLabel": { "type": "string" },
-              "category": { "type": "string" },
-              "idToWidget": { "type": "string" }
-            },
-            "required": ["showDisabled", "title"]
+            "required": ["id", "title"]
           }
-        ]
+        },
+        "resources": {
+          "type": "array",
+          "items": {
+            "oneOf": [{
+              "type": "object",
+              "properties": {
+                "resourceType": { "enum": ["study"] },
+                "title": { "type": "string" },
+                "icon": { "type": "string" },
+                "newStudyLabel": { "type": "string" },
+                "idToWidget": { "type": "string" }
+              },
+              "required": ["resourceType", "title"]
+            }, {
+              "type": "object",
+              "properties": {
+                "resourceType": { "enum": ["template"] },
+                "expectedTemplateLabel": { "type": "string" },
+                "title": { "type": "string" },
+                "icon": { "type": "string" },
+                "newStudyLabel": { "type": "string" },
+                "category": { "type": "string" },
+                "idToWidget": { "type": "string" }
+              },
+              "required": ["resourceType", "expectedTemplateLabel", "title"]
+            }, {
+              "type": "object",
+              "properties": {
+                "resourceType": { "enum": ["service"] },
+                "expectedKey": { "type": "string" },
+                "title": { "type": "string" },
+                "icon": { "type": "string" },
+                "newStudyLabel": { "type": "string" },
+                "category": { "type": "string" },
+                "idToWidget": { "type": "string" }
+              },
+              "required": ["resourceType", "expectedKey", "title"]
+            }, {
+              "type": "object",
+              "properties": {
+                "showDisabled": {
+                  "type": "boolean",
+                  "enum": [true]
+                },
+                "title": { "type": "string" },
+                "icon": { "type": "string" },
+                "reason": { "type": "string" },
+                "newStudyLabel": { "type": "string" },
+                "category": { "type": "string" },
+                "idToWidget": { "type": "string" }
+              },
+              "required": ["showDisabled", "title"]
+            }]
+          },
+          "additionalProperties": false
+        }
       },
       "additionalProperties": false
     }
-  },
-  "additionalProperties": false
+  }
 }
