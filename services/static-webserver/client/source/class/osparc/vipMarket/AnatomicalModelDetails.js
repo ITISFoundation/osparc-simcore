@@ -55,7 +55,7 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
       const anatomicalModelsData = this.getAnatomicalModelsData();
       if (anatomicalModelsData && anatomicalModelsData["licensedResources"].length) {
         this.__addModelsInfo();
-        this.__addPricingUnits();
+        this.__addPricing();
         this.__addSeatsSection();
       } else {
         const selectModelLabel = new qx.ui.basic.Label().set({
@@ -108,7 +108,8 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
       const topGrid = new qx.ui.layout.Grid(8, 8);
       topGrid.setColumnFlex(0, 1);
       const topLayout = new qx.ui.container.Composite(topGrid);
-      const description = anatomicalModel["description"] || "";
+      let description = anatomicalModel["description"] || "";
+      description = description.replace(/SPEAG/g, " "); // remove SPEAG substring
       const delimiter = " - ";
       let titleAndSubtitle = description.split(delimiter);
       if (titleAndSubtitle.length > 0) {
@@ -289,19 +290,28 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
           modelId: anatomicalModelsData["licensedResources"][selectedIdx]["source"]["id"]
         });
       }, this);
-      if (anatomicalModelsData["purchases"].length) {
+      if (anatomicalModelsData["seats"].length) {
         importSection.add(importButton);
       }
       return importSection;
     },
 
-    __addPricingUnits: function() {
-      const anatomicalModelsData = this.getAnatomicalModelsData();
+    __addPricing: function() {
+      const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox().set({
+        alignX: "center"
+      }))
+
+      const pricingLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox()).set({
+        allowGrowX: false,
+        decorator: "border",
+      });
+      layout.add(pricingLayout)
+
       const pricingUnitsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
         alignX: "center"
       }));
-
-      osparc.store.Pricing.getInstance().fetchPricingUnits(anatomicalModelsData["pricingPlanId"])
+      const licensedItemData = this.getAnatomicalModelsData();
+      osparc.store.Pricing.getInstance().fetchPricingUnits(licensedItemData["pricingPlanId"])
         .then(pricingUnits => {
           pricingUnits.forEach(pricingUnit => {
             pricingUnit.set({
@@ -312,8 +322,8 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
             });
             pUnit.addListener("rentPricingUnit", () => {
               this.fireDataEvent("modelPurchaseRequested", {
-                licensedItemId: anatomicalModelsData["licensedItemId"],
-                pricingPlanId: anatomicalModelsData["pricingPlanId"],
+                licensedItemId: licensedItemData["licensedItemId"],
+                pricingPlanId: licensedItemData["pricingPlanId"],
                 pricingUnitId: pricingUnit.getPricingUnitId(),
               });
             }, this);
@@ -321,26 +331,109 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
           });
         })
         .catch(err => console.error(err));
-
       this._add(pricingUnitsLayout);
+      pricingLayout.add(pricingUnitsLayout)
+
+      const poweredByLabel = new qx.ui.basic.Label().set({
+        font: "text-14",
+        padding: 10,
+        rich: true,
+        alignX: "center",
+      });
+      osparc.store.LicensedItems.getInstance().getLicensedItems()
+        .then(licensedItems => {
+          const lowerLicensedItems = osparc.store.LicensedItems.getLowerLicensedItems(licensedItems, licensedItemData["key"], licensedItemData["version"])
+          if (licensedItemData["licensedResources"].length > 1 || lowerLicensedItems.length) {
+            let text = this.tr("This Bundle gives you access to:") + "<br>";
+            licensedItemData["licensedResources"].forEach(licensedResource => {
+              text += `- ${osparc.store.LicensedItems.licensedResourceNameAndVersion(licensedResource)}<br>`;
+            });
+            lowerLicensedItems.forEach(lowerLicensedItem => {
+              lowerLicensedItem["licensedResources"].forEach(licensedResource => {
+                text += `- ${osparc.store.LicensedItems.licensedResourceNameAndVersion(licensedResource)} <br>`;
+              });
+            })
+            poweredByLabel.setValue(text);
+            pricingLayout.add(poweredByLabel);
+          }
+        });
+
+      this._add(layout);
     },
 
     __addSeatsSection: function() {
-      const anatomicalModelsData = this.getAnatomicalModelsData();
-      const seatsSection = new qx.ui.container.Composite(new qx.ui.layout.VBox(5).set({
+      const licensedItemData = this.getAnatomicalModelsData();
+      if (licensedItemData["seats"].length === 0) {
+        return;
+      }
+
+      const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox().set({
         alignX: "center",
       }));
 
-      anatomicalModelsData["purchases"].forEach(purchase => {
-        const seatsText = "seat" + (purchase["numberOfSeats"] > 1 ? "s" : "");
-        const entry = new qx.ui.basic.Label().set({
-          value: `${purchase["numberOfSeats"]} ${seatsText} available until ${osparc.utils.Utils.formatDate(purchase["expiresAt"])}`,
-          font: "text-14",
-        });
-        seatsSection.add(entry);
-      });
+      osparc.store.LicensedItems.getInstance().getLicensedItems()
+        .then(licensedItems => {
+          const grid = new qx.ui.layout.Grid(15, 5);
+          grid.setColumnAlign(0, "left", "middle");
+          grid.setColumnAlign(1, "center", "middle");
+          grid.setColumnAlign(2, "right", "middle");
+          const seatsSection = new qx.ui.container.Composite(grid).set({
+            allowGrowX: false,
+            decorator: "border",
+            padding: 10,
+          });
 
-      this._add(seatsSection);
+          let rowIdx = 0;
+          seatsSection.add(new qx.ui.basic.Label("Models Rented").set({font: "title-14"}), {
+            column: 0,
+            row: rowIdx,
+          });
+          seatsSection.add(new qx.ui.basic.Label("Seats").set({font: "title-14"}), {
+            column: 1,
+            row: rowIdx,
+          });
+          seatsSection.add(new qx.ui.basic.Label("Until").set({font: "title-14"}), {
+            column: 2,
+            row: rowIdx,
+          });
+          rowIdx++;
+
+          const entryToGrid = (licensedResource, seat, row) => {
+            const title = osparc.store.LicensedItems.licensedResourceNameAndVersion(licensedResource);
+            seatsSection.add(new qx.ui.basic.Label(title).set({font: "text-14"}), {
+              column: 0,
+              row,
+            });
+            seatsSection.add(new qx.ui.basic.Label(seat["numOfSeats"].toString()).set({font: "text-14"}), {
+              column: 1,
+              row,
+            });
+            seatsSection.add(new qx.ui.basic.Label(osparc.utils.Utils.formatDate(seat["expireAt"])).set({font: "text-14"}), {
+              column: 2,
+              row,
+            });
+          };
+
+          licensedItemData["seats"].forEach(seat => {
+            licensedItemData["licensedResources"].forEach(licensedResource => {
+              entryToGrid(licensedResource, seat, rowIdx);
+              rowIdx++;
+            });
+          });
+
+          const lowerLicensedItems = osparc.store.LicensedItems.getLowerLicensedItems(licensedItems, licensedItemData["key"], licensedItemData["version"])
+          lowerLicensedItems.forEach(lowerLicensedItem => {
+            lowerLicensedItem["seats"].forEach(seat => {
+              lowerLicensedItem["licensedResources"].forEach(licensedResource => {
+                entryToGrid(licensedResource, seat, rowIdx);
+                rowIdx++;
+              });
+            });
+          });
+
+          layout.add(seatsSection);
+          this._add(layout);
+        });
     },
   }
 });
