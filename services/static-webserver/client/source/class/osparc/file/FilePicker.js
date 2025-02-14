@@ -155,7 +155,7 @@ qx.Class.define("osparc.file.FilePicker", {
         const params = {
           url: {
             locationId: outValue.store,
-            studyId: outValue.dataset
+            datasetId: outValue.dataset
           }
         };
         osparc.data.Resources.fetch("storageFiles", "getByStudy", params)
