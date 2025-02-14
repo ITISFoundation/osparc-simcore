@@ -2,12 +2,12 @@ from contextlib import suppress
 from pathlib import Path
 
 from aws_library.s3 import S3MetaData, SimcoreS3API
-from models_library.api_schemas_storage import S3BucketName
 from models_library.projects_nodes_io import (
     SimcoreS3DirectoryID,
     SimcoreS3FileID,
     StorageFileID,
 )
+from models_library.storage_schemas import S3BucketName
 from pydantic import ByteSize, NonNegativeInt, TypeAdapter
 from servicelib.utils import ensure_ends_with
 from sqlalchemy.ext.asyncio import AsyncConnection

@@ -23,7 +23,7 @@ qx.Class.define("osparc.vipMarket.MarketWindow", {
 
     osparc.utils.Utils.setIdToWidget(this, "storeWindow");
 
-    const width = 1035;
+    const width = 1080;
     const height = 700;
     this.set({
       width,

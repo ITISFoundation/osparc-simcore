@@ -1,10 +1,10 @@
 from datetime import datetime
 from enum import auto
-from typing import Any, NamedTuple, NotRequired, TypeAlias, cast
+from typing import Annotated, Any, NamedTuple, NewType, NotRequired, TypeAlias, cast
 from uuid import UUID
 
 from models_library.resource_tracker import PricingPlanId
-from pydantic import BaseModel, ConfigDict, PositiveInt
+from pydantic import BaseModel, ConfigDict, PositiveInt, StringConstraints
 from pydantic.config import JsonDict
 from typing_extensions import TypedDict
 
@@ -14,6 +14,12 @@ from .utils.enums import StrAutoEnum
 
 LicensedItemID: TypeAlias = UUID
 LicensedResourceID: TypeAlias = UUID
+
+LICENSED_ITEM_VERSION_RE = r"^\d+\.\d+\.\d+$"
+LicensedItemKey = NewType("LicensedItemKey", str)
+LicensedItemVersion = Annotated[
+    str, StringConstraints(pattern=LICENSED_ITEM_VERSION_RE)
+]
 
 
 class LicensedResourceType(StrAutoEnum):
@@ -69,26 +75,24 @@ class LicensedItemDB(BaseModel):
     licensed_item_id: LicensedItemID
     display_name: str
 
-    licensed_resource_name: str
+    key: LicensedItemKey
+    version: LicensedItemVersion
     licensed_resource_type: LicensedResourceType
-    licensed_resource_data: dict[str, Any] | None
 
-    pricing_plan_id: PricingPlanId | None
-    product_name: ProductName | None
+    pricing_plan_id: PricingPlanId
+    product_name: ProductName
+    is_hidden_on_market: bool
 
     # states
     created: datetime
     modified: datetime
-    trashed: datetime | None
 
     model_config = ConfigDict(from_attributes=True)
 
 
-class LicensedItemUpdateDB(BaseModel):
+class LicensedItemPatchDB(BaseModel):
     display_name: str | None = None
-    licensed_resource_name: str | None = None
     pricing_plan_id: PricingPlanId | None = None
-    trash: bool | None = None
 
 
 class LicensedResourceDB(BaseModel):
@@ -115,11 +119,13 @@ class LicensedResourcePatchDB(BaseModel):
 
 class LicensedItem(BaseModel):
     licensed_item_id: LicensedItemID
+    key: LicensedItemKey
+    version: LicensedItemVersion
     display_name: str
-    licensed_resource_name: str
     licensed_resource_type: LicensedResourceType
-    licensed_resource_data: dict[str, Any]
+    licensed_resources: list[dict[str, Any]]
     pricing_plan_id: PricingPlanId
+    is_hidden_on_market: bool
     created_at: datetime
     modified_at: datetime
 
@@ -130,18 +136,22 @@ class LicensedItem(BaseModel):
                 "examples": [
                     {
                         "licensed_item_id": "0362b88b-91f8-4b41-867c-35544ad1f7a1",
+                        "key": "Duke",
+                        "version": "1.0.0",
                         "display_name": "my best model",
-                        "licensed_resource_name": "best-model",
                         "licensed_resource_type": f"{LicensedResourceType.VIP_MODEL}",
-                        "licensed_resource_data": cast(
-                            JsonDict,
-                            {
-                                "category_id": "HumanWholeBody",
-                                "category_display": "Humans",
-                                "source": VIP_DETAILS_EXAMPLE,
-                            },
-                        ),
+                        "licensed_resources": [
+                            cast(
+                                JsonDict,
+                                {
+                                    "category_id": "HumanWholeBody",
+                                    "category_display": "Humans",
+                                    "source": VIP_DETAILS_EXAMPLE,
+                                },
+                            )
+                        ],
                         "pricing_plan_id": "15",
+                        "is_hidden_on_market": False,
                         "created_at": "2024-12-12 09:59:26.422140",
                         "modified_at": "2024-12-12 09:59:26.422140",
                     }

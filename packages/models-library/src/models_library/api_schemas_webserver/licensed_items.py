@@ -11,6 +11,8 @@ from ..licenses import (
     FeaturesDict,
     LicensedItem,
     LicensedItemID,
+    LicensedItemKey,
+    LicensedItemVersion,
     LicensedResourceType,
 )
 from ._base import OutputSchema
@@ -20,10 +22,13 @@ from ._base import OutputSchema
 
 class LicensedItemRpcGet(BaseModel):
     licensed_item_id: LicensedItemID
+    key: LicensedItemKey
+    version: LicensedItemVersion
     display_name: str
     licensed_resource_type: LicensedResourceType
-    licensed_resource_data: dict[str, Any]
+    licensed_resources: list[dict[str, Any]]
     pricing_plan_id: PricingPlanId
+    is_hidden_on_market: bool
     created_at: datetime
     modified_at: datetime
 
@@ -32,10 +37,13 @@ class LicensedItemRpcGet(BaseModel):
             "examples": [
                 {
                     "licensed_item_id": "0362b88b-91f8-4b41-867c-35544ad1f7a1",
+                    "key": "Duke",
+                    "version": "1.0.0",
                     "display_name": "best-model",
                     "licensed_resource_type": f"{LicensedResourceType.VIP_MODEL}",
-                    "licensed_resource_data": cast(JsonDict, VIP_DETAILS_EXAMPLE),
+                    "licensed_resources": [cast(JsonDict, VIP_DETAILS_EXAMPLE)],
                     "pricing_plan_id": "15",
+                    "is_hidden_on_market": False,
                     "created_at": "2024-12-12 09:59:26.422140",
                     "modified_at": "2024-12-12 09:59:26.422140",
                 }
@@ -58,23 +66,27 @@ class _ItisVipRestData(OutputSchema):
     thumbnail: str
     features: FeaturesDict  # NOTE: here there is a bit of coupling with domain model
     doi: str | None
+    license_version: str
 
 
 class _ItisVipResourceRestData(OutputSchema):
-    category_id: IDStr
-    category_display: str
-    category_icon: HttpUrl | None = None  # NOTE: Placeholder until provide @odeimaiz
     source: _ItisVipRestData
-    terms_of_use_url: HttpUrl | None = None  # NOTE: Placeholder until provided @mguidon
 
 
 class LicensedItemRestGet(OutputSchema):
     licensed_item_id: LicensedItemID
+    key: LicensedItemKey
+    version: LicensedItemVersion
+
     display_name: str
-    # NOTE: to put here a discriminator we have to embed it one more layer
     licensed_resource_type: LicensedResourceType
-    licensed_resource_data: _ItisVipResourceRestData
+    licensed_resources: list[_ItisVipResourceRestData]
     pricing_plan_id: PricingPlanId
+
+    category_id: IDStr
+    category_display: str
+    category_icon: HttpUrl | None = None  # NOTE: Placeholder until provide @odeimaiz
+    terms_of_use_url: HttpUrl | None = None  # NOTE: Placeholder until provided @mguidon
 
     created_at: datetime
     modified_at: datetime
@@ -86,17 +98,21 @@ class LicensedItemRestGet(OutputSchema):
                 "examples": [
                     {
                         "licensedItemId": "0362b88b-91f8-4b41-867c-35544ad1f7a1",
+                        "key": "Duke",
+                        "version": "1.0.0",
                         "displayName": "my best model",
                         "licensedResourceType": f"{LicensedResourceType.VIP_MODEL}",
-                        "licensedResourceData": cast(
-                            JsonDict,
-                            {
-                                "categoryId": "HumanWholeBody",
-                                "categoryDisplay": "Humans",
-                                "source": {**VIP_DETAILS_EXAMPLE, "doi": doi},
-                            },
-                        ),
+                        "licensedResources": [
+                            cast(
+                                JsonDict,
+                                {
+                                    "source": {**VIP_DETAILS_EXAMPLE, "doi": doi},
+                                },
+                            )
+                        ],
                         "pricingPlanId": "15",
+                        "categoryId": "HumanWholeBody",
+                        "categoryDisplay": "Humans",
                         "createdAt": "2024-12-12 09:59:26.422140",
                         "modifiedAt": "2024-12-12 09:59:26.422140",
                     }
@@ -114,6 +130,8 @@ class LicensedItemRestGet(OutputSchema):
                 **item.model_dump(
                     include={
                         "licensed_item_id",
+                        "key",
+                        "version",
                         "display_name",
                         "licensed_resource_type",
                         "pricing_plan_id",
@@ -122,9 +140,18 @@ class LicensedItemRestGet(OutputSchema):
                     },
                     exclude_unset=True,
                 ),
-                "licensed_resource_data": {
-                    **item.licensed_resource_data,
-                },
+                "licensed_resources": [
+                    _ItisVipResourceRestData(**x)
+                    for x in sorted(
+                        item.licensed_resources,
+                        key=lambda x: datetime.strptime(
+                            x["source"]["features"]["date"], "%Y-%m-%d"
+                        ),
+                        reverse=True,
+                    )
+                ],
+                "category_id": item.licensed_resources[0]["category_id"],
+                "category_display": item.licensed_resources[0]["category_display"],
             }
         )
 
