@@ -76,5 +76,6 @@ async def test_list_paths_root_folder(
     )
     assert page_of_files
     assert len(page_of_files.items) == 1
-    assert page_of_files.items == []
-    assert page_of_files.total == 0
+    assert page_of_files.items[0].path == Path(f"{project_in_db.uuid}")
+    assert page_of_files.items[0].file_meta_data is None
+    assert page_of_files.total == 1
