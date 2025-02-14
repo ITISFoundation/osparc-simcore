@@ -129,6 +129,8 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         bool, Field(description="If True, run as a worker")
     ] = False
 
+    STORAGE_MODE: str
+
     @field_validator("LOG_LEVEL", mode="before")
     @classmethod
     def _validate_loglevel(cls, value: str) -> str:
