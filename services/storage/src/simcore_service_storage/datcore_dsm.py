@@ -11,7 +11,13 @@ from pydantic import AnyUrl, ByteSize, NonNegativeInt
 
 from .constants import DATCORE_ID, DATCORE_STR
 from .dsm_factory import BaseDataManager
-from .models import DatasetMetaData, FileMetaData, TotalNumber, UploadLinks
+from .models import (
+    DatasetMetaData,
+    FileMetaData,
+    PathMetaData,
+    TotalNumber,
+    UploadLinks,
+)
 from .modules.datcore_adapter import datcore_adapter
 from .modules.datcore_adapter.datcore_adapter_exceptions import (
     DatcoreAdapterMultipleFilesError,
@@ -54,14 +60,14 @@ class DatCoreDataManager(BaseDataManager):
             self.app, user_id, api_token, api_secret, DatCoreDatasetName(dataset_id)
         )
 
-    async def list_files_paginated(
+    async def list_paths(
         self,
         user_id: UserID,
         *,
         file_filter: Path | None,
         limit: NonNegativeInt,
         offset: NonNegativeInt,
-    ) -> tuple[list[FileMetaData], TotalNumber]:
+    ) -> tuple[list[PathMetaData], TotalNumber]:
         """returns a page of the file meta data a user has access to"""
         return [], 0
 
