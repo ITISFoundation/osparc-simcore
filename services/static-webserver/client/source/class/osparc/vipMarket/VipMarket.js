@@ -110,15 +110,18 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
             flex: 1
           });
           break;
-        case "models-details":
+        case "models-details": {
           control = new osparc.vipMarket.AnatomicalModelDetails().set({
             padding: 5,
           });
+          const scrollView = new qx.ui.container.Scroll();
+          scrollView.add(control);
           this.bind("openBy", control, "openBy");
-          this.getChildControl("right-side").add(control, {
+          this.getChildControl("right-side").add(scrollView, {
             flex: 1
           });
           break;
+        }
       }
       return control || this.base(arguments, id);
     },
@@ -133,14 +136,14 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
       membersCtrl.setDelegate({
         createItem: () => new osparc.vipMarket.AnatomicalModelListItem(),
         bindItem: (ctrl, item, id) => {
-          ctrl.bindProperty("licenseKey", "licenseKey", null, item, id);
-          ctrl.bindProperty("licenseVersion", "licenseVersion", null, item, id);
+          ctrl.bindProperty("key", "key", null, item, id);
+          ctrl.bindProperty("version", "version", null, item, id);
           ctrl.bindProperty("thumbnail", "thumbnail", null, item, id);
           ctrl.bindProperty("displayName", "displayName", null, item, id);
           ctrl.bindProperty("date", "date", null, item, id);
           ctrl.bindProperty("licensedItemId", "licensedItemId", null, item, id);
           ctrl.bindProperty("pricingPlanId", "pricingPlanId", null, item, id);
-          ctrl.bindProperty("purchases", "purchases", null, item, id);
+          ctrl.bindProperty("seats", "seats", null, item, id);
         },
         configureItem: item => {
           item.subscribeToFilterGroup("vipModels");
@@ -177,61 +180,40 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
         return;
       }
 
-      const walletId = contextWallet.getWalletId();
-      const licensedItemsStore = osparc.store.LicensedItems.getInstance();
-      licensedItemsStore.getPurchasedLicensedItems(walletId)
-        .then(purchasesItems => {
-          this.__anatomicalBundles = [];
-          licensedBundles.forEach(licensedBundle => {
-            const anatomicalBundle = osparc.utils.Utils.deepCloneObject(licensedBundle);
-            anatomicalBundle["licenseKey"] = anatomicalBundle["key"];
-            anatomicalBundle["licenseVersion"] = anatomicalBundle["version"];
-            anatomicalBundle["thumbnail"] = "";
-            anatomicalBundle["date"] = null;
-            if (anatomicalBundle["licensedResources"] && anatomicalBundle["licensedResources"].length) {
-              const firstItem = anatomicalBundle["licensedResources"][0]["source"];
-              if (firstItem["thumbnail"]) {
-                anatomicalBundle["thumbnail"] = firstItem["thumbnail"];
-              }
-              if (firstItem["features"] && firstItem["features"]["date"]) {
-                anatomicalBundle["date"] = new Date(firstItem["features"]["date"]);
-              }
-            }
-            // attach license data
-            anatomicalBundle["pricingPlanId"] = licensedBundle["pricingPlanId"];
-            // attach purchases data
-            anatomicalBundle["purchases"] = []; // default
-            const purchasesItemsFound = purchasesItems.filter(purchasesItem => purchasesItem["licensedItemId"] === licensedBundle["licensedItemId"]);
-            if (purchasesItemsFound.length) {
-              purchasesItemsFound.forEach(purchasesItemFound => {
-                anatomicalBundle["purchases"].push({
-                  expiresAt: new Date(purchasesItemFound["expireAt"]),
-                  numberOfSeats: purchasesItemFound["numOfSeats"],
-                })
-              });
-            }
-            this.__anatomicalBundles.push(anatomicalBundle);
-          });
+      this.__anatomicalBundles = [];
+      licensedBundles.forEach(licensedBundle => {
+        licensedBundle["thumbnail"] = "";
+        licensedBundle["date"] = null;
+        if (licensedBundle["licensedResources"] && licensedBundle["licensedResources"].length) {
+          const firstItem = licensedBundle["licensedResources"][0]["source"];
+          if (firstItem["thumbnail"]) {
+            licensedBundle["thumbnail"] = firstItem["thumbnail"];
+          }
+          if (firstItem["features"] && firstItem["features"]["date"]) {
+            licensedBundle["date"] = new Date(firstItem["features"]["date"]);
+          }
+        }
+        this.__anatomicalBundles.push(licensedBundle);
+      });
 
-          this.__populateModels();
+      this.__populateModels();
 
-          const anatomicModelDetails = this.getChildControl("models-details");
-          anatomicModelDetails.addListener("modelPurchaseRequested", e => {
-            const {
-              licensedItemId,
-              pricingPlanId,
-              pricingUnitId,
-            } = e.getData();
-            this.__modelPurchaseRequested(licensedItemId, pricingPlanId, pricingUnitId);
-          }, this);
+      const anatomicModelDetails = this.getChildControl("models-details");
+      anatomicModelDetails.addListener("modelPurchaseRequested", e => {
+        const {
+          licensedItemId,
+          pricingPlanId,
+          pricingUnitId,
+        } = e.getData();
+        this.__modelPurchaseRequested(licensedItemId, pricingPlanId, pricingUnitId);
+      }, this);
 
-          anatomicModelDetails.addListener("modelImportRequested", e => {
-            const {
-              modelId
-            } = e.getData();
-            this.__sendImportModelMessage(modelId);
-          }, this);
-        });
+      anatomicModelDetails.addListener("modelImportRequested", e => {
+        const {
+          modelId
+        } = e.getData();
+        this.__sendImportModelMessage(modelId);
+      }, this);
     },
 
     __populateModels: function(selectLicensedItemId) {
@@ -241,8 +223,8 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
       const sortModel = sortBy => {
         models.sort((a, b) => {
           // first criteria
-          const nASeats = osparc.store.LicensedItems.purchasesToNSeats(a["purchases"]);
-          const nBSeats = osparc.store.LicensedItems.purchasesToNSeats(b["purchases"]);
+          const nASeats = osparc.store.LicensedItems.seatsToNSeats(a["seats"]);
+          const nBSeats = osparc.store.LicensedItems.seatsToNSeats(b["seats"]);
           if (nBSeats !== nASeats) {
             // nSeats first
             return nBSeats - nASeats;
@@ -298,29 +280,28 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
         return;
       }
       const walletId = contextWallet.getWalletId();
-      let numberOfSeats = null;
+      let numOfSeats = null;
       const pricingUnit = osparc.store.Pricing.getInstance().getPricingUnit(pricingPlanId, pricingUnitId);
       if (pricingUnit) {
         const split = pricingUnit.getName().split(" ");
-        numberOfSeats = parseInt(split[0]);
+        numOfSeats = parseInt(split[0]);
       }
       const licensedItemsStore = osparc.store.LicensedItems.getInstance();
-      licensedItemsStore.purchaseLicensedItem(licensedItemId, walletId, pricingPlanId, pricingUnitId, numberOfSeats)
-        .then(() => {
-          const expirationDate = osparc.study.PricingUnitLicense.getExpirationDate();
-          const purchaseData = {
-            expiresAt: expirationDate, // get this info from the response
-            numberOfSeats, // get this info from the response
-          };
-
-          let msg = numberOfSeats;
-          msg += " seat" + (purchaseData["numberOfSeats"] > 1 ? "s" : "");
-          msg += " rented until " + osparc.utils.Utils.formatDate(purchaseData["expiresAt"]);
+      licensedItemsStore.purchaseLicensedItem(licensedItemId, walletId, pricingPlanId, pricingUnitId, numOfSeats)
+        .then(purchaseData => {
+          let msg = numOfSeats;
+          msg += " seat" + (purchaseData["numOfSeats"] > 1 ? "s" : "");
+          msg += " rented until " + osparc.utils.Utils.formatDate(new Date(purchaseData["expireAt"]));
           osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
 
           const found = this.__anatomicalBundles.find(model => model["licensedItemId"] === licensedItemId);
           if (found) {
-            found["purchases"].push(purchaseData);
+            found["seats"].push({
+              licensedItemId: purchaseData["licensedItemId"],
+              licensedItemPurchaseId: purchaseData["licensedItemPurchaseId"],
+              numOfSeats: purchaseData["numOfSeats"],
+              expireAt: new Date(purchaseData["expireAt"]),
+            });
             this.__populateModels(licensedItemId);
             const anatomicModelDetails = this.getChildControl("models-details");
             anatomicModelDetails.setAnatomicalModelsData(found);
