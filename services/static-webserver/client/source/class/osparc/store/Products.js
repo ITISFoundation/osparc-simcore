@@ -69,7 +69,6 @@ qx.Class.define("osparc.store.Products", {
               const validate = ajv.compile(schema);
               const valid = validate(uiConfig);
               if (valid) {
-                // Validate data if present
                 this.__uiConfig = uiConfig;
                 resolve(this.__uiConfig);
               } else {
