@@ -26,6 +26,27 @@ qx.Class.define("osparc.store.LicensedItems", {
   },
 
   statics: {
+    populateSeatsFromPurchases: function(licensedItems, purchases) {
+      // reset seats
+      licensedItems.forEach(licensedItem => licensedItem["seats"] = []);
+      // populate seats
+      purchases.forEach(purchase => {
+        const {
+          key,
+          version,
+        } = purchase;
+        licensedItems.forEach(licensedItem => {
+          if (licensedItem["key"] === key && licensedItem["version"] <= version) {
+            licensedItem["seats"].push({
+              licensedItemPurchaseId: purchase["licensedItemPurchaseId"],
+              numOfSeats: purchase["numOfSeats"],
+              expireAt: purchase["expireAt"],
+            });
+          }
+        })
+      })
+    },
+
     purchasesToNSeats: function(purchases) {
       let nSeats = 0;
       purchases.forEach(purchase => {

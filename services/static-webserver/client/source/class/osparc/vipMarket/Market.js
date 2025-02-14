@@ -42,6 +42,7 @@ qx.Class.define("osparc.vipMarket.Market", {
       .then(values => {
         const licensedItems = values[0];
         const purchasedItems = values[1];
+        osparc.store.LicensedItems.populateSeatsFromPurchases(licensedItems, purchasedItems);
         const categories = [];
         const purchasedCategory = {
           categoryId: "purchasedModels",
@@ -51,7 +52,7 @@ qx.Class.define("osparc.vipMarket.Market", {
         };
         categories.push(purchasedCategory);
         licensedItems.forEach(licensedItem => {
-          if (purchasedItems.find(purchasedItem => purchasedItem["licensedItemId"] === licensedItem["licensedItemId"])) {
+          if (licensedItem["seats"].length) {
             purchasedCategory["items"].push(licensedItem);
             if (!openCategory) {
               openCategory = purchasedCategory["categoryId"];
