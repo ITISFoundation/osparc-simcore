@@ -95,6 +95,37 @@ _MAX_PARALLEL_S3_CALLS: Final[NonNegativeInt] = 10
 _logger = logging.getLogger(__name__)
 
 
+async def _add_frontend_needed_data(
+    engine: AsyncEngine,
+    *,
+    project_ids: list[ProjectID],
+    data: list[FileMetaData],
+) -> list[FileMetaData]:
+    # artifically fills ['project_name', 'node_name', 'file_id', 'raw_file_path', 'display_file_path']
+    #   with information from the projects table!
+    # NOTE: This part with the projects, should be done in the client code not here!
+
+    async with engine.connect() as conn:
+        prj_names_mapping: dict[ProjectID | NodeID, str] = {}
+        async for proj_data in projects.list_valid_projects_in(conn, project_ids):
+            prj_names_mapping |= {proj_data.uuid: proj_data.name} | {
+                NodeID(node_id): node_data.label
+                for node_id, node_data in proj_data.workbench.items()
+            }
+
+    clean_data: list[FileMetaData] = []
+    for d in data:
+        if d.project_id not in prj_names_mapping:
+            continue
+        d.project_name = prj_names_mapping[d.project_id]
+        if d.node_id in prj_names_mapping:
+            d.node_name = prj_names_mapping[d.node_id]
+        if d.node_name and d.project_name:
+            clean_data.append(d)
+
+    return clean_data
+
+
 @dataclass
 class SimcoreS3DataManager(BaseDataManager):
     engine: AsyncEngine
@@ -173,25 +204,23 @@ class SimcoreS3DataManager(BaseDataManager):
             file_and_directory_meta_data = await file_meta_data.list_fmds_children(
                 conn,
                 filter_by_user_id=user_id,
-                file_id_prefix=None,
-                is_directory=None,
-                partial_file_id=f"{file_filter}" if file_filter else None,
-                sha256_checksum=None,
+                filter_by_project_ids=accessible_projects_ids,
+                filter_by_file_prefix=file_filter,
                 limit=limit,
                 offset=offset,
             )
 
-        list_s3_objects = await get_s3_client(self.app).list_objects(
-            bucket=self.simcore_bucket_name,
-            prefix=file_filter,
-            start_after=None,
-            limit=limit,
-        )
+        # list_s3_objects = await get_s3_client(self.app).list_objects(
+        #     bucket=self.simcore_bucket_name,
+        #     prefix=file_filter,
+        #     start_after=None,
+        #     limit=limit,
+        # )
         # TODO: computing the total can be expensive, do we want that?
         total = limit + 1
-        if len(list_s3_objects) < limit:
-            total = len(list_s3_objects)
-        return [], total
+        if len(file_and_directory_meta_data) < limit:
+            total = len(file_and_directory_meta_data)
+        return [convert_db_to_model(_) for _ in file_and_directory_meta_data], total
 
     async def list_files(  # noqa C901
         self,
@@ -229,17 +258,17 @@ class SimcoreS3DataManager(BaseDataManager):
             else:
                 accessible_projects_ids = await get_readable_project_ids(conn, user_id)
                 uid = user_id
-            file_and_directory_meta_data: list[
-                FileMetaDataAtDB
-            ] = await file_meta_data.list_filter_with_partial_file_id(
-                conn,
-                user_or_project_filter=UserOrProjectFilter(
-                    user_id=uid, project_ids=accessible_projects_ids
-                ),
-                file_id_prefix=None,
-                is_directory=None,
-                partial_file_id=uuid_filter,
-                sha256_checksum=None,
+            file_and_directory_meta_data = (
+                await file_meta_data.list_filter_with_partial_file_id(
+                    conn,
+                    user_or_project_filter=UserOrProjectFilter(
+                        user_id=uid, project_ids=accessible_projects_ids
+                    ),
+                    file_id_prefix=None,
+                    is_directory=None,
+                    partial_file_id=uuid_filter,
+                    sha256_checksum=None,
+                )
             )
 
         # add all the entries from file_meta_data without
@@ -255,17 +284,6 @@ class SimcoreS3DataManager(BaseDataManager):
             with suppress(S3KeyNotFoundError):
                 updated_fmd = await self._update_database_from_storage(metadata)
                 data.append(convert_db_to_model(updated_fmd))
-
-        # now parse the project to search for node/project names
-        async with self.engine.connect() as conn:
-            prj_names_mapping: dict[ProjectID | NodeID, str] = {}
-            async for proj_data in projects.list_valid_projects_in(
-                conn, accessible_projects_ids
-            ):
-                prj_names_mapping |= {proj_data.uuid: proj_data.name} | {
-                    NodeID(node_id): node_data.label
-                    for node_id, node_data in proj_data.workbench.items()
-                }
 
         # expand directories until the max number of files to return is reached
         directory_expands: list[Coroutine] = []
@@ -289,21 +307,9 @@ class SimcoreS3DataManager(BaseDataManager):
         ):
             data.extend(files_in_directory)
 
-        # artifically fills ['project_name', 'node_name', 'file_id', 'raw_file_path', 'display_file_path']
-        #   with information from the projects table!
-        # NOTE: This part with the projects, should be done in the client code not here!
-        clean_data: list[FileMetaData] = []
-        for d in data:
-            if d.project_id not in prj_names_mapping:
-                continue
-            d.project_name = prj_names_mapping[d.project_id]
-            if d.node_id in prj_names_mapping:
-                d.node_name = prj_names_mapping[d.node_id]
-            if d.node_name and d.project_name:
-                clean_data.append(d)
-
-            data = clean_data
-        return data
+        return await _add_frontend_needed_data(
+            self.engine, project_ids=accessible_projects_ids, data=data
+        )
 
     async def get_file(self, user_id: UserID, file_id: StorageFileID) -> FileMetaData:
         async with self.engine.connect() as conn:
