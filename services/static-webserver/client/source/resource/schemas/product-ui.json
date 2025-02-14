@@ -72,7 +72,9 @@
             "required": ["showDisabled", "title"]
           }
         ]
-      }
+      },
+      "additionalProperties": false
     }
-  }
+  },
+  "additionalProperties": false
 }
