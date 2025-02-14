@@ -19,6 +19,7 @@ from models_library.users import UserID
 from pytest_simcore.helpers.fastapi import url_from_operation_id
 from pytest_simcore.helpers.httpx_assert_checks import assert_status
 from servicelib.aiohttp import status
+from tests.fixtures.data_models import FileIDDict
 
 pytest_simcore_core_services_selection = ["postgres"]
 pytest_simcore_ops_services_selection = ["adminer"]
@@ -55,7 +56,7 @@ async def test_list_paths_root_folder(
     user_id: UserID,
     with_random_project_with_files: tuple[
         ProjectAtDB,
-        dict[NodeID, dict[SimcoreS3FileID, dict[str, Path | str]]],
+        dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],
     ],
 ):
     project_in_db, list_of_files = with_random_project_with_files

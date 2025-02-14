@@ -37,6 +37,7 @@ from simcore_postgres_database.storage_models import file_meta_data
 from simcore_service_storage.models import SearchFilesQueryParams
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 from sqlalchemy.ext.asyncio import AsyncEngine
+from tests.fixtures.data_models import FileIDDict
 from tests.helpers.utils_file_meta_data import assert_file_meta_data_in_db
 from tests.helpers.utils_project import clone_project_data
 from yarl import URL
@@ -213,7 +214,7 @@ async def test_copy_folders_from_valid_project_with_one_large_file(
         Awaitable[
             tuple[
                 ProjectAtDB,
-                dict[NodeID, dict[SimcoreS3FileID, dict[str, Path | str]]],
+                dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],
             ]
         ],
     ],
@@ -283,7 +284,7 @@ async def test_copy_folders_from_valid_project(
         Awaitable[
             tuple[
                 ProjectAtDB,
-                dict[NodeID, dict[SimcoreS3FileID, dict[str, Path | SHA256Str]]],
+                dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],
             ]
         ],
     ],
