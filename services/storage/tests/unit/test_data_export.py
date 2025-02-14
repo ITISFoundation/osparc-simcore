@@ -20,6 +20,7 @@ from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.rabbitmq import RabbitMQRPCClient
+from servicelib.rabbitmq.rpc_interfaces.async_jobs import async_jobs
 from servicelib.rabbitmq.rpc_interfaces.storage import data_export
 from settings_library.rabbit import RabbitSettings
 from simcore_service_storage.core.settings import ApplicationSettings
@@ -82,19 +83,19 @@ async def test_start_data_export(rpc_client: RabbitMQRPCClient, faker: Faker):
 
 async def test_abort_data_export(rpc_client: RabbitMQRPCClient, faker: Faker):
     _task_id = TaskRpcId(faker.uuid4())
-    result = await data_export.abort_data_export(rpc_client, task_id=_task_id)
+    result = await async_jobs.abort(rpc_client, task_id=_task_id)
     assert isinstance(result, DataExportTaskAbortOutput)
     assert result.task_id == _task_id
 
 
 async def test_get_data_export_status(rpc_client: RabbitMQRPCClient, faker: Faker):
     _task_id = TaskRpcId(faker.uuid4())
-    result = await data_export.get_data_export_status(rpc_client, task_id=_task_id)
+    result = await async_jobs.get_status(rpc_client, task_id=_task_id)
     assert isinstance(result, TaskRpcStatus)
     assert result.task_id == _task_id
 
 
 async def test_get_data_export_result(rpc_client: RabbitMQRPCClient, faker: Faker):
     _task_id = TaskRpcId(faker.uuid4())
-    result = await data_export.get_data_export_result(rpc_client, task_id=_task_id)
+    result = await async_jobs.get_result(rpc_client, task_id=_task_id)
     assert isinstance(result, TaskRpcResult)
