@@ -79,6 +79,8 @@ from .utils.simcore_s3_dsm_utils import (
     compute_file_id_prefix,
     expand_directory,
     get_directory_file_id,
+    get_random_export_name,
+    upload_fake_archive,
 )
 from .utils.utils import (
     convert_db_to_model,
@@ -1061,6 +1063,52 @@ class SimcoreS3DataManager(BaseDataManager):
             sha256_checksum=sha256_checksum,
         )
         return await file_meta_data.upsert(conn, fmd)
+
+    async def create_s3_export(
+        self,
+        user_id: UserID,
+        object_keys: list[StorageFileID],
+    ) -> StorageFileID:
+        selected_object_keys: set[StorageFileID] = set()
+
+        for object_key in object_keys:
+            async for meta_data_files in get_s3_client(self.app).list_objects_paginated(
+                self.simcore_bucket_name, object_key
+            ):
+                for entry in meta_data_files:
+                    selected_object_keys.add(entry.object_key)
+
+        _logger.debug("will archive '%s' files", len(selected_object_keys))
+
+        try:
+            uploaded_object_key = get_random_export_name(user_id)
+
+            await self.create_file_upload_links(
+                user_id=user_id,
+                file_id=uploaded_object_key,
+                link_type=LinkType.S3,
+                file_size_bytes=ByteSize(0),
+                sha256_checksum=None,
+                is_directory=False,
+            )
+
+            # TODO: replace me with streaming archive
+            await upload_fake_archive(
+                get_s3_client(self.app),
+                self.simcore_bucket_name,
+                selected_object_keys,
+                uploaded_object_key,
+            )
+        except Exception:  # pylint:disable=broad-exception-caught
+            await self.abort_file_upload(user_id=user_id, file_id=uploaded_object_key)
+        else:
+            await self.complete_file_upload(
+                file_id=uploaded_object_key, user_id=user_id, uploaded_parts=[]
+            )
+
+        _logger.info("Export available in path '%s'", uploaded_object_key)
+
+        return uploaded_object_key
 
 
 def create_simcore_s3_data_manager(app: FastAPI) -> SimcoreS3DataManager:
