@@ -144,7 +144,7 @@ async def list_trashed_projects(
     until_equal_datetime: datetime.datetime | None = None,
 ) -> list[ProjectID]:
     """
-    Lists all projects that were trashed until a specific datetime.
+    Lists all projects that were trashed until a specific datetime (if !=None).
     """
     trashed_projects: list[ProjectID] = []
 
@@ -165,11 +165,12 @@ async def list_trashed_projects(
             search_by_project_name=None,
         )
 
-        # NOTE: post filtering because for the moment, i do not want ot modify the interface
-        # of _crud_api_read.list_projects_full_depth.
-        # This could not be done at the database level when `projects_repo` is refactored
-        # by defining a custom trash_filter that permits some flexibility in the filtering
-        # options
+        # NOTE: Applying POST-FILTERING because we do not want to modify the interface of
+        # _crud_api_read.list_projects_full_depth at this time.
+        # This filtering couldn't be handled at the database level when `projects_repo`
+        # was refactored, as defining a custom trash_filter was needed to allow more
+        # flexibility in filtering options.
+
         for project in projects:
             trashed_at, trashed_by, trashed_explicitly = _get_trashed_fields(project)
 
