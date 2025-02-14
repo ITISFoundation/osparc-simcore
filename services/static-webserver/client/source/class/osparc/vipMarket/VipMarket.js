@@ -291,19 +291,17 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
         .then(purchaseData => {
           let msg = numOfSeats;
           msg += " seat" + (purchaseData["numOfSeats"] > 1 ? "s" : "");
-          msg += " rented until " + osparc.utils.Utils.formatDate(purchaseData["expireAt"]);
+          msg += " rented until " + osparc.utils.Utils.formatDate(new Date(purchaseData["expireAt"]));
           osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
-
-          const purchasedSeatsData = {
-            licensedItemId: purchaseData["licensedItemId"],
-            licensedItemPurchaseId: purchaseData["licensedItemPurchaseId"],
-            numOfSeats: purchaseData["numOfSeats"],
-            expireAt: purchaseData["expireAt"],
-          };
 
           const found = this.__anatomicalBundles.find(model => model["licensedItemId"] === licensedItemId);
           if (found) {
-            found["seats"].push(purchasedSeatsData);
+            found["seats"].push({
+              licensedItemId: purchaseData["licensedItemId"],
+              licensedItemPurchaseId: purchaseData["licensedItemPurchaseId"],
+              numOfSeats: purchaseData["numOfSeats"],
+              expireAt: new Date(purchaseData["expireAt"]),
+            });
             this.__populateModels(licensedItemId);
             const anatomicModelDetails = this.getChildControl("models-details");
             anatomicModelDetails.setAnatomicalModelsData(found);
