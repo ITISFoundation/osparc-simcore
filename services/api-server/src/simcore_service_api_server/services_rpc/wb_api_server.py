@@ -64,6 +64,7 @@ def _create_licensed_items_get_page(
                 licensed_resource_type=elm.licensed_resource_type,
                 licensed_resources=elm.licensed_resources,
                 pricing_plan_id=elm.pricing_plan_id,
+                is_hidden_on_market=elm.is_hidden_on_market,
                 created_at=elm.created_at,
                 modified_at=elm.modified_at,
             )
