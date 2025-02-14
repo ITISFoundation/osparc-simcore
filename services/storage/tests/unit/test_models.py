@@ -1,9 +1,9 @@
 import uuid
 
 import pytest
-from models_library.api_schemas_storage import S3BucketName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileID, StorageFileID
+from models_library.storage_schemas import S3BucketName
 from pydantic import TypeAdapter, ValidationError
 from simcore_service_storage.models import FileMetaData
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager

@@ -13,8 +13,8 @@ from aiobotocore.session import ClientCreatorContext
 from boto3.s3.transfer import TransferConfig
 from botocore import exceptions as botocore_exc
 from botocore.client import Config
-from models_library.api_schemas_storage import ETag, S3BucketName, UploadedPart
 from models_library.basic_types import SHA256Str
+from models_library.storage_schemas import ETag, S3BucketName, UploadedPart
 from pydantic import AnyUrl, ByteSize, TypeAdapter
 from servicelib.logging_utils import log_catch, log_context
 from servicelib.utils import limited_gather

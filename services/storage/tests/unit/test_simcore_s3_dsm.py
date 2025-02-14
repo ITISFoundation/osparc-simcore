@@ -7,9 +7,9 @@ from pathlib import Path
 
 import pytest
 from faker import Faker
-from models_library.api_schemas_storage import FileUploadSchema
 from models_library.basic_types import SHA256Str
 from models_library.projects_nodes_io import SimcoreS3FileID
+from models_library.storage_schemas import FileUploadSchema
 from models_library.users import UserID
 from pydantic import ByteSize, TypeAdapter
 from simcore_service_storage.models import FileMetaData

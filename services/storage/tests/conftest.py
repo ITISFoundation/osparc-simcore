@@ -23,7 +23,11 @@ from aws_library.s3 import SimcoreS3API
 from faker import Faker
 from fakeredis.aioredis import FakeRedis
 from fastapi import FastAPI
-from models_library.api_schemas_storage import (
+from models_library.basic_types import SHA256Str
+from models_library.projects import ProjectID
+from models_library.projects_nodes import NodeID
+from models_library.projects_nodes_io import LocationID, SimcoreS3FileID
+from models_library.storage_schemas import (
     FileMetaDataGet,
     FileUploadCompleteFutureResponse,
     FileUploadCompleteResponse,
@@ -33,10 +37,6 @@ from models_library.api_schemas_storage import (
     LinkType,
     UploadedPart,
 )
-from models_library.basic_types import SHA256Str
-from models_library.projects import ProjectID
-from models_library.projects_nodes import NodeID
-from models_library.projects_nodes_io import LocationID, SimcoreS3FileID
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import ByteSize, TypeAdapter
@@ -141,10 +141,18 @@ async def storage_s3_bucket(app_settings: ApplicationSettings) -> str:
 
 
 @pytest.fixture
+async def mock_rabbit_setup(mocker: MockerFixture) -> MockerFixture:
+    mocker.patch("simcore_service_storage.core.application.setup_rabbitmq")
+    mocker.patch("simcore_service_storage.core.application.setup_rpc_api_routes")
+    return mocker
+
+
+@pytest.fixture
 def app_environment(
     mock_env_devel_environment: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
     external_envfile_dict: EnvVarsDict,
+    mock_rabbit_setup: MockerFixture,
 ) -> EnvVarsDict:
     if external_envfile_dict:
         delenvs_from_dict(monkeypatch, mock_env_devel_environment, raising=False)

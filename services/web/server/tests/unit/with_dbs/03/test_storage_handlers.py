@@ -9,7 +9,7 @@ from typing import Any
 
 import pytest
 from aiohttp.test_utils import TestClient
-from models_library.api_schemas_storage import (
+from models_library.storage_schemas import (
     FileUploadCompleteResponse,
     FileUploadLinks,
     FileUploadSchema,

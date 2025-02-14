@@ -2,9 +2,9 @@ import logging
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Request
-from models_library.api_schemas_storage import DatasetMetaDataGet, FileMetaDataGet
 from models_library.generics import Envelope
 from models_library.projects_nodes_io import LocationID
+from models_library.storage_schemas import DatasetMetaDataGet, FileMetaDataGet
 
 from ...dsm import get_dsm_provider
 from ...models import FilesMetadataDatasetQueryParams, StorageQueryParamsBase

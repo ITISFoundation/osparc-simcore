@@ -13,6 +13,7 @@ from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
 from settings_library.application import BaseApplicationSettings
 from settings_library.basic_types import LogLevel, PortInt
 from settings_library.postgres import PostgresSettings
+from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from settings_library.s3 import S3Settings
 from settings_library.tracing import TracingSettings
@@ -73,6 +74,10 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     STORAGE_CLEANER_INTERVAL_S: int | None = Field(
         30,
         description="Interval in seconds when task cleaning pending uploads runs. setting to NULL disables the cleaner.",
+    )
+
+    STORAGE_RABBITMQ: RabbitSettings | None = Field(
+        json_schema_extra={"auto_default_from_env": True},
     )
 
     STORAGE_S3_CLIENT_MAX_TRANSFER_CONCURRENCY: int = Field(

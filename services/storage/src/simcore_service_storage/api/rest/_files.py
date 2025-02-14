@@ -3,7 +3,9 @@ import logging
 from typing import Annotated, cast
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
-from models_library.api_schemas_storage import (
+from models_library.generics import Envelope
+from models_library.projects_nodes_io import LocationID, StorageFileID
+from models_library.storage_schemas import (
     FileMetaDataGet,
     FileMetaDataGetv010,
     FileUploadCompleteFutureResponse,
@@ -15,8 +17,6 @@ from models_library.api_schemas_storage import (
     FileUploadSchema,
     SoftCopyBody,
 )
-from models_library.generics import Envelope
-from models_library.projects_nodes_io import LocationID, StorageFileID
 from pydantic import AnyUrl, ByteSize, TypeAdapter
 from servicelib.aiohttp import status
 from yarl import URL

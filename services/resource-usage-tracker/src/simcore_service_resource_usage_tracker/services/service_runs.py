@@ -12,7 +12,6 @@ from models_library.api_schemas_resource_usage_tracker.service_runs import (
     ServiceRunGet,
     ServiceRunPage,
 )
-from models_library.api_schemas_storage import S3BucketName
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.resource_tracker import (
@@ -22,6 +21,7 @@ from models_library.resource_tracker import (
     ServicesAggregatedUsagesType,
 )
 from models_library.rest_ordering import OrderBy
+from models_library.storage_schemas import S3BucketName
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import AnyUrl, TypeAdapter

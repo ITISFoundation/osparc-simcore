@@ -18,13 +18,6 @@ from aws_library.s3 import (
     UploadID,
 )
 from fastapi import FastAPI
-from models_library.api_schemas_storage import (
-    UNDEFINED_SIZE,
-    UNDEFINED_SIZE_TYPE,
-    LinkType,
-    S3BucketName,
-    UploadedPart,
-)
 from models_library.basic_types import SHA256Str
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import (
@@ -32,6 +25,13 @@ from models_library.projects_nodes_io import (
     NodeID,
     SimcoreS3FileID,
     StorageFileID,
+)
+from models_library.storage_schemas import (
+    UNDEFINED_SIZE,
+    UNDEFINED_SIZE_TYPE,
+    LinkType,
+    S3BucketName,
+    UploadedPart,
 )
 from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize, NonNegativeInt, TypeAdapter

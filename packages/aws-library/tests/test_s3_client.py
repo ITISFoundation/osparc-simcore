@@ -29,8 +29,8 @@ from aws_library.s3._errors import (
 )
 from aws_library.s3._models import MultiPartUploadLinks
 from faker import Faker
-from models_library.api_schemas_storage import S3BucketName, UploadedPart
 from models_library.basic_types import SHA256Str
+from models_library.storage_schemas import S3BucketName, UploadedPart
 from moto.server import ThreadedMotoServer
 from pydantic import AnyUrl, ByteSize, TypeAdapter
 from pytest_benchmark.plugin import BenchmarkFixture

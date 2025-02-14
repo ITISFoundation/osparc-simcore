@@ -3,7 +3,7 @@ from typing import cast
 
 from aws_library.s3 import S3NotConnectedError, SimcoreS3API
 from fastapi import FastAPI
-from models_library.api_schemas_storage import S3BucketName
+from models_library.storage_schemas import S3BucketName
 from pydantic import TypeAdapter
 from servicelib.logging_utils import log_context
 from settings_library.s3 import S3Settings
