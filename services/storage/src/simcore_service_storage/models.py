@@ -312,3 +312,20 @@ class AccessRights:
 
 
 TotalNumber: TypeAlias = NonNegativeInt
+
+
+class PathMetaData(BaseModel):
+    path: Path
+    location_id: LocationID
+    location: LocationName
+    bucket_name: str
+
+    project_id: ProjectID | None
+    node_id: NodeID | None
+    user_id: UserID | None
+    created_at: datetime.datetime
+    last_modified: datetime.datetime
+
+    file_meta_data: FileMetaData | None
+
+    model_config = ConfigDict(from_attributes=True)
