@@ -1,7 +1,7 @@
 # pylint: disable=R6301
 from pathlib import Path
 
-from models_library.api_schemas_rpc_long_running_tasks.tasks import TaskRpcId
+from models_library.api_schemas_rpc_data_export.tasks import TaskRpcId
 from pydantic import BaseModel, Field
 
 

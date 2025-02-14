@@ -2,7 +2,7 @@ from datetime import datetime
 from uuid import uuid4
 
 from fastapi import FastAPI
-from models_library.api_schemas_rpc_long_running_tasks.tasks import (
+from models_library.api_schemas_rpc_data_export.tasks import (
     TaskRpcGet,
     TaskRpcId,
     TaskRpcResult,
