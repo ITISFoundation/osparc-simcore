@@ -108,7 +108,8 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
       const topGrid = new qx.ui.layout.Grid(8, 8);
       topGrid.setColumnFlex(0, 1);
       const topLayout = new qx.ui.container.Composite(topGrid);
-      const description = anatomicalModel["description"] || "";
+      let description = anatomicalModel["description"] || "";
+      description = description.replace(/SPEAG/g, " "); // remove SPEAG substring
       const delimiter = " - ";
       let titleAndSubtitle = description.split(delimiter);
       if (titleAndSubtitle.length > 0) {
