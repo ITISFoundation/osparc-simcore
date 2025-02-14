@@ -101,6 +101,8 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') to a list of _logger message patterns that should be filtered out.",
     )
 
+    STORAGE_MODE: str
+
     @field_validator("LOG_LEVEL", mode="before")
     @classmethod
     def _validate_loglevel(cls, value: str) -> str:

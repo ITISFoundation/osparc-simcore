@@ -57,13 +57,13 @@ if [ "${SC_BOOT_MODE}" = "debug" ]; then
   "
 else
   if [ "${STORAGE_MODE}" = "NORMAL" ]; then
-    exec uvicorn simcore_service_storage.main:the_app \
+    exec uvicorn simcore_service_storage.main:app \
       --host 0.0.0.0 \
       --port ${STORAGE_PORT} \
       --log-level "${SERVER_LOG_LEVEL}"
   else
     exec celery \
-      -A simcore_service_storage.modules.celery.worker.main:app \
+      -A simcore_service_storage.main:app \
       worker
       --loglevel="${SERVER_LOG_LEVEL}"
   fi

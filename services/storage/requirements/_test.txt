@@ -21,8 +21,6 @@ anyio==4.8.0
     # via
     #   -c requirements/_base.txt
     #   httpx
-asgi-lifespan==2.1.0
-    # via -r requirements/_test.in
 asyncpg==0.30.0
     # via
     #   -c requirements/_base.txt
@@ -337,7 +335,6 @@ sniffio==1.3.1
     # via
     #   -c requirements/_base.txt
     #   anyio
-    #   asgi-lifespan
 sortedcontainers==2.4.0
     # via fakeredis
 sqlalchemy==1.4.54
