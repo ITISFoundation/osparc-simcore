@@ -5973,8 +5973,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_FileUploadCompleteFutureResponse_'
-  /v0/trash:
-    delete:
+  /v0/trash:empty:
+    post:
       tags:
       - trash
       summary: Empty Trash

@@ -49,7 +49,7 @@ _handle_exceptions = exception_handling_decorator(
 routes = web.RouteTableDef()
 
 
-@routes.delete(f"/{VTAG}/trash", name="empty_trash")
+@routes.post(f"/{VTAG}/trash:empty", name="empty_trash")
 @login_required
 @permission_required("project.delete")
 @_handle_exceptions
