@@ -1,8 +1,8 @@
 import logging
 import os
-from typing import Any
 
 import sqlalchemy as sa
+from models_library.projects import ProjectAtDB
 from simcore_postgres_database.storage_models import projects
 from sqlalchemy.ext.asyncio import AsyncEngine
 
@@ -19,11 +19,10 @@ def has_datcore_tokens() -> bool:
 
 async def get_updated_project(
     sqlalchemy_async_engine: AsyncEngine, project_id: str
-) -> dict[str, Any]:
+) -> ProjectAtDB:
     async with sqlalchemy_async_engine.connect() as conn:
         result = await conn.execute(
             sa.select(projects).where(projects.c.uuid == project_id)
         )
-        row = result.fetchone()
-        assert row
-        return row._asdict()
+        row = result.one()
+        return ProjectAtDB.model_validate(row)

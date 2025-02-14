@@ -20,7 +20,7 @@ from aws_library.s3 import SimcoreS3API
 from faker import Faker
 from fastapi import FastAPI
 from models_library.basic_types import SHA256Str
-from models_library.projects import ProjectID
+from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_nodes_io import NodeID, NodeIDStr, SimcoreS3FileID
 from models_library.storage_schemas import FileMetaDataGet, FoldersBody
 from models_library.users import UserID
@@ -212,7 +212,7 @@ async def test_copy_folders_from_valid_project_with_one_large_file(
         [int, tuple[ByteSize], tuple[SHA256Str]],
         Awaitable[
             tuple[
-                dict[str, Any],
+                ProjectAtDB,
                 dict[NodeID, dict[SimcoreS3FileID, dict[str, Path | str]]],
             ]
         ],
@@ -228,20 +228,20 @@ async def test_copy_folders_from_valid_project_with_one_large_file(
         (sha256_checksum,),
     )
     # 2. create a dst project without files
-    dst_project, nodes_map = clone_project_data(src_project)
+    dst_project, nodes_map = clone_project_data(src_project.model_dump(mode="json"))
     dst_project = await create_project(**dst_project)
     # copy the project files
     data = await _request_copy_folders(
         initialized_app,
         client,
         user_id,
-        src_project,
+        src_project.model_dump(mode="json"),
         dst_project,
         nodes_map={NodeID(i): NodeID(j) for i, j in nodes_map.items()},
     )
-    assert data == jsonable_encoder(
+    assert data == (
         await get_updated_project(sqlalchemy_async_engine, dst_project["uuid"])
-    )
+    ).model_dump(mode="json")
     # check that file meta data was effectively copied
     for src_node_id in src_projects_list:
         dst_node_id = nodes_map.get(
@@ -257,7 +257,7 @@ async def test_copy_folders_from_valid_project_with_one_large_file(
                 sqlalchemy_async_engine,
                 file_id=TypeAdapter(SimcoreS3FileID).validate_python(
                     f"{src_file_id}".replace(
-                        src_project["uuid"], dst_project["uuid"]
+                        f"{src_project.uuid}", dst_project["uuid"]
                     ).replace(f"{src_node_id}", f"{dst_node_id}")
                 ),
                 expected_entry_exists=True,
@@ -282,7 +282,7 @@ async def test_copy_folders_from_valid_project(
         ...,
         Awaitable[
             tuple[
-                dict[str, Any],
+                ProjectAtDB,
                 dict[NodeID, dict[SimcoreS3FileID, dict[str, Path | SHA256Str]]],
             ]
         ],
@@ -291,20 +291,20 @@ async def test_copy_folders_from_valid_project(
     # 1. create a src project with some files
     src_project, src_projects_list = await random_project_with_files()
     # 2. create a dst project without files
-    dst_project, nodes_map = clone_project_data(src_project)
+    dst_project, nodes_map = clone_project_data(src_project.model_dump(mode="json"))
     dst_project = await create_project(**dst_project)
     # copy the project files
     data = await _request_copy_folders(
         initialized_app,
         client,
         user_id,
-        src_project,
+        src_project.model_dump(mode="json"),
         dst_project,
         nodes_map={NodeID(i): NodeID(j) for i, j in nodes_map.items()},
     )
-    assert data == jsonable_encoder(
+    assert data == (
         await get_updated_project(sqlalchemy_async_engine, dst_project["uuid"])
-    )
+    ).model_dump(mode="json")
 
     # check that file meta data was effectively copied
     for src_node_id in src_projects_list:
@@ -321,7 +321,7 @@ async def test_copy_folders_from_valid_project(
                 sqlalchemy_async_engine,
                 file_id=TypeAdapter(SimcoreS3FileID).validate_python(
                     f"{src_file_id}".replace(
-                        src_project["uuid"], dst_project["uuid"]
+                        f"{src_project.uuid}", dst_project["uuid"]
                     ).replace(f"{src_node_id}", f"{dst_node_id}")
                 ),
                 expected_entry_exists=True,

@@ -12,7 +12,7 @@ import sys
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import AbstractAsyncContextManager, asynccontextmanager
 from pathlib import Path
-from typing import Any, Final, cast
+from typing import Final, cast
 
 import httpx
 import pytest
@@ -24,7 +24,7 @@ from faker import Faker
 from fakeredis.aioredis import FakeRedis
 from fastapi import FastAPI
 from models_library.basic_types import SHA256Str
-from models_library.projects import ProjectID
+from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.projects_nodes_io import LocationID, SimcoreS3FileID
 from models_library.storage_schemas import (
@@ -63,9 +63,10 @@ from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
-from tests.helpers.utils_file_meta_data import assert_file_meta_data_in_db
 from types_aiobotocore_s3 import S3Client
 from yarl import URL
+
+from tests.helpers.utils_file_meta_data import assert_file_meta_data_in_db
 
 pytest_plugins = [
     "pytest_simcore.aws_s3_service",
@@ -289,9 +290,9 @@ async def create_upload_file_link_v2(
             location_id=f"{location_id}",
             file_id=file_id,
         ).with_query(**query_kwargs, user_id=user_id)
-        assert (
-            "file_size" in url.query
-        ), "V2 call to upload file must contain file_size field!"
+        assert "file_size" in url.query, (
+            "V2 call to upload file must contain file_size field!"
+        )
         response = await client.put(f"{url}")
         received_file_upload, error = assert_status(
             response, status.HTTP_200_OK, FileUploadSchema
@@ -639,12 +640,15 @@ async def with_random_project_with_files(
         ...,
         Awaitable[
             tuple[
-                dict[str, Any],
+                ProjectAtDB,
                 dict[NodeID, dict[SimcoreS3FileID, dict[str, Path | str]]],
             ]
         ],
     ],
-) -> tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, dict[str, Path | str]]],]:
+) -> tuple[
+    ProjectAtDB,
+    dict[NodeID, dict[SimcoreS3FileID, dict[str, Path | str]]],
+]:
     return await random_project_with_files(
         file_sizes=(
             TypeAdapter(ByteSize).validate_python("1Mib"),

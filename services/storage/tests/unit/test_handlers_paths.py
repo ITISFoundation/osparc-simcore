@@ -13,7 +13,7 @@ from typing import Any
 import httpx
 from fastapi import FastAPI
 from fastapi_pagination import LimitOffsetPage
-from models_library.api_schemas_storage import FileMetaDataGet
+from models_library.api_schemas_storage import FileMetaDataGet, PathMetaDataGet
 from models_library.projects_nodes_io import LocationID, NodeID, SimcoreS3FileID
 from models_library.users import UserID
 from pytest_simcore.helpers.fastapi import url_from_operation_id
@@ -71,7 +71,7 @@ async def test_list_paths_root_folder(
     page_of_files, _ = assert_status(
         response,
         status.HTTP_200_OK,
-        LimitOffsetPage[FileMetaDataGet],
+        LimitOffsetPage[PathMetaDataGet],
         expect_envelope=False,
     )
     assert page_of_files
