@@ -372,8 +372,14 @@ class SoftCopyBody(BaseModel):
 
 
 class PathMetaDataGet(BaseModel):
-    path: Path
+    path: Annotated[Path, Field(description="the path to the current path")]
+    display_path: Annotated[
+        Path, Field(description="the path to display with UUID replaced")
+    ]
     created_at: datetime
     last_modified: datetime
 
-    file_meta_data: FileMetaDataGet | None
+    file_meta_data: Annotated[
+        FileMetaDataGet | None,
+        Field(description="if filled, this is the file meta data of the s3 object"),
+    ]

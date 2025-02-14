@@ -36,4 +36,6 @@ async def list_paths(
         limit=page_params.limit,
         offset=page_params.offset,
     )
-    return create_page(items, total=total_number, params=page_params)
+    return create_page(
+        [_.to_api_model() for _ in items], total=total_number, params=page_params
+    )

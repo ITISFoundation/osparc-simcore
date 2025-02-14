@@ -27,6 +27,7 @@ from models_library.storage_schemas import (
     ETag,
     FileMetaDataGet,
     LinkType,
+    PathMetaDataGet,
     S3BucketName,
 )
 from models_library.users import UserID
@@ -44,6 +45,7 @@ from pydantic import (
     model_validator,
     validate_call,
 )
+from simcore_postgres_database.models import file_meta_data
 
 
 class DatasetMetaData(DatasetMetaDataGet):
@@ -329,3 +331,12 @@ class PathMetaData(BaseModel):
     file_meta_data: FileMetaData | None
 
     model_config = ConfigDict(from_attributes=True)
+
+    def to_api_model(self) -> PathMetaDataGet:
+        return PathMetaDataGet.model_construct(
+            path=self.path,
+            display_path=self.path,
+            created_at=self.created_at,
+            last_modified=self.last_modified,
+            file_meta_data=self.file_meta_data,
+        )
