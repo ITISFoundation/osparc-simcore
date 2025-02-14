@@ -1,6 +1,7 @@
 // This is a template. Clone and replace extension ".template.json" by ".json"
 {
   "autoDocstring.docstringFormat": "pep257",
+
   "editor.tabSize": 2,
   "editor.insertSpaces": true,
   "editor.detectIndentation": false,
@@ -62,7 +63,6 @@
   "ruff.path": [
     "${workspaceFolder}/.venv/bin/ruff"
   ],
-  "ruff.configuration": "${workspaceFolder}/.ruff.toml",
   "shellcheck.executablePath": "${workspaceFolder}/scripts/shellcheck.bash",
   "shellcheck.run": "onSave",
   "shellcheck.enableQuickFix": true
