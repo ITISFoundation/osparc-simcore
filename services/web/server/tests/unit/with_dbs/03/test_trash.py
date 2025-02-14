@@ -836,8 +836,6 @@ async def test_trash_project_explitictly_and_empty_trash_bin(
 
     # force EMPTY trash
     resp = await client.delete("/v0/trash")
-    # TODO: POST trash:empty -> logs number of elements and
-    # starts delete in the background ? Assume many many items and can take really long
     await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
     # waits for deletion

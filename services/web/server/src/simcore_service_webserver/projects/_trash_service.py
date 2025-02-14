@@ -129,11 +129,33 @@ async def untrash_project(
     )
 
 
-def _get_trashed_fields(project: ProjectDict):
+def _can_delete(
+    project: ProjectDict,
+    user_id: UserID,
+    until_equal_datetime: datetime.datetime | None,
+) -> bool:
+    """
+    This is the current policy to delete trashed project
+
+    """
     trashed_at = project.get("trashed")
     trashed_by = project.get("trashedBy")
     trashed_explicitly = project.get("trashedExplicitly")
-    return trashed_at, trashed_by, trashed_explicitly
+
+    assert trashed_at is not None  # nosec
+    assert trashed_by is not None  # nosec
+
+    is_shared = len(project["accessRights"]) > 1
+
+    return bool(
+        trashed_at
+        and (until_equal_datetime is None or trashed_at < until_equal_datetime)
+        # NOTE: current policy is more restricted until
+        # logic is adapted to deal with the other cases
+        and trashed_by == user_id
+        and not is_shared
+        and trashed_explicitly
+    )
 
 
 async def list_trashed_projects(
@@ -170,18 +192,11 @@ async def list_trashed_projects(
         # This filtering couldn't be handled at the database level when `projects_repo`
         # was refactored, as defining a custom trash_filter was needed to allow more
         # flexibility in filtering options.
-
-        for project in projects:
-            trashed_at, trashed_by, trashed_explicitly = _get_trashed_fields(project)
-
-            if (
-                trashed_at
-                and (until_equal_datetime is None or trashed_at < until_equal_datetime)
-                and trashed_by == user_id
-                and trashed_explicitly
-            ):
-                trashed_projects.append(project["uuid"])
-
+        trashed_projects = [
+            project["uuid"]
+            for project in projects
+            if _can_delete(project, user_id, until_equal_datetime)
+        ]
     return trashed_projects
 
 
@@ -206,22 +221,16 @@ async def delete_trashed_project(
     if not project:
         raise ProjectNotFoundError(project_uuid=project_id, user_id=user_id)
 
-    trashed_at, trashed_by, trashed_explicitly = _get_trashed_fields(project)
-
-    if (
-        not trashed_at
-        or (until_equal_datetime is not None and until_equal_datetime < trashed_at)
-        or trashed_by != user_id
-        or not trashed_explicitly
-    ):
+    if not _can_delete(project, user_id, until_equal_datetime):
+        # safety check
         raise ProjectNotTrashedError(
             project_uuid=project_id,
             user_id=user_id,
-            reason="Project was not trashed explicitly by the user from the specified datetime",
+            reason="Cannot delete trashed project since it does not fit current criteria",
         )
-    # FIXME: locking while deleting?
-    # FIXME: this can be heavy. Rather call delete_trashed_project as a task
+
     await projects_service.delete_project_by_user(
+        # FIXME: locking while deleting?
         app,
         user_id=user_id,
         project_uuid=project_id,
