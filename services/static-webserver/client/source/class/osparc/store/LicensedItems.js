@@ -43,8 +43,18 @@ qx.Class.define("osparc.store.LicensedItems", {
               expireAt: new Date(purchase["expireAt"]),
             });
           }
-        })
+        });
       })
+    },
+
+    getLowerLicensedItems: function(licensedItems, key, version) {
+      const lowerLicensedItems = [];
+      licensedItems.forEach(licensedItem => {
+        if (licensedItem["key"] === key && licensedItem["version"] < version) {
+          lowerLicensedItems.push(licensedItem);
+        }
+      });
+      return lowerLicensedItems;
     },
 
     seatsToNSeats: function(seats) {

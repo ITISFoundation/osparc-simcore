@@ -55,7 +55,7 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
       const anatomicalModelsData = this.getAnatomicalModelsData();
       if (anatomicalModelsData && anatomicalModelsData["licensedResources"].length) {
         this.__addModelsInfo();
-        this.__addPricingUnits();
+        this.__addPricing();
         this.__addSeatsSection();
       } else {
         const selectModelLabel = new qx.ui.basic.Label().set({
@@ -295,13 +295,18 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
       return importSection;
     },
 
-    __addPricingUnits: function() {
-      const anatomicalModelsData = this.getAnatomicalModelsData();
+    __addPricing: function() {
+      const pricingLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(0).set({
+        alignX: "center"
+      })).set({
+        decorator: "border",
+      });
+
       const pricingUnitsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
         alignX: "center"
       }));
-
-      osparc.store.Pricing.getInstance().fetchPricingUnits(anatomicalModelsData["pricingPlanId"])
+      const licensedItemData = this.getAnatomicalModelsData();
+      osparc.store.Pricing.getInstance().fetchPricingUnits(licensedItemData["pricingPlanId"])
         .then(pricingUnits => {
           pricingUnits.forEach(pricingUnit => {
             pricingUnit.set({
@@ -312,8 +317,8 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
             });
             pUnit.addListener("rentPricingUnit", () => {
               this.fireDataEvent("modelPurchaseRequested", {
-                licensedItemId: anatomicalModelsData["licensedItemId"],
-                pricingPlanId: anatomicalModelsData["pricingPlanId"],
+                licensedItemId: licensedItemData["licensedItemId"],
+                pricingPlanId: licensedItemData["pricingPlanId"],
                 pricingUnitId: pricingUnit.getPricingUnitId(),
               });
             }, this);
@@ -321,8 +326,33 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
           });
         })
         .catch(err => console.error(err));
-
       this._add(pricingUnitsLayout);
+      pricingLayout.add(pricingUnitsLayout)
+
+      const poweredByLabel = new qx.ui.basic.Label().set({
+        font: "text-14",
+        padding: 10,
+        rich: true,
+      });
+      osparc.store.LicensedItems.getInstance().getLicensedItems()
+        .then(licensedItems => {
+          const lowerLicensedItems = osparc.store.LicensedItems.getLowerLicensedItems(licensedItems, licensedItemData["key"], licensedItemData["version"])
+          if (licensedItemData["licensedResources"].length > 1 || lowerLicensedItems.length) {
+            let text = this.tr("This Rental would give you access to:") + "<br>";
+            licensedItemData["licensedResources"].forEach(licensedResource => {
+              text += ` - ${licensedResource["source"]["features"]["name"]} ${licensedResource["source"]["features"]["version"]} <br>`;
+            });
+            lowerLicensedItems.forEach(lowerLicensedItem => {
+              lowerLicensedItem["licensedResources"].forEach(licensedResource => {
+                text += ` - ${licensedResource["source"]["features"]["name"]} ${licensedResource["source"]["features"]["version"]} <br>`;
+              });
+            })
+            poweredByLabel.setValue(text);
+            pricingLayout.add(poweredByLabel);
+          }
+        });
+
+      this._add(pricingLayout);
     },
 
     __addSeatsSection: function() {
