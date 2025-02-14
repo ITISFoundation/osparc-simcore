@@ -336,13 +336,13 @@ async def test_copy_folders_from_valid_project(
 
 async def _create_and_delete_folders_from_project(
     user_id: UserID,
-    project: dict[str, Any],
+    project: ProjectAtDB,
     initialized_app: FastAPI,
     client: httpx.AsyncClient,
     project_db_creator: Callable,
     check_list_files: bool,
 ) -> None:
-    destination_project, nodes_map = clone_project_data(project)
+    destination_project, nodes_map = clone_project_data(project.model_dump(mode="json"))
     await project_db_creator(**destination_project)
 
     # creating a copy
@@ -350,7 +350,7 @@ async def _create_and_delete_folders_from_project(
         initialized_app,
         client,
         user_id,
-        project,
+        project.model_dump(mode="json"),
         destination_project,
         nodes_map={NodeID(i): NodeID(j) for i, j in nodes_map.items()},
     )
@@ -429,7 +429,7 @@ async def test_create_and_delete_folders_from_project(
     user_id: UserID,
     create_project: Callable[..., Awaitable[dict[str, Any]]],
     with_random_project_with_files: tuple[
-        dict[str, Any],
+        ProjectAtDB,
         dict[NodeID, dict[SimcoreS3FileID, dict[str, Path | str]]],
     ],
     mock_datcore_download,
@@ -453,7 +453,7 @@ async def test_create_and_delete_folders_from_project_burst(
     client: httpx.AsyncClient,
     user_id: UserID,
     with_random_project_with_files: tuple[
-        dict[str, Any],
+        ProjectAtDB,
         dict[NodeID, dict[SimcoreS3FileID, dict[str, Path | str]]],
     ],
     create_project: Callable[..., Awaitable[dict[str, Any]]],
