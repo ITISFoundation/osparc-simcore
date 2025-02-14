@@ -42,7 +42,7 @@ from ..workspaces.errors import WorkspaceAccessForbiddenError
 from . import _folders_db as project_to_folders_db
 from . import projects_service
 from ._metadata_api import set_project_ancestors
-from ._permalink_api import update_or_pop_permalink_in_project
+from ._permalink_service import update_or_pop_permalink_in_project
 from .db import ProjectDBAPI
 from .exceptions import (
     ParentNodeNotFoundError,

@@ -40,8 +40,10 @@ from simcore_service_webserver.groups._groups_service import get_product_group_f
 from simcore_service_webserver.groups.api import auto_add_user_to_product_group
 from simcore_service_webserver.groups.exceptions import GroupNotFoundError
 from simcore_service_webserver.products.api import get_product
-from simcore_service_webserver.projects._permalink_api import ProjectPermalink
 from simcore_service_webserver.projects.models import ProjectDict
+from simcore_service_webserver.projects.projects_permalink_service import (
+    ProjectPermalink,
+)
 from simcore_service_webserver.utils import to_datetime
 from yarl import URL
 
