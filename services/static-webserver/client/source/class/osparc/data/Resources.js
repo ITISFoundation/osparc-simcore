@@ -1176,33 +1176,25 @@ qx.Class.define("osparc.data.Resources", {
       "storageLocations": {
         useCache: true,
         endpoints: {
-          get: {
+          getLocations: {
             method: "GET",
             url: statics.API + "/storage/locations"
           }
         }
       },
       /*
-       * STORAGE DATASETS
-       */
-      "storageDatasets": {
-        useCache: false,
-        endpoints: {
-          getByLocation: {
-            method: "GET",
-            url: statics.API + "/storage/locations/{locationId}/datasets"
-          }
-        }
-      },
-      /*
-       * STORAGE FILES
+       * STORAGE
        */
       "storageFiles": {
         useCache: false,
         endpoints: {
-          getByLocationAndDataset: {
+          getByLocation: {
             method: "GET",
-            url: statics.API + "/storage/locations/{locationId}/datasets/{datasetId}/metadata"
+            url: statics.API + "/storage/locations/{locationId}/files/metadata"
+          },
+          getByStudy: {
+            method: "GET",
+            url: statics.API + "/storage/locations/0/files/metadata?uuid_filter={studyId}"
           },
           getByNode: {
             method: "GET",

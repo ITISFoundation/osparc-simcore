@@ -63,7 +63,7 @@ qx.Class.define("osparc.store.Data", {
           resolve(cachedData);
         } else {
           // Get available storage locations
-          osparc.data.Resources.get("storageLocations")
+          osparc.data.Resources.fetch("storageLocations", "getLocations")
             .then(locations => {
               // Add them to cache
               this.__locationsCached = locations;
@@ -109,7 +109,7 @@ qx.Class.define("osparc.store.Data", {
               locationId
             }
           };
-          osparc.data.Resources.fetch("storageDatasets", "getByLocation", params)
+          osparc.data.Resources.fetch("storageFiles", "getByLocation", params)
             .then(datasets => {
               const data = {
                 location: locationId,
@@ -162,10 +162,10 @@ qx.Class.define("osparc.store.Data", {
           const params = {
             url: {
               locationId,
-              datasetId
+              studyId: datasetId
             }
           };
-          osparc.data.Resources.fetch("storageFiles", "getByLocationAndDataset", params)
+          osparc.data.Resources.fetch("storageFiles", "getByStudy", params)
             .then(files => {
               const data = {
                 location: locationId,
