@@ -344,7 +344,7 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
         .then(licensedItems => {
           const lowerLicensedItems = osparc.store.LicensedItems.getLowerLicensedItems(licensedItems, licensedItemData["key"], licensedItemData["version"])
           if (licensedItemData["licensedResources"].length > 1 || lowerLicensedItems.length) {
-            let text = this.tr("This Rental will give you access to:") + "<br>";
+            let text = this.tr("This Bundle gives you access to:") + "<br>";
             licensedItemData["licensedResources"].forEach(licensedResource => {
               text += `- ${osparc.store.LicensedItems.licensedResourceNameAndVersion(licensedResource)}<br>`;
             });
@@ -370,40 +370,48 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
       osparc.store.LicensedItems.getInstance().getLicensedItems()
         .then(licensedItems => {
           const grid = new qx.ui.layout.Grid(15, 5);
-          grid.setColumnAlign(0, "left", "middle");
-          grid.setColumnAlign(1, "center", "middle");
-          grid.setColumnAlign(2, "right", "middle");
-          const seatsSection = new qx.ui.container.Composite(grid).set({
-            alignX: "center",
-          });
+          grid.setColumnFlex(0, 1);
+          grid.setColumnAlign(1, "left", "middle");
+          grid.setColumnAlign(2, "center", "middle");
+          grid.setColumnAlign(3, "right", "middle");
+          grid.setColumnFlex(4, 1);
+          const seatsSection = new qx.ui.container.Composite(grid);
 
           let rowIdx = 0;
-          seatsSection.add(new qx.ui.basic.Label("Model Version"), {
+          seatsSection.add(new qx.ui.core.Spacer(), {
             column: 0,
             row: rowIdx,
           });
-          seatsSection.add(new qx.ui.basic.Label("Seats"), {
+          seatsSection.add(new qx.ui.basic.Label("Model").set({font: "title-14"}), {
             column: 1,
             row: rowIdx,
           });
-          seatsSection.add(new qx.ui.basic.Label("Until"), {
+          seatsSection.add(new qx.ui.basic.Label("Seats").set({font: "title-14"}), {
             column: 2,
+            row: rowIdx,
+          });
+          seatsSection.add(new qx.ui.basic.Label("Until").set({font: "title-14"}), {
+            column: 3,
+            row: rowIdx,
+          });
+          seatsSection.add(new qx.ui.core.Spacer(), {
+            column: 4,
             row: rowIdx,
           });
           rowIdx++;
 
           const entryToGrid = (licensedResource, seat, row) => {
             const title = osparc.store.LicensedItems.licensedResourceNameAndVersion(licensedResource);
-            seatsSection.add(new qx.ui.basic.Label(title), {
-              column: 0,
-              row,
-            });
-            seatsSection.add(new qx.ui.basic.Label(seat["numOfSeats"].toString()), {
+            seatsSection.add(new qx.ui.basic.Label(title).set({font: "text-14"}), {
               column: 1,
               row,
             });
-            seatsSection.add(new qx.ui.basic.Label(osparc.utils.Utils.formatDate(seat["expireAt"])), {
+            seatsSection.add(new qx.ui.basic.Label(seat["numOfSeats"].toString()).set({font: "text-14"}), {
               column: 2,
+              row,
+            });
+            seatsSection.add(new qx.ui.basic.Label(osparc.utils.Utils.formatDate(seat["expireAt"])).set({font: "text-14"}), {
+              column: 3,
               row,
             });
           };
