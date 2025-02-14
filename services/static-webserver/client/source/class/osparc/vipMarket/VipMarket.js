@@ -197,21 +197,6 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
                 licensedBundle["date"] = new Date(firstItem["features"]["date"]);
               }
             }
-            // attach license data
-            // anatomicalBundle["pricingPlanId"] = licensedBundle["pricingPlanId"];
-            // attach purchases data
-            /*
-            anatomicalBundle["purchases"] = []; // default
-            const purchasesItemsFound = purchasesItems.filter(purchasesItem => purchasesItem["licensedItemId"] === licensedBundle["licensedItemId"]);
-            if (purchasesItemsFound.length) {
-              purchasesItemsFound.forEach(purchasesItemFound => {
-                anatomicalBundle["purchases"].push({
-                  expireAt: new Date(purchasesItemFound["expireAt"]),
-                  numOfSeats: purchasesItemFound["numOfSeats"],
-                })
-              });
-            }
-              */
             this.__anatomicalBundles.push(licensedBundle);
           });
 
