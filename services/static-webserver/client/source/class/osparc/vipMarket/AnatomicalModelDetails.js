@@ -367,35 +367,33 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
         return;
       }
 
+      const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox().set({
+        alignX: "center",
+      }));
+
       osparc.store.LicensedItems.getInstance().getLicensedItems()
         .then(licensedItems => {
           const grid = new qx.ui.layout.Grid(15, 5);
-          grid.setColumnFlex(0, 1);
-          grid.setColumnAlign(1, "left", "middle");
-          grid.setColumnAlign(2, "center", "middle");
-          grid.setColumnAlign(3, "right", "middle");
-          grid.setColumnFlex(4, 1);
-          const seatsSection = new qx.ui.container.Composite(grid);
+          grid.setColumnAlign(0, "left", "middle");
+          grid.setColumnAlign(1, "center", "middle");
+          grid.setColumnAlign(2, "right", "middle");
+          const seatsSection = new qx.ui.container.Composite(grid).set({
+            allowGrowX: false,
+            decorator: "border",
+            padding: 10,
+          });
 
           let rowIdx = 0;
-          seatsSection.add(new qx.ui.core.Spacer(), {
+          seatsSection.add(new qx.ui.basic.Label("Models Rented").set({font: "title-14"}), {
             column: 0,
             row: rowIdx,
           });
-          seatsSection.add(new qx.ui.basic.Label("Model").set({font: "title-14"}), {
+          seatsSection.add(new qx.ui.basic.Label("Seats").set({font: "title-14"}), {
             column: 1,
             row: rowIdx,
           });
-          seatsSection.add(new qx.ui.basic.Label("Seats").set({font: "title-14"}), {
-            column: 2,
-            row: rowIdx,
-          });
           seatsSection.add(new qx.ui.basic.Label("Until").set({font: "title-14"}), {
-            column: 3,
-            row: rowIdx,
-          });
-          seatsSection.add(new qx.ui.core.Spacer(), {
-            column: 4,
+            column: 2,
             row: rowIdx,
           });
           rowIdx++;
@@ -403,15 +401,15 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
           const entryToGrid = (licensedResource, seat, row) => {
             const title = osparc.store.LicensedItems.licensedResourceNameAndVersion(licensedResource);
             seatsSection.add(new qx.ui.basic.Label(title).set({font: "text-14"}), {
-              column: 1,
+              column: 0,
               row,
             });
             seatsSection.add(new qx.ui.basic.Label(seat["numOfSeats"].toString()).set({font: "text-14"}), {
-              column: 2,
+              column: 1,
               row,
             });
             seatsSection.add(new qx.ui.basic.Label(osparc.utils.Utils.formatDate(seat["expireAt"])).set({font: "text-14"}), {
-              column: 3,
+              column: 2,
               row,
             });
           };
@@ -433,7 +431,8 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
             });
           });
 
-          this._add(seatsSection);
+          layout.add(seatsSection);
+          this._add(layout);
         });
     },
   }
