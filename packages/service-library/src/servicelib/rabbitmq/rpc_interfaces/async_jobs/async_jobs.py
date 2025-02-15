@@ -1,6 +1,6 @@
 from typing import Final
 
-from models_library.api_schemas_rpc_data_export.tasks import (
+from models_library.api_schemas_rpc_data_export.async_jobs import (
     AsyncJobRpcId,
     AsyncJobRpcResult,
     AsyncJobRpcStatus,
