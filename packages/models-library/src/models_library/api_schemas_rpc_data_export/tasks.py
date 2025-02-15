@@ -5,11 +5,11 @@ from uuid import UUID
 from pydantic import BaseModel, Field, PositiveFloat, model_validator
 from typing_extensions import Self
 
-TaskRpcId: TypeAlias = UUID
+AsyncJobRpcId: TypeAlias = UUID
 
 
-class TaskRpcStatus(BaseModel):
-    task_id: TaskRpcId
+class AsyncJobRpcStatus(BaseModel):
+    task_id: AsyncJobRpcId
     task_progress: PositiveFloat = Field(..., ge=0.0, le=1.0)
     done: bool
     started: datetime
@@ -26,11 +26,11 @@ class TaskRpcStatus(BaseModel):
         return self
 
 
-class TaskRpcResult(BaseModel):
+class AsyncJobRpcResult(BaseModel):
     result: Any | None
     error: Any | None
 
 
-class TaskRpcGet(BaseModel):
-    task_id: TaskRpcId
+class AsyncJobRpcGet(BaseModel):
+    task_id: AsyncJobRpcId
     task_name: str
