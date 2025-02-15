@@ -8,9 +8,16 @@ IMPORTANT: DO NOT COUPLE these schemas until storage is refactored
 
 from datetime import datetime
 from enum import Enum
+
+# /data-export
+from pathlib import Path
 from typing import Annotated, Any, Literal, Self, TypeAlias
 from uuid import UUID
 
+from models_library.api_schemas_rpc_data_export.async_jobs import AsyncJobRpcGet
+from models_library.api_schemas_storage.data_export_tasks import (
+    DataExportTaskStartInput,
+)
 from models_library.projects import ProjectID
 from models_library.users import UserID
 from pydantic import (
@@ -368,3 +375,20 @@ class FoldersBody(BaseModel):
 
 class SoftCopyBody(BaseModel):
     link_id: SimcoreS3FileID
+
+
+class DataExportPost(BaseModel):
+    paths: list[Path]
+
+    def to_storage_model(self) -> DataExportTaskStartInput:
+        return DataExportTaskStartInput(paths=self.paths)
+
+
+class AsyncJobGet(BaseModel):
+    task_id: UUID
+
+    @classmethod
+    def from_async_job_rpc_status(
+        cls, async_job_rpc_get: AsyncJobRpcGet
+    ) -> "AsyncJobGet":
+        return AsyncJobGet(task_id=async_job_rpc_get.task_id)

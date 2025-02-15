@@ -11,6 +11,7 @@ from urllib.parse import quote, unquote
 from aiohttp import ClientTimeout, web
 from models_library.projects_nodes_io import LocationID
 from models_library.storage_schemas import (
+    DataExportPost,
     FileUploadCompleteResponse,
     FileUploadCompletionBody,
     FileUploadSchema,
@@ -27,8 +28,10 @@ from servicelib.aiohttp.requests_validation import (
 )
 from servicelib.aiohttp.rest_responses import create_data_response
 from servicelib.common_headers import X_FORWARDED_PROTO
+from servicelib.rabbitmq.rpc_interfaces.storage.data_export import start_data_export
 from servicelib.request_keys import RQT_USERID_KEY
 from servicelib.rest_responses import unwrap_envelope
+from simcore_service_webserver.rabbitmq import get_rabbitmq_rpc_client
 from yarl import URL
 
 from .._meta import API_VTAG
@@ -121,10 +124,11 @@ async def _forward_request_to_storage(
 # ---------------------------------------------------------------------
 
 routes = web.RouteTableDef()
-_path_prefix = f"/{API_VTAG}/storage/locations"
+_storage_prefix = f"/{API_VTAG}/storage"
+_storage_locations_prefix = f"/{_storage_prefix}/locations"
 
 
-@routes.get(_path_prefix, name="list_storage_locations")
+@routes.get(_storage_locations_prefix, name="list_storage_locations")
 @login_required
 @permission_required("storage.files.*")
 async def list_storage_locations(request: web.Request) -> web.Response:
@@ -132,7 +136,9 @@ async def list_storage_locations(request: web.Request) -> web.Response:
     return create_data_response(payload, status=resp_status)
 
 
-@routes.get(_path_prefix + "/{location_id}/datasets", name="list_datasets_metadata")
+@routes.get(
+    _storage_locations_prefix + "/{location_id}/datasets", name="list_datasets_metadata"
+)
 @login_required
 @permission_required("storage.files.*")
 async def list_datasets_metadata(request: web.Request) -> web.Response:
@@ -146,7 +152,7 @@ async def list_datasets_metadata(request: web.Request) -> web.Response:
 
 
 @routes.get(
-    _path_prefix + "/{location_id}/files/metadata",
+    _storage_locations_prefix + "/{location_id}/files/metadata",
     name="get_files_metadata",
 )
 @login_required
@@ -171,7 +177,7 @@ _LIST_ALL_DATASETS_TIMEOUT_S: Final[int] = 60
 
 
 @routes.get(
-    _path_prefix + "/{location_id}/datasets/{dataset_id}/metadata",
+    _storage_locations_prefix + "/{location_id}/datasets/{dataset_id}/metadata",
     name="list_dataset_files_metadata",
 )
 @login_required
@@ -199,7 +205,7 @@ async def list_dataset_files_metadata(request: web.Request) -> web.Response:
 
 
 @routes.get(
-    _path_prefix + "/{location_id}/files/{file_id}/metadata",
+    _storage_locations_prefix + "/{location_id}/files/{file_id}/metadata",
     name="get_file_metadata",
 )
 @login_required
@@ -216,7 +222,7 @@ async def get_file_metadata(request: web.Request) -> web.Response:
 
 
 @routes.get(
-    _path_prefix + "/{location_id}/files/{file_id}",
+    _storage_locations_prefix + "/{location_id}/files/{file_id}",
     name="download_file",
 )
 @login_required
@@ -238,7 +244,7 @@ async def download_file(request: web.Request) -> web.Response:
 
 
 @routes.put(
-    _path_prefix + "/{location_id}/files/{file_id}",
+    _storage_locations_prefix + "/{location_id}/files/{file_id}",
     name="upload_file",
 )
 @login_required
@@ -279,7 +285,7 @@ async def upload_file(request: web.Request) -> web.Response:
 
 
 @routes.post(
-    _path_prefix + "/{location_id}/files/{file_id}:complete",
+    _storage_locations_prefix + "/{location_id}/files/{file_id}:complete",
     name="complete_upload_file",
 )
 @login_required
@@ -307,7 +313,7 @@ async def complete_upload_file(request: web.Request) -> web.Response:
 
 
 @routes.post(
-    _path_prefix + "/{location_id}/files/{file_id}:abort",
+    _storage_locations_prefix + "/{location_id}/files/{file_id}:abort",
     name="abort_upload_file",
 )
 @login_required
@@ -324,7 +330,8 @@ async def abort_upload_file(request: web.Request) -> web.Response:
 
 
 @routes.post(
-    _path_prefix + "/{location_id}/files/{file_id}:complete/futures/{future_id}",
+    _storage_locations_prefix
+    + "/{location_id}/files/{file_id}:complete/futures/{future_id}",
     name="is_completed_upload_file",
 )
 @login_required
@@ -342,7 +349,7 @@ async def is_completed_upload_file(request: web.Request) -> web.Response:
 
 
 @routes.delete(
-    _path_prefix + "/{location_id}/files/{file_id}",
+    _storage_locations_prefix + "/{location_id}/files/{file_id}",
     name="delete_file",
 )
 @login_required
@@ -358,3 +365,20 @@ async def delete_file(request: web.Request) -> web.Response:
         request, "DELETE", body=None
     )
     return create_data_response(payload, status=resp_status)
+
+
+@routes.post(
+    _storage_prefix + "/export-data",
+    name="export_data",
+)
+@login_required
+@permission_required("storage.files.*")
+async def export_data(request: web.Request) -> web.Response:
+    rabbitmq_rpc_client = get_rabbitmq_rpc_client(request.app)
+    data_export_post = await parse_request_body_as(
+        model_schema_cls=DataExportPost, request=request
+    )
+    job_get = start_data_export(
+        rabbitmq_rpc_client=rabbitmq_rpc_client,
+        paths=data_export_post.to_storage_model(),
+    )
