@@ -384,6 +384,6 @@ async def export_data(request: web.Request) -> web.Response:
         paths=data_export_post.to_storage_model(),
     )
     return create_data_response(
-        AsyncJobGet.from_async_job_rpc_status(async_job_rpc_get),
+        AsyncJobGet.from_async_job_rpc_get(async_job_rpc_get),
         status=status.HTTP_202_ACCEPTED,
     )

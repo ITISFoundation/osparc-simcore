@@ -10,6 +10,8 @@ from fastapi import APIRouter, Query, status
 from models_library.generics import Envelope
 from models_library.projects_nodes_io import LocationID
 from models_library.storage_schemas import (
+    AsyncJobGet,
+    DataExportPost,
     FileLocation,
     FileMetaDataGet,
     FileUploadCompleteFutureResponse,
@@ -167,3 +169,14 @@ async def is_completed_upload_file(
     location_id: LocationID, file_id: StorageFileIDStr, future_id: str
 ):
     """Returns state of upload completion"""
+
+
+# data export
+@router.post(
+    "/storage/export-data",
+    response_model=AsyncJobGet,
+    name="export_data",
+    description="Export data",
+)
+async def export_data(data_export: DataExportPost):
+    """Trigger data export. Returns async job id for getting status and results"""

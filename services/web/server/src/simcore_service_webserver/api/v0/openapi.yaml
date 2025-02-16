@@ -5973,6 +5973,26 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_FileUploadCompleteFutureResponse_'
+  /v0/storage/export-data:
+    post:
+      tags:
+      - storage
+      summary: Export Data
+      description: Export data
+      operationId: export_data
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DataExportPost'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AsyncJobGet'
   /v0/trash:
     delete:
       tags:
@@ -7001,6 +7021,16 @@ components:
       - app_name
       - version
       title: AppStatusCheck
+    AsyncJobGet:
+      properties:
+        task_id:
+          type: string
+          format: uuid
+          title: Task Id
+      type: object
+      required:
+      - task_id
+      title: AsyncJobGet
     Author:
       properties:
         name:
@@ -7638,6 +7668,18 @@ components:
       - dataset
       title: DatCoreFileLink
       description: I/O port type to hold a link to a file in DATCORE storage
+    DataExportPost:
+      properties:
+        paths:
+          items:
+            type: string
+            format: path
+          type: array
+          title: Paths
+      type: object
+      required:
+      - paths
+      title: DataExportPost
     DatasetMetaData:
       properties:
         dataset_id:

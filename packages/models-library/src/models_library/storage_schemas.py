@@ -15,7 +15,7 @@ from typing import Annotated, Any, Literal, Self, TypeAlias
 from uuid import UUID
 
 from models_library.api_schemas_rpc_data_export.async_jobs import AsyncJobRpcGet
-from models_library.api_schemas_storage.data_export_tasks import (
+from models_library.api_schemas_storage.data_export_async_jobs import (
     DataExportTaskStartInput,
 )
 from models_library.projects import ProjectID
@@ -388,7 +388,5 @@ class AsyncJobGet(BaseModel):
     task_id: UUID
 
     @classmethod
-    def from_async_job_rpc_status(
-        cls, async_job_rpc_get: AsyncJobRpcGet
-    ) -> "AsyncJobGet":
+    def from_async_job_rpc_get(cls, async_job_rpc_get: AsyncJobRpcGet) -> "AsyncJobGet":
         return AsyncJobGet(task_id=async_job_rpc_get.task_id)
