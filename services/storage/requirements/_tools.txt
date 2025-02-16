@@ -71,7 +71,7 @@ pyyaml==6.0.2
     #   -c requirements/_test.txt
     #   pre-commit
     #   watchdog
-ruff==0.9.5
+ruff==0.9.6
     # via -r requirements/../../../requirements/devenv.txt
 setuptools==75.8.0
     # via
@@ -84,7 +84,7 @@ typing-extensions==4.12.2
     #   -c requirements/_base.txt
     #   -c requirements/_test.txt
     #   mypy
-virtualenv==20.29.1
+virtualenv==20.29.2
     # via pre-commit
 watchdog==6.0.0
     # via -r requirements/_tools.in

@@ -20,7 +20,7 @@ def assert_status(
     response_model: type[T] | None,
     *,
     expected_msg: str | None = None,
-    is_enveloped: bool = True,
+    expect_envelope: bool = True,
 ) -> tuple[T | None, Any]:
     """
     Asserts for enveloped responses
@@ -36,7 +36,7 @@ def assert_status(
     if expected_status_code == status.HTTP_204_NO_CONTENT:
         assert response.text == ""
         return None, None
-    if is_enveloped:
+    if expect_envelope:
         validated_response = TypeAdapter(Envelope[response_model]).validate_json(
             response.text
         )
@@ -49,6 +49,8 @@ def assert_status(
                 expected_status_code,
                 expected_msg,
             )
+        else:
+            assert data is not None
         return data, error
 
     if is_error(expected_status_code):
