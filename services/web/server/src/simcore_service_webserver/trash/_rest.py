@@ -2,6 +2,8 @@ import logging
 
 from aiohttp import web
 from servicelib.aiohttp import status
+from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
+from servicelib.utils import fire_and_forget_task
 
 from .._meta import API_VTAG as VTAG
 from ..exception_handling import (
@@ -47,7 +49,7 @@ _handle_exceptions = exception_handling_decorator(
 routes = web.RouteTableDef()
 
 
-@routes.delete(f"/{VTAG}/trash", name="empty_trash")
+@routes.post(f"/{VTAG}/trash:empty", name="empty_trash")
 @login_required
 @permission_required("project.delete")
 @_handle_exceptions
@@ -55,6 +57,12 @@ async def empty_trash(request: web.Request):
     user_id = get_user_id(request)
     product_name = get_product_name(request)
 
-    await _service.empty_trash(request.app, product_name=product_name, user_id=user_id)
+    fire_and_forget_task(
+        _service.empty_trash_safe(
+            request.app, product_name=product_name, user_id=user_id
+        ),
+        task_suffix_name="rest.empty_trash",
+        fire_and_forget_tasks_collection=request.app[APP_FIRE_AND_FORGET_TASKS_KEY],
+    )
 
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
