@@ -11,6 +11,7 @@ from urllib.parse import quote, unquote
 from aiohttp import ClientTimeout, web
 from models_library.projects_nodes_io import LocationID
 from models_library.storage_schemas import (
+    AsyncJobGet,
     DataExportPost,
     FileUploadCompleteResponse,
     FileUploadCompletionBody,
@@ -378,7 +379,11 @@ async def export_data(request: web.Request) -> web.Response:
     data_export_post = await parse_request_body_as(
         model_schema_cls=DataExportPost, request=request
     )
-    job_get = start_data_export(
+    async_job_rpc_get = await start_data_export(
         rabbitmq_rpc_client=rabbitmq_rpc_client,
         paths=data_export_post.to_storage_model(),
+    )
+    return create_data_response(
+        AsyncJobGet.from_async_job_rpc_status(async_job_rpc_get),
+        status=status.HTTP_202_ACCEPTED,
     )

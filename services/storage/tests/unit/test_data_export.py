@@ -13,7 +13,7 @@ from models_library.api_schemas_rpc_data_export.async_jobs import (
     AsyncJobRpcStatus,
 )
 from models_library.api_schemas_storage import STORAGE_RPC_NAMESPACE
-from models_library.api_schemas_storage.data_export_tasks import (
+from models_library.api_schemas_storage.data_export_async_jobs import (
     DataExportTaskAbortOutput,
     DataExportTaskStartInput,
 )

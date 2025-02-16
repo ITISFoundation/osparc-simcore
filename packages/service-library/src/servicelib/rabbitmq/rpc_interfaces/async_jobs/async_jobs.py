@@ -5,7 +5,7 @@ from models_library.api_schemas_rpc_data_export.async_jobs import (
     AsyncJobRpcResult,
     AsyncJobRpcStatus,
 )
-from models_library.api_schemas_storage.data_export_tasks import (
+from models_library.api_schemas_storage.data_export_async_jobs import (
     DataExportTaskAbortOutput,
 )
 from models_library.rabbitmq_basic_types import RPCMethodName, RPCNamespace
