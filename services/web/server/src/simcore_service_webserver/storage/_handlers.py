@@ -9,9 +9,11 @@ from typing import Any, Final, NamedTuple
 from urllib.parse import quote, unquote
 
 from aiohttp import ClientTimeout, web
+from models_library.api_schemas_storage import STORAGE_RPC_NAMESPACE
 from models_library.projects_nodes_io import LocationID
 from models_library.storage_schemas import (
     AsyncJobGet,
+    AsyncJobStatus,
     DataExportPost,
     FileUploadCompleteResponse,
     FileUploadCompletionBody,
@@ -29,6 +31,7 @@ from servicelib.aiohttp.requests_validation import (
 )
 from servicelib.aiohttp.rest_responses import create_data_response
 from servicelib.common_headers import X_FORWARDED_PROTO
+from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import get_status
 from servicelib.rabbitmq.rpc_interfaces.storage.data_export import start_data_export
 from servicelib.request_keys import RQT_USERID_KEY
 from servicelib.rest_responses import unwrap_envelope
@@ -370,7 +373,7 @@ async def delete_file(request: web.Request) -> web.Response:
 
 @routes.post(
     _storage_prefix + "/export-data",
-    name="export_data",
+    name="storage_export_data",
 )
 @login_required
 @permission_required("storage.files.*")
@@ -385,5 +388,27 @@ async def export_data(request: web.Request) -> web.Response:
     )
     return create_data_response(
         AsyncJobGet.from_async_job_rpc_get(async_job_rpc_get),
+        status=status.HTTP_202_ACCEPTED,
+    )
+
+
+@routes.get(
+    _storage_prefix + "/async-jobs/status",
+    name="storage_async_job_status",
+)
+@login_required
+@permission_required("storage.files.*")
+async def get_async_job_status(request: web.Request) -> web.Response:
+    rabbitmq_rpc_client = get_rabbitmq_rpc_client(request.app)
+    async_job_get = await parse_request_body_as(
+        model_schema_cls=AsyncJobGet, request=request
+    )
+    async_job_rpc_status = await get_status(
+        rabbitmq_rpc_client=rabbitmq_rpc_client,
+        rpc_namespace=STORAGE_RPC_NAMESPACE,
+        task_id=async_job_get.task_id,
+    )
+    return create_data_response(
+        AsyncJobStatus.from_async_job_rpc_status(async_job_rpc_status),
         status=status.HTTP_202_ACCEPTED,
     )

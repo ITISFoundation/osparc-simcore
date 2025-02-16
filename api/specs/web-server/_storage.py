@@ -11,6 +11,7 @@ from models_library.generics import Envelope
 from models_library.projects_nodes_io import LocationID
 from models_library.storage_schemas import (
     AsyncJobGet,
+    AsyncJobStatus,
     DataExportPost,
     FileLocation,
     FileMetaDataGet,
@@ -175,8 +176,17 @@ async def is_completed_upload_file(
 @router.post(
     "/storage/export-data",
     response_model=AsyncJobGet,
-    name="export_data",
+    name="storage_export_data",
     description="Export data",
 )
 async def export_data(data_export: DataExportPost):
     """Trigger data export. Returns async job id for getting status and results"""
+
+
+@router.get(
+    "/storage/async-jobs/status",
+    response_model=AsyncJobStatus,
+    name="storage_async_job_status",
+)
+async def get_async_job_status(task_id: AsyncJobGet):
+    """Get async job status"""

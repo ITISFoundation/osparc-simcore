@@ -14,7 +14,10 @@ from pathlib import Path
 from typing import Annotated, Any, Literal, Self, TypeAlias
 from uuid import UUID
 
-from models_library.api_schemas_rpc_data_export.async_jobs import AsyncJobRpcGet
+from models_library.api_schemas_rpc_data_export.async_jobs import (
+    AsyncJobRpcGet,
+    AsyncJobRpcStatus,
+)
 from models_library.api_schemas_storage.data_export_async_jobs import (
     DataExportTaskStartInput,
 )
@@ -25,6 +28,7 @@ from pydantic import (
     ByteSize,
     ConfigDict,
     Field,
+    PositiveFloat,
     PositiveInt,
     RootModel,
     StringConstraints,
@@ -390,3 +394,23 @@ class AsyncJobGet(BaseModel):
     @classmethod
     def from_async_job_rpc_get(cls, async_job_rpc_get: AsyncJobRpcGet) -> "AsyncJobGet":
         return AsyncJobGet(task_id=async_job_rpc_get.task_id)
+
+
+class AsyncJobStatus(BaseModel):
+    task_id: UUID
+    task_progress: PositiveFloat = Field(..., ge=0.0, le=1.0)
+    done: bool
+    started: datetime
+    stopped: datetime | None
+
+    @classmethod
+    def from_async_job_rpc_status(
+        cls, async_job_rpc_status: AsyncJobRpcStatus
+    ) -> "AsyncJobStatus":
+        return AsyncJobStatus(
+            task_id=async_job_rpc_status.task_id,
+            task_progress=async_job_rpc_status.task_progress,
+            done=async_job_rpc_status.done,
+            started=async_job_rpc_status.started,
+            stopped=async_job_rpc_status.stopped,
+        )

@@ -5977,7 +5977,7 @@ paths:
     post:
       tags:
       - storage
-      summary: Export Data
+      summary: Storage Export Data
       description: Export data
       operationId: export_data
       requestBody:
@@ -5993,6 +5993,26 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AsyncJobGet'
+  /v0/storage/async-jobs/status:
+    get:
+      tags:
+      - storage
+      summary: Storage Async Job Status
+      description: Get async job status
+      operationId: get_async_job_status
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AsyncJobGet'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AsyncJobStatus'
   /v0/trash:
     delete:
       tags:
@@ -7031,6 +7051,39 @@ components:
       required:
       - task_id
       title: AsyncJobGet
+    AsyncJobStatus:
+      properties:
+        task_id:
+          type: string
+          format: uuid
+          title: Task Id
+        task_progress:
+          type: number
+          maximum: 1.0
+          minimum: 0.0
+          exclusiveMinimum: true
+          title: Task Progress
+        done:
+          type: boolean
+          title: Done
+        started:
+          type: string
+          format: date-time
+          title: Started
+        stopped:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Stopped
+      type: object
+      required:
+      - task_id
+      - task_progress
+      - done
+      - started
+      - stopped
+      title: AsyncJobStatus
     Author:
       properties:
         name:
