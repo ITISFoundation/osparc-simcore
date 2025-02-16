@@ -313,11 +313,11 @@ async def list_licensed_items(
     )
 
     if filter_by_licensed_resource_type:
-        base_query.where(
+        base_query = base_query.where(
             licensed_items.c.licensed_resource_type == filter_by_licensed_resource_type
         )
     if not include_hidden_items_on_market:
-        base_query.where(licensed_items.c.is_hidden_on_market.is_(False))
+        base_query = base_query.where(licensed_items.c.is_hidden_on_market.is_(False))
 
     # Select total count from base_query
     subquery = base_query.subquery()

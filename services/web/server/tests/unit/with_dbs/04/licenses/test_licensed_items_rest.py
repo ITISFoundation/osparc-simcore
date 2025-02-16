@@ -27,6 +27,7 @@ from servicelib.aiohttp import status
 from simcore_postgres_database.models.licensed_item_to_resource import (
     licensed_item_to_resource,
 )
+from simcore_postgres_database.models.licensed_items import licensed_items
 from simcore_postgres_database.utils_repos import transaction_context
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.db.plugin import get_asyncpg_engine
@@ -102,6 +103,21 @@ async def test_licensed_items_listing(
     # Testing trimmed
     assert "additionalField" not in source
     assert "additional_field" not in source
+
+    # Testing hidden flag
+    async with transaction_context(get_asyncpg_engine(client.app)) as conn:
+        await conn.execute(
+            licensed_items.update()
+            .values(
+                is_hidden_on_market=True,
+            )
+            .where(licensed_items.c.licensed_item_id == _licensed_item_id)
+        )
+
+    url = client.app.router["list_licensed_items"].url_for()
+    resp = await client.get(f"{url}")
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+    assert data == []
 
 
 _LICENSED_ITEM_PURCHASE_GET = (
