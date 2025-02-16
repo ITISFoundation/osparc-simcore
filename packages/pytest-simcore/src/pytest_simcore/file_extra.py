@@ -1,11 +1,23 @@
 import logging
 from collections.abc import Callable
 from pathlib import Path
+from typing import Iterable
 
 import pytest
 from faker import Faker
 from pydantic import ByteSize
 from pytest_simcore.helpers.logging_tools import log_context
+
+
+@pytest.fixture
+def fake_file_name(tmp_path: Path, faker: Faker) -> Iterable[Path]:
+    file = tmp_path / faker.file_name()
+
+    yield file
+
+    if file.exists():
+        file.unlink()
+    assert not file.exists()
 
 
 @pytest.fixture
@@ -29,11 +41,12 @@ def create_file_of_size(tmp_path: Path, faker: Faker) -> Callable[[ByteSize], Pa
 @pytest.fixture
 def create_folder_of_size_with_multiple_files(
     tmp_path: Path, faker: Faker
-) -> Callable[[ByteSize, ByteSize, ByteSize], Path]:
+) -> Callable[[ByteSize, ByteSize, ByteSize, Path | None], Path]:
     def _create_folder_of_size_with_multiple_files(
         directory_size: ByteSize,
         file_min_size: ByteSize,
         file_max_size: ByteSize,
+        working_directory: Path | None,
     ) -> Path:
         # Helper function to create random files and directories
         assert file_min_size > 0
@@ -62,17 +75,18 @@ def create_folder_of_size_with_multiple_files(
             return ByteSize(remaining_size - file_size)
 
         # Recursively create content in the temporary directory
+        folder_path = working_directory or tmp_path
         remaining_size = directory_size
         with log_context(
             logging.INFO,
             msg=f"creating {directory_size.human_readable()} of random files "
-            f"(up to {file_max_size.human_readable()}) in {tmp_path}",
+            f"(up to {file_max_size.human_readable()}) in {folder_path}",
         ) as ctx:
             num_files_created = 0
             while remaining_size > 0:
-                remaining_size = create_random_content(tmp_path, remaining_size)
+                remaining_size = create_random_content(folder_path, remaining_size)
                 num_files_created += 1
             ctx.logger.info("created %s files", num_files_created)
-        return tmp_path
+        return folder_path
 
     return _create_folder_of_size_with_multiple_files

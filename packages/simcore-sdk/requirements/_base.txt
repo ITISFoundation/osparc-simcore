@@ -267,6 +267,8 @@ psycopg2-binary==2.9.10
     # via
     #   aiopg
     #   sqlalchemy
+pycryptodome==3.21.0
+    # via stream-zip
 pydantic==2.10.6
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -415,6 +417,8 @@ sqlalchemy==1.4.54
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
     #   aiopg
     #   alembic
+stream-zip==0.0.83
+    # via -r requirements/../../../packages/service-library/requirements/_base.in
 tenacity==9.0.0
     # via
     #   -r requirements/../../../packages/service-library/requirements/_base.in

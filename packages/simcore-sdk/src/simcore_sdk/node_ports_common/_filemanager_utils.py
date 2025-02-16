@@ -54,7 +54,7 @@ def _get_https_link_if_storage_secure(url: str) -> str:
     return url
 
 
-async def _complete_upload(
+async def complete_upload(
     session: ClientSession,
     upload_completion_link: AnyUrl,
     parts: list[UploadedPart],
@@ -118,7 +118,7 @@ async def _complete_upload(
     raise exceptions.S3TransferError(msg)
 
 
-async def _resolve_location_id(
+async def resolve_location_id(
     client_session: ClientSession,
     user_id: UserID,
     store_name: LocationName | None,
@@ -136,7 +136,7 @@ async def _resolve_location_id(
     return store_id
 
 
-async def _abort_upload(
+async def abort_upload(
     session: ClientSession, abort_upload_link: AnyUrl, *, reraise_exceptions: bool
 ) -> None:
     # abort the upload correctly, so it can revert back to last version

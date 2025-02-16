@@ -350,6 +350,8 @@ psutil==6.1.0
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 psycopg2-binary==2.9.10
     # via sqlalchemy
+pycryptodome==3.21.0
+    # via stream-zip
 pydantic==2.10.2
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -534,6 +536,8 @@ starlette==0.41.3
     #   -c requirements/../../../requirements/constraints.txt
     #   fastapi
     #   prometheus-fastapi-instrumentator
+stream-zip==0.0.83
+    # via -r requirements/../../../packages/service-library/requirements/_base.in
 tenacity==9.0.0
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 toolz==1.0.0
