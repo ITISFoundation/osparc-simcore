@@ -74,7 +74,8 @@ from ._comments_repository import (
     total_project_comments,
     update_project_comment,
 )
-from ._db_utils import (
+from ._projects_repository import PROJECT_DB_COLS
+from ._projects_repository_legacy_utils import (
     ANY_USER_ID_SENTINEL,
     BaseProjectDB,
     ProjectAccessRights,
@@ -85,7 +86,6 @@ from ._db_utils import (
     patch_workbench,
     update_workbench,
 )
-from ._projects_repository import PROJECT_DB_COLS
 from .exceptions import (
     ProjectDeleteError,
     ProjectInvalidRightsError,

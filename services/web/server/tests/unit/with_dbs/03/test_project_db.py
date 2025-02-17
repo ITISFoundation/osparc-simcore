@@ -37,7 +37,7 @@ from simcore_service_webserver.projects.exceptions import (
     ProjectNodeRequiredInputsNotSetError,
     ProjectNotFoundError,
 )
-from simcore_service_webserver.projects.models import ProjectDict
+from simcore_service_webserver.projects.models import PermissionStr, ProjectDict
 from simcore_service_webserver.projects.projects_groups_repository import (
     update_or_insert_project_group,
 )

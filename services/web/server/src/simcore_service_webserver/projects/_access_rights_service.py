@@ -6,10 +6,9 @@ from models_library.users import UserID
 from ..db.plugin import get_database_engine
 from ..workspaces.api import get_workspace
 from ._access_rights_repository import get_project_owner
-from ._db_utils import PermissionStr
 from ._projects_repository_legacy import APP_PROJECT_DBAPI, ProjectDBAPI
 from .exceptions import ProjectInvalidRightsError, ProjectNotFoundError
-from .models import UserProjectAccessRightsWithWorkspace
+from .models import PermissionStr, UserProjectAccessRightsWithWorkspace
 
 
 async def validate_project_ownership(

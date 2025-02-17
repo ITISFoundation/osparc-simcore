@@ -13,7 +13,7 @@ from models_library.workspaces import (
 )
 from pydantic import NonNegativeInt
 
-from ..projects._db_utils import PermissionStr
+from ..projects.models import PermissionStr
 from ..users.api import get_user
 from . import _workspaces_repository as db
 from .errors import WorkspaceAccessForbiddenError

@@ -135,7 +135,6 @@ from ._access_rights_service import (
     check_user_project_permission,
     has_user_project_access_rights,
 )
-from ._db_utils import PermissionStr
 from ._nodes_utils import set_reservation_same_as_limit, validate_new_service_resources
 from ._projects_repository_legacy import APP_PROJECT_DBAPI, ProjectDBAPI
 from .exceptions import (
@@ -153,7 +152,7 @@ from .exceptions import (
     ProjectStartsTooManyDynamicNodesError,
     ProjectTooManyProjectOpenedError,
 )
-from .models import ProjectDict, ProjectPatchInternalExtended
+from .models import PermissionStr, ProjectDict, ProjectPatchInternalExtended
 from .settings import ProjectsSettings, get_plugin_settings
 from .utils import extract_dns_without_default_port
 

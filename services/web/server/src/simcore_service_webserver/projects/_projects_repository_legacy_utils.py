@@ -4,7 +4,7 @@ from collections.abc import Mapping
 from copy import deepcopy
 from datetime import datetime
 from enum import Enum
-from typing import Any, Literal, cast
+from typing import Any, cast
 
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
@@ -39,7 +39,6 @@ logger = logging.getLogger(__name__)
 DB_EXCLUSIVE_COLUMNS = ["type", "id", "published", "hidden"]
 SCHEMA_NON_NULL_KEYS = ["thumbnail"]
 
-PermissionStr = Literal["read", "write", "delete"]
 
 ANY_USER_ID_SENTINEL = -1
 
