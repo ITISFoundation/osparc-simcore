@@ -375,8 +375,8 @@ async def delete_file(request: web.Request) -> web.Response:
     _storage_prefix + "/export-data",
     name="storage_export_data",
 )
-@login_required
-@permission_required("storage.files.*")
+# @login_required
+# @permission_required("storage.files.*")
 async def export_data(request: web.Request) -> web.Response:
     rabbitmq_rpc_client = get_rabbitmq_rpc_client(request.app)
     data_export_post = await parse_request_body_as(

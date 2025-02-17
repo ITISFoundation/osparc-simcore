@@ -32,6 +32,7 @@ from pydantic import (
     PositiveInt,
     RootModel,
     StringConstraints,
+    field_serializer,
     field_validator,
     model_validator,
 )
@@ -383,6 +384,10 @@ class SoftCopyBody(BaseModel):
 
 class DataExportPost(BaseModel):
     paths: list[Path]
+
+    @field_serializer("paths")
+    def serialize_path(self, value: list[Path]) -> list[str]:
+        return [f"{elm}" for elm in value]
 
     def to_storage_model(self) -> DataExportTaskStartInput:
         return DataExportTaskStartInput(paths=self.paths)
