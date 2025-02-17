@@ -105,7 +105,7 @@ qx.Class.define("osparc.study.PricingUnitLicense", {
       if (this.getLicenseUrl()) {
         const useCacheCB = new qx.ui.form.CheckBox().set({
           value: false,
-          label: this.tr("Accept <u>License Agreement</u>"),
+          label: this.tr("Accept <u>Terms and Conditions</u>"),
           rich: true,
         });
         useCacheCB.getChildControl("label").set({
@@ -127,7 +127,12 @@ qx.Class.define("osparc.study.PricingUnitLicense", {
     },
 
     __openLicense: function() {
-      window.open(this.getLicenseUrl());
+      const mdWindow = new osparc.ui.markdown.MarkdownWindow(this.getLicenseUrl()).set({
+        caption: this.tr("Terms and Conditions"),
+        width: 800,
+        height: 600,
+      });
+      mdWindow.open();
     },
   }
 });
