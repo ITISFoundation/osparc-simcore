@@ -12,6 +12,11 @@ from models_library.api_schemas_rpc_data_export.async_jobs import (
     AsyncJobRpcResult,
     AsyncJobRpcStatus,
 )
+from models_library.api_schemas_storage.data_export_async_jobs import (
+    AccessRightError,
+    DataExportError,
+    InvalidFileIdentifierError,
+)
 from models_library.generics import Envelope
 from models_library.storage_schemas import AsyncJobGet, DataExportPost
 from pytest_mock import MockerFixture
@@ -24,6 +29,8 @@ from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import (
 )
 from servicelib.rabbitmq.rpc_interfaces.storage.data_export import start_data_export
 from simcore_postgres_database.models.users import UserRole
+
+_faker = Faker()
 
 
 @pytest.fixture
@@ -43,25 +50,43 @@ def create_storage_rpc_client_mock(mocker: MockerFixture) -> Callable[[str, Any]
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
+@pytest.mark.parametrize(
+    "backend_result_or_exception",
+    [
+        AsyncJobRpcGet(job_id=AsyncJobRpcId(_faker.uuid4()), task_name=_faker.text()),
+        InvalidFileIdentifierError(file_id=Path("/my/file")),
+        AccessRightError(user_id=_faker.pyint(min_value=0), file_id=Path("/my/file")),
+        DataExportError(job_id=_faker.pyint(min_value=0)),
+    ],
+    ids=lambda x: type(x).__name__,
+)
 async def test_data_export(
     user_role: UserRole,
     logged_user: UserInfoDict,
     client: TestClient,
     create_storage_rpc_client_mock: Callable[[str, Any], None],
     faker: Faker,
+    backend_result_or_exception: Any,
 ):
-    _job_id = AsyncJobRpcId(faker.uuid4())
     create_storage_rpc_client_mock(
         start_data_export.__name__,
-        AsyncJobRpcGet(job_id=_job_id, task_name=faker.text()),
+        backend_result_or_exception,
     )
 
     _body = DataExportPost(paths=[Path(".")])
     response = await client.post(
         "/v0/storage/locations/0/export-data", data=_body.model_dump_json()
     )
-    assert response.status == status.HTTP_202_ACCEPTED
-    Envelope[AsyncJobGet].model_validate(await response.json())
+    if isinstance(backend_result_or_exception, AsyncJobRpcGet):
+        assert response.status == status.HTTP_202_ACCEPTED
+        Envelope[AsyncJobGet].model_validate(await response.json())
+    elif isinstance(backend_result_or_exception, InvalidFileIdentifierError):
+        assert response.status == status.HTTP_404_NOT_FOUND
+    elif isinstance(backend_result_or_exception, AccessRightError):
+        assert response.status == status.HTTP_403_FORBIDDEN
+    else:
+        assert isinstance(backend_result_or_exception, DataExportError)
+        assert response.status == status.HTTP_500_INTERNAL_SERVER_ERROR
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
