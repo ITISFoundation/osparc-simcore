@@ -9,7 +9,8 @@ from models_library.users import UserID
 from servicelib.logging_errors import create_troubleshotting_log_kwargs
 from servicelib.logging_utils import log_context
 
-from ..projects import _trash_service
+from ..folders import folders_trash_service
+from ..projects import projects_trash_service
 from .settings import get_plugin_settings
 
 _logger = logging.getLogger(__name__)
@@ -20,7 +21,7 @@ async def empty_trash_safe(
 ):
     assert app  # nosec
 
-    trashed_projects_ids = await _trash_service.list_trashed_projects(
+    trashed_folders_ids = await projects_trash_service.list_trashed_projects(
         app=app, product_name=product_name, user_id=user_id
     )
 
@@ -28,15 +29,15 @@ async def empty_trash_safe(
         _logger,
         logging.DEBUG,
         "Deleting %s trashed projects",
-        len(trashed_projects_ids),
+        len(trashed_folders_ids),
     ):
-        for project_id in trashed_projects_ids:
+        for folder_id in trashed_folders_ids:
             try:
 
-                await _trash_service.delete_trashed_project(
+                await projects_trash_service.delete_trashed_project(
                     app,
                     user_id=user_id,
-                    project_id=project_id,
+                    project_id=folder_id,
                 )
 
             except Exception as exc:  # pylint: disable=broad-exception-caught
@@ -45,7 +46,42 @@ async def empty_trash_safe(
                         "Error deleting a trashed project while emptying trash.",
                         error=exc,
                         error_context={
-                            "project_id": project_id,
+                            "project_id": folder_id,
+                            "product_name": product_name,
+                            "user_id": user_id,
+                        },
+                        tip="`empty_trash_safe` is set `fail_fast=False`."
+                        "\nErrors while deletion are ignored."
+                        "\nNew runs might resolve them",
+                    )
+                )
+
+    trashed_folders_ids = await folders_trash_service.list_explicitly_trashed_folders(
+        app=app, product_name=product_name, user_id=user_id
+    )
+
+    with log_context(
+        _logger,
+        logging.DEBUG,
+        "Deleting %s trashed folders",
+        len(trashed_folders_ids),
+    ):
+        for folder_id in trashed_folders_ids:
+            try:
+                await folders_trash_service.delete_trashed_folder(
+                    app,
+                    product_name=product_name,
+                    user_id=user_id,
+                    project_id=folder_id,
+                )
+
+            except Exception as exc:  # pylint: disable=broad-exception-caught
+                _logger.warning(
+                    **create_troubleshotting_log_kwargs(
+                        "Error deleting a trashed folders (and content) while emptying trash.",
+                        error=exc,
+                        error_context={
+                            "folder_id": folder_id,
                             "product_name": product_name,
                             "user_id": user_id,
                         },
