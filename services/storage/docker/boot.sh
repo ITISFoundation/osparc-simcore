@@ -63,7 +63,7 @@ else
       --log-level "${SERVER_LOG_LEVEL}"
   else
     exec celery \
-      -A simcore_service_storage.main:app \
+      -A simcore_service_storage.modules.celery.worker.main:app \
       worker
       --loglevel="${SERVER_LOG_LEVEL}"
   fi
