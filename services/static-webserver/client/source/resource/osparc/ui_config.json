@@ -153,6 +153,9 @@
         "title": "Empty Study",
         "newStudyLabel": "New Study",
         "idToWidget": "emptyStudyBtn"
+      }, {
+        "resourceType": "service",
+        "myMostUsed": 2
       }]
     }
   }
