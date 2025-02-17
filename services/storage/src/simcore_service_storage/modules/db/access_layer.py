@@ -263,7 +263,7 @@ async def get_project_access_rights(
     return _aggregate_access_rights(row.access_rights, user_group_ids)
 
 
-async def get_file_access_rights(
+async def get_file_access_rights(  # pylint:disable=too-many-return-statements  # noqa: PLR0911
     conn: AsyncConnection, user_id: UserID, file_id: StorageFileID
 ) -> AccessRights:
     """
