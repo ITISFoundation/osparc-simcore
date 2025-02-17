@@ -11,7 +11,7 @@ from servicelib.aiohttp.requests_validation import parse_request_path_parameters
 from .._meta import api_version_prefix as VTAG
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
-from . import _folders_api
+from . import _folders_service
 from ._common.exceptions_handlers import handle_plugin_requests_exceptions
 from ._common.models import RequestContext
 
@@ -43,7 +43,7 @@ async def replace_project_folder(request: web.Request):
     req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(_ProjectsFoldersPathParams, request)
 
-    await _folders_api.move_project_into_folder(
+    await _folders_service.move_project_into_folder(
         app=request.app,
         user_id=req_ctx.user_id,
         project_id=path_params.project_id,
