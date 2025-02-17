@@ -861,6 +861,7 @@ async def test_trash_folder_with_subfolder_and_project_and_empty_bin(
     logged_user: UserInfoDict,
     user_project: ProjectDict,
     mocked_catalog: None,
+    mocked_director_v2: None,
     mocked_dynamic_services_interface: dict[str, MagicMock],
 ):
     assert client.app
@@ -889,26 +890,45 @@ async def test_trash_folder_with_subfolder_and_project_and_empty_bin(
     resp = await client.post(f"/v0/folders/{parent_folder.folder_id}:trash")
     await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
-    # LIST trashed folders
+    # CHECK BIN
+    # - LIST trashed folders as shown in the bin (will show only explicilty)
     resp = await client.get(
         "/v0/folders:search", params={"filters": '{"trashed": true}'}
     )
     await assert_status(resp, status.HTTP_200_OK)
     page = Page[FolderGet].model_validate(await resp.json())
-    assert page.meta.total == 2
-    assert {f.folder_id for f in page.data} == {
-        parent_folder.folder_id,
-        sub_folder.folder_id,
-    }
+    assert page.meta.total == 1
+    assert page.data[0].folder_id == parent_folder.folder_id
 
-    # LIST trashed projects
+    # - LIST trashed projects (will show only explicit!)
     resp = await client.get(
         "/v0/projects:search", params={"filters": '{"trashed": true}'}
     )
     await assert_status(resp, status.HTTP_200_OK)
     page = Page[ProjectListItem].model_validate(await resp.json())
-    assert page.meta.total == 1
-    assert page.data[0].uuid == project_uuid
+    assert page.meta.total == 0
+
+    # CHECK items
+    # - GET trashed parent folder (explicit)
+    resp = await client.get(f"/v0/folders/{parent_folder.folder_id}")
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+    got = FolderGet.model_validate(data)
+    assert got.trashed_at is not None
+    assert got.trashed_by == logged_user["id"]
+
+    # - GET trashed subfolder (implicit)
+    resp = await client.get(f"/v0/folders/{sub_folder.folder_id}")
+    await assert_status(resp, status.HTTP_404_NOT_FOUND)
+    got = FolderGet.model_validate(data)
+    assert got.trashed_at is not None
+    assert got.trashed_by == logged_user["id"]
+
+    # GET trashed project (implicit)
+    resp = await client.get(f"/v0/projects/{project_uuid}")
+    await assert_status(resp, status.HTTP_404_NOT_FOUND)
+    got = ProjectGet.model_validate(data)
+    assert got.trashed_at is not None
+    assert got.trashed_by == logged_user["id"]
 
     # EMPTY trash
     resp = await client.post("/v0/trash:empty")
@@ -931,7 +951,8 @@ async def test_trash_folder_with_subfolder_and_project_and_empty_bin(
             resp = await client.get(f"/v0/projects/{project_uuid}")
             await assert_status(resp, status.HTTP_404_NOT_FOUND)
 
-    # LIST trashed folders
+    # CHECK BIN
+    # LIST trashed (will show only explicit)
     resp = await client.get(
         "/v0/folders:search", params={"filters": '{"trashed": true}'}
     )
@@ -939,7 +960,7 @@ async def test_trash_folder_with_subfolder_and_project_and_empty_bin(
     page = Page[FolderGet].model_validate(await resp.json())
     assert page.meta.total == 0
 
-    # LIST trashed projects
+    # - LIST trashed projects (will show only explicit!)
     resp = await client.get(
         "/v0/projects:search", params={"filters": '{"trashed": true}'}
     )
