@@ -166,7 +166,7 @@ async def simcore_storage_service(mocker: MockerFixture, app: FastAPI) -> None:
 
     # NOTE: Mock to ensure container IP agrees with host IP when testing
     mocker.patch(
-        "simcore_sdk.node_ports_common._filemanager._get_https_link_if_storage_secure",
+        "simcore_sdk.node_ports_common._filemanager_utils._get_https_link_if_storage_secure",
         replace_storage_endpoint(storage_host, int(storage_port)),
     )
 
