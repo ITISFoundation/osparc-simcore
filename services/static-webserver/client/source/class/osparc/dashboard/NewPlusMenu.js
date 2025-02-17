@@ -290,6 +290,28 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
     },
 
     __addFromServiceButton: function(newStudyData) {
+      const addListenerToButton = (menuButton, latestMetadata) => {
+        menuButton.addListener("tap", () => {
+          this.fireDataEvent("newStudyFromServiceClicked", {
+            serviceMetadata: latestMetadata,
+            newStudyLabel: newStudyData["newStudyLabel"],
+          });
+        });
+
+        const cb = e => {
+          this.hide();
+          // so that is not consumed by the menu button itself
+          e.stopPropagation();
+          latestMetadata["resourceType"] = "service";
+          const resourceDetails = new osparc.dashboard.ResourceDetails(latestMetadata);
+          osparc.dashboard.ResourceDetails.popUpInWindow(resourceDetails);
+        }
+        const infoButton = new osparc.ui.basic.IconButton(osparc.ui.hint.InfoHint.INFO_ICON + "/16", cb);
+        // where the shortcut is supposed to go
+        // eslint-disable-next-line no-underscore-dangle
+        menuButton._add(infoButton, {column: 2});
+      };
+
       if ("expectedKey" in newStudyData) {
         const menuButton = this.self().createMenuButton(null, newStudyData["title"]);
         osparc.utils.Utils.setIdToWidget(menuButton, newStudyData["idToWidget"]);
@@ -310,29 +332,10 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
                 return;
               }
               menuButton.setEnabled(true);
-              menuButton.addListener("tap", () => {
-                this.fireDataEvent("newStudyFromServiceClicked", {
-                  serviceMetadata: latestMetadata,
-                  newStudyLabel: newStudyData["newStudyLabel"],
-                });
-              });
-
-              const cb = e => {
-                this.hide();
-                // so that is not consumed by the menu button itself
-                e.stopPropagation();
-                latestMetadata["resourceType"] = "service";
-                const resourceDetails = new osparc.dashboard.ResourceDetails(latestMetadata);
-                osparc.dashboard.ResourceDetails.popUpInWindow(resourceDetails);
-              }
-              const infoButton = new osparc.ui.basic.IconButton(osparc.ui.hint.InfoHint.INFO_ICON + "/16", cb);
-              // where the shortcut is supposed to go
-              // eslint-disable-next-line no-underscore-dangle
-              menuButton._add(infoButton, {column: 2});
-
               this.__addIcon(menuButton, newStudyData, latestMetadata);
               this.__addFromResourceButton(menuButton, newStudyData["category"]);
-            })
+              addListenerToButton(menuButton, latestMetadata);
+            });
         }
       } else if ("mostUsed" in newStudyData) {
         const excludeFrontend = true;
@@ -353,6 +356,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
                 });
                 this.__addIcon(menuButton, null, latestMetadata);
                 this.__addFromResourceButton(menuButton, newStudyData["category"]);
+                addListenerToButton(menuButton, latestMetadata);
               }
             }
           });
