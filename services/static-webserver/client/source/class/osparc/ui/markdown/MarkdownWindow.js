@@ -25,7 +25,7 @@ qx.Class.define("osparc.ui.markdown.MarkdownWindow", {
       padding: 15,
     });
     const scrollContainer = new qx.ui.container.Scroll();
-    scrollContainer.add(markdown)
+    scrollContainer.add(markdown);
     this._add(scrollContainer, {
       flex: 1,
     });
