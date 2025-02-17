@@ -21,7 +21,7 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
   construct: function() {
     this.base(arguments);
 
-    const layout = new qx.ui.layout.VBox(10);
+    const layout = new qx.ui.layout.VBox(15);
     this._setLayout(layout);
 
     this.__populateLayout();
@@ -65,6 +65,8 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
   },
 
   members: {
+    __selectedModelLayout: null,
+
     __populateLayout: function() {
       this._removeAll();
 
@@ -89,6 +91,9 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
     __addModelsInfo: function() {
       const modelLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(6));
 
+      this.__selectedModelLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(6));
+      modelLayout.add(this.__selectedModelLayout);
+
       const anatomicalModelsData = this.getAnatomicalModelsData();
       const modelsInfo = anatomicalModelsData["licensedResources"];
       if (modelsInfo.length > 1) {
@@ -98,7 +103,7 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
         const thumbnailsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(2));
         modelSelectionLayout.add(thumbnailsLayout);
         const thumbnailTapped = idx => {
-          this.__populateModelInfo(modelLayout, anatomicalModelsData, idx);
+          this.__populateSelectedModelInfo(idx);
           const selectedBorderColor = qx.theme.manager.Color.getInstance().resolve("strong-main");
           const unselectedBorderColor = "transparent";
           thumbnailsLayout.getChildren().forEach((thumbnail, index) => {
@@ -114,24 +119,26 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
           miniThumbnail.addListener("tap", () => thumbnailTapped(idx));
           thumbnailsLayout.add(miniThumbnail);
         });
-        this._add(modelSelectionLayout);
+        modelLayout.add(modelSelectionLayout);
         thumbnailTapped(0);
 
-        this.__populateModelInfo(modelLayout, anatomicalModelsData, 0);
+        this.__populateSelectedModelInfo();
       } else {
-        this.__populateModelInfo(modelLayout, anatomicalModelsData, 0);
+        this.__populateSelectedModelInfo();
       }
 
-      this._addAt(modelLayout, 0);
+      this._add(modelLayout);
     },
 
-    __populateModelInfo: function(modelLayout, anatomicalModelsData, selectedIdx = 0) {
-      modelLayout.removeAll();
+    __populateSelectedModelInfo: function(selectedIdx = 0) {
+      this.__selectedModelLayout.removeAll();
 
-      const anatomicalModel = anatomicalModelsData["licensedResources"][selectedIdx]["source"];
+      const anatomicalModelsData = this.getAnatomicalModelsData();
+
       const topGrid = new qx.ui.layout.Grid(8, 6);
       topGrid.setColumnFlex(0, 1);
-      const topLayout = new qx.ui.container.Composite(topGrid);
+      const headerLayout = new qx.ui.container.Composite(topGrid);
+      const anatomicalModel = anatomicalModelsData["licensedResources"][selectedIdx]["source"];
       let description = anatomicalModel["description"] || "";
       description = description.replace(/SPEAG/g, " "); // remove SPEAG substring
       const delimiter = " - ";
@@ -144,7 +151,7 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
           allowGrowX: true,
           allowGrowY: true,
         });
-        topLayout.add(titleLabel, {
+        headerLayout.add(titleLabel, {
           column: 0,
           row: 0,
         });
@@ -159,7 +166,7 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
           allowGrowX: true,
           allowGrowY: true,
         });
-        topLayout.add(subtitleLabel, {
+        headerLayout.add(subtitleLabel, {
           column: 0,
           row: 1,
         });
@@ -190,13 +197,13 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
           decorator: "rounded",
         });
         manufacturerLink.addListener("tap", () => window.open(manufacturerData["link"]));
-        topLayout.add(manufacturerLink, {
+        headerLayout.add(manufacturerLink, {
           column: 1,
           row: 0,
           rowSpan: 2,
         });
       }
-      modelLayout.add(topLayout);
+      this.__selectedModelLayout.add(headerLayout);
 
 
       const middleLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(16));
@@ -278,14 +285,14 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
 
       middleLayout.add(featuresLayout);
 
-      modelLayout.add(middleLayout);
+      this.__selectedModelLayout.add(middleLayout);
 
-      const importButton = this.__createImportSection(anatomicalModelsData, selectedIdx);
-      modelLayout.add(importButton);
+      const importSection = this.__createImportSection(anatomicalModelsData, selectedIdx);
+      this.__selectedModelLayout.add(importSection);
     },
 
     __createImportSection: function(anatomicalModelsData, selectedIdx) {
-      const importSection = new qx.ui.container.Composite(new qx.ui.layout.VBox(5).set({
+      const importSection = new qx.ui.container.Composite(new qx.ui.layout.VBox().set({
         alignX: "center"
       }));
 
@@ -295,6 +302,7 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
         center: true,
         maxWidth: 200,
         alignX: "center",
+        marginTop: 10,
       });
       this.bind("openBy", importButton, "visibility", {
         converter: openBy => openBy ? "visible" : "excluded"
