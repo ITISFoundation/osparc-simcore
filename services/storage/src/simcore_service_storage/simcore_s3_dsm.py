@@ -1107,10 +1107,10 @@ class SimcoreS3DataManager(BaseDataManager):
                 user_id=user_id, file_id=destination_object_key
             )
             raise
-        else:
-            await self.complete_file_upload(
-                file_id=destination_object_key, user_id=user_id, uploaded_parts=[]
-            )
+
+        await self.complete_file_upload(
+            file_id=destination_object_key, user_id=user_id, uploaded_parts=[]
+        )
 
         _logger.info("Export available in path '%s'", destination_object_key)
 
