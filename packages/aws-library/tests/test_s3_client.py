@@ -1398,7 +1398,7 @@ def test_copy_recurively_performance(
     benchmark.pedantic(run_async_test, setup=dst_folder_setup, rounds=4)
 
 
-async def test_read_object_file_stream(
+async def test_read_from_bytes_streamer(
     mocked_s3_server_envs: EnvVarsDict,
     with_uploaded_file_on_s3: UploadedFile,
     simcore_s3_api: SimcoreS3API,
