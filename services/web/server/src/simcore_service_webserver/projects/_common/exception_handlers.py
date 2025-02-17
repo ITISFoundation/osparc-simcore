@@ -12,6 +12,7 @@ from ...folders.errors import FolderAccessForbiddenError, FolderNotFoundError
 from ...workspaces.errors import WorkspaceAccessForbiddenError, WorkspaceNotFoundError
 from ..exceptions import (
     ProjectDeleteError,
+    ProjectGroupNotFoundError,
     ProjectInvalidRightsError,
     ProjectNotFoundError,
     ProjectOwnerNotFoundInTheProjectAccessRightsError,
@@ -36,13 +37,17 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
         status.HTTP_409_CONFLICT,
         "Failed to complete deletion of '{project_uuid}': {reason}",
     ),
+    ProjectGroupNotFoundError: HttpErrorInfo(
+        status.HTTP_404_NOT_FOUND,
+        "Project group not found: {reason}",
+    ),
     ProjectInvalidRightsError: HttpErrorInfo(
         status.HTTP_403_FORBIDDEN,
         "Do not have sufficient access rights on project {project_uuid} for this action",
     ),
     ProjectNotFoundError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
-        "Project not found",
+        "Project {project_uuid} not found",
     ),
     ProjectOwnerNotFoundInTheProjectAccessRightsError: HttpErrorInfo(
         status.HTTP_400_BAD_REQUEST,

@@ -2,7 +2,6 @@
 
 """
 
-import functools
 import logging
 
 from aiohttp import web
@@ -14,33 +13,17 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
 )
-from servicelib.aiohttp.typing_extension import Handler
 
 from .._meta import api_version_prefix as VTAG
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
 from . import _groups_api
+from ._common.exception_handlers import handle_plugin_requests_exceptions
 from ._common.models import ProjectPathParams, RequestContext
 from ._groups_api import ProjectGroupGet
-from .exceptions import ProjectGroupNotFoundError, ProjectNotFoundError
 
 _logger = logging.getLogger(__name__)
-
-
-def _handle_projects_groups_exceptions(handler: Handler):
-    @functools.wraps(handler)
-    async def wrapper(request: web.Request) -> web.StreamResponse:
-        try:
-            return await handler(request)
-
-        except ProjectGroupNotFoundError as exc:
-            raise web.HTTPNotFound(reason=f"{exc}") from exc
-
-        except ProjectNotFoundError as exc:
-            raise web.HTTPForbidden(reason=f"{exc}") from exc
-
-    return wrapper
 
 
 #
@@ -68,7 +51,7 @@ class _ProjectsGroupsBodyParams(BaseModel):
 )
 @login_required
 @permission_required("project.access_rights.update")
-@_handle_projects_groups_exceptions
+@handle_plugin_requests_exceptions
 async def create_project_group(request: web.Request):
     req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(_ProjectsGroupsPathParams, request)
@@ -91,7 +74,7 @@ async def create_project_group(request: web.Request):
 @routes.get(f"/{VTAG}/projects/{{project_id}}/groups", name="list_project_groups")
 @login_required
 @permission_required("project.read")
-@_handle_projects_groups_exceptions
+@handle_plugin_requests_exceptions
 async def list_project_groups(request: web.Request):
     req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
@@ -114,7 +97,7 @@ async def list_project_groups(request: web.Request):
 )
 @login_required
 @permission_required("project.access_rights.update")
-@_handle_projects_groups_exceptions
+@handle_plugin_requests_exceptions
 async def replace_project_group(request: web.Request):
     req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(_ProjectsGroupsPathParams, request)
@@ -138,7 +121,7 @@ async def replace_project_group(request: web.Request):
 )
 @login_required
 @permission_required("project.access_rights.update")
-@_handle_projects_groups_exceptions
+@handle_plugin_requests_exceptions
 async def delete_project_group(request: web.Request):
     req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(_ProjectsGroupsPathParams, request)
