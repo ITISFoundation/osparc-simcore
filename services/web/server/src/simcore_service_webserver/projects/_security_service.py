@@ -3,8 +3,8 @@ from aiohttp import web
 from simcore_postgres_database.models.users import UserRole
 
 from ..security.api import get_access_model
+from ._projects_repository_legacy import ProjectDBAPI
 from .api import check_user_project_permission
-from .db import ProjectDBAPI
 
 
 async def can_update_node_inputs(context):

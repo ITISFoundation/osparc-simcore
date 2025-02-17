@@ -11,7 +11,7 @@ from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from simcore_postgres_database.errors import DatabaseError
 from simcore_postgres_database.models.users import UserRole
 
-from ..projects.db import ProjectDBAPI
+from ..projects._projects_repository_legacy import ProjectDBAPI
 from ..projects.exceptions import ProjectDeleteError, ProjectNotFoundError
 from ..projects.projects_service import get_project_for_user, submit_delete_project_task
 from ..redis import get_redis_lock_manager_client

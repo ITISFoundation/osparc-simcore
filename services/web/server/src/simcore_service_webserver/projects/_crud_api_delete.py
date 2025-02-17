@@ -18,7 +18,7 @@ from ..storage.api import delete_data_folders_of_project
 from ..users.api import FullNameDict
 from ..users.exceptions import UserNotFoundError
 from ._access_rights_service import check_user_project_permission
-from .db import ProjectDBAPI
+from ._projects_repository_legacy import ProjectDBAPI
 from .exceptions import (
     ProjectDeleteError,
     ProjectInvalidRightsError,

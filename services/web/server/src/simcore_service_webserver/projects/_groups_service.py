@@ -12,7 +12,7 @@ from ..users import api as users_api
 from . import _groups_repository as projects_groups_db
 from ._access_rights_service import check_user_project_permission
 from ._groups_repository import ProjectGroupGetDB
-from .db import APP_PROJECT_DBAPI, ProjectDBAPI
+from ._projects_repository_legacy import APP_PROJECT_DBAPI, ProjectDBAPI
 from .exceptions import ProjectInvalidRightsError
 
 _logger = logging.getLogger(__name__)

@@ -43,7 +43,7 @@ from . import _folders_repository as project_to_folders_db
 from . import _projects_service
 from ._metadata_service import set_project_ancestors
 from ._permalink_service import update_or_pop_permalink_in_project
-from .db import ProjectDBAPI
+from ._projects_repository_legacy import ProjectDBAPI
 from .exceptions import (
     ParentNodeNotFoundError,
     ParentProjectNotFoundError,

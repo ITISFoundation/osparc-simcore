@@ -9,7 +9,7 @@ from models_library.users import UserID
 from ..folders import _folders_repository as _folders_repository
 from . import _folders_repository as project_to_folders_db
 from ._access_rights_service import get_user_project_access_rights
-from .db import APP_PROJECT_DBAPI, ProjectDBAPI
+from ._projects_repository_legacy import APP_PROJECT_DBAPI, ProjectDBAPI
 from .exceptions import ProjectInvalidRightsError
 
 _logger = logging.getLogger(__name__)

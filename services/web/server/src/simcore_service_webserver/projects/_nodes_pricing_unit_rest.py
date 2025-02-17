@@ -22,7 +22,7 @@ from . import _projects_service
 from ._common.exceptions_handlers import handle_plugin_requests_exceptions
 from ._common.models import RequestContext
 from ._nodes_rest import NodePathParams
-from .db import ProjectDBAPI
+from ._projects_repository_legacy import ProjectDBAPI
 
 _logger = logging.getLogger(__name__)
 

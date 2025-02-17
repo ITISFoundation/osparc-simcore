@@ -20,7 +20,7 @@ from simcore_service_webserver.projects._db_utils import (
     DB_EXCLUSIVE_COLUMNS,
     SCHEMA_NON_NULL_KEYS,
 )
-from simcore_service_webserver.projects.db import (
+from simcore_service_webserver.projects._projects_repository_legacy import (
     ProjectAccessRights,
     assemble_array_groups,
     convert_to_db_names,

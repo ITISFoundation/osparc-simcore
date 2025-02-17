@@ -8,7 +8,10 @@ from models_library.users import UserID
 from simcore_postgres_database.errors import DatabaseError
 
 from ..groups.api import get_group_from_gid
-from ..projects.db import APP_PROJECT_DBAPI, ProjectAccessRights
+from ..projects._projects_repository_legacy import (
+    APP_PROJECT_DBAPI,
+    ProjectAccessRights,
+)
 from ..projects.exceptions import ProjectNotFoundError
 from ..projects.projects_groups_service import (
     create_project_group_without_checking_permissions,

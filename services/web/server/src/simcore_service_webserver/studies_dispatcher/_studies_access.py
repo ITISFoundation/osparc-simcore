@@ -31,8 +31,8 @@ from ..director_v2._core_computations import create_or_update_pipeline
 from ..dynamic_scheduler import api as dynamic_scheduler_api
 from ..products.api import get_current_product, get_product_name
 from ..projects import projects_groups_repository
+from ..projects._projects_repository_legacy import ProjectDBAPI
 from ..projects.api import check_user_project_permission
-from ..projects.db import ProjectDBAPI
 from ..projects.exceptions import (
     ProjectGroupNotFoundError,
     ProjectInvalidRightsError,
@@ -141,7 +141,7 @@ async def copy_study_to_account(
     - Replaces template parameters by values passed in query
     - Avoids multiple copies of the same template on each account
     """
-    from ..projects.db import APP_PROJECT_DBAPI
+    from ..projects._projects_repository_legacy import APP_PROJECT_DBAPI
     from ..projects.utils import clone_project_document, substitute_parameterized_inputs
 
     db: ProjectDBAPI = request.config_dict[APP_PROJECT_DBAPI]

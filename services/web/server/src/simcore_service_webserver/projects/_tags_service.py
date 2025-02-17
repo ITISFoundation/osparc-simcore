@@ -11,7 +11,7 @@ from models_library.workspaces import UserWorkspaceWithAccessRights
 
 from ..workspaces import _workspaces_repository as workspaces_db
 from ._access_rights_service import check_user_project_permission
-from .db import ProjectDBAPI
+from ._projects_repository_legacy import ProjectDBAPI
 from .models import ProjectDict
 
 _logger = logging.getLogger(__name__)
