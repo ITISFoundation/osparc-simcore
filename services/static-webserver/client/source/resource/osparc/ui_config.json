@@ -155,7 +155,7 @@
         "idToWidget": "emptyStudyBtn"
       }, {
         "resourceType": "service",
-        "mostUsed": 2
+        "myMostUsed": 2
       }]
     }
   }

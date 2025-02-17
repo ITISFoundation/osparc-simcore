@@ -67,10 +67,10 @@
               "type": "object",
               "properties": {
                 "resourceType": { "enum": ["service"] },
-                "mostUsed": { "type": "integer" },
+                "myMostUsed": { "type": "integer" },
                 "category": { "type": "string" }
               },
-              "required": ["resourceType", "mostUsed"]
+              "required": ["resourceType", "myMostUsed"]
             }, {
               "type": "object",
               "properties": {

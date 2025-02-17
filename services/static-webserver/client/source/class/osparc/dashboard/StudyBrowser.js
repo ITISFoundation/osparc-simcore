@@ -1000,7 +1000,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
               this._resourcesContainer.addNonResourceCard(newStudyFromServiceButton);
             })
         }
-      } else if ("mostUsed" in newStudyData) {
+      } else if ("myMostUsed" in newStudyData) {
         const excludeFrontend = true;
         const excludeDeprecated = true
         osparc.store.Services.getServicesLatestList(excludeFrontend, excludeDeprecated)
@@ -1009,7 +1009,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
               "sort": "hits",
               "order": "down"
             });
-            for (let i=0; i<newStudyData["mostUsed"]; i++) {
+            for (let i=0; i<newStudyData["myMostUsed"]; i++) {
               const latestMetadata = servicesList[i];
               const mode = this._resourcesContainer.getMode();
               const newStudyFromServiceButton = (mode === "grid") ? new osparc.dashboard.GridButtonNew(latestMetadata["name"]) : new osparc.dashboard.ListButtonNew(latestMetadata["name"]);

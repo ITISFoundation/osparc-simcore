@@ -46,7 +46,7 @@
     "idToWidget": "string" // optional
   }, {
     "resourceType": "service", // it will create a study from the service
-    "mostUsed": 2, // required
+    "myMostUsed": 2, // required
     "category": "categories.id", // optional
   }, {
     "showDisabled": true, // it will show a disabled button on the defined item
@@ -337,7 +337,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
               addListenerToButton(menuButton, latestMetadata);
             });
         }
-      } else if ("mostUsed" in newStudyData) {
+      } else if ("myMostUsed" in newStudyData) {
         const excludeFrontend = true;
         const excludeDeprecated = true
         osparc.store.Services.getServicesLatestList(excludeFrontend, excludeDeprecated)
@@ -346,7 +346,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
               "sort": "hits",
               "order": "down"
             });
-            for (let i=0; i<newStudyData["mostUsed"]; i++) {
+            for (let i=0; i<newStudyData["myMostUsed"]; i++) {
               const latestMetadata = servicesList[i];
               if (latestMetadata["hits"] > 0) {
                 const menuButton = new qx.ui.menu.Button().set({
