@@ -1,7 +1,10 @@
 import logging
 
 from servicelib.aiohttp import status
-from servicelib.rabbitmq.rpc_interfaces.catalog.errors import CatalogForbiddenError
+from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
+    CatalogForbiddenError,
+    CatalogItemNotFoundError,
+)
 
 from ...exception_handling import (
     ExceptionToHttpErrorMap,
@@ -165,6 +168,9 @@ _OTHER_ERRORS: ExceptionToHttpErrorMap = {
     CatalogForbiddenError: HttpErrorInfo(
         status.HTTP_403_FORBIDDEN,
         "Catalog forbidden: Insufficient access rights for {name}",
+    ),
+    CatalogItemNotFoundError: HttpErrorInfo(
+        status.HTTP_404_NOT_FOUND, "{name} was not found"
     ),
 }
 
