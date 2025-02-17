@@ -33,6 +33,7 @@ from servicelib.common_headers import (
 )
 from servicelib.redis import get_project_locked_state
 from simcore_service_webserver.projects.models import ProjectDict
+from simcore_service_webserver.utils_aiohttp import envelope_json_response
 
 from .._meta import API_VTAG as VTAG
 from ..catalog.client import get_services_for_user_in_product
@@ -259,7 +260,7 @@ async def get_active_project(request: web.Request) -> web.Response:
 
         data = ProjectGet.from_domain_model(project).data(exclude_unset=True)
 
-    return web.json_response({"data": data}, dumps=json_dumps)
+    return envelope_json_response(data)
 
 
 @routes.get(f"/{VTAG}/projects/{{project_id}}", name="get_project")
@@ -312,7 +313,7 @@ async def get_project(request: web.Request):
     await update_or_pop_permalink_in_project(request, project)
 
     data = ProjectGet.from_domain_model(project).data(exclude_unset=True)
-    return web.json_response({"data": data}, dumps=json_dumps)
+    return envelope_json_response(data)
 
 
 @routes.get(
