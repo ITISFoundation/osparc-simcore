@@ -19,16 +19,21 @@ import sqlalchemy as sa
 from aws_library.s3 import SimcoreS3API
 from faker import Faker
 from fastapi import FastAPI
-from models_library.api_schemas_storage import FileMetaDataGet, FoldersBody
 from models_library.basic_types import SHA256Str
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, NodeIDStr, SimcoreS3FileID
+from models_library.storage_schemas import FileMetaDataGet, FoldersBody
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import ByteSize, TypeAdapter
 from pytest_simcore.helpers.fastapi import url_from_operation_id
 from pytest_simcore.helpers.httpx_assert_checks import assert_status
 from pytest_simcore.helpers.logging_tools import log_context
+from pytest_simcore.helpers.storage_utils import FileIDDict, get_updated_project
+from pytest_simcore.helpers.storage_utils_file_meta_data import (
+    assert_file_meta_data_in_db,
+)
+from pytest_simcore.helpers.storage_utils_project import clone_project_data
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.aiohttp import status
 from servicelib.fastapi.long_running_tasks.client import long_running_task_request
@@ -37,11 +42,7 @@ from simcore_postgres_database.storage_models import file_meta_data
 from simcore_service_storage.models import SearchFilesQueryParams
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 from sqlalchemy.ext.asyncio import AsyncEngine
-from tests.helpers.utils_file_meta_data import assert_file_meta_data_in_db
-from tests.helpers.utils_project import clone_project_data
 from yarl import URL
-
-from ..helpers.utils import get_updated_project
 
 pytest_simcore_core_services_selection = ["postgres"]
 pytest_simcore_ops_services_selection = ["adminer", "minio"]
@@ -213,7 +214,7 @@ async def test_copy_folders_from_valid_project_with_one_large_file(
         Awaitable[
             tuple[
                 dict[str, Any],
-                dict[NodeID, dict[SimcoreS3FileID, dict[str, Path | str]]],
+                dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],
             ]
         ],
     ],
@@ -257,7 +258,7 @@ async def test_copy_folders_from_valid_project_with_one_large_file(
                 sqlalchemy_async_engine,
                 file_id=TypeAdapter(SimcoreS3FileID).validate_python(
                     f"{src_file_id}".replace(
-                        src_project["uuid"], dst_project["uuid"]
+                        f"{src_project['uuid']}", dst_project["uuid"]
                     ).replace(f"{src_node_id}", f"{dst_node_id}")
                 ),
                 expected_entry_exists=True,
@@ -283,7 +284,7 @@ async def test_copy_folders_from_valid_project(
         Awaitable[
             tuple[
                 dict[str, Any],
-                dict[NodeID, dict[SimcoreS3FileID, dict[str, Path | SHA256Str]]],
+                dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],
             ]
         ],
     ],
@@ -321,7 +322,7 @@ async def test_copy_folders_from_valid_project(
                 sqlalchemy_async_engine,
                 file_id=TypeAdapter(SimcoreS3FileID).validate_python(
                     f"{src_file_id}".replace(
-                        src_project["uuid"], dst_project["uuid"]
+                        f"{src_project['uuid']}", dst_project["uuid"]
                     ).replace(f"{src_node_id}", f"{dst_node_id}")
                 ),
                 expected_entry_exists=True,
@@ -402,27 +403,6 @@ async def _create_and_delete_folders_from_project(
 def set_log_levels_for_noisy_libraries() -> None:
     # Reduce the log level for 'werkzeug'
     logging.getLogger("werkzeug").setLevel(logging.WARNING)
-
-
-@pytest.fixture
-async def with_random_project_with_files(
-    random_project_with_files: Callable[
-        ...,
-        Awaitable[
-            tuple[
-                dict[str, Any],
-                dict[NodeID, dict[SimcoreS3FileID, dict[str, Path | str]]],
-            ]
-        ],
-    ],
-) -> tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, dict[str, Path | str]]],]:
-    return await random_project_with_files(
-        file_sizes=(
-            TypeAdapter(ByteSize).validate_python("1Mib"),
-            TypeAdapter(ByteSize).validate_python("2Mib"),
-            TypeAdapter(ByteSize).validate_python("5Mib"),
-        )
-    )
 
 
 async def test_connect_to_external(

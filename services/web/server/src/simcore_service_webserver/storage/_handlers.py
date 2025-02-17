@@ -9,13 +9,13 @@ from typing import Any, Final, NamedTuple
 from urllib.parse import quote, unquote
 
 from aiohttp import ClientTimeout, web
-from models_library.api_schemas_storage import (
+from models_library.projects_nodes_io import LocationID
+from models_library.storage_schemas import (
     FileUploadCompleteResponse,
     FileUploadCompletionBody,
     FileUploadSchema,
     LinkType,
 )
-from models_library.projects_nodes_io import LocationID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import AnyUrl, BaseModel, ByteSize, TypeAdapter
 from servicelib.aiohttp import status

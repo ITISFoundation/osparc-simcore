@@ -12,7 +12,7 @@ import sys
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import AbstractAsyncContextManager, asynccontextmanager
 from pathlib import Path
-from typing import Final, cast
+from typing import Any, Final, cast
 
 import httpx
 import pytest
@@ -23,7 +23,11 @@ from aws_library.s3 import SimcoreS3API
 from faker import Faker
 from fakeredis.aioredis import FakeRedis
 from fastapi import FastAPI
-from models_library.api_schemas_storage import (
+from models_library.basic_types import SHA256Str
+from models_library.projects import ProjectID
+from models_library.projects_nodes import NodeID
+from models_library.projects_nodes_io import LocationID, SimcoreS3FileID
+from models_library.storage_schemas import (
     FileMetaDataGet,
     FileUploadCompleteFutureResponse,
     FileUploadCompleteResponse,
@@ -33,10 +37,6 @@ from models_library.api_schemas_storage import (
     LinkType,
     UploadedPart,
 )
-from models_library.basic_types import SHA256Str
-from models_library.projects import ProjectID
-from models_library.projects_nodes import NodeID
-from models_library.projects_nodes_io import LocationID, SimcoreS3FileID
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import ByteSize, TypeAdapter
@@ -46,6 +46,10 @@ from pytest_simcore.helpers.httpx_assert_checks import assert_status
 from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.monkeypatch_envs import delenvs_from_dict, setenvs_from_dict
 from pytest_simcore.helpers.s3 import upload_file_to_presigned_link
+from pytest_simcore.helpers.storage_utils import FileIDDict
+from pytest_simcore.helpers.storage_utils_file_meta_data import (
+    assert_file_meta_data_in_db,
+)
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.aiohttp import status
 from simcore_postgres_database.storage_models import file_meta_data, projects, users
@@ -63,7 +67,6 @@ from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
-from tests.helpers.utils_file_meta_data import assert_file_meta_data_in_db
 from types_aiobotocore_s3 import S3Client
 from yarl import URL
 
@@ -81,8 +84,8 @@ pytest_plugins = [
     "pytest_simcore.postgres_service",
     "pytest_simcore.pytest_global_environs",
     "pytest_simcore.repository_paths",
-    "tests.fixtures.data_models",
-    "tests.fixtures.datcore_adapter",
+    "pytest_simcore.simcore_storage_data_models",
+    "pytest_simcore.simcore_storage_datcore_adapter",
 ]
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
@@ -141,10 +144,18 @@ async def storage_s3_bucket(app_settings: ApplicationSettings) -> str:
 
 
 @pytest.fixture
+async def mock_rabbit_setup(mocker: MockerFixture) -> MockerFixture:
+    mocker.patch("simcore_service_storage.core.application.setup_rabbitmq")
+    mocker.patch("simcore_service_storage.core.application.setup_rpc_api_routes")
+    return mocker
+
+
+@pytest.fixture
 def app_environment(
     mock_env_devel_environment: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
     external_envfile_dict: EnvVarsDict,
+    mock_rabbit_setup: MockerFixture,
 ) -> EnvVarsDict:
     if external_envfile_dict:
         delenvs_from_dict(monkeypatch, mock_env_devel_environment, raising=False)
@@ -623,3 +634,24 @@ async def create_directory_with_files(
         await delete_directory(directory_file_upload=directory_file_upload)
 
     return _create_context
+
+
+@pytest.fixture
+async def with_random_project_with_files(
+    random_project_with_files: Callable[
+        ...,
+        Awaitable[
+            tuple[
+                dict[str, Any],
+                dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],
+            ]
+        ],
+    ],
+) -> tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],]:
+    return await random_project_with_files(
+        file_sizes=(
+            TypeAdapter(ByteSize).validate_python("1Mib"),
+            TypeAdapter(ByteSize).validate_python("2Mib"),
+            TypeAdapter(ByteSize).validate_python("5Mib"),
+        )
+    )

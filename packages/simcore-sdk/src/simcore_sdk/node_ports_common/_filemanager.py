@@ -2,7 +2,9 @@ import logging
 from typing import cast
 
 from aiohttp import ClientError, ClientSession
-from models_library.api_schemas_storage import (
+from models_library.generics import Envelope
+from models_library.projects_nodes_io import LocationID, LocationName
+from models_library.storage_schemas import (
     ETag,
     FileUploadCompleteFutureResponse,
     FileUploadCompleteResponse,
@@ -10,8 +12,6 @@ from models_library.api_schemas_storage import (
     FileUploadCompletionBody,
     UploadedPart,
 )
-from models_library.generics import Envelope
-from models_library.projects_nodes_io import LocationID, LocationName
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import AnyUrl, TypeAdapter

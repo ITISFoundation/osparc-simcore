@@ -24,7 +24,12 @@ from models_library.api_schemas_webserver.wallets import (
 )
 from models_library.basic_types import IDStr, NonNegativeDecimal
 from models_library.groups import GroupID
-from models_library.licenses import LicensedItemID, LicensedResourceType
+from models_library.licenses import (
+    LicensedItemID,
+    LicensedItemKey,
+    LicensedItemVersion,
+    LicensedResourceType,
+)
 from models_library.products import ProductName
 from models_library.resource_tracker import (
     PricingPlanClassification,
@@ -137,10 +142,13 @@ assert set(ServicePricingPlanGetLegacy.model_fields.keys()) == set(
 
 class LicensedItemGet(BaseModel):
     licensed_item_id: LicensedItemID
+    key: LicensedItemKey
+    version: LicensedItemVersion
     display_name: str
     licensed_resource_type: LicensedResourceType
-    licensed_resource_data: dict[str, Any]
+    licensed_resources: list[dict[str, Any]]
     pricing_plan_id: PricingPlanId
+    is_hidden_on_market: bool
     created_at: datetime
     modified_at: datetime
     model_config = ConfigDict(
@@ -156,6 +164,8 @@ assert set(LicensedItemGet.model_fields.keys()) == set(
 class LicensedItemCheckoutGet(BaseModel):
     licensed_item_checkout_id: LicensedItemCheckoutID
     licensed_item_id: LicensedItemID
+    key: LicensedItemKey
+    version: LicensedItemVersion
     wallet_id: WalletID
     user_id: UserID
     product_name: ProductName

@@ -26,8 +26,9 @@ from simcore_sdk.node_ports_common import r_clone
 pytest_simcore_core_services_selection = [
     "migration",
     "postgres",
-    "storage",
+    "rabbit",
     "redis",
+    "storage",
 ]
 
 pytest_simcore_ops_services_selection = [

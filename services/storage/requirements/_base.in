@@ -23,6 +23,7 @@ httpx
 opentelemetry-instrumentation-botocore
 packaging
 fastapi[all]
+fastapi-pagination
 orjson
 pydantic[dotenv]
 tenacity

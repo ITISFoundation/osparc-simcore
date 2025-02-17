@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from models_library.licenses import LicensedItemID
+from models_library.licenses import LicensedItemID, LicensedItemKey, LicensedItemVersion
 from models_library.products import ProductName
 from models_library.resource_tracker_licensed_items_checkouts import (
     LicensedItemCheckoutID,
@@ -14,6 +14,8 @@ from pydantic import BaseModel, ConfigDict
 class LicensedItemCheckoutDB(BaseModel):
     licensed_item_checkout_id: LicensedItemCheckoutID
     licensed_item_id: LicensedItemID
+    key: LicensedItemKey
+    version: LicensedItemVersion
     wallet_id: WalletID
     user_id: UserID
     user_email: str
@@ -29,6 +31,8 @@ class LicensedItemCheckoutDB(BaseModel):
 
 class CreateLicensedItemCheckoutDB(BaseModel):
     licensed_item_id: LicensedItemID
+    key: LicensedItemKey
+    version: LicensedItemVersion
     wallet_id: WalletID
     user_id: UserID
     user_email: str

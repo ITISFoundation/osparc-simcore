@@ -50,7 +50,7 @@ qx.Class.define("osparc.desktop.MainPage", {
     const navBar = this.__navBar = new osparc.navigation.NavigationBar();
     navBar.populateLayout();
     navBar.addListener("backToDashboardPressed", () => this.__backToDashboardPressed(), this);
-    navBar.addListener("downloadStudyLogs", () => this.__downloadStudyLogs(), this);
+    navBar.addListener("openLogger", () => this.__openLogger(), this);
     this._add(navBar);
 
     // Some resources request before building the main stack
@@ -67,6 +67,7 @@ qx.Class.define("osparc.desktop.MainPage", {
     }
     preloadPromises.push(store.getAllClassifiers(true));
     preloadPromises.push(osparc.store.Tags.getInstance().fetchTags());
+    preloadPromises.push(osparc.store.Products.getInstance().fetchUiConfig());
     Promise.all(preloadPromises)
       .then(() => {
         const mainStack = this.__createMainStack();
@@ -171,9 +172,9 @@ qx.Class.define("osparc.desktop.MainPage", {
       }
     },
 
-    __downloadStudyLogs: function() {
+    __openLogger: function() {
       if (this.__studyEditor) {
-        this.__studyEditor.getStudyLogger().downloadLogs();
+        osparc.ui.window.Window.popUpInWindow(this.__studyEditor.getStudyLogger(), this.tr("Platform logger"), 950, 650);
       }
     },
 
@@ -199,6 +200,11 @@ qx.Class.define("osparc.desktop.MainPage", {
 
     __createDashboardLayout: function() {
       const dashboard = this.__dashboard = new osparc.dashboard.Dashboard();
+      const tabsBar = dashboard.getChildControl("bar");
+      tabsBar.set({
+        paddingBottom: 6
+      });
+      this.__navBar.addDashboardTabButtons(tabsBar);
       const dashboardLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
       dashboardLayout.add(dashboard, {
         flex: 1

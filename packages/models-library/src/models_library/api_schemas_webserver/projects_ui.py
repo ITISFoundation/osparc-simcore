@@ -18,9 +18,9 @@ from typing_extensions import (  # https://docs.pydantic.dev/latest/api/standard
     TypedDict,
 )
 
-from .projects_nodes_io import NodeID, NodeIDStr
+from ..projects_nodes_io import NodeID, NodeIDStr
+from ..utils.common_validators import empty_str_to_none_pre_validator
 from .projects_nodes_ui import MarkerUI, PositionUI
-from .utils.common_validators import empty_str_to_none_pre_validator
 
 
 class WorkbenchUI(BaseModel):

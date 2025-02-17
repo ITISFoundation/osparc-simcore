@@ -10,6 +10,10 @@ class ProductError(WebServerBaseError, ValueError):
     ...
 
 
+class ProductNotFoundError(ProductError):
+    msg_template = "Undefined product '{product_name}'"
+
+
 class ProductPriceNotDefinedError(ProductError):
     msg_template = "Product price not defined. {reason}"
 

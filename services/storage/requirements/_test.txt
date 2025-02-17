@@ -85,7 +85,7 @@ docker==7.1.0
     # via
     #   -r requirements/_test.in
     #   moto
-faker==35.2.0
+faker==36.1.0
     # via -r requirements/_test.in
 fakeredis==2.26.2
     # via -r requirements/_test.in
@@ -266,7 +266,6 @@ python-dateutil==2.9.0.post0
     # via
     #   -c requirements/_base.txt
     #   botocore
-    #   faker
     #   moto
     #   pandas
     #   simcore-service-storage-sdk
@@ -357,7 +356,6 @@ typing-extensions==4.12.2
     #   asyncpg-stubs
     #   aws-sam-translator
     #   cfn-lint
-    #   faker
     #   mypy
     #   pydantic
     #   pydantic-core
@@ -365,6 +363,7 @@ typing-extensions==4.12.2
 tzdata==2025.1
     # via
     #   -c requirements/_base.txt
+    #   faker
     #   pandas
 urllib3==2.3.0
     # via

@@ -26,7 +26,10 @@ from aws_library.s3 import S3KeyNotFoundError, S3ObjectKey, SimcoreS3API
 from aws_library.s3._constants import MULTIPART_UPLOADS_MIN_TOTAL_SIZE
 from faker import Faker
 from fastapi import FastAPI
-from models_library.api_schemas_storage import (
+from models_library.basic_types import SHA256Str
+from models_library.projects import ProjectID
+from models_library.projects_nodes_io import LocationID, NodeID, SimcoreS3FileID
+from models_library.storage_schemas import (
     FileMetaDataGet,
     FileUploadCompleteFutureResponse,
     FileUploadCompleteResponse,
@@ -38,9 +41,6 @@ from models_library.api_schemas_storage import (
     SoftCopyBody,
     UploadedPart,
 )
-from models_library.basic_types import SHA256Str
-from models_library.projects import ProjectID
-from models_library.projects_nodes_io import LocationID, NodeID, SimcoreS3FileID
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import AnyUrl, ByteSize, TypeAdapter
@@ -50,6 +50,10 @@ from pytest_simcore.helpers.httpx_assert_checks import assert_status
 from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.parametrizations import byte_size_ids
 from pytest_simcore.helpers.s3 import upload_file_part, upload_file_to_presigned_link
+from pytest_simcore.helpers.storage_utils import FileIDDict
+from pytest_simcore.helpers.storage_utils_file_meta_data import (
+    assert_file_meta_data_in_db,
+)
 from servicelib.aiohttp import status
 from simcore_service_storage.constants import S3_UNDEFINED_OR_EXTERNAL_MULTIPART_ID
 from simcore_service_storage.models import FileDownloadResponse, S3BucketName, UploadID
@@ -61,7 +65,6 @@ from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
-from tests.helpers.utils_file_meta_data import assert_file_meta_data_in_db
 from types_aiobotocore_s3 import S3Client
 from yarl import URL
 
@@ -1482,13 +1485,13 @@ async def test_listing_with_project_id_filter(
         Awaitable[
             tuple[
                 dict[str, Any],
-                dict[NodeID, dict[SimcoreS3FileID, dict[str, Path | str]]],
+                dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],
             ]
         ],
     ],
     uuid_filter: bool,
 ):
-    project, src_projects_list = await random_project_with_files(
+    src_project, src_projects_list = await random_project_with_files(
         num_nodes=1,
         file_sizes=(ByteSize(1),),
         file_checksums=(TypeAdapter(SHA256Str).validate_python(faker.sha256()),),
@@ -1502,12 +1505,12 @@ async def test_listing_with_project_id_filter(
     node_id = next(iter(src_projects_list.keys()))
     project_files_in_db = set(src_projects_list[node_id])
     assert len(project_files_in_db) > 0
-    project_id = project["uuid"]
+    project_id = src_project["uuid"]
     project_file_name = Path(choice(list(project_files_in_db))).name  # noqa: S311
 
     query = {
         "user_id": user_id,
-        "project_id": project_id,
+        "project_id": f"{project_id}",
         "uuid_filter": project_file_name if uuid_filter else None,
     }
 

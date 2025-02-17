@@ -316,6 +316,22 @@ services:
         org.opencontainers.image.revision: "${VCS_REF}"
         io.osparc.api-version: "${DYNAMIC_SCHEDULER_API_VERSION}"
 
+  docker-api-proxy:
+    image: local/docker-api-proxy:${BUILD_TARGET:?build_target_required}
+    build:
+      context: ../
+      dockerfile: services/docker-api-proxy/Dockerfile
+      cache_from:
+        - local/docker-api-proxy:${BUILD_TARGET:?build_target_required}
+        - ${DOCKER_REGISTRY:-itisfoundation}/docker-api-proxy:master-github-latest
+        - ${DOCKER_REGISTRY:-itisfoundation}/docker-api-proxy:staging-github-latest
+        - ${DOCKER_REGISTRY:-itisfoundation}/docker-api-proxy:release-github-latest
+      target: ${BUILD_TARGET:?build_target_required}
+      labels:
+        org.opencontainers.image.created: "${BUILD_DATE}"
+        org.opencontainers.image.source: "${VCS_URL}"
+        org.opencontainers.image.revision: "${VCS_REF}"
+
   datcore-adapter:
     image: local/datcore-adapter:${BUILD_TARGET:?build_target_required}
     build:

@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: simcore-service-webserver
   description: Main service with an interface (http-API & websockets) to the web front-end
-  version: 0.56.0
+  version: 0.57.0
 servers:
 - url: ''
   description: webserver
@@ -1114,6 +1114,8 @@ paths:
       - products
       - po
       summary: Get Product
+      description: 'NOTE: `/products/current` is used to define current project w/o
+        naming it'
       operationId: get_product
       parameters:
       - name: product_name
@@ -1133,7 +1135,20 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_GetProduct_'
+                $ref: '#/components/schemas/Envelope_ProductGet_'
+  /v0/products/current/ui:
+    get:
+      tags:
+      - products
+      summary: Get Current Product Ui
+      operationId: get_current_product_ui
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_ProductUIGet_'
   /v0/products/{product_name}/templates/{template_id}:
     put:
       tags:
@@ -3126,52 +3141,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Bad Request
-  /v0/catalog/licensed-items/{licensed_item_id}:
-    get:
-      tags:
-      - licenses
-      - catalog
-      summary: Get Licensed Item
-      operationId: get_licensed_item
-      parameters:
-      - name: licensed_item_id
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
-          title: Licensed Item Id
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_LicensedItemRestGet_'
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
-          description: Not Found
-        '403':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
-          description: Forbidden
-        '402':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
-          description: Payment Required
-        '400':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
-          description: Bad Request
   /v0/catalog/licensed-items/{licensed_item_id}:purchase:
     post:
       tags:
@@ -3194,8 +3163,12 @@ paths:
             schema:
               $ref: '#/components/schemas/LicensedItemsBodyParams'
       responses:
-        '204':
+        '200':
           description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LicensedItemPurchaseGet'
         '404':
           content:
             application/json:
@@ -5670,7 +5643,7 @@ paths:
             application/json:
               schema:
                 items:
-                  $ref: '#/components/schemas/DatasetMetaData'
+                  $ref: '#/components/schemas/FileLocation'
                 type: array
                 title: Response List Storage Locations
   /v0/storage/locations/{location_id}/datasets:
@@ -7909,19 +7882,6 @@ components:
           title: Error
       type: object
       title: Envelope[GetCreditPrice]
-    Envelope_GetProduct_:
-      properties:
-        data:
-          anyOf:
-          - $ref: '#/components/schemas/GetProduct'
-          - type: 'null'
-        error:
-          anyOf:
-          - {}
-          - type: 'null'
-          title: Error
-      type: object
-      title: Envelope[GetProduct]
     Envelope_GetProjectInactivityResponse_:
       properties:
         data:
@@ -8026,19 +7986,6 @@ components:
           title: Error
       type: object
       title: Envelope[LicensedItemPurchaseGet]
-    Envelope_LicensedItemRestGet_:
-      properties:
-        data:
-          anyOf:
-          - $ref: '#/components/schemas/LicensedItemRestGet'
-          - type: 'null'
-        error:
-          anyOf:
-          - {}
-          - type: 'null'
-          title: Error
-      type: object
-      title: Envelope[LicensedItemRestGet]
     Envelope_Log_:
       properties:
         data:
@@ -8234,6 +8181,32 @@ components:
           title: Error
       type: object
       title: Envelope[PricingUnitGet]
+    Envelope_ProductGet_:
+      properties:
+        data:
+          anyOf:
+          - $ref: '#/components/schemas/ProductGet'
+          - type: 'null'
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[ProductGet]
+    Envelope_ProductUIGet_:
+      properties:
+        data:
+          anyOf:
+          - $ref: '#/components/schemas/ProductUIGet'
+          - type: 'null'
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[ProductUIGet]
     Envelope_ProjectGet_:
       properties:
         data:
@@ -9296,6 +9269,20 @@ components:
       required:
       - date
       title: FeaturesDict
+    FileLocation:
+      properties:
+        name:
+          type: string
+          title: Name
+        id:
+          type: integer
+          title: Id
+      additionalProperties: false
+      type: object
+      required:
+      - name
+      - id
+      title: FileLocation
     FileMetaData:
       properties:
         file_uuid:
@@ -9697,84 +9684,6 @@ components:
       - usdPerCredit
       - minPaymentAmountUsd
       title: GetCreditPrice
-    GetProduct:
-      properties:
-        name:
-          type: string
-          title: Name
-        displayName:
-          type: string
-          title: Displayname
-        shortName:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Shortname
-          description: Short display name for SMS
-        vendor:
-          anyOf:
-          - type: object
-          - type: 'null'
-          title: Vendor
-          description: vendor attributes
-        issues:
-          anyOf:
-          - items:
-              type: object
-            type: array
-          - type: 'null'
-          title: Issues
-          description: Reference to issues tracker
-        manuals:
-          anyOf:
-          - items:
-              type: object
-            type: array
-          - type: 'null'
-          title: Manuals
-          description: List of manuals
-        support:
-          anyOf:
-          - items:
-              type: object
-            type: array
-          - type: 'null'
-          title: Support
-          description: List of support resources
-        loginSettings:
-          type: object
-          title: Loginsettings
-        maxOpenStudiesPerUser:
-          anyOf:
-          - type: integer
-            exclusiveMinimum: true
-            minimum: 0
-          - type: 'null'
-          title: Maxopenstudiesperuser
-        isPaymentEnabled:
-          type: boolean
-          title: Ispaymentenabled
-        creditsPerUsd:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Creditsperusd
-        templates:
-          items:
-            $ref: '#/components/schemas/GetProductTemplate'
-          type: array
-          title: Templates
-          description: List of templates available to this product for communications
-            (e.g. emails, sms, etc)
-      type: object
-      required:
-      - name
-      - displayName
-      - loginSettings
-      - maxOpenStudiesPerUser
-      - isPaymentEnabled
-      - creditsPerUsd
-      title: GetProduct
     GetProductTemplate:
       properties:
         id:
@@ -10198,6 +10107,13 @@ components:
           type: string
           format: uuid
           title: Licenseditemid
+        key:
+          type: string
+          title: Key
+        version:
+          type: string
+          pattern: ^\d+\.\d+\.\d+$
+          title: Version
         walletId:
           type: integer
           exclusiveMinimum: true
@@ -10244,6 +10160,8 @@ components:
       - licensedItemPurchaseId
       - productName
       - licensedItemId
+      - key
+      - version
       - walletId
       - pricingUnitCostId
       - pricingUnitCost
@@ -10261,18 +10179,46 @@ components:
           type: string
           format: uuid
           title: Licenseditemid
+        key:
+          type: string
+          title: Key
+        version:
+          type: string
+          pattern: ^\d+\.\d+\.\d+$
+          title: Version
         displayName:
           type: string
           title: Displayname
         licensedResourceType:
           $ref: '#/components/schemas/LicensedResourceType'
-        licensedResourceData:
-          $ref: '#/components/schemas/_ItisVipResourceRestData'
+        licensedResources:
+          items:
+            $ref: '#/components/schemas/_ItisVipResourceRestData'
+          type: array
+          title: Licensedresources
         pricingPlanId:
           type: integer
           exclusiveMinimum: true
           title: Pricingplanid
           minimum: 0
+        categoryId:
+          type: string
+          maxLength: 100
+          minLength: 1
+          title: Categoryid
+        categoryDisplay:
+          type: string
+          title: Categorydisplay
+        categoryIcon:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Categoryicon
+        termsOfUseUrl:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Termsofuseurl
         createdAt:
           type: string
           format: date-time
@@ -10284,10 +10230,14 @@ components:
       type: object
       required:
       - licensedItemId
+      - key
+      - version
       - displayName
       - licensedResourceType
-      - licensedResourceData
+      - licensedResources
       - pricingPlanId
+      - categoryId
+      - categoryDisplay
       - createdAt
       - modifiedAt
       title: LicensedItemRestGet
@@ -10824,7 +10774,7 @@ components:
           description: Parent's (group-nodes') node ID s. Used to group
         position:
           anyOf:
-          - $ref: '#/components/schemas/PositionUI'
+          - $ref: '#/components/schemas/Position'
           - type: 'null'
           description: Use projects_ui.WorkbenchUI.position instead
           deprecated: true
@@ -10953,7 +10903,7 @@ components:
           description: Parent's (group-nodes') node ID s. Used to group
         position:
           anyOf:
-          - $ref: '#/components/schemas/PositionUI'
+          - $ref: '#/components/schemas/Position'
           - type: 'null'
           description: Use projects_ui.WorkbenchUI.position instead
           deprecated: true
@@ -11765,7 +11715,7 @@ components:
       title: PortLink
       description: I/O port type to reference to an output port of another node in
         the same project
-    PositionUI:
+    Position:
       properties:
         x:
           type: integer
@@ -11780,7 +11730,7 @@ components:
       required:
       - x
       - y
-      title: PositionUI
+      title: Position
     PreRegisteredUserGet:
       properties:
         firstName:
@@ -12046,6 +11996,98 @@ components:
       - currentCostPerUnit
       - default
       title: PricingUnitGet
+    ProductGet:
+      properties:
+        name:
+          type: string
+          title: Name
+        displayName:
+          type: string
+          title: Displayname
+        shortName:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Shortname
+          description: Short display name for SMS
+        vendor:
+          anyOf:
+          - type: object
+          - type: 'null'
+          title: Vendor
+          description: vendor attributes
+        issues:
+          anyOf:
+          - items:
+              type: object
+            type: array
+          - type: 'null'
+          title: Issues
+          description: Reference to issues tracker
+        manuals:
+          anyOf:
+          - items:
+              type: object
+            type: array
+          - type: 'null'
+          title: Manuals
+          description: List of manuals
+        support:
+          anyOf:
+          - items:
+              type: object
+            type: array
+          - type: 'null'
+          title: Support
+          description: List of support resources
+        loginSettings:
+          type: object
+          title: Loginsettings
+        maxOpenStudiesPerUser:
+          anyOf:
+          - type: integer
+            exclusiveMinimum: true
+            minimum: 0
+          - type: 'null'
+          title: Maxopenstudiesperuser
+        isPaymentEnabled:
+          type: boolean
+          title: Ispaymentenabled
+        creditsPerUsd:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Creditsperusd
+        templates:
+          items:
+            $ref: '#/components/schemas/GetProductTemplate'
+          type: array
+          title: Templates
+          description: List of templates available to this product for communications
+            (e.g. emails, sms, etc)
+      type: object
+      required:
+      - name
+      - displayName
+      - loginSettings
+      - maxOpenStudiesPerUser
+      - isPaymentEnabled
+      - creditsPerUsd
+      title: ProductGet
+    ProductUIGet:
+      properties:
+        productName:
+          type: string
+          title: Productname
+        ui:
+          type: object
+          title: Ui
+          description: Front-end owned ui product configuration
+      type: object
+      required:
+      - productName
+      - ui
+      title: ProductUIGet
     ProjectCopyOverride:
       properties:
         name:
@@ -14658,7 +14700,7 @@ components:
     WorkbenchUI:
       properties:
         position:
-          $ref: '#/components/schemas/PositionUI'
+          $ref: '#/components/schemas/Position'
           description: The node position in the workbench
         marker:
           anyOf:
@@ -14843,30 +14885,10 @@ components:
       title: _ComputationStarted
     _ItisVipResourceRestData:
       properties:
-        categoryId:
-          type: string
-          maxLength: 100
-          minLength: 1
-          title: Categoryid
-        categoryDisplay:
-          type: string
-          title: Categorydisplay
-        categoryIcon:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Categoryicon
         source:
           $ref: '#/components/schemas/_ItisVipRestData'
-        termsOfUseUrl:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Termsofuseurl
       type: object
       required:
-      - categoryId
-      - categoryDisplay
       - source
       title: _ItisVipResourceRestData
     _ItisVipRestData:
@@ -14887,6 +14909,9 @@ components:
           - type: string
           - type: 'null'
           title: Doi
+        licenseVersion:
+          type: string
+          title: Licenseversion
       type: object
       required:
       - id
@@ -14894,6 +14919,7 @@ components:
       - thumbnail
       - features
       - doi
+      - licenseVersion
       title: _ItisVipRestData
     _PageParams:
       properties:
