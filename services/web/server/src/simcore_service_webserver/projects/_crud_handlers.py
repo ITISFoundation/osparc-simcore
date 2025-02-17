@@ -44,7 +44,7 @@ from ..security.api import check_user_permission
 from ..security.decorators import permission_required
 from ..users.api import get_user_fullname
 from . import _crud_api_create, _crud_api_read, _crud_handlers_utils, projects_service
-from ._common.exception_handlers import handle_plugin_requests_exceptions
+from ._common.exceptions_handlers import handle_plugin_requests_exceptions
 from ._common.models import ProjectPathParams, RequestContext
 from ._crud_handlers_models import (
     ProjectActiveQueryParams,

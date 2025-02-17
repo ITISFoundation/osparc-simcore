@@ -13,7 +13,7 @@ from .._meta import API_VTAG
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from . import _tags_api as tags_api
-from ._common.exception_handlers import handle_plugin_requests_exceptions
+from ._common.exceptions_handlers import handle_plugin_requests_exceptions
 
 _logger = logging.getLogger(__name__)
 

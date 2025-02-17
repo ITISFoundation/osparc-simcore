@@ -31,7 +31,7 @@ from ..login.decorators import login_required
 from ..projects._access_rights_api import check_user_project_permission
 from ..security.decorators import permission_required
 from . import _ports_api, projects_service
-from ._common.exception_handlers import handle_plugin_requests_exceptions
+from ._common.exceptions_handlers import handle_plugin_requests_exceptions
 from ._common.models import ProjectPathParams, RequestContext
 from .db import ProjectDBAPI
 from .models import ProjectDict

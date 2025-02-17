@@ -12,7 +12,7 @@ from .._meta import api_version_prefix as VTAG
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from . import _folders_api
-from ._common.exception_handlers import handle_plugin_requests_exceptions
+from ._common.exceptions_handlers import handle_plugin_requests_exceptions
 from ._common.models import RequestContext
 
 _logger = logging.getLogger(__name__)

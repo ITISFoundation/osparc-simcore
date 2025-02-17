@@ -23,7 +23,7 @@ from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from . import _wallets_api as wallets_api
 from . import projects_service
-from ._common.exception_handlers import handle_plugin_requests_exceptions
+from ._common.exceptions_handlers import handle_plugin_requests_exceptions
 from ._common.models import ProjectPathParams, RequestContext
 
 _logger = logging.getLogger(__name__)

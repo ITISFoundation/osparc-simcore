@@ -31,7 +31,7 @@ from ..users import api
 from ..utils_aiohttp import envelope_json_response
 from . import api as projects_api
 from . import projects_service
-from ._common.exception_handlers import handle_plugin_requests_exceptions
+from ._common.exceptions_handlers import handle_plugin_requests_exceptions
 from ._common.models import ProjectPathParams, RequestContext
 from .exceptions import ProjectStartsTooManyDynamicNodesError
 
