@@ -141,9 +141,9 @@ def get_random_export_name(user_id: UserID) -> StorageFileID:
 async def create_and_upload_export(
     s3_client: SimcoreS3API,
     bucket: S3BucketName,
-    object_keys: set[StorageFileID],
-    uploaded_object_key: StorageFileID,
     *,
+    source_object_keys: set[StorageFileID],
+    destination_object_keys: StorageFileID,
     progress_bar: ProgressBarData | None,
 ) -> None:
     if progress_bar is None:
@@ -152,7 +152,7 @@ async def create_and_upload_export(
         )
 
     archive_entries: ArchiveEntries = []
-    for s3_object in object_keys:
+    for s3_object in source_object_keys:
         archive_entries.append(
             (
                 s3_object,
@@ -163,7 +163,7 @@ async def create_and_upload_export(
     async with progress_bar:
         await s3_client.upload_object_from_file_like(
             bucket,
-            uploaded_object_key,
+            destination_object_keys,
             FileLikeBytesIterReader(
                 get_zip_bytes_iter(
                     archive_entries,
