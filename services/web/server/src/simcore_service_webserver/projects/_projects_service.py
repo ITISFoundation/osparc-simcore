@@ -16,12 +16,10 @@ from collections import defaultdict
 from collections.abc import Generator
 from contextlib import suppress
 from decimal import Decimal
-from pprint import pformat
 from typing import Any, Final, cast
 from uuid import UUID, uuid4
 
 from aiohttp import web
-from common_library.json_serialization import json_dumps
 from models_library.api_schemas_clusters_keeper.ec2_instances import EC2InstanceTypeGet
 from models_library.api_schemas_directorv2.dynamic_services import (
     GetProjectInactivityResponse,
@@ -69,7 +67,7 @@ from servicelib.common_headers import (
     X_FORWARDED_PROTO,
     X_SIMCORE_USER_AGENT,
 )
-from servicelib.logging_utils import get_log_record_extra, log_context
+from servicelib.logging_utils import get_log_record_extra, log_context, log_decorator
 from servicelib.rabbitmq import RemoteMethodNotRegisteredError, RPCServerError
 from servicelib.rabbitmq.rpc_interfaces.catalog import services as catalog_rpc
 from servicelib.rabbitmq.rpc_interfaces.clusters_keeper.ec2_instances import (
@@ -156,7 +154,7 @@ from .models import PermissionStr, ProjectDict, ProjectPatchInternalExtended
 from .settings import ProjectsSettings, get_plugin_settings
 from .utils import extract_dns_without_default_port
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 PROJECT_REDIS_LOCK_KEY: str = "project:{}"
 
@@ -374,7 +372,7 @@ async def submit_delete_project_task(
             user_id,
             simcore_user_agent,
             remove_project_dynamic_services,
-            log,
+            _logger,
         )
     return task
 
@@ -475,7 +473,7 @@ async def update_project_node_resources_from_hardware_info(
                     service_to_resources[1].resources["RAM"].limit
                 ),
             )
-            log.debug(
+            _logger.debug(
                 "the most hungry service is %s",
                 f"{scalable_service_name=}:{hungry_service_resources}",
             )
@@ -612,7 +610,7 @@ async def _start_dynamic_service(  # noqa: C901
         )
     except ProjectNodeRequiredInputsNotSetError as e:
         if graceful_start:
-            log.info(
+            _logger.info(
                 "Did not start '%s' because of missing required inputs: %s",
                 node_uuid,
                 e,
@@ -799,7 +797,7 @@ async def add_project_node(
     service_version: ServiceVersion,
     service_id: str | None,
 ) -> NodeID:
-    log.debug(
+    _logger.debug(
         "starting node %s:%s in project %s for user %s",
         service_key,
         service_version,
@@ -926,7 +924,7 @@ async def delete_project_node(
     node_uuid: NodeIDStr,
     product_name: ProductName,
 ) -> None:
-    log.debug(
+    _logger.debug(
         "deleting node %s in project %s for user %s", node_uuid, project_uuid, user_id
     )
 
@@ -978,7 +976,9 @@ async def delete_project_node(
 async def update_project_linked_product(
     app: web.Application, project_id: ProjectID, product_name: str
 ) -> None:
-    with log_context(log, level=logging.DEBUG, msg="updating project linked product"):
+    with log_context(
+        _logger, level=logging.DEBUG, msg="updating project linked product"
+    ):
         db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
         await db.upsert_project_linked_product(project_id, product_name)
 
@@ -990,7 +990,7 @@ async def update_project_node_state(
     node_id: NodeID,
     new_state: str,
 ) -> dict:
-    log.debug(
+    _logger.debug(
         "updating node %s current state in project %s for user %s",
         node_id,
         project_id,
@@ -1125,80 +1125,77 @@ async def update_project_node_outputs(
     new_outputs: dict | None,
     new_run_hash: str | None,
 ) -> tuple[dict, list[str]]:
-    """
-    Updates outputs of a given node in a project with 'data'
-    """
-    log.debug(
-        "updating node %s outputs in project %s for user %s with %s: run_hash [%s]",
-        node_id,
-        project_id,
-        user_id,
-        json_dumps(new_outputs),
-        new_run_hash,
-        extra=get_log_record_extra(user_id=user_id),
-    )
-    new_outputs = new_outputs or {}
-
-    db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
-    product_name = await db.get_project_product(project_id)
-    await check_user_project_permission(
+    updated_project, changed_keys = await _nodes_service.update_project_node_outputs(
         app,
-        project_id=project_id,
         user_id=user_id,
-        product_name=product_name,
-        permission="write",  # NOTE: MD: before only read was sufficient, double check this
-    )
-
-    updated_project, changed_entries = await db.update_project_node_data(
-        user_id=user_id,
-        project_uuid=project_id,
-        node_id=node_id,
-        product_name=None,
-        new_node_data={"outputs": new_outputs, "runHash": new_run_hash},
-    )
-
-    await _nodes_repository.update(
-        app,
         project_id=project_id,
         node_id=node_id,
-        partial_node=PartialNode.model_construct(
-            outputs=new_outputs, run_hash=new_run_hash
-        ),
-    )
-
-    log.debug(
-        "patched project %s, following entries changed: %s",
-        project_id,
-        pformat(changed_entries),
+        new_outputs=new_outputs,
+        new_run_hash=new_run_hash,
     )
     updated_project = await add_project_states_for_user(
         user_id=user_id, project=updated_project, is_template=False, app=app
     )
 
-    # changed entries come in the form of {node_uuid: {outputs: {changed_key1: value1, changed_key2: value2}}}
-    # we do want only the key names
-    changed_keys = (
-        changed_entries.get(NodeIDStr(f"{node_id}"), {}).get("outputs", {}).keys()
-    )
     return updated_project, changed_keys
 
 
-async def list_node_ids_in_project(
+@log_decorator(logger=_logger)
+async def update_node_outputs(
     app: web.Application,
+    user_id: UserID,
     project_uuid: ProjectID,
-) -> set[NodeID]:
-    """Returns a set with all the node_ids from a project's workbench"""
-    db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
-    return await db.list_node_ids_in_project(project_uuid)
+    node_uuid: NodeID,
+    outputs: dict,
+    run_hash: str | None,
+    node_errors: list[ErrorDict] | None,
+    *,
+    ui_changed_keys: set[str] | None,
+) -> None:
+    # the new outputs might be {}, or {key_name: payload}
+    project, keys_changed = await update_project_node_outputs(
+        app,
+        user_id,
+        project_uuid,
+        node_uuid,
+        new_outputs=outputs,
+        new_run_hash=run_hash,
+    )
 
+    await notify_project_node_update(app, project, node_uuid, errors=node_errors)
+    # get depending node and notify for these ones as well
+    depending_node_uuids = await _nodes_service.project_get_depending_nodes(
+        project, node_uuid
+    )
+    await logged_gather(
+        *[
+            notify_project_node_update(app, project, nid, errors=None)
+            for nid in depending_node_uuids
+        ]
+    )
 
-async def is_node_id_present_in_any_project_workbench(
-    app: web.Application,
-    node_id: NodeID,
-) -> bool:
-    """If the node_id is presnet in one of the projects' workbenche returns True"""
-    db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
-    return await db.node_id_exists(node_id)
+    # changed keys are coming from two sources:
+    # 1. updates to ports done by UI services
+    # 2. updates to ports done other services
+    #
+    # In the 1. case `keys_changed` will be empty since the version stored in the
+    # database will be the same as the as the one in the notification. No key change
+    # will be reported (in the past a side effect was causing to detect a key change,
+    # but it was now removed).
+    # When the project is updated and after the workbench was stored in the db,
+    # this method will be invoked with the `ui_changed_keys` containing all
+    # the keys which have changed.
+
+    keys: list[str] = (
+        keys_changed
+        if ui_changed_keys is None
+        else list(ui_changed_keys | set(keys_changed))
+    )
+
+    # fire&forget to notify connected nodes to retrieve its inputs **if necessary**
+    await post_trigger_connected_service_retrieve(
+        app=app, project=project, updated_node_uuid=f"{node_uuid}", changed_keys=keys
+    )
 
 
 async def _safe_retrieve(
@@ -1207,7 +1204,7 @@ async def _safe_retrieve(
     try:
         await dynamic_scheduler_api.retrieve_inputs(app, node_id, port_keys)
     except RPCServerError as exc:
-        log.warning(
+        _logger.warning(
             "Unable to call :retrieve endpoint on service %s, keys: [%s]: error: [%s]",
             node_id,
             port_keys,
@@ -1221,7 +1218,7 @@ async def _trigger_connected_service_retrieve(
     project_id = project["uuid"]
     if await is_project_locked(get_redis_lock_manager_client_sdk(app), project_id):
         # NOTE: we log warn since this function is fire&forget and raise an exception would not be anybody to handle it
-        log.warning(
+        _logger.warning(
             "Skipping service retrieval because project with %s is currently locked."
             "Operation triggered by %s",
             f"{project_id=}",
@@ -1302,7 +1299,7 @@ async def _clean_user_disconnected_clients(
     for u in users_sessions_ids:
         with managed_resource(u.user_id, u.client_session_id, app) as user_session:
             if await user_session.get_socket_id() is None:
-                log.debug(
+                _logger.debug(
                     "removing disconnected project of user %s/%s",
                     u.user_id,
                     u.client_session_id,
@@ -1427,7 +1424,7 @@ async def try_close_project_for_user(
         # first check whether other sessions registered this project
         if current_session not in all_sessions_with_project:
             # nothing to do, I do not have this project registered
-            log.warning(
+            _logger.warning(
                 "%s is not registered as resource of %s. Skipping close project",
                 f"{project_uuid=}",
                 f"{user_id}",
@@ -1436,14 +1433,14 @@ async def try_close_project_for_user(
             return
 
         # remove the project from our list of opened ones
-        log.debug(
+        _logger.debug(
             "removing project [%s] from user [%s] resources", project_uuid, user_id
         )
         await user_session.remove(key=PROJECT_ID_KEY)
 
     # check it is not opened by someone else
     all_sessions_with_project.remove(current_session)
-    log.debug("remaining user_to_session_ids: %s", all_sessions_with_project)
+    _logger.debug("remaining user_to_session_ids: %s", all_sessions_with_project)
     if not all_sessions_with_project:
         # NOTE: depending on the garbage collector speed, it might already be removing it
         fire_and_forget_task(
@@ -1454,7 +1451,7 @@ async def try_close_project_for_user(
             fire_and_forget_tasks_collection=app[APP_FIRE_AND_FORGET_TASKS_KEY],
         )
     else:
-        log.error(
+        _logger.error(
             "project [%s] is used by other users: [%s]. This should not be possible",
             project_uuid,
             {user_session.user_id for user_session in all_sessions_with_project},
@@ -1478,7 +1475,7 @@ async def _get_project_lock_state(
     4. If the same user is using the project with a valid socket id (meaning a tab is currently active) then the project is Locked and OPENED.
     5. If the same user is using the project with NO socket id (meaning there is no current tab active) then the project is Unlocked and OPENED. which means the user can open it again.
     """
-    log.debug(
+    _logger.debug(
         "getting project [%s] lock state for user [%s]...",
         f"{project_uuid=}",
         f"{user_id=}",
@@ -1487,7 +1484,7 @@ async def _get_project_lock_state(
         get_redis_lock_manager_client_sdk(app), project_uuid
     )
     if prj_locked_state:
-        log.debug(
+        _logger.debug(
             "project [%s] is locked: %s", f"{project_uuid=}", f"{prj_locked_state=}"
         )
         return prj_locked_state
@@ -1505,10 +1502,10 @@ async def _get_project_lock_state(
 
     if not set_user_ids:
         # no one has the project, so it is unlocked and closed.
-        log.debug("project [%s] is not in use", f"{project_uuid=}")
+        _logger.debug("project [%s] is not in use", f"{project_uuid=}")
         return ProjectLocked(value=False, status=ProjectStatus.CLOSED)
 
-    log.debug(
+    _logger.debug(
         "project [%s] might be used by the following users: [%s]",
         f"{project_uuid=}",
         f"{set_user_ids=}",
@@ -1521,7 +1518,7 @@ async def _get_project_lock_state(
         user_session_id_list, app
     ):
         # in this case the project is re-openable by the same user until it gets closed
-        log.debug(
+        _logger.debug(
             "project [%s] is in use by the same user [%s] that is currently disconnected, so it is unlocked for this specific user and opened",
             f"{project_uuid=}",
             f"{set_user_ids=}",
@@ -1532,7 +1529,7 @@ async def _get_project_lock_state(
             status=ProjectStatus.OPENED,
         )
     # the project is opened in another tab or browser, or by another user, both case resolves to the project being locked, and opened
-    log.debug(
+    _logger.debug(
         "project [%s] is in use by another user [%s], so it is locked",
         f"{project_uuid=}",
         f"{set_user_ids=}",
@@ -1569,7 +1566,7 @@ async def add_project_states_for_user(
     is_template: bool,
     app: web.Application,
 ) -> ProjectDict:
-    log.debug(
+    _logger.debug(
         "adding project states for %s with project %s",
         f"{user_id=}",
         f"{project['uuid']=}",
@@ -1809,7 +1806,7 @@ async def remove_project_dynamic_services(
 
     # NOTE: during the closing process, which might take awhile,
     # the project is locked so no one opens it at the same time
-    log.debug(
+    _logger.debug(
         "removing project interactive services for project [%s] and user [%s]",
         project_uuid,
         user_id,

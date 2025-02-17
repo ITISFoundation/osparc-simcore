@@ -31,7 +31,6 @@ from simcore_postgres_database.models.users import UserRole
 from simcore_postgres_database.utils_projects_nodes import ProjectNodesRepo
 from simcore_service_webserver.projects._db_utils import PermissionStr
 from simcore_service_webserver.projects._groups_db import update_or_insert_project_group
-from simcore_service_webserver.projects.api import has_user_project_access_rights
 from simcore_service_webserver.projects.exceptions import (
     NodeNotFoundError,
     ProjectNodeRequiredInputsNotSetError,
@@ -792,6 +791,8 @@ async def test_has_permission(
     aiopg_engine: aiopg.sa.engine.Engine,
     insert_project_in_db: Callable[..., Awaitable[dict[str, Any]]],
 ):
+    assert client.app
+
     project_id = faker.uuid4(cast_to=None)
     owner_id = logged_user["id"]
 
@@ -817,7 +818,7 @@ async def test_has_permission(
         # owner always is allowed to do everything
         # assert await db_api.has_permission(owner_id, project_id, permission) is True
         assert (
-            await has_user_project_access_rights(
+            await projects_access_rights_service.has_user_project_access_rights(
                 client.app,
                 project_id=project_id,
                 user_id=owner_id,
@@ -828,7 +829,7 @@ async def test_has_permission(
 
         # user does not exits
         assert (
-            await has_user_project_access_rights(
+            await projects_access_rights_service.has_user_project_access_rights(
                 client.app, project_id=project_id, user_id=-1, permission=permission
             )
             is False
@@ -836,7 +837,7 @@ async def test_has_permission(
 
         # other user
         assert (
-            await has_user_project_access_rights(
+            await projects_access_rights_service.has_user_project_access_rights(
                 client.app,
                 project_id=project_id,
                 user_id=second_user["id"],
@@ -924,6 +925,7 @@ async def test_check_project_node_has_all_required_inputs_raises(
     inserted_project: dict,
     expected_error: str,
 ):
+    assert client.app
 
     with pytest.raises(ProjectNodeRequiredInputsNotSetError) as exc:
         await _check_project_node_has_all_required_inputs(
@@ -954,6 +956,8 @@ async def test_check_project_node_has_all_required_inputs_ok(
     db_api: ProjectDBAPI,
     inserted_project: dict,
 ):
+    assert client.app
+
     await _check_project_node_has_all_required_inputs(
         client.app,
         db_api,

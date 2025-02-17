@@ -3,16 +3,17 @@ import logging
 import mimetypes
 import urllib.parse
 from pathlib import Path
+from pprint import pformat
 from typing import Any, Final, NamedTuple
 
 from aiohttp import web
 from aiohttp.client import ClientError
 from models_library.api_schemas_storage.storage_schemas import FileMetaDataGet
+from common_library.json_serialization import json_dumps
 from models_library.basic_types import KeyIDStr
-from models_library.errors import ErrorDict
 from models_library.projects import ProjectID
-from models_library.projects_nodes import Node
-from models_library.projects_nodes_io import NodeID, SimCoreFileLink
+from models_library.projects_nodes import Node, PartialNode
+from models_library.projects_nodes_io import NodeID, NodeIDStr, SimCoreFileLink
 from models_library.users import UserID
 from pydantic import (
     BaseModel,
@@ -23,12 +24,13 @@ from pydantic import (
     ValidationError,
     model_validator,
 )
-from servicelib.logging_utils import log_decorator
+from servicelib.logging_utils import get_log_record_extra
 from servicelib.utils import logged_gather
 
 from ..application_settings import get_application_settings
 from ..storage.api import get_download_link, get_files_in_node_folder
-from . import _projects_service
+from . import _access_rights_service, _nodes_repository
+from ._projects_repository_legacy import APP_PROJECT_DBAPI, ProjectDBAPI
 from .exceptions import ProjectStartsTooManyDynamicNodesError
 
 _logger = logging.getLogger(__name__)
@@ -72,11 +74,6 @@ def get_total_project_dynamic_nodes_creation_interval(
     director-v2. Note: these calls are sent one after the other.
     """
     return max_nodes * _NODE_START_INTERVAL_S.total_seconds()
-
-
-#
-# PREVIEWS
-#
 
 
 def _guess_mimetype_from_name(name: str) -> str | None:
@@ -283,59 +280,82 @@ async def project_get_depending_nodes(
     return depending_node_uuids
 
 
-@log_decorator(logger=_logger)
-async def update_node_outputs(
+async def update_project_node_outputs(
     app: web.Application,
     user_id: UserID,
-    project_uuid: ProjectID,
-    node_uuid: NodeID,
-    outputs: dict,
-    run_hash: str | None,
-    node_errors: list[ErrorDict] | None,
-    *,
-    ui_changed_keys: set[str] | None,
-) -> None:
-    # the new outputs might be {}, or {key_name: payload}
-    project, keys_changed = await _projects_service.update_project_node_outputs(
-        app,
+    project_id: ProjectID,
+    node_id: NodeID,
+    new_outputs: dict | None,
+    new_run_hash: str | None,
+) -> tuple[dict, list[str]]:
+    """
+    Updates outputs of a given node in a project with 'data'
+    """
+    _logger.debug(
+        "updating node %s outputs in project %s for user %s with %s: run_hash [%s]",
+        node_id,
+        project_id,
         user_id,
-        project_uuid,
-        node_uuid,
-        new_outputs=outputs,
-        new_run_hash=run_hash,
+        json_dumps(new_outputs),
+        new_run_hash,
+        extra=get_log_record_extra(user_id=user_id),
+    )
+    new_outputs = new_outputs or {}
+
+    db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
+    product_name = await db.get_project_product(project_id)
+    await _access_rights_service.check_user_project_permission(
+        app,
+        project_id=project_id,
+        user_id=user_id,
+        product_name=product_name,
+        permission="write",  # NOTE: MD: before only read was sufficient, double check this
     )
 
-    await _projects_service.notify_project_node_update(
-        app, project, node_uuid, errors=node_errors
-    )
-    # get depending node and notify for these ones as well
-    depending_node_uuids = await project_get_depending_nodes(project, node_uuid)
-    await logged_gather(
-        *[
-            _projects_service.notify_project_node_update(app, project, nid, errors=None)
-            for nid in depending_node_uuids
-        ]
+    updated_project, changed_entries = await db.update_project_node_data(
+        user_id=user_id,
+        project_uuid=project_id,
+        node_id=node_id,
+        product_name=None,
+        new_node_data={"outputs": new_outputs, "runHash": new_run_hash},
     )
 
-    # changed keys are coming from two sources:
-    # 1. updates to ports done by UI services
-    # 2. updates to ports done other services
-    #
-    # In the 1. case `keys_changed` will be empty since the version stored in the
-    # database will be the same as the as the one in the notification. No key change
-    # will be reported (in the past a side effect was causing to detect a key change,
-    # but it was now removed).
-    # When the project is updated and after the workbench was stored in the db,
-    # this method will be invoked with the `ui_changed_keys` containing all
-    # the keys which have changed.
-
-    keys: list[str] = (
-        keys_changed
-        if ui_changed_keys is None
-        else list(ui_changed_keys | set(keys_changed))
+    await _nodes_repository.update(
+        app,
+        project_id=project_id,
+        node_id=node_id,
+        partial_node=PartialNode.model_construct(
+            outputs=new_outputs, run_hash=new_run_hash
+        ),
     )
 
-    # fire&forget to notify connected nodes to retrieve its inputs **if necessary**
-    await _projects_service.post_trigger_connected_service_retrieve(
-        app=app, project=project, updated_node_uuid=f"{node_uuid}", changed_keys=keys
+    _logger.debug(
+        "patched project %s, following entries changed: %s",
+        project_id,
+        pformat(changed_entries),
     )
+
+    # changed entries come in the form of {node_uuid: {outputs: {changed_key1: value1, changed_key2: value2}}}
+    # we do want only the key names
+    changed_keys = (
+        changed_entries.get(NodeIDStr(f"{node_id}"), {}).get("outputs", {}).keys()
+    )
+    return updated_project, changed_keys
+
+
+async def list_node_ids_in_project(
+    app: web.Application,
+    project_uuid: ProjectID,
+) -> set[NodeID]:
+    """Returns a set with all the node_ids from a project's workbench"""
+    db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
+    return await db.list_node_ids_in_project(project_uuid)
+
+
+async def is_node_id_present_in_any_project_workbench(
+    app: web.Application,
+    node_id: NodeID,
+) -> bool:
+    """If the node_id is presnet in one of the projects' workbenche returns True"""
+    db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
+    return await db.node_id_exists(node_id)
