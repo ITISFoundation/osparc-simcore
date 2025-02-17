@@ -975,15 +975,15 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this._resourcesContainer.addNonResourceCard(newPlansBtn);
       newPlansBtn.setEnabled(false);
 
-      const newStudiesData = osparc.store.Products.getInstance().getNewStudiesUiConfig();
-      if (newStudiesData) {
+      const newStudiesConfig = osparc.store.Products.getInstance().getNewStudiesUiConfig();
+      if (newStudiesConfig) {
         newPlansBtn.setEnabled(true);
 
         newPlansBtn.addListener("tap", () => {
           osparc.data.Resources.get("templates")
             .then(templates => {
               if (templates) {
-                const newStudies = new osparc.dashboard.NewStudies(newStudiesData);
+                const newStudies = new osparc.dashboard.NewStudies(newStudiesConfig);
                 newStudies.addListener("templatesLoaded", () => {
                   newStudies.setGroupBy("category");
                   const winTitle = this.tr("New Plan");
