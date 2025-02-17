@@ -34,3 +34,8 @@ class AsyncJobRpcResult(BaseModel):
 class AsyncJobRpcGet(BaseModel):
     job_id: AsyncJobRpcId
     task_name: str
+
+
+class AsyncJobRpcAbort(BaseModel):
+    result: bool
+    job_id: AsyncJobRpcId

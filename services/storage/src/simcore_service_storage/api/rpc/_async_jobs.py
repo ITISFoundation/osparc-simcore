@@ -2,12 +2,10 @@ from datetime import datetime
 
 from fastapi import FastAPI
 from models_library.api_schemas_rpc_data_export.async_jobs import (
+    AsyncJobRpcAbort,
     AsyncJobRpcId,
     AsyncJobRpcResult,
     AsyncJobRpcStatus,
-)
-from models_library.api_schemas_storage.data_export_async_jobs import (
-    DataExportTaskAbortOutput,
 )
 from servicelib.rabbitmq import RPCRouter
 
@@ -15,9 +13,9 @@ router = RPCRouter()
 
 
 @router.expose()
-async def abort(app: FastAPI, job_id: AsyncJobRpcId) -> DataExportTaskAbortOutput:
+async def abort(app: FastAPI, job_id: AsyncJobRpcId) -> AsyncJobRpcAbort:
     assert app  # nosec
-    return DataExportTaskAbortOutput(result=True, task_id=job_id)
+    return AsyncJobRpcAbort(result=True, job_id=job_id)
 
 
 @router.expose()

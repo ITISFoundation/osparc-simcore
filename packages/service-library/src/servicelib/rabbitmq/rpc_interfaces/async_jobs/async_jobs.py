@@ -1,12 +1,10 @@
 from typing import Final
 
 from models_library.api_schemas_rpc_data_export.async_jobs import (
+    AsyncJobRpcAbort,
     AsyncJobRpcId,
     AsyncJobRpcResult,
     AsyncJobRpcStatus,
-)
-from models_library.api_schemas_storage.data_export_async_jobs import (
-    DataExportTaskAbortOutput,
 )
 from models_library.rabbitmq_basic_types import RPCMethodName, RPCNamespace
 from pydantic import NonNegativeInt, TypeAdapter
@@ -22,15 +20,15 @@ async def abort(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
     rpc_namespace: RPCNamespace,
-    task_id: AsyncJobRpcId
-) -> DataExportTaskAbortOutput:
+    job_id: AsyncJobRpcId
+) -> AsyncJobRpcAbort:
     result = await rabbitmq_rpc_client.request(
         rpc_namespace,
         _RPC_METHOD_NAME_ADAPTER.validate_python("abort"),
-        task_id=task_id,
+        job_id=job_id,
         timeout_s=_DEFAULT_TIMEOUT_S,
     )
-    assert isinstance(result, DataExportTaskAbortOutput)
+    assert isinstance(result, AsyncJobRpcAbort)
     return result
 
 
@@ -38,12 +36,12 @@ async def get_status(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
     rpc_namespace: RPCNamespace,
-    task_id: AsyncJobRpcId
+    job_id: AsyncJobRpcId
 ) -> AsyncJobRpcStatus:
     result = await rabbitmq_rpc_client.request(
         rpc_namespace,
         _RPC_METHOD_NAME_ADAPTER.validate_python("get_status"),
-        task_id=task_id,
+        job_id=job_id,
         timeout_s=_DEFAULT_TIMEOUT_S,
     )
     assert isinstance(result, AsyncJobRpcStatus)
@@ -54,12 +52,12 @@ async def get_result(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
     rpc_namespace: RPCNamespace,
-    task_id: AsyncJobRpcId
+    job_id: AsyncJobRpcId
 ) -> AsyncJobRpcResult:
     result = await rabbitmq_rpc_client.request(
         rpc_namespace,
         _RPC_METHOD_NAME_ADAPTER.validate_python("get_result"),
-        task_id=task_id,
+        job_id=job_id,
         timeout_s=_DEFAULT_TIMEOUT_S,
     )
     assert isinstance(result, AsyncJobRpcResult)

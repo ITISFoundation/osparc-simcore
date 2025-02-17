@@ -44,10 +44,10 @@ async def test_data_export(
     create_storage_rpc_client_mock: Callable[[str, Any], None],
     faker: Faker,
 ):
-    _task_id = AsyncJobRpcId(faker.uuid4())
+    _job_id = AsyncJobRpcId(faker.uuid4())
     create_storage_rpc_client_mock(
         start_data_export.__name__,
-        AsyncJobRpcGet(job_id=_task_id, task_name=faker.text()),
+        AsyncJobRpcGet(job_id=_job_id, task_name=faker.text()),
     )
 
     _body = DataExportPost(paths=[Path(".")])
@@ -66,11 +66,11 @@ async def test_get_async_jobs_status(
     create_storage_rpc_client_mock: Callable[[str, Any], None],
     faker: Faker,
 ):
-    _task_id = AsyncJobRpcId(faker.uuid4())
+    _job_id = AsyncJobRpcId(faker.uuid4())
     create_storage_rpc_client_mock(
         get_status.__name__,
         AsyncJobRpcStatus(
-            job_id=_task_id,
+            job_id=_job_id,
             task_progress=0.5,
             done=False,
             started=datetime.now(),
@@ -78,10 +78,10 @@ async def test_get_async_jobs_status(
         ),
     )
 
-    response = await client.get(f"/v0/storage/async-jobs/{_task_id}/status")
+    response = await client.get(f"/v0/storage/async-jobs/{_job_id}/status")
     assert response.status == status.HTTP_200_OK
     response_body_data = (
         Envelope[AsyncJobGet].model_validate(await response.json()).data
     )
     assert response_body_data is not None
-    assert response_body_data.job_id == _task_id
+    assert response_body_data.job_id == _job_id

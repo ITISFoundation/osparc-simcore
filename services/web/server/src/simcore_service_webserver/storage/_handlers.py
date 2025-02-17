@@ -31,7 +31,7 @@ from servicelib.aiohttp.requests_validation import (
 )
 from servicelib.aiohttp.rest_responses import create_data_response
 from servicelib.common_headers import X_FORWARDED_PROTO
-from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import get_status
+from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import abort, get_status
 from servicelib.rabbitmq.rpc_interfaces.storage.data_export import start_data_export
 from servicelib.request_keys import RQT_USERID_KEY
 from servicelib.rest_responses import unwrap_envelope
@@ -409,7 +409,27 @@ async def get_async_job_status(request: web.Request) -> web.Response:
     async_job_rpc_status = await get_status(
         rabbitmq_rpc_client=rabbitmq_rpc_client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
-        task_id=async_job_get.job_id,
+        job_id=async_job_get.job_id,
+    )
+    return create_data_response(
+        AsyncJobStatus.from_async_job_rpc_status(async_job_rpc_status),
+        status=status.HTTP_200_OK,
+    )
+
+
+@routes.post(
+    _storage_prefix + "/async-jobs/{job_id}:abort",
+    name="storage_async_job_abort",
+)
+@login_required
+@permission_required("storage.files.*")
+async def abort_async_job(request: web.Request) -> web.Response:
+    rabbitmq_rpc_client = get_rabbitmq_rpc_client(request.app)
+    async_job_get = parse_request_path_parameters_as(AsyncJobGet, request)
+    data_export_task_abort_request = await abort(
+        rabbitmq_rpc_client=rabbitmq_rpc_client,
+        rpc_namespace=STORAGE_RPC_NAMESPACE,
+        job_id=async_job_get.job_id,
     )
     return create_data_response(
         AsyncJobStatus.from_async_job_rpc_status(async_job_rpc_status),
