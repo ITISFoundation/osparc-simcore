@@ -197,7 +197,6 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
             appearance: "danger-button",
             allowGrowY: false,
             alignY: "middle",
-            visibility: "excluded", // Not yet implemented
           });
           control.addListener("execute", () => this.fireEvent("emptyTrashRequested"));
           this._addAt(control, this.self().POS.EMPTY_TRASH_BUTTON);
