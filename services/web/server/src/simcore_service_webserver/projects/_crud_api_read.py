@@ -18,14 +18,12 @@ from pydantic import NonNegativeInt
 from servicelib.utils import logged_gather
 from simcore_postgres_database.models.projects import ProjectType
 from simcore_postgres_database.webserver_models import ProjectType as ProjectTypeDB
-from simcore_service_webserver.projects._projects_db import (
-    batch_get_trashed_by_primary_gid,
-)
 
 from ..catalog.client import get_services_for_user_in_product
 from ..folders import _folders_repository
 from ..workspaces._workspaces_service import check_user_workspace_access
 from . import _projects_service
+from ._projects_db import batch_get_trashed_by_primary_gid
 from .db import ProjectDBAPI
 from .models import ProjectDict, ProjectTypeAPI
 
