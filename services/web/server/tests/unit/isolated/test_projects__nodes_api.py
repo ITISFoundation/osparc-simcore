@@ -3,7 +3,7 @@ from uuid import uuid4
 
 import pytest
 from models_library.api_schemas_storage.storage_schemas import FileMetaDataGet
-from simcore_service_webserver.projects._nodes_api import (
+from simcore_service_webserver.projects._nodes_services import (
     _SUPPORTED_PREVIEW_FILE_EXTENSIONS,
     _FileWithThumbnail,
     _get_files_with_thumbnails,

@@ -60,14 +60,14 @@ from ..dynamic_scheduler import api as dynamic_scheduler_api
 from ..groups.api import get_group_from_gid, list_all_user_groups_ids
 from ..groups.exceptions import GroupNotFoundError
 from ..login.decorators import login_required
-from ..projects.api import has_user_project_access_rights
 from ..security.decorators import permission_required
 from ..users.api import get_user_id_from_gid, get_user_role
 from ..utils_aiohttp import envelope_json_response
 from . import nodes_utils, projects_service
 from ._common.exceptions_handlers import handle_plugin_requests_exceptions
 from ._common.models import ProjectPathParams, RequestContext
-from ._nodes_api import NodeScreenshot, get_node_screenshots
+from ._nodes_services import NodeScreenshot, get_node_screenshots
+from .api import has_user_project_access_rights
 from .exceptions import (
     NodeNotFoundError,
     ProjectNodeResourcesInsufficientRightsError,

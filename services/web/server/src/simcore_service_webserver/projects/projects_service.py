@@ -126,7 +126,7 @@ from ..wallets.errors import WalletNotEnoughCreditsError
 from ..workspaces import _workspaces_repository as workspaces_db
 from . import (
     _crud_api_delete,
-    _nodes_api,
+    _nodes_services,
     _projects_db,
     _projects_nodes_repository,
     _wallets_service,
@@ -630,10 +630,10 @@ async def _start_dynamic_service(  # noqa: C901
 
     @exclusive(
         get_redis_lock_manager_client_sdk(request.app),
-        lock_key=_nodes_api.get_service_start_lock_key(user_id, project_uuid),
+        lock_key=_nodes_services.get_service_start_lock_key(user_id, project_uuid),
         blocking=True,
         blocking_timeout=datetime.timedelta(
-            seconds=_nodes_api.get_total_project_dynamic_nodes_creation_interval(
+            seconds=_nodes_services.get_total_project_dynamic_nodes_creation_interval(
                 get_plugin_settings(request.app).PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES
             )
         ),
@@ -642,7 +642,7 @@ async def _start_dynamic_service(  # noqa: C901
         project_running_nodes = await dynamic_scheduler_api.list_dynamic_services(
             request.app, user_id=user_id, project_id=project_uuid
         )
-        _nodes_api.check_num_service_per_projects_limit(
+        _nodes_services.check_num_service_per_projects_limit(
             app=request.app,
             number_of_services=len(project_running_nodes),
             user_id=user_id,
