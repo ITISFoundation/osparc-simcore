@@ -106,7 +106,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') to a list of _logger message patterns that should be filtered out.",
     )
 
-    STORAGE_MODE: str
+    STORAGE_WORKER_MODE: bool | None = False
 
     @field_validator("LOG_LEVEL", mode="before")
     @classmethod

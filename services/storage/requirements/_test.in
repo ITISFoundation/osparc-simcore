@@ -16,6 +16,7 @@ moto[server]
 pandas
 pytest
 pytest-asyncio
+pytest-celery
 pytest-cov
 pytest-icdiff
 pytest-instafail
