@@ -919,14 +919,14 @@ async def test_trash_folder_with_subfolder_and_project_and_empty_bin(
 
     # - GET trashed subfolder (implicit)
     resp = await client.get(f"/v0/folders/{sub_folder.folder_id}")
-    await assert_status(resp, status.HTTP_404_NOT_FOUND)
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
     got = FolderGet.model_validate(data)
     assert got.trashed_at is not None
     assert got.trashed_by == logged_user["primary_gid"]
 
     # GET trashed project (implicit)
     resp = await client.get(f"/v0/projects/{project_uuid}")
-    await assert_status(resp, status.HTTP_404_NOT_FOUND)
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
     got = ProjectGet.model_validate(data)
     assert got.trashed_at is not None
     assert got.trashed_by == logged_user["primary_gid"]
@@ -942,11 +942,11 @@ async def test_trash_folder_with_subfolder_and_project_and_empty_bin(
         with attempt:
             # GET trashed parent folder
             resp = await client.get(f"/v0/folders/{parent_folder.folder_id}")
-            await assert_status(resp, status.HTTP_404_NOT_FOUND)
+            await assert_status(resp, status.HTTP_403_FORBIDDEN)
 
             # GET trashed subfolder
             resp = await client.get(f"/v0/folders/{sub_folder.folder_id}")
-            await assert_status(resp, status.HTTP_404_NOT_FOUND)
+            await assert_status(resp, status.HTTP_403_FORBIDDEN)
 
             # GET trashed project
             resp = await client.get(f"/v0/projects/{project_uuid}")
