@@ -10,7 +10,7 @@ from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setu
 
 from .._constants import APP_SETTINGS_KEY
 from . import (
-    _comments_handlers,
+    _comments_rest,
     _crud_handlers,
     _folders_handlers,
     _groups_handlers,
@@ -52,7 +52,7 @@ def setup_projects(app: web.Application) -> bool:
 
     app.router.add_routes(_states_handlers.routes)
     app.router.add_routes(_crud_handlers.routes)
-    app.router.add_routes(_comments_handlers.routes)
+    app.router.add_routes(_comments_rest.routes)
     app.router.add_routes(_groups_handlers.routes)
     app.router.add_routes(_metadata_handlers.routes)
     app.router.add_routes(_ports_handlers.routes)

@@ -28,7 +28,7 @@ from .._meta import API_VTAG as VTAG
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
-from . import _comments_api, projects_service
+from . import _comments_service, projects_service
 from ._common.exceptions_handlers import handle_plugin_requests_exceptions
 from ._common.models import RequestContext
 
@@ -76,7 +76,7 @@ async def create_project_comment(request: web.Request):
         include_state=False,
     )
 
-    comment_id = await _comments_api.create_project_comment(
+    comment_id = await _comments_service.create_project_comment(
         request=request,
         project_uuid=path_params.project_uuid,
         user_id=req_ctx.user_id,
@@ -118,12 +118,12 @@ async def list_project_comments(request: web.Request):
         include_state=False,
     )
 
-    total_project_comments = await _comments_api.total_project_comments(
+    total_project_comments = await _comments_service.total_project_comments(
         request=request,
         project_uuid=path_params.project_uuid,
     )
 
-    project_comments = await _comments_api.list_project_comments(
+    project_comments = await _comments_service.list_project_comments(
         request=request,
         project_uuid=path_params.project_uuid,
         offset=query_params.offset,
@@ -167,7 +167,7 @@ async def update_project_comment(request: web.Request):
         include_state=False,
     )
 
-    updated_comment = await _comments_api.update_project_comment(
+    updated_comment = await _comments_service.update_project_comment(
         request=request,
         comment_id=path_params.comment_id,
         project_uuid=path_params.project_uuid,
@@ -197,7 +197,7 @@ async def delete_project_comment(request: web.Request):
         include_state=False,
     )
 
-    await _comments_api.delete_project_comment(
+    await _comments_service.delete_project_comment(
         request=request,
         comment_id=path_params.comment_id,
     )
@@ -225,7 +225,7 @@ async def get_project_comment(request: web.Request):
         include_state=False,
     )
 
-    comment = await _comments_api.get_project_comment(
+    comment = await _comments_service.get_project_comment(
         request=request,
         comment_id=path_params.comment_id,
     )
