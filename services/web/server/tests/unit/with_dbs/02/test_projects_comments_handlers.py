@@ -16,8 +16,10 @@ from pytest_simcore.helpers.webserver_login import LoggedUser, UserInfoDict
 from servicelib.aiohttp import status
 from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.db.models import UserRole
-from simcore_service_webserver.projects._groups_db import update_or_insert_project_group
 from simcore_service_webserver.projects.models import ProjectDict
+from simcore_service_webserver.projects.projects_groups_repository import (
+    update_or_insert_project_group,
+)
 
 API_PREFIX = "/" + api_version_prefix
 

@@ -30,7 +30,7 @@ from .._constants import INDEX_RESOURCE_NAME
 from ..director_v2._core_computations import create_or_update_pipeline
 from ..dynamic_scheduler import api as dynamic_scheduler_api
 from ..products.api import get_current_product, get_product_name
-from ..projects._groups_db import get_project_group
+from ..projects import projects_groups_repository
 from ..projects.api import check_user_project_permission
 from ..projects.db import ProjectDBAPI
 from ..projects.exceptions import (
@@ -91,7 +91,7 @@ async def _get_published_template_project(
             only_published=only_public_projects,
         )
         # 3. MUST be shared with EVERYONE=1 in read mode, i.e.
-        project_group_get = await get_project_group(
+        project_group_get = await projects_groups_repository.get_project_group(
             request.app, project_id=ProjectID(project_uuid), group_id=1
         )
         if project_group_get.read is False:

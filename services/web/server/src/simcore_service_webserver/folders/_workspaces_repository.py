@@ -8,9 +8,12 @@ from models_library.workspaces import WorkspaceID
 from simcore_postgres_database.utils_repos import transaction_context
 
 from ..db.plugin import get_asyncpg_engine
-from ..projects import _groups_db as project_groups_db
 from ..projects import _projects_db as projects_db
-from ..projects import projects_access_rights_service, projects_folders_repository
+from ..projects import (
+    projects_access_rights_service,
+    projects_folders_repository,
+    projects_groups_repository,
+)
 from ..users.api import get_user
 from ..workspaces.api import check_user_workspace_access
 from . import _folders_repository
@@ -123,10 +126,10 @@ async def move_folder_into_workspace(
         # 9. Remove all project permissions, leave only the user who moved the project
         user = await get_user(app, user_id=user_id)
         for project_id in project_ids:
-            await project_groups_db.delete_all_project_groups(
+            await projects_groups_repository.delete_all_project_groups(
                 app, connection=conn, project_id=project_id
             )
-            await project_groups_db.update_or_insert_project_group(
+            await projects_groups_repository.update_or_insert_project_group(
                 app,
                 connection=conn,
                 project_id=project_id,

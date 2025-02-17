@@ -12,6 +12,7 @@ from unittest import mock
 import pytest
 from aiohttp.test_utils import TestClient
 from models_library.api_schemas_webserver.folders_v2 import FolderGet
+from models_library.groups import GroupID
 from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
@@ -23,11 +24,10 @@ from pytest_simcore.helpers.webserver_parametrizations import (
 from servicelib.aiohttp import status
 from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
 from simcore_service_webserver.db.models import UserRole
-from simcore_service_webserver.projects._groups_db import (
-    GroupID,
+from simcore_service_webserver.projects.models import ProjectDict
+from simcore_service_webserver.projects.projects_groups_repository import (
     update_or_insert_project_group,
 )
-from simcore_service_webserver.projects.models import ProjectDict
 
 
 @pytest.mark.parametrize(*standard_role_response(), ids=str)

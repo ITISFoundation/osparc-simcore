@@ -8,12 +8,12 @@ from models_library.users import UserID
 from simcore_postgres_database.errors import DatabaseError
 
 from ..groups.api import get_group_from_gid
-from ..projects.api import (
+from ..projects.db import APP_PROJECT_DBAPI, ProjectAccessRights
+from ..projects.exceptions import ProjectNotFoundError
+from ..projects.projects_groups_service import (
     create_project_group_without_checking_permissions,
     delete_project_group_without_checking_permissions,
 )
-from ..projects.db import APP_PROJECT_DBAPI, ProjectAccessRights
-from ..projects.exceptions import ProjectNotFoundError
 from ..users.api import get_user, get_user_id_from_gid, get_users_in_group
 from ..users.exceptions import UserNotFoundError
 

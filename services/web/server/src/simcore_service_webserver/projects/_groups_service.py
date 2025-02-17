@@ -9,9 +9,9 @@ from models_library.users import UserID
 from pydantic import BaseModel
 
 from ..users import api as users_api
-from . import _groups_db as projects_groups_db
+from . import _groups_repository as projects_groups_db
 from ._access_rights_service import check_user_project_permission
-from ._groups_db import ProjectGroupGetDB
+from ._groups_repository import ProjectGroupGetDB
 from .db import APP_PROJECT_DBAPI, ProjectDBAPI
 from .exceptions import ProjectInvalidRightsError
 

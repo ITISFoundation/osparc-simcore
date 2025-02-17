@@ -17,9 +17,11 @@ from models_library.projects_nodes_io import NodeID
 from models_library.services_resources import ServiceResourcesDictHelpers
 from simcore_postgres_database.utils_projects_nodes import ProjectNodeCreate
 from simcore_service_webserver.projects._db_utils import DB_EXCLUSIVE_COLUMNS
-from simcore_service_webserver.projects._groups_db import update_or_insert_project_group
 from simcore_service_webserver.projects.db import APP_PROJECT_DBAPI, ProjectDBAPI
 from simcore_service_webserver.projects.models import ProjectDict
+from simcore_service_webserver.projects.projects_groups_repository import (
+    update_or_insert_project_group,
+)
 from simcore_service_webserver.utils import now_str
 
 from .assert_checks import assert_status

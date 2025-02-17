@@ -5,10 +5,6 @@ from ._access_rights_service import (
     check_user_project_permission,
     has_user_project_access_rights,
 )
-from ._groups_api import (
-    create_project_group_without_checking_permissions,
-    delete_project_group_without_checking_permissions,
-)
 from ._wallets_api import (
     check_project_financial_status,
     connect_wallet_to_project,
@@ -19,8 +15,6 @@ __all__: tuple[str, ...] = (
     "check_project_financial_status",
     "check_user_project_permission",
     "connect_wallet_to_project",
-    "create_project_group_without_checking_permissions",
-    "delete_project_group_without_checking_permissions",
     "get_project_wallet",
     "has_user_project_access_rights",
 )
