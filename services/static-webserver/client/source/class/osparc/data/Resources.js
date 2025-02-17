@@ -458,8 +458,8 @@ qx.Class.define("osparc.data.Resources", {
       "trash": {
         endpoints: {
           delete: {
-            method: "DELETE",
-            url: statics.API + "/trash"
+            method: "POST",
+            url: statics.API + "/trash:empty"
           }
         }
       },
