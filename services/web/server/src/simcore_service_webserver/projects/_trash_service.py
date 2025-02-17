@@ -1,6 +1,7 @@
 import asyncio
 import datetime
 import logging
+from datetime import datetime
 
 import arrow
 from aiohttp import web
@@ -133,7 +134,7 @@ async def untrash_project(
 def _can_delete(
     project: ProjectDict,
     user_id: UserID,
-    until_equal_datetime: datetime.datetime | None,
+    until_equal_datetime: datetime | None,
 ) -> bool:
     """
     This is the current policy to delete trashed project
@@ -164,7 +165,7 @@ async def list_trashed_projects(
     *,
     product_name: ProductName,
     user_id: UserID,
-    until_equal_datetime: datetime.datetime | None = None,
+    until_equal_datetime: datetime | None = None,
 ) -> list[ProjectID]:
     """
     Lists all projects that were trashed until a specific datetime (if !=None).
@@ -208,7 +209,7 @@ async def delete_trashed_project(
     *,
     user_id: UserID,
     project_id: ProjectID,
-    until_equal_datetime: datetime.datetime | None = None,
+    until_equal_datetime: datetime | None = None,
 ) -> None:
     """
     Deletes a project that was explicitly trashed by the user from a specific datetime (if provided, otherwise all).
