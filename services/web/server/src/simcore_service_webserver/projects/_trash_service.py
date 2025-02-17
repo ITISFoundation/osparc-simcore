@@ -230,7 +230,6 @@ async def delete_trashed_project(
         )
 
     await projects_service.delete_project_by_user(
-        # FIXME: locking while deleting?
         app,
         user_id=user_id,
         project_uuid=project_id,
