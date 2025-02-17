@@ -1,9 +1,9 @@
-import tempfile
 from contextlib import suppress
 from pathlib import Path
 from uuid import uuid4
 
 from aws_library.s3 import S3MetaData, SimcoreS3API
+from aws_library.s3._constants import MULTIPART_COPY_THRESHOLD
 from models_library.projects_nodes_io import (
     SimcoreS3DirectoryID,
     SimcoreS3FileID,
@@ -12,6 +12,9 @@ from models_library.projects_nodes_io import (
 from models_library.storage_schemas import S3BucketName
 from models_library.users import UserID
 from pydantic import ByteSize, NonNegativeInt, TypeAdapter
+from servicelib.bytes_iters import ArchiveEntries, get_zip_bytes_iter
+from servicelib.progress_bar import ProgressBarData
+from servicelib.s3_utils import FileLikeBytesIterReader
 from servicelib.utils import ensure_ends_with
 from sqlalchemy.ext.asyncio import AsyncConnection
 
@@ -135,19 +138,37 @@ def get_random_export_name(user_id: UserID) -> StorageFileID:
     )
 
 
-async def upload_fake_archive(
+async def create_and_upload_export(
     s3_client: SimcoreS3API,
     bucket: S3BucketName,
     object_keys: set[StorageFileID],
     uploaded_object_key: StorageFileID,
+    *,
+    progress_bar: ProgressBarData | None,
 ) -> None:
-    # NOTE: this will be replaced with the functionality introduced by https://github.com/ITISFoundation/osparc-simcore/pull/7186
-    with tempfile.NamedTemporaryFile(mode="wt", delete=True) as temp_file:
-        temp_file.writelines(object_keys)
-        temp_file.flush()
-        await s3_client.upload_file(
-            bucket=bucket,
-            file=Path(temp_file.name),
-            object_key=uploaded_object_key,
-            bytes_transfered_cb=None,
+    if progress_bar is None:
+        progress_bar = ProgressBarData(
+            num_steps=1, description="create and upload export"
+        )
+
+    archive_entries: ArchiveEntries = []
+    for s3_object in object_keys:
+        archive_entries.append(
+            (
+                s3_object,
+                await s3_client.get_bytes_streamer_from_object(bucket, s3_object),
+            )
+        )
+
+    async with progress_bar:
+        await s3_client.upload_object_from_file_like(
+            bucket,
+            uploaded_object_key,
+            FileLikeBytesIterReader(
+                get_zip_bytes_iter(
+                    archive_entries,
+                    progress_bar=progress_bar,
+                    chunk_size=MULTIPART_COPY_THRESHOLD,
+                )
+            ),
         )
