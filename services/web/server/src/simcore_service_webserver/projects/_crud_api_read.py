@@ -5,7 +5,8 @@ Read operations are list, get
 
 """
 
-from typing import Any, Coroutine
+from collections.abc import Coroutine
+from typing import Any
 
 from aiohttp import web
 from models_library.folders import FolderID, FolderQuery, FolderScope
@@ -17,15 +18,12 @@ from pydantic import NonNegativeInt
 from servicelib.utils import logged_gather
 from simcore_postgres_database.models.projects import ProjectType
 from simcore_postgres_database.webserver_models import ProjectType as ProjectTypeDB
-from simcore_service_webserver.projects._permalink_api import (
-    aggregate_permalink_in_project,
-)
 from simcore_service_webserver.projects._projects_db import (
     batch_get_trashed_by_primary_gid,
 )
 
 from ..catalog.client import get_services_for_user_in_product
-from ..folders import _folders_repository as _folders_repository
+from ..folders import _folders_repository
 from ..workspaces._workspaces_service import check_user_workspace_access
 from . import projects_service
 from .db import ProjectDBAPI
