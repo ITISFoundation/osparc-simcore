@@ -32,13 +32,13 @@ from ..dynamic_scheduler import api as dynamic_scheduler_api
 from ..products.api import get_current_product, get_product_name
 from ..projects import projects_groups_repository
 from ..projects._projects_repository_legacy import ProjectDBAPI
-from ..projects.api import check_user_project_permission
 from ..projects.exceptions import (
     ProjectGroupNotFoundError,
     ProjectInvalidRightsError,
     ProjectNotFoundError,
 )
 from ..projects.models import ProjectDict
+from ..projects.projects_access_rights_service import check_user_project_permission
 from ..security.api import is_anonymous, remember_identity
 from ..storage.api import copy_data_folders_from_project
 from ..utils import compose_support_error_msg

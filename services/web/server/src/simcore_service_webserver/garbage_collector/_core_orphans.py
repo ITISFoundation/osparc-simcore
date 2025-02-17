@@ -14,7 +14,7 @@ from servicelib.utils import logged_gather
 from simcore_postgres_database.models.users import UserRole
 
 from ..dynamic_scheduler import api as dynamic_scheduler_api
-from ..projects.api import has_user_project_access_rights
+from ..projects.projects_access_rights_service import has_user_project_access_rights
 from ..projects.projects_service import (
     is_node_id_present_in_any_project_workbench,
     list_node_ids_in_project,
