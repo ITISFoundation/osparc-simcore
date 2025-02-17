@@ -37,6 +37,7 @@ async def test_iter_pages_args(
     expected_num_pages = num_items // limit + (1 if num_items % limit else 0)
 
     num_pages = 0
+    page_args = None
     for page_index, page_args in enumerate(iter_pagination_params(offset, limit)):
 
         page_items, page_args.total_number_of_items = await get_page(
@@ -54,6 +55,7 @@ async def test_iter_pages_args(
     assert last_page[-1] == all_items[-1]
     assert num_pages == expected_num_pages
 
+    assert page_args is not None
     assert not page_args.has_items_left()
     assert page_args.total_number_of_pages() == num_pages
 
