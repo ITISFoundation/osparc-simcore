@@ -130,7 +130,7 @@ botocore==1.35.81
     #   aiobotocore
     #   boto3
     #   s3transfer
-botocore-stubs==1.36.16
+botocore-stubs==1.36.17
     # via types-aiobotocore
 certifi==2025.1.31
     # via
@@ -195,6 +195,8 @@ fastapi-cli==0.0.7
     # via fastapi
 fastapi-lifespan-manager==0.1.4
     # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
+fastapi-pagination==0.12.34
+    # via -r requirements/_base.in
 faststream==0.5.34
     # via
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
@@ -568,6 +570,7 @@ pydantic==2.10.6
     #   -r requirements/_base.in
     #   fast-depends
     #   fastapi
+    #   fastapi-pagination
     #   pydantic-extra-types
     #   pydantic-settings
 pydantic-core==2.27.2
@@ -832,7 +835,7 @@ types-aiobotocore-s3==2.19.0.post1
     # via types-aiobotocore
 types-aiobotocore-ssm==2.19.0
     # via types-aiobotocore
-types-awscrt==0.23.9
+types-awscrt==0.23.10
     # via botocore-stubs
 types-python-dateutil==2.9.0.20241206
     # via arrow
@@ -842,6 +845,7 @@ typing-extensions==4.12.2
     #   alembic
     #   anyio
     #   fastapi
+    #   fastapi-pagination
     #   faststream
     #   opentelemetry-sdk
     #   pydantic
