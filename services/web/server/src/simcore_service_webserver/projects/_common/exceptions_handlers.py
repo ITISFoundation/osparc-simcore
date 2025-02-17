@@ -36,7 +36,7 @@ from ..exceptions import (
 
 _logger = logging.getLogger(__name__)
 
-# Folder errors
+
 _FOLDER_ERRORS: ExceptionToHttpErrorMap = {
     FolderAccessForbiddenError: HttpErrorInfo(
         status.HTTP_403_FORBIDDEN,
@@ -48,7 +48,7 @@ _FOLDER_ERRORS: ExceptionToHttpErrorMap = {
     ),
 }
 
-# Node errors
+
 _NODE_ERRORS: ExceptionToHttpErrorMap = {
     NodeNotFoundError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
@@ -64,7 +64,7 @@ _NODE_ERRORS: ExceptionToHttpErrorMap = {
     ),
 }
 
-# Project errors
+
 _PROJECT_ERRORS: ExceptionToHttpErrorMap = {
     ProjectDeleteError: HttpErrorInfo(
         status.HTTP_409_CONFLICT,
@@ -116,7 +116,7 @@ _PROJECT_ERRORS: ExceptionToHttpErrorMap = {
     ),
 }
 
-# Workspace errors
+
 _WORKSPACE_ERRORS: ExceptionToHttpErrorMap = {
     WorkspaceAccessForbiddenError: HttpErrorInfo(
         status.HTTP_403_FORBIDDEN,
@@ -128,7 +128,7 @@ _WORKSPACE_ERRORS: ExceptionToHttpErrorMap = {
     ),
 }
 
-# Wallet errors
+
 _WALLET_ERRORS: ExceptionToHttpErrorMap = {
     UserDefaultWalletNotFoundError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
@@ -144,7 +144,7 @@ _WALLET_ERRORS: ExceptionToHttpErrorMap = {
     ),
 }
 
-# Pricing errors
+
 _PRICING_ERRORS: ExceptionToHttpErrorMap = {
     DefaultPricingPlanNotFoundError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
@@ -156,7 +156,7 @@ _PRICING_ERRORS: ExceptionToHttpErrorMap = {
     ),
 }
 
-# Other errors
+
 _OTHER_ERRORS: ExceptionToHttpErrorMap = {
     ClustersKeeperNotAvailableError: HttpErrorInfo(
         status.HTTP_503_SERVICE_UNAVAILABLE,
