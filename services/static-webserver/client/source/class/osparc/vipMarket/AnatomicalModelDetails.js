@@ -101,9 +101,9 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
         const thumbnailTapped = idx => {
           this.__populateModelInfo(modelLayout, anatomicalModelsData, idx);
           const selectedBorderColor = qx.theme.manager.Color.getInstance().resolve("strong-main");
-          const unselectedBorderColor = qx.theme.manager.Color.getInstance().resolve("text");
-          slideBar.getChildren().forEach((thumbnailImg, index) => {
-            osparc.utils.Utils.updateBorderColor(thumbnailImg, index === idx ? selectedBorderColor : unselectedBorderColor);
+          const unselectedBorderColor = "transparent";
+          slideBar.getChildren().forEach((thumbnail, index) => {
+            osparc.utils.Utils.updateBorderColor(thumbnail, index === idx ? selectedBorderColor : unselectedBorderColor);
           });
         }
         modelsInfo.forEach((modelInfo, idx) => {
@@ -111,6 +111,7 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
           miniThumbnail.set({
             toolTipText: modelInfo["source"]["features"]["name"]
           });
+          osparc.utils.Utils.addBorder(miniThumbnail);
           miniThumbnail.addListener("tap", () => thumbnailTapped(idx));
           slideBar.add(miniThumbnail);
         });
