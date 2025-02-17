@@ -11,6 +11,7 @@ from pathlib import Path
 import pytest
 from faker import Faker
 from models_library.basic_types import SHA256Str
+from models_library.progress_bar import ProgressReport
 from models_library.projects_nodes_io import SimcoreS3FileID, StorageFileID
 from models_library.storage_schemas import FileUploadSchema
 from models_library.users import UserID
@@ -184,9 +185,14 @@ async def test_create_s3_export(
 ):
     selection_to_export = _get_folder_and_files_selection(paths_for_export)
 
+    reports: list[ProgressReport] = []
+
+    async def _progress_cb(report: ProgressReport) -> None:
+        reports.append(report)
+
     await _assert_meta_data_entries_count(sqlalchemy_async_engine, count=1)
     file_id = await simcore_s3_dsm.create_s3_export(
-        user_id, selection_to_export, progress_cb=None
+        user_id, selection_to_export, progress_cb=_progress_cb
     )
     # count=2 -> the direcotory and the .zip export
     await _assert_meta_data_entries_count(sqlalchemy_async_engine, count=2)
@@ -196,6 +202,8 @@ async def test_create_s3_export(
     )
 
     assert file_id in f"{download_link}"
+
+    assert reports[-1].actual_value == 1
 
 
 @pytest.fixture
