@@ -3656,6 +3656,48 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_TaskGet_'
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Conflict
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Unprocessable Entity
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Bad Request
+        '402':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Payment Required
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Service Unavailable
     get:
       tags:
       - projects
@@ -3743,6 +3785,48 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Page_ProjectListItem_'
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Conflict
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Unprocessable Entity
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Bad Request
+        '402':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Payment Required
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Service Unavailable
   /v0/projects/active:
     get:
       tags:
@@ -3763,6 +3847,48 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_ProjectGet_'
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Conflict
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Unprocessable Entity
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Bad Request
+        '402':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Payment Required
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Service Unavailable
   /v0/projects/{project_id}:
     get:
       tags:
@@ -3784,6 +3910,48 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_ProjectGet_'
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Conflict
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Unprocessable Entity
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Bad Request
+        '402':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Payment Required
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Service Unavailable
     patch:
       tags:
       - projects
@@ -3806,6 +3974,48 @@ paths:
       responses:
         '204':
           description: Successful Response
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Conflict
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Unprocessable Entity
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Bad Request
+        '402':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Payment Required
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Service Unavailable
     delete:
       tags:
       - projects
@@ -3822,6 +4032,48 @@ paths:
       responses:
         '204':
           description: Successful Response
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Conflict
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Unprocessable Entity
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Bad Request
+        '402':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Payment Required
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Service Unavailable
   /v0/projects/{project_id}:clone:
     post:
       tags:
@@ -3843,6 +4095,48 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_TaskGet_'
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Conflict
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Unprocessable Entity
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Bad Request
+        '402':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Payment Required
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Service Unavailable
   /v0/projects:search:
     get:
       tags:
@@ -3906,6 +4200,48 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Page_ProjectListItem_'
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Conflict
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Unprocessable Entity
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Bad Request
+        '402':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Payment Required
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Service Unavailable
   /v0/projects/{project_id}/inactivity:
     get:
       tags:
@@ -3927,6 +4263,48 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_GetProjectInactivityResponse_'
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Conflict
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Unprocessable Entity
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Bad Request
+        '402':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Payment Required
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Service Unavailable
   /v0/projects/{project_uuid}/comments:
     post:
       tags:

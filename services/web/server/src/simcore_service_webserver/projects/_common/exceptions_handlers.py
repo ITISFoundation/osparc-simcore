@@ -36,10 +36,8 @@ from ..exceptions import (
 
 _logger = logging.getLogger(__name__)
 
-_TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
-    #
-    # NOTE: keep keys alphabetically sorted
-    #
+# Folder errors
+_FOLDER_ERRORS: ExceptionToHttpErrorMap = {
     FolderAccessForbiddenError: HttpErrorInfo(
         status.HTTP_403_FORBIDDEN,
         "Access to folder forbidden",
@@ -48,6 +46,10 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
         status.HTTP_404_NOT_FOUND,
         "Folder not found: {reason}",
     ),
+}
+
+# Node errors
+_NODE_ERRORS: ExceptionToHttpErrorMap = {
     NodeNotFoundError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
         "Node '{node_uuid}' not found in project '{project_uuid}'",
@@ -56,6 +58,14 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
         status.HTTP_404_NOT_FOUND,
         "Parent node '{node_uuid}' not found",
     ),
+    ProjectNodeRequiredInputsNotSetError: HttpErrorInfo(
+        status.HTTP_409_CONFLICT,
+        "Project node is required but input is not set",
+    ),
+}
+
+# Project errors
+_PROJECT_ERRORS: ExceptionToHttpErrorMap = {
     ProjectDeleteError: HttpErrorInfo(
         status.HTTP_409_CONFLICT,
         "Failed to complete deletion of '{project_uuid}': {reason}",
@@ -84,33 +94,13 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
         status.HTTP_409_CONFLICT,
         "You cannot open more than {max_num_projects} study/ies at once. Please close another study and retry.",
     ),
-    WorkspaceAccessForbiddenError: HttpErrorInfo(
-        status.HTTP_403_FORBIDDEN,
-        "Access to workspace forbidden: {reason}",
+    ProjectStartsTooManyDynamicNodesError: HttpErrorInfo(
+        status.HTTP_409_CONFLICT,
+        "The maximal amount of concurrently running dynamic services was reached. Please manually stop a service and retry.",
     ),
-    WorkspaceNotFoundError: HttpErrorInfo(
-        status.HTTP_404_NOT_FOUND,
-        "Workspace not found: {reason}",
-    ),
-    WrongTagIdsInQueryError: HttpErrorInfo(
-        status.HTTP_400_BAD_REQUEST,
-        "Wrong tag IDs in query",
-    ),
-    UserDefaultWalletNotFoundError: HttpErrorInfo(
-        status.HTTP_404_NOT_FOUND,
-        "Wallet not found: {reason}",
-    ),
-    DefaultPricingPlanNotFoundError: HttpErrorInfo(
-        status.HTTP_404_NOT_FOUND,
-        "Default pricing plan not found",
-    ),
-    DefaultPricingUnitNotFoundError: HttpErrorInfo(
-        status.HTTP_404_NOT_FOUND,
-        "Default pricing unit not found",
-    ),
-    WalletNotEnoughCreditsError: HttpErrorInfo(
-        status.HTTP_402_PAYMENT_REQUIRED,
-        "Wallet does not have enough credits. {reason}",
+    ProjectWalletPendingTransactionError: HttpErrorInfo(
+        status.HTTP_409_CONFLICT,
+        "Project has currently pending transactions. It is forbidden to change wallet.",
     ),
     ProjectInDebtCanNotChangeWalletError: HttpErrorInfo(
         status.HTTP_402_PAYMENT_REQUIRED,
@@ -120,31 +110,73 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
         status.HTTP_402_PAYMENT_REQUIRED,
         "Unable to open the project. The project is embargoed because the last transaction of {debt_amount} resulted in the credit account going negative.",
     ),
-    ProjectStartsTooManyDynamicNodesError: HttpErrorInfo(
-        status.HTTP_409_CONFLICT,
-        "The maximal amount of concurrently running dynamic services was reached. Please manually stop a service and retry.",
+    WrongTagIdsInQueryError: HttpErrorInfo(
+        status.HTTP_400_BAD_REQUEST,
+        "Wrong tag IDs in query",
     ),
-    ProjectWalletPendingTransactionError: HttpErrorInfo(
-        status.HTTP_409_CONFLICT,
-        "Project has currently pending transactions. It is forbidden to change wallet.",
-    ),
-    ClustersKeeperNotAvailableError: HttpErrorInfo(
-        status.HTTP_503_SERVICE_UNAVAILABLE,
-        "Clusters-keeper service is not available",
-    ),
-    ProjectNodeRequiredInputsNotSetError: HttpErrorInfo(
-        status.HTTP_409_CONFLICT,
-        "Project node is required but input is not set",
-    ),
-    CatalogForbiddenError: HttpErrorInfo(
+}
+
+# Workspace errors
+_WORKSPACE_ERRORS: ExceptionToHttpErrorMap = {
+    WorkspaceAccessForbiddenError: HttpErrorInfo(
         status.HTTP_403_FORBIDDEN,
-        "Catalog forbidden: Insufficient access rights for {name}",
+        "Access to workspace forbidden: {reason}",
+    ),
+    WorkspaceNotFoundError: HttpErrorInfo(
+        status.HTTP_404_NOT_FOUND,
+        "Workspace not found: {reason}",
+    ),
+}
+
+# Wallet errors
+_WALLET_ERRORS: ExceptionToHttpErrorMap = {
+    UserDefaultWalletNotFoundError: HttpErrorInfo(
+        status.HTTP_404_NOT_FOUND,
+        "Wallet not found: {reason}",
     ),
     WalletAccessForbiddenError: HttpErrorInfo(
         status.HTTP_403_FORBIDDEN,
         "Payment required, but the user lacks access to the project's linked wallet: Wallet access forbidden. {reason}",
     ),
+    WalletNotEnoughCreditsError: HttpErrorInfo(
+        status.HTTP_402_PAYMENT_REQUIRED,
+        "Wallet does not have enough credits. {reason}",
+    ),
 }
+
+# Pricing errors
+_PRICING_ERRORS: ExceptionToHttpErrorMap = {
+    DefaultPricingPlanNotFoundError: HttpErrorInfo(
+        status.HTTP_404_NOT_FOUND,
+        "Default pricing plan not found",
+    ),
+    DefaultPricingUnitNotFoundError: HttpErrorInfo(
+        status.HTTP_404_NOT_FOUND,
+        "Default pricing unit not found",
+    ),
+}
+
+# Other errors
+_OTHER_ERRORS: ExceptionToHttpErrorMap = {
+    ClustersKeeperNotAvailableError: HttpErrorInfo(
+        status.HTTP_503_SERVICE_UNAVAILABLE,
+        "Clusters-keeper service is not available",
+    ),
+    CatalogForbiddenError: HttpErrorInfo(
+        status.HTTP_403_FORBIDDEN,
+        "Catalog forbidden: Insufficient access rights for {name}",
+    ),
+}
+
+_TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {}
+_TO_HTTP_ERROR_MAP.update(_FOLDER_ERRORS)
+_TO_HTTP_ERROR_MAP.update(_NODE_ERRORS)
+_TO_HTTP_ERROR_MAP.update(_PROJECT_ERRORS)
+_TO_HTTP_ERROR_MAP.update(_WORKSPACE_ERRORS)
+_TO_HTTP_ERROR_MAP.update(_WALLET_ERRORS)
+_TO_HTTP_ERROR_MAP.update(_PRICING_ERRORS)
+_TO_HTTP_ERROR_MAP.update(_OTHER_ERRORS)
+
 handle_plugin_requests_exceptions = exception_handling_decorator(
     to_exceptions_handlers_map(_TO_HTTP_ERROR_MAP)
 )
