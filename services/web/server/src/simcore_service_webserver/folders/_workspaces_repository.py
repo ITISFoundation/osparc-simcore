@@ -11,7 +11,7 @@ from ..db.plugin import get_asyncpg_engine
 from ..projects import _folders_db as project_to_folders_db
 from ..projects import _groups_db as project_groups_db
 from ..projects import _projects_db as projects_db
-from ..projects._access_rights_api import check_user_project_permission
+from ..projects import projects_access_rights_service
 from ..users.api import get_user
 from ..workspaces.api import check_user_workspace_access
 from . import _folders_repository
@@ -65,7 +65,7 @@ async def move_folder_into_workspace(
     )
     # NOTE: Not the most effective, can be improved
     for project_id in project_ids:
-        await check_user_project_permission(
+        await projects_access_rights_service.check_user_project_permission(
             app,
             project_id=project_id,
             user_id=user_id,

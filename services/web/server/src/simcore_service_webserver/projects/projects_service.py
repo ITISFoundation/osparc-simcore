@@ -131,7 +131,7 @@ from . import (
     _projects_nodes_repository,
     _wallets_api,
 )
-from ._access_rights_api import (
+from ._access_rights_service import (
     check_user_project_permission,
     has_user_project_access_rights,
 )
