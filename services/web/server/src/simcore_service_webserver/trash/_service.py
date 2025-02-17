@@ -72,7 +72,7 @@ async def empty_trash_safe(
                     app,
                     product_name=product_name,
                     user_id=user_id,
-                    project_id=folder_id,
+                    folder_id=folder_id,
                 )
 
             except Exception as exc:  # pylint: disable=broad-exception-caught
