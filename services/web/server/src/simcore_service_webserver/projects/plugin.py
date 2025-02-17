@@ -19,7 +19,7 @@ from . import (
     _ports_handlers,
     _projects_nodes_pricing_unit_handlers,
     _states_handlers,
-    _tags_handlers,
+    _tags_rest,
     _trash_rest,
     _wallets_handlers,
     _workspaces_handlers,
@@ -57,7 +57,7 @@ def setup_projects(app: web.Application) -> bool:
     app.router.add_routes(_metadata_rest.routes)
     app.router.add_routes(_ports_handlers.routes)
     app.router.add_routes(_nodes_handlers.routes)
-    app.router.add_routes(_tags_handlers.routes)
+    app.router.add_routes(_tags_rest.routes)
     app.router.add_routes(_wallets_handlers.routes)
     app.router.add_routes(_folders_rest.routes)
     app.router.add_routes(_projects_nodes_pricing_unit_handlers.routes)
