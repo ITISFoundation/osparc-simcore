@@ -24,12 +24,8 @@ from .exceptions import ProjectRunningConflictError, ProjectStoppingError
 
 _logger = logging.getLogger(__name__)
 
-#
-# LOCAL EXCEPTIONS HANDLING
-#
 
-
-_TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
+_TRASH_ERRORS: ExceptionToHttpErrorMap = {
     ProjectRunningConflictError: HttpErrorInfo(
         status.HTTP_409_CONFLICT,
         "Current study is in use and cannot be trashed [project_id={project_uuid}]. Please stop all services first and try again",
@@ -40,15 +36,10 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
     ),
 }
 
-
 _handle_local_request_exceptions = exception_handling_decorator(
-    to_exceptions_handlers_map(_TO_HTTP_ERROR_MAP)
+    to_exceptions_handlers_map(_TRASH_ERRORS)
 )
 
-
-#
-# ROUTES
-#
 
 routes = web.RouteTableDef()
 
