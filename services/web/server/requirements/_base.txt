@@ -543,6 +543,8 @@ pycountry==23.12.11
     # via -r requirements/_base.in
 pycparser==2.21
     # via cffi
+pycryptodome==3.21.0
+    # via stream-zip
 pydantic==2.10.2
     # via
     #   -c requirements/../../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -786,6 +788,10 @@ sqlalchemy==1.4.47
     #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.in
     #   aiopg
     #   alembic
+stream-zip==0.0.83
+    # via
+    #   -r requirements/../../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
 swagger-ui-py==23.9.23
     # via -r requirements/_base.in
 tenacity==8.5.0
