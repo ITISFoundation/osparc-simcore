@@ -64,11 +64,6 @@ async def prune_trash(app: web.Application) -> list[str]:
     retention = timedelta(days=settings.TRASH_RETENTION_DAYS)
     expiration_dt = arrow.now().datetime - retention
 
-    # TODO:
-    #   for each product
-    #      list_trashed_projects
-    #      sort by owner
-    #      as owner start deleting
     _logger.debug(
         "CODE PLACEHOLDER: **ALL** items marked as trashed during %s days are deleted (those marked before %s)",
         retention,
