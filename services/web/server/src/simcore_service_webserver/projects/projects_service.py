@@ -129,7 +129,7 @@ from . import (
     _nodes_api,
     _projects_db,
     _projects_nodes_repository,
-    _wallets_api,
+    _wallets_service,
 )
 from ._access_rights_service import (
     check_user_project_permission,
@@ -658,7 +658,7 @@ async def _start_dynamic_service(  # noqa: C901
             and app_settings.WEBSERVER_CREDIT_COMPUTATION_ENABLED
         ):
             # Deal with Wallet
-            project_wallet = await _wallets_api.get_project_wallet(
+            project_wallet = await _wallets_service.get_project_wallet(
                 request.app, project_id=project_uuid
             )
             if project_wallet is None:
@@ -673,7 +673,7 @@ async def _start_dynamic_service(  # noqa: C901
                 project_wallet_id = TypeAdapter(WalletID).validate_python(
                     user_default_wallet_preference.value
                 )
-                await _wallets_api.connect_wallet_to_project(
+                await _wallets_service.connect_wallet_to_project(
                     request.app,
                     product_name=product_name,
                     project_id=project_uuid,

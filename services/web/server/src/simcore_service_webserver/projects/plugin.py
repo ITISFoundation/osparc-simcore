@@ -21,7 +21,7 @@ from . import (
     _states_handlers,
     _tags_rest,
     _trash_rest,
-    _wallets_handlers,
+    _wallets_rest,
     _workspaces_handlers,
 )
 from ._observer import setup_project_observer_events
@@ -58,7 +58,7 @@ def setup_projects(app: web.Application) -> bool:
     app.router.add_routes(_ports_handlers.routes)
     app.router.add_routes(_nodes_handlers.routes)
     app.router.add_routes(_tags_rest.routes)
-    app.router.add_routes(_wallets_handlers.routes)
+    app.router.add_routes(_wallets_rest.routes)
     app.router.add_routes(_folders_rest.routes)
     app.router.add_routes(_projects_nodes_pricing_unit_handlers.routes)
     app.router.add_routes(_workspaces_handlers.routes)

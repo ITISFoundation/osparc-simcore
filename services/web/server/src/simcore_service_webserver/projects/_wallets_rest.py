@@ -21,8 +21,7 @@ from simcore_service_webserver.utils_aiohttp import envelope_json_response
 from .._meta import API_VTAG
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
-from . import _wallets_api as wallets_api
-from . import projects_service
+from . import _wallets_service, projects_service
 from ._common.exceptions_handlers import handle_plugin_requests_exceptions
 from ._common.models import ProjectPathParams, RequestContext
 
@@ -47,7 +46,7 @@ async def get_project_wallet(request: web.Request):
         user_id=req_ctx.user_id,
         include_state=False,
     )
-    wallet: WalletGet | None = await wallets_api.get_project_wallet(
+    wallet: WalletGet | None = await _wallets_service.get_project_wallet(
         request.app, path_params.project_id
     )
 
@@ -79,7 +78,7 @@ async def connect_wallet_to_project(request: web.Request):
         include_state=False,
     )
 
-    wallet: WalletGet = await wallets_api.connect_wallet_to_project(
+    wallet: WalletGet = await _wallets_service.connect_wallet_to_project(
         request.app,
         product_name=req_ctx.product_name,
         project_id=path_params.project_id,
@@ -116,7 +115,7 @@ async def pay_project_debt(request: web.Request):
     )
 
     # Get curently associated wallet with the project
-    current_wallet: WalletGet | None = await wallets_api.get_project_wallet(
+    current_wallet: WalletGet | None = await _wallets_service.get_project_wallet(
         request.app, path_params.project_id
     )
     if not current_wallet:
@@ -139,7 +138,7 @@ async def pay_project_debt(request: web.Request):
     # Steps:
     # 1. Transfer the required credits from the specified wallet to the connected wallet.
     # 2. Mark the project transactions as billed
-    await wallets_api.pay_debt_with_different_wallet(
+    await _wallets_service.pay_debt_with_different_wallet(
         app=request.app,
         product_name=req_ctx.product_name,
         project_id=path_params.project_id,
