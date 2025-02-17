@@ -19,6 +19,7 @@ from ..db.plugin import get_asyncpg_engine
 from ..projects._trash_service import trash_project, untrash_project
 from ..workspaces.api import check_user_workspace_access
 from . import _folders_repository, _folders_service
+from .errors import FolderNotTrashedError
 
 _logger = logging.getLogger(__name__)
 
@@ -214,7 +215,7 @@ async def list_explicitly_trashed_folders(
     product_name: ProductName,
     user_id: UserID,
     until_equal_datetime: datetime | None = None,
-):
+) -> list[FolderID]:
     trashed_folder_ids: list[FolderID] = []
 
     for page_params in iter_pagination_params(limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE):
@@ -255,5 +256,25 @@ async def delete_trashed_folder(
     user_id: UserID,
     folder_id: FolderID,
     until_equal_datetime: datetime | None = None,
-):
-    raise NotImplementedError
+) -> None:
+
+    folder = await _folders_service.get_folder(
+        app, user_id=user_id, folder_id=folder_id, product_name=product_name
+    )
+
+    if not _can_delete(
+        folder.folder_db,
+        folder.my_access_rights,
+        user_id=user_id,
+        until_equal_datetime=until_equal_datetime,
+    ):
+        raise FolderNotTrashedError(
+            folder_id=folder_id,
+            user_id=user_id,
+            reason="Cannot delete trashed folder since it does not fit current criteria",
+        )
+
+    # NOTE: this function deletes folder AND its content recursively!
+    await _folders_service.delete_folder(
+        app, user_id=user_id, folder_id=folder_id, product_name=product_name
+    )
