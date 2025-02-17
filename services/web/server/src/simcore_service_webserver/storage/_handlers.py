@@ -426,12 +426,13 @@ async def get_async_job_status(request: web.Request) -> web.Response:
 async def abort_async_job(request: web.Request) -> web.Response:
     rabbitmq_rpc_client = get_rabbitmq_rpc_client(request.app)
     async_job_get = parse_request_path_parameters_as(AsyncJobGet, request)
-    data_export_task_abort_request = await abort(
+    async_job_rpc_abort = await abort(
         rabbitmq_rpc_client=rabbitmq_rpc_client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
         job_id=async_job_get.job_id,
     )
-    return create_data_response(
-        AsyncJobStatus.from_async_job_rpc_status(async_job_rpc_status),
-        status=status.HTTP_200_OK,
+    return web.Response(
+        status=status.HTTP_200_OK
+        if async_job_rpc_abort.result
+        else status.HTTP_500_INTERNAL_SERVER_ERROR
     )
