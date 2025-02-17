@@ -48,6 +48,22 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
     },
   },
 
+  statics: {
+    createThumbnail: function(source, size) {
+      return new qx.ui.basic.Image().set({
+        source: source,
+        alignY: "middle",
+        scale: true,
+        allowGrowX: true,
+        allowGrowY: true,
+        allowShrinkX: true,
+        allowShrinkY: true,
+        maxWidth: size,
+        maxHeight: size,
+      });
+    },
+  },
+
   members: {
     __populateLayout: function() {
       this._removeAll();
@@ -76,29 +92,33 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
       const anatomicalModelsData = this.getAnatomicalModelsData();
       const modelsInfo = anatomicalModelsData["licensedResources"];
       if (modelsInfo.length > 1) {
-        const sBox = new qx.ui.form.SelectBox().set({
-          minWidth: 200,
-          allowGrowX: false,
+        const slideBar = new osparc.widget.SlideBar();
+        slideBar.setButtonsWidth(32);
+        const thumbnailTapped = idx => {
+          this.__populateModelInfo(modelLayout, anatomicalModelsData, idx);
+          const selectedBorderColor = qx.theme.manager.Color.getInstance().resolve("strong-main");
+          const unselectedBorderColor = qx.theme.manager.Color.getInstance().resolve("text");
+          slideBar.getChildren().forEach((thumbnailImg, index) => {
+            osparc.utils.Utils.updateBorderColor(thumbnailImg, index === idx ? selectedBorderColor : unselectedBorderColor);
+          });
+        }
+        modelsInfo.forEach((modelInfo, idx) => {
+          const miniThumbnail = this.self().createThumbnail(modelInfo["source"]["thumbnail"], 32);
+          miniThumbnail.set({
+            toolTipText: modelInfo["source"]["features"]["name"]
+          });
+          miniThumbnail.addListener("tap", () => thumbnailTapped(idx));
+          slideBar.add(miniThumbnail);
         });
-        modelsInfo.forEach(modelInfo => {
-          const sbItem = new qx.ui.form.ListItem(modelInfo["source"]["features"]["name"]);
-          sbItem.modelId = modelInfo["source"]["id"];
-          sBox.add(sbItem);
-        });
-        this._add(sBox);
-        sBox.addListener("changeSelection", e => {
-          const selection = e.getData();
-          if (selection.length) {
-            const idxFound = modelsInfo.findIndex(mdlInfo => mdlInfo["source"]["id"] === selection[0].modelId)
-            this.__populateModelInfo(modelLayout, anatomicalModelsData, idxFound);
-          }
-        }, this);
+        this._add(slideBar);
+        thumbnailTapped(0);
+
         this.__populateModelInfo(modelLayout, anatomicalModelsData, 0);
       } else {
         this.__populateModelInfo(modelLayout, anatomicalModelsData, 0);
       }
 
-      this._add(modelLayout);
+      this._addAt(modelLayout, 0);
     },
 
     __populateModelInfo: function(modelLayout, anatomicalModelsData, selectedIdx = 0) {
@@ -176,17 +196,7 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
 
 
       const middleLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(16));
-      const thumbnail = new qx.ui.basic.Image().set({
-        source: anatomicalModel["thumbnail"],
-        alignY: "middle",
-        scale: true,
-        allowGrowX: true,
-        allowGrowY: true,
-        allowShrinkX: true,
-        allowShrinkY: true,
-        maxWidth: 256,
-        maxHeight: 256,
-      });
+      const thumbnail = this.self().createThumbnail(anatomicalModel["thumbnail"], 256);
       middleLayout.add(thumbnail);
 
       const features = anatomicalModel["features"];
