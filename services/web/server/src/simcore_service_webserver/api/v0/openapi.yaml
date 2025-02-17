@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: simcore-service-webserver
   description: Main service with an interface (http-API & websockets) to the web front-end
-  version: 0.57.0
+  version: 0.58.0
 servers:
 - url: ''
   description: webserver
@@ -5973,8 +5973,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_FileUploadCompleteFutureResponse_'
-  /v0/trash:
-    delete:
+  /v0/trash:empty:
+    post:
       tags:
       - trash
       summary: Empty Trash

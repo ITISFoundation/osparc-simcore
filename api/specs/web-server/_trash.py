@@ -26,8 +26,8 @@ router = APIRouter(
 )
 
 
-@router.delete(
-    "/trash",
+@router.post(
+    "/trash:empty",
     status_code=status.HTTP_204_NO_CONTENT,
 )
 def empty_trash():
