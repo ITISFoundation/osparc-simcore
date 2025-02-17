@@ -129,7 +129,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         bool, Field(description="If True, run as a worker")
     ] = False
 
-    STORAGE_MODE: str
+    STORAGE_WORKER_MODE: bool | None = False
 
     @field_validator("LOG_LEVEL", mode="before")
     @classmethod
