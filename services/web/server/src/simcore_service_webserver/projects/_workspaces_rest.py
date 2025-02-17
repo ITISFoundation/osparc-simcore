@@ -12,7 +12,7 @@ from servicelib.aiohttp.requests_validation import parse_request_path_parameters
 from .._meta import api_version_prefix as VTAG
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
-from . import _workspaces_api
+from . import _workspaces_service
 from ._common.exceptions_handlers import handle_plugin_requests_exceptions
 from ._common.models import RequestContext
 
@@ -44,7 +44,7 @@ async def move_project_to_workspace(request: web.Request):
         _ProjectWorkspacesPathParams, request
     )
 
-    await _workspaces_api.move_project_into_workspace(
+    await _workspaces_service.move_project_into_workspace(
         app=request.app,
         user_id=req_ctx.user_id,
         project_id=path_params.project_id,

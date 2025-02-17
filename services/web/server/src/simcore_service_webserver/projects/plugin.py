@@ -22,7 +22,7 @@ from . import (
     _tags_rest,
     _trash_rest,
     _wallets_rest,
-    _workspaces_handlers,
+    _workspaces_rest,
 )
 from ._observer import setup_project_observer_events
 from ._projects_access import setup_projects_access
@@ -61,7 +61,7 @@ def setup_projects(app: web.Application) -> bool:
     app.router.add_routes(_wallets_rest.routes)
     app.router.add_routes(_folders_rest.routes)
     app.router.add_routes(_nodes_pricing_unit_rest.routes)
-    app.router.add_routes(_workspaces_handlers.routes)
+    app.router.add_routes(_workspaces_rest.routes)
     app.router.add_routes(_trash_rest.routes)
 
     return True
