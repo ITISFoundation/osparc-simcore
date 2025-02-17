@@ -9,7 +9,7 @@ AsyncJobRpcId: TypeAlias = UUID
 
 
 class AsyncJobRpcStatus(BaseModel):
-    task_id: AsyncJobRpcId
+    job_id: AsyncJobRpcId
     task_progress: PositiveFloat = Field(..., ge=0.0, le=1.0)
     done: bool
     started: datetime
@@ -32,5 +32,5 @@ class AsyncJobRpcResult(BaseModel):
 
 
 class AsyncJobRpcGet(BaseModel):
-    task_id: AsyncJobRpcId
+    job_id: AsyncJobRpcId
     task_name: str

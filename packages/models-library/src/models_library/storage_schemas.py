@@ -389,15 +389,15 @@ class DataExportPost(BaseModel):
 
 
 class AsyncJobGet(BaseModel):
-    task_id: UUID
+    job_id: UUID
 
     @classmethod
     def from_async_job_rpc_get(cls, async_job_rpc_get: AsyncJobRpcGet) -> "AsyncJobGet":
-        return AsyncJobGet(task_id=async_job_rpc_get.task_id)
+        return AsyncJobGet(job_id=async_job_rpc_get.job_id)
 
 
 class AsyncJobStatus(BaseModel):
-    task_id: UUID
+    job_id: UUID
     task_progress: PositiveFloat = Field(..., ge=0.0, le=1.0)
     done: bool
     started: datetime
@@ -408,7 +408,7 @@ class AsyncJobStatus(BaseModel):
         cls, async_job_rpc_status: AsyncJobRpcStatus
     ) -> "AsyncJobStatus":
         return AsyncJobStatus(
-            task_id=async_job_rpc_status.task_id,
+            job_id=async_job_rpc_status.job_id,
             task_progress=async_job_rpc_status.task_progress,
             done=async_job_rpc_status.done,
             started=async_job_rpc_status.started,

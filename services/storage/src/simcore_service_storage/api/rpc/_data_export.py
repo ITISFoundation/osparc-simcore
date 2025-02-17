@@ -16,6 +16,6 @@ async def start_data_export(
 ) -> AsyncJobRpcGet:
     assert app  # nosec
     return AsyncJobRpcGet(
-        task_id=uuid4(),
+        job_id=uuid4(),
         task_name=", ".join(str(p) for p in paths.paths),
     )

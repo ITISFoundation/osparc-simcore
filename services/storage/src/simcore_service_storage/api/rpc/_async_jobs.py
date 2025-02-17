@@ -15,16 +15,16 @@ router = RPCRouter()
 
 
 @router.expose()
-async def abort(app: FastAPI, task_id: AsyncJobRpcId) -> DataExportTaskAbortOutput:
+async def abort(app: FastAPI, job_id: AsyncJobRpcId) -> DataExportTaskAbortOutput:
     assert app  # nosec
-    return DataExportTaskAbortOutput(result=True, task_id=task_id)
+    return DataExportTaskAbortOutput(result=True, task_id=job_id)
 
 
 @router.expose()
-async def get_status(app: FastAPI, task_id: AsyncJobRpcId) -> AsyncJobRpcStatus:
+async def get_status(app: FastAPI, job_id: AsyncJobRpcId) -> AsyncJobRpcStatus:
     assert app  # nosec
     return AsyncJobRpcStatus(
-        task_id=task_id,
+        job_id=job_id,
         task_progress=0.5,
         done=False,
         started=datetime.now(),
@@ -33,7 +33,7 @@ async def get_status(app: FastAPI, task_id: AsyncJobRpcId) -> AsyncJobRpcStatus:
 
 
 @router.expose()
-async def get_result(app: FastAPI, task_id: AsyncJobRpcId) -> AsyncJobRpcResult:
+async def get_result(app: FastAPI, job_id: AsyncJobRpcId) -> AsyncJobRpcResult:
     assert app  # nosec
-    assert task_id  # nosec
+    assert job_id  # nosec
     return AsyncJobRpcResult(result="Here's your result.", error=None)

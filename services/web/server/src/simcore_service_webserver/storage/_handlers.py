@@ -397,20 +397,19 @@ async def export_data(request: web.Request) -> web.Response:
 
 
 @routes.get(
-    _storage_prefix + "/async-jobs/status",
+    _storage_prefix + "/async-jobs/{job_id}/status",
     name="storage_async_job_status",
 )
 @login_required
 @permission_required("storage.files.*")
 async def get_async_job_status(request: web.Request) -> web.Response:
     rabbitmq_rpc_client = get_rabbitmq_rpc_client(request.app)
-    async_job_get = await parse_request_body_as(
-        model_schema_cls=AsyncJobGet, request=request
-    )
+
+    async_job_get = parse_request_path_parameters_as(AsyncJobGet, request)
     async_job_rpc_status = await get_status(
         rabbitmq_rpc_client=rabbitmq_rpc_client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
-        task_id=async_job_get.task_id,
+        task_id=async_job_get.job_id,
     )
     return create_data_response(
         AsyncJobStatus.from_async_job_rpc_status(async_job_rpc_status),
