@@ -63,7 +63,7 @@ async def test_custom_metadata_handlers(
     response = await client.get(f"{url}")
 
     _, error = await assert_status(response, expected_status_code=expected.not_found)
-    error_message = error["errors"][0]["message"]
+    error_message = error["message"]
     assert invalid_project_id in error_message
     assert "project" in error_message.lower()
 
