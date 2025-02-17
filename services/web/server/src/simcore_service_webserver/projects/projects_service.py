@@ -126,9 +126,9 @@ from ..wallets.errors import WalletNotEnoughCreditsError
 from ..workspaces import _workspaces_repository as workspaces_db
 from . import (
     _crud_api_delete,
+    _nodes_repository,
     _nodes_services,
     _projects_db,
-    _projects_nodes_repository,
     _wallets_service,
 )
 from ._access_rights_service import (
@@ -1018,7 +1018,7 @@ async def update_project_node_state(
         new_node_data={"state": {"currentStatus": new_state}},
     )
 
-    await _projects_nodes_repository.update(
+    await _nodes_repository.update(
         app,
         project_id=project_id,
         node_id=node_id,
@@ -1090,7 +1090,7 @@ async def patch_project_node(
         new_node_data=_node_patch_exclude_unset,
     )
 
-    await _projects_nodes_repository.update(
+    await _nodes_repository.update(
         app,
         project_id=project_id,
         node_id=node_id,
@@ -1158,7 +1158,7 @@ async def update_project_node_outputs(
         new_node_data={"outputs": new_outputs, "runHash": new_run_hash},
     )
 
-    await _projects_nodes_repository.update(
+    await _nodes_repository.update(
         app,
         project_id=project_id,
         node_id=node_id,
