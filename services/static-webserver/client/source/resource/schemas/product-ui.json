@@ -66,6 +66,14 @@
             }, {
               "type": "object",
               "properties": {
+                "resourceType": { "enum": ["service"] },
+                "mostUsed": { "type": "integer" },
+                "category": { "type": "string" }
+              },
+              "required": ["resourceType", "mostUsed"]
+            }, {
+              "type": "object",
+              "properties": {
                 "showDisabled": {
                   "type": "boolean",
                   "enum": [true]
