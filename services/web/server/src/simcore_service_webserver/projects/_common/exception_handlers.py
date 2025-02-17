@@ -22,12 +22,14 @@ from ..exceptions import (
     ProjectDeleteError,
     ProjectGroupNotFoundError,
     ProjectInDebtCanNotChangeWalletError,
+    ProjectInDebtCanNotOpenError,
     ProjectInvalidRightsError,
     ProjectInvalidUsageError,
     ProjectNodeRequiredInputsNotSetError,
     ProjectNotFoundError,
     ProjectOwnerNotFoundInTheProjectAccessRightsError,
     ProjectStartsTooManyDynamicNodesError,
+    ProjectTooManyProjectOpenedError,
     WrongTagIdsInQueryError,
 )
 
@@ -77,6 +79,10 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
         status.HTTP_400_BAD_REQUEST,
         "Project owner identifier was not found in the project's access-rights field",
     ),
+    ProjectTooManyProjectOpenedError: HttpErrorInfo(
+        status.HTTP_409_CONFLICT,
+        "You cannot open more than {max_num_projects} study/ies at once. Please close another study and retry.",
+    ),
     WorkspaceAccessForbiddenError: HttpErrorInfo(
         status.HTTP_403_FORBIDDEN,
         "Access to workspace forbidden: {reason}",
@@ -108,6 +114,10 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
     ProjectInDebtCanNotChangeWalletError: HttpErrorInfo(
         status.HTTP_402_PAYMENT_REQUIRED,
         "Unable to change the credit account linked to the project. The project is embargoed because the last transaction of {debt_amount} resulted in the credit account going negative.",
+    ),
+    ProjectInDebtCanNotOpenError: HttpErrorInfo(
+        status.HTTP_402_PAYMENT_REQUIRED,
+        "Unable to open the project. The project is embargoed because the last transaction of {debt_amount} resulted in the credit account going negative.",
     ),
     ProjectStartsTooManyDynamicNodesError: HttpErrorInfo(
         status.HTTP_409_CONFLICT,
