@@ -129,7 +129,7 @@ async def _forward_request_to_storage(
 
 routes = web.RouteTableDef()
 _storage_prefix = f"/{API_VTAG}/storage"
-_storage_locations_prefix = f"/{_storage_prefix}/locations"
+_storage_locations_prefix = f"{_storage_prefix}/locations"
 
 
 @routes.get(_storage_locations_prefix, name="list_storage_locations")
@@ -372,19 +372,23 @@ async def delete_file(request: web.Request) -> web.Response:
 
 
 @routes.post(
-    _storage_prefix + "/export-data",
+    _storage_locations_prefix + "/{location_id}/export-data",
     name="storage_export_data",
 )
 @login_required
 @permission_required("storage.files.*")
 async def export_data(request: web.Request) -> web.Response:
+    class _PathParams(BaseModel):
+        location_id: LocationID
+
     rabbitmq_rpc_client = get_rabbitmq_rpc_client(request.app)
+    _path_params = parse_request_path_parameters_as(_PathParams, request)
     data_export_post = await parse_request_body_as(
         model_schema_cls=DataExportPost, request=request
     )
     async_job_rpc_get = await start_data_export(
         rabbitmq_rpc_client=rabbitmq_rpc_client,
-        paths=data_export_post.to_storage_model(),
+        paths=data_export_post.to_storage_model(location_id=_path_params.location_id),
     )
     return create_data_response(
         AsyncJobGet.from_async_job_rpc_get(async_job_rpc_get),

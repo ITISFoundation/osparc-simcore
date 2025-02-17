@@ -384,8 +384,8 @@ class SoftCopyBody(BaseModel):
 class DataExportPost(BaseModel):
     paths: list[Path]
 
-    def to_storage_model(self) -> DataExportTaskStartInput:
-        return DataExportTaskStartInput(paths=self.paths)
+    def to_storage_model(self, location_id: LocationID) -> DataExportTaskStartInput:
+        return DataExportTaskStartInput(paths=self.paths, location_id=location_id)
 
 
 class AsyncJobGet(BaseModel):

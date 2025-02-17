@@ -52,7 +52,7 @@ async def test_data_export(
 
     _body = DataExportPost(paths=[Path(".")])
     response = await client.post(
-        "/v0/storage/export-data", data=_body.model_dump_json()
+        "/v0/storage/locations/0/export-data", data=_body.model_dump_json()
     )
     assert response.status == status.HTTP_202_ACCEPTED
     Envelope[AsyncJobGet].model_validate(await response.json())
