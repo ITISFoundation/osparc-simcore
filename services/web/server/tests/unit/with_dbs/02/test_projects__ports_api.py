@@ -9,7 +9,7 @@ from typing import Any
 import pytest
 from models_library.projects_nodes import Node, NodeID
 from models_library.utils.json_schema import jsonschema_validate_schema
-from simcore_service_webserver.projects._ports_api import (
+from simcore_service_webserver.projects._ports_service import (
     InvalidInputValue,
     _get_outputs_in_workbench,
     get_project_inputs,

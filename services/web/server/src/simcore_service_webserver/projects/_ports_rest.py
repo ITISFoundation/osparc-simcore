@@ -24,12 +24,12 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
 )
-from simcore_service_webserver.utils_aiohttp import envelope_json_response
 
 from .._meta import API_VTAG as VTAG
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
-from . import _ports_api, projects_service
+from ..utils_aiohttp import envelope_json_response
+from . import _ports_service, projects_service
 from ._access_rights_service import check_user_project_permission
 from ._common.exceptions_handlers import handle_plugin_requests_exceptions
 from ._common.models import ProjectPathParams, RequestContext
@@ -72,7 +72,7 @@ async def get_project_inputs(request: web.Request) -> web.Response:
     workbench = await _get_validated_workbench_model(
         app=request.app, project_id=path_params.project_id, user_id=req_ctx.user_id
     )
-    inputs: dict[NodeID, Any] = _ports_api.get_project_inputs(workbench)
+    inputs: dict[NodeID, Any] = _ports_service.get_project_inputs(workbench)
 
     return envelope_json_response(
         {
@@ -99,7 +99,7 @@ async def update_project_inputs(request: web.Request) -> web.Response:
     workbench = await _get_validated_workbench_model(
         app=request.app, project_id=path_params.project_id, user_id=req_ctx.user_id
     )
-    current_inputs: dict[NodeID, Any] = _ports_api.get_project_inputs(workbench)
+    current_inputs: dict[NodeID, Any] = _ports_service.get_project_inputs(workbench)
 
     # build workbench patch
     partial_workbench_data = {}
@@ -133,7 +133,7 @@ async def update_project_inputs(request: web.Request) -> web.Response:
     workbench = TypeAdapter(dict[NodeID, Node]).validate_python(
         updated_project["workbench"]
     )
-    inputs: dict[NodeID, Any] = _ports_api.get_project_inputs(workbench)
+    inputs: dict[NodeID, Any] = _ports_service.get_project_inputs(workbench)
 
     return envelope_json_response(
         {
@@ -163,7 +163,7 @@ async def get_project_outputs(request: web.Request) -> web.Response:
     workbench = await _get_validated_workbench_model(
         app=request.app, project_id=path_params.project_id, user_id=req_ctx.user_id
     )
-    outputs: dict[NodeID, Any] = await _ports_api.get_project_outputs(
+    outputs: dict[NodeID, Any] = await _ports_service.get_project_outputs(
         request.app, project_id=path_params.project_id, workbench=workbench
     )
 
@@ -218,6 +218,6 @@ async def list_project_metadata_ports(request: web.Request) -> web.Response:
                 kind=port.kind,
                 content_schema=port.get_schema(),
             )
-            for port in _ports_api.iter_project_ports(workbench)
+            for port in _ports_service.iter_project_ports(workbench)
         ]
     )
