@@ -1418,25 +1418,38 @@ async def test_read_from_bytes_streamer(
     await assert_same_file_content(with_uploaded_file_on_s3.local_path, fake_file_name)
 
 
+@pytest.mark.parametrize("upload_from_s3", [True, False])
 async def test_upload_object_from_file_like(
     mocked_s3_server_envs: EnvVarsDict,
     with_uploaded_file_on_s3: UploadedFile,
     simcore_s3_api: SimcoreS3API,
     with_s3_bucket: S3BucketName,
+    upload_from_s3: bool,
 ):
     object_key = "read_from_s3_write_to_s3"
-    bytes_streamer = await simcore_s3_api.get_bytes_streamer_from_object(
-        with_s3_bucket, with_uploaded_file_on_s3.s3_key
-    )
-    assert isinstance(bytes_streamer.data_size, DataSize)
 
-    await simcore_s3_api.upload_object_from_file_like(
-        with_s3_bucket,
-        object_key,
-        FileLikeBytesIterReader(bytes_streamer.with_progress_bytes_iter(AsyncMock())),
-    )
-
-    # TODO: also add a test uploading form a file instead of S3 since it's possible, open it with aiofiles
+    if upload_from_s3:
+        bytes_streamer = await simcore_s3_api.get_bytes_streamer_from_object(
+            with_s3_bucket, with_uploaded_file_on_s3.s3_key
+        )
+        assert isinstance(bytes_streamer.data_size, DataSize)
+        await simcore_s3_api.upload_object_from_file_like(
+            with_s3_bucket,
+            object_key,
+            FileLikeBytesIterReader(
+                bytes_streamer.with_progress_bytes_iter(AsyncMock())
+            ),
+        )
+    else:
+        await simcore_s3_api.upload_object_from_file_like(
+            with_s3_bucket,
+            object_key,
+            FileLikeBytesIterReader(
+                DiskStreamReader(with_uploaded_file_on_s3.local_path)
+                .get_bytes_streamer()
+                .bytes_iter_callable()
+            ),
+        )
 
     await simcore_s3_api.delete_object(bucket=with_s3_bucket, object_key=object_key)
 
