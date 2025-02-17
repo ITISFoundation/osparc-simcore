@@ -3,7 +3,6 @@
 """
 
 import asyncio
-import functools
 import logging
 
 from aiohttp import web
@@ -42,17 +41,12 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_path_parameters_as,
     parse_request_query_parameters_as,
 )
-from servicelib.aiohttp.typing_extension import Handler
 from servicelib.common_headers import (
     UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
     X_SIMCORE_USER_AGENT,
 )
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.rabbitmq import RPCServerError
-from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
-    CatalogForbiddenError,
-    CatalogItemNotFoundError,
-)
 from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler.errors import (
     ServiceWaitingForManualInterventionError,
     ServiceWasNotFoundError,
@@ -67,68 +61,20 @@ from ..groups.api import get_group_from_gid, list_all_user_groups_ids
 from ..groups.exceptions import GroupNotFoundError
 from ..login.decorators import login_required
 from ..projects.api import has_user_project_access_rights
-from ..resource_usage.errors import DefaultPricingPlanNotFoundError
 from ..security.decorators import permission_required
 from ..users.api import get_user_id_from_gid, get_user_role
-from ..users.exceptions import UserDefaultWalletNotFoundError
 from ..utils_aiohttp import envelope_json_response
-from ..wallets.errors import WalletAccessForbiddenError, WalletNotEnoughCreditsError
 from . import nodes_utils, projects_service
+from ._common.exception_handlers import handle_plugin_requests_exceptions
 from ._common.models import ProjectPathParams, RequestContext
 from ._nodes_api import NodeScreenshot, get_node_screenshots
 from .exceptions import (
-    ClustersKeeperNotAvailableError,
-    DefaultPricingUnitNotFoundError,
     NodeNotFoundError,
-    ProjectInDebtCanNotChangeWalletError,
-    ProjectInvalidRightsError,
-    ProjectNodeRequiredInputsNotSetError,
     ProjectNodeResourcesInsufficientRightsError,
     ProjectNodeResourcesInvalidError,
-    ProjectNotFoundError,
-    ProjectStartsTooManyDynamicNodesError,
 )
 
 _logger = logging.getLogger(__name__)
-
-
-def _handle_project_nodes_exceptions(handler: Handler):
-    @functools.wraps(handler)
-    async def wrapper(request: web.Request) -> web.StreamResponse:
-        try:
-            return await handler(request)
-
-        except (
-            ProjectNotFoundError,
-            NodeNotFoundError,
-            UserDefaultWalletNotFoundError,
-            DefaultPricingPlanNotFoundError,
-            DefaultPricingUnitNotFoundError,
-            GroupNotFoundError,
-            CatalogItemNotFoundError,
-        ) as exc:
-            raise web.HTTPNotFound(reason=f"{exc}") from exc
-        except (
-            WalletNotEnoughCreditsError,
-            ProjectInDebtCanNotChangeWalletError,
-        ) as exc:
-            raise web.HTTPPaymentRequired(reason=f"{exc}") from exc
-        except ProjectInvalidRightsError as exc:
-            raise web.HTTPUnauthorized(reason=f"{exc}") from exc
-        except ProjectStartsTooManyDynamicNodesError as exc:
-            raise web.HTTPConflict(reason=f"{exc}") from exc
-        except ClustersKeeperNotAvailableError as exc:
-            raise web.HTTPServiceUnavailable(reason=f"{exc}") from exc
-        except ProjectNodeRequiredInputsNotSetError as exc:
-            raise web.HTTPConflict(reason=f"{exc}") from exc
-        except CatalogForbiddenError as exc:
-            raise web.HTTPForbidden(reason=f"{exc}") from exc
-        except WalletAccessForbiddenError as exc:
-            raise web.HTTPForbidden(
-                reason=f"Payment required, but the user lacks access to the project's linked wallet.: {exc}"
-            ) from exc
-
-    return wrapper
 
 
 #
@@ -145,7 +91,7 @@ class NodePathParams(ProjectPathParams):
 @routes.post(f"/{VTAG}/projects/{{project_id}}/nodes", name="create_node")
 @login_required
 @permission_required("project.node.create")
-@_handle_project_nodes_exceptions
+@handle_plugin_requests_exceptions
 async def create_node(request: web.Request) -> web.Response:
     req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
@@ -187,7 +133,7 @@ async def create_node(request: web.Request) -> web.Response:
 @routes.get(f"/{VTAG}/projects/{{project_id}}/nodes/{{node_id}}", name="get_node")
 @login_required
 @permission_required("project.node.read")
-@_handle_project_nodes_exceptions
+@handle_plugin_requests_exceptions
 # NOTE: Careful, this endpoint is actually "get_node_state," and it doesn't return a Node resource.
 async def get_node(request: web.Request) -> web.Response:
     req_ctx = RequestContext.model_validate(request)
@@ -226,7 +172,7 @@ async def get_node(request: web.Request) -> web.Response:
 )
 @login_required
 @permission_required("project.node.update")
-@_handle_project_nodes_exceptions
+@handle_plugin_requests_exceptions
 async def patch_project_node(request: web.Request) -> web.Response:
     req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(NodePathParams, request)
@@ -247,7 +193,7 @@ async def patch_project_node(request: web.Request) -> web.Response:
 @routes.delete(f"/{VTAG}/projects/{{project_id}}/nodes/{{node_id}}", name="delete_node")
 @login_required
 @permission_required("project.node.delete")
-@_handle_project_nodes_exceptions
+@handle_plugin_requests_exceptions
 async def delete_node(request: web.Request) -> web.Response:
     req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(NodePathParams, request)
@@ -275,7 +221,7 @@ async def delete_node(request: web.Request) -> web.Response:
 )
 @login_required
 @permission_required("project.node.read")
-@_handle_project_nodes_exceptions
+@handle_plugin_requests_exceptions
 async def retrieve_node(request: web.Request) -> web.Response:
     """Has only effect on nodes associated to dynamic services"""
     path_params = parse_request_path_parameters_as(NodePathParams, request)
@@ -295,7 +241,7 @@ async def retrieve_node(request: web.Request) -> web.Response:
 )
 @login_required
 @permission_required("project.node.update")
-@_handle_project_nodes_exceptions
+@handle_plugin_requests_exceptions
 async def update_node_outputs(request: web.Request) -> web.Response:
     req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(NodePathParams, request)
@@ -322,7 +268,7 @@ async def update_node_outputs(request: web.Request) -> web.Response:
 )
 @login_required
 @permission_required("project.update")
-@_handle_project_nodes_exceptions
+@handle_plugin_requests_exceptions
 async def start_node(request: web.Request) -> web.Response:
     """Has only effect on nodes associated to dynamic services"""
     req_ctx = RequestContext.model_validate(request)
@@ -366,7 +312,7 @@ async def _stop_dynamic_service_task(
 )
 @login_required
 @permission_required("project.update")
-@_handle_project_nodes_exceptions
+@handle_plugin_requests_exceptions
 async def stop_node(request: web.Request) -> web.Response:
     """Has only effect on nodes associated to dynamic services"""
     req_ctx = RequestContext.model_validate(request)
@@ -408,7 +354,7 @@ async def stop_node(request: web.Request) -> web.Response:
 )
 @login_required
 @permission_required("project.node.read")
-@_handle_project_nodes_exceptions
+@handle_plugin_requests_exceptions
 async def restart_node(request: web.Request) -> web.Response:
     """Has only effect on nodes associated to dynamic services"""
 
@@ -432,7 +378,7 @@ async def restart_node(request: web.Request) -> web.Response:
 )
 @login_required
 @permission_required("project.node.read")
-@_handle_project_nodes_exceptions
+@handle_plugin_requests_exceptions
 async def get_node_resources(request: web.Request) -> web.Response:
     req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(NodePathParams, request)
@@ -465,7 +411,7 @@ async def get_node_resources(request: web.Request) -> web.Response:
 )
 @login_required
 @permission_required("project.node.update")
-@_handle_project_nodes_exceptions
+@handle_plugin_requests_exceptions
 async def replace_node_resources(request: web.Request) -> web.Response:
     req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(NodePathParams, request)
@@ -524,7 +470,7 @@ class _ProjectGroupAccess(BaseModel):
 )
 @login_required
 @permission_required("project.read")
-@_handle_project_nodes_exceptions
+@handle_plugin_requests_exceptions
 async def get_project_services_access_for_gid(
     request: web.Request,
 ) -> web.Response:
@@ -644,7 +590,7 @@ class _ProjectNodePreview(BaseModel):
 )
 @login_required
 @permission_required("project.read")
-@_handle_project_nodes_exceptions
+@handle_plugin_requests_exceptions
 async def list_project_nodes_previews(request: web.Request) -> web.Response:
     req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
@@ -684,7 +630,7 @@ async def list_project_nodes_previews(request: web.Request) -> web.Response:
 )
 @login_required
 @permission_required("project.read")
-@_handle_project_nodes_exceptions
+@handle_plugin_requests_exceptions
 async def get_project_node_preview(request: web.Request) -> web.Response:
     req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(NodePathParams, request)

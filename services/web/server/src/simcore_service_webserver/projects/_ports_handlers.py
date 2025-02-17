@@ -3,13 +3,10 @@
     - /projects/{*}/outputs
 """
 
-import functools
 import logging
-from collections.abc import Awaitable, Callable
 from typing import Any, Literal
 
 from aiohttp import web
-from common_library.json_serialization import json_dumps
 from models_library.api_schemas_webserver.projects_ports import (
     ProjectInputGet,
     ProjectInputUpdate,
@@ -27,55 +24,19 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
 )
+from simcore_service_webserver.utils_aiohttp import envelope_json_response
 
 from .._meta import API_VTAG as VTAG
 from ..login.decorators import login_required
 from ..projects._access_rights_api import check_user_project_permission
 from ..security.decorators import permission_required
 from . import _ports_api, projects_service
+from ._common.exception_handlers import handle_plugin_requests_exceptions
 from ._common.models import ProjectPathParams, RequestContext
 from .db import ProjectDBAPI
-from .exceptions import (
-    NodeNotFoundError,
-    ProjectInvalidRightsError,
-    ProjectNotFoundError,
-)
 from .models import ProjectDict
 
 log = logging.getLogger(__name__)
-
-
-def _web_json_response_enveloped(data: Any) -> web.Response:
-    return web.json_response(
-        {
-            "data": jsonable_encoder(data),
-        },
-        dumps=json_dumps,
-    )
-
-
-def _handle_project_exceptions(
-    handler: Callable[[web.Request], Awaitable[web.Response]]
-) -> Callable[[web.Request], Awaitable[web.Response]]:
-    @functools.wraps(handler)
-    async def wrapper(request: web.Request) -> web.Response:
-        try:
-            return await handler(request)
-
-        except ProjectNotFoundError as exc:
-            raise web.HTTPNotFound(
-                reason=f"Project '{exc.project_uuid}' not found"
-            ) from exc
-
-        except ProjectInvalidRightsError as exc:
-            raise web.HTTPUnauthorized from exc
-
-        except NodeNotFoundError as exc:
-            raise web.HTTPNotFound(
-                reason=f"Port '{exc.node_uuid}' not found in node '{exc.project_uuid}'"
-            ) from exc
-
-    return wrapper
 
 
 async def _get_validated_workbench_model(
@@ -101,7 +62,7 @@ routes = web.RouteTableDef()
 @routes.get(f"/{VTAG}/projects/{{project_id}}/inputs", name="get_project_inputs")
 @login_required
 @permission_required("project.read")
-@_handle_project_exceptions
+@handle_plugin_requests_exceptions
 async def get_project_inputs(request: web.Request) -> web.Response:
     req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
@@ -113,8 +74,8 @@ async def get_project_inputs(request: web.Request) -> web.Response:
     )
     inputs: dict[NodeID, Any] = _ports_api.get_project_inputs(workbench)
 
-    return _web_json_response_enveloped(
-        data={
+    return envelope_json_response(
+        {
             node_id: ProjectInputGet(
                 key=node_id, label=workbench[node_id].label, value=value
             )
@@ -126,7 +87,7 @@ async def get_project_inputs(request: web.Request) -> web.Response:
 @routes.patch(f"/{VTAG}/projects/{{project_id}}/inputs", name="update_project_inputs")
 @login_required
 @permission_required("project.update")
-@_handle_project_exceptions
+@handle_plugin_requests_exceptions
 async def update_project_inputs(request: web.Request) -> web.Response:
     db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(request.app)
     req_ctx = RequestContext.model_validate(request)
@@ -174,8 +135,8 @@ async def update_project_inputs(request: web.Request) -> web.Response:
     )
     inputs: dict[NodeID, Any] = _ports_api.get_project_inputs(workbench)
 
-    return _web_json_response_enveloped(
-        data={
+    return envelope_json_response(
+        {
             node_id: ProjectInputGet(
                 key=node_id, label=workbench[node_id].label, value=value
             )
@@ -192,7 +153,7 @@ async def update_project_inputs(request: web.Request) -> web.Response:
 @routes.get(f"/{VTAG}/projects/{{project_id}}/outputs", name="get_project_outputs")
 @login_required
 @permission_required("project.read")
-@_handle_project_exceptions
+@handle_plugin_requests_exceptions
 async def get_project_outputs(request: web.Request) -> web.Response:
     req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
@@ -206,8 +167,8 @@ async def get_project_outputs(request: web.Request) -> web.Response:
         request.app, project_id=path_params.project_id, workbench=workbench
     )
 
-    return _web_json_response_enveloped(
-        data={
+    return envelope_json_response(
+        {
             node_id: ProjectOutputGet(
                 key=node_id, label=workbench[node_id].label, value=value
             )
@@ -239,7 +200,7 @@ class ProjectMetadataPortGet(BaseModel):
 )
 @login_required
 @permission_required("project.read")
-@_handle_project_exceptions
+@handle_plugin_requests_exceptions
 async def list_project_metadata_ports(request: web.Request) -> web.Response:
     req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
@@ -250,8 +211,8 @@ async def list_project_metadata_ports(request: web.Request) -> web.Response:
         app=request.app, project_id=path_params.project_id, user_id=req_ctx.user_id
     )
 
-    return _web_json_response_enveloped(
-        data=[
+    return envelope_json_response(
+        [
             ProjectMetadataPortGet(
                 key=port.node_id,
                 kind=port.kind,
