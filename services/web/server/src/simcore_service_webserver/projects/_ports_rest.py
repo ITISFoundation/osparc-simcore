@@ -29,7 +29,7 @@ from .._meta import API_VTAG as VTAG
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
-from . import _ports_service, projects_service
+from . import _ports_service, _projects_service
 from ._access_rights_service import check_user_project_permission
 from ._common.exceptions_handlers import handle_plugin_requests_exceptions
 from ._common.models import ProjectPathParams, RequestContext
@@ -42,7 +42,7 @@ log = logging.getLogger(__name__)
 async def _get_validated_workbench_model(
     app: web.Application, project_id: ProjectID, user_id: UserID
 ) -> dict[NodeID, Node]:
-    project: ProjectDict = await projects_service.get_project_for_user(
+    project: ProjectDict = await _projects_service.get_project_for_user(
         app,
         project_uuid=f"{project_id}",
         user_id=user_id,

@@ -28,7 +28,7 @@ from .._meta import API_VTAG as VTAG
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
-from . import _comments_service, projects_service
+from . import _comments_service, _projects_service
 from ._common.exceptions_handlers import handle_plugin_requests_exceptions
 from ._common.models import RequestContext
 
@@ -69,7 +69,7 @@ async def create_project_comment(request: web.Request):
     body_params = await parse_request_body_as(_ProjectCommentsBodyParams, request)
 
     # ensure the project exists
-    await projects_service.get_project_for_user(
+    await _projects_service.get_project_for_user(
         request.app,
         project_uuid=f"{path_params.project_uuid}",
         user_id=req_ctx.user_id,
@@ -111,7 +111,7 @@ async def list_project_comments(request: web.Request):
     )
 
     # ensure the project exists
-    await projects_service.get_project_for_user(
+    await _projects_service.get_project_for_user(
         request.app,
         project_uuid=f"{path_params.project_uuid}",
         user_id=req_ctx.user_id,
@@ -160,7 +160,7 @@ async def update_project_comment(request: web.Request):
     body_params = await parse_request_body_as(_ProjectCommentsBodyParams, request)
 
     # ensure the project exists
-    await projects_service.get_project_for_user(
+    await _projects_service.get_project_for_user(
         request.app,
         project_uuid=f"{path_params.project_uuid}",
         user_id=req_ctx.user_id,
@@ -190,7 +190,7 @@ async def delete_project_comment(request: web.Request):
     )
 
     # ensure the project exists
-    await projects_service.get_project_for_user(
+    await _projects_service.get_project_for_user(
         request.app,
         project_uuid=f"{path_params.project_uuid}",
         user_id=req_ctx.user_id,
@@ -218,7 +218,7 @@ async def get_project_comment(request: web.Request):
     )
 
     # ensure the project exists
-    await projects_service.get_project_for_user(
+    await _projects_service.get_project_for_user(
         request.app,
         project_uuid=f"{path_params.project_uuid}",
         user_id=req_ctx.user_id,

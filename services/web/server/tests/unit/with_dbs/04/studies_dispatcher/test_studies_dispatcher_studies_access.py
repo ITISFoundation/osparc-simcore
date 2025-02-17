@@ -31,10 +31,10 @@ from servicelib.aiohttp.long_running_tasks.server import TaskProgress
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from servicelib.rest_responses import unwrap_envelope
 from settings_library.utils_session import DEFAULT_SESSION_COOKIE_NAME
-from simcore_service_webserver.projects.models import ProjectDict
-from simcore_service_webserver.projects.projects_service import (
+from simcore_service_webserver.projects._projects_service import (
     submit_delete_project_task,
 )
+from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.users.api import (
     delete_user_without_projects,
     get_user_role,

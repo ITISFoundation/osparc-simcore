@@ -18,7 +18,7 @@ from ..login.decorators import login_required
 from ..resource_usage import service as rut_api
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
-from . import projects_service
+from . import _projects_service
 from ._common.exceptions_handlers import handle_plugin_requests_exceptions
 from ._common.models import RequestContext
 from ._nodes_rest import NodePathParams
@@ -51,7 +51,7 @@ async def get_project_node_pricing_unit(request: web.Request):
     path_params = parse_request_path_parameters_as(NodePathParams, request)
 
     # ensure the project exists
-    await projects_service.get_project_for_user(
+    await _projects_service.get_project_for_user(
         request.app,
         project_uuid=f"{path_params.project_id}",
         user_id=req_ctx.user_id,
@@ -100,7 +100,7 @@ async def connect_pricing_unit_to_project_node(request: web.Request):
     )
 
     # ensure the project exists
-    project = await projects_service.get_project_for_user(
+    project = await _projects_service.get_project_for_user(
         request.app,
         project_uuid=f"{path_params.project_id}",
         user_id=req_ctx.user_id,
@@ -126,7 +126,7 @@ async def connect_pricing_unit_to_project_node(request: web.Request):
 
     node_data = project["workbench"][NodeIDStr(f"{path_params.node_id}")]
 
-    await projects_service.update_project_node_resources_from_hardware_info(
+    await _projects_service.update_project_node_resources_from_hardware_info(
         request.app,
         user_id=req_ctx.user_id,
         project_id=path_params.project_id,

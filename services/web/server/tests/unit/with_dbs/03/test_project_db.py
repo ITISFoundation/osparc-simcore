@@ -42,9 +42,6 @@ from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.projects.projects_groups_repository import (
     update_or_insert_project_group,
 )
-from simcore_service_webserver.projects.projects_service import (
-    _check_project_node_has_all_required_inputs,
-)
 from simcore_service_webserver.users.exceptions import UserNotFoundError
 from simcore_service_webserver.utils import to_datetime
 from sqlalchemy.engine.result import Row

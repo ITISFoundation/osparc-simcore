@@ -28,7 +28,7 @@ from servicelib.utils import logged_gather
 
 from ..application_settings import get_application_settings
 from ..storage.api import get_download_link, get_files_in_node_folder
-from . import projects_service
+from . import _projects_service
 from .exceptions import ProjectStartsTooManyDynamicNodesError
 
 _logger = logging.getLogger(__name__)
@@ -296,7 +296,7 @@ async def update_node_outputs(
     ui_changed_keys: set[str] | None,
 ) -> None:
     # the new outputs might be {}, or {key_name: payload}
-    project, keys_changed = await projects_service.update_project_node_outputs(
+    project, keys_changed = await _projects_service.update_project_node_outputs(
         app,
         user_id,
         project_uuid,
@@ -305,14 +305,14 @@ async def update_node_outputs(
         new_run_hash=run_hash,
     )
 
-    await projects_service.notify_project_node_update(
+    await _projects_service.notify_project_node_update(
         app, project, node_uuid, errors=node_errors
     )
     # get depending node and notify for these ones as well
     depending_node_uuids = await project_get_depending_nodes(project, node_uuid)
     await logged_gather(
         *[
-            projects_service.notify_project_node_update(app, project, nid, errors=None)
+            _projects_service.notify_project_node_update(app, project, nid, errors=None)
             for nid in depending_node_uuids
         ]
     )
@@ -336,6 +336,6 @@ async def update_node_outputs(
     )
 
     # fire&forget to notify connected nodes to retrieve its inputs **if necessary**
-    await projects_service.post_trigger_connected_service_retrieve(
+    await _projects_service.post_trigger_connected_service_retrieve(
         app=app, project=project, updated_node_uuid=f"{node_uuid}", changed_keys=keys
     )

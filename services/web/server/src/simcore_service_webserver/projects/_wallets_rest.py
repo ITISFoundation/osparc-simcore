@@ -21,7 +21,7 @@ from simcore_service_webserver.utils_aiohttp import envelope_json_response
 from .._meta import API_VTAG
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
-from . import _wallets_service, projects_service
+from . import _projects_service, _wallets_service
 from ._common.exceptions_handlers import handle_plugin_requests_exceptions
 from ._common.models import ProjectPathParams, RequestContext
 
@@ -40,7 +40,7 @@ async def get_project_wallet(request: web.Request):
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
     # ensure the project exists
-    await projects_service.get_project_for_user(
+    await _projects_service.get_project_for_user(
         request.app,
         project_uuid=f"{path_params.project_id}",
         user_id=req_ctx.user_id,
@@ -71,7 +71,7 @@ async def connect_wallet_to_project(request: web.Request):
     path_params = parse_request_path_parameters_as(_ProjectWalletPathParams, request)
 
     # ensure the project exists
-    await projects_service.get_project_for_user(
+    await _projects_service.get_project_for_user(
         request.app,
         project_uuid=f"{path_params.project_id}",
         user_id=req_ctx.user_id,
@@ -107,7 +107,7 @@ async def pay_project_debt(request: web.Request):
     body_params = await parse_request_body_as(_PayProjectDebtBody, request)
 
     # Ensure the project exists
-    await projects_service.get_project_for_user(
+    await _projects_service.get_project_for_user(
         request.app,
         project_uuid=f"{path_params.project_id}",
         user_id=req_ctx.user_id,
