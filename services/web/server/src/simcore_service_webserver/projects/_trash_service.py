@@ -160,7 +160,7 @@ def _can_delete(
     )
 
 
-async def list_trashed_projects(
+async def list_explicitly_trashed_projects(
     app: web.Application,
     *,
     product_name: ProductName,
@@ -204,7 +204,7 @@ async def list_trashed_projects(
     return trashed_projects
 
 
-async def delete_trashed_project(
+async def delete_explicitly_trashed_project(
     app: web.Application,
     *,
     user_id: UserID,
