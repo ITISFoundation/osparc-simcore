@@ -1,5 +1,6 @@
 # pylint:disable=protected-access
 # pylint:disable=redefined-outer-name
+# pylint:disable=unused-argument
 
 import math
 import random
@@ -14,6 +15,7 @@ from models_library.projects_nodes_io import SimcoreS3FileID, StorageFileID
 from models_library.storage_schemas import FileUploadSchema
 from models_library.users import UserID
 from pydantic import ByteSize, TypeAdapter
+from pytest_mock import MockerFixture
 from simcore_service_storage.constants import LinkType
 from simcore_service_storage.models import FileMetaData
 from simcore_service_storage.modules.db import file_meta_data
@@ -166,17 +168,53 @@ def _get_folder_and_files_selection(
     return duplicate_selection
 
 
+async def _assert_meta_data_entries_count(
+    connection: AsyncEngine, *, count: int
+) -> None:
+    async with connection.connect() as conn:
+        result = await file_meta_data.list_fmds(conn)
+        assert len(result) == count
+
+
 async def test_create_s3_export(
     simcore_s3_dsm: SimcoreS3DataManager,
     user_id: UserID,
     paths_for_export: set[StorageFileID],
+    sqlalchemy_async_engine: AsyncEngine,
 ):
     selection_to_export = _get_folder_and_files_selection(paths_for_export)
 
+    await _assert_meta_data_entries_count(sqlalchemy_async_engine, count=1)
     file_id = await simcore_s3_dsm.create_s3_export(user_id, selection_to_export)
+    # count=2 -> the direcotory and the .zip export
+    await _assert_meta_data_entries_count(sqlalchemy_async_engine, count=2)
 
     download_link = await simcore_s3_dsm.create_file_download_link(
         user_id, file_id, LinkType.PRESIGNED
     )
 
     assert file_id in f"{download_link}"
+
+
+@pytest.fixture
+def mock_create_and_upload_export_raises_error(mocker: MockerFixture) -> None:
+    async def _raise_error(*args, **kwarts) -> None:
+        msg = "failing as expected"
+        raise RuntimeError(msg)
+
+    mocker.patch(
+        "simcore_service_storage.simcore_s3_dsm.create_and_upload_export",
+        side_effect=_raise_error,
+    )
+
+
+async def test_create_s3_export_abort_upload_upon_error(
+    mock_create_and_upload_export_raises_error: None,
+    simcore_s3_dsm: SimcoreS3DataManager,
+    user_id: UserID,
+    sqlalchemy_async_engine: AsyncEngine,
+):
+    await _assert_meta_data_entries_count(sqlalchemy_async_engine, count=0)
+    with pytest.raises(RuntimeError, match="failing as expected"):
+        await simcore_s3_dsm.create_s3_export(user_id, [])
+    await _assert_meta_data_entries_count(sqlalchemy_async_engine, count=0)
