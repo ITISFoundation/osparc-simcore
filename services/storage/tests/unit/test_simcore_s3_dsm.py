@@ -185,7 +185,9 @@ async def test_create_s3_export(
     selection_to_export = _get_folder_and_files_selection(paths_for_export)
 
     await _assert_meta_data_entries_count(sqlalchemy_async_engine, count=1)
-    file_id = await simcore_s3_dsm.create_s3_export(user_id, selection_to_export)
+    file_id = await simcore_s3_dsm.create_s3_export(
+        user_id, selection_to_export, progress_cb=None
+    )
     # count=2 -> the direcotory and the .zip export
     await _assert_meta_data_entries_count(sqlalchemy_async_engine, count=2)
 
@@ -216,5 +218,5 @@ async def test_create_s3_export_abort_upload_upon_error(
 ):
     await _assert_meta_data_entries_count(sqlalchemy_async_engine, count=0)
     with pytest.raises(RuntimeError, match="failing as expected"):
-        await simcore_s3_dsm.create_s3_export(user_id, [])
+        await simcore_s3_dsm.create_s3_export(user_id, [], progress_cb=None)
     await _assert_meta_data_entries_count(sqlalchemy_async_engine, count=0)

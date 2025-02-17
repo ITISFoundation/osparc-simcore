@@ -13,7 +13,7 @@ from models_library.storage_schemas import S3BucketName
 from models_library.users import UserID
 from pydantic import ByteSize, NonNegativeInt, TypeAdapter
 from servicelib.bytes_iters import ArchiveEntries, get_zip_bytes_iter
-from servicelib.progress_bar import ProgressBarData
+from servicelib.progress_bar import AsyncReportCB, ProgressBarData
 from servicelib.s3_utils import FileLikeBytesIterReader
 from servicelib.utils import ensure_ends_with
 from sqlalchemy.ext.asyncio import AsyncConnection
@@ -144,12 +144,14 @@ async def create_and_upload_export(
     *,
     source_object_keys: set[StorageFileID],
     destination_object_keys: StorageFileID,
-    progress_bar: ProgressBarData | None,
+    progress_cb: AsyncReportCB | None,
 ) -> None:
-    if progress_bar is None:
-        progress_bar = ProgressBarData(
-            num_steps=1, description="create and upload export"
-        )
+
+    progress_bar = ProgressBarData(
+        num_steps=1,
+        description="create and upload export",
+        progress_report_cb=progress_cb,
+    )
 
     archive_entries: ArchiveEntries = []
     for s3_object in source_object_keys:

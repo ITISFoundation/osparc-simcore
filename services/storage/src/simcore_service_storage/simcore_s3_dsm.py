@@ -38,6 +38,7 @@ from pydantic import AnyUrl, ByteSize, NonNegativeInt, TypeAdapter
 from servicelib.aiohttp.long_running_tasks.server import TaskProgress
 from servicelib.fastapi.client_session import get_client_session
 from servicelib.logging_utils import log_context
+from servicelib.progress_bar import AsyncReportCB
 from servicelib.utils import ensure_ends_with, limited_gather
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
@@ -1068,6 +1069,8 @@ class SimcoreS3DataManager(BaseDataManager):
         self,
         user_id: UserID,
         object_keys: list[StorageFileID],
+        *,
+        progress_cb: AsyncReportCB | None,
     ) -> StorageFileID:
         source_object_keys: set[StorageFileID] = set()
 
@@ -1097,12 +1100,13 @@ class SimcoreS3DataManager(BaseDataManager):
                 self.simcore_bucket_name,
                 source_object_keys=source_object_keys,
                 destination_object_keys=destination_object_key,
-                progress_bar=None,  # TODO: add progress bar
+                progress_cb=progress_cb,
             )
         except Exception:  # pylint:disable=broad-exception-caught
             await self.abort_file_upload(
                 user_id=user_id, file_id=destination_object_key
             )
+            raise
         else:
             await self.complete_file_upload(
                 file_id=destination_object_key, user_id=user_id, uploaded_parts=[]
