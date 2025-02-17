@@ -25,7 +25,7 @@ from . import (
     _workspaces_rest,
 )
 from ._observer import setup_project_observer_events
-from ._projects_access import setup_projects_access
+from ._security_service import setup_projects_access
 from .db import setup_projects_db
 
 logger = logging.getLogger(__name__)
