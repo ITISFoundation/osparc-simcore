@@ -128,7 +128,7 @@ from . import (
     _crud_api_delete,
     _nodes_repository,
     _nodes_service,
-    _projects_db,
+    _projects_repository,
     _wallets_service,
 )
 from ._access_rights_service import (
@@ -220,7 +220,7 @@ async def get_project_for_user(
         and project.get("trashed_by", project.get("trashedBy")) is not None
     ):
         project.update(
-            trashedByPrimaryGid=await _projects_db.get_trashed_by_primary_gid(
+            trashedByPrimaryGid=await _projects_repository.get_trashed_by_primary_gid(
                 app, projects_uuid=project["uuid"]
             )
         )
@@ -306,7 +306,7 @@ async def patch_project(
             raise ProjectOwnerNotFoundInTheProjectAccessRightsError
 
     # 4. Patch the project
-    await _projects_db.patch_project(
+    await _projects_repository.patch_project(
         app=app,
         project_uuid=project_uuid,
         new_partial_project_data=patch_project_data,

@@ -24,7 +24,7 @@ from sqlalchemy.sql.selectable import CompoundSelect, Select
 from ..db.models import GroupType, groups, projects_tags, user_to_groups, users
 from ..users.exceptions import UserNotFoundError
 from ..utils import format_datetime
-from ._projects_db import PROJECT_DB_COLS
+from ._projects_repository import PROJECT_DB_COLS
 from .exceptions import (
     NodeNotFoundError,
     ProjectInvalidRightsError,

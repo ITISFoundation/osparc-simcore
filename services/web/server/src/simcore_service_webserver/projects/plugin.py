@@ -24,7 +24,7 @@ from . import (
     _wallets_rest,
     _workspaces_rest,
 )
-from ._observer import setup_project_observer_events
+from ._observer_service import setup_project_observer_events
 from ._security_service import setup_projects_access
 from .db import setup_projects_db
 

@@ -85,7 +85,7 @@ from ._db_utils import (
     patch_workbench,
     update_workbench,
 )
-from ._projects_db import PROJECT_DB_COLS
+from ._projects_repository import PROJECT_DB_COLS
 from .exceptions import (
     ProjectDeleteError,
     ProjectInvalidRightsError,
