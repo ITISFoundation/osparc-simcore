@@ -1,6 +1,5 @@
 """Main application to be deployed in for example uvicorn."""
 
-import asyncio
 import logging
 
 from servicelib.logging_utils import config_all_loggers

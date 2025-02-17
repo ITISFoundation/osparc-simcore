@@ -22,7 +22,6 @@ class CeleryTaskQueue:
         self._celery_app.control.revoke(task_id)
 
 
-# TODO: move and use new FastAPI lifespan
 def create_celery_app(settings: ApplicationSettings) -> Celery:
     assert settings.STORAGE_REDIS
 
