@@ -22,8 +22,7 @@ from simcore_postgres_database.webserver_models import DB_CHANNEL_NAME, projects
 from sqlalchemy.sql import select
 
 from ..db.plugin import get_database_engine
-from ..projects import exceptions, projects_service
-from ..projects.nodes_utils import update_node_outputs
+from ..projects import exceptions, projects_nodes_service, projects_service
 from ._utils import convert_state_from_db
 
 _LISTENING_TASK_BASE_SLEEPING_TIME_S: Final[int] = 1
@@ -51,7 +50,9 @@ async def _update_project_state(
         app, user_id, project_uuid, node_uuid, new_state
     )
 
-    await projects_service.notify_project_node_update(app, project, node_uuid, node_errors)
+    await projects_service.notify_project_node_update(
+        app, project, node_uuid, node_errors
+    )
     await projects_service.notify_project_state_update(app, project)
 
 
@@ -90,7 +91,7 @@ async def _handle_db_notification(
             new_outputs = task_data.get("outputs", {})
             new_run_hash = task_data.get("run_hash", None)
 
-            await update_node_outputs(
+            await projects_nodes_service.update_node_outputs(
                 app,
                 the_project_owner,
                 ProjectID(project_uuid),

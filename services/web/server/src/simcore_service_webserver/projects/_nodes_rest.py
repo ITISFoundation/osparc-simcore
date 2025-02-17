@@ -63,7 +63,7 @@ from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from ..users.api import get_user_id_from_gid, get_user_role
 from ..utils_aiohttp import envelope_json_response
-from . import nodes_utils, projects_service
+from . import _nodes_utils2, projects_service
 from ._common.exceptions_handlers import handle_plugin_requests_exceptions
 from ._common.models import ProjectPathParams, RequestContext
 from ._nodes_service import NodeScreenshot, get_node_screenshots
@@ -249,7 +249,7 @@ async def update_node_outputs(request: web.Request) -> web.Response:
 
     ui_changed_keys = set()
     ui_changed_keys.add(f"{path_params.node_id}")
-    await nodes_utils.update_node_outputs(
+    await _nodes_utils2.update_node_outputs(
         app=request.app,
         user_id=req_ctx.user_id,
         project_uuid=path_params.project_id,

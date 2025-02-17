@@ -9,8 +9,10 @@ from pathlib import Path
 import pytest
 from models_library.projects import Project
 from models_library.projects_nodes_io import NodeID
+from simcore_service_webserver.projects._nodes_service import (
+    project_get_depending_nodes,
+)
 from simcore_service_webserver.projects.models import ProjectDict
-from simcore_service_webserver.projects.nodes_utils import project_get_depending_nodes
 from simcore_service_webserver.projects.utils import (
     any_node_inputs_changed,
     clone_project_document,
