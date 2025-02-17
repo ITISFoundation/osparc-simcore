@@ -16,6 +16,7 @@ from uuid import UUID
 
 from models_library.api_schemas_rpc_data_export.async_jobs import (
     AsyncJobRpcGet,
+    AsyncJobRpcResult,
     AsyncJobRpcStatus,
 )
 from models_library.api_schemas_storage.data_export_async_jobs import (
@@ -413,4 +414,17 @@ class AsyncJobStatus(BaseModel):
             done=async_job_rpc_status.done,
             started=async_job_rpc_status.started,
             stopped=async_job_rpc_status.stopped,
+        )
+
+
+class AsyncJobResult(BaseModel):
+    result: Any | None
+    error: Any | None
+
+    @classmethod
+    def from_async_job_rpc_result(
+        cls, async_job_rpc_result: AsyncJobRpcResult
+    ) -> "AsyncJobResult":
+        return AsyncJobResult(
+            result=async_job_rpc_result.result, error=async_job_rpc_result.error
         )

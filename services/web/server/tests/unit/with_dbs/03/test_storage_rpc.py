@@ -9,6 +9,7 @@ from models_library.api_schemas_rpc_data_export.async_jobs import (
     AsyncJobRpcAbort,
     AsyncJobRpcGet,
     AsyncJobRpcId,
+    AsyncJobRpcResult,
     AsyncJobRpcStatus,
 )
 from models_library.generics import Envelope
@@ -16,7 +17,11 @@ from models_library.storage_schemas import AsyncJobGet, DataExportPost
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.webserver_login import UserInfoDict
 from servicelib.aiohttp import status
-from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import abort, get_status
+from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import (
+    abort,
+    get_result,
+    get_status,
+)
 from servicelib.rabbitmq.rpc_interfaces.storage.data_export import start_data_export
 from simcore_postgres_database.models.users import UserRole
 
@@ -109,3 +114,21 @@ async def test_abort_async_jobs(
         assert response.status == status.HTTP_200_OK
     else:
         assert response.status == status.HTTP_500_INTERNAL_SERVER_ERROR
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_get_async_job_result(
+    user_role: UserRole,
+    logged_user: UserInfoDict,
+    client: TestClient,
+    create_storage_rpc_client_mock: Callable[[str, Any], None],
+    faker: Faker,
+):
+    _job_id = AsyncJobRpcId(faker.uuid4())
+    create_storage_rpc_client_mock(
+        get_result.__name__, AsyncJobRpcResult(result=None, error=faker.text())
+    )
+
+    response = await client.get(f"/v0/storage/async-jobs/{_job_id}/result")
+
+    assert response.status == status.HTTP_200_OK
