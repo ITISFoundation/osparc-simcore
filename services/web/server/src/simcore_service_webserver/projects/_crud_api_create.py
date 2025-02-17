@@ -41,7 +41,7 @@ from ..workspaces.api import check_user_workspace_access, get_user_workspace
 from ..workspaces.errors import WorkspaceAccessForbiddenError
 from . import _folders_repository as project_to_folders_db
 from . import projects_service
-from ._metadata_api import set_project_ancestors
+from ._metadata_service import set_project_ancestors
 from ._permalink_service import update_or_pop_permalink_in_project
 from .db import ProjectDBAPI
 from .exceptions import (

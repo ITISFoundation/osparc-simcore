@@ -14,7 +14,7 @@ from . import (
     _crud_handlers,
     _folders_rest,
     _groups_rest,
-    _metadata_handlers,
+    _metadata_rest,
     _nodes_handlers,
     _ports_handlers,
     _projects_nodes_pricing_unit_handlers,
@@ -54,7 +54,7 @@ def setup_projects(app: web.Application) -> bool:
     app.router.add_routes(_crud_handlers.routes)
     app.router.add_routes(_comments_rest.routes)
     app.router.add_routes(_groups_rest.routes)
-    app.router.add_routes(_metadata_handlers.routes)
+    app.router.add_routes(_metadata_rest.routes)
     app.router.add_routes(_ports_handlers.routes)
     app.router.add_routes(_nodes_handlers.routes)
     app.router.add_routes(_tags_handlers.routes)

@@ -27,7 +27,7 @@ from .._meta import api_version_prefix
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
-from . import _metadata_api
+from . import _metadata_service
 from ._common.exceptions_handlers import handle_plugin_requests_exceptions
 from ._common.models import ProjectPathParams, RequestContext
 
@@ -52,7 +52,7 @@ async def get_project_metadata(request: web.Request) -> web.Response:
     req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
-    custom_metadata = await _metadata_api.get_project_custom_metadata(
+    custom_metadata = await _metadata_service.get_project_custom_metadata(
         request.app, user_id=req_ctx.user_id, project_uuid=path_params.project_id
     )
 
@@ -73,14 +73,14 @@ async def update_project_metadata(request: web.Request) -> web.Response:
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
     update = await parse_request_body_as(ProjectMetadataUpdate, request)
 
-    custom_metadata = await _metadata_api.set_project_custom_metadata(
+    custom_metadata = await _metadata_service.set_project_custom_metadata(
         request.app,
         user_id=req_ctx.user_id,
         project_uuid=path_params.project_id,
         value=update.custom,
     )
     with log_catch(_logger, reraise=False):
-        await _metadata_api.set_project_ancestors_from_custom_metadata(
+        await _metadata_service.set_project_ancestors_from_custom_metadata(
             request.app,
             user_id=req_ctx.user_id,
             project_uuid=path_params.project_id,
