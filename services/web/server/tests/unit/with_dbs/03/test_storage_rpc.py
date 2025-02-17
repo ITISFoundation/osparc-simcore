@@ -1,3 +1,4 @@
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable
 
@@ -7,11 +8,15 @@ from faker import Faker
 from models_library.api_schemas_rpc_data_export.async_jobs import (
     AsyncJobRpcGet,
     AsyncJobRpcId,
+    AsyncJobRpcStatus,
 )
-from models_library.storage_schemas import DataExportPost
+from models_library.generics import Envelope
+from models_library.storage_schemas import AsyncJobGet, DataExportPost
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.webserver_login import UserInfoDict
 from servicelib.aiohttp import status
+from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import get_status
+from servicelib.rabbitmq.rpc_interfaces.storage.data_export import start_data_export
 from simcore_postgres_database.models.users import UserRole
 
 
@@ -41,9 +46,45 @@ async def test_data_export(
 ):
     _task_id = AsyncJobRpcId(faker.uuid4())
     create_storage_rpc_client_mock(
-        "start_data_export", AsyncJobRpcGet(task_id=_task_id, task_name=faker.text())
+        start_data_export.__name__,
+        AsyncJobRpcGet(task_id=_task_id, task_name=faker.text()),
     )
 
     _body = DataExportPost(paths=[Path(".")])
-    response = await client.post("/v0/storage/export-data", json=_body.model_dump())
+    response = await client.post(
+        "/v0/storage/export-data", data=_body.model_dump_json()
+    )
     assert response.status == status.HTTP_202_ACCEPTED
+    Envelope[AsyncJobGet].model_validate(await response.json())
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_get_async_jobs_status(
+    user_role: UserRole,
+    logged_user: UserInfoDict,
+    client: TestClient,
+    create_storage_rpc_client_mock: Callable[[str, Any], None],
+    faker: Faker,
+):
+    _task_id = AsyncJobRpcId(faker.uuid4())
+    create_storage_rpc_client_mock(
+        get_status.__name__,
+        AsyncJobRpcStatus(
+            task_id=_task_id,
+            task_progress=0.5,
+            done=False,
+            started=datetime.now(),
+            stopped=None,
+        ),
+    )
+
+    _body = AsyncJobGet(task_id=_task_id)
+    response = await client.get(
+        "/v0/storage/async-jobs/status", data=_body.model_dump_json()
+    )
+    assert response.status == status.HTTP_200_OK
+    response_body_data = (
+        Envelope[AsyncJobGet].model_validate(await response.json()).data
+    )
+    assert response_body_data is not None
+    assert response_body_data.task_id == _task_id

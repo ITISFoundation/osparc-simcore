@@ -175,7 +175,7 @@ async def is_completed_upload_file(
 # data export
 @router.post(
     "/storage/export-data",
-    response_model=AsyncJobGet,
+    response_model=Envelope[AsyncJobGet],
     name="storage_export_data",
     description="Export data",
 )
@@ -185,7 +185,7 @@ async def export_data(data_export: DataExportPost):
 
 @router.get(
     "/storage/async-jobs/status",
-    response_model=AsyncJobStatus,
+    response_model=Envelope[AsyncJobStatus],
     name="storage_async_job_status",
 )
 async def get_async_job_status(task_id: AsyncJobGet):
