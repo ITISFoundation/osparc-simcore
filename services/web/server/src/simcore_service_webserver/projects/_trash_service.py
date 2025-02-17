@@ -9,6 +9,7 @@ from models_library.basic_types import IDStr
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.rest_ordering import OrderBy, OrderDirection
+from models_library.rest_pagination import MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
 from models_library.users import UserID
 from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
@@ -170,7 +171,7 @@ async def list_trashed_projects(
     """
     trashed_projects: list[ProjectID] = []
 
-    for page_params in iter_pagination_params(limit=100):
+    for page_params in iter_pagination_params(limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE):
         (
             projects,
             page_params.total_number_of_items,
