@@ -87,12 +87,16 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
     },
 
     __addModelsInfo: function() {
-      const modelLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(16));
+      const modelLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(6));
 
       const anatomicalModelsData = this.getAnatomicalModelsData();
       const modelsInfo = anatomicalModelsData["licensedResources"];
       if (modelsInfo.length > 1) {
+        const modelSelectionLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(4));
+        const titleLabel = new qx.ui.basic.Label(this.tr("This bundle contains:"));
+        modelSelectionLayout.add(titleLabel);
         const slideBar = new osparc.widget.SlideBar();
+        modelSelectionLayout.add(slideBar);
         slideBar.setButtonsWidth(32);
         const thumbnailTapped = idx => {
           this.__populateModelInfo(modelLayout, anatomicalModelsData, idx);
@@ -110,7 +114,7 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
           miniThumbnail.addListener("tap", () => thumbnailTapped(idx));
           slideBar.add(miniThumbnail);
         });
-        this._add(slideBar);
+        this._add(modelSelectionLayout);
         thumbnailTapped(0);
 
         this.__populateModelInfo(modelLayout, anatomicalModelsData, 0);
@@ -125,7 +129,7 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
       modelLayout.removeAll();
 
       const anatomicalModel = anatomicalModelsData["licensedResources"][selectedIdx]["source"];
-      const topGrid = new qx.ui.layout.Grid(8, 8);
+      const topGrid = new qx.ui.layout.Grid(8, 6);
       topGrid.setColumnFlex(0, 1);
       const topLayout = new qx.ui.container.Composite(topGrid);
       let description = anatomicalModel["description"] || "";
@@ -354,7 +358,7 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
         .then(licensedItems => {
           const lowerLicensedItems = osparc.store.LicensedItems.getLowerLicensedItems(licensedItems, licensedItemData["key"], licensedItemData["version"])
           if (licensedItemData["licensedResources"].length > 1 || lowerLicensedItems.length) {
-            let text = this.tr("This Bundle gives you access to:") + "<br>";
+            let text = this.tr("This bundle gives you access to:") + "<br>";
             licensedItemData["licensedResources"].forEach(licensedResource => {
               text += `- ${osparc.store.LicensedItems.licensedResourceNameAndVersion(licensedResource)}<br>`;
             });
