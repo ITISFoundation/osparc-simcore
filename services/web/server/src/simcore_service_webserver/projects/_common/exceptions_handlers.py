@@ -174,14 +174,15 @@ _OTHER_ERRORS: ExceptionToHttpErrorMap = {
     ),
 }
 
-_TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {}
-_TO_HTTP_ERROR_MAP.update(_FOLDER_ERRORS)
-_TO_HTTP_ERROR_MAP.update(_NODE_ERRORS)
-_TO_HTTP_ERROR_MAP.update(_PROJECT_ERRORS)
-_TO_HTTP_ERROR_MAP.update(_WORKSPACE_ERRORS)
-_TO_HTTP_ERROR_MAP.update(_WALLET_ERRORS)
-_TO_HTTP_ERROR_MAP.update(_PRICING_ERRORS)
-_TO_HTTP_ERROR_MAP.update(_OTHER_ERRORS)
+_TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
+    **_FOLDER_ERRORS,
+    **_NODE_ERRORS,
+    **_OTHER_ERRORS,
+    **_PRICING_ERRORS,
+    **_PROJECT_ERRORS,
+    **_WALLET_ERRORS,
+    **_WORKSPACE_ERRORS,
+}
 
 handle_plugin_requests_exceptions = exception_handling_decorator(
     to_exceptions_handlers_map(_TO_HTTP_ERROR_MAP)
