@@ -27,9 +27,13 @@ from models_library.api_schemas_webserver.projects import (
 from models_library.generics import Envelope
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
+from models_library.rest_error import EnvelopedError
 from models_library.rest_pagination import Page
 from pydantic import BaseModel
 from simcore_service_webserver._meta import API_VTAG
+from simcore_service_webserver.projects._common.exceptions_handlers import (
+    _TO_HTTP_ERROR_MAP,
+)
 from simcore_service_webserver.projects._common.models import ProjectPathParams
 from simcore_service_webserver.projects._crud_handlers import ProjectCreateQueryParams
 from simcore_service_webserver.projects._crud_handlers_models import (
@@ -43,6 +47,9 @@ router = APIRouter(
     tags=[
         "projects",
     ],
+    responses={
+        i.status_code: {"model": EnvelopedError} for i in _TO_HTTP_ERROR_MAP.values()
+    },
 )
 
 

@@ -192,11 +192,13 @@ async def list_trashed_projects(
         # This filtering couldn't be handled at the database level when `projects_repo`
         # was refactored, as defining a custom trash_filter was needed to allow more
         # flexibility in filtering options.
-        trashed_projects = [
-            project["uuid"]
-            for project in projects
-            if _can_delete(project, user_id, until_equal_datetime)
-        ]
+        trashed_projects.extend(
+            [
+                project["uuid"]
+                for project in projects
+                if _can_delete(project, user_id, until_equal_datetime)
+            ]
+        )
     return trashed_projects
 
 

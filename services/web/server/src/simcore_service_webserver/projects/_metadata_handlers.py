@@ -10,7 +10,6 @@ Design rationale:
     - Get and Update methods only
 """
 
-import functools
 import logging
 
 from aiohttp import web
@@ -22,7 +21,6 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
 )
-from servicelib.aiohttp.typing_extension import Handler
 from servicelib.logging_utils import log_catch
 
 from .._meta import api_version_prefix
@@ -30,40 +28,12 @@ from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
 from . import _metadata_api
+from ._common.exceptions_handlers import handle_plugin_requests_exceptions
 from ._common.models import ProjectPathParams, RequestContext
-from .exceptions import (
-    NodeNotFoundError,
-    ParentNodeNotFoundError,
-    ProjectInvalidRightsError,
-    ProjectInvalidUsageError,
-    ProjectNotFoundError,
-)
 
 routes = web.RouteTableDef()
 
 _logger = logging.getLogger(__name__)
-
-
-def _handle_project_exceptions(handler: Handler):
-    """Transforms project errors -> http errors"""
-
-    @functools.wraps(handler)
-    async def wrapper(request: web.Request) -> web.StreamResponse:
-        try:
-            return await handler(request)
-
-        except (
-            ProjectNotFoundError,
-            NodeNotFoundError,
-            ParentNodeNotFoundError,
-        ) as exc:
-            raise web.HTTPNotFound(reason=f"{exc}") from exc
-        except ProjectInvalidRightsError as exc:
-            raise web.HTTPUnauthorized(reason=f"{exc}") from exc
-        except ProjectInvalidUsageError as exc:
-            raise web.HTTPUnprocessableEntity(reason=f"{exc}") from exc
-
-    return wrapper
 
 
 #
@@ -77,7 +47,7 @@ def _handle_project_exceptions(handler: Handler):
 )
 @login_required
 @permission_required("project.read")
-@_handle_project_exceptions
+@handle_plugin_requests_exceptions
 async def get_project_metadata(request: web.Request) -> web.Response:
     req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
@@ -97,7 +67,7 @@ async def get_project_metadata(request: web.Request) -> web.Response:
 )
 @login_required
 @permission_required("project.update")
-@_handle_project_exceptions
+@handle_plugin_requests_exceptions
 async def update_project_metadata(request: web.Request) -> web.Response:
     req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
