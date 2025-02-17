@@ -10,7 +10,9 @@ from models_library.api_schemas_rpc_data_export.async_jobs import (
 )
 from models_library.storage_schemas import DataExportPost
 from pytest_mock import MockerFixture
+from pytest_simcore.helpers.webserver_login import UserInfoDict
 from servicelib.aiohttp import status
+from simcore_postgres_database.models.users import UserRole
 
 
 @pytest.fixture
@@ -29,7 +31,10 @@ def create_storage_rpc_client_mock(mocker: MockerFixture) -> Callable[[str, Any]
     return _
 
 
+@pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_data_export(
+    user_role: UserRole,
+    logged_user: UserInfoDict,
     client: TestClient,
     create_storage_rpc_client_mock: Callable[[str, Any], None],
     faker: Faker,
