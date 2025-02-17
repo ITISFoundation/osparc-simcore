@@ -95,14 +95,13 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
         const modelSelectionLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(4));
         const titleLabel = new qx.ui.basic.Label(this.tr("This bundle contains:"));
         modelSelectionLayout.add(titleLabel);
-        const slideBar = new osparc.widget.SlideBar();
-        modelSelectionLayout.add(slideBar);
-        slideBar.setButtonsWidth(32);
+        const thumbnailsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(2));
+        modelSelectionLayout.add(thumbnailsLayout);
         const thumbnailTapped = idx => {
           this.__populateModelInfo(modelLayout, anatomicalModelsData, idx);
           const selectedBorderColor = qx.theme.manager.Color.getInstance().resolve("strong-main");
           const unselectedBorderColor = "transparent";
-          slideBar.getChildren().forEach((thumbnail, index) => {
+          thumbnailsLayout.getChildren().forEach((thumbnail, index) => {
             osparc.utils.Utils.updateBorderColor(thumbnail, index === idx ? selectedBorderColor : unselectedBorderColor);
           });
         }
@@ -113,7 +112,7 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
           });
           osparc.utils.Utils.addBorder(miniThumbnail);
           miniThumbnail.addListener("tap", () => thumbnailTapped(idx));
-          slideBar.add(miniThumbnail);
+          thumbnailsLayout.add(miniThumbnail);
         });
         this._add(modelSelectionLayout);
         thumbnailTapped(0);
