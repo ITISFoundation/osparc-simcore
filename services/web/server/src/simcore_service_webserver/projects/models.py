@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import Enum
-from typing import Any, TypeAlias
+from typing import Any, Literal, TypeAlias
 
 from aiopg.sa.result import RowProxy
 from common_library.dict_tools import remap_keys
@@ -20,6 +20,8 @@ from simcore_postgres_database.models.projects import ProjectType
 
 ProjectDict: TypeAlias = dict[str, Any]
 ProjectProxy: TypeAlias = RowProxy
+
+PermissionStr = Literal["read", "write", "delete"]
 
 
 class ProjectTypeAPI(str, Enum):

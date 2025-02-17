@@ -42,10 +42,11 @@ from ..security.api import check_user_permission
 from ..security.decorators import permission_required
 from ..users.api import get_user_fullname
 from ..utils_aiohttp import envelope_json_response
-from . import _crud_api_create, _crud_api_read, _crud_handlers_utils, _projects_service
+from . import _crud_api_create, _crud_api_read, _projects_rest_utils, _projects_service
 from ._common.exceptions_handlers import handle_plugin_requests_exceptions
 from ._common.models import ProjectPathParams, RequestContext
-from ._crud_handlers_models import (
+from ._permalink_service import update_or_pop_permalink_in_project
+from ._projects_models import (
     ProjectActiveQueryParams,
     ProjectCreateHeaders,
     ProjectCreateQueryParams,
@@ -53,7 +54,6 @@ from ._crud_handlers_models import (
     ProjectsListQueryParams,
     ProjectsSearchQueryParams,
 )
-from ._permalink_service import update_or_pop_permalink_in_project
 from .models import ProjectDict
 from .utils import get_project_unavailable_services, project_uses_available_services
 
@@ -165,11 +165,11 @@ async def list_projects(request: web.Request):
         order_by=OrderBy.model_construct(**query_params.order_by.model_dump()),
     )
 
-    projects = await _crud_handlers_utils.aggregate_data_to_projects_from_request(
+    projects = await _projects_rest_utils.aggregate_data_to_projects_from_request(
         request, projects
     )
 
-    return _crud_handlers_utils.create_page_response(
+    return _projects_rest_utils.create_page_response(
         projects=projects,
         request_url=request.url,
         total=total_number_of_projects,
@@ -205,11 +205,11 @@ async def list_projects_full_search(request: web.Request):
         order_by=OrderBy.model_construct(**query_params.order_by.model_dump()),
     )
 
-    projects = await _crud_handlers_utils.aggregate_data_to_projects_from_request(
+    projects = await _projects_rest_utils.aggregate_data_to_projects_from_request(
         request, projects
     )
 
-    return _crud_handlers_utils.create_page_response(
+    return _projects_rest_utils.create_page_response(
         projects=projects,
         request_url=request.url,
         total=total_number_of_projects,
