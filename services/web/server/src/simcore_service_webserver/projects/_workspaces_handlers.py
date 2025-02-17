@@ -1,4 +1,3 @@
-import functools
 import logging
 from typing import Annotated
 
@@ -9,41 +8,15 @@ from models_library.workspaces import WorkspaceID
 from pydantic import BaseModel, BeforeValidator, ConfigDict, Field
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import parse_request_path_parameters_as
-from servicelib.aiohttp.typing_extension import Handler
 
 from .._meta import api_version_prefix as VTAG
-from ..folders.errors import FolderAccessForbiddenError, FolderNotFoundError
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
-from ..workspaces.errors import WorkspaceAccessForbiddenError, WorkspaceNotFoundError
 from . import _workspaces_api
+from ._common.exceptions_handlers import handle_plugin_requests_exceptions
 from ._common.models import RequestContext
-from .exceptions import ProjectInvalidRightsError, ProjectNotFoundError
 
 _logger = logging.getLogger(__name__)
-
-
-def _handle_projects_workspaces_exceptions(handler: Handler):
-    @functools.wraps(handler)
-    async def wrapper(request: web.Request) -> web.StreamResponse:
-        try:
-            return await handler(request)
-
-        except (
-            ProjectNotFoundError,
-            FolderNotFoundError,
-            WorkspaceNotFoundError,
-        ) as exc:
-            raise web.HTTPNotFound(reason=f"{exc}") from exc
-
-        except (
-            ProjectInvalidRightsError,
-            FolderAccessForbiddenError,
-            WorkspaceAccessForbiddenError,
-        ) as exc:
-            raise web.HTTPForbidden(reason=f"{exc}") from exc
-
-    return wrapper
 
 
 routes = web.RouteTableDef()
@@ -64,7 +37,7 @@ class _ProjectWorkspacesPathParams(BaseModel):
 )
 @login_required
 @permission_required("project.workspaces.*")
-@_handle_projects_workspaces_exceptions
+@handle_plugin_requests_exceptions
 async def move_project_to_workspace(request: web.Request):
     req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(
