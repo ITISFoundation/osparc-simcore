@@ -5992,7 +5992,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AsyncJobGet'
+                $ref: '#/components/schemas/Envelope_AsyncJobGet_'
   /v0/storage/async-jobs/status:
     get:
       tags:
@@ -6012,7 +6012,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AsyncJobStatus'
+                $ref: '#/components/schemas/Envelope_AsyncJobStatus_'
   /v0/trash:
     delete:
       tags:
@@ -7043,20 +7043,20 @@ components:
       title: AppStatusCheck
     AsyncJobGet:
       properties:
-        task_id:
+        job_id:
           type: string
           format: uuid
-          title: Task Id
+          title: Job Id
       type: object
       required:
-      - task_id
+      - job_id
       title: AsyncJobGet
     AsyncJobStatus:
       properties:
-        task_id:
+        job_id:
           type: string
           format: uuid
-          title: Task Id
+          title: Job Id
         task_progress:
           type: number
           maximum: 1.0
@@ -7078,7 +7078,7 @@ components:
           title: Stopped
       type: object
       required:
-      - task_id
+      - job_id
       - task_progress
       - done
       - started
@@ -7860,6 +7860,32 @@ components:
           title: Error
       type: object
       title: Envelope[AppStatusCheck]
+    Envelope_AsyncJobGet_:
+      properties:
+        data:
+          anyOf:
+          - $ref: '#/components/schemas/AsyncJobGet'
+          - type: 'null'
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[AsyncJobGet]
+    Envelope_AsyncJobStatus_:
+      properties:
+        data:
+          anyOf:
+          - $ref: '#/components/schemas/AsyncJobStatus'
+          - type: 'null'
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[AsyncJobStatus]
     Envelope_CatalogServiceGet_:
       properties:
         data:
