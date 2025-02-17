@@ -108,7 +108,7 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
         modelsInfo.forEach((modelInfo, idx) => {
           const miniThumbnail = this.self().createThumbnail(modelInfo["source"]["thumbnail"], 32);
           miniThumbnail.set({
-            toolTipText: modelInfo["source"]["features"]["name"]
+            toolTipText: osparc.store.LicensedItems.licensedResourceNameAndVersion(modelInfo),
           });
           osparc.utils.Utils.addBorder(miniThumbnail);
           miniThumbnail.addListener("tap", () => thumbnailTapped(idx));
