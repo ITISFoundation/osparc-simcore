@@ -410,5 +410,5 @@ async def get_async_job_status(request: web.Request) -> web.Response:
     )
     return create_data_response(
         AsyncJobStatus.from_async_job_rpc_status(async_job_rpc_status),
-        status=status.HTTP_202_ACCEPTED,
+        status=status.HTTP_200_OK,
     )
