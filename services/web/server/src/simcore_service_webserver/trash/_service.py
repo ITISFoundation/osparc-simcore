@@ -1,6 +1,7 @@
 import asyncio
 import logging
 from datetime import timedelta
+from typing import Final
 
 import arrow
 from aiohttp import web
@@ -15,29 +16,35 @@ from .settings import get_plugin_settings
 
 _logger = logging.getLogger(__name__)
 
+_TIP: Final[str] = (
+    "`empty_trash_safe` is set `fail_fast=False`."
+    "\nErrors while deletion are ignored."
+    "\nNew runs might resolve them"
+)
 
-async def empty_trash_safe(
+
+async def _empty_explicitly_trashed_projects(
     app: web.Application, product_name: ProductName, user_id: UserID
 ):
-    assert app  # nosec
-
-    trashed_folders_ids = await projects_trash_service.list_trashed_projects(
-        app=app, product_name=product_name, user_id=user_id
+    trashed_projects_ids = (
+        await projects_trash_service.list_explicitly_trashed_projects(
+            app=app, product_name=product_name, user_id=user_id
+        )
     )
 
     with log_context(
         _logger,
         logging.DEBUG,
-        "Deleting %s trashed projects",
-        len(trashed_folders_ids),
+        "Deleting %s explicitly trashed projects",
+        len(trashed_projects_ids),
     ):
-        for folder_id in trashed_folders_ids:
+        for project_id in trashed_projects_ids:
             try:
 
-                await projects_trash_service.delete_trashed_project(
+                await projects_trash_service.delete_explicitly_trashed_project(
                     app,
                     user_id=user_id,
-                    project_id=folder_id,
+                    project_id=project_id,
                 )
 
             except Exception as exc:  # pylint: disable=broad-exception-caught
@@ -46,16 +53,18 @@ async def empty_trash_safe(
                         "Error deleting a trashed project while emptying trash.",
                         error=exc,
                         error_context={
-                            "project_id": folder_id,
+                            "project_id": project_id,
                             "product_name": product_name,
                             "user_id": user_id,
                         },
-                        tip="`empty_trash_safe` is set `fail_fast=False`."
-                        "\nErrors while deletion are ignored."
-                        "\nNew runs might resolve them",
+                        tip=_TIP,
                     )
                 )
 
+
+async def _empty_trashed_folders(
+    app: web.Application, product_name: ProductName, user_id: UserID
+):
     trashed_folders_ids = await folders_trash_service.list_explicitly_trashed_folders(
         app=app, product_name=product_name, user_id=user_id
     )
@@ -63,7 +72,7 @@ async def empty_trash_safe(
     with log_context(
         _logger,
         logging.DEBUG,
-        "Deleting %s trashed folders",
+        "Deleting %s trashed folders (and all its content)",
         len(trashed_folders_ids),
     ):
         for folder_id in trashed_folders_ids:
@@ -85,11 +94,17 @@ async def empty_trash_safe(
                             "product_name": product_name,
                             "user_id": user_id,
                         },
-                        tip="`empty_trash_safe` is set `fail_fast=False`."
-                        "\nErrors while deletion are ignored."
-                        "\nNew runs might resolve them",
+                        tip=_TIP,
                     )
                 )
+
+
+async def empty_trash_safe(
+    app: web.Application, *, product_name: ProductName, user_id: UserID
+):
+    await _empty_explicitly_trashed_projects(app, product_name, user_id)
+
+    await _empty_trashed_folders(app, product_name, user_id)
 
 
 async def prune_trash(app: web.Application) -> list[str]:
