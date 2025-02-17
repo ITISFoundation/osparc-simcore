@@ -2,7 +2,6 @@
 
 """
 
-import functools
 import logging
 from decimal import Decimal
 from typing import Annotated
@@ -17,49 +16,17 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
 )
-from servicelib.aiohttp.typing_extension import Handler
 from simcore_service_webserver.utils_aiohttp import envelope_json_response
 
 from .._meta import API_VTAG
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
-from ..wallets.errors import WalletAccessForbiddenError, WalletNotFoundError
 from . import _wallets_api as wallets_api
 from . import projects_service
+from ._common.exception_handlers import handle_plugin_requests_exceptions
 from ._common.models import ProjectPathParams, RequestContext
-from .exceptions import (
-    ProjectInDebtCanNotChangeWalletError,
-    ProjectInvalidRightsError,
-    ProjectNotFoundError,
-    ProjectWalletPendingTransactionError,
-)
 
 _logger = logging.getLogger(__name__)
-
-
-def _handle_project_wallet_exceptions(handler: Handler):
-    @functools.wraps(handler)
-    async def wrapper(request: web.Request) -> web.StreamResponse:
-        try:
-            return await handler(request)
-
-        except ProjectNotFoundError as exc:
-            raise web.HTTPNotFound(reason=f"{exc}") from exc
-
-        except WalletNotFoundError as exc:
-            raise web.HTTPNotFound(reason=f"{exc}") from exc
-
-        except ProjectInDebtCanNotChangeWalletError as exc:
-            raise web.HTTPPaymentRequired(reason=f"{exc}") from exc
-
-        except (
-            WalletAccessForbiddenError,
-            ProjectInvalidRightsError,
-            ProjectWalletPendingTransactionError,
-        ) as exc:
-            raise web.HTTPForbidden(reason=f"{exc}") from exc
-
-    return wrapper
 
 
 routes = web.RouteTableDef()
@@ -68,7 +35,7 @@ routes = web.RouteTableDef()
 @routes.get(f"/{API_VTAG}/projects/{{project_id}}/wallet", name="get_project_wallet")
 @login_required
 @permission_required("project.wallet.*")
-@_handle_project_wallet_exceptions
+@handle_plugin_requests_exceptions
 async def get_project_wallet(request: web.Request):
     req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
@@ -99,7 +66,7 @@ class _ProjectWalletPathParams(BaseModel):
 )
 @login_required
 @permission_required("project.wallet.*")
-@_handle_project_wallet_exceptions
+@handle_plugin_requests_exceptions
 async def connect_wallet_to_project(request: web.Request):
     req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(_ProjectWalletPathParams, request)
@@ -134,7 +101,7 @@ class _PayProjectDebtBody(BaseModel):
 )
 @login_required
 @permission_required("project.wallet.*")
-@_handle_project_wallet_exceptions
+@handle_plugin_requests_exceptions
 async def pay_project_debt(request: web.Request):
     req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(_ProjectWalletPathParams, request)

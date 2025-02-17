@@ -18,13 +18,14 @@ from ..login.decorators import get_user_id, login_required
 from ..products.api import get_product_name
 from ..security.decorators import permission_required
 from . import _trash_service
+from ._common.exception_handlers import handle_plugin_requests_exceptions
 from ._common.models import ProjectPathParams, RemoveQueryParams
 from .exceptions import ProjectRunningConflictError, ProjectStoppingError
 
 _logger = logging.getLogger(__name__)
 
 #
-# EXCEPTIONS HANDLING
+# LOCAL EXCEPTIONS HANDLING
 #
 
 
@@ -40,7 +41,7 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
 }
 
 
-_handle_exceptions = exception_handling_decorator(
+_handle_local_request_exceptions = exception_handling_decorator(
     to_exceptions_handlers_map(_TO_HTTP_ERROR_MAP)
 )
 
@@ -55,7 +56,8 @@ routes = web.RouteTableDef()
 @routes.post(f"/{VTAG}/projects/{{project_id}}:trash", name="trash_project")
 @login_required
 @permission_required("project.delete")
-@_handle_exceptions
+@handle_plugin_requests_exceptions
+@_handle_local_request_exceptions
 async def trash_project(request: web.Request):
     user_id = get_user_id(request)
     product_name = get_product_name(request)
@@ -79,7 +81,8 @@ async def trash_project(request: web.Request):
 @routes.post(f"/{VTAG}/projects/{{project_id}}:untrash", name="untrash_project")
 @login_required
 @permission_required("project.delete")
-@_handle_exceptions
+@handle_plugin_requests_exceptions
+@_handle_local_request_exceptions
 async def untrash_project(request: web.Request):
     user_id = get_user_id(request)
     product_name = get_product_name(request)

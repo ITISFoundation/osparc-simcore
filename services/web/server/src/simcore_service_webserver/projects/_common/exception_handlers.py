@@ -30,6 +30,7 @@ from ..exceptions import (
     ProjectOwnerNotFoundInTheProjectAccessRightsError,
     ProjectStartsTooManyDynamicNodesError,
     ProjectTooManyProjectOpenedError,
+    ProjectWalletPendingTransactionError,
     WrongTagIdsInQueryError,
 )
 
@@ -97,7 +98,7 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
     ),
     UserDefaultWalletNotFoundError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
-        "User default wallet not found",
+        "Wallet not found: {reason}",
     ),
     DefaultPricingPlanNotFoundError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
@@ -122,6 +123,10 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
     ProjectStartsTooManyDynamicNodesError: HttpErrorInfo(
         status.HTTP_409_CONFLICT,
         "The maximal amount of concurrently running dynamic services was reached. Please manually stop a service and retry.",
+    ),
+    ProjectWalletPendingTransactionError: HttpErrorInfo(
+        status.HTTP_409_CONFLICT,
+        "Project has currently pending transactions. It is forbidden to change wallet.",
     ),
     ClustersKeeperNotAvailableError: HttpErrorInfo(
         status.HTTP_503_SERVICE_UNAVAILABLE,
