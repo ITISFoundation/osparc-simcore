@@ -57,17 +57,18 @@ qx.Class.define("osparc.desktop.credits.BuyCreditsInput", {
         paddingRight: 0
       });
       this.__totalInput = totalInput;
-      amountInput.addListener("changeValue", e => {
-        const value = e.getData();
+      const amountChanged = value => {
         totalInput.setValue(value ? 1 * (value * this.__pricePerCredit).toFixed(2) + this.__currencySymbol : "-");
         this.fireDataEvent("input", this.getValues());
-      });
+      }
+      amountInput.getChildControl("textfield").addListener("input", e => amountChanged(e.getData()));
+      amountInput.addListener("changeValue", e => amountChanged(e.getData()));
       this._add(totalContainer);
 
       osparc.store.Store.getInstance().getMinimumAmount()
         .then(minimum => {
           amountInput.set({
-            maximum: 10000,
+            maximum: 100000,
             minimum: Math.ceil(minimum/this.__pricePerCredit),
             value: Math.ceil(minimum/this.__pricePerCredit)
           });
@@ -81,7 +82,7 @@ qx.Class.define("osparc.desktop.credits.BuyCreditsInput", {
       const input = new qx.ui.form.TextField().set({
         appearance: "appmotion-buy-credits-input",
         textAlign: "center",
-        width: 90,
+        width: 100,
         ...inputProps
       });
       const label = new qx.ui.basic.Label(labelText);
@@ -96,7 +97,7 @@ qx.Class.define("osparc.desktop.credits.BuyCreditsInput", {
       }));
       const input = new qx.ui.form.Spinner().set({
         appearance: "appmotion-buy-credits-spinner",
-        width: 100,
+        width: 110,
         ...inputProps
       });
       input.getChildControl("textfield").set({

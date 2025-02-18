@@ -127,7 +127,12 @@ qx.Class.define("osparc.study.PricingUnitLicense", {
     },
 
     __openLicense: function() {
-      const mdWindow = new osparc.ui.markdown.MarkdownWindow(this.getLicenseUrl()).set({
+      let rawLink = this.getLicenseUrl() || "";
+      if (rawLink.includes("github")) {
+        // make sure the raw version of the link is shown
+        rawLink += "?raw=true";
+      }
+      const mdWindow = new osparc.ui.markdown.MarkdownWindow(rawLink).set({
         caption: this.tr("Terms and Conditions"),
         width: 800,
         height: 600,

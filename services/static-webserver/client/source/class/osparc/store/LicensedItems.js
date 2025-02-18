@@ -71,7 +71,9 @@ qx.Class.define("osparc.store.LicensedItems", {
     },
 
     licensedResourceNameAndVersion: function(licensedResource) {
-      return `${licensedResource["source"]["features"]["name"]} ${licensedResource["source"]["features"]["version"]}`;
+      const name = licensedResource["source"]["features"]["name"];
+      const version = licensedResource["source"]["features"]["version"];
+      return `${name} ${version}`;
     },
   },
 

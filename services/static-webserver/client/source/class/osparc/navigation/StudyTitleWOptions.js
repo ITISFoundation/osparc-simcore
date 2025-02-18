@@ -93,6 +93,15 @@ qx.Class.define("osparc.navigation.StudyTitleWOptions", {
             this.getStudy().getUi().setMode("standalone");
           });
           break;
+        case "study-menu-restore":
+          control = new qx.ui.menu.Button().set({
+            label: this.tr("Restore"),
+            icon: osparc.theme.common.Image.URLS["window-restore"] + "/20",
+          });
+          control.addListener("execute", () => {
+            this.getStudy().getUi().setMode("workbench");
+          });
+          break;
         case "study-menu-open-logger":
           control = new qx.ui.menu.Button().set({
             label: this.tr("Platform Logs..."),
@@ -107,6 +116,7 @@ qx.Class.define("osparc.navigation.StudyTitleWOptions", {
           optionsMenu.add(this.getChildControl("study-menu-reload"));
           optionsMenu.add(this.getChildControl("study-menu-convert-to-pipeline"));
           optionsMenu.add(this.getChildControl("study-menu-convert-to-standalone"));
+          optionsMenu.add(this.getChildControl("study-menu-restore"));
           optionsMenu.add(this.getChildControl("study-menu-open-logger"));
           control = new qx.ui.form.MenuButton().set({
             appearance: "fab-button",
@@ -168,6 +178,16 @@ qx.Class.define("osparc.navigation.StudyTitleWOptions", {
           convertToPipelineButton.exclude();
           convertToStandaloneButton.exclude();
         }
+
+        const restoreButton = this.getChildControl("study-menu-restore");
+        study.getUi().bind("mode", restoreButton, "visibility", {
+          converter: mode => mode === "standalone" ? "visible" : "excluded"
+        });
+
+        const loggerButton = this.getChildControl("study-menu-open-logger");
+        study.getUi().bind("mode", loggerButton, "visibility", {
+          converter: mode => mode === "standalone" ? "visible" : "excluded"
+        });
       } else {
         this.exclude();
       }

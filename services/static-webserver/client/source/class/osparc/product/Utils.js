@@ -188,10 +188,8 @@ qx.Class.define("osparc.product.Utils", {
       return "REGISTER";
     },
 
-    // oSPARC only
     hasConvertToPipelineEnabled: function() {
-      const product = this.getProductName();
-      return product === "osparc";
+      return false;
     },
 
     // oSPARC only
@@ -269,7 +267,7 @@ qx.Class.define("osparc.product.Utils", {
     },
 
     getIconUrl: function(asset = "Default.png") {
-      const base = "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/icons/"
+      const base = "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/icons"
       let url;
       switch (osparc.product.Utils.getProductName()) {
         case "osparc":

@@ -214,16 +214,15 @@ qx.Class.define("osparc.navigation.UserMenu", {
       }
       this.addSeparator();
 
-      // quick starts
+      // quick starts and manuals
       osparc.store.Support.addQuickStartToMenu(this);
       osparc.store.Support.addGuidedToursToMenu(this);
-
-      // manuals
       osparc.store.Support.addManualButtonsToMenu(this);
       this.addSeparator();
 
       // feedbacks
       osparc.store.Support.addSupportButtonsToMenu(this);
+      osparc.store.Support.addReleaseNotesToMenu(this);
       this.addSeparator();
 
       this.getChildControl("theme-switcher");

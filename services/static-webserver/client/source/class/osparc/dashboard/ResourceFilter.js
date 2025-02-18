@@ -384,6 +384,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
         const button = new qx.ui.form.ToggleButton(null, "@FontAwesome5Solid/tag/16");
         button.id = tag.getTagId();
         tag.bind("name", button, "label");
+        tag.bind("name", button, "toolTipText");
         tag.bind("color", button.getChildControl("icon"), "textColor");
         osparc.utils.Utils.setIdToWidget(button, this.__resourceType + "-tagFilterItem");
         button.set({
