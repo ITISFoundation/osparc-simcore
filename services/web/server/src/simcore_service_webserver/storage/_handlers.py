@@ -46,6 +46,7 @@ from yarl import URL
 from .._meta import API_VTAG
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
+from ._exception_handlers import handle_data_export_exceptions
 from .schemas import StorageFileIDStr
 from .settings import StorageSettings, get_plugin_settings
 
@@ -382,6 +383,7 @@ async def delete_file(request: web.Request) -> web.Response:
 )
 @login_required
 @permission_required("storage.files.*")
+@handle_data_export_exceptions
 async def export_data(request: web.Request) -> web.Response:
     class _PathParams(BaseModel):
         location_id: LocationID
@@ -407,6 +409,7 @@ async def export_data(request: web.Request) -> web.Response:
 )
 @login_required
 @permission_required("storage.files.*")
+@handle_data_export_exceptions
 async def get_async_job_status(request: web.Request) -> web.Response:
     rabbitmq_rpc_client = get_rabbitmq_rpc_client(request.app)
 
@@ -428,6 +431,7 @@ async def get_async_job_status(request: web.Request) -> web.Response:
 )
 @login_required
 @permission_required("storage.files.*")
+@handle_data_export_exceptions
 async def abort_async_job(request: web.Request) -> web.Response:
     rabbitmq_rpc_client = get_rabbitmq_rpc_client(request.app)
     async_job_get = parse_request_path_parameters_as(AsyncJobGet, request)
@@ -449,6 +453,7 @@ async def abort_async_job(request: web.Request) -> web.Response:
 )
 @login_required
 @permission_required("storage.files.*")
+@handle_data_export_exceptions
 async def get_async_job_result(request: web.Request) -> web.Response:
     rabbitmq_rpc_client = get_rabbitmq_rpc_client(request.app)
     async_job_get = parse_request_path_parameters_as(AsyncJobGet, request)
