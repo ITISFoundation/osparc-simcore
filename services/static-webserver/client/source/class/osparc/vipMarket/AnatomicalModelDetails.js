@@ -313,9 +313,17 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
           modelId: anatomicalModelsData["licensedResources"][selectedIdx]["source"]["id"]
         });
       }, this);
-      if (anatomicalModelsData["seats"].length) {
-        importSection.add(importButton);
-      }
+
+      osparc.store.Pricing.getInstance().fetchPricingUnits(anatomicalModelsData["pricingPlanId"])
+        .then(pricingUnits => {
+          if (
+            anatomicalModelsData["seats"].length ||
+            (pricingUnits.length === 1 && pricingUnits[0].getCost() === 0)
+          ) {
+            importSection.add(importButton);
+          }
+        });
+
       return importSection;
     },
 
