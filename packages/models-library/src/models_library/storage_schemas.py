@@ -10,7 +10,6 @@ from datetime import datetime
 from enum import Enum
 
 # /data-export
-from pathlib import Path
 from typing import Annotated, Any, Literal, Self, TypeAlias
 from uuid import UUID
 
@@ -21,7 +20,6 @@ from pydantic import (
     ByteSize,
     ConfigDict,
     Field,
-    PositiveFloat,
     PositiveInt,
     RootModel,
     StringConstraints,
@@ -30,12 +28,6 @@ from pydantic import (
 )
 from pydantic.networks import AnyUrl
 
-from .api_schemas_rpc_async_jobs.async_jobs import (
-    AsyncJobGet,
-    AsyncJobResult,
-    AsyncJobStatus,
-)
-from .api_schemas_storage.data_export_async_jobs import DataExportTaskStartInput
 from .basic_regex import DATCORE_DATASET_NAME_RE, S3_BUCKET_NAME_RE
 from .basic_types import SHA256Str
 from .generics import ListModel
@@ -378,55 +370,3 @@ class FoldersBody(BaseModel):
 
 class SoftCopyBody(BaseModel):
     link_id: SimcoreS3FileID
-
-
-class DataExportPost(BaseModel):
-    paths: list[Path]
-
-    def to_storage_model(
-        self, user_id: UserID, location_id: LocationID
-    ) -> DataExportTaskStartInput:
-        return DataExportTaskStartInput(
-            paths=self.paths, user_id=user_id, location_id=location_id
-        )
-
-
-class AsyncJobGet(BaseModel):
-    job_id: UUID
-
-    @classmethod
-    def from_async_job_rpc_get(cls, async_job_rpc_get: AsyncJobGet) -> "AsyncJobGet":
-        return AsyncJobGet(job_id=async_job_rpc_get.job_id)
-
-
-class AsyncJobStatus(BaseModel):
-    job_id: UUID
-    task_progress: PositiveFloat = Field(..., ge=0.0, le=1.0)
-    done: bool
-    started: datetime
-    stopped: datetime | None
-
-    @classmethod
-    def from_async_job_rpc_status(
-        cls, async_job_rpc_status: AsyncJobStatus
-    ) -> "AsyncJobStatus":
-        return AsyncJobStatus(
-            job_id=async_job_rpc_status.job_id,
-            task_progress=async_job_rpc_status.task_progress,
-            done=async_job_rpc_status.done,
-            started=async_job_rpc_status.started,
-            stopped=async_job_rpc_status.stopped,
-        )
-
-
-class AsyncJobResult(BaseModel):
-    result: Any | None
-    error: Any | None
-
-    @classmethod
-    def from_async_job_rpc_result(
-        cls, async_job_rpc_result: AsyncJobResult
-    ) -> "AsyncJobResult":
-        return AsyncJobResult(
-            result=async_job_rpc_result.result, error=async_job_rpc_result.error
-        )

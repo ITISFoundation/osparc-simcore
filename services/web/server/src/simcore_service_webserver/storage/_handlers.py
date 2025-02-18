@@ -10,13 +10,15 @@ from urllib.parse import quote, unquote
 
 from aiohttp import ClientTimeout, web
 from models_library.api_schemas_storage import STORAGE_RPC_NAMESPACE
+from models_library.api_schemas_webserver.storage import (
+    DataExportPost,
+    StorageAsyncJobGet,
+    StorageAsyncJobResult,
+    StorageAsyncJobStatus,
+)
 from models_library.projects_nodes_io import LocationID
 from models_library.rest_base import RequestParameters
 from models_library.storage_schemas import (
-    AsyncJobGet,
-    AsyncJobResult,
-    AsyncJobStatus,
-    DataExportPost,
     FileUploadCompleteResponse,
     FileUploadCompletionBody,
     FileUploadSchema,
@@ -405,7 +407,7 @@ async def export_data(request: web.Request) -> web.Response:
         ),
     )
     return create_data_response(
-        AsyncJobGet.from_async_job_rpc_get(async_job_rpc_get),
+        StorageAsyncJobGet.from_async_job_rpc_get(async_job_rpc_get),
         status=status.HTTP_202_ACCEPTED,
     )
 
@@ -420,14 +422,14 @@ async def export_data(request: web.Request) -> web.Response:
 async def get_async_job_status(request: web.Request) -> web.Response:
     rabbitmq_rpc_client = get_rabbitmq_rpc_client(request.app)
 
-    async_job_get = parse_request_path_parameters_as(AsyncJobGet, request)
+    async_job_get = parse_request_path_parameters_as(StorageAsyncJobGet, request)
     async_job_rpc_status = await get_status(
         rabbitmq_rpc_client=rabbitmq_rpc_client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
         job_id=async_job_get.job_id,
     )
     return create_data_response(
-        AsyncJobStatus.from_async_job_rpc_status(async_job_rpc_status),
+        StorageAsyncJobStatus.from_async_job_rpc_status(async_job_rpc_status),
         status=status.HTTP_200_OK,
     )
 
@@ -441,7 +443,7 @@ async def get_async_job_status(request: web.Request) -> web.Response:
 @handle_data_export_exceptions
 async def abort_async_job(request: web.Request) -> web.Response:
     rabbitmq_rpc_client = get_rabbitmq_rpc_client(request.app)
-    async_job_get = parse_request_path_parameters_as(AsyncJobGet, request)
+    async_job_get = parse_request_path_parameters_as(StorageAsyncJobGet, request)
     async_job_rpc_abort = await abort(
         rabbitmq_rpc_client=rabbitmq_rpc_client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
@@ -463,13 +465,13 @@ async def abort_async_job(request: web.Request) -> web.Response:
 @handle_data_export_exceptions
 async def get_async_job_result(request: web.Request) -> web.Response:
     rabbitmq_rpc_client = get_rabbitmq_rpc_client(request.app)
-    async_job_get = parse_request_path_parameters_as(AsyncJobGet, request)
+    async_job_get = parse_request_path_parameters_as(StorageAsyncJobGet, request)
     async_job_rpc_result = await get_result(
         rabbitmq_rpc_client=rabbitmq_rpc_client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
         job_id=async_job_get.job_id,
     )
     return create_data_response(
-        AsyncJobResult.from_async_job_rpc_result(async_job_rpc_result),
+        StorageAsyncJobResult.from_async_job_rpc_result(async_job_rpc_result),
         status=status.HTTP_200_OK,
     )

@@ -2,7 +2,8 @@ from datetime import datetime
 from typing import Any, TypeAlias
 from uuid import UUID
 
-from pydantic import BaseModel, Field, PositiveFloat, model_validator
+from pydantic import BaseModel, model_validator
+from servicelib.progress_bar import ProgressBarData
 from typing_extensions import Self
 
 AsyncJobId: TypeAlias = UUID
@@ -10,7 +11,7 @@ AsyncJobId: TypeAlias = UUID
 
 class AsyncJobStatus(BaseModel):
     job_id: AsyncJobId
-    progress: PositiveFloat = Field(..., ge=0.0, le=1.0)
+    progress: ProgressBarData
     done: bool
     started: datetime
     stopped: datetime | None
