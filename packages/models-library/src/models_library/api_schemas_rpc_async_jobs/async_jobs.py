@@ -3,15 +3,16 @@ from typing import Any, TypeAlias
 from uuid import UUID
 
 from pydantic import BaseModel, model_validator
-from servicelib.progress_bar import ProgressBarData
 from typing_extensions import Self
+
+from ..progress_bar import ProgressReport
 
 AsyncJobId: TypeAlias = UUID
 
 
 class AsyncJobStatus(BaseModel):
     job_id: AsyncJobId
-    progress: ProgressBarData
+    progress: ProgressReport
     done: bool
     started: datetime
     stopped: datetime | None

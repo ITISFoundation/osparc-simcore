@@ -11,6 +11,7 @@ from models_library.api_schemas_rpc_async_jobs.exceptions import (
     ResultError,
     StatusError,
 )
+from models_library.progress_bar import ProgressReport
 from servicelib.rabbitmq import RPCRouter
 
 router = RPCRouter()
@@ -25,9 +26,10 @@ async def abort(app: FastAPI, job_id: AsyncJobId) -> AsyncJobAbort:
 @router.expose(reraise_if_error_type=(StatusError,))
 async def get_status(app: FastAPI, job_id: AsyncJobId) -> AsyncJobStatus:
     assert app  # nosec
+    progress_report = ProgressReport(actual_value=0.5, total=1.0, attempt=1)
     return AsyncJobStatus(
         job_id=job_id,
-        progress=0.5,
+        progress=progress_report,
         done=False,
         started=datetime.now(),
         stopped=None,
