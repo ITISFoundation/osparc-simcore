@@ -141,17 +141,13 @@ class LicensedItemRestGet(OutputSchema):
                     exclude_unset=True,
                 ),
                 "licensed_resources": [
-                    _ItisVipResourceRestData(**x)
-                    for x in sorted(
-                        item.licensed_resources,
-                        key=lambda x: datetime.strptime(
-                            x["source"]["features"]["date"], "%Y-%m-%d"
-                        ),
-                        reverse=True,
-                    )
+                    _ItisVipResourceRestData(**x) for x in item.licensed_resources
                 ],
                 "category_id": item.licensed_resources[0]["category_id"],
                 "category_display": item.licensed_resources[0]["category_display"],
+                "terms_of_use_url": item.licensed_resources[0].get(
+                    "terms_of_use_url", None
+                ),
             }
         )
 

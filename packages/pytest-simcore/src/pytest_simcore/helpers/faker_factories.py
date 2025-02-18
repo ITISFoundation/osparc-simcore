@@ -488,7 +488,7 @@ def random_itis_vip_available_download_item(
         f"name: {fake.name()} Right Hand,"  # w/o spaces
         f" version: V{fake.pyint()}.0,   "  # w/ x2 spaces
         f"sex: Male, age: 8 years,"  # w/o spaces
-        f"date: {fake.date()}, "  # w/ x1 spaces
+        f"date:  {fake.date()} , "  # w/ x2 spaces prefix, x1 space suffix
         f"ethnicity: Caucasian, functionality: {features_functionality}  "
         "}"
     )

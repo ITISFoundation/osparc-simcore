@@ -3674,6 +3674,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Conflict
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Service Unavailable
         '422':
           content:
             application/json:
@@ -3692,12 +3698,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Payment Required
-        '503':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
-          description: Service Unavailable
     get:
       tags:
       - projects
@@ -3803,6 +3803,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Conflict
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Service Unavailable
         '422':
           content:
             application/json:
@@ -3821,12 +3827,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Payment Required
-        '503':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
-          description: Service Unavailable
   /v0/projects/active:
     get:
       tags:
@@ -3865,6 +3865,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Conflict
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Service Unavailable
         '422':
           content:
             application/json:
@@ -3883,12 +3889,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Payment Required
-        '503':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
-          description: Service Unavailable
   /v0/projects/{project_id}:
     get:
       tags:
@@ -3928,6 +3928,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Conflict
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Service Unavailable
         '422':
           content:
             application/json:
@@ -3946,12 +3952,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Payment Required
-        '503':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
-          description: Service Unavailable
     patch:
       tags:
       - projects
@@ -3992,6 +3992,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Conflict
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Service Unavailable
         '422':
           content:
             application/json:
@@ -4010,12 +4016,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Payment Required
-        '503':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
-          description: Service Unavailable
     delete:
       tags:
       - projects
@@ -4050,6 +4050,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Conflict
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Service Unavailable
         '422':
           content:
             application/json:
@@ -4068,12 +4074,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Payment Required
-        '503':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
-          description: Service Unavailable
   /v0/projects/{project_id}:clone:
     post:
       tags:
@@ -4113,6 +4113,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Conflict
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Service Unavailable
         '422':
           content:
             application/json:
@@ -4131,12 +4137,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Payment Required
-        '503':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
-          description: Service Unavailable
   /v0/projects:search:
     get:
       tags:
@@ -4218,6 +4218,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Conflict
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Service Unavailable
         '422':
           content:
             application/json:
@@ -4236,12 +4242,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Payment Required
-        '503':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
-          description: Service Unavailable
   /v0/projects/{project_id}/inactivity:
     get:
       tags:
@@ -4281,6 +4281,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Conflict
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Service Unavailable
         '422':
           content:
             application/json:
@@ -4299,12 +4305,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Payment Required
-        '503':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
-          description: Service Unavailable
   /v0/projects/{project_uuid}/comments:
     post:
       tags:
@@ -6378,6 +6378,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
+        '503':
+          description: Service Unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
         '422':
           description: Unprocessable Entity
           content:
@@ -6392,12 +6398,6 @@ paths:
                 $ref: '#/components/schemas/EnvelopedError'
         '402':
           description: Payment Required
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
-        '503':
-          description: Service Unavailable
           content:
             application/json:
               schema:
@@ -6445,6 +6445,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
+        '503':
+          description: Trash service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
         '422':
           content:
             application/json:
@@ -6463,12 +6469,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Payment Required
-        '503':
-          description: Trash service error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
   /v0/projects/{project_id}:untrash:
     post:
       tags:
@@ -6505,6 +6505,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Conflict
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Service Unavailable
         '422':
           content:
             application/json:
@@ -6523,12 +6529,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Payment Required
-        '503':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
-          description: Service Unavailable
   /v0/folders/{folder_id}:trash:
     post:
       tags:
@@ -6566,6 +6566,8 @@ paths:
         '409':
           description: One or more projects in the folder are in use and cannot be
             trashed
+        '503':
+          description: Trash service error
         '422':
           content:
             application/json:
@@ -6584,8 +6586,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Payment Required
-        '503':
-          description: Trash service error
   /v0/folders/{folder_id}:untrash:
     post:
       tags:
@@ -6623,6 +6623,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Conflict
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Service Unavailable
         '422':
           content:
             application/json:
@@ -6641,12 +6647,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Payment Required
-        '503':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
-          description: Service Unavailable
   /v0/workspaces/{workspace_id}:trash:
     post:
       tags:
@@ -6684,6 +6684,8 @@ paths:
         '409':
           description: One or more projects in the workspace are in use and cannot
             be trashed
+        '503':
+          description: Trash service error
         '422':
           content:
             application/json:
@@ -6702,8 +6704,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Payment Required
-        '503':
-          description: Trash service error
   /v0/workspaces/{workspace_id}:untrash:
     post:
       tags:
@@ -6741,6 +6741,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Conflict
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Service Unavailable
         '422':
           content:
             application/json:
@@ -6759,12 +6765,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Payment Required
-        '503':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
-          description: Service Unavailable
   /v0/workspaces:
     post:
       tags:
@@ -9888,6 +9888,7 @@ components:
           title: Height
         date:
           type: string
+          format: date
           title: Date
         ethnicity:
           type: string
