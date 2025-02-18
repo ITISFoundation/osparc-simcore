@@ -1,4 +1,6 @@
+import itertools
 import logging
+from collections import Counter
 
 from servicelib.aiohttp import status
 from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
@@ -174,15 +176,36 @@ _OTHER_ERRORS: ExceptionToHttpErrorMap = {
     ),
 }
 
+
+_ERRORS = [
+    _FOLDER_ERRORS,
+    _NODE_ERRORS,
+    _OTHER_ERRORS,
+    _PRICING_ERRORS,
+    _PROJECT_ERRORS,
+    _WALLET_ERRORS,
+    _WORKSPACE_ERRORS,
+]
+
+
+def _assert_duplicate():
+    duplicates = {
+        exc.__name__: count
+        for exc, count in Counter(itertools.chain(*[d.keys() for d in _ERRORS])).items()
+        if count > 1
+    }
+    if duplicates:
+        msg = f"Found duplicated exceptions: {duplicates}"
+        raise AssertionError(msg)
+    return True
+
+
+assert _assert_duplicate()  # nosec
+
 _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
-    **_FOLDER_ERRORS,
-    **_NODE_ERRORS,
-    **_OTHER_ERRORS,
-    **_PRICING_ERRORS,
-    **_PROJECT_ERRORS,
-    **_WALLET_ERRORS,
-    **_WORKSPACE_ERRORS,
+    k: v for dikt in _ERRORS for k, v in dikt.items()
 }
+
 
 handle_plugin_requests_exceptions = exception_handling_decorator(
     to_exceptions_handlers_map(_TO_HTTP_ERROR_MAP)

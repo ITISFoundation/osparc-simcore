@@ -854,3 +854,117 @@ async def test_trash_project_explitictly_and_empty_trash_bin(
     # GET trahsed project
     resp = await client.get(f"/v0/projects/{project_uuid}")
     await assert_status(resp, status.HTTP_404_NOT_FOUND)
+
+
+async def test_trash_folder_with_subfolder_and_project_and_empty_bin(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    mocked_catalog: None,
+    mocked_director_v2: None,
+    mocked_dynamic_services_interface: dict[str, MagicMock],
+    mocked_storage: None,
+):
+    assert client.app
+
+    # CREATE a folder
+    resp = await client.post("/v0/folders", json={"name": "Parent Folder"})
+    data, _ = await assert_status(resp, status.HTTP_201_CREATED)
+    parent_folder = FolderGet.model_validate(data)
+
+    # CREATE a subfolder
+    resp = await client.post(
+        "/v0/folders",
+        json={"name": "Sub Folder", "parentFolderId": parent_folder.folder_id},
+    )
+    data, _ = await assert_status(resp, status.HTTP_201_CREATED)
+    sub_folder = FolderGet.model_validate(data)
+
+    # MOVE project to subfolder
+    project_uuid = UUID(user_project["uuid"])
+    resp = await client.put(
+        f"/v0/projects/{project_uuid}/folders/{sub_folder.folder_id}"
+    )
+    await assert_status(resp, status.HTTP_204_NO_CONTENT)
+
+    # TRASH the parent folder
+    resp = await client.post(f"/v0/folders/{parent_folder.folder_id}:trash")
+    await assert_status(resp, status.HTTP_204_NO_CONTENT)
+
+    # CHECK BIN
+    # - LIST trashed folders as shown in the bin (will show only explicilty)
+    resp = await client.get(
+        "/v0/folders:search", params={"filters": '{"trashed": true}'}
+    )
+    await assert_status(resp, status.HTTP_200_OK)
+    page = Page[FolderGet].model_validate(await resp.json())
+    assert page.meta.total == 1
+    assert page.data[0].folder_id == parent_folder.folder_id
+
+    # - LIST trashed projects (will show only explicit!)
+    resp = await client.get(
+        "/v0/projects:search", params={"filters": '{"trashed": true}'}
+    )
+    await assert_status(resp, status.HTTP_200_OK)
+    page = Page[ProjectListItem].model_validate(await resp.json())
+    assert page.meta.total == 0
+
+    # CHECK items
+    # - GET trashed parent folder (explicit)
+    resp = await client.get(f"/v0/folders/{parent_folder.folder_id}")
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+    got = FolderGet.model_validate(data)
+    assert got.trashed_at is not None
+    assert got.trashed_by == logged_user["primary_gid"]
+
+    # - GET trashed subfolder (implicit)
+    resp = await client.get(f"/v0/folders/{sub_folder.folder_id}")
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+    got = FolderGet.model_validate(data)
+    assert got.trashed_at is not None
+    assert got.trashed_by == logged_user["primary_gid"]
+
+    # GET trashed project (implicit)
+    resp = await client.get(f"/v0/projects/{project_uuid}")
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+    got = ProjectGet.model_validate(data)
+    assert got.trashed_at is not None
+    assert got.trashed_by == logged_user["primary_gid"]
+
+    # EMPTY trash
+    resp = await client.post("/v0/trash:empty")
+    await assert_status(resp, status.HTTP_204_NO_CONTENT)
+
+    # waits for deletion
+    async for attempt in AsyncRetrying(
+        stop=stop_after_attempt(3), wait=wait_fixed(1), reraise=True
+    ):
+        with attempt:
+            # GET trashed parent folder
+            resp = await client.get(f"/v0/folders/{parent_folder.folder_id}")
+            await assert_status(resp, status.HTTP_403_FORBIDDEN)
+
+            # GET trashed subfolder
+            resp = await client.get(f"/v0/folders/{sub_folder.folder_id}")
+            await assert_status(resp, status.HTTP_403_FORBIDDEN)
+
+            # GET trashed project
+            resp = await client.get(f"/v0/projects/{project_uuid}")
+            await assert_status(resp, status.HTTP_404_NOT_FOUND)
+
+    # CHECK BIN
+    # LIST trashed (will show only explicit)
+    resp = await client.get(
+        "/v0/folders:search", params={"filters": '{"trashed": true}'}
+    )
+    await assert_status(resp, status.HTTP_200_OK)
+    page = Page[FolderGet].model_validate(await resp.json())
+    assert page.meta.total == 0
+
+    # - LIST trashed projects (will show only explicit!)
+    resp = await client.get(
+        "/v0/projects:search", params={"filters": '{"trashed": true}'}
+    )
+    await assert_status(resp, status.HTTP_200_OK)
+    page = Page[ProjectListItem].model_validate(await resp.json())
+    assert page.meta.total == 0
