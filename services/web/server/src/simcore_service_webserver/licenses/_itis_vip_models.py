@@ -19,6 +19,25 @@ _max_str_adapter: TypeAdapter[str] = TypeAdapter(
 )
 
 
+def _clean_dict_data(data_dict):
+    """
+    Strips leading/trailing whitespace from all string values
+    and removes keys whose stripped value is empty.
+    """
+    cleaned = {}
+    for k, v in data_dict.items():
+        if v is not None:
+            if isinstance(v, str):
+                v_stripped = v.strip()
+                # Keep the key only if it's not empty after strip
+                if v_stripped:
+                    cleaned[k] = v_stripped
+            else:
+                # If it's not a string, just copy the value as is
+                cleaned[k] = v
+    return cleaned
+
+
 def _feature_descriptor_to_dict(descriptor: str) -> dict[str, Any]:
     # NOTE: this is manually added in the server side so be more robust to errors
     descriptor = _max_str_adapter.validate_python(descriptor.strip("{}"))
@@ -34,6 +53,7 @@ class ItisVipData(BaseModel):
     thumbnail: Annotated[str, Field(alias="Thumbnail")]
     features: Annotated[
         FeaturesDict,
+        BeforeValidator(_clean_dict_data),
         BeforeValidator(_feature_descriptor_to_dict),
         Field(alias="Features"),
     ]
