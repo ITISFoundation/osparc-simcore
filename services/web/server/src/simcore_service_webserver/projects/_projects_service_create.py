@@ -27,7 +27,7 @@ from simcore_postgres_database.utils_projects_nodes import (
 from simcore_postgres_database.webserver_models import ProjectType as ProjectTypeDB
 
 from ..application_settings import get_application_settings
-from ..catalog import client as catalog_client
+from ..catalog import client as catalog_service
 from ..director_v2 import api as director_v2_service
 from ..dynamic_scheduler import api as dynamic_scheduler_service
 from ..folders import _folders_repository as _folders_repository
@@ -219,7 +219,7 @@ async def _compose_project_data(
             NodeID(node_id): ProjectNodeCreate(
                 node_id=NodeID(node_id),
                 required_resources=jsonable_encoder(
-                    await catalog_client.get_service_resources(
+                    await catalog_service.get_service_resources(
                         app, user_id, node_data["key"], node_data["version"]
                     )
                 ),

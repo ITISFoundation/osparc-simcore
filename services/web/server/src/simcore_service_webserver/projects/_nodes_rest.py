@@ -55,7 +55,7 @@ from servicelib.services_utils import get_status_as_dict
 from simcore_postgres_database.models.users import UserRole
 
 from .._meta import API_VTAG as VTAG
-from ..catalog import client as catalog_client
+from ..catalog import client as catalog_service
 from ..dynamic_scheduler import api as dynamic_scheduler_service
 from ..groups.api import get_group_from_gid, list_all_user_groups_ids
 from ..groups.exceptions import GroupNotFoundError
@@ -495,7 +495,7 @@ async def get_project_services_access_for_gid(
 
     project_services_access_rights: list[ServiceAccessRightsGet] = await asyncio.gather(
         *[
-            catalog_client.get_service_access_rights(
+            catalog_service.get_service_access_rights(
                 app=request.app,
                 user_id=req_ctx.user_id,
                 service_key=service.key,

@@ -93,7 +93,7 @@ from simcore_postgres_database.webserver_models import ProjectType
 from yarl import URL
 
 from ..application_settings import get_application_settings
-from ..catalog import client as catalog_client
+from ..catalog import client as catalog_service
 from ..director_v2 import api as director_v2_service
 from ..dynamic_scheduler import api as dynamic_scheduler_service
 from ..products import api as products_api
@@ -823,7 +823,7 @@ async def add_project_node(
     )
 
     node_uuid = NodeID(service_id if service_id else f"{uuid4()}")
-    default_resources = await catalog_client.get_service_resources(
+    default_resources = await catalog_service.get_service_resources(
         request.app, user_id, service_key, service_version
     )
     db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(request.app)
@@ -1625,7 +1625,7 @@ async def is_service_deprecated(
     service_version: str,
     product_name: str,
 ) -> bool:
-    service = await catalog_client.get_service(
+    service = await catalog_service.get_service(
         app, user_id, service_key, service_version, product_name
     )
     if deprecation_date := service.get("deprecated"):
@@ -1674,7 +1674,7 @@ async def get_project_node_resources(
         )
         if not node_resources:
             # get default resources
-            node_resources = await catalog_client.get_service_resources(
+            node_resources = await catalog_service.get_service_resources(
                 app, user_id, service_key, service_version
             )
         return node_resources
@@ -1705,7 +1705,7 @@ async def update_project_node_resources(
         if not current_resources:
             # NOTE: this can happen after the migration
             # get default resources
-            current_resources = await catalog_client.get_service_resources(
+            current_resources = await catalog_service.get_service_resources(
                 app, user_id, service_key, service_version
             )
 
