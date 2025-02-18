@@ -7,14 +7,19 @@ from uuid import UUID, uuid1, uuid5
 
 from models_library.projects_nodes_io import NodeIDStr
 from models_library.services import ServiceKey
+from pydantic import TypeAdapter
 from servicelib.decorators import safe_return
-from yarl import URL
 
 from .models import ProjectDict
 
 _logger = logging.getLogger(__name__)
 
 _VARIABLE_PATTERN = re.compile(r"^{{\W*(\w+)\W*}}$")
+
+_FIELDS_TO_DELETE = ("outputs", "progress", "runHash")
+
+_COPY_SUFFIX_RE = re.compile(r"^(.*? \(Copy\))(\(\d+\))?$")
+_COPY_SUFFIX = "(Copy)"
 
 
 class NodeDict(TypedDict, total=False):
@@ -24,7 +29,17 @@ class NodeDict(TypedDict, total=False):
 
 NodesMap = dict[NodeIDStr, NodeIDStr]
 
-_FIELDS_TO_DELETE = ("outputs", "progress", "runHash")
+
+def default_copy_project_name(name: str) -> str:
+    if match := _COPY_SUFFIX_RE.fullmatch(name):
+        new_copy_index = 1
+        if current_copy_index := match.group(2):
+            # we receive something of type "(23)"
+            new_copy_index = (
+                TypeAdapter(int).validate_python(current_copy_index.strip("()")) + 1
+            )
+        return f"{match.group(1)}({new_copy_index})"
+    return f"{name} (Copy)"
 
 
 def clone_project_document(
@@ -183,11 +198,6 @@ def get_project_unavailable_services(
     }
 
     return required - available
-
-
-def extract_dns_without_default_port(url: URL) -> str:
-    port = "" if url.port == 80 else f":{url.port}"
-    return f"{url.host}{port}"
 
 
 def find_changed_node_keys(

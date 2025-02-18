@@ -4,7 +4,6 @@
 
 import json
 import logging
-import re
 from copy import deepcopy
 from pathlib import Path
 from typing import Any
@@ -14,7 +13,6 @@ from models_library.projects import Project
 from models_library.projects import ProjectType as ml_project_type
 from models_library.projects_nodes_io import NodeID
 from models_library.services import ServiceKey
-from pydantic import TypeAdapter
 from simcore_postgres_database.models.projects import ProjectType as pg_project_type
 from simcore_service_webserver.projects._nodes_service import (
     project_get_depending_nodes,
@@ -23,26 +21,11 @@ from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.projects.utils import (
     NodeDict,
     clone_project_document,
+    default_copy_project_name,
     find_changed_node_keys,
 )
 
 _logger = logging.getLogger(__name__)
-
-
-COPY_SUFFIX_RE = re.compile(r"^(.*? \(Copy\))(\(\d+\))?$")
-COPY_SUFFIX = "(Copy)"
-
-
-def default_copy_project_name(name: str) -> str:
-    if match := COPY_SUFFIX_RE.fullmatch(name):
-        new_copy_index = 1
-        if current_copy_index := match.group(2):
-            # we receive something of type "(23)"
-            new_copy_index = (
-                TypeAdapter(int).validate_python(current_copy_index.strip("()")) + 1
-            )
-        return f"{match.group(1)}({new_copy_index})"
-    return f"{name} (Copy)"
 
 
 # NOTE: InputTypes/OutputTypes that are NOT links

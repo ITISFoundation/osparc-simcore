@@ -90,6 +90,7 @@ from simcore_postgres_database.utils_projects_nodes import (
     ProjectNodesNodeNotFoundError,
 )
 from simcore_postgres_database.webserver_models import ProjectType
+from yarl import URL
 
 from ..application_settings import get_application_settings
 from ..catalog import client as catalog_client
@@ -155,7 +156,6 @@ from .exceptions import (
 )
 from .models import PermissionStr, ProjectDict, ProjectPatchInternalExtended
 from .settings import ProjectsSettings, get_plugin_settings
-from .utils import extract_dns_without_default_port
 
 _logger = logging.getLogger(__name__)
 
@@ -764,6 +764,11 @@ async def _start_dynamic_service(  # noqa: C901
             service_key=service_key,
             service_version=service_version,
         )
+
+        def _extract_dns_without_default_port(url: URL) -> str:
+            port = "" if url.port == 80 else f":{url.port}"  # noqa: PLR2004
+            return f"{url.host}{port}"
+
         await dynamic_scheduler_service.run_dynamic_service(
             app=request.app,
             dynamic_service_start=DynamicServiceStart(
@@ -774,7 +779,7 @@ async def _start_dynamic_service(  # noqa: C901
                 service_key=service_key,
                 service_version=service_version,
                 service_uuid=node_uuid,
-                request_dns=extract_dns_without_default_port(request.url),
+                request_dns=_extract_dns_without_default_port(request.url),
                 request_scheme=request.headers.get(
                     X_FORWARDED_PROTO, request.url.scheme
                 ),
