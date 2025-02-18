@@ -7,6 +7,10 @@ from models_library.api_schemas_rpc_async_jobs.async_jobs import (
     AsyncJobRpcResult,
     AsyncJobRpcStatus,
 )
+from models_library.api_schemas_rpc_async_jobs.exceptions import (
+    ResultError,
+    StatusError,
+)
 from servicelib.rabbitmq import RPCRouter
 
 router = RPCRouter()
@@ -18,7 +22,7 @@ async def abort(app: FastAPI, job_id: AsyncJobRpcId) -> AsyncJobRpcAbort:
     return AsyncJobRpcAbort(result=True, job_id=job_id)
 
 
-@router.expose()
+@router.expose(reraise_if_error_type=(StatusError,))
 async def get_status(app: FastAPI, job_id: AsyncJobRpcId) -> AsyncJobRpcStatus:
     assert app  # nosec
     return AsyncJobRpcStatus(
@@ -30,7 +34,7 @@ async def get_status(app: FastAPI, job_id: AsyncJobRpcId) -> AsyncJobRpcStatus:
     )
 
 
-@router.expose()
+@router.expose(reraise_if_error_type=(ResultError,))
 async def get_result(app: FastAPI, job_id: AsyncJobRpcId) -> AsyncJobRpcResult:
     assert app  # nosec
     assert job_id  # nosec
