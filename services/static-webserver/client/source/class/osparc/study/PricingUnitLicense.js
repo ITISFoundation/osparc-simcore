@@ -29,6 +29,13 @@ qx.Class.define("osparc.study.PricingUnitLicense", {
       nullable: true,
       event: "changeShowRentButton"
     },
+
+    licenseUrl: {
+      check: "String",
+      init: false,
+      nullable: true,
+      event: "changeLicenseUrl"
+    },
   },
 
   statics: {
@@ -94,12 +101,38 @@ qx.Class.define("osparc.study.PricingUnitLicense", {
         caption: this.tr("Rent"),
         confirmText: this.tr("Rent"),
       });
+
+      if (this.getLicenseUrl()) {
+        const useCacheCB = new qx.ui.form.CheckBox().set({
+          value: false,
+          label: this.tr("Accept <u>Terms and Conditions</u>"),
+          rich: true,
+        });
+        useCacheCB.getChildControl("label").set({
+          anonymous: false,
+          cursor: "pointer",
+        });
+        useCacheCB.getChildControl("label").addListener("tap", () => this.__openLicense());
+        confirmationWin.addWidget(useCacheCB);
+        confirmationWin.getExtraWidgetsLayout().setPaddingTop(0); // reset paddingTop
+        useCacheCB.bind("value", confirmationWin.getConfirmButton(), "enabled");
+      }
+
       confirmationWin.open();
       confirmationWin.addListener("close", () => {
         if (confirmationWin.getConfirmed()) {
           this.fireEvent("rentPricingUnit");
         }
       }, this);
+    },
+
+    __openLicense: function() {
+      const mdWindow = new osparc.ui.markdown.MarkdownWindow(this.getLicenseUrl()).set({
+        caption: this.tr("Terms and Conditions"),
+        width: 800,
+        height: 600,
+      });
+      mdWindow.open();
     },
   }
 });

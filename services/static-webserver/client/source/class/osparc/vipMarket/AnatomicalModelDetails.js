@@ -341,6 +341,7 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
             });
             const pUnit = new osparc.study.PricingUnitLicense(pricingUnit).set({
               showRentButton: true,
+              licenseUrl: licensedItemData["termsOfUseUrl"],
             });
             pUnit.addListener("rentPricingUnit", () => {
               this.fireDataEvent("modelPurchaseRequested", {
