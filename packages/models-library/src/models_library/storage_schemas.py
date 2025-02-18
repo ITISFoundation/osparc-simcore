@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Annotated, Any, Literal, Self, TypeAlias
 from uuid import UUID
 
-from models_library.api_schemas_rpc_data_export.async_jobs import (
+from models_library.api_schemas_rpc_async_jobs.async_jobs import (
     AsyncJobRpcGet,
     AsyncJobRpcResult,
     AsyncJobRpcStatus,

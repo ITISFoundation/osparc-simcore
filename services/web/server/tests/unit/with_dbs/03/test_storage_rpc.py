@@ -5,7 +5,7 @@ from typing import Any, Callable
 import pytest
 from aiohttp.test_utils import TestClient
 from faker import Faker
-from models_library.api_schemas_rpc_data_export.async_jobs import (
+from models_library.api_schemas_rpc_async_jobs.async_jobs import (
     AsyncJobRpcAbort,
     AsyncJobRpcGet,
     AsyncJobRpcId,

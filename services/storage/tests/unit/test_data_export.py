@@ -6,7 +6,8 @@ from typing import Awaitable, Callable
 import pytest
 from faker import Faker
 from fastapi import FastAPI
-from models_library.api_schemas_rpc_data_export.async_jobs import (
+from models_library.api_schemas_rpc_async_jobs.async_jobs import (
+    AsyncJobRpcAbort,
     AsyncJobRpcGet,
     AsyncJobRpcId,
     AsyncJobRpcResult,
@@ -14,7 +15,6 @@ from models_library.api_schemas_rpc_data_export.async_jobs import (
 )
 from models_library.api_schemas_storage import STORAGE_RPC_NAMESPACE
 from models_library.api_schemas_storage.data_export_async_jobs import (
-    DataExportTaskAbortOutput,
     DataExportTaskStartInput,
 )
 from pytest_mock import MockerFixture
@@ -88,7 +88,7 @@ async def test_abort_data_export(rpc_client: RabbitMQRPCClient, faker: Faker):
     result = await async_jobs.abort(
         rpc_client, rpc_namespace=STORAGE_RPC_NAMESPACE, job_id=_job_id
     )
-    assert isinstance(result, DataExportTaskAbortOutput)
+    assert isinstance(result, AsyncJobRpcAbort)
     assert result.job_id == _job_id
 
 
