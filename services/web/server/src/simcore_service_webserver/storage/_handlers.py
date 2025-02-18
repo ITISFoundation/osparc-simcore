@@ -42,7 +42,6 @@ from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import (
 from servicelib.rabbitmq.rpc_interfaces.storage.data_export import start_data_export
 from servicelib.request_keys import RQT_USERID_KEY
 from servicelib.rest_responses import unwrap_envelope
-from simcore_service_webserver.products._api import RQ_PRODUCT_KEY
 from simcore_service_webserver.rabbitmq import get_rabbitmq_rpc_client
 from yarl import URL
 
@@ -390,7 +389,6 @@ async def delete_file(request: web.Request) -> web.Response:
 async def export_data(request: web.Request) -> web.Response:
     class _RequestContext(RequestParameters):
         user_id: UserID = Field(..., alias=RQT_USERID_KEY)  # type: ignore[literal-required]
-        product_name: str = Field(..., alias=RQ_PRODUCT_KEY)  # type: ignore[literal-required]
 
     class _PathParams(BaseModel):
         location_id: LocationID
