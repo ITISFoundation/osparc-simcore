@@ -15,7 +15,6 @@ from servicelib.utils import fire_and_forget_task
 
 from ..director_v2 import api as director_v2_api
 from ..dynamic_scheduler import api as dynamic_scheduler_api
-from . import _crud_api_read
 from . import _projects_db as _projects_repository
 from . import _projects_service_delete, _projects_service
 from ._access_rights_service import check_user_project_permission
@@ -165,7 +164,7 @@ async def list_explicitly_trashed_projects(
         (
             projects,
             page_params.total_number_of_items,
-        ) = await _crud_api_read.list_projects_full_depth(
+        ) = await _projects_service_read.list_projects_full_depth(
             app,
             user_id=user_id,
             product_name=product_name,
@@ -179,7 +178,7 @@ async def list_explicitly_trashed_projects(
         )
 
         # NOTE: Applying POST-FILTERING because we do not want to modify the interface of
-        # _crud_api_read.list_projects_full_depth at this time.
+        # _projects_service_read.list_projects_full_depth at this time.
         # This filtering couldn't be handled at the database level when `projects_repo`
         # was refactored, as defining a custom trash_filter was needed to allow more
         # flexibility in filtering options.

@@ -47,10 +47,10 @@ from ..users import api as users_service
 from ..utils_aiohttp import envelope_json_response
 from . import (
     _crud_api_create,
-    _crud_api_read,
     _permalink_service,
     _projects_rest_utils,
     _projects_service,
+    _projects_service_read,
     _wallets_service,
 )
 from ._common.exceptions_handlers import handle_plugin_requests_exceptions
@@ -151,7 +151,7 @@ async def list_projects(request: web.Request):
 
     assert query_params.filters  # nosec
 
-    projects, total_number_of_projects = await _crud_api_read.list_projects(
+    projects, total_number_of_projects = await _projects_service_read.list_projects(
         request.app,
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
@@ -194,7 +194,10 @@ async def list_projects_full_search(request: web.Request):
 
     tag_ids_list = query_params.tag_ids_list()
 
-    projects, total_number_of_projects = await _crud_api_read.list_projects_full_depth(
+    (
+        projects,
+        total_number_of_projects,
+    ) = await _projects_service_read.list_projects_full_depth(
         request.app,
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,

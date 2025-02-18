@@ -288,7 +288,7 @@ def catalog_subsystem_mock(
         return services_in_project
 
     for namespace in (
-        "simcore_service_webserver.projects._crud_api_read.get_services_for_user_in_product",
+        "simcore_service_webserver.projects._projects_service_read.get_services_for_user_in_product",
         "simcore_service_webserver.projects._crud_handlers.get_services_for_user_in_product",
     ):
         mock = mocker.patch(

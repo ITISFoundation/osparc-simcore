@@ -283,7 +283,7 @@ def catalog_subsystem_mock(mocker: MockerFixture) -> None:
     ]
 
     mock = mocker.patch(
-        "simcore_service_webserver.projects._crud_api_read.get_services_for_user_in_product",
+        "simcore_service_webserver.projects._projects_service_read.get_services_for_user_in_product",
         autospec=True,
     )
 
