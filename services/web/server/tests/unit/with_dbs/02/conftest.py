@@ -92,12 +92,12 @@ def mock_catalog_api(
 ) -> dict[str, mock.Mock]:
     return {
         "get_service_resources": mocker.patch(
-            "simcore_service_webserver.projects.projects_service.catalog_client.get_service_resources",
+            "simcore_service_webserver.projects._projects_service.catalog_client.get_service_resources",
             return_value=mock_service_resources,
             autospec=True,
         ),
         "get_service": mocker.patch(
-            "simcore_service_webserver.projects.projects_service.catalog_client.get_service",
+            "simcore_service_webserver.projects._projects_service.catalog_client.get_service",
             return_value=mock_service,
             autospec=True,
         ),
@@ -374,7 +374,7 @@ def mock_get_total_project_dynamic_nodes_creation_interval(
 ) -> None:
     _VERY_LONG_LOCK_TIMEOUT_S: Final[float] = 300
     mocker.patch(
-        "simcore_service_webserver.projects.projects_service._nodes_api"
+        "simcore_service_webserver.projects._projects_service._nodes_api"
         ".get_total_project_dynamic_nodes_creation_interval",
         return_value=_VERY_LONG_LOCK_TIMEOUT_S,
     )

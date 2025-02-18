@@ -383,7 +383,7 @@ async def storage_subsystem_mock(mocker: MockerFixture) -> MockedStorageSubsyste
     )
 
     mock2 = mocker.patch(
-        "simcore_service_webserver.projects.projects_service.storage_api.delete_data_folders_of_project_node",
+        "simcore_service_webserver.projects._projects_service.storage_api.delete_data_folders_of_project_node",
         autospec=True,
         return_value=None,
     )

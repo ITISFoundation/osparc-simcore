@@ -651,7 +651,7 @@ async def test_interactive_services_remain_after_websocket_reconnection_from_2_t
 async def mocked_notification_system(mocker):
     mocks = {}
     mocked_notification_system = mocker.patch(
-        "simcore_service_webserver.projects.projects_service.retrieve_and_notify_project_locked_state",
+        "simcore_service_webserver.projects._projects_service.retrieve_and_notify_project_locked_state",
         return_value=Future(),
     )
     mocked_notification_system.return_value.set_result("")

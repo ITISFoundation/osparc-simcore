@@ -41,7 +41,7 @@ async def mock_project_subsystem(
     mocked_project_calls = {}
 
     mocked_project_calls["update_node_outputs"] = mocker.patch(
-        "simcore_service_webserver.db_listener._db_comp_tasks_listening_task.projects_service.update_node_outputs",
+        "simcore_service_webserver.db_listener._db_comp_tasks_listening_task._projects_service.update_node_outputs",
         return_value="",
     )
 

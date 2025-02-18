@@ -136,7 +136,7 @@ def mocked_clusters_keeper_service_get_instance_type_details(
         ]
 
     return mocker.patch(
-        "simcore_service_webserver.projects.projects_service.get_instance_type_details",
+        "simcore_service_webserver.projects._projects_service.get_instance_type_details",
         side_effect=_fake_instance_type_details,
     )
 
