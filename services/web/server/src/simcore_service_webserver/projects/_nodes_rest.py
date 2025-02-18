@@ -56,7 +56,7 @@ from simcore_postgres_database.models.users import UserRole
 
 from .._meta import API_VTAG as VTAG
 from ..catalog import client as catalog_client
-from ..dynamic_scheduler import api as dynamic_scheduler_api
+from ..dynamic_scheduler import api as dynamic_scheduler_service
 from ..groups.api import get_group_from_gid, list_all_user_groups_ids
 from ..groups.exceptions import GroupNotFoundError
 from ..login.decorators import login_required
@@ -159,7 +159,7 @@ async def get_node(request: web.Request) -> web.Response:
         )
 
     service_data: NodeGetIdle | NodeGetUnknown | DynamicServiceGet | NodeGet = (
-        await dynamic_scheduler_api.get_dynamic_service(
+        await dynamic_scheduler_service.get_dynamic_service(
             app=request.app, node_id=path_params.node_id
         )
     )
@@ -228,7 +228,7 @@ async def retrieve_node(request: web.Request) -> web.Response:
     retrieve = await parse_request_body_as(NodeRetrieve, request)
 
     return web.json_response(
-        await dynamic_scheduler_api.retrieve_inputs(
+        await dynamic_scheduler_service.retrieve_inputs(
             request.app, path_params.node_id, retrieve.port_keys
         ),
         dumps=json_dumps,
@@ -293,7 +293,7 @@ async def _stop_dynamic_service_task(
 ):
     # NOTE: _handle_project_nodes_exceptions only decorate handlers
     try:
-        await dynamic_scheduler_api.stop_dynamic_service(
+        await dynamic_scheduler_service.stop_dynamic_service(
             app, dynamic_service_stop=dynamic_service_stop
         )
         return web.json_response(status=status.HTTP_204_NO_CONTENT)
@@ -360,7 +360,7 @@ async def restart_node(request: web.Request) -> web.Response:
 
     path_params = parse_request_path_parameters_as(NodePathParams, request)
 
-    await dynamic_scheduler_api.restart_user_services(
+    await dynamic_scheduler_service.restart_user_services(
         request.app, node_id=path_params.node_id
     )
 

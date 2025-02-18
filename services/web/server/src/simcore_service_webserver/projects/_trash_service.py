@@ -13,12 +13,13 @@ from models_library.users import UserID
 from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
 from servicelib.utils import fire_and_forget_task
 
-from ..director_v2 import api as director_v2_api
-from ..dynamic_scheduler import api as dynamic_scheduler_api
-from . import _projects_db as _projects_repository
-from . import _projects_service_delete, _projects_service
-from ._access_rights_service import check_user_project_permission
-from ._projects_db import _OLDEST_TRASHED_FIRST
+from . import (
+    _access_rights_service,
+    _projects_repository,
+    _projects_service,
+    _projects_service_delete,
+)
+from ._projects_repository import _OLDEST_TRASHED_FIRST
 from .exceptions import (
     ProjectNotFoundError,
     ProjectNotTrashedError,
@@ -37,11 +38,11 @@ async def _is_project_running(
     project_id: ProjectID,
 ) -> bool:
     return bool(
-        await director_v2_api.is_pipeline_running(
+        await director_v2_service.is_pipeline_running(
             app, user_id=user_id, project_id=project_id
         )
     ) or bool(
-        await dynamic_scheduler_api.list_dynamic_services(
+        await dynamic_scheduler_service.list_dynamic_services(
             app, user_id=user_id, project_id=project_id
         )
     )
@@ -62,7 +63,7 @@ async def trash_project(
         ProjectStopError:
         ProjectRunningConflictError:
     """
-    await check_user_project_permission(
+    await _access_rights_service.check_user_project_permission(
         app,
         project_id=project_id,
         user_id=user_id,

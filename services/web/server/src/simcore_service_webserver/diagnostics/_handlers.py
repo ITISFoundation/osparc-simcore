@@ -17,7 +17,7 @@ from servicelib.utils import logged_gather
 from .._meta import API_VERSION, APP_NAME, api_version_prefix
 from ..catalog.client import is_catalog_service_responsive
 from ..db import plugin
-from ..director_v2 import api as director_v2_api
+from ..director_v2 import api as director_v2_service
 from ..login.decorators import login_required
 from ..resource_usage._client import is_resource_usage_tracking_service_responsive
 from ..security.decorators import permission_required
@@ -126,7 +126,7 @@ async def get_app_status(request: web.Request):
 
     async def _check_director2():
         check.services["director_v2"] = {
-            "healthy": await director_v2_api.is_healthy(request.app)
+            "healthy": await director_v2_service.is_healthy(request.app)
         }
 
     async def _check_catalog():

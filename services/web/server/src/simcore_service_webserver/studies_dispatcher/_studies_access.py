@@ -28,7 +28,7 @@ from servicelib.logging_errors import create_troubleshotting_log_kwargs
 
 from .._constants import INDEX_RESOURCE_NAME
 from ..director_v2._core_computations import create_or_update_pipeline
-from ..dynamic_scheduler import api as dynamic_scheduler_api
+from ..dynamic_scheduler import api as dynamic_scheduler_service
 from ..products.api import get_current_product, get_product_name
 from ..projects import projects_groups_repository
 from ..projects._projects_repository_legacy import ProjectDBAPI
@@ -212,7 +212,7 @@ async def copy_study_to_account(
         await create_or_update_pipeline(
             request.app, user["id"], project["uuid"], product_name
         )
-        await dynamic_scheduler_api.update_projects_networks(
+        await dynamic_scheduler_service.update_projects_networks(
             request.app, project_id=ProjectID(project["uuid"])
         )
 
