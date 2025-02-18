@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 from enum import auto
 from typing import Annotated, Any, NamedTuple, NewType, NotRequired, TypeAlias, cast
 from uuid import UUID
@@ -47,7 +47,7 @@ class FeaturesDict(TypedDict):
     age: NotRequired[str]
     weight: NotRequired[str]
     height: NotRequired[str]
-    date: str
+    date: date
     ethnicity: NotRequired[str]
     functionality: NotRequired[str]
 
@@ -102,6 +102,7 @@ class LicensedResourceDB(BaseModel):
     licensed_resource_name: str
     licensed_resource_type: LicensedResourceType
     licensed_resource_data: dict[str, Any] | None
+    priority: int
 
     # states
     created: datetime
