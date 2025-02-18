@@ -2203,9 +2203,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       let msg = this.tr("Are you sure you want to delete");
       if (studyNames.length > 1) {
         const studiesText = osparc.product.Utils.getStudyAlias({plural: true});
-        msg += ` ${studyNames.length} ${studiesText} `
+        msg += ` ${studyNames.length} ${studiesText}?`;
       } else {
-        msg += ` '${studyNames[0]}' `;
+        msg += ` '${studyNames[0]}'?`;
       }
       const trashDays = osparc.store.StaticInfo.getInstance().getTrashRetentionDays();
       msg += "<br><br>" + (studyNames.length > 1 ? "They" : "It") + this.tr(` will be permanently deleted after ${trashDays} days.`);

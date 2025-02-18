@@ -217,11 +217,12 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
       [
         "Name",
         "Version",
+        "Date",
+        "Species",
         "Sex",
         "Age",
         "Weight",
         "Height",
-        "Date",
         "Ethnicity",
         "Functionality",
       ].forEach(key => {
