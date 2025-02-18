@@ -1,8 +1,10 @@
 import logging
 
+from models_library.api_schemas_storage.rest.storage_schemas import (
+    LinkType as FileLinkType,
+)
 from models_library.projects import ProjectIDStr
 from models_library.projects_nodes_io import NodeIDStr
-from models_library.storage_schemas import LinkType as FileLinkType
 from models_library.users import UserID
 from settings_library.aws_s3_cli import AwsS3CliSettings
 from settings_library.r_clone import RCloneSettings

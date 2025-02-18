@@ -10,6 +10,12 @@ from urllib.parse import quote, unquote
 
 from aiohttp import ClientTimeout, web
 from models_library.api_schemas_storage import STORAGE_RPC_NAMESPACE
+from models_library.api_schemas_storage.rest.storage_schemas import (
+    FileUploadCompleteResponse,
+    FileUploadCompletionBody,
+    FileUploadSchema,
+    LinkType,
+)
 from models_library.api_schemas_webserver.storage import (
     DataExportPost,
     StorageAsyncJobGet,
@@ -18,12 +24,6 @@ from models_library.api_schemas_webserver.storage import (
 )
 from models_library.projects_nodes_io import LocationID
 from models_library.rest_base import RequestParameters
-from models_library.storage_schemas import (
-    FileUploadCompleteResponse,
-    FileUploadCompletionBody,
-    FileUploadSchema,
-    LinkType,
-)
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import AnyUrl, BaseModel, ByteSize, Field, TypeAdapter

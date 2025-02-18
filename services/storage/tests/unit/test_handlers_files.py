@@ -26,10 +26,7 @@ from aws_library.s3 import S3KeyNotFoundError, S3ObjectKey, SimcoreS3API
 from aws_library.s3._constants import MULTIPART_UPLOADS_MIN_TOTAL_SIZE
 from faker import Faker
 from fastapi import FastAPI
-from models_library.basic_types import SHA256Str
-from models_library.projects import ProjectID
-from models_library.projects_nodes_io import LocationID, NodeID, SimcoreS3FileID
-from models_library.storage_schemas import (
+from models_library.api_schemas_storage.rest.storage_schemas import (
     FileMetaDataGet,
     FileUploadCompleteFutureResponse,
     FileUploadCompleteResponse,
@@ -41,6 +38,9 @@ from models_library.storage_schemas import (
     SoftCopyBody,
     UploadedPart,
 )
+from models_library.basic_types import SHA256Str
+from models_library.projects import ProjectID
+from models_library.projects_nodes_io import LocationID, NodeID, SimcoreS3FileID
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import AnyUrl, ByteSize, TypeAdapter

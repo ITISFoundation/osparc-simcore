@@ -12,9 +12,12 @@ import pytest
 from faker import Faker
 from fastapi import FastAPI
 from httpx import AsyncClient
+from models_library.api_schemas_storage.rest.storage_schemas import (
+    DatasetMetaDataGet,
+    FileMetaDataGet,
+)
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import SimcoreS3FileID
-from models_library.storage_schemas import DatasetMetaDataGet, FileMetaDataGet
 from models_library.users import UserID
 from pydantic import ByteSize
 from pytest_mock import MockerFixture

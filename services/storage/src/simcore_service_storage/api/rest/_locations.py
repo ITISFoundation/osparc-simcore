@@ -2,8 +2,8 @@ import logging
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Request, status
+from models_library.api_schemas_storage.rest.storage_schemas import FileLocation
 from models_library.generics import Envelope
-from models_library.storage_schemas import FileLocation
 
 # Exclusive for simcore-s3 storage -----------------------
 from ...dsm import get_dsm_provider

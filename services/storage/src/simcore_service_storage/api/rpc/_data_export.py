@@ -2,7 +2,7 @@ from uuid import uuid4
 
 from fastapi import FastAPI
 from models_library.api_schemas_rpc_async_jobs.async_jobs import AsyncJobGet
-from models_library.api_schemas_storage.data_export_async_jobs import (
+from models_library.api_schemas_storage.rpc.data_export_async_jobs import (
     AccessRightError,
     DataExportError,
     DataExportTaskStartInput,

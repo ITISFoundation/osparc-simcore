@@ -6,10 +6,10 @@ from collections.abc import Callable, Coroutine
 from pathlib import Path
 from typing import Any
 
+from models_library.api_schemas_storage.rest.storage_schemas import LinkType
 from models_library.projects import ProjectIDStr
 from models_library.projects_nodes_io import NodeIDStr
 from models_library.services_types import ServicePortKey
-from models_library.storage_schemas import LinkType
 from models_library.users import UserID
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from pydantic_core import InitErrorDetails

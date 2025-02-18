@@ -7,15 +7,15 @@ from collections.abc import AsyncGenerator
 from typing import Any, Final
 
 from aiohttp import ClientError, ClientSession, ClientTimeout, web
-from models_library.generics import Envelope
-from models_library.projects import ProjectID
-from models_library.projects_nodes_io import LocationID, NodeID, SimCoreFileLink
-from models_library.storage_schemas import (
+from models_library.api_schemas_storage.rest.storage_schemas import (
     FileLocation,
     FileLocationArray,
     FileMetaDataGet,
     PresignedLink,
 )
+from models_library.generics import Envelope
+from models_library.projects import ProjectID
+from models_library.projects_nodes_io import LocationID, NodeID, SimCoreFileLink
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import ByteSize, HttpUrl, TypeAdapter

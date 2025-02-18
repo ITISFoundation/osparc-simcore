@@ -6,9 +6,9 @@ from pathlib import Path
 from pprint import pformat
 from typing import Any
 
+from models_library.api_schemas_storage.rest.storage_schemas import LinkType
 from models_library.services_io import BaseServiceIOModel
 from models_library.services_types import ServicePortKey
-from models_library.storage_schemas import LinkType
 from pydantic import (
     AnyUrl,
     ConfigDict,

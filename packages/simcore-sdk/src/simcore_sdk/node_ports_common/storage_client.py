@@ -10,16 +10,16 @@ from urllib.parse import quote
 from aiohttp import ClientResponse, ClientSession
 from aiohttp import client as aiohttp_client_module
 from aiohttp.client_exceptions import ClientConnectionError, ClientResponseError
-from models_library.basic_types import SHA256Str
-from models_library.generics import Envelope
-from models_library.projects_nodes_io import LocationID, StorageFileID
-from models_library.storage_schemas import (
+from models_library.api_schemas_storage.rest.storage_schemas import (
     FileLocationArray,
     FileMetaDataGet,
     FileUploadSchema,
     LinkType,
     PresignedLink,
 )
+from models_library.basic_types import SHA256Str
+from models_library.generics import Envelope
+from models_library.projects_nodes_io import LocationID, StorageFileID
 from models_library.users import UserID
 from pydantic import ByteSize
 from pydantic.networks import AnyUrl

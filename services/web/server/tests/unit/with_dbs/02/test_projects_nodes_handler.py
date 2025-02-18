@@ -24,6 +24,10 @@ from models_library.api_schemas_directorv2.dynamic_services import DynamicServic
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     DynamicServiceStop,
 )
+from models_library.api_schemas_storage.rest.storage_schemas import (
+    FileMetaDataGet,
+    PresignedLink,
+)
 from models_library.generics import Envelope
 from models_library.projects_nodes_io import NodeID
 from models_library.services_resources import (
@@ -31,7 +35,6 @@ from models_library.services_resources import (
     ServiceResourcesDict,
     ServiceResourcesDictHelpers,
 )
-from models_library.storage_schemas import FileMetaDataGet, PresignedLink
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import NonNegativeFloat, NonNegativeInt, TypeAdapter
 from pytest_simcore.helpers.assert_checks import assert_status

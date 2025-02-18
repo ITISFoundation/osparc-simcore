@@ -16,13 +16,17 @@ from models_library.api_schemas_rpc_async_jobs.exceptions import (
     ResultError,
     StatusError,
 )
-from models_library.api_schemas_storage.data_export_async_jobs import (
+from models_library.api_schemas_storage.rpc.data_export_async_jobs import (
     AccessRightError,
     DataExportError,
     InvalidFileIdentifierError,
 )
+from models_library.api_schemas_webserver.storage import (
+    DataExportPost,
+    StorageAsyncJobGet,
+)
 from models_library.generics import Envelope
-from models_library.storage_schemas import AsyncJobGet, DataExportPost
+from models_library.progress_bar import ProgressReport
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.webserver_login import UserInfoDict
 from servicelib.aiohttp import status
@@ -83,7 +87,7 @@ async def test_data_export(
     )
     if isinstance(backend_result_or_exception, AsyncJobGet):
         assert response.status == status.HTTP_202_ACCEPTED
-        Envelope[AsyncJobGet].model_validate(await response.json())
+        Envelope[StorageAsyncJobGet].model_validate(await response.json())
     elif isinstance(backend_result_or_exception, InvalidFileIdentifierError):
         assert response.status == status.HTTP_404_NOT_FOUND
     elif isinstance(backend_result_or_exception, AccessRightError):
@@ -99,7 +103,7 @@ async def test_data_export(
     [
         AsyncJobStatus(
             job_id=_faker.uuid4(),
-            progress=0.5,
+            progress=ProgressReport(actual_value=0.5, total=1.0),
             done=False,
             started=datetime.now(),
             stopped=None,
@@ -122,7 +126,7 @@ async def test_get_async_jobs_status(
     if isinstance(backend_result_or_exception, AsyncJobStatus):
         assert response.status == status.HTTP_200_OK
         response_body_data = (
-            Envelope[AsyncJobGet].model_validate(await response.json()).data
+            Envelope[StorageAsyncJobGet].model_validate(await response.json()).data
         )
         assert response_body_data is not None
     elif isinstance(backend_result_or_exception, StatusError):

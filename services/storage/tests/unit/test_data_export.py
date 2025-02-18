@@ -14,7 +14,7 @@ from models_library.api_schemas_rpc_async_jobs.async_jobs import (
     AsyncJobStatus,
 )
 from models_library.api_schemas_storage import STORAGE_RPC_NAMESPACE
-from models_library.api_schemas_storage.data_export_async_jobs import (
+from models_library.api_schemas_storage.rpc.data_export_async_jobs import (
     DataExportTaskStartInput,
 )
 from pytest_mock import MockerFixture
@@ -78,7 +78,9 @@ async def rpc_client(
 async def test_start_data_export(rpc_client: RabbitMQRPCClient, faker: Faker):
     result = await data_export.start_data_export(
         rpc_client,
-        paths=DataExportTaskStartInput(location_id=0, paths=[Path(faker.file_path())]),
+        paths=DataExportTaskStartInput(
+            user_id=1, location_id=0, paths=[Path(faker.file_path())]
+        ),
     )
     assert isinstance(result, AsyncJobGet)
 

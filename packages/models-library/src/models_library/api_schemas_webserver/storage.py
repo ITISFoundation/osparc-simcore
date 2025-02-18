@@ -10,7 +10,7 @@ from ..api_schemas_rpc_async_jobs.async_jobs import (
     AsyncJobResult,
     AsyncJobStatus,
 )
-from ..api_schemas_storage.data_export_async_jobs import DataExportTaskStartInput
+from ..api_schemas_storage.rpc.data_export_async_jobs import DataExportTaskStartInput
 from ..progress_bar import ProgressReport
 from ..projects_nodes_io import LocationID
 from ..users import UserID

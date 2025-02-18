@@ -3,10 +3,13 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 
 from fastapi import FastAPI
+from models_library.api_schemas_storage.rest.storage_schemas import (
+    LinkType,
+    UploadedPart,
+)
 from models_library.basic_types import SHA256Str
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import LocationID, LocationName, StorageFileID
-from models_library.storage_schemas import LinkType, UploadedPart
 from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize
 

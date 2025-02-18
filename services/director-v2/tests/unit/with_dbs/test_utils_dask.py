@@ -30,11 +30,14 @@ from distributed import SpecCluster
 from faker import Faker
 from fastapi import FastAPI
 from models_library.api_schemas_directorv2.services import NodeRequirements
+from models_library.api_schemas_storage.rest.storage_schemas import (
+    FileUploadLinks,
+    FileUploadSchema,
+)
 from models_library.docker import to_simcore_runtime_docker_label_key
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimCoreFileLink, SimcoreS3FileID
 from models_library.services import ServiceRunID
-from models_library.storage_schemas import FileUploadLinks, FileUploadSchema
 from models_library.users import UserID
 from pydantic import ByteSize, TypeAdapter
 from pydantic.networks import AnyUrl
