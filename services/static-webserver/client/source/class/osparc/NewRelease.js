@@ -70,11 +70,11 @@ qx.Class.define("osparc.NewRelease", {
       });
       this._add(introLabel);
 
-      const rData = osparc.store.StaticInfo.getInstance().getReleaseData();
-      const url = rData["url"] || osparc.utils.LibVersions.getVcsRefUrl();
+      const releaseTag = osparc.utils.Utils.getReleaseTag();
+      const releaseLink = osparc.utils.Utils.getReleaseLink();
       const linkLabel = new osparc.ui.basic.LinkLabel().set({
-        value: this.tr("What's new"),
-        url,
+        value: this.tr("What's new in ") + releaseTag,
+        url: releaseLink,
         font: "link-label-14"
       });
       this._add(linkLabel);
