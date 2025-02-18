@@ -1,13 +1,10 @@
-"""Handlers for STANDARD methods on /projects colletions
-
-Standard methods or CRUD that states for Create+Read(Get&List)+Update+Delete
-
-"""
-
+import contextlib
+import json
 import logging
 
 from aiohttp import web
 from common_library.json_serialization import json_dumps
+from common_library.users_enums import UserRole
 from models_library.api_schemas_webserver.projects import (
     EmptyModel,
     ProjectCopyOverride,
@@ -16,9 +13,10 @@ from models_library.api_schemas_webserver.projects import (
     ProjectPatch,
 )
 from models_library.generics import Envelope
-from models_library.projects_state import ProjectLocked
+from models_library.projects_state import ProjectLocked, ProjectState
 from models_library.rest_ordering import OrderBy
 from models_library.utils.fastapi_encoders import jsonable_encoder
+from pydantic import BaseModel
 from servicelib.aiohttp import status
 from servicelib.aiohttp.long_running_tasks.server import start_long_running_task
 from servicelib.aiohttp.requests_validation import (
@@ -27,25 +25,36 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_path_parameters_as,
     parse_request_query_parameters_as,
 )
+from servicelib.aiohttp.web_exceptions_extension import HTTPLockedError
 from servicelib.common_headers import (
     UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
     X_SIMCORE_USER_AGENT,
 )
 from servicelib.redis import get_project_locked_state
+from simcore_postgres_database.webserver_models import ProjectType
 
 from .._meta import API_VTAG as VTAG
-from ..catalog.client import get_services_for_user_in_product
+from ..catalog import client as catalog_service
+from ..director_v2.exceptions import DirectorServiceError
 from ..login.decorators import login_required
+from ..notifications import project_logs as notifications_service
+from ..products.api import Product, get_current_product
 from ..redis import get_redis_lock_manager_client_sdk
 from ..resource_manager.user_sessions import PROJECT_ID_KEY, managed_resource
-from ..security.api import check_user_permission
+from ..security import api as security_service
 from ..security.decorators import permission_required
-from ..users.api import get_user_fullname
+from ..users import api as users_service
 from ..utils_aiohttp import envelope_json_response
-from . import _crud_api_create, _crud_api_read, _projects_rest_utils, _projects_service
+from . import (
+    _crud_api_create,
+    _crud_api_read,
+    _permalink_service,
+    _projects_rest_utils,
+    _projects_service,
+    _wallets_service,
+)
 from ._common.exceptions_handlers import handle_plugin_requests_exceptions
 from ._common.models import ProjectPathParams, RequestContext
-from ._permalink_service import update_or_pop_permalink_in_project
 from ._projects_models import (
     ProjectActiveQueryParams,
     ProjectCreateHeaders,
@@ -54,6 +63,7 @@ from ._projects_models import (
     ProjectsListQueryParams,
     ProjectsSearchQueryParams,
 )
+from .exceptions import ProjectStartsTooManyDynamicNodesError
 from .models import ProjectDict
 from .utils import get_project_unavailable_services, project_uses_available_services
 
@@ -75,8 +85,7 @@ routes = web.RouteTableDef()
 @permission_required("services.pipeline.*")  # due to update_pipeline_db
 @handle_plugin_requests_exceptions
 async def create_project(request: web.Request):
-    #
-    # - Create https://google.aip.dev/133
+    # NOTE: Create as in https://google.aip.dev/133
     #
     req_ctx = RequestContext.model_validate(request)
     query_params: ProjectCreateQueryParams = parse_request_query_parameters_as(
@@ -84,7 +93,7 @@ async def create_project(request: web.Request):
     )
     header_params = parse_request_headers_as(ProjectCreateHeaders, request)
     if query_params.as_template:  # create template from
-        await check_user_permission(request, "project.template.create")
+        await security_service.check_user_permission(request, "project.template.create")
 
     # NOTE: Having so many different types of bodys is an indication that
     # this entrypoint are in reality multiple entrypoints in one, namely
@@ -100,7 +109,8 @@ async def create_project(request: web.Request):
         project_create: (
             ProjectCreateNew | ProjectCopyOverride | EmptyModel
         ) = await parse_request_body_as(
-            ProjectCreateNew | ProjectCopyOverride | EmptyModel,  # type: ignore[arg-type] # from pydantic v2 --> https://github.com/pydantic/pydantic/discussions/4950
+            ProjectCreateNew | ProjectCopyOverride | EmptyModel,  # type: ignore[arg-type]
+            # from pydantic v2 --> https://github.com/pydantic/pydantic/discussions/4950
             request,
         )
         predefined_project = project_create.to_domain_model() or None
@@ -130,15 +140,7 @@ async def create_project(request: web.Request):
 @permission_required("project.read")
 @handle_plugin_requests_exceptions
 async def list_projects(request: web.Request):
-    #
-    # - List https://google.aip.dev/132
-    #
-    """
-
-    Raises:
-        web.HTTPUnprocessableEntity: (422) if validation of request parameters fail
-
-    """
+    # NOTE: List as in https://google.aip.dev/132
     req_ctx = RequestContext.model_validate(request)
     query_params: ProjectsListQueryParams = parse_request_query_parameters_as(
         ProjectsListQueryParams, request
@@ -223,16 +225,10 @@ async def list_projects_full_search(request: web.Request):
 @permission_required("project.read")
 @handle_plugin_requests_exceptions
 async def get_active_project(request: web.Request) -> web.Response:
-    #
-    # - Get https://google.aip.dev/131
+    # NOTE:
+    # - Get as in https://google.aip.dev/131
     # - Get active project: Singleton per-session resources https://google.aip.dev/156
     #
-    """
-
-    Raises:
-        web.HTTPUnprocessableEntity: (422) if validation of request parameters fail
-        web.HTTPNotFound: If active project is not found
-    """
     req_ctx = RequestContext.model_validate(request)
     query_params: ProjectActiveQueryParams = parse_request_query_parameters_as(
         ProjectActiveQueryParams, request
@@ -256,7 +252,7 @@ async def get_active_project(request: web.Request) -> web.Response:
         )
 
         # updates project's permalink field
-        await update_or_pop_permalink_in_project(request, project)
+        await _permalink_service.update_or_pop_permalink_in_project(request, project)
 
         data = ProjectGet.from_domain_model(project).data(exclude_unset=True)
 
@@ -268,19 +264,12 @@ async def get_active_project(request: web.Request) -> web.Response:
 @permission_required("project.read")
 @handle_plugin_requests_exceptions
 async def get_project(request: web.Request):
-    """
-
-    Raises:
-        web.HTTPUnprocessableEntity: (422) if validation of request parameters fail
-        web.HTTPNotFound: User has no access to at least one service in project
-        web.HTTPForbidden: User has no access rights to get this project
-        web.HTTPNotFound: This project was not found
-    """
-
     req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
-    user_available_services: list[dict] = await get_services_for_user_in_product(
+    user_available_services: list[
+        dict
+    ] = await catalog_service.get_services_for_user_in_product(
         request.app, req_ctx.user_id, req_ctx.product_name, only_key_versions=True
     )
 
@@ -310,7 +299,7 @@ async def get_project(request: web.Request):
         project["uuid"] = new_uuid
 
     # Adds permalink
-    await update_or_pop_permalink_in_project(request, project)
+    await _permalink_service.update_or_pop_permalink_in_project(request, project)
 
     data = ProjectGet.from_domain_model(project).data(exclude_unset=True)
     return envelope_json_response(data)
@@ -337,9 +326,7 @@ async def get_project_inactivity(request: web.Request):
 @permission_required("services.pipeline.*")
 @handle_plugin_requests_exceptions
 async def patch_project(request: web.Request):
-    #
-    # Update https://google.aip.dev/134
-    #
+    # NOTE: Update as https://google.aip.dev/134
     req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
     project_patch = await parse_request_body_as(ProjectPatch, request)
@@ -360,9 +347,8 @@ async def patch_project(request: web.Request):
 @permission_required("project.delete")
 @handle_plugin_requests_exceptions
 async def delete_project(request: web.Request):
-    # Delete https://google.aip.dev/135
+    # NOTE: Delete as https://google.aip.dev/135
     """
-
     Raises:
         web.HTTPUnprocessableEntity: (422) if validation of request parameters fail
         web.HTTPForbidden: Still open in a different tab
@@ -397,7 +383,7 @@ async def delete_project(request: web.Request):
         )
     if project_users:
         other_user_names = {
-            f"{await get_user_fullname(request.app, user_id=uid)}"
+            f"{await users_service.get_user_fullname(request.app, user_id=uid)}"
             for uid in project_users
         }
         raise web.HTTPForbidden(
@@ -426,19 +412,17 @@ async def delete_project(request: web.Request):
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
 
-#
-# - Clone (as custom method)
-#   - https://google.aip.dev/136
-#   - https://cloud.google.com/apis/design/custom_methods#http_mapping
-#
-
-
 @routes.post(f"/{VTAG}/projects/{{project_id}}:clone", name="clone_project")
 @login_required
 @permission_required("project.create")
 @permission_required("services.pipeline.*")  # due to update_pipeline_db
 @handle_plugin_requests_exceptions
 async def clone_project(request: web.Request):
+    #
+    # - Clone (as custom method)
+    #   - https://google.aip.dev/136
+    #   - https://cloud.google.com/apis/design/custom_methods#http_mapping
+    #
     req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
@@ -462,3 +446,172 @@ async def clone_project(request: web.Request):
         parent_project_uuid=None,
         parent_node_id=None,
     )
+
+
+class _OpenProjectQuery(BaseModel):
+    disable_service_auto_start: bool = False
+
+
+@routes.post(f"/{VTAG}/projects/{{project_id}}:open", name="open_project")
+@login_required
+@permission_required("project.open")
+@handle_plugin_requests_exceptions
+async def open_project(request: web.Request) -> web.Response:
+    # NOTE: Is a custom method as in https://google.aip.dev/136
+    #
+    req_ctx = RequestContext.model_validate(request)
+    path_params = parse_request_path_parameters_as(ProjectPathParams, request)
+    query_params: _OpenProjectQuery = parse_request_query_parameters_as(
+        _OpenProjectQuery, request
+    )
+
+    try:
+        client_session_id = await request.json()
+
+    except json.JSONDecodeError as exc:
+        raise web.HTTPBadRequest(reason="Invalid request body") from exc
+
+    try:
+        project_type: ProjectType = await _projects_service.get_project_type(
+            request.app, path_params.project_id
+        )
+        user_role: UserRole = await users_service.get_user_role(
+            request.app, user_id=req_ctx.user_id
+        )
+        if project_type is ProjectType.TEMPLATE and user_role < UserRole.USER:
+            # only USERS/TESTERS can do that
+            raise web.HTTPForbidden(reason="Wrong user role to open/edit a template")
+
+        project = await _projects_service.get_project_for_user(
+            request.app,
+            project_uuid=f"{path_params.project_id}",
+            user_id=req_ctx.user_id,
+            include_state=True,
+            check_permissions=(
+                "write" if project_type is ProjectType.TEMPLATE else "read"
+            ),
+        )
+
+        await _wallets_service.check_project_financial_status(
+            request.app,
+            project_id=path_params.project_id,
+            product_name=req_ctx.product_name,
+        )
+
+        product: Product = get_current_product(request)
+
+        if not await _projects_service.try_open_project_for_user(
+            req_ctx.user_id,
+            project_uuid=path_params.project_id,
+            client_session_id=client_session_id,
+            app=request.app,
+            max_number_of_studies_per_user=product.max_open_studies_per_user,
+        ):
+            raise HTTPLockedError(reason="Project is locked, try later")
+
+        # the project can be opened, let's update its product links
+        await _projects_service.update_project_linked_product(
+            request.app, path_params.project_id, req_ctx.product_name
+        )
+
+        # we now need to receive logs for that project
+        await notifications_service.subscribe(request.app, path_params.project_id)
+
+        # user id opened project uuid
+        if not query_params.disable_service_auto_start:
+            with contextlib.suppress(ProjectStartsTooManyDynamicNodesError):
+                # NOTE: this method raises that exception when the number of dynamic
+                # services in the project is highter than the maximum allowed per project
+                # the project shall still open though.
+                await _projects_service.run_project_dynamic_services(
+                    request, project, req_ctx.user_id, req_ctx.product_name
+                )
+
+        # and let's update the project last change timestamp
+        await _projects_service.update_project_last_change_timestamp(
+            request.app, path_params.project_id
+        )
+
+        # notify users that project is now opened
+        project = await _projects_service.add_project_states_for_user(
+            user_id=req_ctx.user_id,
+            project=project,
+            is_template=False,
+            app=request.app,
+        )
+        await _projects_service.notify_project_state_update(request.app, project)
+
+        return envelope_json_response(ProjectGet.from_domain_model(project))
+
+    except DirectorServiceError as exc:
+        # there was an issue while accessing the director-v2/director-v0
+        # ensure the project is closed again
+        await _projects_service.try_close_project_for_user(
+            user_id=req_ctx.user_id,
+            project_uuid=f"{path_params.project_id}",
+            client_session_id=client_session_id,
+            app=request.app,
+            simcore_user_agent=request.headers.get(
+                X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
+            ),
+        )
+        raise web.HTTPServiceUnavailable(
+            reason="Unexpected error while starting services."
+        ) from exc
+
+
+@routes.post(f"/{VTAG}/projects/{{project_id}}:close", name="close_project")
+@login_required
+@permission_required("project.close")
+@handle_plugin_requests_exceptions
+async def close_project(request: web.Request) -> web.Response:
+    # NOTE: Is a custom method as in https://google.aip.dev/136
+
+    req_ctx = RequestContext.model_validate(request)
+    path_params = parse_request_path_parameters_as(ProjectPathParams, request)
+
+    try:
+        client_session_id = await request.json()
+
+    except json.JSONDecodeError as exc:
+        raise web.HTTPBadRequest(reason="Invalid request body") from exc
+
+    # ensure the project exists
+    await _projects_service.get_project_for_user(
+        request.app,
+        project_uuid=f"{path_params.project_id}",
+        user_id=req_ctx.user_id,
+        include_state=False,
+    )
+    await _projects_service.try_close_project_for_user(
+        req_ctx.user_id,
+        f"{path_params.project_id}",
+        client_session_id,
+        request.app,
+        simcore_user_agent=request.headers.get(
+            X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
+        ),
+    )
+    await notifications_service.unsubscribe(request.app, path_params.project_id)
+    return web.json_response(status=status.HTTP_204_NO_CONTENT)
+
+
+@routes.get(f"/{VTAG}/projects/{{project_id}}/state", name="get_project_state")
+@login_required
+@permission_required("project.read")
+@handle_plugin_requests_exceptions
+async def get_project_state(request: web.Request) -> web.Response:
+    # NOTE: is a project's sub-resource
+
+    req_ctx = RequestContext.model_validate(request)
+    path_params = parse_request_path_parameters_as(ProjectPathParams, request)
+
+    # check that project exists and queries state
+    validated_project = await _projects_service.get_project_for_user(
+        request.app,
+        project_uuid=f"{path_params.project_id}",
+        user_id=req_ctx.user_id,
+        include_state=True,
+    )
+    project_state = ProjectState(**validated_project["state"])
+    return envelope_json_response(project_state.model_dump())

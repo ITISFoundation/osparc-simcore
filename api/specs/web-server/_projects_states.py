@@ -14,7 +14,7 @@ from pydantic import ValidationError
 from servicelib.aiohttp import status
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.director_v2.exceptions import DirectorServiceError
-from simcore_service_webserver.projects._projects_rest2 import (
+from simcore_service_webserver.projects._projects_rest import (
     ProjectPathParams,
     _OpenProjectQuery,
 )
