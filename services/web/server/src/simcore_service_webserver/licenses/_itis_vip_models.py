@@ -41,7 +41,7 @@ def _clean_dict_data(data_dict):
 def _feature_descriptor_to_dict(descriptor: str) -> dict[str, Any]:
     # NOTE: this is manually added in the server side so be more robust to errors
     descriptor = _max_str_adapter.validate_python(descriptor.strip("{}"))
-    pattern = r"(\w{1,100}): ([^,]{1,100})"
+    pattern = r"(\w{1,100}):\s*([^,]{1,100})"
     matches = re.findall(pattern, descriptor)
     return dict(matches)
 

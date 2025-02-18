@@ -29,7 +29,7 @@ class LicensedResourceType(StrAutoEnum):
 VIP_FEATURES_EXAMPLE = {
     "name": "Duke",
     "version": "V2.0",
-    "sex": "Male",
+    "sex": "Mas bien poco",
     "age": "34 years",
     "weight": "70.2 Kg",
     "height": "1.77 m",
@@ -41,15 +41,17 @@ VIP_FEATURES_EXAMPLE = {
 
 
 class FeaturesDict(TypedDict):
-    name: NotRequired[str]
-    version: NotRequired[str]
-    sex: NotRequired[str]
+    # keep alphabetical
     age: NotRequired[str]
-    weight: NotRequired[str]
-    height: NotRequired[str]
     date: date
     ethnicity: NotRequired[str]
     functionality: NotRequired[str]
+    height: NotRequired[str]
+    name: NotRequired[str]
+    sex: NotRequired[str]
+    species: NotRequired[str]
+    version: NotRequired[str]
+    weight: NotRequired[str]
 
 
 VIP_DETAILS_EXAMPLE = {
