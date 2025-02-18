@@ -145,6 +145,9 @@ class LicensedItemRestGet(OutputSchema):
                 ],
                 "category_id": item.licensed_resources[0]["category_id"],
                 "category_display": item.licensed_resources[0]["category_display"],
+                "terms_of_use_url": item.licensed_resources[0].get(
+                    "terms_of_use_url", None
+                ),
             }
         )
 
