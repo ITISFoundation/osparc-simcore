@@ -370,7 +370,7 @@ async def storage_subsystem_mock(mocker: MockerFixture) -> MockedStorageSubsyste
         )
 
     mock = mocker.patch(
-        "simcore_service_webserver.projects._crud_api_create.copy_data_folders_from_project",
+        "simcore_service_webserver.projects._projects_service_create.copy_data_folders_from_project",
         autospec=True,
         side_effect=_mock_copy_data_from_project,
     )
@@ -389,7 +389,7 @@ async def storage_subsystem_mock(mocker: MockerFixture) -> MockedStorageSubsyste
     )
 
     mock3 = mocker.patch(
-        "simcore_service_webserver.projects._crud_api_create.get_project_total_size_simcore_s3",
+        "simcore_service_webserver.projects._projects_service_create.get_project_total_size_simcore_s3",
         autospec=True,
         return_value=TypeAdapter(ByteSize).validate_python("1Gib"),
     )

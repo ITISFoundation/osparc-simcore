@@ -38,7 +38,7 @@ from simcore_service_webserver.application_settings_utils import (
     convert_to_environ_vars,
 )
 from simcore_service_webserver.db.models import UserRole
-from simcore_service_webserver.projects._crud_api_create import (
+from simcore_service_webserver.projects._projects_service_create import (
     OVERRIDABLE_DOCUMENT_KEYS,
 )
 from simcore_service_webserver.projects.models import ProjectDict

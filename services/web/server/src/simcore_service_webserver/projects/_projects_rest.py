@@ -46,10 +46,10 @@ from ..security.decorators import permission_required
 from ..users import api as users_service
 from ..utils_aiohttp import envelope_json_response
 from . import (
-    _crud_api_create,
     _permalink_service,
     _projects_rest_utils,
     _projects_service,
+    _projects_service_create,
     _projects_service_read,
     _wallets_service,
 )
@@ -117,7 +117,7 @@ async def create_project(request: web.Request):
 
     return await start_long_running_task(
         request,
-        _crud_api_create.create_project,  # type: ignore[arg-type] # @GitHK, @pcrespov this one I don't know how to fix
+        _projects_service_create.create_project,  # type: ignore[arg-type] # @GitHK, @pcrespov this one I don't know how to fix
         fire_and_forget=True,
         task_context=jsonable_encoder(req_ctx),
         # arguments
@@ -431,7 +431,7 @@ async def clone_project(request: web.Request):
 
     return await start_long_running_task(
         request,
-        _crud_api_create.create_project,  # type: ignore[arg-type] # @GitHK, @pcrespov this one I don't know how to fix
+        _projects_service_create.create_project,  # type: ignore[arg-type] # @GitHK, @pcrespov this one I don't know how to fix
         fire_and_forget=True,
         task_context=jsonable_encoder(req_ctx),
         # arguments
