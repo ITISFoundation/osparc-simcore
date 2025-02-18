@@ -112,7 +112,7 @@ from ..socketio.messages import (
     send_message_to_standard_group,
     send_message_to_user,
 )
-from ..storage import api as storage_api
+from ..storage import api as storage_service
 from ..users.api import FullNameDict, get_user, get_user_fullname, get_user_role
 from ..users.exceptions import UserNotFoundError
 from ..users.preferences_api import (
@@ -920,7 +920,7 @@ async def _remove_service_and_its_data_folders(
         )
 
     # remove the node's data if any
-    await storage_api.delete_data_folders_of_project_node(
+    await storage_service.delete_data_folders_of_project_node(
         app, f"{project_uuid}", node_uuid, user_id
     )
 

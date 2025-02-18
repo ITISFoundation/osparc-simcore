@@ -1072,8 +1072,8 @@ async def test_project_node_lifetime(  # noqa: PLR0915
     faker: Faker,
     create_dynamic_service_mock: Callable[..., Awaitable[DynamicServiceGet]],
 ):
-    mock_storage_api_delete_data_folders_of_project_node = mocker.patch(
-        "simcore_service_webserver.projects._projects_rest._projects_service.storage_api.delete_data_folders_of_project_node",
+    mock_storage_service_delete_data_folders_of_project_node = mocker.patch(
+        "simcore_service_webserver.projects._projects_service.storage_service.delete_data_folders_of_project_node",
         return_value="",
     )
     assert client.app
@@ -1180,18 +1180,18 @@ async def test_project_node_lifetime(  # noqa: PLR0915
         mocked_dynamic_services_interface[
             "dynamic_scheduler.api.stop_dynamic_service"
         ].assert_called_once()
-        mock_storage_api_delete_data_folders_of_project_node.assert_called_once()
+        mock_storage_service_delete_data_folders_of_project_node.assert_called_once()
     else:
         mocked_dynamic_services_interface[
             "dynamic_scheduler.api.stop_dynamic_service"
         ].assert_not_called()
-        mock_storage_api_delete_data_folders_of_project_node.assert_not_called()
+        mock_storage_service_delete_data_folders_of_project_node.assert_not_called()
 
     # delete the NOT dynamic node
     mocked_dynamic_services_interface[
         "dynamic_scheduler.api.stop_dynamic_service"
     ].reset_mock()
-    mock_storage_api_delete_data_folders_of_project_node.reset_mock()
+    mock_storage_service_delete_data_folders_of_project_node.reset_mock()
     url = client.app.router["delete_node"].url_for(
         project_id=user_project["uuid"], node_id=computational_node_id
     )
@@ -1201,12 +1201,12 @@ async def test_project_node_lifetime(  # noqa: PLR0915
         mocked_dynamic_services_interface[
             "dynamic_scheduler.api.stop_dynamic_service"
         ].assert_not_called()
-        mock_storage_api_delete_data_folders_of_project_node.assert_called_once()
+        mock_storage_service_delete_data_folders_of_project_node.assert_called_once()
     else:
         mocked_dynamic_services_interface[
             "dynamic_scheduler.api.stop_dynamic_service"
         ].assert_not_called()
-        mock_storage_api_delete_data_folders_of_project_node.assert_not_called()
+        mock_storage_service_delete_data_folders_of_project_node.assert_not_called()
 
 
 @pytest.fixture
