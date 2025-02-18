@@ -453,7 +453,7 @@ async def test_open_project__in_debt(
     added_wallet, _ = await assert_status(resp, status.HTTP_201_CREATED)
 
     mock_get_project_wallet_total_credits = mocker.patch(
-        "simcore_service_webserver.projects._wallets_api.credit_transactions.get_project_wallet_total_credits",
+        "simcore_service_webserver.projects._wallets_service.credit_transactions.get_project_wallet_total_credits",
         spec=True,
         return_value=WalletTotalCredits(
             wallet_id=added_wallet["walletId"],
@@ -1073,7 +1073,7 @@ async def test_project_node_lifetime(  # noqa: PLR0915
     create_dynamic_service_mock: Callable[..., Awaitable[DynamicServiceGet]],
 ):
     mock_storage_api_delete_data_folders_of_project_node = mocker.patch(
-        "simcore_service_webserver.projects._crud_handlers._projects_service.storage_api.delete_data_folders_of_project_node",
+        "simcore_service_webserver.projects._projects_rest._projects_service.storage_api.delete_data_folders_of_project_node",
         return_value="",
     )
     assert client.app

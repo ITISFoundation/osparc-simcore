@@ -20,7 +20,7 @@ from simcore_service_webserver.projects.models import ProjectDict
 @pytest.fixture
 def mock_catalog_api_get_services_for_user_in_product(mocker: MockerFixture):
     mocker.patch(
-        "simcore_service_webserver.projects._crud_handlers.get_services_for_user_in_product",
+        "simcore_service_webserver.projects._projects_rest.get_services_for_user_in_product",
         spec=True,
         return_value=[],
     )
@@ -29,7 +29,7 @@ def mock_catalog_api_get_services_for_user_in_product(mocker: MockerFixture):
 @pytest.fixture
 def mock_project_uses_available_services(mocker: MockerFixture):
     mocker.patch(
-        "simcore_service_webserver.projects._crud_handlers.project_uses_available_services",
+        "simcore_service_webserver.projects._projects_rest.project_uses_available_services",
         spec=True,
         return_value=True,
     )

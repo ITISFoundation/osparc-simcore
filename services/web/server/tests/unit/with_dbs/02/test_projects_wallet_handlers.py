@@ -111,7 +111,7 @@ def mock_get_project_wallet_total_credits(
     mocker: MockerFixture, setup_wallets_db: list[WalletGet]
 ):
     mocker.patch(
-        "simcore_service_webserver.projects._wallets_api.credit_transactions.get_project_wallet_total_credits",
+        "simcore_service_webserver.projects._wallets_service.credit_transactions.get_project_wallet_total_credits",
         spec=True,
         return_value=WalletTotalCredits(
             wallet_id=setup_wallets_db[0].wallet_id, available_osparc_credits=Decimal(0)
@@ -122,7 +122,7 @@ def mock_get_project_wallet_total_credits(
 @pytest.fixture
 def mock_get_service_run_page(mocker: MockerFixture):
     mocker.patch(
-        "simcore_service_webserver.projects._wallets_api.service_runs.get_service_run_page",
+        "simcore_service_webserver.projects._wallets_service.service_runs.get_service_run_page",
         spec=True,
         return_value=ServiceRunPage(items=[], total=0),
     )
@@ -181,7 +181,7 @@ async def test_project_wallets_full_workflow(
 @pytest.fixture
 def mock_pay_project_debt(mocker: MockerFixture):
     return mocker.patch(
-        "simcore_service_webserver.projects._wallets_api.credit_transactions.pay_project_debt",
+        "simcore_service_webserver.projects._wallets_service.credit_transactions.pay_project_debt",
         spec=True,
     )
 
