@@ -34,12 +34,21 @@ def test_pre_validator_feature_descriptor_to_dict():
         (
             # checks fix: regex expected at least one space after `:`
             "{species:Mouse, functionality:Static, height:95 mm, date: 2012-01-01, name:Male OF1 Mouse, sex:Male, version:1.0, weight:35.5 g}",
-            {"version": "1.0", "weight": "35.5 g"},
+            {
+                "version": "1.0",
+                "weight": "35.5 g",
+                "species": "Mouse",
+                "functionality": "Static",
+            },
         ),
         (
             # Checks spaces before `,` are removed
-            "{date: 2012-01-01, name:  Male OF1 Mouse    ,}",
-            {"date": datetime.date(2012, 1, 1), "name": "Male OF1 Mouse"},
+            "{date: 2012-01-01, name:  Male OF1 Mouse    , sex:Male}",
+            {
+                "date": datetime.date(2012, 1, 1),
+                "name": "Male OF1 Mouse",
+                "sex": "Male",
+            },
         ),
     ],
 )
