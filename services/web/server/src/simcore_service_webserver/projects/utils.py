@@ -39,7 +39,7 @@ def default_copy_project_name(name: str) -> str:
                 TypeAdapter(int).validate_python(current_copy_index.strip("()")) + 1
             )
         return f"{match.group(1)}({new_copy_index})"
-    return f"{name} (Copy)"
+    return f"{name} {_COPY_SUFFIX}"
 
 
 def clone_project_document(

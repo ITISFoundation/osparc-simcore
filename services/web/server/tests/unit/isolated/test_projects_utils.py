@@ -19,7 +19,6 @@ from simcore_service_webserver.projects._nodes_service import (
 )
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.projects.utils import (
-    NodeDict,
     clone_project_document,
     default_copy_project_name,
     find_changed_node_keys,
@@ -372,6 +371,11 @@ def test_find_changed_node_keys_file_picker_case(
 _SUPPORTED_FRONTEND_KEYS: set[ServiceKey] = {
     ServiceKey("simcore/services/frontend/file-picker"),
 }
+
+
+class NodeDict(TypedDict, total=False):
+    key: ServiceKey | None
+    outputs: dict[str, Any] | None
 
 
 def get_frontend_node_outputs_changes(
