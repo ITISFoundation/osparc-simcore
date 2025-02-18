@@ -133,7 +133,10 @@ from ._access_rights_service import (
     check_user_project_permission,
     has_user_project_access_rights,
 )
-from ._nodes_utils import set_reservation_same_as_limit, validate_new_service_resources
+from ._nodes_service_utils import (
+    set_reservation_same_as_limit,
+    validate_new_service_resources,
+)
 from ._projects_repository_legacy import APP_PROJECT_DBAPI, ProjectDBAPI
 from .exceptions import (
     ClustersKeeperNotAvailableError,
