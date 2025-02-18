@@ -10109,6 +10109,7 @@ components:
           title: Height
         date:
           type: string
+          format: date
           title: Date
         ethnicity:
           type: string

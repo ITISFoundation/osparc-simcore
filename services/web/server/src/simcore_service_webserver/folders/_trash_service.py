@@ -3,9 +3,14 @@ from datetime import datetime
 
 import arrow
 from aiohttp import web
-from models_library.folders import FolderID
+from common_library.pagination_tools import iter_pagination_params
+from models_library.access_rights import AccessRights
+from models_library.basic_types import IDStr
+from models_library.folders import FolderDB, FolderID
 from models_library.products import ProductName
 from models_library.projects import ProjectID
+from models_library.rest_ordering import OrderBy, OrderDirection
+from models_library.rest_pagination import MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
 from models_library.users import UserID
 from simcore_postgres_database.utils_repos import transaction_context
 from sqlalchemy.ext.asyncio import AsyncConnection
@@ -13,7 +18,8 @@ from sqlalchemy.ext.asyncio import AsyncConnection
 from ..db.plugin import get_asyncpg_engine
 from ..projects._trash_service import trash_project, untrash_project
 from ..workspaces.api import check_user_workspace_access
-from . import _folders_repository
+from . import _folders_repository, _folders_service
+from .errors import FolderNotTrashedError
 
 _logger = logging.getLogger(__name__)
 
@@ -186,3 +192,89 @@ async def untrash_folder(
         await untrash_project(
             app, product_name=product_name, user_id=user_id, project_id=project_id
         )
+
+
+def _can_delete(
+    folder_db: FolderDB,
+    my_access_rights: AccessRights,
+    user_id: UserID,
+    until_equal_datetime: datetime | None,
+) -> bool:
+    return bool(
+        folder_db.trashed
+        and (until_equal_datetime is None or folder_db.trashed < until_equal_datetime)
+        and my_access_rights.delete
+        and folder_db.trashed_by == user_id
+        and folder_db.trashed_explicitly
+    )
+
+
+async def list_explicitly_trashed_folders(
+    app: web.Application,
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    until_equal_datetime: datetime | None = None,
+) -> list[FolderID]:
+    trashed_folder_ids: list[FolderID] = []
+
+    for page_params in iter_pagination_params(limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE):
+        (
+            folders,
+            page_params.total_number_of_items,
+        ) = await _folders_service.list_folders_full_depth(
+            app,
+            user_id=user_id,
+            product_name=product_name,
+            text=None,
+            trashed=True,
+            offset=page_params.offset,
+            limit=page_params.limit,
+            order_by=OrderBy(field=IDStr("trashed"), direction=OrderDirection.ASC),
+        )
+
+        # NOTE: Applying POST-FILTERING
+        trashed_folder_ids.extend(
+            [
+                f.folder_db.folder_id
+                for f in folders
+                if _can_delete(
+                    f.folder_db,
+                    my_access_rights=f.my_access_rights,
+                    user_id=user_id,
+                    until_equal_datetime=until_equal_datetime,
+                )
+            ]
+        )
+    return trashed_folder_ids
+
+
+async def delete_trashed_folder(
+    app: web.Application,
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    folder_id: FolderID,
+    until_equal_datetime: datetime | None = None,
+) -> None:
+
+    folder = await _folders_service.get_folder(
+        app, user_id=user_id, folder_id=folder_id, product_name=product_name
+    )
+
+    if not _can_delete(
+        folder.folder_db,
+        folder.my_access_rights,
+        user_id=user_id,
+        until_equal_datetime=until_equal_datetime,
+    ):
+        raise FolderNotTrashedError(
+            folder_id=folder_id,
+            user_id=user_id,
+            reason="Cannot delete trashed folder since it does not fit current criteria",
+        )
+
+    # NOTE: this function deletes folder AND its content recursively!
+    await _folders_service.delete_folder(
+        app, user_id=user_id, folder_id=folder_id, product_name=product_name
+    )
