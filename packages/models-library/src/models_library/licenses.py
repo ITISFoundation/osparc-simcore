@@ -148,6 +148,7 @@ class LicensedItem(BaseModel):
                                     "category_id": "HumanWholeBody",
                                     "category_display": "Humans",
                                     "source": VIP_DETAILS_EXAMPLE,
+                                    "priority": 0,
                                 },
                             )
                         ],

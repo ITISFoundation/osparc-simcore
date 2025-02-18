@@ -141,12 +141,7 @@ class LicensedItemRestGet(OutputSchema):
                     exclude_unset=True,
                 ),
                 "licensed_resources": [
-                    _ItisVipResourceRestData(**x)
-                    for x in sorted(
-                        item.licensed_resources,
-                        key=lambda x: (x["priority"], x["licensed_resource_id"]),
-                        reverse=True,
-                    )
+                    _ItisVipResourceRestData(**x) for x in item.licensed_resources
                 ],
                 "category_id": item.licensed_resources[0]["category_id"],
                 "category_display": item.licensed_resources[0]["category_display"],
