@@ -241,25 +241,6 @@ _licensed_resource_subquery = (
 ).subquery("licensed_resource_subquery")
 
 
-# _licensed_resource_subquery = (
-#     select(
-#         licensed_item_to_resource.c.licensed_item_id,
-#         func.array_agg(licensed_resources.c.licensed_resource_data)
-#         .label("licensed_resources"),
-#     )
-#     .select_from(
-#         licensed_item_to_resource.join(
-#             licensed_resources,
-#             licensed_resources.c.licensed_resource_id
-#             == licensed_item_to_resource.c.licensed_resource_id,
-#         )
-#     )
-#     .group_by(
-#         licensed_item_to_resource.c.licensed_item_id,
-#     )
-# ).subquery("licensed_resource_subquery")
-
-
 async def get_licensed_item_by_key_version(
     app: web.Application,
     connection: AsyncConnection | None = None,
