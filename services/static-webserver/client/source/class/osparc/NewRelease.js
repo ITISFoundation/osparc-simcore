@@ -57,10 +57,48 @@ qx.Class.define("osparc.NewRelease", {
           })
           .catch(() => reject());
       });
-    }
+    },
+
+    checkNewRelease: function() {
+      if (osparc.NewRelease.firstTimeISeeThisFrontend()) {
+        const newRelease = new osparc.NewRelease();
+        const title = qx.locale.Manager.tr("New Release");
+        let win = null;
+        if (this.isNewReleaseLinkMarkdown()) {
+          win = osparc.ui.window.Window.popUpInWindow(newRelease, title, 800).set({
+            clickAwayClose: false,
+            resizable: true,
+            showClose: true,
+            maxHeight: 800,
+          });
+          newRelease.getMarkdown().addListener("resized", () => win.center());
+        } else {
+          win = osparc.ui.window.Window.popUpInWindow(newRelease, title, 350, 135).set({
+            clickAwayClose: false,
+            resizable: false,
+            showClose: true
+          });
+        }
+        const closeBtn = win.getChildControl("close-button");
+        osparc.utils.Utils.setIdToWidget(closeBtn, "newReleaseCloseBtn");
+      }
+    },
+
+    getReleaseNotesLink: function() {
+      const rData = osparc.store.StaticInfo.getInstance().getReleaseData();
+      const url = rData["url"] || osparc.utils.LibVersions.getVcsRefUrl();
+      return url;
+    },
+
+    isNewReleaseLinkMarkdown: function() {
+      const url = this.getReleaseNotesLink();
+      return osparc.utils.Utils.isMarkdownLink(url);
+    },
   },
 
   members: {
+    __markdown: null,
+
     __buildLayout: function() {
       const introText = qx.locale.Manager.tr("We are pleased to announce that some new features were deployed for you!");
       const introLabel = new qx.ui.basic.Label(introText).set({
@@ -70,14 +108,31 @@ qx.Class.define("osparc.NewRelease", {
       });
       this._add(introLabel);
 
-      const rData = osparc.store.StaticInfo.getInstance().getReleaseData();
-      const url = rData["url"] || osparc.utils.LibVersions.getVcsRefUrl();
-      const linkLabel = new osparc.ui.basic.LinkLabel().set({
-        value: this.tr("What's new"),
-        url,
-        font: "link-label-14"
-      });
-      this._add(linkLabel);
-    }
+      const url = this.self().getReleaseNotesLink();
+      if (osparc.utils.Utils.isMarkdownLink(url)) {
+        const markdown = this.__markdown = new osparc.ui.markdown.Markdown().set({
+          maxWidth: 750,
+        });
+        this._add(markdown);
+        fetch(url)
+          .then(response => response.blob())
+          .then(blob => blob.text())
+          .then(text => {
+            markdown.setValue(text);
+          })
+          .catch(err => console.error(err));
+      } else {
+        const linkLabel = new osparc.ui.basic.LinkLabel().set({
+          value: this.tr("What's new"),
+          url,
+          font: "link-label-14"
+        });
+        this._add(linkLabel);
+      }
+    },
+
+    getMarkdown: function() {
+      return this.__markdown;
+    },
   }
 });
