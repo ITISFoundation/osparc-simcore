@@ -10,14 +10,11 @@ from models_library.users import UserID
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from servicelib.redis._errors import ProjectLockError
 
-from ..director_v2 import api
 from ..director_v2 import api as director_v2_service
-from ..storage.api import delete_data_folders_of_project
+from ..storage import api as storage_service
 from ..users.api import FullNameDict
 from ..users.exceptions import UserNotFoundError
-from . import _projects_db as _projects_repository
-from . import projects_service
-from ._access_rights_service import check_user_project_permission
+from . import _access_rights_service, _projects_repository, projects_service
 from ._projects_repository_legacy import ProjectDBAPI
 from .exceptions import (
     ProjectDeleteError,
@@ -148,7 +145,7 @@ async def mark_project_as_deleted(
     # NOTE: https://github.com/ITISFoundation/osparc-issues/issues/468
     db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(app)
     product_name = await db.get_project_product(project_uuid=project_uuid)
-    await check_user_project_permission(
+    await _access_rights_service.check_user_project_permission(
         app,
         project_id=project_uuid,
         user_id=user_id,
@@ -201,10 +198,10 @@ async def delete_project(
 
         # stops computational services
         # - raises DirectorServiceError
-        await api.delete_pipeline(app, user_id, project_uuid)
+        await director_v2_service.delete_pipeline(app, user_id, project_uuid)
 
         # rm data from storage
-        await delete_data_folders_of_project(app, project_uuid, user_id)
+        await storage_service.delete_data_folders_of_project(app, project_uuid, user_id)
 
         # rm project from database
         await db.delete_project(user_id, f"{project_uuid}")

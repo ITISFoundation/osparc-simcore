@@ -299,7 +299,7 @@ def mocks_on_projects_api(mocker) -> None:
     All projects in this module are UNLOCKED
     """
     mocker.patch(
-        "simcore_service_webserver.projects._projects_service._get_project_lock_state",
+        "simcore_service_webserver.projects._projects_service.get_project_lock_state",
         return_value=ProjectLocked(value=False, status=ProjectStatus.CLOSED),
     )
 
