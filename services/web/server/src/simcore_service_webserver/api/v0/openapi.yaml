@@ -9868,24 +9868,9 @@ components:
       title: ErrorItemType
     FeaturesDict:
       properties:
-        name:
-          type: string
-          title: Name
-        version:
-          type: string
-          title: Version
-        sex:
-          type: string
-          title: Sex
         age:
           type: string
           title: Age
-        weight:
-          type: string
-          title: Weight
-        height:
-          type: string
-          title: Height
         date:
           type: string
           format: date
@@ -9896,6 +9881,24 @@ components:
         functionality:
           type: string
           title: Functionality
+        height:
+          type: string
+          title: Height
+        name:
+          type: string
+          title: Name
+        sex:
+          type: string
+          title: Sex
+        species:
+          type: string
+          title: Species
+        version:
+          type: string
+          title: Version
+        weight:
+          type: string
+          title: Weight
       type: object
       required:
       - date
