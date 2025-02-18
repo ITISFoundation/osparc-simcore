@@ -62,7 +62,7 @@ async def _empty_explicitly_trashed_projects(
                 )
 
 
-async def _empty_trashed_folders(
+async def _empty_explicitly_trashed_folders_and_content(
     app: web.Application, product_name: ProductName, user_id: UserID
 ):
     trashed_folders_ids = await folders_trash_service.list_explicitly_trashed_folders(
@@ -104,10 +104,10 @@ async def empty_trash_safe(
 ):
     await _empty_explicitly_trashed_projects(app, product_name, user_id)
 
-    await _empty_trashed_folders(app, product_name, user_id)
+    await _empty_explicitly_trashed_folders_and_content(app, product_name, user_id)
 
 
-async def prune_trash(app: web.Application) -> list[str]:
+async def delete_expired_trash(app: web.Application) -> list[str]:
     """Deletes expired items in the trash"""
     settings = get_plugin_settings(app)
 
