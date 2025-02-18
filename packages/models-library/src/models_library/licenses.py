@@ -148,13 +148,11 @@ class LicensedItem(BaseModel):
                                     "category_id": "HumanWholeBody",
                                     "category_display": "Humans",
                                     "source": VIP_DETAILS_EXAMPLE,
-                                    "priority": 0,
                                 },
                             )
                         ],
                         "pricing_plan_id": "15",
                         "is_hidden_on_market": False,
-                        "priority": 0,
                         "created_at": "2024-12-12 09:59:26.422140",
                         "modified_at": "2024-12-12 09:59:26.422140",
                     }
