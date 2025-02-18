@@ -9,10 +9,6 @@ from uuid import UUID
 
 from fastapi import APIRouter, Query, status
 from models_library.api_schemas_storage.rest.storage_schemas import (
-    AsyncJobGet,
-    AsyncJobResult,
-    AsyncJobStatus,
-    DataExportPost,
     FileLocation,
     FileMetaDataGet,
     FileUploadCompleteFutureResponse,
@@ -21,6 +17,12 @@ from models_library.api_schemas_storage.rest.storage_schemas import (
     FileUploadSchema,
     LinkType,
     PresignedLink,
+)
+from models_library.api_schemas_webserver.storage import (
+    DataExportPost,
+    StorageAsyncJobGet,
+    StorageAsyncJobResult,
+    StorageAsyncJobStatus,
 )
 from models_library.generics import Envelope
 from models_library.projects_nodes_io import LocationID
@@ -177,7 +179,7 @@ async def is_completed_upload_file(
 # data export
 @router.post(
     "/storage/locations/{location_id}/export-data",
-    response_model=Envelope[AsyncJobGet],
+    response_model=Envelope[StorageAsyncJobGet],
     name="storage_export_data",
     description="Export data",
 )
@@ -187,10 +189,10 @@ async def export_data(data_export: DataExportPost, location_id: LocationID):
 
 @router.get(
     "/storage/async-jobs/{job_id}/status",
-    response_model=Envelope[AsyncJobStatus],
+    response_model=Envelope[StorageAsyncJobStatus],
     name="storage_async_job_status",
 )
-async def get_async_job_status(task_id: AsyncJobGet, job_id: UUID):
+async def get_async_job_status(task_id: StorageAsyncJobGet, job_id: UUID):
     """Get async job status"""
 
 
@@ -198,14 +200,14 @@ async def get_async_job_status(task_id: AsyncJobGet, job_id: UUID):
     "/storage/async-jobs/{job_id}:abort",
     name="abort_async_job",
 )
-async def abort_async_job(task_id: AsyncJobGet, job_id: UUID):
+async def abort_async_job(task_id: StorageAsyncJobGet, job_id: UUID):
     """Get async job status"""
 
 
 @router.get(
     "/storage/async-jobs/{job_id}/result",
-    response_model=Envelope[AsyncJobResult],
+    response_model=Envelope[StorageAsyncJobResult],
     name="get_async_job_result",
 )
-async def get_async_job_result(task_id: AsyncJobGet, job_id: UUID):
+async def get_async_job_result(task_id: StorageAsyncJobGet, job_id: UUID):
     """Get async job status"""
