@@ -6351,19 +6351,26 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_FileUploadCompleteFutureResponse_'
-  /v0/storage/export-data:
+  /v0/storage/locations/{location_id}/export-data:
     post:
       tags:
       - storage
       summary: Storage Export Data
       description: Export data
       operationId: export_data
+      parameters:
+      - name: location_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Location Id
       requestBody:
+        required: true
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/DataExportPost'
-        required: true
       responses:
         '200':
           description: Successful Response
@@ -6371,19 +6378,27 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_AsyncJobGet_'
-  /v0/storage/async-jobs/status:
+  /v0/storage/async-jobs/{job_id}/status:
     get:
       tags:
       - storage
       summary: Storage Async Job Status
       description: Get async job status
       operationId: get_async_job_status
+      parameters:
+      - name: job_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Job Id
       requestBody:
+        required: true
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/AsyncJobGet'
-        required: true
       responses:
         '200':
           description: Successful Response
@@ -6391,6 +6406,61 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_AsyncJobStatus_'
+  /v0/storage/async-jobs/{job_id}:abort:
+    post:
+      tags:
+      - storage
+      summary: Abort Async Job
+      description: Get async job status
+      operationId: abort_async_job
+      parameters:
+      - name: job_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Job Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AsyncJobGet'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+  /v0/storage/async-jobs/{job_id}/result:
+    get:
+      tags:
+      - storage
+      summary: Get Async Job Result
+      description: Get async job status
+      operationId: get_async_job_result
+      parameters:
+      - name: job_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Job Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AsyncJobGet'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_AsyncJobResult_'
   /v0/trash:empty:
     post:
       tags:
@@ -7681,6 +7751,23 @@ components:
       required:
       - job_id
       title: AsyncJobGet
+    AsyncJobResult:
+      properties:
+        result:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Result
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      required:
+      - result
+      - error
+      title: AsyncJobResult
     AsyncJobStatus:
       properties:
         job_id:
@@ -8503,6 +8590,19 @@ components:
           title: Error
       type: object
       title: Envelope[AsyncJobGet]
+    Envelope_AsyncJobResult_:
+      properties:
+        data:
+          anyOf:
+          - $ref: '#/components/schemas/AsyncJobResult'
+          - type: 'null'
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[AsyncJobResult]
     Envelope_AsyncJobStatus_:
       properties:
         data:

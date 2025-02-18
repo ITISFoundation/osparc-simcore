@@ -380,8 +380,7 @@ async def delete_file(request: web.Request) -> web.Response:
 
 
 @routes.post(
-    _storage_locations_prefix + "/{location_id}/export-data",
-    name="storage_export_data",
+    _storage_locations_prefix + "/{location_id}/export-data", name="export_data"
 )
 @login_required
 @permission_required("storage.files.*")
@@ -413,7 +412,7 @@ async def export_data(request: web.Request) -> web.Response:
 
 @routes.get(
     _storage_prefix + "/async-jobs/{job_id}/status",
-    name="storage_async_job_status",
+    name="get_async_job_status",
 )
 @login_required
 @permission_required("storage.files.*")
@@ -435,7 +434,7 @@ async def get_async_job_status(request: web.Request) -> web.Response:
 
 @routes.post(
     _storage_prefix + "/async-jobs/{job_id}:abort",
-    name="storage_async_job_abort",
+    name="abort_async_job",
 )
 @login_required
 @permission_required("storage.files.*")
@@ -457,7 +456,7 @@ async def abort_async_job(request: web.Request) -> web.Response:
 
 @routes.get(
     _storage_prefix + "/async-jobs/{job_id}/result",
-    name="storage_async_job_result",
+    name="get_async_job_result",
 )
 @login_required
 @permission_required("storage.files.*")

@@ -5,12 +5,14 @@
 
 
 from typing import TypeAlias
+from uuid import UUID
 
 from fastapi import APIRouter, Query, status
 from models_library.generics import Envelope
 from models_library.projects_nodes_io import LocationID
 from models_library.storage_schemas import (
     AsyncJobGet,
+    AsyncJobResult,
     AsyncJobStatus,
     DataExportPost,
     FileLocation,
@@ -174,19 +176,36 @@ async def is_completed_upload_file(
 
 # data export
 @router.post(
-    "/storage/export-data",
+    "/storage/locations/{location_id}/export-data",
     response_model=Envelope[AsyncJobGet],
     name="storage_export_data",
     description="Export data",
 )
-async def export_data(data_export: DataExportPost):
+async def export_data(data_export: DataExportPost, location_id: LocationID):
     """Trigger data export. Returns async job id for getting status and results"""
 
 
 @router.get(
-    "/storage/async-jobs/status",
+    "/storage/async-jobs/{job_id}/status",
     response_model=Envelope[AsyncJobStatus],
     name="storage_async_job_status",
 )
-async def get_async_job_status(task_id: AsyncJobGet):
+async def get_async_job_status(task_id: AsyncJobGet, job_id: UUID):
+    """Get async job status"""
+
+
+@router.post(
+    "/storage/async-jobs/{job_id}:abort",
+    name="abort_async_job",
+)
+async def abort_async_job(task_id: AsyncJobGet, job_id: UUID):
+    """Get async job status"""
+
+
+@router.get(
+    "/storage/async-jobs/{job_id}/result",
+    response_model=Envelope[AsyncJobResult],
+    name="get_async_job_result",
+)
+async def get_async_job_result(task_id: AsyncJobGet, job_id: UUID):
     """Get async job status"""
