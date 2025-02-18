@@ -17,12 +17,12 @@ from simcore_postgres_database.models.projects import ProjectType as pg_project_
 from simcore_service_webserver.projects._nodes_service import (
     project_get_depending_nodes,
 )
-from simcore_service_webserver.projects.models import ProjectDict
-from simcore_service_webserver.projects.utils import (
+from simcore_service_webserver.projects._projects_service_utils import (
     clone_project_document,
     default_copy_project_name,
     find_changed_node_keys,
 )
+from simcore_service_webserver.projects.models import ProjectDict
 
 _logger = logging.getLogger(__name__)
 

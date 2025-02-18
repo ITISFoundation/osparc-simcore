@@ -141,8 +141,8 @@ async def copy_study_to_account(
     - Replaces template parameters by values passed in query
     - Avoids multiple copies of the same template on each account
     """
+    from ..projects import projects_service_legacy
     from ..projects._projects_repository_legacy import APP_PROJECT_DBAPI
-    from ..projects.utils import clone_project_document, substitute_parameterized_inputs
 
     db: ProjectDBAPI = request.config_dict[APP_PROJECT_DBAPI]
     template_parameters = dict(request.query)
@@ -167,7 +167,7 @@ async def copy_study_to_account(
 
     except ProjectNotFoundError:
         # New project cloned from template
-        project, nodes_map = clone_project_document(
+        project, nodes_map = projects_service_legacy.clone_project_document(
             template_project, forced_copy_project_id=UUID(project_uuid)
         )
 
@@ -182,7 +182,10 @@ async def copy_study_to_account(
                 "Substituting parameters '%s' in template", template_parameters
             )
             project = (
-                substitute_parameterized_inputs(project, template_parameters) or project
+                projects_service_legacy.substitute_parameterized_inputs(
+                    project, template_parameters
+                )
+                or project
             )
         # add project model + copy data TODO: guarantee order and atomicity
         product_name = get_product_name(request)

@@ -63,9 +63,12 @@ from ._projects_models import (
     ProjectsListQueryParams,
     ProjectsSearchQueryParams,
 )
+from ._projects_service_utils import (
+    get_project_unavailable_services,
+    project_uses_available_services,
+)
 from .exceptions import ProjectStartsTooManyDynamicNodesError
 from .models import ProjectDict
-from .utils import get_project_unavailable_services, project_uses_available_services
 
 # When the user requests a project with a repo, the working copy might differ from
 # the repo project. A middleware in the meta module (if active) will resolve

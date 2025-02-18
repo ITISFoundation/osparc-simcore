@@ -44,14 +44,14 @@ from . import _projects_service
 from ._metadata_service import set_project_ancestors
 from ._permalink_service import update_or_pop_permalink_in_project
 from ._projects_repository_legacy import ProjectDBAPI
+from ._projects_service_utils import clone_project_document, default_copy_project_name
 from .exceptions import (
     ParentNodeNotFoundError,
     ParentProjectNotFoundError,
     ProjectInvalidRightsError,
     ProjectNotFoundError,
 )
-from .models import ProjectDict
-from .utils import NodesMap, clone_project_document, default_copy_project_name
+from .models import NodesMap, ProjectDict
 
 OVERRIDABLE_DOCUMENT_KEYS = [
     "name",

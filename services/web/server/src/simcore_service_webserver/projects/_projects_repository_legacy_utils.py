@@ -25,6 +25,10 @@ from ..db.models import GroupType, groups, projects_tags, user_to_groups, users
 from ..users.exceptions import UserNotFoundError
 from ..utils import format_datetime
 from ._projects_repository import PROJECT_DB_COLS
+from ._projects_service_utils import (
+    find_changed_node_keys,
+    project_uses_available_services,
+)
 from .exceptions import (
     NodeNotFoundError,
     ProjectInvalidRightsError,
@@ -32,7 +36,6 @@ from .exceptions import (
     ProjectNotFoundError,
 )
 from .models import ProjectDict
-from .utils import find_changed_node_keys, project_uses_available_services
 
 logger = logging.getLogger(__name__)
 

@@ -2,11 +2,10 @@ import logging
 import re
 from copy import deepcopy
 from re import Match
-from typing import Any, TypedDict
+from typing import Any
 from uuid import UUID, uuid1, uuid5
 
 from models_library.projects_nodes_io import NodeIDStr
-from models_library.services import ServiceKey
 from pydantic import TypeAdapter
 from servicelib.decorators import safe_return
 
@@ -20,11 +19,6 @@ _FIELDS_TO_DELETE = ("outputs", "progress", "runHash")
 
 _COPY_SUFFIX_RE = re.compile(r"^(.*? \(Copy\))(\(\d+\))?$")
 _COPY_SUFFIX = "(Copy)"
-
-
-class NodeDict(TypedDict, total=False):
-    key: ServiceKey | None
-    outputs: dict[str, Any] | None
 
 
 NodesMap = dict[NodeIDStr, NodeIDStr]

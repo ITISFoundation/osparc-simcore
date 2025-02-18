@@ -9,6 +9,7 @@ from models_library.api_schemas_webserver.projects_ui import StudyUI
 from models_library.folders import FolderID
 from models_library.groups import GroupID
 from models_library.projects import ClassifierID, ProjectID
+from models_library.projects_nodes_io import NodeIDStr
 from models_library.users import UserID
 from models_library.utils.common_validators import (
     empty_str_to_none_pre_validator,
@@ -20,6 +21,7 @@ from simcore_postgres_database.models.projects import ProjectType
 
 ProjectDict: TypeAlias = dict[str, Any]
 ProjectProxy: TypeAlias = RowProxy
+NodesMap: TypeAlias = dict[NodeIDStr, NodeIDStr]
 
 PermissionStr = Literal["read", "write", "delete"]
 
