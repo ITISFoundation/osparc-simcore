@@ -3,10 +3,12 @@ from pathlib import Path
 
 from common_library.errors_classes import OsparcErrorMixin
 from models_library.projects_nodes_io import LocationID
+from models_library.users import UserID
 from pydantic import BaseModel, Field
 
 
 class DataExportTaskStartInput(BaseModel):
+    user_id: UserID
     location_id: LocationID
     paths: list[Path] = Field(..., min_length=1)
 

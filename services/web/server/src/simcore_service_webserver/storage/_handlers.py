@@ -11,6 +11,7 @@ from urllib.parse import quote, unquote
 from aiohttp import ClientTimeout, web
 from models_library.api_schemas_storage import STORAGE_RPC_NAMESPACE
 from models_library.projects_nodes_io import LocationID
+from models_library.rest_base import RequestParameters
 from models_library.storage_schemas import (
     AsyncJobGet,
     AsyncJobResult,
@@ -21,8 +22,9 @@ from models_library.storage_schemas import (
     FileUploadSchema,
     LinkType,
 )
+from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import AnyUrl, BaseModel, ByteSize, TypeAdapter
+from pydantic import AnyUrl, BaseModel, ByteSize, Field, TypeAdapter
 from servicelib.aiohttp import status
 from servicelib.aiohttp.client_session import get_client_session
 from servicelib.aiohttp.requests_validation import (
@@ -40,6 +42,7 @@ from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import (
 from servicelib.rabbitmq.rpc_interfaces.storage.data_export import start_data_export
 from servicelib.request_keys import RQT_USERID_KEY
 from servicelib.rest_responses import unwrap_envelope
+from simcore_service_webserver.products._api import RQ_PRODUCT_KEY
 from simcore_service_webserver.rabbitmq import get_rabbitmq_rpc_client
 from yarl import URL
 
@@ -385,17 +388,24 @@ async def delete_file(request: web.Request) -> web.Response:
 @permission_required("storage.files.*")
 @handle_data_export_exceptions
 async def export_data(request: web.Request) -> web.Response:
+    class _RequestContext(RequestParameters):
+        user_id: UserID = Field(..., alias=RQT_USERID_KEY)  # type: ignore[literal-required]
+        product_name: str = Field(..., alias=RQ_PRODUCT_KEY)  # type: ignore[literal-required]
+
     class _PathParams(BaseModel):
         location_id: LocationID
 
     rabbitmq_rpc_client = get_rabbitmq_rpc_client(request.app)
+    _req_ctx = _RequestContext.model_validate(request)
     _path_params = parse_request_path_parameters_as(_PathParams, request)
     data_export_post = await parse_request_body_as(
         model_schema_cls=DataExportPost, request=request
     )
     async_job_rpc_get = await start_data_export(
         rabbitmq_rpc_client=rabbitmq_rpc_client,
-        paths=data_export_post.to_storage_model(location_id=_path_params.location_id),
+        paths=data_export_post.to_storage_model(
+            user_id=_req_ctx.user_id, location_id=_path_params.location_id
+        ),
     )
     return create_data_response(
         AsyncJobGet.from_async_job_rpc_get(async_job_rpc_get),
