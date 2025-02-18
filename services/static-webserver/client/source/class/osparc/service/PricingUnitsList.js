@@ -47,8 +47,7 @@ qx.Class.define("osparc.service.PricingUnitsList", {
     },
 
     __fetchUnits: function() {
-      const pricingStore = osparc.store.Pricing.getInstance();
-      pricingStore.fetchPricingPlansService(this.__serviceMetadata["key"], this.__serviceMetadata["version"])
+      osparc.store.Pricing.getInstance().fetchPricingPlansService(this.__serviceMetadata["key"], this.__serviceMetadata["version"])
         .then(data => this.__populateList(data["pricingUnits"]))
         .catch(err => {
           console.error(err);

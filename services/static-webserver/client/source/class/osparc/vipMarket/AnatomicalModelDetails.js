@@ -313,9 +313,17 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
           modelId: anatomicalModelsData["licensedResources"][selectedIdx]["source"]["id"]
         });
       }, this);
-      if (anatomicalModelsData["seats"].length) {
-        importSection.add(importButton);
-      }
+
+      osparc.store.Pricing.getInstance().fetchPricingUnits(anatomicalModelsData["pricingPlanId"])
+        .then(pricingUnits => {
+          if (
+            anatomicalModelsData["seats"].length ||
+            (pricingUnits.length === 1 && pricingUnits[0].getCost() === 0)
+          ) {
+            importSection.add(importButton);
+          }
+        });
+
       return importSection;
     },
 
@@ -336,23 +344,32 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
       const licensedItemData = this.getAnatomicalModelsData();
       osparc.store.Pricing.getInstance().fetchPricingUnits(licensedItemData["pricingPlanId"])
         .then(pricingUnits => {
-          pricingUnits.forEach(pricingUnit => {
-            pricingUnit.set({
-              classification: "LICENSE"
+          if (pricingUnits.length === 1 && pricingUnits[0].getCost() === 0) {
+            const availableLabel = new qx.ui.basic.Label().set({
+              font: "text-14",
+              value: this.tr("Available for Importing"),
+              padding: 10,
             });
-            const pUnit = new osparc.study.PricingUnitLicense(pricingUnit).set({
-              showRentButton: true,
-              licenseUrl: licensedItemData["termsOfUseUrl"],
-            });
-            pUnit.addListener("rentPricingUnit", () => {
-              this.fireDataEvent("modelPurchaseRequested", {
-                licensedItemId: licensedItemData["licensedItemId"],
-                pricingPlanId: licensedItemData["pricingPlanId"],
-                pricingUnitId: pricingUnit.getPricingUnitId(),
+            pricingUnitsLayout.add(availableLabel);
+          } else {
+            pricingUnits.forEach(pricingUnit => {
+              pricingUnit.set({
+                classification: "LICENSE"
               });
-            }, this);
-            pricingUnitsLayout.add(pUnit);
-          });
+              const pUnit = new osparc.study.PricingUnitLicense(pricingUnit).set({
+                showRentButton: true,
+                licenseUrl: licensedItemData["termsOfUseUrl"],
+              });
+              pUnit.addListener("rentPricingUnit", () => {
+                this.fireDataEvent("modelPurchaseRequested", {
+                  licensedItemId: licensedItemData["licensedItemId"],
+                  pricingPlanId: licensedItemData["pricingPlanId"],
+                  pricingUnitId: pricingUnit.getPricingUnitId(),
+                });
+              }, this);
+              pricingUnitsLayout.add(pUnit);
+            });
+          }
         })
         .catch(err => console.error(err));
       this._add(pricingUnitsLayout);
