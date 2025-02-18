@@ -10,7 +10,7 @@ AsyncJobId: TypeAlias = UUID
 
 class AsyncJobStatus(BaseModel):
     job_id: AsyncJobId
-    task_progress: PositiveFloat = Field(..., ge=0.0, le=1.0)
+    progress: PositiveFloat = Field(..., ge=0.0, le=1.0)
     done: bool
     started: datetime
     stopped: datetime | None

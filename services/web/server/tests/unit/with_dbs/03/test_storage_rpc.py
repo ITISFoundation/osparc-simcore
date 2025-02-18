@@ -99,7 +99,7 @@ async def test_data_export(
     [
         AsyncJobStatus(
             job_id=_faker.uuid4(),
-            task_progress=0.5,
+            progress=0.5,
             done=False,
             started=datetime.now(),
             stopped=None,

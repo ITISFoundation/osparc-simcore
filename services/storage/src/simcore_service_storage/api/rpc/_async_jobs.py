@@ -27,7 +27,7 @@ async def get_status(app: FastAPI, job_id: AsyncJobId) -> AsyncJobStatus:
     assert app  # nosec
     return AsyncJobStatus(
         job_id=job_id,
-        task_progress=0.5,
+        progress=0.5,
         done=False,
         started=datetime.now(),
         stopped=None,
