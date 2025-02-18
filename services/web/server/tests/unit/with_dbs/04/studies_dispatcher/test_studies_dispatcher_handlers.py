@@ -400,7 +400,7 @@ async def test_dispatch_study_anonymously(
         return_value=None,
     )
     mock_dynamic_scheduler_update_project_networks = mocker.patch(
-        "simcore_service_webserver.studies_dispatcher._redirects_handlers.dynamic_scheduler_api.update_projects_networks",
+        "simcore_service_webserver.studies_dispatcher._redirects_handlers.dynamic_scheduler_service.update_projects_networks",
         return_value=None,
     )
 
@@ -466,7 +466,7 @@ async def test_dispatch_logged_in_user(
         return_value=None,
     )
     mock_dynamic_scheduler_update_project_networks = mocker.patch(
-        "simcore_service_webserver.studies_dispatcher._redirects_handlers.dynamic_scheduler_api.update_projects_networks",
+        "simcore_service_webserver.studies_dispatcher._redirects_handlers.dynamic_scheduler_service.update_projects_networks",
         return_value=None,
     )
 

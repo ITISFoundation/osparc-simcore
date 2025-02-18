@@ -1,6 +1,7 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+# pylint: disable=too-many-arguments
 
 import json
 import logging
@@ -23,6 +24,7 @@ from simcore_service_webserver.projects._projects_service_utils import (
     find_changed_node_keys,
 )
 from simcore_service_webserver.projects.models import ProjectDict
+from typing_extensions import TypedDict
 
 _logger = logging.getLogger(__name__)
 
