@@ -144,9 +144,7 @@ class LicensedItemRestGet(OutputSchema):
                     _ItisVipResourceRestData(**x)
                     for x in sorted(
                         item.licensed_resources,
-                        key=lambda x: datetime.strptime(
-                            x["source"]["features"]["date"], "%Y-%m-%d"
-                        ),
+                        key=lambda x: (x["priority"], x["licensed_resource_id"]),
                         reverse=True,
                     )
                 ],

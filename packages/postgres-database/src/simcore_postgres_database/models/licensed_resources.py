@@ -47,6 +47,13 @@ licensed_resources = sa.Table(
         nullable=True,
         doc="Resource metadata. Used for read-only purposes",
     ),
+    sa.Column(
+        "priority",
+        sa.SmallInteger,
+        nullable=False,
+        default=0,
+        doc="Used for sorting (ex. if we want to manually adjust how it is presented in the Market)",
+    ),
     column_created_datetime(timezone=True),
     column_modified_datetime(timezone=True),
     column_trashed_datetime("licensed_resources"),
