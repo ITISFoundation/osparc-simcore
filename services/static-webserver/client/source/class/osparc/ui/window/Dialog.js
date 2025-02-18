@@ -100,6 +100,10 @@ qx.Class.define("osparc.ui.window.Dialog", {
       this.__extraWidgetsLayout.add(widget);
     },
 
+    getExtraWidgetsLayout: function() {
+      return this.__extraWidgetsLayout;
+    },
+
     /**
      * Adds a button to the dialog.
      * @param {qx.ui.form.Button} button Button that will be added to the bottom bar of the dialog.
