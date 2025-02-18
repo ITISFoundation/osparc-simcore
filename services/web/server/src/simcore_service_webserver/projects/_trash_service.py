@@ -1,6 +1,6 @@
 import asyncio
-import datetime
 import logging
+from datetime import datetime
 
 import arrow
 from aiohttp import web
@@ -9,6 +9,7 @@ from models_library.basic_types import IDStr
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.rest_ordering import OrderBy, OrderDirection
+from models_library.rest_pagination import MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
 from models_library.users import UserID
 from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
@@ -132,7 +133,7 @@ async def untrash_project(
 def _can_delete(
     project: ProjectDict,
     user_id: UserID,
-    until_equal_datetime: datetime.datetime | None,
+    until_equal_datetime: datetime | None,
 ) -> bool:
     """
     This is the current policy to delete trashed project
@@ -158,19 +159,19 @@ def _can_delete(
     )
 
 
-async def list_trashed_projects(
+async def list_explicitly_trashed_projects(
     app: web.Application,
     *,
     product_name: ProductName,
     user_id: UserID,
-    until_equal_datetime: datetime.datetime | None = None,
+    until_equal_datetime: datetime | None = None,
 ) -> list[ProjectID]:
     """
     Lists all projects that were trashed until a specific datetime (if !=None).
     """
     trashed_projects: list[ProjectID] = []
 
-    for page_params in iter_pagination_params(limit=100):
+    for page_params in iter_pagination_params(limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE):
         (
             projects,
             page_params.total_number_of_items,
@@ -202,12 +203,12 @@ async def list_trashed_projects(
     return trashed_projects
 
 
-async def delete_trashed_project(
+async def delete_explicitly_trashed_project(
     app: web.Application,
     *,
     user_id: UserID,
     project_id: ProjectID,
-    until_equal_datetime: datetime.datetime | None = None,
+    until_equal_datetime: datetime | None = None,
 ) -> None:
     """
     Deletes a project that was explicitly trashed by the user from a specific datetime (if provided, otherwise all).
