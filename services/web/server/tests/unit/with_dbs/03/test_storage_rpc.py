@@ -6,11 +6,11 @@ import pytest
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from models_library.api_schemas_rpc_async_jobs.async_jobs import (
-    AsyncJobRpcAbort,
-    AsyncJobRpcGet,
-    AsyncJobRpcId,
-    AsyncJobRpcResult,
-    AsyncJobRpcStatus,
+    AsyncJobAbort,
+    AsyncJobGet,
+    AsyncJobId,
+    AsyncJobResult,
+    AsyncJobStatus,
 )
 from models_library.api_schemas_rpc_async_jobs.exceptions import (
     ResultError,
@@ -57,7 +57,7 @@ def create_storage_rpc_client_mock(mocker: MockerFixture) -> Callable[[str, Any]
 @pytest.mark.parametrize(
     "backend_result_or_exception",
     [
-        AsyncJobRpcGet(job_id=AsyncJobRpcId(_faker.uuid4()), task_name=_faker.text()),
+        AsyncJobGet(job_id=AsyncJobId(_faker.uuid4()), task_name=_faker.text()),
         InvalidFileIdentifierError(file_id=Path("/my/file")),
         AccessRightError(user_id=_faker.pyint(min_value=0), file_id=Path("/my/file")),
         DataExportError(job_id=_faker.pyint(min_value=0)),
@@ -81,7 +81,7 @@ async def test_data_export(
     response = await client.post(
         "/v0/storage/locations/0/export-data", data=_body.model_dump_json()
     )
-    if isinstance(backend_result_or_exception, AsyncJobRpcGet):
+    if isinstance(backend_result_or_exception, AsyncJobGet):
         assert response.status == status.HTTP_202_ACCEPTED
         Envelope[AsyncJobGet].model_validate(await response.json())
     elif isinstance(backend_result_or_exception, InvalidFileIdentifierError):
@@ -97,7 +97,7 @@ async def test_data_export(
 @pytest.mark.parametrize(
     "backend_result_or_exception",
     [
-        AsyncJobRpcStatus(
+        AsyncJobStatus(
             job_id=_faker.uuid4(),
             task_progress=0.5,
             done=False,
@@ -115,11 +115,11 @@ async def test_get_async_jobs_status(
     create_storage_rpc_client_mock: Callable[[str, Any], None],
     backend_result_or_exception: Any,
 ):
-    _job_id = AsyncJobRpcId(_faker.uuid4())
+    _job_id = AsyncJobId(_faker.uuid4())
     create_storage_rpc_client_mock(get_status.__name__, backend_result_or_exception)
 
     response = await client.get(f"/v0/storage/async-jobs/{_job_id}/status")
-    if isinstance(backend_result_or_exception, AsyncJobRpcStatus):
+    if isinstance(backend_result_or_exception, AsyncJobStatus):
         assert response.status == status.HTTP_200_OK
         response_body_data = (
             Envelope[AsyncJobGet].model_validate(await response.json()).data
@@ -141,9 +141,9 @@ async def test_abort_async_jobs(
     faker: Faker,
     abort_success: bool,
 ):
-    _job_id = AsyncJobRpcId(faker.uuid4())
+    _job_id = AsyncJobId(faker.uuid4())
     create_storage_rpc_client_mock(
-        abort.__name__, AsyncJobRpcAbort(result=abort_success, job_id=_job_id)
+        abort.__name__, AsyncJobAbort(result=abort_success, job_id=_job_id)
     )
 
     response = await client.post(f"/v0/storage/async-jobs/{_job_id}:abort")
@@ -158,7 +158,7 @@ async def test_abort_async_jobs(
 @pytest.mark.parametrize(
     "backend_result_or_exception",
     [
-        AsyncJobRpcResult(result=None, error=_faker.text()),
+        AsyncJobResult(result=None, error=_faker.text()),
         ResultError(job_id=_faker.uuid4()),
     ],
     ids=lambda x: type(x).__name__,
@@ -171,12 +171,12 @@ async def test_get_async_job_result(
     faker: Faker,
     backend_result_or_exception: Any,
 ):
-    _job_id = AsyncJobRpcId(faker.uuid4())
+    _job_id = AsyncJobId(faker.uuid4())
     create_storage_rpc_client_mock(get_result.__name__, backend_result_or_exception)
 
     response = await client.get(f"/v0/storage/async-jobs/{_job_id}/result")
 
-    if isinstance(backend_result_or_exception, AsyncJobRpcResult):
+    if isinstance(backend_result_or_exception, AsyncJobResult):
         assert response.status == status.HTTP_200_OK
     elif isinstance(backend_result_or_exception, ResultError):
         assert response.status == status.HTTP_500_INTERNAL_SERVER_ERROR

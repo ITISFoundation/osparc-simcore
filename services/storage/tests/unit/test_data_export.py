@@ -7,11 +7,11 @@ import pytest
 from faker import Faker
 from fastapi import FastAPI
 from models_library.api_schemas_rpc_async_jobs.async_jobs import (
-    AsyncJobRpcAbort,
-    AsyncJobRpcGet,
-    AsyncJobRpcId,
-    AsyncJobRpcResult,
-    AsyncJobRpcStatus,
+    AsyncJobAbort,
+    AsyncJobGet,
+    AsyncJobId,
+    AsyncJobResult,
+    AsyncJobStatus,
 )
 from models_library.api_schemas_storage import STORAGE_RPC_NAMESPACE
 from models_library.api_schemas_storage.data_export_async_jobs import (
@@ -80,30 +80,30 @@ async def test_start_data_export(rpc_client: RabbitMQRPCClient, faker: Faker):
         rpc_client,
         paths=DataExportTaskStartInput(location_id=0, paths=[Path(faker.file_path())]),
     )
-    assert isinstance(result, AsyncJobRpcGet)
+    assert isinstance(result, AsyncJobGet)
 
 
 async def test_abort_data_export(rpc_client: RabbitMQRPCClient, faker: Faker):
-    _job_id = AsyncJobRpcId(faker.uuid4())
+    _job_id = AsyncJobId(faker.uuid4())
     result = await async_jobs.abort(
         rpc_client, rpc_namespace=STORAGE_RPC_NAMESPACE, job_id=_job_id
     )
-    assert isinstance(result, AsyncJobRpcAbort)
+    assert isinstance(result, AsyncJobAbort)
     assert result.job_id == _job_id
 
 
 async def test_get_data_export_status(rpc_client: RabbitMQRPCClient, faker: Faker):
-    _job_id = AsyncJobRpcId(faker.uuid4())
+    _job_id = AsyncJobId(faker.uuid4())
     result = await async_jobs.get_status(
         rpc_client, rpc_namespace=STORAGE_RPC_NAMESPACE, job_id=_job_id
     )
-    assert isinstance(result, AsyncJobRpcStatus)
+    assert isinstance(result, AsyncJobStatus)
     assert result.job_id == _job_id
 
 
 async def test_get_data_export_result(rpc_client: RabbitMQRPCClient, faker: Faker):
-    _job_id = AsyncJobRpcId(faker.uuid4())
+    _job_id = AsyncJobId(faker.uuid4())
     result = await async_jobs.get_result(
         rpc_client, rpc_namespace=STORAGE_RPC_NAMESPACE, job_id=_job_id
     )
-    assert isinstance(result, AsyncJobRpcResult)
+    assert isinstance(result, AsyncJobResult)

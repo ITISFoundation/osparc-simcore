@@ -1,7 +1,7 @@
 from uuid import uuid4
 
 from fastapi import FastAPI
-from models_library.api_schemas_rpc_async_jobs.async_jobs import AsyncJobRpcGet
+from models_library.api_schemas_rpc_async_jobs.async_jobs import AsyncJobGet
 from models_library.api_schemas_storage.data_export_async_jobs import (
     AccessRightError,
     DataExportError,
@@ -22,9 +22,9 @@ router = RPCRouter()
 )
 async def start_data_export(
     app: FastAPI, paths: DataExportTaskStartInput
-) -> AsyncJobRpcGet:
+) -> AsyncJobGet:
     assert app  # nosec
-    return AsyncJobRpcGet(
+    return AsyncJobGet(
         job_id=uuid4(),
         task_name=", ".join(str(p) for p in paths.paths),
     )

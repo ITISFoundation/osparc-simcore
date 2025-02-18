@@ -2,10 +2,10 @@ from datetime import datetime
 
 from fastapi import FastAPI
 from models_library.api_schemas_rpc_async_jobs.async_jobs import (
-    AsyncJobRpcAbort,
-    AsyncJobRpcId,
-    AsyncJobRpcResult,
-    AsyncJobRpcStatus,
+    AsyncJobAbort,
+    AsyncJobId,
+    AsyncJobResult,
+    AsyncJobStatus,
 )
 from models_library.api_schemas_rpc_async_jobs.exceptions import (
     ResultError,
@@ -17,15 +17,15 @@ router = RPCRouter()
 
 
 @router.expose()
-async def abort(app: FastAPI, job_id: AsyncJobRpcId) -> AsyncJobRpcAbort:
+async def abort(app: FastAPI, job_id: AsyncJobId) -> AsyncJobAbort:
     assert app  # nosec
-    return AsyncJobRpcAbort(result=True, job_id=job_id)
+    return AsyncJobAbort(result=True, job_id=job_id)
 
 
 @router.expose(reraise_if_error_type=(StatusError,))
-async def get_status(app: FastAPI, job_id: AsyncJobRpcId) -> AsyncJobRpcStatus:
+async def get_status(app: FastAPI, job_id: AsyncJobId) -> AsyncJobStatus:
     assert app  # nosec
-    return AsyncJobRpcStatus(
+    return AsyncJobStatus(
         job_id=job_id,
         task_progress=0.5,
         done=False,
@@ -35,7 +35,7 @@ async def get_status(app: FastAPI, job_id: AsyncJobRpcId) -> AsyncJobRpcStatus:
 
 
 @router.expose(reraise_if_error_type=(ResultError,))
-async def get_result(app: FastAPI, job_id: AsyncJobRpcId) -> AsyncJobRpcResult:
+async def get_result(app: FastAPI, job_id: AsyncJobId) -> AsyncJobResult:
     assert app  # nosec
     assert job_id  # nosec
-    return AsyncJobRpcResult(result="Here's your result.", error=None)
+    return AsyncJobResult(result="Here's your result.", error=None)

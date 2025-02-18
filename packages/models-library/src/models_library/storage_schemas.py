@@ -31,9 +31,9 @@ from pydantic import (
 from pydantic.networks import AnyUrl
 
 from .api_schemas_rpc_async_jobs.async_jobs import (
-    AsyncJobRpcGet,
-    AsyncJobRpcResult,
-    AsyncJobRpcStatus,
+    AsyncJobGet,
+    AsyncJobResult,
+    AsyncJobStatus,
 )
 from .api_schemas_storage.data_export_async_jobs import DataExportTaskStartInput
 from .basic_regex import DATCORE_DATASET_NAME_RE, S3_BUCKET_NAME_RE
@@ -395,7 +395,7 @@ class AsyncJobGet(BaseModel):
     job_id: UUID
 
     @classmethod
-    def from_async_job_rpc_get(cls, async_job_rpc_get: AsyncJobRpcGet) -> "AsyncJobGet":
+    def from_async_job_rpc_get(cls, async_job_rpc_get: AsyncJobGet) -> "AsyncJobGet":
         return AsyncJobGet(job_id=async_job_rpc_get.job_id)
 
 
@@ -408,7 +408,7 @@ class AsyncJobStatus(BaseModel):
 
     @classmethod
     def from_async_job_rpc_status(
-        cls, async_job_rpc_status: AsyncJobRpcStatus
+        cls, async_job_rpc_status: AsyncJobStatus
     ) -> "AsyncJobStatus":
         return AsyncJobStatus(
             job_id=async_job_rpc_status.job_id,
@@ -425,7 +425,7 @@ class AsyncJobResult(BaseModel):
 
     @classmethod
     def from_async_job_rpc_result(
-        cls, async_job_rpc_result: AsyncJobRpcResult
+        cls, async_job_rpc_result: AsyncJobResult
     ) -> "AsyncJobResult":
         return AsyncJobResult(
             result=async_job_rpc_result.result, error=async_job_rpc_result.error
