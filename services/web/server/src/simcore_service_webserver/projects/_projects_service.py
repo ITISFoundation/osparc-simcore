@@ -123,10 +123,10 @@ from ..wallets import api as wallets_api
 from ..wallets.errors import WalletNotEnoughCreditsError
 from ..workspaces import _workspaces_repository as workspaces_db
 from . import (
-    _crud_api_delete,
     _nodes_repository,
     _nodes_service,
     _projects_repository,
+    _projects_service_delete,
     _wallets_service,
 )
 from ._access_rights_service import (
@@ -336,7 +336,7 @@ async def delete_project_by_user(
 def get_delete_project_task(
     project_uuid: ProjectID, user_id: UserID
 ) -> asyncio.Task | None:
-    if tasks := _crud_api_delete.get_scheduled_tasks(project_uuid, user_id):
+    if tasks := _projects_service_delete.get_scheduled_tasks(project_uuid, user_id):
         assert len(tasks) == 1, f"{tasks=}"  # nosec
         return tasks[0]
     return None
@@ -361,12 +361,12 @@ async def submit_delete_project_task(
     raises ProjectInvalidRightsError
     raises ProjectNotFoundError
     """
-    await _crud_api_delete.mark_project_as_deleted(app, project_uuid, user_id)
+    await _projects_service_delete.mark_project_as_deleted(app, project_uuid, user_id)
 
     # Ensures ONE delete task per (project,user) pair
     task = get_delete_project_task(project_uuid, user_id)
     if not task:
-        task = _crud_api_delete.schedule_task(
+        task = _projects_service_delete.schedule_task(
             app,
             project_uuid,
             user_id,

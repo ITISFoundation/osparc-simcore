@@ -35,7 +35,7 @@ from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.projects_to_products import projects_to_products
 from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.db.models import UserRole
-from simcore_service_webserver.projects import _crud_api_delete
+from simcore_service_webserver.projects import _projects_service_delete
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.redis import get_redis_lock_manager_client_sdk
 from socketio.exceptions import ConnectionError as SocketConnectionError
@@ -78,7 +78,7 @@ async def test_delete_project(
 
     user_id: int = logged_user["id"]
 
-    tasks = _crud_api_delete.get_scheduled_tasks(
+    tasks = _projects_service_delete.get_scheduled_tasks(
         project_uuid=user_project["uuid"], user_id=user_id
     )
 
