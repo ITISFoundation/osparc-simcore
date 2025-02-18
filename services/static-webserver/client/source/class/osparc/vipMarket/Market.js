@@ -116,7 +116,7 @@ qx.Class.define("osparc.vipMarket.Market", {
     __addFreeCategory: function() {
       const freeCategory = {
         categoryId: "freeModels",
-        label: this.tr("Included Items"),
+        label: this.tr("Open Access Models"),
         icon: "osparc/market/RentedModels.svg",
         items: [],
       };
