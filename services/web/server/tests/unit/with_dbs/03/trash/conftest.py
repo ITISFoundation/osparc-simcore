@@ -6,19 +6,25 @@
 # pylint: disable=unused-variable
 
 
+import logging
 from collections.abc import AsyncIterable, Callable
 from pathlib import Path
 
 import pytest
+from aiohttp import web
 from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
 from models_library.products import ProductName
+from pytest_mock import MockerFixture
+from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_login import NewUser, UserInfoDict
 from pytest_simcore.helpers.webserver_parametrizations import MockedStorageSubsystem
 from pytest_simcore.helpers.webserver_projects import NewProject
 from simcore_service_webserver.projects.models import ProjectDict
+
+_logger = logging.getLogger(__name__)
 
 
 @pytest.fixture
@@ -79,3 +85,18 @@ def mocked_director_v2(director_v2_service_mock: aioresponses):
 @pytest.fixture
 def mocked_storage(storage_subsystem_mock: MockedStorageSubsystem):
     ...
+
+
+@pytest.fixture
+def with_disabled_background_task_to_prune_trash(mocker: MockerFixture) -> None:
+    async def _empty_lifespan(app: web.Application):
+        with log_context(
+            logging.INFO, "Fake background_task_to_prune_trash event", logger=_logger
+        ):
+            yield
+
+    mocker.patch(
+        "simcore_service_webserver.garbage_collector._tasks_trash.create_background_task_to_prune_trash",
+        autospec=True,
+        return_value=_empty_lifespan,
+    )

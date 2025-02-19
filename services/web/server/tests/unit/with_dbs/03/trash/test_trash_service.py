@@ -20,15 +20,21 @@ from servicelib.aiohttp import status
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects import _trash_service
 from simcore_service_webserver.projects.models import ProjectDict
-from simcore_service_webserver.trash._service import delete_expired_trash
+from simcore_service_webserver.trash import trash_service
 
 
 @pytest.fixture
 def app_environment(
-    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
+    app_environment: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
+    with_disabled_background_task_to_prune_trash: None,
 ) -> EnvVarsDict:
     return app_environment | setenvs_from_dict(
-        monkeypatch, {"TRASH_RETENTION_DAYS": "0"}
+        monkeypatch,
+        {
+            "TRASH_RETENTION_DAYS": "0",
+            "WEBSERVER_GARBAGE_COLLECTOR": "null",
+        },
     )
 
 
@@ -104,7 +110,7 @@ async def test_trash_service__delete_expired_trash(
     assert ProjectGet.model_validate(data).trashed_by == logged_user["primary_gid"]
 
     # UNDER TEST: Run delete_expired_trash
-    await delete_expired_trash(client.app)
+    await trash_service.delete_expired_trash(client.app)
 
     # ASSERT: logged_user tries to get the project and expects 404
     resp = await client.get(f"/v0/projects/{user_project_id}")
