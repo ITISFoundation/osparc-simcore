@@ -26,9 +26,9 @@ def _monitor_step(steps: dict[str, Any], *, name: str, elapsed: bool = False):
     steps[name] = {"status": "starting"}
     try:
         yield
-    except Exception as e:
-        steps[name]["status"] = "failed"
-        steps[name]["exception"] = str(e)
+    except Exception as exc:
+        steps[name]["status"] = "raised"
+        steps[name]["exception"] = f"{exc.__class__.__name__}:{exc}"
         raise
     else:
         steps[name]["status"] = "success"
@@ -98,6 +98,7 @@ async def delete_project_as_admin(
         raise ProjectDeleteError(
             project_uuid=project_uuid,
             reason=f"Cannot delete project {project_uuid} because it is currently in use. Details: {err}",
+            state=state,
         ) from err
 
     except Exception as err:
