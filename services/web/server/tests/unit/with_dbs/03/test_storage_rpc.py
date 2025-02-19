@@ -36,11 +36,9 @@ from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import (
     abort,
     get_result,
     get_status,
+    list_jobs,
 )
-from servicelib.rabbitmq.rpc_interfaces.storage.data_export import (
-    get_user_jobs,
-    start_data_export,
-)
+from servicelib.rabbitmq.rpc_interfaces.storage.data_export import start_data_export
 from simcore_postgres_database.models.users import UserRole
 
 _faker = Faker()
@@ -202,7 +200,7 @@ async def test_get_user_async_jobs(
     create_storage_rpc_client_mock: Callable[[str, Any], None],
 ):
     create_storage_rpc_client_mock(
-        get_user_jobs.__name__, [StorageAsyncJobGet(job_id=AsyncJobId(_faker.uuid4()))]
+        list_jobs.__name__, [StorageAsyncJobGet(job_id=AsyncJobId(_faker.uuid4()))]
     )
 
     response = await client.get("/v0/storage/async-jobs")

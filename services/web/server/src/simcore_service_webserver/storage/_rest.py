@@ -3,6 +3,7 @@
 Mostly resolves and redirect to storage API
 """
 
+import json
 import logging
 import urllib.parse
 from typing import Any, Final, NamedTuple
@@ -41,11 +42,9 @@ from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import (
     abort,
     get_result,
     get_status,
+    list_jobs,
 )
-from servicelib.rabbitmq.rpc_interfaces.storage.data_export import (
-    get_user_jobs,
-    start_data_export,
-)
+from servicelib.rabbitmq.rpc_interfaces.storage.data_export import start_data_export
 from servicelib.request_keys import RQT_USERID_KEY
 from servicelib.rest_responses import unwrap_envelope
 from simcore_service_webserver.rabbitmq import get_rabbitmq_rpc_client
@@ -431,8 +430,10 @@ async def get_async_jobs(request: web.Request) -> web.Response:
 
     rabbitmq_rpc_client = get_rabbitmq_rpc_client(request.app)
 
-    user_async_jobs = await get_user_jobs(
-        rabbitmq_rpc_client=rabbitmq_rpc_client, user_id=_req_ctx.user_id
+    user_async_jobs = await list_jobs(
+        rabbitmq_rpc_client=rabbitmq_rpc_client,
+        rpc_namespace=STORAGE_RPC_NAMESPACE,
+        filter=json.dumps({"user_id": _req_ctx.user_id}),
     )
     return create_data_response(
         [StorageAsyncJobGet.from_rpc_schema(job) for job in user_async_jobs],
