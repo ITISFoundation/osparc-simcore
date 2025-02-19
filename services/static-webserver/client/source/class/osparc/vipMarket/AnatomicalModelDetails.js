@@ -89,10 +89,10 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
     },
 
     __addModelsInfo: function() {
-      const modelLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(6));
+      const modelBundleLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(6));
 
       this.__selectedModelLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(6));
-      modelLayout.add(this.__selectedModelLayout);
+      modelBundleLayout.add(this.__selectedModelLayout);
 
       const licensedItemBundleData = this.getAnatomicalModelsData();
       const modelsInfo = licensedItemBundleData["licensedResources"];
@@ -100,26 +100,31 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
         const modelSelectionLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(4));
         const titleLabel = new qx.ui.basic.Label(this.tr("This bundle contains:"));
         modelSelectionLayout.add(titleLabel);
-        const thumbnailsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(2));
-        modelSelectionLayout.add(thumbnailsLayout);
+        const modelsLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(4));
+        modelSelectionLayout.add(modelsLayout);
         const thumbnailTapped = idx => {
           this.__populateSelectedModelInfo(idx);
           const selectedBorderColor = qx.theme.manager.Color.getInstance().resolve("strong-main");
           const unselectedBorderColor = "transparent";
-          thumbnailsLayout.getChildren().forEach((thumbnail, index) => {
+          modelsLayout.getChildren().forEach((thumbnailAndTitle, index) => {
+            const thumbnail = thumbnailAndTitle.getChildren()[0];
             osparc.utils.Utils.updateBorderColor(thumbnail, index === idx ? selectedBorderColor : unselectedBorderColor);
           });
         }
         modelsInfo.forEach((modelInfo, idx) => {
+          const modelLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(4));
           const miniThumbnail = this.self().createThumbnail(modelInfo["source"]["thumbnail"], 32);
-          miniThumbnail.set({
-            toolTipText: osparc.store.LicensedItems.licensedResourceNameAndVersion(modelInfo),
-          });
           osparc.utils.Utils.addBorder(miniThumbnail);
+          modelLayout.add(miniThumbnail);
           miniThumbnail.addListener("tap", () => thumbnailTapped(idx));
-          thumbnailsLayout.add(miniThumbnail);
+          const title = new qx.ui.basic.Label().set({
+            value: osparc.store.LicensedItems.licensedResourceTitle(modelInfo),
+            alignY: "middle"
+          });
+          modelLayout.add(title);
+          modelsLayout.add(modelLayout);
         });
-        modelLayout.add(modelSelectionLayout);
+        modelBundleLayout.add(modelSelectionLayout);
         thumbnailTapped(0);
 
         this.__populateSelectedModelInfo();
@@ -127,7 +132,7 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
         this.__populateSelectedModelInfo();
       }
 
-      this._add(modelLayout);
+      this._add(modelBundleLayout);
     },
 
     __populateSelectedModelInfo: function(selectedIdx = 0) {
@@ -445,7 +450,7 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
           rowIdx++;
 
           const entryToGrid = (licensedResource, seat, row) => {
-            const title = osparc.store.LicensedItems.licensedResourceNameAndVersion(licensedResource);
+            const title = osparc.store.LicensedItems.licensedResourceTitle(licensedResource);
             seatsSection.add(new qx.ui.basic.Label(title).set({font: "text-14"}), {
               column: 0,
               row,
