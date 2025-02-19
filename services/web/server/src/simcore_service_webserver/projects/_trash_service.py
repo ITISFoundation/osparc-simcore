@@ -237,3 +237,14 @@ async def delete_explicitly_trashed_project(
         user_id=user_id,
         project_uuid=project_id,
     )
+
+
+async def batch_delete_trashed_projects_as_admin(
+    app: web.Application,
+    trashed_before: datetime,
+    *,
+    product_name: ProductName,
+    fail_fast: bool,
+) -> None:
+
+    raise NotImplementedError

@@ -30,7 +30,7 @@ _APP_TASK_KEY = f"{_PERIODIC_TASK_NAME}.task"
 )
 async def _run_task(app: web.Application):
     with log_context(_logger, logging.INFO, "Deleting expired trashed items"):
-        await trash_service.delete_expired_trash_as_admin(app)
+        await trash_service.safe_delete_expired_trash_as_admin(app)
 
 
 async def _run_periodically(app: web.Application, wait_interval_s: float):

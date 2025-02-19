@@ -110,7 +110,7 @@ async def test_trash_service__delete_expired_trash(
     assert ProjectGet.model_validate(data).trashed_by == logged_user["primary_gid"]
 
     # UNDER TEST: Run delete_expired_trash
-    await trash_service.delete_expired_trash_as_admin(client.app)
+    await trash_service.safe_delete_expired_trash_as_admin(client.app)
 
     # ASSERT: logged_user tries to get the project and expects 404
     resp = await client.get(f"/v0/projects/{user_project_id}")
@@ -194,7 +194,7 @@ async def test_trash_nested_folders_and_projects(
         await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
     # UNDER TEST
-    await trash_service.delete_expired_trash_as_admin(client.app)
+    await trash_service.safe_delete_expired_trash_as_admin(client.app)
 
     async with _client_session_with_user(client, logged_user):
         # Verify logged_user's resources are gone
