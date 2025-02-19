@@ -14552,13 +14552,13 @@ components:
       title: StatusDiagnosticsGet
     StorageAsyncJobGet:
       properties:
-        job_id:
+        jobId:
           type: string
           format: uuid
-          title: Job Id
+          title: Jobid
       type: object
       required:
-      - job_id
+      - jobId
       title: StorageAsyncJobGet
     StorageAsyncJobResult:
       properties:
@@ -14579,10 +14579,10 @@ components:
       title: StorageAsyncJobResult
     StorageAsyncJobStatus:
       properties:
-        job_id:
+        jobId:
           type: string
           format: uuid
-          title: Job Id
+          title: Jobid
         progress:
           $ref: '#/components/schemas/ProgressReport'
         done:
@@ -14600,7 +14600,7 @@ components:
           title: Stopped
       type: object
       required:
-      - job_id
+      - jobId
       - progress
       - done
       - started
