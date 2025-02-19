@@ -1,11 +1,10 @@
-from typing import Union
-
 import pytest
 from faker import Faker
 from models_library.progress_bar import ProgressReport
 from models_library.rabbitmq_messages import (
     ProgressRabbitMessageNode,
     ProgressRabbitMessageProject,
+    ProgressRabbitMessageWorkerJob,
     ProgressType,
 )
 from pydantic import TypeAdapter
@@ -37,10 +36,21 @@ faker = Faker()
             ProgressRabbitMessageProject,
             id="project_progress",
         ),
+        pytest.param(
+            ProgressRabbitMessageWorkerJob(
+                user_id=faker.pyint(min_value=1),
+                progress_type=ProgressType.PROJECT_CLOSING,
+                report=ProgressReport(actual_value=0.4, total=1),
+            ).model_dump_json(),
+            ProgressRabbitMessageWorkerJob,
+            id="worker_job_progress",
+        ),
     ],
 )
 async def test_raw_message_parsing(raw_data: str, class_type: type):
     result = TypeAdapter(
-        Union[ProgressRabbitMessageNode, ProgressRabbitMessageProject]
+        ProgressRabbitMessageNode
+        | ProgressRabbitMessageProject
+        | ProgressRabbitMessageWorkerJob
     ).validate_json(raw_data)
-    assert type(result) == class_type
+    assert type(result) is class_type
