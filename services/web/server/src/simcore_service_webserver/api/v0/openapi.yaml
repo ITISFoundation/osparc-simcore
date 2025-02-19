@@ -6461,6 +6461,20 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_StorageAsyncJobResult_'
+  /v0/storage/async-jobs:
+    get:
+      tags:
+      - storage
+      summary: Get Async Job Result
+      description: Get async job status
+      operationId: get_async_jobs
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list_StorageAsyncJobGet__'
   /v0/trash:empty:
     post:
       tags:
@@ -9747,6 +9761,22 @@ components:
           title: Error
       type: object
       title: Envelope[list[ServiceOutputGet]]
+    Envelope_list_StorageAsyncJobGet__:
+      properties:
+        data:
+          anyOf:
+          - items:
+              $ref: '#/components/schemas/StorageAsyncJobGet'
+            type: array
+          - type: 'null'
+          title: Data
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[list[StorageAsyncJobGet]]
     Envelope_list_TagGet__:
       properties:
         data:

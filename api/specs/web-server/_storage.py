@@ -192,7 +192,7 @@ async def export_data(data_export: DataExportPost, location_id: LocationID):
     response_model=Envelope[StorageAsyncJobStatus],
     name="storage_async_job_status",
 )
-async def get_async_job_status(task_id: StorageAsyncJobGet, job_id: UUID):
+async def get_async_job_status(storage_async_job_get: StorageAsyncJobGet, job_id: UUID):
     """Get async job status"""
 
 
@@ -200,7 +200,7 @@ async def get_async_job_status(task_id: StorageAsyncJobGet, job_id: UUID):
     "/storage/async-jobs/{job_id}:abort",
     name="abort_async_job",
 )
-async def abort_async_job(task_id: StorageAsyncJobGet, job_id: UUID):
+async def abort_async_job(storage_async_job_get: StorageAsyncJobGet, job_id: UUID):
     """Get async job status"""
 
 
@@ -209,5 +209,14 @@ async def abort_async_job(task_id: StorageAsyncJobGet, job_id: UUID):
     response_model=Envelope[StorageAsyncJobResult],
     name="get_async_job_result",
 )
-async def get_async_job_result(task_id: StorageAsyncJobGet, job_id: UUID):
+async def get_async_job_result(storage_async_job_get: StorageAsyncJobGet, job_id: UUID):
+    """Get async job status"""
+
+
+@router.get(
+    "/storage/async-jobs",
+    response_model=Envelope[list[StorageAsyncJobGet]],
+    name="get_async_job_result",
+)
+async def get_async_jobs():
     """Get async job status"""
