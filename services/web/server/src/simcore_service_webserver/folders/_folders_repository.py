@@ -4,7 +4,7 @@ from typing import cast
 
 import sqlalchemy as sa
 from aiohttp import web
-from common_library.exclude import UnSet, as_dict_exclude_unset
+from common_library.exclude import UnSet, as_dict_exclude_unset, is_set
 from models_library.folders import (
     FolderDB,
     FolderID,
@@ -35,6 +35,7 @@ from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncConnection
 from sqlalchemy.orm import aliased
 from sqlalchemy.sql import ColumnElement, CompoundSelect, Select, asc, desc, select
+from sqlalchemy.sql.selectable import GenerativeSelect
 
 from ..db.plugin import get_asyncpg_engine
 from .errors import FolderAccessForbiddenError, FolderNotFoundError
@@ -155,6 +156,17 @@ def _create_shared_workspace_query(
     return shared_workspace_query
 
 
+def _set_ordering(
+    base_query: GenerativeSelect,
+    order_by: OrderBy,
+) -> GenerativeSelect:
+    if order_by.direction == OrderDirection.ASC:
+        list_query = base_query.order_by(asc(getattr(folders_v2.c, order_by.field)))
+    else:
+        list_query = base_query.order_by(desc(getattr(folders_v2.c, order_by.field)))
+    return list_query
+
+
 async def list_(  # pylint: disable=too-many-arguments,too-many-branches
     app: web.Application,
     connection: AsyncConnection | None = None,
@@ -235,12 +247,7 @@ async def list_(  # pylint: disable=too-many-arguments,too-many-branches
     count_query = select(func.count()).select_from(combined_query.subquery())
 
     # Ordering and pagination
-    if order_by.direction == OrderDirection.ASC:
-        list_query = combined_query.order_by(asc(getattr(folders_v2.c, order_by.field)))
-    else:
-        list_query = combined_query.order_by(
-            desc(getattr(folders_v2.c, order_by.field))
-        )
+    list_query = _set_ordering(combined_query, order_by=order_by)
     list_query = list_query.offset(offset).limit(limit)
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
@@ -250,6 +257,50 @@ async def list_(  # pylint: disable=too-many-arguments,too-many-branches
         folders: list[UserFolder] = [
             UserFolder.model_validate(row) async for row in result
         ]
+        return cast(int, total_count), folders
+
+
+async def list_trashed_folders(
+    app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
+    # filter
+    trashed_explicitly: bool | UnSet = UnSet.VALUE,
+    trashed_until: datetime | UnSet = UnSet.VALUE,
+    # pagination
+    offset: NonNegativeInt,
+    limit: int,
+    # order
+    order_by: OrderBy,
+) -> tuple[int, list[FolderDB]]:
+    """
+    NOTE: this is app-wide i.e. no product, user or workspace filtered
+    TODO: check with MD about workspaces
+    """
+    base_query = select(_FOLDER_DB_MODEL_COLS).where(folders_v2.c.trashed.is_not(None))
+
+    if is_set(trashed_explicitly):
+        assert isinstance(trashed_explicitly, bool)  # nosec
+        base_query = base_query.where(
+            folders_v2.c.trashed_explicitly.is_(trashed_explicitly)
+        )
+
+    if is_set(trashed_until):
+        assert isinstance(trashed_until, datetime)  # nosec
+        base_query = base_query.where(folders_v2.c.trashed < trashed_until)
+
+    # Select total count from base_query
+    count_query = select(func.count()).select_from(base_query.subquery())
+
+    # Ordering and pagination
+    list_query = _set_ordering(base_query, order_by)
+    list_query = list_query.offset(offset).limit(limit)
+
+    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
+        total_count = await conn.scalar(count_query)
+
+        result = await conn.stream(list_query)
+        folders: list[FolderDB] = [FolderDB.model_validate(row) async for row in result]
         return cast(int, total_count), folders
 
 
