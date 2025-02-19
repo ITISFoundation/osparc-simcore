@@ -17,12 +17,16 @@ from servicelib.utils import fire_and_forget_task
 
 from ..director_v2 import api as director_v2_api
 from ..dynamic_scheduler import api as dynamic_scheduler_api
-from . import _crud_api_read, projects_service
+from . import _crud_api_read
+from . import _projects_db as _projects_repository
+from . import projects_service
 from ._access_rights_api import check_user_project_permission
+from ._projects_db import _OLDEST_TRASHED_FIRST
 from .exceptions import (
     ProjectNotFoundError,
     ProjectNotTrashedError,
     ProjectRunningConflictError,
+    ProjectsBatchDeleteError,
 )
 from .models import ProjectDict, ProjectPatchInternalExtended
 
@@ -241,10 +245,52 @@ async def delete_explicitly_trashed_project(
 
 async def batch_delete_trashed_projects_as_admin(
     app: web.Application,
-    trashed_before: datetime,
     *,
     product_name: ProductName,
+    trashed_before: datetime,
     fail_fast: bool,
-) -> None:
+) -> list[ProjectID]:
 
-    raise NotImplementedError
+    deleted_project_ids: list[ProjectID] = []
+    errors: list[tuple[ProjectID, Exception]] = []
+
+    for page_params in iter_pagination_params(limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE):
+        (
+            page_params.total_number_of_items,
+            expired_trashed_projects,
+        ) = await _projects_repository.list_trashed_projects(
+            app,
+            trashed_explicitly=True,
+            trashed_before=trashed_before,
+            offset=page_params.offset,
+            limit=page_params.limit,
+            order_by=_OLDEST_TRASHED_FIRST,
+        )
+        # BATCH delete
+        for project in expired_trashed_projects:
+
+            assert project.trashed  # nosec
+            assert project.trashed_explicitly  # nosec
+
+            try:
+                _logger.debug(
+                    # TODO: _projects_service_delete.delete_project_as_admin
+                    "await _projects_service_delete.delete_project_as_admin(app, project_id=%s, product_name=%s)",
+                    project.uuid,
+                    product_name,
+                )
+                deleted_project_ids.append(project.uuid)
+            except Exception as err:  # pylint: disable=broad-exception-caught
+                if fail_fast:
+                    raise
+                errors.append((project.uuid, err))
+
+    if errors:
+        raise ProjectsBatchDeleteError(
+            errors=errors,
+            trashed_before=trashed_before,
+            product_name=product_name,
+            deleted_project_ids=deleted_project_ids,
+        )
+
+    return deleted_project_ids

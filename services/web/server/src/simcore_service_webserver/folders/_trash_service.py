@@ -292,6 +292,7 @@ async def batch_delete_trashed_folders_as_admin(
         FolderBatchDeleteError: if error and fail_fast=False
         Exception: any other exception during delete_recursively
     """
+    errors: list[tuple[FolderID, Exception]] = []
 
     for page_params in iter_pagination_params(limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE):
         (
@@ -306,8 +307,7 @@ async def batch_delete_trashed_folders_as_admin(
             order_by=OrderBy(field=IDStr("trashed"), direction=OrderDirection.ASC),
         )
 
-        # batch delete
-        errors: list[tuple[FolderID, Exception]] = []
+        # BATCH delete
         for folder in expired_trashed_folders:
             try:
                 await _folders_repository.delete_recursively(
@@ -318,7 +318,7 @@ async def batch_delete_trashed_folders_as_admin(
                     raise
                 errors.append((folder.folder_id, err))
 
-        if errors:
-            raise FolderBatchDeleteError(
-                errors=errors, trashed_before=trashed_before, product_name=product_name
-            )
+    if errors:
+        raise FolderBatchDeleteError(
+            errors=errors, trashed_before=trashed_before, product_name=product_name
+        )
