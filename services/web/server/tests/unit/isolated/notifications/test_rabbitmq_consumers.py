@@ -12,6 +12,7 @@ from models_library.progress_bar import ProgressReport
 from models_library.rabbitmq_messages import (
     ProgressRabbitMessageNode,
     ProgressRabbitMessageProject,
+    ProgressRabbitMessageWorkerJob,
     ProgressType,
 )
 from models_library.socketio import SocketMessageDict
@@ -74,6 +75,28 @@ from simcore_service_webserver.socketio.models import WebSocketNodeProgress
                 },
             ),
             id="project_progress",
+        ),
+        pytest.param(
+            ProgressRabbitMessageWorkerJob(
+                user_id=123,
+                progress_type=ProgressType.WORKER_JOB_EXPORTING,
+                report=ProgressReport(actual_value=0.4, total=1),
+            ).model_dump_json(),
+            SocketMessageDict(
+                event_type=WebSocketNodeProgress.get_event_type(),
+                data={
+                    "user_id": 123,
+                    "progress_type": ProgressType.WORKER_JOB_EXPORTING.value,
+                    "progress_report": {
+                        "actual_value": 0.4,
+                        "attempt": 0,
+                        "total": 1.0,
+                        "unit": None,
+                        "message": None,
+                    },
+                },
+            ),
+            id="worker_job_progress",
         ),
     ],
 )
