@@ -129,7 +129,9 @@ qx.Class.define("osparc.vipMarket.Market", {
               freeCategory["items"].push(licensedItem);
             }
           }
-          this.__buildViPMarketPage(freeCategory, freeCategory["items"]);
+          if (freeCategory["items"].length) {
+            this.__buildViPMarketPage(freeCategory, freeCategory["items"]);
+          }
         });
     },
 
