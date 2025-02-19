@@ -19,7 +19,7 @@ from ..director_v2 import api as director_v2_api
 from ..dynamic_scheduler import api as dynamic_scheduler_api
 from . import _crud_api_read
 from . import _projects_db as _projects_repository
-from . import projects_service
+from . import _projects_service_delete, projects_service
 from ._access_rights_api import check_user_project_permission
 from ._projects_db import _OLDEST_TRASHED_FIRST
 from .exceptions import (
@@ -246,7 +246,6 @@ async def delete_explicitly_trashed_project(
 async def batch_delete_trashed_projects_as_admin(
     app: web.Application,
     *,
-    product_name: ProductName,
     trashed_before: datetime,
     fail_fast: bool,
 ) -> list[ProjectID]:
@@ -273,11 +272,11 @@ async def batch_delete_trashed_projects_as_admin(
             assert project.trashed_explicitly  # nosec
 
             try:
-                _logger.debug(
-                    # TODO: _projects_service_delete.delete_project_as_admin
-                    "await _projects_service_delete.delete_project_as_admin(app, project_id=%s, product_name=%s)",
-                    project.uuid,
-                    product_name,
+                await _projects_service_delete.delete_project_as_admin(
+                    app,
+                    project_uuid=project.uuid,
+                    # FIXME: trashed project does not have services running?
+                    stop_project_services_as_admin=None,
                 )
                 deleted_project_ids.append(project.uuid)
             except Exception as err:  # pylint: disable=broad-exception-caught
@@ -289,7 +288,6 @@ async def batch_delete_trashed_projects_as_admin(
         raise ProjectsBatchDeleteError(
             errors=errors,
             trashed_before=trashed_before,
-            product_name=product_name,
             deleted_project_ids=deleted_project_ids,
         )
 

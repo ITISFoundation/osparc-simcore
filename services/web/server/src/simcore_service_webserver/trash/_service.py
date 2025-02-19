@@ -151,7 +151,6 @@ async def safe_delete_expired_trash_as_admin(app: web.Application) -> None:
                 await projects_trash_service.batch_delete_trashed_projects_as_admin(
                     app,
                     trashed_before=delete_until,
-                    product_name=product.name,
                     fail_fast=False,
                 )
 
