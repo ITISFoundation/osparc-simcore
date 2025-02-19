@@ -433,7 +433,7 @@ async def get_async_jobs(request: web.Request) -> web.Response:
     user_async_jobs = await list_jobs(
         rabbitmq_rpc_client=rabbitmq_rpc_client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
-        filter=json.dumps({"user_id": _req_ctx.user_id}),
+        filter_=json.dumps({"user_id": _req_ctx.user_id}),
     )
     return create_data_response(
         [StorageAsyncJobGet.from_rpc_schema(job) for job in user_async_jobs],

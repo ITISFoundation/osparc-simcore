@@ -73,12 +73,12 @@ async def get_result(
 
 
 async def list_jobs(
-    rabbitmq_rpc_client: RabbitMQRPCClient, *, rpc_namespace: RPCNamespace, filter: str
+    rabbitmq_rpc_client: RabbitMQRPCClient, *, rpc_namespace: RPCNamespace, filter_: str
 ) -> list[AsyncJobGet]:
     result: list[AsyncJobGet] = await rabbitmq_rpc_client.request(
         rpc_namespace,
         _RPC_METHOD_NAME_ADAPTER.validate_python("list_jobs"),
-        filter=str,
+        filter_=filter_,
         timeout_s=_DEFAULT_TIMEOUT_S,
     )
     return result
