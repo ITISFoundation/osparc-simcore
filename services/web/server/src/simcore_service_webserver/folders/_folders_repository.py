@@ -161,10 +161,11 @@ def _set_ordering(
     base_query: GenerativeSelect,
     order_by: OrderBy,
 ) -> GenerativeSelect:
-    direction_func: Callable = {OrderDirection.ASC: sql.asc, OrderDirection: sql.asc}[
-        order_by.direction
-    ]
-    column = getattr(folders_v2.c, order_by.field)
+    direction_func: Callable = {
+        OrderDirection.ASC: sql.asc,
+        OrderDirection.DESC: sql.desc,
+    }[order_by.direction]
+    column = folders_v2.columns[order_by.field]
     return base_query.order_by(direction_func(column))
 
 
