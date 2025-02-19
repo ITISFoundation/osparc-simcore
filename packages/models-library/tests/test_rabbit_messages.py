@@ -41,6 +41,7 @@ faker = Faker()
                 user_id=faker.pyint(min_value=1),
                 progress_type=ProgressType.PROJECT_CLOSING,
                 report=ProgressReport(actual_value=0.4, total=1),
+                osparc_job_id=faker.pystr(),
             ).model_dump_json(),
             ProgressRabbitMessageWorkerJob,
             id="worker_job_progress",
