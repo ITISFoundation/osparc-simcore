@@ -190,7 +190,7 @@ async def export_data(data_export: DataExportPost, location_id: LocationID):
 @router.get(
     "/storage/async-jobs/{job_id}/status",
     response_model=Envelope[StorageAsyncJobStatus],
-    name="storage_async_job_status",
+    name="get_async_job_status",
 )
 async def get_async_job_status(storage_async_job_get: StorageAsyncJobGet, job_id: UUID):
     """Get async job status"""
