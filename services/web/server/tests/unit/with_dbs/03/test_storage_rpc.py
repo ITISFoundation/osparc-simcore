@@ -35,7 +35,10 @@ from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import (
     get_result,
     get_status,
 )
-from servicelib.rabbitmq.rpc_interfaces.storage.data_export import start_data_export
+from servicelib.rabbitmq.rpc_interfaces.storage.data_export import (
+    get_user_jobs,
+    start_data_export,
+)
 from simcore_postgres_database.models.users import UserRole
 
 _faker = Faker()
@@ -50,7 +53,7 @@ def create_storage_rpc_client_mock(mocker: MockerFixture) -> Callable[[str, Any]
             return result_or_exception
 
         mocker.patch(
-            f"simcore_service_webserver.storage._handlers.{method}",
+            f"simcore_service_webserver.storage._rest.{method}",
             side_effect=side_effect,
         )
 
@@ -186,3 +189,26 @@ async def test_get_async_job_result(
         assert response.status == status.HTTP_500_INTERNAL_SERVER_ERROR
     else:
         raise Exception("Test incorrectly configured")
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+@pytest.mark.parametrize(
+    "backend_result_or_exception",
+    [
+        [StorageAsyncJobGet(job_id=AsyncJobId(_faker.uuid4()))],
+    ],
+    ids=lambda x: type(x).__name__,
+)
+async def test_get_user_async_jobs(
+    user_role: UserRole,
+    logged_user: UserInfoDict,
+    client: TestClient,
+    create_storage_rpc_client_mock: Callable[[str, Any], None],
+    backend_result_or_exception: Any,
+):
+    create_storage_rpc_client_mock(get_user_jobs.__name__, backend_result_or_exception)
+
+    response = await client.get("/v0/storage/async-jobs")
+
+    assert response.status == status.HTTP_200_OK
+    Envelope[list[StorageAsyncJobGet]].model_validate(await response.json())
