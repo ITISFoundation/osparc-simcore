@@ -8,6 +8,7 @@ from models_library.api_schemas_storage.rpc.data_export_async_jobs import (
     DataExportTaskStartInput,
     InvalidFileIdentifierError,
 )
+from models_library.users import UserID
 from servicelib.rabbitmq import RPCRouter
 
 router = RPCRouter()
@@ -26,5 +27,12 @@ async def start_data_export(
     assert app  # nosec
     return AsyncJobGet(
         job_id=uuid4(),
-        task_name=", ".join(str(p) for p in paths.paths),
+        job_name=", ".join(str(p) for p in paths.paths),
     )
+
+
+@router.expose()
+async def get_user_jobs(app: FastAPI, user_id: UserID) -> list[AsyncJobGet]:
+    assert app  # nosec
+    assert user_id  # nosec
+    return [AsyncJobGet(job_id=uuid4(), job_name="myjob")]

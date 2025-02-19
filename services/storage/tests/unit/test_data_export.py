@@ -109,3 +109,11 @@ async def test_get_data_export_result(rpc_client: RabbitMQRPCClient, faker: Fake
         rpc_client, rpc_namespace=STORAGE_RPC_NAMESPACE, job_id=_job_id
     )
     assert isinstance(result, AsyncJobResult)
+
+
+async def test_get_user_jobs(rpc_client: RabbitMQRPCClient, faker: Faker):
+    result = await data_export.get_user_jobs(
+        rpc_client, user_id=faker.pyint(min_value=1)
+    )
+    assert isinstance(result, list)
+    assert all(isinstance(elm, AsyncJobGet) for elm in result)
