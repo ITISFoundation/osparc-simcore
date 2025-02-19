@@ -120,3 +120,100 @@ async def test_trash_service__delete_expired_trash(
     async with _client_session_with_user(client, other_user):
         resp = await client.get(f"/v0/projects/{other_user_project_id}")
         await assert_status(resp, status.HTTP_404_NOT_FOUND)
+
+
+async def test_trash_nested_folders_and_projects(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    other_user: UserInfoDict,
+    other_user_project: ProjectDict,
+    mocked_catalog: None,
+    mocked_director_v2: None,
+):
+    assert client.app
+    assert logged_user["id"] != other_user["id"]
+
+    # Create folders hierarchy for logged_user
+    resp = await client.post("/v0/folders", json={"name": "Root Folder"})
+    data, _ = await assert_status(resp, status.HTTP_201_CREATED)
+    logged_user_root_folder = data
+
+    resp = await client.post(
+        "/v0/folders",
+        json={
+            "name": "Sub Folder",
+            "parentFolderId": logged_user_root_folder["folderId"],
+        },
+    )
+    data, _ = await assert_status(resp, status.HTTP_201_CREATED)
+    logged_user_sub_folder = data
+
+    # Move project to subfolder
+    resp = await client.put(
+        f"/v0/projects/{user_project['uuid']}/folders/{logged_user_sub_folder['folderId']}"
+    )
+    await assert_status(resp, status.HTTP_204_NO_CONTENT)
+
+    # Trash root folders
+    resp = await client.post(f"/v0/folders/{logged_user_root_folder['folderId']}:trash")
+    await assert_status(resp, status.HTTP_204_NO_CONTENT)
+
+    # Create folders hierarchy for other_user
+    async with _client_session_with_user(client, other_user):
+        resp = await client.post("/v0/folders", json={"name": "Root Folder"})
+        data, _ = await assert_status(resp, status.HTTP_201_CREATED)
+        other_user_root_folder = data
+
+        resp = await client.post(
+            "/v0/folders",
+            json={
+                "name": "Sub Folder",
+                "parentFolderId": other_user_root_folder["folderId"],
+            },
+        )
+        data, _ = await assert_status(resp, status.HTTP_201_CREATED)
+        other_user_sub_folder = data
+
+        # Move project to subfolder
+        resp = await client.put(
+            f"/v0/projects/{other_user_project['uuid']}/folders/{other_user_sub_folder['folderId']}"
+        )
+        await assert_status(resp, status.HTTP_204_NO_CONTENT)
+
+        # Trash root folders
+        resp = await client.post(
+            f"/v0/folders/{logged_user_root_folder['folderId']}:trash"
+        )
+        await assert_status(resp, status.HTTP_204_NO_CONTENT)
+
+    async with _client_session_with_user(client, other_user):
+        resp = await client.post(
+            f"/v0/folders/{other_user_root_folder['folderId']}:trash"
+        )
+        await assert_status(resp, status.HTTP_204_NO_CONTENT)
+
+    # UNDER TEST
+    await trash_service.delete_expired_trash_as_admin(client.app)
+
+    async with _client_session_with_user(client, logged_user):
+        # Verify logged_user's resources are gone
+        resp = await client.get(f"/v0/folders/{logged_user_root_folder['folderId']}")
+        await assert_status(resp, status.HTTP_404_NOT_FOUND)
+
+        resp = await client.get(f"/v0/folders/{logged_user_sub_folder['folderId']}")
+        await assert_status(resp, status.HTTP_404_NOT_FOUND)
+
+        resp = await client.get(f"/v0/projects/{user_project['uuid']}")
+        await assert_status(resp, status.HTTP_404_NOT_FOUND)
+
+    # Verify other_user's resources are gone
+    async with _client_session_with_user(client, other_user):
+        resp = await client.get(f"/v0/folders/{other_user_root_folder['folderId']}")
+        await assert_status(resp, status.HTTP_404_NOT_FOUND)
+
+        resp = await client.get(f"/v0/folders/{other_user_sub_folder['folderId']}")
+        await assert_status(resp, status.HTTP_404_NOT_FOUND)
+
+        resp = await client.get(f"/v0/projects/{other_user_project['uuid']}")
+        await assert_status(resp, status.HTTP_404_NOT_FOUND)
