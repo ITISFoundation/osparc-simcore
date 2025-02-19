@@ -949,13 +949,15 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __addPlusButtons: function() {
       const plusButtonConfig = osparc.store.Products.getInstance().getNewStudiesUiConfig();
-      plusButtonConfig["resources"].forEach(newStudyData => {
-        if (newStudyData["resourceType"] === "study") {
-          this.__addEmptyStudyPlusButton(newStudyData);
-        } else if (newStudyData["resourceType"] === "service") {
-          this.__addNewStudyFromServiceButton(newStudyData);
-        }
-      });
+      if (plusButtonConfig) {
+        plusButtonConfig["resources"].forEach(newStudyData => {
+          if (newStudyData["resourceType"] === "study") {
+            this.__addEmptyStudyPlusButton(newStudyData);
+          } else if (newStudyData["resourceType"] === "service") {
+            this.__addNewStudyFromServiceButton(newStudyData);
+          }
+        });
+      }
     },
 
     __addEmptyStudyPlusButton: function(newStudyData) {

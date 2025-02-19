@@ -160,24 +160,26 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
     },
 
     __addNewStudyItems: async function() {
-      await osparc.data.Resources.get("templates")
-        .then(templates => {
-          const plusButtonConfig = osparc.store.Products.getInstance().getPlusButtonUiConfig();
-          if (plusButtonConfig["categories"]) {
-            this.__addCategories(plusButtonConfig["categories"]);
-          }
-          plusButtonConfig["resources"].forEach(newStudyData => {
-            if (newStudyData["showDisabled"]) {
-              this.__addDisabledButton(newStudyData);
-            } else if (newStudyData["resourceType"] === "study") {
-              this.__addEmptyStudyButton(newStudyData);
-            } else if (newStudyData["resourceType"] === "template") {
-              this.__addFromTemplateButton(newStudyData, templates);
-            } else if (newStudyData["resourceType"] === "service") {
-              this.__addFromServiceButton(newStudyData);
+      const plusButtonConfig = osparc.store.Products.getInstance().getPlusButtonUiConfig();
+      if (plusButtonConfig) {
+        await osparc.data.Resources.get("templates")
+          .then(templates => {
+            if (plusButtonConfig["categories"]) {
+              this.__addCategories(plusButtonConfig["categories"]);
             }
+            plusButtonConfig["resources"].forEach(newStudyData => {
+              if (newStudyData["showDisabled"]) {
+                this.__addDisabledButton(newStudyData);
+              } else if (newStudyData["resourceType"] === "study") {
+                this.__addEmptyStudyButton(newStudyData);
+              } else if (newStudyData["resourceType"] === "template") {
+                this.__addFromTemplateButton(newStudyData, templates);
+              } else if (newStudyData["resourceType"] === "service") {
+                this.__addFromServiceButton(newStudyData);
+              }
+            });
           });
-        });
+      }
     },
 
     __getLastIdxFromCategory: function(categoryId) {

@@ -82,6 +82,9 @@ qx.Class.define("osparc.store.Pricing", {
     },
 
     fetchPricingUnits: function(pricingPlanId) {
+      if (this.getPricingPlan(pricingPlanId)) {
+        return new Promise(resolve => resolve(this.getPricingPlan(pricingPlanId).getPricingUnits()));
+      }
       const params = {
         url: {
           pricingPlanId,
