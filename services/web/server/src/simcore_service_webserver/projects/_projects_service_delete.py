@@ -9,12 +9,11 @@ from models_library.projects import ProjectID
 from models_library.users import UserID
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from servicelib.redis._errors import ProjectLockError
-from simcore_service_director_v2.core.errors import ProjectNotFoundError
-from simcore_service_webserver.projects.exceptions import ProjectDeleteError
 
 from ..director_v2 import api as director_v2_service
 from . import _projects_db as _projects_repository
 from . import projects_service
+from .exceptions import ProjectDeleteError, ProjectNotFoundError
 
 _logger = logging.getLogger(__name__)
 
