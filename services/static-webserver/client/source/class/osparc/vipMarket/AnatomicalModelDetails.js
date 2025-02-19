@@ -381,12 +381,16 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
       osparc.store.Pricing.getInstance().fetchPricingUnits(licensedItemData["pricingPlanId"])
         .then(pricingUnits => {
           if (pricingUnits.length === 1 && pricingUnits[0].getCost() === 0) {
-            const availableLabel = new qx.ui.basic.Label().set({
+            const availableForImporting = new qx.ui.basic.Label().set({
               font: "text-14",
               value: this.tr("Available for Importing"),
               padding: 10,
             });
-            pricingUnitsLayout.add(availableLabel);
+            pricingUnitsLayout.add(availableForImporting);
+            // hide the text if Import button is there
+            this.bind("openBy", pricingLayout, "visibility", {
+              converter: openBy => openBy ? "excluded" : "visible"
+            });
           } else {
             pricingUnits.forEach(pricingUnit => {
               pricingUnit.set({
