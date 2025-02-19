@@ -4,12 +4,14 @@ from uuid import uuid4
 
 from fastapi import FastAPI
 from models_library.osparc_jobs import OsparcJobId
+from models_library.progress_bar import ProgressReport
 from models_library.projects_nodes_io import StorageFileID
 from models_library.users import UserID
-from servicelib.progress_bar import ProgressReport, ReportCB
+from servicelib.progress_bar import ReportCB
 
-from ...dsm import SimcoreS3DataManager, get_dsm_provider
+from ...dsm import get_dsm_provider
 from ...modules.rabbitmq import post_task_progress_message
+from ...simcore_s3_dsm import SimcoreS3DataManager
 from ._tqdm_utils import get_export_progress, set_absolute_progress
 
 
