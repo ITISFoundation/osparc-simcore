@@ -210,7 +210,7 @@ async def abort_async_job(storage_async_job_get: StorageAsyncJobGet, job_id: UUI
     name="get_async_job_result",
 )
 async def get_async_job_result(storage_async_job_get: StorageAsyncJobGet, job_id: UUID):
-    """Get async job status"""
+    """Get the result of the async job"""
 
 
 @router.get(
