@@ -90,22 +90,16 @@ async def list_trashed_projects(
         return cast(int, total_count), folders
 
 
-async def patch_project(
+async def get_project(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
     project_uuid: ProjectID,
-    new_partial_project_data: dict,
 ) -> ProjectDBGet:
-
-    async with transaction_context(get_asyncpg_engine(app), connection) as conn:
-        result = await conn.stream(
-            projects.update()
-            .values(last_change_date=sql.func.now(), **new_partial_project_data)
-            .where(projects.c.uuid == f"{project_uuid}")
-            .returning(*PROJECT_DB_COLS)
-        )
-        row = await result.first()
+    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
+        query = sql.select(PROJECT_DB_COLS).where(projects.c.uuid == f"{project_uuid}")
+        result = await conn.execute(query)
+        row = result.one_or_none()
         if row is None:
             raise ProjectNotFoundError(project_uuid=project_uuid)
         return ProjectDBGet.model_validate(row)
@@ -170,3 +164,43 @@ async def batch_get_trashed_by_primary_gid(
         rows = {row.uuid: row.trashed_by_primary_gid async for row in result}
 
     return [rows.get(uuid) for uuid in projects_uuids_str]
+
+
+async def patch_project(
+    app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
+    project_uuid: ProjectID,
+    new_partial_project_data: dict,
+) -> None:
+
+    async with transaction_context(get_asyncpg_engine(app), connection) as conn:
+        result = await conn.stream(
+            projects.update()
+            .values(
+                **new_partial_project_data,
+                last_change_date=sql.func.now(),
+            )
+            .where(projects.c.uuid == f"{project_uuid}")
+        )
+        row = await result.one_or_none()
+        if row is None:
+            raise ProjectNotFoundError(project_uuid=project_uuid)
+
+
+async def delete_project(
+    app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
+    project_uuid: ProjectID,
+) -> ProjectDBGet:
+    async with transaction_context(get_asyncpg_engine(app), connection) as conn:
+        result = await conn.stream(
+            projects.delete()
+            .where(projects.c.uuid == f"{project_uuid}")
+            .returning(*PROJECT_DB_COLS)
+        )
+        row = await result.one_or_none()
+        if row is None:
+            raise ProjectNotFoundError(project_uuid=project_uuid)
+        return ProjectDBGet.model_validate(row)
