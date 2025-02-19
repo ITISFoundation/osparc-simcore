@@ -180,7 +180,7 @@ async def is_completed_upload_file(
 @router.post(
     "/storage/locations/{location_id}/export-data",
     response_model=Envelope[StorageAsyncJobGet],
-    name="storage_export_data",
+    name="export_data",
     description="Export data",
 )
 async def export_data(data_export: DataExportPost, location_id: LocationID):
