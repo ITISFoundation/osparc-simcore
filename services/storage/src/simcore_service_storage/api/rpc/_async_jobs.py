@@ -1,10 +1,12 @@
 # pylint: disable=unused-argument
 from datetime import datetime
+from uuid import uuid4
 
 from fastapi import FastAPI
 from models_library.api_schemas_rpc_async_jobs.async_jobs import (
     AsyncJobAbort,
     AsyncJobAccessData,
+    AsyncJobGet,
     AsyncJobId,
     AsyncJobResult,
     AsyncJobStatus,
@@ -49,3 +51,9 @@ async def get_result(
     assert app  # nosec
     assert job_id  # nosec
     return AsyncJobResult(result="Here's your result.", error=None)
+
+
+@router.expose()
+async def list_jobs(app: FastAPI, filter: str) -> list[AsyncJobGet]:
+    assert app  # nosec
+    return [AsyncJobGet(job_id=AsyncJobId(f"{uuid4()}"), job_name="myjob")]

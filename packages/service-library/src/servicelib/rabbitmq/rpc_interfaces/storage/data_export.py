@@ -6,7 +6,6 @@ from models_library.api_schemas_storage.data_export_async_jobs import (
     DataExportTaskStartInput,
 )
 from models_library.rabbitmq_basic_types import RPCMethodName
-from models_library.users import UserID
 from pydantic import NonNegativeInt, TypeAdapter
 
 from ... import RabbitMQRPCClient
@@ -26,16 +25,4 @@ async def start_data_export(
         timeout_s=_DEFAULT_TIMEOUT_S,
     )
     assert isinstance(result, AsyncJobGet)
-    return result
-
-
-async def get_user_jobs(
-    rabbitmq_rpc_client: RabbitMQRPCClient, *, user_id: UserID
-) -> list[AsyncJobGet]:
-    result: list[AsyncJobGet] = await rabbitmq_rpc_client.request(
-        STORAGE_RPC_NAMESPACE,
-        _RPC_METHOD_NAME_ADAPTER.validate_python("get_user_jobs"),
-        user_id=user_id,
-        timeout_s=_DEFAULT_TIMEOUT_S,
-    )
     return result

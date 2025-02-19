@@ -3,6 +3,7 @@ from typing import Final
 from models_library.api_schemas_rpc_async_jobs.async_jobs import (
     AsyncJobAbort,
     AsyncJobAccessData,
+    AsyncJobGet,
     AsyncJobId,
     AsyncJobResult,
     AsyncJobStatus,
@@ -68,4 +69,16 @@ async def get_result(
         timeout_s=_DEFAULT_TIMEOUT_S,
     )
     assert isinstance(result, AsyncJobResult)
+    return result
+
+
+async def list_jobs(
+    rabbitmq_rpc_client: RabbitMQRPCClient, *, rpc_namespace: RPCNamespace, filter: str
+) -> list[AsyncJobGet]:
+    result: list[AsyncJobGet] = await rabbitmq_rpc_client.request(
+        rpc_namespace,
+        _RPC_METHOD_NAME_ADAPTER.validate_python("list_jobs"),
+        filter=str,
+        timeout_s=_DEFAULT_TIMEOUT_S,
+    )
     return result
