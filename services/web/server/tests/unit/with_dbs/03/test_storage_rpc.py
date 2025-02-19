@@ -192,21 +192,15 @@ async def test_get_async_job_result(
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
-@pytest.mark.parametrize(
-    "backend_result_or_exception",
-    [
-        [StorageAsyncJobGet(job_id=AsyncJobId(_faker.uuid4()))],
-    ],
-    ids=lambda x: type(x).__name__,
-)
 async def test_get_user_async_jobs(
     user_role: UserRole,
     logged_user: UserInfoDict,
     client: TestClient,
     create_storage_rpc_client_mock: Callable[[str, Any], None],
-    backend_result_or_exception: Any,
 ):
-    create_storage_rpc_client_mock(get_user_jobs.__name__, backend_result_or_exception)
+    create_storage_rpc_client_mock(
+        get_user_jobs.__name__, [StorageAsyncJobGet(job_id=AsyncJobId(_faker.uuid4()))]
+    )
 
     response = await client.get("/v0/storage/async-jobs")
 
