@@ -110,7 +110,7 @@ async def test_trash_service__delete_expired_trash(
     assert ProjectGet.model_validate(data).trashed_by == logged_user["primary_gid"]
 
     # UNDER TEST: Run delete_expired_trash
-    await trash_service.delete_expired_trash(client.app)
+    await trash_service.delete_expired_trash_as_admin(client.app)
 
     # ASSERT: logged_user tries to get the project and expects 404
     resp = await client.get(f"/v0/projects/{user_project_id}")

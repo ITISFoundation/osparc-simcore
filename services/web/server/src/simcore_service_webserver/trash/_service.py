@@ -1,4 +1,3 @@
-import asyncio
 import logging
 from datetime import timedelta
 from typing import Final
@@ -107,19 +106,34 @@ async def empty_trash_safe(
     await _empty_explicitly_trashed_folders_and_content(app, product_name, user_id)
 
 
-async def delete_expired_trash(app: web.Application) -> list[str]:
-    """Deletes expired items in the trash"""
+async def delete_expired_trash_as_admin(app: web.Application) -> list[str]:
     settings = get_plugin_settings(app)
 
     # app-wide
     retention = timedelta(days=settings.TRASH_RETENTION_DAYS)
-    expiration_dt = arrow.now().datetime - retention
+    delete_until = arrow.now().datetime - retention
 
-    _logger.debug(
+    with log_context(
+        _logger,
+        logging.DEBUG,
         "CODE PLACEHOLDER: **ALL** items marked as trashed during %s days are deleted (those marked before %s)",
         retention,
-        expiration_dt,
-    )
-    await asyncio.sleep(5)
+        delete_until,
+    ):
+        try:
+            await folders_trash_service.batch_delete_trashed_folders_as_admin(
+                app, trashed_before=delete_until, product_name="TODO", fail_fast=False
+            )
+        except Exception as exc:  # pylint: disable=broad-exception-caught
+            _logger.warning(
+                **create_troubleshotting_log_kwargs(
+                    "Error deleting a trashed folders (and content) that were expired.",
+                    error=exc,
+                    error_context={
+                        "delete_until": delete_until,
+                        "retention": retention,
+                    },
+                )
+            )
 
     return []

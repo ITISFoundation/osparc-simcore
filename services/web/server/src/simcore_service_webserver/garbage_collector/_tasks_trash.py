@@ -28,7 +28,7 @@ _APP_TASK_KEY = f"{_PERIODIC_TASK_NAME}.task"
     before_sleep=before_sleep_log(_logger, logging.WARNING),
 )
 async def _run_task(app: web.Application):
-    if deleted := await trash_service.delete_expired_trash(app):
+    if deleted := await trash_service.delete_expired_trash_as_admin(app):
         for name in deleted:
             _logger.info("Trash item %s expired and was deleted", f"{name}")
     else:
