@@ -1,7 +1,7 @@
 from uuid import uuid4
 
 from fastapi import FastAPI
-from models_library.api_schemas_rpc_async_jobs.async_jobs import AsyncJobGet
+from models_library.api_schemas_rpc_async_jobs.async_jobs import AsyncJobGet, AsyncJobId
 from models_library.api_schemas_storage.data_export_async_jobs import (
     AccessRightError,
     DataExportError,
@@ -26,7 +26,7 @@ async def start_data_export(
 ) -> AsyncJobGet:
     assert app  # nosec
     return AsyncJobGet(
-        job_id=uuid4(),
+        job_id=AsyncJobId(uuid4()),
         job_name=", ".join(str(p) for p in paths.paths),
     )
 
@@ -35,4 +35,4 @@ async def start_data_export(
 async def get_user_jobs(app: FastAPI, user_id: UserID) -> list[AsyncJobGet]:
     assert app  # nosec
     assert user_id  # nosec
-    return [AsyncJobGet(job_id=uuid4(), job_name="myjob")]
+    return [AsyncJobGet(job_id=AsyncJobId(uuid4()), job_name="myjob")]
