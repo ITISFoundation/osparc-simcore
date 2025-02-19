@@ -256,3 +256,8 @@ services:
         - traefik.http.routers.${SWARM_STACK_NAME}_whoami.rule=PathPrefix(`/whoami`)
         - traefik.http.routers.${SWARM_STACK_NAME}_whoami.entrypoints=traefik_monitor
         - traefik.http.routers.${SWARM_STACK_NAME}_whoami.middlewares=${SWARM_STACK_NAME}_gzip@swarm
+
+networks:
+  docker-api-network:
+    driver_opts:
+      encrypted: "false" # disable locally, some WSL versions have issues with encrypted networks SEE https://github.com/microsoft/WSL/issues/10029
