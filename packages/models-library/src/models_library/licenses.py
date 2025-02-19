@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 from enum import auto
 from typing import Annotated, Any, NamedTuple, NewType, NotRequired, TypeAlias, cast
 from uuid import UUID
@@ -29,7 +29,7 @@ class LicensedResourceType(StrAutoEnum):
 VIP_FEATURES_EXAMPLE = {
     "name": "Duke",
     "version": "V2.0",
-    "sex": "Male",
+    "sex": "Mas bien poco",
     "age": "34 years",
     "weight": "70.2 Kg",
     "height": "1.77 m",
@@ -41,15 +41,17 @@ VIP_FEATURES_EXAMPLE = {
 
 
 class FeaturesDict(TypedDict):
-    name: NotRequired[str]
-    version: NotRequired[str]
-    sex: NotRequired[str]
+    # keep alphabetical
     age: NotRequired[str]
-    weight: NotRequired[str]
-    height: NotRequired[str]
-    date: str
+    date: date
     ethnicity: NotRequired[str]
     functionality: NotRequired[str]
+    height: NotRequired[str]
+    name: NotRequired[str]
+    sex: NotRequired[str]
+    species: NotRequired[str]
+    version: NotRequired[str]
+    weight: NotRequired[str]
 
 
 VIP_DETAILS_EXAMPLE = {
@@ -102,6 +104,7 @@ class LicensedResourceDB(BaseModel):
     licensed_resource_name: str
     licensed_resource_type: LicensedResourceType
     licensed_resource_data: dict[str, Any] | None
+    priority: int
 
     # states
     created: datetime

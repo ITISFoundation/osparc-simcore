@@ -719,7 +719,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           if (oldUIMode === "standalone") {
             // in this transition, show workbenchUI
             this.__workbenchView.setMaximized(false);
-            this.__workbenchView.showPipeline();
+            // uncomment this when we release the osparc<->s4l integration
+            // this.__workbenchView.showPipeline();
           } else {
             const currentNodeId = this.getStudy().getUi().getCurrentNodeId();
             if (currentNodeId && this.getStudy().getWorkbench().getNode(currentNodeId)) {

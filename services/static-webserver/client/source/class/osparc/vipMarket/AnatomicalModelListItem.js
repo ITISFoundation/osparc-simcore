@@ -177,6 +177,10 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelListItem", {
 
     __applyDisplayName: function(value) {
       this.getChildControl("name").setValue(value);
+
+      this.set({
+        toolTipText: value
+      });
     },
 
     __applySeats: function(seats) {
