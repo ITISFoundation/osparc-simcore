@@ -6,6 +6,7 @@ from enum import Enum, IntEnum, auto
 from typing import Any, Literal, TypeAlias
 
 import arrow
+from models_library.osparc_jobs import OsparcJobId
 from pydantic import BaseModel, Field
 
 from .products import ProductName
@@ -123,6 +124,8 @@ class ProgressRabbitMessageProject(ProgressMessageMixin, ProjectMessageBase):
 
 
 class ProgressRabbitMessageWorkerJob(ProgressMessageMixin, WorkerJobMessageBase):
+    osparc_job_id: OsparcJobId
+
     def routing_key(self) -> str | None:
         return f"{self.user_id}.worker_job"
 
