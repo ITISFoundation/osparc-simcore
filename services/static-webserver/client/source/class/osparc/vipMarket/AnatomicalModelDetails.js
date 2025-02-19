@@ -73,8 +73,8 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
       const licensedItemBundleData = this.getAnatomicalModelsData();
       if (licensedItemBundleData && licensedItemBundleData["licensedResources"].length) {
         this.__addModelsInfo();
-        this.__addPricing();
         this.__addSeatsSection();
+        this.__addPricing();
       } else {
         const selectModelLabel = new qx.ui.basic.Label().set({
           value: this.tr("Select a model for more details"),
@@ -417,74 +417,21 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
       if (licensedItemData["seats"].length === 0) {
         return;
       }
-
-      const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox().set({
-        alignX: "center",
+      const seatsSection = new qx.ui.container.Composite(new qx.ui.layout.VBox(5).set({
+        alignX: "left",
       }));
 
-      osparc.store.LicensedItems.getInstance().getLicensedItems()
-        .then(licensedItems => {
-          const grid = new qx.ui.layout.Grid(15, 5);
-          grid.setColumnAlign(0, "left", "middle");
-          grid.setColumnAlign(1, "center", "middle");
-          grid.setColumnAlign(2, "right", "middle");
-          const seatsSection = new qx.ui.container.Composite(grid).set({
-            allowGrowX: false,
-            decorator: "border",
-            padding: 10,
-          });
-
-          let rowIdx = 0;
-          seatsSection.add(new qx.ui.basic.Label("Models Rented").set({font: "title-14"}), {
-            column: 0,
-            row: rowIdx,
-          });
-          seatsSection.add(new qx.ui.basic.Label("Seats").set({font: "title-14"}), {
-            column: 1,
-            row: rowIdx,
-          });
-          seatsSection.add(new qx.ui.basic.Label("Until").set({font: "title-14"}), {
-            column: 2,
-            row: rowIdx,
-          });
-          rowIdx++;
-
-          const entryToGrid = (licensedResource, seat, row) => {
-            const title = osparc.store.LicensedItems.licensedResourceTitle(licensedResource);
-            seatsSection.add(new qx.ui.basic.Label(title).set({font: "text-14"}), {
-              column: 0,
-              row,
-            });
-            seatsSection.add(new qx.ui.basic.Label(seat["numOfSeats"].toString()).set({font: "text-14"}), {
-              column: 1,
-              row,
-            });
-            seatsSection.add(new qx.ui.basic.Label(osparc.utils.Utils.formatDate(seat["expireAt"])).set({font: "text-14"}), {
-              column: 2,
-              row,
-            });
-          };
-
-          licensedItemData["seats"].forEach(seat => {
-            licensedItemData["licensedResources"].forEach(licensedResource => {
-              entryToGrid(licensedResource, seat, rowIdx);
-              rowIdx++;
-            });
-          });
-
-          const lowerLicensedItems = osparc.store.LicensedItems.getLowerLicensedItems(licensedItems, licensedItemData["key"], licensedItemData["version"])
-          lowerLicensedItems.forEach(lowerLicensedItem => {
-            lowerLicensedItem["seats"].forEach(seat => {
-              lowerLicensedItem["licensedResources"].forEach(licensedResource => {
-                entryToGrid(licensedResource, seat, rowIdx);
-                rowIdx++;
-              });
-            });
-          });
-
-          layout.add(seatsSection);
-          this._add(layout);
+      licensedItemData["seats"].forEach(purchase => {
+        const nSeats = purchase["numOfSeats"];
+        const seatsText = "seat" + (nSeats > 1 ? "s" : "");
+        const entry = new qx.ui.basic.Label().set({
+          value: `${nSeats} ${seatsText} available until ${osparc.utils.Utils.formatDate(purchase["expireAt"])}`,
+          font: "text-14",
         });
+        seatsSection.add(entry);
+      });
+
+      this._add(seatsSection);
     },
   }
 });
