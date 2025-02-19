@@ -1,3 +1,5 @@
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable
@@ -135,7 +137,7 @@ async def test_get_async_jobs_status(
     elif isinstance(backend_result_or_exception, StatusError):
         assert response.status == status.HTTP_500_INTERNAL_SERVER_ERROR
     else:
-        raise Exception("Test incorrectly configured")
+        pytest.fail("Incorrectly configured test")
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
@@ -188,7 +190,7 @@ async def test_get_async_job_result(
     elif isinstance(backend_result_or_exception, ResultError):
         assert response.status == status.HTTP_500_INTERNAL_SERVER_ERROR
     else:
-        raise Exception("Test incorrectly configured")
+        pytest.fail("Incorrectly configured test")
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
