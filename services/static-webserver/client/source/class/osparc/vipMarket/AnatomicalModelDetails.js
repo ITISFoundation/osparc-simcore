@@ -402,31 +402,7 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
         })
         .catch(err => console.error(err));
       this._add(pricingUnitsLayout);
-      pricingLayout.add(pricingUnitsLayout)
-
-      osparc.store.LicensedItems.getInstance().getLicensedItems()
-        .then(licensedItems => {
-          const lowerLicensedItems = osparc.store.LicensedItems.getLowerLicensedItems(licensedItems, licensedItemData["key"], licensedItemData["version"])
-          if (licensedItemData["licensedResources"].length > 1 || lowerLicensedItems.length) {
-            let text = this.tr("This bundle gives you access to:") + "<br>";
-            licensedItemData["licensedResources"].forEach(licensedResource => {
-              text += `- ${osparc.store.LicensedItems.licensedResourceNameAndVersion(licensedResource)}<br>`;
-            });
-            lowerLicensedItems.forEach(lowerLicensedItem => {
-              lowerLicensedItem["licensedResources"].forEach(licensedResource => {
-                text += `- ${osparc.store.LicensedItems.licensedResourceNameAndVersion(licensedResource)} <br>`;
-              });
-            })
-            const bundleText = new qx.ui.basic.Label().set({
-              value: text,
-              font: "text-14",
-              padding: 10,
-              rich: true,
-              alignX: "center",
-            });
-            pricingLayout.add(bundleText);
-          }
-        });
+      pricingLayout.add(pricingUnitsLayout);
 
       this._add(layout);
     },
