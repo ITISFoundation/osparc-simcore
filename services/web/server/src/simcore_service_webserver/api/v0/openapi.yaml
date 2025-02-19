@@ -6355,7 +6355,7 @@ paths:
     post:
       tags:
       - storage
-      summary: Storage Export Data
+      summary: Export Data
       description: Export data
       operationId: export_data
       parameters:
@@ -6382,7 +6382,7 @@ paths:
     get:
       tags:
       - storage
-      summary: Storage Async Job Status
+      summary: Get Async Job Status
       description: Get async job status
       operationId: get_async_job_status
       parameters:
@@ -6411,7 +6411,7 @@ paths:
       tags:
       - storage
       summary: Abort Async Job
-      description: Get async job status
+      description: aborts execution of an async job
       operationId: abort_async_job
       parameters:
       - name: job_id
@@ -6438,7 +6438,7 @@ paths:
       tags:
       - storage
       summary: Get Async Job Result
-      description: Get async job status
+      description: Get the result of the async job
       operationId: get_async_job_result
       parameters:
       - name: job_id
@@ -6465,9 +6465,18 @@ paths:
     get:
       tags:
       - storage
-      summary: Get Async Job Result
-      description: Get async job status
+      summary: Get Async Jobs
+      description: Retrunsa list of async jobs for the user
       operationId: get_async_jobs
+      parameters:
+      - name: user_id
+        in: query
+        required: true
+        schema:
+          type: integer
+          exclusiveMinimum: true
+          title: User Id
+          minimum: 0
       responses:
         '200':
           description: Successful Response
