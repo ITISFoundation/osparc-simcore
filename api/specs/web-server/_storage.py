@@ -216,7 +216,7 @@ async def get_async_job_result(storage_async_job_get: StorageAsyncJobGet, job_id
 @router.get(
     "/storage/async-jobs",
     response_model=Envelope[list[StorageAsyncJobGet]],
-    name="get_async_job_result",
+    name="get_async_jobs",
 )
-async def get_async_jobs():
-    """Get async job status"""
+async def get_async_jobs(user_id: UserID):
+    """Retrunsa list of async jobs for the user"""
