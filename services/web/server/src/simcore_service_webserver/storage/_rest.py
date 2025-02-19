@@ -9,6 +9,7 @@ from typing import Any, Final, NamedTuple
 from urllib.parse import quote, unquote
 
 from aiohttp import ClientTimeout, web
+from models_library.api_schemas_rpc_async_jobs.async_jobs import AsyncJobAccessData
 from models_library.api_schemas_storage import STORAGE_RPC_NAMESPACE
 from models_library.api_schemas_storage.storage_schemas import (
     FileUploadCompleteResponse,
@@ -447,6 +448,10 @@ async def get_async_jobs(request: web.Request) -> web.Response:
 @permission_required("storage.files.*")
 @handle_data_export_exceptions
 async def get_async_job_status(request: web.Request) -> web.Response:
+    class _RequestContext(RequestParameters):
+        user_id: UserID = Field(..., alias=RQT_USERID_KEY)  # type: ignore[literal-required]
+
+    _req_ctx = _RequestContext.model_validate(request)
     rabbitmq_rpc_client = get_rabbitmq_rpc_client(request.app)
 
     async_job_get = parse_request_path_parameters_as(StorageAsyncJobGet, request)
@@ -454,6 +459,7 @@ async def get_async_job_status(request: web.Request) -> web.Response:
         rabbitmq_rpc_client=rabbitmq_rpc_client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
         job_id=async_job_get.job_id,
+        access_data=AsyncJobAccessData(user_id=_req_ctx.user_id),
     )
     return create_data_response(
         StorageAsyncJobStatus.from_rpc_schema(async_job_rpc_status),
@@ -469,12 +475,18 @@ async def get_async_job_status(request: web.Request) -> web.Response:
 @permission_required("storage.files.*")
 @handle_data_export_exceptions
 async def abort_async_job(request: web.Request) -> web.Response:
+    class _RequestContext(RequestParameters):
+        user_id: UserID = Field(..., alias=RQT_USERID_KEY)  # type: ignore[literal-required]
+
+    _req_ctx = _RequestContext.model_validate(request)
+
     rabbitmq_rpc_client = get_rabbitmq_rpc_client(request.app)
     async_job_get = parse_request_path_parameters_as(StorageAsyncJobGet, request)
     async_job_rpc_abort = await abort(
         rabbitmq_rpc_client=rabbitmq_rpc_client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
         job_id=async_job_get.job_id,
+        access_data=AsyncJobAccessData(user_id=_req_ctx.user_id),
     )
     return web.Response(
         status=status.HTTP_200_OK
@@ -491,12 +503,18 @@ async def abort_async_job(request: web.Request) -> web.Response:
 @permission_required("storage.files.*")
 @handle_data_export_exceptions
 async def get_async_job_result(request: web.Request) -> web.Response:
+    class _RequestContext(RequestParameters):
+        user_id: UserID = Field(..., alias=RQT_USERID_KEY)  # type: ignore[literal-required]
+
+    _req_ctx = _RequestContext.model_validate(request)
+
     rabbitmq_rpc_client = get_rabbitmq_rpc_client(request.app)
     async_job_get = parse_request_path_parameters_as(StorageAsyncJobGet, request)
     async_job_rpc_result = await get_result(
         rabbitmq_rpc_client=rabbitmq_rpc_client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
         job_id=async_job_get.job_id,
+        access_data=AsyncJobAccessData(user_id=_req_ctx.user_id),
     )
     return create_data_response(
         StorageAsyncJobResult.from_rpc_schema(async_job_rpc_result),

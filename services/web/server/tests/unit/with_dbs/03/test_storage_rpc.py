@@ -52,6 +52,7 @@ def create_storage_rpc_client_mock(mocker: MockerFixture) -> Callable[[str, Any]
         def side_effect(*args, **kwargs):
             if isinstance(result_or_exception, Exception):
                 raise result_or_exception
+
             return result_or_exception
 
         mocker.patch(

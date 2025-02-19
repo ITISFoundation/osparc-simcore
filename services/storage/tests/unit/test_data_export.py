@@ -88,7 +88,10 @@ async def test_start_data_export(rpc_client: RabbitMQRPCClient, faker: Faker):
 async def test_abort_data_export(rpc_client: RabbitMQRPCClient, faker: Faker):
     _job_id = AsyncJobId(faker.uuid4())
     result = await async_jobs.abort(
-        rpc_client, rpc_namespace=STORAGE_RPC_NAMESPACE, job_id=_job_id
+        rpc_client,
+        rpc_namespace=STORAGE_RPC_NAMESPACE,
+        job_id=_job_id,
+        access_data=None,
     )
     assert isinstance(result, AsyncJobAbort)
     assert result.job_id == _job_id
@@ -97,7 +100,10 @@ async def test_abort_data_export(rpc_client: RabbitMQRPCClient, faker: Faker):
 async def test_get_data_export_status(rpc_client: RabbitMQRPCClient, faker: Faker):
     _job_id = AsyncJobId(faker.uuid4())
     result = await async_jobs.get_status(
-        rpc_client, rpc_namespace=STORAGE_RPC_NAMESPACE, job_id=_job_id
+        rpc_client,
+        rpc_namespace=STORAGE_RPC_NAMESPACE,
+        job_id=_job_id,
+        access_data=None,
     )
     assert isinstance(result, AsyncJobStatus)
     assert result.job_id == _job_id
@@ -106,7 +112,10 @@ async def test_get_data_export_status(rpc_client: RabbitMQRPCClient, faker: Fake
 async def test_get_data_export_result(rpc_client: RabbitMQRPCClient, faker: Faker):
     _job_id = AsyncJobId(faker.uuid4())
     result = await async_jobs.get_result(
-        rpc_client, rpc_namespace=STORAGE_RPC_NAMESPACE, job_id=_job_id
+        rpc_client,
+        rpc_namespace=STORAGE_RPC_NAMESPACE,
+        job_id=_job_id,
+        access_data=None,
     )
     assert isinstance(result, AsyncJobResult)
 

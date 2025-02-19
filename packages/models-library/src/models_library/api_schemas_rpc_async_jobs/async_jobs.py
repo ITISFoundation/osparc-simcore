@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import Any, TypeAlias
 from uuid import UUID
 
+from models_library.users import UserID
 from pydantic import BaseModel, model_validator
 from typing_extensions import Self
 
@@ -41,3 +42,9 @@ class AsyncJobGet(BaseModel):
 class AsyncJobAbort(BaseModel):
     result: bool
     job_id: AsyncJobId
+
+
+class AsyncJobAccessData(BaseModel):
+    """Data for controlling access to an async job"""
+
+    user_id: UserID | None
