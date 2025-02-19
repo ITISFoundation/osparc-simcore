@@ -2,8 +2,6 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from pydantic import BaseModel
-
 from ..api_schemas_rpc_async_jobs.async_jobs import (
     AsyncJobGet,
     AsyncJobId,
@@ -14,12 +12,13 @@ from ..api_schemas_storage.rpc.data_export_async_jobs import DataExportTaskStart
 from ..progress_bar import ProgressReport
 from ..projects_nodes_io import LocationID
 from ..users import UserID
+from ._base import InputSchema, OutputSchema
 
 
-class DataExportPost(BaseModel):
+class DataExportPost(InputSchema):
     paths: list[Path]
 
-    def to_storage_model(
+    def to_rpc_schema(
         self, user_id: UserID, location_id: LocationID
     ) -> DataExportTaskStartInput:
         return DataExportTaskStartInput(
@@ -27,17 +26,15 @@ class DataExportPost(BaseModel):
         )
 
 
-class StorageAsyncJobGet(BaseModel):
+class StorageAsyncJobGet(OutputSchema):
     job_id: AsyncJobId
 
     @classmethod
-    def from_async_job_rpc_get(
-        cls, async_job_rpc_get: AsyncJobGet
-    ) -> "StorageAsyncJobGet":
+    def from_rpc_schema(cls, async_job_rpc_get: AsyncJobGet) -> "StorageAsyncJobGet":
         return StorageAsyncJobGet(job_id=async_job_rpc_get.job_id)
 
 
-class StorageAsyncJobStatus(BaseModel):
+class StorageAsyncJobStatus(OutputSchema):
     job_id: AsyncJobId
     progress: ProgressReport
     done: bool
@@ -45,7 +42,7 @@ class StorageAsyncJobStatus(BaseModel):
     stopped: datetime | None
 
     @classmethod
-    def from_async_job_rpc_status(
+    def from_rpc_schema(
         cls, async_job_rpc_status: AsyncJobStatus
     ) -> "StorageAsyncJobStatus":
         return StorageAsyncJobStatus(
@@ -57,12 +54,12 @@ class StorageAsyncJobStatus(BaseModel):
         )
 
 
-class StorageAsyncJobResult(BaseModel):
+class StorageAsyncJobResult(OutputSchema):
     result: Any | None
     error: Any | None
 
     @classmethod
-    def from_async_job_rpc_result(
+    def from_rpc_schema(
         cls, async_job_rpc_result: AsyncJobResult
     ) -> "StorageAsyncJobResult":
         return StorageAsyncJobResult(

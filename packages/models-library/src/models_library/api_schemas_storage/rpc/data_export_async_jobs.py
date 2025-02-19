@@ -16,17 +16,17 @@ class DataExportTaskStartInput(BaseModel):
 ### Exceptions
 
 
-class StorageRpcErrors(OsparcErrorMixin, RuntimeError):
+class StorageRpcError(OsparcErrorMixin, RuntimeError):
     pass
 
 
-class InvalidFileIdentifierError(StorageRpcErrors):
+class InvalidFileIdentifierError(StorageRpcError):
     msg_template: str = "Could not find the file {file_id}"
 
 
-class AccessRightError(StorageRpcErrors):
+class AccessRightError(StorageRpcError):
     msg_template: str = "User {user_id} does not have access to file {file_id}"
 
 
-class DataExportError(StorageRpcErrors):
+class DataExportError(StorageRpcError):
     msg_template: str = "Could not complete data export job with id {job_id}"

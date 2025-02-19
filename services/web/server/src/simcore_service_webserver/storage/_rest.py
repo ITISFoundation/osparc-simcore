@@ -402,12 +402,12 @@ async def export_data(request: web.Request) -> web.Response:
     )
     async_job_rpc_get = await start_data_export(
         rabbitmq_rpc_client=rabbitmq_rpc_client,
-        paths=data_export_post.to_storage_model(
+        paths=data_export_post.to_rpc_schema(
             user_id=_req_ctx.user_id, location_id=_path_params.location_id
         ),
     )
     return create_data_response(
-        StorageAsyncJobGet.from_async_job_rpc_get(async_job_rpc_get),
+        StorageAsyncJobGet.from_rpc_schema(async_job_rpc_get),
         status=status.HTTP_202_ACCEPTED,
     )
 
@@ -429,7 +429,7 @@ async def get_async_job_status(request: web.Request) -> web.Response:
         job_id=async_job_get.job_id,
     )
     return create_data_response(
-        StorageAsyncJobStatus.from_async_job_rpc_status(async_job_rpc_status),
+        StorageAsyncJobStatus.from_rpc_schema(async_job_rpc_status),
         status=status.HTTP_200_OK,
     )
 
@@ -472,6 +472,6 @@ async def get_async_job_result(request: web.Request) -> web.Response:
         job_id=async_job_get.job_id,
     )
     return create_data_response(
-        StorageAsyncJobResult.from_async_job_rpc_result(async_job_rpc_result),
+        StorageAsyncJobResult.from_rpc_schema(async_job_rpc_result),
         status=status.HTTP_200_OK,
     )
