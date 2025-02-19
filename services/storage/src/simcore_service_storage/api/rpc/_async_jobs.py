@@ -1,3 +1,4 @@
+# pylint: disable=unused-argument
 from datetime import datetime
 
 from fastapi import FastAPI
