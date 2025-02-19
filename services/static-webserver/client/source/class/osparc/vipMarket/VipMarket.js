@@ -163,9 +163,9 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
         const selection = e.getData();
         if (selection.length) {
           const licensedItemId = selection[0].getLicensedItemId();
-          const bundleFound = this.__anatomicalBundles.find(anatomicalBundle => anatomicalBundle["licensedItemId"] === licensedItemId);
-          if (bundleFound) {
-            anatomicModelDetails.setAnatomicalModelsData(bundleFound);
+          const licensedItemBundle = this.__anatomicalBundles.find(anatomicalBundle => anatomicalBundle["licensedItemId"] === licensedItemId);
+          if (licensedItemBundle) {
+            anatomicModelDetails.setAnatomicalModelsData(licensedItemBundle);
             return;
           }
         }

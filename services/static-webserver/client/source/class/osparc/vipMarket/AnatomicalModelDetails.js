@@ -70,8 +70,8 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
     __populateLayout: function() {
       this._removeAll();
 
-      const anatomicalModelsData = this.getAnatomicalModelsData();
-      if (anatomicalModelsData && anatomicalModelsData["licensedResources"].length) {
+      const licensedItemBundleData = this.getAnatomicalModelsData();
+      if (licensedItemBundleData && licensedItemBundleData["licensedResources"].length) {
         this.__addModelsInfo();
         this.__addPricing();
         this.__addSeatsSection();
@@ -94,8 +94,8 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
       this.__selectedModelLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(6));
       modelLayout.add(this.__selectedModelLayout);
 
-      const anatomicalModelsData = this.getAnatomicalModelsData();
-      const modelsInfo = anatomicalModelsData["licensedResources"];
+      const licensedItemBundleData = this.getAnatomicalModelsData();
+      const modelsInfo = licensedItemBundleData["licensedResources"];
       if (modelsInfo.length > 1) {
         const modelSelectionLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(4));
         const titleLabel = new qx.ui.basic.Label(this.tr("This bundle contains:"));
@@ -133,11 +133,12 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
     __populateSelectedModelInfo: function(selectedIdx = 0) {
       this.__selectedModelLayout.removeAll();
 
-      const anatomicalModelsData = this.getAnatomicalModelsData();
+      const licensedItemBundleData = this.getAnatomicalModelsData();
 
       const topGrid = new qx.ui.layout.Grid(8, 6);
       topGrid.setColumnFlex(0, 1);
       const headerLayout = new qx.ui.container.Composite(topGrid);
+      const anatomicalModel = licensedItemBundleData["licensedResources"][selectedIdx]["source"];
       const anatomicalModel = anatomicalModelsData["licensedResources"][selectedIdx]["source"];
       let description = anatomicalModel["description"] || "";
       description = description.replace(/SPEAG/g, " "); // remove SPEAG substring
@@ -288,7 +289,7 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
 
       this.__selectedModelLayout.add(middleLayout);
 
-      const importSection = this.__createImportSection(anatomicalModelsData, selectedIdx);
+      const importSection = this.__createImportSection(licensedItemBundleData, selectedIdx);
       this.__selectedModelLayout.add(importSection);
     },
 
