@@ -76,6 +76,7 @@ async def trash_project(
     if force_stop_first:
 
         async def _schedule():
+            # TODO: use batch_stop_services_in_project instead. Change mocks!
             await asyncio.gather(
                 director_v2_api.stop_pipeline(
                     app, user_id=user_id, project_id=project_id
@@ -275,8 +276,6 @@ async def batch_delete_trashed_projects_as_admin(
                 await _projects_service_delete.delete_project_as_admin(
                     app,
                     project_uuid=project.uuid,
-                    # FIXME: trashed project does not have services running?
-                    stop_project_services_as_admin=None,
                 )
                 deleted_project_ids.append(project.uuid)
             except Exception as err:  # pylint: disable=broad-exception-caught

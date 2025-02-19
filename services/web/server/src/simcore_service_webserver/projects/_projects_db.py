@@ -172,8 +172,7 @@ async def patch_project(
     *,
     project_uuid: ProjectID,
     new_partial_project_data: dict,
-) -> None:
-
+) -> ProjectDBGet:
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         result = await conn.stream(
             projects.update()
@@ -182,10 +181,12 @@ async def patch_project(
                 last_change_date=sql.func.now(),
             )
             .where(projects.c.uuid == f"{project_uuid}")
+            .returning(*PROJECT_DB_COLS)
         )
         row = await result.one_or_none()
         if row is None:
             raise ProjectNotFoundError(project_uuid=project_uuid)
+        return ProjectDBGet.model_validate(row)
 
 
 async def delete_project(

@@ -1,17 +1,40 @@
-# NOTE: should replace _crud_api_delete.py:delete_project
-
+import asyncio
 import logging
-from typing import Protocol
+import time
+from contextlib import contextmanager
+from typing import Any, Protocol
 
 from aiohttp import web
 from models_library.projects import ProjectID
+from models_library.users import UserID
+from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from servicelib.redis._errors import ProjectLockError
 from simcore_service_director_v2.core.errors import ProjectNotFoundError
 from simcore_service_webserver.projects.exceptions import ProjectDeleteError
 
+from ..director_v2 import api as director_v2_service
 from . import _projects_db as _projects_repository
+from . import projects_service
 
 _logger = logging.getLogger(__name__)
+
+
+@contextmanager
+def _monitor_step(steps: dict[str, Any], *, name: str, elapsed: bool = False):
+    # util
+    start_time = time.perf_counter()
+    steps[name] = {"status": "starting"}
+    try:
+        yield
+    except Exception as e:
+        steps[name]["status"] = "failed"
+        steps[name]["exception"] = str(e)
+        raise
+    else:
+        steps[name]["status"] = "success"
+    finally:
+        if elapsed:
+            steps[name]["elapsed"] = time.perf_counter() - start_time
 
 
 class StopServicesCallback(Protocol):
@@ -19,32 +42,50 @@ class StopServicesCallback(Protocol):
         ...
 
 
+async def batch_stop_services_in_project(
+    app: web.Application, *, user_id: UserID, project_uuid: ProjectID
+) -> None:
+    await asyncio.gather(
+        director_v2_service.stop_pipeline(
+            app, user_id=user_id, project_id=project_uuid
+        ),
+        projects_service.remove_project_dynamic_services(
+            user_id=user_id,
+            project_uuid=f"{project_uuid}",
+            app=app,
+            simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
+            notify_users=False,
+        ),
+    )
+
+
 async def delete_project_as_admin(
     app: web.Application,
     *,
     project_uuid: ProjectID,
-    stop_project_services_as_admin: StopServicesCallback | None,
 ):
-    hidden = False
-    stopped = not stop_project_services_as_admin
-    deleted = False
+
+    state: dict[str, Any] = {}
 
     try:
-        # hide
-        await _projects_repository.patch_project(
-            app,
-            project_uuid=project_uuid,
-            new_partial_project_data={"hidden": True},
-        )
-        hidden = True
+        # 1. hide
+        with _monitor_step(state, name="hide"):
+            project = await _projects_repository.patch_project(
+                app,
+                project_uuid=project_uuid,
+                new_partial_project_data={"hidden": True},
+            )
 
-        if stop_project_services_as_admin:
+        # 2. stop
+        with _monitor_step(state, name="stop", elapsed=True):
             # NOTE: this callback could take long or raise whatever!
-            await stop_project_services_as_admin(app, project_uuid)
-            stopped = True
+            await batch_stop_services_in_project(
+                app, user_id=project.prj_owner, project_uuid=project_uuid
+            )
 
-        await _projects_repository.delete_project(app, project_uuid=project_uuid)
-        deleted = True
+        # 3. delete
+        with _monitor_step(state, name="delete"):
+            await _projects_repository.delete_project(app, project_uuid=project_uuid)
 
     except ProjectNotFoundError as err:
         _logger.debug(
@@ -62,5 +103,6 @@ async def delete_project_as_admin(
     except Exception as err:
         raise ProjectDeleteError(
             project_uuid=project_uuid,
-            reason=f"Unexpected error. Deletion sequence: {hidden=}, {stopped=}, {deleted=} ",
+            reason=f"Unexpected error. Deletion sequence: {state=}",
+            state=state,
         ) from err
