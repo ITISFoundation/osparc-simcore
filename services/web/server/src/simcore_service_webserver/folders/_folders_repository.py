@@ -36,7 +36,6 @@ from sqlalchemy import sql
 from sqlalchemy.ext.asyncio import AsyncConnection
 from sqlalchemy.orm import aliased
 from sqlalchemy.sql import ColumnElement, CompoundSelect, Select
-from sqlalchemy.sql.selectable import GenerativeSelect
 
 from ..db.plugin import get_asyncpg_engine
 from .errors import FolderAccessForbiddenError, FolderNotFoundError
@@ -157,16 +156,12 @@ def _create_shared_workspace_query(
     return shared_workspace_query
 
 
-def _set_ordering(
-    base_query: GenerativeSelect,
-    order_by: OrderBy,
-) -> GenerativeSelect:
+def _to_expression(order_by: OrderBy):
     direction_func: Callable = {
         OrderDirection.ASC: sql.asc,
         OrderDirection.DESC: sql.desc,
     }[order_by.direction]
-    column = folders_v2.columns[order_by.field]
-    return base_query.order_by(direction_func(column))
+    return direction_func(folders_v2.columns[order_by.field])
 
 
 async def list_(  # pylint: disable=too-many-arguments,too-many-branches
@@ -250,7 +245,7 @@ async def list_(  # pylint: disable=too-many-arguments,too-many-branches
 
     # Ordering and pagination
     list_query = (
-        _set_ordering(combined_query, order_by=order_by).offset(offset).limit(limit)
+        combined_query.order_by(_to_expression(order_by)).offset(offset).limit(limit)
     )
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
@@ -298,7 +293,9 @@ async def list_trashed_folders(
     count_query = sql.select(sql.func.count()).select_from(base_query.subquery())
 
     # Ordering and pagination
-    list_query = _set_ordering(base_query, order_by).offset(offset).limit(limit)
+    list_query = (
+        base_query.order_by(_to_expression(order_by)).offset(offset).limit(limit)
+    )
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         total_count = await conn.scalar(count_query)

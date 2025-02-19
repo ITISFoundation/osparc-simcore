@@ -1,9 +1,15 @@
 import logging
+from datetime import datetime
+from typing import Callable, cast
 
-import sqlalchemy as sa
 from aiohttp import web
+from common_library.exclude import UnSet, is_set
+from models_library.basic_types import IDStr
 from models_library.groups import GroupID
 from models_library.projects import ProjectID
+from models_library.rest_ordering import OrderBy, OrderDirection
+from models_library.rest_pagination import MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
+from pydantic import NonNegativeInt, PositiveInt
 from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.models.users import users
 from simcore_postgres_database.utils_repos import (
@@ -29,6 +35,60 @@ PROJECT_DB_COLS = get_columns_from_db_model(  # noqa: RUF012
     ProjectDBGet,
 )
 
+_OLDEST_TRASHED_FIRST = OrderBy(field=IDStr("trashed"), direction=OrderDirection.ASC)
+
+
+def _to_expression(order_by: OrderBy):
+    direction_func: Callable = {
+        OrderDirection.ASC: sql.asc,
+        OrderDirection.DESC: sql.desc,
+    }[order_by.direction]
+    return direction_func(projects.columns[order_by.field])
+
+
+async def list_trashed_projects(
+    app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
+    # filter
+    trashed_explicitly: bool | UnSet = UnSet.VALUE,
+    trashed_before: datetime | UnSet = UnSet.VALUE,
+    # pagination
+    offset: NonNegativeInt = 0,
+    limit: PositiveInt = MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
+    # order
+    order_by: OrderBy = _OLDEST_TRASHED_FIRST,
+) -> tuple[int, list[ProjectDBGet]]:
+
+    base_query = sql.select(PROJECT_DB_COLS).where(projects.c.trashed.is_not(None))
+
+    if is_set(trashed_explicitly):
+        assert isinstance(trashed_explicitly, bool)  # nosec
+        base_query = base_query.where(
+            projects.c.trashed_explicitly.is_(trashed_explicitly)
+        )
+
+    if is_set(trashed_before):
+        assert isinstance(trashed_before, datetime)  # nosec
+        base_query = base_query.where(projects.c.trashed < trashed_before)
+
+    # Select total count from base_query
+    count_query = sql.select(sql.func.count()).select_from(base_query.subquery())
+
+    # Ordering and pagination
+    list_query = (
+        base_query.order_by(_to_expression(order_by)).offset(offset).limit(limit)
+    )
+
+    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
+        total_count = await conn.scalar(count_query)
+
+        result = await conn.stream(list_query)
+        folders: list[ProjectDBGet] = [
+            ProjectDBGet.model_validate(row) async for row in result
+        ]
+        return cast(int, total_count), folders
+
 
 async def patch_project(
     app: web.Application,
@@ -41,7 +101,7 @@ async def patch_project(
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         result = await conn.stream(
             projects.update()
-            .values(last_change_date=sa.func.now(), **new_partial_project_data)
+            .values(last_change_date=sql.func.now(), **new_partial_project_data)
             .where(projects.c.uuid == f"{project_uuid}")
             .returning(*PROJECT_DB_COLS)
         )
@@ -52,7 +112,7 @@ async def patch_project(
 
 
 def _select_trashed_by_primary_gid_query() -> sql.Select:
-    return sa.select(
+    return sql.select(
         projects.c.uuid,
         users.c.primary_gid.label("trashed_by_primary_gid"),
     ).select_from(projects.outerjoin(users, projects.c.trashed_by == users.c.id))
@@ -97,7 +157,7 @@ async def batch_get_trashed_by_primary_gid(
     ).order_by(
         # Preserves the order of folders_ids
         # SEE https://docs.sqlalchemy.org/en/20/core/sqlelement.html#sqlalchemy.sql.expression.case
-        sa.case(
+        sql.case(
             {
                 project_uuid: index
                 for index, project_uuid in enumerate(projects_uuids_str)
