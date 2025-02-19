@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime
-from typing import cast
+from typing import Callable, cast
 
 import sqlalchemy as sa
 from aiohttp import web
@@ -160,11 +160,11 @@ def _set_ordering(
     base_query: GenerativeSelect,
     order_by: OrderBy,
 ) -> GenerativeSelect:
-    if order_by.direction == OrderDirection.ASC:
-        list_query = base_query.order_by(asc(getattr(folders_v2.c, order_by.field)))
-    else:
-        list_query = base_query.order_by(desc(getattr(folders_v2.c, order_by.field)))
-    return list_query
+    direction_func: Callable = {OrderDirection.ASC: asc, OrderDirection: desc}[
+        order_by.direction
+    ]
+    column = getattr(folders_v2.c, order_by.field)
+    return base_query.order_by(direction_func(column))
 
 
 async def list_(  # pylint: disable=too-many-arguments,too-many-branches
@@ -247,8 +247,9 @@ async def list_(  # pylint: disable=too-many-arguments,too-many-branches
     count_query = select(func.count()).select_from(combined_query.subquery())
 
     # Ordering and pagination
-    list_query = _set_ordering(combined_query, order_by=order_by)
-    list_query = list_query.offset(offset).limit(limit)
+    list_query = (
+        _set_ordering(combined_query, order_by=order_by).offset(offset).limit(limit)
+    )
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         total_count = await conn.scalar(count_query)
@@ -293,8 +294,7 @@ async def list_trashed_folders(
     count_query = select(func.count()).select_from(base_query.subquery())
 
     # Ordering and pagination
-    list_query = _set_ordering(base_query, order_by)
-    list_query = list_query.offset(offset).limit(limit)
+    list_query = _set_ordering(base_query, order_by).offset(offset).limit(limit)
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         total_count = await conn.scalar(count_query)
