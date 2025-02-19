@@ -15,7 +15,7 @@ import uvicorn
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from fastapi import APIRouter, FastAPI, Request
-from models_library.api_schemas_storage.rest.storage_schemas import (
+from models_library.api_schemas_storage.storage_schemas import (
     DatasetMetaDataGet,
     FileLocation,
     FileMetaDataGet,

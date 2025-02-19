@@ -23,7 +23,7 @@ from aws_library.s3 import SimcoreS3API
 from faker import Faker
 from fakeredis.aioredis import FakeRedis
 from fastapi import FastAPI
-from models_library.api_schemas_storage.rest.storage_schemas import (
+from models_library.api_schemas_storage.storage_schemas import (
     FileMetaDataGet,
     FileUploadCompleteFutureResponse,
     FileUploadCompleteResponse,

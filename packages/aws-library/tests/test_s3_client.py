@@ -38,7 +38,7 @@ from aws_library.s3._errors import (
 )
 from aws_library.s3._models import MultiPartUploadLinks
 from faker import Faker
-from models_library.api_schemas_storage.rest.storage_schemas import (
+from models_library.api_schemas_storage.storage_schemas import (
     S3BucketName,
     UploadedPart,
 )

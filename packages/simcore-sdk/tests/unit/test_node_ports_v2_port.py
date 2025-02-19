@@ -21,7 +21,7 @@ import pytest
 from aiohttp.client import ClientSession
 from aioresponses import aioresponses as AioResponsesMock
 from faker import Faker
-from models_library.api_schemas_storage.rest.storage_schemas import FileMetaDataGet
+from models_library.api_schemas_storage.storage_schemas import FileMetaDataGet
 from models_library.projects_nodes_io import LocationID
 from pydantic import TypeAdapter, ValidationError
 from pytest_mock.plugin import MockerFixture

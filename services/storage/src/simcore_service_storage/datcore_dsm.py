@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 from fastapi import FastAPI
-from models_library.api_schemas_storage.rest.storage_schemas import (
+from models_library.api_schemas_storage.storage_schemas import (
     DatCoreDatasetName,
     LinkType,
     UploadedPart,

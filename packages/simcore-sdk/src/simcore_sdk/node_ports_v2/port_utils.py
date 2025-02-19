@@ -4,7 +4,7 @@ from collections.abc import Callable, Coroutine
 from pathlib import Path
 from typing import Any
 
-from models_library.api_schemas_storage.rest.storage_schemas import (
+from models_library.api_schemas_storage.storage_schemas import (
     FileUploadSchema,
     LinkType,
 )

@@ -10,7 +10,7 @@ from urllib.parse import quote
 from aiohttp import ClientResponse, ClientSession
 from aiohttp import client as aiohttp_client_module
 from aiohttp.client_exceptions import ClientConnectionError, ClientResponseError
-from models_library.api_schemas_storage.rest.storage_schemas import (
+from models_library.api_schemas_storage.storage_schemas import (
     FileLocationArray,
     FileMetaDataGet,
     FileUploadSchema,

@@ -13,7 +13,7 @@ from aiobotocore.session import AioBaseClient, get_session
 from aiohttp import ClientResponse, ClientSession, TCPConnector
 from aioresponses import aioresponses
 from faker import Faker
-from models_library.api_schemas_storage.rest.storage_schemas import (
+from models_library.api_schemas_storage.storage_schemas import (
     FileUploadLinks,
     FileUploadSchema,
     UploadedPart,

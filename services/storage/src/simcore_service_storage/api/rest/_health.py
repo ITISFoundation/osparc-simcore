@@ -8,10 +8,7 @@ import logging
 
 from aws_library.s3 import S3AccessError
 from fastapi import APIRouter, Request
-from models_library.api_schemas_storage.rest.storage_schemas import (
-    HealthCheck,
-    S3BucketName,
-)
+from models_library.api_schemas_storage.storage_schemas import HealthCheck, S3BucketName
 from models_library.app_diagnostics import AppStatusCheck
 from models_library.generics import Envelope
 from pydantic import TypeAdapter

@@ -7,10 +7,7 @@
 import httpx
 import simcore_service_storage._meta
 from fastapi import FastAPI
-from models_library.api_schemas_storage.rest.storage_schemas import (
-    HealthCheck,
-    S3BucketName,
-)
+from models_library.api_schemas_storage.storage_schemas import HealthCheck, S3BucketName
 from models_library.app_diagnostics import AppStatusCheck
 from moto.server import ThreadedMotoServer
 from pytest_simcore.helpers.fastapi import url_from_operation_id

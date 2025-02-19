@@ -7,7 +7,7 @@ from collections.abc import AsyncGenerator
 from typing import Any, Final
 
 from aiohttp import ClientError, ClientSession, ClientTimeout, web
-from models_library.api_schemas_storage.rest.storage_schemas import (
+from models_library.api_schemas_storage.storage_schemas import (
     FileLocation,
     FileLocationArray,
     FileMetaDataGet,

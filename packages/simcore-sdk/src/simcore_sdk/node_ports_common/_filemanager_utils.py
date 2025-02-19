@@ -2,7 +2,7 @@ import logging
 from typing import cast
 
 from aiohttp import ClientError, ClientSession
-from models_library.api_schemas_storage.rest.storage_schemas import (
+from models_library.api_schemas_storage.storage_schemas import (
     ETag,
     FileUploadCompleteFutureResponse,
     FileUploadCompleteResponse,

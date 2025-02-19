@@ -2,7 +2,7 @@ import logging
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Request, status
-from models_library.api_schemas_storage.rest.storage_schemas import FileLocation
+from models_library.api_schemas_storage.storage_schemas import FileLocation
 from models_library.generics import Envelope
 
 # Exclusive for simcore-s3 storage -----------------------

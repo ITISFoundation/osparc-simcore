@@ -13,7 +13,7 @@ from aiobotocore.session import ClientCreatorContext
 from boto3.s3.transfer import TransferConfig
 from botocore import exceptions as botocore_exc
 from botocore.client import Config
-from models_library.api_schemas_storage.rest.storage_schemas import (
+from models_library.api_schemas_storage.storage_schemas import (
     ETag,
     S3BucketName,
     UploadedPart,

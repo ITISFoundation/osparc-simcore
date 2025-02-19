@@ -11,7 +11,7 @@ from uuid import uuid4
 
 import pytest
 from fastapi import UploadFile
-from models_library.api_schemas_storage.rest.storage_schemas import (
+from models_library.api_schemas_storage.storage_schemas import (
     FileMetaDataGet as StorageFileMetaData,
 )
 from models_library.basic_types import SHA256Str

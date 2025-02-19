@@ -30,7 +30,7 @@ from distributed import SpecCluster
 from faker import Faker
 from fastapi import FastAPI
 from models_library.api_schemas_directorv2.services import NodeRequirements
-from models_library.api_schemas_storage.rest.storage_schemas import (
+from models_library.api_schemas_storage.storage_schemas import (
     FileUploadLinks,
     FileUploadSchema,
 )

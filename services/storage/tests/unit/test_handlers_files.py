@@ -26,7 +26,7 @@ from aws_library.s3 import S3KeyNotFoundError, S3ObjectKey, SimcoreS3API
 from aws_library.s3._constants import MULTIPART_UPLOADS_MIN_TOTAL_SIZE
 from faker import Faker
 from fastapi import FastAPI
-from models_library.api_schemas_storage.rest.storage_schemas import (
+from models_library.api_schemas_storage.storage_schemas import (
     FileMetaDataGet,
     FileUploadCompleteFutureResponse,
     FileUploadCompleteResponse,

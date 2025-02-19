@@ -5,7 +5,7 @@ from pathlib import Path
 
 import aiofiles
 from aiohttp import ClientSession
-from models_library.api_schemas_storage.rest.storage_schemas import (
+from models_library.api_schemas_storage.storage_schemas import (
     ETag,
     FileMetaDataGet,
     FileUploadSchema,

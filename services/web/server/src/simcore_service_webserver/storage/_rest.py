@@ -10,7 +10,7 @@ from urllib.parse import quote, unquote
 
 from aiohttp import ClientTimeout, web
 from models_library.api_schemas_storage import STORAGE_RPC_NAMESPACE
-from models_library.api_schemas_storage.rest.storage_schemas import (
+from models_library.api_schemas_storage.storage_schemas import (
     FileUploadCompleteResponse,
     FileUploadCompletionBody,
     FileUploadSchema,

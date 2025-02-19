@@ -8,7 +8,7 @@ import httpx
 import orjson
 from aws_library.s3 import MultiPartUploadLinks
 from fastapi import status
-from models_library.api_schemas_storage.rest.storage_schemas import (
+from models_library.api_schemas_storage.storage_schemas import (
     ETag,
     FileUploadSchema,
     UploadedPart,

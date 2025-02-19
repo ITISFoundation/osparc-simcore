@@ -1,4 +1,4 @@
-from models_library.api_schemas_storage.rpc.data_export_async_jobs import (
+from models_library.api_schemas_storage.data_export_async_jobs import (
     AccessRightError,
     DataExportError,
     InvalidFileIdentifierError,

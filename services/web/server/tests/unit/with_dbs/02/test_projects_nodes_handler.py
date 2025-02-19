@@ -24,7 +24,7 @@ from models_library.api_schemas_directorv2.dynamic_services import DynamicServic
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     DynamicServiceStop,
 )
-from models_library.api_schemas_storage.rest.storage_schemas import (
+from models_library.api_schemas_storage.storage_schemas import (
     FileMetaDataGet,
     PresignedLink,
 )

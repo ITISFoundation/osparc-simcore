@@ -12,7 +12,7 @@ from aioresponses import aioresponses as AioResponsesMock
 from aioresponses.core import CallbackResult
 from faker import Faker
 from models_library.api_schemas_directorv2.comp_tasks import ComputationGet
-from models_library.api_schemas_storage.rest.storage_schemas import (
+from models_library.api_schemas_storage.storage_schemas import (
     FileMetaDataGet,
     FileUploadCompleteFutureResponse,
     FileUploadCompleteResponse,

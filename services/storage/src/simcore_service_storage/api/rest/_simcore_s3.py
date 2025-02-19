@@ -5,7 +5,7 @@ from typing import Annotated, Any, cast
 from fastapi import APIRouter, Depends, FastAPI, Request
 from models_library.api_schemas_long_running_tasks.base import TaskProgress
 from models_library.api_schemas_long_running_tasks.tasks import TaskGet
-from models_library.api_schemas_storage.rest.storage_schemas import (
+from models_library.api_schemas_storage.storage_schemas import (
     FileMetaDataGet,
     FoldersBody,
 )

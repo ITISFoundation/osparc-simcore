@@ -27,7 +27,7 @@ from models_library.api_schemas_long_running_tasks.tasks import (
     TaskProgress,
     TaskStatus,
 )
-from models_library.api_schemas_storage.rest.storage_schemas import HealthCheck
+from models_library.api_schemas_storage.storage_schemas import HealthCheck
 from models_library.api_schemas_webserver.projects import ProjectGet
 from models_library.app_diagnostics import AppStatusCheck
 from models_library.generics import Envelope

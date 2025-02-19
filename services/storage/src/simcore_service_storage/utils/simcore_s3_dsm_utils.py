@@ -2,7 +2,7 @@ from contextlib import suppress
 from pathlib import Path
 
 from aws_library.s3 import S3MetaData, SimcoreS3API
-from models_library.api_schemas_storage.rest.storage_schemas import S3BucketName
+from models_library.api_schemas_storage.storage_schemas import S3BucketName
 from models_library.projects_nodes_io import (
     SimcoreS3DirectoryID,
     SimcoreS3FileID,

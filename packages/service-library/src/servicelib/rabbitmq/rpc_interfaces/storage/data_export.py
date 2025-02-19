@@ -2,7 +2,7 @@ from typing import Final
 
 from models_library.api_schemas_rpc_async_jobs.async_jobs import AsyncJobGet
 from models_library.api_schemas_storage import STORAGE_RPC_NAMESPACE
-from models_library.api_schemas_storage.rpc.data_export_async_jobs import (
+from models_library.api_schemas_storage.data_export_async_jobs import (
     DataExportTaskStartInput,
 )
 from models_library.rabbitmq_basic_types import RPCMethodName

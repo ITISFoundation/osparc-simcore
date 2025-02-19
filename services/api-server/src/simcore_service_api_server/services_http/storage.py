@@ -8,11 +8,11 @@ from uuid import UUID
 
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
-from models_library.api_schemas_storage.rest.storage_schemas import FileMetaDataArray
-from models_library.api_schemas_storage.rest.storage_schemas import (
+from models_library.api_schemas_storage.storage_schemas import FileMetaDataArray
+from models_library.api_schemas_storage.storage_schemas import (
     FileMetaDataGet as StorageFileMetaData,
 )
-from models_library.api_schemas_storage.rest.storage_schemas import (
+from models_library.api_schemas_storage.storage_schemas import (
     FileUploadSchema,
     PresignedLink,
 )

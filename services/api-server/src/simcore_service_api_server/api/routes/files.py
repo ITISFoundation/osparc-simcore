@@ -10,7 +10,7 @@ from fastapi import File as FileParam
 from fastapi import Header, Request, UploadFile, status
 from fastapi.exceptions import HTTPException
 from fastapi_pagination.api import create_page
-from models_library.api_schemas_storage.rest.storage_schemas import (
+from models_library.api_schemas_storage.storage_schemas import (
     ETag,
     FileUploadCompletionBody,
     LinkType,

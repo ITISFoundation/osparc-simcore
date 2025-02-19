@@ -12,7 +12,7 @@ import aiohttp
 import pytest
 from aioresponses import aioresponses as AioResponsesMock
 from faker import Faker
-from models_library.api_schemas_storage.rest.storage_schemas import (
+from models_library.api_schemas_storage.storage_schemas import (
     FileLocationArray,
     FileMetaDataGet,
     FileUploadSchema,

@@ -18,7 +18,7 @@ from aws_library.s3 import (
     UploadID,
 )
 from fastapi import FastAPI
-from models_library.api_schemas_storage.rest.storage_schemas import (
+from models_library.api_schemas_storage.storage_schemas import (
     UNDEFINED_SIZE,
     UNDEFINED_SIZE_TYPE,
     LinkType,

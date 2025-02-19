@@ -13,7 +13,7 @@ from uuid import uuid4
 import httpx
 import pytest
 from faker import Faker
-from models_library.api_schemas_storage.rest.storage_schemas import UNDEFINED_SIZE_TYPE
+from models_library.api_schemas_storage.storage_schemas import UNDEFINED_SIZE_TYPE
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
 from pydantic import ByteSize, HttpUrl, TypeAdapter

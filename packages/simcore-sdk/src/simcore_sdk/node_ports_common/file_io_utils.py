@@ -17,7 +17,7 @@ from aiohttp import (
     ClientSession,
     RequestInfo,
 )
-from models_library.api_schemas_storage.rest.storage_schemas import (
+from models_library.api_schemas_storage.storage_schemas import (
     ETag,
     FileUploadSchema,
     UploadedPart,

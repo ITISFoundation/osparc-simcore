@@ -12,7 +12,7 @@ import pytest
 from faker import Faker
 from fastapi import FastAPI
 from httpx import AsyncClient
-from models_library.api_schemas_storage.rest.storage_schemas import (
+from models_library.api_schemas_storage.storage_schemas import (
     DatasetMetaDataGet,
     FileMetaDataGet,
 )
