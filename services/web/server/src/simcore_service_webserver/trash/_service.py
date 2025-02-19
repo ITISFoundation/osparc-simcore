@@ -107,12 +107,11 @@ async def safe_empty_trash(
     await _empty_explicitly_trashed_folders_and_content(app, product_name, user_id)
 
 
-async def safe_delete_expired_trash_as_admin(app: web.Application) -> list:
+async def safe_delete_expired_trash_as_admin(app: web.Application) -> None:
     settings = get_plugin_settings(app)
     retention = timedelta(days=settings.TRASH_RETENTION_DAYS)
     delete_until = arrow.now().datetime - retention
 
-    deleted = []  # TODO: delete count of all items? ids? delete-stats?
     for product in products_service.list_products(app):
 
         ctx = {
@@ -164,5 +163,3 @@ async def safe_delete_expired_trash_as_admin(app: web.Application) -> list:
                         error_context=ctx,
                     )
                 )
-
-    return deleted
