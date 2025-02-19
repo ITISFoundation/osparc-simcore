@@ -375,12 +375,6 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
       this._add(pricingUnitsLayout);
       pricingLayout.add(pricingUnitsLayout)
 
-      const poweredByLabel = new qx.ui.basic.Label().set({
-        font: "text-14",
-        padding: 10,
-        rich: true,
-        alignX: "center",
-      });
       osparc.store.LicensedItems.getInstance().getLicensedItems()
         .then(licensedItems => {
           const lowerLicensedItems = osparc.store.LicensedItems.getLowerLicensedItems(licensedItems, licensedItemData["key"], licensedItemData["version"])
@@ -394,8 +388,14 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
                 text += `- ${osparc.store.LicensedItems.licensedResourceNameAndVersion(licensedResource)} <br>`;
               });
             })
-            poweredByLabel.setValue(text);
-            pricingLayout.add(poweredByLabel);
+            const bundleText = new qx.ui.basic.Label().set({
+              value: text,
+              font: "text-14",
+              padding: 10,
+              rich: true,
+              alignX: "center",
+            });
+            pricingLayout.add(bundleText);
           }
         });
 
