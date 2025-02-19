@@ -43,7 +43,7 @@ def mock_request_storage(mocker: MockerFixture, expected_response: Any) -> None:
         return (wrap_as_envelope(data=expected_response), 200)
 
     mocker.patch(
-        "simcore_service_webserver.storage._handlers._forward_request_to_storage",
+        "simcore_service_webserver.storage._rest._forward_request_to_storage",
         autospec=True,
         side_effect=_resp,
     )
@@ -52,7 +52,7 @@ def mock_request_storage(mocker: MockerFixture, expected_response: Any) -> None:
         return TypeAdapter(AnyUrl).validate_python("http://private-url")
 
     mocker.patch(
-        "simcore_service_webserver.storage._handlers._from_storage_url",
+        "simcore_service_webserver.storage._rest._from_storage_url",
         autospec=True,
         side_effect=_resolve,
     )
