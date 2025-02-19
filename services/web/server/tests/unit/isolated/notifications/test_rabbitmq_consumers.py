@@ -81,12 +81,14 @@ from simcore_service_webserver.socketio.models import WebSocketNodeProgress
                 user_id=123,
                 progress_type=ProgressType.WORKER_JOB_EXPORTING,
                 report=ProgressReport(actual_value=0.4, total=1),
+                osparc_job_id="id",
             ).model_dump_json(),
             SocketMessageDict(
                 event_type=WebSocketNodeProgress.get_event_type(),
                 data={
                     "user_id": 123,
                     "progress_type": ProgressType.WORKER_JOB_EXPORTING.value,
+                    "osparc_job_id": "id",
                     "progress_report": {
                         "actual_value": 0.4,
                         "attempt": 0,

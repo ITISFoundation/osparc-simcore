@@ -1,6 +1,7 @@
 from abc import abstractmethod
 from typing import Literal, Self
 
+from models_library.osparc_jobs import OsparcJobId
 from models_library.progress_bar import ProgressReport
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -46,6 +47,10 @@ class _WebSocketUserMixin(BaseModel):
 class _WebSocketProgressMixin(BaseModel):
     progress_type: ProgressType
     progress_report: ProgressReport
+
+
+class _WebSocketOsparcJobIdMixin(BaseModel):
+    osparc_job_id: OsparcJobId
 
 
 class WebSocketProjectProgress(
@@ -101,6 +106,7 @@ class WebSocketNodeProgress(
 class WebSocketWorkerJobProgress(
     _WebSocketUserMixin,
     _WebSocketProgressMixin,
+    _WebSocketOsparcJobIdMixin,
     WebSocketMessageBase,
 ):
     event_type: Literal["workerJobProgress"] = "workerJobProgress"
@@ -109,6 +115,7 @@ class WebSocketWorkerJobProgress(
     def from_rabbit_message(cls, message: ProgressRabbitMessageWorkerJob) -> Self:
         return cls.model_construct(
             user_id=message.user_id,
+            osparc_job_id=message.osparc_job_id,
             progress_type=message.progress_type,
             progress_report=message.report,
         )
