@@ -227,7 +227,7 @@ async def list_explicitly_trashed_folders(
             user_id=user_id,
             product_name=product_name,
             text=None,
-            trashed=True,
+            trashed=True,  # NOTE: lists only expliclty trashed!
             offset=page_params.offset,
             limit=page_params.limit,
             order_by=OrderBy(field=IDStr("trashed"), direction=OrderDirection.ASC),

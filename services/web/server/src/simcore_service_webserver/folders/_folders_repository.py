@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime
-from typing import Final, cast
+from typing import cast
 
 import sqlalchemy as sa
 from aiohttp import web
@@ -40,8 +40,6 @@ from ..db.plugin import get_asyncpg_engine
 from .errors import FolderAccessForbiddenError, FolderNotFoundError
 
 _logger = logging.getLogger(__name__)
-
-_unset: Final = UnSet()
 
 
 _FOLDER_DB_MODEL_COLS = get_columns_from_db_model(folders_v2, FolderDB)
