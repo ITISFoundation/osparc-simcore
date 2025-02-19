@@ -199,21 +199,24 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
       this.__populateModels();
 
       const anatomicModelDetails = this.getChildControl("models-details");
-      anatomicModelDetails.addListener("modelPurchaseRequested", e => {
-        const {
-          licensedItemId,
-          pricingPlanId,
-          pricingUnitId,
-        } = e.getData();
-        this.__modelPurchaseRequested(licensedItemId, pricingPlanId, pricingUnitId);
-      }, this);
-
-      anatomicModelDetails.addListener("modelImportRequested", e => {
-        const {
-          modelId
-        } = e.getData();
-        this.__sendImportModelMessage(modelId);
-      }, this);
+      if (!anatomicModelDetails.hasListener("modelPurchaseRequested")) {
+        anatomicModelDetails.addListener("modelPurchaseRequested", e => {
+          const {
+            licensedItemId,
+            pricingPlanId,
+            pricingUnitId,
+          } = e.getData();
+          this.__modelPurchaseRequested(licensedItemId, pricingPlanId, pricingUnitId);
+        }, this);
+      }
+      if (!anatomicModelDetails.hasListener("modelImportRequested")) {
+        anatomicModelDetails.addListener("modelImportRequested", e => {
+          const {
+            modelId
+          } = e.getData();
+          this.__sendImportModelMessage(modelId);
+        }, this);
+      }
     },
 
     __populateModels: function(selectLicensedItemId) {
