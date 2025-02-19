@@ -266,7 +266,7 @@ async def list_trashed_folders(
     *,
     # filter
     trashed_explicitly: bool | UnSet = UnSet.VALUE,
-    trashed_until: datetime | UnSet = UnSet.VALUE,
+    trashed_before: datetime | UnSet = UnSet.VALUE,
     # pagination
     offset: NonNegativeInt,
     limit: int,
@@ -285,9 +285,9 @@ async def list_trashed_folders(
             folders_v2.c.trashed_explicitly.is_(trashed_explicitly)
         )
 
-    if is_set(trashed_until):
-        assert isinstance(trashed_until, datetime)  # nosec
-        base_query = base_query.where(folders_v2.c.trashed < trashed_until)
+    if is_set(trashed_before):
+        assert isinstance(trashed_before, datetime)  # nosec
+        base_query = base_query.where(folders_v2.c.trashed < trashed_before)
 
     # Select total count from base_query
     count_query = select(func.count()).select_from(base_query.subquery())
