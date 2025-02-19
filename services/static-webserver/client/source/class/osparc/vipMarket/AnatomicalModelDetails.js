@@ -187,26 +187,28 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
           manufacturerData["link"] = "https://speag.swiss/products/em-phantoms/overview-2/";
           manufacturerData["icon"] = "https://media.licdn.com/dms/image/v2/D4E0BAQG2CYG28KAKbA/company-logo_200_200/company-logo_200_200/0/1700045977122/schmid__partner_engineering_ag_logo?e=2147483647&v=beta&t=6CZb1jjg5TnnzQWkrZBS9R3ebRKesdflg-_xYi4dwD8";
         }
-        const manufacturerLink = new qx.ui.basic.Atom().set({
-          label: manufacturerData["label"],
-          icon: manufacturerData["icon"],
-          font: "text-16",
-          gap: 10,
-          iconPosition: "right",
-          cursor: "pointer",
-        });
-        manufacturerLink.getChildControl("icon").set({
-          maxWidth: 32,
-          maxHeight: 32,
-          scale: true,
-          decorator: "rounded",
-        });
-        manufacturerLink.addListener("tap", () => window.open(manufacturerData["link"]));
-        headerLayout.add(manufacturerLink, {
-          column: 1,
-          row: 0,
-          rowSpan: 2,
-        });
+        if (Object.keys(manufacturerData).length) {
+          const manufacturerLink = new qx.ui.basic.Atom().set({
+            label: manufacturerData["label"],
+            icon: manufacturerData["icon"],
+            font: "text-16",
+            gap: 10,
+            iconPosition: "right",
+            cursor: "pointer",
+          });
+          manufacturerLink.getChildControl("icon").set({
+            maxWidth: 32,
+            maxHeight: 32,
+            scale: true,
+            decorator: "rounded",
+          });
+          manufacturerLink.addListener("tap", () => window.open(manufacturerData["link"]));
+          headerLayout.add(manufacturerLink, {
+            column: 1,
+            row: 0,
+            rowSpan: 2,
+          });
+        }
       }
       this.__selectedModelLayout.add(headerLayout);
 
