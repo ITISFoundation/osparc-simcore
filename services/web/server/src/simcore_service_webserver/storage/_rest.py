@@ -41,7 +41,10 @@ from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import (
     get_result,
     get_status,
 )
-from servicelib.rabbitmq.rpc_interfaces.storage.data_export import start_data_export
+from servicelib.rabbitmq.rpc_interfaces.storage.data_export import (
+    get_user_jobs,
+    start_data_export,
+)
 from servicelib.request_keys import RQT_USERID_KEY
 from servicelib.rest_responses import unwrap_envelope
 from simcore_service_webserver.rabbitmq import get_rabbitmq_rpc_client
@@ -409,6 +412,30 @@ async def export_data(request: web.Request) -> web.Response:
     return create_data_response(
         StorageAsyncJobGet.from_rpc_schema(async_job_rpc_get),
         status=status.HTTP_202_ACCEPTED,
+    )
+
+
+@routes.get(
+    _storage_prefix + "/async-jobs",
+    name="get_async_jobs",
+)
+@login_required
+@permission_required("storage.files.*")
+@handle_data_export_exceptions
+async def get_async_jobs(request: web.Request) -> web.Response:
+    class _RequestContext(RequestParameters):
+        user_id: UserID = Field(..., alias=RQT_USERID_KEY)  # type: ignore[literal-required]
+
+    _req_ctx = _RequestContext.model_validate(request)
+
+    rabbitmq_rpc_client = get_rabbitmq_rpc_client(request.app)
+
+    user_async_jobs = await get_user_jobs(
+        rabbitmq_rpc_client=rabbitmq_rpc_client, user_id=_req_ctx.user_id
+    )
+    return create_data_response(
+        [StorageAsyncJobGet.from_rpc_schema(job) for job in user_async_jobs],
+        status=status.HTTP_200_OK,
     )
 
 
