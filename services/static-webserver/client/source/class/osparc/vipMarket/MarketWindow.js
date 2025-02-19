@@ -23,7 +23,7 @@ qx.Class.define("osparc.vipMarket.MarketWindow", {
 
     osparc.utils.Utils.setIdToWidget(this, "storeWindow");
 
-    const width = 1080;
+    const width = Math.min(1100, window.innerWidth); // since we go over the supported minimum, take the min
     const height = 700;
     this.set({
       width,

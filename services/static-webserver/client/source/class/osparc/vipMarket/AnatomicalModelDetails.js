@@ -139,7 +139,6 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
       topGrid.setColumnFlex(0, 1);
       const headerLayout = new qx.ui.container.Composite(topGrid);
       const anatomicalModel = licensedItemBundleData["licensedResources"][selectedIdx]["source"];
-      const anatomicalModel = anatomicalModelsData["licensedResources"][selectedIdx]["source"];
       let description = anatomicalModel["description"] || "";
       description = description.replace(/SPEAG/g, " "); // remove SPEAG substring
       const delimiter = " - ";
@@ -257,7 +256,7 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
           value: "DOI",
           font: "text-14",
           alignX: "right",
-          marginTop: 16,
+          marginTop: 10,
         });
         featuresLayout.add(doiTitle, {
           column: 0,
@@ -268,7 +267,7 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
           const doiLabel = new osparc.ui.basic.LinkLabel("-").set({
             font: "text-14",
             alignX: "left",
-            marginTop: 16,
+            marginTop: 10,
           });
           if (doi) {
             doiLabel.set({
@@ -283,6 +282,23 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
           column: 1,
           row: idx,
         });
+        idx++;
+      }
+
+      if (licensedItemBundleData["termsOfUseUrl"] || anatomicalModel["termsOfUseUrl"]) { // remove the first one when this info goes down to the model
+        const tAndC = new qx.ui.basic.Label().set({
+          font: "text-14",
+          value: this.tr("<u>Terms and Conditions</u>"),
+          rich: true,
+          anonymous: false,
+          cursor: "pointer",
+        });
+        tAndC.addListener("tap", () => this.__openLicense(licensedItemBundleData["termsOfUseUrl"] || anatomicalModel["termsOfUseUrl"]));
+        featuresLayout.add(tAndC, {
+          column: 1,
+          row: idx,
+        });
+        idx++;
       }
 
       middleLayout.add(featuresLayout);
@@ -291,6 +307,19 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
 
       const importSection = this.__createImportSection(licensedItemBundleData, selectedIdx);
       this.__selectedModelLayout.add(importSection);
+    },
+
+    __openLicense: function(rawLink) {
+      if (rawLink.includes("github")) {
+        // make sure the raw version of the link is shown
+        rawLink += "?raw=true";
+      }
+      const mdWindow = new osparc.ui.markdown.MarkdownWindow(rawLink).set({
+        caption: this.tr("Terms and Conditions"),
+        width: 800,
+        height: 600,
+      });
+      mdWindow.open();
     },
 
     __createImportSection: function(anatomicalModelsData, selectedIdx) {
@@ -359,7 +388,6 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
               });
               const pUnit = new osparc.study.PricingUnitLicense(pricingUnit).set({
                 showRentButton: true,
-                licenseUrl: licensedItemData["termsOfUseUrl"],
               });
               pUnit.addListener("rentPricingUnit", () => {
                 this.fireDataEvent("modelPurchaseRequested", {
