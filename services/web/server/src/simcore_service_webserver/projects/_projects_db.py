@@ -84,10 +84,10 @@ async def list_trashed_projects(
         total_count = await conn.scalar(count_query)
 
         result = await conn.stream(list_query)
-        folders: list[ProjectDBGet] = [
+        projects_list: list[ProjectDBGet] = [
             ProjectDBGet.model_validate(row) async for row in result
         ]
-        return cast(int, total_count), folders
+        return cast(int, total_count), projects_list
 
 
 async def get_project(
