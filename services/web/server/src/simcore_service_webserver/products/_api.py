@@ -44,7 +44,8 @@ def list_products(app: web.Application) -> list[Product]:
 
 async def list_products_names(app: web.Application) -> list[ProductName]:
     repo = ProductRepository.create_from_app(app)
-    return await repo.list_products_names()
+    names: list[ProductName] = await repo.list_products_names()
+    return names
 
 
 async def get_current_product_credit_price_info(
