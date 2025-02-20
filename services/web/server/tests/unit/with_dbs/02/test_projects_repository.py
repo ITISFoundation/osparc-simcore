@@ -29,13 +29,13 @@ async def test_get_project(
     assert client.app
 
     # Get valid project
-    got = await projects_service_repository.get_project(
+    got_project = await projects_service_repository.get_project(
         client.app, project_uuid=user_project["uuid"]
     )
 
-    assert got.uuid == UUID(user_project["uuid"])
-    assert got.name == user_project["name"]
-    assert got.description == user_project["description"]
+    assert got_project.uuid == UUID(user_project["uuid"])
+    assert got_project.name == user_project["name"]
+    assert got_project.description == user_project["description"]
 
     # Get non-existent project
     non_existent_project_uuid = UUID("00000000-0000-0000-0000-000000000000")
@@ -52,6 +52,9 @@ async def test_patch_project(
 ):
     assert client.app
 
+    # Thie will change after in patched_project
+    assert user_project["creationDate"] == user_project["lastChangeDate"]
+
     # Patch valid project
     patch_data = {"name": "Updated Project Name"}
     patched_project = await projects_service_repository.patch_project(
@@ -62,6 +65,7 @@ async def test_patch_project(
 
     assert patched_project.uuid == UUID(user_project["uuid"])
     assert patched_project.name == patch_data["name"]
+    assert patched_project.creation_date < patched_project.last_change_date
 
     # Patch non-existent project
     non_existent_project_uuid = UUID("00000000-0000-0000-0000-000000000000")
@@ -86,6 +90,12 @@ async def test_delete_project(
     )
 
     assert deleted_project.uuid == UUID(user_project["uuid"])
+
+    # Check deleted
+    with pytest.raises(ProjectNotFoundError):
+        await projects_service_repository.delete_project(
+            client.app, project_uuid=user_project["uuid"]
+        )
 
     # Delete non-existent project
     non_existent_project_uuid = UUID("00000000-0000-0000-0000-000000000000")
