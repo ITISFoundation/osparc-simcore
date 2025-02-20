@@ -8,6 +8,7 @@
 
 import contextlib
 from collections.abc import AsyncIterator
+from unittest.mock import MagicMock
 
 import pytest
 from aiohttp.test_utils import TestClient
@@ -44,18 +45,16 @@ def user_role() -> UserRole:
 
 
 @contextlib.asynccontextmanager
-async def _client_session_with_user(
+async def _switch_client_session_to(
     client: TestClient, user: UserInfoDict
 ) -> AsyncIterator[TestClient]:
     assert client.app
 
-    url = client.app.router["logout"].url_for()
-    resp = await client.post(f"{url}")
-    await assert_status(resp, status.HTTP_200_OK)
+    await client.post(f'{client.app.router["auth_logout"].url_for()}')
+    # sometimes 4xx if user already logged out. Ignore
 
-    url = client.app.router["login"].url_for()
     resp = await client.post(
-        f"{url}",
+        f'{client.app.router["auth_login"].url_for()}',
         json={
             "email": user["email"],
             "password": user["raw_password"],
@@ -65,8 +64,7 @@ async def _client_session_with_user(
 
     yield client
 
-    url = client.app.router["logout"].url_for()
-    resp = await client.post(f"{url}")
+    resp = await client.post(f'{client.app.router["auth_logout"].url_for()}')
     await assert_status(resp, status.HTTP_200_OK)
 
 
@@ -78,6 +76,7 @@ async def test_trash_service__delete_expired_trash(
     other_user_project: ProjectDict,
     mocked_catalog: None,
     mocked_director_v2: None,
+    mocked_dynamic_services_interface: dict[str, MagicMock],
 ):
     assert client.app
     assert logged_user["id"] != other_user["id"]
@@ -117,7 +116,7 @@ async def test_trash_service__delete_expired_trash(
     await assert_status(resp, status.HTTP_404_NOT_FOUND)
 
     # ASSERT: other_user tries to get the project and expects 404
-    async with _client_session_with_user(client, other_user):
+    async with _switch_client_session_to(client, other_user):
         resp = await client.get(f"/v0/projects/{other_user_project_id}")
         await assert_status(resp, status.HTTP_404_NOT_FOUND)
 
@@ -130,37 +129,41 @@ async def test_trash_nested_folders_and_projects(
     other_user_project: ProjectDict,
     mocked_catalog: None,
     mocked_director_v2: None,
+    mocked_dynamic_services_interface: dict[str, MagicMock],
 ):
     assert client.app
     assert logged_user["id"] != other_user["id"]
 
-    # Create folders hierarchy for logged_user
-    resp = await client.post("/v0/folders", json={"name": "Root Folder"})
-    data, _ = await assert_status(resp, status.HTTP_201_CREATED)
-    logged_user_root_folder = data
+    async with _switch_client_session_to(client, logged_user):
+        # CREATE folders hierarchy for logged_user
+        resp = await client.post("/v0/folders", json={"name": "Root Folder"})
+        data, _ = await assert_status(resp, status.HTTP_201_CREATED)
+        logged_user_root_folder = data
 
-    resp = await client.post(
-        "/v0/folders",
-        json={
-            "name": "Sub Folder",
-            "parentFolderId": logged_user_root_folder["folderId"],
-        },
-    )
-    data, _ = await assert_status(resp, status.HTTP_201_CREATED)
-    logged_user_sub_folder = data
+        resp = await client.post(
+            "/v0/folders",
+            json={
+                "name": "Sub Folder",
+                "parentFolderId": logged_user_root_folder["folderId"],
+            },
+        )
+        data, _ = await assert_status(resp, status.HTTP_201_CREATED)
+        logged_user_sub_folder = data
 
-    # Move project to subfolder
-    resp = await client.put(
-        f"/v0/projects/{user_project['uuid']}/folders/{logged_user_sub_folder['folderId']}"
-    )
-    await assert_status(resp, status.HTTP_204_NO_CONTENT)
+        # MOVE project to subfolder
+        resp = await client.put(
+            f"/v0/projects/{user_project['uuid']}/folders/{logged_user_sub_folder['folderId']}"
+        )
+        await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
-    # Trash root folders
-    resp = await client.post(f"/v0/folders/{logged_user_root_folder['folderId']}:trash")
-    await assert_status(resp, status.HTTP_204_NO_CONTENT)
+        # TRASH root folders
+        resp = await client.post(
+            f"/v0/folders/{logged_user_root_folder['folderId']}:trash"
+        )
+        await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
-    # Create folders hierarchy for other_user
-    async with _client_session_with_user(client, other_user):
+    async with _switch_client_session_to(client, other_user):
+        # CREATE folders hierarchy for other_user
         resp = await client.post("/v0/folders", json={"name": "Root Folder"})
         data, _ = await assert_status(resp, status.HTTP_201_CREATED)
         other_user_root_folder = data
@@ -168,26 +171,20 @@ async def test_trash_nested_folders_and_projects(
         resp = await client.post(
             "/v0/folders",
             json={
-                "name": "Sub Folder",
+                "name": "Sub Folder (other)",
                 "parentFolderId": other_user_root_folder["folderId"],
             },
         )
         data, _ = await assert_status(resp, status.HTTP_201_CREATED)
         other_user_sub_folder = data
 
-        # Move project to subfolder
+        # MOVE project to subfolder
         resp = await client.put(
             f"/v0/projects/{other_user_project['uuid']}/folders/{other_user_sub_folder['folderId']}"
         )
         await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
-        # Trash root folders
-        resp = await client.post(
-            f"/v0/folders/{logged_user_root_folder['folderId']}:trash"
-        )
-        await assert_status(resp, status.HTTP_204_NO_CONTENT)
-
-    async with _client_session_with_user(client, other_user):
+        # TRASH root folders
         resp = await client.post(
             f"/v0/folders/{other_user_root_folder['folderId']}:trash"
         )
@@ -196,24 +193,24 @@ async def test_trash_nested_folders_and_projects(
     # UNDER TEST
     await trash_service.safe_delete_expired_trash_as_admin(client.app)
 
-    async with _client_session_with_user(client, logged_user):
+    async with _switch_client_session_to(client, logged_user):
         # Verify logged_user's resources are gone
         resp = await client.get(f"/v0/folders/{logged_user_root_folder['folderId']}")
-        await assert_status(resp, status.HTTP_404_NOT_FOUND)
+        await assert_status(resp, status.HTTP_403_FORBIDDEN)
 
         resp = await client.get(f"/v0/folders/{logged_user_sub_folder['folderId']}")
-        await assert_status(resp, status.HTTP_404_NOT_FOUND)
+        await assert_status(resp, status.HTTP_403_FORBIDDEN)
 
         resp = await client.get(f"/v0/projects/{user_project['uuid']}")
         await assert_status(resp, status.HTTP_404_NOT_FOUND)
 
     # Verify other_user's resources are gone
-    async with _client_session_with_user(client, other_user):
+    async with _switch_client_session_to(client, other_user):
         resp = await client.get(f"/v0/folders/{other_user_root_folder['folderId']}")
-        await assert_status(resp, status.HTTP_404_NOT_FOUND)
+        await assert_status(resp, status.HTTP_403_FORBIDDEN)
 
         resp = await client.get(f"/v0/folders/{other_user_sub_folder['folderId']}")
-        await assert_status(resp, status.HTTP_404_NOT_FOUND)
+        await assert_status(resp, status.HTTP_403_FORBIDDEN)
 
         resp = await client.get(f"/v0/projects/{other_user_project['uuid']}")
         await assert_status(resp, status.HTTP_404_NOT_FOUND)

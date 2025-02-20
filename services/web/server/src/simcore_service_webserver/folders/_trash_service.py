@@ -313,6 +313,8 @@ async def batch_delete_trashed_folders_as_admin(
                 await _folders_repository.delete_recursively(
                     app, folder_id=folder.folder_id, product_name=product_name
                 )
+                # NOTE: projects in folders are NOT deleted
+
             except Exception as err:  # pylint: disable=broad-exception-caught
                 if fail_fast:
                     raise

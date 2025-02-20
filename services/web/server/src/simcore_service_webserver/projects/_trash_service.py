@@ -260,7 +260,7 @@ async def batch_delete_trashed_projects_as_admin(
             expired_trashed_projects,
         ) = await _projects_repository.list_trashed_projects(
             app,
-            trashed_explicitly=True,
+            # both implicit and explicitly trashed
             trashed_before=trashed_before,
             offset=page_params.offset,
             limit=page_params.limit,
@@ -270,7 +270,6 @@ async def batch_delete_trashed_projects_as_admin(
         for project in expired_trashed_projects:
 
             assert project.trashed  # nosec
-            assert project.trashed_explicitly  # nosec
 
             try:
                 await _projects_service_delete.delete_project_as_admin(
