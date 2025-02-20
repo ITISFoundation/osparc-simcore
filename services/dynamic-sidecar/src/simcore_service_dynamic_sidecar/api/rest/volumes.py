@@ -1,13 +1,13 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, FastAPI
 from fastapi import Path as PathParam
 from fastapi import status
-from models_library.sidecar_volumes import VolumeCategory, VolumeState, VolumeStatus
+from models_library.sidecar_volumes import VolumeCategory, VolumeStatus
 from pydantic import BaseModel
 
-from ...models.shared_store import SharedStore
-from ._dependencies import get_shared_store
+from ...services import volumes
+from ._dependencies import get_application
 
 router = APIRouter()
 
@@ -23,8 +23,7 @@ class PutVolumeItem(BaseModel):
 )
 async def put_volume_state(
     item: PutVolumeItem,
+    app: Annotated[FastAPI, Depends(get_application)],
     volume_category: Annotated[VolumeCategory, PathParam(..., alias="id")],
-    shared_store: Annotated[SharedStore, Depends(get_shared_store)],
 ) -> None:
-    async with shared_store:
-        shared_store.volume_states[volume_category] = VolumeState(status=item.status)
+    await volumes.save_volume_state(app, status=item.status, category=volume_category)
