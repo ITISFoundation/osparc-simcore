@@ -1,4 +1,3 @@
-import asyncio
 import logging
 from datetime import datetime
 
@@ -12,7 +11,6 @@ from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.rest_pagination import MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
 from models_library.users import UserID
 from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
-from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from servicelib.utils import fire_and_forget_task
 
 from ..director_v2 import api as director_v2_api
@@ -75,23 +73,10 @@ async def trash_project(
 
     if force_stop_first:
 
-        async def _schedule():
-            # TODO: use batch_stop_services_in_project instead. Change mocks!
-            await asyncio.gather(
-                director_v2_api.stop_pipeline(
-                    app, user_id=user_id, project_id=project_id
-                ),
-                projects_service.remove_project_dynamic_services(
-                    user_id=user_id,
-                    project_uuid=f"{project_id}",
-                    app=app,
-                    simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
-                    notify_users=False,
-                ),
-            )
-
         fire_and_forget_task(
-            _schedule(),
+            _projects_service_delete.batch_stop_services_in_project(
+                app, user_id=user_id, project_uuid=project_id
+            ),
             task_suffix_name=f"trash_project_force_stop_first_{user_id=}_{project_id=}",
             fire_and_forget_tasks_collection=app[APP_FIRE_AND_FORGET_TASKS_KEY],
         )
