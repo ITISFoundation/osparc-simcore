@@ -1,4 +1,3 @@
-import asyncio
 import logging
 from datetime import datetime
 
@@ -12,17 +11,20 @@ from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.rest_pagination import MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
 from models_library.users import UserID
 from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
-from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from servicelib.utils import fire_and_forget_task
 
 from ..director_v2 import api as director_v2_api
 from ..dynamic_scheduler import api as dynamic_scheduler_api
-from . import _crud_api_read, projects_service
+from . import _crud_api_read
+from . import _projects_db as _projects_repository
+from . import _projects_service_delete, projects_service
 from ._access_rights_api import check_user_project_permission
+from ._projects_db import _OLDEST_TRASHED_FIRST
 from .exceptions import (
     ProjectNotFoundError,
     ProjectNotTrashedError,
     ProjectRunningConflictError,
+    ProjectsBatchDeleteError,
 )
 from .models import ProjectDict, ProjectPatchInternalExtended
 
@@ -71,22 +73,10 @@ async def trash_project(
 
     if force_stop_first:
 
-        async def _schedule():
-            await asyncio.gather(
-                director_v2_api.stop_pipeline(
-                    app, user_id=user_id, project_id=project_id
-                ),
-                projects_service.remove_project_dynamic_services(
-                    user_id=user_id,
-                    project_uuid=f"{project_id}",
-                    app=app,
-                    simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
-                    notify_users=False,
-                ),
-            )
-
         fire_and_forget_task(
-            _schedule(),
+            _projects_service_delete.batch_stop_services_in_project(
+                app, user_id=user_id, project_uuid=project_id
+            ),
             task_suffix_name=f"trash_project_force_stop_first_{user_id=}_{project_id=}",
             fire_and_forget_tasks_collection=app[APP_FIRE_AND_FORGET_TASKS_KEY],
         )
@@ -237,3 +227,51 @@ async def delete_explicitly_trashed_project(
         user_id=user_id,
         project_uuid=project_id,
     )
+
+
+async def batch_delete_trashed_projects_as_admin(
+    app: web.Application,
+    *,
+    trashed_before: datetime,
+    fail_fast: bool,
+) -> list[ProjectID]:
+
+    deleted_project_ids: list[ProjectID] = []
+    errors: list[tuple[ProjectID, Exception]] = []
+
+    for page_params in iter_pagination_params(limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE):
+        (
+            page_params.total_number_of_items,
+            expired_trashed_projects,
+        ) = await _projects_repository.list_trashed_projects(
+            app,
+            # both implicit and explicitly trashed
+            trashed_before=trashed_before,
+            offset=page_params.offset,
+            limit=page_params.limit,
+            order_by=_OLDEST_TRASHED_FIRST,
+        )
+        # BATCH delete
+        for project in expired_trashed_projects:
+
+            assert project.trashed  # nosec
+
+            try:
+                await _projects_service_delete.delete_project_as_admin(
+                    app,
+                    project_uuid=project.uuid,
+                )
+                deleted_project_ids.append(project.uuid)
+            except Exception as err:  # pylint: disable=broad-exception-caught
+                if fail_fast:
+                    raise
+                errors.append((project.uuid, err))
+
+    if errors:
+        raise ProjectsBatchDeleteError(
+            errors=errors,
+            trashed_before=trashed_before,
+            deleted_project_ids=deleted_project_ids,
+        )
+
+    return deleted_project_ids

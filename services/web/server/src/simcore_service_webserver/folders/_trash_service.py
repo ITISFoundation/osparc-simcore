@@ -19,7 +19,7 @@ from ..db.plugin import get_asyncpg_engine
 from ..projects._trash_service import trash_project, untrash_project
 from ..workspaces.api import check_user_workspace_access
 from . import _folders_repository, _folders_service
-from .errors import FolderNotTrashedError
+from .errors import FolderBatchDeleteError, FolderNotTrashedError
 
 _logger = logging.getLogger(__name__)
 
@@ -227,7 +227,7 @@ async def list_explicitly_trashed_folders(
             user_id=user_id,
             product_name=product_name,
             text=None,
-            trashed=True,
+            trashed=True,  # NOTE: lists only expliclty trashed!
             offset=page_params.offset,
             limit=page_params.limit,
             order_by=OrderBy(field=IDStr("trashed"), direction=OrderDirection.ASC),
@@ -278,3 +278,49 @@ async def delete_trashed_folder(
     await _folders_service.delete_folder(
         app, user_id=user_id, folder_id=folder_id, product_name=product_name
     )
+
+
+async def batch_delete_trashed_folders_as_admin(
+    app: web.Application,
+    trashed_before: datetime,
+    *,
+    product_name: ProductName,
+    fail_fast: bool,
+) -> None:
+    """
+    Raises:
+        FolderBatchDeleteError: if error and fail_fast=False
+        Exception: any other exception during delete_recursively
+    """
+    errors: list[tuple[FolderID, Exception]] = []
+
+    for page_params in iter_pagination_params(limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE):
+        (
+            page_params.total_number_of_items,
+            expired_trashed_folders,
+        ) = await _folders_repository.list_trashed_folders(
+            app,
+            trashed_explicitly=True,
+            trashed_before=trashed_before,
+            offset=page_params.offset,
+            limit=page_params.limit,
+            order_by=OrderBy(field=IDStr("trashed"), direction=OrderDirection.ASC),
+        )
+
+        # BATCH delete
+        for folder in expired_trashed_folders:
+            try:
+                await _folders_repository.delete_recursively(
+                    app, folder_id=folder.folder_id, product_name=product_name
+                )
+                # NOTE: projects in folders are NOT deleted
+
+            except Exception as err:  # pylint: disable=broad-exception-caught
+                if fail_fast:
+                    raise
+                errors.append((folder.folder_id, err))
+
+    if errors:
+        raise FolderBatchDeleteError(
+            errors=errors, trashed_before=trashed_before, product_name=product_name
+        )
