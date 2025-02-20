@@ -179,7 +179,7 @@ async def test_batch_get_trashed_by_primary_gid(
             client.app,
             projects_uuids=[
                 trashed_project.uuid,
-                non_existent_project_uuid,  # invalid
+                non_existent_project_uuid,  # non-existent
                 trashed_project.uuid,  # repeated
             ],
         )
