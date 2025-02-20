@@ -1,6 +1,7 @@
 import logging
+from collections.abc import Callable
 from datetime import datetime
-from typing import Callable, cast
+from typing import cast
 
 import sqlalchemy as sa
 from aiohttp import web
@@ -28,7 +29,7 @@ from .models import ProjectDBGet
 _logger = logging.getLogger(__name__)
 
 
-PROJECT_DB_COLS = get_columns_from_db_model(  # noqa: RUF012
+PROJECT_DB_COLS = get_columns_from_db_model(
     # NOTE: MD: I intentionally didn't include the workbench. There is a special interface
     # for the workbench, and at some point, this column should be removed from the table.
     # The same holds true for access_rights/ui/classifiers/quality, but we have decided to proceed step by step.
