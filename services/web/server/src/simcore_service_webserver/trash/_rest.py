@@ -58,7 +58,7 @@ async def empty_trash(request: web.Request):
     product_name = get_product_name(request)
 
     fire_and_forget_task(
-        _service.empty_trash_safe(
+        _service.safe_empty_trash(
             request.app, product_name=product_name, user_id=user_id
         ),
         task_suffix_name="rest.empty_trash",

@@ -7,24 +7,20 @@
 
 
 import asyncio
-from collections.abc import AsyncIterable, Callable
+from collections.abc import AsyncIterable
 from unittest.mock import MagicMock
 from uuid import UUID
 
 import arrow
 import pytest
 from aiohttp.test_utils import TestClient
-from aioresponses import aioresponses
 from models_library.api_schemas_webserver.folders_v2 import FolderGet
 from models_library.api_schemas_webserver.projects import ProjectGet, ProjectListItem
 from models_library.api_schemas_webserver.workspaces import WorkspaceGet
 from models_library.rest_pagination import Page
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
-from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
-from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.webserver_login import NewUser, UserInfoDict
-from pytest_simcore.helpers.webserver_parametrizations import MockedStorageSubsystem
+from pytest_simcore.helpers.webserver_login import UserInfoDict
 from servicelib.aiohttp import status
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects._groups_api import ProjectGroupGet
@@ -34,35 +30,8 @@ from yarl import URL
 
 
 @pytest.fixture
-def app_environment(
-    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
-) -> EnvVarsDict:
-    return app_environment | setenvs_from_dict(
-        monkeypatch, {"WEBSERVER_DEV_FEATURES_ENABLED": "1"}
-    )
-
-
-@pytest.fixture
 def user_role() -> UserRole:
     return UserRole.USER
-
-
-@pytest.fixture
-def mocked_catalog(
-    user_project: ProjectDict,
-    catalog_subsystem_mock: Callable[[list[ProjectDict]], None],
-):
-    catalog_subsystem_mock([user_project])
-
-
-@pytest.fixture
-def mocked_director_v2(director_v2_service_mock: aioresponses):
-    ...
-
-
-@pytest.fixture
-def mocked_storage(storage_subsystem_mock: MockedStorageSubsystem):
-    ...
 
 
 @pytest.mark.acceptance_test(
@@ -84,11 +53,11 @@ async def test_trash_projects(  # noqa: PLR0915
 
     # this test should emulate NO errors stopping services
     mock_remove_dynamic_services = mocker.patch(
-        "simcore_service_webserver.projects._trash_service.projects_service.remove_project_dynamic_services",
+        "simcore_service_webserver.projects._trash_service._projects_service_delete.projects_service.remove_project_dynamic_services",
         autospec=True,
     )
     mock_stop_pipeline = mocker.patch(
-        "simcore_service_webserver.projects._trash_service.director_v2_api.stop_pipeline",
+        "simcore_service_webserver.projects._trash_service._projects_service_delete.director_v2_service.stop_pipeline",
         autospec=True,
     )
     mocker.patch(
@@ -188,21 +157,6 @@ async def test_trash_projects(  # noqa: PLR0915
         await asyncio.sleep(0.1)
         mock_stop_pipeline.assert_awaited()
         mock_remove_dynamic_services.assert_awaited()
-
-
-@pytest.fixture
-async def other_user(
-    client: TestClient, logged_user: UserInfoDict
-) -> AsyncIterable[UserInfoDict]:
-    # new user different from logged_user
-    async with NewUser(
-        {
-            "name": f"other_user_than_{logged_user['name']}",
-            "role": "USER",
-        },
-        client.app,
-    ) as user:
-        yield user
 
 
 async def test_trash_projects_shared_among_users(
@@ -384,6 +338,7 @@ async def test_trash_folder_with_content(
     resp = await client.post("/v0/folders", json={"name": "My first folder"})
     data, _ = await assert_status(resp, status.HTTP_201_CREATED)
     folder = FolderGet.model_validate(data)
+    assert folder.trashed_at is None
 
     # CREATE a SUB-folder
     resp = await client.post(
@@ -427,11 +382,12 @@ async def test_trash_folder_with_content(
     resp = await client.post(f"/v0/folders/{folder.folder_id}:trash")
     await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
-    # ONLY folder listed in trash. The rest is not listed anymore!
+    # ONLY folder listed in trash. The rest is not listed anymore since they are implicitly trashed!
     resp = await client.get("/v0/folders", params={"filters": '{"trashed": true}'})
     await assert_status(resp, status.HTTP_200_OK)
     page = Page[FolderGet].model_validate(await resp.json())
     assert page.meta.total == 1
+    assert page.data[0].trashed_at is not None
     assert page.data[0].folder_id == folder.folder_id
 
     resp = await client.get(

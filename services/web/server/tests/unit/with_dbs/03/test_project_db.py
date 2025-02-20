@@ -13,7 +13,6 @@ from typing import Any, get_args
 from uuid import UUID, uuid5
 
 import aiopg.sa
-import arrow
 import pytest
 import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
@@ -32,9 +31,6 @@ from simcore_postgres_database.models.users import UserRole
 from simcore_postgres_database.utils_projects_nodes import ProjectNodesRepo
 from simcore_service_webserver.projects._db_utils import PermissionStr
 from simcore_service_webserver.projects._groups_db import update_or_insert_project_group
-from simcore_service_webserver.projects._projects_db import (
-    batch_get_trashed_by_primary_gid,
-)
 from simcore_service_webserver.projects.api import has_user_project_access_rights
 from simcore_service_webserver.projects.db import ProjectAccessRights, ProjectDBAPI
 from simcore_service_webserver.projects.exceptions import (
@@ -966,42 +962,3 @@ async def test_check_project_node_has_all_required_inputs_ok(
         project_uuid=UUID(inserted_project["uuid"]),
         node_id=UUID("324d6ef2-a82c-414d-9001-dc84da1cbea3"),
     )
-
-
-@pytest.mark.parametrize(
-    "user_role",
-    [UserRole.USER],
-)
-async def test_batch_get_trashed_by_primary_gid(
-    client: TestClient,
-    logged_user: UserInfoDict,
-    insert_project_in_db: Callable[..., Awaitable[dict[str, Any]]],
-    fake_project: ProjectDict,
-):
-    assert client.app
-
-    # Insert two different projects
-    fake_project_1 = deepcopy(fake_project)
-    fake_project_1["trashed_by"] = logged_user["id"]
-    fake_project_1["trashed"] = arrow.now().datetime
-    fake_project_1["trashed_explicitly"] = True
-
-    project_1 = await insert_project_in_db(fake_project_1, user_id=logged_user["id"])
-    project_2 = await insert_project_in_db(fake_project, user_id=logged_user["id"])
-
-    # Test with two different project UUIDs
-    trashed_by_primary_gid = await batch_get_trashed_by_primary_gid(
-        client.app,
-        projects_uuids=[project_1["uuid"], project_2["uuid"]],
-    )
-    assert trashed_by_primary_gid == [logged_user["primary_gid"], None]
-
-    # Test with two identical project UUIDs
-    trashed_by_primary_gid = await batch_get_trashed_by_primary_gid(
-        client.app,
-        projects_uuids=[project_1["uuid"], project_1["uuid"]],
-    )
-    assert trashed_by_primary_gid == [
-        logged_user["primary_gid"],
-        logged_user["primary_gid"],
-    ]

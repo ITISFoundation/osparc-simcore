@@ -1,4 +1,3 @@
-import asyncio
 import logging
 from datetime import timedelta
 from typing import Final
@@ -9,6 +8,7 @@ from models_library.products import ProductName
 from models_library.users import UserID
 from servicelib.logging_errors import create_troubleshotting_log_kwargs
 from servicelib.logging_utils import log_context
+from simcore_service_webserver.products import _api as products_service
 
 from ..folders import folders_trash_service
 from ..projects import projects_trash_service
@@ -62,7 +62,7 @@ async def _empty_explicitly_trashed_projects(
                 )
 
 
-async def _empty_trashed_folders(
+async def _empty_explicitly_trashed_folders_and_content(
     app: web.Application, product_name: ProductName, user_id: UserID
 ):
     trashed_folders_ids = await folders_trash_service.list_explicitly_trashed_folders(
@@ -99,27 +99,72 @@ async def _empty_trashed_folders(
                 )
 
 
-async def empty_trash_safe(
+async def safe_empty_trash(
     app: web.Application, *, product_name: ProductName, user_id: UserID
 ):
     await _empty_explicitly_trashed_projects(app, product_name, user_id)
 
-    await _empty_trashed_folders(app, product_name, user_id)
+    await _empty_explicitly_trashed_folders_and_content(app, product_name, user_id)
 
 
-async def prune_trash(app: web.Application) -> list[str]:
-    """Deletes expired items in the trash"""
+async def safe_delete_expired_trash_as_admin(app: web.Application) -> None:
     settings = get_plugin_settings(app)
-
-    # app-wide
     retention = timedelta(days=settings.TRASH_RETENTION_DAYS)
-    expiration_dt = arrow.now().datetime - retention
+    delete_until = arrow.now().datetime - retention
 
-    _logger.debug(
-        "CODE PLACEHOLDER: **ALL** items marked as trashed during %s days are deleted (those marked before %s)",
-        retention,
-        expiration_dt,
-    )
-    await asyncio.sleep(5)
+    app_products_names = await products_service.list_products_names(app)
 
-    return []
+    for product_name in app_products_names:
+
+        ctx = {
+            "delete_until": delete_until,
+            "retention": retention,
+            "product_name": product_name,
+        }
+
+        with log_context(
+            _logger,
+            logging.DEBUG,
+            "Deleting items marked as trashed before %s in %s [trashed_at < %s will be deleted]",
+            retention,
+            product_name,
+            delete_until,
+        ):
+            try:
+
+                await folders_trash_service.batch_delete_trashed_folders_as_admin(
+                    app,
+                    trashed_before=delete_until,
+                    product_name=product_name,
+                    fail_fast=False,
+                )
+
+            except Exception as exc:  # pylint: disable=broad-exception-caught
+                _logger.warning(
+                    **create_troubleshotting_log_kwargs(
+                        "Error batch deleting expired trashed folders as admin.",
+                        error=exc,
+                        error_context=ctx,
+                    )
+                )
+
+            try:
+
+                deleted_project_ids = (
+                    await projects_trash_service.batch_delete_trashed_projects_as_admin(
+                        app,
+                        trashed_before=delete_until,
+                        fail_fast=False,
+                    )
+                )
+
+                _logger.info("Deleted %d trashed projects", len(deleted_project_ids))
+
+            except Exception as exc:  # pylint: disable=broad-exception-caught
+                _logger.warning(
+                    **create_troubleshotting_log_kwargs(
+                        "Error batch deleting expired projects as admin.",
+                        error=exc,
+                        error_context=ctx,
+                    )
+                )

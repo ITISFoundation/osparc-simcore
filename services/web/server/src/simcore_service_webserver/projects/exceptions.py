@@ -79,6 +79,10 @@ class ProjectDeleteError(BaseProjectError):
         self.reason = reason
 
 
+class ProjectsBatchDeleteError(BaseProjectError):
+    msg_template = "One or more projects could not be deleted in the batch: {errors}"
+
+
 class ProjectTrashError(BaseProjectError):
     ...
 

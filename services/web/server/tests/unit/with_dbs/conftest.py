@@ -631,7 +631,7 @@ async def user_project(
     fake_project: ProjectDict,
     logged_user: UserInfoDict,
     tests_data_dir: Path,
-    osparc_product_name: str,
+    osparc_product_name: ProductName,
 ) -> AsyncIterator[ProjectDict]:
     async with NewProject(
         fake_project,
