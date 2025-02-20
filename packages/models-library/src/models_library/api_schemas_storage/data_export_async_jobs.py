@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field
 
 class DataExportTaskStartInput(BaseModel):
     user_id: UserID
+    product_name: str
     location_id: LocationID
     paths: list[Path] = Field(..., min_length=1)
 

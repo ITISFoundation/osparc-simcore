@@ -48,3 +48,4 @@ class AsyncJobAccessData(BaseModel):
     """Data for controlling access to an async job"""
 
     user_id: UserID | None
+    product_name: str

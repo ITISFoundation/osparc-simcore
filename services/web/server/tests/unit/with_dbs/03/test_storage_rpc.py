@@ -37,8 +37,8 @@ from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import (
     get_result,
     get_status,
     list_jobs,
+    submit_job,
 )
-from servicelib.rabbitmq.rpc_interfaces.storage.data_export import start_data_export
 from simcore_postgres_database.models.users import UserRole
 
 _faker = Faker()
@@ -81,7 +81,7 @@ async def test_data_export(
     backend_result_or_exception: Any,
 ):
     create_storage_rpc_client_mock(
-        start_data_export.__name__,
+        submit_job.__name__,
         backend_result_or_exception,
     )
 

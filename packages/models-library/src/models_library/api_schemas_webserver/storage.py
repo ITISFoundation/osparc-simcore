@@ -19,10 +19,13 @@ class DataExportPost(InputSchema):
     paths: list[Path]
 
     def to_rpc_schema(
-        self, user_id: UserID, location_id: LocationID
+        self, user_id: UserID, product_name: str, location_id: LocationID
     ) -> DataExportTaskStartInput:
         return DataExportTaskStartInput(
-            paths=self.paths, user_id=user_id, location_id=location_id
+            paths=self.paths,
+            user_id=user_id,
+            product_name=product_name,
+            location_id=location_id,
         )
 
 
