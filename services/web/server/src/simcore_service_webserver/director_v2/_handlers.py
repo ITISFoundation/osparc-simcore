@@ -24,7 +24,7 @@ from .._meta import API_VTAG as VTAG
 from ..db.plugin import get_database_engine
 from ..login.decorators import login_required
 from ..models import RequestContext
-from ..products import api as products_api
+from ..products import api as products_service
 from ..security.decorators import permission_required
 from ..users.exceptions import UserDefaultWalletNotFoundError
 from ..utils_aiohttp import envelope_json_response
@@ -88,7 +88,7 @@ async def start_computation(request: web.Request) -> web.Response:
             )
 
         # Get wallet information
-        product = products_api.get_current_product(request)
+        product = products_service.get_current_product(request)
         wallet_info = await get_wallet_info(
             request.app,
             product=product,

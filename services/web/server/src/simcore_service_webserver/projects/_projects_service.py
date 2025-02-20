@@ -1,12 +1,3 @@
-"""Interface to other subsystems
-
-- Data validation
-- Operations on projects
-    - are NOT handlers, therefore do not return web.Response
-    - return data and successful HTTP responses (or raise them)
-    - upon failure raise errors that can be also HTTP reponses
-"""
-
 import asyncio
 import collections
 import datetime
@@ -96,8 +87,7 @@ from ..application_settings import get_application_settings
 from ..catalog import client as catalog_service
 from ..director_v2 import api as director_v2_service
 from ..dynamic_scheduler import api as dynamic_scheduler_service
-from ..products import api as products_api
-from ..products.api import get_product_name
+from ..products import api as products_service
 from ..rabbitmq import get_rabbitmq_rpc_client
 from ..redis import get_redis_lock_manager_client_sdk
 from ..resource_manager.user_sessions import (
@@ -113,26 +103,24 @@ from ..socketio.messages import (
     send_message_to_user,
 )
 from ..storage import api as storage_service
-from ..users.api import FullNameDict, get_user, get_user_fullname, get_user_role
+from ..users import api as users_service
+from ..users import preferences_api as users_preferences_service
+from ..users.api import FullNameDict
 from ..users.exceptions import UserNotFoundError
 from ..users.preferences_api import (
     PreferredWalletIdFrontendUserPreference,
     UserDefaultWalletNotFoundError,
-    get_frontend_user_preference,
 )
-from ..wallets import api as wallets_api
+from ..wallets import api as wallets_service
 from ..wallets.errors import WalletNotEnoughCreditsError
-from ..workspaces import _workspaces_repository as workspaces_db
+from ..workspaces import _workspaces_repository
 from . import (
+    _access_rights_service,
     _nodes_repository,
     _nodes_service,
     _projects_repository,
     _projects_service_delete,
     _wallets_service,
-)
-from ._access_rights_service import (
-    check_user_project_permission,
-    has_user_project_access_rights,
 )
 from ._nodes_service_utils import (
     set_reservation_same_as_limit,
@@ -188,7 +176,7 @@ async def get_project_for_user(
     db = ProjectDBAPI.get_from_app_context(app)
 
     product_name = await db.get_project_product(ProjectID(project_uuid))
-    user_project_access = await check_user_project_permission(
+    user_project_access = await _access_rights_service._access_rights_service.check_user_project_permission(
         app,
         project_id=ProjectID(project_uuid),
         user_id=user_id,
@@ -227,7 +215,7 @@ async def get_project_for_user(
 
     if project["workspaceId"] is not None:
         workspace: UserWorkspaceWithAccessRights = (
-            await workspaces_db.get_workspace_for_user(
+            await _workspaces_repository.get_workspace_for_user(
                 app=app,
                 user_id=user_id,
                 workspace_id=project["workspaceId"],
@@ -279,12 +267,14 @@ async def patch_project(
     project_db = await db.get_project_db(project_uuid=project_uuid)
 
     # 2. Check user permissions
-    _user_project_access_rights = await check_user_project_permission(
-        app,
-        project_id=project_uuid,
-        user_id=user_id,
-        product_name=product_name,
-        permission="write",
+    _user_project_access_rights = (
+        await _access_rights_service.check_user_project_permission(
+            app,
+            project_id=project_uuid,
+            user_id=user_id,
+            product_name=product_name,
+            permission="write",
+        )
     )
 
     # 3. If patching access rights
@@ -298,7 +288,7 @@ async def patch_project(
             "write": True,
             "delete": True,
         }
-        user: dict = await get_user(app, project_db.prj_owner)
+        user: dict = await users_service.get_user(app, project_db.prj_owner)
         _prj_owner_primary_group = f"{user['primary_gid']}"
         if _prj_owner_primary_group not in new_prj_access_rights:
             raise ProjectOwnerNotFoundInTheProjectAccessRightsError
@@ -534,7 +524,7 @@ async def _check_project_node_has_all_required_inputs(
     node_id: NodeID,
 ) -> None:
     product_name = await db.get_project_product(project_uuid)
-    await check_user_project_permission(
+    await _access_rights_service.check_user_project_permission(
         app,
         project_id=project_uuid,
         user_id=user_id,
@@ -622,9 +612,11 @@ async def _start_dynamic_service(  # noqa: C901
         raise
 
     save_state = False
-    user_role: UserRole = await get_user_role(request.app, user_id=user_id)
+    user_role: UserRole = await users_service.get_user_role(
+        request.app, user_id=user_id
+    )
     if user_role > UserRole.GUEST:
-        save_state = await has_user_project_access_rights(
+        save_state = await _access_rights_service.has_user_project_access_rights(
             request.app, project_id=project_uuid, user_id=user_id, permission="write"
         )
 
@@ -651,7 +643,7 @@ async def _start_dynamic_service(  # noqa: C901
 
         # Get wallet/pricing/hardware information
         wallet_info, pricing_info, hardware_info = None, None, None
-        product = products_api.get_current_product(request)
+        product = products_service.get_current_product(request)
         app_settings = get_application_settings(request.app)
         if (
             product.is_payment_enabled
@@ -662,11 +654,13 @@ async def _start_dynamic_service(  # noqa: C901
                 request.app, project_id=project_uuid
             )
             if project_wallet is None:
-                user_default_wallet_preference = await get_frontend_user_preference(
-                    request.app,
-                    user_id=user_id,
-                    product_name=product_name,
-                    preference_class=PreferredWalletIdFrontendUserPreference,
+                user_default_wallet_preference = (
+                    await users_preferences_service.get_frontend_user_preference(
+                        request.app,
+                        user_id=user_id,
+                        product_name=product_name,
+                        preference_class=PreferredWalletIdFrontendUserPreference,
+                    )
                 )
                 if user_default_wallet_preference is None:
                     raise UserDefaultWalletNotFoundError(uid=user_id)
@@ -683,13 +677,11 @@ async def _start_dynamic_service(  # noqa: C901
             else:
                 project_wallet_id = project_wallet.wallet_id
             # Check whether user has access to the wallet
-            wallet = (
-                await wallets_api.get_wallet_with_available_credits_by_user_and_wallet(
-                    request.app,
-                    user_id=user_id,
-                    wallet_id=project_wallet_id,
-                    product_name=product_name,
-                )
+            wallet = await wallets_service.get_wallet_with_available_credits_by_user_and_wallet(
+                request.app,
+                user_id=user_id,
+                wallet_id=project_wallet_id,
+                product_name=product_name,
             )
             wallet_info = WalletInfo(
                 wallet_id=project_wallet_id,
@@ -814,7 +806,7 @@ async def add_project_node(
         extra=get_log_record_extra(user_id=user_id),
     )
 
-    await check_user_project_permission(
+    await _access_rights_service.check_user_project_permission(
         request.app,
         project_id=project["uuid"],
         user_id=user_id,
@@ -936,7 +928,7 @@ async def delete_project_node(
         "deleting node %s in project %s for user %s", node_uuid, project_uuid, user_id
     )
 
-    await check_user_project_permission(
+    await _access_rights_service.check_user_project_permission(
         request.app,
         project_id=project_uuid,
         user_id=user_id,
@@ -974,7 +966,7 @@ async def delete_project_node(
     assert db  # nosec
     await db.remove_project_node(user_id, project_uuid, NodeID(node_uuid))
     # also ensure the project is updated by director-v2 since services
-    product_name = get_product_name(request)
+    product_name = products_service.get_product_name(request)
     await director_v2_service.create_or_update_pipeline(
         request.app, user_id, project_uuid, product_name
     )
@@ -1009,7 +1001,7 @@ async def update_project_node_state(
 
     db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
     product_name = await db.get_project_product(project_id)
-    await check_user_project_permission(
+    await _access_rights_service.check_user_project_permission(
         app,
         project_id=project_id,
         user_id=user_id,
@@ -1062,7 +1054,7 @@ async def patch_project_node(
     _projects_repository = ProjectDBAPI.get_from_app_context(app)
 
     # 1. Check user permissions
-    await check_user_project_permission(
+    await _access_rights_service.check_user_project_permission(
         app,
         project_id=project_id,
         user_id=user_id,
@@ -1349,7 +1341,8 @@ async def try_open_project_for_user(
             project_uuid=project_uuid,
             status=ProjectStatus.OPENING,
             owner=Owner(
-                user_id=user_id, **await get_user_fullname(app, user_id=user_id)
+                user_id=user_id,
+                **await users_service.get_user_fullname(app, user_id=user_id),
             ),
             notification_cb=None,
         )
@@ -1523,7 +1516,7 @@ async def _get_project_lock_state(
         f"{set_user_ids=}",
     )
     usernames: list[FullNameDict] = [
-        await get_user_fullname(app, user_id=uid) for uid in set_user_ids
+        await users_service.get_user_fullname(app, user_id=uid) for uid in set_user_ids
     ]
     # let's check if the project is opened by the same user, maybe already opened or closed in a orphaned session
     if set_user_ids.issubset({user_id}) and not await _user_has_another_client_open(
@@ -1824,17 +1817,17 @@ async def remove_project_dynamic_services(
         user_id,
     )
 
-    user_name_data: FullNameDict = user_name or await get_user_fullname(
+    user_name_data: FullNameDict = user_name or await users_service.get_user_fullname(
         app, user_id=user_id
     )
 
     user_role: UserRole | None = None
     try:
-        user_role = await get_user_role(app, user_id=user_id)
+        user_role = await users_service.get_user_role(app, user_id=user_id)
     except UserNotFoundError:
         user_role = None
 
-    save_state = await has_user_project_access_rights(
+    save_state = await _access_rights_service.has_user_project_access_rights(
         app, project_id=ProjectID(project_uuid), user_id=user_id, permission="write"
     )
     if user_role is None or user_role <= UserRole.GUEST:

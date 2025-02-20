@@ -13,7 +13,7 @@ from ..director_v2 import api as director_v2_service
 from ..storage import api as storage_service
 from ..users.api import FullNameDict
 from ..users.exceptions import UserNotFoundError
-from . import _access_rights_service, _projects_repository, projects_service
+from . import _access_rights_service, _projects_repository, _projects_service
 from ._projects_repository_legacy import ProjectDBAPI
 from .exceptions import (
     ProjectDeleteError,
@@ -59,7 +59,7 @@ async def batch_stop_services_in_project(
         director_v2_service.stop_pipeline(
             app, user_id=user_id, project_id=project_uuid
         ),
-        projects_service.remove_project_dynamic_services(
+        _projects_service.remove_project_dynamic_services(
             user_id=user_id,
             project_uuid=f"{project_uuid}",
             app=app,
