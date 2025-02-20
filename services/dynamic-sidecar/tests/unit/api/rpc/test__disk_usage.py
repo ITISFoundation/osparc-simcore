@@ -1,3 +1,5 @@
+# pylint:disable=protected-access
+# pylint:disable=redefined-outer-name
 # pylint:disable=unused-argument
 
 import pytest
