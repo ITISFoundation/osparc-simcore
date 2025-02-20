@@ -596,19 +596,8 @@ async def get_folders_recursively(
         )
         folder_hierarchy_cte = base_query.cte(name="folder_hierarchy", recursive=True)
 
-        # Step 2: Define the recursive case
-        folder_alias = aliased(folders_v2)
-        recursive_query = sql.select(
-            folder_alias.c.folder_id, folder_alias.c.parent_folder_id
-        ).select_from(
-            folder_alias.join(
-                folder_hierarchy_cte,
-                folder_alias.c.parent_folder_id == folder_hierarchy_cte.c.folder_id,
-            )
-        )
-
-        # Step 3: Combine base and recursive cases into a CTE
-        folder_hierarchy_cte = folder_hierarchy_cte.union_all(recursive_query)
+        # Step 2, 3
+        folder_hierarchy_cte = _create_folder_hierarchy_cte(base_query)
 
         # Step 4: Execute the query to get all descendants
         final_query = sql.select(folder_hierarchy_cte)
