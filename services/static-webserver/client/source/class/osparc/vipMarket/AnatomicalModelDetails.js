@@ -65,7 +65,7 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
   },
 
   members: {
-    __selectedModelLayout: null,
+    __modelsInfoStack: null,
 
     __populateLayout: function() {
       this._removeAll();
@@ -91,8 +91,13 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
     __addModelsInfo: function() {
       const modelBundleLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(6));
 
-      this.__selectedModelLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(6));
-      modelBundleLayout.add(this.__selectedModelLayout);
+      const stack = this.__modelsInfoStack = new qx.ui.container.Stack();
+      this._add(stack, {
+        flex: 1
+      });
+      modelBundleLayout.add(this.__modelsInfoStack);
+
+      this.__populateModelsInfo();
 
       const licensedItemBundleData = this.getAnatomicalModelsData();
       const modelsInfo = licensedItemBundleData["licensedResources"];
@@ -102,8 +107,12 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
         modelSelectionLayout.add(titleLabel);
         const modelsLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(4));
         modelSelectionLayout.add(modelsLayout);
-        const thumbnailTapped = idx => {
-          this.__populateSelectedModelInfo(idx);
+
+        const modelSelected = idx => {
+          if (this.__modelsInfoStack.getSelectables().length > idx) {
+            this.__modelsInfoStack.setSelection([stack.getSelectables()[idx]]);
+          }
+
           const selectedBorderColor = qx.theme.manager.Color.getInstance().resolve("strong-main");
           const unselectedBorderColor = "transparent";
           modelsLayout.getChildren().forEach((thumbnailAndTitle, index) => {
@@ -111,6 +120,7 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
             osparc.utils.Utils.updateBorderColor(thumbnail, index === idx ? selectedBorderColor : unselectedBorderColor);
           });
         }
+
         modelsInfo.forEach((modelInfo, idx) => {
           const modelLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(4)).set({
             allowGrowX: false,
@@ -124,199 +134,203 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
           });
           modelLayout.add(title);
           modelLayout.setCursor("pointer");
-          modelLayout.addListener("tap", () => thumbnailTapped(idx));
+          modelLayout.addListener("tap", () => modelSelected(idx));
           modelsLayout.add(modelLayout);
         });
         modelBundleLayout.add(modelSelectionLayout);
-        thumbnailTapped(0);
 
-        this.__populateSelectedModelInfo();
-      } else {
-        this.__populateSelectedModelInfo();
+        modelSelected(0);
       }
 
       this._add(modelBundleLayout);
     },
 
-    __populateSelectedModelInfo: function(selectedIdx = 0) {
-      this.__selectedModelLayout.removeAll();
+    __populateModelsInfo: function() {
+      this.__modelsInfoStack.removeAll();
 
       const licensedItemBundleData = this.getAnatomicalModelsData();
+      const modelsInfo = licensedItemBundleData["licensedResources"];
+      modelsInfo.forEach((modelInfo, index) => {
+        const modelInfoLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(4));
 
-      const topGrid = new qx.ui.layout.Grid(8, 6);
-      topGrid.setColumnFlex(0, 1);
-      const headerLayout = new qx.ui.container.Composite(topGrid);
-      const anatomicalModel = licensedItemBundleData["licensedResources"][selectedIdx]["source"];
-      let description = anatomicalModel["description"] || "";
-      description = description.replace(/SPEAG/g, " "); // remove SPEAG substring
-      const delimiter = " - ";
-      let titleAndSubtitle = description.split(delimiter);
-      if (titleAndSubtitle.length > 0) {
-        const titleLabel = new qx.ui.basic.Label().set({
-          value: titleAndSubtitle[0],
-          font: "text-16",
-          alignY: "middle",
-          allowGrowX: true,
-          allowGrowY: true,
-        });
-        headerLayout.add(titleLabel, {
-          column: 0,
-          row: 0,
-        });
-        titleAndSubtitle.shift();
-      }
-      if (titleAndSubtitle.length > 0) {
-        titleAndSubtitle = titleAndSubtitle.join(delimiter);
-        const subtitleLabel = new qx.ui.basic.Label().set({
-          value: titleAndSubtitle,
-          font: "text-16",
-          alignY: "middle",
-          allowGrowX: true,
-          allowGrowY: true,
-        });
-        headerLayout.add(subtitleLabel, {
-          column: 0,
-          row: 1,
-        });
-      }
-      if (anatomicalModel["thumbnail"]) {
-        const manufacturerData = {};
-        if (anatomicalModel["thumbnail"].includes("itis.swiss")) {
-          manufacturerData["label"] = "IT'IS Foundation";
-          manufacturerData["link"] = "https://itis.swiss/virtual-population/";
-          manufacturerData["icon"] = "https://media.licdn.com/dms/image/v2/C4D0BAQE_FGa66IyvrQ/company-logo_200_200/company-logo_200_200/0/1631341490431?e=2147483647&v=beta&t=7f_IK-ArGjPrz-1xuWolAT4S2NdaVH-e_qa8hsKRaAc";
-        } else if (anatomicalModel["thumbnail"].includes("speag.swiss")) {
-          manufacturerData["label"] = "Speag";
-          manufacturerData["link"] = "https://speag.swiss/products/em-phantoms/overview-2/";
-          manufacturerData["icon"] = "https://media.licdn.com/dms/image/v2/D4E0BAQG2CYG28KAKbA/company-logo_200_200/company-logo_200_200/0/1700045977122/schmid__partner_engineering_ag_logo?e=2147483647&v=beta&t=6CZb1jjg5TnnzQWkrZBS9R3ebRKesdflg-_xYi4dwD8";
-        }
-        if (Object.keys(manufacturerData).length) {
-          const manufacturerLink = new qx.ui.basic.Atom().set({
-            label: manufacturerData["label"],
-            icon: manufacturerData["icon"],
-            font: "text-16",
-            gap: 10,
-            iconPosition: "right",
-            cursor: "pointer",
-          });
-          manufacturerLink.getChildControl("icon").set({
-            maxWidth: 32,
-            maxHeight: 32,
-            scale: true,
-            decorator: "rounded",
-          });
-          manufacturerLink.addListener("tap", () => window.open(manufacturerData["link"]));
-          headerLayout.add(manufacturerLink, {
-            column: 1,
-            row: 0,
-            rowSpan: 2,
-          });
-        }
-      }
-      this.__selectedModelLayout.add(headerLayout);
+        const anatomicalModel = modelInfo["source"];
 
-
-      const middleLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(16));
-      const thumbnail = this.self().createThumbnail(anatomicalModel["thumbnail"], 256);
-      middleLayout.add(thumbnail);
-
-      const features = anatomicalModel["features"];
-      const featuresGrid = new qx.ui.layout.Grid(8, 8);
-      const featuresLayout = new qx.ui.container.Composite(featuresGrid);
-      let idx = 0;
-      [
-        "Name",
-        "Version",
-        "Date",
-        "Species",
-        "Sex",
-        "Age",
-        "Weight",
-        "Height",
-        "Ethnicity",
-        "Functionality",
-      ].forEach(key => {
-        if (key.toLowerCase() in features) {
+        const topGrid = new qx.ui.layout.Grid(8, 6);
+        topGrid.setColumnFlex(0, 1);
+        const headerLayout = new qx.ui.container.Composite(topGrid);
+        let description = anatomicalModel["description"] || "";
+        description = description.replace(/SPEAG/g, " "); // remove SPEAG substring
+        const delimiter = " - ";
+        let titleAndSubtitle = description.split(delimiter);
+        if (titleAndSubtitle.length > 0) {
           const titleLabel = new qx.ui.basic.Label().set({
-            value: key,
+            value: titleAndSubtitle[0],
+            font: "text-16",
+            alignY: "middle",
+            allowGrowX: true,
+            allowGrowY: true,
+          });
+          headerLayout.add(titleLabel, {
+            column: 0,
+            row: 0,
+          });
+          titleAndSubtitle.shift();
+        }
+        if (titleAndSubtitle.length > 0) {
+          titleAndSubtitle = titleAndSubtitle.join(delimiter);
+          const subtitleLabel = new qx.ui.basic.Label().set({
+            value: titleAndSubtitle,
+            font: "text-16",
+            alignY: "middle",
+            allowGrowX: true,
+            allowGrowY: true,
+          });
+          headerLayout.add(subtitleLabel, {
+            column: 0,
+            row: 1,
+          });
+        }
+        if (anatomicalModel["thumbnail"]) {
+          const manufacturerData = {};
+          if (anatomicalModel["thumbnail"].includes("itis.swiss")) {
+            manufacturerData["label"] = "IT'IS Foundation";
+            manufacturerData["link"] = "https://itis.swiss/virtual-population/";
+            manufacturerData["icon"] = "https://media.licdn.com/dms/image/v2/C4D0BAQE_FGa66IyvrQ/company-logo_200_200/company-logo_200_200/0/1631341490431?e=2147483647&v=beta&t=7f_IK-ArGjPrz-1xuWolAT4S2NdaVH-e_qa8hsKRaAc";
+          } else if (anatomicalModel["thumbnail"].includes("speag.swiss")) {
+            manufacturerData["label"] = "Speag";
+            manufacturerData["link"] = "https://speag.swiss/products/em-phantoms/overview-2/";
+            manufacturerData["icon"] = "https://media.licdn.com/dms/image/v2/D4E0BAQG2CYG28KAKbA/company-logo_200_200/company-logo_200_200/0/1700045977122/schmid__partner_engineering_ag_logo?e=2147483647&v=beta&t=6CZb1jjg5TnnzQWkrZBS9R3ebRKesdflg-_xYi4dwD8";
+          }
+          if (Object.keys(manufacturerData).length) {
+            const manufacturerLink = new qx.ui.basic.Atom().set({
+              label: manufacturerData["label"],
+              icon: manufacturerData["icon"],
+              font: "text-16",
+              gap: 10,
+              iconPosition: "right",
+              cursor: "pointer",
+            });
+            manufacturerLink.getChildControl("icon").set({
+              maxWidth: 32,
+              maxHeight: 32,
+              scale: true,
+              decorator: "rounded",
+            });
+            manufacturerLink.addListener("tap", () => window.open(manufacturerData["link"]));
+            headerLayout.add(manufacturerLink, {
+              column: 1,
+              row: 0,
+              rowSpan: 2,
+            });
+          }
+        }
+        modelInfoLayout.add(headerLayout);
+
+
+        const middleLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(16));
+        const thumbnail = this.self().createThumbnail(anatomicalModel["thumbnail"], 256);
+        middleLayout.add(thumbnail);
+
+        const features = anatomicalModel["features"];
+        const featuresGrid = new qx.ui.layout.Grid(8, 8);
+        const featuresLayout = new qx.ui.container.Composite(featuresGrid);
+        let idx = 0;
+        [
+          "Name",
+          "Version",
+          "Date",
+          "Species",
+          "Sex",
+          "Age",
+          "Weight",
+          "Height",
+          "Ethnicity",
+          "Functionality",
+        ].forEach(key => {
+          if (key.toLowerCase() in features) {
+            const titleLabel = new qx.ui.basic.Label().set({
+              value: key,
+              font: "text-14",
+              alignX: "right",
+            });
+            featuresLayout.add(titleLabel, {
+              column: 0,
+              row: idx,
+            });
+
+            const nameLabel = new qx.ui.basic.Label().set({
+              value: features[key.toLowerCase()],
+              font: "text-14",
+              alignX: "left",
+            });
+            featuresLayout.add(nameLabel, {
+              column: 1,
+              row: idx,
+            });
+
+            idx++;
+          }
+        });
+
+        if (anatomicalModel["doi"]) {
+          const doiTitle = new qx.ui.basic.Label().set({
+            value: "DOI",
             font: "text-14",
             alignX: "right",
+            marginTop: 10,
           });
-          featuresLayout.add(titleLabel, {
+          featuresLayout.add(doiTitle, {
             column: 0,
             row: idx,
           });
 
-          const nameLabel = new qx.ui.basic.Label().set({
-            value: features[key.toLowerCase()],
-            font: "text-14",
-            alignX: "left",
-          });
-          featuresLayout.add(nameLabel, {
+          const doiToLink = doi => {
+            const doiLabel = new osparc.ui.basic.LinkLabel("-").set({
+              font: "text-14",
+              alignX: "left",
+              marginTop: 10,
+            });
+            if (doi) {
+              doiLabel.set({
+                value: doi,
+                url: "https://doi.org/" + doi,
+                font: "link-label-14",
+              });
+            }
+            return doiLabel;
+          };
+          featuresLayout.add(doiToLink(anatomicalModel["doi"]), {
             column: 1,
             row: idx,
           });
-
           idx++;
         }
-      });
 
-      if (anatomicalModel["doi"]) {
-        const doiTitle = new qx.ui.basic.Label().set({
-          value: "DOI",
-          font: "text-14",
-          alignX: "right",
-          marginTop: 10,
-        });
-        featuresLayout.add(doiTitle, {
-          column: 0,
-          row: idx,
-        });
-
-        const doiToLink = doi => {
-          const doiLabel = new osparc.ui.basic.LinkLabel("-").set({
+        if (licensedItemBundleData["termsOfUseUrl"] || anatomicalModel["termsOfUseUrl"]) { // remove the first one when this info goes down to the model
+          const tAndC = new qx.ui.basic.Label().set({
             font: "text-14",
-            alignX: "left",
-            marginTop: 10,
+            value: this.tr("<u>Terms and Conditions</u>"),
+            rich: true,
+            anonymous: false,
+            cursor: "pointer",
           });
-          if (doi) {
-            doiLabel.set({
-              value: doi,
-              url: "https://doi.org/" + doi,
-              font: "link-label-14",
-            });
-          }
-          return doiLabel;
-        };
-        featuresLayout.add(doiToLink(anatomicalModel["doi"]), {
-          column: 1,
-          row: idx,
-        });
-        idx++;
-      }
+          tAndC.addListener("tap", () => this.__openLicense(licensedItemBundleData["termsOfUseUrl"] || anatomicalModel["termsOfUseUrl"]));
+          featuresLayout.add(tAndC, {
+            column: 1,
+            row: idx,
+          });
+          idx++;
+        }
 
-      if (licensedItemBundleData["termsOfUseUrl"] || anatomicalModel["termsOfUseUrl"]) { // remove the first one when this info goes down to the model
-        const tAndC = new qx.ui.basic.Label().set({
-          font: "text-14",
-          value: this.tr("<u>Terms and Conditions</u>"),
-          rich: true,
-          anonymous: false,
-          cursor: "pointer",
-        });
-        tAndC.addListener("tap", () => this.__openLicense(licensedItemBundleData["termsOfUseUrl"] || anatomicalModel["termsOfUseUrl"]));
-        featuresLayout.add(tAndC, {
-          column: 1,
-          row: idx,
-        });
-        idx++;
-      }
+        middleLayout.add(featuresLayout);
 
-      middleLayout.add(featuresLayout);
+        modelInfoLayout.add(middleLayout);
 
-      this.__selectedModelLayout.add(middleLayout);
+        const importSection = this.__createImportSection(licensedItemBundleData, index);
+        modelInfoLayout.add(importSection);
 
-      const importSection = this.__createImportSection(licensedItemBundleData, selectedIdx);
-      this.__selectedModelLayout.add(importSection);
+        this.__modelsInfoStack.add(modelInfoLayout);
+      })
     },
 
     __openLicense: function(rawLink) {
