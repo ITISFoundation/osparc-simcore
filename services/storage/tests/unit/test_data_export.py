@@ -80,7 +80,10 @@ async def test_start_data_export(rpc_client: RabbitMQRPCClient, faker: Faker):
         rpc_namespace=STORAGE_RPC_NAMESPACE,
         job_name="start_data_export",
         paths=DataExportTaskStartInput(
-            user_id=1, location_id=0, paths=[Path(faker.file_path())]
+            user_id=1,
+            product_name="osparc",
+            location_id=0,
+            paths=[Path(faker.file_path())],
         ),
     )
     assert isinstance(result, AsyncJobGet)
