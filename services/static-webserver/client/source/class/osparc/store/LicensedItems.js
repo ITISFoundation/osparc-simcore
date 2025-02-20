@@ -72,8 +72,9 @@ qx.Class.define("osparc.store.LicensedItems", {
 
     licensedResourceTitle: function(licensedResource) {
       const name = licensedResource["source"]["features"]["name"] || osparc.store.LicensedItems.extractNameFromDescription(licensedResource);
+      const version = licensedResource["source"]["features"]["version"] || "";
       const functionality = licensedResource["source"]["features"]["functionality"] || "Static";
-      return `${name}, ${functionality}`;
+      return `${name} ${version}, ${functionality}`;
     },
 
     extractNameFromDescription: function(licensedResource) {
