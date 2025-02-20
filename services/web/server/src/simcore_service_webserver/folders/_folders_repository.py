@@ -594,7 +594,6 @@ async def get_folders_recursively(
             (folders_v2.c.folder_id == folder_id)  # <-- specified folder id
             & (folders_v2.c.product_name == product_name)
         )
-        folder_hierarchy_cte = base_query.cte(name="folder_hierarchy", recursive=True)
 
         # Step 2, 3
         folder_hierarchy_cte = _create_folder_hierarchy_cte(base_query)
