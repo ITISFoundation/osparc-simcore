@@ -6,6 +6,7 @@ from enum import Enum, IntEnum, auto
 from typing import Any, Literal, TypeAlias
 
 import arrow
+from models_library.osparc_jobs import OsparcJobId
 from pydantic import BaseModel, Field
 
 from .products import ProductName
@@ -50,8 +51,11 @@ class RabbitMessageBase(BaseModel):
         return self.model_dump_json().encode()
 
 
-class ProjectMessageBase(BaseModel):
+class WorkerJobMessageBase(BaseModel):
     user_id: UserID
+
+
+class ProjectMessageBase(WorkerJobMessageBase):
     project_id: ProjectID
 
 
@@ -93,6 +97,8 @@ class ProgressType(StrAutoEnum):
 
     PROJECT_CLOSING = auto()
 
+    WORKER_JOB_EXPORTING = auto()
+
 
 class ProgressMessageMixin(RabbitMessageBase):
     channel_name: Literal[
@@ -115,6 +121,13 @@ class ProgressRabbitMessageNode(ProgressMessageMixin, NodeMessageBase):
 class ProgressRabbitMessageProject(ProgressMessageMixin, ProjectMessageBase):
     def routing_key(self) -> str | None:
         return f"{self.project_id}.all_nodes"
+
+
+class ProgressRabbitMessageWorkerJob(ProgressMessageMixin, WorkerJobMessageBase):
+    osparc_job_id: OsparcJobId
+
+    def routing_key(self) -> str | None:
+        return f"{self.user_id}.worker_job"
 
 
 class InstrumentationRabbitMessage(RabbitMessageBase, NodeMessageBase):

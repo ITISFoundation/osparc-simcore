@@ -27,4 +27,5 @@ python-dotenv
 respx
 simcore-service-storage-sdk @ git+https://github.com/ITISFoundation/osparc-simcore.git@cfdf4f86d844ebb362f4f39e9c6571d561b72897#subdirectory=services/storage/client-sdk/python # to test backwards compatibility against deprecated client-sdk (used still in old versions of simcore-sdk)
 sqlalchemy[mypy] # adds Mypy / Pep-484 Support for ORM Mappings SEE https://docs.sqlalchemy.org/en/20/orm/extensions/mypy.html
+types_tqdm
 types-aiofiles

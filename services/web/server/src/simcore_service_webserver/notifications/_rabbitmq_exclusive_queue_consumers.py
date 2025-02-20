@@ -7,8 +7,10 @@ from models_library.groups import GroupID
 from models_library.rabbitmq_messages import (
     EventRabbitMessage,
     LoggerRabbitMessage,
+    ProgressMessageMixin,
     ProgressRabbitMessageNode,
     ProgressRabbitMessageProject,
+    ProgressRabbitMessageWorkerJob,
     ProgressType,
     WalletCreditsMessage,
 )
@@ -29,7 +31,11 @@ from ..socketio.messages import (
     send_message_to_standard_group,
     send_message_to_user,
 )
-from ..socketio.models import WebSocketNodeProgress, WebSocketProjectProgress
+from ..socketio.models import (
+    WebSocketNodeProgress,
+    WebSocketProjectProgress,
+    WebSocketWorkerJobProgress,
+)
 from ..wallets import api as wallets_api
 from ._rabbitmq_consumers_common import SubcribeArgumentsTuple, subscribe_to_rabbitmq
 
@@ -65,20 +71,29 @@ async def _convert_to_node_update_event(
 
 
 async def _progress_message_parser(app: web.Application, data: bytes) -> bool:
-    rabbit_message: ProgressRabbitMessageNode | ProgressRabbitMessageProject = (
-        TypeAdapter(
-            ProgressRabbitMessageNode | ProgressRabbitMessageProject
-        ).validate_json(data)
+    rabbit_message: (
+        ProgressRabbitMessageNode
+        | ProgressRabbitMessageProject
+        | ProgressRabbitMessageWorkerJob
+    ) = TypeAdapter(
+        ProgressRabbitMessageNode
+        | ProgressRabbitMessageProject
+        | ProgressRabbitMessageWorkerJob
+    ).validate_json(
+        data
     )
+
     message: SocketMessageDict | None = None
     if isinstance(rabbit_message, ProgressRabbitMessageProject):
         message = WebSocketProjectProgress.from_rabbit_message(
             rabbit_message
         ).to_socket_dict()
-
+    elif isinstance(rabbit_message, ProgressRabbitMessageWorkerJob):
+        message = WebSocketWorkerJobProgress.from_rabbit_message(
+            rabbit_message
+        ).to_socket_dict()
     elif rabbit_message.progress_type is ProgressType.COMPUTATION_RUNNING:
         message = await _convert_to_node_update_event(app, rabbit_message)
-
     else:
         message = WebSocketNodeProgress.from_rabbit_message(
             rabbit_message
@@ -156,7 +171,7 @@ _EXCHANGE_TO_PARSER_CONFIG: Final[tuple[SubcribeArgumentsTuple, ...]] = (
         {"topics": []},
     ),
     SubcribeArgumentsTuple(
-        ProgressRabbitMessageNode.get_channel_name(),
+        ProgressMessageMixin.get_channel_name(),
         _progress_message_parser,
         {"topics": []},
     ),
