@@ -1,3 +1,5 @@
+from typing import Annotated
+
 from fastapi import APIRouter, Depends
 from fastapi import Path as PathParam
 from fastapi import status
@@ -21,8 +23,8 @@ class PutVolumeItem(BaseModel):
 )
 async def put_volume_state(
     item: PutVolumeItem,
-    volume_category: VolumeCategory = PathParam(..., alias="id"),
-    shared_store: SharedStore = Depends(get_shared_store),
+    volume_category: Annotated[VolumeCategory, PathParam(..., alias="id")],
+    shared_store: Annotated[SharedStore, Depends(get_shared_store)],
 ) -> None:
     async with shared_store:
         shared_store.volume_states[volume_category] = VolumeState(status=item.status)
