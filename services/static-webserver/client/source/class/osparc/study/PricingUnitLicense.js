@@ -29,13 +29,6 @@ qx.Class.define("osparc.study.PricingUnitLicense", {
       nullable: true,
       event: "changeShowRentButton"
     },
-
-    licenseUrl: {
-      check: "String",
-      init: false,
-      nullable: true,
-      event: "changeLicenseUrl"
-    },
   },
 
   statics: {
@@ -95,28 +88,12 @@ qx.Class.define("osparc.study.PricingUnitLicense", {
       const nCredits = this.getUnitData().getCost();
       const expirationDate = osparc.study.PricingUnitLicense.getExpirationDate();
       let msg = this.getUnitData().getName() + this.tr(" will be available until ") + osparc.utils.Utils.formatDate(expirationDate);
-      msg += "<br>";
-      msg += `The rental will cost ${nCredits} credits`;
+      msg += `<br>The rental will cost ${nCredits} credits`;
+      msg += `<br>I hereby accept the Terms and Conditions`;
       const confirmationWin = new osparc.ui.window.Confirmation(msg).set({
         caption: this.tr("Rent"),
         confirmText: this.tr("Rent"),
       });
-
-      if (this.getLicenseUrl()) {
-        const useCacheCB = new qx.ui.form.CheckBox().set({
-          value: false,
-          label: this.tr("Accept <u>Terms and Conditions</u>"),
-          rich: true,
-        });
-        useCacheCB.getChildControl("label").set({
-          anonymous: false,
-          cursor: "pointer",
-        });
-        useCacheCB.getChildControl("label").addListener("tap", () => this.__openLicense());
-        confirmationWin.addWidget(useCacheCB);
-        confirmationWin.getExtraWidgetsLayout().setPaddingTop(0); // reset paddingTop
-        useCacheCB.bind("value", confirmationWin.getConfirmButton(), "enabled");
-      }
 
       confirmationWin.open();
       confirmationWin.addListener("close", () => {
@@ -124,20 +101,6 @@ qx.Class.define("osparc.study.PricingUnitLicense", {
           this.fireEvent("rentPricingUnit");
         }
       }, this);
-    },
-
-    __openLicense: function() {
-      let rawLink = this.getLicenseUrl() || "";
-      if (rawLink.includes("github")) {
-        // make sure the raw version of the link is shown
-        rawLink += "?raw=true";
-      }
-      const mdWindow = new osparc.ui.markdown.MarkdownWindow(rawLink).set({
-        caption: this.tr("Terms and Conditions"),
-        width: 800,
-        height: 600,
-      });
-      mdWindow.open();
     },
   }
 });

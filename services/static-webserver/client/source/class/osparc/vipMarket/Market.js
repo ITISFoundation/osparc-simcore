@@ -50,8 +50,8 @@ qx.Class.define("osparc.vipMarket.Market", {
   },
 
   members: {
-    __purchasedCategoryButton: null,
-    __purchasedCategoryMarket: null,
+    __myModelsCategoryMarket: null,
+    __myModelsCategoryButton: null,
 
     __populateCategories: function(openCategory) {
       const store = osparc.store.Store.getInstance();
@@ -68,18 +68,18 @@ qx.Class.define("osparc.vipMarket.Market", {
           const purchasedItems = values[1];
           osparc.store.LicensedItems.populateSeatsFromPurchases(licensedItems, purchasedItems);
           const categories = [];
-          const purchasedCategory = {
-            categoryId: "purchasedModels",
-            label: this.tr("Rented"),
+          const availableCategory = {
+            categoryId: "availableModels",
+            label: this.tr("My Models"),
             icon: "osparc/market/RentedModels.svg",
             items: [],
           };
-          categories.push(purchasedCategory);
+          categories.push(availableCategory);
           licensedItems.forEach(licensedItem => {
             if (licensedItem["seats"].length) {
-              purchasedCategory["items"].push(licensedItem);
+              availableCategory["items"].push(licensedItem);
               if (!openCategory) {
-                openCategory = purchasedCategory["categoryId"];
+                openCategory = availableCategory["categoryId"];
               }
             }
             if (licensedItem && licensedItem["categoryId"]) {
@@ -109,29 +109,22 @@ qx.Class.define("osparc.vipMarket.Market", {
             this.__openCategory(openCategory);
           }
 
-          this.__addFreeCategory();
+          this.__addFreeItems();
         });
     },
 
-    __addFreeCategory: function() {
-      const freeCategory = {
-        categoryId: "freeModels",
-        label: this.tr("Open Access Models"),
-        icon: "osparc/market/RentedModels.svg",
-        items: [],
-      };
+    __addFreeItems: function() {
       const licensedItemsStore = osparc.store.LicensedItems.getInstance();
       licensedItemsStore.getLicensedItems()
         .then(async licensedItems => {
+          this.__freeItems = [];
           for (const licensedItem of licensedItems) {
             const pricingUnits = await osparc.store.Pricing.getInstance().fetchPricingUnits(licensedItem["pricingPlanId"]);
             if (pricingUnits.length === 1 && pricingUnits[0].getCost() === 0) {
-              freeCategory["items"].push(licensedItem);
+              this.__freeItems.push(licensedItem);
             }
           }
-          if (freeCategory["items"].length) {
-            this.__buildViPMarketPage(freeCategory, freeCategory["items"]);
-          }
+          this.__repopulateMyModelsCategory();
         });
     },
 
@@ -141,19 +134,19 @@ qx.Class.define("osparc.vipMarket.Market", {
         category: marketTabInfo["categoryId"],
       });
       this.bind("openBy", vipMarketView, "openBy");
-      vipMarketView.addListener("modelPurchased", () => this.__repopulatePurchasedCategory());
+      vipMarketView.addListener("modelPurchased", () => this.__repopulateMyModelsCategory());
       vipMarketView.addListener("importMessageSent", () => this.fireEvent("importMessageSent"));
       const page = this.addTab(marketTabInfo["label"], marketTabInfo["icon"], vipMarketView);
       page.category = marketTabInfo["categoryId"];
-      if (page.category === "purchasedModels") {
-        this.__purchasedCategoryMarket = vipMarketView;
-        this.__purchasedCategoryButton = page.getChildControl("button");
-        this.__purchasedCategoryButton.setVisibility(licensedItems.length ? "visible" : "excluded");
+      if (page.category === "availableModels") {
+        this.__myModelsCategoryMarket = vipMarketView;
+        this.__myModelsCategoryButton = page.getChildControl("button");
+        this.__myModelsCategoryButton.setVisibility(licensedItems.length ? "visible" : "excluded");
       }
       return page;
     },
 
-    __repopulatePurchasedCategory: function() {
+    __repopulateMyModelsCategory: function() {
       const store = osparc.store.Store.getInstance();
       const contextWallet = store.getContextWallet();
       const walletId = contextWallet.getWalletId();
@@ -172,8 +165,9 @@ qx.Class.define("osparc.vipMarket.Market", {
               items.push(licensedItem);
             }
           });
-          this.__purchasedCategoryButton.setVisibility(items.length ? "visible" : "excluded");
-          this.__purchasedCategoryMarket.setLicensedItems(items);
+          items = items.concat(this.__freeItems);
+          this.__myModelsCategoryButton.setVisibility(items.length ? "visible" : "excluded");
+          this.__myModelsCategoryMarket.setLicensedItems(items);
         });
     },
 

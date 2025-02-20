@@ -70,10 +70,10 @@ qx.Class.define("osparc.store.LicensedItems", {
       return nSeats;
     },
 
-    licensedResourceNameAndVersion: function(licensedResource) {
+    licensedResourceTitle: function(licensedResource) {
       const name = licensedResource["source"]["features"]["name"] || osparc.store.LicensedItems.extractNameFromDescription(licensedResource);
-      const version = licensedResource["source"]["features"]["version"] || "";
-      return `${name} ${version}`;
+      const functionality = licensedResource["source"]["features"]["functionality"] || "Static";
+      return `${name}, ${functionality}`;
     },
 
     extractNameFromDescription: function(licensedResource) {

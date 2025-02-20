@@ -163,9 +163,9 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
         const selection = e.getData();
         if (selection.length) {
           const licensedItemId = selection[0].getLicensedItemId();
-          const bundleFound = this.__anatomicalBundles.find(anatomicalBundle => anatomicalBundle["licensedItemId"] === licensedItemId);
-          if (bundleFound) {
-            anatomicModelDetails.setAnatomicalModelsData(bundleFound);
+          const licensedItemBundle = this.__anatomicalBundles.find(anatomicalBundle => anatomicalBundle["licensedItemId"] === licensedItemId);
+          if (licensedItemBundle) {
+            anatomicModelDetails.setAnatomicalModelsData(licensedItemBundle);
             return;
           }
         }
@@ -212,9 +212,10 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
       if (!anatomicModelDetails.hasListener("modelImportRequested")) {
         anatomicModelDetails.addListener("modelImportRequested", e => {
           const {
-            modelId
+            modelId,
+            categoryId,
           } = e.getData();
-          this.__sendImportModelMessage(modelId);
+          this.__sendImportModelMessage(modelId, categoryId);
         }, this);
       }
     },
@@ -317,7 +318,7 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
         });
     },
 
-    __sendImportModelMessage: function(modelId) {
+    __sendImportModelMessage: function(modelId, categoryId) {
       const store = osparc.store.Store.getInstance();
       const currentStudy = store.getCurrentStudy();
       const nodeId = this.getOpenBy();
@@ -326,6 +327,7 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
           "type": "importModel",
           "message": {
             "modelId": modelId,
+            "categoryId": categoryId,
           },
         };
         if (currentStudy.sendMessageToIframe(nodeId, msg)) {
