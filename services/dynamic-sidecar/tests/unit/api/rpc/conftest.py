@@ -1,3 +1,6 @@
+# pylint:disable=redefined-outer-name
+# pylint:disable=unused-argument
+
 from collections.abc import AsyncIterable, Awaitable, Callable
 from unittest.mock import AsyncMock
 
