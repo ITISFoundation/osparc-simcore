@@ -1,6 +1,6 @@
 from fastapi import APIRouter, status
 
-from ...core.reserved_space import remove_reserved_disk_space
+from ...services.disk import remove_reserved_disk_space
 
 router = APIRouter()
 
