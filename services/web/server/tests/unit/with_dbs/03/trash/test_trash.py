@@ -338,6 +338,7 @@ async def test_trash_folder_with_content(
     resp = await client.post("/v0/folders", json={"name": "My first folder"})
     data, _ = await assert_status(resp, status.HTTP_201_CREATED)
     folder = FolderGet.model_validate(data)
+    assert folder.trashed_at is None
 
     # CREATE a SUB-folder
     resp = await client.post(
@@ -381,12 +382,13 @@ async def test_trash_folder_with_content(
     resp = await client.post(f"/v0/folders/{folder.folder_id}:trash")
     await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
-    # ONLY folder listed in trash. The rest is not listed anymore!
+    # ONLY folder listed in trash. The rest is not listed anymore since they are implicitly trashed!
     resp = await client.get("/v0/folders", params={"filters": '{"trashed": true}'})
     await assert_status(resp, status.HTTP_200_OK)
     page = Page[FolderGet].model_validate(await resp.json())
     assert page.meta.total == 1
-    assert page.data[0] == folder
+    assert page.data[0].trashed_at is not None
+    assert page.data[0].folder_id == folder.folder_id
 
     resp = await client.get(
         "/v0/folders",
