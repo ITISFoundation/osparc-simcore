@@ -14,7 +14,6 @@ from uuid import uuid4
 
 import pytest
 from faker import Faker
-from models_library.basic_types import IDStr
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
 from models_library.users import UserID
@@ -30,8 +29,9 @@ from simcore_sdk.node_ports_common.file_io_utils import LogRedirectCB
 pytest_simcore_core_services_selection = [
     "migration",
     "postgres",
-    "storage",
+    "rabbit",
     "redis",
+    "storage",
 ]
 
 pytest_simcore_ops_services_selection = [
@@ -158,9 +158,7 @@ async def test_valid_upload_download(
     mock_io_log_redirect_cb: LogRedirectCB,
     faker: Faker,
 ):
-    async with ProgressBarData(
-        num_steps=2, description=IDStr(faker.pystr())
-    ) as progress_bar:
+    async with ProgressBarData(num_steps=2, description=faker.pystr()) as progress_bar:
         await data_manager._push_directory(  # noqa: SLF001
             user_id=user_id,
             project_id=project_id,
@@ -206,9 +204,7 @@ async def test_valid_upload_download_saved_to(
     mock_io_log_redirect_cb: LogRedirectCB,
     faker: Faker,
 ):
-    async with ProgressBarData(
-        num_steps=2, description=IDStr(faker.pystr())
-    ) as progress_bar:
+    async with ProgressBarData(num_steps=2, description=faker.pystr()) as progress_bar:
         await data_manager._push_directory(  # noqa: SLF001
             user_id=user_id,
             project_id=project_id,
@@ -256,9 +252,7 @@ async def test_delete_legacy_archive(
     temp_dir: Path,
     faker: Faker,
 ):
-    async with ProgressBarData(
-        num_steps=2, description=IDStr(faker.pystr())
-    ) as progress_bar:
+    async with ProgressBarData(num_steps=2, description=faker.pystr()) as progress_bar:
         # NOTE: legacy archives can no longer be crated
         # generating a "legacy style archive"
         archive_into_dir = temp_dir / f"legacy-archive-dir-{uuid4()}"

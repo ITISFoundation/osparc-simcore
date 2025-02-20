@@ -93,7 +93,7 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
           break;
         case "menu-button":
           this.getChildControl("title").set({
-            maxWidth: osparc.dashboard.GridButtonBase.ITEM_WIDTH - osparc.dashboard.GridButtonBase.ICON_SIZE - this.self().MENU_BTN_DIMENSIONS,
+            maxWidth: osparc.dashboard.GridButtonBase.ITEM_WIDTH - osparc.dashboard.GridButtonBase.ICON_SIZE - this.self().MENU_BTN_DIMENSIONS - 2,
           });
           control = new qx.ui.form.MenuButton().set({
             appearance: "form-button-outlined",
@@ -194,7 +194,7 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
           const dateBy = this.getChildControl("date-by");
           dateBy.set({
             date: value,
-            toolTipText: this.tr("Moved to the bin"),
+            toolTipText: this.tr("Deleted"),
           });
         }
       }

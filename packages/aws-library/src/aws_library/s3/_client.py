@@ -6,17 +6,20 @@ import urllib.parse
 from collections.abc import AsyncGenerator, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Final, Protocol, cast
+from typing import Any, Final, Literal, Protocol, cast
 
 import aioboto3
 from aiobotocore.session import ClientCreatorContext
 from boto3.s3.transfer import TransferConfig
 from botocore import exceptions as botocore_exc
 from botocore.client import Config
-from models_library.api_schemas_storage import ETag, S3BucketName, UploadedPart
 from models_library.basic_types import SHA256Str
+from models_library.bytes_iters import BytesIter, DataSize
+from models_library.storage_schemas import ETag, S3BucketName, UploadedPart
 from pydantic import AnyUrl, ByteSize, TypeAdapter
+from servicelib.bytes_iters import DEFAULT_READ_CHUNK_SIZE, BytesStreamer
 from servicelib.logging_utils import log_catch, log_context
+from servicelib.s3_utils import FileLikeReader
 from servicelib.utils import limited_gather
 from settings_library.s3 import S3Settings
 from types_aiobotocore_s3 import S3Client
@@ -97,7 +100,10 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
 
     @s3_exception_handler(_logger)
     async def create_bucket(
-        self, *, bucket: S3BucketName, region: BucketLocationConstraintType
+        self,
+        *,
+        bucket: S3BucketName,
+        region: BucketLocationConstraintType | Literal["us-east-1"],
     ) -> None:
         with log_context(
             _logger, logging.INFO, msg=f"Create bucket {bucket} in {region}"
@@ -466,6 +472,57 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
             ],
             limit=_MAX_CONCURRENT_COPY,
         )
+
+    async def get_bytes_streamer_from_object(
+        self,
+        bucket_name: S3BucketName,
+        object_key: S3ObjectKey,
+        *,
+        chunk_size: int = DEFAULT_READ_CHUNK_SIZE,
+    ) -> BytesStreamer:
+        """stream read an object from S3 chunk by chunk"""
+
+        # NOTE `download_fileobj` cannot be used to implement this because
+        # it will buffer the entire file in memory instead of reading it
+        # chunk by chunk
+
+        # below is a quick call
+        head_response = await self._client.head_object(
+            Bucket=bucket_name, Key=object_key
+        )
+        data_size = DataSize(head_response["ContentLength"])
+
+        async def _() -> BytesIter:
+            # Download the file in chunks
+            position = 0
+            while position < data_size:
+                # Calculate the range for this chunk
+                end = min(position + chunk_size - 1, data_size - 1)
+                range_header = f"bytes={position}-{end}"
+
+                # Download the chunk
+                response = await self._client.get_object(
+                    Bucket=bucket_name, Key=object_key, Range=range_header
+                )
+
+                chunk = await response["Body"].read()
+
+                # Yield the chunk for processing
+                yield chunk
+
+                position += chunk_size
+
+        return BytesStreamer(data_size, _)
+
+    @s3_exception_handler(_logger)
+    async def upload_object_from_file_like(
+        self,
+        bucket_name: S3BucketName,
+        object_key: S3ObjectKey,
+        file_like_reader: FileLikeReader,
+    ) -> None:
+        """streams write an object in S3 from an AsyncIterable[bytes]"""
+        await self._client.upload_fileobj(file_like_reader, bucket_name, object_key)  # type: ignore[arg-type]
 
     @staticmethod
     def is_multipart(file_size: ByteSize) -> bool:

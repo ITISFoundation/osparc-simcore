@@ -6,17 +6,17 @@ from contextlib import AbstractAsyncContextManager
 from pathlib import Path
 
 import pytest
-from aiopg.sa.engine import Engine
 from faker import Faker
-from models_library.api_schemas_storage import FileUploadSchema
 from models_library.basic_types import SHA256Str
 from models_library.projects_nodes_io import SimcoreS3FileID
+from models_library.storage_schemas import FileUploadSchema
 from models_library.users import UserID
 from pydantic import ByteSize, TypeAdapter
-from simcore_service_storage import db_file_meta_data
 from simcore_service_storage.models import FileMetaData
-from simcore_service_storage.s3 import get_s3_client
+from simcore_service_storage.modules.db import file_meta_data
+from simcore_service_storage.modules.s3 import get_s3_client
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 pytest_simcore_core_services_selection = ["postgres"]
 pytest_simcore_ops_services_selection = ["adminer"]
@@ -44,7 +44,7 @@ async def test__copy_path_s3_s3(
     file_size: ByteSize,
     user_id: UserID,
     mock_copy_transfer_cb: Callable[..., None],
-    aiopg_engine: Engine,
+    sqlalchemy_async_engine: AsyncEngine,
 ):
     def _get_dest_file_id(src: SimcoreS3FileID) -> SimcoreS3FileID:
         return TypeAdapter(SimcoreS3FileID).validate_python(
@@ -52,8 +52,8 @@ async def test__copy_path_s3_s3(
         )
 
     async def _copy_s3_path(s3_file_id_to_copy: SimcoreS3FileID) -> None:
-        async with aiopg_engine.acquire() as conn:
-            exiting_fmd = await db_file_meta_data.get(conn, s3_file_id_to_copy)
+        async with sqlalchemy_async_engine.connect() as conn:
+            exiting_fmd = await file_meta_data.get(conn, s3_file_id_to_copy)
 
         await simcore_s3_dsm._copy_path_s3_s3(  # noqa: SLF001
             user_id=user_id,

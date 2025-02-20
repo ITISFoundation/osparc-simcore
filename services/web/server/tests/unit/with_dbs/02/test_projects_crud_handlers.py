@@ -40,8 +40,10 @@ from simcore_service_webserver.groups._groups_service import get_product_group_f
 from simcore_service_webserver.groups.api import auto_add_user_to_product_group
 from simcore_service_webserver.groups.exceptions import GroupNotFoundError
 from simcore_service_webserver.products.api import get_product
-from simcore_service_webserver.projects._permalink_api import ProjectPermalink
 from simcore_service_webserver.projects.models import ProjectDict
+from simcore_service_webserver.projects.projects_permalink_service import (
+    ProjectPermalink,
+)
 from simcore_service_webserver.utils import to_datetime
 from yarl import URL
 
@@ -422,13 +424,66 @@ async def test_new_project(
     logged_user: UserInfoDict,
     primary_group,
     expected: ExpectedResponse,
+    request_create_project: Callable[..., Awaitable[ProjectDict]],
     storage_subsystem_mock,
     project_db_cleaner,
-    request_create_project: Callable[..., Awaitable[ProjectDict]],
 ):
     await request_create_project(
         client, expected.accepted, expected.created, logged_user, primary_group
     )
+
+
+@pytest.mark.parametrize(
+    "user_role",
+    [UserRole.USER],
+)
+async def test_create_get_and_patch_project_ui_field(
+    mock_dynamic_scheduler: None,
+    storage_subsystem_mock,
+    client: TestClient,
+    logged_user: UserInfoDict,
+    primary_group: dict[str, str],
+    request_create_project: Callable[..., Awaitable[ProjectDict]],
+    catalog_subsystem_mock: Callable[[list[ProjectDict]], None],
+    project_db_cleaner,
+):
+    assert client.app
+
+    gid = logged_user["primary_gid"]
+    assert primary_group["gid"] == gid
+
+    # Step 1: Create project (long running task)
+    new_project = await request_create_project(
+        client,
+        status.HTTP_202_ACCEPTED,
+        status.HTTP_201_CREATED,
+        logged_user,
+        primary_group,
+    )
+    project_id = new_project["uuid"]
+
+    catalog_subsystem_mock([new_project])
+
+    # Step 2: Get the project and check the ui.icon
+    url = client.app.router["get_project"].url_for(project_id=project_id)
+    resp = await client.get(f"{url}")
+    got_project, _ = await assert_status(resp, status.HTTP_200_OK)
+    assert got_project["ui"] == {}
+
+    # Step 3: Patch the project to set ui.icon to null
+    patch_data = {"ui": {"icon": "http://example.com/icon.png"}}
+    url = client.app.router["patch_project"].url_for(project_id=project_id)
+    resp = await client.patch(f"{url}", json=patch_data)
+    await assert_status(resp, status.HTTP_204_NO_CONTENT)
+
+    # Step 4: Get the project again and check the ui.icon is now null
+    resp = await client.get(f"{url}")
+    got_project, _ = await assert_status(resp, status.HTTP_200_OK)
+    assert got_project["ui"]["icon"] == "http://example.com/icon.png"
+
+    # Step 5: Delete project
+    resp = await client.delete(f"{url}")
+    await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
 
 @pytest.mark.parametrize(*standard_user_role_response())

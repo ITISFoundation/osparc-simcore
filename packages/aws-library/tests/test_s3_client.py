@@ -1,26 +1,35 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
+# pylint:disable=contextmanager-generator-missing-cleanup
+# pylint:disable=no-name-in-module
+# pylint:disable=protected-access
 # pylint:disable=redefined-outer-name
 # pylint:disable=too-many-arguments
-# pylint:disable=protected-access
-# pylint:disable=no-name-in-module
+# pylint:disable=unused-argument
+# pylint:disable=unused-variable
 
 
 import asyncio
 import filecmp
 import json
 import logging
+import random
+import time
 from collections import defaultdict
-from collections.abc import AsyncIterator, Awaitable, Callable
+from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+from unittest.mock import AsyncMock, Mock
 
+import aiofiles
 import botocore.exceptions
 import pytest
 from aiohttp import ClientSession
 from aws_library.s3._client import S3ObjectKey, SimcoreS3API
-from aws_library.s3._constants import MULTIPART_UPLOADS_MIN_TOTAL_SIZE
+from aws_library.s3._constants import (
+    MULTIPART_COPY_THRESHOLD,
+    MULTIPART_UPLOADS_MIN_TOTAL_SIZE,
+)
 from aws_library.s3._errors import (
     S3BucketInvalidError,
     S3DestinationNotEmptyError,
@@ -29,11 +38,17 @@ from aws_library.s3._errors import (
 )
 from aws_library.s3._models import MultiPartUploadLinks
 from faker import Faker
-from models_library.api_schemas_storage import S3BucketName, UploadedPart
 from models_library.basic_types import SHA256Str
+from models_library.storage_schemas import S3BucketName, UploadedPart
 from moto.server import ThreadedMotoServer
 from pydantic import AnyUrl, ByteSize, TypeAdapter
 from pytest_benchmark.plugin import BenchmarkFixture
+from pytest_mock import MockerFixture
+from pytest_simcore.helpers.comparing import (
+    assert_same_contents,
+    assert_same_file_content,
+    get_files_info_from_path,
+)
 from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.parametrizations import (
     byte_size_ids,
@@ -44,7 +59,13 @@ from pytest_simcore.helpers.s3 import (
     upload_file_to_presigned_link,
 )
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from servicelib.utils import limited_as_completed
+from servicelib.archiving_utils import unarchive_dir
+from servicelib.bytes_iters import ArchiveEntries, DiskStreamReader, get_zip_bytes_iter
+from servicelib.bytes_iters._models import DataSize
+from servicelib.file_utils import remove_directory
+from servicelib.progress_bar import ProgressBarData
+from servicelib.s3_utils import FileLikeBytesIterReader
+from servicelib.utils import limited_as_completed, limited_gather
 from settings_library.s3 import S3Settings
 from types_aiobotocore_s3 import S3Client
 from types_aiobotocore_s3.literals import BucketLocationConstraintType
@@ -346,7 +367,7 @@ def set_log_levels_for_noisy_libraries() -> None:
 @pytest.fixture
 async def with_uploaded_folder_on_s3(
     create_folder_of_size_with_multiple_files: Callable[
-        [ByteSize, ByteSize, ByteSize], Path
+        [ByteSize, ByteSize, ByteSize, Path | None], Path
     ],
     upload_file: Callable[[Path, Path], Awaitable[UploadedFile]],
     directory_size: ByteSize,
@@ -355,7 +376,7 @@ async def with_uploaded_folder_on_s3(
 ) -> list[UploadedFile]:
     # create random files of random size and upload to S3
     folder = create_folder_of_size_with_multiple_files(
-        ByteSize(directory_size), ByteSize(min_file_size), ByteSize(max_file_size)
+        ByteSize(directory_size), ByteSize(min_file_size), ByteSize(max_file_size), None
     )
     list_uploaded_files = []
 
@@ -1375,3 +1396,245 @@ def test_copy_recurively_performance(
         )
 
     benchmark.pedantic(run_async_test, setup=dst_folder_setup, rounds=4)
+
+
+async def test_read_from_bytes_streamer(
+    mocked_s3_server_envs: EnvVarsDict,
+    with_uploaded_file_on_s3: UploadedFile,
+    simcore_s3_api: SimcoreS3API,
+    with_s3_bucket: S3BucketName,
+    fake_file_name: Path,
+):
+    async with aiofiles.open(fake_file_name, "wb") as f:
+        bytes_streamer = await simcore_s3_api.get_bytes_streamer_from_object(
+            with_s3_bucket, with_uploaded_file_on_s3.s3_key, chunk_size=1024
+        )
+        assert isinstance(bytes_streamer.data_size, DataSize)
+        async for chunk in bytes_streamer.with_progress_bytes_iter(AsyncMock()):
+            await f.write(chunk)
+
+    assert bytes_streamer.data_size == fake_file_name.stat().st_size
+
+    await assert_same_file_content(with_uploaded_file_on_s3.local_path, fake_file_name)
+
+
+@pytest.mark.parametrize("upload_from_s3", [True, False])
+async def test_upload_object_from_file_like(
+    mocked_s3_server_envs: EnvVarsDict,
+    with_uploaded_file_on_s3: UploadedFile,
+    simcore_s3_api: SimcoreS3API,
+    with_s3_bucket: S3BucketName,
+    upload_from_s3: bool,
+):
+    object_key = "read_from_s3_write_to_s3"
+
+    if upload_from_s3:
+        bytes_streamer = await simcore_s3_api.get_bytes_streamer_from_object(
+            with_s3_bucket, with_uploaded_file_on_s3.s3_key
+        )
+        assert isinstance(bytes_streamer.data_size, DataSize)
+        await simcore_s3_api.upload_object_from_file_like(
+            with_s3_bucket,
+            object_key,
+            FileLikeBytesIterReader(
+                bytes_streamer.with_progress_bytes_iter(AsyncMock())
+            ),
+        )
+    else:
+        await simcore_s3_api.upload_object_from_file_like(
+            with_s3_bucket,
+            object_key,
+            FileLikeBytesIterReader(
+                DiskStreamReader(with_uploaded_file_on_s3.local_path)
+                .get_bytes_streamer()
+                .bytes_iter_callable()
+            ),
+        )
+
+    await simcore_s3_api.delete_object(bucket=with_s3_bucket, object_key=object_key)
+
+
+@contextmanager
+def _folder_with_files(
+    create_folder_of_size_with_multiple_files: Callable[
+        [ByteSize, ByteSize, ByteSize, Path | None], Path
+    ],
+    target_folder: Path,
+) -> Iterator[dict[str, Path]]:
+    target_folder.mkdir(parents=True, exist_ok=True)
+    folder_path = create_folder_of_size_with_multiple_files(
+        TypeAdapter(ByteSize).validate_python("10MiB"),
+        TypeAdapter(ByteSize).validate_python("10KiB"),
+        TypeAdapter(ByteSize).validate_python("100KiB"),
+        target_folder,
+    )
+
+    relative_names_to_paths = get_files_info_from_path(folder_path)
+
+    yield relative_names_to_paths
+
+    for file in relative_names_to_paths.values():
+        file.unlink()
+
+
+@pytest.fixture
+def path_local_files_for_archive(
+    tmp_path: Path,
+    create_folder_of_size_with_multiple_files: Callable[
+        [ByteSize, ByteSize, ByteSize, Path | None], Path
+    ],
+) -> Iterator[Path]:
+    dir_path = tmp_path / "not_uploaded"
+    with _folder_with_files(create_folder_of_size_with_multiple_files, dir_path):
+        yield dir_path
+
+
+@pytest.fixture
+async def path_s3_files_for_archive(
+    tmp_path: Path,
+    create_folder_of_size_with_multiple_files: Callable[
+        [ByteSize, ByteSize, ByteSize, Path | None], Path
+    ],
+    s3_client: S3Client,
+    with_s3_bucket: S3BucketName,
+) -> AsyncIterator[Path]:
+    dir_path = tmp_path / "stored_in_s3"
+    with _folder_with_files(
+        create_folder_of_size_with_multiple_files, dir_path
+    ) as relative_names_to_paths:
+        await limited_gather(
+            *(
+                s3_client.upload_file(
+                    Filename=f"{file}", Bucket=with_s3_bucket, Key=s3_object_key
+                )
+                for s3_object_key, file in relative_names_to_paths.items()
+            ),
+            limit=10,
+        )
+        yield dir_path
+
+        await delete_all_object_versions(
+            s3_client, with_s3_bucket, relative_names_to_paths.keys()
+        )
+
+
+@pytest.fixture
+def archive_download_path(tmp_path: Path, faker: Faker) -> Iterator[Path]:
+    path = tmp_path / f"downlaoded_ardhive_{faker.uuid4()}.zip"
+    yield path
+    if path.exists():
+        path.unlink()
+
+
+@pytest.fixture
+async def extracted_archive_path(tmp_path: Path, faker: Faker) -> AsyncIterator[Path]:
+    path = tmp_path / f"decomrepssed_archive{faker.uuid4()}"
+    path.mkdir(parents=True, exist_ok=True)
+    assert path.is_dir()
+    yield path
+    await remove_directory(path)
+    assert not path.is_dir()
+
+
+@pytest.fixture
+async def archive_s3_object_key(
+    with_s3_bucket: S3BucketName, simcore_s3_api: SimcoreS3API
+) -> AsyncIterator[S3ObjectKey]:
+    s3_object_key = "read_from_s3_write_to_s3"
+    yield s3_object_key
+    await simcore_s3_api.delete_object(bucket=with_s3_bucket, object_key=s3_object_key)
+
+
+@pytest.fixture
+def mocked_progress_bar_cb(mocker: MockerFixture) -> Mock:
+    def _progress_cb(*args, **kwargs) -> None:
+        print(f"received progress: {args}, {kwargs}")
+
+    return mocker.Mock(side_effect=_progress_cb)
+
+
+async def test_workflow_compress_s3_objects_and_local_files_in_a_single_archive_then_upload_to_s3(
+    mocked_s3_server_envs: EnvVarsDict,
+    path_local_files_for_archive: Path,
+    path_s3_files_for_archive: Path,
+    archive_download_path: Path,
+    extracted_archive_path: Path,
+    simcore_s3_api: SimcoreS3API,
+    with_s3_bucket: S3BucketName,
+    s3_client: S3Client,
+    archive_s3_object_key: S3ObjectKey,
+    mocked_progress_bar_cb: Mock,
+):
+    # In this test:
+    # - files are read form disk and S3
+    # - a zip archive is created on the go
+    # - the zip archive is streamed to S3 as soon as chunks inside it are created
+    # Uses no disk and constant memory for the entire opration.
+
+    # 1. assemble and upload zip archive
+
+    archive_entries: ArchiveEntries = []
+
+    local_files = get_files_info_from_path(path_local_files_for_archive)
+    for file_name, file_path in local_files.items():
+        archive_entries.append(
+            (
+                file_name,
+                DiskStreamReader(file_path).get_bytes_streamer(),
+            )
+        )
+
+    s3_files = get_files_info_from_path(path_s3_files_for_archive)
+
+    for s3_object_key in s3_files:
+        archive_entries.append(
+            (
+                s3_object_key,
+                await simcore_s3_api.get_bytes_streamer_from_object(
+                    with_s3_bucket, s3_object_key
+                ),
+            )
+        )
+
+    # shuffle order of files in archive.
+    # some will be read from S3 and some from the disk
+    random.shuffle(archive_entries)
+
+    started = time.time()
+
+    async with ProgressBarData(
+        num_steps=1,
+        progress_report_cb=mocked_progress_bar_cb,
+        description="root_bar",
+    ) as progress_bar:
+        await simcore_s3_api.upload_object_from_file_like(
+            with_s3_bucket,
+            archive_s3_object_key,
+            FileLikeBytesIterReader(
+                get_zip_bytes_iter(
+                    archive_entries,
+                    progress_bar=progress_bar,
+                    chunk_size=MULTIPART_COPY_THRESHOLD,
+                )
+            ),
+        )
+
+    duration = time.time() - started
+    print(f"Zip created on S3 in {duration:.2f} seconds")
+
+    # 2. download zip archive form S3
+    print(f"downloading {archive_download_path}")
+    await s3_client.download_file(
+        with_s3_bucket, archive_s3_object_key, f"{archive_download_path}"
+    )
+
+    # 3. extract archive
+    await unarchive_dir(archive_download_path, extracted_archive_path)
+
+    # 4. compare
+    print("comparing files")
+    all_files_in_zip = get_files_info_from_path(path_local_files_for_archive) | s3_files
+
+    await assert_same_contents(
+        all_files_in_zip, get_files_info_from_path(extracted_archive_path)
+    )

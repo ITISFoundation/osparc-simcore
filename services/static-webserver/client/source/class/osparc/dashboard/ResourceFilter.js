@@ -57,7 +57,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
         case "study": {
           this._add(this.__createWorkspacesAndFoldersTree());
           this._add(this.__createTrashBin());
-          this._add(this.__createResourceTypeContextButtons());
+          // this._add(this.__createResourceTypeContextButtons());
           this._add(filtersSpacer);
           const scrollView = new qx.ui.container.Scroll();
           scrollView.add(this.__createTagsFilterLayout());
@@ -67,7 +67,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
           break;
         }
         case "template": {
-          this._add(this.__createResourceTypeContextButtons());
+          // this._add(this.__createResourceTypeContextButtons());
           this._add(filtersSpacer);
           this._add(this.__createSharedWithFilterLayout());
           const scrollView = new qx.ui.container.Scroll();
@@ -78,7 +78,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
           break;
         }
         case "service":
-          this._add(this.__createResourceTypeContextButtons());
+          // this._add(this.__createResourceTypeContextButtons());
           this._add(filtersSpacer);
           this._add(this.__createSharedWithFilterLayout());
           this._add(this.__createServiceTypeFilterLayout());
@@ -124,7 +124,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
       const trashButton = this.__trashButton = new qx.ui.toolbar.RadioButton().set({
         value: false,
         appearance: "filter-toggle-button",
-        label: this.tr("Bin"),
+        label: this.tr("Recently Deleted"),
         icon: "@FontAwesome5Solid/trash-alt/16",
         paddingLeft: 10, // align it with the context
       });
@@ -384,6 +384,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
         const button = new qx.ui.form.ToggleButton(null, "@FontAwesome5Solid/tag/16");
         button.id = tag.getTagId();
         tag.bind("name", button, "label");
+        tag.bind("name", button, "toolTipText");
         tag.bind("color", button.getChildControl("icon"), "textColor");
         osparc.utils.Utils.setIdToWidget(button, this.__resourceType + "-tagFilterItem");
         button.set({

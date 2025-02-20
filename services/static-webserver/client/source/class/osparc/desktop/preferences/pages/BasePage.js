@@ -30,7 +30,17 @@ qx.Class.define("osparc.desktop.preferences.pages.BasePage", {
       paddingLeft: 15
     });
 
-    this.__showLabelOnTab(title)
+    this.__showLabelOnTab(title);
+
+    const tabButton = this.getChildControl("button");
+    if (tabButton.getIcon() && tabButton.getIcon().includes(".svg")) {
+      tabButton.getChildControl("icon").set({
+        minWidth: 24,
+        minHeight: 24,
+        scale: true,
+      });
+      osparc.ui.basic.SVGImage.setColorToImage(tabButton.getChildControl("icon"), "text");
+    }
   },
 
   members: {

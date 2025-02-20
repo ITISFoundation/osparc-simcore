@@ -24,11 +24,12 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelListItem", {
     this.base(arguments);
 
     const layout = new qx.ui.layout.Grid(5, 5);
-    layout.setColumnWidth(0, 64);
     layout.setRowFlex(0, 1);
-    layout.setColumnFlex(1, 1);
+    layout.setColumnFlex(1, 1); // flex display name
+    layout.setColumnWidth(0, 48);
     layout.setColumnAlign(0, "center", "middle");
     layout.setColumnAlign(1, "left", "middle");
+    layout.setColumnAlign(2, "center", "middle");
     this._setLayout(layout);
 
     this.set({
@@ -53,11 +54,25 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelListItem", {
       init: "selectable"
     },
 
-    modelId: {
-      check: "Number",
+    key: {
+      check: "String",
       init: null,
       nullable: false,
-      event: "changeModelId",
+      event: "changeKey",
+    },
+
+    version: {
+      check: "String",
+      init: null,
+      nullable: false,
+      event: "changeVersion",
+    },
+
+    licensedItemId: {
+      check: "String",
+      init: null,
+      nullable: false,
+      event: "changeLicensedItemId",
     },
 
     thumbnail: {
@@ -83,13 +98,6 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelListItem", {
       event: "changeDate",
     },
 
-    licensedItemId: {
-      check: "String",
-      init: null,
-      nullable: false,
-      event: "changeLicensedItemId",
-    },
-
     pricingPlanId: {
       check: "Number",
       init: null,
@@ -97,12 +105,12 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelListItem", {
       event: "changePricingPlanId",
     },
 
-    purchases: {
+    seats: {
       check: "Array",
       nullable: false,
       init: [],
-      event: "changePurchases",
-      apply: "__applyPurchases",
+      event: "changeSeats",
+      apply: "__applySeats",
     },
   },
 
@@ -145,6 +153,16 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelListItem", {
             column: 1
           });
           break;
+        case "n-seats":
+          control = new qx.ui.basic.Label().set({
+            font: "text-14",
+            alignY: "middle",
+          });
+          this._add(control, {
+            row: 0,
+            column: 2
+          });
+          break;
       }
       control.set({
         anonymous: true, // pass the tap action over
@@ -159,14 +177,19 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelListItem", {
 
     __applyDisplayName: function(value) {
       this.getChildControl("name").setValue(value);
+
+      this.set({
+        toolTipText: value
+      });
     },
 
-    __applyPurchases: function(purchases) {
-      if (purchases.length) {
-        this.set({
-          textColor: "default-button-text",
-          backgroundColor: "strong-main",
-        })
+    __applySeats: function(seats) {
+      const nSeatsLabel = this.getChildControl("n-seats");
+      const nSeats = osparc.store.LicensedItems.seatsToNSeats(seats);
+      if (nSeats) {
+        nSeatsLabel.setValue(`(${nSeats})`);
+      } else {
+        nSeatsLabel.resetValue();
       }
     },
 
@@ -189,7 +212,7 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelListItem", {
     _shouldApplyFilter: function(data) {
       if (data.text) {
         const checks = [
-          this.getName(),
+          this.getDisplayName(),
         ];
         if (checks.filter(check => check && check.toLowerCase().trim().includes(data.text)).length == 0) {
           return true;

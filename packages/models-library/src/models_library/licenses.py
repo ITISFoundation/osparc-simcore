@@ -1,10 +1,10 @@
-from datetime import datetime
+from datetime import date, datetime
 from enum import auto
-from typing import Any, NamedTuple, NotRequired, TypeAlias, cast
+from typing import Annotated, Any, NamedTuple, NewType, NotRequired, TypeAlias, cast
 from uuid import UUID
 
 from models_library.resource_tracker import PricingPlanId
-from pydantic import BaseModel, ConfigDict, PositiveInt
+from pydantic import BaseModel, ConfigDict, PositiveInt, StringConstraints
 from pydantic.config import JsonDict
 from typing_extensions import TypedDict
 
@@ -13,6 +13,13 @@ from .resource_tracker import PricingPlanId
 from .utils.enums import StrAutoEnum
 
 LicensedItemID: TypeAlias = UUID
+LicensedResourceID: TypeAlias = UUID
+
+LICENSED_ITEM_VERSION_RE = r"^\d+\.\d+\.\d+$"
+LicensedItemKey = NewType("LicensedItemKey", str)
+LicensedItemVersion = Annotated[
+    str, StringConstraints(pattern=LICENSED_ITEM_VERSION_RE)
+]
 
 
 class LicensedResourceType(StrAutoEnum):
@@ -22,7 +29,7 @@ class LicensedResourceType(StrAutoEnum):
 VIP_FEATURES_EXAMPLE = {
     "name": "Duke",
     "version": "V2.0",
-    "sex": "Male",
+    "sex": "Mas bien poco",
     "age": "34 years",
     "weight": "70.2 Kg",
     "height": "1.77 m",
@@ -34,15 +41,17 @@ VIP_FEATURES_EXAMPLE = {
 
 
 class FeaturesDict(TypedDict):
-    name: NotRequired[str]
-    version: NotRequired[str]
-    sex: NotRequired[str]
+    # keep alphabetical
     age: NotRequired[str]
-    weight: NotRequired[str]
-    height: NotRequired[str]
-    date: str
+    date: date
     ethnicity: NotRequired[str]
     functionality: NotRequired[str]
+    height: NotRequired[str]
+    name: NotRequired[str]
+    sex: NotRequired[str]
+    species: NotRequired[str]
+    version: NotRequired[str]
+    weight: NotRequired[str]
 
 
 VIP_DETAILS_EXAMPLE = {
@@ -53,7 +62,7 @@ VIP_DETAILS_EXAMPLE = {
     "doi": "10.1000/xyz123",
     "license_key": "ABC123XYZ",
     "license_version": "1.0",
-    "protection": "Encrypted",
+    "protection": "Code",
     "available_from_url": "https://example.com/download",
     "additional_field": "trimmed if rest",
 }
@@ -68,12 +77,34 @@ class LicensedItemDB(BaseModel):
     licensed_item_id: LicensedItemID
     display_name: str
 
+    key: LicensedItemKey
+    version: LicensedItemVersion
+    licensed_resource_type: LicensedResourceType
+
+    pricing_plan_id: PricingPlanId
+    product_name: ProductName
+    is_hidden_on_market: bool
+
+    # states
+    created: datetime
+    modified: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class LicensedItemPatchDB(BaseModel):
+    display_name: str | None = None
+    pricing_plan_id: PricingPlanId | None = None
+
+
+class LicensedResourceDB(BaseModel):
+    licensed_resource_id: LicensedResourceID
+    display_name: str
+
     licensed_resource_name: str
     licensed_resource_type: LicensedResourceType
     licensed_resource_data: dict[str, Any] | None
-
-    pricing_plan_id: PricingPlanId | None
-    product_name: ProductName | None
+    priority: int
 
     # states
     created: datetime
@@ -83,20 +114,21 @@ class LicensedItemDB(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-class LicensedItemUpdateDB(BaseModel):
+class LicensedResourcePatchDB(BaseModel):
     display_name: str | None = None
     licensed_resource_name: str | None = None
-    pricing_plan_id: PricingPlanId | None = None
     trash: bool | None = None
 
 
 class LicensedItem(BaseModel):
     licensed_item_id: LicensedItemID
+    key: LicensedItemKey
+    version: LicensedItemVersion
     display_name: str
-    licensed_resource_name: str
     licensed_resource_type: LicensedResourceType
-    licensed_resource_data: dict[str, Any]
+    licensed_resources: list[dict[str, Any]]
     pricing_plan_id: PricingPlanId
+    is_hidden_on_market: bool
     created_at: datetime
     modified_at: datetime
 
@@ -107,11 +139,22 @@ class LicensedItem(BaseModel):
                 "examples": [
                     {
                         "licensed_item_id": "0362b88b-91f8-4b41-867c-35544ad1f7a1",
+                        "key": "Duke",
+                        "version": "1.0.0",
                         "display_name": "my best model",
-                        "licensed_resource_name": "best-model",
                         "licensed_resource_type": f"{LicensedResourceType.VIP_MODEL}",
-                        "licensed_resource_data": cast(JsonDict, VIP_DETAILS_EXAMPLE),
+                        "licensed_resources": [
+                            cast(
+                                JsonDict,
+                                {
+                                    "category_id": "HumanWholeBody",
+                                    "category_display": "Humans",
+                                    "source": VIP_DETAILS_EXAMPLE,
+                                },
+                            )
+                        ],
                         "pricing_plan_id": "15",
+                        "is_hidden_on_market": False,
                         "created_at": "2024-12-12 09:59:26.422140",
                         "modified_at": "2024-12-12 09:59:26.422140",
                     }

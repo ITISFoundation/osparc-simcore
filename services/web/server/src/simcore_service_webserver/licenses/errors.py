@@ -6,7 +6,15 @@ class LicensesValueError(WebServerBaseError, ValueError):
 
 
 class LicensedItemNotFoundError(LicensesValueError):
-    msg_template = "License good {licensed_item_id} not found"
+    msg_template = "License item {licensed_item_id} not found"
+
+
+class LicensedKeyVersionNotFoundError(LicensesValueError):
+    msg_template = "License key {key} version {version} not found"
+
+
+class LicensedResourceNotFoundError(LicensesValueError):
+    msg_template = "License resource {licensed_resource_id} not found"
 
 
 class LicensedItemPricingPlanMatchError(LicensesValueError):

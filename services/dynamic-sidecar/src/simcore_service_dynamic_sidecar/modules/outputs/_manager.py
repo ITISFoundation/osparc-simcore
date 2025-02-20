@@ -8,7 +8,6 @@ from functools import partial
 
 from common_library.errors_classes import OsparcErrorMixin
 from fastapi import FastAPI
-from models_library.basic_types import IDStr
 from models_library.rabbitmq_messages import ProgressType
 from pydantic import PositiveFloat
 from servicelib import progress_bar
@@ -136,7 +135,7 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
                 async with progress_bar.ProgressBarData(
                     num_steps=1,
                     progress_report_cb=self.task_progress_cb,
-                    description=IDStr("uploading ports"),
+                    description="uploading ports",
                 ) as root_progress:
                     await upload_outputs(
                         outputs_path=self.outputs_context.outputs_path,

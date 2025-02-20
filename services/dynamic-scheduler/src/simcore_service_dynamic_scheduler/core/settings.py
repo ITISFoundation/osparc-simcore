@@ -5,8 +5,10 @@ from pydantic import AliasChoices, Field, SecretStr, TypeAdapter, field_validato
 from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
 from settings_library.application import BaseApplicationSettings
 from settings_library.basic_types import LogLevel, VersionTag
+from settings_library.catalog import CatalogSettings
 from settings_library.director_v0 import DirectorV0Settings
 from settings_library.director_v2 import DirectorV2Settings
+from settings_library.docker_api_proxy import DockerApiProxysettings
 from settings_library.http_client_request import ClientRequestSettings
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
@@ -144,6 +146,11 @@ class ApplicationSettings(_BaseApplicationSettings):
         description="settings for director-v2 service",
     )
 
+    DYNAMIC_SCHEDULER_CATALOG_SETTINGS: CatalogSettings = Field(
+        json_schema_extra={"auto_default_from_env": True},
+        description="settings for catalog service",
+    )
+
     DYNAMIC_SCHEDULER_PROMETHEUS_INSTRUMENTATION_ENABLED: bool = True
 
     DYNAMIC_SCHEDULER_PROFILING: bool = False
@@ -151,6 +158,11 @@ class ApplicationSettings(_BaseApplicationSettings):
         json_schema_extra={"auto_default_from_env": True},
         description="settings for opentelemetry tracing",
     )
+
+    DYNAMIC_SCHEDULER_DOCKER_API_PROXY: Annotated[
+        DockerApiProxysettings,
+        Field(json_schema_extra={"auto_default_from_env": True}),
+    ]
 
     @field_validator("DYNAMIC_SCHEDULER_UI_MOUNT_PATH", mode="before")
     @classmethod

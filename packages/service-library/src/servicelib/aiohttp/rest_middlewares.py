@@ -1,9 +1,8 @@
-""" rest - middlewares for error, enveloping and validation
+"""rest - middlewares for error, enveloping and validation
 
-    SEE  https://gist.github.com/amitripshtos/854da3f4217e3441e8fceea85b0cbd91
+SEE  https://gist.github.com/amitripshtos/854da3f4217e3441e8fceea85b0cbd91
 """
 
-import asyncio
 import json
 import logging
 from collections.abc import Awaitable, Callable
@@ -18,14 +17,9 @@ from models_library.rest_error import ErrorGet, ErrorItemType, LogMessageType
 
 from ..logging_errors import create_troubleshotting_log_kwargs
 from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
+from ..rest_responses import is_enveloped_from_map, is_enveloped_from_text
 from ..utils import is_production_environ
-from .rest_responses import (
-    create_data_response,
-    create_http_error,
-    is_enveloped_from_map,
-    is_enveloped_from_text,
-    wrap_as_envelope,
-)
+from .rest_responses import create_data_response, create_http_error, wrap_as_envelope
 from .rest_utils import EnvelopeFactory
 from .typing_extension import Handler, Middleware
 
@@ -51,7 +45,6 @@ def error_middleware_factory(
     _is_prod: bool = is_production_environ()
 
     def _process_and_raise_unexpected_error(request: web.BaseRequest, err: Exception):
-
         error_code = create_error_code(err)
         error_context: dict[str, Any] = {
             "request.remote": f"{request.remote}",
@@ -137,7 +130,7 @@ def error_middleware_factory(
             )
             raise http_error from err
 
-        except asyncio.TimeoutError as err:
+        except TimeoutError as err:
             http_error = create_http_error(
                 err,
                 f"{err}",

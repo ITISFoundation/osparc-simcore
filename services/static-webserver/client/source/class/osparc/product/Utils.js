@@ -188,6 +188,16 @@ qx.Class.define("osparc.product.Utils", {
       return "REGISTER";
     },
 
+    hasConvertToPipelineEnabled: function() {
+      return false;
+    },
+
+    // oSPARC only
+    hasExportCMisEnabled: function() {
+      const product = this.getProductName();
+      return product === "osparc";
+    },
+
     // All products except oSPARC
     hasIdlingTrackerEnabled: function() {
       const product = this.getProductName();
@@ -257,7 +267,7 @@ qx.Class.define("osparc.product.Utils", {
     },
 
     getIconUrl: function(asset = "Default.png") {
-      const base = "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/icons/"
+      const base = "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/icons"
       let url;
       switch (osparc.product.Utils.getProductName()) {
         case "osparc":
@@ -311,14 +321,7 @@ qx.Class.define("osparc.product.Utils", {
     },
 
     hasNewPlusButton: function() {
-      return [
-        "osparc",
-        "s4l",
-        "s4lacad",
-        "s4llite",
-        // "tis",
-        // "tiplite",
-      ].includes(osparc.product.Utils.getProductName());
+      return Boolean(osparc.store.Products.getInstance().getPlusButtonUiConfig());
     },
   }
 });

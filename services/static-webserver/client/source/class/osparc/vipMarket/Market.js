@@ -33,54 +33,12 @@ qx.Class.define("osparc.vipMarket.Market", {
       return;
     }
 
-    const walletId = contextWallet.getWalletId();
-    const licensedItemsStore = osparc.store.LicensedItems.getInstance();
-    Promise.all([
-      licensedItemsStore.getLicensedItems(),
-      licensedItemsStore.getPurchasedLicensedItems(walletId),
-    ])
-      .then(values => {
-        const licensedItems = values[0];
-        const categories = {};
-        licensedItems.forEach(licensedItem => {
-          if (licensedItem["licensedResourceData"] && licensedItem["licensedResourceData"]["category"]) {
-            const category = licensedItem["licensedResourceData"]["category"];
-            if (!(category in categories)) {
-              categories[category] = [];
-            }
-            categories[category].push(licensedItem);
-          }
-        });
-
-        const expectedCategories = [{
-          category: "HumanWholeBody",
-          label: "Humans",
-          icon: "@FontAwesome5Solid/users/20",
-        }, {
-          category: "HumanBodyRegion",
-          label: "Humans (Region)",
-          icon: "@FontAwesome5Solid/users/20",
-        }, {
-          category: "AnimalWholeBody",
-          label: "Animals",
-          icon: "@FontAwesome5Solid/users/20",
-        }, {
-          category: "ComputationalPhantom",
-          label: "Phantoms",
-          icon: "@FontAwesome5Solid/users/20",
-        }]
-        expectedCategories.forEach(expectedCategory => {
-          this.__buildViPMarketPage(expectedCategory, categories[expectedCategory["category"]]);
-        });
-
-        if (openCategory) {
-          this.openCategory(openCategory);
-        }
-      });
+    this.__reqOpenCategory = openCategory;
+    this.__populateCategories();
   },
 
   events: {
-    "importMessageSent": "qx.event.type.Data",
+    "importMessageSent": "qx.event.type.Event",
   },
 
   properties: {
@@ -93,19 +51,133 @@ qx.Class.define("osparc.vipMarket.Market", {
   },
 
   members: {
+    __reqOpenCategory: null,
+    __myModelsCategoryMarket: null,
+    __myModelsCategoryButton: null,
+
+    __populateCategories: function() {
+      const store = osparc.store.Store.getInstance();
+      const contextWallet = store.getContextWallet();
+
+      const walletId = contextWallet.getWalletId();
+      const licensedItemsStore = osparc.store.LicensedItems.getInstance();
+      Promise.all([
+        licensedItemsStore.getLicensedItems(),
+        licensedItemsStore.getPurchasedLicensedItems(walletId),
+      ])
+        .then(values => {
+          const licensedItems = values[0];
+          const purchasedItems = values[1];
+          osparc.store.LicensedItems.populateSeatsFromPurchases(licensedItems, purchasedItems);
+          const categories = [];
+          const availableCategory = {
+            categoryId: "availableModels",
+            label: this.tr("My Models"),
+            icon: "osparc/market/RentedModels.svg",
+            items: [],
+          };
+          categories.push(availableCategory);
+          let openCategory = null;
+          licensedItems.forEach(licensedItem => {
+            if (licensedItem["seats"].length) {
+              availableCategory["items"].push(licensedItem);
+              if (!this.__reqOpenCategory) {
+                openCategory = availableCategory["categoryId"];
+              }
+            }
+            if (licensedItem && licensedItem["categoryId"]) {
+              const categoryId = licensedItem["categoryId"];
+              let category = categories.find(cat => cat["categoryId"] === categoryId);
+              if (!category) {
+                category = {
+                  categoryId,
+                  label: licensedItem["categoryDisplay"] || "Category",
+                  icon: licensedItem["categoryIcon"] || `osparc/market/${categoryId}.svg`,
+                  items: [],
+                };
+                if (!openCategory) {
+                  openCategory = categoryId;
+                }
+                categories.push(category);
+              }
+              category["items"].push(licensedItem);
+            }
+          });
+
+          categories.forEach(category => {
+            this.__buildViPMarketPage(category, category["items"]);
+          });
+
+          if (openCategory) {
+            this.__openCategory(openCategory);
+          }
+
+          this.__addFreeItems();
+        });
+    },
+
+    __addFreeItems: function() {
+      const licensedItemsStore = osparc.store.LicensedItems.getInstance();
+      licensedItemsStore.getLicensedItems()
+        .then(async licensedItems => {
+          this.__freeItems = [];
+          for (const licensedItem of licensedItems) {
+            const pricingUnits = await osparc.store.Pricing.getInstance().fetchPricingUnits(licensedItem["pricingPlanId"]);
+            if (pricingUnits.length === 1 && pricingUnits[0].getCost() === 0) {
+              this.__freeItems.push(licensedItem);
+            }
+          }
+          if (!this.__reqOpenCategory && this.__freeItems.length) {
+            this.__openCategory("availableModels");
+          }
+          this.__repopulateMyModelsCategory();
+        });
+    },
+
     __buildViPMarketPage: function(marketTabInfo, licensedItems = []) {
       const vipMarketView = new osparc.vipMarket.VipMarket(licensedItems);
       vipMarketView.set({
-        category: marketTabInfo["category"],
+        category: marketTabInfo["categoryId"],
       });
       this.bind("openBy", vipMarketView, "openBy");
+      vipMarketView.addListener("modelPurchased", () => this.__repopulateMyModelsCategory());
       vipMarketView.addListener("importMessageSent", () => this.fireEvent("importMessageSent"));
       const page = this.addTab(marketTabInfo["label"], marketTabInfo["icon"], vipMarketView);
-      page.category = marketTabInfo["category"];
+      page.category = marketTabInfo["categoryId"];
+      if (page.category === "availableModels") {
+        this.__myModelsCategoryMarket = vipMarketView;
+        this.__myModelsCategoryButton = page.getChildControl("button");
+        this.__myModelsCategoryButton.setVisibility(licensedItems.length ? "visible" : "excluded");
+      }
       return page;
     },
 
-    openCategory: function(category) {
+    __repopulateMyModelsCategory: function() {
+      const store = osparc.store.Store.getInstance();
+      const contextWallet = store.getContextWallet();
+      const walletId = contextWallet.getWalletId();
+      const licensedItemsStore = osparc.store.LicensedItems.getInstance();
+      Promise.all([
+        licensedItemsStore.getLicensedItems(),
+        licensedItemsStore.getPurchasedLicensedItems(walletId),
+      ])
+        .then(values => {
+          const licensedItems = values[0];
+          const purchasedItems = values[1];
+          osparc.store.LicensedItems.populateSeatsFromPurchases(licensedItems, purchasedItems);
+          let items = [];
+          licensedItems.forEach(licensedItem => {
+            if (licensedItem["seats"].length) {
+              items.push(licensedItem);
+            }
+          });
+          items = items.concat(this.__freeItems);
+          this.__myModelsCategoryButton.setVisibility(items.length ? "visible" : "excluded");
+          this.__myModelsCategoryMarket.setLicensedItems(items);
+        });
+    },
+
+    __openCategory: function(category) {
       const viewFound = this.getChildControl("tabs-view").getChildren().find(view => view.category === category);
       if (viewFound) {
         this._openPage(viewFound);

@@ -27,12 +27,12 @@ from models_library.api_schemas_long_running_tasks.tasks import (
     TaskProgress,
     TaskStatus,
 )
-from models_library.api_schemas_storage import HealthCheck
 from models_library.api_schemas_webserver.projects import ProjectGet
 from models_library.app_diagnostics import AppStatusCheck
 from models_library.generics import Envelope
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import BaseFileLink, SimcoreS3FileID
+from models_library.storage_schemas import HealthCheck
 from models_library.users import UserID
 from moto.server import ThreadedMotoServer
 from packaging.version import Version
@@ -121,15 +121,18 @@ async def client(
     #
 
     # LifespanManager will trigger app's startup&shutown event handlers
-    async with LifespanManager(
-        app,
-        startup_timeout=None if is_pdb_enabled else MAX_TIME_FOR_APP_TO_STARTUP,
-        shutdown_timeout=None if is_pdb_enabled else MAX_TIME_FOR_APP_TO_SHUTDOWN,
-    ), httpx.AsyncClient(
-        base_url="http://api.testserver.io",
-        headers={"Content-Type": "application/json"},
-        transport=ASGITransport(app=app),
-    ) as httpx_async_client:
+    async with (
+        LifespanManager(
+            app,
+            startup_timeout=None if is_pdb_enabled else MAX_TIME_FOR_APP_TO_STARTUP,
+            shutdown_timeout=None if is_pdb_enabled else MAX_TIME_FOR_APP_TO_SHUTDOWN,
+        ),
+        httpx.AsyncClient(
+            base_url="http://api.testserver.io",
+            headers={"Content-Type": "application/json"},
+            transport=ASGITransport(app=app),
+        ) as httpx_async_client,
+    ):
         assert isinstance(httpx_async_client, httpx.AsyncClient)
         yield httpx_async_client
 
@@ -242,11 +245,8 @@ def webserver_service_openapi_specs(
 def storage_service_openapi_specs(
     osparc_simcore_services_dir: Path,
 ) -> dict[str, Any]:
-    openapi_path = (
-        osparc_simcore_services_dir
-        / "storage/src/simcore_service_storage/api/v0/openapi.yaml"
-    )
-    return yaml.safe_load(openapi_path.read_text())
+    openapi_path = osparc_simcore_services_dir / "storage" / "openapi.json"
+    return json.loads(openapi_path.read_text())
 
 
 @pytest.fixture
@@ -355,9 +355,9 @@ def mocked_storage_service_api_base(
         base_url=settings.API_SERVER_STORAGE.base_url,
         assert_all_called=False,
     ) as respx_mock:
-        assert openapi["paths"]["/v0/"]["get"]["operationId"] == "health_check"
+        assert openapi["paths"]["/v0/"]["get"]["operationId"] == "get_health_v0__get"
 
-        respx_mock.get(path="/v0/", name="health_check").respond(
+        respx_mock.get(path="/v0/", name="get_health_v0__get").respond(
             status.HTTP_200_OK,
             json=Envelope[HealthCheck](
                 data={
@@ -369,8 +369,11 @@ def mocked_storage_service_api_base(
             ).model_dump(),
         )
 
-        assert openapi["paths"]["/v0/status"]["get"]["operationId"] == "get_status"
-        respx_mock.get(path="/v0/status", name="get_status").respond(
+        assert (
+            openapi["paths"]["/v0/status"]["get"]["operationId"]
+            == "get_status_v0_status_get"
+        )
+        respx_mock.get(path="/v0/status", name="get_status_v0_status_get").respond(
             status.HTTP_200_OK,
             json=Envelope[AppStatusCheck](
                 data={

@@ -11,27 +11,92 @@ NOTE: this test coverage is intentionally limited to the functions of 'simcore_s
 used in simcore_sdk since legacy services are planned to be deprecated.
 """
 
+import logging
 from pathlib import Path
+from threading import Thread
+from typing import AsyncIterator
 
 import aiohttp
+import httpx
 import pytest
-from aiohttp.test_utils import TestClient
+import uvicorn
 from faker import Faker
 from models_library.projects_nodes_io import LocationID, SimcoreS3FileID
 from models_library.users import UserID
+from pytest_simcore.helpers.logging_tools import log_context
+from servicelib.utils import unused_port
+from simcore_service_storage._meta import API_VTAG
+from simcore_service_storage.core.application import create_app
+from simcore_service_storage.core.settings import ApplicationSettings
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 from simcore_service_storage_sdk import ApiClient, Configuration, UsersApi
+from tenacity import (
+    before_sleep_log,
+    retry,
+    retry_if_exception_type,
+    stop_after_delay,
+    wait_fixed,
+)
+from yarl import URL
 
-pytest_simcore_core_services_selection = [
-    "postgres",
-]
+pytest_simcore_core_services_selection = ["postgres"]
 pytest_simcore_ops_services_selection = [
     "adminer",
 ]
 
+_logger = logging.getLogger(__name__)
+
+
+@retry(
+    wait=wait_fixed(1),
+    stop=stop_after_delay(10),
+    retry=retry_if_exception_type(),
+    reraise=True,
+    before_sleep=before_sleep_log(_logger, logging.WARNING),
+)
+async def _wait_for_server_ready(server: URL) -> None:
+    async with httpx.AsyncClient(follow_redirects=True) as client:
+        response = await client.get(f"{server}")
+        response.raise_for_status()
+
 
 @pytest.fixture
-def user_id(user_id: UserID) -> str:
+async def real_storage_server(app_settings: ApplicationSettings) -> AsyncIterator[URL]:
+    settings = ApplicationSettings.create_from_envs()
+    app = create_app(settings)
+    storage_port = unused_port()
+    with log_context(
+        logging.INFO,
+        msg=f"with fake storage server on 127.0.0.1:{storage_port}/{API_VTAG}",
+    ) as ctx:
+        config = uvicorn.Config(
+            app,
+            host="127.0.0.1",
+            port=storage_port,
+            log_level="error",
+        )
+        server = uvicorn.Server(config)
+
+        thread = Thread(target=server.run)
+        thread.daemon = True
+        thread.start()
+
+        ctx.logger.info(
+            "health at : %s",
+            f"http://127.0.0.1:{storage_port}/{API_VTAG}",
+        )
+        server_url = URL(f"http://127.0.0.1:{storage_port}")
+
+        await _wait_for_server_ready(server_url / API_VTAG)
+
+        yield server_url
+
+        server.should_exit = True
+        thread.join(timeout=10)
+
+
+@pytest.fixture
+def str_user_id(user_id: UserID) -> str:
     """overrides tests/fixtures/data_models.py::user_id
     and adapts to simcore_service_storage_sdk API
     """
@@ -56,10 +121,10 @@ def location_name() -> str:
     return SimcoreS3DataManager.get_location_name()
 
 
-async def test_storage_client_used_in_simcore_sdk_0_3_2(  # noqa: PLR0915
-    client: TestClient,
+async def test_storage_client_used_in_simcore_sdk_0_3_2(
+    real_storage_server: URL,
+    str_user_id: str,
     file_id: str,
-    user_id: str,
     location_id: int,
     location_name: str,
     tmp_path: Path,
@@ -76,14 +141,12 @@ async def test_storage_client_used_in_simcore_sdk_0_3_2(  # noqa: PLR0915
     the OAS had already change!!!
     """
 
-    assert client.app
-    assert client.server
     # --------
     cfg = Configuration()
-    cfg.host = f"http://{client.host}:{client.port}/v0"
+    cfg.host = f"{real_storage_server / API_VTAG}"
     cfg.debug = True
 
-    assert cfg.host == f'{client.make_url("/v0")}'
+    # assert cfg.host == f"{client.make_url('/v0')}"
     print(f"{cfg=}")
     print(f"{cfg.to_debug_report()=}")
 
@@ -101,7 +164,7 @@ async def test_storage_client_used_in_simcore_sdk_0_3_2(  # noqa: PLR0915
             response_payload,
             status_code,
             response_headers,
-        ) = await api.get_storage_locations_with_http_info(user_id)
+        ) = await api.get_storage_locations_with_http_info(str_user_id)
         print(f"{response_payload=}")
         print(f"{status_code=}")
         print(f"{response_headers=}")
@@ -112,7 +175,7 @@ async def test_storage_client_used_in_simcore_sdk_0_3_2(  # noqa: PLR0915
         # https://github.com/ITISFoundation/osparc-simcore/blob/cfdf4f86d844ebb362f4f39e9c6571d561b72897/packages/simcore-sdk/src/simcore_sdk/node_ports/filemanager.py#L132
         resp_model = await api.upload_file(
             location_id=location_id,
-            user_id=user_id,
+            user_id=str_user_id,
             file_id=file_id,
             _request_timeout=1000,
         )
@@ -138,14 +201,14 @@ async def test_storage_client_used_in_simcore_sdk_0_3_2(  # noqa: PLR0915
         #   A bug in the response of this call was preventing downloading data
         #   with the new storage API
         #
-        resp_model = await api.get_file_metadata(file_id, location_id, user_id)
+        resp_model = await api.get_file_metadata(file_id, location_id, str_user_id)
         print(type(resp_model), ":\n", resp_model)
         assert resp_model.data.object_name is not None
         assert resp_model.error is None
 
         # _get_location_id_from_location_name
         # https://github.com/ITISFoundation/osparc-simcore/blob/cfdf4f86d844ebb362f4f39e9c6571d561b72897/packages/simcore-sdk/src/simcore_sdk/node_ports/filemanager.py#L89
-        resp_model = await api.get_storage_locations(user_id=user_id)
+        resp_model = await api.get_storage_locations(user_id=str_user_id)
         print(f"{resp_model=}")
         for location in resp_model.data:
             assert location["name"] == location_name
@@ -155,7 +218,7 @@ async def test_storage_client_used_in_simcore_sdk_0_3_2(  # noqa: PLR0915
         # https://github.com/ITISFoundation/osparc-simcore/blob/cfdf4f86d844ebb362f4f39e9c6571d561b72897/packages/simcore-sdk/src/simcore_sdk/node_ports/filemanager.py#L123
         resp_model = await api.download_file(
             location_id=location_id,
-            user_id=user_id,
+            user_id=str_user_id,
             file_id=file_id,
             _request_timeout=1000,
         )

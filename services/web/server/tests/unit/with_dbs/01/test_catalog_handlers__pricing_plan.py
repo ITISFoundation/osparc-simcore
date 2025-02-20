@@ -30,7 +30,7 @@ def mock_rut_api_responses(
     settings: ResourceUsageTrackerSettings = get_plugin_settings(client.app)
 
     service_pricing_plan_get = PricingPlanGet.model_validate(
-        PricingPlanGet.model_config["json_schema_extra"]["examples"][0],
+        PricingPlanGet.model_json_schema()["examples"][0],
     )
     aioresponses_mocker.get(
         re.compile(f"^{settings.api_base_url}/services/+.+$"),

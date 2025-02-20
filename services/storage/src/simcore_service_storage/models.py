@@ -1,20 +1,11 @@
 import datetime
 import urllib.parse
 from dataclasses import dataclass
-from typing import Any, Literal, NamedTuple
+from typing import Annotated, Any, Literal, NamedTuple
 from uuid import UUID
 
 import arrow
 from aws_library.s3 import UploadID
-from models_library.api_schemas_storage import (
-    UNDEFINED_SIZE,
-    UNDEFINED_SIZE_TYPE,
-    DatasetMetaDataGet,
-    ETag,
-    FileMetaDataGet,
-    LinkType,
-    S3BucketName,
-)
 from models_library.basic_types import SHA256Str
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import (
@@ -28,6 +19,15 @@ from models_library.rest_pagination import (
     DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
     MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
 )
+from models_library.storage_schemas import (
+    UNDEFINED_SIZE,
+    UNDEFINED_SIZE_TYPE,
+    DatasetMetaDataGet,
+    ETag,
+    FileMetaDataGet,
+    LinkType,
+    S3BucketName,
+)
 from models_library.users import UserID
 from models_library.utils.common_validators import empty_str_to_none_pre_validator
 from pydantic import (
@@ -36,6 +36,7 @@ from pydantic import (
     ByteSize,
     ConfigDict,
     Field,
+    PlainSerializer,
     TypeAdapter,
     field_validator,
     model_validator,
@@ -56,17 +57,31 @@ def is_uuid(value: str) -> bool:
 
 
 class FileMetaDataAtDB(BaseModel):
-    location_id: LocationID
+    location_id: Annotated[
+        LocationID, PlainSerializer(lambda x: f"{x}", return_type=str)
+    ]
     location: LocationName
     bucket_name: S3BucketName
     object_name: SimcoreS3FileID
-    project_id: ProjectID | None = None
-    node_id: NodeID | None = None
-    user_id: UserID
-    created_at: datetime.datetime
+    project_id: Annotated[
+        ProjectID | None,
+        PlainSerializer(
+            lambda x: f"{x}" if x is not None else None, return_type=str | None
+        ),
+    ] = None
+    node_id: Annotated[
+        NodeID | None,
+        PlainSerializer(
+            lambda x: f"{x}" if x is not None else None, return_type=str | None
+        ),
+    ] = None
+    user_id: Annotated[UserID, PlainSerializer(lambda x: f"{x}", return_type=str)]
+    created_at: Annotated[datetime.datetime, PlainSerializer(lambda x: x.isoformat())]
     file_id: SimcoreS3FileID
     file_size: UNDEFINED_SIZE_TYPE | ByteSize
-    last_modified: datetime.datetime
+    last_modified: Annotated[
+        datetime.datetime, PlainSerializer(lambda x: x.isoformat())
+    ]
     entity_tag: ETag | None = None
     is_soft_link: bool
     upload_id: UploadID | None = None
@@ -151,7 +166,7 @@ class FilesMetadataDatasetQueryParams(StorageQueryParamsBase):
     expand_dirs: bool = True
 
 
-class FilesMetadataQueryParams(StorageQueryParamsBase):
+class FileMetadataListQueryParams(StorageQueryParamsBase):
     project_id: ProjectID | None = None
     uuid_filter: str = ""
     expand_dirs: bool = True
@@ -162,15 +177,18 @@ class SyncMetadataQueryParams(BaseModel):
     fire_and_forget: bool = False
 
 
+class SyncMetadataResponse(BaseModel):
+    removed: list[StorageFileID]
+    fire_and_forget: bool
+    dry_run: bool
+
+
 class FileDownloadQueryParams(StorageQueryParamsBase):
     link_type: LinkType = LinkType.PRESIGNED
 
-    @field_validator("link_type", mode="before")
-    @classmethod
-    def convert_from_lower_case(cls, v: str) -> str:
-        if v is not None:
-            return f"{v}".upper()
-        return v
+
+class FileDownloadResponse(BaseModel):
+    link: AnyUrl
 
 
 class FileUploadQueryParams(StorageQueryParamsBase):
@@ -178,13 +196,6 @@ class FileUploadQueryParams(StorageQueryParamsBase):
     file_size: ByteSize | None = None  # NOTE: in old legacy services this might happen
     is_directory: bool = False
     sha256_checksum: SHA256Str | None = None
-
-    @field_validator("link_type", mode="before")
-    @classmethod
-    def convert_from_lower_case(cls, v: str) -> str:
-        if v is not None:
-            return f"{v}".upper()
-        return v
 
     @model_validator(mode="before")
     @classmethod
@@ -208,6 +219,10 @@ class FileUploadQueryParams(StorageQueryParamsBase):
         - storage relies on lazy update to find if the file is finished uploaded (when client calls get_file_meta_data, or if the dsm_cleaner goes over it after the upload time is expired)
         """
         return self.file_size is None and self.is_directory is False
+
+
+class FileUploadResponseV1(BaseModel):
+    link: AnyUrl
 
 
 class DeleteFolderQueryParams(StorageQueryParamsBase):
@@ -275,13 +290,16 @@ class UserOrProjectFilter(NamedTuple):
     project_ids: list[ProjectID]
 
 
-__all__ = (
-    "ETag",
-    "FileMetaData",
-    "FileMetaDataAtDB",
-    "S3BucketName",
-    "SimcoreS3FileID",
-    "StorageFileID",
-    "UploadID",
-    "UploadLinks",
-)
+@dataclass(frozen=True)
+class AccessRights:
+    read: bool
+    write: bool
+    delete: bool
+
+    @classmethod
+    def all(cls) -> "AccessRights":
+        return cls(read=True, write=True, delete=True)
+
+    @classmethod
+    def none(cls) -> "AccessRights":
+        return cls(read=False, write=False, delete=False)

@@ -12,7 +12,7 @@ from packaging.specifiers import SpecifierSet
 from packaging.version import Version
 from pytest_mock import MockerFixture, MockType
 from simcore_service_catalog.db.repositories.services import ServicesRepository
-from simcore_service_catalog.models.services_db import ReleaseFromDB
+from simcore_service_catalog.models.services_db import ReleaseDBGet
 from simcore_service_catalog.services.compatibility import (
     _get_latest_compatible_version,
     evaluate_service_compatibility_map,
@@ -178,10 +178,10 @@ async def test_evaluate_service_compatibility_map_with_default_policy(
     mock_repo: MockType, user_id: UserID
 ):
     service_release_history = [
-        _create_as(ReleaseFromDB, version="1.0.0"),
-        _create_as(ReleaseFromDB, version="1.0.1"),
-        _create_as(ReleaseFromDB, version="1.1.0"),
-        _create_as(ReleaseFromDB, version="2.0.0"),
+        _create_as(ReleaseDBGet, version="1.0.0"),
+        _create_as(ReleaseDBGet, version="1.0.1"),
+        _create_as(ReleaseDBGet, version="1.1.0"),
+        _create_as(ReleaseDBGet, version="2.0.0"),
     ]
 
     compatibility_map = await evaluate_service_compatibility_map(
@@ -199,14 +199,14 @@ async def test_evaluate_service_compatibility_map_with_custom_policy(
     mock_repo: MockType, user_id: UserID
 ):
     service_release_history = [
-        _create_as(ReleaseFromDB, version="1.0.0"),
+        _create_as(ReleaseDBGet, version="1.0.0"),
         _create_as(
-            ReleaseFromDB,
+            ReleaseDBGet,
             version="1.0.1",
             compatibility_policy={"versions_specifier": ">1.1.0,<=2.0.0"},
         ),
-        _create_as(ReleaseFromDB, version="1.2.0"),
-        _create_as(ReleaseFromDB, version="2.0.0"),
+        _create_as(ReleaseDBGet, version="1.2.0"),
+        _create_as(ReleaseDBGet, version="2.0.0"),
     ]
 
     compatibility_map = await evaluate_service_compatibility_map(
@@ -228,9 +228,9 @@ async def test_evaluate_service_compatibility_map_with_other_service(
     mock_repo: MockType, user_id: UserID
 ):
     service_release_history = [
-        _create_as(ReleaseFromDB, version="1.0.0"),
+        _create_as(ReleaseDBGet, version="1.0.0"),
         _create_as(
-            ReleaseFromDB,
+            ReleaseDBGet,
             version="1.0.1",
             compatibility_policy={
                 "other_service_key": "simcore/services/comp/other_service",
@@ -240,9 +240,9 @@ async def test_evaluate_service_compatibility_map_with_other_service(
     ]
 
     mock_repo.get_service_history.return_value = [
-        _create_as(ReleaseFromDB, version="5.0.0"),
-        _create_as(ReleaseFromDB, version="5.1.0"),
-        _create_as(ReleaseFromDB, version="5.2.0"),
+        _create_as(ReleaseDBGet, version="5.0.0"),
+        _create_as(ReleaseDBGet, version="5.1.0"),
+        _create_as(ReleaseDBGet, version="5.2.0"),
     ]
 
     compatibility_map = await evaluate_service_compatibility_map(
@@ -265,10 +265,10 @@ async def test_evaluate_service_compatibility_map_with_deprecated_versions(
     mock_repo: MockType, user_id: UserID
 ):
     service_release_history = [
-        _create_as(ReleaseFromDB, version="1.0.0"),
-        _create_as(ReleaseFromDB, version="1.0.1", deprecated=arrow.now().datetime),
-        _create_as(ReleaseFromDB, version="1.2.0"),
-        _create_as(ReleaseFromDB, version="1.2.5"),
+        _create_as(ReleaseDBGet, version="1.0.0"),
+        _create_as(ReleaseDBGet, version="1.0.1", deprecated=arrow.now().datetime),
+        _create_as(ReleaseDBGet, version="1.2.0"),
+        _create_as(ReleaseDBGet, version="1.2.5"),
     ]
 
     compatibility_map = await evaluate_service_compatibility_map(

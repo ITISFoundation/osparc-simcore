@@ -86,7 +86,7 @@ qx.Class.define("osparc.navigation.UserMenu", {
           this.add(control);
           break;
         case "market":
-          control = new qx.ui.menu.Button(this.tr("Market"));
+          control = new qx.ui.menu.Button(this.tr("Model Market"));
           control.addListener("execute", () => osparc.vipMarket.MarketWindow.openWindow());
           this.add(control);
           break;
@@ -214,16 +214,15 @@ qx.Class.define("osparc.navigation.UserMenu", {
       }
       this.addSeparator();
 
-      // quick starts
+      // quick starts and manuals
       osparc.store.Support.addQuickStartToMenu(this);
       osparc.store.Support.addGuidedToursToMenu(this);
-
-      // manuals
       osparc.store.Support.addManualButtonsToMenu(this);
       this.addSeparator();
 
       // feedbacks
       osparc.store.Support.addSupportButtonsToMenu(this);
+      osparc.store.Support.addReleaseNotesToMenu(this);
       this.addSeparator();
 
       this.getChildControl("theme-switcher");

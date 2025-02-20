@@ -11,17 +11,19 @@
 --requirement ../../../packages/postgres-database/requirements/_base.in
 --requirement ../../../packages/settings-library/requirements/_base.in
 
-# service-library[aiohttp]
 --requirement ../../../packages/service-library/requirements/_base.in
---requirement ../../../packages/service-library/requirements/_aiohttp.in
+--requirement ../../../packages/service-library/requirements/_fastapi.in
 
 aioboto3 # s3 storage
 aiofiles # i/o
-aiohttp # server
-aiohttp-swagger[performance] # server
-aiopg[sa] # db
+asyncpg # database
+httpx
 opentelemetry-instrumentation-botocore
 packaging
+fastapi[all]
+fastapi-pagination
+orjson
+pydantic[dotenv]
 tenacity
 typer
 types-aiobotocore[s3] # s3 storage

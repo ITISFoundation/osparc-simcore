@@ -107,6 +107,10 @@ services:
     deploy:
       replicas: 2
 
+  docker-api-proxy:
+    ports:
+     - "8014:8888"
+
   resource-usage-tracker:
     environment:
       RESOURCE_USAGE_TRACKER_REMOTE_DEBUGGING_PORT : 3000
@@ -252,3 +256,8 @@ services:
         - traefik.http.routers.${SWARM_STACK_NAME}_whoami.rule=PathPrefix(`/whoami`)
         - traefik.http.routers.${SWARM_STACK_NAME}_whoami.entrypoints=traefik_monitor
         - traefik.http.routers.${SWARM_STACK_NAME}_whoami.middlewares=${SWARM_STACK_NAME}_gzip@swarm
+
+networks:
+  docker-api-network:
+    driver_opts:
+      {} # override 'encrypted' locally, some WSL versions have issues with encrypted networks SEE https://github.com/microsoft/WSL/issues/10029
