@@ -260,4 +260,4 @@ services:
 networks:
   docker-api-network:
     driver_opts:
-      {}
+      {} # override 'encrypted' locally, some WSL versions have issues with encrypted networks SEE https://github.com/microsoft/WSL/issues/10029
