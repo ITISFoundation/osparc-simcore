@@ -3,6 +3,7 @@ import logging
 from aiohttp import web
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 from servicelib.logging_utils import set_parent_module_log_level
+from simcore_service_webserver.products.plugin import setup_products
 
 from ..application_settings import get_application_settings
 from ..login.plugin import setup_login_storage
@@ -21,6 +22,9 @@ _logger = logging.getLogger(__name__)
     logger=_logger,
 )
 def setup_garbage_collector(app: web.Application) -> None:
+    # for trashing
+    setup_products(app)
+
     # - project-api needs access to db
     setup_projects_db(app)
     # - project needs access to socketio via notify_project_state_update
