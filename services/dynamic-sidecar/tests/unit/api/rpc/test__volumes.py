@@ -49,7 +49,7 @@ async def test_volumes_state_saved_ok(
         category=volume_category,
     )
 
-    # check that
+    # check that content was saved
     assert shared_store.volume_states[volume_category] == VolumeState(
         status=VolumeStatus.CONTENT_WAS_SAVED
     )
