@@ -93,6 +93,8 @@ def _create_private_workspace_query(
         return (
             sql.select(
                 *_FOLDER_DB_MODEL_COLS,
+                # NOTE: design INVARIANT:
+                #   a user in his private workspace owns his folders
                 sql.func.json_build_object(
                     "read",
                     sa.text("true"),
@@ -130,6 +132,8 @@ def _create_shared_workspace_query(
         shared_workspace_query = (
             sql.select(
                 *_FOLDER_DB_MODEL_COLS,
+                # NOTE: design INVARIANT:
+                #   a user access rights to a folder in a SHARED workspace is inherited from the workspace
                 workspace_access_rights_subquery.c.my_access_rights,
             )
             .select_from(
@@ -156,12 +160,12 @@ def _create_shared_workspace_query(
     return shared_workspace_query
 
 
-def _to_expression(order_by: OrderBy):
+def _to_sql_expression(table: sa.Table, order_by: OrderBy):
     direction_func: Callable = {
         OrderDirection.ASC: sql.asc,
         OrderDirection.DESC: sql.desc,
     }[order_by.direction]
-    return direction_func(folders_v2.columns[order_by.field])
+    return direction_func(table.columns[order_by.field])
 
 
 async def list_(  # pylint: disable=too-many-arguments,too-many-branches
@@ -245,7 +249,9 @@ async def list_(  # pylint: disable=too-many-arguments,too-many-branches
 
     # Ordering and pagination
     list_query = (
-        combined_query.order_by(_to_expression(order_by)).offset(offset).limit(limit)
+        combined_query.order_by(_to_sql_expression(folders_v2, order_by))
+        .offset(offset)
+        .limit(limit)
     )
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
@@ -273,7 +279,6 @@ async def list_trashed_folders(
 ) -> tuple[int, list[FolderDB]]:
     """
     NOTE: this is app-wide i.e. no product, user or workspace filtered
-    TODO: check with MD about workspaces
     """
     base_query = sql.select(*_FOLDER_DB_MODEL_COLS).where(
         folders_v2.c.trashed.is_not(None)
@@ -294,7 +299,7 @@ async def list_trashed_folders(
 
     # Ordering and pagination
     list_query = (
-        base_query.order_by(_to_expression(order_by)).offset(offset).limit(limit)
+        base_query.order_by(_to_sql_expression(order_by)).offset(offset).limit(limit)
     )
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:

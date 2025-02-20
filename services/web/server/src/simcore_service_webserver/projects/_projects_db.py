@@ -2,6 +2,7 @@ import logging
 from datetime import datetime
 from typing import Callable, cast
 
+import sqlalchemy as sa
 from aiohttp import web
 from common_library.exclude import UnSet, is_set
 from models_library.basic_types import IDStr
@@ -38,12 +39,12 @@ PROJECT_DB_COLS = get_columns_from_db_model(  # noqa: RUF012
 _OLDEST_TRASHED_FIRST = OrderBy(field=IDStr("trashed"), direction=OrderDirection.ASC)
 
 
-def _to_expression(order_by: OrderBy):
+def _to_sql_expression(table: sa.Table, order_by: OrderBy):
     direction_func: Callable = {
         OrderDirection.ASC: sql.asc,
         OrderDirection.DESC: sql.desc,
     }[order_by.direction]
-    return direction_func(projects.columns[order_by.field])
+    return direction_func(table.columns[order_by.field])
 
 
 async def list_trashed_projects(
@@ -77,7 +78,9 @@ async def list_trashed_projects(
 
     # Ordering and pagination
     list_query = (
-        base_query.order_by(_to_expression(order_by)).offset(offset).limit(limit)
+        base_query.order_by(_to_sql_expression(projects, order_by))
+        .offset(offset)
+        .limit(limit)
     )
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
