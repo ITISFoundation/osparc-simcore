@@ -123,12 +123,12 @@ async def get_trashed_by_primary_gid(
     projects_uuid: ProjectID,
 ) -> GroupID | None:
     query = _select_trashed_by_primary_gid_query().where(
-        projects.c.uuid == projects_uuid
+        projects.c.uuid == f"{projects_uuid}"
     )
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         result = await conn.execute(query)
-        row = result.first()
+        row = result.one_or_none()
         return row.trashed_by_primary_gid if row else None
 
 
@@ -167,7 +167,7 @@ async def batch_get_trashed_by_primary_gid(
         result = await conn.stream(query)
         rows = {row.uuid: row.trashed_by_primary_gid async for row in result}
 
-    return [rows.get(uuid) for uuid in projects_uuids_str]
+    return [rows.get(project_uuid) for project_uuid in projects_uuids_str]
 
 
 async def patch_project(

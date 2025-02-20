@@ -162,3 +162,31 @@ async def test_get_trashed_by_primary_gid(
     )
 
     assert trashed_by_primary_gid == logged_user["primary_gid"]
+
+
+async def test_batch_get_trashed_by_primary_gid(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    trashed_project: ProjectDBGet,
+):
+    assert client.app
+
+    non_existent_project_uuid = UUID("00000000-0000-0000-0000-000000000000")
+
+    # Batch get trashed by primary gid
+    trashed_by_primary_gid = (
+        await projects_service_repository.batch_get_trashed_by_primary_gid(
+            client.app,
+            projects_uuids=[
+                trashed_project.uuid,
+                non_existent_project_uuid,  # invalid
+                trashed_project.uuid,  # repeated
+            ],
+        )
+    )
+
+    assert trashed_by_primary_gid == [
+        logged_user["primary_gid"],
+        None,
+        logged_user["primary_gid"],
+    ]
