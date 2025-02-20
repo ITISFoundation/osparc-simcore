@@ -43,3 +43,53 @@ async def test_get_project(
         await projects_service_repository.get_project(
             client.app, project_uuid=non_existent_project_uuid
         )
+
+
+async def test_patch_project(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+):
+    assert client.app
+
+    # Patch valid project
+    patch_data = {"name": "Updated Project Name"}
+    patched_project = await projects_service_repository.patch_project(
+        client.app,
+        project_uuid=user_project["uuid"],
+        new_partial_project_data=patch_data,
+    )
+
+    assert patched_project.uuid == UUID(user_project["uuid"])
+    assert patched_project.name == patch_data["name"]
+
+    # Patch non-existent project
+    non_existent_project_uuid = UUID("00000000-0000-0000-0000-000000000000")
+    with pytest.raises(ProjectNotFoundError):
+        await projects_service_repository.patch_project(
+            client.app,
+            project_uuid=non_existent_project_uuid,
+            new_partial_project_data=patch_data,
+        )
+
+
+async def test_delete_project(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+):
+    assert client.app
+
+    # Delete valid project
+    deleted_project = await projects_service_repository.delete_project(
+        client.app, project_uuid=user_project["uuid"]
+    )
+
+    assert deleted_project.uuid == UUID(user_project["uuid"])
+
+    # Delete non-existent project
+    non_existent_project_uuid = UUID("00000000-0000-0000-0000-000000000000")
+    with pytest.raises(ProjectNotFoundError):
+        await projects_service_repository.delete_project(
+            client.app, project_uuid=non_existent_project_uuid
+        )
