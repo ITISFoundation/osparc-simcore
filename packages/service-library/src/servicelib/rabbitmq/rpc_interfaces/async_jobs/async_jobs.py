@@ -82,3 +82,20 @@ async def list_jobs(
         timeout_s=_DEFAULT_TIMEOUT_S,
     )
     return result
+
+
+async def submit_job(
+    rabbitmq_rpc_client: RabbitMQRPCClient,
+    *,
+    rpc_namespace: RPCNamespace,
+    job_name: str,
+    **kwargs
+) -> AsyncJobGet:
+    result = await rabbitmq_rpc_client.request(
+        rpc_namespace,
+        _RPC_METHOD_NAME_ADAPTER.validate_python(job_name),
+        **kwargs,
+        timeout_s=_DEFAULT_TIMEOUT_S,
+    )
+    assert isinstance(result, AsyncJobGet)
+    return result

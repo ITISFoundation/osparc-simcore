@@ -43,8 +43,8 @@ from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import (
     get_result,
     get_status,
     list_jobs,
+    submit_job,
 )
-from servicelib.rabbitmq.rpc_interfaces.storage.data_export import start_data_export
 from servicelib.request_keys import RQT_USERID_KEY
 from servicelib.rest_responses import unwrap_envelope
 from simcore_service_webserver.rabbitmq import get_rabbitmq_rpc_client
@@ -403,8 +403,10 @@ async def export_data(request: web.Request) -> web.Response:
     data_export_post = await parse_request_body_as(
         model_schema_cls=DataExportPost, request=request
     )
-    async_job_rpc_get = await start_data_export(
+    async_job_rpc_get = await submit_job(
         rabbitmq_rpc_client=rabbitmq_rpc_client,
+        rpc_namespace=STORAGE_RPC_NAMESPACE,
+        job_name="start_data_export",
         paths=data_export_post.to_rpc_schema(
             user_id=_req_ctx.user_id, location_id=_path_params.location_id
         ),

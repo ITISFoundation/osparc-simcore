@@ -22,7 +22,6 @@ from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.async_jobs import async_jobs
-from servicelib.rabbitmq.rpc_interfaces.storage import data_export
 from settings_library.rabbit import RabbitSettings
 from simcore_service_storage.core.settings import ApplicationSettings
 
@@ -76,8 +75,10 @@ async def rpc_client(
 
 
 async def test_start_data_export(rpc_client: RabbitMQRPCClient, faker: Faker):
-    result = await data_export.start_data_export(
+    result = await async_jobs.submit_job(
         rpc_client,
+        rpc_namespace=STORAGE_RPC_NAMESPACE,
+        job_name="start_data_export",
         paths=DataExportTaskStartInput(
             user_id=1, location_id=0, paths=[Path(faker.file_path())]
         ),
