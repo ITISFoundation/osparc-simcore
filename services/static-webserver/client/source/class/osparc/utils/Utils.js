@@ -91,6 +91,10 @@ qx.Class.define("osparc.utils.Utils", {
 
     FLOATING_Z_INDEX: 1000001 + 1,
 
+    addWhiteSpaces: function(integer) {
+      return new Intl.NumberFormat("fr-FR").format(integer); // french will add white spaces every 3 digits
+    },
+
     updateTabName: function(name) {
       document.title = name;
     },

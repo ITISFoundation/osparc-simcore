@@ -33,7 +33,8 @@ qx.Class.define("osparc.vipMarket.Market", {
       return;
     }
 
-    this.__populateCategories(openCategory);
+    this.__reqOpenCategory = openCategory;
+    this.__populateCategories();
   },
 
   events: {
@@ -50,10 +51,11 @@ qx.Class.define("osparc.vipMarket.Market", {
   },
 
   members: {
+    __reqOpenCategory: null,
     __myModelsCategoryMarket: null,
     __myModelsCategoryButton: null,
 
-    __populateCategories: function(openCategory) {
+    __populateCategories: function() {
       const store = osparc.store.Store.getInstance();
       const contextWallet = store.getContextWallet();
 
@@ -75,10 +77,11 @@ qx.Class.define("osparc.vipMarket.Market", {
             items: [],
           };
           categories.push(availableCategory);
+          let openCategory = null;
           licensedItems.forEach(licensedItem => {
             if (licensedItem["seats"].length) {
               availableCategory["items"].push(licensedItem);
-              if (!openCategory) {
+              if (!this.__reqOpenCategory) {
                 openCategory = availableCategory["categoryId"];
               }
             }
@@ -123,6 +126,9 @@ qx.Class.define("osparc.vipMarket.Market", {
             if (pricingUnits.length === 1 && pricingUnits[0].getCost() === 0) {
               this.__freeItems.push(licensedItem);
             }
+          }
+          if (!this.__reqOpenCategory && this.__freeItems.length) {
+            this.__openCategory("availableModels");
           }
           this.__repopulateMyModelsCategory();
         });
