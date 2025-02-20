@@ -5,8 +5,10 @@ import logging
 from servicelib.logging_utils import config_all_loggers
 from simcore_service_storage.core.application import create_app
 from simcore_service_storage.core.settings import ApplicationSettings
-from simcore_service_storage.modules.celery.application import create_celery_app
-from simcore_service_storage.modules.celery.tasks import archive
+from simcore_service_storage.modules.celery.client.setup import (
+    attach_to_fastapi,
+    create_celery_app,
+)
 
 _settings = ApplicationSettings.create_from_envs()
 
@@ -24,7 +26,6 @@ _logger = logging.getLogger(__name__)
 fastapi_app = create_app(_settings)
 
 celery_app = create_celery_app(_settings)
-celery_app.task(name="archive")(archive)
+attach_to_fastapi(fastapi_app, celery_app)
 
-fastapi_app.state.celery = celery_app
 app = fastapi_app
