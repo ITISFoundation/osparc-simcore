@@ -8,7 +8,6 @@ from aiohttp import web
 from models_library.projects import ProjectID
 from models_library.users import UserID
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
-from servicelib.redis._errors import ProjectLockError
 
 from ..director_v2 import api as director_v2_service
 from ..storage import api as storage_service
