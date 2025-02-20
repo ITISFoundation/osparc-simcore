@@ -123,7 +123,7 @@ async def safe_delete_expired_trash_as_admin(app: web.Application) -> None:
         with log_context(
             _logger,
             logging.DEBUG,
-            "Deleting items marked as trashed before %s in %s [retention=%s]",
+            "Deleting items marked as trashed before %s in %s [trashed_at < %s will be deleted]",
             retention,
             product.display_name,
             delete_until,
@@ -148,11 +148,15 @@ async def safe_delete_expired_trash_as_admin(app: web.Application) -> None:
 
             try:
 
-                await projects_trash_service.batch_delete_trashed_projects_as_admin(
-                    app,
-                    trashed_before=delete_until,
-                    fail_fast=False,
+                deleted_project_ids = (
+                    await projects_trash_service.batch_delete_trashed_projects_as_admin(
+                        app,
+                        trashed_before=delete_until,
+                        fail_fast=False,
+                    )
                 )
+
+                _logger.info("Deleted %d trashed projects", len(deleted_project_ids))
 
             except Exception as exc:  # pylint: disable=broad-exception-caught
                 _logger.warning(
