@@ -112,16 +112,19 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
           });
         }
         modelsInfo.forEach((modelInfo, idx) => {
-          const modelLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(4));
+          const modelLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(4)).set({
+            allowGrowX: false,
+          });
           const miniThumbnail = this.self().createThumbnail(modelInfo["source"]["thumbnail"], 32);
           osparc.utils.Utils.addBorder(miniThumbnail);
           modelLayout.add(miniThumbnail);
-          miniThumbnail.addListener("tap", () => thumbnailTapped(idx));
           const title = new qx.ui.basic.Label().set({
             value: osparc.store.LicensedItems.licensedResourceTitle(modelInfo),
             alignY: "middle"
           });
           modelLayout.add(title);
+          modelLayout.setCursor("pointer");
+          modelLayout.addListener("tap", () => thumbnailTapped(idx));
           modelsLayout.add(modelLayout);
         });
         modelBundleLayout.add(modelSelectionLayout);
