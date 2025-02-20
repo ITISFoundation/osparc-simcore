@@ -299,7 +299,9 @@ async def list_trashed_folders(
 
     # Ordering and pagination
     list_query = (
-        base_query.order_by(_to_sql_expression(order_by)).offset(offset).limit(limit)
+        base_query.order_by(_to_sql_expression(folders_v2, order_by))
+        .offset(offset)
+        .limit(limit)
     )
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
