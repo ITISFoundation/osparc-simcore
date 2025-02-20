@@ -42,6 +42,11 @@ def list_products(app: web.Application) -> list[Product]:
     return products
 
 
+async def list_products_names(app: web.Application) -> list[ProductName]:
+    repo = ProductRepository.create_from_app(app)
+    return await repo.list_products_names()
+
+
 async def get_current_product_credit_price_info(
     request: web.Request,
 ) -> ProductPriceInfo | None:

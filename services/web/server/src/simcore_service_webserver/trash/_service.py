@@ -112,12 +112,14 @@ async def safe_delete_expired_trash_as_admin(app: web.Application) -> None:
     retention = timedelta(days=settings.TRASH_RETENTION_DAYS)
     delete_until = arrow.now().datetime - retention
 
-    for product in products_service.list_products(app):
+    app_products_names = await products_service.list_products_names(app)
+
+    for product_name in app_products_names:
 
         ctx = {
             "delete_until": delete_until,
             "retention": retention,
-            "product_name": product.name,
+            "product_name": product_name,
         }
 
         with log_context(
@@ -125,7 +127,7 @@ async def safe_delete_expired_trash_as_admin(app: web.Application) -> None:
             logging.DEBUG,
             "Deleting items marked as trashed before %s in %s [trashed_at < %s will be deleted]",
             retention,
-            product.display_name,
+            product_name,
             delete_until,
         ):
             try:
@@ -133,7 +135,7 @@ async def safe_delete_expired_trash_as_admin(app: web.Application) -> None:
                 await folders_trash_service.batch_delete_trashed_folders_as_admin(
                     app,
                     trashed_before=delete_until,
-                    product_name=product.name,
+                    product_name=product_name,
                     fail_fast=False,
                 )
 
