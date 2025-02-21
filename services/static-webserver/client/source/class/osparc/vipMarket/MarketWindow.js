@@ -19,12 +19,12 @@ qx.Class.define("osparc.vipMarket.MarketWindow", {
   extend: osparc.ui.window.TabbedWindow,
 
   construct: function(nodeId, category) {
-    this.base(arguments, "store", this.tr("Market"));
+    this.base(arguments, "store", this.tr("Model Store"));
 
     osparc.utils.Utils.setIdToWidget(this, "storeWindow");
 
-    const width = 1080;
-    const height = 700;
+    const width = Math.min(1200, window.innerWidth); // since we go over the supported minimum, take the min
+    const height = Math.min(700, window.innerHeight); // since we go over the supported minimum, take the min
     this.set({
       width,
       height

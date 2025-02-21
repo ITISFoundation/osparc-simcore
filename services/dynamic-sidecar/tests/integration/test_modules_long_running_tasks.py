@@ -19,9 +19,9 @@ from async_asgi_testclient import TestClient
 from botocore.client import Config
 from botocore.exceptions import ClientError
 from fastapi import FastAPI
+from models_library.api_schemas_storage.storage_schemas import S3BucketName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
-from models_library.storage_schemas import S3BucketName
 from models_library.users import UserID
 from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
@@ -166,7 +166,7 @@ async def simcore_storage_service(mocker: MockerFixture, app: FastAPI) -> None:
 
     # NOTE: Mock to ensure container IP agrees with host IP when testing
     mocker.patch(
-        "simcore_sdk.node_ports_common._filemanager._get_https_link_if_storage_secure",
+        "simcore_sdk.node_ports_common._filemanager_utils._get_https_link_if_storage_secure",
         replace_storage_endpoint(storage_host, int(storage_port)),
     )
 

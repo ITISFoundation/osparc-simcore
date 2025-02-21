@@ -212,12 +212,13 @@ async def delete(
 ### LICENSED ITEMS DOMAIN
 
 
-_licensed_resource_subquery = (
+# Step 1: Create an ordered subquery
+_ordered_subquery = (
     select(
         licensed_item_to_resource.c.licensed_item_id,
-        func.array_agg(licensed_resources.c.licensed_resource_data).label(
-            "licensed_resources"
-        ),
+        licensed_resources.c.licensed_resource_data,
+        licensed_resources.c.priority,
+        licensed_resources.c.licensed_resource_id,
     )
     .select_from(
         licensed_item_to_resource.join(
@@ -226,9 +227,17 @@ _licensed_resource_subquery = (
             == licensed_item_to_resource.c.licensed_resource_id,
         )
     )
-    .group_by(
-        licensed_item_to_resource.c.licensed_item_id,
-    )
+    .order_by(licensed_resources.c.priority, licensed_resources.c.licensed_resource_id)
+).subquery("ordered_subquery")
+
+# Step 2: Aggregate the ordered subquery results
+_licensed_resource_subquery = (
+    select(
+        _ordered_subquery.c.licensed_item_id,
+        func.array_agg(_ordered_subquery.c.licensed_resource_data).label(
+            "licensed_resources"
+        ),
+    ).group_by(_ordered_subquery.c.licensed_item_id)
 ).subquery("licensed_resource_subquery")
 
 
@@ -313,11 +322,11 @@ async def list_licensed_items(
     )
 
     if filter_by_licensed_resource_type:
-        base_query.where(
+        base_query = base_query.where(
             licensed_items.c.licensed_resource_type == filter_by_licensed_resource_type
         )
     if not include_hidden_items_on_market:
-        base_query.where(licensed_items.c.is_hidden_on_market.is_(False))
+        base_query = base_query.where(licensed_items.c.is_hidden_on_market.is_(False))
 
     # Select total count from base_query
     subquery = base_query.subquery()

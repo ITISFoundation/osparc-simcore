@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: simcore-service-webserver
   description: Main service with an interface (http-API & websockets) to the web front-end
-  version: 0.57.0
+  version: 0.59.0
 servers:
 - url: ''
   description: webserver
@@ -3656,6 +3656,48 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_TaskGet_'
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Conflict
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Service Unavailable
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Unprocessable Entity
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Bad Request
+        '402':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Payment Required
     get:
       tags:
       - projects
@@ -3743,6 +3785,48 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Page_ProjectListItem_'
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Conflict
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Service Unavailable
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Unprocessable Entity
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Bad Request
+        '402':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Payment Required
   /v0/projects/active:
     get:
       tags:
@@ -3763,6 +3847,48 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_ProjectGet_'
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Conflict
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Service Unavailable
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Unprocessable Entity
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Bad Request
+        '402':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Payment Required
   /v0/projects/{project_id}:
     get:
       tags:
@@ -3784,6 +3910,48 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_ProjectGet_'
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Conflict
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Service Unavailable
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Unprocessable Entity
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Bad Request
+        '402':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Payment Required
     patch:
       tags:
       - projects
@@ -3806,6 +3974,48 @@ paths:
       responses:
         '204':
           description: Successful Response
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Conflict
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Service Unavailable
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Unprocessable Entity
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Bad Request
+        '402':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Payment Required
     delete:
       tags:
       - projects
@@ -3822,6 +4032,48 @@ paths:
       responses:
         '204':
           description: Successful Response
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Conflict
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Service Unavailable
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Unprocessable Entity
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Bad Request
+        '402':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Payment Required
   /v0/projects/{project_id}:clone:
     post:
       tags:
@@ -3843,6 +4095,48 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_TaskGet_'
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Conflict
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Service Unavailable
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Unprocessable Entity
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Bad Request
+        '402':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Payment Required
   /v0/projects:search:
     get:
       tags:
@@ -3906,6 +4200,48 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Page_ProjectListItem_'
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Conflict
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Service Unavailable
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Unprocessable Entity
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Bad Request
+        '402':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Payment Required
   /v0/projects/{project_id}/inactivity:
     get:
       tags:
@@ -3927,6 +4263,48 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_GetProjectInactivityResponse_'
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Conflict
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Service Unavailable
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Unprocessable Entity
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Bad Request
+        '402':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Payment Required
   /v0/projects/{project_uuid}/comments:
     post:
       tags:
@@ -5973,8 +6351,141 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_FileUploadCompleteFutureResponse_'
-  /v0/trash:
-    delete:
+  /v0/storage/locations/{location_id}/export-data:
+    post:
+      tags:
+      - storage
+      summary: Export Data
+      description: Export data
+      operationId: export_data
+      parameters:
+      - name: location_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Location Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DataExportPost'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_StorageAsyncJobGet_'
+  /v0/storage/async-jobs/{job_id}/status:
+    get:
+      tags:
+      - storage
+      summary: Get Async Job Status
+      description: Get async job status
+      operationId: get_async_job_status
+      parameters:
+      - name: job_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Job Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StorageAsyncJobGet'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_StorageAsyncJobStatus_'
+  /v0/storage/async-jobs/{job_id}:abort:
+    post:
+      tags:
+      - storage
+      summary: Abort Async Job
+      description: aborts execution of an async job
+      operationId: abort_async_job
+      parameters:
+      - name: job_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Job Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StorageAsyncJobGet'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+  /v0/storage/async-jobs/{job_id}/result:
+    get:
+      tags:
+      - storage
+      summary: Get Async Job Result
+      description: Get the result of the async job
+      operationId: get_async_job_result
+      parameters:
+      - name: job_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Job Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StorageAsyncJobGet'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_StorageAsyncJobResult_'
+  /v0/storage/async-jobs:
+    get:
+      tags:
+      - storage
+      summary: Get Async Jobs
+      description: Retrunsa list of async jobs for the user
+      operationId: get_async_jobs
+      parameters:
+      - name: user_id
+        in: query
+        required: true
+        schema:
+          type: integer
+          exclusiveMinimum: true
+          title: User Id
+          minimum: 0
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list_StorageAsyncJobGet__'
+  /v0/trash:empty:
+    post:
       tags:
       - trash
       summary: Empty Trash
@@ -5982,6 +6493,48 @@ paths:
       responses:
         '204':
           description: Successful Response
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+        '503':
+          description: Service Unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+        '422':
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+        '402':
+          description: Payment Required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
   /v0/projects/{project_id}:trash:
     post:
       tags:
@@ -6007,12 +6560,48 @@ paths:
       responses:
         '204':
           description: Successful Response
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
         '404':
           description: Not such a project
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
         '409':
           description: Project is in use and cannot be trashed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
         '503':
           description: Trash service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Unprocessable Entity
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Bad Request
+        '402':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Payment Required
   /v0/projects/{project_id}:untrash:
     post:
       tags:
@@ -6031,6 +6620,48 @@ paths:
       responses:
         '204':
           description: Successful Response
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Conflict
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Service Unavailable
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Unprocessable Entity
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Bad Request
+        '402':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Payment Required
   /v0/folders/{folder_id}:trash:
     post:
       tags:
@@ -6057,6 +6688,12 @@ paths:
       responses:
         '204':
           description: Successful Response
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
         '404':
           description: Not such a folder
         '409':
@@ -6064,6 +6701,24 @@ paths:
             trashed
         '503':
           description: Trash service error
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Unprocessable Entity
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Bad Request
+        '402':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Payment Required
   /v0/folders/{folder_id}:untrash:
     post:
       tags:
@@ -6083,6 +6738,48 @@ paths:
       responses:
         '204':
           description: Successful Response
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Conflict
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Service Unavailable
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Unprocessable Entity
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Bad Request
+        '402':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Payment Required
   /v0/workspaces/{workspace_id}:trash:
     post:
       tags:
@@ -6109,6 +6806,12 @@ paths:
       responses:
         '204':
           description: Successful Response
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
         '404':
           description: Not such a workspace
         '409':
@@ -6116,6 +6819,24 @@ paths:
             be trashed
         '503':
           description: Trash service error
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Unprocessable Entity
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Bad Request
+        '402':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Payment Required
   /v0/workspaces/{workspace_id}:untrash:
     post:
       tags:
@@ -6135,6 +6856,48 @@ paths:
       responses:
         '204':
           description: Successful Response
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Conflict
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Service Unavailable
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Unprocessable Entity
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Bad Request
+        '402':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Payment Required
   /v0/workspaces:
     post:
       tags:
@@ -7638,6 +8401,18 @@ components:
       - dataset
       title: DatCoreFileLink
       description: I/O port type to hold a link to a file in DATCORE storage
+    DataExportPost:
+      properties:
+        paths:
+          items:
+            type: string
+            format: path
+          type: array
+          title: Paths
+      type: object
+      required:
+      - paths
+      title: DataExportPost
     DatasetMetaData:
       properties:
         dataset_id:
@@ -8337,6 +9112,45 @@ components:
           title: Error
       type: object
       title: Envelope[StatusDiagnosticsGet]
+    Envelope_StorageAsyncJobGet_:
+      properties:
+        data:
+          anyOf:
+          - $ref: '#/components/schemas/StorageAsyncJobGet'
+          - type: 'null'
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[StorageAsyncJobGet]
+    Envelope_StorageAsyncJobResult_:
+      properties:
+        data:
+          anyOf:
+          - $ref: '#/components/schemas/StorageAsyncJobResult'
+          - type: 'null'
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[StorageAsyncJobResult]
+    Envelope_StorageAsyncJobStatus_:
+      properties:
+        data:
+          anyOf:
+          - $ref: '#/components/schemas/StorageAsyncJobStatus'
+          - type: 'null'
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[StorageAsyncJobStatus]
     Envelope_TagGet_:
       properties:
         data:
@@ -8956,6 +9770,22 @@ components:
           title: Error
       type: object
       title: Envelope[list[ServiceOutputGet]]
+    Envelope_list_StorageAsyncJobGet__:
+      properties:
+        data:
+          anyOf:
+          - items:
+              $ref: '#/components/schemas/StorageAsyncJobGet'
+            type: array
+          - type: 'null'
+          title: Data
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[list[StorageAsyncJobGet]]
     Envelope_list_TagGet__:
       properties:
         data:
@@ -9191,8 +10021,6 @@ components:
         status:
           type: integer
           title: Status
-          default: 400
-          deprecated: true
         errors:
           items:
             $ref: '#/components/schemas/ErrorItemType'
@@ -9210,6 +10038,7 @@ components:
       type: object
       required:
       - message
+      - status
       title: ErrorGet
     ErrorItemType:
       properties:
@@ -9238,26 +10067,12 @@ components:
       title: ErrorItemType
     FeaturesDict:
       properties:
-        name:
-          type: string
-          title: Name
-        version:
-          type: string
-          title: Version
-        sex:
-          type: string
-          title: Sex
         age:
           type: string
           title: Age
-        weight:
-          type: string
-          title: Weight
-        height:
-          type: string
-          title: Height
         date:
           type: string
+          format: date
           title: Date
         ethnicity:
           type: string
@@ -9265,6 +10080,24 @@ components:
         functionality:
           type: string
           title: Functionality
+        height:
+          type: string
+          title: Height
+        name:
+          type: string
+          title: Name
+        sex:
+          type: string
+          title: Sex
+        species:
+          type: string
+          title: Species
+        version:
+          type: string
+          title: Version
+        weight:
+          type: string
+          title: Weight
       type: object
       required:
       - date
@@ -12088,6 +12921,59 @@ components:
       - productName
       - ui
       title: ProductUIGet
+    ProgressReport:
+      properties:
+        actual_value:
+          type: number
+          title: Actual Value
+        total:
+          type: number
+          title: Total
+          default: 1.0
+        attempt:
+          type: integer
+          title: Attempt
+          default: 0
+        unit:
+          anyOf:
+          - type: string
+            const: Byte
+          - type: 'null'
+          title: Unit
+        message:
+          anyOf:
+          - $ref: '#/components/schemas/ProgressStructuredMessage'
+          - type: 'null'
+      type: object
+      required:
+      - actual_value
+      title: ProgressReport
+    ProgressStructuredMessage:
+      properties:
+        description:
+          type: string
+          title: Description
+        current:
+          type: number
+          title: Current
+        total:
+          type: integer
+          title: Total
+        unit:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Unit
+        sub:
+          anyOf:
+          - $ref: '#/components/schemas/ProgressStructuredMessage'
+          - type: 'null'
+      type: object
+      required:
+      - description
+      - current
+      - total
+      title: ProgressStructuredMessage
     ProjectCopyOverride:
       properties:
         name:
@@ -13702,6 +14588,62 @@ components:
       - loop_tasks
       - top_tracemalloc
       title: StatusDiagnosticsGet
+    StorageAsyncJobGet:
+      properties:
+        jobId:
+          type: string
+          format: uuid
+          title: Jobid
+      type: object
+      required:
+      - jobId
+      title: StorageAsyncJobGet
+    StorageAsyncJobResult:
+      properties:
+        result:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Result
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      required:
+      - result
+      - error
+      title: StorageAsyncJobResult
+    StorageAsyncJobStatus:
+      properties:
+        jobId:
+          type: string
+          format: uuid
+          title: Jobid
+        progress:
+          $ref: '#/components/schemas/ProgressReport'
+        done:
+          type: boolean
+          title: Done
+        started:
+          type: string
+          format: date-time
+          title: Started
+        stopped:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Stopped
+      type: object
+      required:
+      - jobId
+      - progress
+      - done
+      - started
+      - stopped
+      title: StorageAsyncJobStatus
     Structure:
       properties:
         key:

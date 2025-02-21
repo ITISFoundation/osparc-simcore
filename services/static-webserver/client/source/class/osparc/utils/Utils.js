@@ -91,6 +91,10 @@ qx.Class.define("osparc.utils.Utils", {
 
     FLOATING_Z_INDEX: 1000001 + 1,
 
+    addWhiteSpaces: function(integer) {
+      return new Intl.NumberFormat("fr-FR").format(integer); // french will add white spaces every 3 digits
+    },
+
     updateTabName: function(name) {
       document.title = name;
     },
@@ -545,15 +549,24 @@ qx.Class.define("osparc.utils.Utils", {
       return daysBetween;
     },
 
-    createReleaseNotesLink: function() {
-      const versionLink = new osparc.ui.basic.LinkLabel();
+    getReleaseTag: function() {
       const rData = osparc.store.StaticInfo.getInstance().getReleaseData();
       const platformVersion = osparc.utils.LibVersions.getPlatformVersion();
-      let text = "osparc-simcore ";
-      text += (rData["tag"] && rData["tag"] !== "latest") ? rData["tag"] : platformVersion.version;
+      let text = (rData["tag"] && rData["tag"] !== "latest") ? rData["tag"] : platformVersion.version;
+      return text;
+    },
+
+    getReleaseLink: function() {
+      const rData = osparc.store.StaticInfo.getInstance().getReleaseData();
+      return rData["url"] || osparc.utils.LibVersions.getVcsRefUrl();
+    },
+
+    createReleaseNotesLink: function() {
+      let text = "osparc-simcore " + this.getReleaseTag();
       const platformName = osparc.store.StaticInfo.getInstance().getPlatformName();
       text += platformName.length ? ` (${platformName})` : "";
-      const url = rData["url"] || osparc.utils.LibVersions.getVcsRefUrl();
+      const url = this.self().getReleaseLink();
+      const versionLink = new osparc.ui.basic.LinkLabel();
       versionLink.set({
         value: text,
         url

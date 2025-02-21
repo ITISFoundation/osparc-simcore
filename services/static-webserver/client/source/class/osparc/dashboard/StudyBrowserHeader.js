@@ -45,7 +45,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
     "locationChanged": "qx.event.type.Data",
     "workspaceUpdated": "qx.event.type.Data",
     "deleteWorkspaceRequested": "qx.event.type.Data",
-    "emptyTrashRequested": "qx.event.type.Event",
+    "trashEmptied": "qx.event.type.Event",
   },
 
   properties: {
@@ -193,19 +193,44 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
           break;
         }
         case "empty-trash-button": {
-          control = new qx.ui.form.Button(this.tr("Delete all"), "@FontAwesome5Solid/trash/14").set({
+          control = new osparc.ui.form.FetchButton(this.tr("Delete all"), "@FontAwesome5Solid/trash/14").set({
             appearance: "danger-button",
             allowGrowY: false,
             alignY: "middle",
-            visibility: "excluded", // Not yet implemented
           });
-          control.addListener("execute", () => this.fireEvent("emptyTrashRequested"));
+          control.addListener("execute", () => {
+            const win = this.__createConfirmEmptyTrashWindow();
+            win.center();
+            win.open();
+            win.addListener("close", () => {
+              control.setFetching(true);
+              if (win.getConfirmed()) {
+                osparc.data.Resources.fetch("trash", "delete")
+                  .then(() => {
+                    this.fireEvent("trashEmptied")
+                  })
+                  .finally(() => control.setFetching(false));
+              } else {
+                control.setFetching(false)
+              }
+            }, this);
+          });
           this._addAt(control, this.self().POS.EMPTY_TRASH_BUTTON);
           break;
         }
       }
 
       return control || this.base(arguments, id);
+    },
+
+    __createConfirmEmptyTrashWindow: function() {
+      const msg = this.tr("All items will be permanently deleted");
+      const confirmationWin = new osparc.ui.window.Confirmation(msg).set({
+        caption: this.tr("Delete"),
+        confirmText: this.tr("Delete permanently"),
+        confirmAction: "delete"
+      });
+      return confirmationWin;
     },
 
     __titleTapped: function() {

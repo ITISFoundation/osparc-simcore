@@ -2,9 +2,7 @@ import logging
 from typing import cast
 
 from aiohttp import ClientError, ClientSession
-from models_library.generics import Envelope
-from models_library.projects_nodes_io import LocationID, LocationName
-from models_library.storage_schemas import (
+from models_library.api_schemas_storage.storage_schemas import (
     ETag,
     FileUploadCompleteFutureResponse,
     FileUploadCompleteResponse,
@@ -12,6 +10,8 @@ from models_library.storage_schemas import (
     FileUploadCompletionBody,
     UploadedPart,
 )
+from models_library.generics import Envelope
+from models_library.projects_nodes_io import LocationID, LocationName
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import AnyUrl, TypeAdapter
@@ -54,7 +54,7 @@ def _get_https_link_if_storage_secure(url: str) -> str:
     return url
 
 
-async def _complete_upload(
+async def complete_upload(
     session: ClientSession,
     upload_completion_link: AnyUrl,
     parts: list[UploadedPart],
@@ -118,7 +118,7 @@ async def _complete_upload(
     raise exceptions.S3TransferError(msg)
 
 
-async def _resolve_location_id(
+async def resolve_location_id(
     client_session: ClientSession,
     user_id: UserID,
     store_name: LocationName | None,
@@ -136,7 +136,7 @@ async def _resolve_location_id(
     return store_id
 
 
-async def _abort_upload(
+async def abort_upload(
     session: ClientSession, abort_upload_link: AnyUrl, *, reraise_exceptions: bool
 ) -> None:
     # abort the upload correctly, so it can revert back to last version

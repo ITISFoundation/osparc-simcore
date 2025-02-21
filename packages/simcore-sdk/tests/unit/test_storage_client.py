@@ -12,19 +12,21 @@ import aiohttp
 import pytest
 from aioresponses import aioresponses as AioResponsesMock
 from faker import Faker
-from models_library.projects_nodes_io import SimcoreS3FileID
-from models_library.storage_schemas import (
+from models_library.api_schemas_storage.storage_schemas import (
     FileLocationArray,
     FileMetaDataGet,
     FileUploadSchema,
     LocationID,
 )
+from models_library.projects_nodes_io import SimcoreS3FileID
 from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize, TypeAdapter
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.aiohttp import status
 from simcore_sdk.node_ports_common import exceptions
-from simcore_sdk.node_ports_common._filemanager import _get_https_link_if_storage_secure
+from simcore_sdk.node_ports_common._filemanager_utils import (
+    _get_https_link_if_storage_secure,
+)
 from simcore_sdk.node_ports_common.storage_client import (
     LinkType,
     delete_file,

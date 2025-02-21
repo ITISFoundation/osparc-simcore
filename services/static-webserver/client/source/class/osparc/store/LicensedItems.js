@@ -70,8 +70,25 @@ qx.Class.define("osparc.store.LicensedItems", {
       return nSeats;
     },
 
-    licensedResourceNameAndVersion: function(licensedResource) {
-      return `${licensedResource["source"]["features"]["name"]} ${licensedResource["source"]["features"]["version"]}`;
+    licensedResourceTitle: function(licensedResource) {
+      const name = licensedResource["source"]["features"]["name"] || osparc.store.LicensedItems.extractNameFromDescription(licensedResource);
+      const version = licensedResource["source"]["features"]["version"] || "";
+      const functionality = licensedResource["source"]["features"]["functionality"] || "Static";
+      return `${name} ${version}, ${functionality}`;
+    },
+
+    extractNameFromDescription: function(licensedResource) {
+      const description = licensedResource["source"]["description"] || "";
+      const delimiter = " - ";
+      let typeAndName = description.split(delimiter);
+      if (typeAndName.length > 1) {
+        // drop the type
+        typeAndName.shift();
+        // join the name
+        typeAndName = typeAndName.join(delimiter);
+        return typeAndName;
+      }
+      return "";
     },
   },
 

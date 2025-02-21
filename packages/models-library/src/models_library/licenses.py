@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 from enum import auto
 from typing import Annotated, Any, NamedTuple, NewType, NotRequired, TypeAlias, cast
 from uuid import UUID
@@ -26,37 +26,41 @@ class LicensedResourceType(StrAutoEnum):
     VIP_MODEL = auto()
 
 
-VIP_FEATURES_EXAMPLE = {
-    "name": "Duke",
-    "version": "V2.0",
-    "sex": "Male",
+_VIP_FEATURES_EXAMPLE = {
+    # NOTE: this view is how it would be after parsed and validated
     "age": "34 years",
-    "weight": "70.2 Kg",
-    "height": "1.77 m",
     "date": "2015-03-01",
     "ethnicity": "Caucasian",
     "functionality": "Static",
+    "height": "1.77 m",
+    "name": "Duke",
+    "sex": "Male",
+    "version": "V2.0",
+    "weight": "70.2 Kg",
+    # other
     "additional_field": "allowed",
 }
 
 
 class FeaturesDict(TypedDict):
-    name: NotRequired[str]
-    version: NotRequired[str]
-    sex: NotRequired[str]
+    # keep alphabetical
     age: NotRequired[str]
-    weight: NotRequired[str]
-    height: NotRequired[str]
-    date: str
+    date: date
     ethnicity: NotRequired[str]
     functionality: NotRequired[str]
+    height: NotRequired[str]
+    name: NotRequired[str]
+    sex: NotRequired[str]
+    species: NotRequired[str]
+    version: NotRequired[str]
+    weight: NotRequired[str]
 
 
 VIP_DETAILS_EXAMPLE = {
     "id": 1,
     "description": "A detailed description of the VIP model",
     "thumbnail": "https://example.com/thumbnail.jpg",
-    "features": VIP_FEATURES_EXAMPLE,
+    "features": _VIP_FEATURES_EXAMPLE,
     "doi": "10.1000/xyz123",
     "license_key": "ABC123XYZ",
     "license_version": "1.0",
@@ -102,6 +106,7 @@ class LicensedResourceDB(BaseModel):
     licensed_resource_name: str
     licensed_resource_type: LicensedResourceType
     licensed_resource_data: dict[str, Any] | None
+    priority: int
 
     # states
     created: datetime
