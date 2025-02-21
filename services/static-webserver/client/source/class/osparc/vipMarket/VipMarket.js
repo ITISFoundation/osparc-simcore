@@ -16,12 +16,22 @@
 ************************************************************************ */
 
 qx.Class.define("osparc.vipMarket.VipMarket", {
-  extend: qx.ui.core.Widget,
+  extend: qx.ui.splitpane.Pane,
 
   construct: function(licensedItems) {
-    this.base(arguments);
+    this.base(arguments, "horizontal");
 
-    this._setLayout(new qx.ui.layout.HBox(10));
+    this.setOffset(5);
+    this.getChildControl("splitter").set({
+      width: 1,
+      backgroundColor: "text",
+      opacity: 0.3,
+    });
+    this.getChildControl("slider").set({
+      width: 2,
+      backgroundColor: "text",
+      opacity: 1,
+    });
 
     this.__buildLayout();
 
@@ -60,16 +70,16 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
         case "left-side":
           control = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
             alignY: "middle",
+            paddingRight: 5,
           });
-          this._add(control);
+          this.add(control, 0); // flex: 0
           break;
         case "right-side":
           control = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
             alignY: "middle",
+            paddingLeft: 5,
           });
-          this._add(control, {
-            flex: 1
-          });
+          this.add(control, 1); // flex: 1
           break;
         case "toolbar-layout":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(10)).set({
@@ -88,10 +98,12 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
           control = new osparc.filter.TextFilter("text", "vipModels").set({
             alignY: "middle",
             allowGrowY: false,
-            minWidth: 160,
+            allowGrowX: true,
+            marginRight: 5,
           });
           control.getChildControl("textfield").set({
             backgroundColor: "transparent",
+            allowGrowX: true,
           });
           this.addListener("appear", () => control.getChildControl("textfield").focus());
           this.getChildControl("toolbar-layout").add(control, {
@@ -102,8 +114,7 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
           control = new qx.ui.form.List().set({
             decorator: "no-border",
             spacing: 5,
-            minWidth: 250,
-            maxWidth: 250,
+            width: 250,
             backgroundColor: "transparent",
           });
           this.getChildControl("left-side").add(control, {
