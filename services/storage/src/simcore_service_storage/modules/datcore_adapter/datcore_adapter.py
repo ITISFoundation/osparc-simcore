@@ -5,7 +5,7 @@ from typing import Any, TypeVar, cast
 
 import httpx
 from fastapi import FastAPI
-from models_library.storage_schemas import DatCoreDatasetName
+from models_library.api_schemas_storage.storage_schemas import DatCoreDatasetName
 from models_library.users import UserID
 from pydantic import AnyUrl, TypeAdapter
 from servicelib.fastapi.client_session import get_client_session

@@ -5,11 +5,10 @@
 
 
 from typing import TypeAlias
+from uuid import UUID
 
 from fastapi import APIRouter, Query, status
-from models_library.generics import Envelope
-from models_library.projects_nodes_io import LocationID
-from models_library.storage_schemas import (
+from models_library.api_schemas_storage.storage_schemas import (
     FileLocation,
     FileMetaDataGet,
     FileUploadCompleteFutureResponse,
@@ -19,6 +18,15 @@ from models_library.storage_schemas import (
     LinkType,
     PresignedLink,
 )
+from models_library.api_schemas_webserver.storage import (
+    DataExportPost,
+    StorageAsyncJobGet,
+    StorageAsyncJobResult,
+    StorageAsyncJobStatus,
+)
+from models_library.generics import Envelope
+from models_library.projects_nodes_io import LocationID
+from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.storage.schemas import DatasetMetaData, FileMetaData
@@ -167,3 +175,49 @@ async def is_completed_upload_file(
     location_id: LocationID, file_id: StorageFileIDStr, future_id: str
 ):
     """Returns state of upload completion"""
+
+
+# data export
+@router.post(
+    "/storage/locations/{location_id}/export-data",
+    response_model=Envelope[StorageAsyncJobGet],
+    name="export_data",
+    description="Export data",
+)
+async def export_data(data_export: DataExportPost, location_id: LocationID):
+    """Trigger data export. Returns async job id for getting status and results"""
+
+
+@router.get(
+    "/storage/async-jobs/{job_id}/status",
+    response_model=Envelope[StorageAsyncJobStatus],
+    name="get_async_job_status",
+)
+async def get_async_job_status(storage_async_job_get: StorageAsyncJobGet, job_id: UUID):
+    """Get async job status"""
+
+
+@router.post(
+    "/storage/async-jobs/{job_id}:abort",
+    name="abort_async_job",
+)
+async def abort_async_job(storage_async_job_get: StorageAsyncJobGet, job_id: UUID):
+    """aborts execution of an async job"""
+
+
+@router.get(
+    "/storage/async-jobs/{job_id}/result",
+    response_model=Envelope[StorageAsyncJobResult],
+    name="get_async_job_result",
+)
+async def get_async_job_result(storage_async_job_get: StorageAsyncJobGet, job_id: UUID):
+    """Get the result of the async job"""
+
+
+@router.get(
+    "/storage/async-jobs",
+    response_model=Envelope[list[StorageAsyncJobGet]],
+    name="get_async_jobs",
+)
+async def get_async_jobs(user_id: UserID):
+    """Retrunsa list of async jobs for the user"""

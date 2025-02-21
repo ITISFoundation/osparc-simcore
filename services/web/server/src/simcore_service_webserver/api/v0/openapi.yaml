@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: simcore-service-webserver
   description: Main service with an interface (http-API & websockets) to the web front-end
-  version: 0.58.1
+  version: 0.59.0
 servers:
 - url: ''
   description: webserver
@@ -6351,6 +6351,139 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_FileUploadCompleteFutureResponse_'
+  /v0/storage/locations/{location_id}/export-data:
+    post:
+      tags:
+      - storage
+      summary: Export Data
+      description: Export data
+      operationId: export_data
+      parameters:
+      - name: location_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Location Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DataExportPost'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_StorageAsyncJobGet_'
+  /v0/storage/async-jobs/{job_id}/status:
+    get:
+      tags:
+      - storage
+      summary: Get Async Job Status
+      description: Get async job status
+      operationId: get_async_job_status
+      parameters:
+      - name: job_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Job Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StorageAsyncJobGet'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_StorageAsyncJobStatus_'
+  /v0/storage/async-jobs/{job_id}:abort:
+    post:
+      tags:
+      - storage
+      summary: Abort Async Job
+      description: aborts execution of an async job
+      operationId: abort_async_job
+      parameters:
+      - name: job_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Job Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StorageAsyncJobGet'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+  /v0/storage/async-jobs/{job_id}/result:
+    get:
+      tags:
+      - storage
+      summary: Get Async Job Result
+      description: Get the result of the async job
+      operationId: get_async_job_result
+      parameters:
+      - name: job_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Job Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StorageAsyncJobGet'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_StorageAsyncJobResult_'
+  /v0/storage/async-jobs:
+    get:
+      tags:
+      - storage
+      summary: Get Async Jobs
+      description: Retrunsa list of async jobs for the user
+      operationId: get_async_jobs
+      parameters:
+      - name: user_id
+        in: query
+        required: true
+        schema:
+          type: integer
+          exclusiveMinimum: true
+          title: User Id
+          minimum: 0
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list_StorageAsyncJobGet__'
   /v0/trash:empty:
     post:
       tags:
@@ -8268,6 +8401,18 @@ components:
       - dataset
       title: DatCoreFileLink
       description: I/O port type to hold a link to a file in DATCORE storage
+    DataExportPost:
+      properties:
+        paths:
+          items:
+            type: string
+            format: path
+          type: array
+          title: Paths
+      type: object
+      required:
+      - paths
+      title: DataExportPost
     DatasetMetaData:
       properties:
         dataset_id:
@@ -8967,6 +9112,45 @@ components:
           title: Error
       type: object
       title: Envelope[StatusDiagnosticsGet]
+    Envelope_StorageAsyncJobGet_:
+      properties:
+        data:
+          anyOf:
+          - $ref: '#/components/schemas/StorageAsyncJobGet'
+          - type: 'null'
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[StorageAsyncJobGet]
+    Envelope_StorageAsyncJobResult_:
+      properties:
+        data:
+          anyOf:
+          - $ref: '#/components/schemas/StorageAsyncJobResult'
+          - type: 'null'
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[StorageAsyncJobResult]
+    Envelope_StorageAsyncJobStatus_:
+      properties:
+        data:
+          anyOf:
+          - $ref: '#/components/schemas/StorageAsyncJobStatus'
+          - type: 'null'
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[StorageAsyncJobStatus]
     Envelope_TagGet_:
       properties:
         data:
@@ -9586,6 +9770,22 @@ components:
           title: Error
       type: object
       title: Envelope[list[ServiceOutputGet]]
+    Envelope_list_StorageAsyncJobGet__:
+      properties:
+        data:
+          anyOf:
+          - items:
+              $ref: '#/components/schemas/StorageAsyncJobGet'
+            type: array
+          - type: 'null'
+          title: Data
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[list[StorageAsyncJobGet]]
     Envelope_list_TagGet__:
       properties:
         data:
@@ -12722,6 +12922,59 @@ components:
       - productName
       - ui
       title: ProductUIGet
+    ProgressReport:
+      properties:
+        actual_value:
+          type: number
+          title: Actual Value
+        total:
+          type: number
+          title: Total
+          default: 1.0
+        attempt:
+          type: integer
+          title: Attempt
+          default: 0
+        unit:
+          anyOf:
+          - type: string
+            const: Byte
+          - type: 'null'
+          title: Unit
+        message:
+          anyOf:
+          - $ref: '#/components/schemas/ProgressStructuredMessage'
+          - type: 'null'
+      type: object
+      required:
+      - actual_value
+      title: ProgressReport
+    ProgressStructuredMessage:
+      properties:
+        description:
+          type: string
+          title: Description
+        current:
+          type: number
+          title: Current
+        total:
+          type: integer
+          title: Total
+        unit:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Unit
+        sub:
+          anyOf:
+          - $ref: '#/components/schemas/ProgressStructuredMessage'
+          - type: 'null'
+      type: object
+      required:
+      - description
+      - current
+      - total
+      title: ProgressStructuredMessage
     ProjectCopyOverride:
       properties:
         name:
@@ -14336,6 +14589,62 @@ components:
       - loop_tasks
       - top_tracemalloc
       title: StatusDiagnosticsGet
+    StorageAsyncJobGet:
+      properties:
+        jobId:
+          type: string
+          format: uuid
+          title: Jobid
+      type: object
+      required:
+      - jobId
+      title: StorageAsyncJobGet
+    StorageAsyncJobResult:
+      properties:
+        result:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Result
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      required:
+      - result
+      - error
+      title: StorageAsyncJobResult
+    StorageAsyncJobStatus:
+      properties:
+        jobId:
+          type: string
+          format: uuid
+          title: Jobid
+        progress:
+          $ref: '#/components/schemas/ProgressReport'
+        done:
+          type: boolean
+          title: Done
+        started:
+          type: string
+          format: date-time
+          title: Started
+        stopped:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Stopped
+      type: object
+      required:
+      - jobId
+      - progress
+      - done
+      - started
+      - stopped
+      title: StorageAsyncJobStatus
     Structure:
       properties:
         key:

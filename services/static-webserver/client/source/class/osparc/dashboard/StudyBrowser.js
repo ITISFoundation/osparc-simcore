@@ -193,8 +193,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           this.__setWorkspacesToList(workspaces);
           if (this.getCurrentContext() === "trash") {
             if (workspaces.length) {
-              // Not yet implemented
-              // this.__header.getChildControl("empty-trash-button").show();
+              this.__header.getChildControl("empty-trash-button").show();
             }
           }
         })
@@ -240,8 +239,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           this.__setFoldersToList(folders);
           if (this.getCurrentContext() === "trash") {
             if (folders.length) {
-              // Not yet implemented
-              // this.__header.getChildControl("empty-trash-button").show();
+              this.__header.getChildControl("empty-trash-button").show();
             }
           }
         })
@@ -312,8 +310,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
           if (this.getCurrentContext() === "trash") {
             if (this._resourcesList.length) {
-              // Not yet implemented
-              // this.__header.getChildControl("empty-trash-button").show();
+              this.__header.getChildControl("empty-trash-button").show();
             }
           }
 
@@ -1069,7 +1066,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this._createSearchBar();
 
       const header = this.__header = new osparc.dashboard.StudyBrowserHeader();
-      this.__header.addListener("emptyTrashRequested", () => this.__emptyTrash(), this);
+      this.__header.addListener("trashEmptied", () => this.reloadResources(), this);
       this._addToLayout(header);
 
       this._createResourcesLayout("studiesList");
@@ -1447,19 +1444,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       return deleteButton;
     },
 
-    __emptyTrash: function() {
-      const win = this.__createConfirmEmptyTrashWindow();
-      win.center();
-      win.open();
-      win.addListener("close", () => {
-        if (win.getConfirmed()) {
-          osparc.data.Resources.fetch("trash", "delete")
-            .then(() => {
-              this.__resetStudiesList();
-            });
-        }
-      }, this);
-    },
+
 
     __createSelectButton: function() {
       const selectButton = new qx.ui.form.ToggleButton().set({
@@ -2241,16 +2226,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         confirmAction: "delete"
       });
       osparc.utils.Utils.setIdToWidget(confirmationWin.getConfirmButton(), "confirmDeleteStudyBtn");
-      return confirmationWin;
-    },
-
-    __createConfirmEmptyTrashWindow: function() {
-      const msg = this.tr("All items will be permanently deleted");
-      const confirmationWin = new osparc.ui.window.Confirmation(msg).set({
-        caption: this.tr("Delete"),
-        confirmText: this.tr("Delete permanently"),
-        confirmAction: "delete"
-      });
       return confirmationWin;
     },
 

@@ -235,6 +235,12 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
         const featuresGrid = new qx.ui.layout.Grid(8, 8);
         const featuresLayout = new qx.ui.container.Composite(featuresGrid);
         let idx = 0;
+        const capitalizeField = [
+          "Sex",
+          "Species",
+          "Ethnicity",
+          "Functionality",
+        ];
         [
           "Name",
           "Version",
@@ -258,8 +264,10 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
               row: idx,
             });
 
+            const value = features[key.toLowerCase()];
+            const featureValue = capitalizeField.includes(key) ? osparc.utils.Utils.capitalize(value) : value;
             const nameLabel = new qx.ui.basic.Label().set({
-              value: features[key.toLowerCase()],
+              value: featureValue,
               font: "text-14",
               alignX: "left",
             });

@@ -19,10 +19,13 @@ import sqlalchemy as sa
 from aws_library.s3 import SimcoreS3API
 from faker import Faker
 from fastapi import FastAPI
+from models_library.api_schemas_storage.storage_schemas import (
+    FileMetaDataGet,
+    FoldersBody,
+)
 from models_library.basic_types import SHA256Str
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, NodeIDStr, SimcoreS3FileID
-from models_library.storage_schemas import FileMetaDataGet, FoldersBody
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import ByteSize, TypeAdapter
