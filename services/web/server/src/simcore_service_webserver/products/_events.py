@@ -16,8 +16,8 @@ from simcore_postgres_database.utils_products import (
 from .._constants import APP_PRODUCTS_KEY
 from ..db.plugin import get_database_engine
 from ..statics._constants import FRONTEND_APP_DEFAULT, FRONTEND_APPS_AVAILABLE
-from ._db import get_product_payment_fields, iter_products
-from ._model import Product
+from ._models import Product
+from ._repository import get_product_payment_fields, iter_products
 
 _logger = logging.getLogger(__name__)
 

@@ -87,7 +87,7 @@ from ..application_settings import get_application_settings
 from ..catalog import client as catalog_service
 from ..director_v2 import api as director_v2_service
 from ..dynamic_scheduler import api as dynamic_scheduler_service
-from ..products import api as products_service
+from ..products import products_service as products_service
 from ..rabbitmq import get_rabbitmq_rpc_client
 from ..redis import get_redis_lock_manager_client_sdk
 from ..resource_manager.user_sessions import (

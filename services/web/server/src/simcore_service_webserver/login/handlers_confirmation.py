@@ -26,7 +26,7 @@ from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.errors import UniqueViolation
 from yarl import URL
 
-from ..products.api import Product, get_current_product
+from ..products.products_service import Product, get_current_product
 from ..security.api import encrypt_password
 from ..session.access_policies import session_access_required
 from ..utils import MINUTE

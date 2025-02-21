@@ -14,7 +14,7 @@ from ..exception_handling import (
     to_exceptions_handlers_map,
 )
 from ..login.decorators import get_user_id, login_required
-from ..products.api import get_product_name
+from ..products.products_service import get_product_name
 from ..projects.exceptions import ProjectRunningConflictError, ProjectStoppingError
 from ..security.decorators import permission_required
 from . import _service

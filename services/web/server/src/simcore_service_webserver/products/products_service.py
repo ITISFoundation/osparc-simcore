@@ -1,6 +1,7 @@
 from models_library.products import ProductName
 
-from ._api import (
+from ._models import Product
+from ._service import (
     get_credit_amount,
     get_current_product,
     get_product,
@@ -10,7 +11,6 @@ from ._api import (
     get_product_ui,
     list_products,
 )
-from ._model import Product
 
 __all__: tuple[str, ...] = (
     "get_credit_amount",

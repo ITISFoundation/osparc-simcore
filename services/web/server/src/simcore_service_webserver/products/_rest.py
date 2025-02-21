@@ -13,15 +13,15 @@ from models_library.users import UserID
 from pydantic import Field
 from servicelib.aiohttp.requests_validation import parse_request_path_parameters_as
 from servicelib.request_keys import RQT_USERID_KEY
-from simcore_service_webserver.products._db import ProductRepository
+from simcore_service_webserver.products._repository import ProductRepository
 
 from .._constants import RQ_PRODUCT_KEY
 from .._meta import API_VTAG as VTAG
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
-from . import _api, api
-from ._model import Product
+from . import _service, products_service
+from ._models import Product
 
 routes = web.RouteTableDef()
 
@@ -39,7 +39,7 @@ class _ProductsRequestContext(RequestParameters):
 @permission_required("product.price.read")
 async def _get_current_product_price(request: web.Request):
     req_ctx = _ProductsRequestContext.model_validate(request)
-    price_info = await _api.get_current_product_credit_price_info(request)
+    price_info = await _service.get_current_product_credit_price_info(request)
 
     credit_price = GetCreditPrice(
         product_name=req_ctx.product_name,
@@ -70,7 +70,9 @@ async def _get_product(request: web.Request):
         product_name = path_params.product_name
 
     try:
-        product: Product = api.get_product(request.app, product_name=product_name)
+        product: Product = products_service.get_product(
+            request.app, product_name=product_name
+        )
     except KeyError as err:
         raise web.HTTPNotFound(reason=f"{product_name=} not found") from err
 
@@ -87,7 +89,7 @@ async def _get_current_product_ui(request: web.Request):
     req_ctx = _ProductsRequestContext.model_validate(request)
     product_name = req_ctx.product_name
 
-    ui = await api.get_product_ui(
+    ui = await products_service.get_product_ui(
         ProductRepository.create_from_request(request), product_name=product_name
     )
 

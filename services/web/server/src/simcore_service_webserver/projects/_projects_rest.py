@@ -38,7 +38,7 @@ from ..catalog import client as catalog_service
 from ..director_v2.exceptions import DirectorServiceError
 from ..login.decorators import login_required
 from ..notifications import project_logs as notifications_service
-from ..products.api import Product, get_current_product
+from ..products.products_service import Product, get_current_product
 from ..redis import get_redis_lock_manager_client_sdk
 from ..resource_manager.user_sessions import PROJECT_ID_KEY, managed_resource
 from ..security import api as security_service

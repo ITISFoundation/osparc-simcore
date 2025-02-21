@@ -7,7 +7,7 @@ from models_library.users import UserID
 from servicelib.aiohttp.typing_extension import HandlerAnyReturn
 from servicelib.request_keys import RQT_USERID_KEY
 
-from ..products.api import get_product_name
+from ..products.products_service import get_product_name
 from ..security.api import (
     PERMISSION_PRODUCT_LOGIN_KEY,
     AuthContextDict,

@@ -9,9 +9,9 @@ from simcore_postgres_database.utils_products_prices import ProductPriceInfo
 
 from .._constants import APP_PRODUCTS_KEY, RQ_PRODUCT_KEY
 from .._resources import webserver_resources
-from ._db import ProductRepository
 from ._events import APP_PRODUCTS_TEMPLATES_DIR_KEY
-from ._model import Product
+from ._models import Product
+from ._repository import ProductRepository
 from .errors import (
     BelowMinimumPaymentError,
     ProductNotFoundError,
