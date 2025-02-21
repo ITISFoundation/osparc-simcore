@@ -11,8 +11,7 @@ from models_library.api_schemas_storage.data_export_async_jobs import (
 )
 from servicelib.rabbitmq import RPCRouter
 from simcore_service_storage.dsm import SimcoreS3DataManager, get_dsm_provider
-
-from ...modules.db.access_layer import get_file_access_rights
+from simcore_service_storage.simcore_s3_dsm import FileAccessRightError
 
 router = RPCRouter()
 
@@ -34,11 +33,11 @@ async def start_data_export(
             SimcoreS3DataManager,
             get_dsm_provider(app).get(SimcoreS3DataManager.get_location_id()),
         )
-        async with dsm.engine.connect() as conn:
+        try:
             for _id in paths.file_and_folder_ids:
-                acces_right = await get_file_access_rights(conn, paths.user_id, _id)
-                if not acces_right.read:
-                    raise AccessRightError(user_id=paths.user_id, file_id=_id)
+                _ = await dsm.get_file(user_id=paths.user_id, file_id=_id)
+        except FileAccessRightError as err:
+            raise AccessRightError(user_id=paths.user_id, file_id=_id) from err
 
     return AsyncJobGet(
         job_id=AsyncJobId(f"{uuid4()}"),
