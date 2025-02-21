@@ -15,11 +15,6 @@ from ._projects_repository_legacy import APP_PROJECT_DBAPI, ProjectDBAPI
 log = logging.getLogger(__name__)
 
 
-#
-#  PROJECT COMMENTS -------------------------------------------------------------------
-#
-
-
 async def create_project_comment(
     request: web.Request, project_uuid: ProjectID, user_id: UserID, contents: str
 ) -> CommentID:

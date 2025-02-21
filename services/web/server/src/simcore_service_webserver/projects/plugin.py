@@ -23,8 +23,8 @@ from . import (
     _wallets_rest,
     _workspaces_rest,
 )
-from ._observer_service import setup_project_observer_events
 from ._projects_repository_legacy import setup_projects_db
+from ._projects_slots import setup_project_observer_events
 from ._security_service import setup_projects_access
 
 logger = logging.getLogger(__name__)
