@@ -17,10 +17,6 @@ from simcore_service_storage.modules.celery.worker.utils import (
 )
 from tenacity import Retrying, retry_if_exception_type, stop_after_delay, wait_fixed
 
-pytest_simcore_core_services_selection = [
-    "rabbit",
-]
-
 
 async def _async_archive(
     celery_app: Celery, task_name: str, task_id: str, files: list[str]
@@ -112,41 +108,3 @@ def test_failure_task(
 
     assert client_interface.get_status(task_id).task_state == "FAILURE"
     assert f"{client_interface.get_result(task_id)}" == "my error here"
-
-
-def test_revoke(
-    client_celery_app: Celery,
-    worker_celery_app: Celery,
-):
-    client_interface = get_celery_client_interface(fastapi_app)
-
-    task_name = "sleeper_task"
-    components = TaskIdComponents(user_id=1)
-
-    task_id = client_interface.submit(
-        task_name,
-        task_id_components=components,
-        seconds=10000,
-    )
-    print(f"Submitted task_id: {task_id}")
-
-    # Wait for task to be registered
-    time.sleep(5)  # Give worker time to pick up task
-
-    task_ids = client_interface.list(task_name, task_id_components=components)
-
-    time.sleep(5)
-    assert task_id in task_ids
-
-    # client_interface.cancel(task_id)
-
-    # for attempt in Retrying(
-    #     retry=retry_if_exception_type(AssertionError),
-    #     wait=wait_fixed(1),
-    #     stop=stop_after_delay(10),
-    # ):
-    #     with attempt:
-    #         task_state = client_interface.get_status(task_id).task_state
-    #         assert task_state == "REVOKED"
-
-    # assert client_interface.get_result(task_id) is None

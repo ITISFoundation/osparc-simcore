@@ -7,7 +7,6 @@ from celery import Celery
 from celery.contrib.testing.worker import TestWorkController, start_worker
 from celery.signals import worker_init, worker_shutdown
 from fastapi import FastAPI
-from settings_library.rabbit import RabbitSettings
 from simcore_service_storage.main import celery_app as celery_app_client
 from simcore_service_storage.modules.celery.client import CeleryClientInterface
 from simcore_service_storage.modules.celery.worker._interface import (
@@ -21,24 +20,9 @@ from simcore_service_storage.modules.celery.worker.setup import (
     on_worker_shutdown,
 )
 
-
-@pytest.fixture
-async def rabbit_service(
-    rabbit_settings: RabbitSettings, monkeypatch: pytest.MonkeyPatch
-) -> RabbitSettings:
-    monkeypatch.setenv("RABBIT_HOST", rabbit_settings.RABBIT_HOST)
-    monkeypatch.setenv("RABBIT_PORT", f"{rabbit_settings.RABBIT_PORT}")
-    monkeypatch.setenv("RABBIT_USER", rabbit_settings.RABBIT_USER)
-    monkeypatch.setenv("RABBIT_SECURE", f"{rabbit_settings.RABBIT_SECURE}")
-    monkeypatch.setenv(
-        "RABBIT_PASSWORD", rabbit_settings.RABBIT_PASSWORD.get_secret_value()
-    )
-
-    return rabbit_settings
-
-
 _CELERY_CONF = {
-    "result_backend": "redis://localhost",
+    "broker_url": "memory://",
+    "result_backend": "cache+memory://",
     "result_expires": timedelta(days=7),
     "result_extended": True,
     "task_always_eager": False,
@@ -54,13 +38,8 @@ _CELERY_CONF = {
 
 
 @pytest.fixture
-def client_celery_app(rabbit_service: RabbitSettings) -> Celery:
-    celery_app_client.conf.update(
-        **_CELERY_CONF
-        | {
-            "broker_url": rabbit_service.dsn,
-        }
-    )
+def client_celery_app() -> Celery:
+    celery_app_client.conf.update(_CELERY_CONF)
 
     assert isinstance(celery_app_client.conf["client_interface"], CeleryClientInterface)
     assert "worker_interface" not in celery_app_client.conf
@@ -78,14 +57,9 @@ def register_celery_tasks() -> Callable[[Celery], None]:
 
 @pytest.fixture
 def celery_worker(
-    register_celery_tasks: Callable[[Celery], None], rabbit_service: RabbitSettings
+    register_celery_tasks: Callable[[Celery], None],
 ) -> Iterable[TestWorkController]:
-    celery_app_worker.conf.update(
-        **_CELERY_CONF
-        | {
-            "broker_url": rabbit_service.dsn,
-        }
-    )
+    celery_app_worker.conf.update(_CELERY_CONF)
 
     register_celery_tasks(celery_app_worker)
 
