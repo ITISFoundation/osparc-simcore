@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
+qx.Class.define("osparc.vipMarket.LicensedItemDetails", {
   extend: qx.ui.core.Widget,
 
   construct: function() {

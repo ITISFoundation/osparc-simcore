@@ -122,7 +122,7 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
           });
           break;
         case "models-details": {
-          control = new osparc.vipMarket.AnatomicalModelDetails().set({
+          control = new osparc.vipMarket.LicensedItemDetails().set({
             padding: 5,
           });
           const scrollView = new qx.ui.container.Scroll();
@@ -145,7 +145,7 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
       const anatomicalModelsModel = this.__anatomicalBundlesModel = new qx.data.Array();
       const membersCtrl = new qx.data.controller.List(anatomicalModelsModel, modelsUIList, "displayName");
       membersCtrl.setDelegate({
-        createItem: () => new osparc.vipMarket.AnatomicalModelListItem(),
+        createItem: () => new osparc.vipMarket.LicensedItemListItem(),
         bindItem: (ctrl, item, id) => {
           ctrl.bindProperty("key", "key", null, item, id);
           ctrl.bindProperty("version", "version", null, item, id);
