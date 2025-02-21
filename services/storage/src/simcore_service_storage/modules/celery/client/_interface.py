@@ -86,9 +86,9 @@ class CeleryClientInterface:
             + "*"
         )
         redis = self._celery_app.backend.client
-        keys = redis.keys(search_key)
-        if keys:
-            return [f"{key}".lstrip(_CELERY_TASK_META_PREFIX) for key in keys]
+        if hasattr(redis, "keys"):
+            if keys := redis.keys(search_key):
+                return [f"{key}".lstrip(_CELERY_TASK_META_PREFIX) for key in keys]
         return []
 
     def list(
