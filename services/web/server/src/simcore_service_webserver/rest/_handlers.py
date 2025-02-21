@@ -14,7 +14,7 @@ from servicelib.aiohttp import status
 from .._constants import APP_PUBLIC_CONFIG_PER_PRODUCT, APP_SETTINGS_KEY
 from .._meta import API_VTAG
 from ..login.decorators import login_required
-from ..products.products_service import get_product_name
+from ..products import products_web
 from ..redis import get_redis_scheduled_maintenance_client
 from ..utils_aiohttp import envelope_json_response
 from .healthcheck import HealthCheck, HealthCheckError
@@ -76,7 +76,7 @@ async def get_config(request: web.Request):
     """
     app_public_config: dict[str, Any] = request.app[APP_SETTINGS_KEY].public_dict()
 
-    product_name = get_product_name(request=request)
+    product_name = products_web.get_product_name(request=request)
     product_public_config = request.app.get(APP_PUBLIC_CONFIG_PER_PRODUCT, {}).get(
         product_name, {}
     )

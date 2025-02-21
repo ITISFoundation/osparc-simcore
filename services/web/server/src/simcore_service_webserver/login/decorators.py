@@ -7,7 +7,7 @@ from models_library.users import UserID
 from servicelib.aiohttp.typing_extension import HandlerAnyReturn
 from servicelib.request_keys import RQT_USERID_KEY
 
-from ..products.products_service import get_product_name
+from ..products import products_web
 from ..security.api import (
     PERMISSION_PRODUCT_LOGIN_KEY,
     AuthContextDict,
@@ -62,7 +62,7 @@ def login_required(handler: HandlerAnyReturn) -> HandlerAnyReturn:
             request,
             PERMISSION_PRODUCT_LOGIN_KEY,
             context=AuthContextDict(
-                product_name=get_product_name(request),
+                product_name=products_web.get_product_name(request),
                 authorized_uid=user_id,
             ),
         )

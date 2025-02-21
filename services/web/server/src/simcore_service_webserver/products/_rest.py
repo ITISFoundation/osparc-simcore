@@ -20,8 +20,7 @@ from .._meta import API_VTAG as VTAG
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
-from . import products_web
-from ._api import service
+from . import _service, products_web
 from ._models import Product
 
 routes = web.RouteTableDef()
@@ -71,7 +70,7 @@ async def _get_product(request: web.Request):
         product_name = path_params.product_name
 
     try:
-        product: Product = service.get_product(request.app, product_name=product_name)
+        product: Product = _service.get_product(request.app, product_name=product_name)
     except KeyError as err:
         raise web.HTTPNotFound(reason=f"{product_name=} not found") from err
 
@@ -88,7 +87,7 @@ async def _get_current_product_ui(request: web.Request):
     req_ctx = _ProductsRequestContext.model_validate(request)
     product_name = req_ctx.product_name
 
-    ui = await service.get_product_ui(
+    ui = await _service.get_product_ui(
         ProductRepository.create_from_request(request), product_name=product_name
     )
 

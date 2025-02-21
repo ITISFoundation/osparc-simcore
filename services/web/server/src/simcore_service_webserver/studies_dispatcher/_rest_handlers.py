@@ -19,7 +19,7 @@ from pydantic import (
 from pydantic.networks import HttpUrl
 
 from .._meta import API_VTAG
-from ..products.products_service import get_product_name
+from ..products import products_web
 from ..utils_aiohttp import envelope_json_response
 from ._catalog import ServiceMetaData, iter_latest_product_services
 from ._core import list_viewers_info
@@ -163,7 +163,7 @@ routes = web.RouteTableDef()
 @routes.get(f"/{API_VTAG}/services", name="list_latest_services")
 async def list_latest_services(request: Request):
     """Returns a list latest version of services"""
-    product_name = get_product_name(request)
+    product_name = products_web.get_product_name(request)
 
     services = []
     async for service_data in iter_latest_product_services(

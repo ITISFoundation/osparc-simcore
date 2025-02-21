@@ -9,7 +9,8 @@ from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import parse_request_body_as
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 
-from ..products.products_service import Product, get_current_product
+from ..products import products_web
+from ..products.products_service import Product
 from ..session.access_policies import session_access_required
 from ._2fa_api import (
     create_2fa_code,
@@ -51,7 +52,7 @@ class Resend2faBody(InputSchema):
 @handle_login_exceptions
 async def resend_2fa_code(request: web.Request):
     """Resends 2FA code via SMS/Email"""
-    product: Product = get_current_product(request)
+    product: Product = products_web.get_current_product(request)
     settings: LoginSettingsForProduct = get_plugin_settings(
         request.app, product_name=product.name
     )

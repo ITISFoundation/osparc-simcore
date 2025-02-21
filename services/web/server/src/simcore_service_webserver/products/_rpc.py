@@ -6,7 +6,7 @@ from models_library.products import CreditResultGet, ProductName
 from servicelib.rabbitmq import RPCRouter
 
 from ..rabbitmq import get_rabbitmq_rpc_server
-from ._api import _service
+from . import _service
 
 router = RPCRouter()
 

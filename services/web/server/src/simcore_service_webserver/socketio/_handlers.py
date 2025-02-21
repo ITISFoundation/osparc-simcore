@@ -19,7 +19,8 @@ from servicelib.request_keys import RQT_USERID_KEY
 
 from ..groups.api import list_user_groups_ids_with_read_access
 from ..login.decorators import login_required
-from ..products.products_service import Product, get_current_product
+from ..products import products_web
+from ..products.products_service import Product
 from ..resource_manager.user_sessions import managed_resource
 from ._utils import EnvironDict, SocketID, get_socket_server, register_socketio_handler
 from .messages import SOCKET_IO_HEARTBEAT_EVENT, send_message_to_user
@@ -51,7 +52,7 @@ def auth_user_factory(socket_id: SocketID):
         app = request.app
         user_id = UserID(request.get(RQT_USERID_KEY, _ANONYMOUS_USER_ID))
         client_session_id = request.query.get("client_session_id", None)
-        product: Product = get_current_product(request)
+        product: Product = products_web.get_current_product(request)
 
         _logger.debug(
             "client %s,%s authenticated", f"{user_id=}", f"{client_session_id=}"

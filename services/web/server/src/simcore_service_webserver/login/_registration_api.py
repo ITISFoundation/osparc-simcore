@@ -14,7 +14,7 @@ from servicelib.utils_secrets import generate_passcode
 
 from ..email.utils import send_email_from_template
 from ..products import products_web
-from ..products.products_service import Product, get_current_product
+from ..products.products_service import Product
 
 _logger = logging.getLogger(__name__)
 
@@ -29,7 +29,7 @@ async def send_close_account_email(
     email_template_path = await products_web.get_product_template_path(
         request, template_name
     )
-    product = get_current_product(request)
+    product = products_web.get_current_product(request)
 
     try:
         await send_email_from_template(

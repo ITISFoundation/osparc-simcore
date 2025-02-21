@@ -23,7 +23,8 @@ from simcore_postgres_database.models.users import UserStatus
 from .._meta import API_VTAG
 from ..groups.api import auto_add_user_to_groups, auto_add_user_to_product_group
 from ..invitations.api import is_service_invitation_code
-from ..products.products_service import Product, get_current_product
+from ..products import products_web
+from ..products.products_service import Product
 from ..session.access_policies import (
     on_success_grant_session_access_to,
     session_access_required,
@@ -94,7 +95,7 @@ async def check_registration_invitation(request: web.Request):
 
     raises HTTPForbidden, HTTPServiceUnavailable
     """
-    product: Product = get_current_product(request)
+    product: Product = products_web.get_current_product(request)
     settings: LoginSettingsForProduct = get_plugin_settings(
         request.app, product_name=product.name
     )
@@ -145,7 +146,7 @@ async def register(request: web.Request):
 
     An email with a link to 'email_confirmation' is sent to complete registration
     """
-    product: Product = get_current_product(request)
+    product: Product = products_web.get_current_product(request)
     settings: LoginSettingsForProduct = get_plugin_settings(
         request.app, product_name=product.name
     )
@@ -360,7 +361,7 @@ async def register_phone(request: web.Request):
     - sends a code
     - registration is completed requesting to 'phone_confirmation' route with the code received
     """
-    product: Product = get_current_product(request)
+    product: Product = products_web.get_current_product(request)
     settings: LoginSettingsForProduct = get_plugin_settings(
         request.app, product_name=product.name
     )

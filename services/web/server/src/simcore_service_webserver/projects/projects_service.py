@@ -97,8 +97,7 @@ from ..application_settings import get_application_settings
 from ..catalog import client as catalog_client
 from ..director_v2 import api as director_v2_api
 from ..dynamic_scheduler import api as dynamic_scheduler_api
-from ..products import products_service as products_api
-from ..products.products_service import get_product_name
+from ..products import products_web
 from ..rabbitmq import get_rabbitmq_rpc_client
 from ..redis import get_redis_lock_manager_client_sdk
 from ..resource_manager.user_sessions import (
@@ -651,7 +650,7 @@ async def _start_dynamic_service(  # noqa: C901
 
         # Get wallet/pricing/hardware information
         wallet_info, pricing_info, hardware_info = None, None, None
-        product = products_api.get_current_product(request)
+        product = products_web.get_current_product(request)
         app_settings = get_application_settings(request.app)
         if (
             product.is_payment_enabled
@@ -967,7 +966,7 @@ async def delete_project_node(
     assert db  # nosec
     await db.remove_project_node(user_id, project_uuid, NodeID(node_uuid))
     # also ensure the project is updated by director-v2 since services
-    product_name = get_product_name(request)
+    product_name = products_web.get_product_name(request)
     await director_v2_api.create_or_update_pipeline(
         request.app, user_id, project_uuid, product_name
     )

@@ -12,10 +12,10 @@ from servicelib.aiohttp import status
 from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
 from simcore_postgres_database.models.products import LOGIN_SETTINGS_DEFAULT
 from simcore_postgres_database.webserver_models import products
+from simcore_service_webserver.products import products_web
 from simcore_service_webserver.products._events import _set_app_state
 from simcore_service_webserver.products._middlewares import discover_product_middleware
 from simcore_service_webserver.products._models import Product
-from simcore_service_webserver.products.products_service import get_product_name
 from simcore_service_webserver.statics._constants import FRONTEND_APP_DEFAULT
 from yarl import URL
 
@@ -124,5 +124,5 @@ async def test_middleware_product_discovery(
     response = await discover_product_middleware(mock_request, _mock_handler)
 
     # checks
-    assert get_product_name(mock_request) == expected_product
+    assert products_web.get_product_name(mock_request) == expected_product
     assert response.status == status.HTTP_200_OK

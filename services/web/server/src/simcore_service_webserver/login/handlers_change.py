@@ -11,7 +11,8 @@ from simcore_postgres_database.utils_users import UsersRepo
 from simcore_service_webserver.db.plugin import get_database_engine
 
 from .._meta import API_VTAG
-from ..products.products_service import Product, get_current_product
+from ..products import products_web
+from ..products.products_service import Product
 from ..security.api import check_password, encrypt_password
 from ..utils import HOUR
 from ..utils_rate_limiting import global_rate_limit_route
@@ -66,7 +67,7 @@ async def submit_request_to_reset_password(request: web.Request):
 
     db: AsyncpgStorage = get_plugin_storage(request.app)
     cfg: LoginOptions = get_plugin_options(request.app)
-    product: Product = get_current_product(request)
+    product: Product = products_web.get_current_product(request)
 
     request_body = await parse_request_body_as(ResetPasswordBody, request)
 
@@ -139,7 +140,7 @@ class ChangeEmailBody(InputSchema):
 async def submit_request_to_change_email(request: web.Request):
     # NOTE: This code have been intentially disabled in https://github.com/ITISFoundation/osparc-simcore/pull/5472
     db: AsyncpgStorage = get_plugin_storage(request.app)
-    product: Product = get_current_product(request)
+    product: Product = products_web.get_current_product(request)
 
     request_body = await parse_request_body_as(ChangeEmailBody, request)
 

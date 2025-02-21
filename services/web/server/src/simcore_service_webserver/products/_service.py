@@ -5,7 +5,7 @@ from aiohttp import web
 from models_library.products import CreditResultGet, ProductName, ProductStripeInfoGet
 from simcore_postgres_database.utils_products_prices import ProductPriceInfo
 
-from .._constants import APP_PRODUCTS_KEY, RQ_PRODUCT_KEY
+from .._constants import APP_PRODUCTS_KEY
 from ._models import Product
 from ._repository import ProductRepository
 from .errors import (
@@ -14,20 +14,6 @@ from .errors import (
     ProductPriceNotDefinedError,
     ProductTemplateNotFoundError,
 )
-
-
-# DEPRECATED
-def get_product_name(request: web.Request) -> str:
-    """Returns product name in request but might be undefined"""
-    product_name: str = request[RQ_PRODUCT_KEY]
-    return product_name
-
-
-def get_current_product(request: web.Request) -> Product:
-    """Returns product associated to current request"""
-    product_name: ProductName = get_product_name(request)
-    current_product: Product = get_product(request.app, product_name=product_name)
-    return current_product
 
 
 def get_product(app: web.Application, product_name: ProductName) -> Product:
