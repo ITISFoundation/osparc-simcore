@@ -271,6 +271,15 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
           patchData["privacy"]["hideEmail"] = model.getHideEmail();
         }
 
+        if (
+          "hideFullname" in patchData["privacy"] &&
+          patchData["privacy"]["hideFullname"] === false &&
+          this.__userProfileData["first_name"] === null
+        ) {
+          osparc.FlashMessenger.getInstance().logAs(this.tr("Set the Name first"), "WARNING");
+          return;
+        }
+
         if (Object.keys(patchData["privacy"]).length) {
           const params = {
             data: patchData
