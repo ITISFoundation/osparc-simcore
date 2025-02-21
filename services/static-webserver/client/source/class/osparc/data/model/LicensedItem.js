@@ -54,7 +54,7 @@ qx.Class.define("osparc.data.model.LicensedItem", {
       displayName: licensedItemData.displayName,
       date: new Date(date),
       licensedResources: licensedResources,
-      seats: licensedItemData.seats || null,
+      seats: licensedItemData.seats || [],
     });
   },
 
@@ -138,8 +138,8 @@ qx.Class.define("osparc.data.model.LicensedItem", {
 
     seats: {
       check: "Array",
-      nullable: true,
-      init: null,
+      nullable: false,
+      init: [],
       event: "changeSeats",
     },
   },
@@ -165,6 +165,27 @@ qx.Class.define("osparc.data.model.LicensedItem", {
           }
         });
       })
+    },
+
+    licensedResourceTitle: function(licensedResource) {
+      const name = licensedResource["features"]["name"] || osparc.data.model.LicensedItem.extractNameFromDescription(licensedResource);
+      const version = licensedResource["features"]["version"] || "";
+      const functionality = licensedResource["features"]["functionality"] || "Static";
+      return `${name} ${version}, ${functionality}`;
+    },
+
+    extractNameFromDescription: function(licensedResource) {
+      const description = licensedResource["description"] || "";
+      const delimiter = " - ";
+      let typeAndName = description.split(delimiter);
+      if (typeAndName.length > 1) {
+        // drop the type
+        typeAndName.shift();
+        // join the name
+        typeAndName = typeAndName.join(delimiter);
+        return typeAndName;
+      }
+      return "";
     },
   },
 
