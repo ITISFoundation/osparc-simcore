@@ -27,12 +27,12 @@ from models_library.api_schemas_long_running_tasks.tasks import (
     TaskProgress,
     TaskStatus,
 )
+from models_library.api_schemas_storage.storage_schemas import HealthCheck
 from models_library.api_schemas_webserver.projects import ProjectGet
 from models_library.app_diagnostics import AppStatusCheck
 from models_library.generics import Envelope
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import BaseFileLink, SimcoreS3FileID
-from models_library.storage_schemas import HealthCheck
 from models_library.users import UserID
 from moto.server import ThreadedMotoServer
 from packaging.version import Version

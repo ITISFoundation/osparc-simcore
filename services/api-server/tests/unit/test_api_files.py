@@ -18,8 +18,12 @@ from faker import Faker
 from fastapi import status
 from fastapi.encoders import jsonable_encoder
 from httpx import AsyncClient
+from models_library.api_schemas_storage.storage_schemas import (
+    ETag,
+    FileUploadCompletionBody,
+    UploadedPart,
+)
 from models_library.basic_types import SHA256Str
-from models_library.storage_schemas import ETag, FileUploadCompletionBody, UploadedPart
 from pydantic import TypeAdapter
 from pytest_simcore.helpers.httpx_calls_capture_models import (
     CreateRespxMockCallback,
