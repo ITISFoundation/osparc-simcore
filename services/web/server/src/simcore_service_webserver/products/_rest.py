@@ -20,7 +20,7 @@ from .._meta import API_VTAG as VTAG
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
-from . import web_helpers
+from . import products_web
 from ._api import service
 from ._models import Product
 
@@ -40,7 +40,7 @@ class _ProductsRequestContext(RequestParameters):
 @permission_required("product.price.read")
 async def _get_current_product_price(request: web.Request):
     req_ctx = _ProductsRequestContext.model_validate(request)
-    price_info = await web_helpers.get_current_product_credit_price_info(request)
+    price_info = await products_web.get_current_product_credit_price_info(request)
 
     credit_price = GetCreditPrice(
         product_name=req_ctx.product_name,
