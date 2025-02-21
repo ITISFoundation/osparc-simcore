@@ -20,7 +20,7 @@ from .._meta import API_VTAG as VTAG
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
-from . import _service, service
+from ._api import _service, service
 from ._models import Product
 
 routes = web.RouteTableDef()

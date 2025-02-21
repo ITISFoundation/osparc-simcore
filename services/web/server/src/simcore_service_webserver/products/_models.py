@@ -1,10 +1,7 @@
 import logging
 import re
 import string
-from typing import (  # noqa: UP035 # pydantic does not validate with re.Pattern
-    Annotated,
-    Any,
-)
+from typing import Annotated, Any
 
 from models_library.basic_regex import (
     PUBLIC_VARIABLE_NAME_RE,
@@ -23,6 +20,7 @@ from pydantic import (
     field_serializer,
     field_validator,
 )
+from pydantic.config import JsonDict
 from simcore_postgres_database.models.products import (
     EmailFeedback,
     Forum,
@@ -31,10 +29,10 @@ from simcore_postgres_database.models.products import (
     ProductLoginSettingsDict,
     Vendor,
     WebFeedback,
+    products,
 )
 from sqlalchemy import Column
 
-from ..db.models import products
 from ..statics._constants import FRONTEND_APPS_AVAILABLE
 
 _logger = logging.getLogger(__name__)
@@ -150,6 +148,101 @@ class Product(BaseModel):
     def twilio_alpha_numeric_sender_id(self) -> str:
         return self.short_name or self.display_name.replace(string.punctuation, "")[:11]
 
+    @staticmethod
+    def _update_json_schema_extra(schema: JsonDict) -> None:
+        schema.update(
+            {
+                "examples": [
+                    {
+                        # fake mandatory
+                        "name": "osparc",
+                        "host_regex": r"([\.-]{0,1}osparc[\.-])",
+                        "twilio_messaging_sid": "1" * 34,
+                        "registration_email_template": "osparc_registration_email",
+                        "login_settings": {
+                            "LOGIN_2FA_REQUIRED": False,
+                        },
+                        # defaults from sqlalchemy table
+                        **{
+                            str(c.name): c.server_default.arg  # type: ignore[union-attr]
+                            for c in products.columns
+                            if isinstance(c, Column)
+                            and c.server_default
+                            and isinstance(c.server_default.arg, str)  # type: ignore[union-attr]
+                        },
+                    },
+                    # Example of data in the dabase with a url set with blanks
+                    {
+                        "name": "tis",
+                        "display_name": "TI PT",
+                        "short_name": "TIPI",
+                        "host_regex": r"(^tis[\.-])|(^ti-solutions\.)|(^ti-plan\.)",
+                        "support_email": "support@foo.com",
+                        "manual_url": "https://foo.com",
+                        "issues_login_url": None,
+                        "issues_new_url": "https://foo.com/new",
+                        "feedback_form_url": "",  # <-- blanks
+                        "login_settings": {
+                            "LOGIN_2FA_REQUIRED": False,
+                        },
+                    },
+                    # full example
+                    {
+                        "name": "osparc",
+                        "display_name": "o²S²PARC FOO",
+                        "short_name": "osparcf",
+                        "host_regex": "([\\.-]{0,1}osparcf[\\.-])",
+                        "support_email": "foo@osparcf.io",
+                        "vendor": {
+                            "url": "https://acme.com",
+                            "license_url": "https://acme.com/license",
+                            "invitation_form": True,
+                            "name": "ACME",
+                            "copyright": "© ACME correcaminos",
+                        },
+                        "issues": [
+                            {
+                                "label": "github",
+                                "login_url": "https://github.com/ITISFoundation/osparc-simcore",
+                                "new_url": "https://github.com/ITISFoundation/osparc-simcore/issues/new/choose",
+                            },
+                            {
+                                "label": "fogbugz",
+                                "login_url": "https://fogbugz.com/login",
+                                "new_url": "https://fogbugz.com/new?project=123",
+                            },
+                        ],
+                        "manuals": [
+                            {"url": "doc.acme.com", "label": "main"},
+                            {"url": "yet-another-manual.acme.com", "label": "z43"},
+                        ],
+                        "support": [
+                            {
+                                "url": "forum.acme.com",
+                                "kind": "forum",
+                                "label": "forum",
+                            },
+                            {
+                                "kind": "email",
+                                "email": "more-support@acme.com",
+                                "label": "email",
+                            },
+                            {
+                                "url": "support.acme.com",
+                                "kind": "web",
+                                "label": "web-form",
+                            },
+                        ],
+                        "login_settings": {
+                            "LOGIN_2FA_REQUIRED": False,
+                        },
+                        "group_id": 12345,
+                        "is_payment_enabled": False,
+                    },
+                ]
+            },
+        )
+
     model_config = ConfigDict(
         alias_generator=snake_to_camel,
         populate_by_name=True,
@@ -157,99 +250,8 @@ class Product(BaseModel):
         frozen=True,
         from_attributes=True,
         extra="ignore",
-        json_schema_extra={
-            "examples": [
-                {
-                    # fake mandatory
-                    "name": "osparc",
-                    "host_regex": r"([\.-]{0,1}osparc[\.-])",
-                    "twilio_messaging_sid": "1" * 34,
-                    "registration_email_template": "osparc_registration_email",
-                    "login_settings": {
-                        "LOGIN_2FA_REQUIRED": False,
-                    },
-                    # defaults from sqlalchemy table
-                    **{
-                        str(c.name): c.server_default.arg  # type: ignore[union-attr]
-                        for c in products.columns
-                        if isinstance(c, Column)
-                        and c.server_default
-                        and isinstance(c.server_default.arg, str)  # type: ignore[union-attr]
-                    },
-                },
-                # Example of data in the dabase with a url set with blanks
-                {
-                    "name": "tis",
-                    "display_name": "TI PT",
-                    "short_name": "TIPI",
-                    "host_regex": r"(^tis[\.-])|(^ti-solutions\.)|(^ti-plan\.)",
-                    "support_email": "support@foo.com",
-                    "manual_url": "https://foo.com",
-                    "issues_login_url": None,
-                    "issues_new_url": "https://foo.com/new",
-                    "feedback_form_url": "",  # <-- blanks
-                    "login_settings": {
-                        "LOGIN_2FA_REQUIRED": False,
-                    },
-                },
-                # full example
-                {
-                    "name": "osparc",
-                    "display_name": "o²S²PARC FOO",
-                    "short_name": "osparcf",
-                    "host_regex": "([\\.-]{0,1}osparcf[\\.-])",
-                    "support_email": "foo@osparcf.io",
-                    "vendor": {
-                        "url": "https://acme.com",
-                        "license_url": "https://acme.com/license",
-                        "invitation_form": True,
-                        "name": "ACME",
-                        "copyright": "© ACME correcaminos",
-                    },
-                    "issues": [
-                        {
-                            "label": "github",
-                            "login_url": "https://github.com/ITISFoundation/osparc-simcore",
-                            "new_url": "https://github.com/ITISFoundation/osparc-simcore/issues/new/choose",
-                        },
-                        {
-                            "label": "fogbugz",
-                            "login_url": "https://fogbugz.com/login",
-                            "new_url": "https://fogbugz.com/new?project=123",
-                        },
-                    ],
-                    "manuals": [
-                        {"url": "doc.acme.com", "label": "main"},
-                        {"url": "yet-another-manual.acme.com", "label": "z43"},
-                    ],
-                    "support": [
-                        {
-                            "url": "forum.acme.com",
-                            "kind": "forum",
-                            "label": "forum",
-                        },
-                        {
-                            "kind": "email",
-                            "email": "more-support@acme.com",
-                            "label": "email",
-                        },
-                        {
-                            "url": "support.acme.com",
-                            "kind": "web",
-                            "label": "web-form",
-                        },
-                    ],
-                    "login_settings": {
-                        "LOGIN_2FA_REQUIRED": False,
-                    },
-                    "group_id": 12345,
-                    "is_payment_enabled": False,
-                },
-            ]
-        },
+        json_schema_extra=_update_json_schema_extra,
     )
-
-    #  helpers ----
 
     def to_statics(self) -> dict[str, Any]:
         """

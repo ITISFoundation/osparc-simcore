@@ -127,11 +127,6 @@ async def get_product_stripe_info(
     return cast(ProductStripeInfoGet, product_stripe_info)  # mypy: not sure why
 
 
-#
-# helpers for get_product_template_path
-#
-
-
 def _themed(dirname: str, template: str) -> Path:
     path: Path = webserver_resources.get_path(f"{Path(dirname) / template}")
     return path
