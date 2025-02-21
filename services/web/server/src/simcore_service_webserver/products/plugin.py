@@ -8,21 +8,10 @@ At every request to this service API, a middleware discovers which product is th
 
 """
 
-
 import logging
 
 from aiohttp import web
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
-
-from .._constants import APP_SETTINGS_KEY
-from ..rabbitmq import setup_rabbitmq
-from . import _rest, _rpc
-from ._web_events import (
-    auto_create_products_groups,
-    load_products_on_startup,
-    setup_product_templates,
-)
-from ._web_middlewares import discover_product_middleware
 
 _logger = logging.getLogger(__name__)
 
@@ -35,20 +24,30 @@ _logger = logging.getLogger(__name__)
     logger=_logger,
 )
 def setup_products(app: web.Application):
+    from .._constants import APP_SETTINGS_KEY
+    from ..rabbitmq import setup_rabbitmq
+    from . import _rest, _rpc
+    from ._web_events import (
+        auto_create_products_groups,
+        load_products_on_startup,
+        setup_product_templates,
+    )
+    from ._web_middlewares import discover_product_middleware
+
     assert app[APP_SETTINGS_KEY].WEBSERVER_PRODUCTS is True  # nosec
 
-    # middlewares
+    # set middlewares
     app.middlewares.append(discover_product_middleware)
 
-    # routes
+    # setup rest
     app.router.add_routes(_rest.routes)
 
-    # rpc api
+    # setup rpc
     setup_rabbitmq(app)
     if app[APP_SETTINGS_KEY].WEBSERVER_RABBITMQ:
         app.on_startup.append(_rpc.register_rpc_routes_on_startup)
 
-    # events
+    # setup events
     app.on_startup.append(
         # NOTE: must go BEFORE load_products_on_startup
         auto_create_products_groups
