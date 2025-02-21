@@ -78,5 +78,11 @@ licensed_items = sa.Table(
     ),
     column_created_datetime(timezone=True),
     column_modified_datetime(timezone=True),
-    sa.Index("idx_licensed_items_key_version", "key", "version", unique=True),
+    sa.Index(
+        "idx_licensed_items_key_version_product",
+        "key",
+        "version",
+        "product_name",
+        unique=True,
+    ),
 )
