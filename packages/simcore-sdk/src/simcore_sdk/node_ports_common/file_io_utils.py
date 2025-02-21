@@ -17,8 +17,12 @@ from aiohttp import (
     ClientSession,
     RequestInfo,
 )
+from models_library.api_schemas_storage.storage_schemas import (
+    ETag,
+    FileUploadSchema,
+    UploadedPart,
+)
 from models_library.basic_types import SHA256Str
-from models_library.storage_schemas import ETag, FileUploadSchema, UploadedPart
 from multidict import MultiMapping
 from pydantic import AnyUrl, NonNegativeInt
 from servicelib.aiohttp import status

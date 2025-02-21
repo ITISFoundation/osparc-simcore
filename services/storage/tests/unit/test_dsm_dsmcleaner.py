@@ -16,9 +16,9 @@ from typing import Final
 import pytest
 from aws_library.s3 import MultiPartUploadLinks, SimcoreS3API
 from faker import Faker
+from models_library.api_schemas_storage.storage_schemas import LinkType
 from models_library.basic_types import SHA256Str
 from models_library.projects_nodes_io import SimcoreS3DirectoryID, SimcoreS3FileID
-from models_library.storage_schemas import LinkType
 from models_library.users import UserID
 from pydantic import ByteSize, TypeAdapter
 from pytest_simcore.helpers.parametrizations import byte_size_ids

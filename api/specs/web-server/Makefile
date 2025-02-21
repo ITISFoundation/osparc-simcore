@@ -16,3 +16,6 @@ install-dev install: _check_venv_active
 .PHONY: all
 all: _check_venv_active install
 	python openapi.py
+
+.PHONY: openapi-specs
+openapi-specs: all
