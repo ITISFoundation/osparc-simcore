@@ -86,6 +86,13 @@ async def iter_products(conn: SAConnection) -> AsyncIterator[ResultProxy]:
 
 
 class ProductRepository(BaseRepository):
+    async def list_products_names(self) -> list[ProductName]:
+        async with self.engine.acquire() as conn:
+            query = sa.select(products.c.name).order_by(products.c.priority)
+            result = await conn.execute(query)
+            rows = await result.fetchall()
+            return [ProductName(row.name) for row in rows]
+
     async def get_product(self, product_name: str) -> Product | None:
         async with self.engine.acquire() as conn:
             result: ResultProxy = await conn.execute(
