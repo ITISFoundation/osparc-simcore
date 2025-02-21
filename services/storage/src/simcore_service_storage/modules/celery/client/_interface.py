@@ -2,13 +2,14 @@ from typing import Any, Final, TypeAlias
 from uuid import uuid4
 
 from celery import Celery
+from celery.contrib.abortable import AbortableAsyncResult
 from celery.result import AsyncResult
 from models_library.progress_bar import ProgressReport
 from pydantic import ValidationError
 
-from ..models import TaskID, TaskProgress
+from ..models import TaskID, TaskStatus
 
-_PREFIX: Final = "AJ"
+_PREFIX: Final = "ct"
 
 TaskIdComponents: TypeAlias = dict[str, Any]
 
@@ -31,6 +32,9 @@ def _get_task_id(name: str, task_id_components: TaskIdComponents) -> TaskID:
     return "::".join([*_get_components_prefix(name, task_id_components), f"{uuid4()}"])
 
 
+_CELERY_TASK_META_PREFIX = "celery-task-meta-"
+
+
 class CeleryClientInterface:
     def __init__(self, celery_app: Celery):
         self._celery_app = celery_app
@@ -48,13 +52,13 @@ class CeleryClientInterface:
         return self._celery_app.tasks(task_id)
 
     def cancel(self, task_id: TaskID) -> None:
-        self._celery_app.control.revoke(task_id, terminate=True)
+        AbortableAsyncResult(task_id, app=self._celery_app).abort()
 
     def _get_async_result(self, task_id: TaskID) -> AsyncResult:
         return self._celery_app.AsyncResult(task_id)
 
     def get_result(self, task_id: TaskID) -> Any:
-        # se manca il risultato o se va in FAILURE, ritorna error
+        # if the result is missing or if it goes into FAILURE, return error
         return self._get_async_result(task_id).result
 
     def _get_progress_report(self, task_id: TaskID) -> ProgressReport | None:
@@ -63,17 +67,37 @@ class CeleryClientInterface:
             try:
                 return ProgressReport.model_validate(result)
             except ValidationError:
-                return None
+                pass
+        return None
 
-    def get_progress(self, task_id: TaskID) -> TaskProgress:
-        return TaskProgress(
+    def get_status(self, task_id: TaskID) -> TaskStatus:
+        return TaskStatus(
             task_id=task_id,
             task_state=self._get_async_result(task_id).state,
             progress_report=self._get_progress_report(task_id),
         )
 
+    def _get_completed_task_ids(
+        self, task_name: str, task_id_components: TaskIdComponents
+    ) -> list[TaskID]:
+        search_key = (
+            _CELERY_TASK_META_PREFIX
+            + _get_task_id_prefix(task_name, task_id_components)
+            + "*"
+        )
+        redis = self._celery_app.backend.client
+        keys = redis.keys(search_key)
+        if keys:
+            return [f"{key}".lstrip(_CELERY_TASK_META_PREFIX) for key in keys]
+        return []
+
     def list(
         self, task_name: str, *, task_id_components: TaskIdComponents
     ) -> list[TaskID]:
-        prefix_to_search_in_redis = _get_task_id_prefix(task_name, task_id_components)
-        return []
+        all_task_ids = self._get_completed_task_ids(task_name, task_id_components)
+
+        for task_type in ["active", "registered", "scheduled", "revoked"]:
+            if task_ids := getattr(self._celery_app.control.inspect(), task_type)():
+                all_task_ids.extend(task_ids)
+
+        return all_task_ids
