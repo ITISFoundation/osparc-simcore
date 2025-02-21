@@ -16,6 +16,7 @@ from .errors import (
     BelowMinimumPaymentError,
     ProductNotFoundError,
     ProductPriceNotDefinedError,
+    ProductTemplateNotFoundError,
 )
 
 
@@ -125,12 +126,19 @@ def _themed(dirname: str, template: str) -> Path:
     return path
 
 
+async def get_template_content(app: web.Application, *, template_name: str):
+    repo = ProductRepository.create_from_app(app)
+    content = await repo.get_template_content(template_name)
+    if not content:
+        raise ProductTemplateNotFoundError(template_name=template_name)
+    return content
+
+
 async def _get_content(request: web.Request, template_name: str):
     repo = ProductRepository.create_from_request(request)
     content = await repo.get_template_content(template_name)
     if not content:
-        msg = f"Missing template {template_name} for product"
-        raise ValueError(msg)
+        raise ProductTemplateNotFoundError(template_name=template_name)
     return content
 
 

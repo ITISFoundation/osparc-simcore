@@ -10,7 +10,6 @@ from .._resources import webserver_resources
 from . import _service
 from ._events import APP_PRODUCTS_TEMPLATES_DIR_KEY
 from ._models import Product
-from ._repository import ProductRepository
 
 
 def get_product_name(request: web.Request) -> str:
@@ -49,15 +48,6 @@ def _themed(dirname: str, template: str) -> Path:
     return path
 
 
-async def _get_content(request: web.Request, template_name: str):
-    repo = ProductRepository.create_from_request(request)
-    content = await repo.get_template_content(template_name)
-    if not content:
-        msg = f"Missing template {template_name} for product"
-        raise ValueError(msg)
-    return content
-
-
 def _safe_get_current_product(request: web.Request) -> Product | None:
     try:
         product: Product = get_current_product(request)
@@ -73,9 +63,11 @@ async def get_product_template_path(request: web.Request, filename: str) -> Path
             template_path = template_dir / template_name
             if not template_path.exists():
                 # cache
-                content = await _get_content(request, template_name)
+                content = await _service.get_template_content(
+                    request.app, template_name=template_name
+                )
                 try:
-                    async with aiofiles.open(template_path, "wt") as fh:
+                    async with aiofiles.open(template_path, "w") as fh:
                         await fh.write(content)
                 except Exception:
                     # fails to write
