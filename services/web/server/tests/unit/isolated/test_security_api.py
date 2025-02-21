@@ -26,8 +26,10 @@ from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.login.decorators import login_required
 from simcore_service_webserver.products._events import _set_app_state
-from simcore_service_webserver.products._middlewares import discover_product_middleware
 from simcore_service_webserver.products._models import Product
+from simcore_service_webserver.products._web_middlewares import (
+    discover_product_middleware,
+)
 from simcore_service_webserver.security.api import (
     check_user_authorized,
     clean_auth_policy_cache,

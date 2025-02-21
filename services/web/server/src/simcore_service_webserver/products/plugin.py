@@ -22,7 +22,7 @@ from ._events import (
     load_products_on_startup,
     setup_product_templates,
 )
-from ._middlewares import discover_product_middleware
+from ._web_middlewares import discover_product_middleware
 
 _logger = logging.getLogger(__name__)
 
