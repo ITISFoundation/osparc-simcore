@@ -10021,8 +10021,6 @@ components:
         status:
           type: integer
           title: Status
-          default: 400
-          deprecated: true
         errors:
           items:
             $ref: '#/components/schemas/ErrorItemType'
@@ -10040,6 +10038,7 @@ components:
       type: object
       required:
       - message
+      - status
       title: ErrorGet
     ErrorItemType:
       properties:

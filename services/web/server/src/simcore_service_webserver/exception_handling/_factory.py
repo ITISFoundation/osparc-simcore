@@ -80,7 +80,7 @@ def create_exception_handler_from_http_info(
             _DefaultDict(getattr(exception, "__dict__", {}))
         )
 
-        error = ErrorGet.model_construct(message=user_msg)
+        error = ErrorGet.model_construct(message=user_msg, status=status_code)
 
         if is_5xx_server_error(status_code):
             oec = create_error_code(exception)
@@ -100,7 +100,9 @@ def create_exception_handler_from_http_info(
                     },
                 )
             )
-            error = ErrorGet.model_construct(message=user_msg, support_id=oec)
+            error = ErrorGet.model_construct(
+                message=user_msg, support_id=oec, status=status_code
+            )
 
         return create_error_response(error, status_code=status_code)
 
