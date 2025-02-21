@@ -39,7 +39,7 @@ from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.groups._groups_service import get_product_group_for_user
 from simcore_service_webserver.groups.api import auto_add_user_to_product_group
 from simcore_service_webserver.groups.exceptions import GroupNotFoundError
-from simcore_service_webserver.products.api import get_product
+from simcore_service_webserver.products.service import get_product
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.projects.projects_permalink_service import (
     ProjectPermalink,

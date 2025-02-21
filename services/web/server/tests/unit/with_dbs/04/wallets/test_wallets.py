@@ -28,7 +28,7 @@ from pytest_simcore.helpers.webserver_login import LoggedUser, UserInfoDict
 from servicelib.aiohttp import status
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.login.utils import notify_user_confirmation
-from simcore_service_webserver.products.api import get_product
+from simcore_service_webserver.products.service import get_product
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.users.api import UserDisplayAndIdNamesTuple
 from simcore_service_webserver.wallets._events import (

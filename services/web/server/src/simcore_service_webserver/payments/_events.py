@@ -6,8 +6,8 @@ import logging
 
 from aiohttp import web
 
-from ..products.api import list_products
 from ..products.errors import BelowMinimumPaymentError
+from ..products.service import list_products
 from .settings import get_plugin_settings
 
 _logger = logging.getLogger(__name__)

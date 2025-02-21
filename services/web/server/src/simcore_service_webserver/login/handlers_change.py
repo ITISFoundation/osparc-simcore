@@ -11,7 +11,7 @@ from simcore_postgres_database.utils_users import UsersRepo
 from simcore_service_webserver.db.plugin import get_database_engine
 
 from .._meta import API_VTAG
-from ..products.api import Product, get_current_product
+from ..products.service import Product, get_current_product
 from ..security.api import check_password, encrypt_password
 from ..utils import HOUR
 from ..utils_rate_limiting import global_rate_limit_route

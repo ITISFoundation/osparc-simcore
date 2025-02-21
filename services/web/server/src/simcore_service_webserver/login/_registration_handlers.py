@@ -18,7 +18,7 @@ from servicelib.utils import fire_and_forget_task
 
 from .._constants import RQ_PRODUCT_KEY
 from .._meta import API_VTAG
-from ..products.api import Product, get_current_product
+from ..products.service import Product, get_current_product
 from ..security.api import check_password, forget_identity
 from ..security.decorators import permission_required
 from ..session.api import get_session

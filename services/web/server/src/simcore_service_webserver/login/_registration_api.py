@@ -13,7 +13,7 @@ from pydantic import EmailStr, PositiveInt, TypeAdapter, ValidationError
 from servicelib.utils_secrets import generate_passcode
 
 from ..email.utils import send_email_from_template
-from ..products.api import Product, get_current_product, get_product_template_path
+from ..products.service import Product, get_current_product, get_product_template_path
 
 _logger = logging.getLogger(__name__)
 

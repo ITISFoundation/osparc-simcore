@@ -35,7 +35,7 @@ from simcore_service_webserver.login._constants import (
     MSG_2FA_UNAVAILABLE_OEC,
 )
 from simcore_service_webserver.login.storage import AsyncpgStorage
-from simcore_service_webserver.products.api import Product, get_current_product
+from simcore_service_webserver.products.service import Product, get_current_product
 from simcore_service_webserver.users import preferences_api as user_preferences_api
 from twilio.base.exceptions import TwilioRestException
 

@@ -29,7 +29,7 @@ from servicelib.logging_errors import create_troubleshotting_log_kwargs
 from .._constants import INDEX_RESOURCE_NAME
 from ..director_v2._core_computations import create_or_update_pipeline
 from ..dynamic_scheduler import api as dynamic_scheduler_api
-from ..products.api import get_current_product, get_product_name
+from ..products.service import get_current_product, get_product_name
 from ..projects._groups_db import get_project_group
 from ..projects.api import check_user_project_permission
 from ..projects.db import ProjectDBAPI

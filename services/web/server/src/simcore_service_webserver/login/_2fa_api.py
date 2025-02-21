@@ -20,7 +20,7 @@ from twilio.base.exceptions import TwilioException  # type: ignore[import-untype
 from twilio.rest import Client  # type: ignore[import-untyped]
 
 from ..login.errors import SendingVerificationEmailError, SendingVerificationSmsError
-from ..products.api import Product
+from ..products.service import Product
 from ..redis import get_redis_validation_code_client
 from .utils_email import get_template_path, send_email_from_template
 

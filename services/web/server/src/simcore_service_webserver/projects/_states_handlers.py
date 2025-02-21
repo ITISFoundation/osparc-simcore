@@ -25,7 +25,7 @@ from .._meta import API_VTAG as VTAG
 from ..director_v2.exceptions import DirectorServiceError
 from ..login.decorators import login_required
 from ..notifications import project_logs
-from ..products.api import Product, get_current_product
+from ..products.service import Product, get_current_product
 from ..security.decorators import permission_required
 from ..users import api
 from ..utils_aiohttp import envelope_json_response

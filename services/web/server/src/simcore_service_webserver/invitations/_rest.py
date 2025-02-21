@@ -16,10 +16,10 @@ from yarl import URL
 
 from .._constants import RQ_PRODUCT_KEY
 from .._meta import API_VTAG as VTAG
-from ..invitations import api
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from ..users.api import get_user_name_and_email
+from . import api
 
 routes = web.RouteTableDef()
 

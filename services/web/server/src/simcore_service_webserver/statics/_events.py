@@ -17,7 +17,7 @@ from yarl import URL
 
 from .._constants import APP_PRODUCTS_KEY
 from ..application_settings import ApplicationSettings, get_application_settings
-from ..products.api import Product
+from ..products.service import Product
 from ._constants import (
     APP_FRONTEND_CACHED_INDEXES_KEY,
     APP_FRONTEND_CACHED_STATICS_JSON_KEY,

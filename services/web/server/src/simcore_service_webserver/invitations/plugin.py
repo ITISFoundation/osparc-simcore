@@ -11,6 +11,7 @@ from simcore_service_webserver.products.plugin import setup_products
 from .._constants import APP_SETTINGS_KEY
 from ..db.plugin import setup_db
 from ..products.plugin import setup_products
+from . import _rest
 from ._client import invitations_service_api_cleanup_ctx
 
 _logger = logging.getLogger(__name__)
@@ -27,5 +28,7 @@ def setup_invitations(app: web.Application):
 
     setup_db(app)
     setup_products(app)
+
+    app.router.add_routes(_rest.routes)
 
     app.cleanup_ctx.append(invitations_service_api_cleanup_ctx)

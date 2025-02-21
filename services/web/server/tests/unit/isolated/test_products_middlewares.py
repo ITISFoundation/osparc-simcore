@@ -15,7 +15,7 @@ from simcore_postgres_database.webserver_models import products
 from simcore_service_webserver.products._events import _set_app_state
 from simcore_service_webserver.products._middlewares import discover_product_middleware
 from simcore_service_webserver.products._models import Product
-from simcore_service_webserver.products.api import get_product_name
+from simcore_service_webserver.products.service import get_product_name
 from simcore_service_webserver.statics._constants import FRONTEND_APP_DEFAULT
 from yarl import URL
 

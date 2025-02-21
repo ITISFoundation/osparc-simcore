@@ -19,7 +19,7 @@ from servicelib.aiohttp.requests_validation import (
 
 from .._meta import API_VTAG
 from ..login.decorators import login_required
-from ..products.api import Product, get_current_product
+from ..products.service import Product, get_current_product
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
 from . import _groups_service
