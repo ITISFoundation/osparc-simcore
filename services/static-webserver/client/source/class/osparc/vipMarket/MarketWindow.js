@@ -19,7 +19,7 @@ qx.Class.define("osparc.vipMarket.MarketWindow", {
   extend: osparc.ui.window.TabbedWindow,
 
   construct: function(nodeId, category) {
-    this.base(arguments, "store", this.tr("Model Market"));
+    this.base(arguments, "store", this.tr("Model Store"));
 
     osparc.utils.Utils.setIdToWidget(this, "storeWindow");
 
