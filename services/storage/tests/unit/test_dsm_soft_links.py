@@ -8,8 +8,8 @@ from functools import lru_cache
 
 import pytest
 from faker import Faker
+from models_library.api_schemas_storage.storage_schemas import S3BucketName
 from models_library.projects_nodes_io import SimcoreS3FileID
-from models_library.storage_schemas import S3BucketName
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import ByteSize, TypeAdapter

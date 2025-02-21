@@ -5,15 +5,15 @@ from pathlib import Path
 
 import aiofiles
 from aiohttp import ClientSession
-from models_library.basic_types import SHA256Str
-from models_library.projects_nodes_io import LocationID, LocationName, StorageFileID
-from models_library.storage_schemas import (
+from models_library.api_schemas_storage.storage_schemas import (
     ETag,
     FileMetaDataGet,
     FileUploadSchema,
     LinkType,
     UploadedPart,
 )
+from models_library.basic_types import SHA256Str
+from models_library.projects_nodes_io import LocationID, LocationName, StorageFileID
 from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize, TypeAdapter
 from servicelib.file_utils import create_sha256_checksum

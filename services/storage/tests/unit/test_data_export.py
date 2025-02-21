@@ -6,21 +6,22 @@ from typing import Awaitable, Callable
 import pytest
 from faker import Faker
 from fastapi import FastAPI
-from models_library.api_schemas_rpc_data_export.tasks import (
-    TaskRpcGet,
-    TaskRpcId,
-    TaskRpcResult,
-    TaskRpcStatus,
+from models_library.api_schemas_rpc_async_jobs.async_jobs import (
+    AsyncJobAbort,
+    AsyncJobGet,
+    AsyncJobId,
+    AsyncJobResult,
+    AsyncJobStatus,
 )
-from models_library.api_schemas_storage.data_export_tasks import (
-    DataExportTaskAbortOutput,
+from models_library.api_schemas_storage import STORAGE_RPC_NAMESPACE
+from models_library.api_schemas_storage.data_export_async_jobs import (
     DataExportTaskStartInput,
 )
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.rabbitmq import RabbitMQRPCClient
-from servicelib.rabbitmq.rpc_interfaces.storage import data_export
+from servicelib.rabbitmq.rpc_interfaces.async_jobs import async_jobs
 from settings_library.rabbit import RabbitSettings
 from simcore_service_storage.core.settings import ApplicationSettings
 
@@ -74,27 +75,58 @@ async def rpc_client(
 
 
 async def test_start_data_export(rpc_client: RabbitMQRPCClient, faker: Faker):
-    result = await data_export.start_data_export(
-        rpc_client, paths=DataExportTaskStartInput(paths=[Path(faker.file_path())])
+    result = await async_jobs.submit_job(
+        rpc_client,
+        rpc_namespace=STORAGE_RPC_NAMESPACE,
+        job_name="start_data_export",
+        paths=DataExportTaskStartInput(
+            user_id=1,
+            product_name="osparc",
+            location_id=0,
+            paths=[Path(faker.file_path())],
+        ),
     )
-    assert isinstance(result, TaskRpcGet)
+    assert isinstance(result, AsyncJobGet)
 
 
 async def test_abort_data_export(rpc_client: RabbitMQRPCClient, faker: Faker):
-    _task_id = TaskRpcId(faker.uuid4())
-    result = await data_export.abort_data_export(rpc_client, task_id=_task_id)
-    assert isinstance(result, DataExportTaskAbortOutput)
-    assert result.task_id == _task_id
+    _job_id = AsyncJobId(faker.uuid4())
+    result = await async_jobs.abort(
+        rpc_client,
+        rpc_namespace=STORAGE_RPC_NAMESPACE,
+        job_id=_job_id,
+        access_data=None,
+    )
+    assert isinstance(result, AsyncJobAbort)
+    assert result.job_id == _job_id
 
 
 async def test_get_data_export_status(rpc_client: RabbitMQRPCClient, faker: Faker):
-    _task_id = TaskRpcId(faker.uuid4())
-    result = await data_export.get_data_export_status(rpc_client, task_id=_task_id)
-    assert isinstance(result, TaskRpcStatus)
-    assert result.task_id == _task_id
+    _job_id = AsyncJobId(faker.uuid4())
+    result = await async_jobs.get_status(
+        rpc_client,
+        rpc_namespace=STORAGE_RPC_NAMESPACE,
+        job_id=_job_id,
+        access_data=None,
+    )
+    assert isinstance(result, AsyncJobStatus)
+    assert result.job_id == _job_id
 
 
 async def test_get_data_export_result(rpc_client: RabbitMQRPCClient, faker: Faker):
-    _task_id = TaskRpcId(faker.uuid4())
-    result = await data_export.get_data_export_result(rpc_client, task_id=_task_id)
-    assert isinstance(result, TaskRpcResult)
+    _job_id = AsyncJobId(faker.uuid4())
+    result = await async_jobs.get_result(
+        rpc_client,
+        rpc_namespace=STORAGE_RPC_NAMESPACE,
+        job_id=_job_id,
+        access_data=None,
+    )
+    assert isinstance(result, AsyncJobResult)
+
+
+async def test_list_jobs(rpc_client: RabbitMQRPCClient, faker: Faker):
+    result = await async_jobs.list_jobs(
+        rpc_client, rpc_namespace=STORAGE_RPC_NAMESPACE, filter_=""
+    )
+    assert isinstance(result, list)
+    assert all(isinstance(elm, AsyncJobGet) for elm in result)

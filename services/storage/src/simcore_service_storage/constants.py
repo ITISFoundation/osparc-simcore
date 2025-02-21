@@ -1,7 +1,7 @@
 from typing import Final
 
 from aws_library.s3 import PRESIGNED_LINK_MAX_SIZE, S3_MAX_FILE_SIZE
-from models_library.storage_schemas import LinkType
+from models_library.api_schemas_storage.storage_schemas import LinkType
 from pydantic import ByteSize
 
 RETRY_WAIT_SECS = 2

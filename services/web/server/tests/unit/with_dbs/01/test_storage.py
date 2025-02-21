@@ -15,10 +15,7 @@ import uvicorn
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from fastapi import APIRouter, FastAPI, Request
-from models_library.generics import Envelope
-from models_library.projects import ProjectID
-from models_library.projects_nodes_io import LocationID, StorageFileID
-from models_library.storage_schemas import (
+from models_library.api_schemas_storage.storage_schemas import (
     DatasetMetaDataGet,
     FileLocation,
     FileMetaDataGet,
@@ -28,6 +25,9 @@ from models_library.storage_schemas import (
     FileUploadSchema,
     LinkType,
 )
+from models_library.generics import Envelope
+from models_library.projects import ProjectID
+from models_library.projects_nodes_io import LocationID, StorageFileID
 from models_library.users import UserID
 from pydantic import AnyUrl, TypeAdapter
 from pytest_simcore.helpers.assert_checks import assert_status

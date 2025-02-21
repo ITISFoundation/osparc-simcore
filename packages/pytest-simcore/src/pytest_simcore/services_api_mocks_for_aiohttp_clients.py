@@ -12,10 +12,7 @@ from aioresponses import aioresponses as AioResponsesMock
 from aioresponses.core import CallbackResult
 from faker import Faker
 from models_library.api_schemas_directorv2.comp_tasks import ComputationGet
-from models_library.generics import Envelope
-from models_library.projects_pipeline import ComputationTask
-from models_library.projects_state import RunningState
-from models_library.storage_schemas import (
+from models_library.api_schemas_storage.storage_schemas import (
     FileMetaDataGet,
     FileUploadCompleteFutureResponse,
     FileUploadCompleteResponse,
@@ -25,6 +22,9 @@ from models_library.storage_schemas import (
     LinkType,
     PresignedLink,
 )
+from models_library.generics import Envelope
+from models_library.projects_pipeline import ComputationTask
+from models_library.projects_state import RunningState
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import AnyUrl, ByteSize, TypeAdapter
 from servicelib.aiohttp import status

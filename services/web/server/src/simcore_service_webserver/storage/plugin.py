@@ -9,7 +9,7 @@ from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setu
 
 from .._constants import APP_SETTINGS_KEY
 from ..rest.plugin import setup_rest
-from . import _handlers
+from . import _rest
 
 _logger = logging.getLogger(__name__)
 
@@ -21,4 +21,4 @@ def setup_storage(app: web.Application):
     assert app[APP_SETTINGS_KEY].WEBSERVER_STORAGE  # nosec
 
     setup_rest(app)
-    app.router.add_routes(_handlers.routes)
+    app.router.add_routes(_rest.routes)

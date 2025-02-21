@@ -7,11 +7,11 @@ from typing import Final, NamedTuple
 
 from aiohttp import web
 from aiohttp.client import ClientError
+from models_library.api_schemas_storage.storage_schemas import FileMetaDataGet
 from models_library.basic_types import KeyIDStr
 from models_library.projects import ProjectID
 from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeID, SimCoreFileLink
-from models_library.storage_schemas import FileMetaDataGet
 from models_library.users import UserID
 from pydantic import (
     BaseModel,
