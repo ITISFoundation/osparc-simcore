@@ -15,7 +15,6 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_query_parameters_as,
 )
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
-from simcore_service_webserver.products._models import Product
 
 from .._meta import API_VTAG
 from ..exception_handling import (
@@ -28,6 +27,7 @@ from ..groups import api as groups_api
 from ..groups.exceptions import GroupNotFoundError
 from ..login.decorators import login_required
 from ..products import products_web
+from ..products.products_models import Product
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
 from . import _users_service

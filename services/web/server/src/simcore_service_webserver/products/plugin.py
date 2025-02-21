@@ -17,7 +17,7 @@ from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setu
 from .._constants import APP_SETTINGS_KEY
 from ..rabbitmq import setup_rabbitmq
 from . import _rest, _rpc
-from ._events import (
+from ._web_events import (
     auto_create_products_groups,
     load_products_on_startup,
     setup_product_templates,

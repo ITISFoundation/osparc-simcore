@@ -18,8 +18,9 @@ from ..db.settings import get_plugin_settings as get_db_plugin_settings
 from ..email.plugin import setup_email
 from ..email.settings import get_plugin_settings as get_email_plugin_settings
 from ..invitations.plugin import setup_invitations
+from ..products import products_service
 from ..products.plugin import setup_products
-from ..products.products_service import ProductName, list_products
+from ..products.products_models import ProductName
 from ..redis import setup_redis
 from ..rest.plugin import setup_rest
 from . import (
@@ -90,7 +91,7 @@ async def _resolve_login_settings_per_product(app: web.Application):
         # compose app and product settings
 
         errors = {}
-        for product in list_products(app):
+        for product in products_service.list_products(app):
             try:
                 login_settings_per_product[
                     product.name

@@ -36,7 +36,7 @@ from simcore_service_webserver.login._constants import (
 )
 from simcore_service_webserver.login.storage import AsyncpgStorage
 from simcore_service_webserver.products import products_web
-from simcore_service_webserver.products.products_service import Product
+from simcore_service_webserver.products.products_models import Product
 from simcore_service_webserver.users import preferences_api as user_preferences_api
 from twilio.base.exceptions import TwilioRestException
 

@@ -9,7 +9,7 @@ from servicelib.aiohttp.requests_validation import parse_request_body_as
 from .._meta import API_VTAG
 from ..login.decorators import login_required
 from ..products import products_web
-from ..products.products_service import Product
+from ..products.products_models import Product
 from ..security.decorators import permission_required
 from ..utils import get_traceback_string
 from ..utils_aiohttp import envelope_json_response

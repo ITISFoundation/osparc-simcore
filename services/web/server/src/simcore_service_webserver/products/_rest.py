@@ -21,7 +21,7 @@ from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
 from . import _service, products_web
-from ._models import Product
+from .products_models import Product
 
 routes = web.RouteTableDef()
 

@@ -20,7 +20,7 @@ from simcore_service_webserver.invitations.errors import (
     InvalidInvitationError,
     InvitationsServiceUnavailableError,
 )
-from simcore_service_webserver.products.products_service import Product
+from simcore_service_webserver.products.products_models import Product
 from yarl import URL
 
 

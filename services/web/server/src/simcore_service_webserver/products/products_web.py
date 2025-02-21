@@ -8,8 +8,8 @@ from simcore_postgres_database.utils_products_prices import ProductPriceInfo
 from .._constants import RQ_PRODUCT_KEY
 from .._resources import webserver_resources
 from . import _service
-from ._events import APP_PRODUCTS_TEMPLATES_DIR_KEY
-from ._models import Product
+from ._web_events import APP_PRODUCTS_TEMPLATES_DIR_KEY
+from .products_models import Product
 
 
 def get_product_name(request: web.Request) -> str:

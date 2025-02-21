@@ -24,7 +24,7 @@ from .._meta import API_VTAG
 from ..groups.api import auto_add_user_to_groups, auto_add_user_to_product_group
 from ..invitations.api import is_service_invitation_code
 from ..products import products_web
-from ..products.products_service import Product
+from ..products.products_models import Product
 from ..session.access_policies import (
     on_success_grant_session_access_to,
     session_access_required,

@@ -6,7 +6,6 @@ from models_library.products import CreditResultGet, ProductName, ProductStripeI
 from simcore_postgres_database.utils_products_prices import ProductPriceInfo
 
 from .._constants import APP_PRODUCTS_KEY
-from ._models import Product
 from ._repository import ProductRepository
 from .errors import (
     BelowMinimumPaymentError,
@@ -14,6 +13,7 @@ from .errors import (
     ProductPriceNotDefinedError,
     ProductTemplateNotFoundError,
 )
+from .products_models import Product
 
 
 def get_product(app: web.Application, product_name: ProductName) -> Product:

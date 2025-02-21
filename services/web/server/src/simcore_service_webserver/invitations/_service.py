@@ -11,7 +11,7 @@ from models_library.emails import LowerCaseEmailStr
 from pydantic import AnyHttpUrl, TypeAdapter, ValidationError
 
 from ..groups.api import is_user_by_email_in_group
-from ..products.products_service import Product
+from ..products.products_models import Product
 from ._client import get_invitations_service_api
 from .errors import (
     MSG_INVALID_INVITATION_URL,

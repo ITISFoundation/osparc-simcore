@@ -14,7 +14,7 @@ from simcore_postgres_database.models.users import UserRole
 
 from .._meta import API_VTAG
 from ..products import products_web
-from ..products.products_service import Product
+from ..products.products_models import Product
 from ..security.api import forget_identity
 from ..session.access_policies import (
     on_success_grant_session_access_to,
