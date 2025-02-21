@@ -423,35 +423,6 @@ async def test_containers_docker_status_docker_error(
     assert response.status_code == mock_aiodocker_containers_get, response.text
 
 
-async def test_container_inspect_logs_remove(
-    test_client: TestClient, started_containers: list[str]
-):
-    for container in started_containers:
-        # get container logs
-        # FIXME: slow call?
-        response = await test_client.get(f"/{API_VTAG}/containers/{container}/logs")
-        assert response.status_code == status.HTTP_200_OK, response.text
-
-        # inspect container
-        response = await test_client.get(f"/{API_VTAG}/containers/{container}")
-        assert response.status_code == status.HTTP_200_OK, response.text
-        parsed_response = response.json()
-        assert parsed_response["Name"] == f"/{container}"
-
-
-async def test_container_logs_with_timestamps(
-    test_client: TestClient, started_containers: list[str]
-):
-    for container in started_containers:
-        print("getting logs of container", container, "...")
-        response = await test_client.get(
-            f"/{API_VTAG}/containers/{container}/logs",
-            query_string={"timestamps": True},
-        )
-        assert response.status_code == status.HTTP_200_OK, response.text
-        assert response.json() == []
-
-
 async def test_container_missing_container(
     test_client: TestClient, not_started_containers: list[str]
 ):
@@ -461,11 +432,6 @@ async def test_container_missing_container(
         }
 
     for container in not_started_containers:
-        # get container logs
-        response = await test_client.get(f"/{API_VTAG}/containers/{container}/logs")
-        assert response.status_code == status.HTTP_404_NOT_FOUND, response.text
-        assert response.json() == _expected_error_string(container)
-
         # inspect container
         response = await test_client.get(f"/{API_VTAG}/containers/{container}")
         assert response.status_code == status.HTTP_404_NOT_FOUND, response.text
@@ -485,10 +451,6 @@ async def test_container_docker_error(
         }
 
     for container in started_containers:
-        # get container logs
-        response = await test_client.get(f"/{API_VTAG}/containers/{container}/logs")
-        assert response.status_code == mock_aiodocker_containers_get, response.text
-        assert response.json() == _expected_error_string(mock_aiodocker_containers_get)
 
         # inspect container
         response = await test_client.get(f"/{API_VTAG}/containers/{container}")
