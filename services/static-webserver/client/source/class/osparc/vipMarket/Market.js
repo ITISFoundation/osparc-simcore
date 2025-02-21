@@ -121,7 +121,8 @@ qx.Class.define("osparc.vipMarket.Market", {
       licensedItemsStore.getLicensedItems()
         .then(async licensedItems => {
           this.__freeItems = [];
-          for (const licensedItem of licensedItems) {
+          const licensedItemsArr = Object.values(licensedItems);
+          for (const licensedItem of licensedItemsArr) {
             const pricingUnits = await osparc.store.Pricing.getInstance().fetchPricingUnits(licensedItem.getPricingPlanId());
             if (pricingUnits.length === 1 && pricingUnits[0].getCost() === 0) {
               this.__freeItems.push(licensedItem);
