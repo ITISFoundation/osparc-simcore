@@ -23,6 +23,7 @@ qx.Class.define("osparc.store.LicensedItems", {
     this.base(arguments);
 
     this.__licensedItems = null;
+    this.__cachedLicensedItems = {};
   },
 
   statics: {
@@ -94,6 +95,7 @@ qx.Class.define("osparc.store.LicensedItems", {
 
   members: {
     __licensedItems: null,
+    __cachedLicensedItems: null,
 
     getLicensedItems: function() {
       if (this.__licensedItems) {
@@ -102,9 +104,15 @@ qx.Class.define("osparc.store.LicensedItems", {
 
       return osparc.data.Resources.getInstance().getAllPages("licensedItems")
         .then(licensedItems => {
+          licensedItems.forEach(licensedItemData => this.__addLicensedItemsToCache(licensedItemData));
           this.__licensedItems = licensedItems;
           return this.__licensedItems;
         });
+    },
+
+    __addLicensedItemsToCache: function(licensedItemData) {
+      const licensedItem = new osparc.data.model.LicensedItem(licensedItemData);
+      this.__cachedLicensedItems[licensedItem.getLicensedItemId()] = licensedItem;
     },
 
     getPurchasedLicensedItems: function(walletId, urlParams, options = {}) {
