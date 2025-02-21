@@ -125,11 +125,11 @@ qx.Class.define("osparc.vipMarket.LicensedItemDetails", {
           const modelLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(4)).set({
             allowGrowX: false,
           });
-          const miniThumbnail = this.self().createThumbnail(licensedResource["thumbnail"], 32);
+          const miniThumbnail = this.self().createThumbnail(licensedResource.getThumbnail(), 32);
           osparc.utils.Utils.addBorder(miniThumbnail);
           modelLayout.add(miniThumbnail);
           const title = new qx.ui.basic.Label().set({
-            value: osparc.data.model.LicensedItem.licensedResourceTitle(licensedResource),
+            value: osparc.data.model.LicensedItemResource.longName(licensedResource),
             alignY: "middle"
           });
           modelLayout.add(title);
@@ -156,13 +156,9 @@ qx.Class.define("osparc.vipMarket.LicensedItemDetails", {
         const topGrid = new qx.ui.layout.Grid(8, 6);
         topGrid.setColumnFlex(0, 1);
         const headerLayout = new qx.ui.container.Composite(topGrid);
-        let description = licensedResource["description"] || "";
-        description = description.replace(/SPEAG/g, " "); // remove SPEAG substring
-        const delimiter = " - ";
-        let titleAndSubtitle = description.split(delimiter);
-        if (titleAndSubtitle.length > 0) {
+        if (licensedResource.getTitle()) {
           const titleLabel = new qx.ui.basic.Label().set({
-            value: titleAndSubtitle[0],
+            value: licensedResource.getTitle(),
             font: "text-16",
             alignY: "middle",
             allowGrowX: true,
@@ -172,12 +168,10 @@ qx.Class.define("osparc.vipMarket.LicensedItemDetails", {
             column: 0,
             row: 0,
           });
-          titleAndSubtitle.shift();
         }
-        if (titleAndSubtitle.length > 0) {
-          titleAndSubtitle = titleAndSubtitle.join(delimiter);
+        if (licensedResource.getSubtitle()) {
           const subtitleLabel = new qx.ui.basic.Label().set({
-            value: titleAndSubtitle,
+            value: licensedResource.getSubtitle(),
             font: "text-16",
             alignY: "middle",
             allowGrowX: true,
@@ -188,48 +182,36 @@ qx.Class.define("osparc.vipMarket.LicensedItemDetails", {
             row: 1,
           });
         }
-        if (licensedResource["thumbnail"]) {
-          const manufacturerData = {};
-          if (licensedResource["thumbnail"].includes("itis.swiss")) {
-            manufacturerData["label"] = "IT'IS Foundation";
-            manufacturerData["link"] = "https://itis.swiss/virtual-population/";
-            manufacturerData["icon"] = "https://media.licdn.com/dms/image/v2/C4D0BAQE_FGa66IyvrQ/company-logo_200_200/company-logo_200_200/0/1631341490431?e=2147483647&v=beta&t=7f_IK-ArGjPrz-1xuWolAT4S2NdaVH-e_qa8hsKRaAc";
-          } else if (licensedResource["thumbnail"].includes("speag.swiss")) {
-            manufacturerData["label"] = "Speag";
-            manufacturerData["link"] = "https://speag.swiss/products/em-phantoms/overview-2/";
-            manufacturerData["icon"] = "https://media.licdn.com/dms/image/v2/D4E0BAQG2CYG28KAKbA/company-logo_200_200/company-logo_200_200/0/1700045977122/schmid__partner_engineering_ag_logo?e=2147483647&v=beta&t=6CZb1jjg5TnnzQWkrZBS9R3ebRKesdflg-_xYi4dwD8";
-          }
-          if (Object.keys(manufacturerData).length) {
-            const manufacturerLink = new qx.ui.basic.Atom().set({
-              label: manufacturerData["label"],
-              icon: manufacturerData["icon"],
-              font: "text-16",
-              gap: 10,
-              iconPosition: "right",
-              cursor: "pointer",
-            });
-            manufacturerLink.getChildControl("icon").set({
-              maxWidth: 32,
-              maxHeight: 32,
-              scale: true,
-              decorator: "rounded",
-            });
-            manufacturerLink.addListener("tap", () => window.open(manufacturerData["link"]));
-            headerLayout.add(manufacturerLink, {
-              column: 1,
-              row: 0,
-              rowSpan: 2,
-            });
-          }
+        if (licensedResource.getManufacturerLabel()) {
+          const manufacturerLink = new qx.ui.basic.Atom().set({
+            label: licensedResource.getManufacturerLabel(),
+            icon: licensedResource.getManufacturerIcon(),
+            font: "text-16",
+            gap: 10,
+            iconPosition: "right",
+            cursor: "pointer",
+          });
+          manufacturerLink.getChildControl("icon").set({
+            maxWidth: 32,
+            maxHeight: 32,
+            scale: true,
+            decorator: "rounded",
+          });
+          manufacturerLink.addListener("tap", () => window.open(licensedResource.getManufacturerLink()));
+          headerLayout.add(manufacturerLink, {
+            column: 1,
+            row: 0,
+            rowSpan: 2,
+          });
         }
         modelInfoLayout.add(headerLayout);
 
 
         const middleLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(16));
-        const thumbnail = this.self().createThumbnail(licensedResource["thumbnail"], 256);
+        const thumbnail = this.self().createThumbnail(licensedResource.getThumbnail(), 256);
         middleLayout.add(thumbnail);
 
-        const features = licensedResource["features"];
+        const features = licensedResource.getFeatures();
         const featuresGrid = new qx.ui.layout.Grid(8, 8);
         const featuresLayout = new qx.ui.container.Composite(featuresGrid);
         let idx = 0;
@@ -278,7 +260,7 @@ qx.Class.define("osparc.vipMarket.LicensedItemDetails", {
           }
         });
 
-        if (licensedResource["doi"]) {
+        if (licensedResource.getDoi()) {
           const doiTitle = new qx.ui.basic.Label().set({
             value: "DOI",
             font: "text-14",
@@ -305,14 +287,14 @@ qx.Class.define("osparc.vipMarket.LicensedItemDetails", {
             }
             return doiLabel;
           };
-          featuresLayout.add(doiToLink(licensedResource["doi"]), {
+          featuresLayout.add(doiToLink(licensedResource.getDoi()), {
             column: 1,
             row: idx,
           });
           idx++;
         }
 
-        if (licensedItem["termsOfUseUrl"] || licensedResource["termsOfUseUrl"]) { // remove the first one when this info goes down to the model
+        if (licensedResource.getTermsOfUseUrl()) { // remove the first one when this info goes down to the model
           const tAndC = new qx.ui.basic.Label().set({
             font: "text-14",
             value: this.tr("<u>Terms and Conditions</u>"),
@@ -320,7 +302,7 @@ qx.Class.define("osparc.vipMarket.LicensedItemDetails", {
             anonymous: false,
             cursor: "pointer",
           });
-          tAndC.addListener("tap", () => this.__openLicense(licensedItem["termsOfUseUrl"] || licensedResource["termsOfUseUrl"]));
+          tAndC.addListener("tap", () => this.__openLicense(licensedResource.getTermsOfUseUrl()));
           featuresLayout.add(tAndC, {
             column: 1,
             row: idx,

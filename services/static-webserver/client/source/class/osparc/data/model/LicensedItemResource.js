@@ -138,47 +138,11 @@ qx.Class.define("osparc.data.model.LicensedItemResource", {
   },
 
   statics: {
-    addSeatsFromPurchases: function(licensedItemResources, purchases) {
-      // reset seats
-      Object.values(licensedItemResources).forEach(licensedItemResource => licensedItemResource.setSeats([]));
-      // populate seats
-      purchases.forEach(purchase => {
-        const {
-          key,
-          version,
-        } = purchase;
-        Object.values(licensedItemResources).forEach(licensedItemResource => {
-          if (licensedItemResource.getKey() === key && licensedItemResource.getVersion() <= version) {
-            licensedItemResource.getSeats().push({
-              licensedItemResourceId: purchase["licensedItemResourceId"],
-              licensedItemResourcePurchaseId: purchase["licensedItemResourcePurchaseId"],
-              numOfSeats: purchase["numOfSeats"],
-              expireAt: new Date(purchase["expireAt"]),
-            });
-          }
-        });
-      })
-    },
-
-    licensedResourceTitle: function(licensedResource) {
-      const name = licensedResource["features"]["name"] || osparc.data.model.LicensedItem.extractNameFromDescription(licensedResource);
-      const version = licensedResource["features"]["version"] || "";
-      const functionality = licensedResource["features"]["functionality"] || "Static";
+    longName: function(licensedResource) {
+      const name = licensedResource.getFeatures()["name"] || licensedResource.getSubtitle();
+      const version = licensedResource.getFeatures()["version"] || "";
+      const functionality = licensedResource.getFeatures()["functionality"] || "Static";
       return `${name} ${version}, ${functionality}`;
-    },
-
-    extractNameFromDescription: function(licensedResource) {
-      const description = licensedResource["description"] || "";
-      const delimiter = " - ";
-      let typeAndName = description.split(delimiter);
-      if (typeAndName.length > 1) {
-        // drop the type
-        typeAndName.shift();
-        // join the name
-        typeAndName = typeAndName.join(delimiter);
-        return typeAndName;
-      }
-      return "";
     },
   },
 

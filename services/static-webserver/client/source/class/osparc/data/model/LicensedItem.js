@@ -38,7 +38,15 @@ qx.Class.define("osparc.data.model.LicensedItem", {
           date = firstItem["features"]["date"];
         }
       }
-      licensedItemData["licensedResources"].forEach(licensedRsrc => licensedResources.push(licensedRsrc["source"]));
+      licensedItemData["licensedResources"].forEach(licensedRsrc => {
+        const licensedItemResource = new osparc.data.model.LicensedItemResource(licensedRsrc["source"]);
+        if (licensedItemData["termsOfUseUrl"]) {
+          licensedItemResource.set({
+            termsOfUseUrl: licensedItemData["termsOfUseUrl"],
+          })
+        }
+        licensedResources.push(licensedItemResource);
+      });
     }
 
     this.set({
@@ -164,27 +172,6 @@ qx.Class.define("osparc.data.model.LicensedItem", {
           }
         });
       })
-    },
-
-    licensedResourceTitle: function(licensedResource) {
-      const name = licensedResource["features"]["name"] || osparc.data.model.LicensedItem.extractNameFromDescription(licensedResource);
-      const version = licensedResource["features"]["version"] || "";
-      const functionality = licensedResource["features"]["functionality"] || "Static";
-      return `${name} ${version}, ${functionality}`;
-    },
-
-    extractNameFromDescription: function(licensedResource) {
-      const description = licensedResource["description"] || "";
-      const delimiter = " - ";
-      let typeAndName = description.split(delimiter);
-      if (typeAndName.length > 1) {
-        // drop the type
-        typeAndName.shift();
-        // join the name
-        typeAndName = typeAndName.join(delimiter);
-        return typeAndName;
-      }
-      return "";
     },
   },
 
