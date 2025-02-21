@@ -5,7 +5,7 @@ from aiohttp import web
 
 from .._resources import webserver_resources
 from ..email.utils import AttachmentTuple, send_email_from_template
-from ..products.products_service import get_product_template_path
+from ..products import products_web
 
 log = logging.getLogger(__name__)
 
@@ -16,7 +16,7 @@ def themed(dirname: str, template: str) -> Path:
 
 
 async def get_template_path(request: web.Request, filename: str) -> Path:
-    return await get_product_template_path(request, filename)
+    return await products_web.get_product_template_path(request, filename)
 
 
 # prevents auto-removal by pycln

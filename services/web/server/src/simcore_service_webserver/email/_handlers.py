@@ -8,11 +8,8 @@ from servicelib.aiohttp.requests_validation import parse_request_body_as
 
 from .._meta import API_VTAG
 from ..login.decorators import login_required
-from ..products.products_service import (
-    Product,
-    get_current_product,
-    get_product_template_path,
-)
+from ..products import products_web
+from ..products.products_service import Product, get_current_product
 from ..security.decorators import permission_required
 from ..utils import get_traceback_string
 from ..utils_aiohttp import envelope_json_response
@@ -78,7 +75,7 @@ async def test_email(request: web.Request):
 
     product: Product = get_current_product(request)
 
-    template_path = await get_product_template_path(
+    template_path = await products_web.get_product_template_path(
         request, filename=body.template_name
     )
 

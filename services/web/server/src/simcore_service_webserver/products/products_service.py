@@ -7,7 +7,6 @@ from ._service import (
     get_product,
     get_product_name,
     get_product_stripe_info,
-    get_product_template_path,
     get_product_ui,
     list_products,
 )
@@ -17,7 +16,6 @@ __all__: tuple[str, ...] = (
     "get_current_product",
     "get_product_name",
     "get_product_stripe_info",
-    "get_product_template_path",
     "get_product_ui",
     "get_product",
     "list_products",
