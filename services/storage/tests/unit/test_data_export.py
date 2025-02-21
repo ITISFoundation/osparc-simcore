@@ -1,6 +1,5 @@
 # pylint: disable=W0621
 # pylint: disable=W0613
-from pathlib import Path
 from typing import Awaitable, Callable
 
 import pytest
@@ -83,7 +82,9 @@ async def test_start_data_export(rpc_client: RabbitMQRPCClient, faker: Faker):
             user_id=1,
             product_name="osparc",
             location_id=0,
-            paths=[Path(faker.file_path())],
+            file_and_folder_ids=[
+                f"{faker.uuid4()}/{faker.uuid4()}/{faker.file_path()}"
+            ],
         ),
     )
     assert isinstance(result, AsyncJobGet)

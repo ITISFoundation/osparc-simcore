@@ -1,4 +1,3 @@
-from typing import cast
 from uuid import uuid4
 
 from fastapi import FastAPI
@@ -8,11 +7,10 @@ from models_library.api_schemas_storage.data_export_async_jobs import (
     DataExportError,
     DataExportTaskStartInput,
     InvalidFileIdentifierError,
-    InvalidLocationIdError,
 )
 from servicelib.rabbitmq import RPCRouter
 
-from ...dsm import DatCoreDataManager, SimcoreS3DataManager, get_dsm_provider
+from ...dsm import SimcoreS3DataManager, get_dsm_provider
 from ...modules.datcore_adapter.datcore_adapter import DatcoreAdapterError
 from ...simcore_s3_dsm import FileAccessRightError
 
@@ -27,43 +25,26 @@ router = RPCRouter()
     )
 )
 async def start_data_export(
-    app: FastAPI, paths: DataExportTaskStartInput
+    app: FastAPI, data_export_start: DataExportTaskStartInput
 ) -> AsyncJobGet:
     assert app  # nosec
 
-    if paths.location_id == SimcoreS3DataManager.get_location_id():
-        dsm = cast(
-            SimcoreS3DataManager,
-            get_dsm_provider(app).get(SimcoreS3DataManager.get_location_id()),
-        )
-        try:
-            for _id in paths.file_and_folder_ids:
-                _ = await dsm.get_file(user_id=paths.user_id, file_id=_id)
-        except FileAccessRightError as err:
-            raise AccessRightError(
-                user_id=paths.user_id,
-                file_id=_id,
-                location_id=DatCoreDataManager.get_location_id(),
-            ) from err
+    dsm = get_dsm_provider(app).get(SimcoreS3DataManager.get_location_id())
 
-    elif paths.location_id == DatCoreDataManager.get_location_id():
-        dsm = cast(
-            DatCoreDataManager,
-            get_dsm_provider(app).get(DatCoreDataManager.get_location_id()),
-        )
-        try:
-            for _id in paths.file_and_folder_ids:
-                _ = await dsm.get_file(user_id=paths.user_id, file_id=_id)
-        except DatcoreAdapterError as err:
-            raise AccessRightError(
-                user_id=paths.user_id,
-                file_id=_id,
-                location_id=DatCoreDataManager.get_location_id(),
-            ) from err
-    else:
-        raise InvalidLocationIdError(location_id=paths.location_id)
+    class _AccessRightError(FileAccessRightError, DatcoreAdapterError):
+        pass
+
+    try:
+        for _id in data_export_start.file_and_folder_ids:
+            _ = await dsm.get_file(user_id=data_export_start.user_id, file_id=_id)
+    except _AccessRightError as err:
+        raise AccessRightError(
+            user_id=data_export_start.user_id,
+            file_id=_id,
+            location_id=data_export_start.location_id,
+        ) from err
 
     return AsyncJobGet(
         job_id=AsyncJobId(f"{uuid4()}"),
-        job_name=", ".join(str(p) for p in paths.file_and_folder_ids),
+        job_name=", ".join(str(p) for p in data_export_start.file_and_folder_ids),
     )
