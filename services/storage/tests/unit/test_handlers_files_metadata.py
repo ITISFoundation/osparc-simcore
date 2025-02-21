@@ -13,8 +13,11 @@ import httpx
 import pytest
 from faker import Faker
 from fastapi import FastAPI
+from models_library.api_schemas_storage.storage_schemas import (
+    FileMetaDataGet,
+    SimcoreS3FileID,
+)
 from models_library.projects import ProjectID
-from models_library.storage_schemas import FileMetaDataGet, SimcoreS3FileID
 from models_library.users import UserID
 from pydantic import ByteSize, TypeAdapter
 from pytest_simcore.helpers.fastapi import url_from_operation_id
