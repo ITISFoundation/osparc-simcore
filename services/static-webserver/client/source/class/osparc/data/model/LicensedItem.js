@@ -24,8 +24,7 @@ qx.Class.define("osparc.data.model.LicensedItem", {
   construct: function(licensedItemData) {
     this.base(arguments);
 
-    console.log("licensedItemData", licensedItemData);
-
+    let categoryIcon = licensedItemData.categoryIcon || `osparc/market/${licensedItemData.categoryId}.svg`;
     let thumbnail = "";
     let date = null;
     let licensedResources = [];
@@ -46,7 +45,7 @@ qx.Class.define("osparc.data.model.LicensedItem", {
       licensedItemId: licensedItemData.licensedItemId,
       categoryId: licensedItemData.categoryId,
       categoryDisplay: licensedItemData.categoryDisplay,
-      categoryIcon: licensedItemData.categoryIcon || `osparc/market/${licensedItemData.categoryId}.svg`,
+      categoryIcon: categoryIcon,
       pricingPlanId: licensedItemData.pricingPlanId,
       key: licensedItemData.key,
       version: licensedItemData.version,
