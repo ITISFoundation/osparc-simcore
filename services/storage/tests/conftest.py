@@ -56,12 +56,13 @@ from simcore_postgres_database.storage_models import file_meta_data, projects, u
 from simcore_service_storage.core.application import create_app
 from simcore_service_storage.core.settings import ApplicationSettings
 from simcore_service_storage.dsm import get_dsm_provider
-from simcore_service_storage.models import S3BucketName
+from simcore_service_storage.models import FileMetaData, FileMetaDataAtDB, S3BucketName
 from simcore_service_storage.modules.long_running_tasks import (
     get_completed_upload_tasks,
 )
 from simcore_service_storage.modules.s3 import get_s3_client
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
+from sqlalchemy import literal_column
 from sqlalchemy.ext.asyncio import AsyncEngine
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
@@ -655,3 +656,40 @@ async def with_random_project_with_files(
             TypeAdapter(ByteSize).validate_python("5Mib"),
         )
     )
+
+
+@pytest.fixture()
+async def output_file(
+    user_id: UserID, project_id: str, sqlalchemy_async_engine: AsyncEngine, faker: Faker
+) -> AsyncIterator[FileMetaData]:
+    node_id = "fd6f9737-1988-341b-b4ac-0614b646fa82"
+
+    # pylint: disable=no-value-for-parameter
+
+    file = FileMetaData.from_simcore_node(
+        user_id=user_id,
+        file_id=f"{project_id}/{node_id}/filename.txt",
+        bucket=TypeAdapter(S3BucketName).validate_python("master-simcore"),
+        location_id=SimcoreS3DataManager.get_location_id(),
+        location_name=SimcoreS3DataManager.get_location_name(),
+        sha256_checksum=faker.sha256(),
+    )
+    file.entity_tag = "df9d868b94e53d18009066ca5cd90e9f"
+    file.file_size = ByteSize(12)
+    file.user_id = user_id
+    async with sqlalchemy_async_engine.begin() as conn:
+        stmt = (
+            file_meta_data.insert()
+            .values(jsonable_encoder(FileMetaDataAtDB.model_validate(file)))
+            .returning(literal_column("*"))
+        )
+        result = await conn.execute(stmt)
+        row = result.one()
+        assert row
+
+    yield file
+
+    async with sqlalchemy_async_engine.begin() as conn:
+        result = await conn.execute(
+            file_meta_data.delete().where(file_meta_data.c.file_id == row.file_id)
+        )

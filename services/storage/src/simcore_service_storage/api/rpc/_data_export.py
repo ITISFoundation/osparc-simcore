@@ -31,13 +31,10 @@ async def start_data_export(
 
     dsm = get_dsm_provider(app).get(SimcoreS3DataManager.get_location_id())
 
-    class _AccessRightError(FileAccessRightError, DatcoreAdapterError):
-        pass
-
     try:
         for _id in data_export_start.file_and_folder_ids:
             _ = await dsm.get_file(user_id=data_export_start.user_id, file_id=_id)
-    except _AccessRightError as err:
+    except (FileAccessRightError, DatcoreAdapterError) as err:
         raise AccessRightError(
             user_id=data_export_start.user_id,
             file_id=_id,

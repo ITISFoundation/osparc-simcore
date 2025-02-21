@@ -1,6 +1,7 @@
 # pylint: disable=W0621
 # pylint: disable=W0613
-from typing import Awaitable, Callable
+from pathlib import Path
+from typing import Awaitable, Callable, NamedTuple
 
 import pytest
 from faker import Faker
@@ -16,13 +17,19 @@ from models_library.api_schemas_storage import STORAGE_RPC_NAMESPACE
 from models_library.api_schemas_storage.data_export_async_jobs import (
     DataExportTaskStartInput,
 )
+from models_library.projects import ProjectID
+from models_library.users import UserID
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.async_jobs import async_jobs
 from settings_library.rabbit import RabbitSettings
+from simcore_postgres_database.models.file_meta_data import file_meta_data
+from simcore_service_storage.api.rpc._data_export import AccessRightError
 from simcore_service_storage.core.settings import ApplicationSettings
+from simcore_service_storage.models import FileMetaData
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 pytest_plugins = [
     "pytest_simcore.rabbit_service",
@@ -73,21 +80,55 @@ async def rpc_client(
     return await rabbitmq_rpc_client("client")
 
 
-async def test_start_data_export(rpc_client: RabbitMQRPCClient, faker: Faker):
+class UserWithFile(NamedTuple):
+    user: UserID
+    file: Path
+
+
+@pytest.fixture
+async def user_owner_file(
+    user_id: UserID, project_id: ProjectID, sqlalchemy_async_engine: AsyncEngine
+):
+    async with sqlalchemy_async_engine.connect() as conn:
+        file_meta_data.insert()
+
+
+async def test_start_data_export_success(
+    rpc_client: RabbitMQRPCClient, output_file: FileMetaData, user_id: UserID
+):
+
     result = await async_jobs.submit_job(
         rpc_client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
         job_name="start_data_export",
-        paths=DataExportTaskStartInput(
-            user_id=1,
+        data_export_start=DataExportTaskStartInput(
+            user_id=user_id,
             product_name="osparc",
-            location_id=0,
-            file_and_folder_ids=[
-                f"{faker.uuid4()}/{faker.uuid4()}/{faker.file_path()}"
-            ],
+            location_id=output_file.location_id,
+            file_and_folder_ids=[output_file.file_id],
         ),
     )
     assert isinstance(result, AsyncJobGet)
+
+
+async def test_start_data_export_fail(
+    rpc_client: RabbitMQRPCClient, user_id: UserID, faker: Faker
+):
+
+    with pytest.raises(AccessRightError):
+        _ = await async_jobs.submit_job(
+            rpc_client,
+            rpc_namespace=STORAGE_RPC_NAMESPACE,
+            job_name="start_data_export",
+            data_export_start=DataExportTaskStartInput(
+                user_id=user_id,
+                product_name="osparc",
+                location_id=0,
+                file_and_folder_ids=[
+                    f"{faker.uuid4()}/{faker.uuid4()}/{faker.file_name()}"
+                ],
+            ),
+        )
 
 
 async def test_abort_data_export(rpc_client: RabbitMQRPCClient, faker: Faker):
