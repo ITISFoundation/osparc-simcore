@@ -34,17 +34,13 @@ def test_product_examples(
 
 def test_product_to_static():
 
-    product = Product.model_validate(
-        Product.model_config["json_schema_extra"]["examples"][0]
-    )
+    product = Product.model_validate(Product.model_json_schema()["examples"][0])
     assert product.to_statics() == {
         "displayName": "o²S²PARC",
         "supportEmail": "support@osparc.io",
     }
 
-    product = Product.model_validate(
-        Product.model_config["json_schema_extra"]["examples"][2]
-    )
+    product = Product.model_validate(Product.model_json_schema()["examples"][2])
 
     assert product.to_statics() == {
         "displayName": "o²S²PARC FOO",
@@ -82,7 +78,7 @@ def test_product_to_static():
 
 
 def test_product_host_regex_with_spaces():
-    data = Product.model_config["json_schema_extra"]["examples"][2]
+    data = Product.model_json_schema()["examples"][2]
 
     # with leading and trailing spaces and uppercase (tests anystr_strip_whitespace )
     data["support_email"] = "  fOO@BaR.COM    "

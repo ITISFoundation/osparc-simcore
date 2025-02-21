@@ -251,7 +251,7 @@ def mocked_login_required(mocker: MockerFixture):
     )
 
     mocker.patch(
-        "simcore_service_webserver.login.decorators.get_product_name",
+        "simcore_service_webserver.login.decorators.products_web.get_product_name",
         spec=True,
         return_value="osparc",
     )
