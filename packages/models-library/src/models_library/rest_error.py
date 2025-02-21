@@ -75,9 +75,9 @@ class ErrorGet(BaseModel):
         IDStr | None,
         Field(description="ID to track the incident during support", alias="supportId"),
     ] = None
+    status: int
 
     # NOTE: The fields blow are DEPRECATED. Still here to keep compatibilty with front-end until updated
-    status: Annotated[int, Field(deprecated=True)] = 400
     errors: Annotated[
         list[ErrorItemType],
         Field(deprecated=True, default_factory=list, json_schema_extra={"default": []}),
