@@ -10,7 +10,7 @@ from models_library.api_schemas_storage.data_export_async_jobs import (
 )
 from servicelib.rabbitmq import RPCRouter
 
-from ...dsm import SimcoreS3DataManager, get_dsm_provider
+from ...dsm import get_dsm_provider
 from ...modules.datcore_adapter.datcore_adapter import DatcoreAdapterError
 from ...simcore_s3_dsm import FileAccessRightError
 
@@ -29,7 +29,7 @@ async def start_data_export(
 ) -> AsyncJobGet:
     assert app  # nosec
 
-    dsm = get_dsm_provider(app).get(SimcoreS3DataManager.get_location_id())
+    dsm = get_dsm_provider(app).get(data_export_start.location_id)
 
     try:
         for _id in data_export_start.file_and_folder_ids:
