@@ -94,11 +94,13 @@ class ErrorGet(BaseModel):
         json_schema_extra={
             "examples": [
                 {
-                    "message": "Sorry you do not have sufficient access rights for product"
+                    "message": "Sorry you do not have sufficient access rights for product",
+                    "status": 401,
                 },
                 {
                     "message": "Opps this error was unexpected. We are working on that!",
                     "supportId": "OEC:12346789",
+                    "status": 500,
                 },
             ]
         },
@@ -111,9 +113,13 @@ class EnvelopedError(Envelope[None]):
     model_config = ConfigDict(
         json_schema_extra={
             "examples": [
-                {"error": {"message": "display error message here"}},
+                {"error": {"message": "display error message here", "status": 401}},
                 {
-                    "error": {"message": "failure", "supportId": "OEC:123455"},
+                    "error": {
+                        "message": "failure",
+                        "supportId": "OEC:123455",
+                        "status": 500,
+                    },
                     "data": None,
                 },
             ]
