@@ -8,10 +8,13 @@ from models_library.api_schemas_storage.data_export_async_jobs import (
     DataExportError,
     DataExportTaskStartInput,
     InvalidFileIdentifierError,
+    InvalidLocationIdError,
 )
 from servicelib.rabbitmq import RPCRouter
-from simcore_service_storage.dsm import SimcoreS3DataManager, get_dsm_provider
-from simcore_service_storage.simcore_s3_dsm import FileAccessRightError
+
+from ...dsm import DatCoreDataManager, SimcoreS3DataManager, get_dsm_provider
+from ...modules.datcore_adapter.datcore_adapter import DatcoreAdapterError
+from ...simcore_s3_dsm import FileAccessRightError
 
 router = RPCRouter()
 
@@ -28,7 +31,7 @@ async def start_data_export(
 ) -> AsyncJobGet:
     assert app  # nosec
 
-    if paths.location_id != SimcoreS3DataManager.get_location_id():
+    if paths.location_id == SimcoreS3DataManager.get_location_id():
         dsm = cast(
             SimcoreS3DataManager,
             get_dsm_provider(app).get(SimcoreS3DataManager.get_location_id()),
@@ -37,7 +40,28 @@ async def start_data_export(
             for _id in paths.file_and_folder_ids:
                 _ = await dsm.get_file(user_id=paths.user_id, file_id=_id)
         except FileAccessRightError as err:
-            raise AccessRightError(user_id=paths.user_id, file_id=_id) from err
+            raise AccessRightError(
+                user_id=paths.user_id,
+                file_id=_id,
+                location_id=DatCoreDataManager.get_location_id(),
+            ) from err
+
+    elif paths.location_id == DatCoreDataManager.get_location_id():
+        dsm = cast(
+            DatCoreDataManager,
+            get_dsm_provider(app).get(DatCoreDataManager.get_location_id()),
+        )
+        try:
+            for _id in paths.file_and_folder_ids:
+                _ = await dsm.get_file(user_id=paths.user_id, file_id=_id)
+        except DatcoreAdapterError as err:
+            raise AccessRightError(
+                user_id=paths.user_id,
+                file_id=_id,
+                location_id=DatCoreDataManager.get_location_id(),
+            ) from err
+    else:
+        raise InvalidLocationIdError(location_id=paths.location_id)
 
     return AsyncJobGet(
         job_id=AsyncJobId(f"{uuid4()}"),
