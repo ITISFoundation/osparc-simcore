@@ -200,54 +200,6 @@ async def get_containers_activity(
 
 
 @router.get(
-    "/containers/{id}/logs",
-    responses={
-        status.HTTP_404_NOT_FOUND: {
-            "description": "Container does not exists",
-        },
-        status.HTTP_500_INTERNAL_SERVER_ERROR: {"description": "Errors in container"},
-    },
-)
-@cancel_on_disconnect
-async def get_container_logs(
-    request: Request,
-    shared_store: Annotated[SharedStore, Depends(get_shared_store)],
-    container_id: str = PathParam(..., alias="id"),
-    since: int = Query(
-        default=0,
-        title="Timestamp",
-        description="Only return logs since this time, as a UNIX timestamp",
-    ),
-    until: int = Query(
-        default=0,
-        title="Timestamp",
-        description="Only return logs before this time, as a UNIX timestamp",
-    ),
-    timestamps: bool = Query(  # noqa: FBT001
-        default=False,
-        title="Display timestamps",
-        description="Enabling this parameter will include timestamps in logs",
-    ),
-) -> list[str]:
-    """Returns the logs of a given container if found"""
-    _ = request
-
-    _raise_if_container_is_missing(container_id, shared_store.container_names)
-
-    async with docker_client() as docker:
-        container_instance = await docker.containers.get(container_id)
-
-        args = {"stdout": True, "stderr": True, "since": since, "until": until}
-        if timestamps:
-            args["timestamps"] = True
-
-        container_logs: list[str] = await container_instance.log(
-            **args
-        )  # type:ignore[call-overload]
-        return container_logs
-
-
-@router.get(
     "/containers/name",
     responses={
         status.HTTP_404_NOT_FOUND: {
