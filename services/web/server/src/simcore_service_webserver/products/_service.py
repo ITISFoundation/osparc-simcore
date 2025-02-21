@@ -19,15 +19,11 @@ from .errors import (
 )
 
 
+# DEPRECATED
 def get_product_name(request: web.Request) -> str:
     """Returns product name in request but might be undefined"""
     product_name: str = request[RQ_PRODUCT_KEY]
     return product_name
-
-
-def get_product(app: web.Application, product_name: ProductName) -> Product:
-    product: Product = app[APP_PRODUCTS_KEY][product_name]
-    return product
 
 
 def get_current_product(request: web.Request) -> Product:
@@ -35,6 +31,11 @@ def get_current_product(request: web.Request) -> Product:
     product_name: ProductName = get_product_name(request)
     current_product: Product = get_product(request.app, product_name=product_name)
     return current_product
+
+
+def get_product(app: web.Application, product_name: ProductName) -> Product:
+    product: Product = app[APP_PRODUCTS_KEY][product_name]
+    return product
 
 
 def list_products(app: web.Application) -> list[Product]:
@@ -48,21 +49,13 @@ async def list_products_names(app: web.Application) -> list[ProductName]:
     return names
 
 
-async def get_current_product_credit_price_info(
-    request: web.Request,
+async def get_credit_price_info(
+    app: web.Application, product_name: ProductName
 ) -> ProductPriceInfo | None:
-    """Gets latest credit price for this product.
-
-    NOTE: Contrary to other product api functions (e.g. get_current_product) this function
-    gets the latest update from the database. Otherwise, products are loaded
-    on startup and cached therefore in those cases would require a restart
-    of the service for the latest changes to take effect.
-    """
-    current_product_name = get_product_name(request)
-    repo = ProductRepository.create_from_request(request)
+    repo = ProductRepository.create_from_app(app)
     return cast(  # mypy: not sure why
         ProductPriceInfo | None,
-        await repo.get_product_latest_price_info_or_none(current_product_name),
+        await repo.get_product_latest_price_info_or_none(product_name),
     )
 
 

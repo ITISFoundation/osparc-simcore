@@ -8,7 +8,7 @@ from simcore_postgres_database.utils_users import UsersRepo
 
 from ..db.plugin import get_database_engine
 from ..groups.api import is_user_by_email_in_group
-from ..products.service import Product
+from ..products.products_service import Product
 from ..security.api import check_password, encrypt_password
 from ._constants import MSG_UNKNOWN_EMAIL, MSG_WRONG_PASSWORD
 from .storage import AsyncpgStorage, get_plugin_storage

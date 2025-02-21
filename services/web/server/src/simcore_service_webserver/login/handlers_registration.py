@@ -23,7 +23,7 @@ from simcore_postgres_database.models.users import UserStatus
 from .._meta import API_VTAG
 from ..groups.api import auto_add_user_to_groups, auto_add_user_to_product_group
 from ..invitations.api import is_service_invitation_code
-from ..products.service import Product, get_current_product
+from ..products.products_service import Product, get_current_product
 from ..session.access_policies import (
     on_success_grant_session_access_to,
     session_access_required,

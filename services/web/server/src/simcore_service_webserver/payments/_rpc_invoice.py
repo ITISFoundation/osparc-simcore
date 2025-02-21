@@ -8,7 +8,7 @@ from models_library.products import CreditResultGet, ProductName, ProductStripeI
 from models_library.users import UserID
 from servicelib.rabbitmq import RPCRouter
 
-from ..products.service import get_credit_amount, get_product_stripe_info
+from ..products.products_service import get_credit_amount, get_product_stripe_info
 from ..rabbitmq import get_rabbitmq_rpc_server
 from ..users.api import get_user_display_and_id_names, get_user_invoice_address
 

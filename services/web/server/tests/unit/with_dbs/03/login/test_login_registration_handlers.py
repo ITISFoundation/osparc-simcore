@@ -18,7 +18,7 @@ from pytest_simcore.helpers.webserver_login import NewUser, UserInfoDict
 from servicelib.aiohttp import status
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.login._constants import MSG_USER_DELETED
-from simcore_service_webserver.products.service import get_product
+from simcore_service_webserver.products.products_service import get_product
 
 
 @pytest.mark.parametrize(

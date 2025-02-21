@@ -7,7 +7,7 @@ from models_library.users import UserID
 from pydantic import PositiveInt
 from servicelib.aiohttp.observer import register_observer, setup_observer_registry
 
-from ..products.service import get_product
+from ..products.products_service import get_product
 from ..resource_usage.service import add_credits_to_wallet
 from ..users import preferences_api
 from ..users.api import get_user_display_and_id_names

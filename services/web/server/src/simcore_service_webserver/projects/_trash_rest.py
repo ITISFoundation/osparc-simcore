@@ -15,7 +15,7 @@ from ..exception_handling import (
     to_exceptions_handlers_map,
 )
 from ..login.decorators import get_user_id, login_required
-from ..products.service import get_product_name
+from ..products.products_service import get_product_name
 from ..security.decorators import permission_required
 from . import _trash_service
 from ._common.exceptions_handlers import handle_plugin_requests_exceptions

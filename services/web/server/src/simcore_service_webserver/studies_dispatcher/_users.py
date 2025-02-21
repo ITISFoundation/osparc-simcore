@@ -29,7 +29,7 @@ from ..garbage_collector.settings import GUEST_USER_RC_LOCK_FORMAT
 from ..groups.api import auto_add_user_to_product_group
 from ..login.storage import AsyncpgStorage, get_plugin_storage
 from ..login.utils import ACTIVE, GUEST
-from ..products.service import get_product_name
+from ..products.products_service import get_product_name
 from ..redis import get_redis_lock_manager_client
 from ..security.api import (
     check_user_authorized,

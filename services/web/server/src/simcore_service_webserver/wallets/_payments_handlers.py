@@ -42,7 +42,7 @@ from ..payments.api import (
     pay_with_payment_method,
     replace_wallet_payment_autorecharge,
 )
-from ..products.service import get_credit_amount
+from ..products.products_service import get_credit_amount
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
 from ._handlers import (

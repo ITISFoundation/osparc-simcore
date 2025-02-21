@@ -19,7 +19,7 @@ from servicelib.aiohttp.typing_extension import Handler
 from servicelib.logging_errors import create_troubleshotting_log_kwargs
 
 from ..dynamic_scheduler import api as dynamic_scheduler_api
-from ..products.service import get_product_name
+from ..products.products_service import get_product_name
 from ..utils import compose_support_error_msg
 from ..utils_aiohttp import create_redirect_to_page_response
 from ._catalog import ValidService, validate_requested_service

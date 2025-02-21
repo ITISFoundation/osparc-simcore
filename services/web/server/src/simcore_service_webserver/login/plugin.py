@@ -19,7 +19,7 @@ from ..email.plugin import setup_email
 from ..email.settings import get_plugin_settings as get_email_plugin_settings
 from ..invitations.plugin import setup_invitations
 from ..products.plugin import setup_products
-from ..products.service import ProductName, list_products
+from ..products.products_service import ProductName, list_products
 from ..redis import setup_redis
 from ..rest.plugin import setup_rest
 from . import (

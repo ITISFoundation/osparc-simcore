@@ -9,7 +9,7 @@ from servicelib.aiohttp.requests_validation import (
 
 from .._meta import API_VTAG as VTAG
 from ..login.decorators import get_user_id, login_required
-from ..products.service import get_product_name
+from ..products.products_service import get_product_name
 from ..security.decorators import permission_required
 from . import _trash_services
 from ._common.exceptions_handlers import handle_plugin_requests_exceptions
