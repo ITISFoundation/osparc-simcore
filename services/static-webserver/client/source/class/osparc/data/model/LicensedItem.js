@@ -24,7 +24,6 @@ qx.Class.define("osparc.data.model.LicensedItem", {
   construct: function(licensedItemData) {
     this.base(arguments);
 
-    let categoryIcon = licensedItemData.categoryIcon || `osparc/market/${licensedItemData.categoryId}.svg`;
     let thumbnail = "";
     let date = null;
     let licensedResources = [];
@@ -47,6 +46,12 @@ qx.Class.define("osparc.data.model.LicensedItem", {
         }
         licensedResources.push(licensedItemResource);
       });
+    }
+    let categoryIcon = "@FontAwesome5Solid/shopping-bag/20";
+    if (licensedItemData.categoryIcon) {
+      categoryIcon = licensedItemData.categoryIcon;
+    } else if (qx.util.ResourceManager.getInstance().has(`osparc/market/${licensedItemData.categoryId}.svg`)) {
+      categoryIcon = `osparc/market/${licensedItemData.categoryId}.svg`;
     }
 
     this.set({
