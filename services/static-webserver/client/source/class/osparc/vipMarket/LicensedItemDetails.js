@@ -24,6 +24,10 @@ qx.Class.define("osparc.vipMarket.LicensedItemDetails", {
     const layout = new qx.ui.layout.VBox(15);
     this._setLayout(layout);
 
+    this.set({
+      allowGrowX: false,
+    });
+
     this.__populateLayout();
   },
 
