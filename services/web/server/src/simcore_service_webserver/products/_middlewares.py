@@ -8,7 +8,7 @@ from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
 
 from .._constants import APP_PRODUCTS_KEY, RQ_PRODUCT_KEY
 from .._meta import API_VTAG
-from ._model import Product
+from ._models import Product
 
 _logger = logging.getLogger(__name__)
 

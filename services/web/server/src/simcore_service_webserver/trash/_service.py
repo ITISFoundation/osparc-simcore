@@ -8,7 +8,7 @@ from models_library.products import ProductName
 from models_library.users import UserID
 from servicelib.logging_errors import create_troubleshotting_log_kwargs
 from servicelib.logging_utils import log_context
-from simcore_service_webserver.products import _api as products_service
+from simcore_service_webserver.products import _service as products_service
 
 from ..folders import folders_trash_service
 from ..projects import projects_trash_service

@@ -16,7 +16,7 @@ from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setu
 
 from .._constants import APP_SETTINGS_KEY
 from ..rabbitmq import setup_rabbitmq
-from . import _handlers, _invitations_handlers, _rpc
+from . import _rest, _rest_invitations, _rpc
 from ._events import (
     auto_create_products_groups,
     load_products_on_startup,
@@ -41,8 +41,8 @@ def setup_products(app: web.Application):
     app.middlewares.append(discover_product_middleware)
 
     # routes
-    app.router.add_routes(_handlers.routes)
-    app.router.add_routes(_invitations_handlers.routes)
+    app.router.add_routes(_rest.routes)
+    app.router.add_routes(_rest_invitations.routes)
 
     # rpc api
     setup_rabbitmq(app)

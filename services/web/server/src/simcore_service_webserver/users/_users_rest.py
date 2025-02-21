@@ -15,8 +15,8 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_query_parameters_as,
 )
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
-from simcore_service_webserver.products._api import get_current_product
-from simcore_service_webserver.products._model import Product
+from simcore_service_webserver.products._models import Product
+from simcore_service_webserver.products._service import get_current_product
 
 from .._meta import API_VTAG
 from ..exception_handling import (
