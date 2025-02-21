@@ -46,7 +46,7 @@ qx.Class.define("osparc.data.model.LicensedItem", {
       licensedItemId: licensedItemData.licensedItemId,
       categoryId: licensedItemData.categoryId,
       categoryDisplay: licensedItemData.categoryDisplay,
-      categoryIcon: licensedItemData.categoryIcon,
+      categoryIcon: licensedItemData.categoryIcon || `osparc/market/${licensedItemData.categoryId}.svg`,
       pricingPlanId: licensedItemData.pricingPlanId,
       key: licensedItemData.key,
       version: licensedItemData.version,
@@ -137,10 +137,34 @@ qx.Class.define("osparc.data.model.LicensedItem", {
     },
 
     seats: {
-      check: "Object",
+      check: "Array",
       nullable: true,
       init: null,
       event: "changeSeats",
+    },
+  },
+
+  statics: {
+    addSeatsFromPurchases: function(licensedItems, purchases) {
+      // reset seats
+      Object.values(licensedItems).forEach(licensedItem => licensedItem.setSeats([]));
+      // populate seats
+      purchases.forEach(purchase => {
+        const {
+          key,
+          version,
+        } = purchase;
+        Object.values(licensedItems).forEach(licensedItem => {
+          if (licensedItem.getKey() === key && licensedItem.getVersion() <= version) {
+            licensedItem.getSeats().push({
+              licensedItemId: purchase["licensedItemId"],
+              licensedItemPurchaseId: purchase["licensedItemPurchaseId"],
+              numOfSeats: purchase["numOfSeats"],
+              expireAt: new Date(purchase["expireAt"]),
+            });
+          }
+        });
+      })
     },
   },
 

@@ -27,28 +27,6 @@ qx.Class.define("osparc.store.LicensedItems", {
   },
 
   statics: {
-    populateSeatsFromPurchases: function(licensedItems, purchases) {
-      // reset seats
-      licensedItems.forEach(licensedItem => licensedItem["seats"] = []);
-      // populate seats
-      purchases.forEach(purchase => {
-        const {
-          key,
-          version,
-        } = purchase;
-        licensedItems.forEach(licensedItem => {
-          if (licensedItem["key"] === key && licensedItem["version"] <= version) {
-            licensedItem["seats"].push({
-              licensedItemId: purchase["licensedItemId"],
-              licensedItemPurchaseId: purchase["licensedItemPurchaseId"],
-              numOfSeats: purchase["numOfSeats"],
-              expireAt: new Date(purchase["expireAt"]),
-            });
-          }
-        });
-      })
-    },
-
     getLowerLicensedItems: function(licensedItems, key, version) {
       const lowerLicensedItems = [];
       licensedItems.forEach(licensedItem => {
@@ -98,15 +76,14 @@ qx.Class.define("osparc.store.LicensedItems", {
     __cachedLicensedItems: null,
 
     getLicensedItems: function() {
-      if (this.__licensedItems) {
-        return new Promise(resolve => resolve(this.__licensedItems));
+      if (this.__cachedLicensedItems.length) {
+        return new Promise(resolve => resolve(this.__cachedLicensedItems));
       }
 
       return osparc.data.Resources.getInstance().getAllPages("licensedItems")
-        .then(licensedItems => {
-          licensedItems.forEach(licensedItemData => this.__addLicensedItemsToCache(licensedItemData));
-          this.__licensedItems = licensedItems;
-          return this.__licensedItems;
+        .then(licensedItemsData => {
+          licensedItemsData.forEach(licensedItemData => this.__addLicensedItemsToCache(licensedItemData));
+          return this.__cachedLicensedItems;
         });
     },
 
