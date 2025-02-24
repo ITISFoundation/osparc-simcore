@@ -82,14 +82,6 @@ class ServiceMetaDataDBGet(BaseModel):
         from_attributes=True, json_schema_extra=_update_json_schema_extra
     )
 
-    _prevents_empty_strings_in_nullable_string_cols = field_validator(
-        "icon", "thumbnail", "version_display", mode="before"
-    )(
-        # NOTE: Prevents validation errors caused by empty strings
-        # mistakenly manually set instead of null in the database.
-        empty_str_to_none_pre_validator
-    )
-
 
 class ServiceMetaDataDBCreate(BaseModel):
     # primary-keys

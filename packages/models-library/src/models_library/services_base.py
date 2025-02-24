@@ -41,7 +41,10 @@ class ServiceBaseDisplay(BaseModel):
             validate_default=True,
         ),
     ] = None
-    icon: Annotated[HttpUrl | None, Field(description="URL to the service icon")] = None
+    icon: Annotated[
+        HttpUrl | None,
+        Field(description="URL to the service icon"),
+    ] = None
     description: Annotated[
         str,
         Field(
