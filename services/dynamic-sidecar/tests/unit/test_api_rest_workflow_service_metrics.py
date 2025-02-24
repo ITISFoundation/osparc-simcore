@@ -43,6 +43,7 @@ from simcore_service_dynamic_sidecar.core.docker_utils import get_container_stat
 from simcore_service_dynamic_sidecar.models.schemas.containers import (
     ContainersComposeSpec,
     ContainersCreate,
+    DcokerComposeYamlStr,
 )
 from simcore_service_dynamic_sidecar.models.shared_store import SharedStore
 from tenacity import AsyncRetrying, TryAgain
@@ -73,7 +74,7 @@ def raw_compose_spec(container_names: list[str]) -> dict[str, Any]:
 
 
 @pytest.fixture
-def compose_spec(raw_compose_spec: dict[str, Any]) -> str:
+def compose_spec(raw_compose_spec: dict[str, Any]) -> DcokerComposeYamlStr:
     return json.dumps(raw_compose_spec)
 
 
@@ -145,7 +146,7 @@ def mock_user_services_fail_to_stop(mocker: MockerFixture) -> None:
 
 async def _get_task_id_create_service_containers(
     httpx_async_client: AsyncClient,
-    compose_spec: str,
+    compose_spec: DcokerComposeYamlStr,
     mock_metrics_params: CreateServiceMetricsAdditionalParams,
 ) -> TaskId:
     containers_compose_spec = ContainersComposeSpec(

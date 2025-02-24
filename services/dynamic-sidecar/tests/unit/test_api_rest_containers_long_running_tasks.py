@@ -41,6 +41,7 @@ from simcore_service_dynamic_sidecar.core.validation import InvalidComposeSpecEr
 from simcore_service_dynamic_sidecar.models.schemas.containers import (
     ContainersComposeSpec,
     ContainersCreate,
+    DcokerComposeYamlStr,
 )
 from simcore_service_dynamic_sidecar.models.shared_store import SharedStore
 from simcore_service_dynamic_sidecar.modules.inputs import enable_inputs_pulling
@@ -150,7 +151,7 @@ def dynamic_sidecar_network_name() -> str:
         },
     ]
 )
-def compose_spec(request: pytest.FixtureRequest) -> str:
+def compose_spec(request: pytest.FixtureRequest) -> DcokerComposeYamlStr:
     spec_dict: dict[str, Any] = request.param  # type: ignore
     return json.dumps(spec_dict)
 
@@ -282,7 +283,7 @@ async def _get_task_id_pull_user_servcices_docker_images(
 
 async def _get_task_id_create_service_containers(
     httpx_async_client: AsyncClient,
-    compose_spec: str,
+    compose_spec: DcokerComposeYamlStr,
     mock_metrics_params: CreateServiceMetricsAdditionalParams,
     *args,
     **kwargs,
