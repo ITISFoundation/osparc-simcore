@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Final, TypeAlias
+from typing import Any, Final
 from uuid import uuid4
 
 from celery import Celery
@@ -9,30 +9,26 @@ from fastapi import FastAPI
 from models_library.progress_bar import ProgressReport
 from pydantic import ValidationError
 
-from .models import TaskID, TaskStatus
+from .models import TaskID, TaskIDParts, TaskStatus
 
 _PREFIX: Final = "ct"
-
-TaskIdComponents: TypeAlias = dict[str, Any]
 
 _logger = logging.getLogger(__name__)
 
 
-def _get_task_id_components(task_id_components: TaskIdComponents) -> list[str]:
+def _get_task_id_components(task_id_components: TaskIDParts) -> list[str]:
     return [f"{v}" for _, v in sorted(task_id_components.items())]
 
 
-def _get_components_prefix(
-    name: str, task_id_components: TaskIdComponents
-) -> list[str]:
-    return [_PREFIX, name, *_get_task_id_components(task_id_components)]
+def _get_components_prefix(name: str, task_id_parts: TaskIDParts) -> list[str]:
+    return [_PREFIX, name, *_get_task_id_components(task_id_parts)]
 
 
-def _get_task_id_prefix(name: str, task_id_components: TaskIdComponents) -> TaskID:
-    return "::".join(_get_components_prefix(name, task_id_components))
+def _get_task_id_prefix(name: str, task_id_parts: TaskIDParts) -> TaskID:
+    return "::".join(_get_components_prefix(name, task_id_parts))
 
 
-def _get_task_id(name: str, task_id_components: TaskIdComponents) -> TaskID:
+def _get_task_id(name: str, task_id_components: TaskIDParts) -> TaskID:
     return "::".join([*_get_components_prefix(name, task_id_components), f"{uuid4()}"])
 
 
@@ -44,9 +40,9 @@ class CeleryTaskQueueClient:
         self._celery_app = celery_app
 
     def submit(
-        self, task_name: str, *, task_id_components: TaskIdComponents, **task_params
+        self, task_name: str, *, task_id_parts: TaskIDParts, **task_params
     ) -> TaskID:
-        task_id = _get_task_id(task_name, task_id_components)
+        task_id = _get_task_id(task_name, task_id_parts)
         task = self._celery_app.send_task(
             task_name, task_id=task_id, kwargs=task_params
         )
@@ -82,11 +78,11 @@ class CeleryTaskQueueClient:
         )
 
     def _get_completed_task_ids(
-        self, task_name: str, task_id_components: TaskIdComponents
+        self, task_name: str, task_id_parts: TaskIDParts
     ) -> list[TaskID]:
         search_key = (
             _CELERY_TASK_META_PREFIX
-            + _get_task_id_prefix(task_name, task_id_components)
+            + _get_task_id_prefix(task_name, task_id_parts)
             + "*"
         )
         redis = self._celery_app.backend.client
@@ -95,10 +91,8 @@ class CeleryTaskQueueClient:
                 return [f"{key}".lstrip(_CELERY_TASK_META_PREFIX) for key in keys]
         return []
 
-    def list(
-        self, task_name: str, *, task_id_components: TaskIdComponents
-    ) -> list[TaskID]:
-        all_task_ids = self._get_completed_task_ids(task_name, task_id_components)
+    def list(self, task_name: str, *, task_id_parts: TaskIDParts) -> list[TaskID]:
+        all_task_ids = self._get_completed_task_ids(task_name, task_id_parts)
 
         for task_type in ["active", "registered", "scheduled", "revoked"]:
             if task_ids := getattr(self._celery_app.control.inspect(), task_type)():

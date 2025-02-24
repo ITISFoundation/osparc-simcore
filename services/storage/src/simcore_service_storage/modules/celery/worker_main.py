@@ -12,7 +12,7 @@ from servicelib.logging_utils import config_all_loggers
 
 from ...core.application import create_app
 from ...core.settings import ApplicationSettings
-from .common import create_app
+from .common import create_app as create_celery_app
 from .tasks import sync_archive
 from .worker import CeleryTaskQueueWorker
 
@@ -78,7 +78,7 @@ def on_worker_shutdown(sender, **_kwargs):
     asyncio.run_coroutine_threadsafe(shutdown(), loop)
 
 
-celery_app = create_app(ApplicationSettings.create_from_envs())
+celery_app = create_celery_app(ApplicationSettings.create_from_envs())
 celery_worker = CeleryTaskQueueWorker(celery_app)
 celery_app.conf["worker"] = celery_worker
 

@@ -1,9 +1,10 @@
-from typing import TypeAlias
+from typing import Any, TypeAlias
 
 from models_library.progress_bar import ProgressReport
 from pydantic import BaseModel
 
 TaskID: TypeAlias = str
+TaskIDParts: TypeAlias = dict[str, Any]
 
 
 class TaskStatus(BaseModel):
