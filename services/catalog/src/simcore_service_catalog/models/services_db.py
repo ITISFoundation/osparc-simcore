@@ -7,7 +7,8 @@ from models_library.products import ProductName
 from models_library.services_access import ServiceGroupAccessRights
 from models_library.services_base import ServiceKeyVersion
 from models_library.services_types import ServiceKey, ServiceVersion
-from pydantic import BaseModel, ConfigDict, Field
+from models_library.utils.common_validators import empty_str_to_none_pre_validator
+from pydantic import BaseModel, BeforeValidator, ConfigDict, Field
 from pydantic.config import JsonDict
 from pydantic.types import PositiveInt
 from simcore_postgres_database.models.services_compatibility import CompatiblePolicyDict
@@ -25,9 +26,24 @@ class ServiceMetaDataDBGet(BaseModel):
     name: str
     description: str
     description_ui: bool
-    thumbnail: str | None
-    icon: str | None
-    version_display: str | None
+    thumbnail: Annotated[
+        str | None,
+        # NOTE: Prevents validation errors caused by empty strings mistakenly
+        # set instead of null in the database.
+        BeforeValidator(empty_str_to_none_pre_validator),
+    ]
+    icon: Annotated[
+        str | None,
+        # NOTE: Prevents validation errors caused by empty strings mistakenly
+        # set instead of null in the database.
+        BeforeValidator(empty_str_to_none_pre_validator),
+    ]
+    version_display: Annotated[
+        str | None,
+        # NOTE: Prevents validation errors caused by empty strings mistakenly
+        # set instead of null in the database.
+        BeforeValidator(empty_str_to_none_pre_validator),
+    ]
 
     # tagging
     classifiers: list[str]
