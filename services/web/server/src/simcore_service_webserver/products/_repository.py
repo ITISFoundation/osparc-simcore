@@ -17,7 +17,7 @@ from simcore_postgres_database.utils_products_prices import (
 
 from ..db.base_repository import BaseRepository
 from ..db.models import products
-from .products_models import Product
+from .models import Product
 
 _logger = logging.getLogger(__name__)
 

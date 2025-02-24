@@ -27,7 +27,7 @@ from simcore_postgres_database.errors import UniqueViolation
 from yarl import URL
 
 from ..products import products_web
-from ..products.products_models import Product
+from ..products.models import Product
 from ..security.api import encrypt_password
 from ..session.access_policies import session_access_required
 from ..utils import MINUTE

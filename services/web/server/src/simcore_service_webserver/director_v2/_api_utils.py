@@ -5,7 +5,7 @@ from models_library.wallets import WalletID, WalletInfo
 from pydantic import TypeAdapter
 
 from ..application_settings import get_application_settings
-from ..products.products_models import Product
+from ..products.models import Product
 from ..projects import api as projects_api
 from ..users import preferences_api as user_preferences_api
 from ..users.exceptions import UserDefaultWalletNotFoundError

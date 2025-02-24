@@ -30,7 +30,7 @@ from simcore_service_webserver.invitations.settings import (
     get_plugin_settings,
 )
 from simcore_service_webserver.products import products_service
-from simcore_service_webserver.products.products_models import Product
+from simcore_service_webserver.products.models import Product
 from yarl import URL
 
 

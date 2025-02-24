@@ -29,7 +29,7 @@ from simcore_service_webserver.products._web_events import _set_app_state
 from simcore_service_webserver.products._web_middlewares import (
     discover_product_middleware,
 )
-from simcore_service_webserver.products.products_models import Product
+from simcore_service_webserver.products.models import Product
 from simcore_service_webserver.security.api import (
     check_user_authorized,
     clean_auth_policy_cache,

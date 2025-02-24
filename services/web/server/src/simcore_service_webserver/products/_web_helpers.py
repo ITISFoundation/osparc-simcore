@@ -9,7 +9,7 @@ from .._resources import webserver_resources
 from ..constants import RQ_PRODUCT_KEY
 from . import _service
 from ._web_events import APP_PRODUCTS_TEMPLATES_DIR_KEY
-from .products_models import Product
+from .models import Product
 
 
 def get_product_name(request: web.Request) -> str:

@@ -26,7 +26,7 @@ from ..director_v2.exceptions import DirectorServiceError
 from ..login.decorators import login_required
 from ..notifications import project_logs
 from ..products import products_web
-from ..products.products_models import Product
+from ..products.models import Product
 from ..security.decorators import permission_required
 from ..users import api
 from ..utils_aiohttp import envelope_json_response

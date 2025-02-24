@@ -13,7 +13,7 @@ from .errors import (
     ProductPriceNotDefinedError,
     ProductTemplateNotFoundError,
 )
-from .products_models import Product
+from .models import Product
 
 
 def get_product(app: web.Application, product_name: ProductName) -> Product:

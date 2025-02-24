@@ -20,7 +20,7 @@ from servicelib.request_keys import RQT_USERID_KEY
 from ..groups.api import list_user_groups_ids_with_read_access
 from ..login.decorators import login_required
 from ..products import products_web
-from ..products.products_models import Product
+from ..products.models import Product
 from ..resource_manager.user_sessions import managed_resource
 from ._utils import EnvironDict, SocketID, get_socket_server, register_socketio_handler
 from .messages import SOCKET_IO_HEARTBEAT_EVENT, send_message_to_user

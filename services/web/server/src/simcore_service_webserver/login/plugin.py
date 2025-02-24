@@ -19,8 +19,8 @@ from ..email.plugin import setup_email
 from ..email.settings import get_plugin_settings as get_email_plugin_settings
 from ..invitations.plugin import setup_invitations
 from ..products import products_service
+from ..products.models import ProductName
 from ..products.plugin import setup_products
-from ..products.products_models import ProductName
 from ..redis import setup_redis
 from ..rest.plugin import setup_rest
 from . import (

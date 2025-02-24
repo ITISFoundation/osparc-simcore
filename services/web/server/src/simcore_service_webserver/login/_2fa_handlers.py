@@ -10,7 +10,7 @@ from servicelib.aiohttp.requests_validation import parse_request_body_as
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 
 from ..products import products_web
-from ..products.products_models import Product
+from ..products.models import Product
 from ..session.access_policies import session_access_required
 from ._2fa_api import (
     create_2fa_code,

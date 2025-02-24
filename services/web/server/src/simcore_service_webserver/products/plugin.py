@@ -24,20 +24,18 @@ _logger = logging.getLogger(__name__)
     logger=_logger,
 )
 def setup_products(app: web.Application):
+    #
+    # NOTE: internal import speeds up booting app
+    # specially if this plugin is not set up to be loaded
+    #
     from ..constants import APP_SETTINGS_KEY
     from ..rabbitmq import setup_rabbitmq
-    from . import _rest, _rpc
-    from ._web_events import (
-        auto_create_products_groups,
-        load_products_on_startup,
-        setup_product_templates,
-    )
-    from ._web_middlewares import discover_product_middleware
+    from . import _rest, _rpc, _web_events, _web_middlewares
 
     assert app[APP_SETTINGS_KEY].WEBSERVER_PRODUCTS is True  # nosec
 
     # set middlewares
-    app.middlewares.append(discover_product_middleware)
+    app.middlewares.append(_web_middlewares.discover_product_middleware)
 
     # setup rest
     app.router.add_routes(_rest.routes)
@@ -50,7 +48,7 @@ def setup_products(app: web.Application):
     # setup events
     app.on_startup.append(
         # NOTE: must go BEFORE load_products_on_startup
-        auto_create_products_groups
+        _web_events.auto_create_products_groups
     )
-    app.on_startup.append(load_products_on_startup)
-    app.cleanup_ctx.append(setup_product_templates)
+    app.on_startup.append(_web_events.load_products_on_startup)
+    app.cleanup_ctx.append(_web_events.setup_product_templates)

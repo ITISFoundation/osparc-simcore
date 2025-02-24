@@ -27,7 +27,7 @@ from simcore_service_webserver.products._repository import ProductRepository
 from simcore_service_webserver.products._web_middlewares import (
     _get_default_product_name,
 )
-from simcore_service_webserver.products.products_models import Product
+from simcore_service_webserver.products.models import Product
 
 
 @pytest.fixture

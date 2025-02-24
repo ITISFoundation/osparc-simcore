@@ -14,7 +14,7 @@ from servicelib.utils_secrets import generate_passcode
 
 from ..email.utils import send_email_from_template
 from ..products import products_web
-from ..products.products_models import Product
+from ..products.models import Product
 
 _logger = logging.getLogger(__name__)
 

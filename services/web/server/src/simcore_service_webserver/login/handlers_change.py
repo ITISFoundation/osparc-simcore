@@ -12,7 +12,7 @@ from simcore_service_webserver.db.plugin import get_database_engine
 
 from .._meta import API_VTAG
 from ..products import products_web
-from ..products.products_models import Product
+from ..products.models import Product
 from ..security.api import check_password, encrypt_password
 from ..utils import HOUR
 from ..utils_rate_limiting import global_rate_limit_route
