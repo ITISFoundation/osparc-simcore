@@ -32,8 +32,18 @@ qx.Class.define("osparc.data.model.User", {
     const groupId = ("gid" in userData) ? parseInt(userData["gid"]) : parseInt(userData["groupId"]);
     const username = userData["userName"];
     const email = ("login" in userData) ? userData["login"] : userData["email"];
-    const firstName = ("first_name" in userData) ? userData["first_name"] : userData["firstName"];
-    const lastName = ("last_name" in userData) ? userData["last_name"] : userData["lastName"];
+    let firstName = "";
+    if (userData["first_name"]) {
+      firstName = userData["first_name"];
+    } else if (userData["firstName"]) {
+      firstName = userData["firstName"];
+    }
+    let lastName = "";
+    if (userData["last_name"]) {
+      lastName = userData["last_name"];
+    } else if (userData["lastName"]) {
+      lastName = userData["lastName"];
+    }
     let description = [firstName, lastName].join(" ").trim(); // the null values will be replaced by empty strings
     if (email) {
       if (description) {
