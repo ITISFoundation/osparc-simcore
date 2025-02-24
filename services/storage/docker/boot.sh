@@ -58,9 +58,9 @@ if [ "${SC_BOOT_MODE}" = "debug" ]; then
 else
   if [ "${STORAGE_WORKER_MODE}" = "True" ]; then
     exec celery \
-      --app=simcore_service_storage.modules.celery.worker.setup \
-      worker --task-events --pool=threads \
-      --loglevel=DEBUG
+      --app=simcore_service_storage.modules.celery.worker_main \
+      worker --pool=threads \
+      --loglevel="${SERVER_LOG_LEVEL}"
   else
     exec uvicorn simcore_service_storage.main:app \
       --host 0.0.0.0 \
