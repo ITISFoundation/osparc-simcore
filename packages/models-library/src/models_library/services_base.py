@@ -67,6 +67,6 @@ class ServiceBaseDisplay(BaseModel):
         ),
     ] = None
 
-    _empty_is_none = field_validator("thumbnail", mode="before")(
-        empty_str_to_none_pre_validator
-    )
+    _empty_is_none = field_validator(
+        "icon", "thumbnail", "version_display", mode="before"
+    )(empty_str_to_none_pre_validator)

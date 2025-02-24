@@ -8,7 +8,7 @@ from models_library.services_access import ServiceGroupAccessRights
 from models_library.services_base import ServiceKeyVersion
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.utils.common_validators import empty_str_to_none_pre_validator
-from pydantic import BaseModel, BeforeValidator, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from pydantic.config import JsonDict
 from pydantic.types import PositiveInt
 from simcore_postgres_database.models.services_compatibility import CompatiblePolicyDict
@@ -26,24 +26,9 @@ class ServiceMetaDataDBGet(BaseModel):
     name: str
     description: str
     description_ui: bool
-    thumbnail: Annotated[
-        str | None,
-        # NOTE: Prevents validation errors caused by empty strings mistakenly
-        # set instead of null in the database.
-        BeforeValidator(empty_str_to_none_pre_validator),
-    ]
-    icon: Annotated[
-        str | None,
-        # NOTE: Prevents validation errors caused by empty strings mistakenly
-        # set instead of null in the database.
-        BeforeValidator(empty_str_to_none_pre_validator),
-    ]
-    version_display: Annotated[
-        str | None,
-        # NOTE: Prevents validation errors caused by empty strings mistakenly
-        # set instead of null in the database.
-        BeforeValidator(empty_str_to_none_pre_validator),
-    ]
+    thumbnail: str | None
+    icon: str | None
+    version_display: str | None
 
     # tagging
     classifiers: list[str]
@@ -97,6 +82,14 @@ class ServiceMetaDataDBGet(BaseModel):
         from_attributes=True, json_schema_extra=_update_json_schema_extra
     )
 
+    _prevents_empty_strings_in_nullable_string_cols = field_validator(
+        "icon", "thumbnail", "version_display", mode="before"
+    )(
+        # NOTE: Prevents validation errors caused by empty strings
+        # mistakenly manually set instead of null in the database.
+        empty_str_to_none_pre_validator
+    )
+
 
 class ServiceMetaDataDBCreate(BaseModel):
     # primary-keys
@@ -139,6 +132,13 @@ class ServiceMetaDataDBCreate(BaseModel):
 
     model_config = ConfigDict(json_schema_extra=_update_json_schema_extra)
 
+    _prevents_empty_strings_in_nullable_string_cols = field_validator(
+        "icon", "thumbnail", "version_display", mode="before"
+    )(
+        # NOTE: Prevents empty strings in nullable string columns
+        empty_str_to_none_pre_validator
+    )
+
 
 class ServiceMetaDataDBPatch(BaseModel):
     # ownership
@@ -175,6 +175,13 @@ class ServiceMetaDataDBPatch(BaseModel):
 
     model_config = ConfigDict(json_schema_extra=_update_json_schema_extra)
 
+    _prevents_empty_strings_in_nullable_string_cols = field_validator(
+        "icon", "thumbnail", "version_display", mode="before"
+    )(
+        # NOTE: Prevents empty strings in nullable string columns
+        empty_str_to_none_pre_validator
+    )
+
 
 class ReleaseDBGet(BaseModel):
     version: ServiceVersion
@@ -205,6 +212,14 @@ class ServiceWithHistoryDBGet(BaseModel):
     deprecated: datetime | None
     # releases
     history: list[ReleaseDBGet]
+
+    _prevents_empty_strings_in_nullable_string_cols = field_validator(
+        "icon", "thumbnail", "version_display", mode="before"
+    )(
+        # NOTE: Prevents validation errors caused by empty strings
+        # mistakenly manually set instead of null in the database.
+        empty_str_to_none_pre_validator
+    )
 
 
 assert (  # nosec
