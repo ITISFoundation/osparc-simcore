@@ -33,7 +33,7 @@ from simcore_postgres_database.models.products import (
 )
 from sqlalchemy import Column
 
-from ..statics._constants import FRONTEND_APPS_AVAILABLE
+from ..constants import FRONTEND_APPS_AVAILABLE
 
 _logger = logging.getLogger(__name__)
 
