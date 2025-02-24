@@ -45,7 +45,6 @@ qx.Class.define("osparc.store.Tags", {
           tagsData.forEach(tagData => {
             const tag = this.__addToCache(tagData);
             tags.push(tag);
-            this.fetchAccessRights(tag);
           });
           return tags;
         });
@@ -106,7 +105,11 @@ qx.Class.define("osparc.store.Tags", {
         .catch(console.error);
     },
 
-    fetchAccessRights: function(tag) {
+    fetchAccessRights: function(tag, reload = false) {
+      if (reload === false && tag.getAccessRights() !== null) {
+        return new Promise(resolve => resolve());
+      }
+
       const params = {
         url: {
           "tagId": tag.getTagId()

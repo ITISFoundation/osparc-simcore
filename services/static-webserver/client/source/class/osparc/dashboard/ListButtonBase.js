@@ -66,14 +66,7 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
       let control;
       switch (id) {
         case "icon": {
-          control = new osparc.ui.basic.Thumbnail(null, this.self().ITEM_HEIGHT, this.self().ITEM_HEIGHT).set({
-            minHeight: this.self().ITEM_HEIGHT,
-            minWidth: this.self().ITEM_HEIGHT
-          });
-          control.getChildControl("image").set({
-            anonymous: true,
-            decorator: "rounded",
-          });
+          control = osparc.dashboard.CardBase.createCardIcon();
           this._add(control, {
             row: 0,
             column: osparc.dashboard.ListButtonBase.POS.THUMBNAIL
@@ -124,7 +117,7 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
         case "project-status":
           control = new qx.ui.basic.Image().set({
             alignY: "middle",
-            textColor: "status_icon",
+            textColor: "text",
             height: 12,
             width: 12
           });
@@ -143,6 +136,7 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
         image.set({
           source: value
         });
+        osparc.utils.Utils.setAltToImage(image, "card-icon");
       }
     },
 

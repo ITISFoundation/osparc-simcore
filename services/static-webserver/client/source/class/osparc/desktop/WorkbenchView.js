@@ -49,7 +49,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     decorateSlider: function(slider) {
       slider.set({
         width: 2,
-        backgroundColor: "#007fd4", // Visual Studio blue
+        backgroundColor: "visual-blue",
         opacity: 1
       });
     },

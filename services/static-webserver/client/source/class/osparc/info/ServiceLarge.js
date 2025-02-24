@@ -225,15 +225,10 @@ qx.Class.define("osparc.info.ServiceLarge", {
 
     __createIcon: function() {
       const serviceIcon = this.getService()["icon"] || "osparc/no_photography_black_24dp.svg";
-      const iconSize = osparc.dashboard.GridButtonBase.ICON_SIZE;
-      const icon = new osparc.ui.basic.Thumbnail(serviceIcon, iconSize, iconSize).set({
-        minHeight: iconSize,
-        minWidth: iconSize,
+      const icon = osparc.dashboard.CardBase.createCardIcon().set({
+        source: serviceIcon,
       });
-      icon.getChildControl("image").set({
-        minWidth: iconSize,
-        minHeight: iconSize,
-      });
+      osparc.utils.Utils.setAltToImage(icon.getChildControl("image"), "card-icon");
       return icon;
     },
 

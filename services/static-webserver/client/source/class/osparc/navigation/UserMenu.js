@@ -22,7 +22,7 @@ qx.Class.define("osparc.navigation.UserMenu", {
     this.base(arguments);
 
     this.set({
-      font: "text-14"
+      appearance: "menu-wider",
     });
   },
 
@@ -180,8 +180,6 @@ qx.Class.define("osparc.navigation.UserMenu", {
       this.addSeparator();
 
       this.getChildControl("log-out");
-
-      osparc.utils.Utils.prettifyMenu(this);
     },
 
     __addAnnouncements: function() {
@@ -244,8 +242,6 @@ qx.Class.define("osparc.navigation.UserMenu", {
       }
       this.addSeparator();
       this.getChildControl("log-out");
-
-      osparc.utils.Utils.prettifyMenu(this);
     }
   }
 });

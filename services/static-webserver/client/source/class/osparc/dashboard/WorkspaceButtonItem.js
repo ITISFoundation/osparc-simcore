@@ -188,9 +188,10 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
         const menuButton = this.getChildControl("menu-button");
         menuButton.setVisibility("visible");
 
-        const menu = new qx.ui.menu.Menu();
-        menu.setPosition("bottom-right");
-        osparc.utils.Utils.prettifyMenu(menu);
+        const menu = new qx.ui.menu.Menu().set({
+          appearance: "menu-wider",
+          position: "bottom-right",
+        });
 
         const studyBrowserContext = osparc.store.Store.getInstance().getStudyBrowserContext();
         if (
