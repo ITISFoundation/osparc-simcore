@@ -52,7 +52,7 @@ class CeleryTaskQueueClient:
         return self._celery_app.tasks(task_id)
 
     def cancel(self, task_id: TaskID) -> None:
-        AbortableAsyncResult(task_id, app=self._celery_app).abort()
+        AbortableAsyncResult(task_id).abort()
 
     def _get_async_result(self, task_id: TaskID) -> AsyncResult:
         return self._celery_app.AsyncResult(task_id)
