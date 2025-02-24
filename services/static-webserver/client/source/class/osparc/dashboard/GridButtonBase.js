@@ -47,7 +47,6 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
     TITLE_PADDING: 6,
     SPACING_IN: 5,
     SPACING: 15,
-    ICON_SIZE: 32,
     THUMBNAIL_SIZE: 50,
     POS: {
       TITLE: {
@@ -178,17 +177,7 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
           break;
         }
         case "icon": {
-          control = new osparc.ui.basic.Thumbnail(null, this.self().ICON_SIZE, this.self().ICON_SIZE).set({
-            minHeight: this.self().ICON_SIZE,
-            minWidth: this.self().ICON_SIZE,
-          });
-          control.getChildControl("image").set({
-            anonymous: true,
-            alignY: "top",
-            alignX: "left",
-            allowGrowX: true,
-            allowGrowY: true,
-          });
+          control = osparc.dashboard.CardBase.createCardIcon();
           layout = this.getChildControl("header");
           layout.add(control, {
             column: 0,

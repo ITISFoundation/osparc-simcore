@@ -1065,6 +1065,13 @@ qx.Class.define("osparc.utils.Utils", {
       }
     },
 
+    setAltToImage: (qWidget, altText) => {
+      if (qWidget.getContentElement && qWidget.getContentElement()) {
+        qWidget.getContentElement().removeAttribute("alt");
+        qWidget.getContentElement().setAttribute("alt", altText);
+      }
+    },
+
     // Function that creates a unique tabId even for duplicated tabs
     getClientSessionID: function() {
       const getUniqueSessionId = () => {
