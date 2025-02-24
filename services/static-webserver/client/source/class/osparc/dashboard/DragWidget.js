@@ -71,7 +71,7 @@ qx.Class.define("osparc.dashboard.DragWidget", {
     __dropAllowed: function(allowed) {
       this.getChildControl("allowed-icon").set({
         source: allowed ? "@FontAwesome5Solid/check/14" : "@FontAwesome5Solid/times/14",
-        textColor: allowed ? "default-button-text" : "danger-red",
+        textColor: allowed ? "white" : "danger-red",
       });
     },
 

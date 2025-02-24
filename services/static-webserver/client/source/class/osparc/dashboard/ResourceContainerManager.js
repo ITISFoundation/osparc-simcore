@@ -248,15 +248,17 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       container.add(card);
 
       if (this.getMode() === "list") {
+        const fitToContainer = () => {
+          const bounds = container.getBounds() || container.getSizeHint();
+          card.setWidth(bounds.width);
+        };
         [
           "appear",
           "resize",
         ].forEach(ev => {
-          container.addListener(ev, () => {
-            const bounds = container.getBounds() || container.getSizeHint();
-            card.setWidth(bounds.width);
-          });
+          container.addListener(ev, () => fitToContainer());
         });
+        fitToContainer();
       }
     },
 

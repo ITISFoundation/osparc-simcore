@@ -256,15 +256,6 @@ qx.Class.define("osparc.utils.Utils", {
       }, 2*onTime);
     },
 
-    prettifyMenu: function(menu) {
-      menu.setAppearance("menu-wider");
-      menu.getChildren().forEach(menuItem => {
-        if (menuItem.classname !== "qx.ui.menu.Separator") {
-          menuItem.setPadding(4);
-        }
-      });
-    },
-
     hardRefresh: function() {
       // https://stackoverflow.com/questions/5721704/window-location-reload-with-clear-cache
       // No cigar. Tried:
@@ -1071,6 +1062,13 @@ qx.Class.define("osparc.utils.Utils", {
     setKeyToWidget: (qWidget, id) => {
       if (qWidget.getContentElement && qWidget.getContentElement()) {
         qWidget.getContentElement().setAttribute("osparc-test-key", id);
+      }
+    },
+
+    setAltToImage: (qWidget, altText) => {
+      if (qWidget.getContentElement && qWidget.getContentElement()) {
+        qWidget.getContentElement().removeAttribute("alt");
+        qWidget.getContentElement().setAttribute("alt", altText);
       }
     },
 

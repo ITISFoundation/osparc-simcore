@@ -46,7 +46,7 @@ qx.Class.define("osparc.navigation.LogoOnOff", {
       check: "Boolean",
       init: false,
       nullable: false,
-      apply: "_applyOnline"
+      apply: "__applyOnline"
     }
   },
 
@@ -64,6 +64,7 @@ qx.Class.define("osparc.navigation.LogoOnOff", {
         }
         case "off-logo": {
           control = new qx.ui.basic.Image("osparc/offline.svg");
+          osparc.utils.Utils.setAltToImage(control, "offline");
           const container = this.getChildControl("off-logo-container");
           container.add(control, {
             flex: 1
@@ -80,7 +81,7 @@ qx.Class.define("osparc.navigation.LogoOnOff", {
       return control || this.base(arguments, id);
     },
 
-    _applyOnline: function(value) {
+    __applyOnline: function(value) {
       this.setSelection([this.getSelectables()[value ? 1 : 0]]);
     }
   }
