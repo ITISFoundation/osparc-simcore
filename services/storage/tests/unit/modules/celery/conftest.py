@@ -7,15 +7,13 @@ from celery import Celery
 from celery.contrib.testing.worker import TestWorkController, start_worker
 from celery.signals import worker_init, worker_shutdown
 from fastapi import FastAPI
+from simcore_service_storage.main import CeleryTaskQueueClient
 from simcore_service_storage.main import celery_app as celery_app_client
-from simcore_service_storage.modules.celery.client import CeleryClientInterface
-from simcore_service_storage.modules.celery.worker._interface import (
-    CeleryWorkerInterface,
-)
-from simcore_service_storage.modules.celery.worker.setup import (
+from simcore_service_storage.modules.celery.worker import CeleryTaskQueueWorker
+from simcore_service_storage.modules.celery.worker_main import (
     celery_app as celery_app_worker,
 )
-from simcore_service_storage.modules.celery.worker.setup import (
+from simcore_service_storage.modules.celery.worker_main import (
     on_worker_init,
     on_worker_shutdown,
 )
@@ -41,8 +39,8 @@ _CELERY_CONF = {
 def client_celery_app() -> Celery:
     celery_app_client.conf.update(_CELERY_CONF)
 
-    assert isinstance(celery_app_client.conf["client_interface"], CeleryClientInterface)
-    assert "worker_interface" not in celery_app_client.conf
+    assert isinstance(celery_app_client.conf["client"], CeleryTaskQueueClient)
+    assert "worker" not in celery_app_client.conf
     assert "loop" not in celery_app_client.conf
     assert "fastapi_app" not in celery_app_client.conf
 
@@ -72,9 +70,7 @@ def celery_worker(
     ) as worker:
         worker_init.send(sender=worker)
 
-        assert isinstance(
-            celery_app_worker.conf["worker_interface"], CeleryWorkerInterface
-        )
+        assert isinstance(celery_app_worker.conf["worker"], CeleryTaskQueueWorker)
         assert isinstance(celery_app_worker.conf["loop"], AbstractEventLoop)
         assert isinstance(celery_app_worker.conf["fastapi_app"], FastAPI)
 

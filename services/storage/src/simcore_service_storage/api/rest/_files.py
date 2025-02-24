@@ -33,6 +33,7 @@ from ...models import (
     StorageQueryParamsBase,
     UploadLinks,
 )
+from ...modules.celery.client import get_client
 from ...modules.long_running_tasks import get_completed_upload_tasks
 from ...simcore_s3_dsm import SimcoreS3DataManager
 from ...utils.utils import create_upload_completion_task_name
@@ -55,6 +56,15 @@ async def list_files_metadata(
     location_id: LocationID,
     request: Request,
 ):
+    c = get_client(request.app)
+    components = {"user_id": 1}
+
+    task_id = c.submit("sync_archive", task_id_components=components, files=["aaa.xyz"])
+    _logger.info("Submitted task: %s", task_id)
+
+    task_ids = c.list("sync_archive", task_id_components=components)
+    _logger.info("%s", task_ids)
+
     dsm = get_dsm_provider(request.app).get(location_id)
     data: list[FileMetaData] = await dsm.list_files(
         user_id=query_params.user_id,

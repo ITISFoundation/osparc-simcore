@@ -1,15 +1,21 @@
 import logging
+from asyncio import AbstractEventLoop
 from typing import Callable
 
 from celery import Celery
 from models_library.progress_bar import ProgressReport
 
-from ..models import TaskID
+from .models import TaskID
 
 _logger = logging.getLogger(__name__)
 
 
-class CeleryWorkerInterface:
+def get_event_loop(celery_app: Celery) -> AbstractEventLoop:  # nosec
+    loop: AbstractEventLoop = celery_app.conf["loop"]
+    return loop
+
+
+class CeleryTaskQueueWorker:
     def __init__(self, celery_app: Celery) -> None:
         self.celery_app = celery_app
 
@@ -25,3 +31,8 @@ class CeleryWorkerInterface:
             state="PROGRESS",
             meta=report.model_dump(mode="json"),
         )
+
+
+def get_worker(celery_app: Celery) -> CeleryTaskQueueWorker:
+    worker: CeleryTaskQueueWorker = celery_app.conf["worker"]
+    return worker

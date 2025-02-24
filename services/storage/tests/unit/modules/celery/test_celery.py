@@ -7,21 +7,20 @@ from celery import Celery, Task
 from celery.contrib.abortable import AbortableTask
 from models_library.progress_bar import ProgressReport
 from simcore_service_storage.main import fastapi_app
-from simcore_service_storage.modules.celery.client._interface import TaskIdComponents
+from simcore_service_storage.modules.celery.celery_task_queue_client import (
+    TaskIdComponents,
+)
 from simcore_service_storage.modules.celery.client.utils import (
     get_celery_client_interface,
 )
-from simcore_service_storage.modules.celery.worker.utils import (
-    get_loop,
-    get_worker_interface,
-)
+from simcore_service_storage.modules.celery.worker.utils import get_loop, get_worker
 from tenacity import Retrying, retry_if_exception_type, stop_after_delay, wait_fixed
 
 
 async def _async_archive(
     celery_app: Celery, task_name: str, task_id: str, files: list[str]
 ) -> str:
-    worker_interface = get_worker_interface(celery_app)
+    worker_interface = get_worker(celery_app)
 
     for n in range(len(files)):
         worker_interface.set_progress(

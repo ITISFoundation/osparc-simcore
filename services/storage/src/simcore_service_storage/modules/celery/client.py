@@ -5,10 +5,11 @@ from uuid import uuid4
 from celery import Celery
 from celery.contrib.abortable import AbortableAsyncResult
 from celery.result import AsyncResult
+from fastapi import FastAPI
 from models_library.progress_bar import ProgressReport
 from pydantic import ValidationError
 
-from ..models import TaskID, TaskStatus
+from .models import TaskID, TaskStatus
 
 _PREFIX: Final = "ct"
 
@@ -38,7 +39,7 @@ def _get_task_id(name: str, task_id_components: TaskIdComponents) -> TaskID:
 _CELERY_TASK_META_PREFIX = "celery-task-meta-"
 
 
-class CeleryClientInterface:
+class CeleryTaskQueueClient:
     def __init__(self, celery_app: Celery):
         self._celery_app = celery_app
 
@@ -104,3 +105,10 @@ class CeleryClientInterface:
                 all_task_ids.extend(task_ids)
 
         return all_task_ids
+
+
+def get_client(fastapi: FastAPI) -> CeleryTaskQueueClient:
+    celery = fastapi.state.celery_app
+    assert isinstance(celery, Celery)
+
+    return celery.conf["client"]
