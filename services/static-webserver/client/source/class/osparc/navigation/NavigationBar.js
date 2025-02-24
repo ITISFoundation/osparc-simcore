@@ -296,7 +296,8 @@ qx.Class.define("osparc.navigation.NavigationBar", {
 
     __createHelpMenuBtn: function() {
       const menu = new qx.ui.menu.Menu().set({
-        position: "top-right"
+        position: "top-right",
+        appearance: "menu-wider",
       });
       const menuButton = new qx.ui.form.MenuButton(null, "@FontAwesome5Regular/question-circle/22", menu).set({
         backgroundColor: "transparent"
@@ -313,8 +314,6 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       // feedback
       osparc.store.Support.addSupportButtonsToMenu(menu, menuButton);
       osparc.store.Support.addReleaseNotesToMenu(menu);
-
-      osparc.utils.Utils.prettifyMenu(menu);
 
       return menuButton;
     },
