@@ -50,16 +50,16 @@ async def empty_trash(request: web.Request):
     user_id = get_user_id(request)
     product_name = get_product_name(request)
 
-    is_running = asyncio.Event()
+    is_fired = asyncio.Event()
 
-    async def _run():
-        is_running.set()
+    async def _empty_trash():
+        is_fired.set()
         await _service.safe_empty_trash(
             request.app, product_name=product_name, user_id=user_id
         )
 
     fire_and_forget_task(
-        _run(),
+        _empty_trash(),
         task_suffix_name="rest.empty_trash",
         fire_and_forget_tasks_collection=request.app[APP_FIRE_AND_FORGET_TASKS_KEY],
     )
@@ -68,6 +68,6 @@ async def empty_trash(request: web.Request):
     # when the front-end requests the trash item list,
     # it may still display items, misleading the user into
     # thinking the `empty trash` operation failed.
-    await is_running.wait()
+    await is_fired.wait()
 
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
