@@ -228,6 +228,7 @@ qx.Class.define("osparc.info.ServiceLarge", {
       const icon = osparc.dashboard.CardBase.createCardIcon().set({
         source: serviceIcon,
       });
+      osparc.utils.Utils.setAltToImage(icon.getChildControl("image"), "card-icon");
       return icon;
     },
 

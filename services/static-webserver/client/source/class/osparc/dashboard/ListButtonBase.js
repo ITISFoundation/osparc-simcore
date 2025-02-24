@@ -136,6 +136,7 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
         image.set({
           source: value
         });
+        osparc.utils.Utils.setAltToImage(image, "card-icon");
       }
     },
 

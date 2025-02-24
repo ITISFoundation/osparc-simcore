@@ -286,6 +286,7 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
         image.set({
           source: value,
         });
+        osparc.utils.Utils.setAltToImage(image, "card-icon");
       }
     },
 

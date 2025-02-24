@@ -80,7 +80,6 @@ qx.Class.define("osparc.dashboard.CardBase", {
         minWidth: iconSize,
         minHeight: iconSize,
       });
-      osparc.utils.Utils.setAltToImage(icon.getChildControl("image"), "card-icon");
       return icon
     },
 
