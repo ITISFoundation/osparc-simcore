@@ -50,6 +50,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       paddingLeft: 10,
       paddingRight: 10,
       height: this.self().HEIGHT,
+      backgroundColor: "background-main-1",
     });
 
     osparc.utils.Utils.setIdToWidget(this, "navigationBar");
@@ -91,11 +92,6 @@ qx.Class.define("osparc.navigation.NavigationBar", {
     },
 
     __buildLayout: function() {
-      const colorStr = qx.theme.manager.Color.getInstance().resolve("background-main-1");
-      const color = qx.util.ColorUtil.stringToRgb(colorStr);
-      this.getContentElement().setStyles({
-        "background": `linear-gradient(0deg, rgba(1, 18, 26, 0.1) 0%, ${qx.util.ColorUtil.rgbToRgbString(color)} 4%)`
-      });
       this.getChildControl("left-items");
       this.getChildControl("center-items");
       this.getChildControl("right-items");
