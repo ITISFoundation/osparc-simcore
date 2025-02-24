@@ -68,7 +68,7 @@ qx.Class.define("osparc.vipMarket.Market", {
         .then(values => {
           const licensedItems = values[0];
           const purchasedItems = values[1];
-          osparc.store.LicensedItems.populateSeatsFromPurchases(licensedItems, purchasedItems);
+          osparc.data.model.LicensedItem.addSeatsFromPurchases(licensedItems, purchasedItems);
           const categories = [];
           const availableCategory = {
             categoryId: "availableModels",
@@ -78,21 +78,21 @@ qx.Class.define("osparc.vipMarket.Market", {
           };
           categories.push(availableCategory);
           let openCategory = null;
-          licensedItems.forEach(licensedItem => {
-            if (licensedItem["seats"].length) {
+          Object.values(licensedItems).forEach(licensedItem => {
+            if (licensedItem.getSeats().length) {
               availableCategory["items"].push(licensedItem);
               if (!this.__reqOpenCategory) {
                 openCategory = availableCategory["categoryId"];
               }
             }
-            if (licensedItem && licensedItem["categoryId"]) {
-              const categoryId = licensedItem["categoryId"];
+            if (licensedItem && licensedItem.getCategoryId()) {
+              const categoryId = licensedItem.getCategoryId();
               let category = categories.find(cat => cat["categoryId"] === categoryId);
               if (!category) {
                 category = {
                   categoryId,
-                  label: licensedItem["categoryDisplay"] || "Category",
-                  icon: licensedItem["categoryIcon"] || `osparc/market/${categoryId}.svg`,
+                  label: licensedItem.getCategoryDisplay() || "Category",
+                  icon: licensedItem.getCategoryIcon(),
                   items: [],
                 };
                 if (!openCategory) {
@@ -121,8 +121,9 @@ qx.Class.define("osparc.vipMarket.Market", {
       licensedItemsStore.getLicensedItems()
         .then(async licensedItems => {
           this.__freeItems = [];
-          for (const licensedItem of licensedItems) {
-            const pricingUnits = await osparc.store.Pricing.getInstance().fetchPricingUnits(licensedItem["pricingPlanId"]);
+          const licensedItemsArr = Object.values(licensedItems);
+          for (const licensedItem of licensedItemsArr) {
+            const pricingUnits = await osparc.store.Pricing.getInstance().fetchPricingUnits(licensedItem.getPricingPlanId());
             if (pricingUnits.length === 1 && pricingUnits[0].getCost() === 0) {
               this.__freeItems.push(licensedItem);
             }
@@ -164,10 +165,10 @@ qx.Class.define("osparc.vipMarket.Market", {
         .then(values => {
           const licensedItems = values[0];
           const purchasedItems = values[1];
-          osparc.store.LicensedItems.populateSeatsFromPurchases(licensedItems, purchasedItems);
+          osparc.data.model.LicensedItem.addSeatsFromPurchases(licensedItems, purchasedItems);
           let items = [];
-          licensedItems.forEach(licensedItem => {
-            if (licensedItem["seats"].length) {
+          Object.values(licensedItems).forEach(licensedItem => {
+            if (licensedItem.getSeats().length) {
               items.push(licensedItem);
             }
           });

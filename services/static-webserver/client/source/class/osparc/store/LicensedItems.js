@@ -23,31 +23,10 @@ qx.Class.define("osparc.store.LicensedItems", {
     this.base(arguments);
 
     this.__licensedItems = null;
+    this.__cachedLicensedItems = {};
   },
 
   statics: {
-    populateSeatsFromPurchases: function(licensedItems, purchases) {
-      // reset seats
-      licensedItems.forEach(licensedItem => licensedItem["seats"] = []);
-      // populate seats
-      purchases.forEach(purchase => {
-        const {
-          key,
-          version,
-        } = purchase;
-        licensedItems.forEach(licensedItem => {
-          if (licensedItem["key"] === key && licensedItem["version"] <= version) {
-            licensedItem["seats"].push({
-              licensedItemId: purchase["licensedItemId"],
-              licensedItemPurchaseId: purchase["licensedItemPurchaseId"],
-              numOfSeats: purchase["numOfSeats"],
-              expireAt: new Date(purchase["expireAt"]),
-            });
-          }
-        });
-      })
-    },
-
     getLowerLicensedItems: function(licensedItems, key, version) {
       const lowerLicensedItems = [];
       licensedItems.forEach(licensedItem => {
@@ -69,42 +48,27 @@ qx.Class.define("osparc.store.LicensedItems", {
       });
       return nSeats;
     },
-
-    licensedResourceTitle: function(licensedResource) {
-      const name = licensedResource["source"]["features"]["name"] || osparc.store.LicensedItems.extractNameFromDescription(licensedResource);
-      const version = licensedResource["source"]["features"]["version"] || "";
-      const functionality = licensedResource["source"]["features"]["functionality"] || "Static";
-      return `${name} ${version}, ${functionality}`;
-    },
-
-    extractNameFromDescription: function(licensedResource) {
-      const description = licensedResource["source"]["description"] || "";
-      const delimiter = " - ";
-      let typeAndName = description.split(delimiter);
-      if (typeAndName.length > 1) {
-        // drop the type
-        typeAndName.shift();
-        // join the name
-        typeAndName = typeAndName.join(delimiter);
-        return typeAndName;
-      }
-      return "";
-    },
   },
 
   members: {
     __licensedItems: null,
+    __cachedLicensedItems: null,
 
     getLicensedItems: function() {
-      if (this.__licensedItems) {
-        return new Promise(resolve => resolve(this.__licensedItems));
+      if (this.__cachedLicensedItems.length) {
+        return new Promise(resolve => resolve(this.__cachedLicensedItems));
       }
 
       return osparc.data.Resources.getInstance().getAllPages("licensedItems")
-        .then(licensedItems => {
-          this.__licensedItems = licensedItems;
-          return this.__licensedItems;
+        .then(licensedItemsData => {
+          licensedItemsData.forEach(licensedItemData => this.__addLicensedItemsToCache(licensedItemData));
+          return this.__cachedLicensedItems;
         });
+    },
+
+    __addLicensedItemsToCache: function(licensedItemData) {
+      const licensedItem = new osparc.data.model.LicensedItem(licensedItemData);
+      this.__cachedLicensedItems[licensedItem.getLicensedItemId()] = licensedItem;
     },
 
     getPurchasedLicensedItems: function(walletId, urlParams, options = {}) {

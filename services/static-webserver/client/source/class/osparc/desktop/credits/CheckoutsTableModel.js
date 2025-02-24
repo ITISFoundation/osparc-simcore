@@ -131,7 +131,7 @@ qx.Class.define("osparc.desktop.credits.CheckoutsTableModel", {
             const checkoutsCols = osparc.desktop.credits.CheckoutsTable.COLS;
             checkoutsItems.forEach(checkoutsItem => {
               const licensedItemId = checkoutsItem["licensedItemId"];
-              const licensedItem = licensedItems.find(licItem => licItem["licensedItemId"] === licensedItemId);
+              const licensedItem = licensedItems[licensedItemId];
               let start = "";
               let duration = "";
               if (checkoutsItem["startedAt"]) {
@@ -143,7 +143,7 @@ qx.Class.define("osparc.desktop.credits.CheckoutsTableModel", {
               data.push({
                 [checkoutsCols.CHECKOUT_ID.id]: checkoutsItem["licensedItemCheckoutId"],
                 [checkoutsCols.ITEM_ID.id]: licensedItemId,
-                [checkoutsCols.ITEM_LABEL.id]: licensedItem ? licensedItem["displayName"] : "unknown model",
+                [checkoutsCols.ITEM_LABEL.id]: licensedItem ? licensedItem.getDisplayName() : "unknown model",
                 [checkoutsCols.START.id]: start,
                 [checkoutsCols.DURATION.id]: duration,
                 [checkoutsCols.SEATS.id]: checkoutsItem["numOfSeats"],
