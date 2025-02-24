@@ -234,13 +234,15 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
     },
 
     __titleTapped: function() {
-      const workspaceId = this.getCurrentWorkspaceId();
-      const folderId = null;
-      this.setCurrentFolderId(folderId);
-      this.fireDataEvent("locationChanged", {
-        workspaceId,
-        folderId,
-      });
+      if (osparc.store.Store.getInstance().getStudyBrowserContext() === "studiesAndFolders") {
+        const workspaceId = this.getCurrentWorkspaceId();
+        const folderId = null;
+        this.setCurrentFolderId(folderId);
+        this.fireDataEvent("locationChanged", {
+          workspaceId,
+          folderId,
+        });
+      }
     },
 
     __buildLayout: function() {

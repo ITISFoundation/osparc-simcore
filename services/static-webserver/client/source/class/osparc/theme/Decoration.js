@@ -101,6 +101,10 @@ qx.Theme.define("osparc.theme.Decoration", {
       }
     },
 
+    "form-input-focused-invalid": {
+      include: "form-input-invalid"
+    },
+
     "form-array-container": {
       style: {
         radius: 2,

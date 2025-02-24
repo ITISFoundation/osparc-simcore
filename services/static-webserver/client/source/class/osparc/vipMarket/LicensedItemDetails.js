@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
+qx.Class.define("osparc.vipMarket.LicensedItemDetails", {
   extend: qx.ui.core.Widget,
 
   construct: function() {
@@ -23,6 +23,10 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
 
     const layout = new qx.ui.layout.VBox(15);
     this._setLayout(layout);
+
+    this.set({
+      allowGrowX: false,
+    });
 
     this.__populateLayout();
   },
@@ -70,8 +74,8 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
     __populateLayout: function() {
       this._removeAll();
 
-      const licensedItemBundleData = this.getAnatomicalModelsData();
-      if (licensedItemBundleData && licensedItemBundleData["licensedResources"].length) {
+      const licensedItem = this.getAnatomicalModelsData();
+      if (licensedItem && licensedItem.getLicensedResources().length) {
         this.__addModelsInfo();
         this.__addSeatsSection();
         this.__addPricing();
@@ -99,9 +103,9 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
 
       this.__populateModelsInfo();
 
-      const licensedItemBundleData = this.getAnatomicalModelsData();
-      const modelsInfo = licensedItemBundleData["licensedResources"];
-      if (modelsInfo.length > 1) {
+      const licensedItem = this.getAnatomicalModelsData();
+      const licensedResources = licensedItem.getLicensedResources();
+      if (licensedResources.length > 1) {
         const modelSelectionLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(4));
         const titleLabel = new qx.ui.basic.Label(this.tr("This bundle contains:"));
         modelSelectionLayout.add(titleLabel);
@@ -121,15 +125,15 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
           });
         }
 
-        modelsInfo.forEach((modelInfo, idx) => {
+        licensedResources.forEach((licensedResource, idx) => {
           const modelLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(4)).set({
             allowGrowX: false,
           });
-          const miniThumbnail = this.self().createThumbnail(modelInfo["source"]["thumbnail"], 32);
+          const miniThumbnail = this.self().createThumbnail(licensedResource.getThumbnail(), 32);
           osparc.utils.Utils.addBorder(miniThumbnail);
           modelLayout.add(miniThumbnail);
           const title = new qx.ui.basic.Label().set({
-            value: osparc.store.LicensedItems.licensedResourceTitle(modelInfo),
+            value: osparc.data.model.LicensedItemResource.longName(licensedResource),
             alignY: "middle"
           });
           modelLayout.add(title);
@@ -148,23 +152,17 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
     __populateModelsInfo: function() {
       this.__modelsInfoStack.removeAll();
 
-      const licensedItemBundleData = this.getAnatomicalModelsData();
-      const modelsInfo = licensedItemBundleData["licensedResources"];
-      modelsInfo.forEach((modelInfo, index) => {
+      const licensedItem = this.getAnatomicalModelsData();
+      const licensedResources = licensedItem.getLicensedResources();
+      licensedResources.forEach((licensedResource, index) => {
         const modelInfoLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(4));
-
-        const anatomicalModel = modelInfo["source"];
 
         const topGrid = new qx.ui.layout.Grid(8, 6);
         topGrid.setColumnFlex(0, 1);
         const headerLayout = new qx.ui.container.Composite(topGrid);
-        let description = anatomicalModel["description"] || "";
-        description = description.replace(/SPEAG/g, " "); // remove SPEAG substring
-        const delimiter = " - ";
-        let titleAndSubtitle = description.split(delimiter);
-        if (titleAndSubtitle.length > 0) {
+        if (licensedResource.getTitle()) {
           const titleLabel = new qx.ui.basic.Label().set({
-            value: titleAndSubtitle[0],
+            value: licensedResource.getTitle(),
             font: "text-16",
             alignY: "middle",
             allowGrowX: true,
@@ -174,12 +172,10 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
             column: 0,
             row: 0,
           });
-          titleAndSubtitle.shift();
         }
-        if (titleAndSubtitle.length > 0) {
-          titleAndSubtitle = titleAndSubtitle.join(delimiter);
+        if (licensedResource.getSubtitle()) {
           const subtitleLabel = new qx.ui.basic.Label().set({
-            value: titleAndSubtitle,
+            value: licensedResource.getSubtitle(),
             font: "text-16",
             alignY: "middle",
             allowGrowX: true,
@@ -190,48 +186,36 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
             row: 1,
           });
         }
-        if (anatomicalModel["thumbnail"]) {
-          const manufacturerData = {};
-          if (anatomicalModel["thumbnail"].includes("itis.swiss")) {
-            manufacturerData["label"] = "IT'IS Foundation";
-            manufacturerData["link"] = "https://itis.swiss/virtual-population/";
-            manufacturerData["icon"] = "https://media.licdn.com/dms/image/v2/C4D0BAQE_FGa66IyvrQ/company-logo_200_200/company-logo_200_200/0/1631341490431?e=2147483647&v=beta&t=7f_IK-ArGjPrz-1xuWolAT4S2NdaVH-e_qa8hsKRaAc";
-          } else if (anatomicalModel["thumbnail"].includes("speag.swiss")) {
-            manufacturerData["label"] = "Speag";
-            manufacturerData["link"] = "https://speag.swiss/products/em-phantoms/overview-2/";
-            manufacturerData["icon"] = "https://media.licdn.com/dms/image/v2/D4E0BAQG2CYG28KAKbA/company-logo_200_200/company-logo_200_200/0/1700045977122/schmid__partner_engineering_ag_logo?e=2147483647&v=beta&t=6CZb1jjg5TnnzQWkrZBS9R3ebRKesdflg-_xYi4dwD8";
-          }
-          if (Object.keys(manufacturerData).length) {
-            const manufacturerLink = new qx.ui.basic.Atom().set({
-              label: manufacturerData["label"],
-              icon: manufacturerData["icon"],
-              font: "text-16",
-              gap: 10,
-              iconPosition: "right",
-              cursor: "pointer",
-            });
-            manufacturerLink.getChildControl("icon").set({
-              maxWidth: 32,
-              maxHeight: 32,
-              scale: true,
-              decorator: "rounded",
-            });
-            manufacturerLink.addListener("tap", () => window.open(manufacturerData["link"]));
-            headerLayout.add(manufacturerLink, {
-              column: 1,
-              row: 0,
-              rowSpan: 2,
-            });
-          }
+        if (licensedResource.getManufacturerLabel()) {
+          const manufacturerLink = new qx.ui.basic.Atom().set({
+            label: licensedResource.getManufacturerLabel(),
+            icon: licensedResource.getManufacturerIcon(),
+            font: "text-16",
+            gap: 10,
+            iconPosition: "right",
+            cursor: "pointer",
+          });
+          manufacturerLink.getChildControl("icon").set({
+            maxWidth: 32,
+            maxHeight: 32,
+            scale: true,
+            decorator: "rounded",
+          });
+          manufacturerLink.addListener("tap", () => window.open(licensedResource.getManufacturerLink()));
+          headerLayout.add(manufacturerLink, {
+            column: 1,
+            row: 0,
+            rowSpan: 2,
+          });
         }
         modelInfoLayout.add(headerLayout);
 
 
         const middleLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(16));
-        const thumbnail = this.self().createThumbnail(anatomicalModel["thumbnail"], 256);
+        const thumbnail = this.self().createThumbnail(licensedResource.getThumbnail(), 256);
         middleLayout.add(thumbnail);
 
-        const features = anatomicalModel["features"];
+        const features = licensedResource.getFeatures();
         const featuresGrid = new qx.ui.layout.Grid(8, 8);
         const featuresLayout = new qx.ui.container.Composite(featuresGrid);
         let idx = 0;
@@ -280,7 +264,7 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
           }
         });
 
-        if (anatomicalModel["doi"]) {
+        if (licensedResource.getDoi()) {
           const doiTitle = new qx.ui.basic.Label().set({
             value: "DOI",
             font: "text-14",
@@ -307,14 +291,14 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
             }
             return doiLabel;
           };
-          featuresLayout.add(doiToLink(anatomicalModel["doi"]), {
+          featuresLayout.add(doiToLink(licensedResource.getDoi()), {
             column: 1,
             row: idx,
           });
           idx++;
         }
 
-        if (licensedItemBundleData["termsOfUseUrl"] || anatomicalModel["termsOfUseUrl"]) { // remove the first one when this info goes down to the model
+        if (licensedResource.getTermsOfUseUrl()) { // remove the first one when this info goes down to the model
           const tAndC = new qx.ui.basic.Label().set({
             font: "text-14",
             value: this.tr("<u>Terms and Conditions</u>"),
@@ -322,7 +306,7 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
             anonymous: false,
             cursor: "pointer",
           });
-          tAndC.addListener("tap", () => this.__openLicense(licensedItemBundleData["termsOfUseUrl"] || anatomicalModel["termsOfUseUrl"]));
+          tAndC.addListener("tap", () => this.__openLicense(licensedResource.getTermsOfUseUrl()));
           featuresLayout.add(tAndC, {
             column: 1,
             row: idx,
@@ -334,7 +318,7 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
 
         modelInfoLayout.add(middleLayout);
 
-        const importSection = this.__createImportSection(licensedItemBundleData, index);
+        const importSection = this.__createImportSection(licensedItem, index);
         modelInfoLayout.add(importSection);
 
         this.__modelsInfoStack.add(modelInfoLayout);
@@ -372,15 +356,15 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
       });
       importButton.addListener("execute", () => {
         this.fireDataEvent("modelImportRequested", {
-          modelId: anatomicalModelsData["licensedResources"][selectedIdx]["source"]["id"],
-          categoryId: anatomicalModelsData["categoryId"],
+          modelId: anatomicalModelsData.getLicensedResources()[selectedIdx]["id"],
+          categoryId: anatomicalModelsData.getCategoryId(),
         });
       }, this);
 
-      osparc.store.Pricing.getInstance().fetchPricingUnits(anatomicalModelsData["pricingPlanId"])
+      osparc.store.Pricing.getInstance().fetchPricingUnits(anatomicalModelsData.getPricingPlanId())
         .then(pricingUnits => {
           if (
-            anatomicalModelsData["seats"].length ||
+            anatomicalModelsData.getSeats().length ||
             (pricingUnits.length === 1 && pricingUnits[0].getCost() === 0)
           ) {
             importSection.add(importButton);
@@ -404,8 +388,8 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
       const pricingUnitsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
         alignX: "center"
       }));
-      const licensedItemData = this.getAnatomicalModelsData();
-      osparc.store.Pricing.getInstance().fetchPricingUnits(licensedItemData["pricingPlanId"])
+      const licensedItem = this.getAnatomicalModelsData();
+      osparc.store.Pricing.getInstance().fetchPricingUnits(licensedItem.getPricingPlanId())
         .then(pricingUnits => {
           if (pricingUnits.length === 1 && pricingUnits[0].getCost() === 0) {
             const availableForImporting = new qx.ui.basic.Label().set({
@@ -428,8 +412,8 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
               });
               pUnit.addListener("rentPricingUnit", () => {
                 this.fireDataEvent("modelPurchaseRequested", {
-                  licensedItemId: licensedItemData["licensedItemId"],
-                  pricingPlanId: licensedItemData["pricingPlanId"],
+                  licensedItemId: licensedItem.getLicensedItemId(),
+                  pricingPlanId: licensedItem.getPricingPlanId(),
                   pricingUnitId: pricingUnit.getPricingUnitId(),
                 });
               }, this);
@@ -445,15 +429,15 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
     },
 
     __addSeatsSection: function() {
-      const licensedItemData = this.getAnatomicalModelsData();
-      if (licensedItemData["seats"].length === 0) {
+      const licensedItem = this.getAnatomicalModelsData();
+      if (licensedItem.getSeats().length === 0) {
         return;
       }
       const seatsSection = new qx.ui.container.Composite(new qx.ui.layout.VBox(5).set({
         alignX: "left",
       }));
 
-      licensedItemData["seats"].forEach(purchase => {
+      licensedItem.getSeats().forEach(purchase => {
         const nSeats = purchase["numOfSeats"];
         const seatsText = "seat" + (nSeats > 1 ? "s" : "");
         const entry = new qx.ui.basic.Label().set({

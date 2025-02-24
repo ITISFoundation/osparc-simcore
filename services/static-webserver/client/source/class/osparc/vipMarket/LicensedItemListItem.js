@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.vipMarket.AnatomicalModelListItem", {
+qx.Class.define("osparc.vipMarket.LicensedItemListItem", {
   extend: qx.ui.core.Widget,
   implement : [qx.ui.form.IModel, osparc.filter.IFilterable],
   include : [qx.ui.form.MModelProperty, osparc.filter.MFilterable],

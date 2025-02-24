@@ -431,7 +431,7 @@ qx.Class.define("osparc.share.Collaborators", {
             "description": collab.getDescription(),
           };
           if (!("getUserId" in collab)) {
-            // orgnanization
+            // organization
             if (everyoneGIds.includes(parseInt(gid))) {
               collaborator["thumbnail"] = "@FontAwesome5Solid/globe/32";
             } else if (!collaborator["thumbnail"]) {
