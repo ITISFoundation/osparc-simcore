@@ -122,7 +122,7 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
           });
           break;
         case "models-details": {
-          control = new osparc.vipMarket.AnatomicalModelDetails().set({
+          control = new osparc.vipMarket.LicensedItemDetails().set({
             padding: 5,
           });
           const scrollView = new qx.ui.container.Scroll();
@@ -145,7 +145,7 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
       const anatomicalModelsModel = this.__anatomicalBundlesModel = new qx.data.Array();
       const membersCtrl = new qx.data.controller.List(anatomicalModelsModel, modelsUIList, "displayName");
       membersCtrl.setDelegate({
-        createItem: () => new osparc.vipMarket.AnatomicalModelListItem(),
+        createItem: () => new osparc.vipMarket.LicensedItemListItem(),
         bindItem: (ctrl, item, id) => {
           ctrl.bindProperty("key", "key", null, item, id);
           ctrl.bindProperty("version", "version", null, item, id);
@@ -174,7 +174,7 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
         const selection = e.getData();
         if (selection.length) {
           const licensedItemId = selection[0].getLicensedItemId();
-          const licensedItemBundle = this.__anatomicalBundles.find(anatomicalBundle => anatomicalBundle["licensedItemId"] === licensedItemId);
+          const licensedItemBundle = this.__anatomicalBundles.find(anatomicalBundle => anatomicalBundle.getLicensedItemId() === licensedItemId);
           if (licensedItemBundle) {
             anatomicModelDetails.setAnatomicalModelsData(licensedItemBundle);
             return;
@@ -191,21 +191,7 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
         return;
       }
 
-      this.__anatomicalBundles = [];
-      licensedBundles.forEach(licensedBundle => {
-        licensedBundle["thumbnail"] = "";
-        licensedBundle["date"] = null;
-        if (licensedBundle["licensedResources"] && licensedBundle["licensedResources"].length) {
-          const firstItem = licensedBundle["licensedResources"][0]["source"];
-          if (firstItem["thumbnail"]) {
-            licensedBundle["thumbnail"] = firstItem["thumbnail"];
-          }
-          if (firstItem["features"] && firstItem["features"]["date"]) {
-            licensedBundle["date"] = new Date(firstItem["features"]["date"]);
-          }
-        }
-        this.__anatomicalBundles.push(licensedBundle);
-      });
+      this.__anatomicalBundles = licensedBundles;
 
       this.__populateModels();
 
@@ -238,8 +224,8 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
       const sortModel = sortBy => {
         models.sort((a, b) => {
           // first criteria
-          const nASeats = osparc.store.LicensedItems.seatsToNSeats(a["seats"]);
-          const nBSeats = osparc.store.LicensedItems.seatsToNSeats(b["seats"]);
+          const nASeats = osparc.store.LicensedItems.seatsToNSeats(a.getSeats());
+          const nBSeats = osparc.store.LicensedItems.seatsToNSeats(b.getSeats());
           if (nBSeats !== nASeats) {
             // nSeats first
             return nBSeats - nASeats;
@@ -249,20 +235,20 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
             if (sortBy["sort"] === "name") {
               if (sortBy["order"] === "down") {
                 // A -> Z
-                return a["displayName"].localeCompare(b["displayName"]);
+                return a.getDisplayName().localeCompare(b.getDisplayName());
               }
-              return b["displayName"].localeCompare(a["displayName"]);
+              return b.getDisplayName().localeCompare(a.getDisplayName());
             } else if (sortBy["sort"] === "date") {
               if (sortBy["order"] === "down") {
                 // Now -> Yesterday
-                return b["date"] - a["date"];
+                return b.getDate() - a.getDate();
               }
-              return a["date"] - b["date"];
+              return a.getDate() - b.getDate();
             }
           }
           // default criteria
           // A -> Z
-          return a["displayName"].localeCompare(b["displayName"]);
+          return a.getDisplayName().localeCompare(b.getDisplayName());
         });
       };
       sortModel();
@@ -309,9 +295,9 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
           msg += " rented until " + osparc.utils.Utils.formatDate(new Date(purchaseData["expireAt"]));
           osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
 
-          const found = this.__anatomicalBundles.find(model => model["licensedItemId"] === licensedItemId);
+          const found = this.__anatomicalBundles.find(model => model.getLicensedItemId() === licensedItemId);
           if (found) {
-            found["seats"].push({
+            found.getSeats().push({
               licensedItemId: purchaseData["licensedItemId"],
               licensedItemPurchaseId: purchaseData["licensedItemPurchaseId"],
               numOfSeats: purchaseData["numOfSeats"],
