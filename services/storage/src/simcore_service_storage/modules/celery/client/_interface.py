@@ -1,3 +1,4 @@
+import logging
 from typing import Any, Final, TypeAlias
 from uuid import uuid4
 
@@ -12,6 +13,8 @@ from ..models import TaskID, TaskStatus
 _PREFIX: Final = "ct"
 
 TaskIdComponents: TypeAlias = dict[str, Any]
+
+_logger = logging.getLogger(__name__)
 
 
 def _get_task_id_components(task_id_components: TaskIdComponents) -> list[str]:
