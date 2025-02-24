@@ -285,7 +285,6 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
         const image = this.getChildControl("icon").getChildControl("image");
         image.set({
           source: value,
-          decorator: "rounded",
         });
       }
     },
