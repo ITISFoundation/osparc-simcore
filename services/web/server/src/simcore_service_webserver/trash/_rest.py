@@ -1,3 +1,4 @@
+import asyncio
 import logging
 
 from aiohttp import web
@@ -20,10 +21,6 @@ from . import _service
 
 _logger = logging.getLogger(__name__)
 
-#
-# EXCEPTIONS HANDLING
-#
-
 
 _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
     ProjectRunningConflictError: HttpErrorInfo(
@@ -41,10 +38,6 @@ _handle_exceptions = exception_handling_decorator(
     to_exceptions_handlers_map(_TO_HTTP_ERROR_MAP)
 )
 
-
-#
-# ROUTES
-#
 
 routes = web.RouteTableDef()
 
@@ -64,5 +57,11 @@ async def empty_trash(request: web.Request):
         task_suffix_name="rest.empty_trash",
         fire_and_forget_tasks_collection=request.app[APP_FIRE_AND_FORGET_TASKS_KEY],
     )
+
+    # NOTE: Ensures `fire_and_forget_task` is triggered; otherwise,
+    # when the front-end requests the trash item list,
+    # it may still display items, misleading the user into
+    # thinking the `empty trash` operation failed.
+    await asyncio.sleep(1)
 
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
