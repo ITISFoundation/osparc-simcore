@@ -46,6 +46,7 @@ class CeleryTaskQueueClient:
         task = self._celery_app.send_task(
             task_name, task_id=task_id, kwargs=task_params
         )
+        assert isinstance(str, task.id)
         return task.id
 
     def get(self, task_id: TaskID) -> Any:
@@ -105,4 +106,6 @@ def get_client(fastapi: FastAPI) -> CeleryTaskQueueClient:
     celery = fastapi.state.celery_app
     assert isinstance(celery, Celery)
 
-    return celery.conf["client"]
+    client = celery.conf["client"]
+    assert isinstance(client, CeleryTaskQueueClient)
+    return client
