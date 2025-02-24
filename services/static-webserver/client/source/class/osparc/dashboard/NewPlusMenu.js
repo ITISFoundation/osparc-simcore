@@ -64,15 +64,14 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
   construct: function() {
     this.base(arguments);
 
-    osparc.utils.Utils.prettifyMenu(this);
+    this.set({
+      appearance: "menu-wider",
+      position: "bottom-left",
+      spacingX: 20,
+    });
 
     this.getContentElement().setStyles({
       "border-color": qx.theme.manager.Color.getInstance().resolve("strong-main"),
-    });
-
-    this.set({
-      position: "bottom-left",
-      spacingX: 20,
     });
 
     this.__categoryHeaders = [];
