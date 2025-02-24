@@ -205,14 +205,6 @@ class ServiceWithHistoryDBGet(BaseModel):
     # releases
     history: list[ReleaseDBGet]
 
-    _prevents_empty_strings_in_nullable_string_cols = field_validator(
-        "icon", "thumbnail", "version_display", mode="before"
-    )(
-        # NOTE: Prevents validation errors caused by empty strings
-        # mistakenly manually set instead of null in the database.
-        empty_str_to_none_pre_validator
-    )
-
 
 assert (  # nosec
     set(ReleaseDBGet.model_fields)
