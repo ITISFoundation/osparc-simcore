@@ -13,7 +13,7 @@ from servicelib.logging_utils import config_all_loggers
 from ...core.application import create_app
 from ...core.settings import ApplicationSettings
 from .common import create_app as create_celery_app
-from .tasks import sync_archive
+from .example_tasks import sync_archive
 from .worker import CeleryTaskQueueWorker
 
 _settings = ApplicationSettings.create_from_envs()
