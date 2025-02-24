@@ -3,12 +3,12 @@
 import logging
 
 from servicelib.logging_utils import config_all_loggers
-from simcore_service_storage.core.application import create_app
-from simcore_service_storage.core.settings import ApplicationSettings
-from simcore_service_storage.modules.celery.client.setup import (
-    attach_to_fastapi,
-    create_celery_app,
-)
+
+from .core.application import create_app
+from .core.settings import ApplicationSettings
+from .modules.celery.client import CeleryClientInterface
+from .modules.celery.client.utils import attach_to_fastapi
+from .modules.celery.utils import create_celery_app
 
 _settings = ApplicationSettings.create_from_envs()
 
@@ -24,8 +24,9 @@ config_all_loggers(
 _logger = logging.getLogger(__name__)
 
 fastapi_app = create_app(_settings)
+celery_app = create_celery_app(ApplicationSettings.create_from_envs())
 
-celery_app = create_celery_app(_settings)
+celery_app.conf["client_interface"] = CeleryClientInterface(celery_app)
 attach_to_fastapi(fastapi_app, celery_app)
 
 app = fastapi_app
