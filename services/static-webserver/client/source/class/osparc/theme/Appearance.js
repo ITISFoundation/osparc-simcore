@@ -738,7 +738,7 @@ qx.Theme.define("osparc.theme.Appearance", {
           decorator: "rounded",
           cursor: states.disabled ? "not-allowed" : "pointer",
           backgroundColor: states.selected || states.hovered ? "pb-new" : undefined,
-          textColor: states.selected ? "default-button-text" : "text",
+          textColor: "text",
           padding: [4, 8]
         }
       }

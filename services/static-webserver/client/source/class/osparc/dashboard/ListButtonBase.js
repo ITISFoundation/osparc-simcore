@@ -124,7 +124,7 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
         case "project-status":
           control = new qx.ui.basic.Image().set({
             alignY: "middle",
-            textColor: "status_icon",
+            textColor: "text",
             height: 12,
             width: 12
           });

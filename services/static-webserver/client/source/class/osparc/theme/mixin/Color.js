@@ -44,8 +44,6 @@ qx.Theme.define("osparc.theme.mixin.Color", {
     "default-button-disabled-background": "rgba(113, 157, 181, 0.25)",
     "default-button-focus-blur": "rgba(254, 233, 86, 1)",
 
-    "status_icon": "rgba(255, 255, 255, 1)",
-
     // separator
     "border-separator": "product-color",
 

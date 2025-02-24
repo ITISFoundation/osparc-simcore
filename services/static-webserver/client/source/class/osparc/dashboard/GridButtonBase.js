@@ -275,7 +275,7 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
         case "project-status":
           control = new qx.ui.basic.Image().set({
             alignY: "middle",
-            textColor: "status_icon",
+            textColor: "text",
             height: 13,
             width: 13,
             margin: [0, 1]
