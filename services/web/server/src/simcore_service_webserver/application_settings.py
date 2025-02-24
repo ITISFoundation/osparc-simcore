@@ -27,9 +27,9 @@ from settings_library.utils_logging import MixinLoggingSettings
 from settings_library.utils_service import DEFAULT_AIOHTTP_PORT
 from simcore_service_webserver.licenses.settings import LicensesSettings
 
-from ._constants import APP_SETTINGS_KEY
 from ._meta import API_VERSION, API_VTAG, APP_NAME
 from .catalog.settings import CatalogSettings
+from .constants import APP_SETTINGS_KEY
 from .diagnostics.settings import DiagnosticsSettings
 from .director_v2.settings import DirectorV2Settings
 from .dynamic_scheduler.settings import DynamicSchedulerSettings

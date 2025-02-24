@@ -5,8 +5,8 @@ from aiohttp import web
 from models_library.products import ProductName
 from simcore_postgres_database.utils_products_prices import ProductPriceInfo
 
-from .._constants import RQ_PRODUCT_KEY
 from .._resources import webserver_resources
+from ..constants import RQ_PRODUCT_KEY
 from . import _service
 from ._web_events import APP_PRODUCTS_TEMPLATES_DIR_KEY
 from .products_models import Product

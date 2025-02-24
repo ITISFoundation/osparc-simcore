@@ -26,7 +26,7 @@ from servicelib.aiohttp import status
 from servicelib.aiohttp.typing_extension import Handler
 from servicelib.logging_errors import create_troubleshotting_log_kwargs
 
-from .._constants import INDEX_RESOURCE_NAME
+from ..constants import INDEX_RESOURCE_NAME
 from ..director_v2._core_computations import create_or_update_pipeline
 from ..dynamic_scheduler import api as dynamic_scheduler_api
 from ..products import products_web

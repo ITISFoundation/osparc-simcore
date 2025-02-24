@@ -24,7 +24,7 @@ _logger = logging.getLogger(__name__)
     logger=_logger,
 )
 def setup_products(app: web.Application):
-    from .._constants import APP_SETTINGS_KEY
+    from ..constants import APP_SETTINGS_KEY
     from ..rabbitmq import setup_rabbitmq
     from . import _rest, _rpc
     from ._web_events import (

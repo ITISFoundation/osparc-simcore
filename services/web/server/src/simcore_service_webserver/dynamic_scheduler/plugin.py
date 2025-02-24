@@ -8,7 +8,7 @@ from aiohttp import web
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 from simcore_service_webserver.rabbitmq import setup_rabbitmq
 
-from .._constants import APP_SETTINGS_KEY
+from ..constants import APP_SETTINGS_KEY
 
 _logger = logging.getLogger(__name__)
 

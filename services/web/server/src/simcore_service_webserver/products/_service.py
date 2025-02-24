@@ -5,7 +5,7 @@ from aiohttp import web
 from models_library.products import CreditResultGet, ProductName, ProductStripeInfoGet
 from simcore_postgres_database.utils_products_prices import ProductPriceInfo
 
-from .._constants import APP_PRODUCTS_KEY
+from ..constants import APP_PRODUCTS_KEY
 from ._repository import ProductRepository
 from .errors import (
     BelowMinimumPaymentError,

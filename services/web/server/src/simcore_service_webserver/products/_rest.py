@@ -15,8 +15,8 @@ from servicelib.aiohttp.requests_validation import parse_request_path_parameters
 from servicelib.request_keys import RQT_USERID_KEY
 from simcore_service_webserver.products._repository import ProductRepository
 
-from .._constants import RQ_PRODUCT_KEY
 from .._meta import API_VTAG as VTAG
+from ..constants import RQ_PRODUCT_KEY
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response

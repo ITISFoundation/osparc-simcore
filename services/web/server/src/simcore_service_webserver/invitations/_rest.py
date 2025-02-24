@@ -14,8 +14,8 @@ from servicelib.request_keys import RQT_USERID_KEY
 from simcore_service_webserver.utils_aiohttp import envelope_json_response
 from yarl import URL
 
-from .._constants import RQ_PRODUCT_KEY
 from .._meta import API_VTAG as VTAG
+from ..constants import RQ_PRODUCT_KEY
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from ..users.api import get_user_name_and_email

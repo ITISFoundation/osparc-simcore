@@ -14,7 +14,7 @@ from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 from yarl import URL
 
-from ._constants import INDEX_RESOURCE_NAME
+from .constants import INDEX_RESOURCE_NAME
 
 _logger = logging.getLogger(__name__)
 

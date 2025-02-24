@@ -8,7 +8,7 @@ from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setu
 from settings_library.email import SMTPSettings
 from settings_library.postgres import PostgresSettings
 
-from .._constants import (
+from ..constants import (
     APP_PUBLIC_CONFIG_PER_PRODUCT,
     APP_SETTINGS_KEY,
     INDEX_RESOURCE_NAME,

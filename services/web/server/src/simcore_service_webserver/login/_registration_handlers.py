@@ -16,8 +16,8 @@ from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.request_keys import RQT_USERID_KEY
 from servicelib.utils import fire_and_forget_task
 
-from .._constants import RQ_PRODUCT_KEY
 from .._meta import API_VTAG
+from ..constants import RQ_PRODUCT_KEY
 from ..products import products_web
 from ..products.products_models import Product
 from ..security.api import check_password, forget_identity
