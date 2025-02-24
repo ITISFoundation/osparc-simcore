@@ -220,6 +220,7 @@ def fake_task_factory(
 
 
 def random_product(
+    *,
     group_id: int | None = None,
     registration_email_template: str | None = None,
     fake: Faker = DEFAULT_FAKER,

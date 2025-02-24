@@ -1,19 +1,30 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
+# pylint: disable=too-many-arguments
 
 
+import json
+import re
 from itertools import chain
 from typing import Any
 
 import pytest
 import simcore_service_webserver.products
+import sqlalchemy as sa
+from faker import Faker
+from models_library.products import ProductName
 from pydantic import BaseModel
+from pytest_simcore.helpers.faker_factories import random_product
 from pytest_simcore.pydantic_models import (
     assert_validation_model,
     walk_model_examples_in_package,
 )
+from simcore_postgres_database.models.products import products as products_table
+from simcore_service_webserver.constants import FRONTEND_APP_DEFAULT
 from simcore_service_webserver.products._models import Product
+from sqlalchemy import String
+from sqlalchemy.dialects import postgresql
 
 
 @pytest.mark.parametrize(
@@ -96,3 +107,45 @@ def test_product_host_regex_with_spaces():
     assert product.host_regex.search("osparc.bar.com")
 
     assert product.support_email == "foo@bar.com"
+
+
+@pytest.fixture(scope="session")
+def product_name() -> ProductName:
+    return ProductName(FRONTEND_APP_DEFAULT)
+
+
+def test_safe_load_empty_blanks_on_string_cols_from_db(
+    faker: Faker, product_name: ProductName
+):
+    def _get_server_defaults():
+        server_defaults = {}
+        for c in products_table.columns:
+            if c.server_default is not None:
+                if isinstance(c.type, String):
+                    server_defaults[c.name] = c.server_default.arg
+                elif isinstance(c.type, postgresql.JSONB):
+                    m = re.match(r"^'(.+)'::jsonb$", c.server_default.arg.text)
+                    if m:
+                        server_defaults[c.name] = json.loads(m.group(1))
+
+        return server_defaults
+
+    nullable_strings_column_names = [
+        c.name
+        for c in products_table.columns
+        if isinstance(c.type, sa.String) and c.nullable
+    ]
+
+    server_defaults = _get_server_defaults()
+
+    product_row_from_db = random_product(
+        name=product_name,
+        fake=faker,
+        **{name: " " * len(name) for name in nullable_strings_column_names}
+    )
+
+    product = Product.model_validate(product_row_from_db)
+
+    assert product.model_dump(include=set(nullable_strings_column_names)) == {
+        name: None for name in nullable_strings_column_names
+    }
