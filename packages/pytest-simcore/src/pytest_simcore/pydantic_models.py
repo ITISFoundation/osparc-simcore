@@ -145,15 +145,18 @@ def iter_model_examples_in_class(
 
 def assert_validation_model(
     model_cls: type[BaseModel], example_name: str, example_data: Any
-):
+) -> BaseModel:
     try:
-        assert model_cls.model_validate(example_data) is not None
+        model_instance = model_cls.model_validate(example_data)
     except ValidationError as err:
         pytest.fail(
             f"{example_name} is invalid {model_cls.__module__}.{model_cls.__name__}:"
             f"\n{json_dumps(example_data, indent=1)}"
             f"\nError: {err}"
         )
+
+    assert isinstance(model_instance, BaseModel)
+    return model_instance
 
 
 ## PYDANTIC MODELS & SCHEMAS -----------------------------------------------------

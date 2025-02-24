@@ -3,33 +3,35 @@
 # pylint: disable=unused-variable
 
 
+from itertools import chain
 from typing import Any
 
 import pytest
-from common_library.json_serialization import json_dumps
+import simcore_service_webserver.products
 from pydantic import BaseModel
-from simcore_service_webserver.products._repository import Product
+from pytest_simcore.pydantic_models import (
+    assert_validation_model,
+    walk_model_examples_in_package,
+)
+from simcore_service_webserver.products._models import Product
 
 
 @pytest.mark.parametrize(
-    "model_cls",
-    [
-        Product,
-    ],
+    "model_cls, example_name, example_data",
+    chain(walk_model_examples_in_package(simcore_service_webserver.products)),
 )
-def test_product_examples(
-    model_cls: type[BaseModel], model_cls_examples: dict[str, dict[str, Any]]
+def test_all_products_models_examples(
+    model_cls: type[BaseModel], example_name: str, example_data: Any
 ):
-    for name, example in model_cls_examples.items():
-        print(name, ":", json_dumps(example, indent=1))
-        model_instance = model_cls(**example)
-        assert model_instance, f"Failed with {name}"
+    model_instance = assert_validation_model(
+        model_cls, example_name=example_name, example_data=example_data
+    )
 
-        if isinstance(model_instance, Product):
-            assert model_instance.to_statics()
-
-            if "registration_email_template" in example:
-                assert model_instance.get_template_name_for("registration_email.jinja2")
+    # Some extra checks for Products
+    if isinstance(model_instance, Product):
+        assert model_instance.to_statics()
+        if "registration_email_template" in example_data:
+            assert model_instance.get_template_name_for("registration_email.jinja2")
 
 
 def test_product_to_static():
