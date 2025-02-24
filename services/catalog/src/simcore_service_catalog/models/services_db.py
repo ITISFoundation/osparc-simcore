@@ -124,12 +124,9 @@ class ServiceMetaDataDBCreate(BaseModel):
 
     model_config = ConfigDict(json_schema_extra=_update_json_schema_extra)
 
-    _prevents_empty_strings_in_nullable_string_cols = field_validator(
+    _prevent_empty_strings_in_nullable_string_cols = field_validator(
         "icon", "thumbnail", "version_display", mode="before"
-    )(
-        # NOTE: Prevents empty strings in nullable string columns
-        empty_str_to_none_pre_validator
-    )
+    )(empty_str_to_none_pre_validator)
 
 
 class ServiceMetaDataDBPatch(BaseModel):
@@ -167,12 +164,9 @@ class ServiceMetaDataDBPatch(BaseModel):
 
     model_config = ConfigDict(json_schema_extra=_update_json_schema_extra)
 
-    _prevents_empty_strings_in_nullable_string_cols = field_validator(
+    _prevent_empty_strings_in_nullable_string_cols = field_validator(
         "icon", "thumbnail", "version_display", mode="before"
-    )(
-        # NOTE: Prevents empty strings in nullable string columns
-        empty_str_to_none_pre_validator
-    )
+    )(empty_str_to_none_pre_validator)
 
 
 class ReleaseDBGet(BaseModel):

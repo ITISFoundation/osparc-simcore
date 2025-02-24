@@ -47,4 +47,6 @@ def upgrade():
 
 
 def downgrade():
-    pass
+    """
+    Nothing to be done here
+    """
