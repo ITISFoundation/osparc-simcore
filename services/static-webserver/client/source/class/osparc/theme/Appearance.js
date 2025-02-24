@@ -22,7 +22,7 @@ qx.Theme.define("osparc.theme.Appearance", {
     "strong-ui": {
       style: () => {
         return {
-          textColor: "default-button-text",
+          textColor: "white",
           backgroundColor: "product-color",
         };
       }
@@ -982,7 +982,7 @@ qx.Theme.define("osparc.theme.Appearance", {
       style: state => ({
         decorator: state.hovered || state.focused ? "form-button-warning-hover" : "form-button-warning",
         backgroundColor: state.hovered || state.focused ? "default-button-hover-background" : "warning",
-        textColor: state.hovered || state.focused ? "default-button-text" : "black",
+        textColor: "black",
       })
     },
 
@@ -991,7 +991,7 @@ qx.Theme.define("osparc.theme.Appearance", {
       style: state => ({
         decorator: state.hovered || state.focused ? "form-button-danger-hover" : "form-button-danger",
         backgroundColor: state.hovered || state.focused ? "default-button-hover-background" : "error",
-        textColor: state.hovered || state.focused ? "default-button-text" : "default-button-text" // dark theme's text color
+        textColor: "black",
       })
     },
 
@@ -1008,7 +1008,7 @@ qx.Theme.define("osparc.theme.Appearance", {
           decorator: "tab-button",
           cursor: "pointer",
           padding: 5,
-          textColor: "default-button-text",
+          textColor: "white",
           backgroundColor: "default-button-background"
         };
         if (states.hovered) {
