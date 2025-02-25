@@ -362,7 +362,12 @@ qx.Class.define("osparc.pricing.UnitEditor", {
           Object.assign(extraInfo, this.getUnitExtraInfo());
           data["unitExtraInfo"] = extraInfo;
         } else if (pricingPlan.getClassification() === "LICENSE") {
-          data["nSeats"] = this.getUnitExtraInfoNSeats();
+          data["specificInfo"] = {
+            "aws_ec2_instances": [],
+          };
+          data["unitExtraInfo"] = {
+            "num_of_seats": this.getUnitExtraInfoNSeats(),
+          };
         }
       }
 
