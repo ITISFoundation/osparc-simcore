@@ -3,8 +3,9 @@ from typing import Annotated
 from fastapi import Depends, FastAPI
 from models_library.projects_nodes_io import LocationID
 from servicelib.fastapi.dependencies import get_app
-from simcore_service_storage.dsm import get_dsm_provider
-from simcore_service_storage.dsm_factory import BaseDataManager, DataManagerProvider
+
+from ....dsm import get_dsm_provider
+from ....dsm_factory import BaseDataManager, DataManagerProvider
 
 
 def get_data_manager_provider(
