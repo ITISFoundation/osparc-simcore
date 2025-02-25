@@ -33,12 +33,14 @@ ok = os.getenv("SC_BOOT_MODE", "").lower() == "debug"
 
 # Queries host
 # pylint: disable=consider-using-with
-app_settings = ApplicationSettings.create_from_envs()
-
-broker_url = app_settings.STORAGE_CELERY.CELERY_BROKER.dsn
 
 
 def _is_celery_worker_healthy():
+    app_settings = ApplicationSettings.create_from_envs()
+
+    assert app_settings.STORAGE_CELERY
+    broker_url = app_settings.STORAGE_CELERY.CELERY_BROKER.dsn
+
     try:
         result = subprocess.run(
             [
