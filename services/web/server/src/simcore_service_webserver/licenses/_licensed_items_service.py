@@ -15,6 +15,10 @@ from models_library.licenses import (
     LicensedItemVersion,
 )
 from models_library.products import ProductName
+from models_library.resource_tracker import (
+    PricingPlanClassification,
+    UnitExtraInfoLicense,
+)
 from models_library.resource_tracker_licensed_items_purchases import (
     LicensedItemsPurchasesCreate,
 )
@@ -26,13 +30,17 @@ from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker import (
 )
 
 from ..rabbitmq import get_rabbitmq_rpc_client
-from ..resource_usage.service import get_pricing_plan_unit
+from ..resource_usage.service import get_pricing_plan, get_pricing_plan_unit
 from ..users.api import get_user
 from ..wallets.api import get_wallet_with_available_credits_by_user_and_wallet
 from ..wallets.errors import WalletNotEnoughCreditsError
 from . import _licensed_items_repository
 from ._common.models import LicensedItemsBodyParams
-from .errors import LicensedItemPricingPlanMatchError
+from .errors import (
+    LicensedItemPricingPlanMatchError,
+    LicnesedItemNumOfSeatsMatchError,
+    LicnesedItemPricingPlanConfigurationError,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -102,12 +110,26 @@ async def purchase_licensed_item(
             licensed_item_id=licensed_item.licensed_item_id,
         )
 
+    pricing_plan = await get_pricing_plan(
+        app, product_name=product_name, pricing_plan_id=body_params.pricing_plan_id
+    )
+    if pricing_plan.classification is not PricingPlanClassification.LICENSE:
+        raise LicnesedItemPricingPlanConfigurationError(
+            pricing_plan_id=body_params.pricing_plan_id
+        )
+
     pricing_unit = await get_pricing_plan_unit(
         app,
         product_name=product_name,
         pricing_plan_id=body_params.pricing_plan_id,
         pricing_unit_id=body_params.pricing_unit_id,
     )
+    assert isinstance(pricing_unit.unit_extra_info, UnitExtraInfoLicense)  # nosec
+    if pricing_unit.unit_extra_info.num_of_seats != body_params.num_of_seats:
+        raise LicnesedItemNumOfSeatsMatchError(
+            num_of_seats=body_params.num_of_seats,
+            pricing_unit_id=body_params.pricing_unit_id,
+        )
 
     # Check whether wallet has enough credits
     if wallet.available_credits - pricing_unit.current_cost_per_unit < 0:
@@ -130,7 +152,7 @@ async def purchase_licensed_item(
         pricing_unit_cost=pricing_unit.current_cost_per_unit,
         start_at=datetime.now(tz=UTC),
         expire_at=datetime.now(tz=UTC) + timedelta(days=365),
-        num_of_seats=body_params.num_of_seats,  # <-- NOTE: MD: this needs to be taken from the Pricing UNIT
+        num_of_seats=body_params.num_of_seats,
         purchased_by_user=user_id,
         user_email=user["email"],
         purchased_at=datetime.now(tz=UTC),

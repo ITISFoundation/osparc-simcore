@@ -2,7 +2,7 @@ import functools
 
 from aiohttp import web
 from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
-    PricingPlanGet,
+    RutPricingPlanGet,
 )
 from models_library.api_schemas_webserver.resource_usage import (
     ConnectServiceToPricingPlanBodyParams,
@@ -85,12 +85,14 @@ async def list_pricing_plans_for_admin_user(request: web.Request):
         PageQueryParameters, request
     )
 
-    pricing_plan_page = await pricing_plans_admin_service.list_pricing_plans(
-        app=request.app,
-        product_name=req_ctx.product_name,
-        exclude_inactive=False,
-        offset=query_params.offset,
-        limit=query_params.limit,
+    pricing_plan_page = (
+        await pricing_plans_admin_service.list_pricing_plans_without_pricing_units(
+            app=request.app,
+            product_name=req_ctx.product_name,
+            exclude_inactive=False,
+            offset=query_params.offset,
+            limit=query_params.limit,
+        )
     )
     webserver_pricing_plans = [
         PricingPlanAdminGet(
@@ -121,7 +123,9 @@ async def list_pricing_plans_for_admin_user(request: web.Request):
     )
 
 
-def pricing_plan_get_to_admin(pricing_plan_get: PricingPlanGet) -> PricingPlanAdminGet:
+def pricing_plan_get_to_admin(
+    pricing_plan_get: RutPricingPlanGet,
+) -> PricingPlanAdminGet:
     """
     Convert a PricingPlanGet object into a PricingPlanAdminGet object.
     """

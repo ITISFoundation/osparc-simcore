@@ -1,9 +1,9 @@
 from aiohttp import web
 from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
-    PricingPlanGet,
-    PricingPlanPage,
     PricingPlanToServiceGet,
-    PricingUnitGet,
+    RutPricingPlanGet,
+    RutPricingPlanPage,
+    RutPricingUnitGet,
 )
 from models_library.products import ProductName
 from models_library.resource_tracker import (
@@ -27,21 +27,23 @@ from ..rabbitmq import get_rabbitmq_rpc_client
 ## Pricing Plans
 
 
-async def list_pricing_plans(
+async def list_pricing_plans_without_pricing_units(
     app: web.Application,
     *,
     product_name: ProductName,
     exclude_inactive: bool,
     offset: int,
     limit: int,
-) -> PricingPlanPage:
+) -> RutPricingPlanPage:
     rpc_client = get_rabbitmq_rpc_client(app)
-    output: PricingPlanPage = await pricing_plans.list_pricing_plans(
-        rpc_client,
-        product_name=product_name,
-        exclude_inactive=exclude_inactive,
-        offset=offset,
-        limit=limit,
+    output: RutPricingPlanPage = (
+        await pricing_plans.list_pricing_plans_without_pricing_units(
+            rpc_client,
+            product_name=product_name,
+            exclude_inactive=exclude_inactive,
+            offset=offset,
+            limit=limit,
+        )
     )
     return output
 
@@ -50,7 +52,7 @@ async def get_pricing_plan(
     app: web.Application,
     product_name: ProductName,
     pricing_plan_id: PricingPlanId,
-) -> PricingPlanGet:
+) -> RutPricingPlanGet:
     rpc_client = get_rabbitmq_rpc_client(app)
     return await pricing_plans.get_pricing_plan(
         rpc_client,
@@ -62,14 +64,14 @@ async def get_pricing_plan(
 async def create_pricing_plan(
     app: web.Application,
     data: PricingPlanCreate,
-) -> PricingPlanGet:
+) -> RutPricingPlanGet:
     rpc_client = get_rabbitmq_rpc_client(app)
     return await pricing_plans.create_pricing_plan(rpc_client, data=data)
 
 
 async def update_pricing_plan(
     app: web.Application, product_name: ProductName, data: PricingPlanUpdate
-) -> PricingPlanGet:
+) -> RutPricingPlanGet:
     rpc_client = get_rabbitmq_rpc_client(app)
     return await pricing_plans.update_pricing_plan(
         rpc_client, product_name=product_name, data=data
@@ -84,7 +86,7 @@ async def get_pricing_unit(
     product_name: ProductName,
     pricing_plan_id: PricingPlanId,
     pricing_unit_id: PricingUnitId,
-) -> PricingUnitGet:
+) -> RutPricingUnitGet:
     rpc_client = get_rabbitmq_rpc_client(app)
     return await pricing_units.get_pricing_unit(
         rpc_client,
@@ -96,7 +98,7 @@ async def get_pricing_unit(
 
 async def create_pricing_unit(
     app: web.Application, product_name: ProductName, data: PricingUnitWithCostCreate
-) -> PricingUnitGet:
+) -> RutPricingUnitGet:
     rpc_client = get_rabbitmq_rpc_client(app)
     return await pricing_units.create_pricing_unit(
         rpc_client, product_name=product_name, data=data
@@ -105,7 +107,7 @@ async def create_pricing_unit(
 
 async def update_pricing_unit(
     app: web.Application, product_name: ProductName, data: PricingUnitWithCostUpdate
-) -> PricingUnitGet:
+) -> RutPricingUnitGet:
     rpc_client = get_rabbitmq_rpc_client(app)
     return await pricing_units.update_pricing_unit(
         rpc_client, product_name=product_name, data=data

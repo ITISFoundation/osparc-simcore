@@ -2,7 +2,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import NamedTuple
 
-from pydantic import BaseModel, ConfigDict, PositiveInt
+from pydantic import BaseModel, ConfigDict, PositiveInt, model_validator
 
 from ..resource_tracker import (
     HardwareInfo,
@@ -10,15 +10,16 @@ from ..resource_tracker import (
     PricingPlanId,
     PricingUnitCostId,
     PricingUnitId,
-    UnitExtraInfo,
+    UnitExtraInfoLicense,
+    UnitExtraInfoTier,
 )
 from ..services_types import ServiceKey, ServiceVersion
 
 
-class PricingUnitGet(BaseModel):
+class RutPricingUnitGet(BaseModel):
     pricing_unit_id: PricingUnitId
     unit_name: str
-    unit_extra_info: UnitExtraInfo
+    unit_extra_info: UnitExtraInfoTier | UnitExtraInfoLicense
     current_cost_per_unit: Decimal
     current_cost_per_unit_id: PricingUnitCostId
     default: bool
@@ -30,7 +31,7 @@ class PricingUnitGet(BaseModel):
                 {
                     "pricing_unit_id": 1,
                     "unit_name": "SMALL",
-                    "unit_extra_info": UnitExtraInfo.model_config["json_schema_extra"]["examples"][0],  # type: ignore [index]
+                    "unit_extra_info": UnitExtraInfoTier.model_config["json_schema_extra"]["examples"][0],  # type: ignore [index]
                     "current_cost_per_unit": 5.7,
                     "current_cost_per_unit_id": 1,
                     "default": True,
@@ -44,15 +45,38 @@ class PricingUnitGet(BaseModel):
     )
 
 
-class PricingPlanGet(BaseModel):
+class RutPricingPlanGet(BaseModel):
     pricing_plan_id: PricingPlanId
     display_name: str
     description: str
     classification: PricingPlanClassification
     created_at: datetime
     pricing_plan_key: str
-    pricing_units: list[PricingUnitGet] | None
+    pricing_units: list[RutPricingUnitGet] | None
     is_active: bool
+
+    @model_validator(mode="after")
+    def ensure_classification_matches_extra_info(self):
+        """Enforce that all PricingUnitGet.unit_extra_info match the plan's classification."""
+        if not self.pricing_units:
+            return self  # No units to check
+
+        for unit in self.pricing_units:
+            if (
+                self.classification == PricingPlanClassification.TIER
+                and not isinstance(unit.unit_extra_info, UnitExtraInfoTier)
+            ):
+                error_message = (
+                    "For TIER classification, unit_extra_info must be UnitExtraInfoTier"
+                )
+                raise ValueError(error_message)
+            if (
+                self.classification == PricingPlanClassification.LICENSE
+                and not isinstance(unit.unit_extra_info, UnitExtraInfoLicense)
+            ):
+                error_message = "For LICENSE classification, unit_extra_info must be UnitExtraInfoLicense"
+                raise ValueError(error_message)
+        return self
 
     model_config = ConfigDict(
         json_schema_extra={
@@ -67,7 +91,7 @@ class PricingPlanGet(BaseModel):
                     "pricing_units": [pricing_unit_get_example],
                     "is_active": True,
                 }
-                for pricing_unit_get_example in PricingUnitGet.model_config[
+                for pricing_unit_get_example in RutPricingUnitGet.model_config[
                     "json_schema_extra"
                 ][
                     "examples"
@@ -77,8 +101,8 @@ class PricingPlanGet(BaseModel):
     )
 
 
-class PricingPlanPage(NamedTuple):
-    items: list[PricingPlanGet]
+class RutPricingPlanPage(NamedTuple):
+    items: list[RutPricingPlanGet]
     total: PositiveInt
 
 

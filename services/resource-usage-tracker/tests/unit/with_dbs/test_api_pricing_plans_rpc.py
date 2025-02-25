@@ -5,10 +5,10 @@ import pytest
 import sqlalchemy as sa
 from faker import Faker
 from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
-    PricingPlanGet,
-    PricingPlanPage,
     PricingPlanToServiceGet,
-    PricingUnitGet,
+    RutPricingPlanGet,
+    RutPricingPlanPage,
+    RutPricingUnitGet,
 )
 from models_library.resource_tracker import (
     PricingPlanClassification,
@@ -18,7 +18,7 @@ from models_library.resource_tracker import (
     PricingUnitWithCostCreate,
     PricingUnitWithCostUpdate,
     SpecificInfo,
-    UnitExtraInfo,
+    UnitExtraInfoTier,
 )
 from models_library.services import ServiceKey, ServiceVersion
 from servicelib.rabbitmq import RabbitMQRPCClient
@@ -111,7 +111,7 @@ async def test_rpc_pricing_plans_workflow(
             pricing_plan_key=faker.word(),
         ),
     )
-    assert isinstance(result, PricingPlanGet)
+    assert isinstance(result, RutPricingPlanGet)
     assert result.pricing_units == []
     assert result.display_name == _display_name
     _pricing_plan_id = result.pricing_plan_id
@@ -128,7 +128,7 @@ async def test_rpc_pricing_plans_workflow(
             is_active=True,
         ),
     )
-    assert isinstance(result, PricingPlanGet)
+    assert isinstance(result, RutPricingPlanGet)
     assert result.pricing_units == []
     assert result.display_name == _update_display_name
     assert result.description == _update_description
@@ -138,20 +138,20 @@ async def test_rpc_pricing_plans_workflow(
         product_name="osparc",
         pricing_plan_id=_pricing_plan_id,
     )
-    assert isinstance(result, PricingPlanGet)
+    assert isinstance(result, RutPricingPlanGet)
     assert result.pricing_units == []
     assert result.display_name == _update_display_name
     assert result.description == _update_description
     assert result.is_active is True
 
-    result = await pricing_plans.list_pricing_plans(
+    result = await pricing_plans.list_pricing_plans_without_pricing_units(
         rpc_client,
         product_name="osparc",
     )
-    assert isinstance(result, PricingPlanPage)
+    assert isinstance(result, RutPricingPlanPage)
     assert result.total == 1
     assert len(result.items) == 1
-    assert isinstance(result.items[0], PricingPlanGet)
+    assert isinstance(result.items[0], RutPricingPlanGet)
     assert result.items[0].pricing_units is None
 
     # Now I will deactivate the pricing plan
@@ -165,7 +165,7 @@ async def test_rpc_pricing_plans_workflow(
             is_active=False,  # <-- deactivate
         ),
     )
-    assert isinstance(result, PricingPlanGet)
+    assert isinstance(result, RutPricingPlanGet)
     assert result.is_active is False
 
 
@@ -186,7 +186,7 @@ async def test_rpc_pricing_plans_with_units_workflow(
             pricing_plan_key=faker.word(),
         ),
     )
-    assert isinstance(result, PricingPlanGet)
+    assert isinstance(result, RutPricingPlanGet)
     assert result.pricing_units == []
     assert result.display_name == _display_name
     _pricing_plan_id = result.pricing_plan_id
@@ -197,16 +197,16 @@ async def test_rpc_pricing_plans_with_units_workflow(
         data=PricingUnitWithCostCreate(
             pricing_plan_id=_pricing_plan_id,
             unit_name="SMALL",
-            unit_extra_info=UnitExtraInfo.model_config["json_schema_extra"]["examples"][
-                0
-            ],
+            unit_extra_info=UnitExtraInfoTier.model_config["json_schema_extra"][
+                "examples"
+            ][0],
             default=True,
             specific_info=SpecificInfo(aws_ec2_instances=[]),
             cost_per_unit=Decimal(10),
             comment=faker.sentence(),
         ),
     )
-    assert isinstance(result, PricingUnitGet)
+    assert isinstance(result, RutPricingUnitGet)
     assert result
     _first_pricing_unit_id = result.pricing_unit_id
     _current_cost_per_unit_id = result.current_cost_per_unit_id
@@ -217,7 +217,7 @@ async def test_rpc_pricing_plans_with_units_workflow(
         product_name="osparc",
         pricing_plan_id=_pricing_plan_id,
     )
-    assert isinstance(result, PricingPlanGet)
+    assert isinstance(result, RutPricingPlanGet)
     assert result.pricing_units
     assert len(result.pricing_units) == 1
     assert result.pricing_units[0].pricing_unit_id == _first_pricing_unit_id
@@ -231,15 +231,15 @@ async def test_rpc_pricing_plans_with_units_workflow(
             pricing_plan_id=_pricing_plan_id,
             pricing_unit_id=_first_pricing_unit_id,
             unit_name=_unit_name,
-            unit_extra_info=UnitExtraInfo.model_config["json_schema_extra"]["examples"][
-                0
-            ],
+            unit_extra_info=UnitExtraInfoTier.model_config["json_schema_extra"][
+                "examples"
+            ][0],
             default=True,
             specific_info=SpecificInfo(aws_ec2_instances=[]),
             pricing_unit_cost_update=None,
         ),
     )
-    assert isinstance(result, PricingUnitGet)
+    assert isinstance(result, RutPricingUnitGet)
     assert result.unit_name == _unit_name
     assert result.current_cost_per_unit == Decimal(10)
     assert result.current_cost_per_unit_id == _current_cost_per_unit_id
@@ -252,9 +252,9 @@ async def test_rpc_pricing_plans_with_units_workflow(
             pricing_plan_id=_pricing_plan_id,
             pricing_unit_id=_first_pricing_unit_id,
             unit_name="MEDIUM",
-            unit_extra_info=UnitExtraInfo.model_config["json_schema_extra"]["examples"][
-                0
-            ],
+            unit_extra_info=UnitExtraInfoTier.model_config["json_schema_extra"][
+                "examples"
+            ][0],
             default=True,
             specific_info=SpecificInfo(aws_ec2_instances=[]),
             pricing_unit_cost_update=PricingUnitCostUpdate(
@@ -263,7 +263,7 @@ async def test_rpc_pricing_plans_with_units_workflow(
             ),
         ),
     )
-    assert isinstance(result, PricingUnitGet)
+    assert isinstance(result, RutPricingUnitGet)
     assert result.unit_name == "MEDIUM"
     assert result.current_cost_per_unit == Decimal(15)
     assert result.current_cost_per_unit_id != _current_cost_per_unit_id
@@ -275,7 +275,7 @@ async def test_rpc_pricing_plans_with_units_workflow(
         pricing_plan_id=_pricing_plan_id,
         pricing_unit_id=_first_pricing_unit_id,
     )
-    assert isinstance(result, PricingUnitGet)
+    assert isinstance(result, RutPricingUnitGet)
     assert result.current_cost_per_unit == Decimal(15)
 
     # Create one more unit
@@ -285,16 +285,16 @@ async def test_rpc_pricing_plans_with_units_workflow(
         data=PricingUnitWithCostCreate(
             pricing_plan_id=_pricing_plan_id,
             unit_name="LARGE",
-            unit_extra_info=UnitExtraInfo.model_config["json_schema_extra"]["examples"][
-                0
-            ],
+            unit_extra_info=UnitExtraInfoTier.model_config["json_schema_extra"][
+                "examples"
+            ][0],
             default=False,
             specific_info=SpecificInfo(aws_ec2_instances=[]),
             cost_per_unit=Decimal(20),
             comment=faker.sentence(),
         ),
     )
-    assert isinstance(result, PricingUnitGet)
+    assert isinstance(result, RutPricingUnitGet)
     assert result
     _second_pricing_unit_id = result.pricing_unit_id
 
@@ -304,7 +304,7 @@ async def test_rpc_pricing_plans_with_units_workflow(
         product_name="osparc",
         pricing_plan_id=_pricing_plan_id,
     )
-    assert isinstance(result, PricingPlanGet)
+    assert isinstance(result, RutPricingPlanGet)
     assert result.pricing_units
     assert len(result.pricing_units) == 2
     assert result.pricing_units[0].pricing_unit_id == _first_pricing_unit_id
@@ -327,7 +327,7 @@ async def test_rpc_pricing_plans_to_service_workflow(
             pricing_plan_key=faker.word(),
         ),
     )
-    assert isinstance(result, PricingPlanGet)
+    assert isinstance(result, RutPricingPlanGet)
     _pricing_plan_id = result.pricing_plan_id
 
     result = (
