@@ -18,43 +18,27 @@
 qx.Class.define("osparc.pricing.UnitEditor", {
   extend: qx.ui.core.Widget,
 
-  construct: function(pricingUnit) {
+  construct: function(pricingPlanId, pricingUnit) {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.VBox(10));
 
-    const unitName = this.getChildControl("unit-name");
-    const costPerUnit = this.getChildControl("cost-per-unit");
-    this.getChildControl("comment");
-    const specificInfo = this.getChildControl("specific-info");
-    const unitExtraInfoCPU = this.getChildControl("unit-extra-info-cpu");
-    const unitExtraInfoRAM = this.getChildControl("unit-extra-info-ram");
-    const unitExtraInfoVRAM = this.getChildControl("unit-extra-info-vram");
-    const unitExtraInfo = this.getChildControl("unit-extra-info");
-    this.getChildControl("is-default");
+    this.__validator = new qx.ui.form.validation.Manager();
 
-    const manager = this.__validator = new qx.ui.form.validation.Manager();
-    unitName.setRequired(true);
-    costPerUnit.setRequired(true);
-    unitExtraInfoCPU.setRequired(true);
-    unitExtraInfoRAM.setRequired(true);
-    unitExtraInfoVRAM.setRequired(true);
-    unitExtraInfo.setRequired(true);
-    manager.add(unitName);
-    manager.add(costPerUnit);
-    manager.add(specificInfo);
-    manager.add(unitExtraInfo);
+    this.set({
+      pricingPlanId
+    });
 
     if (pricingUnit) {
       this.set({
         pricingUnitId: pricingUnit.getPricingUnitId(),
         unitName: pricingUnit.getName(),
         costPerUnit: pricingUnit.getCost(),
+        default: pricingUnit.getIsDefault(),
       });
       if (pricingUnit.getClassification() === "TIER") {
         this.set({
           specificInfo: pricingUnit.getSpecificInfo() && pricingUnit.getSpecificInfo()["aws_ec2_instances"] ? pricingUnit.getSpecificInfo()["aws_ec2_instances"].toString() : "",
-          default: pricingUnit.getIsDefault(),
         });
         const extraInfo = osparc.utils.Utils.deepCloneObject(pricingUnit.getExtraInfo());
         // extract the required fields from the unitExtraInfo
@@ -69,6 +53,11 @@ qx.Class.define("osparc.pricing.UnitEditor", {
         this.set({
           unitExtraInfo: extraInfo
         });
+      } else if (pricingUnit.getClassification() === "LICENSE") {
+        this.set({
+          // unitExtraInfoNSeats: pricingUnit.getNumberOfSeats(),
+          unitExtraInfoNSeats: 42,
+        });
       }
       this.getChildControl("save");
     } else {
@@ -81,6 +70,7 @@ qx.Class.define("osparc.pricing.UnitEditor", {
       check: "Number",
       init: null,
       nullable: false,
+      apply: "__applyPricingPlanId"
     },
 
     pricingUnitId: {
@@ -146,6 +136,13 @@ qx.Class.define("osparc.pricing.UnitEditor", {
       event: "changeUnitExtraInfo"
     },
 
+    unitExtraInfoNSeats: {
+      check: "Number",
+      init: 1,
+      nullable: false,
+      event: "changeUnitExtraInfoNSeats"
+    },
+
     default: {
       check: "Boolean",
       init: true,
@@ -175,6 +172,8 @@ qx.Class.define("osparc.pricing.UnitEditor", {
           control = new qx.ui.form.TextField().set({
             font: "text-14"
           });
+          control.setRequired(true);
+          this.__validator.add(control);
           this.bind("unitName", control, "value");
           control.bind("value", this, "unitName");
           this.getChildControl("unit-form").add(control, this.tr("Unit Name"));
@@ -184,6 +183,8 @@ qx.Class.define("osparc.pricing.UnitEditor", {
             minimum: 0,
             maximum: 10000
           });
+          control.setRequired(true);
+          this.__validator.add(control);
           this.bind("costPerUnit", control, "value");
           control.bind("value", this, "costPerUnit");
           this.getChildControl("unit-form").add(control, this.tr("Cost per unit"));
@@ -200,6 +201,7 @@ qx.Class.define("osparc.pricing.UnitEditor", {
           control = new qx.ui.form.TextArea().set({
             font: "text-14"
           });
+          this.__validator.add(control);
           this.bind("specificInfo", control, "value");
           control.bind("value", this, "specificInfo");
           this.getChildControl("unit-form").add(control, this.tr("Specific info"));
@@ -210,6 +212,7 @@ qx.Class.define("osparc.pricing.UnitEditor", {
             minimum: 0,
             maximum: 10000
           });
+          control.setRequired(true);
           this.bind("unitExtraInfoCPU", control, "value");
           control.bind("value", this, "unitExtraInfoCPU");
           this.getChildControl("unit-form").add(control, this.tr("CPU"));
@@ -220,6 +223,7 @@ qx.Class.define("osparc.pricing.UnitEditor", {
             minimum: 0,
             maximum: 10000
           });
+          control.setRequired(true);
           this.bind("unitExtraInfoRAM", control, "value");
           control.bind("value", this, "unitExtraInfoRAM");
           this.getChildControl("unit-form").add(control, this.tr("RAM"));
@@ -230,6 +234,7 @@ qx.Class.define("osparc.pricing.UnitEditor", {
             minimum: 0,
             maximum: 10000
           });
+          control.setRequired(true);
           this.bind("unitExtraInfoVRAM", control, "value");
           control.bind("value", this, "unitExtraInfoVRAM");
           this.getChildControl("unit-form").add(control, this.tr("VRAM"));
@@ -239,6 +244,8 @@ qx.Class.define("osparc.pricing.UnitEditor", {
           control = new qx.ui.form.TextField().set({
             font: "text-14"
           });
+          control.setRequired(true);
+          this.__validator.add(control);
           this.bind("unitExtraInfo", control, "value", {
             converter: v => JSON.stringify(v)
           });
@@ -246,6 +253,16 @@ qx.Class.define("osparc.pricing.UnitEditor", {
             converter: v => JSON.parse(v)
           });
           this.getChildControl("unit-form").add(control, this.tr("More Extra Info"));
+          break;
+        }
+        case "unit-extra-info-n-seats": {
+          control = new qx.ui.form.Spinner().set({
+            minimum: 1,
+            maximum: 10000
+          });
+          this.bind("unitExtraInfoNSeats", control, "value");
+          control.bind("value", this, "unitExtraInfoNSeats");
+          this.getChildControl("unit-form").add(control, this.tr("Number of Seats"));
           break;
         }
         case "is-default": {
@@ -300,6 +317,29 @@ qx.Class.define("osparc.pricing.UnitEditor", {
       }
 
       return control || this.base(arguments, id);
+    },
+
+    __applyPricingPlanId: function(pricingPlanId) {
+      const pricingPlan = osparc.store.Pricing.getInstance().getPricingPlan(pricingPlanId);
+      if (pricingPlan) {
+        if (pricingPlan.getClassification() === "TIER") {
+          this.getChildControl("unit-name");
+          this.getChildControl("cost-per-unit");
+          this.getChildControl("comment");
+          this.getChildControl("specific-info");
+          this.getChildControl("unit-extra-info-cpu");
+          this.getChildControl("unit-extra-info-ram");
+          this.getChildControl("unit-extra-info-vram");
+          this.getChildControl("unit-extra-info");
+          this.getChildControl("is-default");
+        } else if (pricingPlan.getClassification() === "LICENSE") {
+          this.getChildControl("unit-name");
+          this.getChildControl("cost-per-unit");
+          this.getChildControl("comment");
+          this.getChildControl("unit-extra-info-n-seats");
+          this.getChildControl("is-default");
+        }
+      }
     },
 
     __createPricingUnit: function() {
