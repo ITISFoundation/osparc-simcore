@@ -59,7 +59,7 @@ async def get_product_latest_stripe_info(
         )
     ).fetchone()
     if row is None:
-        msg = "No product Stripe info defined in database"
+        msg = f"No product Stripe info defined in database [{product_name=}]"
         raise ValueError(msg)
     return (row.stripe_price_id, row.stripe_tax_rate_id)
 

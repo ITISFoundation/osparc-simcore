@@ -4,7 +4,9 @@
 # pylint: disable=too-many-arguments
 
 import contextlib
-from typing import Any, Iterable
+from collections.abc import Iterable
+from decimal import Decimal
+from typing import Any
 
 import aiopg.sa
 import pytest
@@ -12,7 +14,7 @@ import sqlalchemy as sa
 from aiohttp import web
 from aiohttp.test_utils import TestClient, make_mocked_request
 from models_library.products import ProductName, ProductStripeInfoGet
-from pytest_simcore.helpers.faker_factories import random_product
+from pytest_simcore.helpers.faker_factories import random_product, random_product_price
 from pytest_simcore.helpers.postgres_tools import sync_insert_and_get_row_lifespan
 from simcore_postgres_database import utils_products
 from simcore_postgres_database.models.products import (
@@ -24,6 +26,7 @@ from simcore_postgres_database.models.products import (
     WebFeedback,
     products,
 )
+from simcore_postgres_database.models.products_prices import products_prices
 from simcore_postgres_database.utils_products_prices import ProductPriceInfo
 from simcore_service_webserver.constants import (
     FRONTEND_APP_DEFAULT,
@@ -101,8 +104,26 @@ def products_raw_data() -> dict[ProductName, dict[str, Any]]:
 
 
 @pytest.fixture(scope="module")
+def products_prices_raw_data() -> dict[ProductName, dict[str, Any]]:
+
+    return {
+        "osparc": random_product_price(
+            product_name="osparc",
+            # free of charge
+            usd_per_credit=Decimal(0),
+        ),
+        "tis": random_product_price(
+            product_name="tis",
+            usd_per_credit=Decimal(0),
+        ),
+    }
+
+
+@pytest.fixture(scope="module")
 def db_products_table_with_data_before_app(
-    postgres_db: sa.engine.Engine, products_raw_data: dict[ProductName, dict[str, Any]]
+    postgres_db: sa.engine.Engine,
+    products_raw_data: dict[ProductName, dict[str, Any]],
+    products_prices_raw_data: dict[ProductName, dict[str, Any]],
 ) -> Iterable[dict[ProductName, dict[str, Any]]]:
     """
     All tests in this module are reading from the database
@@ -111,11 +132,11 @@ def db_products_table_with_data_before_app(
     This fixture replicate those two conditions
     """
 
-    with contextlib.ExitStack() as module_test_suite_fixture:
+    with contextlib.ExitStack() as fixture_stack:
         product_to_row: dict[ProductName, dict[str, Any]] = {}
 
         for product_name, product_values in products_raw_data.items():
-            product_row = module_test_suite_fixture.enter_context(
+            product_row = fixture_stack.enter_context(
                 sync_insert_and_get_row_lifespan(
                     postgres_db,
                     table=products,
@@ -125,6 +146,17 @@ def db_products_table_with_data_before_app(
                 )
             )
             product_to_row[product_name] = product_row
+
+            if prices := products_prices_raw_data.get(product_name):
+                fixture_stack.enter_context(
+                    sync_insert_and_get_row_lifespan(
+                        postgres_db,
+                        table=products_prices,
+                        values=prices,
+                        pk_col=products_prices.c.product_name,
+                        pk_value=product_name,
+                    )
+                )
 
         yield product_to_row
 
@@ -162,6 +194,7 @@ async def test_utils_products_and_webserver_default_product_in_sync(
         assert default_product_name == _get_default_product_name(app)
 
     default_product = await product_repository.get_product(default_product_name)
+    assert default_product
     assert default_product.name == default_product_name
 
 
@@ -201,6 +234,10 @@ async def test_product_repository_get_product_stripe_info(
     product_name = "tis"
     stripe_info = await product_repository.get_product_stripe_info(product_name)
     assert isinstance(stripe_info, ProductStripeInfoGet)
+
+    product_name = "s4l"
+    with pytest.raises(ValueError, match=product_name):
+        stripe_info = await product_repository.get_product_stripe_info(product_name)
 
 
 async def test_product_repository_get_template_content(
