@@ -118,18 +118,13 @@ def fake_storage_app(storage_vtag: str) -> FastAPI:  # noqa: C901
         expand_dirs: bool = True,
     ):
         assert "json_schema_extra" in FileMetaDataGet.model_config
-        assert isinstance(FileMetaDataGet.model_config["json_schema_extra"], dict)
-        assert isinstance(
-            FileMetaDataGet.model_config["json_schema_extra"]["examples"], list
-        )
+
         if uuid_filter:
             return Envelope[list[FileMetaDataGet]](
                 data=random.sample(
                     [
                         FileMetaDataGet.model_validate(e)
-                        for e in FileMetaDataGet.model_config["json_schema_extra"][
-                            "examples"
-                        ]
+                        for e in FileMetaDataGet.model_json_schema()["examples"]
                     ],
                     2,
                 )
@@ -137,7 +132,7 @@ def fake_storage_app(storage_vtag: str) -> FastAPI:  # noqa: C901
         return Envelope[list[FileMetaDataGet]](
             data=[
                 FileMetaDataGet.model_validate(e)
-                for e in FileMetaDataGet.model_config["json_schema_extra"]["examples"]
+                for e in FileMetaDataGet.model_json_schema()["examples"]
             ]
         )
 
@@ -149,17 +144,12 @@ def fake_storage_app(storage_vtag: str) -> FastAPI:  # noqa: C901
     )
     async def _get_file_metadata(user_id: UserID, request: Request):
         assert "json_schema_extra" in FileMetaDataGet.model_config
-        assert isinstance(FileMetaDataGet.model_config["json_schema_extra"], dict)
-        assert isinstance(
-            FileMetaDataGet.model_config["json_schema_extra"]["examples"], list
-        )
+
         return Envelope[FileMetaDataGet](
             data=random.choice(  # noqa: S311
                 [
                     FileMetaDataGet.model_validate(e)
-                    for e in FileMetaDataGet.model_config["json_schema_extra"][
-                        "examples"
-                    ]
+                    for e in FileMetaDataGet.model_json_schema()["examples"]
                 ]
             )
         )
@@ -189,14 +179,11 @@ def fake_storage_app(storage_vtag: str) -> FastAPI:  # noqa: C901
     )
     async def _list_dataset_files_metadata(user_id: UserID, request: Request):
         assert "json_schema_extra" in FileMetaDataGet.model_config
-        assert isinstance(FileMetaDataGet.model_config["json_schema_extra"], dict)
-        assert isinstance(
-            FileMetaDataGet.model_config["json_schema_extra"]["examples"], list
-        )
+
         return Envelope[list[FileMetaDataGet]](
             data=[
                 FileMetaDataGet.model_validate(e)
-                for e in FileMetaDataGet.model_config["json_schema_extra"]["examples"]
+                for e in FileMetaDataGet.model_json_schema()["examples"]
             ]
         )
 
@@ -212,10 +199,6 @@ def fake_storage_app(storage_vtag: str) -> FastAPI:  # noqa: C901
         link_type: LinkType = LinkType.PRESIGNED,
     ):
         assert "json_schema_extra" in FileUploadSchema.model_config
-        assert isinstance(FileUploadSchema.model_config["json_schema_extra"], dict)
-        assert isinstance(
-            FileUploadSchema.model_config["json_schema_extra"]["examples"], list
-        )
 
         abort_url = (
             URL(f"{request.url}")
@@ -242,7 +225,7 @@ def fake_storage_app(storage_vtag: str) -> FastAPI:  # noqa: C901
         )
         response = FileUploadSchema.model_validate(
             random.choice(  # noqa: S311
-                FileUploadSchema.model_config["json_schema_extra"]["examples"]
+                FileUploadSchema.model_json_schema()["examples"]
             )
         )
         response.links.abort_upload = TypeAdapter(AnyUrl).validate_python(
