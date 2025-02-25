@@ -179,6 +179,33 @@ class PathsCursorParameters(BaseModel):
     partial: bool
 
 
+def _init_pagination(
+    cursor: GenericCursor | None,
+    *,
+    filter_by_project_ids: list[ProjectID] | None,
+    filter_by_file_prefix: Path | None,
+    is_partial_prefix: bool,
+) -> PathsCursorParameters:
+    if cursor:
+        return PathsCursorParameters.model_validate_json(cursor)
+    return PathsCursorParameters(
+        offset=0,
+        file_prefix=filter_by_file_prefix,
+        project_ids=filter_by_project_ids,
+        partial=is_partial_prefix,
+    )
+
+
+def _create_next_cursor(
+    total: TotalChildren, limit: int, cursor_params: PathsCursorParameters
+) -> GenericCursor | None:
+    if cursor_params.offset + limit < total:
+        return cursor_params.model_copy(
+            update={"offset": cursor_params.offset + limit}
+        ).model_dump_json()
+    return None
+
+
 async def list_child_paths(
     conn: AsyncConnection,
     *,
@@ -192,15 +219,12 @@ async def list_child_paths(
     e.g. when no filter is used, these are top level objects
     """
 
-    if cursor:
-        cursor_params = PathsCursorParameters.model_validate_json(cursor)
-    else:
-        cursor_params = PathsCursorParameters(
-            offset=0,
-            file_prefix=filter_by_file_prefix,
-            project_ids=filter_by_project_ids,
-            partial=is_partial_prefix,
-        )
+    cursor_params = _init_pagination(
+        cursor,
+        filter_by_project_ids=filter_by_project_ids,
+        filter_by_file_prefix=filter_by_file_prefix,
+        is_partial_prefix=is_partial_prefix,
+    )
 
     if cursor_params.file_prefix:
         prefix_levels = len(cursor_params.file_prefix.parts) - 1
@@ -299,12 +323,8 @@ async def list_child_paths(
         )
         async for row in await conn.stream(files_query)
     ]
-    next_cursor = None
-    if cursor_params.offset + limit < total_count:
-        next_cursor = cursor_params.model_copy(
-            update={"offset": cursor_params.offset + limit}
-        ).model_dump_json()
-    return items, next_cursor, total_count
+
+    return items, _create_next_cursor(total_count, limit, cursor_params), total_count
 
 
 async def list_fmds(
