@@ -308,6 +308,10 @@ async def list_licensed_items(
     include_hidden_items_on_market: bool = False,
 ) -> tuple[int, list[LicensedItem]]:
 
+    _licensed_resource_subquery = _create_licensed_resource_subquery(
+        product_name=product_name
+    )
+
     base_query = (
         select(
             licensed_items.c.licensed_item_id,
