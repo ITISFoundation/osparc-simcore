@@ -1,4 +1,3 @@
-from collections.abc import Iterable
 from contextlib import suppress
 from pathlib import Path
 
@@ -184,7 +183,7 @@ async def list_child_paths_from_s3(
 async def list_child_paths_from_repository(
     conn: AsyncConnection,
     *,
-    filter_by_project_ids: Iterable[ProjectID] | None,
+    filter_by_project_ids: list[ProjectID] | None,
     filter_by_file_prefix: Path | None,
     cursor: GenericCursor | None,
     limit: int,
