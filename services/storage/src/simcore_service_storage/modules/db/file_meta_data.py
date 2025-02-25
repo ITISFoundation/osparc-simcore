@@ -172,7 +172,7 @@ async def try_get_directory(
 TotalChildren: TypeAlias = int
 
 
-class PathsCursorParameters(BaseModel):
+class _PathsCursorParameters(BaseModel):
     offset: int
     file_prefix: Path | None
     project_ids: list[ProjectID] | None
@@ -185,10 +185,10 @@ def _init_pagination(
     filter_by_project_ids: list[ProjectID] | None,
     filter_by_file_prefix: Path | None,
     is_partial_prefix: bool,
-) -> PathsCursorParameters:
+) -> _PathsCursorParameters:
     if cursor:
-        return PathsCursorParameters.model_validate_json(cursor)
-    return PathsCursorParameters(
+        return _PathsCursorParameters.model_validate_json(cursor)
+    return _PathsCursorParameters(
         offset=0,
         file_prefix=filter_by_file_prefix,
         project_ids=filter_by_project_ids,
@@ -197,7 +197,7 @@ def _init_pagination(
 
 
 def _create_next_cursor(
-    total: TotalChildren, limit: int, cursor_params: PathsCursorParameters
+    total: TotalChildren, limit: int, cursor_params: _PathsCursorParameters
 ) -> GenericCursor | None:
     if cursor_params.offset + limit < total:
         return cursor_params.model_copy(
