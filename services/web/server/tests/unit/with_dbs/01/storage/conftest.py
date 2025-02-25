@@ -6,15 +6,16 @@
 import logging
 import random
 from collections.abc import Iterator
+from pathlib import Path
 from threading import Thread
-from typing import Any
-from urllib.parse import quote
+from typing import Annotated
 
 import pytest
 import uvicorn
-from aiohttp.test_utils import TestClient
 from faker import Faker
-from fastapi import APIRouter, FastAPI, Request
+from fastapi import APIRouter, Depends, FastAPI, Request, status
+from fastapi_pagination import add_pagination, create_page
+from fastapi_pagination.cursor import CursorPage, CursorParams
 from models_library.api_schemas_storage.storage_schemas import (
     DatasetMetaDataGet,
     FileLocation,
@@ -24,20 +25,17 @@ from models_library.api_schemas_storage.storage_schemas import (
     FileUploadCompletionBody,
     FileUploadSchema,
     LinkType,
+    PathMetaDataGet,
 )
 from models_library.generics import Envelope
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import LocationID, StorageFileID
 from models_library.users import UserID
 from pydantic import AnyUrl, TypeAdapter
-from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.logging_tools import log_context
-from servicelib.aiohttp import status
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from servicelib.utils import unused_port
-from simcore_postgres_database.models.users import UserRole
 from yarl import URL
-
-API_VERSION = "v0"
 
 
 @pytest.fixture(scope="session")
@@ -46,8 +44,10 @@ def storage_vtag() -> str:
 
 
 @pytest.fixture(scope="module")
-def fake_storage_app(storage_vtag: str) -> FastAPI:
+def fake_storage_app(storage_vtag: str) -> FastAPI:  # noqa: C901
     app = FastAPI(debug=True)
+    add_pagination(app)
+
     router = APIRouter(
         prefix=f"/{storage_vtag}",
     )
@@ -73,6 +73,37 @@ def fake_storage_app(storage_vtag: str) -> FastAPI:
                 FileLocation.model_validate(e)
                 for e in FileLocation.model_config["json_schema_extra"]["examples"]
             ]
+        )
+
+    @router.get(
+        "/locations/{location_id}/paths",
+        response_model=CursorPage[PathMetaDataGet],
+    )
+    async def _list_paths(
+        page_params: Annotated[CursorParams, Depends()],
+        # dsm: Annotated[BaseDataManager, Depends(get_data_manager)],
+        user_id: UserID,
+        file_filter: Path | None = None,
+    ):
+        assert user_id
+        assert "json_schema_extra" in PathMetaDataGet.model_config
+        assert isinstance(PathMetaDataGet.model_config["json_schema_extra"], dict)
+        assert isinstance(
+            PathMetaDataGet.model_config["json_schema_extra"]["examples"], list
+        )
+
+        example_index = len(file_filter.parts) if file_filter else 0
+        assert example_index < len(
+            PathMetaDataGet.model_config["json_schema_extra"]["examples"]
+        ), "fake server unable to server this example"
+        chosen_example = PathMetaDataGet.model_config["json_schema_extra"]["examples"][
+            example_index
+        ]
+
+        return create_page(
+            random.randint(3, 15) * [PathMetaDataGet.model_validate(chosen_example)],
+            params=page_params,
+            next_=None,
         )
 
     @router.get(
@@ -296,238 +327,18 @@ def app_environment(
     monkeypatch: pytest.MonkeyPatch,
 ) -> dict[str, str]:
     # NOTE: overrides app_environment
-    monkeypatch.setenv("STORAGE_PORT", f"{fake_storage_server.port}")
-    monkeypatch.setenv("STORAGE_VTAG", storage_vtag)
-    monkeypatch.setenv("WEBSERVER_GARBAGE_COLLECTOR", "null")
-    return app_environment | {"WEBSERVER_GARBAGE_COLLECTOR": "null"}
 
-
-# --------------------------------------------------------------------------
-PREFIX = "/" + API_VERSION + "/storage"
-
-
-@pytest.mark.parametrize(
-    "user_role,expected",
-    [
-        (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
-        (UserRole.GUEST, status.HTTP_200_OK),
-        (UserRole.USER, status.HTTP_200_OK),
-        (UserRole.TESTER, status.HTTP_200_OK),
-    ],
-)
-async def test_list_storage_locations(
-    client: TestClient,
-    logged_user: dict[str, Any],
-    expected: int,
-):
-    url = "/v0/storage/locations"
-    assert url.startswith(PREFIX)
-
-    resp = await client.get(url, params={"user_id": logged_user["id"]})
-    data, error = await assert_status(resp, expected)
-
-    if not error:
-        assert "json_schema_extra" in FileLocation.model_config
-        assert isinstance(FileLocation.model_config["json_schema_extra"], dict)
-        assert isinstance(
-            FileLocation.model_config["json_schema_extra"]["examples"], list
-        )
-        assert len(data) == len(
-            FileLocation.model_config["json_schema_extra"]["examples"]
-        )
-        assert data == FileLocation.model_config["json_schema_extra"]["examples"]
-
-
-@pytest.mark.parametrize(
-    "user_role,expected",
-    [
-        (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
-        (UserRole.GUEST, status.HTTP_200_OK),
-        (UserRole.USER, status.HTTP_200_OK),
-        (UserRole.TESTER, status.HTTP_200_OK),
-    ],
-)
-async def test_list_datasets_metadata(
-    client: TestClient,
-    logged_user: dict[str, Any],
-    expected: int,
-):
-    url = "/v0/storage/locations/0/datasets"
-    assert url.startswith(PREFIX)
-    assert client.app
-    _url = client.app.router["list_datasets_metadata"].url_for(location_id="0")
-
-    assert url == str(_url)
-
-    resp = await client.get(url, params={"user_id": logged_user["id"]})
-    data, error = await assert_status(resp, expected)
-
-    if not error:
-        assert "json_schema_extra" in DatasetMetaDataGet.model_config
-        assert isinstance(DatasetMetaDataGet.model_config["json_schema_extra"], dict)
-        assert isinstance(
-            DatasetMetaDataGet.model_config["json_schema_extra"]["examples"], list
-        )
-
-        assert len(data) == len(
-            DatasetMetaDataGet.model_config["json_schema_extra"]["examples"]
-        )
-        assert data == DatasetMetaDataGet.model_config["json_schema_extra"]["examples"]
-
-
-@pytest.mark.parametrize(
-    "user_role,expected",
-    [
-        (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
-        (UserRole.GUEST, status.HTTP_200_OK),
-        (UserRole.USER, status.HTTP_200_OK),
-        (UserRole.TESTER, status.HTTP_200_OK),
-    ],
-)
-async def test_list_dataset_files_metadata(
-    client: TestClient,
-    logged_user: dict[str, Any],
-    expected: int,
-):
-    url = "/v0/storage/locations/0/datasets/N:asdfsdf/metadata"
-    assert url.startswith(PREFIX)
-    assert client.app
-    _url = client.app.router["list_dataset_files_metadata"].url_for(
-        location_id="0", dataset_id="N:asdfsdf"
+    return app_environment | setenvs_from_dict(
+        monkeypatch,
+        {
+            "STORAGE_PORT": f"{fake_storage_server.port}",
+            "STORAGE_VTAG": storage_vtag,
+            "WEBSERVER_DB_LISTENER": "0",
+            "WEBSERVER_GARBAGE_COLLECTOR": "null",
+        },
     )
-
-    assert url == str(_url)
-
-    resp = await client.get(url, params={"user_id": logged_user["id"]})
-    data, error = await assert_status(resp, expected)
-
-    if not error:
-        assert "json_schema_extra" in FileMetaDataGet.model_config
-        assert isinstance(FileMetaDataGet.model_config["json_schema_extra"], dict)
-        assert isinstance(
-            FileMetaDataGet.model_config["json_schema_extra"]["examples"], list
-        )
-        assert len(data) == len(
-            FileMetaDataGet.model_config["json_schema_extra"]["examples"]
-        )
-        assert data == [
-            FileMetaDataGet.model_validate(e).model_dump(mode="json")
-            for e in FileMetaDataGet.model_config["json_schema_extra"]["examples"]
-        ]
-
-
-@pytest.mark.parametrize(
-    "user_role,expected",
-    [
-        (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
-        (UserRole.GUEST, status.HTTP_200_OK),
-        (UserRole.USER, status.HTTP_200_OK),
-        (UserRole.TESTER, status.HTTP_200_OK),
-    ],
-)
-async def test_storage_file_meta(
-    client: TestClient,
-    logged_user: dict[str, Any],
-    expected: int,
-    faker: Faker,
-):
-    # tests redirect of path with quotes in path
-    file_id = f"{faker.uuid4()}/{faker.uuid4()}/a/b/c/d/e/dat"
-    quoted_file_id = quote(file_id, safe="")
-    url = f"/v0/storage/locations/0/files/{quoted_file_id}/metadata"
-
-    assert url.startswith(PREFIX)
-
-    resp = await client.get(url, params={"user_id": logged_user["id"]})
-    data, error = await assert_status(resp, expected)
-
-    if not error:
-        assert "json_schema_extra" in FileMetaDataGet.model_config
-        assert isinstance(FileMetaDataGet.model_config["json_schema_extra"], dict)
-        assert isinstance(
-            FileMetaDataGet.model_config["json_schema_extra"]["examples"], list
-        )
-
-        assert data
-        model = FileMetaDataGet.model_validate(data)
-        assert model
-
-
-@pytest.mark.parametrize(
-    "user_role,expected",
-    [
-        (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
-        (UserRole.GUEST, status.HTTP_200_OK),
-        (UserRole.USER, status.HTTP_200_OK),
-        (UserRole.TESTER, status.HTTP_200_OK),
-    ],
-)
-async def test_storage_list_filter(
-    client: TestClient,
-    logged_user: dict[str, Any],
-    expected: int,
-):
-    # tests composition of 2 queries
-    file_id = "a/b/c/d/e/dat"
-    url = "/v0/storage/locations/0/files/metadata?uuid_filter={}".format(
-        quote(file_id, safe="")
-    )
-
-    assert url.startswith(PREFIX)
-
-    resp = await client.get(url, params={"user_id": logged_user["id"]})
-    data, error = await assert_status(resp, expected)
-
-    if not error:
-        assert "json_schema_extra" in FileMetaDataGet.model_config
-        assert isinstance(FileMetaDataGet.model_config["json_schema_extra"], dict)
-        assert isinstance(
-            FileMetaDataGet.model_config["json_schema_extra"]["examples"], list
-        )
-
-        assert len(data) == 2
-        for item in data:
-            model = FileMetaDataGet.model_validate(item)
-            assert model
 
 
 @pytest.fixture
-def file_id(faker: Faker) -> StorageFileID:
-    return TypeAdapter(StorageFileID).validate_python(
-        f"{faker.uuid4()}/{faker.uuid4()}/{faker.file_name()} with spaces.dat"
-    )
-
-
-@pytest.mark.parametrize(
-    "user_role,expected",
-    [
-        # (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
-        # (UserRole.GUEST, status.HTTP_200_OK),
-        (UserRole.USER, status.HTTP_200_OK),
-        # (UserRole.TESTER, status.HTTP_200_OK),
-    ],
-)
-async def test_upload_file(
-    client: TestClient,
-    logged_user: dict[str, Any],
-    expected: int,
-    file_id: StorageFileID,
-):
-    url = f"/v0/storage/locations/0/files/{quote(file_id, safe='')}"
-
-    assert url.startswith(PREFIX)
-
-    resp = await client.put(url, params={"user_id": logged_user["id"]})
-    data, error = await assert_status(resp, expected)
-    assert not error
-    assert data
-    file_upload_schema = FileUploadSchema.model_validate(data)
-
-    # let's abort
-    resp = await client.post(
-        f"{file_upload_schema.links.abort_upload.path}",
-        params={"user_id": logged_user["id"]},
-    )
-    data, error = await assert_status(resp, status.HTTP_204_NO_CONTENT)
-    assert not error
-    assert not data
+def location_id(faker: Faker) -> LocationID:
+    return TypeAdapter(LocationID).validate_python(faker.pyint(min_value=0))
