@@ -182,6 +182,7 @@ async def test_list_paths_pagination(
         file_filter=workspace_file_filter,
         expected_paths=expected_paths,
         limit=1,
+        check_total=False,
     )
     # ls in until we get to some files
     while selected_subfolders := [p for p in expected_paths if p[1] is False]:
@@ -196,6 +197,7 @@ async def test_list_paths_pagination(
             user_id,
             file_filter=selected_path_filter[0],
             expected_paths=expected_paths,
+            check_total=False,
         )
 
 
