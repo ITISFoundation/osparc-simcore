@@ -50,6 +50,6 @@ resource_tracker_pricing_plan_to_service = sa.Table(
         ["services_meta_data.key", "services_meta_data.version"],
         name="fk_rut_pricing_plan_to_service_key_and_version",
         onupdate=RefActions.CASCADE,
-        ondelete=RefActions.CASCADE,
+        ondelete=RefActions.RESTRICT,
     ),
 )
