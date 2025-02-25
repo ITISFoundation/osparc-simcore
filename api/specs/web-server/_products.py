@@ -10,7 +10,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, status
 from models_library.api_schemas_webserver.product import (
     CreditPriceGet,
-    GenerateInvitation,
+    InvitationGenerate,
     InvitationGenerated,
     ProductGet,
     ProductTemplateReplace,
@@ -79,5 +79,5 @@ async def replace_product_template(
         "po",
     ],
 )
-async def generate_invitation(_body: GenerateInvitation):
+async def generate_invitation(_body: InvitationGenerate):
     ...

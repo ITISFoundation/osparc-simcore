@@ -115,7 +115,7 @@ class ProductUIGet(OutputSchema):
 ExtraCreditsUsdRangeInt: TypeAlias = Annotated[int, Field(ge=0, lt=500)]
 
 
-class GenerateInvitation(InputSchema):
+class InvitationGenerate(InputSchema):
     guest: LowerCaseEmailStr
     trial_account_days: PositiveInt | None = None
     extra_credits_in_usd: ExtraCreditsUsdRangeInt | None = None

@@ -3,7 +3,7 @@ import logging
 from aiohttp import web
 from models_library.api_schemas_invitations.invitations import ApiInvitationInputs
 from models_library.api_schemas_webserver.product import (
-    GenerateInvitation,
+    InvitationGenerate,
     InvitationGenerated,
 )
 from models_library.rest_base import RequestParameters
@@ -37,7 +37,7 @@ class _ProductsRequestContext(RequestParameters):
 @permission_required("product.invitations.create")
 async def generate_invitation(request: web.Request):
     req_ctx = _ProductsRequestContext.model_validate(request)
-    body = await parse_request_body_as(GenerateInvitation, request)
+    body = await parse_request_body_as(InvitationGenerate, request)
 
     _, user_email = await get_user_name_and_email(request.app, user_id=req_ctx.user_id)
 
