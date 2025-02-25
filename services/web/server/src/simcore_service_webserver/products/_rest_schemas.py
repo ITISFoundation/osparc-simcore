@@ -24,7 +24,3 @@ class ProductsRequestContext(RequestParameters):
 
 class ProductsRequestParams(StrictRequestParameters):
     product_name: IDStr | Literal["current"]
-
-
-class ProductTemplateParams(ProductsRequestParams):
-    template_id: IDStr

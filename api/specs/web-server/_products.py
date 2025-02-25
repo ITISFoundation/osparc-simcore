@@ -7,21 +7,17 @@
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends
 from models_library.api_schemas_webserver.product import (
     CreditPriceGet,
     InvitationGenerate,
     InvitationGenerated,
     ProductGet,
-    ProductTemplateReplace,
     ProductUIGet,
 )
 from models_library.generics import Envelope
 from simcore_service_webserver._meta import API_VTAG
-from simcore_service_webserver.products._rest_schemas import (
-    ProductsRequestParams,
-    ProductTemplateParams,
-)
+from simcore_service_webserver.products._rest_schemas import ProductsRequestParams
 
 router = APIRouter(
     prefix=f"/{API_VTAG}",
@@ -56,19 +52,6 @@ async def get_product(_params: Annotated[ProductsRequestParams, Depends()]):
     response_model=Envelope[ProductUIGet],
 )
 async def get_current_product_ui():
-    ...
-
-
-@router.put(
-    "/products/{product_name}/templates/{template_id}",
-    status_code=status.HTTP_204_NO_CONTENT,
-    tags=[
-        "po",
-    ],
-)
-async def replace_product_template(
-    _params: Annotated[ProductTemplateParams, Depends()], _body: ProductTemplateReplace
-):
     ...
 
 

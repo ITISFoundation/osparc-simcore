@@ -14,11 +14,7 @@ from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
 from . import _service, products_web
-from ._rest_schemas import (
-    ProductsRequestContext,
-    ProductsRequestParams,
-    ProductTemplateParams,
-)
+from ._rest_schemas import ProductsRequestContext, ProductsRequestParams
 from .models import Product
 
 routes = web.RouteTableDef()
@@ -82,21 +78,3 @@ async def _get_current_product_ui(request: web.Request):
 
     data = ProductUIGet(product_name=product_name, ui=ui)
     return envelope_json_response(data)
-
-
-@routes.put(
-    f"/{VTAG}/products/{{product_name}}/templates/{{template_id}}",
-    name="replace_product_template",
-)
-@login_required
-@permission_required("product.details.*")
-async def replace_product_template(request: web.Request):
-    req_ctx = ProductsRequestContext.model_validate(request)
-    path_params = parse_request_path_parameters_as(ProductTemplateParams, request)
-
-    assert req_ctx  # nosec
-    assert path_params  # nosec
-
-    # FIXME: implement this
-
-    raise NotImplementedError

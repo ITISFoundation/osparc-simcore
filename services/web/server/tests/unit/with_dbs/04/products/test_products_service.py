@@ -3,7 +3,6 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
-from itertools import product
 
 import pytest
 from aiohttp import web

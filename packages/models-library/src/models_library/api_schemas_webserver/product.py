@@ -70,10 +70,6 @@ class ProductTemplateGet(OutputSchema):
     content: str
 
 
-class ProductTemplateReplace(InputSchema):
-    content: str
-
-
 class ProductGet(OutputSchema):
     name: ProductName
     display_name: str
