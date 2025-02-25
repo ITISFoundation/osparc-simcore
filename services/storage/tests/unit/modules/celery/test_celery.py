@@ -83,7 +83,9 @@ def test_submitting_task_with_failure_results_with_error(
             assert isinstance(result, ValueError)
 
     assert celery_task_queue_client.get_status(task_id).task_state == "FAILURE"
-    assert f"{celery_task_queue_client.get_result(task_id)}" == "my error here"
+    result = celery_task_queue_client.get_result(task_id)
+    assert isinstance(result, ValueError)
+    assert f"{result}" == "my error here"
 
 
 @pytest.mark.usefixtures("celery_client_app", "celery_worker_app")

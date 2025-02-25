@@ -29,7 +29,7 @@ _logger = logging.getLogger(__name__)
 fastapi_app = create_app(_settings)
 celery_app = create_celery_app(_settings)
 
-set_celery_client(celery_app, CeleryTaskQueueClient(celery_app))
 set_celery_app(fastapi_app, celery_app)
+set_celery_client(fastapi_app, CeleryTaskQueueClient(celery_app))
 
 app = fastapi_app
