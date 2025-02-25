@@ -23,7 +23,7 @@ from yarl import URL
 
 
 @pytest.fixture
-def mock_postgres_product_data(
+def mock_product_db_get_data(
     faker: Faker, product_db_server_defaults: dict[str, Any]
 ) -> list[dict[str, Any]]:
 
@@ -59,12 +59,12 @@ def mock_postgres_product_data(
 
 
 @pytest.fixture
-def mock_app(mock_postgres_product_data: list[dict[str, Any]]) -> web.Application:
+def mock_app(mock_product_db_get_data: list[dict[str, Any]]) -> web.Application:
     app = web.Application()
 
     app_products: dict[str, Product] = {
-        product_from_db["name"]: Product.model_validate(product_from_db)
-        for product_from_db in mock_postgres_product_data
+        product_db_get["name"]: Product.model_validate(product_db_get)
+        for product_db_get in mock_product_db_get_data
     }
 
     default_product_name = next(iter(app_products.keys()))
