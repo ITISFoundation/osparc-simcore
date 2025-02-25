@@ -4,13 +4,13 @@ from collections.abc import AsyncGenerator, Iterable
 from pathlib import Path
 from typing import TypeAlias
 
-import orjson
 import sqlalchemy as sa
 from models_library.basic_types import SHA256Str
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
+from pydantic import BaseModel
 from simcore_postgres_database.storage_models import file_meta_data
 from sqlalchemy import and_, literal_column
 from sqlalchemy.dialects.postgresql import insert as pg_insert
@@ -172,6 +172,13 @@ async def try_get_directory(
 TotalChildren: TypeAlias = int
 
 
+class PathsCursorParameters(BaseModel):
+    offset: int = 0
+    file_prefix: Path | None
+    project_ids: Iterable[ProjectID] | None
+    partial: bool
+
+
 async def list_child_paths(
     conn: AsyncConnection,
     *,
@@ -186,22 +193,22 @@ async def list_child_paths(
     """
 
     if cursor:
-        cursor_params = orjson.loads(cursor)
-        offset = cursor_params["offset"]
-        filter_by_file_prefix = Path(cursor_params["filter_by_file_prefix"])
-        filter_by_project_ids = cursor_params["filter_by_project_ids"]
-        is_partial_prefix = cursor_params["is_partial_prefix"]
+        cursor_params = PathsCursorParameters.model_validate_json(cursor)
     else:
-        offset = 0
-
-    if filter_by_file_prefix:
-        prefix_levels = len(filter_by_file_prefix.parts) - 1
-        search_prefix = (
-            f"{filter_by_file_prefix}%"
-            if is_partial_prefix
-            else f"{filter_by_file_prefix / '%'}"
+        cursor_params = PathsCursorParameters(
+            file_prefix=filter_by_file_prefix,
+            project_ids=filter_by_project_ids,
+            partial=is_partial_prefix,
         )
-        search_regex = rf"^[^/]+(?:/[^/]+){{{prefix_levels}}}{'' if is_partial_prefix else '/[^/]+'}"
+
+    if cursor_params.file_prefix:
+        prefix_levels = len(cursor_params.file_prefix.parts) - 1
+        search_prefix = (
+            f"{cursor_params.file_prefix}%"
+            if cursor_params.partial
+            else f"{cursor_params.file_prefix / '%'}"
+        )
+        search_regex = rf"^[^/]+(?:/[^/]+){{{prefix_levels}}}{'' if cursor_params.partial else '/[^/]+'}"
         ranked_files = (
             sa.select(
                 file_meta_data.c.file_id,
@@ -219,9 +226,9 @@ async def list_child_paths(
                 and_(
                     file_meta_data.c.file_id.like(search_prefix),
                     file_meta_data.c.project_id.in_(
-                        [f"{_}" for _ in filter_by_project_ids]
+                        [f"{_}" for _ in cursor_params.project_ids]
                     )
-                    if filter_by_project_ids
+                    if cursor_params.project_ids
                     else True,
                 )
             )
@@ -240,8 +247,10 @@ async def list_child_paths(
                 .label("row_num"),
             )
             .where(
-                file_meta_data.c.project_id.in_([f"{_}" for _ in filter_by_project_ids])
-                if filter_by_project_ids
+                file_meta_data.c.project_id.in_(
+                    [f"{_}" for _ in cursor_params.project_ids]
+                )
+                if cursor_params.project_ids
                 else True
             )
             .cte("ranked_files")
@@ -259,7 +268,7 @@ async def list_child_paths(
             .order_by(file_meta_data.c.file_id.asc())
         )
         .limit(limit)
-        .offset(offset)
+        .offset(cursor_params.offset)
     )
 
     total_count = await conn.scalar(
@@ -290,17 +299,10 @@ async def list_child_paths(
         async for row in await conn.stream(files_query)
     ]
     next_cursor = None
-    if offset + limit < total_count:
-        next_cursor = orjson.dumps(
-            {
-                "offset": offset + limit,
-                "filter_by_file_prefix": str(filter_by_file_prefix),
-                "filter_by_project_ids": list(filter_by_project_ids)
-                if filter_by_project_ids
-                else None,
-                "is_partial_prefix": is_partial_prefix,
-            }
-        ).decode()
+    if cursor_params.offset + limit < total_count:
+        next_cursor = cursor_params.model_copy(
+            update={"offset": cursor_params.offset + limit}
+        ).model_dump_json()
     return items, next_cursor, total_count
 
 
