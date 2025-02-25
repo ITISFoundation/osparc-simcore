@@ -18,13 +18,17 @@ def set_celery_app(fastapi: FastAPI, celery: Celery) -> None:
     fastapi.state.celery_app = celery
 
 
-def get_celery_client(celery_app: Celery) -> CeleryTaskQueueClient:
+def get_celery_client(fastapi_app: FastAPI) -> CeleryTaskQueueClient:
+    celery_app = get_celery_app(fastapi_app)
     client = celery_app.conf[_CLIENT_KEY]
     assert isinstance(client, CeleryTaskQueueClient)
     return client
 
 
-def set_celery_client(celery_app: Celery, celery_client: CeleryTaskQueueClient) -> None:
+def set_celery_client(
+    fastapi_app: FastAPI, celery_client: CeleryTaskQueueClient
+) -> None:
+    celery_app = get_celery_app(fastapi_app)
     celery_app.conf[_CLIENT_KEY] = celery_client
 
 
