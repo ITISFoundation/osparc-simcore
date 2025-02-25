@@ -1,6 +1,10 @@
+import contextlib
 import datetime
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, Iterable
+from pathlib import Path
+from typing import TypeAlias
 
+import orjson
 import sqlalchemy as sa
 from models_library.basic_types import SHA256Str
 from models_library.projects import ProjectID
@@ -10,10 +14,17 @@ from models_library.utils.fastapi_encoders import jsonable_encoder
 from simcore_postgres_database.storage_models import file_meta_data
 from sqlalchemy import and_, literal_column
 from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.exc import MultipleResultsFound
 from sqlalchemy.ext.asyncio import AsyncConnection
 
 from ...exceptions.errors import FileMetaDataNotFoundError
-from ...models import FileMetaData, FileMetaDataAtDB, UserOrProjectFilter
+from ...models import (
+    FileMetaData,
+    FileMetaDataAtDB,
+    GenericCursor,
+    PathMetaData,
+    UserOrProjectFilter,
+)
 
 
 async def exists(conn: AsyncConnection, file_id: SimcoreS3FileID) -> bool:
@@ -134,6 +145,163 @@ async def list_filter_with_partial_file_id(
     return [
         FileMetaDataAtDB.model_validate(row) async for row in await conn.stream(stmt)
     ]
+
+
+async def try_get_directory(
+    conn: AsyncConnection, file_filter: Path
+) -> FileMetaData | None:
+    """Check if the given file filter is a directory or is inside a directory."""
+    # we might be exactly on a directory or inside it
+    potential_directories = (file_filter, *file_filter.parents)
+    with contextlib.suppress(MultipleResultsFound):
+        for file_id in potential_directories:
+            # there should be only 1 entry if this is a directory
+            result = await conn.execute(
+                sa.select(file_meta_data).where(
+                    file_meta_data.c.file_id == f"{file_id}"
+                )
+            )
+            if row := result.one_or_none():
+                fmd = FileMetaDataAtDB.model_validate(row)
+                if fmd.is_directory:
+                    return FileMetaData.from_db_model(fmd)
+                return None
+    return None
+
+
+TotalChildren: TypeAlias = int
+
+
+async def list_child_paths(
+    conn: AsyncConnection,
+    *,
+    filter_by_project_ids: Iterable[ProjectID] | None,
+    filter_by_file_prefix: Path | None,
+    cursor: GenericCursor | None,
+    limit: int,
+    is_partial_prefix: bool,
+) -> tuple[list[PathMetaData], GenericCursor | None, TotalChildren]:
+    """returns a list of FileMetaDataAtDB that are one level deep.
+    e.g. when no filter is used, these are top level objects
+    """
+
+    if cursor:
+        cursor_params = orjson.loads(cursor)
+        offset = cursor_params["offset"]
+        filter_by_file_prefix = Path(cursor_params["filter_by_file_prefix"])
+        filter_by_project_ids = cursor_params["filter_by_project_ids"]
+        is_partial_prefix = cursor_params["is_partial_prefix"]
+    else:
+        offset = 0
+
+    if filter_by_file_prefix:
+        prefix_levels = len(filter_by_file_prefix.parts) - 1
+        search_prefix = (
+            f"{filter_by_file_prefix}%"
+            if is_partial_prefix
+            else f"{filter_by_file_prefix / '%'}"
+        )
+        search_regex = rf"^[^/]+(?:/[^/]+){{{prefix_levels}}}{'' if is_partial_prefix else '/[^/]+'}"
+        ranked_files = (
+            sa.select(
+                file_meta_data.c.file_id,
+                sa.func.substring(file_meta_data.c.file_id, search_regex).label("path"),
+                sa.func.row_number()
+                .over(
+                    partition_by=sa.func.substring(
+                        file_meta_data.c.file_id, search_regex
+                    ),
+                    order_by=(file_meta_data.c.file_id.asc(),),
+                )
+                .label("row_num"),
+            )
+            .where(
+                and_(
+                    file_meta_data.c.file_id.like(search_prefix),
+                    file_meta_data.c.project_id.in_(
+                        [f"{_}" for _ in filter_by_project_ids]
+                    )
+                    if filter_by_project_ids
+                    else True,
+                )
+            )
+            .cte("ranked_files")
+        )
+    else:
+        ranked_files = (
+            sa.select(
+                file_meta_data.c.file_id,
+                sa.func.split_part(file_meta_data.c.file_id, "/", 1).label("path"),
+                sa.func.row_number()
+                .over(
+                    partition_by=sa.func.split_part(file_meta_data.c.file_id, "/", 1),
+                    order_by=(file_meta_data.c.file_id.asc(),),
+                )
+                .label("row_num"),
+            )
+            .where(
+                file_meta_data.c.project_id.in_([f"{_}" for _ in filter_by_project_ids])
+                if filter_by_project_ids
+                else True
+            )
+            .cte("ranked_files")
+        )
+
+    files_query = (
+        (
+            sa.select(ranked_files, file_meta_data)
+            .where(
+                and_(
+                    ranked_files.c.row_num == 1,
+                    ranked_files.c.file_id == file_meta_data.c.file_id,
+                )
+            )
+            .order_by(file_meta_data.c.file_id.asc())
+        )
+        .limit(limit)
+        .offset(offset)
+    )
+
+    total_count = await conn.scalar(
+        sa.select(sa.func.count())
+        .select_from(ranked_files)
+        .where(ranked_files.c.row_num == 1)
+    )
+
+    items = [
+        PathMetaData(
+            path=row.path
+            or row.file_id,  # NOTE: if path_prefix is partial then path is None
+            display_path=row.path or row.file_id,
+            location_id=row.location_id,
+            location=row.location,
+            bucket_name=row.bucket_name,
+            project_id=row.project_id,
+            node_id=row.node_id,
+            user_id=row.user_id,
+            created_at=row.created_at,
+            last_modified=row.last_modified,
+            file_meta_data=FileMetaData.from_db_model(
+                FileMetaDataAtDB.model_validate(row)
+            )
+            if row.file_id == row.path and not row.is_directory
+            else None,
+        )
+        async for row in await conn.stream(files_query)
+    ]
+    next_cursor = None
+    if offset + limit < total_count:
+        next_cursor = orjson.dumps(
+            {
+                "offset": offset + limit,
+                "filter_by_file_prefix": str(filter_by_file_prefix),
+                "filter_by_project_ids": list(filter_by_project_ids)
+                if filter_by_project_ids
+                else None,
+                "is_partial_prefix": is_partial_prefix,
+            }
+        ).decode()
+    return items, next_cursor, total_count
 
 
 async def list_fmds(

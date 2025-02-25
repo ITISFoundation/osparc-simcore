@@ -1,8 +1,11 @@
+from collections.abc import Iterable
 from contextlib import suppress
 from pathlib import Path
 
+import orjson
 from aws_library.s3 import S3MetaData, SimcoreS3API
 from models_library.api_schemas_storage.storage_schemas import S3BucketName
+from models_library.projects import ProjectID
 from models_library.projects_nodes_io import (
     SimcoreS3DirectoryID,
     SimcoreS3FileID,
@@ -13,7 +16,7 @@ from servicelib.utils import ensure_ends_with
 from sqlalchemy.ext.asyncio import AsyncConnection
 
 from ..exceptions.errors import FileMetaDataNotFoundError
-from ..models import FileMetaData, FileMetaDataAtDB
+from ..models import FileMetaData, FileMetaDataAtDB, GenericCursor, PathMetaData
 from ..modules.db import file_meta_data
 from .utils import convert_db_to_model
 
@@ -124,3 +127,84 @@ async def get_directory_file_id(
 def compute_file_id_prefix(file_id: str, levels: int):
     components = file_id.strip("/").split("/")
     return "/".join(components[:levels])
+
+
+async def list_child_paths_from_s3(
+    s3_client: SimcoreS3API,
+    *,
+    dir_fmd: FileMetaData,
+    bucket: S3BucketName,
+    file_filter: Path,
+    limit: int,
+    cursor: GenericCursor | None,
+) -> tuple[list[PathMetaData], GenericCursor | None]:
+    """list direct children given by `file_filter` of a directory.
+    Tries first using file_filter as a full path, if not results are found will
+    try using file_filter as a partial prefix.
+    """
+    objects_cursor = None
+    if cursor is not None:
+        cursor_params = orjson.loads(cursor)
+        assert cursor_params["file_filter"] == f"{file_filter}"  # nosec
+        objects_cursor = cursor_params["objects_next_cursor"]
+    list_s3_objects, objects_next_cursor = await s3_client.list_objects(
+        bucket=bucket,
+        prefix=file_filter,
+        start_after=None,
+        limit=limit,
+        next_cursor=objects_cursor,
+        is_partial_prefix=False,
+    )
+    if not list_s3_objects:
+        list_s3_objects, objects_next_cursor = await s3_client.list_objects(
+            bucket=bucket,
+            prefix=file_filter,
+            start_after=None,
+            limit=limit,
+            next_cursor=objects_cursor,
+            is_partial_prefix=True,
+        )
+
+    paths_metadata = [
+        PathMetaData.from_s3_object_in_dir(s3_object, dir_fmd)
+        for s3_object in list_s3_objects
+    ]
+    next_cursor = None
+    if objects_next_cursor:
+        next_cursor = orjson.dumps(
+            {
+                "file_filter": f"{file_filter}",
+                "objects_next_cursor": objects_next_cursor,
+            }
+        )
+
+    return paths_metadata, next_cursor
+
+
+async def list_child_paths_from_repository(
+    conn: AsyncConnection,
+    *,
+    filter_by_project_ids: Iterable[ProjectID] | None,
+    filter_by_file_prefix: Path | None,
+    cursor: GenericCursor | None,
+    limit: int,
+) -> tuple[list[PathMetaData], GenericCursor | None, file_meta_data.TotalChildren]:
+    paths_metadata, next_cursor, total = await file_meta_data.list_child_paths(
+        conn,
+        filter_by_project_ids=filter_by_project_ids,
+        filter_by_file_prefix=filter_by_file_prefix,
+        limit=limit,
+        cursor=cursor,
+        is_partial_prefix=False,
+    )
+    if not paths_metadata:
+        paths_metadata, next_cursor, total = await file_meta_data.list_child_paths(
+            conn,
+            filter_by_project_ids=filter_by_project_ids,
+            filter_by_file_prefix=filter_by_file_prefix,
+            limit=limit,
+            cursor=cursor,
+            is_partial_prefix=True,
+        )
+
+    return paths_metadata, next_cursor, total

@@ -5,7 +5,6 @@ from fastapi import APIRouter, Depends, Request, status
 from models_library.api_schemas_storage.storage_schemas import FileLocation
 from models_library.generics import Envelope
 
-# Exclusive for simcore-s3 storage -----------------------
 from ...dsm import get_dsm_provider
 from ...models import StorageQueryParamsBase
 
@@ -16,7 +15,6 @@ router = APIRouter(
 )
 
 
-# HANDLERS ---------------------------------------------------
 @router.get(
     "/locations",
     status_code=status.HTTP_200_OK,

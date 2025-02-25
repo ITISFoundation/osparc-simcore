@@ -1,19 +1,41 @@
 import logging
 from collections.abc import Callable
 from math import ceil
-from typing import Any, TypeVar, cast
+from pathlib import Path
+from typing import Any, TypeAlias, TypeVar, cast
 
 import httpx
 from fastapi import FastAPI
-from models_library.api_schemas_storage.storage_schemas import DatCoreDatasetName
+from fastapi_pagination import Page
+from models_library.api_schemas_datcore_adapter.datasets import (
+    DatasetMetaData as DatCoreDatasetMetaData,
+)
+from models_library.api_schemas_datcore_adapter.datasets import (
+    DataType as DatCoreDataType,
+)
+from models_library.api_schemas_datcore_adapter.datasets import (
+    FileMetaData as DatCoreFileMetaData,
+)
+from models_library.api_schemas_datcore_adapter.datasets import PackageMetaData
+from models_library.api_schemas_storage.storage_schemas import (
+    DatCoreCollectionName,
+    DatCoreDatasetName,
+    DatCorePackageName,
+)
 from models_library.users import UserID
-from pydantic import AnyUrl, TypeAdapter
+from pydantic import AnyUrl, BaseModel, ByteSize, NonNegativeInt, TypeAdapter
 from servicelib.fastapi.client_session import get_client_session
 from servicelib.utils import logged_gather
 
 from ...constants import DATCORE_ID, DATCORE_STR, MAX_CONCURRENT_REST_CALLS
 from ...core.settings import get_application_settings
-from ...models import DatasetMetaData, FileMetaData
+from ...models import (
+    DatasetMetaData,
+    FileMetaData,
+    GenericCursor,
+    PathMetaData,
+    TotalNumber,
+)
 from .datcore_adapter_exceptions import (
     DatcoreAdapterClientError,
     DatcoreAdapterError,
@@ -53,7 +75,7 @@ async def _request(
         if request_kwargs is None:
             request_kwargs = {}
         response = await session.request(
-            method,
+            method.upper(),
             url,
             headers={
                 "x-datcore-api-key": api_key,
@@ -143,7 +165,9 @@ async def check_user_can_connect(app: FastAPI, api_key: str, api_secret: str) ->
 async def list_all_datasets_files_metadatas(
     app: FastAPI, user_id: UserID, api_key: str, api_secret: str
 ) -> list[FileMetaData]:
-    all_datasets: list[DatasetMetaData] = await list_datasets(app, api_key, api_secret)
+    all_datasets: list[DatasetMetaData] = await list_all_datasets(
+        app, api_key, api_secret
+    )
     results = await logged_gather(
         *(
             list_all_files_metadatas_in_dataset(
@@ -206,7 +230,216 @@ async def list_all_files_metadatas_in_dataset(
     ]
 
 
-async def list_datasets(
+_Size: TypeAlias = NonNegativeInt
+_Page: TypeAlias = NonNegativeInt
+
+
+class CursorParameters(BaseModel):
+    next_page: _Page
+    size: _Size
+
+
+def _init_pagination(
+    cursor: GenericCursor | None, limit: NonNegativeInt
+) -> tuple[_Page, _Size]:
+    if cursor is not None:
+        cursor_params = CursorParameters.model_validate_json(cursor)
+        return cursor_params.next_page, cursor_params.size
+    return 1, limit
+
+
+def _create_next_cursor(
+    total: TotalNumber, page: _Page, size: _Size
+) -> GenericCursor | None:
+    if total > page * size:
+        return CursorParameters.model_validate(
+            {"next_page": page + 1, "size": size}
+        ).model_dump_json()
+    return None
+
+
+async def list_top_level_objects_in_dataset(
+    app: FastAPI,
+    *,
+    user_id: UserID,
+    api_key: str,
+    api_secret: str,
+    dataset_id: DatCoreDatasetName,
+    cursor: GenericCursor | None,
+    limit: NonNegativeInt,
+) -> tuple[list[PathMetaData], GenericCursor | None, TotalNumber]:
+    page, size = _init_pagination(cursor, limit)
+    response = await _request(
+        app,
+        api_key,
+        api_secret,
+        "GET",
+        f"/datasets/{dataset_id}/files",
+        params={"size": size, "page": page},
+    )
+    file_metadata_page = Page[DatCoreFileMetaData](**response)
+    entries = file_metadata_page.items
+    total = file_metadata_page.total
+    assert isinstance(total, int)  # nosec
+    next_cursor = _create_next_cursor(total, page, size)
+
+    return (
+        [
+            PathMetaData(
+                path=Path(e.dataset_id) / e.id,
+                display_path=e.path,
+                location_id=DATCORE_ID,
+                location=DATCORE_STR,
+                bucket_name=e.dataset_id,
+                project_id=None,
+                node_id=None,
+                user_id=user_id,
+                created_at=e.created_at,
+                last_modified=e.last_modified_at,
+                file_meta_data=None
+                if e.data_type == DatCoreDataType.FOLDER
+                else FileMetaData(
+                    file_uuid=f"{e.path}",
+                    location_id=DATCORE_ID,
+                    location=DATCORE_STR,
+                    bucket_name=e.dataset_id,
+                    object_name=f"{e.path}",
+                    file_name=e.name,
+                    file_id=e.package_id,
+                    file_size=ByteSize(e.size),
+                    created_at=e.created_at,
+                    last_modified=e.last_modified_at,
+                    project_id=None,
+                    node_id=None,
+                    user_id=user_id,
+                    is_soft_link=False,
+                    sha256_checksum=None,
+                ),
+            )
+            for e in entries
+        ],
+        next_cursor,
+        total,
+    )
+
+
+async def list_top_level_objects_in_collection(
+    app: FastAPI,
+    *,
+    user_id: UserID,
+    api_key: str,
+    api_secret: str,
+    dataset_id: DatCoreDatasetName,
+    collection_id: DatCoreCollectionName,
+    cursor: GenericCursor | None,
+    limit: NonNegativeInt,
+) -> tuple[list[PathMetaData], GenericCursor | None, TotalNumber]:
+    page, size = _init_pagination(cursor, limit)
+    response = await _request(
+        app,
+        api_key,
+        api_secret,
+        "GET",
+        f"/datasets/{dataset_id}/files/{collection_id}",
+        params={"size": size, "page": page},
+    )
+    file_metadata_page = Page[DatCoreFileMetaData](**response)
+    entries = file_metadata_page.items
+    total = file_metadata_page.total
+    assert isinstance(total, int)  # nosec
+    next_cursor = _create_next_cursor(total, page, size)
+
+    return (
+        [
+            PathMetaData(
+                path=Path(e.dataset_id) / e.id,
+                display_path=e.path,
+                location_id=DATCORE_ID,
+                location=DATCORE_STR,
+                bucket_name=e.dataset_id,
+                project_id=None,
+                node_id=None,
+                user_id=user_id,
+                created_at=e.created_at,
+                last_modified=e.last_modified_at,
+                file_meta_data=None
+                if e.data_type == DatCoreDataType.FOLDER
+                else FileMetaData(
+                    file_uuid=f"{e.path}",
+                    location_id=DATCORE_ID,
+                    location=DATCORE_STR,
+                    bucket_name=e.dataset_id,
+                    object_name=f"{e.path}",
+                    file_name=e.name,
+                    file_id=e.package_id,
+                    file_size=ByteSize(e.size),
+                    created_at=e.created_at,
+                    last_modified=e.last_modified_at,
+                    project_id=None,
+                    node_id=None,
+                    user_id=user_id,
+                    is_soft_link=False,
+                    sha256_checksum=None,
+                ),
+            )
+            for e in entries
+        ],
+        next_cursor,
+        total,
+    )
+
+
+async def get_package_file_as_path(
+    app: FastAPI,
+    *,
+    user_id: UserID,
+    api_key: str,
+    api_secret: str,
+    dataset_id: DatCoreDatasetName,
+    package_id: DatCorePackageName,
+) -> PathMetaData:
+    pck_files = await get_package_files(
+        app,
+        api_key=api_key,
+        api_secret=api_secret,
+        package_id=package_id,
+    )
+
+    assert len(pck_files) == 1  # nosec
+    dat_core_fmd = pck_files[0]
+
+    return PathMetaData(
+        path=Path(dataset_id) / package_id,
+        display_path=dat_core_fmd.display_path,
+        location_id=DATCORE_ID,
+        location=DATCORE_STR,
+        bucket_name=dat_core_fmd.s3_bucket,
+        project_id=None,
+        node_id=None,
+        user_id=user_id,
+        created_at=dat_core_fmd.created_at,
+        last_modified=dat_core_fmd.updated_at,
+        file_meta_data=FileMetaData(
+            file_uuid=f"{dat_core_fmd.package_id}",
+            location_id=DATCORE_ID,
+            location=DATCORE_STR,
+            bucket_name=dat_core_fmd.s3_bucket,
+            object_name=f"{dat_core_fmd.package_id}",
+            file_name=dat_core_fmd.name,
+            file_id=dat_core_fmd.package_id,
+            file_size=ByteSize(dat_core_fmd.size),
+            created_at=dat_core_fmd.created_at,
+            last_modified=dat_core_fmd.updated_at,
+            project_id=None,
+            node_id=None,
+            user_id=user_id,
+            is_soft_link=False,
+            sha256_checksum=None,
+        ),
+    )
+
+
+async def list_all_datasets(
     app: FastAPI, api_key: str, api_secret: str
 ) -> list[DatasetMetaData]:
     all_datasets: list[DatasetMetaData] = await _retrieve_all_pages(
@@ -221,6 +454,41 @@ async def list_datasets(
     return all_datasets
 
 
+async def list_datasets(
+    app: FastAPI,
+    *,
+    api_key: str,
+    api_secret: str,
+    cursor: GenericCursor | None,
+    limit: NonNegativeInt,
+) -> tuple[list[DatasetMetaData], GenericCursor | None, TotalNumber]:
+    page, size = _init_pagination(cursor, limit)
+
+    response = await _request(
+        app,
+        api_key,
+        api_secret,
+        "GET",
+        "/datasets",
+        params={"size": size, "page": page},
+    )
+    datasets_page = Page[DatCoreDatasetMetaData](**response)
+    datasets = datasets_page.items
+    total = datasets_page.total
+
+    assert isinstance(total, int)  # nosec
+    next_cursor = _create_next_cursor(total, page, size)
+
+    return (
+        [
+            DatasetMetaData(dataset_id=d.id, display_name=d.display_name)
+            for d in datasets
+        ],
+        next_cursor,
+        total,
+    )
+
+
 async def get_file_download_presigned_link(
     app: FastAPI, api_key: str, api_secret: str, file_id: str
 ) -> AnyUrl:
@@ -233,17 +501,16 @@ async def get_file_download_presigned_link(
 
 
 async def get_package_files(
-    app: FastAPI, api_key: str, api_secret: str, package_id: str
-) -> list[dict[str, Any]]:
-    return cast(
-        list[dict[str, Any]],
+    app: FastAPI, *, api_key: str, api_secret: str, package_id: str
+) -> list[PackageMetaData]:
+    return TypeAdapter(list[PackageMetaData]).validate_python(
         await _request(
             app,
             api_key,
             api_secret,
             "GET",
             f"/packages/{package_id}/files",
-        ),
+        )
     )
 
 
