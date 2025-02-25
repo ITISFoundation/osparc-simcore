@@ -53,7 +53,7 @@ class CeleryTaskQueueClient:
     def get(self, task_id: TaskID) -> Any:
         return self._celery_app.tasks(task_id)
 
-    def cancel(self, task_id: TaskID) -> None:
+    def cancel(self, task_id: TaskID) -> None:  # pylint: disable=R6301
         _logger.info("Aborting task %s", task_id)
         AbortableAsyncResult(task_id).abort()
 
@@ -88,9 +88,8 @@ class CeleryTaskQueueClient:
             + "*"
         )
         redis = self._celery_app.backend.client
-        if hasattr(redis, "keys"):
-            if keys := redis.keys(search_key):
-                return [f"{key}".lstrip(_CELERY_TASK_META_PREFIX) for key in keys]
+        if hasattr(redis, "keys") and (keys := redis.keys(search_key)):
+            return [f"{key}".lstrip(_CELERY_TASK_META_PREFIX) for key in keys]
         return []
 
     def list(self, task_name: str, *, task_id_parts: TaskIDParts) -> list[TaskID]:
