@@ -9,12 +9,11 @@ _logger = logging.getLogger(__name__)
 
 
 def create_app(settings: ApplicationSettings) -> Celery:
-    assert settings.STORAGE_RABBITMQ
-    assert settings.STORAGE_REDIS
+    assert settings.STORAGE_CELERY
 
     app = Celery(
-        broker=settings.STORAGE_RABBITMQ.dsn,
-        backend=settings.STORAGE_REDIS.build_redis_dsn(
+        broker=settings.STORAGE_CELERY.CELERY_BROKER.dsn,
+        backend=settings.STORAGE_CELERY.CELERY_RESULTS_BACKEND.build_redis_dsn(
             RedisDatabase.CELERY_TASKS,
         ),
     )

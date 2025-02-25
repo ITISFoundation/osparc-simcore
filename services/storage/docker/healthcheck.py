@@ -35,7 +35,7 @@ ok = os.getenv("SC_BOOT_MODE", "").lower() == "debug"
 # pylint: disable=consider-using-with
 app_settings = ApplicationSettings.create_from_envs()
 
-broker_url = app_settings.STORAGE_CELERY_BROKER.dsn
+broker_url = app_settings.STORAGE_CELERY.CELERY_BROKER.dsn
 
 
 def _is_celery_worker_healthy():
