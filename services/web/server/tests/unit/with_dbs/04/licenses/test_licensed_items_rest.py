@@ -87,6 +87,7 @@ async def test_licensed_items_listing(
             licensed_item_to_resource.insert().values(
                 licensed_item_id=_licensed_item_id,
                 licensed_resource_id=got_licensed_resource_duke.licensed_resource_id,
+                product_name=osparc_product_name,
             )
         )
 
@@ -224,6 +225,7 @@ async def test_licensed_items_purchase(
             licensed_item_to_resource.insert().values(
                 licensed_item_id=_licensed_item_id,
                 licensed_resource_id=got_licensed_resource_duke.licensed_resource_id,
+                product_name=osparc_product_name,
             )
         )
 
