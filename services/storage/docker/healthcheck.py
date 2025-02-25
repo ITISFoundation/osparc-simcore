@@ -63,7 +63,7 @@ print(_is_celery_worker_healthy())
 
 ok = (
     ok
-    or (bool(os.environ.get("STORAGE_WORKER_MODE", "") and _is_celery_worker_healthy()))
+    or (bool(os.getenv("STORAGE_WORKER_MODE", "") and _is_celery_worker_healthy()))
     or urlopen(
         "{host}{baseurl}".format(
             host=sys.argv[1], baseurl=os.environ.get("SIMCORE_NODE_BASEPATH", "")
