@@ -45,8 +45,8 @@ def mock_rpc_resource_usage_tracker_service_api(
 ) -> dict[str, MagicMock]:
     return {
         ## Pricing plans
-        "list_pricing_plans": mocker.patch(
-            "simcore_service_webserver.resource_usage._pricing_plans_admin_service.pricing_plans.list_pricing_plans",
+        "list_pricing_plans_without_pricing_units": mocker.patch(
+            "simcore_service_webserver.resource_usage._pricing_plans_admin_service.pricing_plans.list_pricing_plans_without_pricing_units",
             autospec=True,
             return_value=RutPricingPlanPage(
                 items=[
