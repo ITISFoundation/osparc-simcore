@@ -1,6 +1,6 @@
 import contextlib
 import datetime
-from collections.abc import AsyncGenerator, Iterable
+from collections.abc import AsyncGenerator
 from pathlib import Path
 from typing import TypeAlias
 
@@ -173,16 +173,16 @@ TotalChildren: TypeAlias = int
 
 
 class PathsCursorParameters(BaseModel):
-    offset: int = 0
+    offset: int
     file_prefix: Path | None
-    project_ids: Iterable[ProjectID] | None
+    project_ids: list[ProjectID] | None
     partial: bool
 
 
 async def list_child_paths(
     conn: AsyncConnection,
     *,
-    filter_by_project_ids: Iterable[ProjectID] | None,
+    filter_by_project_ids: list[ProjectID] | None,
     filter_by_file_prefix: Path | None,
     cursor: GenericCursor | None,
     limit: int,
@@ -196,6 +196,7 @@ async def list_child_paths(
         cursor_params = PathsCursorParameters.model_validate_json(cursor)
     else:
         cursor_params = PathsCursorParameters(
+            offset=0,
             file_prefix=filter_by_file_prefix,
             project_ids=filter_by_project_ids,
             partial=is_partial_prefix,
