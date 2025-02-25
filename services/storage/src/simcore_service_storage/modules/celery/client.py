@@ -43,6 +43,7 @@ class CeleryTaskQueueClient:
         self, task_name: str, *, task_id_parts: TaskIDParts, **task_params
     ) -> TaskID:
         task_id = _get_task_id(task_name, task_id_parts)
+        _logger.debug("Submitting task %s: %s", task_name, task_id)
         task = self._celery_app.send_task(
             task_name, task_id=task_id, kwargs=task_params
         )
@@ -53,13 +54,13 @@ class CeleryTaskQueueClient:
         return self._celery_app.tasks(task_id)
 
     def cancel(self, task_id: TaskID) -> None:
+        _logger.info("Aborting task %s", task_id)
         AbortableAsyncResult(task_id).abort()
 
     def _get_async_result(self, task_id: TaskID) -> AsyncResult:
         return self._celery_app.AsyncResult(task_id)
 
     def get_result(self, task_id: TaskID) -> Any:
-        # if the result is missing or if it goes into FAILURE, return error
         return self._get_async_result(task_id).result
 
     def _get_progress_report(self, task_id: TaskID) -> ProgressReport | None:

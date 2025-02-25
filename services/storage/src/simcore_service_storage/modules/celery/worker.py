@@ -3,6 +3,7 @@ from asyncio import AbstractEventLoop
 from typing import Callable
 
 from celery import Celery
+from celery.contrib.abortable import AbortableTask
 from models_library.progress_bar import ProgressReport
 
 from .models import TaskID
@@ -20,12 +21,15 @@ class CeleryTaskQueueWorker:
         self.celery_app = celery_app
 
     def register_task(self, fn: Callable):
-        _logger.info("Registering %s task", fn.__name__)
-        self.celery_app.task(name=fn.__name__, bind=True)(fn)
+        _logger.debug("Registering %s task", fn.__name__)
+        self.celery_app.task(name=fn.__name__, base=AbortableTask, bind=True)(fn)
 
     def set_progress(
         self, task_name: str, task_id: TaskID, report: ProgressReport
     ) -> None:
+        _logger.debug(
+            "Setting progress for %s: %s", task_name, report.model_dump_json()
+        )
         self.celery_app.tasks[task_name].update_state(
             task_id=task_id,
             state="PROGRESS",
