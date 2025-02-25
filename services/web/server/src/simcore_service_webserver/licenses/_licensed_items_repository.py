@@ -212,33 +212,39 @@ async def delete(
 ### LICENSED ITEMS DOMAIN
 
 
-# Step 1: Create an ordered subquery
-_ordered_subquery = (
-    select(
-        licensed_item_to_resource.c.licensed_item_id,
-        licensed_resources.c.licensed_resource_data,
-        licensed_resources.c.priority,
-        licensed_resources.c.licensed_resource_id,
-    )
-    .select_from(
-        licensed_item_to_resource.join(
-            licensed_resources,
-            licensed_resources.c.licensed_resource_id
-            == licensed_item_to_resource.c.licensed_resource_id,
+def _create_licensed_resource_subquery(product_name: ProductName):
+    # Step 1: Create an ordered subquery
+    _ordered_subquery = (
+        select(
+            licensed_item_to_resource.c.licensed_item_id,
+            licensed_resources.c.licensed_resource_data,
+            licensed_resources.c.priority,
+            licensed_resources.c.licensed_resource_id,
         )
-    )
-    .order_by(licensed_resources.c.priority, licensed_resources.c.licensed_resource_id)
-).subquery("ordered_subquery")
+        .select_from(
+            licensed_item_to_resource.join(
+                licensed_resources,
+                licensed_resources.c.licensed_resource_id
+                == licensed_item_to_resource.c.licensed_resource_id,
+            )
+        )
+        .where(licensed_item_to_resource.c.product_name == product_name)
+        .order_by(
+            licensed_resources.c.priority, licensed_resources.c.licensed_resource_id
+        )
+    ).subquery("ordered_subquery")
 
-# Step 2: Aggregate the ordered subquery results
-_licensed_resource_subquery = (
-    select(
-        _ordered_subquery.c.licensed_item_id,
-        func.array_agg(_ordered_subquery.c.licensed_resource_data).label(
-            "licensed_resources"
-        ),
-    ).group_by(_ordered_subquery.c.licensed_item_id)
-).subquery("licensed_resource_subquery")
+    # Step 2: Aggregate the ordered subquery results
+    _licensed_resource_subquery = (
+        select(
+            _ordered_subquery.c.licensed_item_id,
+            func.array_agg(_ordered_subquery.c.licensed_resource_data).label(
+                "licensed_resources"
+            ),
+        ).group_by(_ordered_subquery.c.licensed_item_id)
+    ).subquery("licensed_resource_subquery")
+
+    return _licensed_resource_subquery  # noqa: RET504
 
 
 async def get_licensed_item_by_key_version(
@@ -249,6 +255,10 @@ async def get_licensed_item_by_key_version(
     version: LicensedItemVersion,
     product_name: ProductName,
 ) -> LicensedItem:
+
+    _licensed_resource_subquery = _create_licensed_resource_subquery(
+        product_name=product_name
+    )
 
     select_query = (
         select(
