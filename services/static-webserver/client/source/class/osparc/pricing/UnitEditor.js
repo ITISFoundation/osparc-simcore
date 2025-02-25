@@ -322,23 +322,19 @@ qx.Class.define("osparc.pricing.UnitEditor", {
     __applyPricingPlanId: function(pricingPlanId) {
       const pricingPlan = osparc.store.Pricing.getInstance().getPricingPlan(pricingPlanId);
       if (pricingPlan) {
+        this.getChildControl("unit-name");
+        this.getChildControl("cost-per-unit");
+        this.getChildControl("comment");
         if (pricingPlan.getClassification() === "TIER") {
-          this.getChildControl("unit-name");
-          this.getChildControl("cost-per-unit");
-          this.getChildControl("comment");
           this.getChildControl("specific-info");
           this.getChildControl("unit-extra-info-cpu");
           this.getChildControl("unit-extra-info-ram");
           this.getChildControl("unit-extra-info-vram");
           this.getChildControl("unit-extra-info");
-          this.getChildControl("is-default");
         } else if (pricingPlan.getClassification() === "LICENSE") {
-          this.getChildControl("unit-name");
-          this.getChildControl("cost-per-unit");
-          this.getChildControl("comment");
           this.getChildControl("unit-extra-info-n-seats");
-          this.getChildControl("is-default");
         }
+        this.getChildControl("is-default");
       }
     },
 
