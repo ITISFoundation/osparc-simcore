@@ -18,6 +18,7 @@ from models_library.resource_tracker import (
     PricingUnitWithCostCreate,
     PricingUnitWithCostUpdate,
     SpecificInfo,
+    UnitExtraInfoLicense,
     UnitExtraInfoTier,
 )
 from models_library.services import ServiceKey, ServiceVersion
@@ -407,3 +408,145 @@ async def test_rpc_pricing_plans_to_service_workflow(
     )
     assert isinstance(result, list)
     assert len(result) == 3
+
+
+async def test_rpc_pricing_plans_with_units_workflow__for_licenses(
+    mocked_redis_server: None,
+    resource_tracker_setup_db: None,
+    rpc_client: RabbitMQRPCClient,
+    faker: Faker,
+):
+    _display_name = faker.word()
+    result = await pricing_plans.create_pricing_plan(
+        rpc_client,
+        data=PricingPlanCreate(
+            product_name="osparc",
+            display_name=_display_name,
+            description=faker.sentence(),
+            classification=PricingPlanClassification.LICENSE,
+            pricing_plan_key=faker.word(),
+        ),
+    )
+    assert isinstance(result, RutPricingPlanGet)
+    assert result.pricing_units == []
+    assert result.display_name == _display_name
+    _pricing_plan_id = result.pricing_plan_id
+
+    result = await pricing_units.create_pricing_unit(
+        rpc_client,
+        product_name="osparc",
+        data=PricingUnitWithCostCreate(
+            pricing_plan_id=_pricing_plan_id,
+            unit_name="VIP MODEL",
+            unit_extra_info=UnitExtraInfoLicense.model_config["json_schema_extra"][
+                "examples"
+            ][0],
+            default=True,
+            specific_info=SpecificInfo(aws_ec2_instances=[]),
+            cost_per_unit=Decimal(10),
+            comment=faker.sentence(),
+        ),
+    )
+    assert isinstance(result, RutPricingUnitGet)
+    assert result
+    _first_pricing_unit_id = result.pricing_unit_id
+    _current_cost_per_unit_id = result.current_cost_per_unit_id
+
+    # Get pricing plan
+    result = await pricing_plans.get_pricing_plan(
+        rpc_client,
+        product_name="osparc",
+        pricing_plan_id=_pricing_plan_id,
+    )
+    assert isinstance(result, RutPricingPlanGet)
+    assert result.pricing_units
+    assert len(result.pricing_units) == 1
+    assert result.pricing_units[0].pricing_unit_id == _first_pricing_unit_id
+
+    # Update only pricing unit info with COST update
+    _unit_name = "1 seat"
+    result = await pricing_units.update_pricing_unit(
+        rpc_client,
+        product_name="osparc",
+        data=PricingUnitWithCostUpdate(
+            pricing_plan_id=_pricing_plan_id,
+            pricing_unit_id=_first_pricing_unit_id,
+            unit_name=_unit_name,
+            unit_extra_info=UnitExtraInfoLicense.model_config["json_schema_extra"][
+                "examples"
+            ][0],
+            default=True,
+            specific_info=SpecificInfo(aws_ec2_instances=[]),
+            pricing_unit_cost_update=None,
+        ),
+    )
+    assert isinstance(result, RutPricingUnitGet)
+    assert result.unit_name == _unit_name
+    assert result.current_cost_per_unit == Decimal(10)
+    assert result.current_cost_per_unit_id == _current_cost_per_unit_id
+
+    # Update pricing unit with COST update!
+    result = await pricing_units.update_pricing_unit(
+        rpc_client,
+        product_name="osparc",
+        data=PricingUnitWithCostUpdate(
+            pricing_plan_id=_pricing_plan_id,
+            pricing_unit_id=_first_pricing_unit_id,
+            unit_name=_unit_name,
+            unit_extra_info=UnitExtraInfoLicense.model_config["json_schema_extra"][
+                "examples"
+            ][0],
+            default=True,
+            specific_info=SpecificInfo(aws_ec2_instances=[]),
+            pricing_unit_cost_update=PricingUnitCostUpdate(
+                cost_per_unit=Decimal(15),
+                comment="Comment update",
+            ),
+        ),
+    )
+    assert isinstance(result, RutPricingUnitGet)
+    assert result.unit_name == _unit_name
+    assert result.current_cost_per_unit == Decimal(15)
+    assert result.current_cost_per_unit_id != _current_cost_per_unit_id
+
+    # Test get pricing unit
+    result = await pricing_units.get_pricing_unit(
+        rpc_client,
+        product_name="osparc",
+        pricing_plan_id=_pricing_plan_id,
+        pricing_unit_id=_first_pricing_unit_id,
+    )
+    assert isinstance(result, RutPricingUnitGet)
+    assert result.current_cost_per_unit == Decimal(15)
+
+    # Create one more unit
+    result = await pricing_units.create_pricing_unit(
+        rpc_client,
+        product_name="osparc",
+        data=PricingUnitWithCostCreate(
+            pricing_plan_id=_pricing_plan_id,
+            unit_name="5 seats",
+            unit_extra_info=UnitExtraInfoLicense.model_config["json_schema_extra"][
+                "examples"
+            ][0],
+            default=False,
+            specific_info=SpecificInfo(aws_ec2_instances=[]),
+            cost_per_unit=Decimal(20),
+            comment=faker.sentence(),
+        ),
+    )
+    assert isinstance(result, RutPricingUnitGet)
+    assert result
+    _second_pricing_unit_id = result.pricing_unit_id
+
+    # Get pricing plan with units
+    result = await pricing_plans.get_pricing_plan(
+        rpc_client,
+        product_name="osparc",
+        pricing_plan_id=_pricing_plan_id,
+    )
+    assert isinstance(result, RutPricingPlanGet)
+    assert result.pricing_units
+    assert len(result.pricing_units) == 2
+    assert result.pricing_units[0].pricing_unit_id == _first_pricing_unit_id
+    assert result.pricing_units[1].pricing_unit_id == _second_pricing_unit_id

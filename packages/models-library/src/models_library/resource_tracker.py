@@ -278,7 +278,7 @@ class UnitExtraInfoLicense(BaseModel):
 class PricingUnitWithCostCreate(BaseModel):
     pricing_plan_id: PricingPlanId
     unit_name: str
-    unit_extra_info: UnitExtraInfoTier
+    unit_extra_info: UnitExtraInfoTier | UnitExtraInfoLicense
     default: bool
     specific_info: SpecificInfo
     cost_per_unit: Decimal
@@ -310,7 +310,7 @@ class PricingUnitWithCostUpdate(BaseModel):
     pricing_plan_id: PricingPlanId
     pricing_unit_id: PricingUnitId
     unit_name: str
-    unit_extra_info: UnitExtraInfoTier
+    unit_extra_info: UnitExtraInfoTier | UnitExtraInfoLicense
     default: bool
     specific_info: SpecificInfo
     pricing_unit_cost_update: PricingUnitCostUpdate | None
