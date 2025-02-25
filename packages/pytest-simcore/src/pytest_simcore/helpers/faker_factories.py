@@ -289,6 +289,28 @@ def random_product(
     return data
 
 
+def random_product_price(
+    product_name: str,
+    fake: Faker = DEFAULT_FAKER,
+    **overrides,
+) -> dict[str, Any]:
+    from simcore_postgres_database.models.products_prices import products_prices
+
+    usd_or_none = fake.random_element(elements=(None, fake.decimal()))
+
+    data = dict(
+        product_name=product_name,
+        usd_per_credit=usd_or_none,
+        comment=fake.sentence(),
+        min_payment_amount_usd=10,
+        stripe_price_id=fake.pystr(),
+        stripe_tax_rate_id=fake.pystr(),
+    )
+    assert set(data.keys()).issubset({c.name for c in products_prices.columns})
+    data.update(overrides)
+    return data
+
+
 def utcnow() -> datetime:
     return datetime.now(tz=UTC)
 

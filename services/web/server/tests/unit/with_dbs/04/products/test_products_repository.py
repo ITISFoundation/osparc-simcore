@@ -4,17 +4,16 @@
 # pylint: disable=too-many-arguments
 
 import contextlib
-from typing import Any
+from typing import Any, Iterable
 
 import aiopg.sa
 import pytest
 import sqlalchemy as sa
 from aiohttp import web
 from aiohttp.test_utils import TestClient, make_mocked_request
-from faker import Faker
 from models_library.products import ProductName, ProductStripeInfoGet
 from pytest_simcore.helpers.faker_factories import random_product
-from pytest_simcore.helpers.postgres_tools import insert_and_get_row_lifespan
+from pytest_simcore.helpers.postgres_tools import sync_insert_and_get_row_lifespan
 from simcore_postgres_database import utils_products
 from simcore_postgres_database.models.products import (
     EmailFeedback,
@@ -37,9 +36,7 @@ from simcore_service_webserver.products._web_middlewares import (
 
 
 @pytest.fixture(scope="module")
-def products_raw_data(faker: Faker) -> dict[ProductName, dict[str, Any]]:
-    default_product = random_product(fake=faker, name=FRONTEND_APP_DEFAULT)
-
+def products_raw_data() -> dict[ProductName, dict[str, Any]]:
     adminer_example = {
         # DATA introduced by operator e.g. in adminer
         "name": "tis",
@@ -95,50 +92,51 @@ def products_raw_data(faker: Faker) -> dict[ProductName, dict[str, Any]]:
 
     _add(adminer_example)
     _add(minimal_example)
-    _add(default_product)
 
     for name in FRONTEND_APPS_AVAILABLE:
-        if name not in examples:
-            _add(random_product(fake=faker, name=name))
+        if name not in examples and name != FRONTEND_APP_DEFAULT:
+            _add(random_product(name=name))
 
     return examples
 
 
 @pytest.fixture(scope="module")
-async def db_products_table_with_data(
+def db_products_table_with_data_before_app(
     postgres_db: sa.engine.Engine, products_raw_data: dict[ProductName, dict[str, Any]]
-):
-    from sqlalchemy.ext.asyncio import create_async_engine
+) -> Iterable[dict[ProductName, dict[str, Any]]]:
+    """
+    All tests in this module are reading from the database
+    and the database for products are setup before the app is started
 
-    asyncio_engine = create_async_engine(
-        f"{postgres_db.url}".replace("postgresql", "postgresql+asyncpg")
-    )
-    try:
-        async with contextlib.AsyncExitStack() as module_test_suite_fixture:
-            product_to_row: dict[ProductName, dict[str, Any]] = {}
+    This fixture replicate those two conditions
+    """
 
-            for product_name, product_values in products_raw_data.items():
-                product_row = await module_test_suite_fixture.enter_async_context(
-                    insert_and_get_row_lifespan(
-                        asyncio_engine,
-                        table=products,
-                        values=product_values,
-                        pk_col=products.c.name,
-                        pk_value=product_name,
-                    )
+    with contextlib.ExitStack() as module_test_suite_fixture:
+        product_to_row: dict[ProductName, dict[str, Any]] = {}
+
+        for product_name, product_values in products_raw_data.items():
+            product_row = module_test_suite_fixture.enter_context(
+                sync_insert_and_get_row_lifespan(
+                    postgres_db,
+                    table=products,
+                    values=product_values,
+                    pk_col=products.c.name,
+                    pk_value=product_name,
                 )
-                product_to_row[product_name] = product_row
+            )
+            product_to_row[product_name] = product_row
 
-            yield product_to_row
+        yield product_to_row
 
-            # will rm products
-
-    finally:
-        await asyncio_engine.dispose()
+        # will rm products
 
 
 @pytest.fixture
-def app(client: TestClient) -> web.Application:
+def app(
+    db_products_table_with_data_before_app: dict[ProductName, dict[str, Any]],
+    client: TestClient,
+) -> web.Application:
+    assert db_products_table_with_data_before_app
     assert client.app
     return client.app
 
