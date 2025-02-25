@@ -205,14 +205,17 @@ async def test_licensed_items_domain_listing(
                 {
                     "licensed_item_id": got_duke1.licensed_item_id,
                     "licensed_resource_id": got_licensed_resource_duke1.licensed_resource_id,
+                    "product_name": osparc_product_name,
                 },
                 {
                     "licensed_item_id": got_duke1.licensed_item_id,
                     "licensed_resource_id": got_licensed_resource_duke1_different_id.licensed_resource_id,
+                    "product_name": osparc_product_name,
                 },
                 {
                     "licensed_item_id": got_duke2.licensed_item_id,
                     "licensed_resource_id": got_licensed_resource_duke2.licensed_resource_id,
+                    "product_name": osparc_product_name,
                 },
             ],
         )
