@@ -21,12 +21,9 @@ from models_library.api_schemas_storage.storage_schemas import (
     DatCorePackageName,
 )
 from models_library.users import UserID
-from pydantic import AnyUrl, BaseModel, ByteSize, NonNegativeInt, TypeAdapter
+from pydantic import AnyUrl, BaseModel, NonNegativeInt, TypeAdapter
 from servicelib.fastapi.client_session import get_client_session
 from servicelib.utils import logged_gather
-from simcore_service_storage.modules.datcore_adapter.utils import (
-    create_fmd_from_datcore_package,
-)
 
 from ...constants import DATCORE_ID, DATCORE_STR, MAX_CONCURRENT_REST_CALLS
 from ...core.settings import get_application_settings
@@ -39,6 +36,7 @@ from ...models import (
 )
 from .datcore_adapter_client_utils import request, retrieve_all_pages
 from .datcore_adapter_exceptions import DatcoreAdapterError
+from .utils import create_fmd_from_datcore_fmd, create_fmd_from_datcore_package
 
 _logger = logging.getLogger(__file__)
 
@@ -204,23 +202,7 @@ async def list_top_level_objects_in_dataset(
                 last_modified=e.last_modified_at,
                 file_meta_data=None
                 if e.data_type == DatCoreDataType.FOLDER
-                else FileMetaData(
-                    file_uuid=f"{e.path}",
-                    location_id=DATCORE_ID,
-                    location=DATCORE_STR,
-                    bucket_name=e.dataset_id,
-                    object_name=f"{e.path}",
-                    file_name=e.name,
-                    file_id=e.package_id,
-                    file_size=ByteSize(e.size),
-                    created_at=e.created_at,
-                    last_modified=e.last_modified_at,
-                    project_id=None,
-                    node_id=None,
-                    user_id=user_id,
-                    is_soft_link=False,
-                    sha256_checksum=None,
-                ),
+                else create_fmd_from_datcore_fmd(user_id, e),
             )
             for e in entries
         ],
@@ -271,23 +253,7 @@ async def list_top_level_objects_in_collection(
                 last_modified=e.last_modified_at,
                 file_meta_data=None
                 if e.data_type == DatCoreDataType.FOLDER
-                else FileMetaData(
-                    file_uuid=f"{e.path}",
-                    location_id=DATCORE_ID,
-                    location=DATCORE_STR,
-                    bucket_name=e.dataset_id,
-                    object_name=f"{e.path}",
-                    file_name=e.name,
-                    file_id=e.package_id,
-                    file_size=ByteSize(e.size),
-                    created_at=e.created_at,
-                    last_modified=e.last_modified_at,
-                    project_id=None,
-                    node_id=None,
-                    user_id=user_id,
-                    is_soft_link=False,
-                    sha256_checksum=None,
-                ),
+                else create_fmd_from_datcore_fmd(user_id, e),
             )
             for e in entries
         ],
