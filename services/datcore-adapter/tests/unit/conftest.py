@@ -15,6 +15,7 @@ import respx
 import simcore_service_datcore_adapter
 from asgi_lifespan import LifespanManager
 from fastapi.applications import FastAPI
+from models_library.utils.fastapi_encoders import jsonable_encoder
 from pytest_mock import MockFixture
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from simcore_service_datcore_adapter.modules.pennsieve import (
@@ -24,6 +25,7 @@ from starlette import status
 from starlette.testclient import TestClient
 
 pytest_plugins = [
+    "pytest_simcore.cli_runner",
     "pytest_simcore.environment_configs",
     "pytest_simcore.repository_paths",
     "pytest_simcore.pytest_global_environs",
@@ -317,15 +319,40 @@ async def pennsieve_subsystem_mock(
 
             # get collection packages
             mock.get(
-                f"https://api.pennsieve.io/packages/{pennsieve_collection_id}"
+                rf"https://api.pennsieve.io/packages/{pennsieve_collection_id}"
             ).respond(
                 status.HTTP_200_OK,
                 json={
                     "content": {"name": "this package name is also awesome"},
                     "children": pennsieve_mock_dataset_packages["packages"],
                     "ancestors": [
-                        {"content": {"name": "Bigger guy"}},
-                        {"content": {"name": "Big guy"}},
+                        {
+                            "content": {
+                                "name": "Bigger guy",
+                            }
+                        },
+                        {
+                            "content": {
+                                "name": "Big guy",
+                            }
+                        },
+                    ],
+                },
+            )
+            # get package ancestry
+            mock.get(
+                url__regex=rf"https://api.pennsieve.io/packages/{pennsieve_file_id}\?includeAncestors=(?P<include>.+)$"
+            ).respond(
+                status.HTTP_200_OK,
+                json={
+                    "content": {
+                        "datasetId": pennsieve_dataset_id,
+                        "name": pennsieve_file_id,
+                    },
+                    "ancestors": [
+                        {"content": {"id": faker.pystr(), "name": faker.name()}},
+                        {"content": {"id": faker.pystr(), "name": faker.name()}},
+                        {"content": {"id": faker.pystr(), "name": faker.name()}},
                     ],
                 },
             )
@@ -334,7 +361,22 @@ async def pennsieve_subsystem_mock(
                 url__regex=r"https://api.pennsieve.io/packages/.+/files\?limit=1&offset=0$"
             ).respond(
                 status.HTTP_200_OK,
-                json=[{"content": {"size": 12345, "id": "fake_file_id"}}],
+                json=[
+                    jsonable_encoder(
+                        {
+                            "content": {
+                                "size": 12345,
+                                "id": faker.pyint(),
+                                "packageId": "N:package:475beff2-03c8-4dca-a221-d1d02e17f064",
+                                "name": faker.file_name(),
+                                "filename": faker.file_name(),
+                                "s3bucket": faker.pystr(),
+                                "createdAt": faker.date_time(),
+                                "updatedAt": faker.date_time(),
+                            }
+                        }
+                    )
+                ],
             )
 
             # download file
