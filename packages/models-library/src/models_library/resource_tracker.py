@@ -267,7 +267,7 @@ class UnitExtraInfoLicense(BaseModel):
         json_schema_extra={
             "examples": [
                 {
-                    "num_of_seats": 1,
+                    "num_of_seats": 5,
                     "custom key": "custom value",
                 }
             ]

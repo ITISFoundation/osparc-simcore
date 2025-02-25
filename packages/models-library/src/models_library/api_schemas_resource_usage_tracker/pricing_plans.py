@@ -37,9 +37,24 @@ class RutPricingUnitGet(BaseModel):
                     "default": True,
                     "specific_info": hw_config_example,
                 }
-                for hw_config_example in HardwareInfo.model_config["json_schema_extra"][
+                for hw_config_example in HardwareInfo.model_config["json_schema_extra"][  # type: ignore[index,union-attr]
                     "examples"
-                ]  # type: ignore[index,union-attr]
+                ]
+            ]
+            + [
+                {
+                    "pricing_unit_id": 2,
+                    "unit_name": "5 seats",
+                    "unit_extra_info": UnitExtraInfoLicense.model_config["json_schema_extra"]["examples"][0],  # type: ignore [index]
+                    "current_cost_per_unit": 10.5,
+                    "current_cost_per_unit_id": 2,
+                    "default": False,
+                    "specific_info": HardwareInfo.model_config["json_schema_extra"][  # type: ignore[index,union-attr]
+                        "examples"
+                    ][
+                        1
+                    ],
+                }
             ]
         }
     )
@@ -88,14 +103,27 @@ class RutPricingPlanGet(BaseModel):
                     "classification": "TIER",
                     "created_at": "2023-01-11 13:11:47.293595",
                     "pricing_plan_key": "pricing-plan-sleeper",
-                    "pricing_units": [pricing_unit_get_example],
+                    "pricing_units": [
+                        RutPricingUnitGet.model_config["json_schema_extra"]["examples"][
+                            0
+                        ]
+                    ],
                     "is_active": True,
-                }
-                for pricing_unit_get_example in RutPricingUnitGet.model_config[
-                    "json_schema_extra"
-                ][
-                    "examples"
-                ]  # type: ignore[index,union-attr]
+                },
+                {
+                    "pricing_plan_id": 2,
+                    "display_name": "VIP model A",
+                    "description": "Special Pricing Plan for VIP",
+                    "classification": "LICENSE",
+                    "created_at": "2023-01-11 13:11:47.293595",
+                    "pricing_plan_key": "vip-model-a",
+                    "pricing_units": [
+                        RutPricingUnitGet.model_config["json_schema_extra"]["examples"][
+                            2
+                        ]
+                    ],
+                    "is_active": True,
+                },
             ]
         }
     )

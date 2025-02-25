@@ -12,6 +12,7 @@ from models_library.api_schemas_resource_usage_tracker import (
     licensed_items_purchases as rut_licensed_items_purchases,
 )
 from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
+    RutPricingPlanGet,
     RutPricingUnitGet,
 )
 from models_library.api_schemas_webserver.licensed_items import LicensedItemRestGet
@@ -153,11 +154,18 @@ def mock_licensed_items_purchase_functions(mocker: MockerFixture) -> tuple:
             WalletGetWithAvailableCredits.model_json_schema()["examples"][0]
         ),
     )
+    mock_get_pricing_plan = mocker.patch(
+        "simcore_service_webserver.licenses._licensed_items_service.get_pricing_plan",
+        spec=True,
+        return_value=RutPricingPlanGet.model_validate(
+            RutPricingPlanGet.model_json_schema()["examples"][1]
+        ),
+    )
     mock_get_pricing_unit = mocker.patch(
         "simcore_service_webserver.licenses._licensed_items_service.get_pricing_plan_unit",
         spec=True,
         return_value=RutPricingUnitGet.model_validate(
-            RutPricingUnitGet.model_json_schema()["examples"][0]
+            RutPricingUnitGet.model_json_schema()["examples"][2]
         ),
     )
     mock_create_licensed_item_purchase = mocker.patch(
@@ -167,6 +175,7 @@ def mock_licensed_items_purchase_functions(mocker: MockerFixture) -> tuple:
 
     return (
         mock_wallet_credits,
+        mock_get_pricing_plan,
         mock_get_pricing_unit,
         mock_create_licensed_item_purchase,
     )
