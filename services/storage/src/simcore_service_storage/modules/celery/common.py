@@ -9,12 +9,15 @@ _logger = logging.getLogger(__name__)
 
 
 def create_app(settings: ApplicationSettings) -> Celery:
-    assert settings.STORAGE_CELERY
+    celery_settings = settings.STORAGE_CELERY
+    assert celery_settings
 
     app = Celery(
-        broker=settings.STORAGE_CELERY.CELERY_BROKER.dsn,
-        backend=settings.STORAGE_CELERY.CELERY_RESULTS_BACKEND.build_redis_dsn(
+        broker=celery_settings.CELERY_BROKER.dsn,
+        backend=celery_settings.CELERY_RESULT_BACKEND.build_redis_dsn(
             RedisDatabase.CELERY_TASKS,
         ),
     )
+    app.conf.result_expires = celery_settings.CELERY_RESULT_EXPIRES
+    app.conf.result_extended = True  # original args are included in the results
     return app

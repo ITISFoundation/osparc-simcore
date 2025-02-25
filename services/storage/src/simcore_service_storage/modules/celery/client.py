@@ -5,7 +5,6 @@ from uuid import uuid4
 from celery import Celery
 from celery.contrib.abortable import AbortableAsyncResult
 from celery.result import AsyncResult
-from fastapi import FastAPI
 from models_library.progress_bar import ProgressReport
 from pydantic import ValidationError
 
@@ -47,7 +46,6 @@ class CeleryTaskQueueClient:
         task = self._celery_app.send_task(
             task_name, task_id=task_id, kwargs=task_params
         )
-        assert isinstance(str, task.id)
         return task.id
 
     def get(self, task_id: TaskID) -> Any:
@@ -100,12 +98,3 @@ class CeleryTaskQueueClient:
                 all_task_ids.extend(task_ids)
 
         return all_task_ids
-
-
-def get_client(fastapi: FastAPI) -> CeleryTaskQueueClient:
-    celery = fastapi.state.celery_app
-    assert isinstance(celery, Celery)
-
-    client = celery.conf["client"]
-    assert isinstance(client, CeleryTaskQueueClient)
-    return client

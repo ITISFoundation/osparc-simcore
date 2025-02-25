@@ -1,6 +1,6 @@
 from asyncio import AbstractEventLoop
+from collections.abc import Callable, Iterable
 from datetime import timedelta
-from typing import Callable, Iterable
 
 import pytest
 from celery import Celery
@@ -23,20 +23,18 @@ _CELERY_CONF = {
     "result_backend": "cache+memory://",
     "result_expires": timedelta(days=7),
     "result_extended": True,
-    "task_always_eager": False,
-    "task_acks_late": True,
-    "result_persistent": True,
-    "broker_transport_options": {"visibility_timeout": 3600},
-    "task_track_started": True,
-    "worker_concurrency": 1,
-    "worker_prefetch_multiplier": 1,
-    "worker_send_task_events": True,  # Required for task monitoring
-    "task_send_sent_event": True,  # Required for task monitoring
+    "pool": "threads",
 }
 
 
 @pytest.fixture
-def client_celery_app() -> Celery:
+def register_celery_tasks() -> Callable[[Celery], None]:
+    msg = "please define a callback that registers the tasks"
+    raise NotImplementedError(msg)
+
+
+@pytest.fixture
+def celery_client_app() -> Celery:
     celery_app_client.conf.update(_CELERY_CONF)
 
     assert isinstance(celery_app_client.conf["client"], CeleryTaskQueueClient)
@@ -45,12 +43,6 @@ def client_celery_app() -> Celery:
     assert "fastapi_app" not in celery_app_client.conf
 
     return celery_app_client
-
-
-@pytest.fixture
-def register_celery_tasks() -> Callable[[Celery], None]:
-    msg = "please define a callback that registers the tasks"
-    raise NotImplementedError(msg)
 
 
 @pytest.fixture
@@ -75,10 +67,21 @@ def celery_worker(
         assert isinstance(celery_app_worker.conf["fastapi_app"], FastAPI)
 
         yield worker
+
         worker_shutdown.send(sender=worker)
 
 
 @pytest.fixture
-def worker_celery_app(celery_worker: TestWorkController) -> Celery:
+def celery_worker_app(celery_worker: TestWorkController) -> Celery:
     assert isinstance(celery_worker.app, Celery)
     return celery_worker.app
+
+
+@pytest.fixture
+def celery_task_queue_client(celery_worker_app: Celery) -> CeleryTaskQueueClient:
+    return CeleryTaskQueueClient(celery_worker_app)
+
+
+@pytest.fixture
+def celery_task_queue_worker(celery_worker_app: Celery) -> CeleryTaskQueueWorker:
+    return CeleryTaskQueueWorker(celery_worker_app)
