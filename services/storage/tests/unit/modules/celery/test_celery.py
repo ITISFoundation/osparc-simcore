@@ -43,7 +43,7 @@ def register_celery_tasks() -> Callable[[Celery], None]:
 
 
 @pytest.mark.usefixtures("celery_client_app", "celery_worker_app")
-def test_archive(
+def test_sumitting_task_calling_async_function_results_with_success_state(
     celery_task_queue_client: CeleryTaskQueueClient,
 ):
     task_id_parts = TaskIDParts(user_id=1)
@@ -67,7 +67,7 @@ def test_archive(
 
 
 @pytest.mark.usefixtures("celery_client_app", "celery_worker_app")
-def test_failure_task(
+def test_submitting_task_with_failure_results_with_error(
     celery_task_queue_client: CeleryTaskQueueClient,
 ):
     task_id = celery_task_queue_client.submit(
@@ -87,7 +87,7 @@ def test_failure_task(
 
 
 @pytest.mark.usefixtures("celery_client_app", "celery_worker_app")
-def test_dreamer_task(
+def test_aborting_task_results_with_aborted_state(
     celery_task_queue_client: CeleryTaskQueueClient,
 ):
     task_id = celery_task_queue_client.submit(
