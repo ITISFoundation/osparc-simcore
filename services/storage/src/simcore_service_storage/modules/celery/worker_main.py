@@ -9,6 +9,7 @@ from celery import Celery
 from celery.signals import worker_init, worker_shutdown
 from servicelib.background_task import cancel_wait_task
 from servicelib.logging_utils import config_all_loggers
+from simcore_service_storage.modules.celery.utils import set_celery_worker
 
 from ...core.application import create_app
 from ...core.settings import ApplicationSettings
@@ -78,10 +79,10 @@ def on_worker_shutdown(sender, **_kwargs):
     asyncio.run_coroutine_threadsafe(shutdown(), loop)
 
 
-celery_app = create_celery_app(ApplicationSettings.create_from_envs())
-celery_worker = CeleryTaskQueueWorker(celery_app)
-celery_app.conf["worker"] = celery_worker
+celery_app = create_celery_app(_settings)
 
+celery_worker = CeleryTaskQueueWorker(celery_app)
 celery_worker.register_task(sync_archive)
+set_celery_worker(celery_app, CeleryTaskQueueWorker(celery_app))
 
 app = celery_app

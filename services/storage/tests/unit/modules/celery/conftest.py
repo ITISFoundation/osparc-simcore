@@ -7,6 +7,8 @@ from celery import Celery
 from celery.contrib.testing.worker import TestWorkController, start_worker
 from celery.signals import worker_init, worker_shutdown
 from fastapi import FastAPI
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_service_storage.main import celery_app as celery_app_client
 from simcore_service_storage.modules.celery.client import CeleryTaskQueueClient
 from simcore_service_storage.modules.celery.worker import CeleryTaskQueueWorker
@@ -17,6 +19,21 @@ from simcore_service_storage.modules.celery.worker_main import (
     on_worker_init,
     on_worker_shutdown,
 )
+
+
+@pytest.fixture
+def app_environment(
+    monkeypatch: pytest.MonkeyPatch,
+    app_environment: EnvVarsDict,
+) -> EnvVarsDict:
+    return setenvs_from_dict(
+        monkeypatch,
+        {
+            **app_environment,
+            "SC_BOOT_MODE": "local-development",
+        },
+    )
+
 
 _CELERY_CONF = {
     "broker_url": "memory://",
@@ -34,7 +51,7 @@ def register_celery_tasks() -> Callable[[Celery], None]:
 
 
 @pytest.fixture
-def celery_client_app() -> Celery:
+def celery_client_app(app_environment: EnvVarsDict) -> Celery:
     celery_app_client.conf.update(_CELERY_CONF)
 
     assert isinstance(celery_app_client.conf["client"], CeleryTaskQueueClient)
