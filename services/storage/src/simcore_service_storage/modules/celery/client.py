@@ -16,8 +16,8 @@ _PREFIX: Final = "ct"
 _logger = logging.getLogger(__name__)
 
 
-def _get_task_id_components(task_id_components: TaskIDParts) -> list[str]:
-    return [f"{v}" for _, v in sorted(task_id_components.items())]
+def _get_task_id_components(task_id_parts: TaskIDParts) -> list[str]:
+    return [f"{v}" for _, v in sorted(task_id_parts.items())]
 
 
 def _get_components_prefix(name: str, task_id_parts: TaskIDParts) -> list[str]:
@@ -28,8 +28,8 @@ def _get_task_id_prefix(name: str, task_id_parts: TaskIDParts) -> TaskID:
     return "::".join(_get_components_prefix(name, task_id_parts))
 
 
-def _get_task_id(name: str, task_id_components: TaskIDParts) -> TaskID:
-    return "::".join([*_get_components_prefix(name, task_id_components), f"{uuid4()}"])
+def _get_task_id(name: str, task_id_parts: TaskIDParts) -> TaskID:
+    return "::".join([*_get_components_prefix(name, task_id_parts), f"{uuid4()}"])
 
 
 _CELERY_TASK_META_PREFIX = "celery-task-meta-"
