@@ -339,34 +339,39 @@ qx.Class.define("osparc.pricing.UnitEditor", {
     },
 
     __createPricingUnit: function() {
-      const unitName = this.getUnitName();
-      const costPerUnit = this.getCostPerUnit();
-      const comment = this.getComment();
-      const awsEc2Instances = [];
-      const specificInfo = this.getSpecificInfo();
-      if (specificInfo) {
-        awsEc2Instances.push(specificInfo);
+      const data = {};
+      data["unitName"] = this.getUnitName();
+      data["costPerUnit"] = this.getCostPerUnit();
+      data["comment"] = this.getComment();
+
+      const pricingPlan = osparc.store.Pricing.getInstance().getPricingPlan(this.getPricingPlanId());
+      if (pricingPlan) {
+        if (pricingPlan.getClassification() === "TIER") {
+          const awsEc2Instances = [];
+          const specificInfo = this.getSpecificInfo();
+          if (specificInfo) {
+            awsEc2Instances.push(specificInfo);
+          }
+          data["specificInfo"] = {
+            "aws_ec2_instances": awsEc2Instances
+          };
+          const extraInfo = {};
+          extraInfo["CPU"] = this.getUnitExtraInfoCPU();
+          extraInfo["RAM"] = this.getUnitExtraInfoRAM();
+          extraInfo["VRAM"] = this.getUnitExtraInfoVRAM();
+          Object.assign(extraInfo, this.getUnitExtraInfo());
+          data["unitExtraInfo"] = extraInfo;
+        } else if (pricingPlan.getClassification() === "LICENSE") {
+          data["nSeats"] = this.getUnitExtraInfoNSeats();
+        }
       }
-      const extraInfo = {};
-      extraInfo["CPU"] = this.getUnitExtraInfoCPU();
-      extraInfo["RAM"] = this.getUnitExtraInfoRAM();
-      extraInfo["VRAM"] = this.getUnitExtraInfoVRAM();
-      Object.assign(extraInfo, this.getUnitExtraInfo());
-      const isDefault = this.getDefault();
+
+      data["default"] = this.getDefault();
       const params = {
         url: {
           "pricingPlanId": this.getPricingPlanId()
         },
-        data: {
-          "unitName": unitName,
-          "costPerUnit": costPerUnit,
-          "comment": comment,
-          "specificInfo": {
-            "aws_ec2_instances": awsEc2Instances
-          },
-          "unitExtraInfo": extraInfo,
-          "default": isDefault
-        }
+        data
       };
       osparc.data.Resources.fetch("pricingUnits", "post", params)
         .then(() => {
