@@ -8,13 +8,10 @@ IMPORTANT: DO NOT COUPLE these schemas until storage is refactored
 
 from datetime import datetime
 from enum import Enum
-
-# /data-export
+from pathlib import Path
 from typing import Annotated, Any, Literal, Self, TypeAlias
 from uuid import UUID
 
-from models_library.projects import ProjectID
-from models_library.users import UserID
 from pydantic import (
     BaseModel,
     ByteSize,
@@ -28,9 +25,15 @@ from pydantic import (
 )
 from pydantic.networks import AnyUrl
 
-from ..basic_regex import DATCORE_DATASET_NAME_RE, S3_BUCKET_NAME_RE
+from ..basic_regex import (
+    DATCORE_COLLECTION_NAME_RE,
+    DATCORE_DATASET_NAME_RE,
+    DATCORE_FILE_ID_RE,
+    S3_BUCKET_NAME_RE,
+)
 from ..basic_types import SHA256Str
 from ..generics import ListModel
+from ..projects import ProjectID
 from ..projects_nodes_io import (
     LocationID,
     LocationName,
@@ -38,6 +41,7 @@ from ..projects_nodes_io import (
     SimcoreS3FileID,
     StorageFileID,
 )
+from ..users import UserID
 
 ETag: TypeAlias = str
 
@@ -45,6 +49,12 @@ S3BucketName: TypeAlias = Annotated[str, StringConstraints(pattern=S3_BUCKET_NAM
 
 DatCoreDatasetName: TypeAlias = Annotated[
     str, StringConstraints(pattern=DATCORE_DATASET_NAME_RE)
+]
+DatCoreCollectionName: TypeAlias = Annotated[
+    str, StringConstraints(pattern=DATCORE_COLLECTION_NAME_RE)
+]
+DatCorePackageName: TypeAlias = Annotated[
+    str, StringConstraints(pattern=DATCORE_FILE_ID_RE)
 ]
 
 
@@ -263,9 +273,6 @@ class FileMetaDataArray(RootModel[list[FileMetaDataGet]]):
     root: list[FileMetaDataGet] = Field(default_factory=list)
 
 
-# /locations/{location_id}/files/{file_id}
-
-
 class LinkType(str, Enum):
     PRESIGNED = "PRESIGNED"
     S3 = "S3"
@@ -370,3 +377,53 @@ class FoldersBody(BaseModel):
 
 class SoftCopyBody(BaseModel):
     link_id: SimcoreS3FileID
+
+
+class PathMetaDataGet(BaseModel):
+    path: Annotated[Path, Field(description="the path to the current path")]
+    display_path: Annotated[
+        Path, Field(description="the path to display with UUID replaced")
+    ]
+
+    file_meta_data: Annotated[
+        FileMetaDataGet | None,
+        Field(description="if filled, this is the file meta data of the s3 object"),
+    ] = None
+
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={
+            "examples": [
+                # ls no filter
+                {
+                    "path": "f8da77a9-24b9-4eab-aee7-1f0608da1e3e",
+                    "display_path": "my amazing project",
+                },
+                # ls f8da77a9-24b9-4eab-aee7-1f0608da1e3e
+                {
+                    "path": "f8da77a9-24b9-4eab-aee7-1f0608da1e3e/2f94f80f-633e-4dfa-a983-226b7babe3d7",
+                    "display_path": "my amazing project/awesome node",
+                },
+                # ls f8da77a9-24b9-4eab-aee7-1f0608da1e3e/2f94f80f-633e-4dfa-a983-226b7babe3d7
+                {
+                    "path": "f8da77a9-24b9-4eab-aee7-1f0608da1e3e/2f94f80f-633e-4dfa-a983-226b7babe3d7/outputs",
+                    "display_path": "my amazing project/awesome node/outputs",
+                },
+                # ls f8da77a9-24b9-4eab-aee7-1f0608da1e3e/2f94f80f-633e-4dfa-a983-226b7babe3d7/outputs
+                {
+                    "path": "f8da77a9-24b9-4eab-aee7-1f0608da1e3e/2f94f80f-633e-4dfa-a983-226b7babe3d7/outputs/output5",
+                    "display_path": "my amazing project/awesome node/outputs/output5",
+                },
+                # ls f8da77a9-24b9-4eab-aee7-1f0608da1e3e/2f94f80f-633e-4dfa-a983-226b7babe3d7/outputs/output_5
+                {
+                    "path": f"f8da77a9-24b9-4eab-aee7-1f0608da1e3e/2f94f80f-633e-4dfa-a983-226b7babe3d7/outputs/output5/{FileMetaDataGet.model_config['json_schema_extra']['examples'][0]['file_name']}",  # type: ignore[index, call-overload]
+                    "display_path": f"my amazing project/awesome node/outputs/output5/{FileMetaDataGet.model_config['json_schema_extra']['examples'][0]['file_name']}",  # type: ignore[index, call-overload]
+                    "file_meta_data": FileMetaDataGet.model_config["json_schema_extra"][  # type: ignore[index]
+                        "examples"
+                    ][
+                        0  # type: ignore[index]
+                    ],
+                },
+            ]
+        },
+    )
