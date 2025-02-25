@@ -197,9 +197,9 @@ def _init_pagination(
 
 
 def _create_next_cursor(
-    total: TotalChildren, limit: int, cursor_params: _PathsCursorParameters
+    total_count: TotalChildren, limit: int, cursor_params: _PathsCursorParameters
 ) -> GenericCursor | None:
-    if cursor_params.offset + limit < total:
+    if cursor_params.offset + limit < total_count:
         return cursor_params.model_copy(
             update={"offset": cursor_params.offset + limit}
         ).model_dump_json()
