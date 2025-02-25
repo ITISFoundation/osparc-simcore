@@ -5,7 +5,6 @@
 
 
 import re
-from itertools import chain
 from typing import Any
 
 import pytest
@@ -25,7 +24,7 @@ from simcore_service_webserver.products.models import Product
 
 @pytest.mark.parametrize(
     "model_cls, example_name, example_data",
-    chain(walk_model_examples_in_package(simcore_service_webserver.products)),
+    walk_model_examples_in_package(simcore_service_webserver.products),
 )
 def test_all_products_models_examples(
     model_cls: type[BaseModel], example_name: str, example_data: Any
