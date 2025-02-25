@@ -10,9 +10,11 @@ from typing import Any
 import pytest
 import simcore_service_webserver.products
 import sqlalchemy as sa
+from faker import Faker
 from models_library.basic_regex import TWILIO_ALPHANUMERIC_SENDER_ID_RE
 from models_library.products import ProductName
 from pydantic import BaseModel, ValidationError
+from pytest_simcore.helpers.faker_factories import random_product
 from pytest_simcore.pydantic_models import (
     assert_validation_model,
     walk_model_examples_in_package,
@@ -124,13 +126,19 @@ def test_safe_load_empty_blanks_on_string_cols_from_db(
     }
 
 
-@pytest.mark.parametrize("product_name", list(FRONTEND_APPS_AVAILABLE))
+@pytest.mark.parametrize("expected_product_name", list(FRONTEND_APPS_AVAILABLE))
 def test_product_name_needs_front_end(
-    product_name: ProductName, fake_product_from_db: dict[str, Any]
+    faker: Faker,
+    expected_product_name: ProductName,
+    product_db_server_defaults: dict[str, Any],
 ):
-    fake_product_from_db.update(name=product_name)
-    product = Product.model_validate(fake_product_from_db)
-    assert product.name == product_name
+    product_from_db = random_product(
+        name=expected_product_name,
+        fake=faker,
+        **product_db_server_defaults,
+    )
+    product = Product.model_validate(product_from_db)
+    assert product.name == expected_product_name
 
 
 def test_product_name_invalid(fake_product_from_db: dict[str, Any]):

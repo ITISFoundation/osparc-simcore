@@ -102,6 +102,8 @@ def mock_env_devel_environment(
         monkeypatch,
         envs={
             "WEBSERVER_DEV_FEATURES_ENABLED": "1",
+            "TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT": "null",
+            "TRACING_OPENTELEMETRY_COLLECTOR_PORT": "null",
         },
     )
 
