@@ -1178,7 +1178,7 @@ services:
       S3_ENDPOINT: ${S3_ENDPOINT}
       S3_REGION: ${S3_REGION}
       S3_SECRET_KEY: ${S3_SECRET_KEY}
-      STORAGE_WORKER_MODE: "False"
+      STORAGE_WORKER_MODE: 0
       STORAGE_LOGLEVEL: ${STORAGE_LOGLEVEL}
       STORAGE_MONITORING_ENABLED: 1
       STORAGE_PROFILING: ${STORAGE_PROFILING}
@@ -1193,7 +1193,7 @@ services:
   storage-worker:
     image: ${DOCKER_REGISTRY:-itisfoundation}/storage:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    hostname: "sto-{{.Node.Hostname}}-{{.Task.Slot}}"
+    hostname: "stow-{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:
       BF_API_KEY: ${BF_API_KEY}
       BF_API_SECRET: ${BF_API_SECRET}
@@ -1221,7 +1221,7 @@ services:
       S3_ENDPOINT: ${S3_ENDPOINT}
       S3_REGION: ${S3_REGION}
       S3_SECRET_KEY: ${S3_SECRET_KEY}
-      STORAGE_WORKER_MODE: "True"
+      STORAGE_WORKER_MODE: 1
       STORAGE_LOGLEVEL: ${STORAGE_LOGLEVEL}
       STORAGE_MONITORING_ENABLED: 1
       STORAGE_PROFILING: ${STORAGE_PROFILING}

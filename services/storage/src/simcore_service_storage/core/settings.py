@@ -106,7 +106,12 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') to a list of _logger message patterns that should be filtered out.",
     )
 
-    STORAGE_WORKER_MODE: bool | None = False
+    STORAGE_WORKER_MODE: Annotated[
+        bool | None, Field(description="If True, run as a worker")
+    ] = False
+    STORAGE_CELERY_BROKER: RabbitSettings | None = Field(
+        json_schema_extra={"auto_default_from_env": True}
+    )
 
     @field_validator("LOG_LEVEL", mode="before")
     @classmethod
