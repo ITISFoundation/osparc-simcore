@@ -7,8 +7,8 @@ from celery import Celery
 from celery.contrib.testing.worker import TestWorkController, start_worker
 from celery.signals import worker_init, worker_shutdown
 from fastapi import FastAPI
-from simcore_service_storage.main import CeleryTaskQueueClient
 from simcore_service_storage.main import celery_app as celery_app_client
+from simcore_service_storage.modules.celery.client import CeleryTaskQueueClient
 from simcore_service_storage.modules.celery.worker import CeleryTaskQueueWorker
 from simcore_service_storage.modules.celery.worker_main import (
     celery_app as celery_app_worker,
