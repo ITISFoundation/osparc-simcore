@@ -6,7 +6,7 @@ import simcore_postgres_database.cli
 import sqlalchemy as sa
 from psycopg2 import OperationalError
 from simcore_postgres_database.models.base import metadata
-from sqlalchemy.ext.asyncio import AsyncEngine
+from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
 
 class PostgresTestConfig(TypedDict):
@@ -76,25 +76,46 @@ def migrated_pg_tables_context(
 def is_postgres_responsive(url) -> bool:
     """Check if something responds to ``url``"""
     try:
-        engine = sa.create_engine(url)
-        conn = engine.connect()
+        sync_engine = sa.create_engine(url)
+        conn = sync_engine.connect()
         conn.close()
     except OperationalError:
         return False
     return True
 
 
-async def _insert_and_get_row(
-    conn, table: sa.Table, values: dict[str, Any], pk_col: sa.Column, pk_value: Any
+async def _async_insert_and_get_row(
+    conn: AsyncConnection,
+    table: sa.Table,
+    values: dict[str, Any],
+    pk_col: sa.Column,
+    pk_value: Any,
 ):
     result = await conn.execute(table.insert().values(**values).returning(pk_col))
-    row = result.first()
+    row = result.one()
 
     # NOTE: DO NO USE row[pk_col] since you will get a deprecation error (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
     assert getattr(row, pk_col.name) == pk_value
 
     result = await conn.execute(sa.select(table).where(pk_col == pk_value))
-    return result.first()
+    return result.one()
+
+
+def _sync_insert_and_get_row(
+    conn: sa.engine.Connection,
+    table: sa.Table,
+    values: dict[str, Any],
+    pk_col: sa.Column,
+    pk_value: Any,
+):
+    result = conn.execute(table.insert().values(**values).returning(pk_col))
+    row = result.one()
+
+    # NOTE: DO NO USE row[pk_col] since you will get a deprecation error (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+    assert getattr(row, pk_col.name) == pk_value
+
+    result = conn.execute(sa.select(table).where(pk_col == pk_value))
+    return result.one()
 
 
 @asynccontextmanager
@@ -108,9 +129,11 @@ async def insert_and_get_row_lifespan(
 ) -> AsyncIterator[dict[str, Any]]:
     # insert & get
     async with sqlalchemy_async_engine.begin() as conn:
-        row = await _insert_and_get_row(
+        row = await _async_insert_and_get_row(
             conn, table=table, values=values, pk_col=pk_col, pk_value=pk_value
         )
+
+    assert row
 
     # NOTE: DO NO USE dict(row) since you will get a deprecation error (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
     # pylint: disable=protected-access
@@ -119,3 +142,35 @@ async def insert_and_get_row_lifespan(
     # delete row
     async with sqlalchemy_async_engine.begin() as conn:
         await conn.execute(table.delete().where(pk_col == pk_value))
+
+
+@contextmanager
+def sync_insert_and_get_row_lifespan(
+    sqlalchemy_sync_engine: sa.engine.Engine,
+    *,
+    table: sa.Table,
+    values: dict[str, Any],
+    pk_col: sa.Column,
+    pk_value: Any,
+) -> Iterator[dict[str, Any]]:
+    """sync version of insert_and_get_row_lifespan.
+
+    TIP: more convenient for **module-scope fixtures** that setup the
+    database tables before the app starts since it does not require an `event_loop`
+    fixture (which is funcition-scoped )
+    """
+    # insert & get
+    with sqlalchemy_sync_engine.begin() as conn:
+        row = _sync_insert_and_get_row(
+            conn, table=table, values=values, pk_col=pk_col, pk_value=pk_value
+        )
+
+    assert row
+
+    # NOTE: DO NO USE dict(row) since you will get a deprecation error (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+    # pylint: disable=protected-access
+    yield row._asdict()
+
+    # delete row
+    with sqlalchemy_sync_engine.begin() as conn:
+        conn.execute(table.delete().where(pk_col == pk_value))
