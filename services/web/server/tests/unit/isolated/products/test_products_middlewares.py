@@ -23,7 +23,7 @@ from yarl import URL
 
 
 @pytest.fixture()
-def mock_postgres_product_table():
+def mock_postgres_product_table() -> list[dict[str, Any]]:
     # NOTE: try here your product's host_regex before adding them in the database!
     column_defaults: dict[str, Any] = {
         c.name: f"{c.server_default.arg}" for c in products.columns if c.server_default
@@ -60,11 +60,12 @@ def mock_postgres_product_table():
 
 
 @pytest.fixture
-def mock_app(mock_postgres_product_table: dict[str, Any]) -> web.Application:
+def mock_app(mock_postgres_product_table: list[dict[str, Any]]) -> web.Application:
     app = web.Application()
 
     app_products: dict[str, Product] = {
-        entry["name"]: Product(**entry) for entry in mock_postgres_product_table
+        product_from_db["name"]: Product.model_validate(product_from_db)
+        for product_from_db in mock_postgres_product_table
     }
     default_product_name = next(iter(app_products.keys()))
     _set_app_state(app, app_products, default_product_name)
