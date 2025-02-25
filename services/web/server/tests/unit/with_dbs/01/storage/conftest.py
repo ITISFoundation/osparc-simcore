@@ -63,15 +63,11 @@ def fake_storage_app(storage_vtag: str) -> FastAPI:  # noqa: C901
     )
     async def _list_storage_locations(user_id: UserID, request: Request):
         assert "json_schema_extra" in FileLocation.model_config
-        assert isinstance(FileLocation.model_config["json_schema_extra"], dict)
-        assert isinstance(
-            FileLocation.model_config["json_schema_extra"]["examples"], list
-        )
 
         return Envelope[list[FileLocation]](
             data=[
                 FileLocation.model_validate(e)
-                for e in FileLocation.model_config["json_schema_extra"]["examples"]
+                for e in FileLocation.model_json_schema()["examples"]
             ]
         )
 
@@ -87,21 +83,16 @@ def fake_storage_app(storage_vtag: str) -> FastAPI:  # noqa: C901
     ):
         assert user_id
         assert "json_schema_extra" in PathMetaDataGet.model_config
-        assert isinstance(PathMetaDataGet.model_config["json_schema_extra"], dict)
-        assert isinstance(
-            PathMetaDataGet.model_config["json_schema_extra"]["examples"], list
-        )
 
         example_index = len(file_filter.parts) if file_filter else 0
         assert example_index < len(
-            PathMetaDataGet.model_config["json_schema_extra"]["examples"]
+            PathMetaDataGet.model_json_schema()["examples"]
         ), "fake server unable to server this example"
-        chosen_example = PathMetaDataGet.model_config["json_schema_extra"]["examples"][
-            example_index
-        ]
+        chosen_example = PathMetaDataGet.model_json_schema()["examples"][example_index]
 
         return create_page(
-            random.randint(3, 15) * [PathMetaDataGet.model_validate(chosen_example)],
+            random.randint(3, 15)
+            * [PathMetaDataGet.model_validate(chosen_example)],  # noqa: S311
             params=page_params,
             next_=None,
         )
@@ -160,16 +151,11 @@ def fake_storage_app(storage_vtag: str) -> FastAPI:  # noqa: C901
     )
     async def _list_datasets_metadata(user_id: UserID, request: Request):
         assert "json_schema_extra" in DatasetMetaDataGet.model_config
-        assert isinstance(DatasetMetaDataGet.model_config["json_schema_extra"], dict)
-        assert isinstance(
-            DatasetMetaDataGet.model_config["json_schema_extra"]["examples"], list
-        )
+
         return Envelope[list[DatasetMetaDataGet]](
             data=[
                 DatasetMetaDataGet.model_validate(e)
-                for e in DatasetMetaDataGet.model_config["json_schema_extra"][
-                    "examples"
-                ]
+                for e in DatasetMetaDataGet.model_json_schema()["examples"]
             ]
         )
 

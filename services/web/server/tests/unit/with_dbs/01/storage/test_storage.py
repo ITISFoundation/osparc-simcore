@@ -51,14 +51,9 @@ async def test_list_storage_locations(
 
     if not error:
         assert "json_schema_extra" in FileLocation.model_config
-        assert isinstance(FileLocation.model_config["json_schema_extra"], dict)
-        assert isinstance(
-            FileLocation.model_config["json_schema_extra"]["examples"], list
-        )
-        assert len(data) == len(
-            FileLocation.model_config["json_schema_extra"]["examples"]
-        )
-        assert data == FileLocation.model_config["json_schema_extra"]["examples"]
+
+        assert len(data) == len(FileLocation.model_json_schema()["examples"])
+        assert data == FileLocation.model_json_schema()["examples"]
 
 
 @pytest.mark.parametrize(
@@ -111,15 +106,9 @@ async def test_list_datasets_metadata(
 
     if not error:
         assert "json_schema_extra" in DatasetMetaDataGet.model_config
-        assert isinstance(DatasetMetaDataGet.model_config["json_schema_extra"], dict)
-        assert isinstance(
-            DatasetMetaDataGet.model_config["json_schema_extra"]["examples"], list
-        )
 
-        assert len(data) == len(
-            DatasetMetaDataGet.model_config["json_schema_extra"]["examples"]
-        )
-        assert data == DatasetMetaDataGet.model_config["json_schema_extra"]["examples"]
+        assert len(data) == len(DatasetMetaDataGet.model_json_schema()["examples"])
+        assert data == DatasetMetaDataGet.model_json_schema()["examples"]
 
 
 @pytest.mark.parametrize(
@@ -150,16 +139,11 @@ async def test_list_dataset_files_metadata(
 
     if not error:
         assert "json_schema_extra" in FileMetaDataGet.model_config
-        assert isinstance(FileMetaDataGet.model_config["json_schema_extra"], dict)
-        assert isinstance(
-            FileMetaDataGet.model_config["json_schema_extra"]["examples"], list
-        )
-        assert len(data) == len(
-            FileMetaDataGet.model_config["json_schema_extra"]["examples"]
-        )
+
+        assert len(data) == len(FileMetaDataGet.model_json_schema()["examples"])
         assert data == [
             FileMetaDataGet.model_validate(e).model_dump(mode="json")
-            for e in FileMetaDataGet.model_config["json_schema_extra"]["examples"]
+            for e in FileMetaDataGet.model_json_schema()["examples"]
         ]
 
 
@@ -189,12 +173,6 @@ async def test_storage_file_meta(
     data, error = await assert_status(resp, expected)
 
     if not error:
-        assert "json_schema_extra" in FileMetaDataGet.model_config
-        assert isinstance(FileMetaDataGet.model_config["json_schema_extra"], dict)
-        assert isinstance(
-            FileMetaDataGet.model_config["json_schema_extra"]["examples"], list
-        )
-
         assert data
         model = FileMetaDataGet.model_validate(data)
         assert model
@@ -226,12 +204,6 @@ async def test_storage_list_filter(
     data, error = await assert_status(resp, expected)
 
     if not error:
-        assert "json_schema_extra" in FileMetaDataGet.model_config
-        assert isinstance(FileMetaDataGet.model_config["json_schema_extra"], dict)
-        assert isinstance(
-            FileMetaDataGet.model_config["json_schema_extra"]["examples"], list
-        )
-
         assert len(data) == 2
         for item in data:
             model = FileMetaDataGet.model_validate(item)
