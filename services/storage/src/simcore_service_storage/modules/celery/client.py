@@ -51,7 +51,7 @@ class CeleryTaskQueueClient:
     def get(self, task_id: TaskID) -> Any:
         return self._celery_app.tasks(task_id)
 
-    def cancel(self, task_id: TaskID) -> None:  # pylint: disable=R6301
+    def abort(self, task_id: TaskID) -> None:  # pylint: disable=R6301
         _logger.info("Aborting task %s", task_id)
         AbortableAsyncResult(task_id).abort()
 

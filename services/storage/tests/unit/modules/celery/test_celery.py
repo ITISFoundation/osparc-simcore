@@ -94,7 +94,7 @@ def test_aborting_task_results_with_aborted_state(
         "dreamer_task", task_id_parts=TaskIDParts(user_id=1)
     )
 
-    celery_task_queue_client.cancel(task_id)
+    celery_task_queue_client.abort(task_id)
 
     for attempt in Retrying(
         retry=retry_if_exception_type(AssertionError),
