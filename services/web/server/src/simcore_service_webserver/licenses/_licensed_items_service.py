@@ -37,9 +37,9 @@ from ..wallets.errors import WalletNotEnoughCreditsError
 from . import _licensed_items_repository
 from ._common.models import LicensedItemsBodyParams
 from .errors import (
+    LicensedItemNumOfSeatsMatchError,
+    LicensedItemPricingPlanConfigurationError,
     LicensedItemPricingPlanMatchError,
-    LicnesedItemNumOfSeatsMatchError,
-    LicnesedItemPricingPlanConfigurationError,
 )
 
 _logger = logging.getLogger(__name__)
@@ -114,7 +114,7 @@ async def purchase_licensed_item(
         app, product_name=product_name, pricing_plan_id=body_params.pricing_plan_id
     )
     if pricing_plan.classification is not PricingPlanClassification.LICENSE:
-        raise LicnesedItemPricingPlanConfigurationError(
+        raise LicensedItemPricingPlanConfigurationError(
             pricing_plan_id=body_params.pricing_plan_id
         )
 
@@ -126,7 +126,7 @@ async def purchase_licensed_item(
     )
     assert isinstance(pricing_unit.unit_extra_info, UnitExtraInfoLicense)  # nosec
     if pricing_unit.unit_extra_info.num_of_seats != body_params.num_of_seats:
-        raise LicnesedItemNumOfSeatsMatchError(
+        raise LicensedItemNumOfSeatsMatchError(
             num_of_seats=body_params.num_of_seats,
             pricing_unit_id=body_params.pricing_unit_id,
         )
