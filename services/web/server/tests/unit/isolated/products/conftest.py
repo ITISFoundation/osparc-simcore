@@ -24,7 +24,7 @@ def product_name() -> ProductName:
 
 
 @pytest.fixture
-def fake_product_from_db(faker: Faker, product_name: ProductName) -> dict[str, Any]:
+def product_db_server_defaults() -> dict[str, Any]:
     server_defaults = {}
     for c in products_table.columns:
         if c.server_default is not None:
@@ -34,8 +34,15 @@ def fake_product_from_db(faker: Faker, product_name: ProductName) -> dict[str, A
                 m = re.match(r"^'(.+)'::jsonb$", c.server_default.arg.text)
                 if m:
                     server_defaults[c.name] = json.loads(m.group(1))
+    return server_defaults
+
+
+@pytest.fixture
+def fake_product_from_db(
+    faker: Faker, product_name: ProductName, product_db_server_defaults: dict[str, Any]
+) -> dict[str, Any]:
     return random_product(
         name=product_name,
         fake=faker,
-        **server_defaults,
+        **product_db_server_defaults,
     )
