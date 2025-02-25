@@ -1,6 +1,6 @@
 import logging
 from collections.abc import Callable
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Depends
@@ -24,7 +24,7 @@ log = logging.getLogger(__file__)
     status_code=status.HTTP_200_OK,
 )
 async def get_service_alive():
-    return f"{__name__}@{datetime.now(timezone.utc).isoformat()}"
+    return f"{__name__}@{datetime.now(UTC).isoformat()}"
 
 
 @router.get("/ready", status_code=status.HTTP_200_OK, response_model=AppStatusCheck)
