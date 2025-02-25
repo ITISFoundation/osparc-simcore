@@ -59,8 +59,6 @@ def _is_celery_worker_healthy():
         return False
 
 
-print(_is_celery_worker_healthy())
-
 ok = (
     ok
     or (bool(os.getenv("STORAGE_WORKER_MODE", "") and _is_celery_worker_healthy()))
