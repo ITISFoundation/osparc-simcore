@@ -19,16 +19,20 @@ from ..products import ProductName
 from ._base import InputSchema, OutputSchema
 
 
-class GetCreditPrice(OutputSchema):
+class CreditPriceGet(OutputSchema):
     product_name: str
     usd_per_credit: Annotated[
-        NonNegativeDecimal,
-        PlainSerializer(float, return_type=NonNegativeFloat, when_used="json"),
-    ] | None = Field(
-        ...,
-        description="Price of a credit in USD. "
-        "If None, then this product's price is UNDEFINED",
-    )
+        Annotated[
+            NonNegativeDecimal,
+            PlainSerializer(float, return_type=NonNegativeFloat, when_used="json"),
+        ]
+        | None,
+        Field(
+            description="Price of a credit in USD. "
+            "If None, then this product's price is UNDEFINED",
+        ),
+    ]
+
     min_payment_amount_usd: Annotated[
         NonNegativeInt | None,
         Field(
@@ -61,12 +65,12 @@ class GetCreditPrice(OutputSchema):
     )
 
 
-class GetProductTemplate(OutputSchema):
+class ProductTemplateGet(OutputSchema):
     id_: Annotated[IDStr, Field(alias="id")]
     content: str
 
 
-class UpdateProductTemplate(InputSchema):
+class ProductTemplateReplace(InputSchema):
     content: str
 
 
@@ -92,7 +96,7 @@ class ProductGet(OutputSchema):
     credits_per_usd: NonNegativeDecimal | None
 
     templates: Annotated[
-        list[GetProductTemplate],
+        list[ProductTemplateGet],
         Field(
             description="List of templates available to this product for communications (e.g. emails, sms, etc)",
             default_factory=list,

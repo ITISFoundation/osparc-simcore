@@ -9,18 +9,18 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, status
 from models_library.api_schemas_webserver.product import (
+    CreditPriceGet,
     GenerateInvitation,
-    GetCreditPrice,
     InvitationGenerated,
     ProductGet,
+    ProductTemplateReplace,
     ProductUIGet,
-    UpdateProductTemplate,
 )
 from models_library.generics import Envelope
 from simcore_service_webserver._meta import API_VTAG
-from simcore_service_webserver.products._rest import (
-    _ProductsRequestParams,
-    _ProductTemplateParams,
+from simcore_service_webserver.products._rest_schemas import (
+    ProductsRequestParams,
+    ProductTemplateParams,
 )
 
 router = APIRouter(
@@ -33,7 +33,7 @@ router = APIRouter(
 
 @router.get(
     "/credits-price",
-    response_model=Envelope[GetCreditPrice],
+    response_model=Envelope[CreditPriceGet],
 )
 async def get_current_product_price():
     ...
@@ -47,7 +47,7 @@ async def get_current_product_price():
         "po",
     ],
 )
-async def get_product(_params: Annotated[_ProductsRequestParams, Depends()]):
+async def get_product(_params: Annotated[ProductsRequestParams, Depends()]):
     ...
 
 
@@ -66,8 +66,8 @@ async def get_current_product_ui():
         "po",
     ],
 )
-async def update_product_template(
-    _params: Annotated[_ProductTemplateParams, Depends()], _body: UpdateProductTemplate
+async def replace_product_template(
+    _params: Annotated[ProductTemplateParams, Depends()], _body: ProductTemplateReplace
 ):
     ...
 

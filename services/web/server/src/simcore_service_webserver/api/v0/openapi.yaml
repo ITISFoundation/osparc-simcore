@@ -1155,7 +1155,7 @@ paths:
       - products
       - po
       summary: Update Product Template
-      operationId: update_product_template
+      operationId: replace_product_template
       parameters:
       - name: product_name
         in: path
