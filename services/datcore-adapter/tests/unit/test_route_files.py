@@ -6,7 +6,7 @@ from unittest.mock import Mock
 
 import httpx
 from pydantic import TypeAdapter
-from simcore_service_datcore_adapter.models.domains.files import FileDownloadOut
+from simcore_service_datcore_adapter.models.files import FileDownloadOut
 from starlette import status
 
 

@@ -6,11 +6,11 @@
 import httpx
 import respx
 from fastapi_pagination import Page
-from pydantic import TypeAdapter
-from simcore_service_datcore_adapter.models.schemas.datasets import (
+from models_library.api_schemas_datcore_adapter.datasets import (
     DatasetMetaData,
     FileMetaData,
 )
+from pydantic import TypeAdapter
 from starlette import status
 
 

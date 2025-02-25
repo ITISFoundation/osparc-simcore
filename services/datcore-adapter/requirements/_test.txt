@@ -4,10 +4,12 @@ anyio==4.3.0
     #   httpx
 asgi-lifespan==2.1.0
     # via -r requirements/_test.in
+boto3-stubs==1.37.0
+    # via -r requirements/_test.in
 botocore-stubs==1.36.6
     # via
-    #   types-boto3
-    #   types-botocore
+    #   -r requirements/_test.in
+    #   boto3-stubs
 certifi==2024.2.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
@@ -110,17 +112,13 @@ termcolor==2.5.0
     # via pytest-sugar
 types-awscrt==0.23.7
     # via botocore-stubs
-types-boto3==1.36.6
-    # via -r requirements/_test.in
-types-botocore==1.0.2
-    # via -r requirements/_test.in
 types-s3transfer==0.11.2
-    # via types-boto3
+    # via boto3-stubs
 typing-extensions==4.12.2
     # via
     #   -c requirements/_base.txt
+    #   boto3-stubs
     #   faker
-    #   types-boto3
 urllib3==2.2.3
     # via
     #   -c requirements/../../../requirements/constraints.txt

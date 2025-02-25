@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, Header, Request
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 from starlette import status
 
-from ...models.domains.user import Profile
+from ...models.user import Profile
 from ...modules.pennsieve import PennsieveApiClient
 from ..dependencies.pennsieve import get_pennsieve_api_client
 

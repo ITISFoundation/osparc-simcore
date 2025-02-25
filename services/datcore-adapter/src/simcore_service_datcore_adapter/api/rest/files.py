@@ -1,17 +1,18 @@
 import logging
-from typing import Annotated, Any
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, Header, Request
+from models_library.api_schemas_datcore_adapter.datasets import PackageMetaData
 from pydantic import AnyUrl, TypeAdapter
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 from starlette import status
 
-from ...models.domains.files import FileDownloadOut
+from ...models.files import FileDownloadOut
 from ...modules.pennsieve import PennsieveApiClient
 from ..dependencies.pennsieve import get_pennsieve_api_client
 
 router = APIRouter()
-log = logging.getLogger(__file__)
+_logger = logging.getLogger(__file__)
 
 
 @router.get(
@@ -62,7 +63,7 @@ async def delete_file(
     "/packages/{package_id}/files",
     summary="returns a package (i.e. a file)",
     status_code=status.HTTP_200_OK,
-    response_model=list[dict[str, Any]],
+    response_model=list[PackageMetaData],
 )
 @cancel_on_disconnect
 async def get_package(
@@ -71,12 +72,15 @@ async def get_package(
     x_datcore_api_key: Annotated[str, Header(..., description="Datcore API Key")],
     x_datcore_api_secret: Annotated[str, Header(..., description="Datcore API Secret")],
     pennsieve_client: Annotated[PennsieveApiClient, Depends(get_pennsieve_api_client)],
-) -> list[dict[str, Any]]:
+) -> list[PackageMetaData]:
     assert request  # nosec
-    return await pennsieve_client.get_package_files(
+
+    data = await pennsieve_client.get_package_files(
         api_key=x_datcore_api_key,
         api_secret=x_datcore_api_secret,
         package_id=package_id,
         limit=1,
         offset=0,
+        fill_path=True,
     )
+    return [_.to_api_model() for _ in data]
