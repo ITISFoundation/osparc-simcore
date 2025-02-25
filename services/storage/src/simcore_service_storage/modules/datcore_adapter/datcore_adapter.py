@@ -1,5 +1,4 @@
 import logging
-from pathlib import Path
 from typing import Any, TypeAlias, cast
 
 import httpx
@@ -7,9 +6,6 @@ from fastapi import FastAPI
 from fastapi_pagination import Page
 from models_library.api_schemas_datcore_adapter.datasets import (
     DatasetMetaData as DatCoreDatasetMetaData,
-)
-from models_library.api_schemas_datcore_adapter.datasets import (
-    DataType as DatCoreDataType,
 )
 from models_library.api_schemas_datcore_adapter.datasets import (
     FileMetaData as DatCoreFileMetaData,
@@ -36,7 +32,10 @@ from ...models import (
 )
 from .datcore_adapter_client_utils import request, retrieve_all_pages
 from .datcore_adapter_exceptions import DatcoreAdapterError
-from .utils import create_fmd_from_datcore_fmd, create_fmd_from_datcore_package
+from .utils import (
+    create_path_meta_data_from_datcore_fmd,
+    create_path_meta_data_from_datcore_package,
+)
 
 _logger = logging.getLogger(__file__)
 
@@ -161,15 +160,15 @@ def _create_next_cursor(
     return None
 
 
-async def list_top_level_objects_in_dataset(
+async def _list_top_level_objects(
     app: FastAPI,
     *,
     user_id: UserID,
     api_key: str,
     api_secret: str,
-    dataset_id: DatCoreDatasetName,
     cursor: GenericCursor | None,
     limit: NonNegativeInt,
+    request_path: str,
 ) -> tuple[list[PathMetaData], GenericCursor | None, TotalNumber]:
     page, size = _init_pagination(cursor, limit)
     response = await request(
@@ -177,7 +176,7 @@ async def list_top_level_objects_in_dataset(
         api_key,
         api_secret,
         "GET",
-        f"/datasets/{dataset_id}/files",
+        request_path,
         params={"size": size, "page": page},
     )
     assert isinstance(response, dict)  # nosec
@@ -188,26 +187,30 @@ async def list_top_level_objects_in_dataset(
     next_cursor = _create_next_cursor(total, page, size)
 
     return (
-        [
-            PathMetaData(
-                path=Path(e.dataset_id) / e.id,
-                display_path=e.path,
-                location_id=DATCORE_ID,
-                location=DATCORE_STR,
-                bucket_name=e.dataset_id,
-                project_id=None,
-                node_id=None,
-                user_id=user_id,
-                created_at=e.created_at,
-                last_modified=e.last_modified_at,
-                file_meta_data=None
-                if e.data_type == DatCoreDataType.FOLDER
-                else create_fmd_from_datcore_fmd(user_id, e),
-            )
-            for e in entries
-        ],
+        [create_path_meta_data_from_datcore_fmd(user_id, e) for e in entries],
         next_cursor,
         total,
+    )
+
+
+async def list_top_level_objects_in_dataset(
+    app: FastAPI,
+    *,
+    user_id: UserID,
+    api_key: str,
+    api_secret: str,
+    dataset_id: DatCoreDatasetName,
+    cursor: GenericCursor | None,
+    limit: NonNegativeInt,
+) -> tuple[list[PathMetaData], GenericCursor | None, TotalNumber]:
+    return await _list_top_level_objects(
+        app,
+        user_id=user_id,
+        api_key=api_key,
+        api_secret=api_secret,
+        cursor=cursor,
+        limit=limit,
+        request_path=f"/datasets/{dataset_id}/files",
     )
 
 
@@ -222,43 +225,14 @@ async def list_top_level_objects_in_collection(
     cursor: GenericCursor | None,
     limit: NonNegativeInt,
 ) -> tuple[list[PathMetaData], GenericCursor | None, TotalNumber]:
-    page, size = _init_pagination(cursor, limit)
-    response = await request(
+    return await _list_top_level_objects(
         app,
-        api_key,
-        api_secret,
-        "GET",
-        f"/datasets/{dataset_id}/files/{collection_id}",
-        params={"size": size, "page": page},
-    )
-    assert isinstance(response, dict)  # nosec
-    file_metadata_page = Page[DatCoreFileMetaData](**response)
-    entries = file_metadata_page.items
-    total = file_metadata_page.total
-    assert isinstance(total, int)  # nosec
-    next_cursor = _create_next_cursor(total, page, size)
-
-    return (
-        [
-            PathMetaData(
-                path=Path(e.dataset_id) / e.id,
-                display_path=e.path,
-                location_id=DATCORE_ID,
-                location=DATCORE_STR,
-                bucket_name=e.dataset_id,
-                project_id=None,
-                node_id=None,
-                user_id=user_id,
-                created_at=e.created_at,
-                last_modified=e.last_modified_at,
-                file_meta_data=None
-                if e.data_type == DatCoreDataType.FOLDER
-                else create_fmd_from_datcore_fmd(user_id, e),
-            )
-            for e in entries
-        ],
-        next_cursor,
-        total,
+        user_id=user_id,
+        api_key=api_key,
+        api_secret=api_secret,
+        cursor=cursor,
+        limit=limit,
+        request_path=f"/datasets/{dataset_id}/files/{collection_id}",
     )
 
 
@@ -279,20 +253,10 @@ async def get_package_file_as_path(
     )
 
     assert len(pck_files) == 1  # nosec
-    dat_core_fmd = pck_files[0]
-
-    return PathMetaData(
-        path=Path(dataset_id) / package_id,
-        display_path=dat_core_fmd.display_path,
-        location_id=DATCORE_ID,
-        location=DATCORE_STR,
-        bucket_name=dat_core_fmd.s3_bucket,
-        project_id=None,
-        node_id=None,
-        user_id=user_id,
-        created_at=dat_core_fmd.created_at,
-        last_modified=dat_core_fmd.updated_at,
-        file_meta_data=create_fmd_from_datcore_package(user_id, pck_files[0]),
+    return create_path_meta_data_from_datcore_package(
+        user_id,
+        dataset_id,
+        pck_files[0],
     )
 
 
@@ -354,8 +318,7 @@ async def get_file_download_presigned_link(
         dict[str, Any],
         await request(app, api_key, api_secret, "GET", f"/files/{file_id}"),
     )
-    url: AnyUrl = TypeAdapter(AnyUrl).validate_python(file_download_data["link"])
-    return url
+    return TypeAdapter(AnyUrl).validate_python(file_download_data["link"])
 
 
 async def get_package_files(
