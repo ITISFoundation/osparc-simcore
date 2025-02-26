@@ -6,96 +6,65 @@
 
 import pytest
 from aiohttp import web
-from aiohttp.test_utils import TestClient, make_mocked_request
-from common_library.users_enums import UserRole
+from aiohttp.test_utils import TestClient
 from models_library.products import ProductName
-from pytest_simcore.helpers.webserver_login import UserInfoDict
-from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
-from simcore_service_webserver.products import products_service, products_web
-
-
-@pytest.fixture(params=["osparc", "tis", "s4l"])
-def product_name(request: pytest.FixtureRequest) -> ProductName:
-    return request.param
-
-
-@pytest.fixture
-def user_role() -> UserRole:
-    return UserRole.PRODUCT_OWNER
+from simcore_service_webserver.constants import FRONTEND_APP_DEFAULT
+from simcore_service_webserver.products import products_service
+from simcore_service_webserver.products._repository import ProductRepository
+from simcore_service_webserver.products.errors import ProductPriceNotDefinedError
 
 
 @pytest.fixture
 def app(
-    logged_user: UserInfoDict,
     client: TestClient,
 ) -> web.Application:
-    # TODO: remove client here
+    # initialized app
     assert client.app
     return client.app
 
 
-async def test_get_credit_amount(product_name: ProductName, app: web.Application):
-    await products_service.get_credit_amount(
-        app, dollar_amount=1, product_name=product_name
-    )
-
-
-async def test_get_product(product_name: ProductName, app: web.Application):
-    product = products_service.get_product(app, product_name=product_name)
-    assert product.name == product_name
-
-
-async def test_get_product_stripe_info(product_name: ProductName, app: web.Application):
-    await products_service.get_product_stripe_info(app, product_name=product_name)
-
-
-async def test_get_product_ui(product_name: ProductName, app: web.Application):
-
-    await products_service.get_product_ui(app, product_name=product_name)
-
-
-async def test_list_products(app: web.Application):
-    products_service.list_products(app)
-
-
 @pytest.fixture
-def fake_request(
-    app: web.Application,
-    product_name: ProductName,
-) -> web.Request:
-    return make_mocked_request(
-        "GET",
-        "/fake",
-        headers={X_PRODUCT_NAME_HEADER: product_name},
-        app=app,
-    )
+def default_product_name() -> ProductName:
+    return FRONTEND_APP_DEFAULT
 
 
-async def test_get_current_product(
-    product_name: ProductName, fake_request: web.Request
+async def test_get_product(app: web.Application, default_product_name: ProductName):
+
+    product = products_service.get_product(app, product_name=default_product_name)
+    assert product.name == default_product_name
+
+    products = products_service.list_products(app)
+    assert len(products) == 1
+    assert products[0] == product
+
+
+async def test_get_product_ui(app: web.Application, default_product_name: ProductName):
+    # this feature is currently setup from adminer by an operator
+
+    repo = ProductRepository.create_from_app(app)
+    ui = await products_service.get_product_ui(repo, product_name=default_product_name)
+    assert ui == {}, "Expected empty by default"
+
+
+async def test_get_product_stripe_info(
+    app: web.Application, default_product_name: ProductName
 ):
-    product = products_web.get_current_product(fake_request)
-    assert product.name == product_name
+    # this feature is currently setup from adminer by an operator
+
+    # default is not configured
+    with pytest.raises(ValueError, match=default_product_name):
+        await products_service.get_product_stripe_info(
+            app, product_name=default_product_name
+        )
 
 
-async def test_get_current_product_credit_price_info(
-    product_name: ProductName, fake_request: web.Request
+async def test_get_credit_amount(
+    app: web.Application, default_product_name: ProductName
 ):
-    await products_web.get_current_product_credit_price_info(fake_request)
+    # this feature is currently setup from adminer by an operator
 
-
-async def test_get_product_name(
-    product_name: ProductName,
-    fake_request: web.Request,
-):
-    assert products_web.get_product_name(fake_request) == product_name
-
-
-async def test_get_product_template_path(
-    product_name: ProductName,
-    fake_request: web.Request,
-):
-    path = await products_web.get_product_template_path(
-        fake_request, filename="template_name.jinja"
-    )
-    assert path
+    # default is not configured
+    with pytest.raises(ProductPriceNotDefinedError):
+        await products_service.get_credit_amount(
+            app, dollar_amount=1, product_name=default_product_name
+        )
