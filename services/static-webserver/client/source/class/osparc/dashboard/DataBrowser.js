@@ -60,7 +60,7 @@ qx.Class.define("osparc.dashboard.DataBrowser", {
 
       this.addListener("appear", () => {
         const treeFolderView = this.getChildControl("tree-folder-view");
-        treeFolderView.getChildControl("folder-tree").populateTree();
+        treeFolderView.getChildControl("folder-tree").populateLocations();
         treeFolderView.getChildControl("folder-viewer").setFolder(treeFolderView.getChildControl("folder-tree").getModel());
       }, this);
     },
@@ -84,7 +84,7 @@ qx.Class.define("osparc.dashboard.DataBrowser", {
 
       const foldersTree = treeFolderView.getChildControl("folder-tree");
       foldersTree.resetCache();
-      foldersTree.populateTree();
+      foldersTree.populateLocations();
 
       const folderViewer = treeFolderView.getChildControl("folder-viewer");
       folderViewer.resetFolder();
@@ -110,7 +110,7 @@ qx.Class.define("osparc.dashboard.DataBrowser", {
       const locationId = fileMetadata["locationId"];
       const datasetId = path[0];
       foldersTree.resetCache();
-      foldersTree.populateTree()
+      foldersTree.populateLocations()
         .then(datasetPromises => {
           Promise.all(datasetPromises)
             .then(() => foldersTree.requestPathItems(locationId, datasetId))

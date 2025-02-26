@@ -157,10 +157,10 @@ qx.Class.define("osparc.widget.NodesTree", {
     },
 
     _applyStudy: function() {
-      this.populateTree();
+      this._populateTree();
     },
 
-    populateTree: function() {
+    _populateTree: function() {
       const study = this.getStudy();
       const rootModel = this.self().createStudyModel(study);
       this.setModel(rootModel);
@@ -198,7 +198,7 @@ qx.Class.define("osparc.widget.NodesTree", {
           if (item.getModel().getId() === study.getUuid()) {
             item.getChildControl("delete-button").exclude();
           } else if (node) {
-            node.addListener("keyChanged", () => this.populateTree(), this);
+            node.addListener("keyChanged", () => this._populateTree(), this);
           }
         },
         configureItem: item => {

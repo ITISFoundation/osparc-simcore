@@ -141,8 +141,32 @@ qx.Class.define("osparc.file.FilesTree", {
       dataStore.resetCache();
     },
 
-    populateTree: function() {
-      return this.__populateLocations();
+    populateLocations: function() {
+      this.__resetChecks();
+
+      const treeName = "My Data";
+      this.__resetTree(treeName);
+      const rootModel = this.getModel();
+      rootModel.getChildren().removeAll();
+      this.self().addLoadingChild(rootModel);
+
+      this.set({
+        hideRoot: true
+      });
+      const dataStore = osparc.store.Data.getInstance();
+      return dataStore.getLocations()
+        .then(locations => {
+          const datasetPromises = [];
+          if (this.__locations.size === 0) {
+            this.__resetChecks();
+            this.__locationsToRoot(locations);
+            for (let i=0; i<locations.length; i++) {
+              const locationId = locations[i]["id"];
+              datasetPromises.push(this.__populateLocation(locationId));
+            }
+          }
+          return datasetPromises;
+        });
     },
 
     populateStudyTree: function(studyId) {
@@ -212,7 +236,7 @@ qx.Class.define("osparc.file.FilesTree", {
         }
       }
       this.__addToLoadFilePath(locationId, datasetId, pathId);
-      this.__populateLocations();
+      this.populateLocations();
     },
 
     requestPathItems: function(locationId, path) {
@@ -271,34 +295,6 @@ qx.Class.define("osparc.file.FilesTree", {
           this.__addDragAndDropMechanisms(item);
         }
       });
-    },
-
-    __populateLocations: function() {
-      this.__resetChecks();
-
-      const treeName = "My Data";
-      this.__resetTree(treeName);
-      const rootModel = this.getModel();
-      rootModel.getChildren().removeAll();
-      this.self().addLoadingChild(rootModel);
-
-      this.set({
-        hideRoot: true
-      });
-      const dataStore = osparc.store.Data.getInstance();
-      return dataStore.getLocations()
-        .then(locations => {
-          const datasetPromises = [];
-          if (this.__locations.size === 0) {
-            this.__resetChecks();
-            this.__locationsToRoot(locations);
-            for (let i=0; i<locations.length; i++) {
-              const locationId = locations[i]["id"];
-              datasetPromises.push(this.__populateLocation(locationId));
-            }
-          }
-          return datasetPromises;
-        });
     },
 
     __locationsToRoot: function(locations) {

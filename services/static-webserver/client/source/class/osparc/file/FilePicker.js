@@ -274,7 +274,7 @@ qx.Class.define("osparc.file.FilePicker", {
       if (this.__filesTree) {
         this.__selectedFileFound = false;
         this.__filesTree.resetCache();
-        this.__filesTree.populateTree();
+        this.__filesTree.populateLocations();
       }
     },
 

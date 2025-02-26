@@ -369,7 +369,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         dragMechanism: true,
         hideRoot: true
       });
-      filesTree.populateTree();
+      filesTree.populateLocations();
       const storagePage = this.__storagePage = this.__createTabPage("@FontAwesome5Solid/database", this.tr("Storage"), filesTree, this.self().PRIMARY_COL_BG_COLOR);
       tabViewPrimary.add(storagePage);
 
@@ -1177,7 +1177,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     },
 
     __workbenchChanged: function() {
-      this.__nodesTree.populateTree();
+      this.__nodesTree.populateLocations();
       this.__nodesTree.nodeSelected(this.__currentNodeId);
     },
 
