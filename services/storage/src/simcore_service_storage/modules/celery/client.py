@@ -4,7 +4,7 @@ from uuid import uuid4
 
 from celery import Celery
 from celery.contrib.abortable import AbortableAsyncResult
-from common_library.async_utils import make_async
+from common_library.async_tools import make_async
 from models_library.progress_bar import ProgressReport
 from pydantic import ValidationError
 
