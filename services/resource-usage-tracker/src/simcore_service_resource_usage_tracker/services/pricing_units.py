@@ -2,7 +2,7 @@ from typing import Annotated
 
 from fastapi import Depends
 from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
-    PricingUnitGet,
+    RutPricingUnitGet,
 )
 from models_library.products import ProductName
 from models_library.resource_tracker import (
@@ -22,7 +22,7 @@ async def get_pricing_unit(
     pricing_plan_id: PricingPlanId,
     pricing_unit_id: PricingUnitId,
     db_engine: Annotated[AsyncEngine, Depends(get_resource_tracker_db_engine)],
-) -> PricingUnitGet:
+) -> RutPricingUnitGet:
     pricing_unit = await pricing_plans_db.get_valid_pricing_unit(
         db_engine,
         product_name=product_name,
@@ -30,7 +30,7 @@ async def get_pricing_unit(
         pricing_unit_id=pricing_unit_id,
     )
 
-    return PricingUnitGet(
+    return RutPricingUnitGet(
         pricing_unit_id=pricing_unit.pricing_unit_id,
         unit_name=pricing_unit.unit_name,
         unit_extra_info=pricing_unit.unit_extra_info,
@@ -45,7 +45,7 @@ async def create_pricing_unit(
     product_name: ProductName,
     data: PricingUnitWithCostCreate,
     db_engine: Annotated[AsyncEngine, Depends(get_resource_tracker_db_engine)],
-) -> PricingUnitGet:
+) -> RutPricingUnitGet:
     # Check whether pricing plan exists
     pricing_plan_db = await pricing_plans_db.get_pricing_plan(
         db_engine, product_name=product_name, pricing_plan_id=data.pricing_plan_id
@@ -61,7 +61,7 @@ async def create_pricing_unit(
         pricing_plan_id=data.pricing_plan_id,
         pricing_unit_id=pricing_unit_id,
     )
-    return PricingUnitGet(
+    return RutPricingUnitGet(
         pricing_unit_id=pricing_unit.pricing_unit_id,
         unit_name=pricing_unit.unit_name,
         unit_extra_info=pricing_unit.unit_extra_info,
@@ -76,7 +76,7 @@ async def update_pricing_unit(
     product_name: ProductName,
     data: PricingUnitWithCostUpdate,
     db_engine: Annotated[AsyncEngine, Depends(get_resource_tracker_db_engine)],
-) -> PricingUnitGet:
+) -> RutPricingUnitGet:
     # Check whether pricing unit exists
     await pricing_plans_db.get_valid_pricing_unit(
         db_engine,
@@ -100,7 +100,7 @@ async def update_pricing_unit(
         pricing_plan_id=data.pricing_plan_id,
         pricing_unit_id=data.pricing_unit_id,
     )
-    return PricingUnitGet(
+    return RutPricingUnitGet(
         pricing_unit_id=pricing_unit.pricing_unit_id,
         unit_name=pricing_unit.unit_name,
         unit_extra_info=pricing_unit.unit_extra_info,

@@ -1,18 +1,21 @@
 from aiohttp import web
 from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
-    PricingPlanGet,
-    PricingPlanPage,
     PricingPlanToServiceGet,
-    PricingUnitGet,
+    RutPricingPlanGet,
+    RutPricingPlanPage,
+    RutPricingUnitGet,
 )
 from models_library.products import ProductName
 from models_library.resource_tracker import (
+    PricingPlanClassification,
     PricingPlanCreate,
     PricingPlanId,
     PricingPlanUpdate,
     PricingUnitId,
     PricingUnitWithCostCreate,
     PricingUnitWithCostUpdate,
+    UnitExtraInfoLicense,
+    UnitExtraInfoTier,
 )
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
@@ -27,21 +30,23 @@ from ..rabbitmq import get_rabbitmq_rpc_client
 ## Pricing Plans
 
 
-async def list_pricing_plans(
+async def list_pricing_plans_without_pricing_units(
     app: web.Application,
     *,
     product_name: ProductName,
     exclude_inactive: bool,
     offset: int,
     limit: int,
-) -> PricingPlanPage:
+) -> RutPricingPlanPage:
     rpc_client = get_rabbitmq_rpc_client(app)
-    output: PricingPlanPage = await pricing_plans.list_pricing_plans(
-        rpc_client,
-        product_name=product_name,
-        exclude_inactive=exclude_inactive,
-        offset=offset,
-        limit=limit,
+    output: RutPricingPlanPage = (
+        await pricing_plans.list_pricing_plans_without_pricing_units(
+            rpc_client,
+            product_name=product_name,
+            exclude_inactive=exclude_inactive,
+            offset=offset,
+            limit=limit,
+        )
     )
     return output
 
@@ -50,7 +55,7 @@ async def get_pricing_plan(
     app: web.Application,
     product_name: ProductName,
     pricing_plan_id: PricingPlanId,
-) -> PricingPlanGet:
+) -> RutPricingPlanGet:
     rpc_client = get_rabbitmq_rpc_client(app)
     return await pricing_plans.get_pricing_plan(
         rpc_client,
@@ -62,14 +67,14 @@ async def get_pricing_plan(
 async def create_pricing_plan(
     app: web.Application,
     data: PricingPlanCreate,
-) -> PricingPlanGet:
+) -> RutPricingPlanGet:
     rpc_client = get_rabbitmq_rpc_client(app)
     return await pricing_plans.create_pricing_plan(rpc_client, data=data)
 
 
 async def update_pricing_plan(
     app: web.Application, product_name: ProductName, data: PricingPlanUpdate
-) -> PricingPlanGet:
+) -> RutPricingPlanGet:
     rpc_client = get_rabbitmq_rpc_client(app)
     return await pricing_plans.update_pricing_plan(
         rpc_client, product_name=product_name, data=data
@@ -84,7 +89,7 @@ async def get_pricing_unit(
     product_name: ProductName,
     pricing_plan_id: PricingPlanId,
     pricing_unit_id: PricingUnitId,
-) -> PricingUnitGet:
+) -> RutPricingUnitGet:
     rpc_client = get_rabbitmq_rpc_client(app)
     return await pricing_units.get_pricing_unit(
         rpc_client,
@@ -96,8 +101,12 @@ async def get_pricing_unit(
 
 async def create_pricing_unit(
     app: web.Application, product_name: ProductName, data: PricingUnitWithCostCreate
-) -> PricingUnitGet:
+) -> RutPricingUnitGet:
     rpc_client = get_rabbitmq_rpc_client(app)
+    pricing_plan = await pricing_plans.get_pricing_plan(
+        rpc_client, product_name=product_name, pricing_plan_id=data.pricing_plan_id
+    )
+    _validate_pricing_unit(pricing_plan.classification, data.unit_extra_info)
     return await pricing_units.create_pricing_unit(
         rpc_client, product_name=product_name, data=data
     )
@@ -105,11 +114,29 @@ async def create_pricing_unit(
 
 async def update_pricing_unit(
     app: web.Application, product_name: ProductName, data: PricingUnitWithCostUpdate
-) -> PricingUnitGet:
+) -> RutPricingUnitGet:
     rpc_client = get_rabbitmq_rpc_client(app)
+    pricing_plan = await pricing_plans.get_pricing_plan(
+        rpc_client, product_name=product_name, pricing_plan_id=data.pricing_plan_id
+    )
+    _validate_pricing_unit(pricing_plan.classification, data.unit_extra_info)
     return await pricing_units.update_pricing_unit(
         rpc_client, product_name=product_name, data=data
     )
+
+
+def _validate_pricing_unit(classification: PricingPlanClassification, unit_extra_info):
+    if classification == PricingPlanClassification.LICENSE:
+        if not isinstance(unit_extra_info, UnitExtraInfoLicense):
+            msg = "Expected UnitExtraInfoLicense (num_of_seats) for LICENSE classification"
+            raise ValueError(msg)
+    elif classification == PricingPlanClassification.TIER:
+        if not isinstance(unit_extra_info, UnitExtraInfoTier):
+            msg = "Expected UnitExtraInfoTier (CPU, RAM, VRAM) for TIER classification"
+            raise ValueError(msg)
+    else:
+        msg = "Not known pricing plan classification"
+        raise ValueError(msg)
 
 
 ## Pricing Plans to Service

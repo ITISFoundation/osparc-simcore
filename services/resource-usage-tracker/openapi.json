@@ -184,7 +184,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PricingPlanGet"
+                  "$ref": "#/components/schemas/RutPricingPlanGet"
                 }
               }
             }
@@ -249,7 +249,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PricingUnitGet"
+                  "$ref": "#/components/schemas/RutPricingUnitGet"
                 }
               }
             }
@@ -383,7 +383,7 @@
         ],
         "title": "PricingPlanClassification"
       },
-      "PricingPlanGet": {
+      "RutPricingPlanGet": {
         "properties": {
           "pricing_plan_id": {
             "type": "integer",
@@ -415,7 +415,7 @@
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/PricingUnitGet"
+                  "$ref": "#/components/schemas/RutPricingUnitGet"
                 },
                 "type": "array"
               },
@@ -441,9 +441,9 @@
           "pricing_units",
           "is_active"
         ],
-        "title": "PricingPlanGet"
+        "title": "RutPricingPlanGet"
       },
-      "PricingUnitGet": {
+      "RutPricingUnitGet": {
         "properties": {
           "pricing_unit_id": {
             "type": "integer",
@@ -456,7 +456,15 @@
             "title": "Unit Name"
           },
           "unit_extra_info": {
-            "$ref": "#/components/schemas/UnitExtraInfo"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UnitExtraInfoTier"
+              },
+              {
+                "$ref": "#/components/schemas/UnitExtraInfoLicense"
+              }
+            ],
+            "title": "Unit Extra Info"
           },
           "current_cost_per_unit": {
             "type": "string",
@@ -486,9 +494,25 @@
           "default",
           "specific_info"
         ],
-        "title": "PricingUnitGet"
+        "title": "RutPricingUnitGet"
       },
-      "UnitExtraInfo": {
+      "UnitExtraInfoLicense": {
+        "properties": {
+          "num_of_seats": {
+            "type": "integer",
+            "minimum": 0,
+            "title": "Num Of Seats"
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "required": [
+          "num_of_seats"
+        ],
+        "title": "UnitExtraInfoLicense",
+        "description": "Custom information that is propagated to the frontend. Defined fields are mandatory."
+      },
+      "UnitExtraInfoTier": {
         "properties": {
           "CPU": {
             "type": "integer",
@@ -513,7 +537,7 @@
           "RAM",
           "VRAM"
         ],
-        "title": "UnitExtraInfo",
+        "title": "UnitExtraInfoTier",
         "description": "Custom information that is propagated to the frontend. Defined fields are mandatory."
       },
       "ValidationError": {
