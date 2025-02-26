@@ -2,10 +2,10 @@ from typing import Annotated
 
 from fastapi import Depends
 from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
-    PricingPlanGet,
-    PricingPlanPage,
     PricingPlanToServiceGet,
-    PricingUnitGet,
+    RutPricingPlanGet,
+    RutPricingPlanPage,
+    RutPricingUnitGet,
 )
 from models_library.products import ProductName
 from models_library.resource_tracker import (
@@ -26,8 +26,8 @@ from .modules.db import pricing_plans_db
 
 async def _create_pricing_plan_get(
     pricing_plan_db: PricingPlansDB, pricing_plan_unit_db: list[PricingUnitsDB]
-) -> PricingPlanGet:
-    return PricingPlanGet(
+) -> RutPricingPlanGet:
+    return RutPricingPlanGet(
         pricing_plan_id=pricing_plan_db.pricing_plan_id,
         display_name=pricing_plan_db.display_name,
         description=pricing_plan_db.description,
@@ -35,7 +35,7 @@ async def _create_pricing_plan_get(
         created_at=pricing_plan_db.created,
         pricing_plan_key=pricing_plan_db.pricing_plan_key,
         pricing_units=[
-            PricingUnitGet(
+            RutPricingUnitGet(
                 pricing_unit_id=unit.pricing_unit_id,
                 unit_name=unit.unit_name,
                 unit_extra_info=unit.unit_extra_info,
@@ -55,7 +55,7 @@ async def get_service_default_pricing_plan(
     service_key: ServiceKey,
     service_version: ServiceVersion,
     db_engine: Annotated[AsyncEngine, Depends(get_resource_tracker_db_engine)],
-) -> PricingPlanGet:
+) -> RutPricingPlanGet:
     active_service_pricing_plans = (
         await pricing_plans_db.list_active_service_pricing_plans_by_product_and_service(
             db_engine,
@@ -118,14 +118,14 @@ async def connect_service_to_pricing_plan(
     return TypeAdapter(PricingPlanToServiceGet).validate_python(output.model_dump())
 
 
-async def list_pricing_plans_by_product(
+async def list_pricing_plans_without_pricing_units(
     db_engine: Annotated[AsyncEngine, Depends(get_resource_tracker_db_engine)],
     product_name: ProductName,
     exclude_inactive: bool,
     # pagination
     offset: int,
     limit: int,
-) -> PricingPlanPage:
+) -> RutPricingPlanPage:
     total, pricing_plans_list_db = await pricing_plans_db.list_pricing_plans_by_product(
         db_engine,
         product_name=product_name,
@@ -133,9 +133,9 @@ async def list_pricing_plans_by_product(
         offset=offset,
         limit=limit,
     )
-    return PricingPlanPage(
+    return RutPricingPlanPage(
         items=[
-            PricingPlanGet(
+            RutPricingPlanGet(
                 pricing_plan_id=pricing_plan_db.pricing_plan_id,
                 display_name=pricing_plan_db.display_name,
                 description=pricing_plan_db.description,
@@ -155,7 +155,7 @@ async def get_pricing_plan(
     product_name: ProductName,
     pricing_plan_id: PricingPlanId,
     db_engine: Annotated[AsyncEngine, Depends(get_resource_tracker_db_engine)],
-) -> PricingPlanGet:
+) -> RutPricingPlanGet:
     pricing_plan_db = await pricing_plans_db.get_pricing_plan(
         db_engine, product_name=product_name, pricing_plan_id=pricing_plan_id
     )
@@ -168,7 +168,7 @@ async def get_pricing_plan(
 async def create_pricing_plan(
     data: PricingPlanCreate,
     db_engine: Annotated[AsyncEngine, Depends(get_resource_tracker_db_engine)],
-) -> PricingPlanGet:
+) -> RutPricingPlanGet:
     pricing_plan_db = await pricing_plans_db.create_pricing_plan(db_engine, data=data)
     pricing_plan_unit_db = await pricing_plans_db.list_pricing_units_by_pricing_plan(
         db_engine, pricing_plan_id=pricing_plan_db.pricing_plan_id
@@ -180,7 +180,7 @@ async def update_pricing_plan(
     product_name: ProductName,
     data: PricingPlanUpdate,
     db_engine: Annotated[AsyncEngine, Depends(get_resource_tracker_db_engine)],
-) -> PricingPlanGet:
+) -> RutPricingPlanGet:
     # Check whether pricing plan exists
     pricing_plan_db = await pricing_plans_db.get_pricing_plan(
         db_engine, product_name=product_name, pricing_plan_id=data.pricing_plan_id
