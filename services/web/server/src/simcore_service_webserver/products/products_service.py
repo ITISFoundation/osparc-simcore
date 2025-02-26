@@ -4,6 +4,7 @@ from ._service import (
     get_product_stripe_info,
     get_product_ui,
     list_products,
+    list_products_names,
 )
 
 __all__: tuple[str, ...] = (
@@ -12,6 +13,7 @@ __all__: tuple[str, ...] = (
     "get_product_stripe_info",
     "get_product_ui",
     "list_products",
+    "list_products_names",
 )
 
 # nopycln: file
