@@ -17,6 +17,7 @@ from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
     CatalogForbiddenError,
     CatalogItemNotFoundError,
 )
+from simcore_service_catalog.db.repositories.groups import GroupsRepository
 
 from ..db.repositories.services import ServicesRepository
 from ..models.services_db import (
@@ -341,7 +342,7 @@ async def check_for_service(
 
 async def batch_get_my_services(
     repo: ServicesRepository,
-    director_api: DirectorApi,
+    groups_repo: GroupsRepository,
     *,
     product_name: ProductName,
     user_id: UserID,
@@ -357,45 +358,67 @@ async def batch_get_my_services(
         key_versions=ids, product_name=product_name
     )
 
+    user_groups = await groups_repo.list_user_groups(user_id=user_id)
+    my_group_ids = {g.gid for g in user_groups}
+
     my_services = []
     for service_key, service_version in ids:
         access_rights = services_access_rights.get((service_key, service_version), [])
+
         my_access_rights = {
-            "read": any(ar.execute_access for ar in access_rights),
-            "write": any(ar.write_access for ar in access_rights),
+            "execute": False,
+            "write": False,
         }
 
-        service = await repo.get_service_with_history(
+        for ar in access_rights:
+            if ar.gid in my_group_ids:
+                my_access_rights["execute"] |= ar.execute_access
+                my_access_rights["write"] |= ar.write_access
+
+        service_db = await repo.get_service(
             product_name=product_name,
-            user_id=user_id,
             key=service_key,
             version=service_version,
         )
+        assert service_db  # nosec
 
-        if service:
-            service_manifest = await manifest.get_service(
-                key=service_key,
-                version=service_version,
-                director_client=director_api,
+        owner = service_db.owner
+        if not owner:
+            # TODO: raise error to indicate that no owner is registered for a given service
+            owner = next(
+                ar.gid for ar in access_rights if ar.write_access and ar.execute_access
             )
 
-            compatibility_map = await evaluate_service_compatibility_map(
-                repo,
-                product_name=product_name,
-                user_id=user_id,
-                service_release_history=service.history,
-            )
+        assert owner is not None  # nosec
 
-            my_services.append(
-                MyServiceGet(
-                    **_db_to_api_model(
-                        service_db=service,
-                        access_rights_db=access_rights,
-                        service_manifest=service_manifest,
-                        compatibility_map=compatibility_map,
-                    ).model_dump(),
-                    my_access_rights=my_access_rights,
+        compatibility_map = {}
+        if my_access_rights != {"execute": False, "write": False}:
+            history = await repo.get_service_history(
+                product_name=product_name, user_id=user_id, key=service_key
+            )
+            if history:
+                compatibility_map = await evaluate_service_compatibility_map(
+                    repo,
+                    product_name=product_name,
+                    user_id=user_id,
+                    service_release_history=history,
                 )
+
+        my_services.append(
+            MyServiceGet(
+                key=service_db.key,
+                release=ServiceRelease.model_construct(
+                    version=service_db.version,
+                    version_display=service_db.version_display,
+                    released=service_db.created,
+                    retired=service_db.deprecated,
+                    compatibility=compatibility_map.get(service_db.version),
+                ),
+                owner=owner,
+                my_access_rights=my_access_rights,
             )
+        )
+
+        # TODO: else error
 
     return my_services
