@@ -2,7 +2,8 @@ from collections.abc import AsyncIterator
 from contextlib import suppress
 
 import sqlalchemy as sa
-from models_library.projects import ProjectAtDB, ProjectID
+from models_library.projects import ProjectAtDB, ProjectID, ProjectIDStr
+from models_library.projects_nodes_io import NodeIDStr
 from pydantic import ValidationError
 from simcore_postgres_database.storage_models import projects
 from sqlalchemy.ext.asyncio import AsyncConnection
@@ -37,3 +38,19 @@ async def project_exists(
         )
         == 1
     )
+
+
+async def get_project_id_and_node_id_to_names_map(
+    conn: AsyncConnection, project_uuids: list[ProjectID]
+) -> dict[ProjectID, dict[ProjectIDStr | NodeIDStr, str]]:
+    mapping = {}
+    async for row in await conn.stream(
+        sa.select(projects.c.uuid, projects.c.name, projects.c.workbench).where(
+            projects.c.uuid.in_(f"{pid}" for pid in project_uuids)
+        )
+    ):
+        mapping[ProjectID(f"{row.uuid}")] = {f"{row.uuid}": row.name} | {
+            f"{node_id}": node["label"] for node_id, node in row.workbench.items()
+        }
+
+    return mapping

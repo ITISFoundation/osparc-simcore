@@ -25,6 +25,7 @@ from models_library.api_schemas_webserver.storage import (
     StorageAsyncJobStatus,
 )
 from models_library.projects_nodes_io import LocationID
+from models_library.utils.change_case import camel_to_snake
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import AnyUrl, BaseModel, ByteSize, TypeAdapter
 from servicelib.aiohttp import status
@@ -45,12 +46,12 @@ from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import (
 )
 from servicelib.request_keys import RQT_USERID_KEY
 from servicelib.rest_responses import unwrap_envelope
-from simcore_service_webserver.rabbitmq import get_rabbitmq_rpc_client
 from yarl import URL
 
 from .._meta import API_VTAG
 from ..login.decorators import login_required
 from ..models import RequestContext
+from ..rabbitmq import get_rabbitmq_rpc_client
 from ..security.decorators import permission_required
 from ._exception_handlers import handle_data_export_exceptions
 from .schemas import StorageFileIDStr
@@ -91,7 +92,7 @@ def _to_storage_url(request: web.Request) -> URL:
 
     return (
         url.joinpath(fastapi_encoded_suffix, encoded=True)
-        .with_query(request.query)
+        .with_query({camel_to_snake(k): v for k, v in request.query.items()})
         .update_query(user_id=userid)
     )
 
@@ -123,7 +124,10 @@ class _ResponseTuple(NamedTuple):
 
 
 async def _forward_request_to_storage(
-    request: web.Request, method: str, body: dict[str, Any] | None = None, **kwargs
+    request: web.Request,
+    method: str,
+    body: dict[str, Any] | None = None,
+    **kwargs,
 ) -> _ResponseTuple:
     url = _to_storage_url(request)
     session = get_client_session(request.app)
@@ -131,10 +135,18 @@ async def _forward_request_to_storage(
     async with session.request(
         method.upper(), url, ssl=False, json=body, **kwargs
     ) as resp:
-        if resp.status >= status.HTTP_400_BAD_REQUEST:
-            raise web.HTTPException(reason=await resp.text())
-        payload = await resp.json()
-        return _ResponseTuple(payload=payload, status_code=resp.status)
+        match resp.status:
+            case status.HTTP_422_UNPROCESSABLE_ENTITY:
+                raise web.HTTPUnprocessableEntity(
+                    reason=await resp.text(), content_type=resp.content_type
+                )
+            case status.HTTP_404_NOT_FOUND:
+                raise web.HTTPNotFound(reason=await resp.text())
+            case _ if resp.status >= status.HTTP_400_BAD_REQUEST:
+                raise web.HTTPError(reason=await resp.text())
+            case _:
+                payload = await resp.json()
+                return _ResponseTuple(payload=payload, status_code=resp.status)
 
 
 # ---------------------------------------------------------------------
@@ -148,6 +160,16 @@ _storage_locations_prefix = f"{_storage_prefix}/locations"
 @login_required
 @permission_required("storage.files.*")
 async def list_storage_locations(request: web.Request) -> web.Response:
+    payload, resp_status = await _forward_request_to_storage(request, "GET", body=None)
+    return create_data_response(payload, status=resp_status)
+
+
+@routes.get(
+    f"{_storage_locations_prefix}/{{location_id}}/paths", name="list_storage_paths"
+)
+@login_required
+@permission_required("storage.files.*")
+async def list_paths(request: web.Request) -> web.Response:
     payload, resp_status = await _forward_request_to_storage(request, "GET", body=None)
     return create_data_response(payload, status=resp_status)
 
@@ -423,7 +445,6 @@ async def export_data(request: web.Request) -> web.Response:
 @permission_required("storage.files.*")
 @handle_data_export_exceptions
 async def get_async_jobs(request: web.Request) -> web.Response:
-
     _req_ctx = RequestContext.model_validate(request)
 
     rabbitmq_rpc_client = get_rabbitmq_rpc_client(request.app)
@@ -449,7 +470,6 @@ async def get_async_jobs(request: web.Request) -> web.Response:
 @permission_required("storage.files.*")
 @handle_data_export_exceptions
 async def get_async_job_status(request: web.Request) -> web.Response:
-
     _req_ctx = RequestContext.model_validate(request)
     rabbitmq_rpc_client = get_rabbitmq_rpc_client(request.app)
 
@@ -503,7 +523,6 @@ async def abort_async_job(request: web.Request) -> web.Response:
 @permission_required("storage.files.*")
 @handle_data_export_exceptions
 async def get_async_job_result(request: web.Request) -> web.Response:
-
     _req_ctx = RequestContext.model_validate(request)
 
     rabbitmq_rpc_client = get_rabbitmq_rpc_client(request.app)

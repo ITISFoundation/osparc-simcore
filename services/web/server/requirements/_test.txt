@@ -14,10 +14,16 @@ alembic==1.8.1
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
+annotated-types==0.7.0
+    # via
+    #   -c requirements/_base.txt
+    #   pydantic
 anyio==4.3.0
     # via
     #   -c requirements/_base.txt
     #   httpx
+    #   starlette
+    #   watchfiles
 async-timeout==4.0.3
     # via
     #   -c requirements/_base.txt
@@ -77,6 +83,8 @@ fastapi==0.115.6
     # via -r requirements/_test.in
 fastapi-cli==0.0.5
     # via fastapi
+fastapi-pagination==0.12.34
+    # via -r requirements/_test.in
 flaky==3.8.1
     # via -r requirements/_test.in
 frozenlist==1.4.1
@@ -92,14 +100,18 @@ h11==0.14.0
     # via
     #   -c requirements/_base.txt
     #   httpcore
+    #   uvicorn
 httpcore==1.0.7
     # via
     #   -c requirements/_base.txt
     #   httpx
+httptools==0.6.4
+    # via uvicorn
 httpx==0.28.1
     # via
     #   -c requirements/../../../../requirements/constraints.txt
     #   -c requirements/_base.txt
+    #   fastapi
     #   respx
 hypothesis==6.91.0
     # via -r requirements/_test.in
@@ -109,6 +121,7 @@ idna==3.3
     # via
     #   -c requirements/_base.txt
     #   anyio
+    #   email-validator
     #   httpx
     #   requests
     #   yarl
@@ -175,6 +188,7 @@ pydantic==2.10.2
     #   -c requirements/../../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   fastapi
+    #   fastapi-pagination
 pydantic-core==2.27.1
     # via
     #   -c requirements/_base.txt
@@ -253,6 +267,10 @@ requests==2.32.2
     #   docker
 respx==0.22.0
     # via -r requirements/_test.in
+rich==13.4.2
+    # via
+    #   -c requirements/_base.txt
+    #   typer
 setuptools==69.1.1
     # via
     #   -c requirements/_base.txt
@@ -310,6 +328,7 @@ typing-extensions==4.12.2
     #   -c requirements/_base.txt
     #   asyncpg-stubs
     #   fastapi
+    #   fastapi-pagination
     #   mypy
     #   pydantic
     #   pydantic-core

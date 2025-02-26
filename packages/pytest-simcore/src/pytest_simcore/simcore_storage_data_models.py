@@ -2,29 +2,23 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from collections import deque
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
-from pathlib import Path
-from random import choice, randint
-from typing import Any, cast
+from typing import Any
 
 import pytest
 import sqlalchemy as sa
 from faker import Faker
-from models_library.basic_types import SHA256Str
 from models_library.projects import ProjectID
-from models_library.projects_nodes_io import NodeID, SimcoreS3FileID, StorageFileID
+from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
-from pydantic import ByteSize, TypeAdapter
-from servicelib.utils import limited_gather
+from pydantic import TypeAdapter
 from simcore_postgres_database.models.project_to_groups import project_to_groups
 from simcore_postgres_database.storage_models import projects, users
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
 from .helpers.faker_factories import random_project, random_user
-from .helpers.storage_utils import FileIDDict, get_updated_project
 
 
 @asynccontextmanager
@@ -255,136 +249,5 @@ async def create_project_node(
                 .values(workbench=project_workbench)
             )
         return new_node_id
-
-    return _creator
-
-
-async def _upload_file_and_update_project(
-    project_id: ProjectID,
-    node_id: NodeID,
-    *,
-    file_name: str | None,
-    file_id: StorageFileID | None,
-    file_sizes: tuple[ByteSize, ...],
-    file_checksums: tuple[SHA256Str, ...],
-    node_to_files_mapping: dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],
-    upload_file: Callable[..., Awaitable[tuple[Path, SimcoreS3FileID]]],
-    create_simcore_file_id: Callable[
-        [ProjectID, NodeID, str, Path | None], SimcoreS3FileID
-    ],
-    faker: Faker,
-) -> None:
-    if file_name is None:
-        file_name = faker.file_name()
-        file_id = create_simcore_file_id(project_id, node_id, file_name, None)
-    checksum: SHA256Str = choice(file_checksums)  # noqa: S311
-    src_file, _ = await upload_file(
-        file_size=choice(file_sizes),  # noqa: S311
-        file_name=file_name,
-        file_id=file_id,
-        sha256_checksum=checksum,
-    )
-    assert file_name is not None
-    assert file_id is not None
-    node_to_files_mapping[node_id][file_id] = {
-        "path": src_file,
-        "sha256_checksum": checksum,
-    }
-
-
-@pytest.fixture
-async def random_project_with_files(
-    sqlalchemy_async_engine: AsyncEngine,
-    create_project: Callable[..., Awaitable[dict[str, Any]]],
-    create_project_node: Callable[..., Awaitable[NodeID]],
-    create_simcore_file_id: Callable[
-        [ProjectID, NodeID, str, Path | None], SimcoreS3FileID
-    ],
-    upload_file: Callable[..., Awaitable[tuple[Path, SimcoreS3FileID]]],
-    faker: Faker,
-) -> Callable[
-    [int, tuple[ByteSize, ...], tuple[SHA256Str, ...]],
-    Awaitable[tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]],
-]:
-    async def _creator(
-        num_nodes: int = 12,
-        file_sizes: tuple[ByteSize, ...] = (
-            TypeAdapter(ByteSize).validate_python("7Mib"),
-            TypeAdapter(ByteSize).validate_python("110Mib"),
-            TypeAdapter(ByteSize).validate_python("1Mib"),
-        ),
-        file_checksums: tuple[SHA256Str, ...] = (
-            TypeAdapter(SHA256Str).validate_python(
-                "311e2e130d83cfea9c3b7560699c221b0b7f9e5d58b02870bd52b695d8b4aabd"
-            ),
-            TypeAdapter(SHA256Str).validate_python(
-                "08e297db979d3c84f6b072c2a1e269e8aa04e82714ca7b295933a0c9c0f62b2e"
-            ),
-            TypeAdapter(SHA256Str).validate_python(
-                "488f3b57932803bbf644593bd46d95599b1d4da1d63bc020d7ebe6f1c255f7f3"
-            ),
-        ),
-    ) -> tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]:
-        assert len(file_sizes) == len(file_checksums)
-        project = await create_project(name="random-project")
-        node_to_files_mapping: dict[NodeID, dict[SimcoreS3FileID, FileIDDict]] = {}
-        upload_tasks: deque[Awaitable] = deque()
-        for _node_index in range(num_nodes):
-            # Create a node with outputs (files and others)
-            project_id = ProjectID(project["uuid"])
-            node_id = cast(NodeID, faker.uuid4(cast_to=None))
-            output3_file_name = faker.file_name()
-            output3_file_id = create_simcore_file_id(
-                project_id, node_id, output3_file_name, Path("outputs/output_3")
-            )
-            created_node_id = await create_project_node(
-                ProjectID(project["uuid"]),
-                node_id,
-                outputs={
-                    "output_1": faker.pyint(),
-                    "output_2": faker.pystr(),
-                    "output_3": f"{output3_file_id}",
-                },
-            )
-            assert created_node_id == node_id
-
-            node_to_files_mapping[created_node_id] = {}
-            upload_tasks.append(
-                _upload_file_and_update_project(
-                    project_id,
-                    node_id,
-                    file_name=output3_file_name,
-                    file_id=output3_file_id,
-                    file_sizes=file_sizes,
-                    file_checksums=file_checksums,
-                    upload_file=upload_file,
-                    create_simcore_file_id=create_simcore_file_id,
-                    faker=faker,
-                    node_to_files_mapping=node_to_files_mapping,
-                )
-            )
-
-            # add a few random files in the node workspace
-            upload_tasks.extend(
-                [
-                    _upload_file_and_update_project(
-                        project_id,
-                        node_id,
-                        file_name=None,
-                        file_id=None,
-                        file_sizes=file_sizes,
-                        file_checksums=file_checksums,
-                        upload_file=upload_file,
-                        create_simcore_file_id=create_simcore_file_id,
-                        faker=faker,
-                        node_to_files_mapping=node_to_files_mapping,
-                    )
-                    for _ in range(randint(0, 3))  # noqa: S311
-                ]
-            )
-        await limited_gather(*upload_tasks, limit=10)
-
-        project = await get_updated_project(sqlalchemy_async_engine, project["uuid"])
-        return project, node_to_files_mapping
 
     return _creator

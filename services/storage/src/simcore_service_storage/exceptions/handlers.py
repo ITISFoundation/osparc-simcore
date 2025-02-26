@@ -12,6 +12,7 @@ from ..modules.datcore_adapter.datcore_adapter_exceptions import (
     DatcoreAdapterTimeoutError,
 )
 from .errors import (
+    DatCoreCredentialsMissingError,
     FileAccessRightError,
     FileMetaDataNotFoundError,
     InvalidFileIdentifierError,
@@ -85,17 +86,11 @@ def set_exception_handlers(app: FastAPI) -> None:
             envelope_error=True,
         ),
     )
-
-    # SEE https://docs.python.org/3/library/exceptions.html#exception-hierarchy
     app.add_exception_handler(
-        NotImplementedError,
+        DatCoreCredentialsMissingError,
         make_http_error_handler_for_exception(
-            status.HTTP_501_NOT_IMPLEMENTED, NotImplementedError, envelope_error=True
-        ),
-    )
-    app.add_exception_handler(
-        Exception,
-        make_http_error_handler_for_exception(
-            status.HTTP_500_INTERNAL_SERVER_ERROR, Exception, envelope_error=True
+            status.HTTP_401_UNAUTHORIZED,
+            DatCoreCredentialsMissingError,
+            envelope_error=True,
         ),
     )

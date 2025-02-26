@@ -12,7 +12,6 @@ import json
 import logging
 import urllib.parse
 from collections.abc import AsyncIterator, Awaitable, Callable
-from contextlib import AbstractAsyncContextManager
 from dataclasses import dataclass
 from pathlib import Path
 from random import choice
@@ -38,7 +37,6 @@ from models_library.api_schemas_storage.storage_schemas import (
     SoftCopyBody,
     UploadedPart,
 )
-from models_library.basic_types import SHA256Str
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import LocationID, NodeID, SimcoreS3FileID
 from models_library.users import UserID
@@ -50,7 +48,7 @@ from pytest_simcore.helpers.httpx_assert_checks import assert_status
 from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.parametrizations import byte_size_ids
 from pytest_simcore.helpers.s3 import upload_file_part, upload_file_to_presigned_link
-from pytest_simcore.helpers.storage_utils import FileIDDict
+from pytest_simcore.helpers.storage_utils import FileIDDict, ProjectWithFilesParams
 from pytest_simcore.helpers.storage_utils_file_meta_data import (
     assert_file_meta_data_in_db,
 )
@@ -1009,7 +1007,11 @@ async def test_download_file_from_inside_a_directory(
     file_size: ByteSize,
     location_id: int,
     user_id: UserID,
-    create_empty_directory: Callable[..., Awaitable[FileUploadSchema]],
+    project_id: ProjectID,
+    node_id: NodeID,
+    create_empty_directory: Callable[
+        [str, ProjectID, NodeID], Awaitable[SimcoreS3FileID]
+    ],
     create_file_of_size: Callable[[ByteSize, str | None], Path],
     storage_s3_client: SimcoreS3API,
     storage_s3_bucket: S3BucketName,
@@ -1020,10 +1022,7 @@ async def test_download_file_from_inside_a_directory(
     # upload a file inside a directory and check the download link
 
     directory_name = "a-test-dir"
-    directory_file_upload = await create_empty_directory(directory_name)
-
-    assert directory_file_upload.urls[0].path
-    dir_path_in_s3 = directory_file_upload.urls[0].path.strip("/")
+    dir_path_in_s3 = await create_empty_directory(directory_name, project_id, node_id)
 
     file_name = "meta_data_entry_is_dir.file"
     file_to_upload_in_dir = create_file_of_size(file_size, file_name)
@@ -1069,15 +1068,16 @@ async def test_download_file_the_file_is_missing_from_the_directory(
     client: httpx.AsyncClient,
     location_id: int,
     user_id: UserID,
-    create_empty_directory: Callable[..., Awaitable[FileUploadSchema]],
+    project_id: ProjectID,
+    node_id: NodeID,
+    create_empty_directory: Callable[
+        [str, ProjectID, NodeID], Awaitable[SimcoreS3FileID]
+    ],
 ):
     # file_meta_data entry corresponds to a directory but file is not present in directory
 
     directory_name = "a-second-test-dir"
-    directory_file_upload = await create_empty_directory(directory_name)
-
-    assert directory_file_upload.urls[0].path
-    dir_path_in_s3 = directory_file_upload.urls[0].path.strip("/")
+    dir_path_in_s3 = await create_empty_directory(directory_name, project_id, node_id)
 
     missing_s3_file_id = TypeAdapter(SimcoreS3FileID).validate_python(
         f"{dir_path_in_s3}/missing_inside_dir.file"
@@ -1250,9 +1250,7 @@ async def _list_files_legacy(
     client: httpx.AsyncClient,
     user_id: UserID,
     location_id: LocationID,
-    directory_file_upload: FileUploadSchema,
 ) -> list[FileMetaDataGet]:
-    assert directory_file_upload.urls[0].path
     return await _list_files(
         initialized_app,
         client,
@@ -1267,9 +1265,7 @@ async def _list_files_and_directories(
     client: httpx.AsyncClient,
     user_id: UserID,
     location_id: LocationID,
-    directory_file_upload: FileUploadSchema,
 ) -> list[FileMetaDataGet]:
-    assert directory_file_upload.urls[0].path
     return await _list_files(
         initialized_app,
         client,
@@ -1312,7 +1308,7 @@ async def test_is_directory_link_forces_link_type_and_size(
     assert len(directory_file_upload.urls) == 1
 
     files_and_directories: list[FileMetaDataGet] = await _list_files_and_directories(
-        initialized_app, client, user_id, location_id, directory_file_upload
+        initialized_app, client, user_id, location_id
     )
     assert len(files_and_directories) == 1
     assert files_and_directories[0].is_directory is True
@@ -1348,53 +1344,59 @@ async def test_ensure_expand_dirs_defaults_true(
 
 async def test_upload_file_is_directory_and_remove_content(
     initialized_app: FastAPI,
-    create_empty_directory: Callable[..., Awaitable[FileUploadSchema]],
-    populate_directory: Callable[..., Awaitable[None]],
+    create_empty_directory: Callable[
+        [str, ProjectID, NodeID], Awaitable[SimcoreS3FileID]
+    ],
+    populate_directory: Callable[
+        [ByteSize, str, ProjectID, NodeID, int, int],
+        Awaitable[tuple[NodeID, dict[SimcoreS3FileID, FileIDDict]]],
+    ],
     delete_directory: Callable[..., Awaitable[None]],
     client: httpx.AsyncClient,
     location_id: LocationID,
     user_id: UserID,
-    faker: Faker,
+    project_id: ProjectID,
+    node_id: NodeID,
 ):
     FILE_SIZE_IN_DIR = TypeAdapter(ByteSize).validate_python("1Mib")
     DIR_NAME = "some-dir"
     SUBDIR_COUNT = 4
-    FILE_COUNT = 5
+    FILE_COUNT = 20
 
     # DIRECTORY CREATION (is empty)
 
-    directory_file_upload: FileUploadSchema = await create_empty_directory(
-        dir_name=DIR_NAME
-    )
+    directory_in_s3 = await create_empty_directory(DIR_NAME, project_id, node_id)
 
     files_and_directories: list[FileMetaDataGet] = await _list_files_and_directories(
-        initialized_app, client, user_id, location_id, directory_file_upload
+        initialized_app, client, user_id, location_id
     )
     assert len(files_and_directories) == 1
 
     list_of_files: list[FileMetaDataGet] = await _list_files_legacy(
-        initialized_app, client, user_id, location_id, directory_file_upload
+        initialized_app, client, user_id, location_id
     )
     assert len(list_of_files) == 0
 
     # DIRECTORY WITH CONTENT
 
     await populate_directory(
-        file_size_in_dir=FILE_SIZE_IN_DIR,
-        dir_name=DIR_NAME,
-        subdir_count=SUBDIR_COUNT,
-        file_count=FILE_COUNT,
+        FILE_SIZE_IN_DIR,
+        DIR_NAME,
+        project_id,
+        node_id,
+        SUBDIR_COUNT,
+        FILE_COUNT,
     )
 
     files_and_directories: list[FileMetaDataGet] = await _list_files_and_directories(
-        initialized_app, client, user_id, location_id, directory_file_upload
+        initialized_app, client, user_id, location_id
     )
     assert len(files_and_directories) == 1
 
     list_of_files: list[FileMetaDataGet] = await _list_files_legacy(
-        initialized_app, client, user_id, location_id, directory_file_upload
+        initialized_app, client, user_id, location_id
     )
-    assert len(list_of_files) == SUBDIR_COUNT * FILE_COUNT
+    assert len(list_of_files) == FILE_COUNT
 
     # DELETE NOT EXISTING
 
@@ -1410,10 +1412,10 @@ async def test_upload_file_is_directory_and_remove_content(
     assert error is None
 
     list_of_files: list[FileMetaDataGet] = await _list_files_legacy(
-        initialized_app, client, user_id, location_id, directory_file_upload
+        initialized_app, client, user_id, location_id
     )
 
-    assert len(list_of_files) == SUBDIR_COUNT * FILE_COUNT
+    assert len(list_of_files) == FILE_COUNT
 
     # DELETE ONE FILE FROM THE DIRECTORY
 
@@ -1428,52 +1430,71 @@ async def test_upload_file_is_directory_and_remove_content(
     _, error = assert_status(response, status.HTTP_204_NO_CONTENT, None)
     assert error is None
 
-    list_of_files: list[FileMetaDataGet] = await _list_files_legacy(
-        initialized_app, client, user_id, location_id, directory_file_upload
+    list_of_files = await _list_files_legacy(
+        initialized_app, client, user_id, location_id
     )
 
-    assert len(list_of_files) == SUBDIR_COUNT * FILE_COUNT - 1
+    assert len(list_of_files) == FILE_COUNT - 1
 
     # DIRECTORY REMOVAL
 
-    await delete_directory(directory_file_upload=directory_file_upload)
+    await delete_directory(directory_in_s3)
 
-    list_of_files: list[FileMetaDataGet] = await _list_files_legacy(
-        initialized_app, client, user_id, location_id, directory_file_upload
+    list_of_files = await _list_files_legacy(
+        initialized_app, client, user_id, location_id
     )
     assert len(list_of_files) == 0
 
-    files_and_directories: list[FileMetaDataGet] = await _list_files_and_directories(
-        initialized_app, client, user_id, location_id, directory_file_upload
+    files_and_directories = await _list_files_and_directories(
+        initialized_app, client, user_id, location_id
     )
     assert len(files_and_directories) == 0
 
 
-@pytest.mark.parametrize("files_in_dir", [1002])
+@pytest.mark.parametrize("files_count", [1002])
 async def test_listing_more_than_1000_objects_in_bucket(
     create_directory_with_files: Callable[
-        ..., AbstractAsyncContextManager[FileUploadSchema]
+        [str, ByteSize, int, int, ProjectID, NodeID],
+        Awaitable[
+            tuple[SimcoreS3FileID, tuple[NodeID, dict[SimcoreS3FileID, FileIDDict]]]
+        ],
     ],
     initialized_app: FastAPI,
     client: httpx.AsyncClient,
     location_id: LocationID,
     user_id: UserID,
-    files_in_dir: int,
+    project_id: ProjectID,
+    node_id: NodeID,
+    files_count: int,
 ):
-    async with create_directory_with_files(
-        dir_name="some-random",
-        file_size_in_dir=TypeAdapter(ByteSize).validate_python("1"),
-        subdir_count=1,
-        file_count=files_in_dir,
-    ) as directory_file_upload:
-        list_of_files: list[FileMetaDataGet] = await _list_files_legacy(
-            initialized_app, client, user_id, location_id, directory_file_upload
-        )
-        # for now no more than 1000 objects will be returned
-        assert len(list_of_files) == 1000
+    SUBDIR_COUNT = 1
+    await create_directory_with_files(
+        "random-directory",
+        TypeAdapter(ByteSize).validate_python("1"),
+        SUBDIR_COUNT,
+        files_count,
+        project_id,
+        node_id,
+    )
+    list_of_files = await _list_files_legacy(
+        initialized_app, client, user_id, location_id
+    )
+    # for now no more than 1000 objects will be returned
+    assert len(list_of_files) == 1000
 
 
 @pytest.mark.parametrize("uuid_filter", [True, False])
+@pytest.mark.parametrize(
+    "project_params",
+    [
+        ProjectWithFilesParams(
+            num_nodes=1,
+            allowed_file_sizes=(TypeAdapter(ByteSize).validate_python("1b"),),
+            workspace_files_count=0,
+        ),
+    ],
+    ids=str,
+)
 async def test_listing_with_project_id_filter(
     initialized_app: FastAPI,
     client: httpx.AsyncClient,
@@ -1481,26 +1502,16 @@ async def test_listing_with_project_id_filter(
     user_id: UserID,
     faker: Faker,
     random_project_with_files: Callable[
-        [int, tuple[ByteSize, ...]],
+        [ProjectWithFilesParams],
         Awaitable[
-            tuple[
-                dict[str, Any],
-                dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],
-            ]
+            tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]
         ],
     ],
     uuid_filter: bool,
+    project_params: ProjectWithFilesParams,
 ):
-    src_project, src_projects_list = await random_project_with_files(
-        num_nodes=1,
-        file_sizes=(ByteSize(1),),
-        file_checksums=(TypeAdapter(SHA256Str).validate_python(faker.sha256()),),
-    )
-    _, _ = await random_project_with_files(
-        num_nodes=1,
-        file_sizes=(ByteSize(1),),
-        file_checksums=(TypeAdapter(SHA256Str).validate_python(faker.sha256()),),
-    )
+    src_project, src_projects_list = await random_project_with_files(project_params)
+    _, _ = await random_project_with_files(project_params)
     assert len(src_projects_list.keys()) > 0
     node_id = next(iter(src_projects_list.keys()))
     project_files_in_db = set(src_projects_list[node_id])

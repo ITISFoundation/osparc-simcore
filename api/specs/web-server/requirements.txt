@@ -3,6 +3,7 @@
 --constraint ../../../requirements/constraints.txt
 
 fastapi
+fastapi-pagination
 jsonref
 pydantic
 pydantic-extra-types

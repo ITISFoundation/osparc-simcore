@@ -30,8 +30,6 @@ def app_environment(
     return app_environment | setenvs_from_dict(
         monkeypatch,
         {
-            "WEBSERVER_DB_LISTENER": "0",
-            "WEBSERVER_GARBAGE_COLLECTOR": "null",
             "STORAGE_HOST": "fake-storage",
         },
     )

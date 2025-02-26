@@ -33,3 +33,14 @@ class DatcoreAdapterMultipleFilesError(DatcoreAdapterError):
 
     def __init__(self, msg: str) -> None:
         super().__init__(msg=msg)
+
+
+class DatcoreAdapterResponseError(DatcoreAdapterError):
+    """Basic exception for response errors"""
+
+    def __init__(self, status: int, reason: str) -> None:
+        self.status = status
+        self.reason = reason
+        super().__init__(
+            msg=f"forwarded call failed with status {status}, reason {reason}"
+        )

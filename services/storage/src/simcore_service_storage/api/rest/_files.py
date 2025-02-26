@@ -81,6 +81,7 @@ async def get_file_metadata(
     user_agent: Annotated[str | None, Header()],
     request: Request,
 ):
+    # NOTE: Used by legacy dynamic services -> MUST BE BACKWARDS COMPATIBLE
     dsm = get_dsm_provider(request.app).get(location_id)
     try:
         data = await dsm.get_file(
@@ -133,6 +134,7 @@ async def download_file(
     query_params: Annotated[FileDownloadQueryParams, Depends()],
     request: Request,
 ) -> Envelope[FileDownloadResponse]:
+    # NOTE: Used by legacy dynamic services -> MUST BE BACKWARDS COMPATIBLE
     dsm = get_dsm_provider(request.app).get(location_id)
     link = await dsm.create_file_download_link(
         query_params.user_id, file_id, query_params.link_type
@@ -178,6 +180,7 @@ async def upload_file(
     Use-case v2.2: if query.file_size > 0 and query.link_type=presigned or None, returns 1 or more presigned links depending on the file size (limited to a single 5TB file)
     Use-case v2.3: if query.link_type=s3 and query.file_size>=0, returns a single s3 direct link (limited to a single 5TB file)
     """
+    # NOTE: Used by legacy dynamic services with single presigned link -> MUST BE BACKWARDS COMPATIBLE
     dsm = get_dsm_provider(request.app).get(location_id)
     links: UploadLinks = await dsm.create_file_upload_links(
         user_id=query_params.user_id,

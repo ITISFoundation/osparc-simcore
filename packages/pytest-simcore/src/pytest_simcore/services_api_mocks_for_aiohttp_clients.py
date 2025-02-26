@@ -297,9 +297,7 @@ async def storage_v0_service_mock(
     aioresponses_mocker.get(
         get_file_metadata_pattern,
         status=status.HTTP_200_OK,
-        payload={
-            "data": FileMetaDataGet.model_config["json_schema_extra"]["examples"][0]
-        },
+        payload={"data": FileMetaDataGet.model_json_schema()["examples"][0]},
         repeat=True,
     )
     aioresponses_mocker.get(

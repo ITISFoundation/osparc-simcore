@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "simcore_service_storage",
-    "description": "Service to auto-scale swarm",
+    "description": "Service that manages osparc storage backend",
     "version": "0.6.0"
   },
   "paths": {
@@ -979,6 +979,105 @@
         }
       }
     },
+    "/v0/locations/{location_id}/paths": {
+      "get": {
+        "tags": [
+          "files"
+        ],
+        "summary": "List Paths",
+        "description": "Returns one level of files (paginated)",
+        "operationId": "list_paths_v0_locations__location_id__paths_get",
+        "parameters": [
+          {
+            "name": "location_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Location Id"
+            }
+          },
+          {
+            "name": "user_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": true,
+              "title": "User Id",
+              "minimum": 0
+            }
+          },
+          {
+            "name": "file_filter",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "path"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "File Filter"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 0,
+              "default": 50,
+              "title": "Size"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CursorPage_PathMetaDataGet_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v0/simcore-s3:access": {
       "post": {
         "tags": [
@@ -1319,6 +1418,82 @@
           "version"
         ],
         "title": "AppStatusCheck"
+      },
+      "CursorPage_PathMetaDataGet_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PathMetaDataGet"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total",
+            "description": "Total items"
+          },
+          "current_page": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Page",
+            "description": "Cursor to refetch the current page"
+          },
+          "current_page_backwards": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Page Backwards",
+            "description": "Cursor to refetch the current page starting from the last item"
+          },
+          "previous_page": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Previous Page",
+            "description": "Cursor for the previous page"
+          },
+          "next_page": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Page",
+            "description": "Cursor for the next page"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "CursorPage[PathMetaDataGet]"
       },
       "DatasetMetaDataGet": {
         "properties": {
@@ -2255,6 +2430,40 @@
           "S3"
         ],
         "title": "LinkType"
+      },
+      "PathMetaDataGet": {
+        "properties": {
+          "path": {
+            "type": "string",
+            "format": "path",
+            "title": "Path",
+            "description": "the path to the current path"
+          },
+          "display_path": {
+            "type": "string",
+            "format": "path",
+            "title": "Display Path",
+            "description": "the path to display with UUID replaced"
+          },
+          "file_meta_data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FileMetaDataGet"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "if filled, this is the file meta data of the s3 object"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "path",
+          "display_path"
+        ],
+        "title": "PathMetaDataGet"
       },
       "S3Settings": {
         "properties": {
