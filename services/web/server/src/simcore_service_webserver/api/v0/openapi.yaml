@@ -6071,7 +6071,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CursorPage_FileMetaDataGet_'
+                $ref: '#/components/schemas/CursorPage_PathMetaDataGet_'
   /v0/storage/locations/{location_id}/datasets:
     get:
       tags:
@@ -8413,11 +8413,11 @@ components:
       required:
       - priceDollars
       title: CreateWalletPayment
-    CursorPage_FileMetaDataGet_:
+    CursorPage_PathMetaDataGet_:
       properties:
         items:
           items:
-            $ref: '#/components/schemas/FileMetaDataGet'
+            $ref: '#/components/schemas/PathMetaDataGet'
           type: array
           title: Items
         total:
@@ -8453,7 +8453,7 @@ components:
       type: object
       required:
       - items
-      title: CursorPage[FileMetaDataGet]
+      title: CursorPage[PathMetaDataGet]
     DatCoreFileLink:
       properties:
         store:
@@ -12426,6 +12426,29 @@ components:
       required:
       - value
       title: PatchRequestBody
+    PathMetaDataGet:
+      properties:
+        path:
+          type: string
+          format: path
+          title: Path
+          description: the path to the current path
+        display_path:
+          type: string
+          format: path
+          title: Display Path
+          description: the path to display with UUID replaced
+        file_meta_data:
+          anyOf:
+          - $ref: '#/components/schemas/FileMetaDataGet'
+          - type: 'null'
+          description: if filled, this is the file meta data of the s3 object
+      additionalProperties: false
+      type: object
+      required:
+      - path
+      - display_path
+      title: PathMetaDataGet
     PaymentMethodGet:
       properties:
         idr:
