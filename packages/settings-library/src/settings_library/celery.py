@@ -34,16 +34,17 @@ class CelerySettings(BaseCustomSettings):
             "examples": [
                 {
                     "CELERY_BROKER": {
-                        "RABBITMQ_USER": "guest",
-                        "RABBITMQ_PASSWORD": "guest",
-                        "RABBITMQ_HOST": "localhost",
-                        "RABBITMQ_PORT": 5672,
+                        "RABBIT_USER": "guest",
+                        "RABBIT_SECURE": False,
+                        "RABBIT_PASSWORD": "guest",
+                        "RABBIT_HOST": "localhost",
+                        "RABBIT_PORT": 5672,
                     },
                     "CELERY_RESULT_BACKEND": {
                         "REDIS_HOST": "localhost",
                         "REDIS_PORT": 6379,
                     },
-                    "CELERY_RESULT_EXPIRES": "3600",
+                    "CELERY_RESULT_EXPIRES": timedelta(days=1),
                     "CELERY_RESULT_PERSISTENT": True,
                 }
             ],
