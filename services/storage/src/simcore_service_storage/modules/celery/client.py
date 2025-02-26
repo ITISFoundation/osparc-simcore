@@ -10,28 +10,22 @@ from pydantic import ValidationError
 
 from .models import TaskID, TaskIDParts, TaskStatus
 
-_PREFIX: Final = "ct"
-
 _logger = logging.getLogger(__name__)
 
-
-def _get_task_id_components(task_id_parts: TaskIDParts) -> list[str]:
-    return sorted(map(str, task_id_parts.values()))
-
-
-def _get_components_prefix(name: str, task_id_parts: TaskIDParts) -> list[str]:
-    return [_PREFIX, name, *_get_task_id_components(task_id_parts)]
-
-
-def _get_task_id_prefix(name: str, task_id_parts: TaskIDParts) -> TaskID:
-    return "::".join(_get_components_prefix(name, task_id_parts))
-
-
-def _get_task_id(name: str, task_id_parts: TaskIDParts) -> TaskID:
-    return "::".join([*_get_components_prefix(name, task_id_parts), f"{uuid4()}"])
-
-
 _CELERY_TASK_META_PREFIX = "celery-task-meta-"
+_PREFIX: Final[str] = "ct"
+
+
+def _build_parts_prefix(name: str, task_id_parts: TaskIDParts) -> list[str]:
+    return [_PREFIX, name, *[f"{task_id_parts[key]}" for key in sorted(task_id_parts)]]
+
+
+def build_task_id_prefix(name: str, task_id_parts: TaskIDParts) -> TaskID:
+    return "::".join(_build_parts_prefix(name, task_id_parts))
+
+
+def build_task_id(name: str, task_id_parts: TaskIDParts) -> TaskID:
+    return "::".join([*_build_parts_prefix(name, task_id_parts), f"{uuid4()}"])
 
 
 class CeleryTaskQueueClient:
@@ -42,7 +36,7 @@ class CeleryTaskQueueClient:
     def send_task(
         self, task_name: str, *, task_id_parts: TaskIDParts, **task_params
     ) -> TaskID:
-        task_id = _get_task_id(task_name, task_id_parts)
+        task_id = build_task_id(task_name, task_id_parts)
         _logger.debug("Submitting task %s: %s", task_name, task_id)
         task = self._celery_app.send_task(
             task_name, task_id=task_id, kwargs=task_params
@@ -84,7 +78,7 @@ class CeleryTaskQueueClient:
     ) -> list[TaskID]:
         search_key = (
             _CELERY_TASK_META_PREFIX
-            + _get_task_id_prefix(task_name, task_id_parts)
+            + build_task_id_prefix(task_name, task_id_parts)
             + "*"
         )
         redis = self._celery_app.backend.client
