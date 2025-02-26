@@ -28,10 +28,10 @@ async function runTutorial () {
     console.log("Workbench Data:", workbenchData);
     const BIOSIdViewer = workbenchData["nodeIds"][0];
     await tutorial.waitForServices(workbenchData["studyId"],
-     [BIOSIdViewer],
-     startTimeout,
-     false
-     );
+      [BIOSIdViewer],
+      startTimeout,
+      false
+    );
 
     await tutorial.waitFor(5000, 'Some time for starting the service');
     await utils.takeScreenshot(page, screenshotPrefix + 'service_started');

@@ -284,14 +284,14 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
       let numOfSeats = null;
       const pricingUnit = osparc.store.Pricing.getInstance().getPricingUnit(pricingPlanId, pricingUnitId);
       if (pricingUnit) {
-        const split = pricingUnit.getName().split(" ");
-        numOfSeats = parseInt(split[0]);
+        numOfSeats = parseInt(pricingUnit.getUnitData()["num_of_seats"]);
       }
       const licensedItemsStore = osparc.store.LicensedItems.getInstance();
       licensedItemsStore.purchaseLicensedItem(licensedItemId, walletId, pricingPlanId, pricingUnitId, numOfSeats)
         .then(purchaseData => {
-          let msg = numOfSeats;
-          msg += " seat" + (purchaseData["numOfSeats"] > 1 ? "s" : "");
+          const nSeats = purchaseData["numOfSeats"];
+          let msg = nSeats;
+          msg += " seat" + (nSeats > 1 ? "s" : "");
           msg += " rented until " + osparc.utils.Utils.formatDate(new Date(purchaseData["expireAt"]));
           osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
 
