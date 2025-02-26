@@ -11,7 +11,6 @@ from models_library.users import UserID
 from pydantic import Field
 from servicelib.aiohttp.requests_validation import parse_request_body_as
 from servicelib.request_keys import RQT_USERID_KEY
-from simcore_service_webserver.utils_aiohttp import envelope_json_response
 from yarl import URL
 
 from .._meta import API_VTAG as VTAG
@@ -19,6 +18,7 @@ from ..constants import RQ_PRODUCT_KEY
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from ..users.api import get_user_name_and_email
+from ..utils_aiohttp import envelope_json_response
 from . import api
 
 routes = web.RouteTableDef()

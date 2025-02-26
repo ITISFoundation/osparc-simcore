@@ -11,7 +11,7 @@ from servicelib.aiohttp.db_asyncpg_engine import get_async_engine
 from simcore_postgres_database.utils_tags import TagAccessRightsDict, TagsRepo
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from ..products.products_service import list_products
+from ..products import products_service
 from ..users.api import get_user_role
 from .errors import (
     InsufficientTagShareAccessError,
@@ -70,7 +70,7 @@ async def delete_tag(app: web.Application, user_id: UserID, tag_id: IdInt):
 
 
 def _is_product_group(app: web.Application, group_id: GroupID):
-    products = list_products(app)
+    products = products_service.list_products(app)
     return any(group_id == p.group_id for p in products)
 
 

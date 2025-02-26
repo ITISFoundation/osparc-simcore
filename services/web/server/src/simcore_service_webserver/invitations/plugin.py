@@ -6,7 +6,6 @@ import logging
 
 from aiohttp import web
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
-from simcore_service_webserver.products.plugin import setup_products
 
 from ..constants import APP_SETTINGS_KEY
 from ..db.plugin import setup_db

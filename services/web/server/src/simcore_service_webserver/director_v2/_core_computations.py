@@ -21,7 +21,7 @@ from pydantic.types import PositiveInt
 from servicelib.aiohttp import status
 from servicelib.logging_utils import log_decorator
 
-from ..products.products_service import get_product
+from ..products import products_service
 from ._api_utils import get_wallet_info
 from ._core_base import DataType, request_director_v2
 from .exceptions import ComputationNotFoundError, DirectorServiceError
@@ -107,7 +107,7 @@ async def create_or_update_pipeline(
         "product_name": product_name,
         "wallet_info": await get_wallet_info(
             app,
-            product=get_product(app, product_name),
+            product=products_service.get_product(app, product_name),
             user_id=user_id,
             project_id=project_id,
             product_name=product_name,

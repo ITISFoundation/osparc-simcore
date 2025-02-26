@@ -25,7 +25,6 @@ from settings_library.redis import RedisSettings
 from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
 from settings_library.utils_service import DEFAULT_AIOHTTP_PORT
-from simcore_service_webserver.licenses.settings import LicensesSettings
 
 from ._meta import API_VERSION, API_VTAG, APP_NAME
 from .catalog.settings import CatalogSettings
@@ -36,6 +35,7 @@ from .dynamic_scheduler.settings import DynamicSchedulerSettings
 from .exporter.settings import ExporterSettings
 from .garbage_collector.settings import GarbageCollectorSettings
 from .invitations.settings import InvitationsSettings
+from .licenses.settings import LicensesSettings
 from .login.settings import LoginSettings
 from .payments.settings import PaymentsSettings
 from .projects.settings import ProjectsSettings

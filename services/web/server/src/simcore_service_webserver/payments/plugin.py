@@ -6,11 +6,11 @@ import logging
 
 from aiohttp import web
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
-from simcore_service_webserver.rabbitmq import setup_rabbitmq
 
 from ..constants import APP_SETTINGS_KEY
 from ..db.plugin import setup_db
 from ..products.plugin import setup_products
+from ..rabbitmq import setup_rabbitmq
 from ..users.plugin import setup_users
 from . import _events, _rpc_invoice
 from ._tasks import create_background_task_to_fake_payment_completion

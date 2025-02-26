@@ -8,9 +8,9 @@ from servicelib.aiohttp.requests_validation import parse_request_body_as
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.request_keys import RQT_USERID_KEY
 from simcore_postgres_database.utils_users import UsersRepo
-from simcore_service_webserver.db.plugin import get_database_engine
 
 from .._meta import API_VTAG
+from ..db.plugin import get_database_engine
 from ..products import products_web
 from ..products.models import Product
 from ..security.api import check_password, encrypt_password

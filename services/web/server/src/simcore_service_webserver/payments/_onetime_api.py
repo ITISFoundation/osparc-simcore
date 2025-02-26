@@ -24,7 +24,7 @@ from simcore_postgres_database.utils_payments import insert_init_payment_transac
 from yarl import URL
 
 from ..db.plugin import get_database_engine
-from ..products.products_service import get_product_stripe_info
+from ..products import products_service
 from ..resource_usage.service import add_credits_to_wallet
 from ..users.api import get_user_display_and_id_names, get_user_invoice_address
 from ..wallets.api import get_wallet_by_user, get_wallet_with_permissions_by_user
@@ -296,7 +296,9 @@ async def init_creation_of_wallet_payment(
     user_invoice_address = await get_user_invoice_address(app, user_id=user_id)
 
     # stripe info
-    product_stripe_info = await get_product_stripe_info(app, product_name=product_name)
+    product_stripe_info = await products_service.get_product_stripe_info(
+        app, product_name=product_name
+    )
 
     settings: PaymentsSettings = get_plugin_settings(app)
     payment_inited: WalletPaymentInitiated
@@ -378,7 +380,9 @@ async def pay_with_payment_method(
     assert user_wallet.wallet_id == wallet_id  # nosec
 
     # stripe info
-    product_stripe_info = await get_product_stripe_info(app, product_name=product_name)
+    product_stripe_info = await products_service.get_product_stripe_info(
+        app, product_name=product_name
+    )
 
     # user info
     user = await get_user_display_and_id_names(app, user_id=user_id)
