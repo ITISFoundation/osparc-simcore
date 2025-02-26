@@ -2,7 +2,7 @@ import asyncio
 import logging
 from collections.abc import Iterator
 from threading import Thread
-from unittest.mock import Mock
+from unittest.mock import AsyncMock
 
 import httpx
 import pytest
@@ -20,13 +20,13 @@ def server_done_event() -> asyncio.Event:
 
 
 @pytest.fixture
-def server_cancelled_mock() -> Mock:
-    return Mock()
+def server_cancelled_mock() -> AsyncMock:
+    return AsyncMock()
 
 
 @pytest.fixture
 def fastapi_router(
-    server_done_event: asyncio.Event, server_cancelled_mock: Mock
+    server_done_event: asyncio.Event, server_cancelled_mock: AsyncMock
 ) -> APIRouter:
     router = APIRouter()
 
@@ -38,7 +38,7 @@ def fastapi_router(
                 return {"message": f"Slept for {sleep_time} seconds"}
             except asyncio.CancelledError:
                 ctx.logger.info("sleeper cancelled!")
-                server_cancelled_mock()
+                await server_cancelled_mock()
                 return {"message": "Cancelled"}
             finally:
                 server_done_event.set()
@@ -85,7 +85,9 @@ def uvicorn_server(fastapi_app: FastAPI) -> Iterator[URL]:
 
 
 async def test_server_cancels_when_client_disconnects(
-    uvicorn_server: URL, server_done_event: asyncio.Event, server_cancelled_mock: Mock
+    uvicorn_server: URL,
+    server_done_event: asyncio.Event,
+    server_cancelled_mock: AsyncMock,
 ):
     async with httpx.AsyncClient(base_url=f"{uvicorn_server}") as client:
         # check standard call still complete as expected
@@ -107,6 +109,7 @@ async def test_server_cancels_when_client_disconnects(
                 )
             ctx.logger.info("client disconnected from server")
 
-        async with asyncio.timeout(10):
+        async with asyncio.timeout(5):
             await server_done_event.wait()
         server_cancelled_mock.assert_called_once()
+        ctx.logger.info("done testing")
