@@ -56,8 +56,16 @@ if [ "${SC_BOOT_MODE}" = "debug" ]; then
       --log-level \"${SERVER_LOG_LEVEL}\"
   "
 else
-  exec uvicorn simcore_service_storage.main:the_app \
-    --host 0.0.0.0 \
-    --port ${STORAGE_PORT} \
-    --log-level "${SERVER_LOG_LEVEL}"
+  if [ "${STORAGE_WORKER_MODE}" = "1" ]; then
+    exec celery \
+      --app=simcore_service_storage.modules.celery.worker_main:app \
+      worker --pool=threads \
+      --loglevel="${SERVER_LOG_LEVEL}" \
+      --hostname="${HOSTNAME}"
+  else
+    exec uvicorn simcore_service_storage.main:app \
+      --host 0.0.0.0 \
+      --port ${STORAGE_PORT} \
+      --log-level "${SERVER_LOG_LEVEL}"
+  fi
 fi

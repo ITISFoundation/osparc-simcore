@@ -2,22 +2,34 @@
 
 import logging
 
-from fastapi import FastAPI
 from servicelib.logging_utils import config_all_loggers
-from simcore_service_storage.core.application import create_app
-from simcore_service_storage.core.settings import ApplicationSettings
-
-_the_settings = ApplicationSettings.create_from_envs()
-
-# SEE https://github.com/ITISFoundation/osparc-simcore/issues/3148
-logging.basicConfig(level=_the_settings.log_level)  # NOSONAR
-logging.root.setLevel(_the_settings.log_level)
-config_all_loggers(
-    log_format_local_dev_enabled=_the_settings.STORAGE_LOG_FORMAT_LOCAL_DEV_ENABLED,
-    logger_filter_mapping=_the_settings.STORAGE_LOG_FILTER_MAPPING,
-    tracing_settings=_the_settings.STORAGE_TRACING,
+from simcore_service_storage.modules.celery.utils import (
+    set_celery_app,
+    set_celery_client,
 )
 
+from .core.application import create_app
+from .core.settings import ApplicationSettings
+from .modules.celery.client import CeleryTaskQueueClient
+from .modules.celery.common import create_app as create_celery_app
 
-# SINGLETON FastAPI app
-the_app: FastAPI = create_app(_the_settings)
+_settings = ApplicationSettings.create_from_envs()
+
+# SEE https://github.com/ITISFoundation/osparc-simcore/issues/3148
+logging.basicConfig(level=_settings.log_level)  # NOSONAR
+logging.root.setLevel(_settings.log_level)
+config_all_loggers(
+    log_format_local_dev_enabled=_settings.STORAGE_LOG_FORMAT_LOCAL_DEV_ENABLED,
+    logger_filter_mapping=_settings.STORAGE_LOG_FILTER_MAPPING,
+    tracing_settings=_settings.STORAGE_TRACING,
+)
+
+_logger = logging.getLogger(__name__)
+
+fastapi_app = create_app(_settings)
+celery_app = create_celery_app(_settings)
+
+set_celery_app(fastapi_app, celery_app)
+set_celery_client(fastapi_app, CeleryTaskQueueClient(celery_app))
+
+app = fastapi_app
