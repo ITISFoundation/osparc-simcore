@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock
 import httpx
 import pytest
 import uvicorn
-from fastapi import APIRouter, FastAPI
+from fastapi import APIRouter, BackgroundTasks, FastAPI
 from pytest_simcore.helpers.logging_tools import log_context
 from servicelib.fastapi.cancellation_middleware import CancellationMiddleware
 from servicelib.utils import unused_port
@@ -42,6 +42,24 @@ def fastapi_router(
                 return {"message": "Cancelled"}
             finally:
                 server_done_event.set()
+
+    async def _sleep_in_the_back(sleep_time: float) -> None:
+        with log_context(logging.INFO, msg="sleeper in the back") as ctx:
+            try:
+                await asyncio.sleep(sleep_time)
+            except asyncio.CancelledError:
+                ctx.logger.info("sleeper in the back cancelled!")
+                await server_cancelled_mock()
+            finally:
+                server_done_event.set()
+
+    @router.get("/sleep-with-background-task")
+    async def sleep_with_background_task(
+        sleep_time: float, background_tasks: BackgroundTasks
+    ) -> dict[str, str]:
+        with log_context(logging.INFO, msg="sleeper with background task"):
+            background_tasks.add_task(_sleep_in_the_back, sleep_time)
+            return {"message": "Sleeping in the back"}
 
     return router
 
@@ -112,4 +130,17 @@ async def test_server_cancels_when_client_disconnects(
         async with asyncio.timeout(5):
             await server_done_event.wait()
         server_cancelled_mock.assert_called_once()
-        ctx.logger.info("done testing")
+        server_cancelled_mock.reset_mock()
+        server_done_event.clear()
+
+        # NOTE: shows that FastAPI BackgroundTasks get cancelled too!
+        # check background tasks get cancelled as well sadly
+        with log_context(logging.INFO, msg="client calling endpoint for cancellation"):
+            response = await client.get(
+                "/sleep-with-background-task",
+                params={"sleep_time": 2},
+            )
+            assert response.status_code == 200
+        async with asyncio.timeout(5):
+            await server_done_event.wait()
+        server_cancelled_mock.assert_called_once()
