@@ -2,6 +2,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from pydantic import BaseModel
+
 from ..api_schemas_rpc_async_jobs.async_jobs import (
     AsyncJobGet,
     AsyncJobId,
@@ -11,8 +13,17 @@ from ..api_schemas_rpc_async_jobs.async_jobs import (
 from ..api_schemas_storage.data_export_async_jobs import DataExportTaskStartInput
 from ..progress_bar import ProgressReport
 from ..projects_nodes_io import LocationID
+from ..rest_pagination import CursorQueryParameters
 from ..users import UserID
 from ._base import InputSchema, OutputSchema
+
+
+class StorageLocationPathParams(BaseModel):
+    location_id: LocationID
+
+
+class ListPathsQueryParams(InputSchema, CursorQueryParameters):
+    file_filter: Path | None = None
 
 
 class DataExportPost(InputSchema):
