@@ -148,31 +148,6 @@ qx.Class.define("osparc.store.Data", {
       });
     },
 
-    getNodeFiles: function(nodeId) {
-      return new Promise((resolve, reject) => {
-        const nodePath = encodeURIComponent(nodeId);
-        const params = {
-          url: {
-            locationId: 0,
-            path: nodePath,
-          }
-        };
-        osparc.data.Resources.fetch("storagePaths", "getPaths", params)
-          .then(files => {
-            console.log("Node Files", files);
-            if (files && files.length>0) {
-              resolve(files);
-            } else {
-              resolve([]);
-            }
-          })
-          .catch(err => {
-            console.error(err);
-            reject([]);
-          });
-      });
-    },
-
     getPresignedLink: function(download = true, locationId, fileUuid, fileSize) {
       return new Promise((resolve, reject) => {
         if (download && !osparc.data.Permissions.getInstance().canDo("study.node.data.pull", true)) {

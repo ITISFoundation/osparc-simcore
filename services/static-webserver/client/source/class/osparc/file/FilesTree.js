@@ -186,41 +186,26 @@ qx.Class.define("osparc.file.FilesTree", {
           }
           this.__itemsToTree(locationId, path, items, studyModel);
 
-          // select study item
           this.setSelection(new qx.data.Array([studyModel]));
           this.__selectionChanged();
         });
     },
 
-    populateNodeTree(nodeId) {
+    populateNodeTree(studyId, nodeId) {
       const treeName = "Node Files";
       this.__resetTree(treeName);
-      const rootModel = this.getModel();
-      this.self().addLoadingChild(rootModel);
+      const nodeModel = this.getModel();
+      this.self().addLoadingChild(nodeModel);
 
       const dataStore = osparc.store.Data.getInstance();
-      return dataStore.getNodeFiles(nodeId)
-        .then(files => {
-          const newChildren = osparc.data.Converters.fromDSMToVirtualTreeModel(0, null, files);
-          if (newChildren.length && // location
-            newChildren[0].children.length && // study
-            newChildren[0].children[0].children.length) { // node
-            const nodeData = newChildren[0].children[0].children[0];
-            const nodeTreeName = nodeData.label;
-            this.__resetTree(nodeTreeName, nodeId);
-            const rootNodeModel = this.getModel();
-            if (nodeData.children.length) {
-              const nodeItemsOnly = nodeData.children;
-              this.__itemsToNode(nodeItemsOnly);
-            }
-            this.openNode(rootNodeModel);
+      const locationId = 0;
+      const path = encodeURIComponent(studyId) + "/" + encodeURIComponent(nodeId);
+      return dataStore.getItemsByLocationAndPath(locationId, path)
+        .then(items => {
+          this.__itemsToTree(0, path, items, nodeModel);
 
-            // select node item
-            this.setSelection(new qx.data.Array([rootNodeModel]));
-            this.__selectionChanged();
-          } else {
-            rootModel.getChildren().removeAll();
-          }
+          this.setSelection(new qx.data.Array([nodeModel]));
+          this.__selectionChanged();
         });
     },
 

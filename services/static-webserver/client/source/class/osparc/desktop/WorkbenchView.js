@@ -54,8 +54,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       });
     },
 
-    openStudyDataManager: function(node) {
-      const win = osparc.widget.StudyDataManager.popUpInWindow(null, node.getNodeId(), node.getLabel());
+    openNodeDataManager: function(node) {
+      const win = osparc.widget.StudyDataManager.popUpInWindow(node.getStudy().getUuid(), node.getNodeId(), node.getLabel());
       const closeBtn = win.getChildControl("close-button");
       osparc.utils.Utils.setIdToWidget(closeBtn, "nodeDataManagerCloseBtn");
     }
@@ -1046,7 +1046,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         allowGrowY: false
       });
       osparc.utils.Utils.setIdToWidget(nodeFilesBtn, "nodeFilesBtn");
-      nodeFilesBtn.addListener("execute", () => this.self().openStudyDataManager(node));
+      nodeFilesBtn.addListener("execute", () => this.self().openNodeDataManager(node));
       outputsBox.add(nodeFilesBtn);
 
       const outputs = new osparc.desktop.PanelView(this.tr("Outputs"), outputsBox);
