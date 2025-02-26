@@ -8494,8 +8494,11 @@ components:
       properties:
         paths:
           items:
-            type: string
-            format: path
+            anyOf:
+            - type: string
+              pattern: ^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\/(.+)$
+            - type: string
+              pattern: ^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$
           type: array
           title: Paths
       type: object
@@ -14681,7 +14684,6 @@ components:
       properties:
         jobId:
           type: string
-          format: uuid
           title: Jobid
       type: object
       required:
@@ -14708,7 +14710,6 @@ components:
       properties:
         jobId:
           type: string
-          format: uuid
           title: Jobid
         progress:
           $ref: '#/components/schemas/ProgressReport'
