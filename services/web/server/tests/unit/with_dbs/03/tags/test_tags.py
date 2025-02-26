@@ -30,7 +30,7 @@ from servicelib.aiohttp import status
 from simcore_postgres_database.models.tags import tags
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.db.plugin import get_database_engine
-from simcore_service_webserver.products._api import get_product
+from simcore_service_webserver.products._service import get_product
 from simcore_service_webserver.projects.models import ProjectDict
 
 

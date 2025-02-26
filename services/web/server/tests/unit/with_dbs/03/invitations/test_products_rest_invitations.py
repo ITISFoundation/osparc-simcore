@@ -12,7 +12,7 @@ import pytest
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from models_library.api_schemas_webserver.product import (
-    GenerateInvitation,
+    InvitationGenerate,
     InvitationGenerated,
 )
 from models_library.invitations import _MAX_LEN
@@ -83,7 +83,7 @@ async def test_product_owner_generates_invitation(
 ):
     before_dt = datetime.now(tz=UTC)
 
-    request_model = GenerateInvitation(
+    request_model = InvitationGenerate(
         guest=guest_email,
         trial_account_days=trial_account_days,
         extra_credits_in_usd=extra_credits_in_usd,
@@ -146,7 +146,7 @@ async def test_pre_registration_and_invitation_workflow(
         "country": faker.country(),
     }
 
-    invitation = GenerateInvitation(
+    invitation = InvitationGenerate(
         guest=guest_email,
         trial_account_days=None,
         extra_credits_in_usd=10,

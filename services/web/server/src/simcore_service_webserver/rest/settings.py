@@ -1,7 +1,7 @@
 from aiohttp import web
 from settings_library.base import BaseCustomSettings
 
-from .._constants import APP_SETTINGS_KEY
+from ..constants import APP_SETTINGS_KEY
 
 
 class RestSettings(BaseCustomSettings):

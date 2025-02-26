@@ -3,7 +3,7 @@ import logging
 from aiohttp import web
 from models_library.api_schemas_invitations.invitations import ApiInvitationInputs
 from models_library.api_schemas_webserver.product import (
-    GenerateInvitation,
+    InvitationGenerate,
     InvitationGenerated,
 )
 from models_library.rest_base import RequestParameters
@@ -11,15 +11,15 @@ from models_library.users import UserID
 from pydantic import Field
 from servicelib.aiohttp.requests_validation import parse_request_body_as
 from servicelib.request_keys import RQT_USERID_KEY
-from simcore_service_webserver.utils_aiohttp import envelope_json_response
 from yarl import URL
 
-from .._constants import RQ_PRODUCT_KEY
 from .._meta import API_VTAG as VTAG
-from ..invitations import api
+from ..constants import RQ_PRODUCT_KEY
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from ..users.api import get_user_name_and_email
+from ..utils_aiohttp import envelope_json_response
+from . import api
 
 routes = web.RouteTableDef()
 
@@ -37,7 +37,7 @@ class _ProductsRequestContext(RequestParameters):
 @permission_required("product.invitations.create")
 async def generate_invitation(request: web.Request):
     req_ctx = _ProductsRequestContext.model_validate(request)
-    body = await parse_request_body_as(GenerateInvitation, request)
+    body = await parse_request_body_as(InvitationGenerate, request)
 
     _, user_email = await get_user_name_and_email(request.app, user_id=req_ctx.user_id)
 

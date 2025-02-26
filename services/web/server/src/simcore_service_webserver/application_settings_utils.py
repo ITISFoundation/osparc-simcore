@@ -14,8 +14,8 @@ from common_library.pydantic_fields_extension import get_type, is_nullable
 from pydantic.types import SecretStr
 from servicelib.aiohttp.typing_extension import Handler
 
-from ._constants import MSG_UNDER_DEVELOPMENT
 from .application_settings import ApplicationSettings, get_application_settings
+from .constants import MSG_UNDER_DEVELOPMENT
 
 _logger = logging.getLogger(__name__)
 

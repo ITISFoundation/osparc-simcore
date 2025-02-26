@@ -1107,7 +1107,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_GetCreditPrice_'
+                $ref: '#/components/schemas/Envelope_CreditPriceGet_'
   /v0/products/{product_name}:
     get:
       tags:
@@ -1149,42 +1149,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_ProductUIGet_'
-  /v0/products/{product_name}/templates/{template_id}:
-    put:
-      tags:
-      - products
-      - po
-      summary: Update Product Template
-      operationId: update_product_template
-      parameters:
-      - name: product_name
-        in: path
-        required: true
-        schema:
-          anyOf:
-          - type: string
-            minLength: 1
-            maxLength: 100
-          - const: current
-            type: string
-          title: Product Name
-      - name: template_id
-        in: path
-        required: true
-        schema:
-          type: string
-          minLength: 1
-          maxLength: 100
-          title: Template Id
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpdateProductTemplate'
-      responses:
-        '204':
-          description: Successful Response
   /v0/invitation:generate:
     post:
       tags:
@@ -1196,7 +1160,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/GenerateInvitation'
+              $ref: '#/components/schemas/InvitationGenerate'
         required: true
       responses:
         '200':
@@ -8413,6 +8377,33 @@ components:
       required:
       - priceDollars
       title: CreateWalletPayment
+    CreditPriceGet:
+      properties:
+        productName:
+          type: string
+          title: Productname
+        usdPerCredit:
+          anyOf:
+          - type: number
+            minimum: 0.0
+          - type: 'null'
+          title: Usdpercredit
+          description: Price of a credit in USD. If None, then this product's price
+            is UNDEFINED
+        minPaymentAmountUsd:
+          anyOf:
+          - type: integer
+            minimum: 0
+          - type: 'null'
+          title: Minpaymentamountusd
+          description: Minimum amount (included) in USD that can be paid for this
+            productCan be None if this product's price is UNDEFINED
+      type: object
+      required:
+      - productName
+      - usdPerCredit
+      - minPaymentAmountUsd
+      title: CreditPriceGet
     CursorPage_PathMetaDataGet_:
       properties:
         items:
@@ -8658,6 +8649,19 @@ components:
           title: Error
       type: object
       title: Envelope[ComputationGet]
+    Envelope_CreditPriceGet_:
+      properties:
+        data:
+          anyOf:
+          - $ref: '#/components/schemas/CreditPriceGet'
+          - type: 'null'
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[CreditPriceGet]
     Envelope_FileMetaDataGet_:
       properties:
         data:
@@ -8736,19 +8740,6 @@ components:
           title: Error
       type: object
       title: Envelope[FolderGet]
-    Envelope_GetCreditPrice_:
-      properties:
-        data:
-          anyOf:
-          - $ref: '#/components/schemas/GetCreditPrice'
-          - type: 'null'
-        error:
-          anyOf:
-          - {}
-          - type: 'null'
-          title: Error
-      type: object
-      title: Envelope[GetCreditPrice]
     Envelope_GetProjectInactivityResponse_:
       properties:
         data:
@@ -10557,73 +10548,6 @@ components:
       required:
       - name
       title: FolderReplaceBodyParams
-    GenerateInvitation:
-      properties:
-        guest:
-          type: string
-          format: email
-          title: Guest
-        trialAccountDays:
-          anyOf:
-          - type: integer
-            exclusiveMinimum: true
-            minimum: 0
-          - type: 'null'
-          title: Trialaccountdays
-        extraCreditsInUsd:
-          anyOf:
-          - type: integer
-            exclusiveMaximum: true
-            minimum: 0
-            maximum: 500
-          - type: 'null'
-          title: Extracreditsinusd
-      type: object
-      required:
-      - guest
-      title: GenerateInvitation
-    GetCreditPrice:
-      properties:
-        productName:
-          type: string
-          title: Productname
-        usdPerCredit:
-          anyOf:
-          - type: number
-            minimum: 0.0
-          - type: 'null'
-          title: Usdpercredit
-          description: Price of a credit in USD. If None, then this product's price
-            is UNDEFINED
-        minPaymentAmountUsd:
-          anyOf:
-          - type: integer
-            minimum: 0
-          - type: 'null'
-          title: Minpaymentamountusd
-          description: Minimum amount (included) in USD that can be paid for this
-            productCan be None if this product's price is UNDEFINED
-      type: object
-      required:
-      - productName
-      - usdPerCredit
-      - minPaymentAmountUsd
-      title: GetCreditPrice
-    GetProductTemplate:
-      properties:
-        id:
-          type: string
-          maxLength: 100
-          minLength: 1
-          title: Id
-        content:
-          type: string
-          title: Content
-      type: object
-      required:
-      - id
-      - content
-      title: GetProductTemplate
     GetProjectInactivityResponse:
       properties:
         is_inactive:
@@ -10966,6 +10890,31 @@ components:
       required:
       - invitation
       title: InvitationCheck
+    InvitationGenerate:
+      properties:
+        guest:
+          type: string
+          format: email
+          title: Guest
+        trialAccountDays:
+          anyOf:
+          - type: integer
+            exclusiveMinimum: true
+            minimum: 0
+          - type: 'null'
+          title: Trialaccountdays
+        extraCreditsInUsd:
+          anyOf:
+          - type: integer
+            exclusiveMaximum: true
+            minimum: 0
+            maximum: 500
+          - type: 'null'
+          title: Extracreditsinusd
+      type: object
+      required:
+      - guest
+      title: InvitationGenerate
     InvitationGenerated:
       properties:
         productName:
@@ -13014,7 +12963,7 @@ components:
           title: Creditsperusd
         templates:
           items:
-            $ref: '#/components/schemas/GetProductTemplate'
+            $ref: '#/components/schemas/ProductTemplateGet'
           type: array
           title: Templates
           description: List of templates available to this product for communications
@@ -13028,6 +12977,21 @@ components:
       - isPaymentEnabled
       - creditsPerUsd
       title: ProductGet
+    ProductTemplateGet:
+      properties:
+        id:
+          type: string
+          maxLength: 100
+          minLength: 1
+          title: Id
+        content:
+          type: string
+          title: Content
+      type: object
+      required:
+      - id
+      - content
+      title: ProductTemplateGet
     ProductUIGet:
       properties:
         productName:
@@ -15269,15 +15233,6 @@ components:
       - default
       - specificInfo
       title: UpdatePricingUnitBodyParams
-    UpdateProductTemplate:
-      properties:
-        content:
-          type: string
-          title: Content
-      type: object
-      required:
-      - content
-      title: UpdateProductTemplate
     UploadedPart:
       properties:
         number:

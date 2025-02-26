@@ -27,7 +27,7 @@ from servicelib.aiohttp.requests_validation import handle_validation_as_http_err
 from servicelib.rabbitmq.rpc_interfaces.catalog import services as catalog_rpc
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
-from .._constants import RQ_PRODUCT_KEY, RQT_USERID_KEY
+from ..constants import RQ_PRODUCT_KEY, RQT_USERID_KEY
 from ..rabbitmq import get_rabbitmq_rpc_client
 from . import client
 from ._api_units import can_connect, replace_service_input_outputs

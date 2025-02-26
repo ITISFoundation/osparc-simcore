@@ -93,8 +93,6 @@ def _create_private_workspace_query(
         return (
             sql.select(
                 *_FOLDER_DB_MODEL_COLS,
-                # NOTE: design INVARIANT:
-                #   a user in his private workspace owns his folders
                 sql.func.json_build_object(
                     "read",
                     sa.text("true"),
@@ -132,8 +130,6 @@ def _create_shared_workspace_query(
         shared_workspace_query = (
             sql.select(
                 *_FOLDER_DB_MODEL_COLS,
-                # NOTE: design INVARIANT:
-                #   a user access rights to a folder in a SHARED workspace is inherited from the workspace
                 workspace_access_rights_subquery.c.my_access_rights,
             )
             .select_from(
@@ -160,12 +156,12 @@ def _create_shared_workspace_query(
     return shared_workspace_query
 
 
-def _to_sql_expression(table: sa.Table, order_by: OrderBy):
+def _to_expression(order_by: OrderBy):
     direction_func: Callable = {
         OrderDirection.ASC: sql.asc,
         OrderDirection.DESC: sql.desc,
     }[order_by.direction]
-    return direction_func(table.columns[order_by.field])
+    return direction_func(folders_v2.columns[order_by.field])
 
 
 async def list_(  # pylint: disable=too-many-arguments,too-many-branches
@@ -249,9 +245,7 @@ async def list_(  # pylint: disable=too-many-arguments,too-many-branches
 
     # Ordering and pagination
     list_query = (
-        combined_query.order_by(_to_sql_expression(folders_v2, order_by))
-        .offset(offset)
-        .limit(limit)
+        combined_query.order_by(_to_expression(order_by)).offset(offset).limit(limit)
     )
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
@@ -279,8 +273,9 @@ async def list_trashed_folders(
 ) -> tuple[int, list[FolderDB]]:
     """
     NOTE: this is app-wide i.e. no product, user or workspace filtered
+    TODO: check with MD about workspaces
     """
-    base_query = sql.select(*_FOLDER_DB_MODEL_COLS).where(
+    base_query = sql.select(_FOLDER_DB_MODEL_COLS).where(
         folders_v2.c.trashed.is_not(None)
     )
 
@@ -299,9 +294,7 @@ async def list_trashed_folders(
 
     # Ordering and pagination
     list_query = (
-        base_query.order_by(_to_sql_expression(folders_v2, order_by))
-        .offset(offset)
-        .limit(limit)
+        base_query.order_by(_to_expression(order_by)).offset(offset).limit(limit)
     )
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
@@ -467,24 +460,6 @@ async def delete_recursively(
         )
 
 
-def _create_folder_hierarchy_cte(base_query: Select):
-    folder_hierarchy_cte = base_query.cte(name="folder_hierarchy", recursive=True)
-
-    # Step 2: Define the recursive case
-    folder_alias = aliased(folders_v2)
-    recursive_query = sql.select(
-        folder_alias.c.folder_id, folder_alias.c.parent_folder_id
-    ).select_from(
-        folder_alias.join(
-            folder_hierarchy_cte,
-            folder_alias.c.parent_folder_id == folder_hierarchy_cte.c.folder_id,
-        )
-    )
-
-    # Step 3: Combine base and recursive cases into a CTE
-    return folder_hierarchy_cte.union_all(recursive_query)
-
-
 async def get_projects_recursively_only_if_user_is_owner(
     app: web.Application,
     connection: AsyncConnection | None = None,
@@ -511,9 +486,21 @@ async def get_projects_recursively_only_if_user_is_owner(
             (folders_v2.c.folder_id == folder_id)  # <-- specified folder id
             & (folders_v2.c.product_name == product_name)
         )
+        folder_hierarchy_cte = base_query.cte(name="folder_hierarchy", recursive=True)
 
-        # Step 2,3
-        folder_hierarchy_cte = _create_folder_hierarchy_cte(base_query)
+        # Step 2: Define the recursive case
+        folder_alias = aliased(folders_v2)
+        recursive_query = sql.select(
+            folder_alias.c.folder_id, folder_alias.c.parent_folder_id
+        ).select_from(
+            folder_alias.join(
+                folder_hierarchy_cte,
+                folder_alias.c.parent_folder_id == folder_hierarchy_cte.c.folder_id,
+            )
+        )
+
+        # Step 3: Combine base and recursive cases into a CTE
+        folder_hierarchy_cte = folder_hierarchy_cte.union_all(recursive_query)
 
         # Step 4: Execute the query to get all descendants
         final_query = sql.select(folder_hierarchy_cte)
@@ -557,9 +544,21 @@ async def get_all_folders_and_projects_ids_recursively(
             (folders_v2.c.folder_id == folder_id)  # <-- specified folder id
             & (folders_v2.c.product_name == product_name)
         )
+        folder_hierarchy_cte = base_query.cte(name="folder_hierarchy", recursive=True)
 
-        # Step 2, 3
-        folder_hierarchy_cte = _create_folder_hierarchy_cte(base_query)
+        # Step 2: Define the recursive case
+        folder_alias = aliased(folders_v2)
+        recursive_query = sql.select(
+            folder_alias.c.folder_id, folder_alias.c.parent_folder_id
+        ).select_from(
+            folder_alias.join(
+                folder_hierarchy_cte,
+                folder_alias.c.parent_folder_id == folder_hierarchy_cte.c.folder_id,
+            )
+        )
+
+        # Step 3: Combine base and recursive cases into a CTE
+        folder_hierarchy_cte = folder_hierarchy_cte.union_all(recursive_query)
 
         # Step 4: Execute the query to get all descendants
         final_query = sql.select(folder_hierarchy_cte)
@@ -594,9 +593,21 @@ async def get_folders_recursively(
             (folders_v2.c.folder_id == folder_id)  # <-- specified folder id
             & (folders_v2.c.product_name == product_name)
         )
+        folder_hierarchy_cte = base_query.cte(name="folder_hierarchy", recursive=True)
 
-        # Step 2, 3
-        folder_hierarchy_cte = _create_folder_hierarchy_cte(base_query)
+        # Step 2: Define the recursive case
+        folder_alias = aliased(folders_v2)
+        recursive_query = sql.select(
+            folder_alias.c.folder_id, folder_alias.c.parent_folder_id
+        ).select_from(
+            folder_alias.join(
+                folder_hierarchy_cte,
+                folder_alias.c.parent_folder_id == folder_hierarchy_cte.c.folder_id,
+            )
+        )
+
+        # Step 3: Combine base and recursive cases into a CTE
+        folder_hierarchy_cte = folder_hierarchy_cte.union_all(recursive_query)
 
         # Step 4: Execute the query to get all descendants
         final_query = sql.select(folder_hierarchy_cte)

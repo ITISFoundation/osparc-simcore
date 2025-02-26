@@ -2,7 +2,7 @@ from aiohttp import web
 from aiopg.sa.engine import Engine
 from models_library.users import UserID
 
-from .._constants import RQT_USERID_KEY
+from ..constants import RQT_USERID_KEY
 from . import _aiopg
 
 

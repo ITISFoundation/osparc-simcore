@@ -59,7 +59,7 @@ async def test_frontend_config(
     assert client.app
     # avoids having to start database etc...
     mocker.patch(
-        "simcore_service_webserver.rest._handlers.get_product_name",
+        "simcore_service_webserver.rest._handlers.products_web.get_product_name",
         spec=True,
         return_value="osparc",
     )

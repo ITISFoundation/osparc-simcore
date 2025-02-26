@@ -5,7 +5,7 @@ from models_library.rest_base import RequestParameters, StrictRequestParameters
 from models_library.users import UserID
 from pydantic import Field
 
-from ..._constants import RQ_PRODUCT_KEY, RQT_USERID_KEY
+from ...constants import RQ_PRODUCT_KEY, RQT_USERID_KEY
 
 
 class GroupsRequestContext(RequestParameters):

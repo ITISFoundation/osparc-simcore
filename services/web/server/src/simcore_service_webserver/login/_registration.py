@@ -39,7 +39,7 @@ from ..invitations.errors import (
     InvalidInvitationError,
     InvitationsServiceUnavailableError,
 )
-from ..products.api import Product
+from ..products.models import Product
 from ._confirmation import is_confirmation_expired, validate_confirmation_code
 from ._constants import (
     MSG_EMAIL_ALREADY_REGISTERED,

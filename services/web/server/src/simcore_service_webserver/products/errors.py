@@ -1,8 +1,3 @@
-"""
-    API plugin errors
-"""
-
-
 from ..errors import WebServerBaseError
 
 
@@ -20,3 +15,7 @@ class ProductPriceNotDefinedError(ProductError):
 
 class BelowMinimumPaymentError(ProductError):
     msg_template = "Payment of {amount_usd} USD is below the required minimum of {min_payment_amount_usd} USD"
+
+
+class ProductTemplateNotFoundError(ProductError):
+    msg_template = "Missing template {template_name} for product"

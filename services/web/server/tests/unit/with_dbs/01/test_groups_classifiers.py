@@ -7,7 +7,7 @@
 import pytest
 import sqlalchemy as sa
 from servicelib.common_aiopg_utils import DataSourceName, create_pg_engine
-from simcore_service_webserver._constants import APP_AIOPG_ENGINE_KEY
+from simcore_service_webserver.constants import APP_AIOPG_ENGINE_KEY
 from simcore_service_webserver.groups._classifiers_service import (
     GroupClassifierRepository,
 )

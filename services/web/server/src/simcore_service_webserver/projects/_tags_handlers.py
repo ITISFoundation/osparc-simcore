@@ -7,11 +7,11 @@ import logging
 from aiohttp import web
 from models_library.projects import ProjectID
 from servicelib.request_keys import RQT_USERID_KEY
-from simcore_service_webserver.utils_aiohttp import envelope_json_response
 
 from .._meta import API_VTAG
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
+from ..utils_aiohttp import envelope_json_response
 from . import _tags_api as tags_api
 from ._common.exceptions_handlers import handle_plugin_requests_exceptions
 

@@ -15,7 +15,7 @@ from ..exception_handling import (
     to_exceptions_handlers_map,
 )
 from ..login.decorators import get_user_id, login_required
-from ..products.api import get_product_name
+from ..products import products_web
 from ..security.decorators import permission_required
 from . import _trash_service
 from ._common.exceptions_handlers import handle_plugin_requests_exceptions
@@ -51,7 +51,7 @@ routes = web.RouteTableDef()
 @_handle_local_request_exceptions
 async def trash_project(request: web.Request):
     user_id = get_user_id(request)
-    product_name = get_product_name(request)
+    product_name = products_web.get_product_name(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
     query_params: RemoveQueryParams = parse_request_query_parameters_as(
         RemoveQueryParams, request
@@ -76,7 +76,7 @@ async def trash_project(request: web.Request):
 @_handle_local_request_exceptions
 async def untrash_project(request: web.Request):
     user_id = get_user_id(request)
-    product_name = get_product_name(request)
+    product_name = products_web.get_product_name(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
     await _trash_service.untrash_project(

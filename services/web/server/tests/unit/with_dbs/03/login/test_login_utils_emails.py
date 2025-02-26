@@ -14,8 +14,8 @@ from faker import Faker
 from json2html import json2html
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from simcore_service_webserver._constants import RQ_PRODUCT_KEY
 from simcore_service_webserver.application_settings import setup_settings
+from simcore_service_webserver.constants import RQ_PRODUCT_KEY
 from simcore_service_webserver.email.plugin import setup_email
 from simcore_service_webserver.login.plugin import setup_login
 from simcore_service_webserver.login.utils_email import (
