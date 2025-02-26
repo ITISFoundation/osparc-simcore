@@ -49,7 +49,7 @@ def _db_to_api_model(
         description=service_db.description,
         description_ui=service_db.description_ui,
         version_display=service_db.version_display,
-        type=service_manifest.service_type,
+        service_type=service_manifest.service_type,
         contact=service_manifest.contact,
         authors=service_manifest.authors,
         owner=(service_db.owner_email if service_db.owner_email else None),
@@ -340,8 +340,9 @@ async def check_for_service(
 
 
 async def batch_get_my_services(
-    *,
     repo: ServicesRepository,
+    director_api: DirectorApi,
+    *,
     product_name: ProductName,
     user_id: UserID,
     ids: list[
@@ -352,18 +353,49 @@ async def batch_get_my_services(
     ],
 ) -> list[MyServiceGet]:
 
-    raise NotImplementedError
+    services_access_rights = await repo.batch_get_services_access_rights(
+        key_versions=ids, product_name=product_name
+    )
 
-    # user_groups = []
+    my_services = []
+    for service_key, service_version in ids:
+        access_rights = services_access_rights.get((service_key, service_version), [])
+        my_access_rights = {
+            "read": any(ar.execute_access for ar in access_rights),
+            "write": any(ar.write_access for ar in access_rights),
+        }
 
-    # result = []
+        service = await repo.get_service_with_history(
+            product_name=product_name,
+            user_id=user_id,
+            key=service_key,
+            version=service_version,
+        )
 
-    # services_access_rights = await repo.batch_get_services_access_rights(key_versions=ids, product_name=product_name)
+        if service:
+            service_manifest = await manifest.get_service(
+                key=service_key,
+                version=service_version,
+                director_client=director_api,
+            )
 
-    # for service_key, service_version in ids:
-    #     my_access_rights = {"read": False, "execute": False}
+            compatibility_map = await evaluate_service_compatibility_map(
+                repo,
+                product_name=product_name,
+                user_id=user_id,
+                service_release_history=service.history,
+            )
 
-    #     if (service_access_rights_db := services_access_rights.get((service_key,service_version)))
+            my_services.append(
+                MyServiceGet(
+                    **_db_to_api_model(
+                        service_db=service,
+                        access_rights_db=access_rights,
+                        service_manifest=service_manifest,
+                        compatibility_map=compatibility_map,
+                    ).model_dump(),
+                    my_access_rights=my_access_rights,
+                )
+            )
 
-    #         if service_access_rights_db.gid in user_groups:
-    #             my_access_rights.append()
+    return my_services
