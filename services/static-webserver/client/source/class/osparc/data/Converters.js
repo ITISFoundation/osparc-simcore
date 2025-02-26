@@ -123,12 +123,13 @@ qx.Class.define("osparc.data.Converters", {
       return children;
     },
 
-    createDirEntry: function(label, location, path) {
-      if (label === null || label === undefined || label === "") {
-        label = "Unknown label";
+    createDirEntry: function(displayPath, location, path) {
+      if (displayPath === null || displayPath === undefined || displayPath === "") {
+        displayPath = "Unknown label";
       }
       return {
-        label,
+        label: displayPath.split("/").slice(-1).pop(), // take last part of the display name
+        displayPath,
         location,
         path,
         itemId: path,
@@ -136,9 +137,9 @@ qx.Class.define("osparc.data.Converters", {
       };
     },
 
-    createFileEntry: function(label, location, path, fileMetaData) {
-      if (label === undefined) {
-        label = "Unknown label";
+    createFileEntry: function(displayPath, location, path, fileMetaData) {
+      if (displayPath === undefined) {
+        displayPath = "Unknown label";
       }
       if (location === undefined) {
         location = "Unknown location";
@@ -153,11 +154,11 @@ qx.Class.define("osparc.data.Converters", {
         size = 0;
       }
       return {
-        label,
+        label: displayPath.split("/").slice(-1).pop(), // take last part of the display name
         location,
         datasetId,
-        fileId,
-        itemId: fileId,
+        fileId: path,
+        itemId: path,
         lastModified,
         size
       };
