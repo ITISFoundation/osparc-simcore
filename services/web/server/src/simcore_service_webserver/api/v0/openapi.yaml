@@ -8311,7 +8311,10 @@ components:
           type: string
           title: Unitname
         unitExtraInfo:
-          $ref: '#/components/schemas/UnitExtraInfo-Input'
+          anyOf:
+          - $ref: '#/components/schemas/UnitExtraInfoTier-Input'
+          - $ref: '#/components/schemas/UnitExtraInfoLicense'
+          title: Unitextrainfo
         default:
           type: boolean
           title: Default
@@ -12831,7 +12834,10 @@ components:
           type: string
           title: Unitname
         unitExtraInfo:
-          $ref: '#/components/schemas/UnitExtraInfo-Output'
+          anyOf:
+          - $ref: '#/components/schemas/UnitExtraInfoTier-Output'
+          - $ref: '#/components/schemas/UnitExtraInfoLicense'
+          title: Unitextrainfo
         currentCostPerUnit:
           type: string
           title: Currentcostperunit
@@ -12875,7 +12881,10 @@ components:
           type: string
           title: Unitname
         unitExtraInfo:
-          $ref: '#/components/schemas/UnitExtraInfo-Output'
+          anyOf:
+          - $ref: '#/components/schemas/UnitExtraInfoTier-Output'
+          - $ref: '#/components/schemas/UnitExtraInfoLicense'
+          title: Unitextrainfo
         currentCostPerUnit:
           type: string
           title: Currentcostperunit
@@ -15100,36 +15109,49 @@ components:
       - url
       - thumbnail
       title: ThirdPartyInfoDict
-    UnitExtraInfo-Input:
+    UnitExtraInfoLicense:
       properties:
-        CPU:
+        num_of_seats:
           type: integer
           minimum: 0
-          title: Cpu
-        RAM:
-          anyOf:
-          - type: string
-            pattern: ^\s*(\d*\.?\d+)\s*(\w+)?
-          - type: integer
-            minimum: 0
-          title: Ram
-        VRAM:
-          anyOf:
-          - type: string
-            pattern: ^\s*(\d*\.?\d+)\s*(\w+)?
-          - type: integer
-            minimum: 0
-          title: Vram
+          title: Num Of Seats
       additionalProperties: true
       type: object
       required:
-      - CPU
-      - RAM
-      - VRAM
-      title: UnitExtraInfo
+      - num_of_seats
+      title: UnitExtraInfoLicense
       description: Custom information that is propagated to the frontend. Defined
         fields are mandatory.
-    UnitExtraInfo-Output:
+    UnitExtraInfoTier-Input:
+      properties:
+        CPU:
+          type: integer
+          minimum: 0
+          title: Cpu
+        RAM:
+          anyOf:
+          - type: string
+            pattern: ^\s*(\d*\.?\d+)\s*(\w+)?
+          - type: integer
+            minimum: 0
+          title: Ram
+        VRAM:
+          anyOf:
+          - type: string
+            pattern: ^\s*(\d*\.?\d+)\s*(\w+)?
+          - type: integer
+            minimum: 0
+          title: Vram
+      additionalProperties: true
+      type: object
+      required:
+      - CPU
+      - RAM
+      - VRAM
+      title: UnitExtraInfoTier
+      description: Custom information that is propagated to the frontend. Defined
+        fields are mandatory.
+    UnitExtraInfoTier-Output:
       properties:
         CPU:
           type: integer
@@ -15149,7 +15171,7 @@ components:
       - CPU
       - RAM
       - VRAM
-      title: UnitExtraInfo
+      title: UnitExtraInfoTier
       description: Custom information that is propagated to the frontend. Defined
         fields are mandatory.
     UnregisterCheck:
@@ -15191,7 +15213,10 @@ components:
           type: string
           title: Unitname
         unitExtraInfo:
-          $ref: '#/components/schemas/UnitExtraInfo-Input'
+          anyOf:
+          - $ref: '#/components/schemas/UnitExtraInfoTier-Input'
+          - $ref: '#/components/schemas/UnitExtraInfoLicense'
+          title: Unitextrainfo
         default:
           type: boolean
           title: Default
