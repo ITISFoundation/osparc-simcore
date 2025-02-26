@@ -48,7 +48,7 @@ qx.Class.define("osparc.file.FilesTree", {
       font: "text-14",
     });
 
-    this.resetChecks();
+    this.__resetChecks();
 
     this.addListener("tap", this.__selectionChanged, this);
 
@@ -133,13 +133,13 @@ qx.Class.define("osparc.file.FilesTree", {
     __datasets: null,
     __loadPaths: null,
 
-    resetChecks: function() {
+    __resetChecks: function() {
       this.__locations = new Set();
       this.__datasets = new Set();
     },
 
     resetCache: function() {
-      this.resetChecks();
+      this.__resetChecks();
 
       const dataStore = osparc.store.Data.getInstance();
       dataStore.resetCache();
@@ -304,7 +304,7 @@ qx.Class.define("osparc.file.FilesTree", {
     },
 
     __populateLocations: function() {
-      this.resetChecks();
+      this.__resetChecks();
 
       const treeName = "My Data";
       this.__resetTree(treeName);
@@ -320,7 +320,7 @@ qx.Class.define("osparc.file.FilesTree", {
         .then(locations => {
           const datasetPromises = [];
           if (this.__locations.size === 0) {
-            this.resetChecks();
+            this.__resetChecks();
             this.__locationsToRoot(locations);
             for (let i=0; i<locations.length; i++) {
               const locationId = locations[i]["id"];
@@ -453,11 +453,6 @@ qx.Class.define("osparc.file.FilesTree", {
 
         // add cached files
         const datasetId = dataset["path"];
-        const cachedData = dataStore.getFilesByLocationAndDatasetCached(locationId, datasetId);
-        if (cachedData) {
-          this.__filesToDataset(cachedData.location, cachedData.dataset, cachedData.files);
-        }
-
         if (this.__hasDatasetNeedToBeLoaded(locationId, datasetId)) {
           openThis = datasetModel;
         }

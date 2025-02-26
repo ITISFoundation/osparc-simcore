@@ -38,12 +38,10 @@ qx.Class.define("osparc.store.Data", {
   members: {
     __locationsCached: null,
     __datasetsByLocationCached: null,
-    __filesByLocationAndDatasetCached: null,
 
     resetCache: function() {
       this.__locationsCached = [];
       this.__datasetsByLocationCached = {};
-      this.__filesByLocationAndDatasetCached = {};
     },
 
     getLocationsCached: function() {
@@ -122,19 +120,6 @@ qx.Class.define("osparc.store.Data", {
       });
     },
 
-    getFilesByLocationAndDatasetCached: function(locationId, datasetId) {
-      const cache = this.__filesByLocationAndDatasetCached;
-      if (locationId in cache && datasetId in cache[locationId]) {
-        const data = {
-          location: locationId,
-          dataset: datasetId,
-          files: cache[locationId][datasetId]
-        };
-        return data;
-      }
-      return null;
-    },
-
     getFilesByLocationAndDataset: function(locationId, datasetId) {
       const data = {
         locationId,
@@ -147,33 +132,23 @@ qx.Class.define("osparc.store.Data", {
           reject(data);
         }
 
-        const cachedData = this.getFilesByLocationAndDatasetCached(locationId, datasetId);
-        if (cachedData) {
-          resolve(cachedData);
-        } else {
-          const params = {
-            url: {
-              locationId: locationId,
-              path: datasetId
+        const params = {
+          url: {
+            locationId: locationId,
+            path: datasetId
+          }
+        };
+        osparc.data.Resources.fetch("storagePaths", "getPaths", params)
+          .then(pagResp => {
+            if (pagResp["items"] && pagResp["items"].length>0) {
+              data.files = pagResp["items"];
             }
-          };
-          osparc.data.Resources.fetch("storagePaths", "getPaths", params)
-            .then(pagResp => {
-              if (pagResp["items"] && pagResp["items"].length>0) {
-                data.files = pagResp["items"];
-              }
-              // Add it to cache
-              if (!(locationId in this.__filesByLocationAndDatasetCached)) {
-                this.__filesByLocationAndDatasetCached[locationId] = {};
-              }
-              this.__filesByLocationAndDatasetCached[locationId][datasetId] = data.files;
-              resolve(data);
-            })
-            .catch(err => {
-              console.error(err);
-              reject(data);
-            });
-        }
+            resolve(data);
+          })
+          .catch(err => {
+            console.error(err);
+            reject(data);
+          });
       });
     },
 
