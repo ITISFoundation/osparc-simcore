@@ -28,6 +28,7 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.async_jobs import async_jobs
 from settings_library.rabbit import RabbitSettings
+from simcore_service_storage.api.rpc._async_jobs import AsyncJobNameData
 from simcore_service_storage.api.rpc._data_export import AccessRightError
 from simcore_service_storage.core.settings import ApplicationSettings
 
@@ -117,11 +118,12 @@ async def test_start_data_export_success(
     _type: Literal["file", "folder"],
 ):
 
-    project, list_of_files = with_random_project_with_files
+    _, list_of_files = with_random_project_with_files
     workspace_files = [
         p for p in list(list_of_files.values())[0].keys() if "/workspace/" in p
     ]
     assert len(workspace_files) > 0
+    file_or_folder_id: SimcoreS3FileID
     if _type == "file":
         file_or_folder_id = workspace_files[0]
     elif _type == "folder":
@@ -137,10 +139,9 @@ async def test_start_data_export_success(
     result = await async_jobs.submit_job(
         rpc_client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
-        job_name="start_data_export",
+        method_name="start_data_export",
+        job_id_data=AsyncJobNameData(user_id=user_id, product_name="osparc"),
         data_export_start=DataExportTaskStartInput(
-            user_id=user_id,
-            product_name="osparc",
             location_id=0,
             file_and_folder_ids=[file_or_folder_id],
         ),
@@ -156,10 +157,9 @@ async def test_start_data_export_fail(
         _ = await async_jobs.submit_job(
             rpc_client,
             rpc_namespace=STORAGE_RPC_NAMESPACE,
-            job_name="start_data_export",
+            method_name="start_data_export",
+            job_id_data=AsyncJobNameData(user_id=user_id, product_name="osparc"),
             data_export_start=DataExportTaskStartInput(
-                user_id=user_id,
-                product_name="osparc",
                 location_id=0,
                 file_and_folder_ids=[
                     f"{faker.uuid4()}/{faker.uuid4()}/{faker.file_name()}"
@@ -173,8 +173,10 @@ async def test_abort_data_export(rpc_client: RabbitMQRPCClient, faker: Faker):
     result = await async_jobs.abort(
         rpc_client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
+        job_id_data=AsyncJobNameData(
+            user_id=faker.pyint(min_value=1, max_value=100), product_name="osparc"
+        ),
         job_id=_job_id,
-        access_data=None,
     )
     assert isinstance(result, AsyncJobAbort)
     assert result.job_id == _job_id
@@ -186,7 +188,9 @@ async def test_get_data_export_status(rpc_client: RabbitMQRPCClient, faker: Fake
         rpc_client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
         job_id=_job_id,
-        access_data=None,
+        job_id_data=AsyncJobNameData(
+            user_id=faker.pyint(min_value=1, max_value=100), product_name="osparc"
+        ),
     )
     assert isinstance(result, AsyncJobStatus)
     assert result.job_id == _job_id
@@ -198,14 +202,21 @@ async def test_get_data_export_result(rpc_client: RabbitMQRPCClient, faker: Fake
         rpc_client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
         job_id=_job_id,
-        access_data=None,
+        job_id_data=AsyncJobNameData(
+            user_id=faker.pyint(min_value=1, max_value=100), product_name="osparc"
+        ),
     )
     assert isinstance(result, AsyncJobResult)
 
 
 async def test_list_jobs(rpc_client: RabbitMQRPCClient, faker: Faker):
     result = await async_jobs.list_jobs(
-        rpc_client, rpc_namespace=STORAGE_RPC_NAMESPACE, filter_=""
+        rpc_client,
+        rpc_namespace=STORAGE_RPC_NAMESPACE,
+        job_id_data=AsyncJobNameData(
+            user_id=faker.pyint(min_value=1, max_value=100), product_name="osparc"
+        ),
+        filter_="",
     )
     assert isinstance(result, list)
     assert all(isinstance(elm, AsyncJobGet) for elm in result)

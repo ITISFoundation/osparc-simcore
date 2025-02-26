@@ -1,7 +1,11 @@
 from uuid import uuid4
 
 from fastapi import FastAPI
-from models_library.api_schemas_rpc_async_jobs.async_jobs import AsyncJobGet, AsyncJobId
+from models_library.api_schemas_rpc_async_jobs.async_jobs import (
+    AsyncJobGet,
+    AsyncJobId,
+    AsyncJobNameData,
+)
 from models_library.api_schemas_storage.data_export_async_jobs import (
     AccessRightError,
     DataExportError,
@@ -25,7 +29,9 @@ router = RPCRouter()
     )
 )
 async def start_data_export(
-    app: FastAPI, data_export_start: DataExportTaskStartInput
+    app: FastAPI,
+    data_export_start: DataExportTaskStartInput,
+    job_id_data: AsyncJobNameData,
 ) -> AsyncJobGet:
     assert app  # nosec
 
@@ -34,18 +40,17 @@ async def start_data_export(
     try:
         for _id in data_export_start.file_and_folder_ids:
             if isinstance(dsm, DatCoreDataManager):
-                _ = await dsm.get_file(user_id=data_export_start.user_id, file_id=_id)
+                _ = await dsm.get_file(user_id=job_id_data.user_id, file_id=_id)
             elif isinstance(dsm, SimcoreS3DataManager):
-                await dsm.can_read_file(user_id=data_export_start.user_id, file_id=_id)
+                await dsm.can_read_file(user_id=job_id_data.user_id, file_id=_id)
 
     except (FileAccessRightError, DatcoreAdapterError) as err:
         raise AccessRightError(
-            user_id=data_export_start.user_id,
+            user_id=job_id_data.user_id,
             file_id=_id,
             location_id=data_export_start.location_id,
         ) from err
 
     return AsyncJobGet(
         job_id=AsyncJobId(f"{uuid4()}"),
-        job_name=", ".join(str(p) for p in data_export_start.file_and_folder_ids),
     )

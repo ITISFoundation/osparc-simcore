@@ -65,7 +65,7 @@ def create_storage_rpc_client_mock(mocker: MockerFixture) -> Callable[[str, Any]
 @pytest.mark.parametrize(
     "backend_result_or_exception",
     [
-        AsyncJobGet(job_id=AsyncJobId(_faker.uuid4()), job_name=_faker.text()),
+        AsyncJobGet(job_id=AsyncJobId(_faker.uuid4())),
         InvalidFileIdentifierError(file_id=Path("/my/file")),
         AccessRightError(user_id=_faker.pyint(min_value=0), file_id=Path("/my/file")),
         DataExportError(job_id=_faker.pyint(min_value=0)),
@@ -106,7 +106,7 @@ async def test_data_export(
     "backend_result_or_exception",
     [
         AsyncJobStatus(
-            job_id=_faker.uuid4(),
+            job_id=f"{_faker.uuid4()}",
             progress=ProgressReport(actual_value=0.5, total=1.0),
             done=False,
             started=datetime.now(),

@@ -10,7 +10,7 @@ from typing import Any, Final, NamedTuple
 from urllib.parse import quote, unquote
 
 from aiohttp import ClientTimeout, web
-from models_library.api_schemas_rpc_async_jobs.async_jobs import AsyncJobAccessData
+from models_library.api_schemas_rpc_async_jobs.async_jobs import AsyncJobNameData
 from models_library.api_schemas_storage import STORAGE_RPC_NAMESPACE
 from models_library.api_schemas_storage.storage_schemas import (
     FileUploadCompleteResponse,
@@ -424,7 +424,7 @@ async def export_data(request: web.Request) -> web.Response:
     async_job_rpc_get = await submit_job(
         rabbitmq_rpc_client=rabbitmq_rpc_client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
-        job_name="start_data_export",
+        method_name="start_data_export",
         paths=data_export_post.to_rpc_schema(
             user_id=_req_ctx.user_id,
             product_name=_req_ctx.product_name,
@@ -478,7 +478,7 @@ async def get_async_job_status(request: web.Request) -> web.Response:
         rabbitmq_rpc_client=rabbitmq_rpc_client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
         job_id=async_job_get.job_id,
-        access_data=AsyncJobAccessData(
+        job_id_data=AsyncJobNameData(
             user_id=_req_ctx.user_id, product_name=_req_ctx.product_name
         ),
     )
@@ -504,7 +504,7 @@ async def abort_async_job(request: web.Request) -> web.Response:
         rabbitmq_rpc_client=rabbitmq_rpc_client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
         job_id=async_job_get.job_id,
-        access_data=AsyncJobAccessData(
+        access_data=AsyncJobNameData(
             user_id=_req_ctx.user_id, product_name=_req_ctx.product_name
         ),
     )
@@ -531,7 +531,7 @@ async def get_async_job_result(request: web.Request) -> web.Response:
         rabbitmq_rpc_client=rabbitmq_rpc_client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
         job_id=async_job_get.job_id,
-        access_data=AsyncJobAccessData(
+        job_id_data=AsyncJobNameData(
             user_id=_req_ctx.user_id, product_name=_req_ctx.product_name
         ),
     )
