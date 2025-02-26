@@ -1,10 +1,10 @@
 import logging
-from typing import Any, Final
+from typing import Any, Coroutine, Final
 from uuid import uuid4
 
 from celery import Celery
 from celery.contrib.abortable import AbortableAsyncResult
-from celery.result import AsyncResult
+from common_library.async_utils import make_async
 from models_library.progress_bar import ProgressReport
 from pydantic import ValidationError
 
@@ -38,31 +38,42 @@ class CeleryTaskQueueClient:
     def __init__(self, celery_app: Celery):
         self._celery_app = celery_app
 
-    def submit(
+    @make_async()
+    def __send_task(self, task_name: str, task_id: TaskID, **task_params):
+        return self._celery_app.send_task(task_name, task_i=task_id, **task_params)
+
+    async def submit(
         self, task_name: str, *, task_id_parts: TaskIDParts, **task_params
     ) -> TaskID:
         task_id = _get_task_id(task_name, task_id_parts)
         _logger.debug("Submitting task %s: %s", task_name, task_id)
-        task = self._celery_app.send_task(
-            task_name, task_id=task_id, kwargs=task_params
-        )
+        task = await self.__send_task(task_name, task_id=task_id, kwargs=task_params)
         return task.id
 
-    def get(self, task_id: TaskID) -> Any:
+    @make_async()
+    def __get_task(self, task_id: TaskID) -> Coroutine[Any, Any, Any]:
         return self._celery_app.tasks(task_id)
 
-    def abort(self, task_id: TaskID) -> None:  # pylint: disable=R6301
+    async def get_task(self, task_id: TaskID) -> Coroutine[Any, Any, Any]:
+        return await self.__get_task(task_id)
+
+    @make_async()
+    def __abort_task(self, task_id: TaskID) -> Any:  # pylint: disable=R6301
         _logger.info("Aborting task %s", task_id)
         AbortableAsyncResult(task_id).abort()
 
-    def _get_async_result(self, task_id: TaskID) -> AsyncResult:
-        return self._celery_app.AsyncResult(task_id)
+    async def abort_task(self, task_id: TaskID) -> None:
+        return await self.__abort_task(task_id)
 
-    def get_result(self, task_id: TaskID) -> Any:
-        return self._get_async_result(task_id).result
+    @make_async()
+    def __get_result(self, task_id: TaskID) -> Any:
+        return self._celery_app.AsyncResult(task_id).result
+
+    async def get_result(self, task_id: TaskID) -> Any:
+        return await self.__get_result(task_id)
 
     def _get_progress_report(self, task_id: TaskID) -> ProgressReport | None:
-        result = self._get_async_result(task_id).result
+        result = self.__get_result(task_id)
         if result:
             try:
                 return ProgressReport.model_validate(result)
@@ -70,12 +81,16 @@ class CeleryTaskQueueClient:
                 pass
         return None
 
-    def get_status(self, task_id: TaskID) -> TaskStatus:
+    @make_async()
+    def __get_status(self, task_id: TaskID) -> TaskStatus:
         return TaskStatus(
             task_id=task_id,
-            task_state=self._get_async_result(task_id).state,
+            task_state=self._celery_app.AsyncResult(task_id).state,
             progress_report=self._get_progress_report(task_id),
         )
+
+    async def get_task_status(self, task_id: TaskID) -> TaskStatus:
+        return await self.__get_status(task_id)
 
     def _get_completed_task_ids(
         self, task_name: str, task_id_parts: TaskIDParts
@@ -90,7 +105,8 @@ class CeleryTaskQueueClient:
             return [f"{key}".lstrip(_CELERY_TASK_META_PREFIX) for key in keys]
         return []
 
-    def list(self, task_name: str, *, task_id_parts: TaskIDParts) -> list[TaskID]:
+    @make_async()
+    def __list_tasks(self, task_name: str, *, task_id_parts: TaskIDParts) -> Any:
         all_task_ids = self._get_completed_task_ids(task_name, task_id_parts)
 
         for task_type in ["active", "registered", "scheduled", "revoked"]:
@@ -98,3 +114,8 @@ class CeleryTaskQueueClient:
                 all_task_ids.extend(task_ids)
 
         return all_task_ids
+
+    async def list_tasks(
+        self, task_name: str, *, task_id_parts: TaskIDParts
+    ) -> list[TaskID]:
+        return await self.__list_tasks(task_name, task_id_parts=task_id_parts)

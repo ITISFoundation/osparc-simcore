@@ -43,12 +43,12 @@ def register_celery_tasks() -> Callable[[Celery], None]:
 
 
 @pytest.mark.usefixtures("celery_client_app", "celery_worker_app")
-def test_sumitting_task_calling_async_function_results_with_success_state(
+async def test_sumitting_task_calling_async_function_results_with_success_state(
     celery_task_queue_client: CeleryTaskQueueClient,
 ):
     task_id_parts = TaskIDParts(user_id=1)
 
-    task_id = celery_task_queue_client.submit(
+    task_id = await celery_task_queue_client.submit(
         "sync_archive",
         task_id_parts=task_id_parts,
         files=[f"file{n}" for n in range(30)],
@@ -60,17 +60,19 @@ def test_sumitting_task_calling_async_function_results_with_success_state(
         stop=stop_after_delay(30),
     ):
         with attempt:
-            progress = celery_task_queue_client.get_status(task_id)
+            progress = await celery_task_queue_client.get_task_status(task_id)
             assert progress.task_state == "SUCCESS"
 
-    assert celery_task_queue_client.get_status(task_id).task_state == "SUCCESS"
+    assert (
+        await celery_task_queue_client.get_task_status(task_id)
+    ).task_state == "SUCCESS"
 
 
 @pytest.mark.usefixtures("celery_client_app", "celery_worker_app")
-def test_submitting_task_with_failure_results_with_error(
+async def test_submitting_task_with_failure_results_with_error(
     celery_task_queue_client: CeleryTaskQueueClient,
 ):
-    task_id = celery_task_queue_client.submit(
+    task_id = await celery_task_queue_client.submit(
         "failure_task", task_id_parts=TaskIDParts(user_id=1)
     )
 
@@ -79,24 +81,26 @@ def test_submitting_task_with_failure_results_with_error(
         wait=wait_fixed(1),
     ):
         with attempt:
-            result = celery_task_queue_client.get_result(task_id)
+            result = await celery_task_queue_client.get_result(task_id)
             assert isinstance(result, ValueError)
 
-    assert celery_task_queue_client.get_status(task_id).task_state == "FAILURE"
-    result = celery_task_queue_client.get_result(task_id)
+    assert (
+        await celery_task_queue_client.get_task_status(task_id)
+    ).task_state == "FAILURE"
+    result = await celery_task_queue_client.get_result(task_id)
     assert isinstance(result, ValueError)
     assert f"{result}" == "my error here"
 
 
 @pytest.mark.usefixtures("celery_client_app", "celery_worker_app")
-def test_aborting_task_results_with_aborted_state(
+async def test_aborting_task_results_with_aborted_state(
     celery_task_queue_client: CeleryTaskQueueClient,
 ):
-    task_id = celery_task_queue_client.submit(
+    task_id = await celery_task_queue_client.submit(
         "dreamer_task", task_id_parts=TaskIDParts(user_id=1)
     )
 
-    celery_task_queue_client.abort(task_id)
+    await celery_task_queue_client.abort_task(task_id)
 
     for attempt in Retrying(
         retry=retry_if_exception_type(AssertionError),
@@ -104,7 +108,9 @@ def test_aborting_task_results_with_aborted_state(
         stop=stop_after_delay(30),
     ):
         with attempt:
-            progress = celery_task_queue_client.get_status(task_id)
+            progress = await celery_task_queue_client.get_task_status(task_id)
             assert progress.task_state == "ABORTED"
 
-    assert celery_task_queue_client.get_status(task_id).task_state == "ABORTED"
+    assert (
+        await celery_task_queue_client.get_task_status(task_id)
+    ).task_state == "ABORTED"
