@@ -181,8 +181,8 @@ qx.Class.define("osparc.file.FilesTree", {
       return dataStore.getItemsByLocationAndPath(locationId, path)
         .then(items => {
           if (items.length) {
-            const studyName = items[0]["display_path"].split("/")[0]
-            this.__resetTree(studyName);
+            const studyName = items[0]["display_path"].split("/")[0];
+            studyModel.setLabel(studyName);
           }
           this.__itemsToTree(locationId, path, items, studyModel);
 
