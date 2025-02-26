@@ -155,10 +155,10 @@ qx.Class.define("osparc.file.FilePicker", {
         const params = {
           url: {
             locationId: outValue.store,
-            datasetId: outValue.dataset
+            path: outValue.dataset
           }
         };
-        osparc.data.Resources.fetch("storageFiles", "getByLocationAndDataset", params)
+        osparc.data.Resources.fetch("storagePaths", "getPaths", params)
           .then(files => {
             const fileMetadata = files.find(file => file.file_id === outValue.path);
             if (fileMetadata) {
@@ -274,7 +274,7 @@ qx.Class.define("osparc.file.FilePicker", {
       if (this.__filesTree) {
         this.__selectedFileFound = false;
         this.__filesTree.resetCache();
-        this.__filesTree.populateTree();
+        this.__filesTree.populateLocations();
       }
     },
 
@@ -576,7 +576,7 @@ qx.Class.define("osparc.file.FilePicker", {
       }, this);
       folderViewer.addListener("requestDatasetFiles", e => {
         const data = e.getData();
-        filesTree.requestDatasetFiles(data.locationId, data.datasetId);
+        filesTree.requestPathItems(data.locationId, data.datasetId);
       }, this);
 
       const selectBtn = this.__selectButton = new qx.ui.form.Button(this.tr("Select")).set({

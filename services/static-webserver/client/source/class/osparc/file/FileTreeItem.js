@@ -70,6 +70,12 @@ qx.Class.define("osparc.file.FileTreeItem", {
       nullable: true
     },
 
+    displayPath: {
+      check: "String",
+      event: "changeDisplayPath",
+      nullable: true
+    },
+
     pathLabel: {
       check: "Array",
       event: "changePathLabel",
@@ -81,13 +87,6 @@ qx.Class.define("osparc.file.FileTreeItem", {
       event: "changeItemId",
       apply: "__applyItemId",
       nullable: true
-    },
-
-    isDataset: {
-      check: "Boolean",
-      event: "changeIsDataset",
-      init: false,
-      nullable: false
     },
 
     datasetId: {

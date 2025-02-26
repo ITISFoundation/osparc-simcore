@@ -42,11 +42,11 @@ qx.Class.define("osparc.file.FolderViewer", {
     const selectedFileLayout = this.getChildControl("selected-file-layout");
 
     this.bind("folder", this.getChildControl("folder-up"), "enabled", {
-      converter: folder => Boolean(folder && folder.getPathLabel && folder.getPathLabel().length > 1)
+      converter: folder => Boolean(folder && folder.getDisplayPath && folder.getDisplayPath())
     });
 
     this.bind("folder", this.getChildControl("folder-path"), "value", {
-      converter: folder => folder ? folder.getPathLabel().join(" / ") : this.tr("Select folder")
+      converter: folder => folder && folder.getDisplayPath ? folder.getDisplayPath() : this.tr("Select folder")
     });
 
     this.bind("folder", folderContent, "folder");
