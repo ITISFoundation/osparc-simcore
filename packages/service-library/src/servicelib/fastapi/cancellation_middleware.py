@@ -27,9 +27,22 @@ async def _handler(app: ASGIApp, scope: Scope, queue: asyncio.Queue, send: Send)
     return await app(scope, queue.get, send)
 
 
-class CancellationMiddleware:
+class RequestCancellationMiddleware:
+    """ASGI Middleware to cancel server requests in case of client disconnection.
+    Reason: FastAPI-based (e.g. starlette) servers do not automatically cancel
+    server requests in case of client disconnection. This middleware will cancel
+    the server request in case of client disconnection via asyncio.CancelledError.
+
+    WARNING: FastAPI BackgroundTasks will also get cancelled. Use with care.
+    TIP: use asyncio.Task in that case
+    """
+
     def __init__(self, app: ASGIApp) -> None:
         self.app = app
+        _logger.warning(
+            "CancellationMiddleware is in use, in case of client disconection, "
+            "FastAPI BackgroundTasks will be cancelled too!",
+        )
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope["type"] != "http":
