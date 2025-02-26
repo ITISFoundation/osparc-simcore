@@ -84,21 +84,14 @@ qx.Class.define("osparc.file.FilesTree", {
 
   statics: {
     isDir: function(item) {
-      let isDir = false;
-      if (item["get"+qx.lang.String.firstUp("path")]) {
-        if (item.getPath() !== null) {
-          isDir = true;
-        }
-      }
-      return isDir;
+      return !this.isFile(item);
     },
 
     isFile: function(item) {
-      let isFile = false;
       if (item["set"+qx.lang.String.firstUp("fileId")]) {
-        isFile = true;
+        return true;
       }
-      return isFile;
+      return false;
     },
 
     addLoadingChild: function(parent) {
