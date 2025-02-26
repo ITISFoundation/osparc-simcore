@@ -6,9 +6,8 @@
 
 import pytest
 from aiohttp import web
-from aiohttp.test_utils import TestClient
+from aiohttp.test_utils import TestServer
 from models_library.products import ProductName
-from simcore_service_webserver.constants import FRONTEND_APP_DEFAULT
 from simcore_service_webserver.products import products_service
 from simcore_service_webserver.products._repository import ProductRepository
 from simcore_service_webserver.products.errors import ProductPriceNotDefinedError
@@ -16,16 +15,11 @@ from simcore_service_webserver.products.errors import ProductPriceNotDefinedErro
 
 @pytest.fixture
 def app(
-    client: TestClient,
+    web_server: TestServer,
 ) -> web.Application:
-    # initialized app
-    assert client.app
-    return client.app
-
-
-@pytest.fixture
-def default_product_name() -> ProductName:
-    return FRONTEND_APP_DEFAULT
+    # app initialized and server running
+    assert web_server.app
+    return web_server.app
 
 
 async def test_get_product(app: web.Application, default_product_name: ProductName):

@@ -48,7 +48,7 @@ def _themed(dirname: str, template: str) -> Path:
     return path
 
 
-def _safe_get_current_product(request: web.Request) -> Product | None:
+def _get_current_product_or_none(request: web.Request) -> Product | None:
     try:
         product: Product = get_current_product(request)
         return product
@@ -56,37 +56,52 @@ def _safe_get_current_product(request: web.Request) -> Product | None:
         return None
 
 
-async def get_product_template_path(request: web.Request, filename: str) -> Path:
-    if product := _safe_get_current_product(request):
-        if template_name := product.get_template_name_for(filename):
-            template_dir: Path = request.app[APP_PRODUCTS_TEMPLATES_DIR_KEY]
-            template_path = template_dir / template_name
-            if not template_path.exists():
-                # cache
-                content = await _service.get_template_content(
-                    request.app, template_name=template_name
-                )
-                try:
-                    async with aiofiles.open(template_path, "w") as fh:
-                        await fh.write(content)
-                except Exception:
-                    # fails to write
-                    if template_path.exists():
-                        template_path.unlink()
-                    raise
-
-            return template_path
-
-        # check static resources under templates/
-        if (
-            template_path := _themed(f"templates/{product.name}", filename)
-        ) and template_path.exists():
-            return template_path
-
-    # If no product or template for product defined, we fall back to common templates
+async def _get_common_template_path(filename: str) -> Path:
     common_template = _themed("templates/common", filename)
     if not common_template.exists():
         msg = f"{filename} is not part of the templates/common"
         raise ValueError(msg)
-
     return common_template
+
+
+async def _cache_template_content(
+    request: web.Request, template_path: Path, template_name: str
+) -> None:
+    content = await _service.get_template_content(
+        request.app, template_name=template_name
+    )
+    try:
+        async with aiofiles.open(template_path, "w") as fh:
+            await fh.write(content)
+    except Exception:
+        if template_path.exists():
+            template_path.unlink()
+        raise
+
+
+async def _get_product_specific_template_path(
+    request: web.Request, product: Product, filename: str
+) -> Path | None:
+    if template_name := product.get_template_name_for(filename):
+        template_dir: Path = request.app[APP_PRODUCTS_TEMPLATES_DIR_KEY]
+        template_path = template_dir / template_name
+        if not template_path.exists():
+            await _cache_template_content(request, template_path, template_name)
+        return template_path
+
+    template_path = _themed(f"templates/{product.name}", filename)
+    if template_path.exists():
+        return template_path
+
+    return None
+
+
+async def get_product_template_path(request: web.Request, filename: str) -> Path:
+    if (product := _get_current_product_or_none(request)) and (
+        template_path := await _get_product_specific_template_path(
+            request, product, filename
+        )
+    ):
+        return template_path
+
+    return await _get_common_template_path(filename)
