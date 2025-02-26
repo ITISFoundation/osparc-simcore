@@ -13,13 +13,13 @@ from models_library.users import UserID
 from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
 from servicelib.utils import fire_and_forget_task
 
-from ..director_v2 import api as director_v2_api
-from ..dynamic_scheduler import api as dynamic_scheduler_api
-from . import _crud_api_read
-from . import _projects_db as _projects_repository
-from . import _projects_service_delete, projects_service
-from ._access_rights_api import check_user_project_permission
-from ._projects_db import _OLDEST_TRASHED_FIRST
+from . import (
+    _access_rights_service,
+    _projects_repository,
+    _projects_service,
+    _projects_service_delete,
+)
+from ._projects_repository import _OLDEST_TRASHED_FIRST
 from .exceptions import (
     ProjectNotFoundError,
     ProjectNotTrashedError,
@@ -38,11 +38,11 @@ async def _is_project_running(
     project_id: ProjectID,
 ) -> bool:
     return bool(
-        await director_v2_api.is_pipeline_running(
+        await director_v2_service.is_pipeline_running(
             app, user_id=user_id, project_id=project_id
         )
     ) or bool(
-        await dynamic_scheduler_api.list_dynamic_services(
+        await dynamic_scheduler_service.list_dynamic_services(
             app, user_id=user_id, project_id=project_id
         )
     )
@@ -63,7 +63,7 @@ async def trash_project(
         ProjectStopError:
         ProjectRunningConflictError:
     """
-    await check_user_project_permission(
+    await _access_rights_service.check_user_project_permission(
         app,
         project_id=project_id,
         user_id=user_id,
@@ -88,7 +88,7 @@ async def trash_project(
             product_name=product_name,
         )
 
-    await projects_service.patch_project(
+    await _projects_service.patch_project(
         app,
         user_id=user_id,
         product_name=product_name,
@@ -109,7 +109,7 @@ async def untrash_project(
     project_id: ProjectID,
 ) -> None:
     # NOTE: check_user_project_permission is inside projects_api.patch_project
-    await projects_service.patch_project(
+    await _projects_service.patch_project(
         app,
         user_id=user_id,
         product_name=product_name,
@@ -165,7 +165,7 @@ async def list_explicitly_trashed_projects(
         (
             projects,
             page_params.total_number_of_items,
-        ) = await _crud_api_read.list_projects_full_depth(
+        ) = await _projects_service_read.list_projects_full_depth(
             app,
             user_id=user_id,
             product_name=product_name,
@@ -179,7 +179,7 @@ async def list_explicitly_trashed_projects(
         )
 
         # NOTE: Applying POST-FILTERING because we do not want to modify the interface of
-        # _crud_api_read.list_projects_full_depth at this time.
+        # _projects_service_read.list_projects_full_depth at this time.
         # This filtering couldn't be handled at the database level when `projects_repo`
         # was refactored, as defining a custom trash_filter was needed to allow more
         # flexibility in filtering options.
@@ -207,7 +207,7 @@ async def delete_explicitly_trashed_project(
         ProjectNotFoundError: If the project is not found.
         ProjectNotTrashedError: If the project was not trashed explicitly by the user from the specified datetime.
     """
-    project = await projects_service.get_project_for_user(
+    project = await _projects_service.get_project_for_user(
         app, project_uuid=f"{project_id}", user_id=user_id
     )
 
@@ -222,7 +222,7 @@ async def delete_explicitly_trashed_project(
             reason="Cannot delete trashed project since it does not fit current criteria",
         )
 
-    await projects_service.delete_project_by_user(
+    await _projects_service.delete_project_by_user(
         app,
         user_id=user_id,
         project_uuid=project_id,

@@ -3,7 +3,7 @@ import logging
 from aiohttp import web
 from servicelib.mimetype_constants import MIMETYPE_TEXT_HTML
 
-from ..products.api import get_product_name
+from ..products.products_service import get_product_name
 from ._constants import (
     APP_FRONTEND_CACHED_INDEXES_KEY,
     APP_FRONTEND_CACHED_STATICS_JSON_KEY,

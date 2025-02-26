@@ -21,7 +21,7 @@ from pydantic.types import PositiveInt
 from servicelib.aiohttp import status
 from servicelib.logging_utils import log_decorator
 
-from ..products.api import get_product
+from ..products.products_service import get_product
 from ._api_utils import get_wallet_info
 from ._core_base import DataType, request_director_v2
 from .exceptions import ComputationNotFoundError, DirectorServiceError

@@ -28,17 +28,17 @@ from servicelib.logging_errors import create_troubleshotting_log_kwargs
 
 from .._constants import INDEX_RESOURCE_NAME
 from ..director_v2._core_computations import create_or_update_pipeline
-from ..dynamic_scheduler import api as dynamic_scheduler_api
-from ..products.api import get_current_product, get_product_name
-from ..projects._groups_db import get_project_group
-from ..projects.api import check_user_project_permission
-from ..projects.db import ProjectDBAPI
+from ..dynamic_scheduler import api as dynamic_scheduler_service
+from ..products.products_service import get_current_product, get_product_name
+from ..projects import projects_groups_repository
+from ..projects._projects_repository_legacy import ProjectDBAPI
 from ..projects.exceptions import (
     ProjectGroupNotFoundError,
     ProjectInvalidRightsError,
     ProjectNotFoundError,
 )
 from ..projects.models import ProjectDict
+from ..projects.projects_access_rights_service import check_user_project_permission
 from ..security.api import is_anonymous, remember_identity
 from ..storage.api import copy_data_folders_from_project
 from ..utils import compose_support_error_msg
@@ -91,7 +91,7 @@ async def _get_published_template_project(
             only_published=only_public_projects,
         )
         # 3. MUST be shared with EVERYONE=1 in read mode, i.e.
-        project_group_get = await get_project_group(
+        project_group_get = await projects_groups_repository.get_project_group(
             request.app, project_id=ProjectID(project_uuid), group_id=1
         )
         if project_group_get.read is False:
@@ -141,8 +141,8 @@ async def copy_study_to_account(
     - Replaces template parameters by values passed in query
     - Avoids multiple copies of the same template on each account
     """
-    from ..projects.db import APP_PROJECT_DBAPI
-    from ..projects.utils import clone_project_document, substitute_parameterized_inputs
+    from ..projects import projects_service_legacy
+    from ..projects._projects_repository_legacy import APP_PROJECT_DBAPI
 
     db: ProjectDBAPI = request.config_dict[APP_PROJECT_DBAPI]
     template_parameters = dict(request.query)
@@ -167,7 +167,7 @@ async def copy_study_to_account(
 
     except ProjectNotFoundError:
         # New project cloned from template
-        project, nodes_map = clone_project_document(
+        project, nodes_map = projects_service_legacy.clone_project_document(
             template_project, forced_copy_project_id=UUID(project_uuid)
         )
 
@@ -182,7 +182,10 @@ async def copy_study_to_account(
                 "Substituting parameters '%s' in template", template_parameters
             )
             project = (
-                substitute_parameterized_inputs(project, template_parameters) or project
+                projects_service_legacy.substitute_parameterized_inputs(
+                    project, template_parameters
+                )
+                or project
             )
         # add project model + copy data TODO: guarantee order and atomicity
         product_name = get_product_name(request)
@@ -212,7 +215,7 @@ async def copy_study_to_account(
         await create_or_update_pipeline(
             request.app, user["id"], project["uuid"], product_name
         )
-        await dynamic_scheduler_api.update_projects_networks(
+        await dynamic_scheduler_service.update_projects_networks(
             request.app, project_id=ProjectID(project["uuid"])
         )
 

@@ -9,7 +9,7 @@ from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import parse_request_body_as
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 
-from ..products.api import Product, get_current_product
+from ..products.products_service import Product, get_current_product
 from ..session.access_policies import session_access_required
 from ._2fa_api import (
     create_2fa_code,

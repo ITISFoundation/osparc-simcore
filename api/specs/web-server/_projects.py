@@ -35,12 +35,12 @@ from simcore_service_webserver.projects._common.exceptions_handlers import (
     _TO_HTTP_ERROR_MAP,
 )
 from simcore_service_webserver.projects._common.models import ProjectPathParams
-from simcore_service_webserver.projects._crud_handlers import ProjectCreateQueryParams
-from simcore_service_webserver.projects._crud_handlers_models import (
+from simcore_service_webserver.projects._projects_models import (
     ProjectActiveQueryParams,
     ProjectsListQueryParams,
     ProjectsSearchQueryParams,
 )
+from simcore_service_webserver.projects._projects_rest import ProjectCreateQueryParams
 
 router = APIRouter(
     prefix=f"/{API_VTAG}",

@@ -23,9 +23,9 @@ from simcore_postgres_database.models.products import (
     products,
 )
 from simcore_service_webserver.db.plugin import APP_AIOPG_ENGINE_KEY
-from simcore_service_webserver.products._db import ProductRepository
 from simcore_service_webserver.products._middlewares import _get_default_product_name
-from simcore_service_webserver.products._model import Product
+from simcore_service_webserver.products._models import Product
+from simcore_service_webserver.products._repository import ProductRepository
 
 
 @pytest.fixture

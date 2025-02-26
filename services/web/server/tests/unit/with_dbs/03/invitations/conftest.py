@@ -29,7 +29,7 @@ from simcore_service_webserver.invitations.settings import (
     InvitationsSettings,
     get_plugin_settings,
 )
-from simcore_service_webserver.products.api import Product, list_products
+from simcore_service_webserver.products.products_service import Product, list_products
 from yarl import URL
 
 

@@ -15,7 +15,7 @@ from servicelib.redis import handle_redis_returns_union_types
 
 from .._meta import API_VTAG
 from ..login.decorators import login_required
-from ..products.api import get_product_name
+from ..products.products_service import get_product_name
 from ..redis import get_redis_user_notifications_client
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response

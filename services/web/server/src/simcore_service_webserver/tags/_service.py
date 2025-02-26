@@ -11,7 +11,7 @@ from servicelib.aiohttp.db_asyncpg_engine import get_async_engine
 from simcore_postgres_database.utils_tags import TagAccessRightsDict, TagsRepo
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from ..products.api import list_products
+from ..products.products_service import list_products
 from ..users.api import get_user_role
 from .errors import (
     InsufficientTagShareAccessError,

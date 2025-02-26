@@ -11,7 +11,7 @@ from simcore_service_webserver.groups.api import auto_add_user_to_product_group
 from simcore_service_webserver.login._constants import MSG_LOGGED_IN
 from simcore_service_webserver.login._registration import create_invitation_token
 from simcore_service_webserver.login.storage import AsyncpgStorage, get_plugin_storage
-from simcore_service_webserver.products.api import list_products
+from simcore_service_webserver.products.products_service import list_products
 from simcore_service_webserver.security.api import clean_auth_policy_cache
 from yarl import URL
 

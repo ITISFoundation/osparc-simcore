@@ -7,7 +7,7 @@ from simcore_service_webserver.products.plugin import setup_products
 
 from ..application_settings import get_application_settings
 from ..login.plugin import setup_login_storage
-from ..projects.db import setup_projects_db
+from ..projects._projects_repository_legacy import setup_projects_db
 from ..socketio.plugin import setup_socketio
 from . import _tasks_api_keys, _tasks_core, _tasks_trash, _tasks_users
 from .settings import get_plugin_settings
