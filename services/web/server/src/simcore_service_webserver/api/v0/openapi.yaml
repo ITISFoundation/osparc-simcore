@@ -4927,6 +4927,58 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_dict_Annotated_str__StringConstraints___ImageResources__'
+  /v0/projects/-/nodes/-/services:
+    get:
+      tags:
+      - projects
+      - nodes
+      summary: List Projects Services
+      description: Lists all services used in the user's projects **grouped by project**
+      operationId: list_projects_services
+      parameters:
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 20
+          title: Limit
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+          title: Offset
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Page_ProjectNodeServicesGet_'
+  /v0/projects/{project_id}/nodes/-/services:
+    get:
+      tags:
+      - projects
+      - nodes
+      summary: Get Project Services
+      operationId: get_project_services
+      parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Project Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_ProjectNodeServicesGet_'
   /v0/projects/{project_id}/nodes/-/services:access:
     get:
       tags:
@@ -9107,6 +9159,19 @@ components:
           title: Error
       type: object
       title: Envelope[ProjectMetadataGet]
+    Envelope_ProjectNodeServicesGet_:
+      properties:
+        data:
+          anyOf:
+          - $ref: '#/components/schemas/ProjectNodeServicesGet'
+          - type: 'null'
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[ProjectNodeServicesGet]
     Envelope_ProjectState_:
       properties:
         data:
@@ -12062,6 +12127,28 @@ components:
       - thumbnail_url
       - file_url
       title: NodeScreenshot
+    NodeServiceGet:
+      properties:
+        key:
+          type: string
+          pattern: ^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$
+          title: Key
+        release:
+          $ref: '#/components/schemas/ServiceRelease'
+        owner:
+          type: integer
+          exclusiveMinimum: true
+          title: Owner
+          minimum: 0
+        myAccessRights:
+          $ref: '#/components/schemas/AccessRights'
+      type: object
+      required:
+      - key
+      - release
+      - owner
+      - myAccessRights
+      title: NodeServiceGet
     NodeState:
       properties:
         modified:
@@ -12352,6 +12439,24 @@ components:
       - _links
       - data
       title: Page[ProjectListItem]
+    Page_ProjectNodeServicesGet_:
+      properties:
+        _meta:
+          $ref: '#/components/schemas/PageMetaInfoLimitOffset'
+        _links:
+          $ref: '#/components/schemas/PageLinks'
+        data:
+          items:
+            $ref: '#/components/schemas/ProjectNodeServicesGet'
+          type: array
+          title: Data
+      additionalProperties: false
+      type: object
+      required:
+      - _meta
+      - _links
+      - data
+      title: Page[ProjectNodeServicesGet]
     Page_ServiceRunGet_:
       properties:
         _meta:
@@ -13549,6 +13654,22 @@ components:
       required:
       - custom
       title: ProjectMetadataUpdate
+    ProjectNodeServicesGet:
+      properties:
+        projectUuid:
+          type: string
+          format: uuid
+          title: Projectuuid
+        services:
+          items:
+            $ref: '#/components/schemas/NodeServiceGet'
+          type: array
+          title: Services
+      type: object
+      required:
+      - projectUuid
+      - services
+      title: ProjectNodeServicesGet
     ProjectOutputGet:
       properties:
         key:

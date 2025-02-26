@@ -4,8 +4,10 @@
 # pylint: disable=too-many-arguments
 
 
-from _common import assert_handler_signature_against_model
-from fastapi import APIRouter, status
+from typing import Annotated
+
+from _common import as_query, assert_handler_signature_against_model
+from fastapi import APIRouter, Depends, status
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.api_schemas_long_running_tasks.tasks import TaskGet
 from models_library.api_schemas_webserver.projects_nodes import (
@@ -18,12 +20,14 @@ from models_library.api_schemas_webserver.projects_nodes import (
     NodePatch,
     NodeRetrieve,
     NodeRetrieved,
+    ProjectNodeServicesGet,
     ServiceResourcesDict,
 )
 from models_library.generics import Envelope
 from models_library.groups import GroupID
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
+from models_library.rest_pagination import Page, PageQueryParameters
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.projects._crud_handlers import ProjectPathParams
 from simcore_service_webserver.projects._nodes_handlers import (
@@ -154,6 +158,24 @@ def replace_node_resources(
 #
 # projects/*/nodes/-/services
 #
+
+
+@router.get(
+    "/projects/-/nodes/-/services",
+    response_model=Page[ProjectNodeServicesGet],
+)
+async def list_projects_services(
+    _query: Annotated[as_query(PageQueryParameters), Depends()]
+):
+    """Lists all services used in the user's projects **grouped by project**"""
+
+
+@router.get(
+    "/projects/{project_id}/nodes/-/services",
+    response_model=Envelope[ProjectNodeServicesGet],
+)
+async def get_project_services(project_id: ProjectID):
+    ...
 
 
 @router.get(
