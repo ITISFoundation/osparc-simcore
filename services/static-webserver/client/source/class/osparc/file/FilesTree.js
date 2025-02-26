@@ -219,10 +219,7 @@ qx.Class.define("osparc.file.FilesTree", {
       const dataStore = osparc.store.Data.getInstance();
       dataStore.getItemsByLocationAndPath(locationId, path)
         .then(items => {
-          const parentModel = this.__getModelFromPath(locationId, path);
-          if (parentModel) {
-            this.__itemsToParentModel(locationId, path, items, parentModel);
-          }
+          this.__itemsToTree(locationId, path, items);
         });
     },
 
@@ -415,7 +412,8 @@ qx.Class.define("osparc.file.FilesTree", {
       return model;
     },
 
-    __itemsToParentModel(locationId, datasetId, items, parentModel) {
+    __itemsToTree: function(locationId, path, items) {
+      const parentModel = this.__getModelFromPath(locationId, path);
       if (parentModel) {
         parentModel.getChildren().removeAll();
         items.forEach(item => {
@@ -453,7 +451,7 @@ qx.Class.define("osparc.file.FilesTree", {
         this.fireEvent("filesAddedToTree");
       }
 
-      this.__filesReceived(locationId, datasetId, items);
+      this.__filesReceived(locationId, path, items);
     },
 
     __itemsToNode: function(files) {
