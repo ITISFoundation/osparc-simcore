@@ -7,7 +7,6 @@
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient, make_mocked_request
-from common_library.json_serialization import json_dumps
 from models_library.products import ProductName
 from pytest_mock import MockerFixture, MockType
 from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
@@ -74,13 +73,11 @@ async def _test_helpers_handler(request: web.Request):
     assert credit_price_info is None
 
     return web.json_response(
-        json_dumps(
-            {
-                "current_product": current_product,
-                "get_producproduct_namet_name": product_name,
-                "credit_price_info": credit_price_info,
-            }
-        )
+        {
+            "current_product": current_product.model_dump(mode="json"),
+            "product_name": product_name,
+            "credit_price_info": credit_price_info,
+        }
     )
 
 
@@ -94,7 +91,7 @@ async def test_request_helpers(client: TestClient, default_product_name: Product
     assert resp.ok, f"Got {await resp.text()}"
 
     got = await resp.json()
-    assert got["current_product"] == default_product_name
+    assert got["product_name"] == default_product_name
 
 
 async def _test_product_template_handler(request: web.Request):
@@ -128,10 +125,11 @@ async def _test_product_template_handler(request: web.Request):
         )
         assert got == template_path
 
-    path = await products_web.get_product_template_path(
-        request, filename="invalid-template-name.jinja"
-    )
-    assert path
+    with pytest.raises(ValueError, match="not part of the templates/common"):
+        await products_web.get_product_template_path(
+            request, filename="invalid-template-name.jinja"
+        )
+
     return web.json_response()
 
 
