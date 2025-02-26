@@ -14,11 +14,12 @@ class CeleryTaskQueueWorker:
     def __init__(self, celery_app: Celery) -> None:
         self.celery_app = celery_app
 
-    def register_task(self, fn: Callable):
-        _logger.debug("Registering %s task", fn.__name__)
-        self.celery_app.task(name=fn.__name__, base=AbortableTask, bind=True)(fn)
+    def register_task(self, fn: Callable, task_name: str | None = None) -> None:
+        name = task_name or fn.__name__
+        _logger.info("Registering %s task", name)
+        self.celery_app.task(name=name, base=AbortableTask, bind=True)(fn)
 
-    def set_progress(
+    def set_task_progress(
         self, task_name: str, task_id: TaskID, report: ProgressReport
     ) -> None:
         _logger.debug(

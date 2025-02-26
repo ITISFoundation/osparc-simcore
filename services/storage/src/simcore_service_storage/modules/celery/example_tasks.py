@@ -17,7 +17,7 @@ async def _async_archive(
 
     for n, file in enumerate(files, start=1):
         _logger.info("Processing file %s", file)
-        worker.set_progress(
+        worker.set_task_progress(
             task_name=task_name,
             task_id=task_id,
             report=ProgressReport(actual_value=n / len(files) * 10),
