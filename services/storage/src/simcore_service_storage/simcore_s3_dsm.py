@@ -355,6 +355,12 @@ class SimcoreS3DataManager(BaseDataManager):
         fmd = await self._update_database_from_storage(fmd)
         return convert_db_to_model(fmd)
 
+    async def can_read_file(self, user_id: UserID, file_id: StorageFileID):
+        async with self.engine.connect() as conn:
+            can = await get_file_access_rights(conn, int(user_id), file_id)
+            if not can.read:
+                raise FileAccessRightError(access_right="read", file_id=file_id)
+
     async def create_file_upload_links(
         self,
         user_id: UserID,

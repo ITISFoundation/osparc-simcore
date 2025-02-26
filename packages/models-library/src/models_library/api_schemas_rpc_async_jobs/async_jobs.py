@@ -1,6 +1,5 @@
 from datetime import datetime
 from typing import Any, TypeAlias
-from uuid import UUID
 
 from models_library.users import UserID
 from pydantic import BaseModel, model_validator
@@ -8,7 +7,7 @@ from typing_extensions import Self
 
 from ..progress_bar import ProgressReport
 
-AsyncJobId: TypeAlias = UUID
+AsyncJobId: TypeAlias = str
 
 
 class AsyncJobStatus(BaseModel):
@@ -36,7 +35,6 @@ class AsyncJobResult(BaseModel):
 
 class AsyncJobGet(BaseModel):
     job_id: AsyncJobId
-    job_name: str
 
 
 class AsyncJobAbort(BaseModel):
@@ -44,8 +42,8 @@ class AsyncJobAbort(BaseModel):
     job_id: AsyncJobId
 
 
-class AsyncJobAccessData(BaseModel):
+class AsyncJobNameData(BaseModel):
     """Data for controlling access to an async job"""
 
-    user_id: UserID | None
+    user_id: UserID
     product_name: str
