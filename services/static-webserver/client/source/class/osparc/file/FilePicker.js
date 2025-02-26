@@ -576,7 +576,7 @@ qx.Class.define("osparc.file.FilePicker", {
       }, this);
       folderViewer.addListener("requestDatasetFiles", e => {
         const data = e.getData();
-        filesTree.requestDatasetFiles(data.locationId, data.datasetId);
+        filesTree.requestPathItems(data.locationId, data.datasetId);
       }, this);
 
       const selectBtn = this.__selectButton = new qx.ui.form.Button(this.tr("Select")).set({

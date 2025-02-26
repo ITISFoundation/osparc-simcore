@@ -113,7 +113,7 @@ qx.Class.define("osparc.dashboard.DataBrowser", {
       foldersTree.populateTree()
         .then(datasetPromises => {
           Promise.all(datasetPromises)
-            .then(() => foldersTree.requestDatasetFiles(locationId, datasetId))
+            .then(() => foldersTree.requestPathItems(locationId, datasetId))
             .then(() => openSameFolder());
         })
         .catch(err => console.error(err));

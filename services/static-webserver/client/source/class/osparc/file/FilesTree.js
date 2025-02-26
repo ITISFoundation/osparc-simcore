@@ -151,7 +151,9 @@ qx.Class.define("osparc.file.FilesTree", {
       this.self().addLoadingChild(studyModel);
 
       const dataStore = osparc.store.Data.getInstance();
-      return dataStore.getItemsByLocationAndDataset("0", studyId)
+      const locationId = 0;
+      const path = studyId;
+      return dataStore.getItemsByLocationAndPath(locationId, path)
         .then(items => {
           if (items.length && "project_name" in items[0]) {
             this.__resetTree(items[0]["project_name"]);
@@ -212,6 +214,22 @@ qx.Class.define("osparc.file.FilesTree", {
       this.__populateLocations();
     },
 
+    requestPathItems: function(locationId, datasetId) {
+      if (this.__datasets.has(datasetId)) {
+        return null;
+      }
+
+      const dataStore = osparc.store.Data.getInstance();
+      const path = datasetId;
+      return dataStore.getItemsByLocationAndPath(locationId, path)
+        .then(items => {
+          const parentModel = this.__getDatasetModel(locationId, datasetId);
+          if (parentModel) {
+            this.__itemsToParentModel(locationId, datasetId, items);
+          }
+        });
+    },
+
     __resetChecks: function() {
       this.__locations = new Set();
       this.__datasets = new Set();
@@ -254,7 +272,7 @@ qx.Class.define("osparc.file.FilesTree", {
               item.setLoaded(true);
               const locationId = item.getLocation();
               const datasetId = item.getPath();
-              this.requestDatasetFiles(locationId, datasetId);
+              this.requestPathItems(locationId, datasetId);
             }
           }, this);
           item.addListener("dbltap", () => this.__itemSelected(), this);
@@ -372,21 +390,6 @@ qx.Class.define("osparc.file.FilesTree", {
         });
     },
 
-    requestDatasetFiles: function(locationId, datasetId) {
-      if (this.__datasets.has(datasetId)) {
-        return null;
-      }
-
-      const dataStore = osparc.store.Data.getInstance();
-      return dataStore.getItemsByLocationAndDataset(locationId, datasetId)
-        .then(items => {
-          const parentModel = this.__getDatasetModel(locationId, datasetId);
-          if (parentModel) {
-            this.__itemsToParentModel(locationId, datasetId, items);
-          }
-        });
-    },
-
     __getLocationModel: function(locationId) {
       const rootModel = this.getModel();
       const locationModels = rootModel.getChildren();
@@ -492,7 +495,7 @@ qx.Class.define("osparc.file.FilesTree", {
       if (openThis) {
         const datasetId = openThis.getItemId();
         this.openNodeAndParents(openThis);
-        this.requestDatasetFiles(locationId, datasetId);
+        this.requestPathItems(locationId, datasetId);
       }
     },
 

@@ -120,7 +120,7 @@ qx.Class.define("osparc.store.Data", {
       });
     },
 
-    getItemsByLocationAndDataset: function(locationId, datasetId) {
+    getItemsByLocationAndPath: function(locationId, path) {
       return new Promise((resolve, reject) => {
         // Get list of file meta data
         if (locationId === 1 && !osparc.data.Permissions.getInstance().canDo("storage.datcore.read")) {
@@ -129,8 +129,8 @@ qx.Class.define("osparc.store.Data", {
 
         const params = {
           url: {
-            locationId: locationId,
-            path: datasetId
+            locationId,
+            path,
           }
         };
         osparc.data.Resources.fetch("storagePaths", "getPaths", params)
