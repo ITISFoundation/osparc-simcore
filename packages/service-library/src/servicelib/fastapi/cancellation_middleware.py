@@ -5,7 +5,7 @@ from typing import NoReturn
 from starlette.requests import Request
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
-from .logging_utils import log_context
+from ..logging_utils import log_context
 
 _logger = logging.getLogger(__name__)
 
