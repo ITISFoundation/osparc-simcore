@@ -353,7 +353,12 @@ GenericCursor: TypeAlias = str | bytes
 
 class PathMetaData(BaseModel):
     path: Path
-    display_path: Path
+    display_path: Annotated[
+        Path,
+        Field(
+            description="Path with names instead of IDs (URL Encoded by parts as names may contain '/')"
+        ),
+    ]
     location_id: LocationID
     location: LocationName
     bucket_name: str
