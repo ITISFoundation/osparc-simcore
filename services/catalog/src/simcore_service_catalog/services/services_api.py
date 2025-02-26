@@ -1,6 +1,10 @@
 import logging
 
-from models_library.api_schemas_catalog.services import ServiceGetV2, ServiceUpdateV2
+from models_library.api_schemas_catalog.services import (
+    MyServiceGet,
+    ServiceGetV2,
+    ServiceUpdateV2,
+)
 from models_library.products import ProductName
 from models_library.rest_pagination import PageLimitInt
 from models_library.services_access import ServiceGroupAccessRightsV2
@@ -93,7 +97,7 @@ async def list_services_paginated(
         # injects access-rights
         access_rights: dict[
             tuple[str, str], list[ServiceAccessRightsAtDB]
-        ] = await repo.list_services_access_rights(
+        ] = await repo.batch_get_services_access_rights(
             ((s.key, s.version) for s in services), product_name=product_name
         )
         if not access_rights:
@@ -333,3 +337,33 @@ async def check_for_service(
             user_id=user_id,
             product_name=product_name,
         )
+
+
+async def batch_get_my_services(
+    *,
+    repo: ServicesRepository,
+    product_name: ProductName,
+    user_id: UserID,
+    ids: list[
+        tuple[
+            ServiceKey,
+            ServiceVersion,
+        ]
+    ],
+) -> list[MyServiceGet]:
+
+    raise NotImplementedError
+
+    # user_groups = []
+
+    # result = []
+
+    # services_access_rights = await repo.batch_get_services_access_rights(key_versions=ids, product_name=product_name)
+
+    # for service_key, service_version in ids:
+    #     my_access_rights = {"read": False, "execute": False}
+
+    #     if (service_access_rights_db := services_access_rights.get((service_key,service_version)))
+
+    #         if service_access_rights_db.gid in user_groups:
+    #             my_access_rights.append()

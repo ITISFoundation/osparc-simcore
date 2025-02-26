@@ -310,3 +310,11 @@ class ServiceUpdateV2(CatalogInputSchema):
 assert set(ServiceUpdateV2.model_fields.keys()) - set(  # nosec
     ServiceGetV2.model_fields.keys()
 ) == {"deprecated"}
+
+
+class MyServiceGet(CatalogOutputSchema):
+    key: ServiceKey
+    release: ServiceRelease
+
+    owner: GroupID
+    my_access_rights: ServiceGroupAccessRightsV2

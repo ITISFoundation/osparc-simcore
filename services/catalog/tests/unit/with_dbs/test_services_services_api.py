@@ -143,3 +143,69 @@ async def test_list_services_paginated(
 
     # since it is cached, it should only call it `limit` times
     assert mocked_director_service_api["get_service"].call_count == limit
+
+
+async def test_batch_get_my_services(
+    background_sync_task_mocked: None,
+    rabbitmq_and_rpc_setup_disabled: None,
+    mocked_director_service_api: MockRouter,
+    target_product: ProductName,
+    services_repo: ServicesRepository,
+    user_id: UserID,
+    director_client: DirectorApi,
+    create_fake_service_data: Callable,
+    services_db_tables_injector: Callable,
+):
+    # Create fake services data
+    service_key = "simcore/services/comp/some-service"
+    service_version_1 = "1.0.0"
+    service_version_2 = "2.0.0"
+    other_service_key = "simcore/services/comp/other-service"
+    other_service_version = "1.0.0"
+
+    fake_service_1 = create_fake_service_data(
+        service_key,
+        service_version_1,
+        team_access=None,
+        everyone_access=None,
+        product=target_product,
+    )
+    fake_service_2 = create_fake_service_data(
+        service_key,
+        service_version_2,
+        team_access="x",
+        everyone_access=None,
+        product=target_product,
+    )
+    fake_service_3 = create_fake_service_data(
+        other_service_key,
+        other_service_version,
+        team_access=None,
+        everyone_access=None,
+        product=target_product,
+    )
+
+    # Inject fake services into the database
+    await services_db_tables_injector([fake_service_1, fake_service_2, fake_service_3])
+
+    # Batch get my services
+    ids = [
+        (service_key, service_version_1),
+        (service_key, service_version_2),
+        (other_service_key, other_service_version),
+    ]
+
+    my_services = await services_api.batch_get_my_services(
+        repo=services_repo,
+        product_name=target_product,
+        user_id=user_id,
+        ids=ids,
+    )
+
+    assert len(my_services) == 3
+
+    # Check access rights
+    assert my_services[0].my_access_rights == {}
+    assert my_services[1].my_access_rights is not None
+    assert my_services[2].my_access_rights is not None
+    assert my_services[2].owner is not None
