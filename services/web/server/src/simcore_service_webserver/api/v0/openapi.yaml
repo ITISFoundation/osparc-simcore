@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: simcore-service-webserver
   description: Main service with an interface (http-API & websockets) to the web front-end
-  version: 0.59.0
+  version: 0.60.0
 servers:
 - url: ''
   description: webserver
@@ -6024,6 +6024,54 @@ paths:
                   $ref: '#/components/schemas/FileLocation'
                 type: array
                 title: Response List Storage Locations
+  /v0/storage/locations/{location_id}/paths:
+    get:
+      tags:
+      - storage
+      summary: List Storage Paths
+      description: Lists the files/directories in WorkingDirectory
+      operationId: list_storage_paths
+      parameters:
+      - name: location_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Location Id
+      - name: size
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          exclusiveMaximum: true
+          default: 20
+          title: Size
+          maximum: 50
+      - name: cursor
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Cursor
+      - name: fileFilter
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            format: path
+          - type: 'null'
+          title: Filefilter
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CursorPage_FileMetaDataGet_'
   /v0/storage/locations/{location_id}/datasets:
     get:
       tags:
@@ -8362,6 +8410,47 @@ components:
       required:
       - priceDollars
       title: CreateWalletPayment
+    CursorPage_FileMetaDataGet_:
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/FileMetaDataGet'
+          type: array
+          title: Items
+        total:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Total
+          description: Total items
+        current_page:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Current Page
+          description: Cursor to refetch the current page
+        current_page_backwards:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Current Page Backwards
+          description: Cursor to refetch the current page starting from the last item
+        previous_page:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Previous Page
+          description: Cursor for the previous page
+        next_page:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Next Page
+          description: Cursor for the next page
+      type: object
+      required:
+      - items
+      title: CursorPage[FileMetaDataGet]
     DatCoreFileLink:
       properties:
         store:
