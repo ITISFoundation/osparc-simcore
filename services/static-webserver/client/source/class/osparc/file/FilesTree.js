@@ -442,9 +442,9 @@ qx.Class.define("osparc.file.FilesTree", {
       let openThis = null;
       datasets.forEach(dataset => {
         const datasetData = osparc.data.Converters.createDirEntry(
-          dataset.display_name,
+          dataset["display_path"],
           locationId,
-          dataset.dataset_id
+          dataset["path"]
         );
         datasetData.isDataset = true;
         datasetData.loaded = false;
@@ -454,7 +454,7 @@ qx.Class.define("osparc.file.FilesTree", {
         locationModel.getChildren().append(datasetModel);
 
         // add cached files
-        const datasetId = dataset.dataset_id;
+        const datasetId = dataset["path"];
         const cachedData = dataStore.getFilesByLocationAndDatasetCached(locationId, datasetId);
         if (cachedData) {
           this.__filesToDataset(cachedData.location, cachedData.dataset, cachedData.files);

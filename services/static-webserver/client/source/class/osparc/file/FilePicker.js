@@ -155,10 +155,10 @@ qx.Class.define("osparc.file.FilePicker", {
         const params = {
           url: {
             locationId: outValue.store,
-            datasetId: outValue.dataset
+            path: outValue.dataset
           }
         };
-        osparc.data.Resources.fetch("storageFiles", "getByLocationAndDataset", params)
+        osparc.data.Resources.fetch("storagePaths", "getFiles", params)
           .then(files => {
             const fileMetadata = files.find(file => file.file_id === outValue.path);
             if (fileMetadata) {

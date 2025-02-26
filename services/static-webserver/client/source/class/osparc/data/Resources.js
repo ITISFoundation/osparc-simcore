@@ -1171,18 +1171,6 @@ qx.Class.define("osparc.data.Resources", {
         }
       },
       /*
-       * STORAGE DATASETS
-       */
-      "storageDatasets": {
-        useCache: false,
-        endpoints: {
-          getByLocation: {
-            method: "GET",
-            url: statics.API + "/storage/locations/{locationId}/datasets"
-          }
-        }
-      },
-      /*
        * STORAGE LOCATIONS
        */
       "storageLocations": {
@@ -1200,14 +1188,6 @@ qx.Class.define("osparc.data.Resources", {
       "storageFiles": {
         useCache: false,
         endpoints: {
-          getByLocationAndDataset: {
-            method: "GET",
-            url: statics.API + "/storage/locations/{locationId}/datasets/{datasetId}/metadata"
-          },
-          getByNode: {
-            method: "GET",
-            url: statics.API + "/storage/locations/0/files/metadata?uuid_filter={nodeId}"
-          },
           put: {
             method: "PUT",
             url: statics.API + "/storage/locations/{toLoc}/files/{fileName}?extra_location={fromLoc}&extra_source={fileUuid}"
@@ -1216,6 +1196,22 @@ qx.Class.define("osparc.data.Resources", {
             method: "DELETE",
             url: statics.API + "/storage/locations/{locationId}/files/{fileUuid}"
           }
+        }
+      },
+      /*
+       * STORAGE PATHS
+       */
+      "storagePaths": {
+        useCache: false,
+        endpoints: {
+          getDatasets: {
+            method: "GET",
+            url: statics.API + "/storage/locations/{locationId}/paths"
+          },
+          getFiles: {
+            method: "GET",
+            url: statics.API + "/storage/locations/{locationId}/paths?file_filter={path}"
+          },
         }
       },
       /*
