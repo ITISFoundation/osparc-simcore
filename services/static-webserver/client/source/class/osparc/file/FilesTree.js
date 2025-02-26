@@ -179,7 +179,7 @@ qx.Class.define("osparc.file.FilesTree", {
       const dataStore = osparc.store.Data.getInstance();
       return dataStore.getNodeFiles(nodeId)
         .then(files => {
-          const newChildren = osparc.data.Converters.fromDSMToVirtualTreeModel(null, files);
+          const newChildren = osparc.data.Converters.fromDSMToVirtualTreeModel(0, null, files);
           if (newChildren.length && // location
             newChildren[0].children.length && // study
             newChildren[0].children[0].children.length) { // node
@@ -385,11 +385,9 @@ qx.Class.define("osparc.file.FilesTree", {
       return dataStore.getFilesByLocationAndDataset(locationId, datasetId)
         .then(data => {
           const {
-            location,
-            dataset,
             files
           } = data;
-          this.__filesToDataset(location, dataset, files);
+          this.__filesToDataset(locationId, datasetId, files);
         });
     },
 
@@ -485,7 +483,7 @@ qx.Class.define("osparc.file.FilesTree", {
       if (datasetModel) {
         datasetModel.getChildren().removeAll();
         if (files.length) {
-          const locationData = osparc.data.Converters.fromDSMToVirtualTreeModel(datasetId, files);
+          const locationData = osparc.data.Converters.fromDSMToVirtualTreeModel(locationId, datasetId, files);
           const datasetData = locationData[0].children;
           datasetData[0].children.forEach(data => {
             this.self().attachPathLabel(datasetModel.getPathLabel(), data);
