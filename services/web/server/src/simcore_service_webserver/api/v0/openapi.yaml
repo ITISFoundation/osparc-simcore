@@ -8401,7 +8401,7 @@ components:
       - usdPerCredit
       - minPaymentAmountUsd
       title: CreditPriceGet
-    CursorPage_FileMetaDataGet_:
+    CursorPage_PathMetaDataGet_:
       properties:
         items:
           items:
