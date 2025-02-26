@@ -54,6 +54,9 @@ def _handle_pricing_plan_admin_exceptions(handler: Handler):
         try:
             return await handler(request)
 
+        except (ValueError,) as exc:
+            raise web.HTTPBadRequest(reason=f"{exc}") from exc
+
         except RPCServerError as exc:
             # NOTE: This will be improved; we will add a mapping between
             # RPC errors and user-friendly frontend errors to pass to the frontend.

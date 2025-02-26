@@ -7,12 +7,15 @@ from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
 )
 from models_library.products import ProductName
 from models_library.resource_tracker import (
+    PricingPlanClassification,
     PricingPlanCreate,
     PricingPlanId,
     PricingPlanUpdate,
     PricingUnitId,
     PricingUnitWithCostCreate,
     PricingUnitWithCostUpdate,
+    UnitExtraInfoLicense,
+    UnitExtraInfoTier,
 )
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
@@ -100,6 +103,10 @@ async def create_pricing_unit(
     app: web.Application, product_name: ProductName, data: PricingUnitWithCostCreate
 ) -> RutPricingUnitGet:
     rpc_client = get_rabbitmq_rpc_client(app)
+    pricing_plan = await pricing_plans.get_pricing_plan(
+        rpc_client, product_name=product_name, pricing_plan_id=data.pricing_plan_id
+    )
+    _validate_pricing_unit(pricing_plan.classification, data.unit_extra_info)
     return await pricing_units.create_pricing_unit(
         rpc_client, product_name=product_name, data=data
     )
@@ -109,9 +116,27 @@ async def update_pricing_unit(
     app: web.Application, product_name: ProductName, data: PricingUnitWithCostUpdate
 ) -> RutPricingUnitGet:
     rpc_client = get_rabbitmq_rpc_client(app)
+    pricing_plan = await pricing_plans.get_pricing_plan(
+        rpc_client, product_name=product_name, pricing_plan_id=data.pricing_plan_id
+    )
+    _validate_pricing_unit(pricing_plan.classification, data.unit_extra_info)
     return await pricing_units.update_pricing_unit(
         rpc_client, product_name=product_name, data=data
     )
+
+
+def _validate_pricing_unit(classification: PricingPlanClassification, unit_extra_info):
+    if classification == PricingPlanClassification.LICENSE:
+        if not isinstance(unit_extra_info, UnitExtraInfoLicense):
+            msg = "Expected UnitExtraInfoLicense (num_of_seats) for LICENSE classification"
+            raise ValueError(msg)
+    elif classification == PricingPlanClassification.TIER:
+        if not isinstance(unit_extra_info, UnitExtraInfoTier):
+            msg = "Expected UnitExtraInfoTier (CPU, RAM, VRAM) for TIER classification"
+            raise ValueError(msg)
+    else:
+        msg = "Not known pricing plan classification"
+        raise ValueError(msg)
 
 
 ## Pricing Plans to Service
