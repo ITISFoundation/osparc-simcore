@@ -172,7 +172,7 @@ qx.Class.define("osparc.file.FilesTree", {
     populateStudyTree: function(studyId) {
       const treeName = osparc.product.Utils.getStudyAlias({firstUpperCase: true}) + " Files";
       this.__resetTree(treeName);
-      let studyModel = this.getModel();
+      const studyModel = this.getModel();
       this.self().addLoadingChild(studyModel);
 
       const dataStore = osparc.store.Data.getInstance();
@@ -180,11 +180,11 @@ qx.Class.define("osparc.file.FilesTree", {
       const path = studyId;
       return dataStore.getItemsByLocationAndPath(locationId, path)
         .then(items => {
-          if (items.length && "project_name" in items[0]) {
-            this.__resetTree(items[0]["project_name"]);
+          if (items.length) {
+            const studyName = items[0]["display_path"].split("/")[0]
+            this.__resetTree(studyName);
           }
-          studyModel = this.getModel();
-          this.__itemsToDataset("0", studyId, items, studyModel);
+          this.__itemsToTree(locationId, path, items, studyModel);
 
           // select study item
           this.setSelection(new qx.data.Array([studyModel]));
@@ -236,6 +236,7 @@ qx.Class.define("osparc.file.FilesTree", {
         }
       }
       this.__addToLoadFilePath(locationId, datasetId, pathId);
+
       this.populateLocations();
     },
 
@@ -408,8 +409,10 @@ qx.Class.define("osparc.file.FilesTree", {
       return model;
     },
 
-    __itemsToTree: function(locationId, path, items) {
-      const parentModel = this.__getModelFromPath(locationId, path);
+    __itemsToTree: function(locationId, path, items, parentModel) {
+      if (!parentModel) {
+        parentModel = this.__getModelFromPath(locationId, path);
+      }
       if (parentModel) {
         parentModel.getChildren().removeAll();
         items.forEach(item => {
@@ -430,12 +433,12 @@ qx.Class.define("osparc.file.FilesTree", {
             );
             data.loaded = false;
             const model = this.__createModel(locationId, item["path"], data);
+            parentModel.getChildren().append(model);
             this.__pathModels.push({
               locationId,
               path: item["path"],
               model,
             });
-            parentModel.getChildren().append(model);
             this.self().addLoadingChild(model);
           }
         });
