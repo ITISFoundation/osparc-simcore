@@ -1177,7 +1177,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     },
 
     __workbenchChanged: function() {
-      this.__nodesTree.populateLocations();
+      this.__nodesTree.populateTree();
       this.__nodesTree.nodeSelected(this.__currentNodeId);
     },
 

@@ -28,7 +28,7 @@ qx.Class.define("osparc.widget.StudyTitleOnlyTree", {
 
   members: {
     // override
-    _populateTree: function() {
+    populateTree: function() {
       const study = this.getStudy();
       const newModel = osparc.widget.NodesTree.createStudyModel(study);
       this.setModel(newModel);

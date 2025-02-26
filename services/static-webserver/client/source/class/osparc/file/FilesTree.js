@@ -113,13 +113,6 @@ qx.Class.define("osparc.file.FilesTree", {
         }
       }
     },
-
-    attachPathLabel: function(srcPathLabel, data) {
-      data["pathLabel"] = srcPathLabel.concat(data["label"]);
-      if ("children" in data) {
-        data.children.forEach(child => this.self().attachPathLabel(data["pathLabel"], child));
-      }
-    }
   },
 
   members: {
@@ -431,19 +424,6 @@ qx.Class.define("osparc.file.FilesTree", {
       this.__filesReceived(locationId, path, items);
     },
 
-    __itemsToNode: function(files) {
-      const currentModel = this.getModel();
-      this.self().removeLoadingChild(currentModel);
-
-      files.forEach(file => this.self().attachPathLabel(currentModel.getPathLabel(), file));
-      const newModelToAdd = qx.data.marshal.Json.createModel(files, true);
-      currentModel.getChildren().append(newModelToAdd);
-      this.setModel(currentModel);
-      this.fireEvent("filesAddedToTree");
-
-      return newModelToAdd;
-    },
-
     __itemsToLocation: function(locationId, items) {
       const locationModel = this.__getLocationModel(locationId);
       if (!locationModel) {
@@ -502,6 +482,8 @@ qx.Class.define("osparc.file.FilesTree", {
       const root = this.getModel();
       const items = [];
       this.__getItemsInTree(root, items);
+      // OM: review this
+      // OM: also check if datasetId is needed
       return items.find(element => "getItemId" in element && element.getItemId() === itemId);
     },
 
