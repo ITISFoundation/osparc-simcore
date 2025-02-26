@@ -120,12 +120,15 @@ qx.Class.define("osparc.store.Data", {
             }
           };
           osparc.data.Resources.fetch("storagePaths", "getFiles", params)
-            .then(files => {
+            .then(pagResp => {
               const data = {
                 location: locationId,
                 dataset: datasetId,
-                files: files && files.length>0 ? files : []
+                files: []
               };
+              if (pagResp["items"] && pagResp["items"].length>0) {
+                data.files = pagResp["items"];
+              }
               // Add it to cache
               if (!(locationId in this.__filesByLocationAndDatasetCached)) {
                 this.__filesByLocationAndDatasetCached[locationId] = {};
