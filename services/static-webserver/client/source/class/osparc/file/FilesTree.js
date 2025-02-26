@@ -504,31 +504,6 @@ qx.Class.define("osparc.file.FilesTree", {
       }
     },
 
-    __itemsToDataset: function(locationId, datasetId, files, model) {
-      const datasetModel = model ? model : this.__getModelFromPath(locationId, datasetId);
-      if (datasetModel) {
-        datasetModel.getChildren().removeAll();
-        if (files.length) {
-          // OM here
-          const locationData = osparc.data.Converters.fromDSMToVirtualTreeModel(locationId, datasetId, files);
-          const datasetData = locationData[0].children;
-          datasetData[0].children.forEach(data => {
-            this.self().attachPathLabel(datasetModel.getPathLabel(), data);
-            const filesModel = qx.data.marshal.Json.createModel(data, true);
-            datasetModel.getChildren().append(filesModel);
-          });
-        }
-        // sort files
-        osparc.data.Converters.sortModelByLabel(datasetModel);
-
-        this.__rerender(datasetModel);
-
-        this.fireEvent("filesAddedToTree");
-      }
-
-      this.__filesReceived(locationId, datasetId, files);
-    },
-
     __rerender: function(item) {
       // Hack to trigger a rebuild of the item.
       // Without this sometimes the arrow giving access to the children is not rendered
