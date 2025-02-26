@@ -138,30 +138,15 @@ qx.Class.define("osparc.data.Converters", {
     },
 
     createFileEntry: function(displayPath, location, path, fileMetaData) {
-      if (displayPath === undefined) {
-        displayPath = "Unknown label";
-      }
-      if (location === undefined) {
-        location = "Unknown location";
-      }
-      if (fileId === undefined) {
-        fileId = "Unknown fileId";
-      }
-      if (lastModified === undefined) {
-        lastModified = (Math.floor(Math.random()*1000000)+1).toString();
-      }
-      if (size === undefined) {
-        size = 0;
-      }
       return {
         label: displayPath.split("/").slice(-1).pop(), // take last part of the display name
         displayPath,
         location,
-        datasetId,
-        fileId: path,
+        path,
         itemId: path,
-        lastModified,
-        size
+        fileId: fileMetaData["file_uuid"],
+        lastModified: fileMetaData["last_modified"],
+        size: fileMetaData["file_size"],
       };
     },
 
