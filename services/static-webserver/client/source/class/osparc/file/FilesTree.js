@@ -133,16 +133,15 @@ qx.Class.define("osparc.file.FilesTree", {
     __datasets: null,
     __loadPaths: null,
 
-    __resetChecks: function() {
-      this.__locations = new Set();
-      this.__datasets = new Set();
-    },
-
     resetCache: function() {
       this.__resetChecks();
 
       const dataStore = osparc.store.Data.getInstance();
       dataStore.resetCache();
+    },
+
+    populateTree: function() {
+      return this.__populateLocations();
     },
 
     populateStudyTree: function(studyId) {
@@ -198,10 +197,6 @@ qx.Class.define("osparc.file.FilesTree", {
         });
     },
 
-    populateTree: function() {
-      return this.__populateLocations();
-    },
-
     loadFilePath: function(outFileVal) {
       const locationId = outFileVal.store;
       let datasetId = "dataset" in outFileVal ? outFileVal.dataset : null;
@@ -217,40 +212,9 @@ qx.Class.define("osparc.file.FilesTree", {
       this.__populateLocations();
     },
 
-    __addToLoadFilePath: function(locationId, datasetId, pathId) {
-      if (datasetId) {
-        if (!(locationId in this.__loadPaths)) {
-          this.__loadPaths[locationId] = {};
-        }
-        if (!(datasetId in this.__loadPaths[locationId])) {
-          this.__loadPaths[locationId][datasetId] = new Set();
-        }
-        this.__loadPaths[locationId][datasetId].add(pathId);
-      }
-    },
-
-    __hasLocationNeedToBeLoaded: function(locationId) {
-      return (locationId in this.__loadPaths) && (Object.keys(this.__loadPaths[locationId]).length > 0);
-    },
-
-    __hasDatasetNeedToBeLoaded: function(locationId, datasetId) {
-      return (locationId in this.__loadPaths) && (datasetId in this.__loadPaths[locationId]) && (this.__loadPaths[locationId][datasetId].size > 0);
-    },
-
-    __filesReceived: function(locationId, datasetId, files) {
-      if (this.__hasDatasetNeedToBeLoaded(locationId, datasetId)) {
-        const paths = Array.from(this.__loadPaths[locationId][datasetId]);
-        for (let i=0; i<paths.length; i++) {
-          const path = paths[i];
-          for (let j=0; j<files.length; j++) {
-            const file = files[j];
-            if (file === path) {
-              this.__loadPaths[locationId].delete(datasetId);
-              return;
-            }
-          }
-        }
-      }
+    __resetChecks: function() {
+      this.__locations = new Set();
+      this.__datasets = new Set();
     },
 
     __resetTree: function(treeName, itemId) {
@@ -347,6 +311,42 @@ qx.Class.define("osparc.file.FilesTree", {
       }
       if (openThis) {
         this.openNodeAndParents(openThis);
+      }
+    },
+
+    __addToLoadFilePath: function(locationId, datasetId, pathId) {
+      if (datasetId) {
+        if (!(locationId in this.__loadPaths)) {
+          this.__loadPaths[locationId] = {};
+        }
+        if (!(datasetId in this.__loadPaths[locationId])) {
+          this.__loadPaths[locationId][datasetId] = new Set();
+        }
+        this.__loadPaths[locationId][datasetId].add(pathId);
+      }
+    },
+
+    __hasLocationNeedToBeLoaded: function(locationId) {
+      return (locationId in this.__loadPaths) && (Object.keys(this.__loadPaths[locationId]).length > 0);
+    },
+
+    __hasDatasetNeedToBeLoaded: function(locationId, datasetId) {
+      return (locationId in this.__loadPaths) && (datasetId in this.__loadPaths[locationId]) && (this.__loadPaths[locationId][datasetId].size > 0);
+    },
+
+    __filesReceived: function(locationId, datasetId, files) {
+      if (this.__hasDatasetNeedToBeLoaded(locationId, datasetId)) {
+        const paths = Array.from(this.__loadPaths[locationId][datasetId]);
+        for (let i=0; i<paths.length; i++) {
+          const path = paths[i];
+          for (let j=0; j<files.length; j++) {
+            const file = files[j];
+            if (file === path) {
+              this.__loadPaths[locationId].delete(datasetId);
+              return;
+            }
+          }
+        }
       }
     },
 
