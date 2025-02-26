@@ -13,7 +13,7 @@ from .models import TaskID, TaskIDParts, TaskStatus
 _logger = logging.getLogger(__name__)
 
 _CELERY_TASK_META_PREFIX = "celery-task-meta-"
-_PREFIX: Final[str] = "ct"
+_PREFIX: Final[str] = "ct"  # short for celery task, not Catania
 
 
 def _build_parts_prefix(name: str, task_id_parts: TaskIDParts) -> list[str]:
@@ -83,7 +83,7 @@ class CeleryTaskQueueClient:
         )
         redis = self._celery_app.backend.client
         if hasattr(redis, "keys") and (keys := redis.keys(search_key)):
-            return [f"{key}".lstrip(_CELERY_TASK_META_PREFIX) for key in keys]
+            return [f"{key}".removeprefix(_CELERY_TASK_META_PREFIX) for key in keys]
         return []
 
     @make_async()
