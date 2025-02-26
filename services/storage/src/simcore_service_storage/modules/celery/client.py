@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Coroutine, Final
+from typing import Any, Final
 from uuid import uuid4
 
 from celery import Celery
@@ -39,41 +39,31 @@ class CeleryTaskQueueClient:
         self._celery_app = celery_app
 
     @make_async()
-    def __send_task(self, task_name: str, task_id: TaskID, **task_params):
-        return self._celery_app.send_task(task_name, task_i=task_id, **task_params)
-
-    async def submit(
+    def send_task(
         self, task_name: str, *, task_id_parts: TaskIDParts, **task_params
     ) -> TaskID:
         task_id = _get_task_id(task_name, task_id_parts)
         _logger.debug("Submitting task %s: %s", task_name, task_id)
-        task = await self.__send_task(task_name, task_id=task_id, kwargs=task_params)
+        task = self._celery_app.send_task(
+            task_name, task_id=task_id, kwargs=task_params
+        )
         return task.id
 
     @make_async()
-    def __get_task(self, task_id: TaskID) -> Coroutine[Any, Any, Any]:
+    def get_task(self, task_id: TaskID) -> Any:
         return self._celery_app.tasks(task_id)
 
-    async def get_task(self, task_id: TaskID) -> Coroutine[Any, Any, Any]:
-        return await self.__get_task(task_id)
-
     @make_async()
-    def __abort_task(self, task_id: TaskID) -> Any:  # pylint: disable=R6301
+    def abort_task(self, task_id: TaskID) -> None:  # pylint: disable=R6301
         _logger.info("Aborting task %s", task_id)
         AbortableAsyncResult(task_id).abort()
 
-    async def abort_task(self, task_id: TaskID) -> None:
-        return await self.__abort_task(task_id)
-
     @make_async()
-    def __get_result(self, task_id: TaskID) -> Any:
+    def get_result(self, task_id: TaskID) -> Any:
         return self._celery_app.AsyncResult(task_id).result
 
-    async def get_result(self, task_id: TaskID) -> Any:
-        return await self.__get_result(task_id)
-
     def _get_progress_report(self, task_id: TaskID) -> ProgressReport | None:
-        result = self.__get_result(task_id)
+        result = self._celery_app.AsyncResult(task_id).result
         if result:
             try:
                 return ProgressReport.model_validate(result)
@@ -82,15 +72,12 @@ class CeleryTaskQueueClient:
         return None
 
     @make_async()
-    def __get_status(self, task_id: TaskID) -> TaskStatus:
+    def get_task_status(self, task_id: TaskID) -> TaskStatus:
         return TaskStatus(
             task_id=task_id,
             task_state=self._celery_app.AsyncResult(task_id).state,
             progress_report=self._get_progress_report(task_id),
         )
-
-    async def get_task_status(self, task_id: TaskID) -> TaskStatus:
-        return await self.__get_status(task_id)
 
     def _get_completed_task_ids(
         self, task_name: str, task_id_parts: TaskIDParts
@@ -106,7 +93,7 @@ class CeleryTaskQueueClient:
         return []
 
     @make_async()
-    def __list_tasks(self, task_name: str, *, task_id_parts: TaskIDParts) -> Any:
+    def list_tasks(self, task_name: str, *, task_id_parts: TaskIDParts) -> Any:
         all_task_ids = self._get_completed_task_ids(task_name, task_id_parts)
 
         for task_type in ["active", "registered", "scheduled", "revoked"]:
@@ -114,8 +101,3 @@ class CeleryTaskQueueClient:
                 all_task_ids.extend(task_ids)
 
         return all_task_ids
-
-    async def list_tasks(
-        self, task_name: str, *, task_id_parts: TaskIDParts
-    ) -> list[TaskID]:
-        return await self.__list_tasks(task_name, task_id_parts=task_id_parts)

@@ -48,7 +48,7 @@ async def test_sumitting_task_calling_async_function_results_with_success_state(
 ):
     task_id_parts = TaskIDParts(user_id=1)
 
-    task_id = await celery_task_queue_client.submit(
+    task_id = await celery_task_queue_client.send_task(
         "sync_archive",
         task_id_parts=task_id_parts,
         files=[f"file{n}" for n in range(30)],
@@ -72,7 +72,7 @@ async def test_sumitting_task_calling_async_function_results_with_success_state(
 async def test_submitting_task_with_failure_results_with_error(
     celery_task_queue_client: CeleryTaskQueueClient,
 ):
-    task_id = await celery_task_queue_client.submit(
+    task_id = await celery_task_queue_client.send_task(
         "failure_task", task_id_parts=TaskIDParts(user_id=1)
     )
 
@@ -96,7 +96,7 @@ async def test_submitting_task_with_failure_results_with_error(
 async def test_aborting_task_results_with_aborted_state(
     celery_task_queue_client: CeleryTaskQueueClient,
 ):
-    task_id = await celery_task_queue_client.submit(
+    task_id = await celery_task_queue_client.send_task(
         "dreamer_task", task_id_parts=TaskIDParts(user_id=1)
     )
 
