@@ -157,7 +157,7 @@ qx.Class.define("osparc.store.Data", {
               path: datasetId
             }
           };
-          osparc.data.Resources.fetch("storagePaths", "getFiles", params)
+          osparc.data.Resources.fetch("storagePaths", "getPaths", params)
             .then(pagResp => {
               if (pagResp["items"] && pagResp["items"].length>0) {
                 data.files = pagResp["items"];
@@ -186,7 +186,7 @@ qx.Class.define("osparc.store.Data", {
             path: nodePath,
           }
         };
-        osparc.data.Resources.fetch("storagePaths", "getFiles", params)
+        osparc.data.Resources.fetch("storagePaths", "getPaths", params)
           .then(files => {
             console.log("Node Files", files);
             if (files && files.length>0) {
