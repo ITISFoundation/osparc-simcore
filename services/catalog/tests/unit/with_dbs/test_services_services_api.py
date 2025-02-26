@@ -196,7 +196,8 @@ async def test_batch_get_my_services(
     ]
 
     my_services = await services_api.batch_get_my_services(
-        repo=services_repo,
+        services_repo,
+        director_client,
         product_name=target_product,
         user_id=user_id,
         ids=ids,
