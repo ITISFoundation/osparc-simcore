@@ -9,7 +9,7 @@ import pytest
 import uvicorn
 from fastapi import APIRouter, BackgroundTasks, FastAPI
 from pytest_simcore.helpers.logging_tools import log_context
-from servicelib.fastapi.cancellation_middleware import CancellationMiddleware
+from servicelib.fastapi.cancellation_middleware import RequestCancellationMiddleware
 from servicelib.utils import unused_port
 from yarl import URL
 
@@ -68,7 +68,7 @@ def fastapi_router(
 def fastapi_app(fastapi_router: APIRouter) -> FastAPI:
     app = FastAPI()
     app.include_router(fastapi_router)
-    app.add_middleware(CancellationMiddleware)
+    app.add_middleware(RequestCancellationMiddleware)
     return app
 
 

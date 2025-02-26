@@ -10,6 +10,7 @@ from fastapi import FastAPI
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi_pagination import add_pagination
 from servicelib.fastapi import timing_middleware
+from servicelib.fastapi.cancellation_middleware import RequestCancellationMiddleware
 from servicelib.fastapi.client_session import setup_client_session
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
 from servicelib.fastapi.profiler import ProfilerMiddleware
@@ -102,6 +103,8 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
         )
 
     app.add_middleware(GZipMiddleware)
+
+    app.add_middleware(RequestCancellationMiddleware)
 
     if settings.STORAGE_TRACING:
         initialize_tracing(app, settings.STORAGE_TRACING, APP_NAME)
