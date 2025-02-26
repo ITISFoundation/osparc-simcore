@@ -1,6 +1,6 @@
 import contextlib
 import logging
-from typing import Any, Coroutine, Final
+from typing import Any, Final
 from uuid import uuid4
 
 from celery import Celery   # type: ignore[import-untyped]
@@ -141,8 +141,3 @@ class CeleryTaskQueueClient:
                         all_task_ids.add(TaskUUID(value.removeprefix(search_key + _CELERY_TASK_ID_KEY_SEPARATOR)))
 
         return all_task_ids
-
-    async def list_tasks(
-        self, task_name: str, *, task_id_parts: TaskIDParts
-    ) -> list[TaskID]:
-        return await self.__list_tasks(task_name, task_id_parts=task_id_parts)
