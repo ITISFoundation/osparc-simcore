@@ -120,16 +120,11 @@ qx.Class.define("osparc.store.Data", {
       });
     },
 
-    getPathByLocationAndDataset: function(locationId, datasetId) {
-      const data = {
-        locationId,
-        datasetId,
-        items: []
-      };
+    getItemsByLocationAndDataset: function(locationId, datasetId) {
       return new Promise((resolve, reject) => {
         // Get list of file meta data
         if (locationId === 1 && !osparc.data.Permissions.getInstance().canDo("storage.datcore.read")) {
-          reject(data);
+          reject([]);
         }
 
         const params = {
@@ -141,13 +136,14 @@ qx.Class.define("osparc.store.Data", {
         osparc.data.Resources.fetch("storagePaths", "getPaths", params)
           .then(pagResp => {
             if (pagResp["items"] && pagResp["items"].length>0) {
-              data.items = pagResp["items"];
+              resolve(pagResp["items"]);
+            } else {
+              resolve([]);
             }
-            resolve(data);
           })
           .catch(err => {
             console.error(err);
-            reject(data);
+            reject([]);
           });
       });
     },
