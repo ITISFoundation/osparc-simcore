@@ -36,44 +36,24 @@ qx.Class.define("osparc.store.Data", {
   },
 
   members: {
-    __locationsCached: null,
     __datasetsByLocationCached: null,
     __filesByLocationAndDatasetCached: null,
 
     resetCache: function() {
-      this.__locationsCached = [];
       this.__datasetsByLocationCached = {};
       this.__filesByLocationAndDatasetCached = {};
-
-      osparc.store.Store.getInstance().reset("storageLocations");
-    },
-
-    getLocationsCached: function() {
-      const cache = this.__locationsCached;
-      if (cache && cache.length) {
-        return cache;
-      }
-      return null;
     },
 
     getLocations: function() {
       return new Promise((resolve, reject) => {
-        const cachedData = this.getLocationsCached();
-        if (cachedData) {
-          resolve(cachedData);
-        } else {
-          // Get available storage locations
-          osparc.data.Resources.get("storageLocations")
-            .then(locations => {
-              // Add them to cache
-              this.__locationsCached = locations;
-              resolve(locations);
-            })
-            .catch(err => {
-              console.error(err);
-              reject([]);
-            });
-        }
+        osparc.data.Resources.fetch("storageLocations", "getLocations")
+          .then(locations => {
+            resolve(locations);
+          })
+          .catch(err => {
+            console.error(err);
+            reject([]);
+          });
       });
     },
 
