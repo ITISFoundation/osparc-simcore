@@ -489,9 +489,9 @@ async def test_list_paths_with_display_name_containing_slashes(
     )
     assert page_of_paths.items[0].display_path == Path(
         quote(project_name_with_slashes, safe="")
-    ) / quote(
-        node_name_with_non_ascii, safe=""
-    ), "display path parts should be url encoded"
+    ) / quote(node_name_with_non_ascii, safe=""), (
+        "display path parts should be url encoded"
+    )
 
     # ls in the node workspace
     selected_node_id = NodeID(random.choice(list(project["workbench"])))  # noqa: S311
@@ -535,6 +535,46 @@ async def test_list_paths_with_display_name_containing_slashes(
                 *(expected_paths[0][0].parts[2:]),
             ],
         )
-        assert page_of_paths.items[0].display_path == Path(
-            expected_display_path
-        ), "display path parts should be url encoded"
+        assert page_of_paths.items[0].display_path == Path(expected_display_path), (
+            "display path parts should be url encoded"
+        )
+
+
+@pytest.mark.parametrize(
+    "project_params",
+    [
+        ProjectWithFilesParams(
+            num_nodes=5,
+            allowed_file_sizes=(TypeAdapter(ByteSize).validate_python("1b"),),
+            workspace_files_count=10,
+        )
+    ],
+    ids=str,
+)
+async def test_path_compute_size(
+    initialized_app: FastAPI,
+    client: httpx.AsyncClient,
+    location_id: LocationID,
+    user_id: UserID,
+    with_random_project_with_files: tuple[
+        dict[str, Any],
+        dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],
+    ],
+):
+    project, list_of_files = with_random_project_with_files
+    url = url_from_operation_id(
+        client,
+        initialized_app,
+        "compute_path_total_size",
+        location_id=f"{location_id}",
+        path=project["uuid"],
+    ).with_query(user_id=user_id)
+    response = await client.post(f"{url}")
+
+    received_size, _ = assert_status(
+        response,
+        status.HTTP_200_OK,
+        ByteSize,
+    )
+    assert received_size
+    assert received_size == 169
