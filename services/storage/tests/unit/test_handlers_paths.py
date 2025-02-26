@@ -11,6 +11,7 @@ import random
 from collections.abc import Awaitable, Callable
 from pathlib import Path
 from typing import Any, TypeAlias
+from urllib.parse import quote
 
 import httpx
 import pytest
@@ -387,16 +388,30 @@ async def test_list_paths_with_display_name_containing_slashes(
     sqlalchemy_async_engine: AsyncEngine,
 ):
     project, list_of_files = with_random_project_with_files
-    name_with_slashes = "something with/ a slash"
+    project_name_with_slashes = "soméà$èq¨thing with/ slas/h/es/"
+    node_name_with_non_ascii = "my node / is not ascii: éàèù"
+    # adjust project to contain "difficult" characters
     async with sqlalchemy_async_engine.begin() as conn:
         result = await conn.execute(
             sa.update(projects)
             .where(projects.c.uuid == project["uuid"])
-            .values(name=name_with_slashes)
-            .returning(sa.literal_column(f"{projects.c.name}"))
+            .values(name=project_name_with_slashes)
+            .returning(sa.literal_column(f"{projects.c.name}, {projects.c.workbench}"))
         )
         row = result.one()
-        assert row[0] == name_with_slashes
+        assert row.name == project_name_with_slashes
+        project_workbench = row.workbench
+        assert len(project_workbench) == 1
+        node = next(iter(project_workbench.values()))
+        node["label"] = node_name_with_non_ascii
+        result = await conn.execute(
+            sa.update(projects)
+            .where(projects.c.uuid == project["uuid"])
+            .values(workbench=project_workbench)
+            .returning(sa.literal_column(f"{projects.c.name}, {projects.c.workbench}"))
+        )
+        row = result.one()
+
     # ls the root
     file_filter = None
     expected_paths = [(Path(project["uuid"]), False)]
@@ -410,10 +425,27 @@ async def test_list_paths_with_display_name_containing_slashes(
         expected_paths=expected_paths,
     )
 
-    assert page_of_paths.items[0].display_path == Path(name_with_slashes)
+    assert page_of_paths.items[0].display_path == Path(
+        quote(project_name_with_slashes, safe="")
+    ), "display path parts should be url encoded"
 
+    # ls the nodes to ensure / is still there between project and node
     file_filter = Path(project["uuid"])
     expected_paths = sorted(
         ((file_filter / node_key, False) for node_key in project["workbench"]),
         key=lambda x: x[0],
     )
+    assert len(expected_paths) == 1, "test configuration problem"
+    page_of_paths = await _assert_list_paths(
+        initialized_app,
+        client,
+        location_id,
+        user_id,
+        file_filter=file_filter,
+        expected_paths=expected_paths,
+    )
+    assert page_of_paths.items[0].display_path == Path(
+        quote(project_name_with_slashes, safe="")
+    ) / quote(
+        node_name_with_non_ascii, safe=""
+    ), "display path parts should be url encoded"

@@ -369,7 +369,7 @@ class PathMetaData(BaseModel):
     def update_display_fields(self, id_name_mapping: dict[str, str]) -> None:
         display_path = f"{self.path}"
         for old, new in id_name_mapping.items():
-            display_path = display_path.replace(old, new)
+            display_path = display_path.replace(old, urllib.parse.quote(new, safe=""))
         self.display_path = Path(display_path)
 
         if self.file_meta_data:
