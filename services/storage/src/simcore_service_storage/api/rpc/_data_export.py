@@ -10,9 +10,9 @@ from models_library.api_schemas_storage.data_export_async_jobs import (
 )
 from servicelib.rabbitmq import RPCRouter
 
-from ...dsm import get_dsm_provider
+from ...dsm import DatCoreDataManager, get_dsm_provider
 from ...modules.datcore_adapter.datcore_adapter import DatcoreAdapterError
-from ...simcore_s3_dsm import FileAccessRightError
+from ...simcore_s3_dsm import FileAccessRightError, SimcoreS3DataManager
 
 router = RPCRouter()
 
@@ -33,7 +33,11 @@ async def start_data_export(
 
     try:
         for _id in data_export_start.file_and_folder_ids:
-            _ = await dsm.get_file(user_id=data_export_start.user_id, file_id=_id)
+            if isinstance(dsm, DatCoreDataManager):
+                _ = await dsm.get_file(user_id=data_export_start.user_id, file_id=_id)
+            elif isinstance(dsm, SimcoreS3DataManager):
+                await dsm.can_read_file(user_id=data_export_start.user_id, file_id=_id)
+
     except (FileAccessRightError, DatcoreAdapterError) as err:
         raise AccessRightError(
             user_id=data_export_start.user_id,
