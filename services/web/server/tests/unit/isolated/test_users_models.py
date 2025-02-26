@@ -3,9 +3,9 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
+import itertools
 from copy import deepcopy
 from datetime import UTC, datetime
-from pprint import pformat
 from typing import Any
 
 import pytest
@@ -19,35 +19,41 @@ from models_library.generics import Envelope
 from models_library.users import UserThirdPartyToken
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import BaseModel
+from pytest_simcore.pydantic_models import (
+    assert_validation_model,
+    iter_model_examples_in_class,
+)
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.users._common.models import ToUserUpdateDB
 
 
 @pytest.mark.parametrize(
-    "model_cls",
-    [MyProfileGet, UserThirdPartyToken],
+    "model_cls, example_name, example_data",
+    itertools.chain(
+        iter_model_examples_in_class(MyProfileGet),
+        iter_model_examples_in_class(UserThirdPartyToken),
+    ),
 )
 def test_user_models_examples(
-    model_cls: type[BaseModel], model_cls_examples: dict[str, Any]
+    model_cls: type[BaseModel], example_name: str, example_data: Any
 ):
-    for name, example in model_cls_examples.items():
-        print(name, ":", pformat(example))
-        model_instance = model_cls(**example)
-        assert model_instance, f"Failed with {name}"
+    model_instance = assert_validation_model(
+        model_cls, example_name=example_name, example_data=example_data
+    )
 
-        model_enveloped = Envelope[model_cls].from_data(
-            model_instance.model_dump(by_alias=True)
-        )
-        model_array_enveloped = Envelope[list[model_cls]].from_data(
-            [
-                model_instance.model_dump(by_alias=True),
-                model_instance.model_dump(by_alias=True),
-            ]
-        )
+    model_enveloped = Envelope[model_cls].from_data(
+        model_instance.model_dump(by_alias=True)
+    )
+    model_array_enveloped = Envelope[list[model_cls]].from_data(
+        [
+            model_instance.model_dump(by_alias=True),
+            model_instance.model_dump(by_alias=True),
+        ]
+    )
 
-        assert model_enveloped.error is None
-        assert model_array_enveloped.error is None
+    assert model_enveloped.error is None
+    assert model_array_enveloped.error is None
 
 
 @pytest.fixture
