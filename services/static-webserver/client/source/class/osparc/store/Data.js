@@ -62,6 +62,8 @@ qx.Class.define("osparc.store.Data", {
         } else {
           osparc.data.Resources.fetch("storageLocations", "getLocations")
             .then(locations => {
+              // Add them to cache
+              this.__locationsCached = locations;
               resolve(locations);
             })
             .catch(err => {
@@ -108,6 +110,8 @@ qx.Class.define("osparc.store.Data", {
               if (pagResp["items"] && pagResp["items"].length>0) {
                 data.datasets = pagResp["items"];
               }
+              // Add it to cache
+              this.__datasetsByLocationCached[locationId] = data.datasets;
               resolve(data);
             })
             .catch(err => {
