@@ -20,14 +20,14 @@ FRONTEND_APPS_AVAILABLE = frozenset(
     # These are the apps built right now by static-webserver/client
     {
         "osparc",
-        "tis",
-        "tiplite",
         "s4l",
-        "s4llite",
         "s4lacad",
-        "s4lengine",
         "s4ldesktop",
         "s4ldesktopacad",
+        "s4lengine",
+        "s4llite",
+        "tiplite",
+        "tis",
     }
 )
 FRONTEND_APP_DEFAULT = "osparc"

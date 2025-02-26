@@ -20,7 +20,6 @@ from pytest_simcore.pydantic_models import (
     walk_model_examples_in_package,
 )
 from simcore_postgres_database.models.products import products as products_table
-from simcore_service_webserver.constants import FRONTEND_APPS_AVAILABLE
 from simcore_service_webserver.products.models import Product
 
 
@@ -126,7 +125,20 @@ def test_safe_load_empty_blanks_on_string_cols_from_db(
     }
 
 
-@pytest.mark.parametrize("expected_product_name", list(FRONTEND_APPS_AVAILABLE))
+@pytest.mark.parametrize(
+    "expected_product_name",
+    [
+        "osparc",
+        "s4l",
+        "s4lacad",
+        "s4ldesktop",
+        "s4ldesktopacad",
+        "s4lengine",
+        "s4llite",
+        "tiplite",
+        "tis",
+    ],
+)
 def test_product_name_needs_front_end(
     faker: Faker,
     expected_product_name: ProductName,
