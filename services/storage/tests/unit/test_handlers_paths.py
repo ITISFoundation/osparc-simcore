@@ -14,7 +14,7 @@ from typing import Any, TypeAlias
 
 import httpx
 import pytest
-from faker import Faker
+import sqlalchemy as sa
 from fastapi import FastAPI, status
 from fastapi_pagination.cursor import CursorPage
 from models_library.api_schemas_storage.storage_schemas import PathMetaDataGet
@@ -24,6 +24,8 @@ from pydantic import ByteSize, TypeAdapter
 from pytest_simcore.helpers.fastapi import url_from_operation_id
 from pytest_simcore.helpers.httpx_assert_checks import assert_status
 from pytest_simcore.helpers.storage_utils import FileIDDict, ProjectWithFilesParams
+from simcore_postgres_database.models.projects import projects
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 pytest_simcore_core_services_selection = ["postgres"]
 pytest_simcore_ops_services_selection = ["adminer"]
@@ -143,7 +145,6 @@ async def test_list_paths_pagination(
         dict[str, Any],
         dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],
     ],
-    faker: Faker,
 ):
     project, list_of_files = with_random_project_with_files
     num_nodes = len(list(project["workbench"]))
@@ -361,3 +362,58 @@ async def test_list_paths(
             expected_paths=expected_paths,
             check_total=False,
         )
+
+
+@pytest.mark.parametrize(
+    "project_params",
+    [
+        ProjectWithFilesParams(
+            num_nodes=1,
+            allowed_file_sizes=(TypeAdapter(ByteSize).validate_python("0b"),),
+            workspace_files_count=0,
+        )
+    ],
+    ids=str,
+)
+async def test_list_paths_with_display_name_containing_slashes(
+    initialized_app: FastAPI,
+    client: httpx.AsyncClient,
+    location_id: LocationID,
+    user_id: UserID,
+    with_random_project_with_files: tuple[
+        dict[str, Any],
+        dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],
+    ],
+    sqlalchemy_async_engine: AsyncEngine,
+):
+    project, list_of_files = with_random_project_with_files
+    name_with_slashes = "something with/ a slash"
+    async with sqlalchemy_async_engine.begin() as conn:
+        result = await conn.execute(
+            sa.update(projects)
+            .where(projects.c.uuid == project["uuid"])
+            .values(name=name_with_slashes)
+            .returning(sa.literal_column(f"{projects.c.name}"))
+        )
+        row = result.one()
+        assert row[0] == name_with_slashes
+    # ls the root
+    file_filter = None
+    expected_paths = [(Path(project["uuid"]), False)]
+
+    page_of_paths = await _assert_list_paths(
+        initialized_app,
+        client,
+        location_id,
+        user_id,
+        file_filter=file_filter,
+        expected_paths=expected_paths,
+    )
+
+    assert page_of_paths.items[0].display_path == Path(name_with_slashes)
+
+    file_filter = Path(project["uuid"])
+    expected_paths = sorted(
+        ((file_filter / node_key, False) for node_key in project["workbench"]),
+        key=lambda x: x[0],
+    )

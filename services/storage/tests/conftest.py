@@ -847,7 +847,6 @@ async def with_random_project_with_files(
         ],
     ],
     project_params: ProjectWithFilesParams,
-    faker: Faker,
 ) -> tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],]:
     return await random_project_with_files(project_params)
 
