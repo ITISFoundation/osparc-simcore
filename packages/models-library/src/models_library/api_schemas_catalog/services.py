@@ -1,6 +1,7 @@
 from datetime import datetime
-from typing import Any, TypeAlias
+from typing import Annotated, Any, TypeAlias
 
+from common_library.basic_types import DEFAULT_FACTORY
 from models_library.rpc_pagination import PageRpc
 from pydantic import ConfigDict, Field, HttpUrl, NonNegativeInt
 from pydantic.config import JsonDict
@@ -154,9 +155,10 @@ _EXAMPLE_SLEEPER: dict[str, Any] = {
 class ServiceGet(
     ServiceMetaDataPublished, ServiceAccessRights, ServiceMetaDataEditable
 ):  # pylint: disable=too-many-ancestors
-    owner: LowerCaseEmailStr | None = Field(
-        description="None when the owner email cannot be found in the database"
-    )
+    owner: Annotated[
+        LowerCaseEmailStr | None,
+        Field(description="None when the owner email cannot be found in the database"),
+    ]
 
     @staticmethod
     def _update_json_schema_extra(schema: JsonDict) -> None:
@@ -169,7 +171,7 @@ class ServiceGet(
     )
 
 
-class ServiceGetV2(CatalogOutputSchema):
+class ServiceGetV2Base(CatalogOutputSchema):
     # Model used in catalog's rpc and rest interfaces
     key: ServiceKey
     version: ServiceVersion
@@ -183,13 +185,14 @@ class ServiceGetV2(CatalogOutputSchema):
 
     version_display: str | None = None
 
-    service_type: ServiceType = Field(default=..., alias="type")
+    service_type: Annotated[ServiceType, Field(alias="type")]
 
     contact: LowerCaseEmailStr | None
-    authors: list[Author] = Field(..., min_length=1)
-    owner: LowerCaseEmailStr | None = Field(
-        description="None when the owner email cannot be found in the database"
-    )
+    authors: Annotated[list[Author], Field(min_length=1)]
+    owner: Annotated[
+        LowerCaseEmailStr | None,
+        Field(description="None when the owner email cannot be found in the database"),
+    ]
 
     inputs: ServiceInputsDict
     outputs: ServiceOutputsDict
@@ -202,12 +205,18 @@ class ServiceGetV2(CatalogOutputSchema):
     classifiers: list[str] | None = []
     quality: dict[str, Any] = {}
 
-    history: list[ServiceRelease] = Field(
-        default_factory=list,
-        description="history of releases for this service at this point in time, starting from the newest to the oldest."
-        " It includes current release.",
-        json_schema_extra={"default": []},
-    )
+
+class ServiceGetV2(ServiceGetV2Base):
+    # Model used in catalog's rpc and rest interfaces
+    history: Annotated[
+        list[ServiceRelease],
+        Field(
+            default_factory=list,
+            description="history of releases for this service at this point in time, starting from the newest to the oldest."
+            " It includes current release.",
+            json_schema_extra={"default": []},
+        ),
+    ] = DEFAULT_FACTORY
 
     @staticmethod
     def _update_json_schema_extra(schema: JsonDict) -> None:
@@ -276,9 +285,22 @@ class ServiceGetV2(CatalogOutputSchema):
     )
 
 
+class ServiceItemList(ServiceGetV2Base):
+    release: ServiceRelease
+    history: Annotated[
+        list[ServiceRelease],
+        Field(
+            default_factory=list,
+            deprecated=True,
+            description="History will be replaced by current 'release' instead",
+            json_schema_extra={"default": []},
+        ),
+    ] = DEFAULT_FACTORY
+
+
 PageRpcServicesGetV2: TypeAlias = PageRpc[
     # WARNING: keep this definition in models_library and not in the RPC interface
-    ServiceGetV2
+    ServiceItemList
 ]
 
 ServiceResourcesGet: TypeAlias = ServiceResourcesDict

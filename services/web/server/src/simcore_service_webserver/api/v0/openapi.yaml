@@ -4927,36 +4927,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_dict_Annotated_str__StringConstraints___ImageResources__'
-  /v0/projects/-/nodes/-/services:
-    get:
-      tags:
-      - projects
-      - nodes
-      summary: List Projects Services
-      description: Lists all services used in the user's projects **grouped by project**
-      operationId: list_projects_services
-      parameters:
-      - name: limit
-        in: query
-        required: false
-        schema:
-          type: integer
-          default: 20
-          title: Limit
-      - name: offset
-        in: query
-        required: false
-        schema:
-          type: integer
-          default: 0
-          title: Offset
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Page_ProjectNodeServicesGet_'
   /v0/projects/{project_id}/nodes/-/services:
     get:
       tags:
@@ -12439,24 +12409,6 @@ components:
       - _links
       - data
       title: Page[ProjectListItem]
-    Page_ProjectNodeServicesGet_:
-      properties:
-        _meta:
-          $ref: '#/components/schemas/PageMetaInfoLimitOffset'
-        _links:
-          $ref: '#/components/schemas/PageLinks'
-        data:
-          items:
-            $ref: '#/components/schemas/ProjectNodeServicesGet'
-          type: array
-          title: Data
-      additionalProperties: false
-      type: object
-      required:
-      - _meta
-      - _links
-      - data
-      title: Page[ProjectNodeServicesGet]
     Page_ServiceRunGet_:
       properties:
         _meta:
