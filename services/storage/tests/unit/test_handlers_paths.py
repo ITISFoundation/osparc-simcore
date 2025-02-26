@@ -18,7 +18,10 @@ import pytest
 import sqlalchemy as sa
 from fastapi import FastAPI, status
 from fastapi_pagination.cursor import CursorPage
-from models_library.api_schemas_storage.storage_schemas import PathMetaDataGet
+from models_library.api_schemas_storage.storage_schemas import (
+    PathMetaDataGet,
+    PathTotalSizeCreate,
+)
 from models_library.api_schemas_webserver.storage import MAX_NUMBER_OF_PATHS_PER_PAGE
 from models_library.projects_nodes_io import LocationID, NodeID, SimcoreS3FileID
 from models_library.users import UserID
@@ -571,10 +574,11 @@ async def test_path_compute_size(
     ).with_query(user_id=user_id)
     response = await client.post(f"{url}")
 
-    received_size, _ = assert_status(
+    received, _ = assert_status(
         response,
         status.HTTP_200_OK,
-        ByteSize,
+        PathTotalSizeCreate,
     )
-    assert received_size
-    assert received_size == 169
+    assert received
+    assert received.path == Path(project["uuid"])
+    assert received.size == 169

@@ -4,8 +4,13 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends
 from fastapi_pagination import create_page
-from models_library.api_schemas_storage.storage_schemas import PathMetaDataGet
+from models_library.api_schemas_storage.storage_schemas import (
+    PathMetaDataGet,
+    PathTotalSizeCreate,
+)
+from models_library.generics import Envelope
 from models_library.users import UserID
+from pydantic import ByteSize
 from servicelib.fastapi.rest_pagination import (
     CustomizedPathsCursorPage,
     CustomizedPathsCursorPageParams,
@@ -45,4 +50,18 @@ async def list_paths(
         total=total_number,
         params=page_params,
         next_=next_cursor,
+    )
+
+
+@router.post(
+    "/locations/{location_id}/paths/{path:path}:size",
+    response_model=Envelope[PathTotalSizeCreate],
+)
+async def compute_path_total_size(
+    dsm: Annotated[BaseDataManager, Depends(get_data_manager)],
+    user_id: UserID,
+    path: Path,
+):
+    return Envelope[PathTotalSizeCreate](
+        data=PathTotalSizeCreate(path=path, size=ByteSize(238723))
     )
