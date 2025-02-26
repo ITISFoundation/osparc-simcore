@@ -286,7 +286,10 @@ assert isinstance(RutPricingPlanGet.model_config["json_schema_extra"]["examples"
 
 
 @pytest.fixture(
-    params=RutPricingPlanGet.model_config["json_schema_extra"]["examples"],
+    params=[
+        RutPricingPlanGet.model_config["json_schema_extra"]["examples"][0],
+        RutPricingPlanGet.model_config["json_schema_extra"]["examples"][1],
+    ],
     ids=["with ec2 restriction", "without"],
 )
 def default_pricing_plan(request: pytest.FixtureRequest) -> RutPricingPlanGet:

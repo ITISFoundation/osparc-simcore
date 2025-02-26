@@ -35,13 +35,17 @@ class RutPricingUnitGet(BaseModel):
                     "current_cost_per_unit": 5.7,
                     "current_cost_per_unit_id": 1,
                     "default": True,
-                    "specific_info": hw_config_example,
-                }
-                for hw_config_example in HardwareInfo.model_config["json_schema_extra"][  # type: ignore[index,union-attr]
-                    "examples"
-                ]
-            ]
-            + [
+                    "specific_info": HardwareInfo.model_config["json_schema_extra"]["examples"][0],  # type: ignore [index]
+                },
+                {
+                    "pricing_unit_id": 1,
+                    "unit_name": "SMALL",
+                    "unit_extra_info": UnitExtraInfoTier.model_config["json_schema_extra"]["examples"][0],  # type: ignore [index]
+                    "current_cost_per_unit": 5.7,
+                    "current_cost_per_unit_id": 1,
+                    "default": True,
+                    "specific_info": HardwareInfo.model_config["json_schema_extra"]["examples"][1],  # type: ignore [index]
+                },
                 {
                     "pricing_unit_id": 2,
                     "unit_name": "5 seats",
@@ -49,12 +53,8 @@ class RutPricingUnitGet(BaseModel):
                     "current_cost_per_unit": 10.5,
                     "current_cost_per_unit_id": 2,
                     "default": False,
-                    "specific_info": HardwareInfo.model_config["json_schema_extra"][  # type: ignore [index]
-                        "examples"
-                    ][
-                        1  # type: ignore [index]
-                    ],
-                }
+                    "specific_info": HardwareInfo.model_config["json_schema_extra"]["examples"][1],  # type: ignore [index]
+                },
             ]
         }
     )
@@ -106,6 +106,20 @@ class RutPricingPlanGet(BaseModel):
                     "pricing_units": [
                         RutPricingUnitGet.model_config["json_schema_extra"]["examples"][  # type: ignore [index]
                             0  # type: ignore [index]
+                        ]
+                    ],
+                    "is_active": True,
+                },
+                {
+                    "pricing_plan_id": 1,
+                    "display_name": "Pricing Plan for Sleeper",
+                    "description": "Special Pricing Plan for Sleeper",
+                    "classification": "TIER",
+                    "created_at": "2023-01-11 13:11:47.293595",
+                    "pricing_plan_key": "pricing-plan-sleeper",
+                    "pricing_units": [
+                        RutPricingUnitGet.model_config["json_schema_extra"]["examples"][  # type: ignore [index]
+                            1  # type: ignore [index]
                         ]
                     ],
                     "is_active": True,
