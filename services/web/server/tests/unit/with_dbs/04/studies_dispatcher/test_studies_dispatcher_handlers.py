@@ -5,7 +5,6 @@
 # pylint: disable=unused-variable
 
 import asyncio
-import json
 import re
 import urllib.parse
 from collections.abc import AsyncIterator
@@ -18,11 +17,14 @@ from aiohttp import ClientResponse, ClientSession
 from aiohttp.test_utils import TestClient, TestServer
 from aioresponses import aioresponses
 from models_library.projects_state import ProjectLocked, ProjectStatus
-from pydantic import BaseModel, ByteSize, TypeAdapter, ValidationError
+from pydantic import BaseModel, ByteSize, TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import UserInfoDict, UserRole
-from pytest_simcore.pydantic_models import walk_model_examples_in_package
+from pytest_simcore.pydantic_models import (
+    assert_validation_model,
+    walk_model_examples_in_package,
+)
 from servicelib.aiohttp import status
 from settings_library.redis import RedisSettings
 from settings_library.utils_session import DEFAULT_SESSION_COOKIE_NAME
@@ -238,16 +240,11 @@ async def test_api_list_supported_filetypes(client: TestClient):
     walk_model_examples_in_package(simcore_service_webserver.studies_dispatcher),
 )
 def test_model_examples(
-    model_cls: type[BaseModel], example_name: int, example_data: Any
+    model_cls: type[BaseModel], example_name: str, example_data: Any
 ):
-    try:
-        assert model_cls.model_validate(example_data) is not None
-    except ValidationError as err:
-        pytest.fail(
-            f"{example_name} is invalid {model_cls.__module__}.{model_cls.__name__}:"
-            f"\n{json.dumps(example_data, indent=1)}"
-            f"\nError: {err}"
-        )
+    assert_validation_model(
+        model_cls, example_name=example_name, example_data=example_data
+    )
 
 
 async def test_api_list_services(client: TestClient):
