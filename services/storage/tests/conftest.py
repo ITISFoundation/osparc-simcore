@@ -8,9 +8,9 @@
 
 import asyncio
 import logging
+import random
 import sys
 from collections.abc import AsyncIterator, Awaitable, Callable
-from contextlib import AbstractAsyncContextManager, asynccontextmanager
 from pathlib import Path
 from typing import Any, Final, cast
 
@@ -36,7 +36,7 @@ from models_library.api_schemas_storage.storage_schemas import (
 from models_library.basic_types import SHA256Str
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
-from models_library.projects_nodes_io import LocationID, SimcoreS3FileID
+from models_library.projects_nodes_io import LocationID, SimcoreS3FileID, StorageFileID
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import ByteSize, TypeAdapter
@@ -46,12 +46,17 @@ from pytest_simcore.helpers.httpx_assert_checks import assert_status
 from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.monkeypatch_envs import delenvs_from_dict, setenvs_from_dict
 from pytest_simcore.helpers.s3 import upload_file_to_presigned_link
-from pytest_simcore.helpers.storage_utils import FileIDDict
+from pytest_simcore.helpers.storage_utils import (
+    FileIDDict,
+    ProjectWithFilesParams,
+    get_updated_project,
+)
 from pytest_simcore.helpers.storage_utils_file_meta_data import (
     assert_file_meta_data_in_db,
 )
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.aiohttp import status
+from servicelib.utils import limited_gather
 from simcore_postgres_database.storage_models import file_meta_data, projects, users
 from simcore_service_storage.core.application import create_app
 from simcore_service_storage.core.settings import ApplicationSettings
@@ -87,6 +92,7 @@ pytest_plugins = [
     "pytest_simcore.repository_paths",
     "pytest_simcore.simcore_storage_data_models",
     "pytest_simcore.simcore_storage_datcore_adapter",
+    "pytest_simcore.simcore_storage_service",
 ]
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
@@ -432,25 +438,6 @@ def upload_file(
 
 
 @pytest.fixture
-def create_simcore_file_id(
-    faker: Faker,
-) -> Callable[[ProjectID, NodeID, str, Path | None], SimcoreS3FileID]:
-    def _creator(
-        project_id: ProjectID,
-        node_id: NodeID,
-        file_name: str,
-        file_base_path: Path | None = None,
-    ) -> SimcoreS3FileID:
-        s3_file_name = file_name
-        if file_base_path:
-            s3_file_name = f"{file_base_path / file_name}"
-        clean_path = Path(f"{project_id}/{node_id}/{s3_file_name}")
-        return TypeAdapter(SimcoreS3FileID).validate_python(f"{clean_path}")
-
-    return _creator
-
-
-@pytest.fixture
 async def with_versioning_enabled(
     s3_client: S3Client,
     storage_s3_bucket: S3BucketName,
@@ -467,10 +454,10 @@ async def create_empty_directory(
     create_upload_file_link_v2: Callable[..., Awaitable[FileUploadSchema]],
     initialized_app: FastAPI,
     client: httpx.AsyncClient,
-    project_id: ProjectID,
-    node_id: NodeID,
-) -> Callable[..., Awaitable[FileUploadSchema]]:
-    async def _directory_creator(dir_name: str):
+) -> Callable[[str, ProjectID, NodeID], Awaitable[SimcoreS3FileID]]:
+    async def _directory_creator(
+        dir_name: str, project_id: ProjectID, node_id: NodeID
+    ) -> SimcoreS3FileID:
         # creating an empty directory goes through the same procedure as uploading a multipart file
         # done by using 3 calls:
         # 1. create the link as a directory
@@ -528,9 +515,26 @@ async def create_empty_directory(
                     f"--> done waiting, data is completely uploaded [{attempt.retry_state.retry_object.statistics}]",
                 )
 
-        return directory_file_upload
+        return directory_file_id
 
     return _directory_creator
+
+
+async def _upload_file_to_s3(
+    s3_client: SimcoreS3API,
+    faker: Faker,
+    *,
+    s3_bucket: S3BucketName,
+    local_file: Path,
+    file_id: SimcoreS3FileID,
+) -> dict[SHA256Str, FileIDDict]:
+    await s3_client.upload_file(
+        bucket=s3_bucket,
+        file=local_file,
+        object_key=file_id,
+        bytes_transfered_cb=None,
+    )
+    return {file_id: FileIDDict(path=local_file, sha256_checksum=f"{faker.sha256()}")}
 
 
 @pytest.fixture
@@ -538,36 +542,62 @@ async def populate_directory(
     create_file_of_size: Callable[[ByteSize, str | None], Path],
     storage_s3_client: SimcoreS3API,
     storage_s3_bucket: S3BucketName,
-    project_id: ProjectID,
-    node_id: NodeID,
-) -> Callable[..., Awaitable[None]]:
+    faker: Faker,
+) -> Callable[
+    [ByteSize, str, ProjectID, NodeID, int, int],
+    Awaitable[tuple[NodeID, dict[SimcoreS3FileID, FileIDDict]]],
+]:
     async def _create_content(
         file_size_in_dir: ByteSize,
         dir_name: str,
-        subdir_count: int = 4,
-        file_count: int = 5,
-    ) -> None:
-        file = create_file_of_size(file_size_in_dir, "some_file")
+        project_id: ProjectID,
+        node_id: NodeID,
+        subdir_count: int,
+        file_count: int,
+    ) -> tuple[NodeID, dict[SimcoreS3FileID, FileIDDict]]:
+        assert subdir_count >= 1, "cannot use fixture with subdir_count < 1!"
+        assert file_count >= 1, "cannot use fixture with file_count < 1!"
 
-        async def _create_file(s: int, f: int):
-            file_name = f"{dir_name}/sub-dir-{s}/file-{f}"
-            clean_path = Path(f"{project_id}/{node_id}/{file_name}")
-            await storage_s3_client.upload_file(
-                bucket=storage_s3_bucket,
-                file=file,
-                object_key=TypeAdapter(SimcoreS3FileID).validate_python(
-                    f"{clean_path}"
-                ),
-                bytes_transfered_cb=None,
+        local_file = create_file_of_size(file_size_in_dir, None)
+
+        # Create subdirectories
+        s3_base_path = Path(f"{project_id}") / f"{node_id}" / dir_name
+        s3_subdirs = [s3_base_path / f"sub-dir-{i}" for i in range(subdir_count)]
+        # Randomly distribute files across subdirectories
+        selected_subdirs = random.choices(s3_subdirs, k=file_count)  # noqa: S311
+        # Upload to S3
+        with log_context(
+            logging.INFO,
+            msg=f"Uploading {file_count} files to S3 (each {file_size_in_dir.human_readable()}, total: {ByteSize(file_count * file_size_in_dir).human_readable()})",
+        ):
+            results = await asyncio.gather(
+                *(
+                    _upload_file_to_s3(
+                        storage_s3_client,
+                        faker,
+                        s3_bucket=storage_s3_bucket,
+                        local_file=local_file,
+                        file_id=TypeAdapter(SimcoreS3FileID).validate_python(
+                            f"{selected_subdir / faker.unique.file_name()}"
+                        ),
+                    )
+                    for selected_subdir in selected_subdirs
+                )
             )
 
-        tasks = [
-            _create_file(s, f) for f in range(file_count) for s in range(subdir_count)
-        ]
+        assert len(results) == file_count
 
-        await asyncio.gather(*tasks)
+        # check this is true
+        counted_uploaded_objects = await storage_s3_client.count_objects(
+            bucket=storage_s3_bucket,
+            prefix=s3_base_path,
+            is_partial_prefix=True,
+            start_after=None,
+            use_delimiter=False,
+        )
+        assert counted_uploaded_objects == file_count
 
-        file.unlink()
+        return node_id, {k: v for r in results for k, v in r.items()}
 
     return _create_content
 
@@ -576,21 +606,16 @@ async def populate_directory(
 async def delete_directory(
     initialized_app: FastAPI,
     client: httpx.AsyncClient,
-    storage_s3_client: SimcoreS3API,
-    storage_s3_bucket: S3BucketName,
     user_id: UserID,
     location_id: LocationID,
 ) -> Callable[..., Awaitable[None]]:
-    async def _dir_remover(directory_file_upload: FileUploadSchema) -> None:
-        assert directory_file_upload.urls[0].path
-        directory_file_id = directory_file_upload.urls[0].path.strip("/")
-
+    async def _dir_remover(directory_s3: StorageFileID) -> None:
         delete_url = url_from_operation_id(
             client,
             initialized_app,
             "delete_file",
             location_id=f"{location_id}",
-            file_id=directory_file_id,
+            file_id=directory_s3,
         ).with_query(user_id=user_id)
 
         response = await client.delete(f"{delete_url}")
@@ -600,7 +625,7 @@ async def delete_directory(
         # even if one file is left this will detect it
         list_files_metadata_url = url_from_operation_id(
             client, initialized_app, "list_files_metadata", location_id=f"{location_id}"
-        ).with_query(user_id=user_id, uuid_filter=directory_file_id)
+        ).with_query(user_id=user_id, uuid_filter=directory_s3)
         response = await client.get(f"{list_files_metadata_url}")
         data, error = assert_status(response, status.HTTP_200_OK, list[FileMetaDataGet])
         assert error is None
@@ -611,51 +636,220 @@ async def delete_directory(
 
 @pytest.fixture
 async def create_directory_with_files(
-    create_empty_directory: Callable[..., Awaitable[FileUploadSchema]],
-    populate_directory: Callable[..., Awaitable[None]],
+    create_empty_directory: Callable[
+        [str, ProjectID, NodeID], Awaitable[SimcoreS3FileID]
+    ],
+    populate_directory: Callable[
+        [ByteSize, str, ProjectID, NodeID, int, int],
+        Awaitable[tuple[NodeID, dict[SimcoreS3FileID, FileIDDict]]],
+    ],
     delete_directory: Callable[..., Awaitable[None]],
-) -> Callable[..., AbstractAsyncContextManager[FileUploadSchema]]:
-    @asynccontextmanager
-    async def _create_context(
-        dir_name: str, file_size_in_dir: ByteSize, subdir_count: int, file_count: int
-    ) -> AsyncIterator[FileUploadSchema]:
-        directory_file_upload: FileUploadSchema = await create_empty_directory(
-            dir_name=dir_name
+) -> AsyncIterator[
+    Callable[
+        [str, ByteSize, int, int, ProjectID, NodeID],
+        Awaitable[
+            tuple[SimcoreS3FileID, tuple[NodeID, dict[SimcoreS3FileID, FileIDDict]]]
+        ],
+    ]
+]:
+    uploaded_directories = []
+
+    async def _(
+        dir_name: str,
+        file_size_in_dir: ByteSize,
+        subdir_count: int,
+        file_count: int,
+        project_id: ProjectID,
+        node_id: NodeID,
+    ) -> tuple[SimcoreS3FileID, tuple[NodeID, dict[SimcoreS3FileID, FileIDDict]]]:
+        directory_file_id = await create_empty_directory(dir_name, project_id, node_id)
+
+        uploaded_files = await populate_directory(
+            file_size_in_dir,
+            dir_name,
+            project_id,
+            node_id,
+            subdir_count,
+            file_count,
         )
 
-        await populate_directory(
-            file_size_in_dir=file_size_in_dir,
-            dir_name=dir_name,
-            subdir_count=subdir_count,
-            file_count=file_count,
+        uploaded_directories.append(directory_file_id)
+
+        return directory_file_id, uploaded_files
+
+    yield _
+
+    await asyncio.gather(*(delete_directory(_) for _ in uploaded_directories))
+
+
+async def _upload_one_file_task(
+    upload_file: Callable[..., Awaitable[tuple[Path, SimcoreS3FileID]]],
+    allowed_file_sizes: tuple[ByteSize, ...],
+    allowed_file_checksums: tuple[SHA256Str, ...],
+    *,
+    file_name: str,
+    file_id: SimcoreS3FileID,
+    node_id: NodeID,
+) -> tuple[NodeID, dict[SimcoreS3FileID, FileIDDict]]:
+    selected_checksum = random.choice(allowed_file_checksums)  # noqa: S311
+    uploaded_file, uploaded_file_id = await upload_file(
+        file_size=random.choice(allowed_file_sizes),  # noqa: S311
+        file_name=file_name,
+        file_id=file_id,
+        sha256_checksum=selected_checksum,
+    )
+    assert uploaded_file_id == file_id
+    return (
+        node_id,
+        {
+            uploaded_file_id: FileIDDict(
+                path=uploaded_file, sha256_checksum=selected_checksum
+            )
+        },
+    )
+
+
+async def _upload_folder_task(
+    create_directory_with_files: Callable[
+        ...,
+        Awaitable[
+            tuple[SimcoreS3FileID, tuple[NodeID, dict[SimcoreS3FileID, FileIDDict]]]
+        ],
+    ],
+    allowed_file_sizes: tuple[ByteSize, ...],
+    *,
+    dir_name: str,
+    project_id: ProjectID,
+    node_id: NodeID,
+    workspace_file_count: int,
+) -> tuple[NodeID, dict[SimcoreS3FileID, FileIDDict]]:
+    dir_file_id, node_files_map = await create_directory_with_files(
+        dir_name=dir_name,
+        file_size_in_dir=random.choice(allowed_file_sizes),  # noqa: S311
+        subdir_count=3,
+        file_count=workspace_file_count,
+        project_id=project_id,
+        node_id=node_id,
+    )
+    assert dir_file_id
+    return node_files_map
+
+
+@pytest.fixture
+async def random_project_with_files(
+    sqlalchemy_async_engine: AsyncEngine,
+    create_project: Callable[..., Awaitable[dict[str, Any]]],
+    create_project_node: Callable[..., Awaitable[NodeID]],
+    create_simcore_file_id: Callable[
+        [ProjectID, NodeID, str, Path | None], SimcoreS3FileID
+    ],
+    faker: Faker,
+    create_directory_with_files: Callable[
+        ...,
+        Awaitable[
+            tuple[SimcoreS3FileID, tuple[NodeID, dict[SimcoreS3FileID, FileIDDict]]]
+        ],
+    ],
+    upload_file: Callable[..., Awaitable[tuple[Path, SimcoreS3FileID]]],
+) -> Callable[
+    [ProjectWithFilesParams],
+    Awaitable[tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]],
+]:
+    async def _creator(
+        project_params: ProjectWithFilesParams,
+    ) -> tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]:
+        assert len(project_params.allowed_file_sizes) == len(
+            project_params.allowed_file_checksums
         )
+        project = await create_project(name="random-project")
+        node_to_files_mapping: dict[NodeID, dict[SimcoreS3FileID, FileIDDict]] = {}
+        upload_tasks = []
+        for _ in range(project_params.num_nodes):
+            # Create a node with outputs (files and others)
+            project_id = ProjectID(project["uuid"])
+            node_id = cast(NodeID, faker.uuid4(cast_to=None))
+            node_to_files_mapping[node_id] = {}
+            output3_file_name = faker.file_name()
+            output3_file_id = create_simcore_file_id(
+                project_id, node_id, output3_file_name, Path("outputs/output_3")
+            )
+            created_node_id = await create_project_node(
+                ProjectID(project["uuid"]),
+                node_id,
+                outputs={
+                    "output_1": faker.pyint(),
+                    "output_2": faker.pystr(),
+                    "output_3": f"{output3_file_id}",
+                },
+            )
+            assert created_node_id == node_id
 
-        yield directory_file_upload
+            upload_tasks.append(
+                _upload_one_file_task(
+                    upload_file,
+                    project_params.allowed_file_sizes,
+                    project_params.allowed_file_checksums,
+                    file_name=output3_file_name,
+                    file_id=output3_file_id,
+                    node_id=node_id,
+                )
+            )
 
-        await delete_directory(directory_file_upload=directory_file_upload)
+            # some workspace files (these are not referenced in the file_meta_data, only as a folder)
+            if project_params.workspace_files_count > 0:
+                upload_tasks.append(
+                    _upload_folder_task(
+                        create_directory_with_files,
+                        project_params.allowed_file_sizes,
+                        dir_name="workspace",
+                        project_id=project_id,
+                        node_id=node_id,
+                        workspace_file_count=project_params.workspace_files_count,
+                    )
+                )
 
-    return _create_context
+            # add a few random files in the node root space for good measure
+            for _ in range(random.randint(1, 3)):  # noqa: S311
+                root_file_name = faker.file_name()
+                root_file_id = create_simcore_file_id(
+                    project_id, node_id, root_file_name, None
+                )
+                upload_tasks.append(
+                    _upload_one_file_task(
+                        upload_file,
+                        project_params.allowed_file_sizes,
+                        project_params.allowed_file_checksums,
+                        file_name=root_file_name,
+                        file_id=root_file_id,
+                        node_id=node_id,
+                    ),
+                )
+
+        # upload everything of the node
+        results = await limited_gather(*upload_tasks, limit=10)
+
+        for node_id, file_id_to_dict_mapping in results:
+            for file_id, file_dict in file_id_to_dict_mapping.items():
+                node_to_files_mapping[node_id][file_id] = file_dict
+
+        project = await get_updated_project(sqlalchemy_async_engine, project["uuid"])
+        return project, node_to_files_mapping
+
+    return _creator
 
 
 @pytest.fixture
 async def with_random_project_with_files(
     random_project_with_files: Callable[
-        ...,
+        [ProjectWithFilesParams],
         Awaitable[
-            tuple[
-                dict[str, Any],
-                dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],
-            ]
+            tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]
         ],
     ],
+    project_params: ProjectWithFilesParams,
+    faker: Faker,
 ) -> tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],]:
-    return await random_project_with_files(
-        file_sizes=(
-            TypeAdapter(ByteSize).validate_python("1Mib"),
-            TypeAdapter(ByteSize).validate_python("2Mib"),
-            TypeAdapter(ByteSize).validate_python("5Mib"),
-        )
-    )
+    return await random_project_with_files(project_params)
 
 
 @pytest.fixture()

@@ -1,4 +1,4 @@
-from typing import cast
+from typing import Annotated, cast
 
 from fastapi import Depends, FastAPI
 from fastapi.requests import Request
@@ -11,7 +11,7 @@ def _get_app(request: Request) -> FastAPI:
 
 
 def get_pennsieve_api_client(
-    app: FastAPI = Depends(_get_app),
+    app: Annotated[FastAPI, Depends(_get_app)],
 ) -> PennsieveApiClient:
     client = PennsieveApiClient.get_instance(app)
     assert client  # nosec

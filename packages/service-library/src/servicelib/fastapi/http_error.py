@@ -99,3 +99,17 @@ def set_app_default_http_error_handlers(app: FastAPI) -> None:
             envelope_error=True,
         ),
     )
+
+    # SEE https://docs.python.org/3/library/exceptions.html#exception-hierarchy
+    app.add_exception_handler(
+        NotImplementedError,
+        make_http_error_handler_for_exception(
+            status.HTTP_501_NOT_IMPLEMENTED, NotImplementedError, envelope_error=True
+        ),
+    )
+    app.add_exception_handler(
+        Exception,
+        make_http_error_handler_for_exception(
+            status.HTTP_500_INTERNAL_SERVER_ERROR, Exception, envelope_error=True
+        ),
+    )

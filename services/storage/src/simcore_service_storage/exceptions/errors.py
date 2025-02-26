@@ -41,3 +41,7 @@ class AccessLayerError(StorageRuntimeError):
 
 class InvalidFileIdentifierError(AccessLayerError):
     msg_template: str = "Error in {identifier}: {details}"
+
+
+class DatCoreCredentialsMissingError(StorageRuntimeError):
+    msg_template: str = "DatCore credentials are incomplete. TIP: Check your settings"

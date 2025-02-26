@@ -130,11 +130,11 @@ qx.Class.define("osparc.desktop.credits.PurchasesTableModel", {
             const purchasesCols = osparc.desktop.credits.PurchasesTable.COLS;
             purchasesItems.forEach(purchasesItem => {
               const licensedItemId = purchasesItem["licensedItemId"];
-              const licensedItem = licensedItems.find(licItem => licItem["licensedItemId"] === licensedItemId);
+              const licensedItem = licensedItems[licensedItemId];
               data.push({
                 [purchasesCols.PURCHASE_ID.id]: purchasesItem["licensedItemPurchaseId"],
                 [purchasesCols.ITEM_ID.id]: licensedItemId,
-                [purchasesCols.ITEM_LABEL.id]: licensedItem ? licensedItem["displayName"] : "unknown model",
+                [purchasesCols.ITEM_LABEL.id]: licensedItem ? licensedItem.getDisplayName() : "unknown model",
                 [purchasesCols.START.id]: osparc.utils.Utils.formatDateAndTime(new Date(purchasesItem["startAt"])),
                 [purchasesCols.END.id]: osparc.utils.Utils.formatDateAndTime(new Date(purchasesItem["expireAt"])),
                 [purchasesCols.SEATS.id]: purchasesItem["numOfSeats"],

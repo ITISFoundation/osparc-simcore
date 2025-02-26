@@ -1,8 +1,7 @@
-from functools import cached_property
 from typing import Annotated
 
 from common_library.basic_types import DEFAULT_FACTORY
-from models_library.basic_types import BootModeEnum, LogLevel
+from models_library.basic_types import LogLevel
 from pydantic import AliasChoices, Field, TypeAdapter, field_validator
 from pydantic.networks import AnyUrl
 from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
@@ -68,15 +67,6 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
             json_schema_extra={"auto_default_from_env": True},
         ),
     ]
-
-    @cached_property
-    def debug(self) -> bool:
-        """If True, debug tracebacks should be returned on errors."""
-        return self.SC_BOOT_MODE in [
-            BootModeEnum.DEBUG,
-            BootModeEnum.DEVELOPMENT,
-            BootModeEnum.LOCAL,
-        ]
 
     @field_validator("LOG_LEVEL", mode="before")
     @classmethod
