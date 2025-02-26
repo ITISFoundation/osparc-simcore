@@ -1152,7 +1152,7 @@ services:
     image: ${DOCKER_REGISTRY:-itisfoundation}/storage:${DOCKER_IMAGE_TAG:-latest}
     init: true
     hostname: "sto-{{.Node.Hostname}}-{{.Task.Slot}}"
-    environment:
+    environment: &storage_environment
       BF_API_KEY: ${BF_API_KEY}
       BF_API_SECRET: ${BF_API_SECRET}
       DATCORE_ADAPTER_HOST: ${DATCORE_ADAPTER_HOST:-datcore-adapter}
@@ -1186,53 +1186,19 @@ services:
       STORAGE_PORT: ${STORAGE_PORT}
       TRACING_OPENTELEMETRY_COLLECTOR_PORT: ${TRACING_OPENTELEMETRY_COLLECTOR_PORT}
       TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT: ${TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT}
-    networks:
+    networks: &storage_networks
       - default
       - interactive_services_subnet
       - storage_subnet
 
-  storage-worker:
+  sto-worker:
     image: ${DOCKER_REGISTRY:-itisfoundation}/storage:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    hostname: "stow-{{.Node.Hostname}}-{{.Task.Slot}}"
+    hostname: "sto-worker-{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:
-      BF_API_KEY: ${BF_API_KEY}
-      BF_API_SECRET: ${BF_API_SECRET}
-      DATCORE_ADAPTER_HOST: ${DATCORE_ADAPTER_HOST:-datcore-adapter}
-      LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
-      LOG_FILTER_MAPPING : ${LOG_FILTER_MAPPING}
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_ENDPOINT: ${POSTGRES_ENDPOINT}
-      POSTGRES_HOST: ${POSTGRES_HOST}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_PORT: ${POSTGRES_PORT}
-      POSTGRES_USER: ${POSTGRES_USER}
-      RABBIT_HOST: ${RABBIT_HOST}
-      RABBIT_PASSWORD: ${RABBIT_PASSWORD}
-      RABBIT_PORT: ${RABBIT_PORT}
-      RABBIT_SECURE: ${RABBIT_SECURE}
-      RABBIT_USER: ${RABBIT_USER}
-      REDIS_HOST: ${REDIS_HOST}
-      REDIS_PORT: ${REDIS_PORT}
-      REDIS_SECURE: ${REDIS_SECURE}
-      REDIS_USER: ${REDIS_USER}
-      REDIS_PASSWORD: ${REDIS_PASSWORD}
-      S3_ACCESS_KEY: ${S3_ACCESS_KEY}
-      S3_BUCKET_NAME: ${S3_BUCKET_NAME}
-      S3_ENDPOINT: ${S3_ENDPOINT}
-      S3_REGION: ${S3_REGION}
-      S3_SECRET_KEY: ${S3_SECRET_KEY}
+      <<: *storage_environment
       STORAGE_WORKER_MODE: 1
-      STORAGE_LOGLEVEL: ${STORAGE_LOGLEVEL}
-      STORAGE_MONITORING_ENABLED: 1
-      STORAGE_PROFILING: ${STORAGE_PROFILING}
-      STORAGE_PORT: ${STORAGE_PORT}
-      TRACING_OPENTELEMETRY_COLLECTOR_PORT: ${TRACING_OPENTELEMETRY_COLLECTOR_PORT}
-      TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT: ${TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT}
-    networks:
-      - default
-      - interactive_services_subnet
-      - storage_subnet
+    networks: *storage_networks
 
   rabbit:
     image: itisfoundation/rabbitmq:3.11.2-management
