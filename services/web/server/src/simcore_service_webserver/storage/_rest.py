@@ -3,7 +3,6 @@
 Mostly resolves and redirect to storage API
 """
 
-import json
 import logging
 import urllib.parse
 from typing import Any, Final, NamedTuple
@@ -425,9 +424,10 @@ async def export_data(request: web.Request) -> web.Response:
         rabbitmq_rpc_client=rabbitmq_rpc_client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
         method_name="start_data_export",
-        paths=data_export_post.to_rpc_schema(
-            user_id=_req_ctx.user_id,
-            product_name=_req_ctx.product_name,
+        job_id_data=AsyncJobNameData(
+            user_id=_req_ctx.user_id, product_name=_req_ctx.product_name
+        ),
+        data_export_start=data_export_post.to_rpc_schema(
             location_id=_path_params.location_id,
         ),
     )
@@ -452,9 +452,10 @@ async def get_async_jobs(request: web.Request) -> web.Response:
     user_async_jobs = await list_jobs(
         rabbitmq_rpc_client=rabbitmq_rpc_client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
-        filter_=json.dumps(
-            {"user_id": _req_ctx.user_id, "product_name": _req_ctx.product_name}
+        job_id_data=AsyncJobNameData(
+            user_id=_req_ctx.user_id, product_name=_req_ctx.product_name
         ),
+        filter_="",
     )
     return create_data_response(
         [StorageAsyncJobGet.from_rpc_schema(job) for job in user_async_jobs],
@@ -504,7 +505,7 @@ async def abort_async_job(request: web.Request) -> web.Response:
         rabbitmq_rpc_client=rabbitmq_rpc_client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
         job_id=async_job_get.job_id,
-        access_data=AsyncJobNameData(
+        job_id_data=AsyncJobNameData(
             user_id=_req_ctx.user_id, product_name=_req_ctx.product_name
         ),
     )
