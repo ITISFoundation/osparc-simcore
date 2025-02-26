@@ -120,11 +120,11 @@ qx.Class.define("osparc.store.Data", {
       });
     },
 
-    getFilesByLocationAndDataset: function(locationId, datasetId) {
+    getPathByLocationAndDataset: function(locationId, datasetId) {
       const data = {
         locationId,
         datasetId,
-        files: []
+        items: []
       };
       return new Promise((resolve, reject) => {
         // Get list of file meta data
@@ -141,7 +141,7 @@ qx.Class.define("osparc.store.Data", {
         osparc.data.Resources.fetch("storagePaths", "getPaths", params)
           .then(pagResp => {
             if (pagResp["items"] && pagResp["items"].length>0) {
-              data.files = pagResp["items"];
+              data.items = pagResp["items"];
             }
             resolve(data);
           })

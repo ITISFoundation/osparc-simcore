@@ -152,17 +152,17 @@ qx.Class.define("osparc.file.FilesTree", {
       this.self().addLoadingChild(studyModel);
 
       const dataStore = osparc.store.Data.getInstance();
-      return dataStore.getFilesByLocationAndDataset("0", studyId)
+      return dataStore.getPathByLocationAndDataset("0", studyId)
         .then(data => {
           const {
-            files
+            items
           } = data;
 
-          if (files.length && "project_name" in files[0]) {
-            this.__resetTree(files[0]["project_name"]);
+          if (items.length && "project_name" in items[0]) {
+            this.__resetTree(items[0]["project_name"]);
           }
           studyModel = this.getModel();
-          this.__filesToDataset("0", studyId, files, studyModel);
+          this.__filesToDataset("0", studyId, items, studyModel);
 
           // select study item
           this.setSelection(new qx.data.Array([studyModel]));
@@ -382,12 +382,12 @@ qx.Class.define("osparc.file.FilesTree", {
       }
 
       const dataStore = osparc.store.Data.getInstance();
-      return dataStore.getFilesByLocationAndDataset(locationId, datasetId)
+      return dataStore.getPathByLocationAndDataset(locationId, datasetId)
         .then(data => {
           const {
-            files
+            items
           } = data;
-          this.__filesToDataset(locationId, datasetId, files);
+          this.__filesToDataset(locationId, datasetId, items);
         });
     },
 
