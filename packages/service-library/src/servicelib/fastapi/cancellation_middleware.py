@@ -1,9 +1,11 @@
 import asyncio
 import logging
+from typing import NoReturn
 
-from servicelib.logging_utils import log_context
 from starlette.requests import Request
-from starlette.types import ASGIApp, Receive, Scope, Send
+from starlette.types import ASGIApp, Message, Receive, Scope, Send
+
+from .logging_utils import log_context
 
 _logger = logging.getLogger(__name__)
 
@@ -12,7 +14,9 @@ class _TerminateTaskGroupError(Exception):
     pass
 
 
-async def _message_poller(request: Request, queue: asyncio.Queue, receive: Receive):
+async def _message_poller(
+    request: Request, queue: asyncio.Queue, receive: Receive
+) -> NoReturn:
     while True:
         message = await receive()
         if message["type"] == "http.disconnect":
@@ -23,7 +27,9 @@ async def _message_poller(request: Request, queue: asyncio.Queue, receive: Recei
         await queue.put(message)
 
 
-async def _handler(app: ASGIApp, scope: Scope, queue: asyncio.Queue, send: Send):
+async def _handler(
+    app: ASGIApp, scope: Scope, queue: asyncio.Queue[Message], send: Send
+) -> None:
     return await app(scope, queue.get, send)
 
 
@@ -47,10 +53,10 @@ class RequestCancellationMiddleware:
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope["type"] != "http":
             await self.app(scope, receive, send)
-            return None
+            return
 
         # Let's make a shared queue for the request messages
-        queue = asyncio.Queue()
+        queue: asyncio.Queue[Message] = asyncio.Queue()
 
         request = Request(scope)
 
@@ -63,9 +69,8 @@ class RequestCancellationMiddleware:
                     poller_task = tg.create_task(
                         _message_poller(request, queue, receive)
                     )
-                    response = await handler_task
+                    await handler_task
                     poller_task.cancel()
-                    return response
             except* _TerminateTaskGroupError:
                 _logger.info(
                     "The client disconnected. request to %s was cancelled.", request.url
