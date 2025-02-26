@@ -1,3 +1,5 @@
+# pylint: disable=redefined-outer-name
+
 import asyncio
 import logging
 from collections.abc import Iterator
