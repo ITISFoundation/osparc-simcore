@@ -4,7 +4,8 @@ import logging
 from celery import Celery, Task
 from models_library.progress_bar import ProgressReport
 
-from .worker import get_event_loop, get_worker
+from .utils import get_celery_worker, get_event_loop
+from .worker import CeleryTaskQueueWorker
 
 _logger = logging.getLogger(__name__)
 
@@ -12,7 +13,7 @@ _logger = logging.getLogger(__name__)
 async def _async_archive(
     celery_app: Celery, task_name: str, task_id: str, files: list[str]
 ) -> str:
-    worker = get_worker(celery_app)
+    worker: CeleryTaskQueueWorker = get_celery_worker(celery_app)
 
     for n, file in enumerate(files, start=1):
         _logger.info("Processing file %s", file)
