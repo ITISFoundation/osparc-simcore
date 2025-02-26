@@ -159,7 +159,7 @@ def mock_licensed_items_purchase_functions(mocker: MockerFixture) -> tuple:
         "simcore_service_webserver.licenses._licensed_items_service.get_pricing_plan",
         spec=True,
         return_value=RutPricingPlanGet.model_validate(
-            RutPricingPlanGet.model_json_schema()["examples"][1]
+            RutPricingPlanGet.model_json_schema()["examples"][2]
         ),
     )
     mock_get_pricing_unit = mocker.patch(
