@@ -429,8 +429,6 @@ qx.Class.define("osparc.file.FilesTree", {
     },
 
     __datasetsToLocation: function(locationId, datasets) {
-      const dataStore = osparc.store.Data.getInstance();
-
       const locationModel = this.__getLocationModel(locationId);
       if (!locationModel) {
         return;
