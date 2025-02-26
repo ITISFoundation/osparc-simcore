@@ -27,6 +27,9 @@ from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker import (
     pricing_plans,
     pricing_units,
 )
+from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
+    PricingUnitDuplicationError,
+)
 from simcore_postgres_database.models.resource_tracker_pricing_plan_to_service import (
     resource_tracker_pricing_plan_to_service,
 )
@@ -211,6 +214,23 @@ async def test_rpc_pricing_plans_with_units_workflow(
     assert result
     _first_pricing_unit_id = result.pricing_unit_id
     _current_cost_per_unit_id = result.current_cost_per_unit_id
+
+    with pytest.raises(PricingUnitDuplicationError):
+        await pricing_units.create_pricing_unit(
+            rpc_client,
+            product_name="osparc",
+            data=PricingUnitWithCostCreate(
+                pricing_plan_id=_pricing_plan_id,
+                unit_name="SMALL",
+                unit_extra_info=UnitExtraInfoTier.model_config["json_schema_extra"][
+                    "examples"
+                ][0],
+                default=True,
+                specific_info=SpecificInfo(aws_ec2_instances=[]),
+                cost_per_unit=Decimal(10),
+                comment=faker.sentence(),
+            ),
+        )
 
     # Get pricing plan
     result = await pricing_plans.get_pricing_plan(

@@ -27,7 +27,7 @@ class RutPricingUnitGet(BaseModel):
 
     model_config = ConfigDict(
         json_schema_extra={
-            "examples": [  # type: ignore [dict-item]
+            "examples": [
                 {
                     "pricing_unit_id": 1,
                     "unit_name": "SMALL",

@@ -33,6 +33,9 @@ from servicelib.aiohttp.requests_validation import (
 from servicelib.aiohttp.typing_extension import Handler
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.rabbitmq._errors import RPCServerError
+from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
+    PricingUnitDuplicationError,
+)
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
 from .._meta import API_VTAG as VTAG
@@ -54,7 +57,7 @@ def _handle_pricing_plan_admin_exceptions(handler: Handler):
         try:
             return await handler(request)
 
-        except ValueError as exc:
+        except (ValueError, PricingUnitDuplicationError) as exc:
             raise web.HTTPBadRequest(reason=f"{exc}") from exc
 
         except RPCServerError as exc:

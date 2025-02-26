@@ -16,6 +16,9 @@ from models_library.resource_tracker import (
 )
 from models_library.services import ServiceKey, ServiceVersion
 from servicelib.rabbitmq import RPCRouter
+from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
+    PricingUnitDuplicationError,
+)
 
 from ...services import pricing_plans, pricing_units
 
@@ -103,7 +106,7 @@ async def get_pricing_unit(
     )
 
 
-@router.expose(reraise_if_error_type=())
+@router.expose(reraise_if_error_type=(PricingUnitDuplicationError,))
 async def create_pricing_unit(
     app: FastAPI,
     *,
