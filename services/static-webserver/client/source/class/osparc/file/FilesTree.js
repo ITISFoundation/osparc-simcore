@@ -423,7 +423,8 @@ qx.Class.define("osparc.file.FilesTree", {
         parentModel.getChildren().removeAll();
         items.forEach(item => {
           let data = null;
-          if (item["file_meta_data"]) {
+          const isFile = Boolean(item["file_meta_data"])
+          if (isFile) {
             data = osparc.data.Converters.createFileEntry(
               item["display_path"],
               locationId,
@@ -436,9 +437,13 @@ qx.Class.define("osparc.file.FilesTree", {
               locationId,
               item["path"]
             );
+            data.loaded = false;
           }
-          const dirModel = qx.data.marshal.Json.createModel(data, true);
-          parentModel.getChildren().append(dirModel);
+          const model = qx.data.marshal.Json.createModel(data, true);
+          parentModel.getChildren().append(model);
+          if (!isFile) {
+            this.self().addLoadingChild(model);
+          }
         });
         // sort files
         osparc.data.Converters.sortModelByLabel(parentModel);
