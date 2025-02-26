@@ -4,8 +4,15 @@
 
 
 import pytest
+from models_library.products import ProductName
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from simcore_service_webserver.constants import FRONTEND_APP_DEFAULT
+
+
+@pytest.fixture
+def default_product_name() -> ProductName:
+    return FRONTEND_APP_DEFAULT
 
 
 @pytest.fixture

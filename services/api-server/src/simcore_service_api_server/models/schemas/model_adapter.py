@@ -14,7 +14,7 @@ from models_library.api_schemas_webserver.licensed_items_checkouts import (
     LicensedItemCheckoutRpcGet as _LicensedItemCheckoutRpcGet,
 )
 from models_library.api_schemas_webserver.product import (
-    GetCreditPrice as _GetCreditPrice,
+    CreditPriceGet as _GetCreditPrice,
 )
 from models_library.api_schemas_webserver.resource_usage import (
     PricingUnitGet as _PricingUnitGet,

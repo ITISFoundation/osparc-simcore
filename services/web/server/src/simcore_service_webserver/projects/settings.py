@@ -4,7 +4,7 @@ from aiohttp import web
 from pydantic import ByteSize, Field, NonNegativeInt, TypeAdapter
 from settings_library.base import BaseCustomSettings
 
-from .._constants import APP_SETTINGS_KEY
+from ..constants import APP_SETTINGS_KEY
 
 
 class ProjectsSettings(BaseCustomSettings):

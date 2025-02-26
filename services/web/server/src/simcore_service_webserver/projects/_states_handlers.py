@@ -25,7 +25,8 @@ from .._meta import API_VTAG as VTAG
 from ..director_v2.exceptions import DirectorServiceError
 from ..login.decorators import login_required
 from ..notifications import project_logs
-from ..products.api import Product, get_current_product
+from ..products import products_web
+from ..products.models import Product
 from ..security.decorators import permission_required
 from ..users import api
 from ..utils_aiohttp import envelope_json_response
@@ -94,7 +95,7 @@ async def open_project(request: web.Request) -> web.Response:
             product_name=req_ctx.product_name,
         )
 
-        product: Product = get_current_product(request)
+        product: Product = products_web.get_current_product(request)
 
         if not await projects_service.try_open_project_for_user(
             req_ctx.user_id,
