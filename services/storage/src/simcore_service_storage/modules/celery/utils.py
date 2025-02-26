@@ -1,3 +1,5 @@
+from asyncio import AbstractEventLoop
+
 from celery import Celery
 from fastapi import FastAPI
 
@@ -6,6 +8,7 @@ from .worker import CeleryTaskQueueWorker
 
 _CLIENT_KEY = "client"
 _WORKER_KEY = "worker"
+_EVENT_LOOP_KEY = "loop"
 
 
 def get_celery_app(fastapi: FastAPI) -> Celery:
@@ -40,3 +43,9 @@ def get_celery_worker(celery_app: Celery) -> CeleryTaskQueueWorker:
 
 def set_celery_worker(celery_app: Celery, celery_worker: CeleryTaskQueueWorker) -> None:
     celery_app.conf[_WORKER_KEY] = celery_worker
+
+
+def get_event_loop(celery_app: Celery) -> AbstractEventLoop:  # nosec
+    loop = celery_app.conf[_EVENT_LOOP_KEY]
+    assert isinstance(loop, AbstractEventLoop)
+    return loop
