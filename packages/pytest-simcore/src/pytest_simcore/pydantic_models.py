@@ -7,7 +7,7 @@ import warnings
 from collections.abc import Iterator
 from contextlib import suppress
 from types import ModuleType
-from typing import Any, NamedTuple
+from typing import Any, NamedTuple, TypeVar
 
 import pytest
 from common_library.json_serialization import json_dumps
@@ -143,9 +143,12 @@ def iter_model_examples_in_class(
             )
 
 
+TBaseModel = TypeVar("TBaseModel", bound=BaseModel)
+
+
 def assert_validation_model(
-    model_cls: type[BaseModel], example_name: str, example_data: Any
-) -> BaseModel:
+    model_cls: type[TBaseModel], example_name: str, example_data: Any
+) -> TBaseModel:
     try:
         model_instance = model_cls.model_validate(example_data)
     except ValidationError as err:
@@ -155,7 +158,7 @@ def assert_validation_model(
             f"\nError: {err}"
         )
 
-    assert isinstance(model_instance, BaseModel)
+    assert isinstance(model_instance, model_cls)
     return model_instance
 
 
@@ -171,6 +174,7 @@ def model_cls_examples(model_cls: type[BaseModel]) -> dict[str, dict[str, Any]]:
         "The 'model_cls_examples' fixture is deprecated and will be removed in a future version. "
         "Please use 'iter_model_example_in_class' or 'iter_model_examples_in_module' as an alternative.",
         DeprecationWarning,
+        stacklevel=2,
     )
     # Use by defining model_cls as test parametrization
     assert model_cls, (

@@ -17,6 +17,7 @@ from models_library.api_schemas_storage.storage_schemas import (
     FileUploadCompletionBody,
     FileUploadSchema,
     LinkType,
+    PathMetaDataGet,
     PresignedLink,
 )
 from models_library.api_schemas_webserver.storage import (
@@ -58,7 +59,7 @@ async def list_storage_locations():
 
 @router.get(
     "/storage/locations/{location_id}/paths",
-    response_model=CursorPage[FileMetaDataGet],
+    response_model=CursorPage[PathMetaDataGet],
 )
 async def list_storage_paths(
     _path: Annotated[StorageLocationPathParams, Depends()],

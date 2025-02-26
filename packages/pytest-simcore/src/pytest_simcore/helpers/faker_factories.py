@@ -290,7 +290,7 @@ def random_product(
 
 
 def random_product_price(
-    product_name: str, fake: Faker = DEFAULT_FAKER, **overrides
+    *, product_name: str, fake: Faker = DEFAULT_FAKER, **overrides
 ) -> dict[str, Any]:
     from simcore_postgres_database.models.products_prices import products_prices
 
