@@ -44,7 +44,7 @@ class CelerySettings(BaseCustomSettings):
                         "REDIS_HOST": "localhost",
                         "REDIS_PORT": 6379,
                     },
-                    "CELERY_RESULT_EXPIRES": timedelta(days=1),
+                    "CELERY_RESULT_EXPIRES": timedelta(days=1),  # type: ignore[dict-item]
                     "CELERY_RESULT_PERSISTENT": True,
                 }
             ],
