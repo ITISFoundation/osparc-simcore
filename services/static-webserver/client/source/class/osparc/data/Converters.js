@@ -123,7 +123,7 @@ qx.Class.define("osparc.data.Converters", {
       return children;
     },
 
-    createDirEntry: function(label, location, path, children = []) {
+    createDirEntry: function(label, location, path) {
       if (label === null || label === undefined || label === "") {
         label = "Unknown label";
       }
@@ -132,7 +132,34 @@ qx.Class.define("osparc.data.Converters", {
         location,
         path,
         itemId: path,
-        children
+        children: [],
+      };
+    },
+
+    createFileEntry: function(label, location, path, fileMetaData) {
+      if (label === undefined) {
+        label = "Unknown label";
+      }
+      if (location === undefined) {
+        location = "Unknown location";
+      }
+      if (fileId === undefined) {
+        fileId = "Unknown fileId";
+      }
+      if (lastModified === undefined) {
+        lastModified = (Math.floor(Math.random()*1000000)+1).toString();
+      }
+      if (size === undefined) {
+        size = 0;
+      }
+      return {
+        label,
+        location,
+        datasetId,
+        fileId,
+        itemId: fileId,
+        lastModified,
+        size
       };
     },
 

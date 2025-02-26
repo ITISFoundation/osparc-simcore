@@ -83,13 +83,6 @@ qx.Class.define("osparc.file.FileTreeItem", {
       nullable: true
     },
 
-    isDataset: {
-      check: "Boolean",
-      event: "changeIsDataset",
-      init: false,
-      nullable: false
-    },
-
     datasetId: {
       check: "String",
       event: "changeDatasetId",
