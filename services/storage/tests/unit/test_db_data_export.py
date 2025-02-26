@@ -2,7 +2,7 @@
 # pylint: disable=W0613
 from collections.abc import Awaitable, Callable
 from pathlib import Path
-from typing import Awaitable, Callable, NamedTuple
+from typing import Any, Awaitable, Callable, Literal, NamedTuple
 
 import pytest
 from faker import Faker
@@ -18,19 +18,18 @@ from models_library.api_schemas_storage import STORAGE_RPC_NAMESPACE
 from models_library.api_schemas_storage.data_export_async_jobs import (
     DataExportTaskStartInput,
 )
-from models_library.projects import ProjectID
+from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
 from models_library.users import UserID
+from pydantic import ByteSize, TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
+from pytest_simcore.helpers.storage_utils import FileIDDict, ProjectWithFilesParams
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.async_jobs import async_jobs
 from settings_library.rabbit import RabbitSettings
-from simcore_postgres_database.models.file_meta_data import file_meta_data
 from simcore_service_storage.api.rpc._data_export import AccessRightError
 from simcore_service_storage.core.settings import ApplicationSettings
-from simcore_service_storage.models import FileMetaData
-from sqlalchemy.ext.asyncio import AsyncEngine
 
 pytest_plugins = [
     "pytest_simcore.rabbit_service",
@@ -86,17 +85,54 @@ class UserWithFile(NamedTuple):
     file: Path
 
 
-@pytest.fixture
-async def user_owner_file(
-    user_id: UserID, project_id: ProjectID, sqlalchemy_async_engine: AsyncEngine
-):
-    async with sqlalchemy_async_engine.connect() as conn:
-        file_meta_data.insert()
-
-
+@pytest.mark.parametrize(
+    "project_params,_type",
+    [
+        (
+            ProjectWithFilesParams(
+                num_nodes=1,
+                allowed_file_sizes=(TypeAdapter(ByteSize).validate_python("1b"),),
+                workspace_files_count=10,
+            ),
+            "file",
+        ),
+        (
+            ProjectWithFilesParams(
+                num_nodes=1,
+                allowed_file_sizes=(TypeAdapter(ByteSize).validate_python("1b"),),
+                workspace_files_count=10,
+            ),
+            "folder",
+        ),
+    ],
+    ids=str,
+)
 async def test_start_data_export_success(
-    rpc_client: RabbitMQRPCClient, output_file: FileMetaData, user_id: UserID
+    rpc_client: RabbitMQRPCClient,
+    with_random_project_with_files: tuple[
+        dict[str, Any],
+        dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],
+    ],
+    user_id: UserID,
+    _type: Literal["file", "folder"],
 ):
+
+    project, list_of_files = with_random_project_with_files
+    workspace_files = [
+        p for p in list(list_of_files.values())[0].keys() if "/workspace/" in p
+    ]
+    assert len(workspace_files) > 0
+    if _type == "file":
+        file_or_folder_id = workspace_files[0]
+    elif _type == "folder":
+        parts = Path(workspace_files[0]).parts
+        parts = parts[0 : parts.index("workspace") + 1]
+        assert len(parts) > 0
+        folder = Path(*parts)
+        assert folder.name == "workspace"
+        file_or_folder_id = f"{folder}"
+    else:
+        pytest.fail("invalid parameter: to_check")
 
     result = await async_jobs.submit_job(
         rpc_client,
@@ -105,8 +141,8 @@ async def test_start_data_export_success(
         data_export_start=DataExportTaskStartInput(
             user_id=user_id,
             product_name="osparc",
-            location_id=output_file.location_id,
-            file_and_folder_ids=[output_file.file_id],
+            location_id=0,
+            file_and_folder_ids=[file_or_folder_id],
         ),
     )
     assert isinstance(result, AsyncJobGet)
