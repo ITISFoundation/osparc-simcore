@@ -36,23 +36,52 @@ qx.Class.define("osparc.store.Data", {
   },
 
   members: {
+    __locationsCached: null,
+    __datasetsByLocationCached: null,
     __filesByLocationAndDatasetCached: null,
 
     resetCache: function() {
+      this.__locationsCached = [];
+      this.__datasetsByLocationCached = {};
       this.__filesByLocationAndDatasetCached = {};
+    },
+
+    getLocationsCached: function() {
+      const cache = this.__locationsCached;
+      if (cache && cache.length) {
+        return cache;
+      }
+      return null;
     },
 
     getLocations: function() {
       return new Promise((resolve, reject) => {
-        osparc.data.Resources.fetch("storageLocations", "getLocations")
-          .then(locations => {
-            resolve(locations);
-          })
-          .catch(err => {
-            console.error(err);
-            reject([]);
-          });
+        const cachedData = this.getLocationsCached();
+        if (cachedData) {
+          resolve(cachedData);
+        } else {
+          osparc.data.Resources.fetch("storageLocations", "getLocations")
+            .then(locations => {
+              resolve(locations);
+            })
+            .catch(err => {
+              console.error(err);
+              reject([]);
+            });
+        }
       });
+    },
+
+    getDatasetsByLocationCached: function(locationId) {
+      const cache = this.__datasetsByLocationCached;
+      if (locationId in cache && cache[locationId] && cache[locationId].length) {
+        const data = {
+          location: locationId,
+          datasets: cache[locationId]
+        };
+        return data;
+      }
+      return null;
     },
 
     getDatasetsByLocation: function(locationId) {
@@ -65,22 +94,27 @@ qx.Class.define("osparc.store.Data", {
           reject(data);
         }
 
-        const params = {
-          url: {
-            locationId
-          }
-        };
-        osparc.data.Resources.fetch("storagePaths", "getDatasets", params)
-          .then(pagResp => {
-            if (pagResp["items"] && pagResp["items"].length>0) {
-              data.datasets = pagResp["items"];
+        const cachedData = this.getDatasetsByLocationCached(locationId);
+        if (cachedData) {
+          resolve(cachedData);
+        } else {
+          const params = {
+            url: {
+              locationId
             }
-            resolve(data);
-          })
-          .catch(err => {
-            console.error(err);
-            reject(data);
-          });
+          };
+          osparc.data.Resources.fetch("storagePaths", "getDatasets", params)
+            .then(pagResp => {
+              if (pagResp["items"] && pagResp["items"].length>0) {
+                data.datasets = pagResp["items"];
+              }
+              resolve(data);
+            })
+            .catch(err => {
+              console.error(err);
+              reject(data);
+            });
+        }
       });
     },
 
