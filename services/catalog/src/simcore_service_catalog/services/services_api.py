@@ -1,6 +1,10 @@
 import logging
 
-from models_library.api_schemas_catalog.services import ServiceGetV2, ServiceUpdateV2
+from models_library.api_schemas_catalog.services import (
+    MyServiceGet,
+    ServiceGetV2,
+    ServiceUpdateV2,
+)
 from models_library.products import ProductName
 from models_library.rest_pagination import PageLimitInt
 from models_library.services_access import ServiceGroupAccessRightsV2
@@ -13,6 +17,7 @@ from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
     CatalogForbiddenError,
     CatalogItemNotFoundError,
 )
+from simcore_service_catalog.db.repositories.groups import GroupsRepository
 
 from ..db.repositories.services import ServicesRepository
 from ..models.services_db import (
@@ -45,7 +50,7 @@ def _db_to_api_model(
         description=service_db.description,
         description_ui=service_db.description_ui,
         version_display=service_db.version_display,
-        type=service_manifest.service_type,
+        service_type=service_manifest.service_type,
         contact=service_manifest.contact,
         authors=service_manifest.authors,
         owner=(service_db.owner_email if service_db.owner_email else None),
@@ -93,7 +98,7 @@ async def list_services_paginated(
         # injects access-rights
         access_rights: dict[
             tuple[str, str], list[ServiceAccessRightsAtDB]
-        ] = await repo.list_services_access_rights(
+        ] = await repo.batch_get_services_access_rights(
             ((s.key, s.version) for s in services), product_name=product_name
         )
         if not access_rights:
@@ -333,3 +338,87 @@ async def check_for_service(
             user_id=user_id,
             product_name=product_name,
         )
+
+
+async def batch_get_my_services(
+    repo: ServicesRepository,
+    groups_repo: GroupsRepository,
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    ids: list[
+        tuple[
+            ServiceKey,
+            ServiceVersion,
+        ]
+    ],
+) -> list[MyServiceGet]:
+
+    services_access_rights = await repo.batch_get_services_access_rights(
+        key_versions=ids, product_name=product_name
+    )
+
+    user_groups = await groups_repo.list_user_groups(user_id=user_id)
+    my_group_ids = {g.gid for g in user_groups}
+
+    my_services = []
+    for service_key, service_version in ids:
+        access_rights = services_access_rights.get((service_key, service_version), [])
+
+        my_access_rights = {
+            "execute": False,
+            "write": False,
+        }
+
+        for ar in access_rights:
+            if ar.gid in my_group_ids:
+                my_access_rights["execute"] |= ar.execute_access
+                my_access_rights["write"] |= ar.write_access
+
+        service_db = await repo.get_service(
+            product_name=product_name,
+            key=service_key,
+            version=service_version,
+        )
+        assert service_db  # nosec
+
+        owner = service_db.owner
+        if not owner:
+            # TODO: raise error to indicate that no owner is registered for a given service
+            owner = next(
+                ar.gid for ar in access_rights if ar.write_access and ar.execute_access
+            )
+
+        assert owner is not None  # nosec
+
+        compatibility_map = {}
+        if my_access_rights != {"execute": False, "write": False}:
+            history = await repo.get_service_history(
+                product_name=product_name, user_id=user_id, key=service_key
+            )
+            if history:
+                compatibility_map = await evaluate_service_compatibility_map(
+                    repo,
+                    product_name=product_name,
+                    user_id=user_id,
+                    service_release_history=history,
+                )
+
+        my_services.append(
+            MyServiceGet(
+                key=service_db.key,
+                release=ServiceRelease.model_construct(
+                    version=service_db.version,
+                    version_display=service_db.version_display,
+                    released=service_db.created,
+                    retired=service_db.deprecated,
+                    compatibility=compatibility_map.get(service_db.version),
+                ),
+                owner=owner,
+                my_access_rights=my_access_rights,
+            )
+        )
+
+        # TODO: else error
+
+    return my_services

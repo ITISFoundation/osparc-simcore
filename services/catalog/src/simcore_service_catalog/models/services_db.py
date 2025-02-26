@@ -3,6 +3,7 @@ from typing import Annotated, Any
 
 from common_library.basic_types import DEFAULT_FACTORY
 from models_library.basic_types import IdInt
+from models_library.groups import GroupID
 from models_library.products import ProductName
 from models_library.services_access import ServiceGroupAccessRights
 from models_library.services_base import ServiceKeyVersion
@@ -10,7 +11,6 @@ from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.utils.common_validators import empty_str_to_none_pre_validator
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from pydantic.config import JsonDict
-from pydantic.types import PositiveInt
 from simcore_postgres_database.models.services_compatibility import CompatiblePolicyDict
 
 
@@ -20,7 +20,7 @@ class ServiceMetaDataDBGet(BaseModel):
     version: ServiceVersion
 
     # ownership
-    owner: IdInt | None
+    owner: GroupID | None
 
     # display
     name: str
@@ -208,7 +208,7 @@ assert (  # nosec
 
 
 class ServiceAccessRightsAtDB(ServiceKeyVersion, ServiceGroupAccessRights):
-    gid: PositiveInt
+    gid: GroupID
     product_name: ProductName
 
     @staticmethod

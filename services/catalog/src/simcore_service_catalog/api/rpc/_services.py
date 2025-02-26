@@ -4,6 +4,7 @@ from typing import cast
 
 from fastapi import FastAPI
 from models_library.api_schemas_catalog.services import (
+    MyServiceGet,
     PageRpcServicesGetV2,
     ServiceGetV2,
     ServiceUpdateV2,
@@ -165,3 +166,21 @@ async def check_for_service(
         service_key=service_key,
         service_version=service_version,
     )
+
+
+@router.expose(reraise_if_error_type=(CatalogForbiddenError,))
+@log_decorator(_logger, level=logging.DEBUG)
+async def batch_get_my_services(
+    app: FastAPI,
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    ids: list[
+        tuple[
+            ServiceKey,
+            ServiceVersion,
+        ]
+    ],
+) -> list[MyServiceGet]:
+
+    raise NotImplementedError
