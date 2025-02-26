@@ -54,7 +54,7 @@ def _handle_pricing_plan_admin_exceptions(handler: Handler):
         try:
             return await handler(request)
 
-        except (ValueError,) as exc:
+        except ValueError as exc:
             raise web.HTTPBadRequest(reason=f"{exc}") from exc
 
         except RPCServerError as exc:

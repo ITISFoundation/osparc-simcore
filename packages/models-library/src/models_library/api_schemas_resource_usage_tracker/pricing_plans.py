@@ -27,7 +27,7 @@ class RutPricingUnitGet(BaseModel):
 
     model_config = ConfigDict(
         json_schema_extra={
-            "examples": [
+            "examples": [  # type: ignore [dict-item]
                 {
                     "pricing_unit_id": 1,
                     "unit_name": "SMALL",
@@ -49,10 +49,10 @@ class RutPricingUnitGet(BaseModel):
                     "current_cost_per_unit": 10.5,
                     "current_cost_per_unit_id": 2,
                     "default": False,
-                    "specific_info": HardwareInfo.model_config["json_schema_extra"][  # type: ignore[index,union-attr]
+                    "specific_info": HardwareInfo.model_config["json_schema_extra"][  # type: ignore [index]
                         "examples"
                     ][
-                        1
+                        1  # type: ignore [index]
                     ],
                 }
             ]
@@ -104,8 +104,8 @@ class RutPricingPlanGet(BaseModel):
                     "created_at": "2023-01-11 13:11:47.293595",
                     "pricing_plan_key": "pricing-plan-sleeper",
                     "pricing_units": [
-                        RutPricingUnitGet.model_config["json_schema_extra"]["examples"][
-                            0
+                        RutPricingUnitGet.model_config["json_schema_extra"]["examples"][  # type: ignore [index]
+                            0  # type: ignore [index]
                         ]
                     ],
                     "is_active": True,
@@ -118,8 +118,8 @@ class RutPricingPlanGet(BaseModel):
                     "created_at": "2023-01-11 13:11:47.293595",
                     "pricing_plan_key": "vip-model-a",
                     "pricing_units": [
-                        RutPricingUnitGet.model_config["json_schema_extra"]["examples"][
-                            2
+                        RutPricingUnitGet.model_config["json_schema_extra"]["examples"][  # type: ignore [index]
+                            2  # type: ignore [index]
                         ]
                     ],
                     "is_active": True,
