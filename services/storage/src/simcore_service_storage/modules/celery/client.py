@@ -16,7 +16,7 @@ _logger = logging.getLogger(__name__)
 
 
 def _get_task_id_components(task_id_parts: TaskIDParts) -> list[str]:
-    return [f"{v}" for _, v in sorted(task_id_parts.items())]
+    return sorted(map(str, task_id_parts.values()))
 
 
 def _get_components_prefix(name: str, task_id_parts: TaskIDParts) -> list[str]:
