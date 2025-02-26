@@ -87,7 +87,7 @@ qx.Class.define("osparc.store.Data", {
     getDatasetsByLocation: function(locationId) {
       const data = {
         location: locationId,
-        datasets: []
+        items: []
       };
       return new Promise((resolve, reject) => {
         if (locationId === 1 && !osparc.data.Permissions.getInstance().canDo("storage.datcore.read")) {
@@ -106,10 +106,10 @@ qx.Class.define("osparc.store.Data", {
           osparc.data.Resources.fetch("storagePaths", "getDatasets", params)
             .then(pagResp => {
               if (pagResp["items"] && pagResp["items"].length>0) {
-                data.datasets = pagResp["items"];
+                data.items = pagResp["items"];
               }
               // Add it to cache
-              this.__datasetsByLocationCached[locationId] = data.datasets;
+              this.__datasetsByLocationCached[locationId] = data.items;
               resolve(data);
             })
             .catch(err => {

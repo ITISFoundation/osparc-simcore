@@ -155,6 +155,7 @@ qx.Class.define("osparc.data.Converters", {
       }
       return {
         label: displayPath.split("/").slice(-1).pop(), // take last part of the display name
+        displayPath,
         location,
         datasetId,
         fileId: path,

@@ -254,6 +254,7 @@ qx.Class.define("osparc.file.FilesTree", {
         bindItem: (c, item, id) => {
           c.bindDefaultProperties(item, id);
           c.bindProperty("itemId", "itemId", null, item, id);
+          c.bindProperty("displayPath", "displayPath", null, item, id);
           c.bindProperty("fileId", "fileId", null, item, id);
           c.bindProperty("location", "location", null, item, id);
           c.bindProperty("datasetId", "datasetId", null, item, id);
@@ -270,8 +271,8 @@ qx.Class.define("osparc.file.FilesTree", {
             if (item.isOpen() && !item.getLoaded()) {
               item.setLoaded(true);
               const locationId = item.getLocation();
-              const datasetId = item.getPath();
-              this.requestPathItems(locationId, datasetId);
+              const path = item.getPath();
+              this.requestPathItems(locationId, path);
             }
           }, this);
           item.addListener("dbltap", () => this.__itemSelected(), this);
@@ -381,10 +382,10 @@ qx.Class.define("osparc.file.FilesTree", {
         .then(data => {
           const {
             location,
-            datasets
+            items,
           } = data;
           if (location === locationId && !this.__locations.has(locationId)) {
-            this.__datasetsToLocation(location, datasets);
+            this.__itemsToLocation(location, items);
           }
         });
     },
@@ -468,7 +469,7 @@ qx.Class.define("osparc.file.FilesTree", {
       return newModelToAdd;
     },
 
-    __datasetsToLocation: function(locationId, datasets) {
+    __itemsToLocation: function(locationId, items) {
       const locationModel = this.__getLocationModel(locationId);
       if (!locationModel) {
         return;
@@ -476,11 +477,11 @@ qx.Class.define("osparc.file.FilesTree", {
       this.__locations.add(locationId);
       locationModel.getChildren().removeAll();
       let openThis = null;
-      datasets.forEach(dataset => {
+      items.forEach(item => {
         const datasetData = osparc.data.Converters.createDirEntry(
-          dataset["display_path"],
+          item["display_path"],
           locationId,
-          dataset["path"]
+          item["path"]
         );
         datasetData.loaded = false;
         datasetData["pathLabel"] = locationModel.getPathLabel().concat(datasetData["label"]);
@@ -489,8 +490,8 @@ qx.Class.define("osparc.file.FilesTree", {
         locationModel.getChildren().append(datasetModel);
 
         // add cached files
-        const datasetId = dataset["path"];
-        if (this.__hasDatasetNeedToBeLoaded(locationId, datasetId)) {
+        const path = item["path"];
+        if (this.__hasDatasetNeedToBeLoaded(locationId, path)) {
           openThis = datasetModel;
         }
       });
@@ -500,9 +501,9 @@ qx.Class.define("osparc.file.FilesTree", {
       this.__rerender(locationModel);
 
       if (openThis) {
-        const datasetId = openThis.getItemId();
+        const path = openThis.getItemId();
         this.openNodeAndParents(openThis);
-        this.requestPathItems(locationId, datasetId);
+        this.requestPathItems(locationId, path);
       }
     },
 
