@@ -94,7 +94,7 @@ qx.Class.define("osparc.dashboard.DataBrowser", {
       // After deleting a file, try to keep the user in the same folder.
       // If the folder doesn't longer exist, open the closest available parent
 
-      const path = fileMetadata["fileUuid"].split("/");
+      const pathParts = fileMetadata["fileUuid"].split("/");
 
       const treeFolderView = this.getChildControl("tree-folder-view");
       const foldersTree = treeFolderView.getChildControl("folder-tree");
@@ -102,18 +102,18 @@ qx.Class.define("osparc.dashboard.DataBrowser", {
 
       const openSameFolder = () => {
         // drop last, which is the file
-        path.pop();
-        treeFolderView.openPath(path);
+        pathParts.pop();
+        treeFolderView.openPath(pathParts);
       };
 
       folderViewer.resetFolder();
       const locationId = fileMetadata["locationId"];
-      const datasetId = path[0];
+      const path = pathParts[0];
       foldersTree.resetCache();
       foldersTree.populateLocations()
         .then(datasetPromises => {
           Promise.all(datasetPromises)
-            .then(() => foldersTree.requestPathItems(locationId, datasetId))
+            .then(() => foldersTree.requestPathItems(locationId, path))
             .then(() => openSameFolder());
         })
         .catch(err => console.error(err));
