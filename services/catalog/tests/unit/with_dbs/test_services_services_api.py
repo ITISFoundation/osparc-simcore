@@ -8,6 +8,8 @@ from typing import Any
 import pytest
 from fastapi import FastAPI
 from models_library.products import ProductName
+from models_library.services_access import ServiceGroupAccessRightsV2
+from models_library.services_history import CompatibleService
 from models_library.users import UserID
 from respx.router import MockRouter
 from simcore_service_catalog.api.dependencies.director import get_director_api
@@ -152,22 +154,24 @@ async def test_list_services_paginated(
 
 
 async def test_batch_get_my_services(
-    background_sync_task_mocked: None,
+    background_tasks_setup_disabled: None,
     rabbitmq_and_rpc_setup_disabled: None,
     mocked_director_service_api: MockRouter,
     target_product: ProductName,
     services_repo: ServicesRepository,
     groups_repo: GroupsRepository,
     user_id: UserID,
+    user: dict[str, Any],
     create_fake_service_data: Callable,
     services_db_tables_injector: Callable,
 ):
-    # Create fake services data
+    # catalog
     service_key = "simcore/services/comp/some-service"
-    service_version_1 = "1.0.0"
-    service_version_2 = "2.0.0"
+    service_version_1 = "1.0.0"  # can upgrade to 1.0.1
+    service_version_2 = "1.0.1"  # latest
+
     other_service_key = "simcore/services/comp/other-service"
-    other_service_version = "1.0.0"
+    other_service_version = "2.0.0"
 
     fake_service_1 = create_fake_service_data(
         service_key,
@@ -194,10 +198,9 @@ async def test_batch_get_my_services(
     # Inject fake services into the database
     await services_db_tables_injector([fake_service_1, fake_service_2, fake_service_3])
 
-    # Batch get my services
-    ids = [
+    # Batch get services e.g. services in a project
+    services_ids = [
         (service_key, service_version_1),
-        (service_key, service_version_2),
         (other_service_key, other_service_version),
     ]
 
@@ -206,13 +209,29 @@ async def test_batch_get_my_services(
         groups_repo,
         product_name=target_product,
         user_id=user_id,
-        ids=ids,
+        ids=services_ids,
     )
 
-    assert len(my_services) == 3
+    # assert returned order and length as ids
+    assert services_ids == [(sc.key, sc.release.version) for sc in my_services]
 
-    # Check access rights
-    assert my_services[0].my_access_rights == {}
-    assert my_services[1].my_access_rights is not None
-    assert my_services[2].my_access_rights is not None
-    assert my_services[2].owner is not None
+    # assert access: owns them
+    assert my_services[0].my_access_rights == ServiceGroupAccessRightsV2(
+        execute=True, write=True
+    )
+    assert my_services[0].owner == user["primary_gid"]
+
+    assert my_services[1].my_access_rights == ServiceGroupAccessRightsV2(
+        execute=True, write=True
+    )
+    assert my_services[1].owner == user["primary_gid"]
+
+    # assert status: first can be updated but not second
+    assert my_services[0].release.retired is None
+    assert my_services[0].release.compatibility
+    assert my_services[0].release.compatibility.can_update_to == CompatibleService(
+        version=service_version_2
+    )  # can be updated
+
+    assert my_services[1].release.retired is None
+    assert my_services[2].release.compatibility is None  # nothing to update

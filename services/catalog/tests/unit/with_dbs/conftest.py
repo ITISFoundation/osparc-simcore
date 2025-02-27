@@ -8,7 +8,7 @@ import itertools
 from collections.abc import AsyncIterator, Awaitable, Callable
 from copy import deepcopy
 from datetime import datetime
-from typing import Any
+from typing import Any, Protocol
 
 import pytest
 import sqlalchemy as sa
@@ -354,6 +354,19 @@ async def service_metadata_faker(faker: Faker) -> Callable:
     return _fake_factory
 
 
+class CreateFakeServiceData(Protocol):
+    def __call__(
+        self,
+        key,
+        version,
+        team_access: str | None = None,
+        everyone_access: str | None = None,
+        product: ProductName = "osparc",
+        deprecated: datetime | None = None,
+    ):
+        ...
+
+
 @pytest.fixture()
 async def create_fake_service_data(
     user_groups_ids: list[int],
@@ -376,11 +389,11 @@ async def create_fake_service_data(
         owner_access, team_access, everyone_access = fake_access_rights
 
     """
-    everyone_gid, user_gid, team_gid = user_groups_ids
+    everyone_gid, user_primary_gid, team_standard_gid = user_groups_ids
 
     def _random_service(**overrides) -> dict[str, Any]:
         return random_service_meta_data(
-            owner_primary_gid=user_gid,
+            owner_primary_gid=user_primary_gid,
             fake=faker,
             **overrides,
         )
@@ -396,9 +409,9 @@ async def create_fake_service_data(
     def _fake_factory(
         key,
         version,
-        team_access=None,
-        everyone_access=None,
-        product=products_names[0],
+        team_access: str | None = None,
+        everyone_access: str | None = None,
+        product: ProductName = products_names[0],
         deprecated: datetime | None = None,
     ) -> tuple[dict[str, Any], ...]:
         service = _random_service(key=key, version=version, deprecated=deprecated)
@@ -420,7 +433,7 @@ async def create_fake_service_data(
             fakes.append(
                 _random_access(
                     service,
-                    gid=team_gid,
+                    gid=team_standard_gid,
                     execute_access="x" in team_access,
                     write_access="w" in team_access,
                     product_name=product,
