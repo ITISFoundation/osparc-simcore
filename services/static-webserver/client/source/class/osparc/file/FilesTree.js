@@ -362,7 +362,9 @@ qx.Class.define("osparc.file.FilesTree", {
         parentModel = this.__getModelFromPath(locationId, path);
       }
       if (parentModel) {
-        parentModel.setLoaded(true);
+        if ("setLoaded" in parentModel) {
+          parentModel.setLoaded(true);
+        }
         parentModel.getChildren().removeAll();
         items.forEach(item => {
           if (item["file_meta_data"]) {
