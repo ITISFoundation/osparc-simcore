@@ -265,7 +265,7 @@ class SimcoreS3DataManager(BaseDataManager):
         # 4. path is complete and not in the DB --> entry in S3, returns directly from there
 
         with contextlib.suppress(ValidationError):
-            file_id = TypeAdapter(StorageFileID).validate_python(path)
+            file_id = TypeAdapter(StorageFileID).validate_python(f"{path}")
             # path might be  complete
             with contextlib.suppress(FileMetaDataNotFoundError):
                 # file or folder is in DB
