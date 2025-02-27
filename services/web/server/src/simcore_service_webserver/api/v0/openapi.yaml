@@ -4927,28 +4927,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_dict_Annotated_str__StringConstraints___ImageResources__'
-  /v0/projects/{project_id}/nodes/-/services:
-    get:
-      tags:
-      - projects
-      - nodes
-      summary: Get Project Services
-      operationId: get_project_services
-      parameters:
-      - name: project_id
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
-          title: Project Id
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_ProjectNodeServicesGet_'
   /v0/projects/{project_id}/nodes/-/services:access:
     get:
       tags:
@@ -9129,19 +9107,6 @@ components:
           title: Error
       type: object
       title: Envelope[ProjectMetadataGet]
-    Envelope_ProjectNodeServicesGet_:
-      properties:
-        data:
-          anyOf:
-          - $ref: '#/components/schemas/ProjectNodeServicesGet'
-          - type: 'null'
-        error:
-          anyOf:
-          - {}
-          - type: 'null'
-          title: Error
-      type: object
-      title: Envelope[ProjectNodeServicesGet]
     Envelope_ProjectState_:
       properties:
         data:
@@ -12097,28 +12062,6 @@ components:
       - thumbnail_url
       - file_url
       title: NodeScreenshot
-    NodeServiceGet:
-      properties:
-        key:
-          type: string
-          pattern: ^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$
-          title: Key
-        release:
-          $ref: '#/components/schemas/ServiceRelease'
-        owner:
-          type: integer
-          exclusiveMinimum: true
-          title: Owner
-          minimum: 0
-        myAccessRights:
-          $ref: '#/components/schemas/AccessRights'
-      type: object
-      required:
-      - key
-      - release
-      - owner
-      - myAccessRights
-      title: NodeServiceGet
     NodeState:
       properties:
         modified:
@@ -12446,7 +12389,8 @@ components:
           type: string
           format: path
           title: Display Path
-          description: the path to display with UUID replaced
+          description: the path to display with UUID replaced (URL Encoded by parts
+            as names may contain '/')
         file_meta_data:
           anyOf:
           - $ref: '#/components/schemas/FileMetaDataGet'
@@ -13606,22 +13550,6 @@ components:
       required:
       - custom
       title: ProjectMetadataUpdate
-    ProjectNodeServicesGet:
-      properties:
-        projectUuid:
-          type: string
-          format: uuid
-          title: Projectuuid
-        services:
-          items:
-            $ref: '#/components/schemas/NodeServiceGet'
-          type: array
-          title: Services
-      type: object
-      required:
-      - projectUuid
-      - services
-      title: ProjectNodeServicesGet
     ProjectOutputGet:
       properties:
         key:
@@ -14474,9 +14402,9 @@ components:
             format: date-time
           - type: 'null'
           title: Retired
-          description: 'whether this service is planned to be retired. If None, the
+          description: whether this service is planned to be retired. If None, the
             service is still active. If now<retired then the service is deprecated.
-            If retired<now then the service is retired and should not be used. '
+            If retired<now then the service is retired and should not be used.
         compatibility:
           anyOf:
           - $ref: '#/components/schemas/Compatibility'
