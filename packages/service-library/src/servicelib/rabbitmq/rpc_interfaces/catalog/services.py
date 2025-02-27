@@ -4,7 +4,11 @@ import logging
 from typing import Any, cast
 
 from models_library.api_schemas_catalog import CATALOG_RPC_NAMESPACE
-from models_library.api_schemas_catalog.services import ServiceGetV2, ServiceUpdateV2
+from models_library.api_schemas_catalog.services import (
+    ServiceGetV2,
+    ServiceItemList,
+    ServiceUpdateV2,
+)
 from models_library.products import ProductName
 from models_library.rabbitmq_basic_types import RPCMethodName
 from models_library.rpc_pagination import (
@@ -30,7 +34,7 @@ async def list_services_paginated(  # pylint: disable=too-many-arguments
     user_id: UserID,
     limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
     offset: NonNegativeInt = 0,
-) -> PageRpc[ServiceGetV2]:
+) -> PageRpc[ServiceItemList]:
     """
     Raises:
         ValidationError: on invalid arguments
@@ -57,10 +61,10 @@ async def list_services_paginated(  # pylint: disable=too-many-arguments
     result = await _call(
         product_name=product_name, user_id=user_id, limit=limit, offset=offset
     )
-    assert (
-        TypeAdapter(PageRpc[ServiceGetV2]).validate_python(result) is not None
-    )  # nosec
-    return cast(PageRpc[ServiceGetV2], result)
+    assert (  # nosec
+        TypeAdapter(PageRpc[ServiceItemList]).validate_python(result) is not None
+    )
+    return cast(PageRpc[ServiceItemList], result)
 
 
 @log_decorator(_logger, level=logging.DEBUG)
