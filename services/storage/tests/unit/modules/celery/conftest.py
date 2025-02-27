@@ -19,7 +19,6 @@ from simcore_service_storage.modules.celery.worker import CeleryTaskQueueWorker
 @pytest.fixture
 def app_environment(
     monkeypatch: pytest.MonkeyPatch,
-    rabbit_service: RabbitSettings,
     app_environment: EnvVarsDict,
 ) -> EnvVarsDict:
     return setenvs_from_dict(
