@@ -252,7 +252,7 @@ async def test_batch_get_my_services(
                     "compatibility": None,  # cannot be updated
                 },
                 "owner": user["primary_gid"],
-                "my_access_rights": {"execute": True, "write": True},  # full acces
+                "my_access_rights": {"execute": True, "write": True},  # full access
             },
         ]
     )
