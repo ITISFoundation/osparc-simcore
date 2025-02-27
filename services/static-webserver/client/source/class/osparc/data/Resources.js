@@ -1188,7 +1188,7 @@ qx.Class.define("osparc.data.Resources", {
       "storageFiles": {
         useCache: false,
         endpoints: {
-          put: {
+          copy: {
             method: "PUT",
             url: statics.API + "/storage/locations/{toLoc}/files/{fileName}?extra_location={fromLoc}&extra_source={fileUuid}"
           },

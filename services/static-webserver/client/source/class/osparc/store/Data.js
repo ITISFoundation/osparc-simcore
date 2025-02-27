@@ -203,7 +203,7 @@ qx.Class.define("osparc.store.Data", {
           fileUuid: encodeURIComponent(fileUuid)
         }
       };
-      osparc.data.Resources.fetch("storageFiles", "put", params)
+      osparc.data.Resources.fetch("storageFiles", "copy", params)
         .then(files => {
           const data = {
             data: files,

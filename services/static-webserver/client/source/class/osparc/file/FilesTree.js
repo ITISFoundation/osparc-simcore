@@ -460,7 +460,6 @@ qx.Class.define("osparc.file.FilesTree", {
       const root = this.getModel();
       const items = [];
       this.__getItemsInTree(root, items);
-      // OM: review this
       return items.find(element => "getItemId" in element && element.getItemId() === itemId);
     },
 
