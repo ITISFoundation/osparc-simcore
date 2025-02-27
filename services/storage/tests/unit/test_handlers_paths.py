@@ -568,16 +568,13 @@ async def test_path_compute_size(
     assert (
         len(project_params.allowed_file_sizes) == 1
     ), "test preconditions are not filled! allowed file sizes should have only 1 option for this test"
-    num_output_files_per_node = 3
-    total_num_files_per_node = (
-        num_output_files_per_node + project_params.workspace_files_count
-    )
-    expected_project_total_size = (
-        project_params.allowed_file_sizes[0]
-        * project_params.num_nodes
-        * total_num_files_per_node
-    )
     project, list_of_files = with_random_project_with_files
+
+    total_num_files = sum(
+        len(files_in_node) for files_in_node in list_of_files.values()
+    )
+    expected_project_total_size = project_params.allowed_file_sizes[0] * total_num_files
+
     url = url_from_operation_id(
         client,
         initialized_app,
