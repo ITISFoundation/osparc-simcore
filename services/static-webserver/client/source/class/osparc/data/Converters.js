@@ -70,7 +70,7 @@ qx.Class.define("osparc.data.Converters", {
         path,
         itemId: path,
         datasetId,
-        fileId: fileMetaData["file_uuid"],
+        fileId: fileMetaData["file_id"],
         lastModified: fileMetaData["last_modified"],
         size: fileMetaData["file_size"],
         type: "file",
