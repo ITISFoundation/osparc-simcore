@@ -543,6 +543,34 @@ async def test_list_paths_with_display_name_containing_slashes(
         ), "display path parts should be url encoded"
 
 
+async def _assert_compute_path_total_size(
+    initialized_app: FastAPI,
+    client: httpx.AsyncClient,
+    location_id: LocationID,
+    user_id: UserID,
+    *,
+    path: Path,
+    expected_total_size: ByteSize,
+) -> None:
+    url = url_from_operation_id(
+        client,
+        initialized_app,
+        "compute_path_total_size",
+        location_id=f"{location_id}",
+        path=f"{path}",
+    ).with_query(user_id=user_id)
+    response = await client.post(f"{url}")
+
+    received, _ = assert_status(
+        response,
+        status.HTTP_200_OK,
+        PathTotalSizeCreate,
+    )
+    assert received
+    assert received.path == path
+    assert received.size == expected_total_size
+
+
 @pytest.mark.parametrize(
     "project_params",
     [
@@ -577,25 +605,16 @@ async def test_path_compute_size(
     # get size of a full project
     expected_total_size = project_params.allowed_file_sizes[0] * total_num_files
     path = Path(project["uuid"])
-    url = url_from_operation_id(
-        client,
+    await _assert_compute_path_total_size(
         initialized_app,
-        "compute_path_total_size",
-        location_id=f"{location_id}",
-        path=f"{path}",
-    ).with_query(user_id=user_id)
-    response = await client.post(f"{url}")
-
-    received, _ = assert_status(
-        response,
-        status.HTTP_200_OK,
-        PathTotalSizeCreate,
+        client,
+        location_id,
+        user_id,
+        path=path,
+        expected_total_size=expected_total_size,
     )
-    assert received
-    assert received.path == path
-    assert received.size == expected_total_size
 
-    # get size of a project/node
+    # get size of one of the nodes
     selected_node_id = NodeID(random.choice(list(project["workbench"])))  # noqa: S311
     selected_node_s3_keys = [
         Path(s3_object_id) for s3_object_id in list_of_files[selected_node_id]
@@ -604,20 +623,11 @@ async def test_path_compute_size(
         selected_node_s3_keys
     )
     path = Path(project["uuid"]) / f"{selected_node_id}"
-    url = url_from_operation_id(
-        client,
+    await _assert_compute_path_total_size(
         initialized_app,
-        "compute_path_total_size",
-        location_id=f"{location_id}",
-        path=f"{path}",
-    ).with_query(user_id=user_id)
-    response = await client.post(f"{url}")
-
-    received, _ = assert_status(
-        response,
-        status.HTTP_200_OK,
-        PathTotalSizeCreate,
+        client,
+        location_id,
+        user_id,
+        path=path,
+        expected_total_size=expected_total_size,
     )
-    assert received
-    assert received.path == path
-    assert received.size == expected_total_size
