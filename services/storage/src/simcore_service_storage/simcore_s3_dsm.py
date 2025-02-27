@@ -251,6 +251,10 @@ class SimcoreS3DataManager(BaseDataManager):
 
         return paths_metadata, next_cursor, total
 
+    async def compute_path_total_size(self, user_id: UserID, *, path: Path) -> ByteSize:
+        """returns the total size of the path"""
+        return 0
+
     async def list_files(
         self,
         user_id: UserID,
