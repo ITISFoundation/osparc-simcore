@@ -12,9 +12,8 @@ from ..api_schemas_rpc_async_jobs.async_jobs import (
 )
 from ..api_schemas_storage.data_export_async_jobs import DataExportTaskStartInput
 from ..progress_bar import ProgressReport
-from ..projects_nodes_io import LocationID
+from ..projects_nodes_io import LocationID, StorageFileID
 from ..rest_pagination import CursorQueryParameters
-from ..users import UserID
 from ._base import InputSchema, OutputSchema
 
 
@@ -27,15 +26,11 @@ class ListPathsQueryParams(InputSchema, CursorQueryParameters):
 
 
 class DataExportPost(InputSchema):
-    paths: list[Path]
+    paths: list[StorageFileID]
 
-    def to_rpc_schema(
-        self, user_id: UserID, product_name: str, location_id: LocationID
-    ) -> DataExportTaskStartInput:
+    def to_rpc_schema(self, location_id: LocationID) -> DataExportTaskStartInput:
         return DataExportTaskStartInput(
-            paths=self.paths,
-            user_id=user_id,
-            product_name=product_name,
+            file_and_folder_ids=self.paths,
             location_id=location_id,
         )
 
