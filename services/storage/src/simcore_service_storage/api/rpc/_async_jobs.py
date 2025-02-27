@@ -1,6 +1,5 @@
 # pylint: disable=unused-argument
 from datetime import datetime
-from uuid import uuid4
 
 from fastapi import FastAPI
 from models_library.api_schemas_rpc_async_jobs.async_jobs import (
@@ -15,8 +14,10 @@ from models_library.api_schemas_rpc_async_jobs.exceptions import (
     ResultError,
     StatusError,
 )
-from models_library.progress_bar import ProgressReport
 from servicelib.rabbitmq import RPCRouter
+
+from ...modules.celery.models import TaskStatus, TaskUUID
+from ...modules.celery.utils import get_celery_client
 
 router = RPCRouter()
 
@@ -36,13 +37,17 @@ async def get_status(
 ) -> AsyncJobStatus:
     assert app  # nosec
     assert job_id_data  # nosec
-    progress_report = ProgressReport(actual_value=0.5, total=1.0, attempt=1)
+
+    task_status: TaskStatus = await get_celery_client(app).get_task_status(
+        task_context=job_id_data.model_dump(),
+        task_uuid=job_id,
+    )
     return AsyncJobStatus(
         job_id=job_id,
-        progress=progress_report,
+        progress=task_status.progress_report,
         done=False,
-        started=datetime.now(),
-        stopped=None,
+        started=datetime.now(),  # TODO: retrieve that
+        stopped=None,  # TODO: retrieve that
     )
 
 
@@ -53,12 +58,23 @@ async def get_result(
     assert app  # nosec
     assert job_id  # nosec
     assert job_id_data  # nosec
-    return AsyncJobResult(result="Here's your result.", error=None)
+
+    result = await get_celery_client(app).get_result(
+        task_context=job_id_data.model_dump(),
+        task_uuid=job_id,
+    )
+
+    return AsyncJobResult(result=result, error=None)
 
 
 @router.expose()
 async def list_jobs(
-    app: FastAPI, filter_: str, job_id_data: AsyncJobNameData
+    app: FastAPI, filter_: str, job_id_data: AsyncJobNameData  # TODO: implement filter
 ) -> list[AsyncJobGet]:
     assert app  # nosec
-    return [AsyncJobGet(job_id=AsyncJobId(f"{uuid4()}"))]
+
+    task_uuids: set[TaskUUID] = await get_celery_client(app).get_task_uuids(
+        task_context=job_id_data.model_dump(),
+    )
+
+    return [AsyncJobGet(job_id=task_uuid) for task_uuid in task_uuids]

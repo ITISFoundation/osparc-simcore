@@ -105,7 +105,7 @@ class CeleryTaskQueueClient:
         return set()
 
     @make_async()
-    def get_task_ids(self, task_context: TaskContext) -> set[TaskUUID]:
+    def get_task_uuids(self, task_context: TaskContext) -> set[TaskUUID]:
         all_task_ids = self._get_completed_task_ids(task_context)
 
         for task_inspect_status in _CELERY_INSPECT_TASK_STATUSES:
