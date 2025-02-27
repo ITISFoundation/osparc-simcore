@@ -34,7 +34,7 @@ from models_library.projects_nodes_io import (
     StorageFileID,
 )
 from models_library.users import UserID
-from pydantic import AnyUrl, ByteSize, NonNegativeInt, TypeAdapter
+from pydantic import AnyUrl, ByteSize, NonNegativeInt, TypeAdapter, ValidationError
 from servicelib.aiohttp.long_running_tasks.server import TaskProgress
 from servicelib.fastapi.client_session import get_client_session
 from servicelib.logging_utils import log_context
@@ -81,6 +81,7 @@ from .utils.s3_utils import S3TransferDataCB, update_task_progress
 from .utils.simcore_s3_dsm_utils import (
     compute_file_id_prefix,
     expand_directory,
+    get_accessible_project_ids,
     get_directory_file_id,
     list_child_paths_from_repository,
     list_child_paths_from_s3,
@@ -191,17 +192,9 @@ class SimcoreS3DataManager(BaseDataManager):
             project_id = ProjectID(file_filter.parts[0]) if file_filter else None
 
         async with self.engine.connect() as conn:
-            if project_id:
-                project_access_rights = await get_project_access_rights(
-                    conn=conn, user_id=user_id, project_id=project_id
-                )
-                if not project_access_rights.read:
-                    raise ProjectAccessRightError(
-                        access_right="read", project_id=project_id
-                    )
-                accessible_projects_ids = [project_id]
-            else:
-                accessible_projects_ids = await get_readable_project_ids(conn, user_id)
+            accessible_projects_ids = await get_accessible_project_ids(
+                conn, user_id=user_id, project_id=project_id
+            )
 
             # check if the file_filter is a directory or inside one
             dir_fmd = None
@@ -253,26 +246,64 @@ class SimcoreS3DataManager(BaseDataManager):
 
     async def compute_path_total_size(self, user_id: UserID, *, path: Path) -> ByteSize:
         """returns the total size of the path"""
+
+        # check access rights
         project_id = None
-        node_id = None
         with contextlib.suppress(ValueError):
             # NOTE: we currently do not support anything else than project_id/node_id/file_path here, sorry chap
             project_id = ProjectID(path.parts[0])
-            if len(path.parts) > 1:
-                node_id = NodeID(path.parts[1])
         async with self.engine.connect() as conn:
-            if project_id:
-                project_access_rights = await get_project_access_rights(
-                    conn=conn, user_id=user_id, project_id=project_id
-                )
-                if not project_access_rights.read:
-                    raise ProjectAccessRightError(
-                        access_right="read", project_id=project_id
-                    )
-                accessible_projects_ids = [project_id]
-            else:
-                accessible_projects_ids = await get_readable_project_ids(conn, user_id)
-        return 0
+            accessible_projects_ids = await get_accessible_project_ids(
+                conn, user_id=user_id, project_id=project_id
+            )
+
+        # compute the total size (files and base folders are in the DB)
+        # use-cases:
+        # 1. path is partial and smaller than in the DB --> all entries are in the DB (files and folder) sum will be done there
+        # 2. path is partial and not in the DB --> entries are in S3, list the entries and sum their sizes
+        # 3. path is complete and in the DB --> return directly from the DB
+        # 4. path is complete and not in the DB --> entry in S3, returns directly from there
+
+        with contextlib.suppress(ValidationError):
+            file_id = TypeAdapter(StorageFileID).validate_python(path)
+            # path might be  complete
+            with contextlib.suppress(FileMetaDataNotFoundError):
+                # file or folder is in DB
+                async with self.engine.connect() as conn:
+                    fmd = await file_meta_data.get(conn, file_id=file_id)
+                assert isinstance(fmd.file_size, ByteSize)  # nosec
+                return fmd.file_size
+            # file or folder is in S3
+            s3_metadata = await get_s3_client(self.app).get_directory_metadata(
+                bucket=self.simcore_bucket_name, prefix=file_id
+            )
+            assert s3_metadata.size  # nosec
+            return s3_metadata.size
+
+        # path is partial not containing the minimal requirements to be a fully fledged file_id (only 1 or 2 parts), so everything is in DB
+        async with self.engine.connect() as conn:
+            fmds = await file_meta_data.list_filter_with_partial_file_id(
+                conn,
+                user_or_project_filter=UserOrProjectFilter(
+                    user_id=user_id, project_ids=accessible_projects_ids
+                ),
+                file_id_prefix=f"{path}",
+                partial_file_id=None,
+                sha256_checksum=None,
+                is_directory=None,
+            )
+
+            # ensure file sizes are uptodate
+        updated_fmds = []
+        for metadata in fmds:
+            if is_file_entry_valid(metadata):
+                updated_fmds.append(metadata)
+                continue
+            updated_fmds.append(
+                convert_db_to_model(await self._update_database_from_storage(metadata))
+            )
+
+        return ByteSize(sum(fmd.file_size for fmd in updated_fmds))
 
     async def list_files(
         self,
@@ -377,12 +408,6 @@ class SimcoreS3DataManager(BaseDataManager):
         # get file from storage if available
         fmd = await self._update_database_from_storage(fmd)
         return convert_db_to_model(fmd)
-
-    async def can_read_file(self, user_id: UserID, file_id: StorageFileID):
-        async with self.engine.connect() as conn:
-            can = await get_file_access_rights(conn, int(user_id), file_id)
-            if not can.read:
-                raise FileAccessRightError(access_right="read", file_id=file_id)
 
     async def create_file_upload_links(
         self,
