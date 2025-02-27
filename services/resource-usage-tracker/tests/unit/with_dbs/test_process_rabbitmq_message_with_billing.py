@@ -15,7 +15,7 @@ from models_library.rabbitmq_messages import (
 from models_library.resource_tracker import (
     CreditClassification,
     CreditTransactionStatus,
-    UnitExtraInfo,
+    UnitExtraInfoTier,
 )
 from pytest_mock.plugin import MockerFixture
 from servicelib.rabbitmq import RabbitMQClient
@@ -73,7 +73,7 @@ def resource_tracker_pricing_tables_db(postgres_db: sa.engine.Engine) -> Iterato
             resource_tracker_pricing_units.insert().values(
                 pricing_plan_id=1,
                 unit_name="S",
-                unit_extra_info=UnitExtraInfo.model_config["json_schema_extra"][
+                unit_extra_info=UnitExtraInfoTier.model_config["json_schema_extra"][
                     "examples"
                 ][0],
                 default=False,
@@ -100,7 +100,7 @@ def resource_tracker_pricing_tables_db(postgres_db: sa.engine.Engine) -> Iterato
             resource_tracker_pricing_units.insert().values(
                 pricing_plan_id=1,
                 unit_name="M",
-                unit_extra_info=UnitExtraInfo.model_config["json_schema_extra"][
+                unit_extra_info=UnitExtraInfoTier.model_config["json_schema_extra"][
                     "examples"
                 ][0],
                 default=True,
@@ -127,7 +127,7 @@ def resource_tracker_pricing_tables_db(postgres_db: sa.engine.Engine) -> Iterato
             resource_tracker_pricing_units.insert().values(
                 pricing_plan_id=1,
                 unit_name="L",
-                unit_extra_info=UnitExtraInfo.model_config["json_schema_extra"][
+                unit_extra_info=UnitExtraInfoTier.model_config["json_schema_extra"][
                     "examples"
                 ][0],
                 default=False,

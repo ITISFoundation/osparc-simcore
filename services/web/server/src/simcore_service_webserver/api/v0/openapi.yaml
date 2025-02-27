@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: simcore-service-webserver
   description: Main service with an interface (http-API & websockets) to the web front-end
-  version: 0.59.0
+  version: 0.60.0
 servers:
 - url: ''
   description: webserver
@@ -1107,7 +1107,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_GetCreditPrice_'
+                $ref: '#/components/schemas/Envelope_CreditPriceGet_'
   /v0/products/{product_name}:
     get:
       tags:
@@ -1149,42 +1149,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_ProductUIGet_'
-  /v0/products/{product_name}/templates/{template_id}:
-    put:
-      tags:
-      - products
-      - po
-      summary: Update Product Template
-      operationId: update_product_template
-      parameters:
-      - name: product_name
-        in: path
-        required: true
-        schema:
-          anyOf:
-          - type: string
-            minLength: 1
-            maxLength: 100
-          - const: current
-            type: string
-          title: Product Name
-      - name: template_id
-        in: path
-        required: true
-        schema:
-          type: string
-          minLength: 1
-          maxLength: 100
-          title: Template Id
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpdateProductTemplate'
-      responses:
-        '204':
-          description: Successful Response
   /v0/invitation:generate:
     post:
       tags:
@@ -1196,7 +1160,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/GenerateInvitation'
+              $ref: '#/components/schemas/InvitationGenerate'
         required: true
       responses:
         '200':
@@ -6024,6 +5988,54 @@ paths:
                   $ref: '#/components/schemas/FileLocation'
                 type: array
                 title: Response List Storage Locations
+  /v0/storage/locations/{location_id}/paths:
+    get:
+      tags:
+      - storage
+      summary: List Storage Paths
+      description: Lists the files/directories in WorkingDirectory
+      operationId: list_storage_paths
+      parameters:
+      - name: location_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Location Id
+      - name: size
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          exclusiveMaximum: true
+          default: 20
+          title: Size
+          maximum: 50
+      - name: cursor
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Cursor
+      - name: fileFilter
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            format: path
+          - type: 'null'
+          title: Filefilter
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CursorPage_PathMetaDataGet_'
   /v0/storage/locations/{location_id}/datasets:
     get:
       tags:
@@ -8299,7 +8311,10 @@ components:
           type: string
           title: Unitname
         unitExtraInfo:
-          $ref: '#/components/schemas/UnitExtraInfo-Input'
+          anyOf:
+          - $ref: '#/components/schemas/UnitExtraInfoTier-Input'
+          - $ref: '#/components/schemas/UnitExtraInfoLicense'
+          title: Unitextrainfo
         default:
           type: boolean
           title: Default
@@ -8362,6 +8377,74 @@ components:
       required:
       - priceDollars
       title: CreateWalletPayment
+    CreditPriceGet:
+      properties:
+        productName:
+          type: string
+          title: Productname
+        usdPerCredit:
+          anyOf:
+          - type: number
+            minimum: 0.0
+          - type: 'null'
+          title: Usdpercredit
+          description: Price of a credit in USD. If None, then this product's price
+            is UNDEFINED
+        minPaymentAmountUsd:
+          anyOf:
+          - type: integer
+            minimum: 0
+          - type: 'null'
+          title: Minpaymentamountusd
+          description: Minimum amount (included) in USD that can be paid for this
+            productCan be None if this product's price is UNDEFINED
+      type: object
+      required:
+      - productName
+      - usdPerCredit
+      - minPaymentAmountUsd
+      title: CreditPriceGet
+    CursorPage_PathMetaDataGet_:
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/PathMetaDataGet'
+          type: array
+          title: Items
+        total:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Total
+          description: Total items
+        current_page:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Current Page
+          description: Cursor to refetch the current page
+        current_page_backwards:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Current Page Backwards
+          description: Cursor to refetch the current page starting from the last item
+        previous_page:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Previous Page
+          description: Cursor for the previous page
+        next_page:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Next Page
+          description: Cursor for the next page
+      type: object
+      required:
+      - items
+      title: CursorPage[PathMetaDataGet]
     DatCoreFileLink:
       properties:
         store:
@@ -8566,6 +8649,19 @@ components:
           title: Error
       type: object
       title: Envelope[ComputationGet]
+    Envelope_CreditPriceGet_:
+      properties:
+        data:
+          anyOf:
+          - $ref: '#/components/schemas/CreditPriceGet'
+          - type: 'null'
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[CreditPriceGet]
     Envelope_FileMetaDataGet_:
       properties:
         data:
@@ -8644,19 +8740,6 @@ components:
           title: Error
       type: object
       title: Envelope[FolderGet]
-    Envelope_GetCreditPrice_:
-      properties:
-        data:
-          anyOf:
-          - $ref: '#/components/schemas/GetCreditPrice'
-          - type: 'null'
-        error:
-          anyOf:
-          - {}
-          - type: 'null'
-          title: Error
-      type: object
-      title: Envelope[GetCreditPrice]
     Envelope_GetProjectInactivityResponse_:
       properties:
         data:
@@ -10465,73 +10548,6 @@ components:
       required:
       - name
       title: FolderReplaceBodyParams
-    GenerateInvitation:
-      properties:
-        guest:
-          type: string
-          format: email
-          title: Guest
-        trialAccountDays:
-          anyOf:
-          - type: integer
-            exclusiveMinimum: true
-            minimum: 0
-          - type: 'null'
-          title: Trialaccountdays
-        extraCreditsInUsd:
-          anyOf:
-          - type: integer
-            exclusiveMaximum: true
-            minimum: 0
-            maximum: 500
-          - type: 'null'
-          title: Extracreditsinusd
-      type: object
-      required:
-      - guest
-      title: GenerateInvitation
-    GetCreditPrice:
-      properties:
-        productName:
-          type: string
-          title: Productname
-        usdPerCredit:
-          anyOf:
-          - type: number
-            minimum: 0.0
-          - type: 'null'
-          title: Usdpercredit
-          description: Price of a credit in USD. If None, then this product's price
-            is UNDEFINED
-        minPaymentAmountUsd:
-          anyOf:
-          - type: integer
-            minimum: 0
-          - type: 'null'
-          title: Minpaymentamountusd
-          description: Minimum amount (included) in USD that can be paid for this
-            productCan be None if this product's price is UNDEFINED
-      type: object
-      required:
-      - productName
-      - usdPerCredit
-      - minPaymentAmountUsd
-      title: GetCreditPrice
-    GetProductTemplate:
-      properties:
-        id:
-          type: string
-          maxLength: 100
-          minLength: 1
-          title: Id
-        content:
-          type: string
-          title: Content
-      type: object
-      required:
-      - id
-      - content
-      title: GetProductTemplate
     GetProjectInactivityResponse:
       properties:
         is_inactive:
@@ -10874,6 +10890,31 @@ components:
       required:
       - invitation
       title: InvitationCheck
+    InvitationGenerate:
+      properties:
+        guest:
+          type: string
+          format: email
+          title: Guest
+        trialAccountDays:
+          anyOf:
+          - type: integer
+            exclusiveMinimum: true
+            minimum: 0
+          - type: 'null'
+          title: Trialaccountdays
+        extraCreditsInUsd:
+          anyOf:
+          - type: integer
+            exclusiveMaximum: true
+            minimum: 0
+            maximum: 500
+          - type: 'null'
+          title: Extracreditsinusd
+      type: object
+      required:
+      - guest
+      title: InvitationGenerate
     InvitationGenerated:
       properties:
         productName:
@@ -12334,6 +12375,29 @@ components:
       required:
       - value
       title: PatchRequestBody
+    PathMetaDataGet:
+      properties:
+        path:
+          type: string
+          format: path
+          title: Path
+          description: the path to the current path
+        display_path:
+          type: string
+          format: path
+          title: Display Path
+          description: the path to display with UUID replaced
+        file_meta_data:
+          anyOf:
+          - $ref: '#/components/schemas/FileMetaDataGet'
+          - type: 'null'
+          description: if filled, this is the file meta data of the s3 object
+      additionalProperties: false
+      type: object
+      required:
+      - path
+      - display_path
+      title: PathMetaDataGet
     PaymentMethodGet:
       properties:
         idr:
@@ -12770,7 +12834,10 @@ components:
           type: string
           title: Unitname
         unitExtraInfo:
-          $ref: '#/components/schemas/UnitExtraInfo-Output'
+          anyOf:
+          - $ref: '#/components/schemas/UnitExtraInfoTier-Output'
+          - $ref: '#/components/schemas/UnitExtraInfoLicense'
+          title: Unitextrainfo
         currentCostPerUnit:
           type: string
           title: Currentcostperunit
@@ -12814,7 +12881,10 @@ components:
           type: string
           title: Unitname
         unitExtraInfo:
-          $ref: '#/components/schemas/UnitExtraInfo-Output'
+          anyOf:
+          - $ref: '#/components/schemas/UnitExtraInfoTier-Output'
+          - $ref: '#/components/schemas/UnitExtraInfoLicense'
+          title: Unitextrainfo
         currentCostPerUnit:
           type: string
           title: Currentcostperunit
@@ -12893,7 +12963,7 @@ components:
           title: Creditsperusd
         templates:
           items:
-            $ref: '#/components/schemas/GetProductTemplate'
+            $ref: '#/components/schemas/ProductTemplateGet'
           type: array
           title: Templates
           description: List of templates available to this product for communications
@@ -12907,6 +12977,21 @@ components:
       - isPaymentEnabled
       - creditsPerUsd
       title: ProductGet
+    ProductTemplateGet:
+      properties:
+        id:
+          type: string
+          maxLength: 100
+          minLength: 1
+          title: Id
+        content:
+          type: string
+          title: Content
+      type: object
+      required:
+      - id
+      - content
+      title: ProductTemplateGet
     ProductUIGet:
       properties:
         productName:
@@ -15024,36 +15109,49 @@ components:
       - url
       - thumbnail
       title: ThirdPartyInfoDict
-    UnitExtraInfo-Input:
+    UnitExtraInfoLicense:
       properties:
-        CPU:
+        num_of_seats:
           type: integer
           minimum: 0
-          title: Cpu
-        RAM:
-          anyOf:
-          - type: string
-            pattern: ^\s*(\d*\.?\d+)\s*(\w+)?
-          - type: integer
-            minimum: 0
-          title: Ram
-        VRAM:
-          anyOf:
-          - type: string
-            pattern: ^\s*(\d*\.?\d+)\s*(\w+)?
-          - type: integer
-            minimum: 0
-          title: Vram
+          title: Num Of Seats
       additionalProperties: true
       type: object
       required:
-      - CPU
-      - RAM
-      - VRAM
-      title: UnitExtraInfo
+      - num_of_seats
+      title: UnitExtraInfoLicense
       description: Custom information that is propagated to the frontend. Defined
         fields are mandatory.
-    UnitExtraInfo-Output:
+    UnitExtraInfoTier-Input:
+      properties:
+        CPU:
+          type: integer
+          minimum: 0
+          title: Cpu
+        RAM:
+          anyOf:
+          - type: string
+            pattern: ^\s*(\d*\.?\d+)\s*(\w+)?
+          - type: integer
+            minimum: 0
+          title: Ram
+        VRAM:
+          anyOf:
+          - type: string
+            pattern: ^\s*(\d*\.?\d+)\s*(\w+)?
+          - type: integer
+            minimum: 0
+          title: Vram
+      additionalProperties: true
+      type: object
+      required:
+      - CPU
+      - RAM
+      - VRAM
+      title: UnitExtraInfoTier
+      description: Custom information that is propagated to the frontend. Defined
+        fields are mandatory.
+    UnitExtraInfoTier-Output:
       properties:
         CPU:
           type: integer
@@ -15073,7 +15171,7 @@ components:
       - CPU
       - RAM
       - VRAM
-      title: UnitExtraInfo
+      title: UnitExtraInfoTier
       description: Custom information that is propagated to the frontend. Defined
         fields are mandatory.
     UnregisterCheck:
@@ -15115,7 +15213,10 @@ components:
           type: string
           title: Unitname
         unitExtraInfo:
-          $ref: '#/components/schemas/UnitExtraInfo-Input'
+          anyOf:
+          - $ref: '#/components/schemas/UnitExtraInfoTier-Input'
+          - $ref: '#/components/schemas/UnitExtraInfoLicense'
+          title: Unitextrainfo
         default:
           type: boolean
           title: Default
@@ -15132,15 +15233,6 @@ components:
       - default
       - specificInfo
       title: UpdatePricingUnitBodyParams
-    UpdateProductTemplate:
-      properties:
-        content:
-          type: string
-          title: Content
-      type: object
-      required:
-      - content
-      title: UpdateProductTemplate
     UploadedPart:
       properties:
         number:

@@ -8,11 +8,6 @@ from simcore_postgres_database.utils_tags import (
     TagNotFoundError,
     TagOperationNotAllowedError,
 )
-from simcore_service_webserver.tags.errors import (
-    InsufficientTagShareAccessError,
-    ShareTagWithEveryoneNotAllowedError,
-    ShareTagWithProductGroupNotAllowedError,
-)
 
 from .._meta import API_VTAG as VTAG
 from ..exception_handling import (
@@ -25,6 +20,11 @@ from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
 from . import _service
+from .errors import (
+    InsufficientTagShareAccessError,
+    ShareTagWithEveryoneNotAllowedError,
+    ShareTagWithProductGroupNotAllowedError,
+)
 from .schemas import (
     TagCreate,
     TagGroupCreate,

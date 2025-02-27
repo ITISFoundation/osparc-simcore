@@ -1,23 +1,15 @@
 from fastapi import APIRouter, FastAPI
 
-from . import _datasets, _files, _health, _locations, _simcore_s3
+from . import _datasets, _files, _health, _locations, _paths, _simcore_s3
 
 v0_router = APIRouter()
 
-# health
 health_router = _health.router
 v0_router.include_router(_health.router)
-
-# locations
 v0_router.include_router(_locations.router)
-
-# datasets
 v0_router.include_router(_datasets.router)
-
-# files
 v0_router.include_router(_files.router)
-
-# simcore-s3
+v0_router.include_router(_paths.router)
 v0_router.include_router(_simcore_s3.router)
 
 

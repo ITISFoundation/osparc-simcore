@@ -857,7 +857,7 @@ types-aiobotocore==2.19.0
     #   -r requirements/_base.in
 types-aiobotocore-ec2==2.19.0
     # via types-aiobotocore
-types-aiobotocore-s3==2.19.0.post1
+types-aiobotocore-s3==2.19.0
     # via types-aiobotocore
 types-aiobotocore-ssm==2.19.0
     # via types-aiobotocore

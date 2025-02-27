@@ -179,7 +179,7 @@ async def test_get_file_metada(
     )
     assert file_metadata
     assert file_metadata == FileMetaDataGet.model_validate(
-        FileMetaDataGet.model_config["json_schema_extra"]["examples"][0]
+        FileMetaDataGet.model_json_schema()["examples"][0]
     )
 
 

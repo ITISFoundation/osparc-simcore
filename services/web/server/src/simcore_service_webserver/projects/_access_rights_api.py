@@ -2,11 +2,11 @@ from aiohttp import web
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.users import UserID
-from simcore_service_webserver.projects._db_utils import PermissionStr
 
 from ..db.plugin import get_database_engine
 from ..workspaces.api import get_workspace
 from ._access_rights_db import get_project_owner
+from ._db_utils import PermissionStr
 from .db import APP_PROJECT_DBAPI, ProjectDBAPI
 from .exceptions import ProjectInvalidRightsError, ProjectNotFoundError
 from .models import UserProjectAccessRightsWithWorkspace

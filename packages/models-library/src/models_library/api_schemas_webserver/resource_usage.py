@@ -13,7 +13,8 @@ from ..resource_tracker import (
     PricingUnitId,
     ServiceRunStatus,
     SpecificInfo,
-    UnitExtraInfo,
+    UnitExtraInfoLicense,
+    UnitExtraInfoTier,
 )
 from ..services import ServiceKey, ServiceVersion
 from ..services_types import ServiceRunID
@@ -48,7 +49,7 @@ class ServiceRunGet(
 class PricingUnitGet(OutputSchema):
     pricing_unit_id: PricingUnitId
     unit_name: str
-    unit_extra_info: UnitExtraInfo
+    unit_extra_info: UnitExtraInfoTier | UnitExtraInfoLicense
     current_cost_per_unit: Decimal
     default: bool
 
@@ -114,7 +115,7 @@ class UpdatePricingPlanBodyParams(InputSchema):
 
 class CreatePricingUnitBodyParams(InputSchema):
     unit_name: str
-    unit_extra_info: UnitExtraInfo
+    unit_extra_info: UnitExtraInfoTier | UnitExtraInfoLicense
     default: bool
     specific_info: SpecificInfo
     cost_per_unit: Decimal
@@ -128,7 +129,7 @@ class CreatePricingUnitBodyParams(InputSchema):
 
 class UpdatePricingUnitBodyParams(InputSchema):
     unit_name: str
-    unit_extra_info: UnitExtraInfo
+    unit_extra_info: UnitExtraInfoTier | UnitExtraInfoLicense
     default: bool
     specific_info: SpecificInfo
     pricing_unit_cost_update: PricingUnitCostUpdate | None = Field(default=None)
