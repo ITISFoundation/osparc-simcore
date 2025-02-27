@@ -81,6 +81,10 @@ class BaseDataManager(ABC):
         """returns a page of the file meta data a user has access to"""
 
     @abstractmethod
+    async def compute_path_total_size(self, user_id: UserID, *, path: Path) -> ByteSize:
+        """returns the total size of the path"""
+
+    @abstractmethod
     async def get_file(self, user_id: UserID, file_id: StorageFileID) -> FileMetaData:
         """returns the file meta data of file_id if user_id has the rights to"""
 
