@@ -14,6 +14,12 @@ _logger = logging.getLogger(__name__)
 
 _CELERY_TASK_META_PREFIX = "celery-task-meta-"
 _PREFIX: Final[str] = "ct"  # short for celery task, not Catania
+_CELERY_INSPECT_TASK_STATUSES = (
+    "active",
+    "registered",
+    "scheduled",
+    "revoked",
+)
 
 
 def _build_parts_prefix(name: str, task_id_parts: TaskIDParts) -> list[str]:
@@ -75,7 +81,7 @@ class CeleryTaskQueueClient:
 
     def _get_completed_task_ids(
         self, task_name: str, task_id_parts: TaskIDParts
-    ) -> list[TaskID]:
+    ) -> set[TaskID]:
         search_key = (
             _CELERY_TASK_META_PREFIX
             + build_task_id_prefix(task_name, task_id_parts)
@@ -83,15 +89,19 @@ class CeleryTaskQueueClient:
         )
         redis = self._celery_app.backend.client
         if hasattr(redis, "keys") and (keys := redis.keys(search_key)):
-            return [f"{key}".removeprefix(_CELERY_TASK_META_PREFIX) for key in keys]
-        return []
+            return {f"{key}".removeprefix(_CELERY_TASK_META_PREFIX) for key in keys}
+        return set()
 
     @make_async()
-    def list_tasks(self, task_name: str, *, task_id_parts: TaskIDParts) -> Any:
+    def get_task_ids(
+        self, task_name: str, *, task_id_parts: TaskIDParts
+    ) -> set[TaskID]:
         all_task_ids = self._get_completed_task_ids(task_name, task_id_parts)
 
-        for task_type in ["active", "registered", "scheduled", "revoked"]:
-            if task_ids := getattr(self._celery_app.control.inspect(), task_type)():
-                all_task_ids.extend(task_ids)
+        for task_inspect_status in _CELERY_INSPECT_TASK_STATUSES:
+            if task_ids := getattr(
+                self._celery_app.control.inspect(), task_inspect_status
+            )():
+                all_task_ids.add(task_ids)
 
         return all_task_ids
