@@ -5,6 +5,7 @@ from models_library.api_schemas_catalog.services import (
     ServiceGetV2,
     ServiceUpdateV2,
 )
+from models_library.groups import GroupID
 from models_library.products import ProductName
 from models_library.rest_pagination import PageLimitInt
 from models_library.services_access import ServiceGroupAccessRightsV2
@@ -363,18 +364,16 @@ async def batch_get_my_services(
 
     my_services = []
     for service_key, service_version in ids:
+
+        # Evaluate user's access-rights to this service key:version
         access_rights = services_access_rights.get((service_key, service_version), [])
-
-        my_access_rights = {
-            "execute": False,
-            "write": False,
-        }
-
+        my_access_rights = ServiceGroupAccessRightsV2(execute=False, write=False)
         for ar in access_rights:
             if ar.gid in my_group_ids:
-                my_access_rights["execute"] |= ar.execute_access
-                my_access_rights["write"] |= ar.write_access
+                my_access_rights.execute |= ar.execute_access
+                my_access_rights.write |= ar.write_access
 
+        # Get service metadata
         service_db = await repo.get_service(
             product_name=product_name,
             key=service_key,
@@ -382,43 +381,50 @@ async def batch_get_my_services(
         )
         assert service_db  # nosec
 
-        owner = service_db.owner
+        # Find service owner
+        owner: GroupID | None = service_db.owner
         if not owner:
-            # TODO: raise error to indicate that no owner is registered for a given service
+            # NOTE can be more than one. Just get first.
             owner = next(
                 ar.gid for ar in access_rights if ar.write_access and ar.execute_access
             )
 
+        # TODO: raise error to indicate that no owner is registered for a given service
         assert owner is not None  # nosec
 
-        compatibility_map = {}
-        if my_access_rights != {"execute": False, "write": False}:
+        # Evaluate `compatibility`
+        compatibility: Compatibility | None = None
+        if my_access_rights.execute or my_access_rights.write:
+            # TODO: add cache to this section that evals compatibility_map based on service_key
+
+            # NOTE: that the service history might be different for each user
+            # since access rights are defined on a k:v basis
             history = await repo.get_service_history(
                 product_name=product_name, user_id=user_id, key=service_key
             )
-            if history:
-                compatibility_map = await evaluate_service_compatibility_map(
-                    repo,
-                    product_name=product_name,
-                    user_id=user_id,
-                    service_release_history=history,
-                )
+            assert history  # nosec
+
+            compatibility_map = await evaluate_service_compatibility_map(
+                repo,
+                product_name=product_name,
+                user_id=user_id,
+                service_release_history=history,
+            )
+            compatibility = compatibility_map.get(service_db.version)
 
         my_services.append(
             MyServiceGet(
                 key=service_db.key,
-                release=ServiceRelease.model_construct(
+                release=ServiceRelease(
                     version=service_db.version,
                     version_display=service_db.version_display,
                     released=service_db.created,
                     retired=service_db.deprecated,
-                    compatibility=compatibility_map.get(service_db.version),
+                    compatibility=compatibility,
                 ),
                 owner=owner,
                 my_access_rights=my_access_rights,
             )
         )
-
-        # TODO: else error
 
     return my_services

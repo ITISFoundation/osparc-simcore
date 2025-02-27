@@ -11,6 +11,7 @@ from models_library.products import ProductName
 from models_library.users import UserID
 from respx.router import MockRouter
 from simcore_service_catalog.api.dependencies.director import get_director_api
+from simcore_service_catalog.db.repositories.groups import GroupsRepository
 from simcore_service_catalog.db.repositories.services import ServicesRepository
 from simcore_service_catalog.services import manifest, services_api
 from simcore_service_catalog.services.director import DirectorApi
@@ -27,6 +28,11 @@ pytest_simcore_ops_services_selection = [
 @pytest.fixture
 def services_repo(sqlalchemy_async_engine: AsyncEngine):
     return ServicesRepository(sqlalchemy_async_engine)
+
+
+@pytest.fixture
+def groups_repo(sqlalchemy_async_engine: AsyncEngine):
+    return GroupsRepository(sqlalchemy_async_engine)
 
 
 @pytest.fixture
@@ -151,8 +157,8 @@ async def test_batch_get_my_services(
     mocked_director_service_api: MockRouter,
     target_product: ProductName,
     services_repo: ServicesRepository,
+    groups_repo: GroupsRepository,
     user_id: UserID,
-    director_client: DirectorApi,
     create_fake_service_data: Callable,
     services_db_tables_injector: Callable,
 ):
@@ -197,7 +203,7 @@ async def test_batch_get_my_services(
 
     my_services = await services_api.batch_get_my_services(
         services_repo,
-        director_client,
+        groups_repo,
         product_name=target_product,
         user_id=user_id,
         ids=ids,
