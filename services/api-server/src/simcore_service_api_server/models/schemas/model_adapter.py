@@ -14,7 +14,7 @@ from models_library.api_schemas_webserver.licensed_items_checkouts import (
     LicensedItemCheckoutRpcGet as _LicensedItemCheckoutRpcGet,
 )
 from models_library.api_schemas_webserver.product import (
-    GetCreditPrice as _GetCreditPrice,
+    CreditPriceGet as _GetCreditPrice,
 )
 from models_library.api_schemas_webserver.resource_usage import (
     PricingUnitGet as _PricingUnitGet,
@@ -35,7 +35,7 @@ from models_library.resource_tracker import (
     PricingPlanClassification,
     PricingPlanId,
     PricingUnitId,
-    UnitExtraInfo,
+    UnitExtraInfoTier,
 )
 from models_library.resource_tracker_licensed_items_checkouts import (
     LicensedItemCheckoutID,
@@ -85,7 +85,9 @@ assert set(GetCreditPriceLegacy.model_fields.keys()) == set(
 class PricingUnitGetLegacy(BaseModel):
     pricing_unit_id: PricingUnitId = Field(alias="pricingUnitId")
     unit_name: str = Field(alias="unitName")
-    unit_extra_info: UnitExtraInfo = Field(alias="unitExtraInfo")
+    unit_extra_info: UnitExtraInfoTier = Field(
+        alias="unitExtraInfo"
+    )  # <-- NOTE: API Server is interested only in the TIER type
     current_cost_per_unit: Annotated[
         Decimal, PlainSerializer(float, return_type=NonNegativeFloat, when_used="json")
     ] = Field(alias="currentCostPerUnit")

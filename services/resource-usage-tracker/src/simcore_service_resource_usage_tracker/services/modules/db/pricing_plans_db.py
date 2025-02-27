@@ -13,6 +13,9 @@ from models_library.resource_tracker import (
     PricingUnitWithCostUpdate,
 )
 from models_library.services import ServiceKey, ServiceVersion
+from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
+    PricingUnitDuplicationError,
+)
 from simcore_postgres_database.models.resource_tracker_pricing_plan_to_service import (
     resource_tracker_pricing_plan_to_service,
 )
@@ -27,6 +30,7 @@ from simcore_postgres_database.models.resource_tracker_pricing_units import (
 )
 from simcore_postgres_database.utils_repos import transaction_context
 from sqlalchemy.dialects.postgresql import ARRAY, INTEGER
+from sqlalchemy.exc import IntegrityError as SqlAlchemyIntegrityError
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
 from ....exceptions.errors import (
@@ -559,7 +563,10 @@ async def create_pricing_unit_with_cost(
             )
             .returning(resource_tracker_pricing_units.c.pricing_unit_id)
         )
-        result = await conn.execute(insert_stmt)
+        try:
+            result = await conn.execute(insert_stmt)
+        except SqlAlchemyIntegrityError as exc:
+            raise PricingUnitDuplicationError from exc
         row = result.first()
         if row is None:
             raise PricingUnitNotCreatedDBError(data=data)

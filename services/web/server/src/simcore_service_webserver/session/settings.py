@@ -7,7 +7,7 @@ from pydantic.types import SecretStr
 from settings_library.base import BaseCustomSettings
 from settings_library.utils_session import MixinSessionSettings
 
-from .._constants import APP_SETTINGS_KEY
+from ..constants import APP_SETTINGS_KEY
 
 _MINUTE: Final[int] = 60  # secs
 

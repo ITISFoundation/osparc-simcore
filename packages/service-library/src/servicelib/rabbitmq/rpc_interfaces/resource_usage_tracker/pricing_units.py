@@ -5,7 +5,7 @@ from models_library.api_schemas_resource_usage_tracker import (
     RESOURCE_USAGE_TRACKER_RPC_NAMESPACE,
 )
 from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
-    PricingUnitGet,
+    RutPricingUnitGet,
 )
 from models_library.products import ProductName
 from models_library.rabbitmq_basic_types import RPCMethodName
@@ -35,8 +35,8 @@ async def get_pricing_unit(
     product_name: ProductName,
     pricing_plan_id: PricingPlanId,
     pricing_unit_id: PricingUnitId,
-) -> PricingUnitGet:
-    result: PricingUnitGet = await rabbitmq_rpc_client.request(
+) -> RutPricingUnitGet:
+    result: RutPricingUnitGet = await rabbitmq_rpc_client.request(
         RESOURCE_USAGE_TRACKER_RPC_NAMESPACE,
         _RPC_METHOD_NAME_ADAPTER.validate_python("get_pricing_unit"),
         product_name=product_name,
@@ -44,7 +44,7 @@ async def get_pricing_unit(
         pricing_unit_id=pricing_unit_id,
         timeout_s=_DEFAULT_TIMEOUT_S,
     )
-    assert isinstance(result, PricingUnitGet)  # nosec
+    assert isinstance(result, RutPricingUnitGet)  # nosec
     return result
 
 
@@ -54,15 +54,15 @@ async def create_pricing_unit(
     *,
     product_name: ProductName,
     data: PricingUnitWithCostCreate,
-) -> PricingUnitGet:
-    result: PricingUnitGet = await rabbitmq_rpc_client.request(
+) -> RutPricingUnitGet:
+    result: RutPricingUnitGet = await rabbitmq_rpc_client.request(
         RESOURCE_USAGE_TRACKER_RPC_NAMESPACE,
         _RPC_METHOD_NAME_ADAPTER.validate_python("create_pricing_unit"),
         product_name=product_name,
         data=data,
         timeout_s=_DEFAULT_TIMEOUT_S,
     )
-    assert isinstance(result, PricingUnitGet)  # nosec
+    assert isinstance(result, RutPricingUnitGet)  # nosec
     return result
 
 
@@ -72,13 +72,13 @@ async def update_pricing_unit(
     *,
     product_name: ProductName,
     data: PricingUnitWithCostUpdate,
-) -> PricingUnitGet:
-    result: PricingUnitGet = await rabbitmq_rpc_client.request(
+) -> RutPricingUnitGet:
+    result: RutPricingUnitGet = await rabbitmq_rpc_client.request(
         RESOURCE_USAGE_TRACKER_RPC_NAMESPACE,
         _RPC_METHOD_NAME_ADAPTER.validate_python("update_pricing_unit"),
         product_name=product_name,
         data=data,
         timeout_s=_DEFAULT_TIMEOUT_S,
     )
-    assert isinstance(result, PricingUnitGet)  # nosec
+    assert isinstance(result, RutPricingUnitGet)  # nosec
     return result
