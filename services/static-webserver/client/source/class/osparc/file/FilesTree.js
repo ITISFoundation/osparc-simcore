@@ -180,11 +180,7 @@ qx.Class.define("osparc.file.FilesTree", {
       const path = outFileVal.path;
       let datasetId = "dataset" in outFileVal ? outFileVal.dataset : null;
       if (datasetId === null) {
-        const splitted = path.split("/");
-        if (splitted.length === 3) { // studyId + nodeId + fileId
-          // simcore.s3
-          datasetId = splitted[0];
-        }
+        datasetId = osparc.data.Converters.pathToDatasetId(path);
       }
       if (datasetId) {
         if (!(locationId in this.__loadPaths)) {
@@ -368,10 +364,12 @@ qx.Class.define("osparc.file.FilesTree", {
         parentModel.getChildren().removeAll();
         items.forEach(item => {
           if (item["file_meta_data"]) {
+            const datasetId = osparc.data.Converters.pathToDatasetId(path);
             const data = osparc.data.Converters.createFileEntry(
               item["display_path"],
               locationId,
               item["path"],
+              datasetId,
               item["file_meta_data"],
             );
             const model = this.__createModel(locationId, item["path"], data);

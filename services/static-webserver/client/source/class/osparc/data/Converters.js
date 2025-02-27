@@ -62,13 +62,14 @@ qx.Class.define("osparc.data.Converters", {
       };
     },
 
-    createFileEntry: function(displayPath, location, path, fileMetaData) {
+    createFileEntry: function(displayPath, location, path, datasetId, fileMetaData) {
       return {
         label: this.displayPathToLabel(displayPath, { last: true }),
         displayPath: decodeURIComponent(displayPath),
         location,
         path,
         itemId: path,
+        datasetId,
         fileId: fileMetaData["file_uuid"],
         lastModified: fileMetaData["last_modified"],
         size: fileMetaData["file_size"],
@@ -88,6 +89,16 @@ qx.Class.define("osparc.data.Converters", {
         return "@MaterialIcons/insert_drive_file/15";
       }
       return "@MaterialIcons/arrow_right_alt/15";
+    },
+
+    pathToDatasetId: function(path) {
+      const splitted = path.split("/");
+      if (splitted.length > 1) {
+        // simcore: studyId + nodeId + fileId
+        // datcore: datasetId + packageId
+        return splitted[0];
+      }
+      return null;
     },
 
     displayPathToLabel: function(encodedDisplayPath, options) {
