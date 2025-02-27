@@ -58,9 +58,6 @@ qx.Class.define("osparc.file.FilesTree", {
         this.__itemSelected();
       }
     }, this);
-
-    this.__pathModels = [];
-    this.__loadPaths = {};
   },
 
   properties: {
@@ -229,6 +226,8 @@ qx.Class.define("osparc.file.FilesTree", {
 
     __resetChecks: function() {
       this.__locations = new Set();
+      this.__pathModels = [];
+      this.__loadPaths = {};
     },
 
     __resetTree: function(treeName, itemId) {
@@ -265,7 +264,6 @@ qx.Class.define("osparc.file.FilesTree", {
           const openButton = item.getChildControl("open");
           openButton.addListener("tap", () => {
             if (item.isOpen() && !item.getLoaded()) {
-              item.setLoaded(true);
               const locationId = item.getLocation();
               const path = item.getPath();
               this.requestPathItems(locationId, path);
@@ -381,6 +379,7 @@ qx.Class.define("osparc.file.FilesTree", {
         parentModel = this.__getModelFromPath(locationId, path);
       }
       if (parentModel) {
+        parentModel.setLoaded(true);
         parentModel.getChildren().removeAll();
         items.forEach(item => {
           if (item["file_meta_data"]) {
