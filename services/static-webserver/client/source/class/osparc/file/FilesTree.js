@@ -253,9 +253,8 @@ qx.Class.define("osparc.file.FilesTree", {
           c.bindProperty("icon", "icon", null, item, id);
         },
         configureItem: item => {
-          const openButton = item.getChildControl("open");
-          openButton.addListener("tap", () => {
-            if (item.isOpen() && !item.getLoaded()) {
+          item.addListener("changeOpen", e => {
+            if (e.getData() && !item.getLoaded()) {
               const locationId = item.getLocation();
               const path = item.getPath();
               this.requestPathItems(locationId, path);
