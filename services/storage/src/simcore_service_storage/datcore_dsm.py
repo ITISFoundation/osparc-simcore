@@ -188,7 +188,9 @@ class DatCoreDataManager(BaseDataManager):
         )
 
     async def compute_path_total_size(self, user_id: UserID, *, path: Path) -> ByteSize:
-        """returns the total size of the path"""
+        """returns the total size of an arbitrary path"""
+        api_token, api_secret = await self._get_datcore_tokens(user_id)
+        api_token, api_secret = _check_api_credentials(api_token, api_secret)
         raise NotImplementedError
 
     async def list_files(
