@@ -46,5 +46,5 @@ class AsyncJobAbort(BaseModel):
 class AsyncJobNameData(BaseModel):
     """Data for controlling access to an async job"""
 
-    user_id: UserID | None
-    product_name: str | None
+    user_id: UserID
+    product_name: str
