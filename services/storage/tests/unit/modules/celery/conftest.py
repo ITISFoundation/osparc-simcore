@@ -1,6 +1,7 @@
 from asyncio import AbstractEventLoop
 from collections.abc import Callable, Iterable
 from datetime import timedelta
+from typing import Any
 
 import pytest
 from celery import Celery
@@ -42,13 +43,15 @@ def app_environment(
     )
 
 
-_CELERY_CONF = {
-    "broker_url": "memory://",
-    "result_backend": "cache+memory://",
-    "result_expires": timedelta(days=7),
-    "result_extended": True,
-    "pool": "threads",
-}
+@pytest.mark.fixture
+def celery_conf() -> dict[str, Any]:
+    return {
+        "broker_url": "memory://",
+        "result_backend": "cache+memory://",
+        "result_expires": timedelta(days=7),
+        "result_extended": True,
+        "pool": "threads",
+    }
 
 
 @pytest.fixture
@@ -58,8 +61,10 @@ def register_celery_tasks() -> Callable[[Celery], None]:
 
 
 @pytest.fixture
-def celery_client_app(app_environment: EnvVarsDict) -> Celery:
-    celery_app_client.conf.update(_CELERY_CONF)
+def celery_client_app(
+    app_environment: EnvVarsDict, celery_conf: dict[str, Any]
+) -> Celery:
+    celery_app_client.conf.update(celery_conf)
 
     assert isinstance(celery_app_client.conf["client"], CeleryTaskQueueClient)
     assert "worker" not in celery_app_client.conf
@@ -72,8 +77,9 @@ def celery_client_app(app_environment: EnvVarsDict) -> Celery:
 @pytest.fixture
 def celery_worker(
     register_celery_tasks: Callable[[Celery], None],
+    celery_conf: dict[str, Any],
 ) -> Iterable[TestWorkController]:
-    celery_app_worker.conf.update(_CELERY_CONF)
+    celery_app_worker.conf.update(celery_conf)
 
     register_celery_tasks(celery_app_worker)
 
