@@ -407,7 +407,10 @@ class SoftCopyBody(BaseModel):
 class PathMetaDataGet(BaseModel):
     path: Annotated[Path, Field(description="the path to the current path")]
     display_path: Annotated[
-        Path, Field(description="the path to display with UUID replaced")
+        Path,
+        Field(
+            description="the path to display with UUID replaced (URL Encoded by parts as names may contain '/')"
+        ),
     ]
 
     file_meta_data: Annotated[
