@@ -236,7 +236,7 @@ async def app_environment(
 async def test_prune_expired_api_keys_task_is_triggered(
     app_environment: EnvVarsDict, mocker: MockerFixture, client: TestClient
 ):
-    m = mocker.patch(
+    mock = mocker.patch(
         "simcore_service_webserver.api_keys._service._repository.prune_expired"
     )
     settings = client.server.app[  # type: ignore
@@ -244,4 +244,4 @@ async def test_prune_expired_api_keys_task_is_triggered(
     ].WEBSERVER_GARBAGE_COLLECTOR
     assert isinstance(settings, GarbageCollectorSettings)
     await asyncio.sleep(2 * settings.GARBAGE_COLLECTOR_PRUNE_APIKEYS_INTERVAL_S)
-    m.assert_called()
+    mock.assert_called()
