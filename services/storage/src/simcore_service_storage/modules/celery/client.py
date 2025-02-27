@@ -12,18 +12,22 @@ from .models import TaskID, TaskIDParts, TaskStatus
 
 _logger = logging.getLogger(__name__)
 
-_CELERY_TASK_META_PREFIX = "celery-task-meta-"
-_PREFIX: Final[str] = "ct"  # short for celery task, not Catania
 _CELERY_INSPECT_TASK_STATUSES = (
     "active",
     "registered",
     "scheduled",
     "revoked",
 )
+_CELERY_TASK_META_PREFIX = "celery-task-meta-"
+_CELERY_TASK_ID_PREFIX: Final[str] = "ct"  # short for celery task, not Catania
 
 
 def _build_parts_prefix(name: str, task_id_parts: TaskIDParts) -> list[str]:
-    return [_PREFIX, name, *[f"{task_id_parts[key]}" for key in sorted(task_id_parts)]]
+    return [
+        _CELERY_TASK_ID_PREFIX,
+        name,
+        *[f"{task_id_parts[key]}" for key in sorted(task_id_parts)],
+    ]
 
 
 def build_task_id_prefix(name: str, task_id_parts: TaskIDParts) -> TaskID:
