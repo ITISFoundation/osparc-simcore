@@ -58,9 +58,16 @@ qx.Class.define("osparc.file.FileTreeItem", {
   },
 
   properties: {
+    loaded: {
+      check: "Boolean",
+      event: "changeLoaded",
+      init: true,
+      nullable: false
+    },
+
     location: {
       check: "String",
-      event: "changePath",
+      event: "changeLocation",
       nullable: true
     },
 
@@ -99,13 +106,6 @@ qx.Class.define("osparc.file.FileTreeItem", {
       check: "String",
       event: "changeDatasetId",
       nullable: true
-    },
-
-    loaded: {
-      check: "Boolean",
-      event: "changeLoaded",
-      init: true,
-      nullable: false
     },
 
     fileId: {
@@ -181,7 +181,9 @@ qx.Class.define("osparc.file.FileTreeItem", {
     },
 
     __applyItemId: function(value, old) {
-      osparc.utils.Utils.setIdToWidget(this, "fileTreeItem_" + value);
+      if (value) {
+        osparc.utils.Utils.setIdToWidget(this, "fileTreeItem_" + value);
+      }
     },
 
     // override
