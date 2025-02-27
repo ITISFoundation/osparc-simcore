@@ -475,7 +475,7 @@ async def test_list_paths_with_display_name_containing_slashes(
         expected_paths = _filter_and_group_paths_one_level_deeper(
             selected_node_s3_keys, selected_path_filter[0]
         )
-        await _assert_list_paths(
+        page_of_paths = await _assert_list_paths(
             initialized_app,
             client,
             location_id,
@@ -484,3 +484,8 @@ async def test_list_paths_with_display_name_containing_slashes(
             expected_paths=expected_paths,
             check_total=False,
         )
+        assert page_of_paths.items[0].display_path == Path(
+            quote(project_name_with_slashes, safe="")
+        ) / quote(
+            node_name_with_non_ascii, safe=""
+        ), "display path parts should be url encoded"
