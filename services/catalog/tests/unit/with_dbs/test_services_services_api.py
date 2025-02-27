@@ -89,7 +89,10 @@ async def background_sync_task_mocked(
     services_db_tables_injector: Callable,
     fake_services_data: list,
 ) -> None:
-    # inject db services (typically done by the sync background task)
+    """
+    Emulates a sync backgroundtask that injects
+    some services in the db
+    """
     await services_db_tables_injector(fake_services_data)
 
 
@@ -150,7 +153,7 @@ async def test_list_services_paginated(
             service_version=item.version,
         )
 
-        assert got == item
+        assert got.model_dump() == item.model_dump(exclude={"release"})
 
     # since it is cached, it should only call it `limit` times
     assert mocked_director_service_api["get_service"].call_count == limit

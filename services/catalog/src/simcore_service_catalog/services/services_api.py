@@ -3,6 +3,7 @@ import logging
 from models_library.api_schemas_catalog.services import (
     MyServiceGet,
     ServiceGetV2,
+    ServiceItemList,
     ServiceUpdateV2,
 )
 from models_library.groups import GroupID
@@ -88,7 +89,7 @@ async def list_services_paginated(
     user_id: UserID,
     limit: PageLimitInt | None,
     offset: NonNegativeInt = 0,
-) -> tuple[NonNegativeInt, list[ServiceGetV2]]:
+) -> tuple[NonNegativeInt, list[ServiceItemList]]:
 
     # defines the order
     total_count, services = await repo.list_latest_services(
@@ -120,12 +121,15 @@ async def list_services_paginated(
 
     items = [
         _db_to_api_model(
-            service_db=s, access_rights_db=ar, service_manifest=sm, compatibility_map=cm
+            service_db=sc,
+            access_rights_db=ar,
+            service_manifest=sm,
+            compatibility_map=cm,
         )
-        for s in services
+        for sc in services
         if (
-            (ar := access_rights.get((s.key, s.version)))
-            and (sm := service_manifest.get((s.key, s.version)))
+            (ar := access_rights.get((sc.key, sc.version)))
+            and (sm := service_manifest.get((sc.key, sc.version)))
             and (
                 # NOTE: This operation might be resource-intensive.
                 # It is temporarily implemented on a trial basis.
@@ -133,13 +137,29 @@ async def list_services_paginated(
                     repo,
                     product_name=product_name,
                     user_id=user_id,
-                    service_release_history=s.history,
+                    service_release_history=sc.history,
                 )
             )
         )
     ]
 
-    return total_count, items
+    def _get_release(item: ServiceGetV2) -> ServiceRelease:
+        for rs in item.history:
+            if rs.version == item.version:
+                return rs
+        return ServiceRelease(
+            version=item.version, version_display=item.version_display, released=None
+        )
+
+    return total_count, [
+        ServiceItemList.model_validate(
+            {
+                **it.model_dump(exclude_unset=True, by_alias=True),
+                "release": _get_release(it),
+            }
+        )
+        for it in items
+    ]
 
 
 async def get_service(

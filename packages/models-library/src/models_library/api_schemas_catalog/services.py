@@ -171,7 +171,7 @@ class ServiceGet(
     )
 
 
-class ServiceGetV2Base(CatalogOutputSchema):
+class _BaseServiceGetV2(CatalogOutputSchema):
     # Model used in catalog's rpc and rest interfaces
     key: ServiceKey
     version: ServiceVersion
@@ -205,8 +205,14 @@ class ServiceGetV2Base(CatalogOutputSchema):
     classifiers: list[str] | None = []
     quality: dict[str, Any] = {}
 
+    model_config = ConfigDict(
+        extra="forbid",
+        populate_by_name=True,
+        alias_generator=snake_to_camel,
+    )
 
-class ServiceGetV2(ServiceGetV2Base):
+
+class ServiceGetV2(_BaseServiceGetV2):
     # Model used in catalog's rpc and rest interfaces
     history: Annotated[
         list[ServiceRelease],
@@ -278,14 +284,11 @@ class ServiceGetV2(ServiceGetV2Base):
         )
 
     model_config = ConfigDict(
-        extra="forbid",
-        populate_by_name=True,
-        alias_generator=snake_to_camel,
         json_schema_extra=_update_json_schema_extra,
     )
 
 
-class ServiceItemList(ServiceGetV2Base):
+class ServiceItemList(_BaseServiceGetV2):
     release: ServiceRelease
     history: Annotated[
         list[ServiceRelease],
