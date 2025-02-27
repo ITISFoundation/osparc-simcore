@@ -87,7 +87,8 @@ qx.Class.define("osparc.file.TreeFolderView", {
       // Connect elements
       folderTree.addListener("selectionChanged", () => {
         const selectedFolder = folderTree.getSelectedItem();
-        if (selectedFolder && (osparc.file.FilesTree.isDir(selectedFolder) || (selectedFolder.getChildren && selectedFolder.getChildren().length))) {
+        // if (selectedFolder && (osparc.file.FilesTree.isDir(selectedFolder) || (selectedFolder.getChildren && selectedFolder.getChildren().length))) {
+        if (selectedFolder && osparc.file.FilesTree.isDir(selectedFolder)) {
           folderViewer.setFolder(selectedFolder);
         }
       }, this);

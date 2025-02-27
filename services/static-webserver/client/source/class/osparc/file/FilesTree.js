@@ -66,39 +66,30 @@ qx.Class.define("osparc.file.FilesTree", {
   },
 
   events: {
-    "selectionChanged": "qx.event.type.Event", // tap
+    "selectionChanged": "qx.event.type.Event",
     "fileCopied": "qx.event.type.Data",
     "filesAddedToTree": "qx.event.type.Event"
   },
 
   statics: {
     isDir: function(item) {
-      return !this.isFile(item);
+      return item.getType() === "folder";
     },
 
     isFile: function(item) {
-      if (item["set"+qx.lang.String.firstUp("fileId")]) {
-        return true;
-      }
-      return false;
+      return item.getType() === "file";
     },
 
     addLoadingChild: function(parent) {
-      const loadingModel = qx.data.marshal.Json.createModel({
-        label: "Loading...",
-        location: null,
-        path: null,
-        children: [],
-        icon: "@FontAwesome5Solid/circle-notch/12",
-      }, true);
+      const loadingData = osparc.data.Converters.createLoadingEntry();
+      const loadingModel = qx.data.marshal.Json.createModel(loadingData, true);
       parent.getChildren().append(loadingModel);
     },
 
     removeLoadingChild: function(parent) {
       for (let i = parent.getChildren().length - 1; i >= 0; i--) {
-        if (parent.getChildren().toArray()[i].getLabel() === "Loading...") {
-          parent.getChildren().toArray()
-            .splice(i, 1);
+        if (parent.getChildren().toArray()[i].getType() === "loading") {
+          parent.getChildren().toArray().splice(i, 1);
         }
       }
     },
@@ -231,7 +222,8 @@ qx.Class.define("osparc.file.FilesTree", {
         location: null,
         path: null,
         pathLabel: [treeName],
-        children: []
+        type: "folder",
+        children: [],
       };
       const root = qx.data.marshal.Json.createModel(rootData, true);
 
@@ -251,6 +243,7 @@ qx.Class.define("osparc.file.FilesTree", {
           c.bindProperty("lastModified", "lastModified", null, item, id);
           c.bindProperty("size", "size", null, item, id);
           c.bindProperty("icon", "icon", null, item, id);
+          c.bindProperty("type", "type", null, item, id);
         },
         configureItem: item => {
           item.addListener("changeOpen", e => {
@@ -271,7 +264,7 @@ qx.Class.define("osparc.file.FilesTree", {
       let openThis = null;
       for (let i=0; i<locations.length; i++) {
         const location = locations[i];
-        const locationData = osparc.data.Converters.createDirEntry(
+        const locationData = osparc.data.Converters.createFolderEntry(
           location.name,
           location.id,
           ""
@@ -382,7 +375,7 @@ qx.Class.define("osparc.file.FilesTree", {
             const model = this.__createModel(locationId, item["path"], data);
             parentModel.getChildren().append(model);
           } else {
-            const data = osparc.data.Converters.createDirEntry(
+            const data = osparc.data.Converters.createFolderEntry(
               item["display_path"],
               locationId,
               item["path"]
@@ -418,7 +411,7 @@ qx.Class.define("osparc.file.FilesTree", {
       locationModel.getChildren().removeAll();
       let openThis = null;
       items.forEach(item => {
-        const datasetData = osparc.data.Converters.createDirEntry(
+        const datasetData = osparc.data.Converters.createFolderEntry(
           item["display_path"],
           locationId,
           item["path"]

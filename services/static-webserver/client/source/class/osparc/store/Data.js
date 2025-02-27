@@ -179,6 +179,7 @@ qx.Class.define("osparc.store.Data", {
             resolve(presignedLinkData);
           })
           .catch(err => {
+            console.log("remove the FP");
             console.error(err);
             reject(err);
           });

@@ -118,7 +118,14 @@ qx.Class.define("osparc.file.FileTreeItem", {
       check: "String",
       event: "changeSize",
       nullable: true
-    }
+    },
+
+    type: {
+      check: ["folder", "file", "loading"],
+      event: "changeType",
+      init: null,
+      nullable: false,
+    },
   },
 
   members: { // eslint-disable-line qx-rules/no-refs-in-members

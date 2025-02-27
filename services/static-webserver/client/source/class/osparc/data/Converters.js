@@ -36,7 +36,18 @@ qx.Class.define("osparc.data.Converters", {
       });
     },
 
-    createDirEntry: function(displayPath, location, path) {
+    createLoadingEntry: function() {
+      return {
+        label: "Loading...",
+        location: null,
+        path: null,
+        children: [],
+        icon: "@FontAwesome5Solid/circle-notch/12",
+        type: "loading",
+      };
+    },
+
+    createFolderEntry: function(displayPath, location, path) {
       if (displayPath === null || displayPath === undefined || displayPath === "") {
         displayPath = "Unknown label";
       }
@@ -47,6 +58,7 @@ qx.Class.define("osparc.data.Converters", {
         path,
         itemId: path,
         children: [],
+        type: "folder",
       };
     },
 
@@ -60,6 +72,7 @@ qx.Class.define("osparc.data.Converters", {
         fileId: fileMetaData["file_uuid"],
         lastModified: fileMetaData["last_modified"],
         size: fileMetaData["file_size"],
+        type: "file",
       };
     },
 
