@@ -82,7 +82,7 @@ class BaseDataManager(ABC):
 
     @abstractmethod
     async def compute_path_total_size(self, user_id: UserID, *, path: Path) -> ByteSize:
-        """returns the total size of the path"""
+        """returns the total size of an arbitrary path"""
 
     @abstractmethod
     async def get_file(self, user_id: UserID, file_id: StorageFileID) -> FileMetaData:
