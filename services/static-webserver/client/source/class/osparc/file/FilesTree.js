@@ -51,13 +51,6 @@ qx.Class.define("osparc.file.FilesTree", {
     this.__resetChecks();
 
     this.addListener("tap", this.__selectionChanged, this);
-
-    // Listen to "Enter" key
-    this.addListener("keypress", keyEvent => {
-      if (keyEvent.getKeyIdentifier() === "Enter") {
-        this.__itemSelected();
-      }
-    }, this);
   },
 
   properties: {
@@ -74,7 +67,6 @@ qx.Class.define("osparc.file.FilesTree", {
 
   events: {
     "selectionChanged": "qx.event.type.Event", // tap
-    "itemSelected": "qx.event.type.Event", // dbltap
     "fileCopied": "qx.event.type.Data",
     "filesAddedToTree": "qx.event.type.Event"
   },
@@ -269,7 +261,6 @@ qx.Class.define("osparc.file.FilesTree", {
               this.requestPathItems(locationId, path);
             }
           }, this);
-          item.addListener("dbltap", () => this.__itemSelected(), this);
           this.__addDragAndDropMechanisms(item);
         }
       });
@@ -545,13 +536,6 @@ qx.Class.define("osparc.file.FilesTree", {
       let selectedItem = this.getSelectedItem();
       if (selectedItem) {
         this.fireEvent("selectionChanged");
-      }
-    },
-
-    __itemSelected: function() {
-      let selectedItem = this.getSelectedItem();
-      if (selectedItem) {
-        this.fireEvent("itemSelected");
       }
     },
 
