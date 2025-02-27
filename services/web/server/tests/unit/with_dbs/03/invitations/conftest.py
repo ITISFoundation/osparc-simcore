@@ -29,7 +29,8 @@ from simcore_service_webserver.invitations.settings import (
     InvitationsSettings,
     get_plugin_settings,
 )
-from simcore_service_webserver.products.api import Product, list_products
+from simcore_service_webserver.products import products_service
+from simcore_service_webserver.products.models import Product
 from yarl import URL
 
 
@@ -52,7 +53,7 @@ def invitations_service_openapi_specs(
 @pytest.fixture
 def current_product(client: TestClient) -> Product:
     assert client.app
-    products = list_products(client.app)
+    products = products_service.list_products(client.app)
     assert products
     assert products[0].name == "osparc"
     return products[0]

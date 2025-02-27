@@ -61,12 +61,13 @@ from simcore_postgres_database.storage_models import file_meta_data, projects, u
 from simcore_service_storage.core.application import create_app
 from simcore_service_storage.core.settings import ApplicationSettings
 from simcore_service_storage.dsm import get_dsm_provider
-from simcore_service_storage.models import S3BucketName
+from simcore_service_storage.models import FileMetaData, FileMetaDataAtDB, S3BucketName
 from simcore_service_storage.modules.long_running_tasks import (
     get_completed_upload_tasks,
 )
 from simcore_service_storage.modules.s3 import get_s3_client
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
+from sqlalchemy import literal_column
 from sqlalchemy.ext.asyncio import AsyncEngine
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
@@ -561,7 +562,10 @@ async def populate_directory(
 
         # Create subdirectories
         s3_base_path = Path(f"{project_id}") / f"{node_id}" / dir_name
-        s3_subdirs = [s3_base_path / f"sub-dir-{i}" for i in range(subdir_count)]
+        # NOTE: add a space in the sub directory
+        s3_subdirs = [
+            s3_base_path / f"sub-dir_ect ory-{i}" for i in range(subdir_count)
+        ]
         # Randomly distribute files across subdirectories
         selected_subdirs = random.choices(s3_subdirs, k=file_count)  # noqa: S311
         # Upload to S3
@@ -569,6 +573,11 @@ async def populate_directory(
             logging.INFO,
             msg=f"Uploading {file_count} files to S3 (each {file_size_in_dir.human_readable()}, total: {ByteSize(file_count * file_size_in_dir).human_readable()})",
         ):
+            # we ensure the file name contain a space
+            def _file_name_with_space():
+                file_name = faker.unique.file_name()
+                return f"{file_name[:1]} {file_name[1:]}"
+
             results = await asyncio.gather(
                 *(
                     _upload_file_to_s3(
@@ -577,7 +586,7 @@ async def populate_directory(
                         s3_bucket=storage_s3_bucket,
                         local_file=local_file,
                         file_id=TypeAdapter(SimcoreS3FileID).validate_python(
-                            f"{selected_subdir / faker.unique.file_name()}"
+                            f"{selected_subdir / _file_name_with_space()}"
                         ),
                     )
                     for selected_subdir in selected_subdirs
@@ -846,6 +855,42 @@ async def with_random_project_with_files(
         ],
     ],
     project_params: ProjectWithFilesParams,
-    faker: Faker,
 ) -> tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],]:
     return await random_project_with_files(project_params)
+
+
+@pytest.fixture()
+async def output_file(
+    user_id: UserID, project_id: str, sqlalchemy_async_engine: AsyncEngine, faker: Faker
+) -> AsyncIterator[FileMetaData]:
+    node_id = "fd6f9737-1988-341b-b4ac-0614b646fa82"
+
+    # pylint: disable=no-value-for-parameter
+
+    file = FileMetaData.from_simcore_node(
+        user_id=user_id,
+        file_id=f"{project_id}/{node_id}/filename.txt",
+        bucket=TypeAdapter(S3BucketName).validate_python("master-simcore"),
+        location_id=SimcoreS3DataManager.get_location_id(),
+        location_name=SimcoreS3DataManager.get_location_name(),
+        sha256_checksum=faker.sha256(),
+    )
+    file.entity_tag = "df9d868b94e53d18009066ca5cd90e9f"
+    file.file_size = ByteSize(12)
+    file.user_id = user_id
+    async with sqlalchemy_async_engine.begin() as conn:
+        stmt = (
+            file_meta_data.insert()
+            .values(jsonable_encoder(FileMetaDataAtDB.model_validate(file)))
+            .returning(literal_column("*"))
+        )
+        result = await conn.execute(stmt)
+        row = result.one()
+        assert row
+
+    yield file
+
+    async with sqlalchemy_async_engine.begin() as conn:
+        result = await conn.execute(
+            file_meta_data.delete().where(file_meta_data.c.file_id == row.file_id)
+        )

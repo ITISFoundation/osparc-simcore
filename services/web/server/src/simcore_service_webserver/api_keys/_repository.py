@@ -8,11 +8,11 @@ from models_library.products import ProductName
 from models_library.users import UserID
 from simcore_postgres_database.models.api_keys import api_keys
 from simcore_postgres_database.utils_repos import transaction_context
-from simcore_service_webserver.api_keys._models import ApiKey
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncConnection
 
 from ..db.plugin import get_asyncpg_engine
+from ._models import ApiKey
 from .errors import ApiKeyDuplicatedDisplayNameError
 
 _logger = logging.getLogger(__name__)

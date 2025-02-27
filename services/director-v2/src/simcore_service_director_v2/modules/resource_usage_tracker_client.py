@@ -12,8 +12,8 @@ from models_library.api_schemas_resource_usage_tracker.credit_transactions impor
     WalletTotalCredits,
 )
 from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
-    PricingPlanGet,
-    PricingUnitGet,
+    RutPricingPlanGet,
+    RutPricingUnitGet,
 )
 from models_library.products import ProductName
 from models_library.resource_tracker import (
@@ -82,7 +82,7 @@ class ResourceUsageTrackerClient:
         product_name: ProductName,
         service_key: ServiceKey,
         service_version: ServiceVersion,
-    ) -> PricingPlanGet:
+    ) -> RutPricingPlanGet:
         response = await self.client.get(
             f"/services/{service_key}/{service_version}/pricing-plan",
             params={
@@ -94,7 +94,7 @@ class ResourceUsageTrackerClient:
             raise PricingPlanUnitNotFoundError(msg=msg)
 
         response.raise_for_status()
-        return PricingPlanGet.model_validate(response.json())
+        return RutPricingPlanGet.model_validate(response.json())
 
     async def get_default_pricing_and_hardware_info(
         self,
@@ -124,7 +124,7 @@ class ResourceUsageTrackerClient:
         product_name: ProductName,
         pricing_plan_id: PricingPlanId,
         pricing_unit_id: PricingUnitId,
-    ) -> PricingUnitGet:
+    ) -> RutPricingUnitGet:
         response = await self.client.get(
             f"/pricing-plans/{pricing_plan_id}/pricing-units/{pricing_unit_id}",
             params={
@@ -132,7 +132,7 @@ class ResourceUsageTrackerClient:
             },
         )
         response.raise_for_status()
-        return PricingUnitGet.model_validate(response.json())
+        return RutPricingUnitGet.model_validate(response.json())
 
     async def get_wallet_credits(
         self,

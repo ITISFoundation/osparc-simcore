@@ -11,10 +11,11 @@ import random
 from collections.abc import Awaitable, Callable
 from pathlib import Path
 from typing import Any, TypeAlias
+from urllib.parse import quote
 
 import httpx
 import pytest
-from faker import Faker
+import sqlalchemy as sa
 from fastapi import FastAPI, status
 from fastapi_pagination.cursor import CursorPage
 from models_library.api_schemas_storage.storage_schemas import PathMetaDataGet
@@ -24,6 +25,8 @@ from pydantic import ByteSize, TypeAdapter
 from pytest_simcore.helpers.fastapi import url_from_operation_id
 from pytest_simcore.helpers.httpx_assert_checks import assert_status
 from pytest_simcore.helpers.storage_utils import FileIDDict, ProjectWithFilesParams
+from simcore_postgres_database.models.projects import projects
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 pytest_simcore_core_services_selection = ["postgres"]
 pytest_simcore_ops_services_selection = ["adminer"]
@@ -143,7 +146,6 @@ async def test_list_paths_pagination(
         dict[str, Any],
         dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],
     ],
-    faker: Faker,
 ):
     project, list_of_files = with_random_project_with_files
     num_nodes = len(list(project["workbench"]))
@@ -361,3 +363,135 @@ async def test_list_paths(
             expected_paths=expected_paths,
             check_total=False,
         )
+
+
+@pytest.mark.parametrize(
+    "project_params",
+    [
+        ProjectWithFilesParams(
+            num_nodes=1,
+            allowed_file_sizes=(TypeAdapter(ByteSize).validate_python("0b"),),
+            workspace_files_count=10,
+        )
+    ],
+    ids=str,
+)
+async def test_list_paths_with_display_name_containing_slashes(
+    initialized_app: FastAPI,
+    client: httpx.AsyncClient,
+    location_id: LocationID,
+    user_id: UserID,
+    with_random_project_with_files: tuple[
+        dict[str, Any],
+        dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],
+    ],
+    sqlalchemy_async_engine: AsyncEngine,
+):
+    project, list_of_files = with_random_project_with_files
+    project_name_with_slashes = "soméà$èq¨thing with/ slas/h/es/"
+    node_name_with_non_ascii = "my node / is not ascii: éàèù"
+    # adjust project to contain "difficult" characters
+    async with sqlalchemy_async_engine.begin() as conn:
+        result = await conn.execute(
+            sa.update(projects)
+            .where(projects.c.uuid == project["uuid"])
+            .values(name=project_name_with_slashes)
+            .returning(sa.literal_column(f"{projects.c.name}, {projects.c.workbench}"))
+        )
+        row = result.one()
+        assert row.name == project_name_with_slashes
+        project_workbench = row.workbench
+        assert len(project_workbench) == 1
+        node = next(iter(project_workbench.values()))
+        node["label"] = node_name_with_non_ascii
+        result = await conn.execute(
+            sa.update(projects)
+            .where(projects.c.uuid == project["uuid"])
+            .values(workbench=project_workbench)
+            .returning(sa.literal_column(f"{projects.c.name}, {projects.c.workbench}"))
+        )
+        row = result.one()
+
+    # ls the root
+    file_filter = None
+    expected_paths = [(Path(project["uuid"]), False)]
+
+    page_of_paths = await _assert_list_paths(
+        initialized_app,
+        client,
+        location_id,
+        user_id,
+        file_filter=file_filter,
+        expected_paths=expected_paths,
+    )
+
+    assert page_of_paths.items[0].display_path == Path(
+        quote(project_name_with_slashes, safe="")
+    ), "display path parts should be url encoded"
+
+    # ls the nodes to ensure / is still there between project and node
+    file_filter = Path(project["uuid"])
+    expected_paths = sorted(
+        ((file_filter / node_key, False) for node_key in project["workbench"]),
+        key=lambda x: x[0],
+    )
+    assert len(expected_paths) == 1, "test configuration problem"
+    page_of_paths = await _assert_list_paths(
+        initialized_app,
+        client,
+        location_id,
+        user_id,
+        file_filter=file_filter,
+        expected_paths=expected_paths,
+    )
+    assert page_of_paths.items[0].display_path == Path(
+        quote(project_name_with_slashes, safe="")
+    ) / quote(
+        node_name_with_non_ascii, safe=""
+    ), "display path parts should be url encoded"
+
+    # ls in the node workspace
+    selected_node_id = NodeID(random.choice(list(project["workbench"])))  # noqa: S311
+    selected_node_s3_keys = [
+        Path(s3_object_id) for s3_object_id in list_of_files[selected_node_id]
+    ]
+    workspace_file_filter = file_filter / f"{selected_node_id}" / "workspace"
+    expected_paths = _filter_and_group_paths_one_level_deeper(
+        selected_node_s3_keys, workspace_file_filter
+    )
+    await _assert_list_paths(
+        initialized_app,
+        client,
+        location_id,
+        user_id,
+        file_filter=workspace_file_filter,
+        expected_paths=expected_paths,
+        check_total=False,
+    )
+
+    # ls in until we get to some files
+    while selected_subfolders := [p for p in expected_paths if p[1] is False]:
+        selected_path_filter = random.choice(selected_subfolders)  # noqa: S311
+        expected_paths = _filter_and_group_paths_one_level_deeper(
+            selected_node_s3_keys, selected_path_filter[0]
+        )
+        page_of_paths = await _assert_list_paths(
+            initialized_app,
+            client,
+            location_id,
+            user_id,
+            file_filter=selected_path_filter[0],
+            expected_paths=expected_paths,
+            check_total=False,
+        )
+
+        expected_display_path = "/".join(
+            [
+                quote(project_name_with_slashes, safe=""),
+                quote(node_name_with_non_ascii, safe=""),
+                *(expected_paths[0][0].parts[2:]),
+            ],
+        )
+        assert page_of_paths.items[0].display_path == Path(
+            expected_display_path
+        ), "display path parts should be url encoded"

@@ -7338,7 +7338,7 @@
             "title": "Unitname"
           },
           "unitExtraInfo": {
-            "$ref": "#/components/schemas/UnitExtraInfo"
+            "$ref": "#/components/schemas/UnitExtraInfoTier"
           },
           "currentCostPerUnit": {
             "type": "number",
@@ -7747,7 +7747,7 @@
           "kind": "input"
         }
       },
-      "UnitExtraInfo": {
+      "UnitExtraInfoTier": {
         "properties": {
           "CPU": {
             "type": "integer",
@@ -7772,7 +7772,7 @@
           "RAM",
           "VRAM"
         ],
-        "title": "UnitExtraInfo",
+        "title": "UnitExtraInfoTier",
         "description": "Custom information that is propagated to the frontend. Defined fields are mandatory."
       },
       "UploadLinks": {

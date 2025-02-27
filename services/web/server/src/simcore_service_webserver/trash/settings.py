@@ -2,7 +2,7 @@ from aiohttp import web
 from pydantic import Field, NonNegativeInt
 from settings_library.base import BaseCustomSettings
 
-from .._constants import APP_SETTINGS_KEY
+from ..constants import APP_SETTINGS_KEY
 
 
 class TrashSettings(BaseCustomSettings):
