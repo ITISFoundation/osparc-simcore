@@ -492,9 +492,9 @@ async def test_list_paths_with_display_name_containing_slashes(
     )
     assert page_of_paths.items[0].display_path == Path(
         quote(project_name_with_slashes, safe="")
-    ) / quote(node_name_with_non_ascii, safe=""), (
-        "display path parts should be url encoded"
-    )
+    ) / quote(
+        node_name_with_non_ascii, safe=""
+    ), "display path parts should be url encoded"
 
     # ls in the node workspace
     selected_node_id = NodeID(random.choice(list(project["workbench"])))  # noqa: S311
@@ -538,9 +538,9 @@ async def test_list_paths_with_display_name_containing_slashes(
                 *(expected_paths[0][0].parts[2:]),
             ],
         )
-        assert page_of_paths.items[0].display_path == Path(expected_display_path), (
-            "display path parts should be url encoded"
-        )
+        assert page_of_paths.items[0].display_path == Path(
+            expected_display_path
+        ), "display path parts should be url encoded"
 
 
 @pytest.mark.parametrize(
@@ -563,7 +563,20 @@ async def test_path_compute_size(
         dict[str, Any],
         dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],
     ],
+    project_params: ProjectWithFilesParams,
 ):
+    assert (
+        len(project_params.allowed_file_sizes) == 1
+    ), "test preconditions are not filled! allowed file sizes should have only 1 option for this test"
+    num_output_files_per_node = 3
+    total_num_files_per_node = (
+        num_output_files_per_node + project_params.workspace_files_count
+    )
+    expected_project_total_size = (
+        project_params.allowed_file_sizes[0]
+        * project_params.num_nodes
+        * total_num_files_per_node
+    )
     project, list_of_files = with_random_project_with_files
     url = url_from_operation_id(
         client,
@@ -581,4 +594,4 @@ async def test_path_compute_size(
     )
     assert received
     assert received.path == Path(project["uuid"])
-    assert received.size == 169
+    assert received.size == expected_project_total_size
