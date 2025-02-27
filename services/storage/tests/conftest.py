@@ -562,7 +562,10 @@ async def populate_directory(
 
         # Create subdirectories
         s3_base_path = Path(f"{project_id}") / f"{node_id}" / dir_name
-        s3_subdirs = [s3_base_path / f"sub-dir-{i}" for i in range(subdir_count)]
+        # NOTE: add a space in the sub directory
+        s3_subdirs = [
+            s3_base_path / f"sub-dir_ect ory-{i}" for i in range(subdir_count)
+        ]
         # Randomly distribute files across subdirectories
         selected_subdirs = random.choices(s3_subdirs, k=file_count)  # noqa: S311
         # Upload to S3
@@ -570,6 +573,11 @@ async def populate_directory(
             logging.INFO,
             msg=f"Uploading {file_count} files to S3 (each {file_size_in_dir.human_readable()}, total: {ByteSize(file_count * file_size_in_dir).human_readable()})",
         ):
+            # we ensure the file name contain a space
+            def _file_name_with_space():
+                file_name = faker.unique.file_name()
+                return f"{file_name[:1]} {file_name[1:]}"
+
             results = await asyncio.gather(
                 *(
                     _upload_file_to_s3(
@@ -578,7 +586,7 @@ async def populate_directory(
                         s3_bucket=storage_s3_bucket,
                         local_file=local_file,
                         file_id=TypeAdapter(SimcoreS3FileID).validate_python(
-                            f"{selected_subdir / faker.unique.file_name()}"
+                            f"{selected_subdir / _file_name_with_space()}"
                         ),
                     )
                     for selected_subdir in selected_subdirs

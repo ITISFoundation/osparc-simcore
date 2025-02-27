@@ -371,7 +371,7 @@ async def test_list_paths(
         ProjectWithFilesParams(
             num_nodes=1,
             allowed_file_sizes=(TypeAdapter(ByteSize).validate_python("0b"),),
-            workspace_files_count=0,
+            workspace_files_count=10,
         )
     ],
     ids=str,
@@ -449,3 +449,38 @@ async def test_list_paths_with_display_name_containing_slashes(
     ) / quote(
         node_name_with_non_ascii, safe=""
     ), "display path parts should be url encoded"
+
+    # ls in the node workspace
+    selected_node_id = NodeID(random.choice(list(project["workbench"])))  # noqa: S311
+    selected_node_s3_keys = [
+        Path(s3_object_id) for s3_object_id in list_of_files[selected_node_id]
+    ]
+    workspace_file_filter = file_filter / f"{selected_node_id}" / "workspace"
+    expected_paths = _filter_and_group_paths_one_level_deeper(
+        selected_node_s3_keys, workspace_file_filter
+    )
+    await _assert_list_paths(
+        initialized_app,
+        client,
+        location_id,
+        user_id,
+        file_filter=workspace_file_filter,
+        expected_paths=expected_paths,
+        check_total=False,
+    )
+
+    # ls in until we get to some files
+    while selected_subfolders := [p for p in expected_paths if p[1] is False]:
+        selected_path_filter = random.choice(selected_subfolders)  # noqa: S311
+        expected_paths = _filter_and_group_paths_one_level_deeper(
+            selected_node_s3_keys, selected_path_filter[0]
+        )
+        await _assert_list_paths(
+            initialized_app,
+            client,
+            location_id,
+            user_id,
+            file_filter=selected_path_filter[0],
+            expected_paths=expected_paths,
+            check_total=False,
+        )
