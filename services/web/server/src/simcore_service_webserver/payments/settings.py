@@ -22,7 +22,7 @@ from settings_library.utils_service import (
     URLPart,
 )
 
-from .._constants import APP_SETTINGS_KEY
+from ..constants import APP_SETTINGS_KEY
 
 
 class PaymentsSettings(BaseCustomSettings, MixinServiceSettings):

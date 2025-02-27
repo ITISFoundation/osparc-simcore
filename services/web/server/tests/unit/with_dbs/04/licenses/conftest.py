@@ -26,11 +26,11 @@ async def pricing_plan_id(
             resource_tracker_pricing_plans.insert()
             .values(
                 product_name=osparc_product_name,
-                display_name="ISolve Thermal",
+                display_name="VIP Model A",
                 description="",
-                classification="TIER",
+                classification="LICENSE",
                 is_active=True,
-                pricing_plan_key="isolve-thermal",
+                pricing_plan_key="vip-model-a",
             )
             .returning(resource_tracker_pricing_plans.c.pricing_plan_id)
         )

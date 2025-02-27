@@ -14,7 +14,7 @@ from ..exception_handling import (
     to_exceptions_handlers_map,
 )
 from ..login.decorators import get_user_id, login_required
-from ..products.api import get_product_name
+from ..products import products_web
 from ..projects.exceptions import ProjectRunningConflictError, ProjectStoppingError
 from ..security.decorators import permission_required
 from . import _service
@@ -48,7 +48,7 @@ routes = web.RouteTableDef()
 @_handle_exceptions
 async def empty_trash(request: web.Request):
     user_id = get_user_id(request)
-    product_name = get_product_name(request)
+    product_name = products_web.get_product_name(request)
 
     is_fired = asyncio.Event()
 

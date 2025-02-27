@@ -10,7 +10,7 @@ import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
-    PricingPlanGet,
+    RutPricingPlanGet,
 )
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pytest_simcore.aioresponses_mocker import AioResponsesMock
@@ -29,8 +29,8 @@ def mock_rut_api_responses(
     assert client.app
     settings: ResourceUsageTrackerSettings = get_plugin_settings(client.app)
 
-    service_pricing_plan_get = PricingPlanGet.model_validate(
-        PricingPlanGet.model_json_schema()["examples"][0],
+    service_pricing_plan_get = RutPricingPlanGet.model_validate(
+        RutPricingPlanGet.model_json_schema()["examples"][0],
     )
     aioresponses_mocker.get(
         re.compile(f"^{settings.api_base_url}/services/+.+$"),
