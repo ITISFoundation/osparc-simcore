@@ -55,7 +55,7 @@ qx.Class.define("osparc.file.FolderContent", {
     "selectionChanged": "qx.event.type.Data", // tap
     "multiSelectionChanged": "qx.event.type.Data", // tap
     "openItemSelected": "qx.event.type.Data", // dbltap
-    "requestDatasetFiles": "qx.event.type.Data",
+    "requestPathItems": "qx.event.type.Data",
   },
 
   statics: {
@@ -206,9 +206,9 @@ qx.Class.define("osparc.file.FolderContent", {
     __applyFolder: function(folder) {
       if (folder) {
         if (folder.getLoaded && !folder.getLoaded()) {
-          this.fireDataEvent("requestDatasetFiles", {
+          this.fireDataEvent("requestPathItems", {
             locationId: folder.getLocation(),
-            datasetId: folder.getPath()
+            path: folder.getPath()
           });
         }
 

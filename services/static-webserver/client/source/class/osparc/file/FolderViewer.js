@@ -69,7 +69,7 @@ qx.Class.define("osparc.file.FolderViewer", {
       multiSelectButton.setValue(false);
     });
 
-    folderContent.addListener("requestDatasetFiles", e => this.fireDataEvent("requestDatasetFiles", e.getData()));
+    folderContent.addListener("requestPathItems", e => this.fireDataEvent("requestPathItems", e.getData()));
     folderContent.addListener("selectionChanged", e => {
       const selectionData = e.getData();
       selectedFileLayout.setItemSelected(selectionData);
@@ -100,7 +100,7 @@ qx.Class.define("osparc.file.FolderViewer", {
   events: {
     "openItemSelected": "qx.event.type.Data", // dbltap
     "folderUp": "qx.event.type.Data",
-    "requestDatasetFiles": "qx.event.type.Data"
+    "requestPathItems": "qx.event.type.Data"
   },
 
   members: {
