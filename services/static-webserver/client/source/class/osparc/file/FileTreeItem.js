@@ -48,13 +48,8 @@ qx.Class.define("osparc.file.FileTreeItem", {
     this.set({
       indent: 12, // defaults to 19,
       decorator: "rounded",
+      alignY: "middle",
     });
-
-    // create a date format like "Oct. 19, 2018 11:31 AM"
-    this._dateFormat = new qx.util.format.DateFormat(
-      qx.locale.Date.getDateFormat("medium") + " " +
-      qx.locale.Date.getTimeFormat("short")
-    );
   },
 
   properties: {
@@ -128,9 +123,7 @@ qx.Class.define("osparc.file.FileTreeItem", {
     },
   },
 
-  members: { // eslint-disable-line qx-rules/no-refs-in-members
-    _dateFormat: null,
-
+  members: {
     // overridden
     _addWidgets: function() {
       // Here's our indentation and tree-lines
@@ -151,32 +144,24 @@ qx.Class.define("osparc.file.FileTreeItem", {
       // Add lastModified
       const lastModifiedWidget = new qx.ui.basic.Label().set({
         maxWidth: 140,
-        textAlign: "right"
+        textAlign: "right",
+        alignY: "middle",
+        paddingLeft: 10,
       });
-      let that = this;
       this.bind("lastModified", lastModifiedWidget, "value", {
-        converter: function(value) {
-          if (value === null) {
-            return "";
-          }
-          const date = new Date(value);
-          return that._dateFormat.format(date); // eslint-disable-line no-underscore-dangle
-        }
+        converter: value => value ? osparc.utils.Utils.formatDateAndTime(new Date(value)) : ""
       });
       this.addWidget(lastModifiedWidget);
 
       // Add size
       const sizeWidget = new qx.ui.basic.Label().set({
-        maxWidth: 70,
-        textAlign: "right"
+        maxWidth: 90,
+        textAlign: "right",
+        alignY: "middle",
+        paddingLeft: 10,
       });
       this.bind("size", sizeWidget, "value", {
-        converter: function(value) {
-          if (value === null) {
-            return "";
-          }
-          return osparc.utils.Utils.bytesToSize(value);
-        }
+        converter: value => value ? osparc.utils.Utils.bytesToSize(value) : ""
       });
       this.addWidget(sizeWidget);
     },
