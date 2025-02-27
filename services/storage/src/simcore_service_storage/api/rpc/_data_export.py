@@ -14,9 +14,11 @@ from models_library.api_schemas_storage.data_export_async_jobs import (
 )
 from servicelib.rabbitmq import RPCRouter
 
-from ...dsm import DatCoreDataManager, get_dsm_provider
-from ...modules.datcore_adapter.datcore_adapter import DatcoreAdapterError
-from ...simcore_s3_dsm import FileAccessRightError, SimcoreS3DataManager
+from ...datcore_dsm import DatCoreDataManager
+from ...dsm import get_dsm_provider
+from ...exceptions.errors import FileAccessRightError
+from ...modules.datcore_adapter.datcore_adapter_exceptions import DatcoreAdapterError
+from ...simcore_s3_dsm import SimcoreS3DataManager
 
 router = RPCRouter()
 
