@@ -616,13 +616,51 @@ async def test_path_compute_size(
 
     # get size of one of the nodes
     selected_node_id = NodeID(random.choice(list(project["workbench"])))  # noqa: S311
+    path = Path(project["uuid"]) / f"{selected_node_id}"
     selected_node_s3_keys = [
         Path(s3_object_id) for s3_object_id in list_of_files[selected_node_id]
     ]
     expected_total_size = project_params.allowed_file_sizes[0] * len(
         selected_node_s3_keys
     )
-    path = Path(project["uuid"]) / f"{selected_node_id}"
+    await _assert_compute_path_total_size(
+        initialized_app,
+        client,
+        location_id,
+        user_id,
+        path=path,
+        expected_total_size=expected_total_size,
+    )
+
+    # get size of the outputs of one of the nodes
+    path = Path(project["uuid"]) / f"{selected_node_id}" / "outputs"
+    selected_node_s3_keys = [
+        Path(s3_object_id)
+        for s3_object_id in list_of_files[selected_node_id]
+        if s3_object_id.startswith(f"{path}")
+    ]
+    expected_total_size = project_params.allowed_file_sizes[0] * len(
+        selected_node_s3_keys
+    )
+    await _assert_compute_path_total_size(
+        initialized_app,
+        client,
+        location_id,
+        user_id,
+        path=path,
+        expected_total_size=expected_total_size,
+    )
+
+    # get size of workspace in one of the nodes (this is semi-cached in the DB)
+    path = Path(project["uuid"]) / f"{selected_node_id}" / "workspace"
+    selected_node_s3_keys = [
+        Path(s3_object_id)
+        for s3_object_id in list_of_files[selected_node_id]
+        if s3_object_id.startswith(f"{path}")
+    ]
+    expected_total_size = project_params.allowed_file_sizes[0] * len(
+        selected_node_s3_keys
+    )
     await _assert_compute_path_total_size(
         initialized_app,
         client,
