@@ -22,6 +22,7 @@ from pytest_simcore.helpers.catalog_services import CreateFakeServiceDataCallabl
 from pytest_simcore.helpers.faker_factories import (
     random_service_access_rights,
     random_service_meta_data,
+    random_user,
 )
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.postgres_tools import (
@@ -156,6 +157,24 @@ async def user(
         values=user,
         pk_col=users.c.id,
         pk_value=user["id"],
+    ) as row:
+        yield row
+
+
+@pytest.fixture
+async def other_user(
+    user_id: UserID,
+    sqlalchemy_async_engine: AsyncEngine,
+    faker: Faker,
+) -> AsyncIterator[dict[str, Any]]:
+
+    _user = random_user(fake=faker, id=user_id + 1)
+    async with insert_and_get_row_lifespan(  # pylint:disable=contextmanager-generator-missing-cleanup
+        sqlalchemy_async_engine,
+        table=users,
+        values=_user,
+        pk_col=users.c.id,
+        pk_value=_user["id"],
     ) as row:
         yield row
 

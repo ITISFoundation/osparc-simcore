@@ -5,7 +5,7 @@
 # pylint: disable=unused-variable
 
 
-from collections.abc import AsyncIterator, Callable
+from collections.abc import Callable
 from typing import Any
 
 import pytest
@@ -16,9 +16,8 @@ from models_library.rest_pagination import MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from pydantic import ValidationError
-from pytest_simcore.helpers.faker_factories import random_icon_url, random_user
+from pytest_simcore.helpers.faker_factories import random_icon_url
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
-from pytest_simcore.helpers.postgres_tools import insert_and_get_row_lifespan
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from respx.router import MockRouter
 from servicelib.rabbitmq import RabbitMQRPCClient
@@ -32,8 +31,6 @@ from servicelib.rabbitmq.rpc_interfaces.catalog.services import (
     list_services_paginated,
     update_service,
 )
-from simcore_postgres_database.models.users import users
-from sqlalchemy.ext.asyncio import AsyncEngine
 
 pytest_simcore_core_services_selection = [
     "rabbit",
@@ -258,24 +255,6 @@ async def test_rpc_check_for_service(
             service_key="simcore/services/dynamic/unknown",
             service_version="1.0.0",
         )
-
-
-@pytest.fixture
-async def other_user(
-    user_id: UserID,
-    sqlalchemy_async_engine: AsyncEngine,
-    faker: Faker,
-) -> AsyncIterator[dict[str, Any]]:
-
-    _user = random_user(fake=faker, id=user_id + 1)
-    async with insert_and_get_row_lifespan(  # pylint:disable=contextmanager-generator-missing-cleanup
-        sqlalchemy_async_engine,
-        table=users,
-        values=_user,
-        pk_col=users.c.id,
-        pk_value=_user["id"],
-    ) as row:
-        yield row
 
 
 async def test_rpc_get_service_access_rights(
