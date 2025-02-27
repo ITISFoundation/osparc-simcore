@@ -14680,6 +14680,7 @@ components:
       properties:
         jobId:
           type: string
+          format: uuid
           title: Jobid
       type: object
       required:
@@ -14706,6 +14707,7 @@ components:
       properties:
         jobId:
           type: string
+          format: uuid
           title: Jobid
         progress:
           $ref: '#/components/schemas/ProgressReport'
