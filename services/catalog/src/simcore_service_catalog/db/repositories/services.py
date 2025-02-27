@@ -481,7 +481,7 @@ class ServicesRepository(BaseRepository):
                 async for row in await conn.stream(query)
             ]
 
-    async def list_services_access_rights(
+    async def batch_get_services_access_rights(
         self,
         key_versions: Iterable[tuple[str, str]],
         product_name: str | None = None,

@@ -4,6 +4,7 @@ from typing import cast
 
 from fastapi import FastAPI
 from models_library.api_schemas_catalog.services import (
+    MyServiceGet,
     PageRpcServicesGetV2,
     ServiceGetV2,
     ServiceUpdateV2,
@@ -20,6 +21,7 @@ from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
     CatalogForbiddenError,
     CatalogItemNotFoundError,
 )
+from simcore_service_catalog.db.repositories.groups import GroupsRepository
 
 from ...db.repositories.services import ServicesRepository
 from ...services import services_api
@@ -165,3 +167,33 @@ async def check_for_service(
         service_key=service_key,
         service_version=service_version,
     )
+
+
+@router.expose(reraise_if_error_type=(CatalogForbiddenError,))
+@log_decorator(_logger, level=logging.DEBUG)
+async def batch_get_my_services(
+    app: FastAPI,
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    ids: list[
+        tuple[
+            ServiceKey,
+            ServiceVersion,
+        ]
+    ],
+) -> list[MyServiceGet]:
+    assert app.state.engine  # nosec
+
+    # TODO: id not found?
+    services = await services_api.batch_get_my_services(
+        repo=ServicesRepository(app.state.engine),
+        groups_repo=GroupsRepository(app.state.engine),
+        product_name=product_name,
+        user_id=user_id,
+        ids=ids,
+    )
+
+    assert [(sv.key, sv.release.version) for sv in services] == ids  # nosec
+
+    return services
