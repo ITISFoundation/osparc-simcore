@@ -197,16 +197,24 @@ qx.Class.define("osparc.file.FilesTree", {
 
     loadFilePath: function(outFileVal) {
       const locationId = outFileVal.store;
+      const path = outFileVal.path;
       let datasetId = "dataset" in outFileVal ? outFileVal.dataset : null;
-      const pathId = outFileVal.path;
       if (datasetId === null) {
-        const splitted = pathId.split("/");
-        if (splitted.length === 3) {
+        const splitted = path.split("/");
+        if (splitted.length === 3) { // studyId + nodeId + fileId
           // simcore.s3
           datasetId = splitted[0];
         }
       }
-      this.__addToLoadFilePath(locationId, datasetId, pathId);
+      if (datasetId) {
+        if (!(locationId in this.__loadPaths)) {
+          this.__loadPaths[locationId] = {};
+        }
+        if (!(datasetId in this.__loadPaths[locationId])) {
+          this.__loadPaths[locationId][datasetId] = new Set();
+        }
+        this.__loadPaths[locationId][datasetId].add(path);
+      }
 
       this.populateLocations();
     },
@@ -289,18 +297,6 @@ qx.Class.define("osparc.file.FilesTree", {
       }
       if (openThis) {
         this.openNodeAndParents(openThis);
-      }
-    },
-
-    __addToLoadFilePath: function(locationId, datasetId, pathId) {
-      if (datasetId) {
-        if (!(locationId in this.__loadPaths)) {
-          this.__loadPaths[locationId] = {};
-        }
-        if (!(datasetId in this.__loadPaths[locationId])) {
-          this.__loadPaths[locationId][datasetId] = new Set();
-        }
-        this.__loadPaths[locationId][datasetId].add(pathId);
       }
     },
 
