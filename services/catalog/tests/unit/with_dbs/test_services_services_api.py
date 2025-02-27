@@ -256,3 +256,7 @@ async def test_batch_get_my_services(
             },
         ]
     )
+
+    # TODO: test user has no access to one and needs to ask owner (NOTE: owner can be a group? )
+    # TODO: test user has no access to entire history
+    #

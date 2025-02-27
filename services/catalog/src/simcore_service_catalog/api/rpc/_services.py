@@ -21,6 +21,7 @@ from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
     CatalogForbiddenError,
     CatalogItemNotFoundError,
 )
+from simcore_service_catalog.db.repositories.groups import GroupsRepository
 
 from ...db.repositories.services import ServicesRepository
 from ...services import services_api
@@ -182,5 +183,17 @@ async def batch_get_my_services(
         ]
     ],
 ) -> list[MyServiceGet]:
+    assert app.state.engine  # nosec
 
-    raise NotImplementedError
+    # TODO: id not found?
+    services = await services_api.batch_get_my_services(
+        repo=ServicesRepository(app.state.engine),
+        groups_repo=GroupsRepository(app.state.engine),
+        product_name=product_name,
+        user_id=user_id,
+        ids=ids,
+    )
+
+    assert [(sv.key, sv.release.version) for sv in services] == ids  # nosec
+
+    return services
