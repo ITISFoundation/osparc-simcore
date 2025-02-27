@@ -484,8 +484,14 @@ async def test_list_paths_with_display_name_containing_slashes(
             expected_paths=expected_paths,
             check_total=False,
         )
+
+        expected_display_path = "/".join(
+            [
+                quote(project_name_with_slashes, safe=""),
+                quote(node_name_with_non_ascii, safe=""),
+                *(expected_paths[0][0].parts[2:]),
+            ],
+        )
         assert page_of_paths.items[0].display_path == Path(
-            quote(project_name_with_slashes, safe="")
-        ) / quote(
-            node_name_with_non_ascii, safe=""
+            expected_display_path
         ), "display path parts should be url encoded"
