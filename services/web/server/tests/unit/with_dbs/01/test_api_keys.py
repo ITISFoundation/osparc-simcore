@@ -239,8 +239,9 @@ async def test_prune_expired_api_keys_task_is_triggered(
     m = mocker.patch(
         "simcore_service_webserver.api_keys._service._repository.prune_expired"
     )
-    settings: GarbageCollectorSettings = client.server.app[  # type: ignore
+    settings = client.server.app[  # type: ignore
         APP_SETTINGS_KEY
     ].WEBSERVER_GARBAGE_COLLECTOR
+    assert isinstance(settings, GarbageCollectorSettings)
     await asyncio.sleep(2 * settings.GARBAGE_COLLECTOR_PRUNE_APIKEYS_INTERVAL_S)
     m.assert_called()
