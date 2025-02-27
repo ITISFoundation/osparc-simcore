@@ -10,7 +10,6 @@ from celery.signals import worker_init, worker_shutdown
 from fastapi import FastAPI
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from simcore_service_storage.core.settings import RabbitSettings
 from simcore_service_storage.main import celery_app as celery_app_client
 from simcore_service_storage.modules.celery.client import CeleryTaskQueueClient
 from simcore_service_storage.modules.celery.worker import CeleryTaskQueueWorker
@@ -26,7 +25,6 @@ from simcore_service_storage.modules.celery.worker_main import (
 @pytest.fixture
 def app_environment(
     monkeypatch: pytest.MonkeyPatch,
-    rabbit_service: RabbitSettings,
     app_environment: EnvVarsDict,
 ) -> EnvVarsDict:
     return setenvs_from_dict(
@@ -34,16 +32,16 @@ def app_environment(
         {
             **app_environment,
             "SC_BOOT_MODE": "local-development",
-            "RABBIT_HOST": rabbit_service.RABBIT_HOST,
-            "RABBIT_PORT": f"{rabbit_service.RABBIT_PORT}",
-            "RABBIT_USER": rabbit_service.RABBIT_USER,
-            "RABBIT_SECURE": f"{rabbit_service.RABBIT_SECURE}",
-            "RABBIT_PASSWORD": rabbit_service.RABBIT_PASSWORD.get_secret_value(),
+            "RABBIT_HOST": "localhost",
+            "RABBIT_PORT": "5672",
+            "RABBIT_USER": "mock",
+            "RABBIT_SECURE": True,
+            "RABBIT_PASSWORD": "",
         },
     )
 
 
-@pytest.mark.fixture
+@pytest.fixture
 def celery_conf() -> dict[str, Any]:
     return {
         "broker_url": "memory://",
