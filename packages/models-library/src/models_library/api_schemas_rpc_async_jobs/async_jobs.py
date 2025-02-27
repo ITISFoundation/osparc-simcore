@@ -11,7 +11,7 @@ AsyncJobId: TypeAlias = UUID
 
 class AsyncJobStatus(BaseModel):
     job_id: AsyncJobId
-    progress: ProgressReport
+    progress: ProgressReport | None
     done: bool
 
 
