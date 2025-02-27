@@ -220,6 +220,7 @@ def fake_task_factory(
 
 
 def random_product(
+    *,
     group_id: int | None = None,
     registration_email_template: str | None = None,
     fake: Faker = DEFAULT_FAKER,
@@ -284,6 +285,29 @@ def random_product(
         data.update(ui=ui)
 
     assert set(data.keys()).issubset({c.name for c in products.columns})
+    data.update(overrides)
+    return data
+
+
+def random_product_price(
+    *, product_name: str, fake: Faker = DEFAULT_FAKER, **overrides
+) -> dict[str, Any]:
+    from simcore_postgres_database.models.products_prices import products_prices
+
+    data = {
+        "product_name": product_name,
+        "usd_per_credit": fake.pydecimal(left_digits=2, right_digits=2, positive=True),
+        "min_payment_amount_usd": fake.pydecimal(
+            left_digits=2, right_digits=2, positive=True
+        ),
+        "comment": fake.sentence(),
+        "valid_from": fake.date_time_this_decade(),
+        "stripe_price_id": fake.uuid4(),
+        "stripe_tax_rate_id": fake.uuid4(),
+    }
+
+    assert set(data.keys()).issubset({c.name for c in products_prices.columns})
+
     data.update(overrides)
     return data
 

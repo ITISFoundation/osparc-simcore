@@ -2,10 +2,17 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-import json
+
+import itertools
+from typing import Any
 
 import pytest
 from packaging.version import Version
+from pydantic import BaseModel
+from pytest_simcore.pydantic_models import (
+    assert_validation_model,
+    iter_model_examples_in_class,
+)
 from service_integration.versioning import (
     ExecutableVersionInfo,
     ServiceVersionInfo,
@@ -45,11 +52,15 @@ def test_bump_version_string(
 
 
 @pytest.mark.parametrize(
-    "model_cls",
-    [ExecutableVersionInfo, ServiceVersionInfo],
+    "model_cls, example_name, example_data",
+    itertools.chain(
+        iter_model_examples_in_class(ExecutableVersionInfo),
+        iter_model_examples_in_class(ServiceVersionInfo),
+    ),
 )
-def test_version_info_model_examples(model_cls, model_cls_examples):
-    for name, example in model_cls_examples.items():
-        print(name, ":", json.dumps(example, indent=1))
-        model_instance = model_cls(**example)
-        assert model_instance, f"Failed with {name}"
+def test_version_info_model_examples(
+    model_cls: type[BaseModel], example_name: str, example_data: Any
+):
+    assert_validation_model(
+        model_cls, example_name=example_name, example_data=example_data
+    )

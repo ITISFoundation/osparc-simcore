@@ -20,7 +20,10 @@ from pydantic import BaseModel, ValidationError
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.pydantic_models import iter_model_examples_in_module
+from pytest_simcore.pydantic_models import (
+    assert_validation_model,
+    iter_model_examples_in_module,
+)
 from servicelib.aiohttp import status
 from settings_library.redis import RedisDatabase, RedisSettings
 from simcore_service_webserver.announcements._redis import (
@@ -185,9 +188,9 @@ async def test_list_announcements_filtered(
 def test_model_examples(
     model_cls: type[BaseModel], example_name: int, example_data: Any
 ):
-    assert model_cls.model_validate(
-        example_data
-    ), f"Failed {example_name} : {json.dumps(example_data)}"
+    assert_validation_model(
+        model_cls, example_name=example_name, example_data=example_data
+    )
 
 
 def test_invalid_announcement(faker: Faker):

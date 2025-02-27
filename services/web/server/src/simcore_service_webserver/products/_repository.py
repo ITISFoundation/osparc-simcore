@@ -1,6 +1,7 @@
 import logging
+from collections.abc import AsyncIterator
 from decimal import Decimal
-from typing import Any, AsyncIterator, NamedTuple
+from typing import Any, NamedTuple
 
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
@@ -16,7 +17,7 @@ from simcore_postgres_database.utils_products_prices import (
 
 from ..db.base_repository import BaseRepository
 from ..db.models import products
-from ._model import Product
+from .models import Product
 
 _logger = logging.getLogger(__name__)
 

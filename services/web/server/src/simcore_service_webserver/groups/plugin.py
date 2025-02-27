@@ -3,7 +3,7 @@ import logging
 from aiohttp import web
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
-from .._constants import APP_SETTINGS_KEY
+from ..constants import APP_SETTINGS_KEY
 from ..products.plugin import setup_products
 from . import _classifiers_rest, _groups_rest
 

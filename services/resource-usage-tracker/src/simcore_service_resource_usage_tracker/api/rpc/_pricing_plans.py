@@ -1,9 +1,9 @@
 from fastapi import FastAPI
 from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
-    PricingPlanGet,
-    PricingPlanPage,
     PricingPlanToServiceGet,
-    PricingUnitGet,
+    RutPricingPlanGet,
+    RutPricingPlanPage,
+    RutPricingUnitGet,
 )
 from models_library.products import ProductName
 from models_library.resource_tracker import (
@@ -16,6 +16,9 @@ from models_library.resource_tracker import (
 )
 from models_library.services import ServiceKey, ServiceVersion
 from servicelib.rabbitmq import RPCRouter
+from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
+    PricingUnitDuplicationError,
+)
 
 from ...services import pricing_plans, pricing_units
 
@@ -31,7 +34,7 @@ async def get_pricing_plan(
     *,
     product_name: ProductName,
     pricing_plan_id: PricingPlanId,
-) -> PricingPlanGet:
+) -> RutPricingPlanGet:
     return await pricing_plans.get_pricing_plan(
         product_name=product_name,
         pricing_plan_id=pricing_plan_id,
@@ -40,7 +43,7 @@ async def get_pricing_plan(
 
 
 @router.expose(reraise_if_error_type=())
-async def list_pricing_plans(
+async def list_pricing_plans_without_pricing_units(
     app: FastAPI,
     *,
     product_name: ProductName,
@@ -48,8 +51,8 @@ async def list_pricing_plans(
     # pagination
     offset: int,
     limit: int,
-) -> PricingPlanPage:
-    return await pricing_plans.list_pricing_plans_by_product(
+) -> RutPricingPlanPage:
+    return await pricing_plans.list_pricing_plans_without_pricing_units(
         db_engine=app.state.engine,
         product_name=product_name,
         exclude_inactive=exclude_inactive,
@@ -63,7 +66,7 @@ async def create_pricing_plan(
     app: FastAPI,
     *,
     data: PricingPlanCreate,
-) -> PricingPlanGet:
+) -> RutPricingPlanGet:
     return await pricing_plans.create_pricing_plan(
         data=data,
         db_engine=app.state.engine,
@@ -76,7 +79,7 @@ async def update_pricing_plan(
     *,
     product_name: ProductName,
     data: PricingPlanUpdate,
-) -> PricingPlanGet:
+) -> RutPricingPlanGet:
     return await pricing_plans.update_pricing_plan(
         product_name=product_name,
         data=data,
@@ -94,7 +97,7 @@ async def get_pricing_unit(
     product_name: ProductName,
     pricing_plan_id: PricingPlanId,
     pricing_unit_id: PricingUnitId,
-) -> PricingUnitGet:
+) -> RutPricingUnitGet:
     return await pricing_units.get_pricing_unit(
         product_name=product_name,
         pricing_plan_id=pricing_plan_id,
@@ -103,13 +106,13 @@ async def get_pricing_unit(
     )
 
 
-@router.expose(reraise_if_error_type=())
+@router.expose(reraise_if_error_type=(PricingUnitDuplicationError,))
 async def create_pricing_unit(
     app: FastAPI,
     *,
     product_name: ProductName,
     data: PricingUnitWithCostCreate,
-) -> PricingUnitGet:
+) -> RutPricingUnitGet:
     return await pricing_units.create_pricing_unit(
         product_name=product_name,
         data=data,
@@ -123,7 +126,7 @@ async def update_pricing_unit(
     *,
     product_name: ProductName,
     data: PricingUnitWithCostUpdate,
-) -> PricingUnitGet:
+) -> RutPricingUnitGet:
     return await pricing_units.update_pricing_unit(
         product_name=product_name,
         data=data,
