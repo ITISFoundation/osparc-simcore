@@ -23,21 +23,52 @@ qx.Class.define("osparc.store.LicensedItems", {
     this.base(arguments);
 
     this.__licensedItems = null;
+    this.__cachedLicensedItems = {};
+  },
+
+  statics: {
+    getLowerLicensedItems: function(licensedItems, key, version) {
+      const lowerLicensedItems = [];
+      licensedItems.forEach(licensedItem => {
+        if (licensedItem["key"] === key && licensedItem["version"] < version) {
+          lowerLicensedItems.push(licensedItem);
+        }
+      });
+      return lowerLicensedItems;
+    },
+
+    seatsToNSeats: function(seats) {
+      let nSeats = 0;
+      seats.forEach(seat => {
+        if ("numOfSeats" in seat) {
+          nSeats += seat["numOfSeats"];
+        } else if ("getNumOfSeats" in seat) {
+          nSeats += seat.getNumOfSeats();
+        }
+      });
+      return nSeats;
+    },
   },
 
   members: {
     __licensedItems: null,
+    __cachedLicensedItems: null,
 
     getLicensedItems: function() {
-      if (this.__licensedItems) {
-        return new Promise(resolve => resolve(this.__licensedItems));
+      if (this.__cachedLicensedItems.length) {
+        return new Promise(resolve => resolve(this.__cachedLicensedItems));
       }
 
       return osparc.data.Resources.getInstance().getAllPages("licensedItems")
-        .then(licensedItems => {
-          this.__licensedItems = licensedItems;
-          return this.__licensedItems;
+        .then(licensedItemsData => {
+          licensedItemsData.forEach(licensedItemData => this.__addLicensedItemsToCache(licensedItemData));
+          return this.__cachedLicensedItems;
         });
+    },
+
+    __addLicensedItemsToCache: function(licensedItemData) {
+      const licensedItem = new osparc.data.model.LicensedItem(licensedItemData);
+      this.__cachedLicensedItems[licensedItem.getLicensedItemId()] = licensedItem;
     },
 
     getPurchasedLicensedItems: function(walletId, urlParams, options = {}) {
@@ -54,7 +85,7 @@ qx.Class.define("osparc.store.LicensedItems", {
       return osparc.data.Resources.fetch("licensedItems", "purchases", purchasesParams, options);
     },
 
-    purchaseLicensedItem: function(licensedItemId, walletId, pricingPlanId, pricingUnitId, numberOfSeats) {
+    purchaseLicensedItem: function(licensedItemId, walletId, pricingPlanId, pricingUnitId, numOfSeats) {
       const params = {
         url: {
           licensedItemId
@@ -63,7 +94,7 @@ qx.Class.define("osparc.store.LicensedItems", {
           "wallet_id": walletId,
           "pricing_plan_id": pricingPlanId,
           "pricing_unit_id": pricingUnitId,
-          "num_of_seats": numberOfSeats, // this should go away
+          "num_of_seats": numOfSeats, // this should go away
         },
       }
       return osparc.data.Resources.fetch("licensedItems", "purchase", params);

@@ -2,21 +2,21 @@
 # pylint:disable=redefined-outer-name
 
 from collections.abc import Awaitable, Callable
-from contextlib import AbstractAsyncContextManager
 from pathlib import Path
 
 import pytest
-from aiopg.sa.engine import Engine
 from faker import Faker
-from models_library.api_schemas_storage import FileUploadSchema
 from models_library.basic_types import SHA256Str
-from models_library.projects_nodes_io import SimcoreS3FileID
+from models_library.projects import ProjectID
+from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
 from models_library.users import UserID
 from pydantic import ByteSize, TypeAdapter
-from simcore_service_storage import db_file_meta_data
+from pytest_simcore.helpers.storage_utils import FileIDDict
 from simcore_service_storage.models import FileMetaData
-from simcore_service_storage.s3 import get_s3_client
+from simcore_service_storage.modules.db import file_meta_data
+from simcore_service_storage.modules.s3 import get_s3_client
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 pytest_simcore_core_services_selection = ["postgres"]
 pytest_simcore_ops_services_selection = ["adminer"]
@@ -38,13 +38,18 @@ def mock_copy_transfer_cb() -> Callable[..., None]:
 async def test__copy_path_s3_s3(
     simcore_s3_dsm: SimcoreS3DataManager,
     create_directory_with_files: Callable[
-        ..., AbstractAsyncContextManager[FileUploadSchema]
+        [str, ByteSize, int, int, ProjectID, NodeID],
+        Awaitable[
+            tuple[SimcoreS3FileID, tuple[NodeID, dict[SimcoreS3FileID, FileIDDict]]]
+        ],
     ],
     upload_file: Callable[[ByteSize, str], Awaitable[tuple[Path, SimcoreS3FileID]]],
     file_size: ByteSize,
     user_id: UserID,
+    project_id: ProjectID,
+    node_id: NodeID,
     mock_copy_transfer_cb: Callable[..., None],
-    aiopg_engine: Engine,
+    sqlalchemy_async_engine: AsyncEngine,
 ):
     def _get_dest_file_id(src: SimcoreS3FileID) -> SimcoreS3FileID:
         return TypeAdapter(SimcoreS3FileID).validate_python(
@@ -52,8 +57,8 @@ async def test__copy_path_s3_s3(
         )
 
     async def _copy_s3_path(s3_file_id_to_copy: SimcoreS3FileID) -> None:
-        async with aiopg_engine.acquire() as conn:
-            exiting_fmd = await db_file_meta_data.get(conn, s3_file_id_to_copy)
+        async with sqlalchemy_async_engine.connect() as conn:
+            exiting_fmd = await file_meta_data.get(conn, s3_file_id_to_copy)
 
         await simcore_s3_dsm._copy_path_s3_s3(  # noqa: SLF001
             user_id=user_id,
@@ -74,24 +79,23 @@ async def test__copy_path_s3_s3(
 
     # using directory
 
-    FILE_COUNT = 4
+    FILE_COUNT = 20
     SUBDIR_COUNT = 5
-    async with create_directory_with_files(
+    s3_object, _ = await create_directory_with_files(
         dir_name="some-random",
         file_size_in_dir=file_size,
         subdir_count=SUBDIR_COUNT,
         file_count=FILE_COUNT,
-    ) as directory_file_upload:
-        assert len(directory_file_upload.urls) == 1
-        assert directory_file_upload.urls[0].path
-        s3_object = directory_file_upload.urls[0].path.lstrip("/")
+        project_id=project_id,
+        node_id=node_id,
+    )
 
-        s3_file_id_dir_src = TypeAdapter(SimcoreS3FileID).validate_python(s3_object)
-        s3_file_id_dir_dst = _get_dest_file_id(s3_file_id_dir_src)
+    s3_file_id_dir_src = TypeAdapter(SimcoreS3FileID).validate_python(s3_object)
+    s3_file_id_dir_dst = _get_dest_file_id(s3_file_id_dir_src)
 
-        await _count_files(s3_file_id_dir_dst, expected_count=0)
-        await _copy_s3_path(s3_file_id_dir_src)
-        await _count_files(s3_file_id_dir_dst, expected_count=FILE_COUNT * SUBDIR_COUNT)
+    await _count_files(s3_file_id_dir_dst, expected_count=0)
+    await _copy_s3_path(s3_file_id_dir_src)
+    await _count_files(s3_file_id_dir_dst, expected_count=FILE_COUNT)
 
     # using a single file
 

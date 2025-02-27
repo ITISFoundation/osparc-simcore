@@ -26,6 +26,8 @@ _LICENSED_ITEM_PURCHASE_GET = (
             "licensed_item_purchase_id": "beb16d18-d57d-44aa-a638-9727fa4a72ef",
             "product_name": "osparc",
             "licensed_item_id": "303942ef-6d31-4ba8-afbe-dbb1fce2a953",
+            "key": "Duke",
+            "version": "1.0.0",
             "wallet_id": 1,
             "wallet_name": "My Wallet",
             "pricing_unit_cost_id": 1,

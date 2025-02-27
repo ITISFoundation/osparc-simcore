@@ -8,11 +8,12 @@ import logging
 from collections.abc import AsyncIterator, Callable
 
 from aiohttp import web
+from servicelib.logging_utils import log_context
 from tenacity import retry
 from tenacity.before_sleep import before_sleep_log
 from tenacity.wait import wait_exponential
 
-from ..trash._service import prune_trash
+from ..trash import trash_service
 
 _logger = logging.getLogger(__name__)
 
@@ -28,11 +29,8 @@ _APP_TASK_KEY = f"{_PERIODIC_TASK_NAME}.task"
     before_sleep=before_sleep_log(_logger, logging.WARNING),
 )
 async def _run_task(app: web.Application):
-    if deleted := await prune_trash(app):
-        for name in deleted:
-            _logger.info("Trash item %s expired and was deleted", f"{name}")
-    else:
-        _logger.info("No trash items expired")
+    with log_context(_logger, logging.INFO, "Deleting expired trashed items"):
+        await trash_service.safe_delete_expired_trash_as_admin(app)
 
 
 async def _run_periodically(app: web.Application, wait_interval_s: float):

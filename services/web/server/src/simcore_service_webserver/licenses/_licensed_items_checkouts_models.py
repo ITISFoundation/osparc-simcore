@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import NamedTuple
 
 from models_library.basic_types import IDStr
-from models_library.licensed_items import LicensedItemID
+from models_library.licenses import LicensedItemID
 from models_library.products import ProductName
 from models_library.resource_tracker_licensed_items_checkouts import (
     LicensedItemCheckoutID,
@@ -22,6 +22,8 @@ from pydantic import BaseModel, PositiveInt
 class LicensedItemCheckoutGet(BaseModel):
     licensed_item_checkout_id: LicensedItemCheckoutID
     licensed_item_id: LicensedItemID
+    key: str
+    version: str
     wallet_id: WalletID
     user_id: UserID
     user_email: str

@@ -66,6 +66,23 @@ qx.Class.define("osparc.dashboard.CardBase", {
       LOADER: 3
     },
 
+    ICON_SIZE: 32,
+
+    createCardIcon: function() {
+      const iconSize = osparc.dashboard.CardBase.ICON_SIZE;
+      const icon = new osparc.ui.basic.Thumbnail(null, iconSize, iconSize).set({
+        minHeight: iconSize,
+        minWidth: iconSize,
+      });
+      icon.getChildControl("image").set({
+        anonymous: true,
+        decorator: "rounded",
+        minWidth: iconSize,
+        minHeight: iconSize,
+      });
+      return icon
+    },
+
     createTSRLayout: function() {
       const layout = new qx.ui.container.Composite(new qx.ui.layout.HBox(2).set({
         alignY: "middle"
@@ -461,20 +478,24 @@ qx.Class.define("osparc.dashboard.CardBase", {
       let owner = null;
       let workbench = null;
       let defaultHits = null;
+      let icon = null;
       switch (resourceData["resourceType"]) {
         case "study":
           uuid = resourceData.uuid ? resourceData.uuid : null;
           owner = resourceData.prjOwner ? resourceData.prjOwner : "";
           workbench = resourceData.workbench ? resourceData.workbench : {};
+          icon = osparc.study.Utils.guessIcon(resourceData);
           break;
         case "template":
           uuid = resourceData.uuid ? resourceData.uuid : null;
           owner = resourceData.prjOwner ? resourceData.prjOwner : "";
           workbench = resourceData.workbench ? resourceData.workbench : {};
+          icon = osparc.study.Utils.guessIcon(resourceData);
           break;
         case "service":
           uuid = resourceData.key ? resourceData.key : null;
           owner = resourceData.owner ? resourceData.owner : resourceData.contact;
+          icon = resourceData["icon"] || osparc.dashboard.CardBase.PRODUCT_ICON;
           defaultHits = 0;
           break;
       }
@@ -489,7 +510,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
         lastChangeDate: resourceData.lastChangeDate ? new Date(resourceData.lastChangeDate) : null,
         trashedAt: resourceData.trashedAt ? new Date(resourceData.trashedAt) : null,
         trashedBy: resourceData.trashedBy || null,
-        icon: ["study", "template"].includes(resourceData.resourceType) ? osparc.study.Utils.guessIcon(resourceData) : null,
+        icon,
         thumbnail: resourceData.thumbnail || this.self().PRODUCT_THUMBNAIL,
         state: resourceData.state ? resourceData.state : {},
         classifiers: resourceData.classifiers && resourceData.classifiers ? resourceData.classifiers : [],
@@ -963,8 +984,8 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     openData: function() {
-      const moreOpts = this.__openMoreOptions();
-      moreOpts.openData();
+      const resourceData = this.getResourceData();
+      osparc.widget.StudyDataManager.popUpInWindow(resourceData["uuid"]);
     },
 
     openBilling: function() {

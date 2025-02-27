@@ -29,7 +29,6 @@ qx.Theme.define("osparc.theme.mixin.Color", {
     "pb-locked": "rgba(113, 157, 181, 0.4)",
 
     // button
-    "default-button-text": "rgba(255, 255, 255, 1)",
     "default-button-text-outline": "contrasted-text-light",
     "default-button-text-action": "contrasted-text-dark",
     "default-button": "product-color",
@@ -44,8 +43,6 @@ qx.Theme.define("osparc.theme.mixin.Color", {
     "default-button-disabled-background": "rgba(113, 157, 181, 0.25)",
     "default-button-focus-blur": "rgba(254, 233, 86, 1)",
 
-    "status_icon": "rgba(255, 255, 255, 1)",
-
     // separator
     "border-separator": "product-color",
 
@@ -54,6 +51,29 @@ qx.Theme.define("osparc.theme.mixin.Color", {
     "logger-warning-message": "warning-yellow",
     "logger-error-message": "failed-red",
 
-    "workbench-edge-selected": "busy-orange"
+    "workbench-edge-selected": "busy-orange",
+
+
+    // table
+    "table-header": "transparent",
+    "table-header-foreground": "text", // text color
+    "table-header-border": "text", // header underline
+    "table-header-cell": "transparent",
+
+    // used in table code
+    "table-focus-indicator": "transparent",
+    "table-row-background-even": "transparent",
+    "table-row-background-odd": "transparent",
+    "table-row-background-focused": "transparent",
+    "table-row-background-focused-selected": "background-main-2",
+    "table-row-background-selected": "background-main-2",
+
+    // foreground
+    "table-row-selected": "text",
+    "table-row": "text",
+
+    // table grid color
+    "table-row-line": "transparent",
+    "table-column-line": "transparent",
   }
 });

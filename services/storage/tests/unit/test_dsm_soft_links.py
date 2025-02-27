@@ -4,60 +4,13 @@
 
 import uuid
 from functools import lru_cache
-from typing import AsyncIterator
 
-import pytest
-from aiopg.sa.engine import Engine
-from faker import Faker
-from models_library.api_schemas_storage import S3BucketName
 from models_library.projects_nodes_io import SimcoreS3FileID
-from models_library.users import UserID
-from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import ByteSize, TypeAdapter
-from simcore_postgres_database.storage_models import file_meta_data
-from simcore_service_storage.models import FileMetaData, FileMetaDataAtDB
+from simcore_service_storage.models import FileMetaData
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
-from sqlalchemy.sql.expression import literal_column
 
 pytest_simcore_core_services_selection = ["postgres"]
 pytest_simcore_ops_services_selection = ["adminer"]
-
-
-@pytest.fixture()
-async def output_file(
-    user_id: UserID, project_id: str, aiopg_engine: Engine, faker: Faker
-) -> AsyncIterator[FileMetaData]:
-    node_id = "fd6f9737-1988-341b-b4ac-0614b646fa82"
-
-    # pylint: disable=no-value-for-parameter
-
-    file = FileMetaData.from_simcore_node(
-        user_id=user_id,
-        file_id=SimcoreS3FileID(f"{project_id}/{node_id}/filename.txt"),
-        bucket=TypeAdapter(S3BucketName).validate_python("master-simcore"),
-        location_id=SimcoreS3DataManager.get_location_id(),
-        location_name=SimcoreS3DataManager.get_location_name(),
-        sha256_checksum=faker.sha256(),
-    )
-    file.entity_tag = "df9d868b94e53d18009066ca5cd90e9f"
-    file.file_size = ByteSize(12)
-    file.user_id = user_id
-
-    async with aiopg_engine.acquire() as conn:
-        stmt = (
-            file_meta_data.insert()
-            .values(jsonable_encoder(FileMetaDataAtDB.model_validate(file)))
-            .returning(literal_column("*"))
-        )
-        result = await conn.execute(stmt)
-        row = await result.fetchone()
-        assert row
-
-        yield file
-
-        result = await conn.execute(
-            file_meta_data.delete().where(file_meta_data.c.file_id == row.file_id)
-        )
 
 
 def create_reverse_dns(*resource_name_parts) -> str:

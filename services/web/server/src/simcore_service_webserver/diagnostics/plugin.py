@@ -6,8 +6,8 @@ from aiohttp import web
 from servicelib.aiohttp import monitor_slow_callbacks
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 from servicelib.aiohttp.profiler_middleware import profiling_middleware
-from simcore_service_webserver.application_settings import get_application_settings
 
+from ..application_settings import get_application_settings
 from ..rest.healthcheck import HealthCheck
 from ..rest.plugin import setup_rest
 from . import _handlers

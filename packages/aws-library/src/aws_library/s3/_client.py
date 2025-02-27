@@ -6,34 +6,50 @@ import urllib.parse
 from collections.abc import AsyncGenerator, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Final, Protocol, cast
+from typing import Any, Final, Literal, Protocol, cast
 
 import aioboto3
 from aiobotocore.session import ClientCreatorContext
 from boto3.s3.transfer import TransferConfig
 from botocore import exceptions as botocore_exc
 from botocore.client import Config
-from models_library.api_schemas_storage import ETag, S3BucketName, UploadedPart
+from models_library.api_schemas_storage.storage_schemas import (
+    ETag,
+    S3BucketName,
+    UploadedPart,
+)
 from models_library.basic_types import SHA256Str
+from models_library.bytes_iters import BytesIter, DataSize
 from pydantic import AnyUrl, ByteSize, TypeAdapter
+from servicelib.bytes_iters import DEFAULT_READ_CHUNK_SIZE, BytesStreamer
 from servicelib.logging_utils import log_catch, log_context
+from servicelib.s3_utils import FileLikeReader
 from servicelib.utils import limited_gather
 from settings_library.s3 import S3Settings
 from types_aiobotocore_s3 import S3Client
 from types_aiobotocore_s3.literals import BucketLocationConstraintType
-from types_aiobotocore_s3.type_defs import ObjectIdentifierTypeDef
+from types_aiobotocore_s3.type_defs import (
+    ListObjectsV2RequestRequestTypeDef,
+    ObjectIdentifierTypeDef,
+)
 
-from ._constants import MULTIPART_COPY_THRESHOLD, MULTIPART_UPLOADS_MIN_TOTAL_SIZE
+from ._constants import (
+    MULTIPART_COPY_THRESHOLD,
+    MULTIPART_UPLOADS_MIN_TOTAL_SIZE,
+    S3_OBJECT_DELIMITER,
+)
 from ._error_handler import s3_exception_handler, s3_exception_handler_async_gen
 from ._errors import S3DestinationNotEmptyError, S3KeyNotFoundError
 from ._models import (
     MultiPartUploadLinks,
+    PathCursor,
     S3DirectoryMetaData,
     S3MetaData,
     S3ObjectKey,
+    S3ObjectPrefix,
     UploadID,
 )
-from ._utils import compute_num_file_chunks
+from ._utils import compute_num_file_chunks, create_final_prefix
 
 _logger = logging.getLogger(__name__)
 
@@ -97,7 +113,10 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
 
     @s3_exception_handler(_logger)
     async def create_bucket(
-        self, *, bucket: S3BucketName, region: BucketLocationConstraintType
+        self,
+        *,
+        bucket: S3BucketName,
+        region: BucketLocationConstraintType | Literal["us-east-1"],
     ) -> None:
         with log_context(
             _logger, logging.INFO, msg=f"Create bucket {bucket} in {region}"
@@ -157,7 +176,99 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
         size = 0
         async for s3_object in self._list_all_objects(bucket=bucket, prefix=prefix):
             size += s3_object.size
-        return S3DirectoryMetaData(size=size)
+        return S3DirectoryMetaData(prefix=S3ObjectPrefix(prefix), size=ByteSize(size))
+
+    @s3_exception_handler(_logger)
+    async def count_objects(
+        self,
+        *,
+        bucket: S3BucketName,
+        prefix: S3ObjectPrefix | None,
+        start_after: S3ObjectKey | None,
+        is_partial_prefix: bool = False,
+        use_delimiter: bool = True,
+    ) -> int:
+        """returns the number of entries in the bucket, defined
+        by prefix and start_after same as list_objects
+        """
+        paginator = self._client.get_paginator("list_objects_v2")
+        total_count = 0
+        async for page in paginator.paginate(
+            Bucket=bucket,
+            Prefix=create_final_prefix(prefix, is_partial_prefix=is_partial_prefix),
+            StartAfter=start_after or "",
+            Delimiter=S3_OBJECT_DELIMITER if use_delimiter else "",
+        ):
+            total_count += page.get("KeyCount", 0)
+        return total_count
+
+    @s3_exception_handler(_logger)
+    async def list_objects(
+        self,
+        *,
+        bucket: S3BucketName,
+        prefix: S3ObjectPrefix | None,
+        start_after: S3ObjectKey | None,
+        limit: int = _MAX_ITEMS_PER_PAGE,
+        next_cursor: PathCursor | None = None,
+        is_partial_prefix: bool = False,
+    ) -> tuple[list[S3MetaData | S3DirectoryMetaData], PathCursor | None]:
+        """returns a number of entries in the bucket, defined by limit
+        the entries are sorted alphabetically by key. If a cursor is returned
+        then the client can call the function again with the cursor to get the
+        next entries.
+
+        the first entry is defined by start_after
+        if start_after is None, the first entry is the first one in the bucket
+        if prefix is not None, only entries with the given prefix are returned
+        if prefix is None, all entries in the bucket are returned
+        if next_cursor is set, then the call will return the next entries after the cursor
+        if is_partial_prefix is set then the prefix is not auto-delimited
+        (if False equivalent to `ls /home/user/`
+        if True equivalent to `ls /home/user*`)
+        limit must be >= 1 and <= _AWS_MAX_ITEMS_PER_PAGE
+
+        Raises:
+            ValueError: in case of invalid limit
+        """
+        if limit < 1:
+            msg = "num_objects must be >= 1"
+            raise ValueError(msg)
+        if limit > _AWS_MAX_ITEMS_PER_PAGE:
+            msg = f"num_objects must be <= {_AWS_MAX_ITEMS_PER_PAGE}"
+            raise ValueError(msg)
+
+        list_config: ListObjectsV2RequestRequestTypeDef = {
+            "Bucket": bucket,
+            "Prefix": create_final_prefix(prefix, is_partial_prefix=is_partial_prefix),
+            "MaxKeys": limit,
+            "Delimiter": S3_OBJECT_DELIMITER,
+        }
+        if start_after:
+            list_config["StartAfter"] = start_after
+        if next_cursor:
+            list_config["ContinuationToken"] = next_cursor
+        listed_objects = await self._client.list_objects_v2(**list_config)
+        found_objects: list[S3MetaData | S3DirectoryMetaData] = []
+        if "CommonPrefixes" in listed_objects:
+            # we have folders here
+            list_subfolders = listed_objects["CommonPrefixes"]
+            found_objects.extend(
+                S3DirectoryMetaData.model_construct(
+                    prefix=S3ObjectPrefix(subfolder["Prefix"], size=None)
+                )
+                for subfolder in list_subfolders
+                if "Prefix" in subfolder
+            )
+        if "Contents" in listed_objects:
+            found_objects.extend(
+                S3MetaData.from_botocore_list_objects(obj)
+                for obj in listed_objects["Contents"]
+            )
+        next_cursor = None
+        if listed_objects["IsTruncated"]:
+            next_cursor = listed_objects["NextContinuationToken"]
+        return found_objects, next_cursor
 
     @s3_exception_handler_async_gen(_logger)
     async def list_objects_paginated(
@@ -449,7 +560,7 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
         dst_metadata = await self.get_directory_metadata(
             bucket=bucket, prefix=dst_prefix
         )
-        if dst_metadata.size > 0:
+        if dst_metadata.size and dst_metadata.size > 0:
             raise S3DestinationNotEmptyError(dst_prefix=dst_prefix)
         await limited_gather(
             *[
@@ -466,6 +577,57 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
             ],
             limit=_MAX_CONCURRENT_COPY,
         )
+
+    async def get_bytes_streamer_from_object(
+        self,
+        bucket_name: S3BucketName,
+        object_key: S3ObjectKey,
+        *,
+        chunk_size: int = DEFAULT_READ_CHUNK_SIZE,
+    ) -> BytesStreamer:
+        """stream read an object from S3 chunk by chunk"""
+
+        # NOTE `download_fileobj` cannot be used to implement this because
+        # it will buffer the entire file in memory instead of reading it
+        # chunk by chunk
+
+        # below is a quick call
+        head_response = await self._client.head_object(
+            Bucket=bucket_name, Key=object_key
+        )
+        data_size = DataSize(head_response["ContentLength"])
+
+        async def _() -> BytesIter:
+            # Download the file in chunks
+            position = 0
+            while position < data_size:
+                # Calculate the range for this chunk
+                end = min(position + chunk_size - 1, data_size - 1)
+                range_header = f"bytes={position}-{end}"
+
+                # Download the chunk
+                response = await self._client.get_object(
+                    Bucket=bucket_name, Key=object_key, Range=range_header
+                )
+
+                chunk = await response["Body"].read()
+
+                # Yield the chunk for processing
+                yield chunk
+
+                position += chunk_size
+
+        return BytesStreamer(data_size, _)
+
+    @s3_exception_handler(_logger)
+    async def upload_object_from_file_like(
+        self,
+        bucket_name: S3BucketName,
+        object_key: S3ObjectKey,
+        file_like_reader: FileLikeReader,
+    ) -> None:
+        """streams write an object in S3 from an AsyncIterable[bytes]"""
+        await self._client.upload_fileobj(file_like_reader, bucket_name, object_key)  # type: ignore[arg-type]
 
     @staticmethod
     def is_multipart(file_size: ByteSize) -> bool:

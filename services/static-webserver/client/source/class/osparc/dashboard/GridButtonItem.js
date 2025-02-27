@@ -93,8 +93,7 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
           break;
         case "menu-button":
           this.getChildControl("title").set({
-            maxWidth: osparc.dashboard.GridButtonBase.ITEM_WIDTH - osparc.dashboard.GridButtonBase.ICON_SIZE - this.self().MENU_BTN_DIMENSIONS - 6,
-            padding: 4,
+            maxWidth: osparc.dashboard.GridButtonBase.ITEM_WIDTH - osparc.dashboard.CardBase.ICON_SIZE - this.self().MENU_BTN_DIMENSIONS - 2,
           });
           control = new qx.ui.form.MenuButton().set({
             appearance: "form-button-outlined",
@@ -195,7 +194,7 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
           const dateBy = this.getChildControl("date-by");
           dateBy.set({
             date: value,
-            toolTipText: this.tr("Moved to the bin"),
+            toolTipText: this.tr("Deleted"),
           });
         }
       }
@@ -245,10 +244,12 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
 
     _applyTags: function(tags) {
       if (osparc.data.Permissions.getInstance().canDo("study.tag")) {
+        const maxTags = 2;
         const tagsContainer = this.getChildControl("tags");
         tagsContainer.setVisibility(tags.length ? "visible" : "excluded");
         tagsContainer.removeAll();
-        tags.forEach(tag => {
+        for (let i=0; i<=tags.length && i<maxTags; i++) {
+          const tag = tags[i];
           const tagUI = new osparc.ui.basic.Tag(tag, "searchBarFilter");
           tagUI.set({
             font: "text-12",
@@ -256,7 +257,15 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
           });
           tagUI.addListener("tap", () => this.fireDataEvent("tagClicked", tag));
           tagsContainer.add(tagUI);
-        });
+        }
+        if (tags.length > maxTags) {
+          const moreButton = new qx.ui.basic.Label(this.tr("More...")).set({
+            font: "text-12",
+            backgroundColor: "strong-main",
+            appearance: "tag",
+          });
+          tagsContainer.add(moreButton);
+        }
       }
     },
 
@@ -264,9 +273,10 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
     _applyMenu: function(menu, old) {
       const menuButton = this.getChildControl("menu-button");
       if (menu) {
-        menuButton.setMenu(menu);
-        menu.setPosition("bottom-left");
-        osparc.utils.Utils.prettifyMenu(menu);
+        menuButton.setMenu(menu).set({
+          appearance: "menu-wider",
+          position: "bottom-left",
+        });
         osparc.utils.Utils.setIdToWidget(menu, "studyItemMenuMenu");
         this.evaluateMenuButtons();
       }

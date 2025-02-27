@@ -22,7 +22,7 @@ qx.Class.define("osparc.navigation.UserMenu", {
     this.base(arguments);
 
     this.set({
-      font: "text-14"
+      appearance: "menu-wider",
     });
   },
 
@@ -77,12 +77,6 @@ qx.Class.define("osparc.navigation.UserMenu", {
           }, this);
           this.add(control);
           break;
-        case "preferences":
-          control = new qx.ui.menu.Button(this.tr("Preferences"));
-          control.addListener("execute", () => osparc.navigation.UserMenuButton.openPreferences(), this);
-          osparc.utils.Utils.setIdToWidget(control, "userMenuPreferencesBtn");
-          this.add(control);
-          break;
         case "organizations":
           control = new qx.ui.menu.Button(this.tr("Organizations")).set({
             visibility: osparc.data.Permissions.getInstance().canDo("user.organizations.create") ? "visible" :"excluded"
@@ -92,7 +86,7 @@ qx.Class.define("osparc.navigation.UserMenu", {
           this.add(control);
           break;
         case "market":
-          control = new qx.ui.menu.Button(this.tr("Market"));
+          control = new qx.ui.menu.Button(this.tr("Model Store"));
           control.addListener("execute", () => osparc.vipMarket.MarketWindow.openWindow());
           this.add(control);
           break;
@@ -162,7 +156,6 @@ qx.Class.define("osparc.navigation.UserMenu", {
         if (osparc.desktop.credits.Utils.areWalletsEnabled()) {
           this.getChildControl("billing-center");
         }
-        this.getChildControl("preferences");
         this.getChildControl("organizations");
       }
       this.addSeparator();
@@ -187,8 +180,6 @@ qx.Class.define("osparc.navigation.UserMenu", {
       this.addSeparator();
 
       this.getChildControl("log-out");
-
-      osparc.utils.Utils.prettifyMenu(this);
     },
 
     __addAnnouncements: function() {
@@ -217,21 +208,19 @@ qx.Class.define("osparc.navigation.UserMenu", {
         if (osparc.desktop.credits.Utils.areWalletsEnabled()) {
           this.getChildControl("billing-center");
         }
-        this.getChildControl("preferences");
         this.getChildControl("organizations");
       }
       this.addSeparator();
 
-      // quick starts
+      // quick starts and manuals
       osparc.store.Support.addQuickStartToMenu(this);
       osparc.store.Support.addGuidedToursToMenu(this);
-
-      // manuals
       osparc.store.Support.addManualButtonsToMenu(this);
       this.addSeparator();
 
       // feedbacks
       osparc.store.Support.addSupportButtonsToMenu(this);
+      osparc.store.Support.addReleaseNotesToMenu(this);
       this.addSeparator();
 
       this.getChildControl("theme-switcher");
@@ -253,8 +242,6 @@ qx.Class.define("osparc.navigation.UserMenu", {
       }
       this.addSeparator();
       this.getChildControl("log-out");
-
-      osparc.utils.Utils.prettifyMenu(this);
     }
   }
 });

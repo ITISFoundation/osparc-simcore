@@ -12,7 +12,7 @@ import aiohttp
 import pytest
 from aioresponses import aioresponses as AioResponsesMock
 from faker import Faker
-from models_library.api_schemas_storage import (
+from models_library.api_schemas_storage.storage_schemas import (
     FileLocationArray,
     FileMetaDataGet,
     FileUploadSchema,
@@ -24,15 +24,17 @@ from pydantic import AnyUrl, ByteSize, TypeAdapter
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.aiohttp import status
 from simcore_sdk.node_ports_common import exceptions
-from simcore_sdk.node_ports_common._filemanager import _get_https_link_if_storage_secure
+from simcore_sdk.node_ports_common._filemanager_utils import (
+    _get_https_link_if_storage_secure,
+)
 from simcore_sdk.node_ports_common.storage_client import (
     LinkType,
     delete_file,
     get_download_file_link,
     get_file_metadata,
-    get_storage_locations,
     get_upload_file_links,
     list_file_metadata,
+    list_storage_locations,
 )
 from simcore_sdk.node_ports_common.storage_endpoint import (
     get_base_url,
@@ -92,14 +94,14 @@ async def session() -> AsyncIterator[aiohttp.ClientSession]:
         yield session
 
 
-async def test_get_storage_locations(
+async def test_list_storage_locations(
     clear_caches: None,
     storage_v0_service_mock: AioResponsesMock,
     mock_postgres: EnvVarsDict,
     session: aiohttp.ClientSession,
     user_id: UserID,
 ):
-    result = await get_storage_locations(session=session, user_id=user_id)
+    result = await list_storage_locations(session=session, user_id=user_id)
     assert isinstance(result, FileLocationArray)  # type: ignore
 
     assert len(result) == 1
@@ -177,7 +179,7 @@ async def test_get_file_metada(
     )
     assert file_metadata
     assert file_metadata == FileMetaDataGet.model_validate(
-        FileMetaDataGet.model_config["json_schema_extra"]["examples"][0]
+        FileMetaDataGet.model_json_schema()["examples"][0]
     )
 
 

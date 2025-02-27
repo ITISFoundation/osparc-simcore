@@ -4,21 +4,33 @@
 # pylint: disable=too-many-arguments
 
 
-from typing import TypeAlias
+from typing import Annotated, TypeAlias
+from uuid import UUID
 
-from fastapi import APIRouter, Query, status
-from models_library.api_schemas_storage import (
+from fastapi import APIRouter, Depends, Query, status
+from fastapi_pagination.cursor import CursorPage
+from models_library.api_schemas_storage.storage_schemas import (
+    FileLocation,
     FileMetaDataGet,
     FileUploadCompleteFutureResponse,
     FileUploadCompleteResponse,
     FileUploadCompletionBody,
     FileUploadSchema,
     LinkType,
+    PathMetaDataGet,
     PresignedLink,
-    TableSynchronisation,
+)
+from models_library.api_schemas_webserver.storage import (
+    DataExportPost,
+    ListPathsQueryParams,
+    StorageAsyncJobGet,
+    StorageAsyncJobResult,
+    StorageAsyncJobStatus,
+    StorageLocationPathParams,
 )
 from models_library.generics import Envelope
 from models_library.projects_nodes_io import LocationID
+from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.storage.schemas import DatasetMetaData, FileMetaData
@@ -38,40 +50,42 @@ StorageFileIDStr: TypeAlias = str
 
 @router.get(
     "/storage/locations",
-    response_model=list[DatasetMetaData],
-    summary="Get available storage locations",
+    response_model=list[FileLocation],
+    description="Get available storage locations",
 )
-async def get_storage_locations():
+async def list_storage_locations():
     """Returns the list of available storage locations"""
 
 
-@router.post(
-    "/storage/locations/{location_id}:sync",
-    response_model=Envelope[TableSynchronisation],
-    summary="Manually triggers the synchronisation of the file meta data table in the database",
+@router.get(
+    "/storage/locations/{location_id}/paths",
+    response_model=CursorPage[PathMetaDataGet],
 )
-async def synchronise_meta_data_table(
-    location_id: LocationID, dry_run: bool = False, fire_and_forget: bool = False
+async def list_storage_paths(
+    _path: Annotated[StorageLocationPathParams, Depends()],
+    _query: Annotated[ListPathsQueryParams, Depends()],
 ):
-    """Returns an object containing added, changed and removed paths"""
+    """Lists the files/directories in WorkingDirectory"""
 
 
 @router.get(
     "/storage/locations/{location_id}/datasets",
     response_model=Envelope[list[DatasetMetaData]],
-    summary="Get datasets metadata",
+    description="Get datasets metadata",
 )
-async def get_datasets_metadata(location_id: LocationID):
+async def list_datasets_metadata(
+    _path: Annotated[StorageLocationPathParams, Depends()],
+):
     """returns all the top level datasets a user has access to"""
 
 
 @router.get(
     "/storage/locations/{location_id}/files/metadata",
     response_model=Envelope[list[DatasetMetaData]],
-    summary="Get datasets metadata",
+    description="Get datasets metadata",
 )
 async def get_files_metadata(
-    location_id: LocationID,
+    _path: Annotated[StorageLocationPathParams, Depends()],
     uuid_filter: str = "",
     expand_dirs: bool = Query(
         True,
@@ -86,9 +100,9 @@ async def get_files_metadata(
 @router.get(
     "/storage/locations/{location_id}/datasets/{dataset_id}/metadata",
     response_model=Envelope[list[FileMetaDataGet]],
-    summary="Get Files Metadata",
+    description="Get Files Metadata",
 )
-async def get_files_metadata_dataset(
+async def list_dataset_files_metadata(
     location_id: LocationID,
     dataset_id: str,
     expand_dirs: bool = Query(
@@ -104,7 +118,7 @@ async def get_files_metadata_dataset(
 @router.get(
     "/storage/locations/{location_id}/files/{file_id}/metadata",
     response_model=FileMetaData | Envelope[FileMetaDataGet],
-    summary="Get File Metadata",
+    description="Get File Metadata",
 )
 async def get_file_metadata(location_id: LocationID, file_id: StorageFileIDStr):
     """returns the file meta data of file_id if user_id has the rights to"""
@@ -113,7 +127,7 @@ async def get_file_metadata(location_id: LocationID, file_id: StorageFileIDStr):
 @router.get(
     "/storage/locations/{location_id}/files/{file_id}",
     response_model=Envelope[PresignedLink],
-    summary="Returns download link for requested file",
+    description="Returns download link for requested file",
 )
 async def download_file(
     location_id: LocationID,
@@ -126,7 +140,7 @@ async def download_file(
 @router.put(
     "/storage/locations/{location_id}/files/{file_id}",
     response_model=Envelope[FileUploadSchema] | Envelope[AnyUrl],
-    summary="Returns upload link",
+    description="Returns upload link",
 )
 async def upload_file(
     location_id: LocationID,
@@ -141,7 +155,7 @@ async def upload_file(
 @router.delete(
     "/storage/locations/{location_id}/files/{file_id}",
     status_code=status.HTTP_204_NO_CONTENT,
-    summary="Deletes File",
+    description="Deletes File",
 )
 async def delete_file(location_id: LocationID, file_id: StorageFileIDStr):
     """deletes file if user has the rights to"""
@@ -172,9 +186,55 @@ async def complete_upload_file(
 @router.post(
     "/storage/locations/{location_id}/files/{file_id}:complete/futures/{future_id}",
     response_model=Envelope[FileUploadCompleteFutureResponse],
-    summary="Check for upload completion",
+    description="Check for upload completion",
 )
 async def is_completed_upload_file(
     location_id: LocationID, file_id: StorageFileIDStr, future_id: str
 ):
     """Returns state of upload completion"""
+
+
+# data export
+@router.post(
+    "/storage/locations/{location_id}/export-data",
+    response_model=Envelope[StorageAsyncJobGet],
+    name="export_data",
+    description="Export data",
+)
+async def export_data(data_export: DataExportPost, location_id: LocationID):
+    """Trigger data export. Returns async job id for getting status and results"""
+
+
+@router.get(
+    "/storage/async-jobs/{job_id}/status",
+    response_model=Envelope[StorageAsyncJobStatus],
+    name="get_async_job_status",
+)
+async def get_async_job_status(storage_async_job_get: StorageAsyncJobGet, job_id: UUID):
+    """Get async job status"""
+
+
+@router.post(
+    "/storage/async-jobs/{job_id}:abort",
+    name="abort_async_job",
+)
+async def abort_async_job(storage_async_job_get: StorageAsyncJobGet, job_id: UUID):
+    """aborts execution of an async job"""
+
+
+@router.get(
+    "/storage/async-jobs/{job_id}/result",
+    response_model=Envelope[StorageAsyncJobResult],
+    name="get_async_job_result",
+)
+async def get_async_job_result(storage_async_job_get: StorageAsyncJobGet, job_id: UUID):
+    """Get the result of the async job"""
+
+
+@router.get(
+    "/storage/async-jobs",
+    response_model=Envelope[list[StorageAsyncJobGet]],
+    name="get_async_jobs",
+)
+async def get_async_jobs(user_id: UserID):
+    """Retrunsa list of async jobs for the user"""

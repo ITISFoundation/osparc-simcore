@@ -6,7 +6,7 @@ from models_library.api_schemas_resource_usage_tracker.licensed_items_checkouts 
     LicensedItemCheckoutGet,
     LicensedItemsCheckoutsPage,
 )
-from models_library.licensed_items import LicensedItemID
+from models_library.licenses import LicensedItemID, LicensedItemKey, LicensedItemVersion
 from models_library.products import ProductName
 from models_library.resource_tracker import ServiceRunStatus
 from models_library.resource_tracker_licensed_items_checkouts import (
@@ -58,6 +58,8 @@ async def list_licensed_items_checkouts(
             LicensedItemCheckoutGet(
                 licensed_item_checkout_id=licensed_item_checkout_db.licensed_item_checkout_id,
                 licensed_item_id=licensed_item_checkout_db.licensed_item_id,
+                key=licensed_item_checkout_db.key,
+                version=licensed_item_checkout_db.version,
                 wallet_id=licensed_item_checkout_db.wallet_id,
                 user_id=licensed_item_checkout_db.user_id,
                 user_email=licensed_item_checkout_db.user_email,
@@ -89,6 +91,8 @@ async def get_licensed_item_checkout(
     return LicensedItemCheckoutGet(
         licensed_item_checkout_id=licensed_item_checkout_db.licensed_item_checkout_id,
         licensed_item_id=licensed_item_checkout_db.licensed_item_id,
+        key=licensed_item_checkout_db.key,
+        version=licensed_item_checkout_db.version,
         wallet_id=licensed_item_checkout_db.wallet_id,
         user_id=licensed_item_checkout_db.user_id,
         user_email=licensed_item_checkout_db.user_email,
@@ -104,6 +108,8 @@ async def checkout_licensed_item(
     db_engine: Annotated[AsyncEngine, Depends(get_resource_tracker_db_engine)],
     *,
     licensed_item_id: LicensedItemID,
+    key: LicensedItemKey,
+    version: LicensedItemVersion,
     wallet_id: WalletID,
     product_name: ProductName,
     num_of_seats: int,
@@ -112,20 +118,20 @@ async def checkout_licensed_item(
     user_email: str,
 ) -> LicensedItemCheckoutGet:
 
-    _active_purchased_seats: int = await licensed_items_purchases_db.get_active_purchased_seats_for_item_and_wallet(
+    _active_purchased_seats: int = await licensed_items_purchases_db.get_active_purchased_seats_for_key_version_wallet(
         db_engine,
-        licensed_item_id=licensed_item_id,
+        key=key,
+        version=version,
         wallet_id=wallet_id,
         product_name=product_name,
     )
 
-    _currently_used_seats = (
-        await licensed_items_checkouts_db.get_currently_used_seats_for_item_and_wallet(
-            db_engine,
-            licensed_item_id=licensed_item_id,
-            wallet_id=wallet_id,
-            product_name=product_name,
-        )
+    _currently_used_seats = await licensed_items_checkouts_db.get_currently_used_seats_for_key_version_wallet(
+        db_engine,
+        key=key,
+        version=version,
+        wallet_id=wallet_id,
+        product_name=product_name,
     )
 
     available_seats = _active_purchased_seats - _currently_used_seats
@@ -155,6 +161,8 @@ async def checkout_licensed_item(
 
     _create_item_checkout = CreateLicensedItemCheckoutDB(
         licensed_item_id=licensed_item_id,
+        key=key,
+        version=version,
         wallet_id=wallet_id,
         user_id=user_id,
         user_email=user_email,
@@ -171,6 +179,8 @@ async def checkout_licensed_item(
     return LicensedItemCheckoutGet(
         licensed_item_checkout_id=licensed_item_checkout_db.licensed_item_checkout_id,
         licensed_item_id=licensed_item_checkout_db.licensed_item_id,
+        key=licensed_item_checkout_db.key,
+        version=licensed_item_checkout_db.version,
         wallet_id=licensed_item_checkout_db.wallet_id,
         user_id=licensed_item_checkout_db.user_id,
         user_email=licensed_item_checkout_db.user_email,
@@ -201,6 +211,8 @@ async def release_licensed_item(
     return LicensedItemCheckoutGet(
         licensed_item_checkout_id=licensed_item_checkout_db.licensed_item_checkout_id,
         licensed_item_id=licensed_item_checkout_db.licensed_item_id,
+        key=licensed_item_checkout_db.key,
+        version=licensed_item_checkout_db.version,
         wallet_id=licensed_item_checkout_db.wallet_id,
         user_id=licensed_item_checkout_db.user_id,
         user_email=licensed_item_checkout_db.user_email,

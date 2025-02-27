@@ -6,6 +6,7 @@ from collections.abc import AsyncIterator
 import pytest
 from aiohttp.test_utils import TestClient
 from simcore_postgres_database.models.licensed_items import licensed_items
+from simcore_postgres_database.models.licensed_resources import licensed_resources
 from simcore_postgres_database.models.resource_tracker_pricing_plans import (
     resource_tracker_pricing_plans,
 )
@@ -25,15 +26,15 @@ async def pricing_plan_id(
             resource_tracker_pricing_plans.insert()
             .values(
                 product_name=osparc_product_name,
-                display_name="ISolve Thermal",
+                display_name="VIP Model A",
                 description="",
-                classification="TIER",
+                classification="LICENSE",
                 is_active=True,
-                pricing_plan_key="isolve-thermal",
+                pricing_plan_key="vip-model-a",
             )
             .returning(resource_tracker_pricing_plans.c.pricing_plan_id)
         )
-        row = result.first()
+        row = result.one()
 
     assert row
 
@@ -42,3 +43,17 @@ async def pricing_plan_id(
     async with transaction_context(get_asyncpg_engine(client.app)) as conn:
         await conn.execute(licensed_items.delete())
         await conn.execute(resource_tracker_pricing_plans.delete())
+
+
+@pytest.fixture
+async def ensure_empty_licensed_resources(client: TestClient):
+    async def _cleanup():
+        assert client.app
+        async with transaction_context(get_asyncpg_engine(client.app)) as conn:
+            await conn.execute(licensed_resources.delete())
+
+    await _cleanup()
+
+    yield
+
+    await _cleanup()

@@ -1,18 +1,21 @@
 import datetime
 import urllib.parse
 from dataclasses import dataclass
-from typing import Any, Literal, NamedTuple
+from pathlib import Path
+from typing import Annotated, Any, Literal, NamedTuple, TypeAlias
 from uuid import UUID
 
 import arrow
 from aws_library.s3 import UploadID
-from models_library.api_schemas_storage import (
+from aws_library.s3._models import S3DirectoryMetaData, S3MetaData
+from models_library.api_schemas_storage.storage_schemas import (
     UNDEFINED_SIZE,
     UNDEFINED_SIZE_TYPE,
     DatasetMetaDataGet,
     ETag,
     FileMetaDataGet,
     LinkType,
+    PathMetaDataGet,
     S3BucketName,
 )
 from models_library.basic_types import SHA256Str
@@ -36,6 +39,8 @@ from pydantic import (
     ByteSize,
     ConfigDict,
     Field,
+    NonNegativeInt,
+    PlainSerializer,
     TypeAdapter,
     field_validator,
     model_validator,
@@ -56,17 +61,31 @@ def is_uuid(value: str) -> bool:
 
 
 class FileMetaDataAtDB(BaseModel):
-    location_id: LocationID
+    location_id: Annotated[
+        LocationID, PlainSerializer(lambda x: f"{x}", return_type=str)
+    ]
     location: LocationName
     bucket_name: S3BucketName
     object_name: SimcoreS3FileID
-    project_id: ProjectID | None = None
-    node_id: NodeID | None = None
-    user_id: UserID
-    created_at: datetime.datetime
+    project_id: Annotated[
+        ProjectID | None,
+        PlainSerializer(
+            lambda x: f"{x}" if x is not None else None, return_type=str | None
+        ),
+    ] = None
+    node_id: Annotated[
+        NodeID | None,
+        PlainSerializer(
+            lambda x: f"{x}" if x is not None else None, return_type=str | None
+        ),
+    ] = None
+    user_id: Annotated[UserID, PlainSerializer(lambda x: f"{x}", return_type=str)]
+    created_at: Annotated[datetime.datetime, PlainSerializer(lambda x: x.isoformat())]
     file_id: SimcoreS3FileID
     file_size: UNDEFINED_SIZE_TYPE | ByteSize
-    last_modified: datetime.datetime
+    last_modified: Annotated[
+        datetime.datetime, PlainSerializer(lambda x: x.isoformat())
+    ]
     entity_tag: ETag | None = None
     is_soft_link: bool
     upload_id: UploadID | None = None
@@ -88,6 +107,16 @@ class FileMetaData(FileMetaDataGet):
     node_id: NodeID | None
     user_id: UserID | None
     sha256_checksum: SHA256Str | None
+
+    def update_display_fields(self, id_name_mapping: dict[str, str]) -> None:
+        if self.project_id:
+            # NOTE: this is disabled because the project_name is defined in FileMetaDataGet
+            # pylint: disable=attribute-defined-outside-init
+            self.project_name = id_name_mapping.get(f"{self.project_id}")
+        if self.node_id:
+            # NOTE: this is disabled because the node_name is defined in FileMetaDataGet
+            # pylint: disable=attribute-defined-outside-init
+            self.node_name = id_name_mapping.get(f"{self.node_id}")
 
     @classmethod
     @validate_call
@@ -135,6 +164,30 @@ class FileMetaData(FileMetaDataGet):
         fmd_kwargs.update(**file_meta_data_kwargs)
         return cls.model_validate(fmd_kwargs)
 
+    @classmethod
+    def from_db_model(cls, x: FileMetaDataAtDB) -> "FileMetaData":
+        return cls.model_validate(
+            x.model_dump()
+            | {"file_uuid": x.file_id, "file_name": x.file_id.split("/")[-1]}
+        )
+
+    @classmethod
+    def from_s3_object_in_dir(
+        cls, x: S3MetaData, dir_fmd: "FileMetaData"
+    ) -> "FileMetaData":
+        return dir_fmd.model_copy(
+            update={
+                "object_name": x.object_key,
+                "file_id": x.object_key,
+                "file_size": x.size,
+                "entity_tag": x.e_tag,
+                "sha256_checksum": x.sha256_checksum,
+                "is_directory": False,
+                "created_at": x.last_modified,
+                "last_modified": x.last_modified,
+            }
+        )
+
 
 @dataclass
 class UploadLinks:
@@ -144,14 +197,18 @@ class UploadLinks:
 
 class StorageQueryParamsBase(BaseModel):
     user_id: UserID
-    model_config = ConfigDict(populate_by_name=True, extra="forbid")
+    model_config = ConfigDict(populate_by_name=True)
+
+
+class ListPathsQueryParams(StorageQueryParamsBase):
+    file_filter: Path | None = None
 
 
 class FilesMetadataDatasetQueryParams(StorageQueryParamsBase):
     expand_dirs: bool = True
 
 
-class FilesMetadataQueryParams(StorageQueryParamsBase):
+class FileMetadataListQueryParams(StorageQueryParamsBase):
     project_id: ProjectID | None = None
     uuid_filter: str = ""
     expand_dirs: bool = True
@@ -162,15 +219,18 @@ class SyncMetadataQueryParams(BaseModel):
     fire_and_forget: bool = False
 
 
+class SyncMetadataResponse(BaseModel):
+    removed: list[StorageFileID]
+    fire_and_forget: bool
+    dry_run: bool
+
+
 class FileDownloadQueryParams(StorageQueryParamsBase):
     link_type: LinkType = LinkType.PRESIGNED
 
-    @field_validator("link_type", mode="before")
-    @classmethod
-    def convert_from_lower_case(cls, v: str) -> str:
-        if v is not None:
-            return f"{v}".upper()
-        return v
+
+class FileDownloadResponse(BaseModel):
+    link: AnyUrl
 
 
 class FileUploadQueryParams(StorageQueryParamsBase):
@@ -178,13 +238,6 @@ class FileUploadQueryParams(StorageQueryParamsBase):
     file_size: ByteSize | None = None  # NOTE: in old legacy services this might happen
     is_directory: bool = False
     sha256_checksum: SHA256Str | None = None
-
-    @field_validator("link_type", mode="before")
-    @classmethod
-    def convert_from_lower_case(cls, v: str) -> str:
-        if v is not None:
-            return f"{v}".upper()
-        return v
 
     @model_validator(mode="before")
     @classmethod
@@ -208,6 +261,10 @@ class FileUploadQueryParams(StorageQueryParamsBase):
         - storage relies on lazy update to find if the file is finished uploaded (when client calls get_file_meta_data, or if the dsm_cleaner goes over it after the upload time is expired)
         """
         return self.file_size is None and self.is_directory is False
+
+
+class FileUploadResponseV1(BaseModel):
+    link: AnyUrl
 
 
 class DeleteFolderQueryParams(StorageQueryParamsBase):
@@ -275,13 +332,77 @@ class UserOrProjectFilter(NamedTuple):
     project_ids: list[ProjectID]
 
 
-__all__ = (
-    "ETag",
-    "FileMetaData",
-    "FileMetaDataAtDB",
-    "S3BucketName",
-    "SimcoreS3FileID",
-    "StorageFileID",
-    "UploadID",
-    "UploadLinks",
-)
+@dataclass(frozen=True)
+class AccessRights:
+    read: bool
+    write: bool
+    delete: bool
+
+    @classmethod
+    def all(cls) -> "AccessRights":
+        return cls(read=True, write=True, delete=True)
+
+    @classmethod
+    def none(cls) -> "AccessRights":
+        return cls(read=False, write=False, delete=False)
+
+
+TotalNumber: TypeAlias = NonNegativeInt
+GenericCursor: TypeAlias = str | bytes
+
+
+class PathMetaData(BaseModel):
+    path: Path
+    display_path: Annotated[
+        Path,
+        Field(
+            description="Path with names instead of IDs (URL Encoded by parts as names may contain '/')"
+        ),
+    ]
+    location_id: LocationID
+    location: LocationName
+    bucket_name: str
+
+    project_id: ProjectID | None
+    node_id: NodeID | None
+    user_id: UserID | None
+    created_at: datetime.datetime
+    last_modified: datetime.datetime
+
+    file_meta_data: FileMetaData | None
+
+    def update_display_fields(self, id_name_mapping: dict[str, str]) -> None:
+        display_path = f"{self.path}"
+        for old, new in id_name_mapping.items():
+            display_path = display_path.replace(old, urllib.parse.quote(new, safe=""))
+        self.display_path = Path(display_path)
+
+        if self.file_meta_data:
+            self.file_meta_data.update_display_fields(id_name_mapping)
+
+    @classmethod
+    def from_s3_object_in_dir(
+        cls, s3_object: S3MetaData | S3DirectoryMetaData, dir_fmd: FileMetaData
+    ) -> "PathMetaData":
+        return cls(
+            path=s3_object.as_path(),
+            display_path=s3_object.as_path(),
+            location_id=dir_fmd.location_id,
+            location=dir_fmd.location,
+            bucket_name=dir_fmd.bucket_name,
+            user_id=dir_fmd.user_id,
+            project_id=dir_fmd.project_id,
+            node_id=dir_fmd.node_id,
+            created_at=dir_fmd.created_at,
+            last_modified=dir_fmd.last_modified,
+            file_meta_data=None
+            if isinstance(s3_object, S3DirectoryMetaData)
+            else FileMetaData.from_s3_object_in_dir(s3_object, dir_fmd),
+        )
+
+    def to_api_model(self) -> PathMetaDataGet:
+        return PathMetaDataGet.model_construct(
+            path=self.path,
+            display_path=self.display_path,
+            file_meta_data=self.file_meta_data,
+        )

@@ -203,7 +203,7 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
           const dateBy = this.getChildControl("date-by");
           dateBy.set({
             date: value,
-            toolTipText: this.tr("Moved to the bin"),
+            toolTipText: this.tr("Deleted"),
           });
         }
       }
@@ -253,9 +253,11 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
 
     _applyTags: function(tags) {
       if (osparc.data.Permissions.getInstance().canDo("study.tag")) {
+        const maxTags = 2;
         const tagsContainer = this.getChildControl("tags");
         tagsContainer.removeAll();
-        tags.forEach(tag => {
+        for (let i=0; i<=tags.length && i<maxTags; i++) {
+          const tag = tags[i];
           const tagUI = new osparc.ui.basic.Tag(tag, "searchBarFilter");
           tagUI.set({
             alignY: "middle",
@@ -264,7 +266,15 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
           });
           tagUI.addListener("tap", () => this.fireDataEvent("tagClicked", tag));
           tagsContainer.add(tagUI);
-        });
+        }
+        if (tags.length > maxTags) {
+          const moreButton = new qx.ui.basic.Label(this.tr("More...")).set({
+            font: "text-12",
+            backgroundColor: "strong-main",
+            appearance: "tag",
+          });
+          tagsContainer.add(moreButton);
+        }
         this.__makeItemResponsive(tagsContainer);
       }
     },
@@ -284,9 +294,10 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
     _applyMenu: function(menu, old) {
       const menuButton = this.getChildControl("menu-button");
       if (menu) {
-        menuButton.setMenu(menu);
-        menu.setPosition("bottom-left");
-        osparc.utils.Utils.prettifyMenu(menu);
+        menuButton.setMenu(menu).set({
+          appearance: "menu-wider",
+          position: "bottom-left",
+        });
         osparc.utils.Utils.setIdToWidget(menu, "studyItemMenuMenu");
         this.evaluateMenuButtons();
       }

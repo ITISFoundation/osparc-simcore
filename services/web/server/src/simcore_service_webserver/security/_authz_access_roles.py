@@ -61,6 +61,7 @@ ROLES_PERMISSIONS: dict[UserRole, PermissionDict] = {
             "groups.*",
             "catalog/licensed-items.*",
             "product.price.read",
+            "product.ui.read",
             "project.folders.*",
             "project.access_rights.update",
             "project.classifier.*",
@@ -111,8 +112,8 @@ ROLES_PERMISSIONS: dict[UserRole, PermissionDict] = {
     UserRole.ADMIN: PermissionDict(
         can=[
             "admin.*",
-            "storage.files.sync",
             "resource-usage.write",
+            "storage.files.sync",
         ],
         inherits=[UserRole.TESTER],
     ),

@@ -54,21 +54,31 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
     __buildLayout: function() {
       const filtersSpacer = new qx.ui.core.Spacer(10, 10);
       switch (this.__resourceType) {
-        case "study":
+        case "study": {
           this._add(this.__createWorkspacesAndFoldersTree());
           this._add(this.__createTrashBin());
-          this._add(this.__createResourceTypeContextButtons());
+          // this._add(this.__createResourceTypeContextButtons());
           this._add(filtersSpacer);
-          this._add(this.__createTagsFilterLayout());
+          const scrollView = new qx.ui.container.Scroll();
+          scrollView.add(this.__createTagsFilterLayout());
+          this._add(scrollView, {
+            flex: 1
+          });
           break;
-        case "template":
-          this._add(this.__createResourceTypeContextButtons());
+        }
+        case "template": {
+          // this._add(this.__createResourceTypeContextButtons());
           this._add(filtersSpacer);
           this._add(this.__createSharedWithFilterLayout());
-          this._add(this.__createTagsFilterLayout());
+          const scrollView = new qx.ui.container.Scroll();
+          scrollView.add(this.__createTagsFilterLayout());
+          this._add(scrollView, {
+            flex: 1
+          });
           break;
+        }
         case "service":
-          this._add(this.__createResourceTypeContextButtons());
+          // this._add(this.__createResourceTypeContextButtons());
           this._add(filtersSpacer);
           this._add(this.__createSharedWithFilterLayout());
           this._add(this.__createServiceTypeFilterLayout());
@@ -114,7 +124,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
       const trashButton = this.__trashButton = new qx.ui.toolbar.RadioButton().set({
         value: false,
         appearance: "filter-toggle-button",
-        label: this.tr("Bin"),
+        label: this.tr("Recently Deleted"),
         icon: "@FontAwesome5Solid/trash-alt/16",
         paddingLeft: 10, // align it with the context
       });
@@ -350,15 +360,15 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
 
     /* TAGS */
     __createTagsFilterLayout: function() {
-      const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(2));
-      osparc.utils.Utils.setIdToWidget(layout, this.__resourceType + "-tagsFilter");
+      const tagsLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(2));
+      osparc.utils.Utils.setIdToWidget(tagsLayout, this.__resourceType + "-tagsFilter");
 
-      this.__populateTags(layout, []);
+      this.__populateTags(tagsLayout, []);
       osparc.store.Tags.getInstance().addListener("tagsChanged", () => {
-        this.__populateTags(layout, this.__getSelectedTagIds());
+        this.__populateTags(tagsLayout, this.__getSelectedTagIds());
       }, this);
 
-      return layout;
+      return tagsLayout;
     },
 
     __getSelectedTagIds: function() {
@@ -366,14 +376,15 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
       return selectedTagIds;
     },
 
-    __populateTags: function(layout, selectedTagIds) {
+    __populateTags: function(tagsLayout, selectedTagIds) {
       const maxTags = 5;
       this.__tagButtons = [];
-      layout.removeAll();
+      tagsLayout.removeAll();
       osparc.store.Tags.getInstance().getTags().forEach((tag, idx) => {
         const button = new qx.ui.form.ToggleButton(null, "@FontAwesome5Solid/tag/16");
         button.id = tag.getTagId();
         tag.bind("name", button, "label");
+        tag.bind("name", button, "toolTipText");
         tag.bind("color", button.getChildControl("icon"), "textColor");
         osparc.utils.Utils.setIdToWidget(button, this.__resourceType + "-tagFilterItem");
         button.set({
@@ -381,7 +392,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
           value: selectedTagIds.includes(tag.getTagId())
         });
 
-        layout.add(button);
+        tagsLayout.add(button);
 
         button.addListener("execute", () => {
           const selection = this.__getSelectedTagIds();
@@ -411,7 +422,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
             showAllButton.showingAll = true;
           }
         });
-        layout.add(showAllButton);
+        tagsLayout.add(showAllButton);
       }
 
       const editTagsButton = new qx.ui.form.Button(this.tr("Edit Tags..."), "@FontAwesome5Solid/pencil-alt/14");
@@ -419,13 +430,13 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
         appearance: "filter-toggle-button"
       });
       editTagsButton.addListener("execute", () => {
-        const preferencesWindow = osparc.desktop.preferences.PreferencesWindow.openWindow();
-        preferencesWindow.openTags();
+        const myAccountWindow = osparc.desktop.account.MyAccountWindow.openWindow();
+        myAccountWindow.openTags();
       });
-      layout.add(editTagsButton);
+      tagsLayout.add(editTagsButton);
 
       if (this.__resourceType === "study") {
-        layout.getChildren().forEach(item => item.setPaddingLeft(10)); // align them with the context
+        tagsLayout.getChildren().forEach(item => item.setPaddingLeft(10)); // align them with the context
       }
     },
     /* /TAGS */

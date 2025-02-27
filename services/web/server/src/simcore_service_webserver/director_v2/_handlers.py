@@ -24,13 +24,12 @@ from .._meta import API_VTAG as VTAG
 from ..db.plugin import get_database_engine
 from ..login.decorators import login_required
 from ..models import RequestContext
-from ..products import api as products_api
+from ..products import products_web
 from ..security.decorators import permission_required
 from ..users.exceptions import UserDefaultWalletNotFoundError
 from ..utils_aiohttp import envelope_json_response
-from ..version_control.models import CommitID
 from ..wallets.errors import WalletNotEnoughCreditsError
-from ._abc import get_project_run_policy
+from ._abc import CommitID, get_project_run_policy
 from ._api_utils import get_wallet_info
 from ._core_computations import ComputationsApi
 from .exceptions import DirectorServiceError
@@ -89,7 +88,7 @@ async def start_computation(request: web.Request) -> web.Response:
             )
 
         # Get wallet information
-        product = products_api.get_current_product(request)
+        product = products_web.get_current_product(request)
         wallet_info = await get_wallet_info(
             request.app,
             product=product,

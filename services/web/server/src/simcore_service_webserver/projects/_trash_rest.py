@@ -15,20 +15,17 @@ from ..exception_handling import (
     to_exceptions_handlers_map,
 )
 from ..login.decorators import get_user_id, login_required
-from ..products.api import get_product_name
+from ..products import products_web
 from ..security.decorators import permission_required
 from . import _trash_service
+from ._common.exceptions_handlers import handle_plugin_requests_exceptions
 from ._common.models import ProjectPathParams, RemoveQueryParams
 from .exceptions import ProjectRunningConflictError, ProjectStoppingError
 
 _logger = logging.getLogger(__name__)
 
-#
-# EXCEPTIONS HANDLING
-#
 
-
-_TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
+_TRASH_ERRORS: ExceptionToHttpErrorMap = {
     ProjectRunningConflictError: HttpErrorInfo(
         status.HTTP_409_CONFLICT,
         "Current study is in use and cannot be trashed [project_id={project_uuid}]. Please stop all services first and try again",
@@ -39,15 +36,10 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
     ),
 }
 
-
-_handle_exceptions = exception_handling_decorator(
-    to_exceptions_handlers_map(_TO_HTTP_ERROR_MAP)
+_handle_local_request_exceptions = exception_handling_decorator(
+    to_exceptions_handlers_map(_TRASH_ERRORS)
 )
 
-
-#
-# ROUTES
-#
 
 routes = web.RouteTableDef()
 
@@ -55,10 +47,11 @@ routes = web.RouteTableDef()
 @routes.post(f"/{VTAG}/projects/{{project_id}}:trash", name="trash_project")
 @login_required
 @permission_required("project.delete")
-@_handle_exceptions
+@handle_plugin_requests_exceptions
+@_handle_local_request_exceptions
 async def trash_project(request: web.Request):
     user_id = get_user_id(request)
-    product_name = get_product_name(request)
+    product_name = products_web.get_product_name(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
     query_params: RemoveQueryParams = parse_request_query_parameters_as(
         RemoveQueryParams, request
@@ -79,10 +72,11 @@ async def trash_project(request: web.Request):
 @routes.post(f"/{VTAG}/projects/{{project_id}}:untrash", name="untrash_project")
 @login_required
 @permission_required("project.delete")
-@_handle_exceptions
+@handle_plugin_requests_exceptions
+@_handle_local_request_exceptions
 async def untrash_project(request: web.Request):
     user_id = get_user_id(request)
-    product_name = get_product_name(request)
+    product_name = products_web.get_product_name(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
     await _trash_service.untrash_project(

@@ -97,8 +97,7 @@ from ..application_settings import get_application_settings
 from ..catalog import client as catalog_client
 from ..director_v2 import api as director_v2_api
 from ..dynamic_scheduler import api as dynamic_scheduler_api
-from ..products import api as products_api
-from ..products.api import get_product_name
+from ..products import products_web
 from ..rabbitmq import get_rabbitmq_rpc_client
 from ..redis import get_redis_lock_manager_client_sdk
 from ..resource_manager.user_sessions import (
@@ -318,6 +317,33 @@ async def patch_project(
 #
 
 
+async def delete_project_by_user(
+    app: web.Application,
+    *,
+    project_uuid: ProjectID,
+    user_id: UserID,
+    simcore_user_agent: str = UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
+    wait_until_completed: bool = True,
+) -> None:
+    task = await submit_delete_project_task(
+        app,
+        project_uuid=project_uuid,
+        user_id=user_id,
+        simcore_user_agent=simcore_user_agent,
+    )
+    if wait_until_completed:
+        await task
+
+
+def get_delete_project_task(
+    project_uuid: ProjectID, user_id: UserID
+) -> asyncio.Task | None:
+    if tasks := _crud_api_delete.get_scheduled_tasks(project_uuid, user_id):
+        assert len(tasks) == 1, f"{tasks=}"  # nosec
+        return tasks[0]
+    return None
+
+
 async def submit_delete_project_task(
     app: web.Application,
     project_uuid: ProjectID,
@@ -351,15 +377,6 @@ async def submit_delete_project_task(
             log,
         )
     return task
-
-
-def get_delete_project_task(
-    project_uuid: ProjectID, user_id: UserID
-) -> asyncio.Task | None:
-    if tasks := _crud_api_delete.get_scheduled_tasks(project_uuid, user_id):
-        assert len(tasks) == 1, f"{tasks=}"  # nosec
-        return tasks[0]
-    return None
 
 
 #
@@ -633,7 +650,7 @@ async def _start_dynamic_service(  # noqa: C901
 
         # Get wallet/pricing/hardware information
         wallet_info, pricing_info, hardware_info = None, None, None
-        product = products_api.get_current_product(request)
+        product = products_web.get_current_product(request)
         app_settings = get_application_settings(request.app)
         if (
             product.is_payment_enabled
@@ -949,7 +966,7 @@ async def delete_project_node(
     assert db  # nosec
     await db.remove_project_node(user_id, project_uuid, NodeID(node_uuid))
     # also ensure the project is updated by director-v2 since services
-    product_name = get_product_name(request)
+    product_name = products_web.get_product_name(request)
     await director_v2_api.create_or_update_pipeline(
         request.app, user_id, project_uuid, product_name
     )

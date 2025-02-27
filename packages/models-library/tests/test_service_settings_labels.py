@@ -5,7 +5,6 @@
 
 import json
 from copy import deepcopy
-from pprint import pformat
 from typing import Any, Final, NamedTuple
 
 import pytest
@@ -33,6 +32,10 @@ from models_library.service_settings_nat_rule import (
 from models_library.services_resources import DEFAULT_SINGLE_SERVICE_NAME
 from models_library.utils.string_substitution import TextTemplate
 from pydantic import BaseModel, TypeAdapter, ValidationError
+from pytest_simcore.pydantic_models import (
+    assert_validation_model,
+    iter_model_examples_in_class,
+)
 
 
 class _Parametrization(NamedTuple):
@@ -89,17 +92,23 @@ def test_service_settings():
         service_setting.set_destination_containers(["random_value1", "random_value2"])
 
 
-@pytest.mark.parametrize("model_cls", [SimcoreServiceLabels])
+@pytest.mark.parametrize(
+    "model_cls, example_name, example_data",
+    iter_model_examples_in_class(SimcoreServiceLabels),
+)
 def test_correctly_detect_dynamic_sidecar_boot(
-    model_cls: type[BaseModel], model_cls_examples: dict[str, dict[str, Any]]
+    model_cls: type[BaseModel], example_name: str, example_data: Any
 ):
-    for name, example in model_cls_examples.items():
-        print(name, ":", pformat(example))
-        model_instance = TypeAdapter(model_cls).validate_python(example)
-        assert model_instance.callbacks_mapping is not None
-        assert model_instance.needs_dynamic_sidecar == (
-            "simcore.service.paths-mapping" in example
-        )
+
+    model_instance = assert_validation_model(
+        model_cls, example_name=example_name, example_data=example_data
+    )
+
+    assert isinstance(model_instance, SimcoreServiceLabels)
+    assert model_instance.callbacks_mapping is not None
+    assert model_instance.needs_dynamic_sidecar == (
+        "simcore.service.paths-mapping" in example_data
+    )
 
 
 def test_raises_error_if_http_entrypoint_is_missing():

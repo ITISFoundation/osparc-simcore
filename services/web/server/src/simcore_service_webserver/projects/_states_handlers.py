@@ -1,7 +1,6 @@
 """handlers for project states"""
 
 import contextlib
-import functools
 import json
 import logging
 
@@ -14,7 +13,6 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_path_parameters_as,
     parse_request_query_parameters_as,
 )
-from servicelib.aiohttp.typing_extension import Handler
 from servicelib.aiohttp.web_exceptions_extension import HTTPLockedError
 from servicelib.common_headers import (
     UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
@@ -27,62 +25,21 @@ from .._meta import API_VTAG as VTAG
 from ..director_v2.exceptions import DirectorServiceError
 from ..login.decorators import login_required
 from ..notifications import project_logs
-from ..products.api import Product, get_current_product
-from ..resource_usage.errors import DefaultPricingPlanNotFoundError
+from ..products import products_web
+from ..products.models import Product
 from ..security.decorators import permission_required
 from ..users import api
-from ..users.exceptions import UserDefaultWalletNotFoundError
 from ..utils_aiohttp import envelope_json_response
-from ..wallets.errors import WalletNotEnoughCreditsError
 from . import api as projects_api
 from . import projects_service
+from ._common.exceptions_handlers import handle_plugin_requests_exceptions
 from ._common.models import ProjectPathParams, RequestContext
-from .exceptions import (
-    DefaultPricingUnitNotFoundError,
-    ProjectInDebtCanNotChangeWalletError,
-    ProjectInDebtCanNotOpenError,
-    ProjectInvalidRightsError,
-    ProjectNotFoundError,
-    ProjectStartsTooManyDynamicNodesError,
-    ProjectTooManyProjectOpenedError,
-)
+from .exceptions import ProjectStartsTooManyDynamicNodesError
 
 _logger = logging.getLogger(__name__)
 
 
 routes = web.RouteTableDef()
-
-
-def _handle_project_exceptions(handler: Handler):
-    """Transforms common project errors -> http errors"""
-
-    @functools.wraps(handler)
-    async def _wrapper(request: web.Request) -> web.StreamResponse:
-        try:
-            return await handler(request)
-
-        except (
-            ProjectNotFoundError,
-            UserDefaultWalletNotFoundError,
-            DefaultPricingPlanNotFoundError,
-            DefaultPricingUnitNotFoundError,
-        ) as exc:
-            raise web.HTTPNotFound(reason=f"{exc}") from exc
-
-        except ProjectInvalidRightsError as exc:
-            raise web.HTTPForbidden(reason=f"{exc}") from exc
-
-        except ProjectTooManyProjectOpenedError as exc:
-            raise web.HTTPConflict(reason=f"{exc}") from exc
-
-        except (
-            WalletNotEnoughCreditsError,
-            ProjectInDebtCanNotChangeWalletError,
-            ProjectInDebtCanNotOpenError,
-        ) as exc:
-            raise web.HTTPPaymentRequired(reason=f"{exc}") from exc
-
-    return _wrapper
 
 
 #
@@ -97,7 +54,7 @@ class _OpenProjectQuery(BaseModel):
 @routes.post(f"/{VTAG}/projects/{{project_id}}:open", name="open_project")
 @login_required
 @permission_required("project.open")
-@_handle_project_exceptions
+@handle_plugin_requests_exceptions
 async def open_project(request: web.Request) -> web.Response:
     req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
@@ -138,7 +95,7 @@ async def open_project(request: web.Request) -> web.Response:
             product_name=req_ctx.product_name,
         )
 
-        product: Product = get_current_product(request)
+        product: Product = products_web.get_current_product(request)
 
         if not await projects_service.try_open_project_for_user(
             req_ctx.user_id,
@@ -208,7 +165,7 @@ async def open_project(request: web.Request) -> web.Response:
 @routes.post(f"/{VTAG}/projects/{{project_id}}:close", name="close_project")
 @login_required
 @permission_required("project.close")
-@_handle_project_exceptions
+@handle_plugin_requests_exceptions
 async def close_project(request: web.Request) -> web.Response:
     req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
@@ -247,6 +204,7 @@ async def close_project(request: web.Request) -> web.Response:
 @routes.get(f"/{VTAG}/projects/{{project_id}}/state", name="get_project_state")
 @login_required
 @permission_required("project.read")
+@handle_plugin_requests_exceptions
 async def get_project_state(request: web.Request) -> web.Response:
     req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)

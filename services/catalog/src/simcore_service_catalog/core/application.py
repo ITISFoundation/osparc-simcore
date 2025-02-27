@@ -9,7 +9,7 @@ from servicelib.fastapi.profiler import initialize_profiler
 from servicelib.fastapi.prometheus_instrumentation import (
     setup_prometheus_instrumentation,
 )
-from servicelib.fastapi.tracing import setup_tracing
+from servicelib.fastapi.tracing import initialize_tracing
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from .._meta import API_VERSION, API_VTAG, APP_NAME, PROJECT_NAME, SUMMARY
@@ -23,8 +23,25 @@ from .settings import ApplicationSettings
 
 _logger = logging.getLogger(__name__)
 
+_LOG_LEVEL_STEP = logging.CRITICAL - logging.ERROR
+_NOISY_LOGGERS = (
+    "aio_pika",
+    "aiobotocore",
+    "aiormq",
+    "botocore",
+    "httpcore",
+    "werkzeug",
+)
+
 
 def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
+    # keep mostly quiet noisy loggers
+    quiet_level: int = max(
+        min(logging.root.level + _LOG_LEVEL_STEP, logging.CRITICAL), logging.WARNING
+    )
+    for name in _NOISY_LOGGERS:
+        logging.getLogger(name).setLevel(quiet_level)
+
     if settings is None:
         settings = ApplicationSettings.create_from_envs()
 
@@ -47,7 +64,7 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
     app.state.settings = settings
 
     if settings.CATALOG_TRACING:
-        setup_tracing(app, settings.CATALOG_TRACING, APP_NAME)
+        initialize_tracing(app, settings.CATALOG_TRACING, APP_NAME)
 
     # STARTUP-EVENT
     app.add_event_handler("startup", create_on_startup(app))

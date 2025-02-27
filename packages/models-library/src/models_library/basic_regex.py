@@ -1,8 +1,8 @@
-""" Regular expressions patterns to build pydantic contrained strings
+"""Regular expressions patterns to build pydantic contrained strings
 
-    - Variants of the patterns with 'Named Groups' captured are suffixed with NG_RE
+- Variants of the patterns with 'Named Groups' captured are suffixed with NG_RE
 
-    SEE tests_basic_regex.py for examples
+SEE tests_basic_regex.py for examples
 """
 # TODO: for every pattern we should have a formatter function
 # NOTE: some sites to manualy check ideas
@@ -56,6 +56,7 @@ S3_BUCKET_NAME_RE = re.compile(
 # Datcore file ID
 DATCORE_FILE_ID_RE = rf"^N:package:{UUID_RE_BASE}$"
 DATCORE_DATASET_NAME_RE = rf"^N:dataset:{UUID_RE_BASE}$"
+DATCORE_COLLECTION_NAME_RE = rf"^N:collection:{UUID_RE_BASE}$"
 
 
 TWILIO_ALPHANUMERIC_SENDER_ID_RE = r"(?!^\d+$)^[a-zA-Z0-9\s]{2,11}$"

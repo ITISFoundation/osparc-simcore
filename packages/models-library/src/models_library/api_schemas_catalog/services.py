@@ -2,7 +2,8 @@ from datetime import datetime
 from typing import Any, TypeAlias
 
 from models_library.rpc_pagination import PageRpc
-from pydantic import BaseModel, ConfigDict, Field, HttpUrl, NonNegativeInt
+from pydantic import ConfigDict, Field, HttpUrl, NonNegativeInt
+from pydantic.config import JsonDict
 
 from ..boot_options import BootOptions
 from ..emails import LowerCaseEmailStr
@@ -20,60 +21,7 @@ from ..services_metadata_published import (
 from ..services_resources import ServiceResourcesDict
 from ..services_types import ServiceKey, ServiceVersion
 from ..utils.change_case import snake_to_camel
-
-
-class ServiceUpdate(ServiceMetaDataEditable, ServiceAccessRights):
-    model_config = ConfigDict(
-        json_schema_extra={
-            "example": {
-                # ServiceAccessRights
-                "accessRights": {
-                    1: {
-                        "execute_access": False,
-                        "write_access": False,
-                    },  # type: ignore[dict-item]
-                    2: {
-                        "execute_access": True,
-                        "write_access": True,
-                    },  # type: ignore[dict-item]
-                    44: {
-                        "execute_access": False,
-                        "write_access": False,
-                    },  # type: ignore[dict-item]
-                },
-                # ServiceMetaData = ServiceCommonData +
-                "name": "My Human Readable Service Name",
-                "thumbnail": None,
-                "description": "An interesting service that does something",
-                "classifiers": ["RRID:SCR_018997", "RRID:SCR_019001"],
-                "quality": {
-                    "tsr": {
-                        "r01": {"level": 3, "references": ""},
-                        "r02": {"level": 2, "references": ""},
-                        "r03": {"level": 0, "references": ""},
-                        "r04": {"level": 0, "references": ""},
-                        "r05": {"level": 2, "references": ""},
-                        "r06": {"level": 0, "references": ""},
-                        "r07": {"level": 0, "references": ""},
-                        "r08": {"level": 1, "references": ""},
-                        "r09": {"level": 0, "references": ""},
-                        "r10": {"level": 0, "references": ""},
-                    },
-                    "enabled": True,
-                    "annotations": {
-                        "vandv": "",
-                        "purpose": "",
-                        "standards": "",
-                        "limitations": "",
-                        "documentation": "",
-                        "certificationLink": "",
-                        "certificationStatus": "Uncertified",
-                    },
-                },
-            }
-        }
-    )
-
+from ._base import CatalogInputSchema, CatalogOutputSchema
 
 _EXAMPLE_FILEPICKER: dict[str, Any] = {
     "name": "File Picker",
@@ -124,6 +72,7 @@ _EXAMPLE_SLEEPER: dict[str, Any] = {
     "thumbnail": None,
     "description": "A service which awaits for time to pass, two times.",
     "description_ui": True,
+    "icon": "https://cdn-icons-png.flaticon.com/512/25/25231.png",
     "classifiers": [],
     "quality": {},
     "accessRights": {"1": {"execute": True, "write": False}},
@@ -209,19 +158,25 @@ class ServiceGet(
         description="None when the owner email cannot be found in the database"
     )
 
+    @staticmethod
+    def _update_json_schema_extra(schema: JsonDict) -> None:
+        schema.update({"examples": [_EXAMPLE_FILEPICKER, _EXAMPLE_SLEEPER]})
+
     model_config = ConfigDict(
         extra="ignore",
         populate_by_name=True,
-        json_schema_extra={"examples": [_EXAMPLE_FILEPICKER, _EXAMPLE_SLEEPER]},
+        json_schema_extra=_update_json_schema_extra,
     )
 
 
-class ServiceGetV2(BaseModel):
+class ServiceGetV2(CatalogOutputSchema):
+    # Model used in catalog's rpc and rest interfaces
     key: ServiceKey
     version: ServiceVersion
 
     name: str
     thumbnail: HttpUrl | None = None
+    icon: HttpUrl | None = None
     description: str
 
     description_ui: bool = False
@@ -254,62 +209,70 @@ class ServiceGetV2(BaseModel):
         json_schema_extra={"default": []},
     )
 
+    @staticmethod
+    def _update_json_schema_extra(schema: JsonDict) -> None:
+        schema.update(
+            {
+                "examples": [
+                    {
+                        **_EXAMPLE_SLEEPER,  # v2.2.1  (latest)
+                        "history": [
+                            {
+                                "version": _EXAMPLE_SLEEPER["version"],
+                                "version_display": "Summer Release",
+                                "released": "2024-07-20T15:00:00",
+                            },
+                            {
+                                "version": "2.0.0",
+                                "compatibility": {
+                                    "canUpdateTo": {
+                                        "version": _EXAMPLE_SLEEPER["version"]
+                                    },
+                                },
+                            },
+                            {"version": "0.9.11"},
+                            {"version": "0.9.10"},
+                            {
+                                "version": "0.9.8",
+                                "compatibility": {
+                                    "canUpdateTo": {"version": "0.9.11"},
+                                },
+                            },
+                            {
+                                "version": "0.9.1",
+                                "versionDisplay": "Matterhorn",
+                                "released": "2024-01-20T18:49:17",
+                                "compatibility": {
+                                    "can_update_to": {"version": "0.9.11"},
+                                },
+                            },
+                            {
+                                "version": "0.9.0",
+                                "retired": "2024-07-20T15:00:00",
+                            },
+                            {"version": "0.8.0"},
+                            {"version": "0.1.0"},
+                        ],
+                    },
+                    {
+                        **_EXAMPLE_FILEPICKER_V2,
+                        "history": [
+                            {
+                                "version": _EXAMPLE_FILEPICKER_V2["version"],
+                                "version_display": "Odei Release",
+                                "released": "2025-03-25T00:00:00",
+                            }
+                        ],
+                    },
+                ]
+            }
+        )
+
     model_config = ConfigDict(
         extra="forbid",
         populate_by_name=True,
         alias_generator=snake_to_camel,
-        json_schema_extra={
-            "examples": [
-                {
-                    **_EXAMPLE_SLEEPER,  # v2.2.1  (latest)
-                    "history": [
-                        {
-                            "version": _EXAMPLE_SLEEPER["version"],
-                            "version_display": "Summer Release",
-                            "released": "2024-07-20T15:00:00",
-                        },
-                        {
-                            "version": "2.0.0",
-                            "compatibility": {
-                                "canUpdateTo": {"version": _EXAMPLE_SLEEPER["version"]},
-                            },
-                        },
-                        {"version": "0.9.11"},
-                        {"version": "0.9.10"},
-                        {
-                            "version": "0.9.8",
-                            "compatibility": {
-                                "canUpdateTo": {"version": "0.9.11"},
-                            },
-                        },
-                        {
-                            "version": "0.9.1",
-                            "versionDisplay": "Matterhorn",
-                            "released": "2024-01-20T18:49:17",
-                            "compatibility": {
-                                "can_update_to": {"version": "0.9.11"},
-                            },
-                        },
-                        {
-                            "version": "0.9.0",
-                            "retired": "2024-07-20T15:00:00",
-                        },
-                        {"version": "0.8.0"},
-                        {"version": "0.1.0"},
-                    ],
-                },
-                {
-                    **_EXAMPLE_FILEPICKER_V2,
-                    "history": [
-                        {
-                            "version": _EXAMPLE_FILEPICKER_V2["version"],
-                            "version_display": "Odei Release",
-                            "released": "2025-03-25T00:00:00",
-                        }
-                    ],
-                },
-            ]
-        },
+        json_schema_extra=_update_json_schema_extra,
     )
 
 
@@ -321,9 +284,10 @@ PageRpcServicesGetV2: TypeAlias = PageRpc[
 ServiceResourcesGet: TypeAlias = ServiceResourcesDict
 
 
-class ServiceUpdateV2(BaseModel):
+class ServiceUpdateV2(CatalogInputSchema):
     name: str | None = None
     thumbnail: HttpUrl | None = None
+    icon: HttpUrl | None = None
 
     description: str | None = None
     description_ui: bool = False

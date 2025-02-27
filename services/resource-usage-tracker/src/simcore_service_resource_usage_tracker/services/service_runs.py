@@ -12,7 +12,7 @@ from models_library.api_schemas_resource_usage_tracker.service_runs import (
     ServiceRunGet,
     ServiceRunPage,
 )
-from models_library.api_schemas_storage import S3BucketName
+from models_library.api_schemas_storage.storage_schemas import S3BucketName
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.resource_tracker import (

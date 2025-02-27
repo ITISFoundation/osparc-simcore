@@ -91,6 +91,10 @@ qx.Class.define("osparc.utils.Utils", {
 
     FLOATING_Z_INDEX: 1000001 + 1,
 
+    addWhiteSpaces: function(integer) {
+      return new Intl.NumberFormat("fr-FR").format(integer); // french will add white spaces every 3 digits
+    },
+
     updateTabName: function(name) {
       document.title = name;
     },
@@ -250,15 +254,6 @@ qx.Class.define("osparc.utils.Utils", {
       const intervalId = setInterval(() => {
         (count < nTimes) ? blinkIt(button) : clearInterval(intervalId);
       }, 2*onTime);
-    },
-
-    prettifyMenu: function(menu) {
-      menu.setAppearance("menu-wider");
-      menu.getChildren().forEach(menuItem => {
-        if (menuItem.classname !== "qx.ui.menu.Separator") {
-          menuItem.setPadding(4);
-        }
-      });
     },
 
     hardRefresh: function() {
@@ -545,15 +540,24 @@ qx.Class.define("osparc.utils.Utils", {
       return daysBetween;
     },
 
-    createReleaseNotesLink: function() {
-      const versionLink = new osparc.ui.basic.LinkLabel();
+    getReleaseTag: function() {
       const rData = osparc.store.StaticInfo.getInstance().getReleaseData();
       const platformVersion = osparc.utils.LibVersions.getPlatformVersion();
-      let text = "osparc-simcore ";
-      text += (rData["tag"] && rData["tag"] !== "latest") ? rData["tag"] : platformVersion.version;
+      let text = (rData["tag"] && rData["tag"] !== "latest") ? rData["tag"] : platformVersion.version;
+      return text;
+    },
+
+    getReleaseLink: function() {
+      const rData = osparc.store.StaticInfo.getInstance().getReleaseData();
+      return rData["url"] || osparc.utils.LibVersions.getVcsRefUrl();
+    },
+
+    createReleaseNotesLink: function() {
+      let text = "osparc-simcore " + this.getReleaseTag();
       const platformName = osparc.store.StaticInfo.getInstance().getPlatformName();
       text += platformName.length ? ` (${platformName})` : "";
-      const url = rData["url"] || osparc.utils.LibVersions.getVcsRefUrl();
+      const url = this.self().getReleaseLink();
+      const versionLink = new osparc.ui.basic.LinkLabel();
       versionLink.set({
         value: text,
         url
@@ -1036,7 +1040,7 @@ qx.Class.define("osparc.utils.Utils", {
     },
 
     setIdToWidget: (qWidget, id) => {
-      if (qWidget.getContentElement && qWidget.getContentElement()) {
+      if (qWidget.getContentElement && qWidget.getContentElement() && id) {
         qWidget.getContentElement().setAttribute("osparc-test-id", id);
       }
     },
@@ -1058,6 +1062,13 @@ qx.Class.define("osparc.utils.Utils", {
     setKeyToWidget: (qWidget, id) => {
       if (qWidget.getContentElement && qWidget.getContentElement()) {
         qWidget.getContentElement().setAttribute("osparc-test-key", id);
+      }
+    },
+
+    setAltToImage: (qWidget, altText) => {
+      if (qWidget.getContentElement && qWidget.getContentElement()) {
+        qWidget.getContentElement().removeAttribute("alt");
+        qWidget.getContentElement().setAttribute("alt", altText);
       }
     },
 

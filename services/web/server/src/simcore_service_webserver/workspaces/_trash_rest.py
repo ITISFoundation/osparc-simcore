@@ -9,7 +9,7 @@ from servicelib.aiohttp.requests_validation import (
 
 from .._meta import API_VTAG as VTAG
 from ..login.decorators import get_user_id, login_required
-from ..products.api import get_product_name
+from ..products import products_web
 from ..security.decorators import permission_required
 from . import _trash_services
 from ._common.exceptions_handlers import handle_plugin_requests_exceptions
@@ -27,7 +27,7 @@ routes = web.RouteTableDef()
 @handle_plugin_requests_exceptions
 async def trash_workspace(request: web.Request):
     user_id = get_user_id(request)
-    product_name = get_product_name(request)
+    product_name = products_web.get_product_name(request)
     path_params = parse_request_path_parameters_as(WorkspacesPathParams, request)
     query_params: WorkspaceTrashQueryParams = parse_request_query_parameters_as(
         WorkspaceTrashQueryParams, request
@@ -50,7 +50,7 @@ async def trash_workspace(request: web.Request):
 @handle_plugin_requests_exceptions
 async def untrash_workspace(request: web.Request):
     user_id = get_user_id(request)
-    product_name = get_product_name(request)
+    product_name = products_web.get_product_name(request)
     path_params = parse_request_path_parameters_as(WorkspacesPathParams, request)
 
     await _trash_services.untrash_workspace(

@@ -14,7 +14,6 @@ import aioboto3
 import aiofiles
 import pytest
 from faker import Faker
-from models_library.basic_types import IDStr
 from models_library.progress_bar import ProgressReport
 from pydantic import AnyUrl, ByteSize, TypeAdapter
 from servicelib.file_utils import remove_directory
@@ -26,8 +25,9 @@ from simcore_sdk.node_ports_common import aws_s3_cli
 pytest_simcore_core_services_selection = [
     "migration",
     "postgres",
-    "storage",
+    "rabbit",
     "redis",
+    "storage",
 ]
 
 pytest_simcore_ops_services_selection = [
@@ -150,7 +150,7 @@ async def _upload_local_dir_to_s3(
     async with ProgressBarData(
         num_steps=1,
         progress_report_cb=_report_progress_upload,
-        description=IDStr(faker.pystr()),
+        description=faker.pystr(),
     ) as progress_bar:
         await aws_s3_cli.sync_local_to_s3(
             aws_s3_cli_settings,
@@ -177,7 +177,7 @@ async def _download_from_s3_to_local_dir(
     async with ProgressBarData(
         num_steps=1,
         progress_report_cb=_report_progress_download,
-        description=IDStr(faker.pystr()),
+        description=faker.pystr(),
     ) as progress_bar:
         await aws_s3_cli.sync_s3_to_local(
             aws_s3_cli_settings,

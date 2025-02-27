@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from collections.abc import Awaitable, Callable
 from contextlib import AsyncExitStack
@@ -11,8 +12,21 @@ import arrow
 from models_library.docker import DockerGenericTag
 from models_library.generated_models.docker_rest_api import ProgressDetail
 from models_library.utils.change_case import snake_to_camel
-from pydantic import BaseModel, ByteSize, ConfigDict, TypeAdapter, ValidationError
+from pydantic import (
+    BaseModel,
+    ByteSize,
+    ConfigDict,
+    NonNegativeInt,
+    TypeAdapter,
+    ValidationError,
+)
 from settings_library.docker_registry import RegistrySettings
+from tenacity import (
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_random_exponential,
+)
 from yarl import URL
 
 from .logging_utils import LogLevelInt
@@ -209,6 +223,8 @@ async def pull_image(
     progress_bar: ProgressBarData,
     log_cb: LogCB,
     image_information: DockerImageManifestsV2 | None,
+    *,
+    retry_upon_error_count: NonNegativeInt = 10,
 ) -> None:
     """pull a docker image to the host machine.
 
@@ -219,7 +235,9 @@ async def pull_image(
         progress_bar -- the current progress bar
         log_cb -- a callback function to send logs to
         image_information -- the image layer information. If this is None, then no fine progress will be retrieved.
+        retry_upon_error_count -- number of tries if there is a TimeoutError. Usually cased by networking issues.
     """
+
     registry_auth = None
     if registry_settings.REGISTRY_URL and registry_settings.REGISTRY_URL in image:
         registry_auth = {
@@ -245,39 +263,64 @@ async def pull_image(
 
         client = await exit_stack.enter_async_context(aiodocker.Docker())
 
-        reported_progress = 0.0
-        async for pull_progress in client.images.pull(
-            image, stream=True, auth=registry_auth
-        ):
-            try:
-                parsed_progress = TypeAdapter(_DockerPullImage).validate_python(
-                    pull_progress
+        def _reset_progress_from_previous_attempt() -> None:
+            for pulled_status in layer_id_to_size.values():
+                pulled_status.downloaded = 0
+                pulled_status.extracted = 0
+
+        attempt: NonNegativeInt = 1
+
+        @retry(
+            wait=wait_random_exponential(),
+            stop=stop_after_attempt(retry_upon_error_count),
+            reraise=True,
+            retry=retry_if_exception_type(asyncio.TimeoutError),
+        )
+        async def _pull_image_with_retry() -> None:
+            nonlocal attempt
+            if attempt > 1:
+                # for each attempt rest the progress
+                progress_bar.reset()
+                _reset_progress_from_previous_attempt()
+            attempt += 1
+
+            _logger.info("attempt '%s' trying to pull image='%s'", attempt, image)
+
+            reported_progress = 0.0
+            async for pull_progress in client.images.pull(
+                image, stream=True, auth=registry_auth
+            ):
+                try:
+                    parsed_progress = TypeAdapter(_DockerPullImage).validate_python(
+                        pull_progress
+                    )
+                except ValidationError:
+                    _logger.exception(
+                        "Unexpected error while validating '%s'. "
+                        "TIP: This is probably an unforeseen pull status text that shall be added to the code. "
+                        "The pulling process will still continue.",
+                        f"{pull_progress=}",
+                    )
+                else:
+                    await _parse_pull_information(
+                        parsed_progress, layer_id_to_size=layer_id_to_size
+                    )
+
+                # compute total progress
+                total_downloaded_size = sum(
+                    layer.downloaded for layer in layer_id_to_size.values()
                 )
-            except ValidationError:
-                _logger.exception(
-                    "Unexpected error while validating '%s'. "
-                    "TIP: This is probably an unforeseen pull status text that shall be added to the code. "
-                    "The pulling process will still continue.",
-                    f"{pull_progress=}",
+                total_extracted_size = sum(
+                    layer.extracted for layer in layer_id_to_size.values()
                 )
-            else:
-                await _parse_pull_information(
-                    parsed_progress, layer_id_to_size=layer_id_to_size
+                total_progress = (total_downloaded_size + total_extracted_size) / 2.0
+                progress_to_report = total_progress - reported_progress
+                await progress_bar.update(progress_to_report)
+                reported_progress = total_progress
+
+                await log_cb(
+                    f"pulling {image_short_name}: {pull_progress}...",
+                    logging.DEBUG,
                 )
 
-            # compute total progress
-            total_downloaded_size = sum(
-                layer.downloaded for layer in layer_id_to_size.values()
-            )
-            total_extracted_size = sum(
-                layer.extracted for layer in layer_id_to_size.values()
-            )
-            total_progress = (total_downloaded_size + total_extracted_size) / 2.0
-            progress_to_report = total_progress - reported_progress
-            await progress_bar.update(progress_to_report)
-            reported_progress = total_progress
-
-            await log_cb(
-                f"pulling {image_short_name}: {pull_progress}...",
-                logging.DEBUG,
-            )
+        await _pull_image_with_retry()

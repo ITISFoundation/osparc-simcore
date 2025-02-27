@@ -1,16 +1,24 @@
 from abc import ABC, abstractmethod
 from collections.abc import Callable
 from dataclasses import dataclass, field
+from pathlib import Path
 
-from aiohttp import web
-from models_library.api_schemas_storage import LinkType, UploadedPart
+from fastapi import FastAPI
+from models_library.api_schemas_storage.storage_schemas import LinkType, UploadedPart
 from models_library.basic_types import SHA256Str
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import LocationID, LocationName, StorageFileID
 from models_library.users import UserID
-from pydantic import AnyUrl, ByteSize
+from pydantic import AnyUrl, ByteSize, NonNegativeInt
 
-from .models import DatasetMetaData, FileMetaData, UploadLinks
+from .models import (
+    DatasetMetaData,
+    FileMetaData,
+    GenericCursor,
+    PathMetaData,
+    TotalNumber,
+    UploadLinks,
+)
 
 
 class BaseDataManager(ABC):
@@ -62,6 +70,17 @@ class BaseDataManager(ABC):
         # NOTE: expand_dirs will be replaced by pagination in the future
 
     @abstractmethod
+    async def list_paths(
+        self,
+        user_id: UserID,
+        *,
+        file_filter: Path | None,
+        cursor: GenericCursor | None,
+        limit: NonNegativeInt,
+    ) -> tuple[list[PathMetaData], GenericCursor | None, TotalNumber | None]:
+        """returns a page of the file meta data a user has access to"""
+
+    @abstractmethod
     async def get_file(self, user_id: UserID, file_id: StorageFileID) -> FileMetaData:
         """returns the file meta data of file_id if user_id has the rights to"""
 
@@ -105,17 +124,17 @@ class BaseDataManager(ABC):
 
 @dataclass
 class DataManagerProvider:
-    app: web.Application
+    app: FastAPI
     _builders: dict[
         LocationID,
-        tuple[Callable[[web.Application], BaseDataManager], type[BaseDataManager]],
+        tuple[Callable[[FastAPI], BaseDataManager], type[BaseDataManager]],
     ] = field(default_factory=dict)
     _services: list[BaseDataManager] = field(default_factory=list)
 
     def register_builder(
         self,
         location_id: LocationID,
-        builder: Callable[[web.Application], BaseDataManager],
+        builder: Callable[[FastAPI], BaseDataManager],
         dsm_type: type[BaseDataManager],
     ):
         self._builders[location_id] = (builder, dsm_type)

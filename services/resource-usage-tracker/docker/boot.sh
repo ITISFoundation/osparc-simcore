@@ -48,7 +48,7 @@ if [ "${SC_BOOT_MODE}" = "debug" ]; then
 
   exec sh -c "
     cd services/resource-usage-tracker/src/simcore_service_resource_usage_tracker && \
-    python -m debugpy --listen 0.0.0.0:${RESOURCE_USAGE_TRACKER_REMOTE_DEBUGGING_PORT} -m uvicorn web_main:the_app \
+    python -m debugpy --listen 0.0.0.0:${RESOURCE_USAGE_TRACKER_REMOTE_DEBUGGING_PORT} -m uvicorn main:the_app \
       --host 0.0.0.0 \
       --reload \
       $reload_dir_packages

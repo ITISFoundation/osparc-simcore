@@ -1,18 +1,20 @@
 import logging
 
-from fastapi import FastAPI, HTTPException
-from fastapi.exceptions import RequestValidationError
+from common_library.basic_types import BootModeEnum
+from fastapi import FastAPI
+from fastapi.middleware.gzip import GZipMiddleware
+from fastapi_pagination import add_pagination
+from servicelib.fastapi import timing_middleware
+from servicelib.fastapi.http_error import set_app_default_http_error_handlers
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
 from servicelib.fastapi.prometheus_instrumentation import (
     setup_prometheus_instrumentation,
 )
-from servicelib.fastapi.tracing import setup_tracing
-from servicelib.logging_utils import config_all_loggers
+from servicelib.fastapi.tracing import initialize_tracing
+from starlette.middleware.base import BaseHTTPMiddleware
 
 from .._meta import API_VERSION, API_VTAG, APP_NAME
-from ..api.errors.http_error import http_error_handler
-from ..api.errors.validation_error import http422_error_handler
-from ..api.module_setup import setup_api
+from ..api.routes import setup_rest_api_routes
 from ..modules import pennsieve
 from .events import (
     create_start_app_handler,
@@ -29,22 +31,10 @@ NOISY_LOGGERS = (
     "hpack",
 )
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
-def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
-    if settings is None:
-        settings = ApplicationSettings.create_from_envs()
-    assert settings  # nosec
-
-    logging.basicConfig(level=settings.LOG_LEVEL.value)
-    logging.root.setLevel(settings.LOG_LEVEL.value)
-    config_all_loggers(
-        log_format_local_dev_enabled=settings.DATCORE_ADAPTER_LOG_FORMAT_LOCAL_DEV_ENABLED,
-        logger_filter_mapping=settings.DATCORE_ADAPTER_LOG_FILTER_MAPPING,
-        tracing_settings=settings.DATCORE_ADAPTER_TRACING,
-    )
-
+def create_app(settings: ApplicationSettings) -> FastAPI:
     # keep mostly quiet noisy loggers
     quiet_level: int = max(
         min(logging.root.level + LOG_LEVEL_STEP, logging.CRITICAL), logging.WARNING
@@ -52,11 +42,13 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
 
     for name in NOISY_LOGGERS:
         logging.getLogger(name).setLevel(quiet_level)
-    logger.debug("App settings:\n%s", settings.model_dump_json(indent=2))
+
+    _logger.debug("App settings:\n%s", settings.model_dump_json(indent=1))
 
     app = FastAPI(
-        debug=settings.debug,
-        title="Datcore Adapter Service",
+        debug=settings.SC_BOOT_MODE
+        in [BootModeEnum.DEBUG, BootModeEnum.DEVELOPMENT, BootModeEnum.LOCAL],
+        title=APP_NAME,
         description="Interfaces with Pennsieve storage service",
         version=API_VERSION,
         openapi_url=f"/api/{API_VTAG}/openapi.json",
@@ -64,17 +56,25 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
         redoc_url=None,  # default disabled
     )
     override_fastapi_openapi_method(app)
+    add_pagination(app)
 
     app.state.settings = settings
 
     if app.state.settings.DATCORE_ADAPTER_PROMETHEUS_INSTRUMENTATION_ENABLED:
         setup_prometheus_instrumentation(app)
     if app.state.settings.DATCORE_ADAPTER_TRACING:
-        setup_tracing(
+        initialize_tracing(
             app,
             app.state.settings.DATCORE_ADAPTER_TRACING,
             APP_NAME,
         )
+
+    if settings.SC_BOOT_MODE != BootModeEnum.PRODUCTION:
+        # middleware to time requests (ONLY for development)
+        app.add_middleware(
+            BaseHTTPMiddleware, dispatch=timing_middleware.add_process_time_header
+        )
+    app.add_middleware(GZipMiddleware)
 
     # events
     app.add_event_handler("startup", on_startup)
@@ -83,12 +83,11 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
     app.add_event_handler("shutdown", on_shutdown)
 
     # Routing
-    setup_api(app)
+    setup_rest_api_routes(app)
 
     if settings.PENNSIEVE.PENNSIEVE_ENABLED:
         pennsieve.setup(app, settings.PENNSIEVE)
 
-    app.add_exception_handler(HTTPException, http_error_handler)
-    app.add_exception_handler(RequestValidationError, http422_error_handler)
+    set_app_default_http_error_handlers(app)
 
     return app

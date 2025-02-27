@@ -11,7 +11,9 @@ from uuid import uuid4
 
 import pytest
 from fastapi import UploadFile
-from models_library.api_schemas_storage import FileMetaDataGet as StorageFileMetaData
+from models_library.api_schemas_storage.storage_schemas import (
+    FileMetaDataGet as StorageFileMetaData,
+)
 from models_library.basic_types import SHA256Str
 from models_library.projects_nodes_io import StorageFileID
 from pydantic import TypeAdapter, ValidationError
@@ -81,7 +83,7 @@ async def test_create_filemetadata_from_starlette_uploadfile(
 
 def test_convert_between_file_models():
     storage_file_meta = StorageFileMetaData(
-        **StorageFileMetaData.model_config["json_schema_extra"]["examples"][1]
+        **StorageFileMetaData.model_json_schema()["examples"][1]
     )
     storage_file_meta.file_id = TypeAdapter(StorageFileID).validate_python(
         f"api/{uuid4()}/extensionless"

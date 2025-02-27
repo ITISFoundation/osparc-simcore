@@ -24,7 +24,7 @@ qx.Class.define("osparc.desktop.credits.BillingCenter", {
     const miniWallet = this.self().createMiniWalletView().set({
       paddingRight: 10
     });
-    this.addWidgetOnTopOfTheTabs(miniWallet);
+    this.addWidgetToTabs(miniWallet);
 
     this.__walletsPage = this.__addWalletsPage();
     this.__paymentMethodsPage = this.__addPaymentMethodsPage();
@@ -36,22 +36,33 @@ qx.Class.define("osparc.desktop.credits.BillingCenter", {
 
     if (osparc.product.Utils.showS4LStore()) {
       this.__addPurchasesPage();
-      this.__addCheckoutsPage();
+      // For now, do not add checkouts page
+      // this.__addCheckoutsPage();
     }
   },
 
   statics: {
     createMiniWalletView: function() {
-      const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(8)).set({
+      const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(6)).set({
         alignX: "center",
         minWidth: 120,
         maxWidth: 150
       });
 
-      const store = osparc.store.Store.getInstance();
+      const walletName = new qx.ui.basic.Label().set({
+        alignX: "center"
+      });
+      layout.add(walletName);
       const creditsIndicator = new osparc.desktop.credits.CreditsIndicator();
-      store.bind("contextWallet", creditsIndicator, "wallet");
       layout.add(creditsIndicator);
+      const store = osparc.store.Store.getInstance();
+      store.bind("contextWallet", walletName, "value", {
+        converter: wallet => wallet.getName()
+      });
+      store.bind("contextWallet", walletName, "toolTipText", {
+        converter: wallet => wallet.getName()
+      });
+      store.bind("contextWallet", creditsIndicator, "wallet");
 
       layout.add(new qx.ui.core.Spacer(15, 15));
 
@@ -102,7 +113,7 @@ qx.Class.define("osparc.desktop.credits.BillingCenter", {
 
     __addPurchasesPage: function() {
       const title = this.tr("Purchases");
-      const iconSrc = "@FontAwesome5Solid/list/22";
+      const iconSrc = "@FontAwesome5Solid/shopping-bag/22";
       const purchases = new osparc.desktop.credits.Purchases();
       const page = this.addTab(title, iconSrc, purchases);
       return page;

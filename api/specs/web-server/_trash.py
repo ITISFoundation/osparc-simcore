@@ -8,11 +8,15 @@ from enum import Enum
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, status
+from models_library.rest_error import EnvelopedError
 from models_library.trash import RemoveQueryParams
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.folders._common.models import (
     FoldersPathParams,
     FolderTrashQueryParams,
+)
+from simcore_service_webserver.projects._common.exceptions_handlers import (
+    _TO_HTTP_ERROR_MAP,
 )
 from simcore_service_webserver.projects._trash_rest import ProjectPathParams
 from simcore_service_webserver.workspaces._common.models import (
@@ -23,11 +27,14 @@ from simcore_service_webserver.workspaces._common.models import (
 router = APIRouter(
     prefix=f"/{API_VTAG}",
     tags=["trash"],
+    responses={
+        i.status_code: {"model": EnvelopedError} for i in _TO_HTTP_ERROR_MAP.values()
+    },
 )
 
 
-@router.delete(
-    "/trash",
+@router.post(
+    "/trash:empty",
     status_code=status.HTTP_204_NO_CONTENT,
 )
 def empty_trash():
@@ -42,11 +49,18 @@ _extra_tags: list[str | Enum] = ["projects"]
     tags=_extra_tags,
     status_code=status.HTTP_204_NO_CONTENT,
     responses={
-        status.HTTP_404_NOT_FOUND: {"description": "Not such a project"},
-        status.HTTP_409_CONFLICT: {
-            "description": "Project is in use and cannot be trashed"
+        status.HTTP_404_NOT_FOUND: {
+            "description": "Not such a project",
+            "model": EnvelopedError,
         },
-        status.HTTP_503_SERVICE_UNAVAILABLE: {"description": "Trash service error"},
+        status.HTTP_409_CONFLICT: {
+            "description": "Project is in use and cannot be trashed",
+            "model": EnvelopedError,
+        },
+        status.HTTP_503_SERVICE_UNAVAILABLE: {
+            "description": "Trash service error",
+            "model": EnvelopedError,
+        },
     },
 )
 def trash_project(

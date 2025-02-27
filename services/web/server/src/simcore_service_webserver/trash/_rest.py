@@ -1,7 +1,10 @@
+import asyncio
 import logging
 
 from aiohttp import web
 from servicelib.aiohttp import status
+from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
+from servicelib.utils import fire_and_forget_task
 
 from .._meta import API_VTAG as VTAG
 from ..exception_handling import (
@@ -11,16 +14,12 @@ from ..exception_handling import (
     to_exceptions_handlers_map,
 )
 from ..login.decorators import get_user_id, login_required
-from ..products.api import get_product_name
+from ..products import products_web
 from ..projects.exceptions import ProjectRunningConflictError, ProjectStoppingError
 from ..security.decorators import permission_required
 from . import _service
 
 _logger = logging.getLogger(__name__)
-
-#
-# EXCEPTIONS HANDLING
-#
 
 
 _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
@@ -40,21 +39,35 @@ _handle_exceptions = exception_handling_decorator(
 )
 
 
-#
-# ROUTES
-#
-
 routes = web.RouteTableDef()
 
 
-@routes.delete(f"/{VTAG}/trash", name="empty_trash")
+@routes.post(f"/{VTAG}/trash:empty", name="empty_trash")
 @login_required
 @permission_required("project.delete")
 @_handle_exceptions
 async def empty_trash(request: web.Request):
     user_id = get_user_id(request)
-    product_name = get_product_name(request)
+    product_name = products_web.get_product_name(request)
 
-    await _service.empty_trash(request.app, product_name=product_name, user_id=user_id)
+    is_fired = asyncio.Event()
+
+    async def _empty_trash():
+        is_fired.set()
+        await _service.safe_empty_trash(
+            request.app, product_name=product_name, user_id=user_id
+        )
+
+    fire_and_forget_task(
+        _empty_trash(),
+        task_suffix_name="rest.empty_trash",
+        fire_and_forget_tasks_collection=request.app[APP_FIRE_AND_FORGET_TASKS_KEY],
+    )
+
+    # NOTE: Ensures `fire_and_forget_task` is triggered; otherwise,
+    # when the front-end requests the trash item list,
+    # it may still display items, misleading the user into
+    # thinking the `empty trash` operation failed.
+    await is_fired.wait()
 
     return web.json_response(status=status.HTTP_204_NO_CONTENT)

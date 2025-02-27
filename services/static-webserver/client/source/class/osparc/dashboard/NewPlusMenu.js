@@ -15,17 +15,63 @@
 
 ************************************************************************ */
 
+/**
+  Supports:
+  "categories": [{
+    "id": "string", // required
+    "title": "string", // required
+    "description": "string" // optional
+  }],
+  "resources": [{
+    "resourceType": "study", // it will start an empty study
+    "title": "string", // required
+    "icon": "fontAwesome inner link | url", // optional
+    "newStudyLabel": "string", // optional
+    "idToWidget": "string" // optional
+  }, {
+    "resourceType": "template", // it will create a study from the template
+    "expectedTemplateLabel": "string", // required
+    "title": "string", // required
+    "icon": "fontAwesome inner link | url", // optional
+    "newStudyLabel": "string", // optional
+    "category": "categories.id", // optional
+    "idToWidget": "string" // optional
+  }, {
+    "resourceType": "service", // it will create a study from the service
+    "expectedKey": "service.key", // required
+    "title": "string", // required
+    "icon": "fontAwesome inner link | url", // optional
+    "newStudyLabel": "string", // optional
+    "category": "categories.id", // optional
+    "idToWidget": "string" // optional
+  }, {
+    "resourceType": "service", // it will create a study from the service
+    "myMostUsed": 2, // required
+    "category": "categories.id", // optional
+  }, {
+    "showDisabled": true, // it will show a disabled button on the defined item
+    "title": "string", // required
+    "icon": "fontAwesome inner link | url", // optional
+    "reason": "string", // optional
+    "newStudyLabel": "string", // optional
+    "category": "categories.id", // optional
+    "idToWidget": "string" // optional
+  }]
+ */
 qx.Class.define("osparc.dashboard.NewPlusMenu", {
   extend: qx.ui.menu.Menu,
 
   construct: function() {
     this.base(arguments);
 
-    osparc.utils.Utils.prettifyMenu(this);
-
     this.set({
+      appearance: "menu-wider",
       position: "bottom-left",
       spacingX: 20,
+    });
+
+    this.getContentElement().setStyles({
+      "border-color": qx.theme.manager.Color.getInstance().resolve("strong-main"),
     });
 
     this.__categoryHeaders = [];
@@ -47,6 +93,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
         "replace_me_product_name",
         osparc.store.StaticInfo.getInstance().getDisplayName()
       );
+      title = title.replace(/<br>/g, " ");
       const menuButton = new qx.ui.menu.Button().set({
         icon: icon || null,
         label: title,
@@ -62,7 +109,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
       });
       if (infoText) {
         infoText = osparc.utils.Utils.replaceTokens(
-          title,
+          infoText,
           "replace_me_product_name",
           osparc.store.StaticInfo.getInstance().getDisplayName()
         );
@@ -112,27 +159,26 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
     },
 
     __addNewStudyItems: async function() {
-      await Promise.all([
-        osparc.store.Products.getInstance().getNewStudyConfig(),
-        osparc.data.Resources.get("templates")
-      ]).then(values => {
-        const newStudiesData = values[0];
-        const templates = values[1];
-        if (newStudiesData["categories"]) {
-          this.__addCategories(newStudiesData["categories"]);
-        }
-        newStudiesData["resources"].forEach(newStudyData => {
-          if (newStudyData["showDisabled"]) {
-            this.__addDisabledButton(newStudyData);
-          } else if (newStudyData["resourceType"] === "study") {
-            this.__addEmptyStudyButton(newStudyData);
-          } else if (newStudyData["resourceType"] === "template") {
-            this.__addFromTemplateButton(newStudyData, templates);
-          } else if (newStudyData["resourceType"] === "service") {
-            this.__addFromServiceButton(newStudyData);
-          }
-        });
-      });
+      const plusButtonConfig = osparc.store.Products.getInstance().getPlusButtonUiConfig();
+      if (plusButtonConfig) {
+        await osparc.data.Resources.get("templates")
+          .then(templates => {
+            if (plusButtonConfig["categories"]) {
+              this.__addCategories(plusButtonConfig["categories"]);
+            }
+            plusButtonConfig["resources"].forEach(newStudyData => {
+              if (newStudyData["showDisabled"]) {
+                this.__addDisabledButton(newStudyData);
+              } else if (newStudyData["resourceType"] === "study") {
+                this.__addEmptyStudyButton(newStudyData);
+              } else if (newStudyData["resourceType"] === "template") {
+                this.__addFromTemplateButton(newStudyData, templates);
+              } else if (newStudyData["resourceType"] === "service") {
+                this.__addFromServiceButton(newStudyData);
+              }
+            });
+          });
+      }
     },
 
     __getLastIdxFromCategory: function(categoryId) {
@@ -160,12 +206,18 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
 
     __addIcon: function(menuButton, resourceInfo, resourceMetadata) {
       let source = null;
-      if (resourceInfo && "icon" in resourceInfo) {
-        // first the one set in the new_studies
+      if (resourceInfo && resourceInfo["icon"]) {
+        // first the one set in the ui_config
         source = resourceInfo["icon"];
-      } else if (resourceMetadata && "thumbnail" in resourceMetadata) {
-        // second the one from the resource
+      } else if (resourceMetadata && resourceMetadata["icon"]) {
+        // second the icon from the resource
+        source = resourceMetadata["icon"];
+      } else if (resourceMetadata && resourceMetadata["thumbnail"]) {
+        // third the thumbnail from the resource
         source = resourceMetadata["thumbnail"];
+      } else {
+        // finally product icon
+        source = osparc.dashboard.CardBase.PRODUCT_ICON;
       }
 
       if (source) {
@@ -196,91 +248,119 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
     },
 
     __addDisabledButton: function(newStudyData) {
-      const menuButton = this.self().createMenuButton(null, newStudyData.title, newStudyData.reason);
-      osparc.utils.Utils.setIdToWidget(menuButton, newStudyData.idToWidget);
+      const menuButton = this.self().createMenuButton(null, newStudyData["title"], newStudyData["reason"]);
+      osparc.utils.Utils.setIdToWidget(menuButton, newStudyData["idToWidget"]);
       menuButton.setEnabled(false);
 
       this.__addIcon(menuButton, newStudyData);
-      this.__addFromResourceButton(menuButton, newStudyData.category);
+      this.__addFromResourceButton(menuButton, newStudyData["category"]);
     },
 
     __addEmptyStudyButton: function(newStudyData) {
-      const menuButton = this.self().createMenuButton(null, newStudyData.title);
-      osparc.utils.Utils.setIdToWidget(menuButton, newStudyData.idToWidget);
+      const menuButton = this.self().createMenuButton(null, newStudyData["title"]);
+      osparc.utils.Utils.setIdToWidget(menuButton, newStudyData["idToWidget"]);
 
       menuButton.addListener("tap", () => {
         this.fireDataEvent("newEmptyStudyClicked", {
-          newStudyLabel: newStudyData.newStudyLabel,
+          newStudyLabel: newStudyData["newStudyLabel"],
         });
       });
 
       this.__addIcon(menuButton, newStudyData);
-      this.__addFromResourceButton(menuButton, newStudyData.category);
+      this.__addFromResourceButton(menuButton, newStudyData["category"]);
     },
 
     __addFromTemplateButton: function(newStudyData, templates) {
-      const menuButton = this.self().createMenuButton(null, newStudyData.title);
-      osparc.utils.Utils.setIdToWidget(menuButton, newStudyData.idToWidget);
+      const menuButton = this.self().createMenuButton(null, newStudyData["title"]);
+      osparc.utils.Utils.setIdToWidget(menuButton, newStudyData["idToWidget"]);
       // disable it until found in templates store
       menuButton.setEnabled(false);
 
-      let templateMetadata = templates.find(t => t.name === newStudyData.expectedTemplateLabel);
+      let templateMetadata = templates.find(t => t.name === newStudyData["expectedTemplateLabel"]);
       if (templateMetadata) {
         menuButton.setEnabled(true);
         menuButton.addListener("tap", () => {
           this.fireDataEvent("newStudyFromTemplateClicked", {
             templateData: templateMetadata,
-            newStudyLabel: newStudyData.newStudyLabel,
+            newStudyLabel: newStudyData["newStudyLabel"],
           });
         });
         this.__addIcon(menuButton, newStudyData, templateMetadata);
-        this.__addFromResourceButton(menuButton, newStudyData.category);
+        this.__addFromResourceButton(menuButton, newStudyData["category"]);
       }
     },
 
     __addFromServiceButton: function(newStudyData) {
-      const menuButton = this.self().createMenuButton(null, newStudyData.title);
-      osparc.utils.Utils.setIdToWidget(menuButton, newStudyData.idToWidget);
-      // disable it until found in services store
-      menuButton.setEnabled(false);
+      const addListenerToButton = (menuButton, latestMetadata) => {
+        menuButton.addListener("tap", () => {
+          this.fireDataEvent("newStudyFromServiceClicked", {
+            serviceMetadata: latestMetadata,
+            newStudyLabel: newStudyData["newStudyLabel"],
+          });
+        });
 
-      const key = newStudyData.expectedKey;
-      // Include deprecated versions, they should all be updatable to a non deprecated version
-      const versions = osparc.service.Utils.getVersions(key, false);
-      if (versions.length && newStudyData) {
-        // scale to latest compatible
-        const latestVersion = versions[0];
-        const latestCompatible = osparc.service.Utils.getLatestCompatible(key, latestVersion);
-        osparc.store.Services.getService(latestCompatible["key"], latestCompatible["version"])
-          .then(latestMetadata => {
-            // make sure this one is not deprecated
-            if (osparc.service.Utils.isDeprecated(latestMetadata)) {
-              return;
-            }
-            menuButton.setEnabled(true);
-            menuButton.addListener("tap", () => {
-              this.fireDataEvent("newStudyFromServiceClicked", {
-                serviceMetadata: latestMetadata,
-                newStudyLabel: newStudyData.newStudyLabel,
-              });
+        const cb = e => {
+          this.hide();
+          // so that is not consumed by the menu button itself
+          e.stopPropagation();
+          latestMetadata["resourceType"] = "service";
+          const resourceDetails = new osparc.dashboard.ResourceDetails(latestMetadata);
+          osparc.dashboard.ResourceDetails.popUpInWindow(resourceDetails);
+        }
+        const infoButton = new osparc.ui.basic.IconButton(osparc.ui.hint.InfoHint.INFO_ICON + "/16", cb);
+        // where the shortcut is supposed to go
+        // eslint-disable-next-line no-underscore-dangle
+        menuButton._add(infoButton, {column: 2});
+      };
+
+      if ("expectedKey" in newStudyData) {
+        const menuButton = this.self().createMenuButton(null, newStudyData["title"]);
+        osparc.utils.Utils.setIdToWidget(menuButton, newStudyData["idToWidget"]);
+        // disable it until found in services store
+        menuButton.setEnabled(false);
+
+        const key = newStudyData["expectedKey"];
+        // Include deprecated versions, they should all be updatable to a non deprecated version
+        const versions = osparc.service.Utils.getVersions(key, false);
+        if (versions.length && newStudyData) {
+          // scale to latest compatible
+          const latestVersion = versions[0];
+          const latestCompatible = osparc.service.Utils.getLatestCompatible(key, latestVersion);
+          osparc.store.Services.getService(latestCompatible["key"], latestCompatible["version"])
+            .then(latestMetadata => {
+              // make sure this one is not deprecated
+              if (osparc.service.Utils.isDeprecated(latestMetadata)) {
+                return;
+              }
+              menuButton.setEnabled(true);
+              this.__addIcon(menuButton, newStudyData, latestMetadata);
+              this.__addFromResourceButton(menuButton, newStudyData["category"]);
+              addListenerToButton(menuButton, latestMetadata);
             });
-
-            const cb = e => {
-              this.hide();
-              // so that is not consumed by the menu button itself
-              e.stopPropagation();
-              latestMetadata["resourceType"] = "service";
-              const resourceDetails = new osparc.dashboard.ResourceDetails(latestMetadata);
-              osparc.dashboard.ResourceDetails.popUpInWindow(resourceDetails);
+        }
+      } else if ("myMostUsed" in newStudyData) {
+        const excludeFrontend = true;
+        const excludeDeprecated = true
+        osparc.store.Services.getServicesLatestList(excludeFrontend, excludeDeprecated)
+          .then(servicesList => {
+            osparc.service.Utils.sortObjectsBasedOn(servicesList, {
+              "sort": "hits",
+              "order": "down"
+            });
+            for (let i=0; i<newStudyData["myMostUsed"]; i++) {
+              const latestMetadata = servicesList[i];
+              if (latestMetadata["hits"] > 0) {
+                const menuButton = new qx.ui.menu.Button().set({
+                  label: latestMetadata["name"],
+                  font: "text-16",
+                  allowGrowX: true,
+                });
+                this.__addIcon(menuButton, null, latestMetadata);
+                this.__addFromResourceButton(menuButton, newStudyData["category"]);
+                addListenerToButton(menuButton, latestMetadata);
+              }
             }
-            const infoButton = new osparc.ui.basic.IconButton(osparc.ui.hint.InfoHint.INFO_ICON + "/16", cb);
-            // where the shortcut is supposed to go
-            // eslint-disable-next-line no-underscore-dangle
-            menuButton._add(infoButton, {column: 2});
-
-            this.__addIcon(menuButton, newStudyData, latestMetadata);
-            this.__addFromResourceButton(menuButton, newStudyData.category);
-          })
+          });
       }
     },
 

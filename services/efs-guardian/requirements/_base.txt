@@ -454,6 +454,8 @@ psutil==6.1.0
     #   -r requirements/../../../packages/service-library/requirements/_base.in
 psycopg2-binary==2.9.10
     # via sqlalchemy
+pycryptodome==3.21.0
+    # via stream-zip
 pydantic==2.10.2
     # via
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -730,6 +732,10 @@ starlette==0.41.2
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   fastapi
+stream-zip==0.0.83
+    # via
+    #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
 tenacity==9.0.0
     # via
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
@@ -748,13 +754,13 @@ typer==0.12.5
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
-types-aiobotocore==2.15.2
+types-aiobotocore==2.19.0
     # via -r requirements/../../../packages/aws-library/requirements/_base.in
-types-aiobotocore-ec2==2.15.2
+types-aiobotocore-ec2==2.19.0
     # via types-aiobotocore
-types-aiobotocore-s3==2.15.2
+types-aiobotocore-s3==2.19.0
     # via types-aiobotocore
-types-aiobotocore-ssm==2.15.2
+types-aiobotocore-ssm==2.19.0
     # via types-aiobotocore
 types-awscrt==0.22.0
     # via botocore-stubs

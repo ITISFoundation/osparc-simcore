@@ -2,7 +2,6 @@ from datetime import UTC, datetime
 from typing import cast
 
 import sqlalchemy as sa
-from models_library.licensed_items import LicensedItemID
 from models_library.products import ProductName
 from models_library.resource_tracker_licensed_items_purchases import (
     LicensedItemPurchaseID,
@@ -24,11 +23,14 @@ from ....models.licensed_items_purchases import (
     CreateLicensedItemsPurchasesDB,
     LicensedItemsPurchasesDB,
 )
+from . import utils as db_utils
 
 _SELECTION_ARGS = (
     resource_tracker_licensed_items_purchases.c.licensed_item_purchase_id,
     resource_tracker_licensed_items_purchases.c.product_name,
     resource_tracker_licensed_items_purchases.c.licensed_item_id,
+    resource_tracker_licensed_items_purchases.c.key,
+    resource_tracker_licensed_items_purchases.c.version,
     resource_tracker_licensed_items_purchases.c.wallet_id,
     resource_tracker_licensed_items_purchases.c.wallet_name,
     resource_tracker_licensed_items_purchases.c.pricing_unit_cost_id,
@@ -59,6 +61,8 @@ async def create(
             .values(
                 product_name=data.product_name,
                 licensed_item_id=data.licensed_item_id,
+                key=data.key,
+                version=data.version,
                 wallet_id=data.wallet_id,
                 wallet_name=data.wallet_name,
                 pricing_unit_cost_id=data.pricing_unit_cost_id,
@@ -106,13 +110,17 @@ async def list_(
     # Ordering and pagination
     if order_by.direction == OrderDirection.ASC:
         list_query = base_query.order_by(
-            sa.asc(getattr(resource_tracker_licensed_items_purchases.c, order_by.field))
+            sa.asc(
+                getattr(resource_tracker_licensed_items_purchases.c, order_by.field)
+            ),
+            resource_tracker_licensed_items_purchases.c.licensed_item_purchase_id,
         )
     else:
         list_query = base_query.order_by(
             sa.desc(
                 getattr(resource_tracker_licensed_items_purchases.c, order_by.field)
-            )
+            ),
+            resource_tracker_licensed_items_purchases.c.licensed_item_purchase_id,
         )
     list_query = list_query.offset(offset).limit(limit)
 
@@ -158,11 +166,12 @@ async def get(
         return LicensedItemsPurchasesDB.model_validate(row)
 
 
-async def get_active_purchased_seats_for_item_and_wallet(
+async def get_active_purchased_seats_for_key_version_wallet(
     engine: AsyncEngine,
     connection: AsyncConnection | None = None,
     *,
-    licensed_item_id: LicensedItemID,
+    key: str,
+    version: str,
     wallet_id: WalletID,
     product_name: ProductName,
 ) -> int:
@@ -175,9 +184,11 @@ async def get_active_purchased_seats_for_item_and_wallet(
         sa.func.sum(resource_tracker_licensed_items_purchases.c.num_of_seats)
     ).where(
         (resource_tracker_licensed_items_purchases.c.wallet_id == wallet_id)
+        & (resource_tracker_licensed_items_purchases.c.key == key)
+        # If purchased version >= requested version, it covers that version
         & (
-            resource_tracker_licensed_items_purchases.c.licensed_item_id
-            == licensed_item_id
+            db_utils.version(resource_tracker_licensed_items_purchases.c.version)
+            >= db_utils.version(version)
         )
         & (resource_tracker_licensed_items_purchases.c.product_name == product_name)
         & (resource_tracker_licensed_items_purchases.c.start_at <= _current_time)

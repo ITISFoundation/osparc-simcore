@@ -363,6 +363,7 @@ async function openNodeFilesAppMode(page) {
 
 async function checkDataProducedByNode(page, nFiles = 1) {
   console.log("checking Data produced by Node. Expecting", nFiles, "file(s)");
+  await utils.waitAndClick(page, '[osparc-test-id="folderGridView"]');
   const iconsContent = await page.waitForSelector('[osparc-test-id="FolderViewerIconsContent"]', {
     timeout: 5000
   });

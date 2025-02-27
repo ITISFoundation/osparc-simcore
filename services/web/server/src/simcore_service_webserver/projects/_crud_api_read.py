@@ -5,6 +5,9 @@ Read operations are list, get
 
 """
 
+from collections.abc import Coroutine
+from typing import Any
+
 from aiohttp import web
 from models_library.folders import FolderID, FolderQuery, FolderScope
 from models_library.projects import ProjectID
@@ -15,59 +18,71 @@ from pydantic import NonNegativeInt
 from servicelib.utils import logged_gather
 from simcore_postgres_database.models.projects import ProjectType
 from simcore_postgres_database.webserver_models import ProjectType as ProjectTypeDB
-from simcore_service_webserver.projects._projects_db import (
-    batch_get_trashed_by_primary_gid,
-)
 
 from ..catalog.client import get_services_for_user_in_product
-from ..folders import _folders_repository as _folders_repository
+from ..folders import _folders_repository
 from ..workspaces._workspaces_service import check_user_workspace_access
 from . import projects_service
-from ._permalink_api import update_or_pop_permalink_in_project
+from ._projects_db import batch_get_trashed_by_primary_gid
 from .db import ProjectDBAPI
 from .models import ProjectDict, ProjectTypeAPI
 
 
-async def _update_project_dict(
-    request: web.Request,
+def _batch_update(
+    key: str,
+    value_per_object: list[Any],
+    objects: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    for obj, value in zip(objects, value_per_object, strict=True):
+        obj[key] = value
+    return objects
+
+
+async def _paralell_update(*update_per_object: Coroutine) -> list[Any]:
+    return await logged_gather(
+        *update_per_object,
+        reraise=True,
+        max_concurrency=100,
+    )
+
+
+async def _aggregate_data_to_projects_from_other_sources(
+    app: web.Application,
     *,
+    db_projects: list[ProjectDict],
+    db_project_types: list[ProjectTypeDB],
     user_id: UserID,
-    project: ProjectDict,
-    is_template: bool,
-) -> ProjectDict:
-    # state
-    await projects_service.add_project_states_for_user(
-        user_id=user_id,
-        project=project,
-        is_template=is_template,
-        app=request.app,
-    )
-
-    # permalink
-    await update_or_pop_permalink_in_project(request, project)
-
-    return project
-
-
-async def _batch_update_list_of_project_dict(
-    app: web.Application, list_of_project_dict: list[ProjectDict]
 ) -> list[ProjectDict]:
-
-    # updating `trashed_by_primary_gid`
+    """
+    Aggregates data to each project from other sources, first as a batch-update and then as a parallel-update.
+    """
+    # updating `project.trashed_by_primary_gid`
     trashed_by_primary_gid_values = await batch_get_trashed_by_primary_gid(
-        app, projects_uuids=[ProjectID(p["uuid"]) for p in list_of_project_dict]
+        app, projects_uuids=[ProjectID(p["uuid"]) for p in db_projects]
     )
 
-    for project_dict, value in zip(
-        list_of_project_dict, trashed_by_primary_gid_values, strict=True
-    ):
-        project_dict.update(trashed_by_primary_gid=value)
+    _batch_update("trashed_by_primary_gid", trashed_by_primary_gid_values, db_projects)
 
-    return list_of_project_dict
+    # udpating `project.state`
+    update_state_per_project = [
+        projects_service.add_project_states_for_user(
+            user_id=user_id,
+            project=prj,
+            is_template=prj_type == ProjectTypeDB.TEMPLATE,
+            app=app,
+        )
+        for prj, prj_type in zip(db_projects, db_project_types, strict=False)
+    ]
+
+    updated_projects: list[ProjectDict] = await _paralell_update(
+        *update_state_per_project,
+    )
+
+    return updated_projects
 
 
 async def list_projects(  # pylint: disable=too-many-arguments
-    request: web.Request,
+    app: web.Application,
     user_id: UserID,
     product_name: str,
     *,
@@ -87,7 +102,6 @@ async def list_projects(  # pylint: disable=too-many-arguments
     # ordering
     order_by: OrderBy,
 ) -> tuple[list[ProjectDict], int]:
-    app = request.app
     db = ProjectDBAPI.get_from_app_context(app)
 
     user_available_services: list[dict] = await get_services_for_user_in_product(
@@ -145,27 +159,15 @@ async def list_projects(  # pylint: disable=too-many-arguments
         order_by=order_by,
     )
 
-    db_projects = await _batch_update_list_of_project_dict(app, db_projects)
-
-    projects: list[ProjectDict] = await logged_gather(
-        *(
-            _update_project_dict(
-                request,
-                user_id=user_id,
-                project=prj,
-                is_template=prj_type == ProjectTypeDB.TEMPLATE,
-            )
-            for prj, prj_type in zip(db_projects, db_project_types, strict=False)
-        ),
-        reraise=True,
-        max_concurrency=100,
+    projects = await _aggregate_data_to_projects_from_other_sources(
+        app, db_projects=db_projects, db_project_types=db_project_types, user_id=user_id
     )
 
     return projects, total_number_projects
 
 
 async def list_projects_full_depth(
-    request,
+    app: web.Application,
     *,
     user_id: UserID,
     product_name: str,
@@ -180,10 +182,10 @@ async def list_projects_full_depth(
     search_by_multi_columns: str | None,
     search_by_project_name: str | None,
 ) -> tuple[list[ProjectDict], int]:
-    db = ProjectDBAPI.get_from_app_context(request.app)
+    db = ProjectDBAPI.get_from_app_context(app)
 
     user_available_services: list[dict] = await get_services_for_user_in_product(
-        request.app, user_id, product_name, only_key_versions=True
+        app, user_id, product_name, only_key_versions=True
     )
 
     db_projects, db_project_types, total_number_projects = await db.list_projects_dicts(
@@ -202,30 +204,8 @@ async def list_projects_full_depth(
         order_by=order_by,
     )
 
-    db_projects = await _batch_update_list_of_project_dict(request.app, db_projects)
-
-    projects: list[ProjectDict] = await logged_gather(
-        *(
-            _update_project_dict(
-                request,
-                user_id=user_id,
-                project=prj,
-                is_template=prj_type == ProjectTypeDB.TEMPLATE,
-            )
-            for prj, prj_type in zip(db_projects, db_project_types, strict=False)
-        ),
-        reraise=True,
-        max_concurrency=100,
+    projects = await _aggregate_data_to_projects_from_other_sources(
+        app, db_projects=db_projects, db_project_types=db_project_types, user_id=user_id
     )
 
     return projects, total_number_projects
-
-
-async def get_project(
-    request: web.Request,
-    user_id: UserID,
-    product_name: str,
-    project_uuid: ProjectID,
-    project_type: ProjectTypeAPI,
-):
-    raise NotImplementedError

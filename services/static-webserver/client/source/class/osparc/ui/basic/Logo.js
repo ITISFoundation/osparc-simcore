@@ -32,6 +32,8 @@ qx.Class.define("osparc.ui.basic.Logo", {
 
     this.__resetSourcePath();
 
+    osparc.utils.Utils.setAltToImage(this, "product-logo");
+
     const themeManager = qx.theme.manager.Meta.getInstance();
     themeManager.addListener("changeTheme", () => this.__resetSourcePath(), this);
 

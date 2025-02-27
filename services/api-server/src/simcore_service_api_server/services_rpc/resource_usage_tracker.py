@@ -44,6 +44,8 @@ class ResourceUsageTrackerClient(SingletonInAppStateMixin):
         return LicensedItemCheckoutGet(
             licensed_item_checkout_id=_licensed_item_checkout.licensed_item_checkout_id,
             licensed_item_id=_licensed_item_checkout.licensed_item_id,
+            key=_licensed_item_checkout.key,
+            version=_licensed_item_checkout.version,
             wallet_id=_licensed_item_checkout.wallet_id,
             user_id=_licensed_item_checkout.user_id,
             product_name=_licensed_item_checkout.product_name,

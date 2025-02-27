@@ -45,7 +45,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
     "locationChanged": "qx.event.type.Data",
     "workspaceUpdated": "qx.event.type.Data",
     "deleteWorkspaceRequested": "qx.event.type.Data",
-    "emptyTrashRequested": "qx.event.type.Event",
+    "trashEmptied": "qx.event.type.Event",
   },
 
   properties: {
@@ -193,13 +193,28 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
           break;
         }
         case "empty-trash-button": {
-          control = new qx.ui.form.Button(this.tr("Empty Bin"), "@FontAwesome5Solid/trash/14").set({
+          control = new osparc.ui.form.FetchButton(this.tr("Delete all"), "@FontAwesome5Solid/trash/14").set({
             appearance: "danger-button",
             allowGrowY: false,
             alignY: "middle",
-            visibility: "excluded", // Not yet implemented
           });
-          control.addListener("execute", () => this.fireEvent("emptyTrashRequested"));
+          control.addListener("execute", () => {
+            const win = this.__createConfirmEmptyTrashWindow();
+            win.center();
+            win.open();
+            win.addListener("close", () => {
+              control.setFetching(true);
+              if (win.getConfirmed()) {
+                osparc.data.Resources.fetch("trash", "delete")
+                  .then(() => {
+                    this.fireEvent("trashEmptied")
+                  })
+                  .finally(() => control.setFetching(false));
+              } else {
+                control.setFetching(false)
+              }
+            }, this);
+          });
           this._addAt(control, this.self().POS.EMPTY_TRASH_BUTTON);
           break;
         }
@@ -208,14 +223,26 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
       return control || this.base(arguments, id);
     },
 
-    __titleTapped: function() {
-      const workspaceId = this.getCurrentWorkspaceId();
-      const folderId = null;
-      this.setCurrentFolderId(folderId);
-      this.fireDataEvent("locationChanged", {
-        workspaceId,
-        folderId,
+    __createConfirmEmptyTrashWindow: function() {
+      const msg = this.tr("All items will be permanently deleted");
+      const confirmationWin = new osparc.ui.window.Confirmation(msg).set({
+        caption: this.tr("Delete"),
+        confirmText: this.tr("Delete permanently"),
+        confirmAction: "delete"
       });
+      return confirmationWin;
+    },
+
+    __titleTapped: function() {
+      if (osparc.store.Store.getInstance().getStudyBrowserContext() === "studiesAndFolders") {
+        const workspaceId = this.getCurrentWorkspaceId();
+        const folderId = null;
+        this.setCurrentFolderId(folderId);
+        this.fireDataEvent("locationChanged", {
+          workspaceId,
+          folderId,
+        });
+      }
     },
 
     __buildLayout: function() {
@@ -276,10 +303,10 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
           break;
         case "trash": {
           this.__setIcon("@FontAwesome5Solid/trash/20");
-          title.setValue(this.tr("Bin"));
+          title.setValue(this.tr("Recently Deleted"));
           const trashDays = osparc.store.StaticInfo.getInstance().getTrashRetentionDays();
           description.set({
-            value: this.tr(`Items in the Bin will be permanently deleted after ${trashDays} days.`),
+            value: this.tr(`Items here will be permanently deleted after ${trashDays} days.`),
             visibility: "visible",
           });
           break;

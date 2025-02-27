@@ -79,6 +79,10 @@ class ProjectDeleteError(BaseProjectError):
         self.reason = reason
 
 
+class ProjectsBatchDeleteError(BaseProjectError):
+    msg_template = "One or more projects could not be deleted in the batch: {errors}"
+
+
 class ProjectTrashError(BaseProjectError):
     ...
 
@@ -90,6 +94,12 @@ class ProjectStoppingError(ProjectTrashError):
 class ProjectRunningConflictError(ProjectTrashError):
     msg_template = (
         "Cannot trash running project '{project_uuid}' except if forced option is on"
+    )
+
+
+class ProjectNotTrashedError(ProjectTrashError):
+    msg_template = (
+        "Cannot delete project {project_uuid} since it was not trashed first: {reason}"
     )
 
 
