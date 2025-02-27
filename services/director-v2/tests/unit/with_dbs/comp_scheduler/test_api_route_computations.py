@@ -31,8 +31,8 @@ from models_library.api_schemas_directorv2.comp_tasks import (
 )
 from models_library.api_schemas_directorv2.services import ServiceExtras
 from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
-    PricingPlanGet,
-    PricingUnitGet,
+    RutPricingPlanGet,
+    RutPricingUnitGet,
 )
 from models_library.projects import ProjectAtDB
 from models_library.projects_nodes import NodeID, NodeState
@@ -280,22 +280,25 @@ def mocked_catalog_service_fcts_deprecated(
         yield respx_mock
 
 
-assert "json_schema_extra" in PricingPlanGet.model_config
-assert isinstance(PricingPlanGet.model_config["json_schema_extra"], dict)
-assert isinstance(PricingPlanGet.model_config["json_schema_extra"]["examples"], list)
+assert "json_schema_extra" in RutPricingPlanGet.model_config
+assert isinstance(RutPricingPlanGet.model_config["json_schema_extra"], dict)
+assert isinstance(RutPricingPlanGet.model_config["json_schema_extra"]["examples"], list)
 
 
 @pytest.fixture(
-    params=PricingPlanGet.model_config["json_schema_extra"]["examples"],
+    params=[
+        RutPricingPlanGet.model_config["json_schema_extra"]["examples"][0],
+        RutPricingPlanGet.model_config["json_schema_extra"]["examples"][1],
+    ],
     ids=["with ec2 restriction", "without"],
 )
-def default_pricing_plan(request: pytest.FixtureRequest) -> PricingPlanGet:
-    return PricingPlanGet(**request.param)
+def default_pricing_plan(request: pytest.FixtureRequest) -> RutPricingPlanGet:
+    return RutPricingPlanGet(**request.param)
 
 
 @pytest.fixture
 def default_pricing_plan_aws_ec2_type(
-    default_pricing_plan: PricingPlanGet,
+    default_pricing_plan: RutPricingPlanGet,
 ) -> str | None:
     assert default_pricing_plan.pricing_units
     for p in default_pricing_plan.pricing_units:
@@ -310,7 +313,7 @@ def default_pricing_plan_aws_ec2_type(
 
 @pytest.fixture
 def mocked_resource_usage_tracker_service_fcts(
-    minimal_app: FastAPI, default_pricing_plan: PricingPlanGet
+    minimal_app: FastAPI, default_pricing_plan: RutPricingPlanGet
 ) -> Iterator[respx.MockRouter]:
     def _mocked_service_default_pricing_plan(
         request, service_key: str, service_version: str
@@ -325,10 +328,10 @@ def mocked_resource_usage_tracker_service_fcts(
         )
 
     def _mocked_get_pricing_unit(request, pricing_plan_id: int) -> httpx.Response:
-        assert "json_schema_extra" in PricingUnitGet.model_config
-        assert isinstance(PricingUnitGet.model_config["json_schema_extra"], dict)
+        assert "json_schema_extra" in RutPricingUnitGet.model_config
+        assert isinstance(RutPricingUnitGet.model_config["json_schema_extra"], dict)
         assert isinstance(
-            PricingUnitGet.model_config["json_schema_extra"]["examples"], list
+            RutPricingUnitGet.model_config["json_schema_extra"]["examples"], list
         )
         return httpx.Response(
             200,
@@ -336,7 +339,9 @@ def mocked_resource_usage_tracker_service_fcts(
                 (
                     default_pricing_plan.pricing_units[0]
                     if default_pricing_plan.pricing_units
-                    else PricingUnitGet.model_config["json_schema_extra"]["examples"][0]
+                    else RutPricingUnitGet.model_config["json_schema_extra"][
+                        "examples"
+                    ][0]
                 ),
                 by_alias=True,
             ),
@@ -590,8 +595,8 @@ async def test_create_computation_with_wallet(
 @pytest.mark.parametrize(
     "default_pricing_plan",
     [
-        PricingPlanGet.model_validate(
-            PricingPlanGet.model_config["json_schema_extra"]["examples"][0]
+        RutPricingPlanGet.model_validate(
+            RutPricingPlanGet.model_config["json_schema_extra"]["examples"][0]
         )
     ],
 )
@@ -632,8 +637,8 @@ async def test_create_computation_with_wallet_with_invalid_pricing_unit_name_rai
 @pytest.mark.parametrize(
     "default_pricing_plan",
     [
-        PricingPlanGet(
-            **PricingPlanGet.model_config["json_schema_extra"]["examples"][0]  # type: ignore
+        RutPricingPlanGet(
+            **RutPricingPlanGet.model_config["json_schema_extra"]["examples"][0]  # type: ignore
         )
     ],
 )

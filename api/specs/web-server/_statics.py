@@ -8,7 +8,7 @@ from typing import Any
 
 from fastapi import APIRouter
 from fastapi.responses import HTMLResponse
-from simcore_service_webserver._constants import INDEX_RESOURCE_NAME
+from simcore_service_webserver.constants import INDEX_RESOURCE_NAME
 from simcore_service_webserver.statics.settings import FrontEndInfoDict
 
 router = APIRouter(

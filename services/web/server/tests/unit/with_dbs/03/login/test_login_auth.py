@@ -14,7 +14,7 @@ from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import NewUser
 from servicelib.aiohttp import status
 from settings_library.utils_session import DEFAULT_SESSION_COOKIE_NAME
-from simcore_service_webserver._constants import APP_SETTINGS_KEY
+from simcore_service_webserver.constants import APP_SETTINGS_KEY
 from simcore_service_webserver.db.models import UserStatus
 from simcore_service_webserver.login._constants import (
     MSG_ACTIVATION_REQUIRED,

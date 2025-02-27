@@ -2,7 +2,7 @@ import functools
 
 from aiohttp import web
 from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
-    PricingPlanGet,
+    RutPricingPlanGet,
 )
 from models_library.api_schemas_webserver.resource_usage import (
     ConnectServiceToPricingPlanBodyParams,
@@ -33,6 +33,9 @@ from servicelib.aiohttp.requests_validation import (
 from servicelib.aiohttp.typing_extension import Handler
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.rabbitmq._errors import RPCServerError
+from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
+    PricingUnitDuplicationError,
+)
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
 from .._meta import API_VTAG as VTAG
@@ -53,6 +56,9 @@ def _handle_pricing_plan_admin_exceptions(handler: Handler):
     async def wrapper(request: web.Request) -> web.StreamResponse:
         try:
             return await handler(request)
+
+        except (ValueError, PricingUnitDuplicationError) as exc:
+            raise web.HTTPBadRequest(reason=f"{exc}") from exc
 
         except RPCServerError as exc:
             # NOTE: This will be improved; we will add a mapping between
@@ -85,12 +91,14 @@ async def list_pricing_plans_for_admin_user(request: web.Request):
         PageQueryParameters, request
     )
 
-    pricing_plan_page = await pricing_plans_admin_service.list_pricing_plans(
-        app=request.app,
-        product_name=req_ctx.product_name,
-        exclude_inactive=False,
-        offset=query_params.offset,
-        limit=query_params.limit,
+    pricing_plan_page = (
+        await pricing_plans_admin_service.list_pricing_plans_without_pricing_units(
+            app=request.app,
+            product_name=req_ctx.product_name,
+            exclude_inactive=False,
+            offset=query_params.offset,
+            limit=query_params.limit,
+        )
     )
     webserver_pricing_plans = [
         PricingPlanAdminGet(
@@ -121,7 +129,9 @@ async def list_pricing_plans_for_admin_user(request: web.Request):
     )
 
 
-def pricing_plan_get_to_admin(pricing_plan_get: PricingPlanGet) -> PricingPlanAdminGet:
+def pricing_plan_get_to_admin(
+    pricing_plan_get: RutPricingPlanGet,
+) -> PricingPlanAdminGet:
     """
     Convert a PricingPlanGet object into a PricingPlanAdminGet object.
     """

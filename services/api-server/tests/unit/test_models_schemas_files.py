@@ -83,7 +83,7 @@ async def test_create_filemetadata_from_starlette_uploadfile(
 
 def test_convert_between_file_models():
     storage_file_meta = StorageFileMetaData(
-        **StorageFileMetaData.model_config["json_schema_extra"]["examples"][1]
+        **StorageFileMetaData.model_json_schema()["examples"][1]
     )
     storage_file_meta.file_id = TypeAdapter(StorageFileID).validate_python(
         f"api/{uuid4()}/extensionless"
