@@ -508,7 +508,7 @@ async def _assert_compute_path_total_size(
     *,
     path: Path,
     expected_total_size: int,
-) -> None:
+) -> ByteSize:
     url = url_from_operation_id(
         client,
         initialized_app,
@@ -526,6 +526,7 @@ async def _assert_compute_path_total_size(
     assert received
     assert received.path == path
     assert received.size == expected_total_size
+    return received.size
 
 
 @pytest.mark.parametrize(
@@ -618,7 +619,7 @@ async def test_path_compute_size(
     expected_total_size = project_params.allowed_file_sizes[0] * len(
         selected_node_s3_keys
     )
-    await _assert_compute_path_total_size(
+    workspace_total_size = await _assert_compute_path_total_size(
         initialized_app,
         client,
         location_id,
@@ -626,3 +627,30 @@ async def test_path_compute_size(
         path=path,
         expected_total_size=expected_total_size,
     )
+
+    # get size of folders inside the workspace
+    folders_inside_workspace = [
+        p[0]
+        for p in _filter_and_group_paths_one_level_deeper(selected_node_s3_keys, path)
+        if p[1] is False
+    ]
+    accumulated_subfolder_size = 0
+    for workspace_subfolder in folders_inside_workspace:
+        selected_node_s3_keys = [
+            Path(s3_object_id)
+            for s3_object_id in list_of_files[selected_node_id]
+            if s3_object_id.startswith(f"{workspace_subfolder}")
+        ]
+        expected_total_size = project_params.allowed_file_sizes[0] * len(
+            selected_node_s3_keys
+        )
+        accumulated_subfolder_size += await _assert_compute_path_total_size(
+            initialized_app,
+            client,
+            location_id,
+            user_id,
+            path=workspace_subfolder,
+            expected_total_size=expected_total_size,
+        )
+
+    assert workspace_total_size == accumulated_subfolder_size
