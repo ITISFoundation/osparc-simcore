@@ -3,10 +3,9 @@
 # pylint: disable=unused-variable
 
 from collections.abc import Callable
-from datetime import timedelta
+from datetime import datetime, timedelta
 from typing import Any
 
-import arrow
 import pytest
 from fastapi import FastAPI
 from models_library.api_schemas_catalog.services import MyServiceGet
@@ -179,7 +178,9 @@ async def test_batch_get_my_services(
     other_service_key = "simcore/services/comp/other-service"
     other_service_version = "2.0.0"
 
-    expected_retirement = arrow.now().datetime + timedelta(days=1)
+    expected_retirement = datetime.utcnow() + timedelta(
+        days=1
+    )  # NOTE: old offset-naive column
 
     fake_service_1 = create_fake_service_data(
         service_key,
@@ -224,11 +225,6 @@ async def test_batch_get_my_services(
     # assert returned order and length as ids
     assert services_ids == [(sc.key, sc.release.version) for sc in my_services]
 
-    assert my_services[1].release.retired is None
-    assert my_services[2].release.compatibility is None  # nothing to update
-
-    released = my_services[1].release
-
     assert my_services == TypeAdapter(list[MyServiceGet]).validate_python(
         [
             {
@@ -236,7 +232,7 @@ async def test_batch_get_my_services(
                 "release": {
                     "version": "1.0.0",
                     "version_display": None,
-                    "released": released,
+                    "released": my_services[0].release.released,
                     "retired": expected_retirement,
                     "compatibility": {
                         "can_update_to": {"version": "1.0.1"}
@@ -250,7 +246,7 @@ async def test_batch_get_my_services(
                 "release": {
                     "version": "2.0.0",
                     "version_display": None,
-                    "released": released,
+                    "released": my_services[1].release.released,
                     "retired": None,
                     "compatibility": None,  # cannot be updated
                 },
