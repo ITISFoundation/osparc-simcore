@@ -128,6 +128,7 @@ qx.Class.define("osparc.file.FolderViewer", {
             marginLeft: 10,
             marginRight: 10
           });
+          control.bind("value", control, "toolTipText");
           header.addAt(control, 1, {
             flex: 1
           });
