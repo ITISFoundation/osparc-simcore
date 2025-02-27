@@ -93,9 +93,9 @@ qx.Class.define("osparc.data.Converters", {
 
     pathToDatasetId: function(path) {
       const splitted = path.split("/");
-      if (splitted.length > 1) {
+      if (splitted.length > 0) {
         // simcore: studyId + nodeId + fileId
-        // datcore: datasetId + packageId
+        // datcore: datasetId
         return splitted[0];
       }
       return null;
