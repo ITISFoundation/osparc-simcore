@@ -253,6 +253,25 @@ class SimcoreS3DataManager(BaseDataManager):
 
     async def compute_path_total_size(self, user_id: UserID, *, path: Path) -> ByteSize:
         """returns the total size of the path"""
+        project_id = None
+        node_id = None
+        with contextlib.suppress(ValueError):
+            # NOTE: we currently do not support anything else than project_id/node_id/file_path here, sorry chap
+            project_id = ProjectID(path.parts[0])
+            if len(path.parts) > 1:
+                node_id = NodeID(path.parts[1])
+        async with self.engine.connect() as conn:
+            if project_id:
+                project_access_rights = await get_project_access_rights(
+                    conn=conn, user_id=user_id, project_id=project_id
+                )
+                if not project_access_rights.read:
+                    raise ProjectAccessRightError(
+                        access_right="read", project_id=project_id
+                    )
+                accessible_projects_ids = [project_id]
+            else:
+                accessible_projects_ids = await get_readable_project_ids(conn, user_id)
         return 0
 
     async def list_files(
