@@ -263,7 +263,9 @@ class SimcoreS3DataManager(BaseDataManager):
 
         use_db_data = True
         with contextlib.suppress(ValidationError):
-            file_id = TypeAdapter(StorageFileID).validate_python(f"{path}")
+            file_id: StorageFileID = TypeAdapter(StorageFileID).validate_python(
+                f"{path}"
+            )
             # path is a valid StorageFileID
             async with self.engine.connect() as conn:
                 if (
@@ -297,7 +299,7 @@ class SimcoreS3DataManager(BaseDataManager):
         updated_fmds = []
         for metadata in fmds:
             if is_file_entry_valid(metadata):
-                updated_fmds.append(metadata)
+                updated_fmds.append(convert_db_to_model(metadata))
                 continue
             updated_fmds.append(
                 convert_db_to_model(await self._update_database_from_storage(metadata))
@@ -408,6 +410,12 @@ class SimcoreS3DataManager(BaseDataManager):
         # get file from storage if available
         fmd = await self._update_database_from_storage(fmd)
         return convert_db_to_model(fmd)
+
+    async def can_read_file(self, user_id: UserID, file_id: StorageFileID):
+        async with self.engine.connect() as conn:
+            can = await get_file_access_rights(conn, int(user_id), file_id)
+            if not can.read:
+                raise FileAccessRightError(access_right="read", file_id=file_id)
 
     async def create_file_upload_links(
         self,
