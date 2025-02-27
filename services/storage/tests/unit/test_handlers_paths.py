@@ -550,7 +550,7 @@ async def _assert_compute_path_total_size(
     user_id: UserID,
     *,
     path: Path,
-    expected_total_size: ByteSize,
+    expected_total_size: int,
 ) -> None:
     url = url_from_operation_id(
         client,
