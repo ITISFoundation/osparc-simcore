@@ -11,7 +11,6 @@ from models_library.api_schemas_storage.storage_schemas import (
 )
 from models_library.generics import Envelope
 from models_library.users import UserID
-from pydantic import ByteSize
 
 from ...dsm_factory import BaseDataManager
 from .dependencies.dsm_prodiver import get_data_manager
@@ -60,5 +59,7 @@ async def compute_path_total_size(
     path: Path,
 ):
     return Envelope[PathTotalSizeCreate](
-        data=PathTotalSizeCreate(path=path, size=ByteSize(238723))
+        data=PathTotalSizeCreate(
+            path=path, size=await dsm.compute_path_total_size(user_id, path=path)
+        )
     )
