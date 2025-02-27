@@ -92,7 +92,7 @@ class CeleryTaskQueueClient:
             progress_report=self._get_progress_report(task_context, task_uuid),
         )
 
-    def _get_completed_task_ids(self, task_context: TaskContext) -> set[TaskUUID]:
+    def _get_completed_task_uuids(self, task_context: TaskContext) -> set[TaskUUID]:
         search_key = (
             _CELERY_TASK_META_PREFIX + _build_task_id_prefix(task_context) + "*"
         )
@@ -106,7 +106,7 @@ class CeleryTaskQueueClient:
 
     @make_async()
     def get_task_uuids(self, task_context: TaskContext) -> set[TaskUUID]:
-        all_task_ids = self._get_completed_task_ids(task_context)
+        all_task_ids = self._get_completed_task_uuids(task_context)
 
         for task_inspect_status in _CELERY_INSPECT_TASK_STATUSES:
             if task_ids := getattr(
