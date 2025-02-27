@@ -41,8 +41,8 @@ qx.Class.define("osparc.data.Converters", {
         displayPath = "Unknown label";
       }
       return {
-        label: displayPath.split("/").slice(-1).pop(), // take last part of the display name
-        displayPath,
+        label: this.displayPathToLabel(displayPath, { last: true }),
+        displayPath: decodeURIComponent(displayPath),
         location,
         path,
         itemId: path,
@@ -52,8 +52,8 @@ qx.Class.define("osparc.data.Converters", {
 
     createFileEntry: function(displayPath, location, path, fileMetaData) {
       return {
-        label: displayPath.split("/").slice(-1).pop(), // take last part of the display name
-        displayPath,
+        label: this.displayPathToLabel(displayPath, { last: true }),
+        displayPath: decodeURIComponent(displayPath),
         location,
         path,
         itemId: path,

@@ -76,6 +76,12 @@ qx.Class.define("osparc.file.FileTreeItem", {
       nullable: true
     },
 
+    label: {
+      check: "String",
+      event: "changeLabel",
+      nullable: true
+    },
+
     pathLabel: {
       check: "Array",
       event: "changePathLabel",
