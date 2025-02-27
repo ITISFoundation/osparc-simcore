@@ -100,7 +100,7 @@ qx.Class.define("osparc.file.FilesTree", {
         location: null,
         path: null,
         children: [],
-        icon: "@FontAwesome5Solid/circle-notch/12"
+        icon: "@FontAwesome5Solid/circle-notch/12",
       }, true);
       parent.getChildren().append(loadingModel);
     },
