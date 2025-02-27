@@ -3,14 +3,17 @@
 # pylint: disable=unused-variable
 
 from collections.abc import Callable
+from datetime import timedelta
 from typing import Any
 
+import arrow
 import pytest
 from fastapi import FastAPI
+from models_library.api_schemas_catalog.services import MyServiceGet
 from models_library.products import ProductName
-from models_library.services_access import ServiceGroupAccessRightsV2
-from models_library.services_history import CompatibleService
 from models_library.users import UserID
+from pydantic import TypeAdapter
+from pytest_simcore.helpers.catalog_services import CreateFakeServiceDataCallable
 from respx.router import MockRouter
 from simcore_service_catalog.api.dependencies.director import get_director_api
 from simcore_service_catalog.db.repositories.groups import GroupsRepository
@@ -162,7 +165,7 @@ async def test_batch_get_my_services(
     groups_repo: GroupsRepository,
     user_id: UserID,
     user: dict[str, Any],
-    create_fake_service_data: Callable,
+    create_fake_service_data: CreateFakeServiceDataCallable,
     services_db_tables_injector: Callable,
 ):
     # catalog
@@ -173,12 +176,15 @@ async def test_batch_get_my_services(
     other_service_key = "simcore/services/comp/other-service"
     other_service_version = "2.0.0"
 
+    expected_retirement = arrow.now().datetime + timedelta(days=1)
+
     fake_service_1 = create_fake_service_data(
         service_key,
         service_version_1,
         team_access=None,
         everyone_access=None,
         product=target_product,
+        deprecated=expected_retirement,
     )
     fake_service_2 = create_fake_service_data(
         service_key,
@@ -215,23 +221,38 @@ async def test_batch_get_my_services(
     # assert returned order and length as ids
     assert services_ids == [(sc.key, sc.release.version) for sc in my_services]
 
-    # assert access: owns them
-    assert my_services[0].my_access_rights == ServiceGroupAccessRightsV2(
-        execute=True, write=True
-    )
-    assert my_services[0].owner == user["primary_gid"]
-
-    assert my_services[1].my_access_rights == ServiceGroupAccessRightsV2(
-        execute=True, write=True
-    )
-    assert my_services[1].owner == user["primary_gid"]
-
-    # assert status: first can be updated but not second
-    assert my_services[0].release.retired is None
-    assert my_services[0].release.compatibility
-    assert my_services[0].release.compatibility.can_update_to == CompatibleService(
-        version=service_version_2
-    )  # can be updated
-
     assert my_services[1].release.retired is None
     assert my_services[2].release.compatibility is None  # nothing to update
+
+    released = my_services[1].release
+
+    assert my_services == TypeAdapter(list[MyServiceGet]).validate_python(
+        [
+            {
+                "key": "simcore/services/comp/some-service",
+                "release": {
+                    "version": "1.0.0",
+                    "version_display": None,
+                    "released": released,
+                    "retired": expected_retirement,
+                    "compatibility": {
+                        "can_update_to": {"version": "1.0.1"}
+                    },  # can be updated
+                },
+                "owner": user["primary_gid"],
+                "my_access_rights": {"execute": True, "write": True},  # full access
+            },
+            {
+                "key": "simcore/services/comp/other-service",
+                "release": {
+                    "version": "2.0.0",
+                    "version_display": None,
+                    "released": released,
+                    "retired": None,
+                    "compatibility": None,  # cannot be updated
+                },
+                "owner": user["primary_gid"],
+                "my_access_rights": {"execute": True, "write": True},  # full acces
+            },
+        ]
+    )

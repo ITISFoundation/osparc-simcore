@@ -8,7 +8,7 @@ import itertools
 from collections.abc import AsyncIterator, Awaitable, Callable
 from copy import deepcopy
 from datetime import datetime
-from typing import Any, Protocol
+from typing import Any
 
 import pytest
 import sqlalchemy as sa
@@ -18,6 +18,7 @@ from models_library.products import ProductName
 from models_library.services import ServiceMetaDataPublished
 from models_library.users import UserID
 from pydantic import ConfigDict, TypeAdapter
+from pytest_simcore.helpers.catalog_services import CreateFakeServiceDataCallable
 from pytest_simcore.helpers.faker_factories import (
     random_service_access_rights,
     random_service_meta_data,
@@ -354,25 +355,12 @@ async def service_metadata_faker(faker: Faker) -> Callable:
     return _fake_factory
 
 
-class CreateFakeServiceData(Protocol):
-    def __call__(
-        self,
-        key,
-        version,
-        team_access: str | None = None,
-        everyone_access: str | None = None,
-        product: ProductName = "osparc",
-        deprecated: datetime | None = None,
-    ):
-        ...
-
-
-@pytest.fixture()
+@pytest.fixture
 async def create_fake_service_data(
     user_groups_ids: list[int],
     products_names: list[str],
     faker: Faker,
-) -> Callable:
+) -> CreateFakeServiceDataCallable:
     """Returns a fake factory that creates catalog DATA that can be used to fill
     both services_meta_data and services_access_rights tables
 

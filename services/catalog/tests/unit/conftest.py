@@ -34,6 +34,7 @@ from simcore_service_catalog.core.settings import ApplicationSettings
 pytest_plugins = [
     "pytest_simcore.cli_runner",
     "pytest_simcore.docker_compose",
+    "pytest_simcore.simcore_catalog_service",
     "pytest_simcore.docker_registry",
     "pytest_simcore.docker_swarm",
     "pytest_simcore.environment_configs",
