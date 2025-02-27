@@ -75,6 +75,19 @@ qx.Class.define("osparc.data.Converters", {
         return "@MaterialIcons/insert_drive_file/15";
       }
       return "@MaterialIcons/arrow_right_alt/15";
-    }
+    },
+
+    displayPathToLabel: function(encodedDisplayPath, options) {
+      const parts = encodedDisplayPath.split("/");
+      const decodedParts = parts.map(decodeURIComponent);
+      if (options.first) {
+        return decodedParts[0];
+      } else if (options.last) {
+        return decodedParts[decodedParts.length-1];
+      } else if ("pos" in options && options["pos"] < decodedParts.length) {
+        return decodedParts[options["pos"]];
+      }
+      return decodedParts[0];
+    },
   }
 });

@@ -167,7 +167,7 @@ qx.Class.define("osparc.file.FilesTree", {
       return dataStore.getItemsByLocationAndPath(locationId, path)
         .then(items => {
           if (items.length) {
-            const studyName = items[0]["display_path"].split("/")[0];
+            const studyName = osparc.data.Converters.displayPathToLabel(items[0]["display_path"], { first: true });
             studyModel.setLabel(studyName);
           }
           this.__itemsToTree(locationId, path, items, studyModel);
@@ -385,7 +385,7 @@ qx.Class.define("osparc.file.FilesTree", {
         items.forEach(item => {
           if (item["file_meta_data"]) {
             const data = osparc.data.Converters.createFileEntry(
-              item["display_path"],
+              osparc.data.Converters.displayPathToLabel(item["display_path"], { last: true }),
               locationId,
               item["path"],
               item["file_meta_data"],
@@ -394,7 +394,7 @@ qx.Class.define("osparc.file.FilesTree", {
             parentModel.getChildren().append(model);
           } else {
             const data = osparc.data.Converters.createDirEntry(
-              item["display_path"],
+              osparc.data.Converters.displayPathToLabel(item["display_path"], { last: true }),
               locationId,
               item["path"]
             );
@@ -430,7 +430,7 @@ qx.Class.define("osparc.file.FilesTree", {
       let openThis = null;
       items.forEach(item => {
         const datasetData = osparc.data.Converters.createDirEntry(
-          item["display_path"],
+          osparc.data.Converters.displayPathToLabel(item["display_path"], { last: true }),
           locationId,
           item["path"]
         );
