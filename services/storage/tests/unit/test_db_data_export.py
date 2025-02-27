@@ -2,7 +2,7 @@
 # pylint: disable=W0613
 from collections.abc import Awaitable, Callable
 from pathlib import Path
-from typing import Any, Awaitable, Callable, Literal, NamedTuple
+from typing import Any, Literal, NamedTuple
 
 import pytest
 from faker import Faker
