@@ -13,15 +13,19 @@ import pytest
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from models_library.products import ProductName
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_login import NewUser, UserInfoDict
 from servicelib.aiohttp import status
+from servicelib.aiohttp.application_keys import APP_SETTINGS_KEY
 from simcore_service_webserver.api_keys import _repository as repo
 from simcore_service_webserver.api_keys._models import ApiKey
 from simcore_service_webserver.api_keys._service import (
     get_or_create_api_key,
     prune_expired_api_keys,
 )
+from simcore_service_webserver.application_settings import GarbageCollectorSettings
 from simcore_service_webserver.db.models import UserRole
 
 
@@ -215,3 +219,28 @@ async def test_get_not_existing_api_key(
 
     if not errors:
         assert data is None
+
+
+@pytest.fixture
+async def app_environment(
+    app_environment: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
+) -> EnvVarsDict:
+    webserver_garbage_collector = '{"GARBAGE_COLLECTOR_INTERVAL_S": 30, "GARBAGE_COLLECTOR_PRUNE_APIKEYS_INTERVAL_S": 1}'
+    monkeypatch.setenv("WEBSERVER_GARBAGE_COLLECTOR", webserver_garbage_collector)
+    return app_environment | {
+        "WEBSERVER_GARBAGE_COLLECTOR": webserver_garbage_collector
+    }
+
+
+async def test_prune_expired_api_keys_task_is_triggered(
+    app_environment: EnvVarsDict, mocker: MockerFixture, client: TestClient
+):
+    m = mocker.patch(
+        "simcore_service_webserver.api_keys._service._repository.prune_expired"
+    )
+    settings: GarbageCollectorSettings = client.server.app[  # type: ignore
+        APP_SETTINGS_KEY
+    ].WEBSERVER_GARBAGE_COLLECTOR
+    await asyncio.sleep(2 * settings.GARBAGE_COLLECTOR_PRUNE_APIKEYS_INTERVAL_S)
+    m.assert_called()
