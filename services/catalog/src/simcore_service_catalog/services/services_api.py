@@ -98,10 +98,10 @@ async def list_services_paginated(
 
     if services:
         # injects access-rights
-        access_rights: dict[
-            tuple[str, str], list[ServiceAccessRightsAtDB]
-        ] = await repo.batch_get_services_access_rights(
-            ((s.key, s.version) for s in services), product_name=product_name
+        access_rights: dict[tuple[str, str], list[ServiceAccessRightsAtDB]] = (
+            await repo.batch_get_services_access_rights(
+                ((s.key, s.version) for s in services), product_name=product_name
+            )
         )
         if not access_rights:
             raise CatalogForbiddenError(
@@ -143,19 +143,10 @@ async def list_services_paginated(
         )
     ]
 
-    def _get_release(item: ServiceGetV2) -> ServiceRelease:
-        for rs in item.history:
-            if rs.version == item.version:
-                return rs
-        return ServiceRelease(
-            version=item.version, version_display=item.version_display, released=None
-        )
-
     return total_count, [
         ServiceItemList.model_validate(
             {
                 **it.model_dump(exclude_unset=True, by_alias=True),
-                "release": _get_release(it),
             }
         )
         for it in items

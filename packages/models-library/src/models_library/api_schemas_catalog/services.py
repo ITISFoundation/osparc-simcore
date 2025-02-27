@@ -289,7 +289,6 @@ class ServiceGetV2(_BaseServiceGetV2):
 
 
 class ServiceItemList(_BaseServiceGetV2):
-    release: ServiceRelease
     history: Annotated[
         list[ServiceRelease],
         Field(

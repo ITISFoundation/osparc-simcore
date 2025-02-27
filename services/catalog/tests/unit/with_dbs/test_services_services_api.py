@@ -152,7 +152,7 @@ async def test_list_services_paginated(
             service_version=item.version,
         )
 
-        assert got.model_dump() == item.model_dump(exclude={"release"})
+        assert got.model_dump() == item.model_dump()
 
     # since it is cached, it should only call it `limit` times
     assert mocked_director_service_api["get_service"].call_count == limit
