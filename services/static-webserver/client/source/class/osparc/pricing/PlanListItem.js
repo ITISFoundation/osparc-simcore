@@ -120,7 +120,6 @@ qx.Class.define("osparc.pricing.PlanListItem", {
           control = new qx.ui.basic.Label().set({
             font: "text-14",
             alignY: "middle",
-            width: 35,
           });
           this._add(control, {
             row: 0,
@@ -132,7 +131,6 @@ qx.Class.define("osparc.pricing.PlanListItem", {
           control = new qx.ui.basic.Label().set({
             font: "text-14",
             alignY: "middle",
-            width: 80,
           });
           this._add(control, {
             row: 0,
@@ -164,7 +162,6 @@ qx.Class.define("osparc.pricing.PlanListItem", {
           control = new qx.ui.basic.Label().set({
             font: "text-14",
             alignY: "middle",
-            width: 60,
           });
           this.bind("classification", control, "value");
           this._add(control, {
