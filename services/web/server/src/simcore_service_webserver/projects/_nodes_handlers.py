@@ -469,7 +469,7 @@ class _ProjectGroupAccess(BaseModel):
 
 @routes.get(
     f"/{VTAG}/projects/{{project_id}}/nodes/-/services",
-    name="get_project_services_access_for_gid",
+    name="get_project_services",
 )
 @login_required
 @permission_required("project.read")
@@ -483,7 +483,10 @@ async def get_project_services(request: web.Request) -> web.Response:
     # and fill services_in_project
 
     services: list[MyServiceGet] = await catalog_service.batch_get_my_services(
-        request.app, user_id=req_ctx.user_id, services_ids=services_in_project
+        request.app,
+        product_name=req_ctx.product_name,
+        user_id=req_ctx.user_id,
+        services_ids=services_in_project,
     )
 
     return envelope_json_response(

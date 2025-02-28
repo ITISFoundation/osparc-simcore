@@ -6,7 +6,7 @@ from models_library.projects import ProjectID
 from models_library.services_history import ServiceRelease
 from pydantic import ConfigDict, Field
 
-from ..access_rights import AccessRights
+from ..access_rights import ExecutableAccessRights
 from ..api_schemas_directorv2.dynamic_services import RetrieveDataOut
 from ..basic_types import PortInt
 from ..projects_nodes import InputID, InputsDict, PartialNode
@@ -59,9 +59,9 @@ class NodePatch(InputSchemaWithoutCamelCase):
         ),
     ] = None
     boot_options: Annotated[BootOptions | None, Field(alias="bootOptions")] = None
-    outputs: dict[
-        str, Any
-    ] | None = None  # NOTE: it is used by frontend for File Picker
+    outputs: dict[str, Any] | None = (
+        None  # NOTE: it is used by frontend for File Picker
+    )
 
     def to_domain_model(self) -> PartialNode:
         data = self.model_dump(
@@ -207,7 +207,7 @@ class NodeServiceGet(OutputSchema):
     key: ServiceKey
     release: ServiceRelease
     owner: GroupID
-    my_access_rights: AccessRights
+    my_access_rights: ExecutableAccessRights
 
 
 class ProjectNodeServicesGet(OutputSchema):
