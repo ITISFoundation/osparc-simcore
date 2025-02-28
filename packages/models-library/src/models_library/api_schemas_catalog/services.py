@@ -288,7 +288,7 @@ class ServiceGetV2(_BaseServiceGetV2):
     )
 
 
-class ServiceItemList(_BaseServiceGetV2):
+class ServiceListItem(_BaseServiceGetV2):
     history: Annotated[
         list[ServiceRelease],
         Field(
@@ -302,7 +302,7 @@ class ServiceItemList(_BaseServiceGetV2):
 
 PageRpcServicesGetV2: TypeAlias = PageRpc[
     # WARNING: keep this definition in models_library and not in the RPC interface
-    ServiceItemList
+    ServiceListItem
 ]
 
 ServiceResourcesGet: TypeAlias = ServiceResourcesDict

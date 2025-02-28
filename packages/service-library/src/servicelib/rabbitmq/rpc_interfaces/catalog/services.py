@@ -7,7 +7,7 @@ from models_library.api_schemas_catalog import CATALOG_RPC_NAMESPACE
 from models_library.api_schemas_catalog.services import (
     MyServiceGet,
     ServiceGetV2,
-    ServiceItemList,
+    ServiceListItem,
     ServiceUpdateV2,
 )
 from models_library.products import ProductName
@@ -35,7 +35,7 @@ async def list_services_paginated(  # pylint: disable=too-many-arguments
     user_id: UserID,
     limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
     offset: NonNegativeInt = 0,
-) -> PageRpc[ServiceItemList]:
+) -> PageRpc[ServiceListItem]:
     """
     Raises:
         ValidationError: on invalid arguments
@@ -63,9 +63,9 @@ async def list_services_paginated(  # pylint: disable=too-many-arguments
         product_name=product_name, user_id=user_id, limit=limit, offset=offset
     )
     assert (  # nosec
-        TypeAdapter(PageRpc[ServiceItemList]).validate_python(result) is not None
+        TypeAdapter(PageRpc[ServiceListItem]).validate_python(result) is not None
     )
-    return cast(PageRpc[ServiceItemList], result)
+    return cast(PageRpc[ServiceListItem], result)
 
 
 @log_decorator(_logger, level=logging.DEBUG)

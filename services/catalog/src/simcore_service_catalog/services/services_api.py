@@ -3,7 +3,7 @@ import logging
 from models_library.api_schemas_catalog.services import (
     MyServiceGet,
     ServiceGetV2,
-    ServiceItemList,
+    ServiceListItem,
     ServiceUpdateV2,
 )
 from models_library.groups import GroupID
@@ -89,7 +89,7 @@ async def list_services_paginated(
     user_id: UserID,
     limit: PageLimitInt | None,
     offset: NonNegativeInt = 0,
-) -> tuple[NonNegativeInt, list[ServiceItemList]]:
+) -> tuple[NonNegativeInt, list[ServiceListItem]]:
 
     # defines the order
     total_count, services = await repo.list_latest_services(
@@ -144,7 +144,7 @@ async def list_services_paginated(
     ]
 
     return total_count, [
-        ServiceItemList.model_validate(
+        ServiceListItem.model_validate(
             {
                 **it.model_dump(exclude_unset=True, by_alias=True),
             }
