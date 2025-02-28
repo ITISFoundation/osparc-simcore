@@ -1,9 +1,6 @@
-from typing import TypeAlias
-
+from models_library.api_schemas_dynamic_sidecar.containers import DcokerComposeYamlStr
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
 from pydantic import BaseModel
-
-DcokerComposeYamlStr: TypeAlias = str
 
 
 class ContainersComposeSpec(BaseModel):

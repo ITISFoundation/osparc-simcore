@@ -16,3 +16,5 @@ class ActivityInfo(BaseModel):
 
 
 ActivityInfoOrNone: TypeAlias = ActivityInfo | None
+
+DcokerComposeYamlStr: TypeAlias = str

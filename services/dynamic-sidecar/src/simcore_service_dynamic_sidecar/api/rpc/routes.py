@@ -4,9 +4,10 @@ from servicelib.rabbitmq import RPCRouter
 
 from ...core.rabbitmq import get_rabbitmq_rpc_server
 from ...core.settings import ApplicationSettings
-from . import _disk, _disk_usage, _volumes
+from . import _containers, _disk, _disk_usage, _volumes
 
 ROUTERS: list[RPCRouter] = [
+    _containers.router,
     _disk_usage.router,
     _disk.router,
     _volumes.router,

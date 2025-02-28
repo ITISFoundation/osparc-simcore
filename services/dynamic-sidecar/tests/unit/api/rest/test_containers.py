@@ -5,10 +5,10 @@
 
 import asyncio
 import json
-from collections.abc import AsyncIterable
+from collections.abc import AsyncIterable, AsyncIterator
 from inspect import signature
 from pathlib import Path
-from typing import Any, AsyncIterator, Final
+from typing import Any, Final
 from unittest.mock import AsyncMock, Mock
 from uuid import uuid4
 
@@ -267,10 +267,10 @@ def not_started_containers() -> list[str]:
 def mock_outputs_labels() -> dict[str, ServiceOutput]:
     return {
         "output_port_1": TypeAdapter(ServiceOutput).validate_python(
-            ServiceOutput.model_config["json_schema_extra"]["examples"][3]
+            ServiceOutput.model_json_schema()["examples"][3]
         ),
         "output_port_2": TypeAdapter(ServiceOutput).validate_python(
-            ServiceOutput.model_config["json_schema_extra"]["examples"][3]
+            ServiceOutput.model_json_schema()["examples"][3]
         ),
     }
 
