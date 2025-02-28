@@ -10,6 +10,7 @@ from http import HTTPStatus
 from http.client import HTTPException
 
 import pytest
+import tenacity
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from models_library.products import ProductName
@@ -28,6 +29,7 @@ from simcore_service_webserver.api_keys._service import (
 )
 from simcore_service_webserver.application_settings import GarbageCollectorSettings
 from simcore_service_webserver.db.models import UserRole
+from tenacity import retry_if_exception_type, stop_after_attempt, wait_fixed
 
 
 @pytest.fixture
@@ -245,5 +247,10 @@ async def test_prune_expired_api_keys_task_is_triggered(
         APP_SETTINGS_KEY
     ].WEBSERVER_GARBAGE_COLLECTOR
     assert isinstance(settings, GarbageCollectorSettings)
-    await asyncio.sleep(2 * settings.GARBAGE_COLLECTOR_PRUNE_APIKEYS_INTERVAL_S)
-    mock.assert_called()
+    async for attempt in tenacity.AsyncRetrying(
+        stop=stop_after_attempt(5),
+        wait=wait_fixed(1),
+        retry=retry_if_exception_type(AssertionError),
+    ):
+        with attempt:
+            mock.assert_called()
