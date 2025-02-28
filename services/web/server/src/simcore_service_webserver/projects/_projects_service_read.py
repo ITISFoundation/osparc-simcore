@@ -1,4 +1,4 @@
-""" Utils to implement READ operations (from cRud) on the project resource
+"""Utils to implement READ operations (from cRud) on the project resource
 
 
 Read operations are list, get
@@ -104,10 +104,10 @@ async def list_projects(  # pylint: disable=too-many-arguments
 ) -> tuple[list[ProjectDict], int]:
     db = ProjectDBAPI.get_from_app_context(app)
 
-    user_available_services: list[
-        dict
-    ] = await catalog_service.get_services_for_user_in_product(
-        app, user_id, product_name, only_key_versions=True
+    user_available_services: list[dict] = (
+        await catalog_service.get_services_for_user_in_product(
+            app, user_id, product_name, only_key_versions=True
+        )
     )
 
     workspace_is_private = True
@@ -186,10 +186,10 @@ async def list_projects_full_depth(
 ) -> tuple[list[ProjectDict], int]:
     db = ProjectDBAPI.get_from_app_context(app)
 
-    user_available_services: list[
-        dict
-    ] = await catalog_service.get_services_for_user_in_product(
-        app, user_id, product_name, only_key_versions=True
+    user_available_services: list[dict] = (
+        await catalog_service.get_services_for_user_in_product(
+            app, user_id, product_name, only_key_versions=True
+        )
     )
 
     db_projects, db_project_types, total_number_projects = await db.list_projects_dicts(

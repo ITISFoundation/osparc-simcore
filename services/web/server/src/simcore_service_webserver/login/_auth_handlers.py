@@ -13,7 +13,8 @@ from servicelib.request_keys import RQT_USERID_KEY
 from simcore_postgres_database.models.users import UserRole
 
 from .._meta import API_VTAG
-from ..products.products_service import Product, get_current_product
+from ..products import products_web
+from ..products.models import Product
 from ..security.api import forget_identity
 from ..session.access_policies import (
     on_success_grant_session_access_to,
@@ -73,8 +74,7 @@ class CodePageParams(BaseModel):
     next_url: str | None = None
 
 
-class LoginNextPage(NextPage[CodePageParams]):
-    ...
+class LoginNextPage(NextPage[CodePageParams]): ...
 
 
 @routes.post(f"/{API_VTAG}/auth/login", name="auth_login")
@@ -96,7 +96,7 @@ async def login(request: web.Request):
 
     If 2FA is enabled, then the login continues with a second request to login_2fa
     """
-    product: Product = get_current_product(request)
+    product: Product = products_web.get_current_product(request)
     settings: LoginSettingsForProduct = get_plugin_settings(
         request.app, product_name=product.name
     )
@@ -235,7 +235,7 @@ class LoginTwoFactorAuthBody(InputSchema):
 )
 async def login_2fa(request: web.Request):
     """Login (continuation): Submits 2FA code"""
-    product: Product = get_current_product(request)
+    product: Product = products_web.get_current_product(request)
     settings: LoginSettingsForProduct = get_plugin_settings(
         request.app, product_name=product.name
     )

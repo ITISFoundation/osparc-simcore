@@ -38,7 +38,8 @@ from ..catalog import client as catalog_service
 from ..director_v2.exceptions import DirectorServiceError
 from ..login.decorators import login_required
 from ..notifications import project_logs as notifications_service
-from ..products.products_service import Product, get_current_product
+from ..products import products_service
+from ..products.models import Product
 from ..redis import get_redis_lock_manager_client_sdk
 from ..resource_manager.user_sessions import PROJECT_ID_KEY, managed_resource
 from ..security import api as security_service
@@ -109,12 +110,12 @@ async def create_project(request: web.Request):
         predefined_project = None
     else:
         # request w/ body (I found cases in which body = {})
-        project_create: (
-            ProjectCreateNew | ProjectCopyOverride | EmptyModel
-        ) = await parse_request_body_as(
-            ProjectCreateNew | ProjectCopyOverride | EmptyModel,  # type: ignore[arg-type]
-            # from pydantic v2 --> https://github.com/pydantic/pydantic/discussions/4950
-            request,
+        project_create: ProjectCreateNew | ProjectCopyOverride | EmptyModel = (
+            await parse_request_body_as(
+                ProjectCreateNew | ProjectCopyOverride | EmptyModel,  # type: ignore[arg-type]
+                # from pydantic v2 --> https://github.com/pydantic/pydantic/discussions/4950
+                request,
+            )
         )
         predefined_project = project_create.to_domain_model() or None
 
@@ -273,10 +274,10 @@ async def get_project(request: web.Request):
     req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
-    user_available_services: list[
-        dict
-    ] = await catalog_service.get_services_for_user_in_product(
-        request.app, req_ctx.user_id, req_ctx.product_name, only_key_versions=True
+    user_available_services: list[dict] = (
+        await catalog_service.get_services_for_user_in_product(
+            request.app, req_ctx.user_id, req_ctx.product_name, only_key_versions=True
+        )
     )
 
     project = await _projects_service.get_project_for_user(
@@ -504,7 +505,7 @@ async def open_project(request: web.Request) -> web.Response:
             product_name=req_ctx.product_name,
         )
 
-        product: Product = get_current_product(request)
+        product: Product = products_service.get_current_product(request)
 
         if not await _projects_service.try_open_project_for_user(
             req_ctx.user_id,

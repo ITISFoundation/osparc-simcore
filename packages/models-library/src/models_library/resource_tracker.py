@@ -232,7 +232,7 @@ class SpecificInfo(HardwareInfo):
     to store aws ec2 instance type."""
 
 
-class UnitExtraInfo(BaseModel):
+class UnitExtraInfoTier(BaseModel):
     """Custom information that is propagated to the frontend. Defined fields are mandatory."""
 
     CPU: NonNegativeInt
@@ -256,10 +256,29 @@ class UnitExtraInfo(BaseModel):
     )
 
 
+class UnitExtraInfoLicense(BaseModel):
+    """Custom information that is propagated to the frontend. Defined fields are mandatory."""
+
+    num_of_seats: NonNegativeInt
+
+    model_config = ConfigDict(
+        populate_by_name=True,
+        extra="allow",
+        json_schema_extra={
+            "examples": [
+                {
+                    "num_of_seats": 5,
+                    "custom key": "custom value",
+                }
+            ]
+        },
+    )
+
+
 class PricingUnitWithCostCreate(BaseModel):
     pricing_plan_id: PricingPlanId
     unit_name: str
-    unit_extra_info: UnitExtraInfo
+    unit_extra_info: UnitExtraInfoTier | UnitExtraInfoLicense
     default: bool
     specific_info: SpecificInfo
     cost_per_unit: Decimal
@@ -271,7 +290,7 @@ class PricingUnitWithCostCreate(BaseModel):
                 {
                     "pricing_plan_id": 1,
                     "unit_name": "My pricing plan",
-                    "unit_extra_info": UnitExtraInfo.model_config["json_schema_extra"]["examples"][0],  # type: ignore [index]
+                    "unit_extra_info": UnitExtraInfoTier.model_config["json_schema_extra"]["examples"][0],  # type: ignore [index]
                     "default": True,
                     "specific_info": {"aws_ec2_instances": ["t3.medium"]},
                     "cost_per_unit": 10,
@@ -291,7 +310,7 @@ class PricingUnitWithCostUpdate(BaseModel):
     pricing_plan_id: PricingPlanId
     pricing_unit_id: PricingUnitId
     unit_name: str
-    unit_extra_info: UnitExtraInfo
+    unit_extra_info: UnitExtraInfoTier | UnitExtraInfoLicense
     default: bool
     specific_info: SpecificInfo
     pricing_unit_cost_update: PricingUnitCostUpdate | None
@@ -303,7 +322,7 @@ class PricingUnitWithCostUpdate(BaseModel):
                     "pricing_plan_id": 1,
                     "pricing_unit_id": 1,
                     "unit_name": "My pricing plan",
-                    "unit_extra_info": UnitExtraInfo.model_config["json_schema_extra"]["examples"][0],  # type: ignore [index]
+                    "unit_extra_info": UnitExtraInfoTier.model_config["json_schema_extra"]["examples"][0],  # type: ignore [index]
                     "default": True,
                     "specific_info": {"aws_ec2_instances": ["t3.medium"]},
                     "pricing_unit_cost_update": {
@@ -315,7 +334,7 @@ class PricingUnitWithCostUpdate(BaseModel):
                     "pricing_plan_id": 1,
                     "pricing_unit_id": 1,
                     "unit_name": "My pricing plan",
-                    "unit_extra_info": UnitExtraInfo.model_config["json_schema_extra"]["examples"][0],  # type: ignore [index]
+                    "unit_extra_info": UnitExtraInfoTier.model_config["json_schema_extra"]["examples"][0],  # type: ignore [index]
                     "default": True,
                     "specific_info": {"aws_ec2_instances": ["t3.medium"]},
                     "pricing_unit_cost_update": None,

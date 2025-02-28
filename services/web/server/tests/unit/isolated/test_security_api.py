@@ -25,9 +25,11 @@ from simcore_postgres_database.models.products import LOGIN_SETTINGS_DEFAULT, pr
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.login.decorators import login_required
-from simcore_service_webserver.products._events import _set_app_state
-from simcore_service_webserver.products._middlewares import discover_product_middleware
-from simcore_service_webserver.products._models import Product
+from simcore_service_webserver.products._web_events import _set_app_state
+from simcore_service_webserver.products._web_middlewares import (
+    discover_product_middleware,
+)
+from simcore_service_webserver.products.models import Product
 from simcore_service_webserver.security.api import (
     check_user_authorized,
     clean_auth_policy_cache,
@@ -69,9 +71,9 @@ async def _forget_product_name(request: web.Request) -> ProductName | None:
 
 
 @pytest.fixture
-def set_products_in_app_state() -> Callable[
-    [web.Application, OrderedDict[str, Product]], None
-]:
+def set_products_in_app_state() -> (
+    Callable[[web.Application, OrderedDict[str, Product]], None]
+):
     """
     Add products in app's state to avoid setting up a full database in tests
 

@@ -1,6 +1,7 @@
 import logging
+from collections.abc import AsyncIterator
 from decimal import Decimal
-from typing import Any, AsyncIterator, NamedTuple
+from typing import Any, NamedTuple
 
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection

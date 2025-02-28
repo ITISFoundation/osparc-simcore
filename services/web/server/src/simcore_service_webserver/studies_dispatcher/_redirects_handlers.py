@@ -1,6 +1,4 @@
-""" Handles request to the viewers redirection entrypoints
-
-"""
+"""Handles request to the viewers redirection entrypoints"""
 
 import functools
 import logging
@@ -18,8 +16,7 @@ from servicelib.aiohttp.requests_validation import parse_request_query_parameter
 from servicelib.aiohttp.typing_extension import Handler
 from servicelib.logging_errors import create_troubleshotting_log_kwargs
 
-from ..dynamic_scheduler import api as dynamic_scheduler_service
-from ..products.products_service import get_product_name
+from ..products import products_web
 from ..utils import compose_support_error_msg
 from ..utils_aiohttp import create_redirect_to_page_response
 from ._catalog import ValidService, validate_requested_service
@@ -169,8 +166,7 @@ class FileQueryParams(FileParams):
         return v
 
 
-class ServiceAndFileParams(FileQueryParams, ServiceParams):
-    ...
+class ServiceAndFileParams(FileQueryParams, ServiceParams): ...
 
 
 class ViewerQueryParams(BaseModel):
@@ -204,6 +200,7 @@ RedirectionQueryParams: TypeAlias = (
     | FileQueryParams
     | ServiceQueryParams
 )
+
 
 #
 # API HANDLERS
@@ -250,7 +247,7 @@ async def get_redirection_to_viewer(request: web.Request):
             user,
             viewer,
             file_params.download_link,
-            product_name=get_product_name(request),
+            product_name=products_web.get_product_name(request),
         )
         await dynamic_scheduler_service.update_projects_networks(
             request.app, project_id=project_id
@@ -281,7 +278,7 @@ async def get_redirection_to_viewer(request: web.Request):
             request.app,
             user,
             service_info=_create_service_info_from(valid_service),
-            product_name=get_product_name(request),
+            product_name=products_web.get_product_name(request),
         )
         await dynamic_scheduler_service.update_projects_networks(
             request.app, project_id=project_id
@@ -319,7 +316,7 @@ async def get_redirection_to_viewer(request: web.Request):
             project_thumbnail=get_plugin_settings(
                 app=request.app
             ).STUDIES_DEFAULT_FILE_THUMBNAIL,
-            product_name=get_product_name(request),
+            product_name=products_web.get_product_name(request),
         )
         await dynamic_scheduler_service.update_projects_networks(
             request.app, project_id=project_id

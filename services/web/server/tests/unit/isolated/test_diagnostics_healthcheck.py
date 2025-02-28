@@ -19,8 +19,8 @@ from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.aiohttp import status
 from servicelib.aiohttp.application import create_safe_application
-from simcore_service_webserver._constants import APP_SETTINGS_KEY
 from simcore_service_webserver.application_settings import setup_settings
+from simcore_service_webserver.constants import APP_SETTINGS_KEY
 from simcore_service_webserver.diagnostics._healthcheck import (
     HEALTH_LATENCY_PROBE,
     HealthCheckError,

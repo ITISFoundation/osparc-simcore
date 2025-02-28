@@ -1,4 +1,4 @@
-""" handles access to *public* studies
+"""handles access to *public* studies
 
     Handles a request to share a given sharable study via '/study/{id}'
 
@@ -26,12 +26,11 @@ from servicelib.aiohttp import status
 from servicelib.aiohttp.typing_extension import Handler
 from servicelib.logging_errors import create_troubleshotting_log_kwargs
 
-from .._constants import INDEX_RESOURCE_NAME
+from ..constants import INDEX_RESOURCE_NAME
 from ..director_v2._core_computations import create_or_update_pipeline
-from ..dynamic_scheduler import api as dynamic_scheduler_service
-from ..products.products_service import get_current_product, get_product_name
-from ..projects import projects_groups_repository
-from ..projects._projects_repository_legacy import ProjectDBAPI
+from ..products import products_web
+from ..projects.api import check_user_project_permission
+from ..projects.db import ProjectDBAPI
 from ..projects.exceptions import (
     ProjectGroupNotFoundError,
     ProjectInvalidRightsError,
@@ -117,7 +116,7 @@ async def _get_published_template_project(
             err.debug_message(),
         )
 
-        support_email = get_current_product(request).support_email
+        support_email = products_web.get_current_product(request).support_email
         if only_public_projects:
             raise RedirectToFrontEndPageError(
                 MSG_PUBLIC_PROJECT_NOT_PUBLISHED.format(support_email=support_email),
@@ -188,7 +187,7 @@ async def copy_study_to_account(
                 or project
             )
         # add project model + copy data TODO: guarantee order and atomicity
-        product_name = get_product_name(request)
+        product_name = products_web.get_product_name(request)
         await db.insert_project(
             project,
             user["id"],

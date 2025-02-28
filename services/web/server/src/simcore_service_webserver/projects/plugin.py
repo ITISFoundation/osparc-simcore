@@ -1,14 +1,15 @@
-""" projects management subsystem
+"""projects management subsystem
 
-    A project is a document defining a osparc study
-    It contains metadata about the study (e.g. name, description, owner, etc) and a workbench section that describes the study pipeline
+A project is a document defining a osparc study
+It contains metadata about the study (e.g. name, description, owner, etc) and a workbench section that describes the study pipeline
 """
+
 import logging
 
 from aiohttp import web
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
-from .._constants import APP_SETTINGS_KEY
+from ..constants import APP_SETTINGS_KEY
 from . import (
     _comments_rest,
     _folders_rest,

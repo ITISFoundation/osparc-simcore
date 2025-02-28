@@ -8,7 +8,7 @@ from models_library.products import CreditResultGet, ProductName, ProductStripeI
 from models_library.users import UserID
 from servicelib.rabbitmq import RPCRouter
 
-from ..products.products_service import get_credit_amount, get_product_stripe_info
+from ..products import products_service
 from ..rabbitmq import get_rabbitmq_rpc_server
 from ..users.api import get_user_display_and_id_names, get_user_invoice_address
 
@@ -23,11 +23,11 @@ async def get_invoice_data(
     dollar_amount: Decimal,
     product_name: ProductName,
 ) -> InvoiceDataGet:
-    credit_result_get: CreditResultGet = await get_credit_amount(
+    credit_result_get: CreditResultGet = await products_service.get_credit_amount(
         app, dollar_amount=dollar_amount, product_name=product_name
     )
-    product_stripe_info_get: ProductStripeInfoGet = await get_product_stripe_info(
-        app, product_name=product_name
+    product_stripe_info_get: ProductStripeInfoGet = (
+        await products_service.get_product_stripe_info(app, product_name=product_name)
     )
     user_invoice_address: UserInvoiceAddress = await get_user_invoice_address(
         app, user_id=user_id

@@ -1,6 +1,6 @@
-""" Handlers for some CRUD operations for
-    - /projects/{*}/inputs
-    - /projects/{*}/outputs
+"""Handlers for some CRUD operations for
+- /projects/{*}/inputs
+- /projects/{*}/outputs
 """
 
 import logging

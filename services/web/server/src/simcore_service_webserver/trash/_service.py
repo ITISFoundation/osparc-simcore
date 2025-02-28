@@ -10,7 +10,7 @@ from servicelib.logging_errors import create_troubleshotting_log_kwargs
 from servicelib.logging_utils import log_context
 
 from ..folders import folders_trash_service
-from ..products import products_service as products_service
+from ..products import products_service
 from ..projects import projects_trash_service
 from .settings import get_plugin_settings
 

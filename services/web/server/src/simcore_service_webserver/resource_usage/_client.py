@@ -16,8 +16,8 @@ from models_library.api_schemas_resource_usage_tracker.credit_transactions impor
     WalletTotalCredits,
 )
 from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
-    PricingPlanGet,
-    PricingUnitGet,
+    RutPricingPlanGet,
+    RutPricingUnitGet,
 )
 from models_library.resource_tracker import PricingPlanId, PricingUnitId
 from models_library.users import UserID
@@ -86,7 +86,7 @@ async def list_service_runs_by_user_and_product_and_wallet(
 
 async def get_default_service_pricing_plan(
     app: web.Application, product_name: str, service_key: str, service_version: str
-) -> PricingPlanGet:
+) -> RutPricingPlanGet:
     settings: ResourceUsageTrackerSettings = get_plugin_settings(app)
     url = URL(
         f"{settings.api_base_url}/services/{urllib.parse.quote_plus(service_key)}/{service_version}/pricing-plan",
@@ -101,7 +101,7 @@ async def get_default_service_pricing_plan(
             async with session.get(url) as response:
                 response.raise_for_status()
                 body: dict = await response.json()
-                return PricingPlanGet.model_validate(body)
+                return RutPricingPlanGet.model_validate(body)
         except ClientResponseError as e:
             if e.status == status.HTTP_404_NOT_FOUND:
                 raise DefaultPricingPlanNotFoundError from e
@@ -113,7 +113,7 @@ async def get_pricing_plan_unit(
     product_name: str,
     pricing_plan_id: PricingPlanId,
     pricing_unit_id: PricingUnitId,
-) -> PricingUnitGet:
+) -> RutPricingUnitGet:
     settings: ResourceUsageTrackerSettings = get_plugin_settings(app)
     url = (
         URL(settings.api_base_url)
@@ -130,7 +130,7 @@ async def get_pricing_plan_unit(
         async with session.get(url) as response:
             response.raise_for_status()
             body: dict = await response.json()
-            return PricingUnitGet.model_validate(body)
+            return RutPricingUnitGet.model_validate(body)
 
 
 async def sum_total_available_credits_in_the_wallet(

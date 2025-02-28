@@ -35,10 +35,8 @@ from simcore_service_webserver.login._constants import (
     MSG_2FA_UNAVAILABLE_OEC,
 )
 from simcore_service_webserver.login.storage import AsyncpgStorage
-from simcore_service_webserver.products.products_service import (
-    Product,
-    get_current_product,
-)
+from simcore_service_webserver.products import products_web
+from simcore_service_webserver.products.models import Product
 from simcore_service_webserver.users import preferences_api as user_preferences_api
 from twilio.base.exceptions import TwilioRestException
 
@@ -374,7 +372,7 @@ async def test_send_email_code(
 
     with pytest.raises(KeyError):
         # NOTE: this is a fake request and did not go through middlewares
-        get_current_product(request)
+        products_web.get_current_product(request)
 
     user_email = faker.email()
     support_email = faker.email()

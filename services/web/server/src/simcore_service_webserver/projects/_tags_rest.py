@@ -1,6 +1,4 @@
-""" Handlers for CRUD operations on /projects/{*}/tags/{*}
-
-"""
+"""Handlers for CRUD operations on /projects/{*}/tags/{*}"""
 
 import logging
 
@@ -12,7 +10,7 @@ from .._meta import API_VTAG
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
-from . import _tags_service as tags_api
+from . import _tags_service
 from ._common.exceptions_handlers import handle_plugin_requests_exceptions
 
 _logger = logging.getLogger(__name__)
@@ -38,7 +36,7 @@ async def add_project_tag(request: web.Request):
     except KeyError as err:
         raise web.HTTPBadRequest(reason=f"Invalid request parameter {err}") from err
 
-    project = await tags_api.add_tag(
+    project = await _tags_service.add_tag(
         request.app,
         user_id=user_id,
         project_uuid=ProjectID(project_uuid),
@@ -61,7 +59,7 @@ async def remove_project_tag(request: web.Request):
         request.match_info["tag_id"],
         request.match_info["project_uuid"],
     )
-    project = await tags_api.remove_tag(
+    project = await _tags_service.remove_tag(
         request.app,
         user_id=user_id,
         project_uuid=ProjectID(project_uuid),
