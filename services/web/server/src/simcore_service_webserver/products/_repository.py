@@ -5,7 +5,7 @@ from typing import Any, NamedTuple
 
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
-from aiopg.sa.result import ResultProxy, RowProxy
+from aiopg.sa.result import ResultProxy
 from models_library.products import ProductName, ProductStripeInfoGet
 from simcore_postgres_database.constants import QUANTIZE_EXP_ARG
 from simcore_postgres_database.models.jinja2_templates import jinja2_templates
@@ -93,81 +93,87 @@ class ProductRepository(BaseRepositoryV2):
         self,
         connection: AsyncConnection | None = None,
     ) -> list[ProductName]:
+        query = sa.select(products.c.name).order_by(products.c.priority)
+
         async with pass_or_acquire_connection(self.engine, connection) as conn:
-            query = sa.select(products.c.name).order_by(products.c.priority)
             rows = await conn.stream(query)
             return [ProductName(row.name) async for row in rows]
 
-    async def get_product(self, product_name: str) -> Product | None:
-        async with self.engine.acquire() as conn:
-            result: ResultProxy = await conn.execute(
-                sa.select(*_PRODUCTS_COLUMNS).where(products.c.name == product_name)
-            )
-            row: RowProxy | None = await result.first()
+    async def get_product(
+        self, product_name: str, connection: AsyncConnection | None = None
+    ) -> Product | None:
+        query = sa.select(*_PRODUCTS_COLUMNS).where(products.c.name == product_name)
+
+        async with pass_or_acquire_connection(self.engine, connection) as conn:
+
+            result = await conn.execute(query)
+            row = result.one_or_none()
             if row:
-                # NOTE: MD Observation: Currently we are not defensive, we assume automatically
-                # that the product is not billable when there is no product in the products_prices table
-                # or it's price is 0. We should change it and always assume that the product is billable, unless
-                # explicitely stated that it is free
                 payments = await get_product_payment_fields(conn, product_name=row.name)
                 return Product(
-                    **dict(row.items()),
+                    **row._asdict(),
                     is_payment_enabled=payments.enabled,
                     credits_per_usd=payments.credits_per_usd,
                 )
             return None
 
     async def get_product_latest_price_info_or_none(
-        self, product_name: str
+        self, product_name: str, connection: AsyncConnection | None = None
     ) -> ProductPriceInfo | None:
-        """newest price of a product or None if not billable"""
-        async with self.engine.acquire() as conn:
+        async with pass_or_acquire_connection(self.engine, connection) as conn:
             return await get_product_latest_price_info_or_none(
                 conn, product_name=product_name
             )
 
-    async def get_product_stripe_info(self, product_name: str) -> ProductStripeInfoGet:
-        async with self.engine.acquire() as conn:
+    async def get_product_stripe_info(
+        self, product_name: str, connection: AsyncConnection | None = None
+    ) -> ProductStripeInfoGet:
+        async with pass_or_acquire_connection(self.engine, connection) as conn:
             row = await get_product_latest_stripe_info(conn, product_name=product_name)
             return ProductStripeInfoGet(
                 stripe_price_id=row[0], stripe_tax_rate_id=row[1]
             )
 
     async def get_template_content(
-        self,
-        template_name: str,
+        self, template_name: str, connection: AsyncConnection | None = None
     ) -> str | None:
-        async with self.engine.acquire() as conn:
-            template_content: str | None = await conn.scalar(
-                sa.select(jinja2_templates.c.content).where(
-                    jinja2_templates.c.name == template_name
-                )
-            )
+        query = sa.select(jinja2_templates.c.content).where(
+            jinja2_templates.c.name == template_name
+        )
+
+        async with pass_or_acquire_connection(self.engine, connection) as conn:
+            template_content: str | None = await conn.scalar(query)
             return template_content
 
     async def get_product_template_content(
         self,
         product_name: str,
         product_template: sa.Column = products.c.registration_email_template,
+        connection: AsyncConnection | None = None,
     ) -> str | None:
-        async with self.engine.acquire() as conn:
-            oj = sa.join(
-                products,
-                jinja2_templates,
-                product_template == jinja2_templates.c.name,
-                isouter=True,
+        query = (
+            sa.select(jinja2_templates.c.content)
+            .select_from(
+                sa.join(
+                    products,
+                    jinja2_templates,
+                    product_template == jinja2_templates.c.name,
+                    isouter=True,
+                )
             )
-            content = await conn.scalar(
-                sa.select(jinja2_templates.c.content)
-                .select_from(oj)
-                .where(products.c.name == product_name)
-            )
-            return f"{content}" if content else None
+            .where(products.c.name == product_name)
+        )
 
-    async def get_product_ui(self, product_name: ProductName) -> dict[str, Any] | None:
-        async with self.engine.acquire() as conn:
-            result = await conn.execute(
-                sa.select(products.c.ui).where(products.c.name == product_name)
-            )
-            row: RowProxy | None = await result.first()
+        async with pass_or_acquire_connection(self.engine, connection) as conn:
+            template_content: str | None = await conn.scalar(query)
+            return template_content
+
+    async def get_product_ui(
+        self, product_name: ProductName, connection: AsyncConnection | None = None
+    ) -> dict[str, Any] | None:
+        query = sa.select(products.c.ui).where(products.c.name == product_name)
+
+        async with pass_or_acquire_connection(self.engine, connection) as conn:
+            result = await conn.execute(query)
+            row = result.one_or_none()
             return dict(**row.ui) if row else None
