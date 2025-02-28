@@ -643,31 +643,41 @@ qx.Class.define("osparc.dashboard.CardBase", {
       }
 
       if (this.isResourceType("study") || this.isResourceType("template")) {
-        this.setEmptyWorkbench(Object.keys(workbench).length === 0);
-      }
+        const params = {
+          url: {
+            studyId: this.getResourceData()["uuid"]
+          }
+        };
+        osparc.data.Resources.fetch("studies", "getServices", params)
+          .then(resp => {
+            console.log("OM getServices", resp);
 
-      // Updatable study
-      if (osparc.study.Utils.isWorkbenchRetired(workbench)) {
-        this.setUpdatable("retired");
-      } else if (osparc.study.Utils.isWorkbenchDeprecated(workbench)) {
-        this.setUpdatable("deprecated");
-      } else {
-        const updatable = osparc.study.Utils.isWorkbenchUpdatable(workbench)
-        if (updatable) {
-          this.setUpdatable("updatable");
-        }
-      }
+            this.setEmptyWorkbench(Object.keys(workbench).length === 0);
 
-      // Block card
-      const unaccessibleServices = osparc.study.Utils.getInaccessibleServices(workbench)
-      if (unaccessibleServices.length) {
-        this.setBlocked("UNKNOWN_SERVICES");
-        let image = "@FontAwesome5Solid/ban/";
-        let toolTipText = this.tr("Service info missing");
-        unaccessibleServices.forEach(unSrv => {
-          toolTipText += "<br>" + unSrv.key + ":" + unSrv.version;
-        });
-        this.__showBlockedCard(image, toolTipText);
+            // Updatable study
+            if (osparc.study.Utils.isWorkbenchRetired(workbench)) {
+              this.setUpdatable("retired");
+            } else if (osparc.study.Utils.isWorkbenchDeprecated(workbench)) {
+              this.setUpdatable("deprecated");
+            } else {
+              const updatable = osparc.study.Utils.isWorkbenchUpdatable(workbench)
+              if (updatable) {
+                this.setUpdatable("updatable");
+              }
+            }
+
+            // Block card
+            const unaccessibleServices = osparc.study.Utils.getInaccessibleServices(workbench)
+            if (unaccessibleServices.length) {
+              this.setBlocked("UNKNOWN_SERVICES");
+              let image = "@FontAwesome5Solid/ban/";
+              let toolTipText = this.tr("Service info missing");
+              unaccessibleServices.forEach(unSrv => {
+                toolTipText += "<br>" + unSrv.key + ":" + unSrv.version;
+              });
+              this.__showBlockedCard(image, toolTipText);
+            }
+          });
       }
     },
 
