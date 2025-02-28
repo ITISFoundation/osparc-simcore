@@ -1,7 +1,8 @@
 """
-    Scheduled task that periodically runs prune in the garbage collector service
+Scheduled task that periodically runs prune in the garbage collector service
 
 """
+
 import asyncio
 import logging
 from collections.abc import AsyncIterator, Callable
@@ -11,7 +12,7 @@ from tenacity import retry
 from tenacity.before_sleep import before_sleep_log
 from tenacity.wait import wait_exponential
 
-from ..api_keys.api import prune_expired_api_keys
+from ..api_keys.service_api_keys import prune_expired_api_keys
 
 logger = logging.getLogger(__name__)
 
