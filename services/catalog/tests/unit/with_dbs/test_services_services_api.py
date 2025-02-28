@@ -167,21 +167,23 @@ async def test_batch_get_my_services(
     groups_repo: GroupsRepository,
     user_id: UserID,
     user: dict[str, Any],
+    other_user: dict[str, Any],
     create_fake_service_data: CreateFakeServiceDataCallable,
     services_db_tables_injector: Callable,
 ):
     # catalog
     service_key = "simcore/services/comp/some-service"
     service_version_1 = "1.0.0"  # can upgrade to 1.0.1
-    service_version_2 = "1.0.1"  # latest
+    service_version_2 = "1.0.10"  # latest
 
     other_service_key = "simcore/services/comp/other-service"
-    other_service_version = "2.0.0"
+    other_service_version = "2.1.2"
 
     expected_retirement = datetime.utcnow() + timedelta(
         days=1
     )  # NOTE: old offset-naive column
 
+    # Owned by user
     fake_service_1 = create_fake_service_data(
         service_key,
         service_version_1,
@@ -197,6 +199,8 @@ async def test_batch_get_my_services(
         everyone_access=None,
         product=target_product,
     )
+
+    # Owned by other-user
     fake_service_3 = create_fake_service_data(
         other_service_key,
         other_service_version,
@@ -204,9 +208,14 @@ async def test_batch_get_my_services(
         everyone_access=None,
         product=target_product,
     )
+    _service, _owner_access = fake_service_3
+    _service["owner"] = other_user["primary_gid"]
+    _owner_access["gid"] = other_user["primary_gid"]
 
     # Inject fake services into the database
     await services_db_tables_injector([fake_service_1, fake_service_2, fake_service_3])
+
+    # UNDER TEST -------------------------------
 
     # Batch get services e.g. services in a project
     services_ids = [
@@ -222,6 +231,8 @@ async def test_batch_get_my_services(
         ids=services_ids,
     )
 
+    # CHECKS -------------------------------
+
     # assert returned order and length as ids
     assert services_ids == [(sc.key, sc.release.version) for sc in my_services]
 
@@ -230,12 +241,12 @@ async def test_batch_get_my_services(
             {
                 "key": "simcore/services/comp/some-service",
                 "release": {
-                    "version": "1.0.0",
+                    "version": service_version_1,
                     "version_display": None,
                     "released": my_services[0].release.released,
                     "retired": expected_retirement,
                     "compatibility": {
-                        "can_update_to": {"version": "1.0.1"}
+                        "can_update_to": {"version": service_version_2}
                     },  # can be updated
                 },
                 "owner": user["primary_gid"],
@@ -244,18 +255,17 @@ async def test_batch_get_my_services(
             {
                 "key": "simcore/services/comp/other-service",
                 "release": {
-                    "version": "2.0.0",
+                    "version": other_service_version,
                     "version_display": None,
                     "released": my_services[1].release.released,
                     "retired": None,
                     "compatibility": None,  # cannot be updated
                 },
-                "owner": user["primary_gid"],
-                "my_access_rights": {"execute": True, "write": True},  # full access
+                "owner": other_user["primary_gid"],  # needs to request access
+                "my_access_rights": {
+                    "execute": False,
+                    "write": False,
+                },
             },
         ]
     )
-
-    # TODO: test user has no access to one and needs to ask owner (NOTE: owner can be a group? )
-    # TODO: test user has no access to entire history
-    #

@@ -5,7 +5,7 @@
 # pylint: disable=unused-variable
 
 from datetime import datetime
-from typing import Protocol
+from typing import Any, Protocol
 
 from models_library.products import ProductName
 
@@ -21,5 +21,22 @@ class CreateFakeServiceDataCallable(Protocol):
         everyone_access: str | None = None,
         product: ProductName = "osparc",
         deprecated: datetime | None = None,  # DB column
-    ):
+    ) -> tuple[dict[str, Any], ...]:
+        """
+        Returns a fake factory that creates catalog DATA that can be used to fill
+        both services_meta_data and services_access_rights tables
+
+
+        Example:
+            fake_service, *fake_access_rights = create_fake_service_data(
+                    "simcore/services/dynamic/jupyterlab",
+                    "0.0.1",
+                    team_access="xw",
+                    everyone_access="x",
+                    product=target_product,
+                ),
+
+            owner_access, team_access, everyone_access = fake_access_rights
+
+        """
         ...
