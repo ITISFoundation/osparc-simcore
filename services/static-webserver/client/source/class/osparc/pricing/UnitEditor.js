@@ -36,11 +36,11 @@ qx.Class.define("osparc.pricing.UnitEditor", {
         costPerUnit: pricingUnit.getCost(),
         default: pricingUnit.getIsDefault(),
       });
+      const extraInfo = osparc.utils.Utils.deepCloneObject(pricingUnit.getExtraInfo());
       if (pricingUnit.getClassification() === "TIER") {
         this.set({
           specificInfo: pricingUnit.getSpecificInfo() && pricingUnit.getSpecificInfo()["aws_ec2_instances"] ? pricingUnit.getSpecificInfo()["aws_ec2_instances"].toString() : "",
         });
-        const extraInfo = osparc.utils.Utils.deepCloneObject(pricingUnit.getExtraInfo());
         // extract the required fields from the unitExtraInfo
         this.set({
           unitExtraInfoCPU: extraInfo["CPU"],
@@ -54,9 +54,9 @@ qx.Class.define("osparc.pricing.UnitEditor", {
           unitExtraInfo: extraInfo
         });
       } else if (pricingUnit.getClassification() === "LICENSE") {
+        // extract the required fields from the unitExtraInfo
         this.set({
-          // unitExtraInfoNSeats: pricingUnit.getNumberOfSeats(),
-          unitExtraInfoNSeats: 42,
+          unitExtraInfoNSeats: extraInfo["num_of_seats"],
         });
       }
       this.getChildControl("save");
@@ -260,6 +260,8 @@ qx.Class.define("osparc.pricing.UnitEditor", {
             minimum: 1,
             maximum: 10000
           });
+          control.setRequired(true);
+          this.__validator.add(control);
           this.bind("unitExtraInfoNSeats", control, "value");
           control.bind("value", this, "unitExtraInfoNSeats");
           this.getChildControl("unit-form").add(control, this.tr("Number of Seats"));
@@ -355,10 +357,11 @@ qx.Class.define("osparc.pricing.UnitEditor", {
           data["specificInfo"] = {
             "aws_ec2_instances": awsEc2Instances
           };
-          const extraInfo = {};
-          extraInfo["CPU"] = this.getUnitExtraInfoCPU();
-          extraInfo["RAM"] = this.getUnitExtraInfoRAM();
-          extraInfo["VRAM"] = this.getUnitExtraInfoVRAM();
+          const extraInfo = {
+            "CPU": this.getUnitExtraInfoCPU(),
+            "RAM": this.getUnitExtraInfoRAM(),
+            "VRAM": this.getUnitExtraInfoVRAM(),
+          };
           Object.assign(extraInfo, this.getUnitExtraInfo());
           data["unitExtraInfo"] = extraInfo;
         } else if (pricingPlan.getClassification() === "LICENSE") {
@@ -370,8 +373,8 @@ qx.Class.define("osparc.pricing.UnitEditor", {
           };
         }
       }
-
       data["default"] = this.getDefault();
+
       const params = {
         url: {
           "pricingPlanId": this.getPricingPlanId()
