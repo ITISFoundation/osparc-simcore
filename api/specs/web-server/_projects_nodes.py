@@ -158,8 +158,6 @@ def replace_node_resources(
 @router.get(
     "/projects/{project_id}/nodes/-/services",
     response_model=Envelope[ProjectNodeServicesGet],
-    # NOTE: will be activated on the follow up from https://github.com/ITISFoundation/osparc-simcore/pull/7287
-    include_in_schema=False,
 )
 async def get_project_services(project_id: ProjectID): ...
 

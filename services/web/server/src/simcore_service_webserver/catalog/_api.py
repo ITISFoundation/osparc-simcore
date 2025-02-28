@@ -4,7 +4,7 @@ from typing import Any, cast
 
 from aiohttp import web
 from aiohttp.web import Request
-from models_library.api_schemas_catalog.services import ServiceUpdateV2
+from models_library.api_schemas_catalog.services import MyServiceGet, ServiceUpdateV2
 from models_library.api_schemas_webserver.catalog import (
     ServiceInputGet,
     ServiceInputKey,
@@ -108,6 +108,22 @@ async def list_latest_services(
         await _safe_replace_service_input_outputs(data, unit_registry)
 
     return page_data, page.meta
+
+
+async def batch_get_my_services(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    services_ids: list[tuple[ServiceKey, ServiceVersion]],
+) -> list[MyServiceGet]:
+
+    return await catalog_rpc.batch_get_my_services(
+        get_rabbitmq_rpc_client(app),
+        user_id=user_id,
+        product_name=product_name,
+        ids=services_ids,
+    )
 
 
 async def get_service_v2(
