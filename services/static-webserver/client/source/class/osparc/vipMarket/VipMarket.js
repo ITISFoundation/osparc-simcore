@@ -284,7 +284,7 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
       let numOfSeats = null;
       const pricingUnit = osparc.store.Pricing.getInstance().getPricingUnit(pricingPlanId, pricingUnitId);
       if (pricingUnit) {
-        numOfSeats = parseInt(pricingUnit.getUnitData()["num_of_seats"]);
+        numOfSeats = parseInt(pricingUnit.getExtraInfo()["num_of_seats"]);
       }
       const licensedItemsStore = osparc.store.LicensedItems.getInstance();
       licensedItemsStore.purchaseLicensedItem(licensedItemId, walletId, pricingPlanId, pricingUnitId, numOfSeats)
