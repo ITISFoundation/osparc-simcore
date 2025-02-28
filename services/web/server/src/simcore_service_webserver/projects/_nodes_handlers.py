@@ -67,6 +67,7 @@ from ..projects.api import has_user_project_access_rights
 from ..security.decorators import permission_required
 from ..users.api import get_user_id_from_gid, get_user_role
 from ..utils_aiohttp import envelope_json_response
+from . import _access_rights_api as access_rights_service
 from . import _nodes_api as _nodes_service
 from . import nodes_utils, projects_service
 from ._common.exceptions_handlers import handle_plugin_requests_exceptions
@@ -479,7 +480,13 @@ async def get_project_services(request: web.Request) -> web.Response:
     req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
-    # FIXME: check user_id has read access to this project!
+    await access_rights_service.check_user_project_permission(
+        request.app,
+        product_name=req_ctx.product_name,
+        user_id=req_ctx.user_id,
+        project_id=path_params.project_id,
+        permission="read",
+    )
 
     services_in_project: list[tuple[ServiceKey, ServiceVersion]] = (
         await _nodes_service.get_project_nodes_services(
