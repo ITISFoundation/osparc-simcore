@@ -91,3 +91,13 @@ APP_URL:=http://$(get_my_ip).nip.io:8006
 test-api: ## Runs schemathesis against development server (NOTE: make up-devel first)
 	@docker run schemathesis/schemathesis:stable run \
 		"$(APP_URL)/api/v0/openapi.json"
+
+
+test-pacts: guard-PACT_BROKER_USERNAME guard-PACT_BROKER_PASSWORD guard-PACT_BROKER_URL _check_venv_active ## Test pacts
+	pytest tests/unit/pact_broker/test_licensed_items.py
+
+# Usage:
+# PACT_BROKER_USERNAME=your_username \
+# PACT_BROKER_PASSWORD=your_password \
+# PACT_BROKER_URL=your_broker_url \
+# make test-pacts
