@@ -85,6 +85,11 @@ jobs:
     timeout-minutes: 10
     name: "Run PACT tests"
     runs-on: ubuntu-latest
+    env:
+      # secrets can be set in settings/secrets on github
+      PACT_BROKER_URL: ${{ secrets.PACT_BROKER_URL }}
+      PACT_BROKER_USERNAME: ${{ secrets.PACT_BROKER_USERNAME }}
+      PACT_BROKER_PASSWORD: ${{ secrets.PACT_BROKER_PASSWORD }}
     steps:
       - name: setup python environment
         uses: actions/setup-python@v5
