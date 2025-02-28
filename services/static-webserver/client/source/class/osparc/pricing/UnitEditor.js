@@ -376,13 +376,7 @@ qx.Class.define("osparc.pricing.UnitEditor", {
         }
       }
 
-      const params = {
-        url: {
-          "pricingPlanId": this.getPricingPlanId()
-        },
-        data
-      };
-      osparc.data.Resources.fetch("pricingUnits", "post", params)
+      osparc.store.Pricing.getInstance().createPricingUnit(this.getPricingPlanId(), data)
         .then(() => {
           osparc.FlashMessenger.getInstance().logAs(this.tr("Successfully created"));
           this.fireEvent("done");
@@ -429,14 +423,7 @@ qx.Class.define("osparc.pricing.UnitEditor", {
         }
       }
 
-      const params = {
-        url: {
-          "pricingPlanId": this.getPricingPlanId(),
-          "pricingUnitId": this.getPricingUnitId()
-        },
-        data
-      };
-      osparc.data.Resources.fetch("pricingUnits", "update", params)
+      osparc.store.Pricing.getInstance().updatePricingUnit(this.getPricingPlanId(), this.getPricingUnitId(), data)
         .then(() => {
           osparc.FlashMessenger.getInstance().logAs(this.tr("Successfully updated"));
           this.fireEvent("done");
