@@ -33,6 +33,24 @@ qx.Class.define("osparc.pricing.PlanDetails", {
     "backToPricingPlans": "qx.event.type.Event"
   },
 
+  statics: {
+    createTabPage: function(label, icon) {
+      const tabPage = new qx.ui.tabview.Page().set({
+        layout: new qx.ui.layout.VBox()
+      });
+      if (label) {
+        tabPage.setLabel(label);
+      }
+      if (icon) {
+        tabPage.setIcon(icon);
+      }
+      tabPage.getChildControl("button").set({
+        font: "text-13"
+      });
+      return tabPage;
+    }
+  },
+
   members: {
     _createChildControlImpl: function(id) {
       let control;
@@ -68,7 +86,7 @@ qx.Class.define("osparc.pricing.PlanDetails", {
           break;
         case "pricing-units": {
           control = new osparc.pricing.UnitsList();
-          const tabPage = this.__createTabPage(this.tr("Pricing Units"), "@FontAwesome5Solid/paw/14");
+          const tabPage = this.self().createTabPage(this.tr("Pricing Units"), "@FontAwesome5Solid/paw/14");
           tabPage.add(control, {
             flex: 1
           });
@@ -78,7 +96,7 @@ qx.Class.define("osparc.pricing.PlanDetails", {
         }
         case "service-list": {
           control = new osparc.pricing.ServicesList();
-          const tabPage = this.__createTabPage(this.tr("Services"), "@FontAwesome5Solid/cogs/14");
+          const tabPage = this.self().createTabPage(this.tr("Services"), "@FontAwesome5Solid/cogs/14");
           tabPage.add(control, {
             flex: 1
           });
@@ -90,38 +108,22 @@ qx.Class.define("osparc.pricing.PlanDetails", {
       return control || this.base(arguments, id);
     },
 
-    setCurrentPricingPlan: function(pricingPlanModel) {
-      if (pricingPlanModel === null) {
+    setCurrentPricingPlan: function(pricingPlan) {
+      if (pricingPlan === null) {
         return;
       }
 
       const pricingPlanListItem = this.getChildControl("pricing-plan-details");
-      pricingPlanModel.bind("model", pricingPlanListItem, "model");
-      pricingPlanModel.bind("ppId", pricingPlanListItem, "ppId");
-      pricingPlanModel.bind("ppKey", pricingPlanListItem, "ppKey");
-      pricingPlanModel.bind("title", pricingPlanListItem, "title");
-      pricingPlanModel.bind("description", pricingPlanListItem, "description");
-      pricingPlanModel.bind("isActive", pricingPlanListItem, "isActive");
+      pricingPlan.bind("model", pricingPlanListItem, "model");
+      pricingPlan.bind("ppId", pricingPlanListItem, "ppId");
+      pricingPlan.bind("ppKey", pricingPlanListItem, "ppKey");
+      pricingPlan.bind("title", pricingPlanListItem, "title");
+      pricingPlan.bind("description", pricingPlanListItem, "description");
+      pricingPlan.bind("isActive", pricingPlanListItem, "isActive");
 
       // set PricingPlanId to the tab views
-      this.getChildControl("pricing-units").setPricingPlanId(pricingPlanModel.getModel());
-      this.getChildControl("service-list").setPricingPlanId(pricingPlanModel.getModel());
+      this.getChildControl("pricing-units").setPricingPlanId(pricingPlan.getModel());
+      this.getChildControl("service-list").setPricingPlanId(pricingPlan.getModel());
     },
-
-    __createTabPage: function(label, icon) {
-      const tabPage = new qx.ui.tabview.Page().set({
-        layout: new qx.ui.layout.VBox()
-      });
-      if (label) {
-        tabPage.setLabel(label);
-      }
-      if (icon) {
-        tabPage.setIcon(icon);
-      }
-      tabPage.getChildControl("button").set({
-        font: "text-13"
-      });
-      return tabPage;
-    }
   }
 });
