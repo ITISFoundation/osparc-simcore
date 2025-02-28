@@ -407,12 +407,12 @@ async def batch_get_my_services(
         # Evaluate `compatibility`
         compatibility: Compatibility | None = None
         if my_access_rights.execute or my_access_rights.write:
-            # TODO: add cache to this section that evals compatibility_map based on service_key
-
-            # NOTE: that the service history might be different for each user
-            # since access rights are defined on a k:v basis
             history = await repo.get_service_history(
-                product_name=product_name, user_id=user_id, key=service_key
+                # NOTE: that the service history might be different for each user
+                # since access rights are defined on a k:v basis
+                product_name=product_name,
+                user_id=user_id,
+                key=service_key,
             )
             assert history  # nosec
 
@@ -422,6 +422,7 @@ async def batch_get_my_services(
                 user_id=user_id,
                 service_release_history=history,
             )
+
             compatibility = compatibility_map.get(service_db.version)
 
         my_services.append(
