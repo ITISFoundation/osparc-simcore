@@ -26,6 +26,7 @@ from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
     CatalogItemNotFoundError,
 )
 from servicelib.rabbitmq.rpc_interfaces.catalog.services import (
+    batch_get_my_services,
     check_for_service,
     get_service,
     list_services_paginated,
@@ -397,3 +398,77 @@ async def test_rpc_get_service_access_rights(
         "name": "foo",
         "description": "bar",
     }
+
+
+async def test_rpc_batch_get_my_services(
+    background_sync_task_mocked: None,
+    mocked_director_service_api: MockRouter,
+    rpc_client: RabbitMQRPCClient,
+    product_name: ProductName,
+    user_id: UserID,
+    app: FastAPI,
+    create_fake_service_data: Callable,
+    services_db_tables_injector: Callable,
+):
+    # Create fake services data
+    service_key = "simcore/services/comp/test-batch-service"
+    service_version_1 = "1.0.0"
+    service_version_2 = "2.0.0"
+    other_service_key = "simcore/services/comp/other-batch-service"
+    other_service_version = "1.0.0"
+
+    fake_service_1 = create_fake_service_data(
+        service_key,
+        service_version_1,
+        team_access=None,
+        everyone_access=None,
+        product=product_name,
+    )
+    fake_service_2 = create_fake_service_data(
+        service_key,
+        service_version_2,
+        team_access="x",
+        everyone_access=None,
+        product=product_name,
+    )
+    fake_service_3 = create_fake_service_data(
+        other_service_key,
+        other_service_version,
+        team_access=None,
+        everyone_access=None,
+        product=product_name,
+    )
+
+    # Inject fake services into the database
+    await services_db_tables_injector([fake_service_1, fake_service_2, fake_service_3])
+
+    # Batch get my services
+    ids = [
+        (service_key, service_version_1),
+        (service_key, service_version_2),
+        (other_service_key, other_service_version),
+    ]
+
+    my_services = await batch_get_my_services(
+        rpc_client,
+        product_name=product_name,
+        user_id=user_id,
+        ids=ids,
+    )
+
+    assert len(my_services) == 3
+
+    # Check access rights
+    assert my_services[0].my_access_rights.model_dump() == {
+        "execute": False,
+        "write": False,
+    }
+    assert my_services[1].my_access_rights.model_dump() == {
+        "execute": True,
+        "write": False,
+    }
+    assert my_services[2].my_access_rights.model_dump() == {
+        "execute": False,
+        "write": False,
+    }
+    assert my_services[2].owner is not None
