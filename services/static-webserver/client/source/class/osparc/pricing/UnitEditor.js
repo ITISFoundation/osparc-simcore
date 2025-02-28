@@ -341,10 +341,12 @@ qx.Class.define("osparc.pricing.UnitEditor", {
     },
 
     __createPricingUnit: function() {
-      const data = {};
-      data["unitName"] = this.getUnitName();
-      data["costPerUnit"] = this.getCostPerUnit();
-      data["comment"] = this.getComment();
+      const data = {
+        "unitName": this.getUnitName(),
+        "costPerUnit": this.getCostPerUnit(),
+        "comment": this.getComment(),
+        "default": this.getDefault(),
+      };
 
       const pricingPlan = osparc.store.Pricing.getInstance().getPricingPlan(this.getPricingPlanId());
       if (pricingPlan) {
@@ -373,7 +375,6 @@ qx.Class.define("osparc.pricing.UnitEditor", {
           };
         }
       }
-      data["default"] = this.getDefault();
 
       const params = {
         url: {
@@ -394,34 +395,46 @@ qx.Class.define("osparc.pricing.UnitEditor", {
     },
 
     __updatePricingUnit: function() {
-      const unitName = this.getUnitName();
-      const costPerUnit = this.getCostPerUnit();
-      const comment = this.getComment();
-      const specificInfo = this.getSpecificInfo();
-      const extraInfo = {};
-      extraInfo["CPU"] = this.getUnitExtraInfoCPU();
-      extraInfo["RAM"] = this.getUnitExtraInfoRAM();
-      extraInfo["VRAM"] = this.getUnitExtraInfoVRAM();
-      Object.assign(extraInfo, this.getUnitExtraInfo());
-      const isDefault = this.getDefault();
+      const data = {
+        "unitName": this.getUnitName(),
+        "pricingUnitCostUpdate": {
+          "costPerUnit": this.getCostPerUnit(),
+          "comment": this.getComment(),
+        },
+        "default": this.getDefault(),
+      };
+
+      const pricingPlan = osparc.store.Pricing.getInstance().getPricingPlan(this.getPricingPlanId());
+      if (pricingPlan) {
+        if (pricingPlan.getClassification() === "TIER") {
+          const specificInfo = this.getSpecificInfo();
+          data["specificInfo"] = {
+            "aws_ec2_instances": [specificInfo]
+          };
+          const extraInfo = {
+            "CPU": this.getUnitExtraInfoCPU(),
+            "RAM": this.getUnitExtraInfoRAM(),
+            "VRAM": this.getUnitExtraInfoVRAM(),
+          };
+          Object.assign(extraInfo, this.getUnitExtraInfo());
+          data["unitExtraInfo"] = extraInfo;
+        } else if (pricingPlan.getClassification() === "LICENSE") {
+          const specificInfo = this.getSpecificInfo();
+          data["specificInfo"] = {
+            "aws_ec2_instances": [specificInfo]
+          };
+          data["unitExtraInfo"] = {
+            "num_of_seats": this.getUnitExtraInfoNSeats(),
+          };
+        }
+      }
 
       const params = {
         url: {
           "pricingPlanId": this.getPricingPlanId(),
           "pricingUnitId": this.getPricingUnitId()
         },
-        data: {
-          "unitName": unitName,
-          "pricingUnitCostUpdate": {
-            "cost_per_unit": costPerUnit,
-            "comment": comment
-          },
-          "specificInfo": {
-            "aws_ec2_instances": [specificInfo]
-          },
-          "unitExtraInfo": extraInfo,
-          "default": isDefault
-        }
+        data
       };
       osparc.data.Resources.fetch("pricingUnits", "update", params)
         .then(() => {
