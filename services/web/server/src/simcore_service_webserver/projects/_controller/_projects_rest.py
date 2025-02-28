@@ -34,19 +34,19 @@ from servicelib.redis import get_project_locked_state
 from simcore_postgres_database.webserver_models import ProjectType
 from simcore_service_webserver.products import products_web
 
-from .._meta import API_VTAG as VTAG
-from ..catalog import client as catalog_service
-from ..director_v2.exceptions import DirectorServiceError
-from ..login.decorators import login_required
-from ..notifications import project_logs as notifications_service
-from ..products.models import Product
-from ..redis import get_redis_lock_manager_client_sdk
-from ..resource_manager.user_sessions import PROJECT_ID_KEY, managed_resource
-from ..security import api as security_service
-from ..security.decorators import permission_required
-from ..users import api as users_service
-from ..utils_aiohttp import envelope_json_response
-from . import (
+from ..._meta import API_VTAG as VTAG
+from ...catalog import client as catalog_service
+from ...director_v2.exceptions import DirectorServiceError
+from ...login.decorators import login_required
+from ...notifications import project_logs as notifications_service
+from ...products.models import Product
+from ...redis import get_redis_lock_manager_client_sdk
+from ...resource_manager.user_sessions import PROJECT_ID_KEY, managed_resource
+from ...security import api as security_service
+from ...security.decorators import permission_required
+from ...users import api as users_service
+from ...utils_aiohttp import envelope_json_response
+from .. import (
     _permalink_service,
     _projects_rest_utils,
     _projects_service,
@@ -54,9 +54,9 @@ from . import (
     _projects_service_read,
     _wallets_service,
 )
-from ._common.exceptions_handlers import handle_plugin_requests_exceptions
-from ._common.models import ProjectPathParams, RequestContext
-from ._projects_models import (
+from .._common.exceptions_handlers import handle_plugin_requests_exceptions
+from .._common.models import ProjectPathParams, RequestContext
+from .._projects_models import (
     ProjectActiveQueryParams,
     ProjectCreateHeaders,
     ProjectCreateQueryParams,
@@ -64,12 +64,12 @@ from ._projects_models import (
     ProjectsListQueryParams,
     ProjectsSearchQueryParams,
 )
-from ._projects_service_utils import (
+from .._projects_service_utils import (
     get_project_unavailable_services,
     project_uses_available_services,
 )
-from .exceptions import ProjectStartsTooManyDynamicNodesError
-from .models import ProjectDict
+from ..exceptions import ProjectStartsTooManyDynamicNodesError
+from ..models import ProjectDict
 
 # When the user requests a project with a repo, the working copy might differ from
 # the repo project. A middleware in the meta module (if active) will resolve

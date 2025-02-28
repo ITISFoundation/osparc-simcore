@@ -1,6 +1,4 @@
-""" Handlers for CRUD operations on /projects/{*}/nodes/{*}
-
-"""
+"""Handlers for CRUD operations on /projects/{*}/nodes/{*}"""
 
 import asyncio
 import logging
@@ -54,21 +52,21 @@ from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler.errors import (
 from servicelib.services_utils import get_status_as_dict
 from simcore_postgres_database.models.users import UserRole
 
-from .._meta import API_VTAG as VTAG
-from ..catalog import client as catalog_service
-from ..dynamic_scheduler import api as dynamic_scheduler_service
-from ..groups.api import get_group_from_gid, list_all_user_groups_ids
-from ..groups.exceptions import GroupNotFoundError
-from ..login.decorators import login_required
-from ..security.decorators import permission_required
-from ..users.api import get_user_id_from_gid, get_user_role
-from ..utils_aiohttp import envelope_json_response
-from . import _projects_service
-from ._access_rights_service import has_user_project_access_rights
-from ._common.exceptions_handlers import handle_plugin_requests_exceptions
-from ._common.models import ProjectPathParams, RequestContext
-from ._nodes_service import NodeScreenshot, get_node_screenshots
-from .exceptions import (
+from ..._meta import API_VTAG as VTAG
+from ...catalog import client as catalog_service
+from ...dynamic_scheduler import api as dynamic_scheduler_service
+from ...groups.api import get_group_from_gid, list_all_user_groups_ids
+from ...groups.exceptions import GroupNotFoundError
+from ...login.decorators import login_required
+from ...security.decorators import permission_required
+from ...users.api import get_user_id_from_gid, get_user_role
+from ...utils_aiohttp import envelope_json_response
+from .. import _projects_service
+from .._access_rights_service import has_user_project_access_rights
+from .._common.exceptions_handlers import handle_plugin_requests_exceptions
+from .._common.models import ProjectPathParams, RequestContext
+from .._nodes_service import NodeScreenshot, get_node_screenshots
+from ..exceptions import (
     NodeNotFoundError,
     ProjectNodeResourcesInsufficientRightsError,
     ProjectNodeResourcesInvalidError,

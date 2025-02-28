@@ -1,4 +1,4 @@
-""" Helper script to automatically generate OAS
+"""Helper script to automatically generate OAS
 
 This OAS are the source of truth
 """
@@ -17,7 +17,7 @@ from models_library.projects import ProjectID
 from models_library.projects_comments import CommentID, ProjectsCommentsAPI
 from pydantic import NonNegativeInt
 from simcore_service_webserver._meta import API_VTAG
-from simcore_service_webserver.projects._comments_rest import (
+from simcore_service_webserver.projects._controller._comments_rest import (
     _ProjectCommentsBodyParams,
     _ProjectCommentsPathParams,
     _ProjectCommentsWithCommentPathParams,
@@ -45,8 +45,7 @@ router = APIRouter(
 )
 async def create_project_comment(
     project_uuid: ProjectID, body: _ProjectCommentsBodyParams
-):
-    ...
+): ...
 
 
 assert_handler_signature_against_model(
@@ -61,8 +60,7 @@ assert_handler_signature_against_model(
 )
 async def list_project_comments(
     project_uuid: ProjectID, limit: int = 20, offset: NonNegativeInt = 0
-):
-    ...
+): ...
 
 
 assert_handler_signature_against_model(
@@ -79,8 +77,7 @@ async def update_project_comment(
     project_uuid: ProjectID,
     comment_id: CommentID,
     body: _ProjectCommentsBodyParams,
-):
-    ...
+): ...
 
 
 assert_handler_signature_against_model(
@@ -93,8 +90,7 @@ assert_handler_signature_against_model(
     description="Delete a specific comment associated with a project.",
     status_code=204,
 )
-async def delete_project_comment(project_uuid: ProjectID, comment_id: CommentID):
-    ...
+async def delete_project_comment(project_uuid: ProjectID, comment_id: CommentID): ...
 
 
 assert_handler_signature_against_model(
@@ -107,8 +103,7 @@ assert_handler_signature_against_model(
     response_model=Envelope[ProjectsCommentsAPI],
     description="Retrieve a specific comment by its ID within a project.",
 )
-async def get_project_comment(project_uuid: ProjectID, comment_id: CommentID):
-    ...
+async def get_project_comment(project_uuid: ProjectID, comment_id: CommentID): ...
 
 
 assert_handler_signature_against_model(

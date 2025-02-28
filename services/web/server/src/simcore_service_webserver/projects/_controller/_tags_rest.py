@@ -6,12 +6,12 @@ from aiohttp import web
 from models_library.projects import ProjectID
 from servicelib.request_keys import RQT_USERID_KEY
 
-from .._meta import API_VTAG
-from ..login.decorators import login_required
-from ..security.decorators import permission_required
-from ..utils_aiohttp import envelope_json_response
-from . import _tags_service
-from ._common.exceptions_handlers import handle_plugin_requests_exceptions
+from ..._meta import API_VTAG
+from ...login.decorators import login_required
+from ...security.decorators import permission_required
+from ...utils_aiohttp import envelope_json_response
+from .. import _tags_service
+from .._common.exceptions_handlers import handle_plugin_requests_exceptions
 
 _logger = logging.getLogger(__name__)
 

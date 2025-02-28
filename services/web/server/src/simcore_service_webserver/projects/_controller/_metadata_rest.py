@@ -23,13 +23,13 @@ from servicelib.aiohttp.requests_validation import (
 )
 from servicelib.logging_utils import log_catch
 
-from .._meta import api_version_prefix
-from ..login.decorators import login_required
-from ..security.decorators import permission_required
-from ..utils_aiohttp import envelope_json_response
-from . import _metadata_service
-from ._common.exceptions_handlers import handle_plugin_requests_exceptions
-from ._common.models import ProjectPathParams, RequestContext
+from ..._meta import api_version_prefix
+from ...login.decorators import login_required
+from ...security.decorators import permission_required
+from ...utils_aiohttp import envelope_json_response
+from .. import _metadata_service
+from .._common.exceptions_handlers import handle_plugin_requests_exceptions
+from .._common.models import ProjectPathParams, RequestContext
 
 routes = web.RouteTableDef()
 

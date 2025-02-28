@@ -8,12 +8,12 @@ from pydantic import BaseModel, ConfigDict, field_validator
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import parse_request_path_parameters_as
 
-from .._meta import api_version_prefix as VTAG
-from ..login.decorators import login_required
-from ..security.decorators import permission_required
-from . import _folders_service
-from ._common.exceptions_handlers import handle_plugin_requests_exceptions
-from ._common.models import RequestContext
+from ..._meta import api_version_prefix as VTAG
+from ...login.decorators import login_required
+from ...security.decorators import permission_required
+from .. import _folders_service
+from .._common.exceptions_handlers import handle_plugin_requests_exceptions
+from .._common.models import RequestContext
 
 _logger = logging.getLogger(__name__)
 

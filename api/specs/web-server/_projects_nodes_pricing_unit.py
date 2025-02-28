@@ -1,4 +1,4 @@
-""" Helper script to automatically generate OAS
+"""Helper script to automatically generate OAS
 
 This OAS are the source of truth
 """
@@ -17,10 +17,10 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.resource_tracker import PricingPlanId, PricingUnitId
 from simcore_service_webserver._meta import API_VTAG
-from simcore_service_webserver.projects._nodes_pricing_unit_rest import (
+from simcore_service_webserver.projects._controller._nodes_pricing_unit_rest import (
     _ProjectNodePricingUnitPathParams,
 )
-from simcore_service_webserver.projects._nodes_rest import NodePathParams
+from simcore_service_webserver.projects._controller._nodes_rest import NodePathParams
 
 router = APIRouter(
     prefix=f"/{API_VTAG}",
@@ -35,8 +35,7 @@ router = APIRouter(
     response_model=Envelope[PricingUnitGet | None],
     description="Get currently connected pricing unit to the project node.",
 )
-async def get_project_node_pricing_unit(project_id: ProjectID, node_id: NodeID):
-    ...
+async def get_project_node_pricing_unit(project_id: ProjectID, node_id: NodeID): ...
 
 
 assert_handler_signature_against_model(get_project_node_pricing_unit, NodePathParams)
@@ -52,8 +51,7 @@ async def connect_pricing_unit_to_project_node(
     node_id: NodeID,
     pricing_plan_id: PricingPlanId,
     pricing_unit_id: PricingUnitId,
-):
-    ...
+): ...
 
 
 assert_handler_signature_against_model(

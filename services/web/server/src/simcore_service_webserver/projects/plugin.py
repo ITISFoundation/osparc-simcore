@@ -10,7 +10,7 @@ from aiohttp import web
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
 from ..constants import APP_SETTINGS_KEY
-from . import (
+from ._controller import (
     _comments_rest,
     _folders_rest,
     _groups_rest,
@@ -24,8 +24,8 @@ from . import (
     _wallets_rest,
     _workspaces_rest,
 )
+from ._controller._projects_slots import setup_project_observer_events
 from ._projects_repository_legacy import setup_projects_db
-from ._projects_slots import setup_project_observer_events
 from ._security_service import setup_projects_access
 
 logger = logging.getLogger(__name__)

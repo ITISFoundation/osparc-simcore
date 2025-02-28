@@ -1,4 +1,4 @@
-""" Helper script to automatically generate OAS
+"""Helper script to automatically generate OAS
 
 This OAS are the source of truth
 """
@@ -18,7 +18,9 @@ from models_library.api_schemas_webserver.projects_metadata import (
 )
 from models_library.generics import Envelope
 from simcore_service_webserver._meta import API_VTAG
-from simcore_service_webserver.projects._metadata_rest import ProjectPathParams
+from simcore_service_webserver.projects._controller._metadata_rest import (
+    ProjectPathParams,
+)
 
 router = APIRouter(prefix=f"/{API_VTAG}", tags=["projects", "metadata"])
 
@@ -33,8 +35,7 @@ router = APIRouter(prefix=f"/{API_VTAG}", tags=["projects", "metadata"])
     response_model=Envelope[ProjectMetadataGet],
     status_code=status.HTTP_200_OK,
 )
-async def get_project_metadata(_params: Annotated[ProjectPathParams, Depends()]):
-    ...
+async def get_project_metadata(_params: Annotated[ProjectPathParams, Depends()]): ...
 
 
 @router.patch(
@@ -44,5 +45,4 @@ async def get_project_metadata(_params: Annotated[ProjectPathParams, Depends()])
 )
 async def update_project_metadata(
     _params: Annotated[ProjectPathParams, Depends()], _body: ProjectMetadataUpdate
-):
-    ...
+): ...

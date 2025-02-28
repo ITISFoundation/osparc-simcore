@@ -15,13 +15,13 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_path_parameters_as,
 )
 
-from .._meta import API_VTAG
-from ..login.decorators import login_required
-from ..security.decorators import permission_required
-from ..utils_aiohttp import envelope_json_response
-from . import _projects_service, _wallets_service
-from ._common.exceptions_handlers import handle_plugin_requests_exceptions
-from ._common.models import ProjectPathParams, RequestContext
+from ..._meta import API_VTAG
+from ...login.decorators import login_required
+from ...security.decorators import permission_required
+from ...utils_aiohttp import envelope_json_response
+from .. import _projects_service, _wallets_service
+from .._common.exceptions_handlers import handle_plugin_requests_exceptions
+from .._common.models import ProjectPathParams, RequestContext
 
 _logger = logging.getLogger(__name__)
 

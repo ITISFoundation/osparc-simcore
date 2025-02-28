@@ -1,4 +1,4 @@
-""" Helper script to automatically generate OAS
+"""Helper script to automatically generate OAS
 
 This OAS are the source of truth
 """
@@ -13,7 +13,9 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, status
 from simcore_service_webserver._meta import API_VTAG
-from simcore_service_webserver.projects._folders_rest import _ProjectsFoldersPathParams
+from simcore_service_webserver.projects._controller._folders_rest import (
+    _ProjectsFoldersPathParams,
+)
 
 router = APIRouter(
     prefix=f"/{API_VTAG}",
@@ -28,5 +30,4 @@ router = APIRouter(
 )
 async def replace_project_folder(
     _path: Annotated[_ProjectsFoldersPathParams, Depends()],
-):
-    ...
+): ...

@@ -1,6 +1,4 @@
-""" Handlers to events registered in servicelib.observer.event_registry
-
-"""
+"""Handlers to events registered in servicelib.observer.event_registry"""
 
 import logging
 
@@ -15,9 +13,9 @@ from servicelib.aiohttp.observer import (
 from servicelib.logging_utils import log_context
 from servicelib.utils import logged_gather
 
-from ..notifications import project_logs
-from ..resource_manager.user_sessions import PROJECT_ID_KEY, managed_resource
-from ._projects_service import retrieve_and_notify_project_locked_state
+from ...notifications import project_logs
+from ...resource_manager.user_sessions import PROJECT_ID_KEY, managed_resource
+from .._projects_service import retrieve_and_notify_project_locked_state
 
 _logger = logging.getLogger(__name__)
 

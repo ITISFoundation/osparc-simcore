@@ -18,7 +18,7 @@ from simcore_service_webserver.folders._common.models import (
 from simcore_service_webserver.projects._common.exceptions_handlers import (
     _TO_HTTP_ERROR_MAP,
 )
-from simcore_service_webserver.projects._trash_rest import ProjectPathParams
+from simcore_service_webserver.projects._controller._trash_rest import ProjectPathParams
 from simcore_service_webserver.workspaces._common.models import (
     WorkspacesPathParams,
     WorkspaceTrashQueryParams,
@@ -37,8 +37,7 @@ router = APIRouter(
     "/trash:empty",
     status_code=status.HTTP_204_NO_CONTENT,
 )
-def empty_trash():
-    ...
+def empty_trash(): ...
 
 
 _extra_tags: list[str | Enum] = ["projects"]
@@ -66,8 +65,7 @@ _extra_tags: list[str | Enum] = ["projects"]
 def trash_project(
     _path: Annotated[ProjectPathParams, Depends()],
     _query: Annotated[RemoveQueryParams, Depends()],
-):
-    ...
+): ...
 
 
 @router.post(
@@ -77,8 +75,7 @@ def trash_project(
 )
 def untrash_project(
     _path: Annotated[ProjectPathParams, Depends()],
-):
-    ...
+): ...
 
 
 _extra_tags = ["folders"]
@@ -99,8 +96,7 @@ _extra_tags = ["folders"]
 def trash_folder(
     _path: Annotated[FoldersPathParams, Depends()],
     _query: Annotated[FolderTrashQueryParams, Depends()],
-):
-    ...
+): ...
 
 
 @router.post(
@@ -110,8 +106,7 @@ def trash_folder(
 )
 def untrash_folder(
     _path: Annotated[FoldersPathParams, Depends()],
-):
-    ...
+): ...
 
 
 _extra_tags = ["workspaces"]
@@ -132,8 +127,7 @@ _extra_tags = ["workspaces"]
 def trash_workspace(
     _path: Annotated[WorkspacesPathParams, Depends()],
     _query: Annotated[WorkspaceTrashQueryParams, Depends()],
-):
-    ...
+): ...
 
 
 @router.post(
@@ -143,5 +137,4 @@ def trash_workspace(
 )
 def untrash_workspace(
     _path: Annotated[WorkspacesPathParams, Depends()],
-):
-    ...
+): ...

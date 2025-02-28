@@ -1,4 +1,4 @@
-""" Helper script to automatically generate OAS
+"""Helper script to automatically generate OAS
 
 This OAS are the source of truth
 """
@@ -35,12 +35,14 @@ from simcore_service_webserver.projects._common.exceptions_handlers import (
     _TO_HTTP_ERROR_MAP,
 )
 from simcore_service_webserver.projects._common.models import ProjectPathParams
+from simcore_service_webserver.projects._controller._projects_rest import (
+    ProjectCreateQueryParams,
+)
 from simcore_service_webserver.projects._projects_models import (
     ProjectActiveQueryParams,
     ProjectsListQueryParams,
     ProjectsSearchQueryParams,
 )
-from simcore_service_webserver.projects._projects_rest import ProjectCreateQueryParams
 
 router = APIRouter(
     prefix=f"/{API_VTAG}",
@@ -83,8 +85,7 @@ async def create_project(
     _h: Annotated[_ProjectCreateHeaderParams, Depends()],
     _query: Annotated[ProjectCreateQueryParams, Depends()],
     _body: ProjectCreateNew | ProjectCopyOverride,
-):
-    ...
+): ...
 
 
 @router.get(
@@ -93,8 +94,7 @@ async def create_project(
 )
 async def list_projects(
     _query: Annotated[as_query(ProjectsListQueryParams), Depends()],
-):
-    ...
+): ...
 
 
 @router.get(
@@ -103,8 +103,7 @@ async def list_projects(
 )
 async def get_active_project(
     _query: Annotated[ProjectActiveQueryParams, Depends()],
-):
-    ...
+): ...
 
 
 @router.get(
@@ -113,8 +112,7 @@ async def get_active_project(
 )
 async def get_project(
     _path: Annotated[ProjectPathParams, Depends()],
-):
-    ...
+): ...
 
 
 @router.patch(
@@ -125,8 +123,7 @@ async def get_project(
 async def patch_project(
     _path: Annotated[ProjectPathParams, Depends()],
     _body: ProjectPatch,
-):
-    ...
+): ...
 
 
 @router.delete(
@@ -135,8 +132,7 @@ async def patch_project(
 )
 async def delete_project(
     _path: Annotated[ProjectPathParams, Depends()],
-):
-    ...
+): ...
 
 
 @router.post(
@@ -146,8 +142,7 @@ async def delete_project(
 )
 async def clone_project(
     _path: Annotated[ProjectPathParams, Depends()],
-):
-    ...
+): ...
 
 
 @router.get(
@@ -156,8 +151,7 @@ async def clone_project(
 )
 async def list_projects_full_search(
     _query: Annotated[as_query(ProjectsSearchQueryParams), Depends()],
-):
-    ...
+): ...
 
 
 @router.get(
@@ -167,5 +161,4 @@ async def list_projects_full_search(
 )
 async def get_project_inactivity(
     _path: Annotated[ProjectPathParams, Depends()],
-):
-    ...
+): ...

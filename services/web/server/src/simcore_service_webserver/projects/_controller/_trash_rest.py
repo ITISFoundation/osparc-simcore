@@ -7,20 +7,20 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_query_parameters_as,
 )
 
-from .._meta import API_VTAG as VTAG
-from ..exception_handling import (
+from ..._meta import API_VTAG as VTAG
+from ...exception_handling import (
     ExceptionToHttpErrorMap,
     HttpErrorInfo,
     exception_handling_decorator,
     to_exceptions_handlers_map,
 )
-from ..login.decorators import get_user_id, login_required
-from ..products import products_web
-from ..security.decorators import permission_required
-from . import _trash_service
-from ._common.exceptions_handlers import handle_plugin_requests_exceptions
-from ._common.models import ProjectPathParams, RemoveQueryParams
-from .exceptions import ProjectRunningConflictError, ProjectStoppingError
+from ...login.decorators import get_user_id, login_required
+from ...products import products_web
+from ...security.decorators import permission_required
+from .. import _trash_service
+from .._common.exceptions_handlers import handle_plugin_requests_exceptions
+from .._common.models import ProjectPathParams, RemoveQueryParams
+from ..exceptions import ProjectRunningConflictError, ProjectStoppingError
 
 _logger = logging.getLogger(__name__)
 
