@@ -447,25 +447,27 @@ class TutorialBase {
     return nodeIframe;
   }
 
-  async openNodeFiles(nodeId) {
-    this.__responsesQueue.addResponseListener("storage/locations/0/files/metadata?uuid_filter=" + nodeId);
+  async openNodeFiles(studyId, nodeId) {
+    const pathFilter = `${studyId}/${nodeId}`;
+    const path = "storage/locations/0/files/paths?file_filter=" + pathFilter;
+    this.__responsesQueue.addResponseListener(path);
     await auto.openNodeFiles(this.__page);
     try {
-      await this.__responsesQueue.waitUntilResponse("storage/locations/0/files/metadata?uuid_filter=" + nodeId);
-    }
-    catch (err) {
+      await this.__responsesQueue.waitUntilResponse(path);
+    } catch (err) {
       console.error("Error: open node files", err);
       throw (err);
     }
   }
 
-  async openNodeFilesAppMode(nodeId) {
-    this.__responsesQueue.addResponseListener("storage/locations/0/files/metadata?uuid_filter=" + nodeId);
+  async openNodeFilesAppMode(studyId, nodeId) {
+    const pathFilter = `${studyId}/${nodeId}`;
+    const path = "storage/locations/0/files/paths?file_filter=" + pathFilter;
+    this.__responsesQueue.addResponseListener(path);
     await auto.openNodeFilesAppMode(this.__page);
     try {
-      await this.__responsesQueue.waitUntilResponse("storage/locations/0/files/metadata?uuid_filter=" + nodeId);
-    }
-    catch (err) {
+      await this.__responsesQueue.waitUntilResponse(path);
+    } catch (err) {
       console.error("Error: open node files", err);
       throw (err);
     }
