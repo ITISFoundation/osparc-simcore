@@ -23,7 +23,6 @@ from pydantic import (
     ValidationError,
     model_validator,
 )
-from pytest_simcore.faker_projects_data import project_id
 from servicelib.utils import logged_gather
 
 from ..application_settings import get_application_settings
