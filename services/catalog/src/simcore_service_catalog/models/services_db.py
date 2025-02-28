@@ -7,7 +7,8 @@ from models_library.products import ProductName
 from models_library.services_access import ServiceGroupAccessRights
 from models_library.services_base import ServiceKeyVersion
 from models_library.services_types import ServiceKey, ServiceVersion
-from pydantic import BaseModel, ConfigDict, Field
+from models_library.utils.common_validators import empty_str_to_none_pre_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from pydantic.config import JsonDict
 from pydantic.types import PositiveInt
 from simcore_postgres_database.models.services_compatibility import CompatiblePolicyDict
@@ -123,6 +124,10 @@ class ServiceMetaDataDBCreate(BaseModel):
 
     model_config = ConfigDict(json_schema_extra=_update_json_schema_extra)
 
+    _prevent_empty_strings_in_nullable_string_cols = field_validator(
+        "icon", "thumbnail", "version_display", mode="before"
+    )(empty_str_to_none_pre_validator)
+
 
 class ServiceMetaDataDBPatch(BaseModel):
     # ownership
@@ -158,6 +163,10 @@ class ServiceMetaDataDBPatch(BaseModel):
         )
 
     model_config = ConfigDict(json_schema_extra=_update_json_schema_extra)
+
+    _prevent_empty_strings_in_nullable_string_cols = field_validator(
+        "icon", "thumbnail", "version_display", mode="before"
+    )(empty_str_to_none_pre_validator)
 
 
 class ReleaseDBGet(BaseModel):

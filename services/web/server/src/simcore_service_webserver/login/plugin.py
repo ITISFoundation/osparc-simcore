@@ -8,7 +8,7 @@ from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setu
 from settings_library.email import SMTPSettings
 from settings_library.postgres import PostgresSettings
 
-from .._constants import (
+from ..constants import (
     APP_PUBLIC_CONFIG_PER_PRODUCT,
     APP_SETTINGS_KEY,
     INDEX_RESOURCE_NAME,
@@ -18,7 +18,8 @@ from ..db.settings import get_plugin_settings as get_db_plugin_settings
 from ..email.plugin import setup_email
 from ..email.settings import get_plugin_settings as get_email_plugin_settings
 from ..invitations.plugin import setup_invitations
-from ..products.api import ProductName, list_products
+from ..products import products_service
+from ..products.models import ProductName
 from ..products.plugin import setup_products
 from ..redis import setup_redis
 from ..rest.plugin import setup_rest
@@ -90,7 +91,7 @@ async def _resolve_login_settings_per_product(app: web.Application):
         # compose app and product settings
 
         errors = {}
-        for product in list_products(app):
+        for product in products_service.list_products(app):
             try:
                 login_settings_per_product[
                     product.name

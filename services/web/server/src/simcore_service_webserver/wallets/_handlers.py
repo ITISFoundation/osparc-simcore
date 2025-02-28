@@ -21,9 +21,9 @@ from servicelib.aiohttp.typing_extension import Handler
 from servicelib.logging_errors import create_troubleshotting_log_kwargs
 from servicelib.request_keys import RQT_USERID_KEY
 
-from .._constants import RQ_PRODUCT_KEY
 from .._meta import API_VTAG as VTAG
 from ..application_settings_utils import requires_dev_feature_enabled
+from ..constants import RQ_PRODUCT_KEY
 from ..login.decorators import login_required
 from ..payments.errors import (
     InvalidPaymentMethodError,

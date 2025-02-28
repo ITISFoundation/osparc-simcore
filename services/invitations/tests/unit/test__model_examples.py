@@ -5,14 +5,16 @@
 # pylint: disable=unused-variable
 
 import itertools
-import json
 from typing import Any
 
 import pytest
 import simcore_service_invitations
 import simcore_service_invitations.api._invitations
 from pydantic import BaseModel
-from pytest_simcore.pydantic_models import iter_model_examples_in_module
+from pytest_simcore.pydantic_models import (
+    assert_validation_model,
+    iter_model_examples_in_module,
+)
 
 
 @pytest.mark.parametrize(
@@ -23,7 +25,8 @@ from pytest_simcore.pydantic_models import iter_model_examples_in_module
     ),
 )
 def test_model_examples(
-    model_cls: type[BaseModel], example_name: int, example_data: Any
+    model_cls: type[BaseModel], example_name: str, example_data: Any
 ):
-    print(example_name, ":", json.dumps(example_data))
-    assert model_cls.model_validate(example_data)
+    assert_validation_model(
+        model_cls, example_name=example_name, example_data=example_data
+    )

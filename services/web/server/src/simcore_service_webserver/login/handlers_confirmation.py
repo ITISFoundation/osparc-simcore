@@ -26,7 +26,8 @@ from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.errors import UniqueViolation
 from yarl import URL
 
-from ..products.api import Product, get_current_product
+from ..products import products_web
+from ..products.models import Product
 from ..security.api import encrypt_password
 from ..session.access_policies import session_access_required
 from ..utils import MINUTE
@@ -138,7 +139,7 @@ async def validate_confirmation_and_redirect(request: web.Request):
     """
     db: AsyncpgStorage = get_plugin_storage(request.app)
     cfg: LoginOptions = get_plugin_options(request.app)
-    product: Product = get_current_product(request)
+    product: Product = products_web.get_current_product(request)
 
     path_params = parse_request_path_parameters_as(_PathParam, request)
 
@@ -224,7 +225,7 @@ class PhoneConfirmationBody(InputSchema):
     unauthorized_reason=MSG_UNAUTHORIZED_PHONE_CONFIRMATION,
 )
 async def phone_confirmation(request: web.Request):
-    product: Product = get_current_product(request)
+    product: Product = products_web.get_current_product(request)
     settings: LoginSettingsForProduct = get_plugin_settings(
         request.app, product_name=product.name
     )
@@ -280,7 +281,7 @@ async def reset_password(request: web.Request):
     """
     db: AsyncpgStorage = get_plugin_storage(request.app)
     cfg: LoginOptions = get_plugin_options(request.app)
-    product: Product = get_current_product(request)
+    product: Product = products_web.get_current_product(request)
 
     path_params = parse_request_path_parameters_as(_PathParam, request)
     request_body = await parse_request_body_as(ResetPasswordConfirmation, request)

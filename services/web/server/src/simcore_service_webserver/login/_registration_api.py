@@ -13,7 +13,8 @@ from pydantic import EmailStr, PositiveInt, TypeAdapter, ValidationError
 from servicelib.utils_secrets import generate_passcode
 
 from ..email.utils import send_email_from_template
-from ..products.api import Product, get_current_product, get_product_template_path
+from ..products import products_web
+from ..products.models import Product
 
 _logger = logging.getLogger(__name__)
 
@@ -25,8 +26,10 @@ async def send_close_account_email(
     retention_days: PositiveInt,
 ):
     template_name = "close_account.jinja2"
-    email_template_path = await get_product_template_path(request, template_name)
-    product = get_current_product(request)
+    email_template_path = await products_web.get_product_template_path(
+        request, template_name
+    )
+    product: Product = products_web.get_current_product(request)
 
     try:
         await send_email_from_template(
@@ -64,7 +67,9 @@ async def send_account_request_email_to_support(
 ):
     template_name = "request_account.jinja2"
     destination_email = product.product_owners_email or product.support_email
-    email_template_path = await get_product_template_path(request, template_name)
+    email_template_path = await products_web.get_product_template_path(
+        request, template_name
+    )
     try:
         user_email = TypeAdapter(LowerCaseEmailStr).validate_python(
             request_form.get("email", None)

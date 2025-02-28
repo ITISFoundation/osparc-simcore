@@ -66,6 +66,23 @@ qx.Class.define("osparc.dashboard.CardBase", {
       LOADER: 3
     },
 
+    ICON_SIZE: 32,
+
+    createCardIcon: function() {
+      const iconSize = osparc.dashboard.CardBase.ICON_SIZE;
+      const icon = new osparc.ui.basic.Thumbnail(null, iconSize, iconSize).set({
+        minHeight: iconSize,
+        minWidth: iconSize,
+      });
+      icon.getChildControl("image").set({
+        anonymous: true,
+        decorator: "rounded",
+        minWidth: iconSize,
+        minHeight: iconSize,
+      });
+      return icon
+    },
+
     createTSRLayout: function() {
       const layout = new qx.ui.container.Composite(new qx.ui.layout.HBox(2).set({
         alignY: "middle"

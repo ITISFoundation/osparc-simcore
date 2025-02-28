@@ -32,7 +32,7 @@ qx.Class.define("osparc.desktop.preferences.pages.TagsPage", {
   members: {
     __tagsContainer: null,
 
-    __renderLayout: function() {
+    __renderLayout: async function() {
       // Tags
       this.__tagsContainer = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
       this.__tagsContainer.set({
@@ -44,6 +44,9 @@ qx.Class.define("osparc.desktop.preferences.pages.TagsPage", {
       });
 
       const tags = osparc.store.Tags.getInstance().getTags();
+      for (const tag of tags) {
+        await osparc.store.Tags.getInstance().fetchAccessRights(tag);
+      }
       const tagItems = tags.map(tag => new osparc.form.tag.TagItem().set({tag}));
       tagItems.forEach(tagItem => {
         this.__tagsContainer.add(tagItem);

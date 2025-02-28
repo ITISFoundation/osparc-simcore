@@ -752,13 +752,13 @@ typer==0.15.1
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
-types-aiobotocore==2.15.2.post3
+types-aiobotocore==2.19.0
     # via -r requirements/../../../packages/aws-library/requirements/_base.in
-types-aiobotocore-ec2==2.15.2
+types-aiobotocore-ec2==2.19.0
     # via types-aiobotocore
-types-aiobotocore-s3==2.15.2.post1
+types-aiobotocore-s3==2.19.0
     # via types-aiobotocore
-types-aiobotocore-ssm==2.15.2
+types-aiobotocore-ssm==2.19.0
     # via types-aiobotocore
 types-awscrt==0.23.3
     # via botocore-stubs

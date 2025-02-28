@@ -4,10 +4,11 @@
 # pylint: disable=too-many-arguments
 
 
-from typing import TypeAlias
+from typing import Annotated, TypeAlias
 from uuid import UUID
 
-from fastapi import APIRouter, Query, status
+from fastapi import APIRouter, Depends, Query, status
+from fastapi_pagination.cursor import CursorPage
 from models_library.api_schemas_storage.storage_schemas import (
     FileLocation,
     FileMetaDataGet,
@@ -16,13 +17,16 @@ from models_library.api_schemas_storage.storage_schemas import (
     FileUploadCompletionBody,
     FileUploadSchema,
     LinkType,
+    PathMetaDataGet,
     PresignedLink,
 )
 from models_library.api_schemas_webserver.storage import (
     DataExportPost,
+    ListPathsQueryParams,
     StorageAsyncJobGet,
     StorageAsyncJobResult,
     StorageAsyncJobStatus,
+    StorageLocationPathParams,
 )
 from models_library.generics import Envelope
 from models_library.projects_nodes_io import LocationID
@@ -54,11 +58,24 @@ async def list_storage_locations():
 
 
 @router.get(
+    "/storage/locations/{location_id}/paths",
+    response_model=CursorPage[PathMetaDataGet],
+)
+async def list_storage_paths(
+    _path: Annotated[StorageLocationPathParams, Depends()],
+    _query: Annotated[ListPathsQueryParams, Depends()],
+):
+    """Lists the files/directories in WorkingDirectory"""
+
+
+@router.get(
     "/storage/locations/{location_id}/datasets",
     response_model=Envelope[list[DatasetMetaData]],
     description="Get datasets metadata",
 )
-async def list_datasets_metadata(location_id: LocationID):
+async def list_datasets_metadata(
+    _path: Annotated[StorageLocationPathParams, Depends()],
+):
     """returns all the top level datasets a user has access to"""
 
 
@@ -68,7 +85,7 @@ async def list_datasets_metadata(location_id: LocationID):
     description="Get datasets metadata",
 )
 async def get_files_metadata(
-    location_id: LocationID,
+    _path: Annotated[StorageLocationPathParams, Depends()],
     uuid_filter: str = "",
     expand_dirs: bool = Query(
         True,
