@@ -12237,10 +12237,14 @@ components:
         release:
           $ref: '#/components/schemas/ServiceRelease'
         owner:
-          type: integer
-          exclusiveMinimum: true
+          anyOf:
+          - type: integer
+            exclusiveMinimum: true
+            minimum: 0
+          - type: 'null'
           title: Owner
-          minimum: 0
+          description: Service owner primary group id or None if ownership still not
+            defined
         myAccessRights:
           $ref: '#/components/schemas/ExecutableAccessRights'
       type: object
