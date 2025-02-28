@@ -1,4 +1,5 @@
 import logging
+from contextlib import suppress
 
 from models_library.api_schemas_catalog.services import (
     MyServiceGet,
@@ -392,16 +393,16 @@ async def batch_get_my_services(
         )
         assert service_db  # nosec
 
-        # Find service owner
+        # Find service owner (if defined!)
         owner: GroupID | None = service_db.owner
         if not owner:
             # NOTE can be more than one. Just get first.
-            owner = next(
-                ar.gid for ar in access_rights if ar.write_access and ar.execute_access
-            )
-
-        # TODO: raise error to indicate that no owner is registered for a given service
-        assert owner is not None  # nosec
+            with suppress(StopIteration):
+                owner = next(
+                    ar.gid
+                    for ar in access_rights
+                    if ar.write_access and ar.execute_access
+                )
 
         # Evaluate `compatibility`
         compatibility: Compatibility | None = None

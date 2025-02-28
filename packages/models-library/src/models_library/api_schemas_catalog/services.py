@@ -340,5 +340,5 @@ class MyServiceGet(CatalogOutputSchema):
     key: ServiceKey
     release: ServiceRelease
 
-    owner: GroupID
+    owner: GroupID | None
     my_access_rights: ServiceGroupAccessRightsV2

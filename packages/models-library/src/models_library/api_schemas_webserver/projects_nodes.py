@@ -206,7 +206,12 @@ class NodeRetrieved(RetrieveDataOut):
 class NodeServiceGet(OutputSchema):
     key: ServiceKey
     release: ServiceRelease
-    owner: GroupID
+    owner: Annotated[
+        GroupID | None,
+        Field(
+            description="Service owner primary group id or None if ownership still not defined"
+        ),
+    ]
     my_access_rights: ExecutableAccessRights
 
 

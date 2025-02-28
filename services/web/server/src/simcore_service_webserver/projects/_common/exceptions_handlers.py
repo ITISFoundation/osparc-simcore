@@ -166,7 +166,7 @@ _PRICING_ERRORS: ExceptionToHttpErrorMap = {
 _OTHER_ERRORS: ExceptionToHttpErrorMap = {
     CatalogServiceError: HttpErrorInfo(
         status.HTTP_503_SERVICE_UNAVAILABLE,
-        "This service is currently not available [supportID:{error_code}]",
+        "This service is currently not available",
     ),
     ClustersKeeperNotAvailableError: HttpErrorInfo(
         status.HTTP_503_SERVICE_UNAVAILABLE,
