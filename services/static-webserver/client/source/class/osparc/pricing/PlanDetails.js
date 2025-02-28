@@ -52,6 +52,8 @@ qx.Class.define("osparc.pricing.PlanDetails", {
   },
 
   members: {
+    __servicesPage: null,
+
     _createChildControlImpl: function(id) {
       let control;
       let layout;
@@ -96,7 +98,7 @@ qx.Class.define("osparc.pricing.PlanDetails", {
         }
         case "service-list": {
           control = new osparc.pricing.ServicesList();
-          const tabPage = this.self().createTabPage(this.tr("Services"), "@FontAwesome5Solid/cogs/14");
+          const tabPage = this.__servicesPage = this.self().createTabPage(this.tr("Services"), "@FontAwesome5Solid/cogs/14");
           tabPage.add(control, {
             flex: 1
           });
@@ -124,6 +126,11 @@ qx.Class.define("osparc.pricing.PlanDetails", {
       // set PricingPlanId to the tab views
       this.getChildControl("pricing-units").setPricingPlanId(pricingPlan.getModel());
       this.getChildControl("service-list").setPricingPlanId(pricingPlan.getModel());
+
+      // show services only if it's a TIER pricing plan
+      this.__servicesPage.getChildControl("button").set({
+        visibility: pricingPlan.getClassification() === "TIER" ? "visible" : "excluded"
+      });
     },
   }
 });
