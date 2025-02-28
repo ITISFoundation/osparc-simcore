@@ -87,7 +87,7 @@ from ..application_settings import get_application_settings
 from ..catalog import client as catalog_service
 from ..director_v2 import api as director_v2_service
 from ..dynamic_scheduler import api as dynamic_scheduler_service
-from ..products import products_service as products_service
+from ..products import products_web
 from ..rabbitmq import get_rabbitmq_rpc_client
 from ..redis import get_redis_lock_manager_client_sdk
 from ..resource_manager.user_sessions import (
@@ -176,7 +176,7 @@ async def get_project_for_user(
     db = ProjectDBAPI.get_from_app_context(app)
 
     product_name = await db.get_project_product(ProjectID(project_uuid))
-    user_project_access = await _access_rights_service._access_rights_service.check_user_project_permission(
+    user_project_access = await _access_rights_service.check_user_project_permission(
         app,
         project_id=ProjectID(project_uuid),
         user_id=user_id,
@@ -403,9 +403,9 @@ async def _get_default_pricing_and_hardware_info(
     )
 
 
-_MACHINE_TOTAL_RAM_SAFE_MARGIN_RATIO: Final[
-    float
-] = 0.1  # NOTE: machines always have less available RAM than advertised
+_MACHINE_TOTAL_RAM_SAFE_MARGIN_RATIO: Final[float] = (
+    0.1  # NOTE: machines always have less available RAM than advertised
+)
 _SIDECARS_OPS_SAFE_RAM_MARGIN: Final[ByteSize] = TypeAdapter(ByteSize).validate_python(
     "1GiB"
 )
@@ -428,11 +428,11 @@ async def update_project_node_resources_from_hardware_info(
         return
     try:
         rabbitmq_rpc_client = get_rabbitmq_rpc_client(app)
-        unordered_list_ec2_instance_types: list[
-            EC2InstanceTypeGet
-        ] = await get_instance_type_details(
-            rabbitmq_rpc_client,
-            instance_type_names=set(hardware_info.aws_ec2_instances),
+        unordered_list_ec2_instance_types: list[EC2InstanceTypeGet] = (
+            await get_instance_type_details(
+                rabbitmq_rpc_client,
+                instance_type_names=set(hardware_info.aws_ec2_instances),
+            )
         )
 
         assert unordered_list_ec2_instance_types  # nosec
@@ -643,7 +643,7 @@ async def _start_dynamic_service(  # noqa: C901
 
         # Get wallet/pricing/hardware information
         wallet_info, pricing_info, hardware_info = None, None, None
-        product = products_service.get_current_product(request)
+        product = products_web.get_current_product(request)
         app_settings = get_application_settings(request.app)
         if (
             product.is_payment_enabled
@@ -966,7 +966,7 @@ async def delete_project_node(
     assert db  # nosec
     await db.remove_project_node(user_id, project_uuid, NodeID(node_uuid))
     # also ensure the project is updated by director-v2 since services
-    product_name = products_service.get_product_name(request)
+    product_name = products_web.get_product_name(request)
     await director_v2_service.create_or_update_pipeline(
         request.app, user_id, project_uuid, product_name
     )
@@ -1368,10 +1368,10 @@ async def try_open_project_for_user(
 
                 # Assign project_id to current_session
                 current_session: UserSessionID = user_session.get_id()
-                sessions_with_project: list[
-                    UserSessionID
-                ] = await user_session.find_users_of_resource(
-                    app, PROJECT_ID_KEY, f"{project_uuid}"
+                sessions_with_project: list[UserSessionID] = (
+                    await user_session.find_users_of_resource(
+                        app, PROJECT_ID_KEY, f"{project_uuid}"
+                    )
                 )
                 if not sessions_with_project:
                     # no one has the project so we assign it
@@ -1420,10 +1420,10 @@ async def try_close_project_for_user(
 ):
     with managed_resource(user_id, client_session_id, app) as user_session:
         current_session: UserSessionID = user_session.get_id()
-        all_sessions_with_project: list[
-            UserSessionID
-        ] = await user_session.find_users_of_resource(
-            app, key=PROJECT_ID_KEY, value=project_uuid
+        all_sessions_with_project: list[UserSessionID] = (
+            await user_session.find_users_of_resource(
+                app, key=PROJECT_ID_KEY, value=project_uuid
+            )
         )
 
         # first check whether other sessions registered this project

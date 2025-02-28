@@ -16,6 +16,7 @@ from servicelib.aiohttp.requests_validation import parse_request_query_parameter
 from servicelib.aiohttp.typing_extension import Handler
 from servicelib.logging_errors import create_troubleshotting_log_kwargs
 
+from ..dynamic_scheduler import api as dynamic_scheduler_service
 from ..products import products_web
 from ..utils import compose_support_error_msg
 from ..utils_aiohttp import create_redirect_to_page_response

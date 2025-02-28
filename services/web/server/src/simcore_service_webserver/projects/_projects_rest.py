@@ -32,13 +32,13 @@ from servicelib.common_headers import (
 )
 from servicelib.redis import get_project_locked_state
 from simcore_postgres_database.webserver_models import ProjectType
+from simcore_service_webserver.products import products_web
 
 from .._meta import API_VTAG as VTAG
 from ..catalog import client as catalog_service
 from ..director_v2.exceptions import DirectorServiceError
 from ..login.decorators import login_required
 from ..notifications import project_logs as notifications_service
-from ..products import products_service
 from ..products.models import Product
 from ..redis import get_redis_lock_manager_client_sdk
 from ..resource_manager.user_sessions import PROJECT_ID_KEY, managed_resource
@@ -505,7 +505,7 @@ async def open_project(request: web.Request) -> web.Response:
             product_name=req_ctx.product_name,
         )
 
-        product: Product = products_service.get_current_product(request)
+        product: Product = products_web.get_current_product(request)
 
         if not await _projects_service.try_open_project_for_user(
             req_ctx.user_id,

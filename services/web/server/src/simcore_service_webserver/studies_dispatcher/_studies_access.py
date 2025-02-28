@@ -28,18 +28,18 @@ from servicelib.logging_errors import create_troubleshotting_log_kwargs
 
 from ..constants import INDEX_RESOURCE_NAME
 from ..director_v2._core_computations import create_or_update_pipeline
+from ..dynamic_scheduler import api as dynamic_scheduler_service
 from ..products import products_web
-from ..projects.api import check_user_project_permission
-from ..projects.db import ProjectDBAPI
+from ..projects import projects_access_rights_service, projects_groups_repository
 from ..projects.exceptions import (
     ProjectGroupNotFoundError,
     ProjectInvalidRightsError,
     ProjectNotFoundError,
 )
 from ..projects.models import ProjectDict
-from ..projects.projects_access_rights_service import check_user_project_permission
-from ..security.api import is_anonymous, remember_identity
-from ..storage.api import copy_data_folders_from_project
+from ..projects.projects_service_legacy import ProjectDBAPI
+from ..security import api as security_service
+from ..storage import api as storage_service
 from ..utils import compose_support_error_msg
 from ..utils_aiohttp import create_redirect_to_page_response
 from ._constants import (
@@ -153,7 +153,7 @@ async def copy_study_to_account(
 
     try:
         product_name = await db.get_project_product(template_project["uuid"])
-        await check_user_project_permission(
+        await projects_access_rights_service.check_user_project_permission(
             request.app,
             project_id=template_project["uuid"],
             user_id=user["id"],
@@ -195,7 +195,7 @@ async def copy_study_to_account(
             force_project_uuid=True,
             project_nodes=None,
         )
-        async for lr_task in copy_data_folders_from_project(
+        async for lr_task in storage_service.copy_data_folders_from_project(
             request.app,
             template_project,
             project,
@@ -297,7 +297,7 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
 
     # Checks USER
     user = None
-    is_anonymous_user = await is_anonymous(request)
+    is_anonymous_user = await security_service.is_anonymous(request)
     if not is_anonymous_user:
         # NOTE: covers valid cookie with unauthorized user (e.g. expired guest/banned)
         user = await get_authorized_user(request)
@@ -402,7 +402,7 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
     if is_anonymous_user:
         _logger.debug("Auto login for anonymous user %s", user["name"])
 
-        await remember_identity(
+        await security_service.remember_identity(
             request,
             response,
             user_email=user["email"],

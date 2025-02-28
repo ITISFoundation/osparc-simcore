@@ -6,6 +6,7 @@ from pydantic import TypeAdapter
 
 from ..application_settings import get_application_settings
 from ..products.models import Product
+from ..projects import projects_wallets_service
 from ..users import preferences_api as user_preferences_api
 from ..users.exceptions import UserDefaultWalletNotFoundError
 from ..wallets import api as _wallets_service
