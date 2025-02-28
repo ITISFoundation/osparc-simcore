@@ -14,8 +14,10 @@ from simcore_postgres_database.utils_products_prices import (
     get_product_latest_price_info_or_none,
     get_product_latest_stripe_info,
 )
+from simcore_postgres_database.utils_repos import pass_or_acquire_connection
+from sqlalchemy.ext.asyncio import AsyncConnection
 
-from ..db.base_repository import BaseRepository
+from ..db.base_repository import BaseRepositoryV2
 from ..db.models import products
 from .models import Product
 
@@ -86,13 +88,15 @@ async def iter_products(conn: SAConnection) -> AsyncIterator[ResultProxy]:
         yield row
 
 
-class ProductRepository(BaseRepository):
-    async def list_products_names(self) -> list[ProductName]:
-        async with self.engine.acquire() as conn:
+class ProductRepository(BaseRepositoryV2):
+    async def list_products_names(
+        self,
+        connection: AsyncConnection | None = None,
+    ) -> list[ProductName]:
+        async with pass_or_acquire_connection(self.engine, connection) as conn:
             query = sa.select(products.c.name).order_by(products.c.priority)
-            result = await conn.execute(query)
-            rows = await result.fetchall()
-            return [ProductName(row.name) for row in rows]
+            rows = await conn.stream(query)
+            return [ProductName(row.name) async for row in rows]
 
     async def get_product(self, product_name: str) -> Product | None:
         async with self.engine.acquire() as conn:
