@@ -12,6 +12,7 @@ from models_library.basic_types import KeyIDStr
 from models_library.projects import ProjectID
 from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeID, SimCoreFileLink
+from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from pydantic import (
     BaseModel,
@@ -22,10 +23,12 @@ from pydantic import (
     ValidationError,
     model_validator,
 )
+from pytest_simcore.faker_projects_data import project_id
 from servicelib.utils import logged_gather
 
 from ..application_settings import get_application_settings
 from ..storage.api import get_download_link, get_files_in_node_folder
+from . import _nodes_repository
 from .exceptions import ProjectStartsTooManyDynamicNodesError
 
 _logger = logging.getLogger(__name__)
@@ -69,6 +72,14 @@ def get_total_project_dynamic_nodes_creation_interval(
     director-v2. Note: these calls are sent one after the other.
     """
     return max_nodes * _NODE_START_INTERVAL_S.total_seconds()
+
+
+async def get_project_nodes_services(
+    app: web.Application, *, project_uuid: ProjectID
+) -> list[tuple[ServiceKey, ServiceVersion]]:
+    return await _nodes_repository.get_project_nodes_services(
+        app, project_uuid=project_uuid
+    )
 
 
 #

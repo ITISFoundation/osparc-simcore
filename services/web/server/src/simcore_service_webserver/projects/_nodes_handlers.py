@@ -67,6 +67,7 @@ from ..projects.api import has_user_project_access_rights
 from ..security.decorators import permission_required
 from ..users.api import get_user_id_from_gid, get_user_role
 from ..utils_aiohttp import envelope_json_response
+from . import _nodes_api as _nodes_service
 from . import nodes_utils, projects_service
 from ._common.exceptions_handlers import handle_plugin_requests_exceptions
 from ._common.models import ProjectPathParams, RequestContext
@@ -478,9 +479,13 @@ async def get_project_services(request: web.Request) -> web.Response:
     req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
-    services_in_project: list[tuple[ServiceKey, ServiceVersion]] = []
-    # TODO: call projects repository and get all services in the projects' node
-    # and fill services_in_project
+    # FIXME: check user_id has read access to this project!
+
+    services_in_project: list[tuple[ServiceKey, ServiceVersion]] = (
+        await _nodes_service.get_project_nodes_services(
+            request.app, project_uuid=path_params.project_id
+        )
+    )
 
     services: list[MyServiceGet] = await catalog_service.batch_get_my_services(
         request.app,
