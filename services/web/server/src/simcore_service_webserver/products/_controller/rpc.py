@@ -5,8 +5,8 @@ from models_library.api_schemas_webserver import WEBSERVER_RPC_NAMESPACE
 from models_library.products import CreditResultGet, ProductName
 from servicelib.rabbitmq import RPCRouter
 
-from ..rabbitmq import get_rabbitmq_rpc_server
-from . import _service
+from ...rabbitmq import get_rabbitmq_rpc_server
+from .. import _service
 
 router = RPCRouter()
 
