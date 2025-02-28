@@ -10301,6 +10301,22 @@ components:
       - resource
       - field
       title: ErrorItemType
+    ExecutableAccessRights:
+      properties:
+        write:
+          type: boolean
+          title: Write
+          description: can change executable settings
+        execute:
+          type: boolean
+          title: Execute
+          description: can run executable
+      additionalProperties: false
+      type: object
+      required:
+      - write
+      - execute
+      title: ExecutableAccessRights
     FeaturesDict:
       properties:
         age:
@@ -12226,7 +12242,7 @@ components:
           title: Owner
           minimum: 0
         myAccessRights:
-          $ref: '#/components/schemas/AccessRights'
+          $ref: '#/components/schemas/ExecutableAccessRights'
       type: object
       required:
       - key
