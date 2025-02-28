@@ -251,6 +251,7 @@ async def test_prune_expired_api_keys_task_is_triggered(
         stop=stop_after_attempt(5),
         wait=wait_fixed(1),
         retry=retry_if_exception_type(AssertionError),
+        reraise=True,
     ):
         with attempt:
             mock.assert_called()
