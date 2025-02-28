@@ -9,25 +9,6 @@ import logging
 from aiohttp import web
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
-from ..constants import APP_SETTINGS_KEY
-from ._controller import (
-    _comments_rest,
-    _folders_rest,
-    _groups_rest,
-    _metadata_rest,
-    _nodes_pricing_unit_rest,
-    _nodes_rest,
-    _ports_rest,
-    _projects_rest,
-    _tags_rest,
-    _trash_rest,
-    _wallets_rest,
-    _workspaces_rest,
-)
-from ._controller._projects_slots import setup_project_observer_events
-from ._projects_repository_legacy import setup_projects_db
-from ._security_service import setup_projects_access
-
 logger = logging.getLogger(__name__)
 
 
@@ -39,17 +20,36 @@ logger = logging.getLogger(__name__)
     logger=logger,
 )
 def setup_projects(app: web.Application) -> bool:
+    from ..constants import APP_SETTINGS_KEY
+    from . import _projects_repository_legacy, _security_service
+    from ._controller import (
+        _comments_rest,
+        _folders_rest,
+        _groups_rest,
+        _metadata_rest,
+        _nodes_pricing_unit_rest,
+        _nodes_rest,
+        _ports_rest,
+        _projects_rest,
+        _projects_slots,
+        _tags_rest,
+        _trash_rest,
+        _wallets_rest,
+        _workspaces_rest,
+    )
+
     assert app[APP_SETTINGS_KEY].WEBSERVER_PROJECTS  # nosec
 
     # security access : Inject permissions to rest API resources
-    setup_projects_access(app)
+    _security_service.setup_projects_access(app)
 
     # database API
-    setup_projects_db(app)
+    _projects_repository_legacy.setup_projects_db(app)
 
-    # registers event handlers (e.g. on_user_disconnect)
-    setup_project_observer_events(app)
+    # slots: registers event handlers (e.g. on_user_disconnect)
+    _projects_slots.setup_project_observer_events(app)
 
+    # rest
     app.router.add_routes(_projects_rest.routes)
     app.router.add_routes(_comments_rest.routes)
     app.router.add_routes(_groups_rest.routes)
