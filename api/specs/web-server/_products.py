@@ -17,7 +17,9 @@ from models_library.api_schemas_webserver.product import (
 )
 from models_library.generics import Envelope
 from simcore_service_webserver._meta import API_VTAG
-from simcore_service_webserver.products._rest_schemas import ProductsRequestParams
+from simcore_service_webserver.products._controller.rest_schemas import (
+    ProductsRequestParams,
+)
 
 router = APIRouter(
     prefix=f"/{API_VTAG}",

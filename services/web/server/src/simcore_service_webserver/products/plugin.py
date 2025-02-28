@@ -30,7 +30,8 @@ def setup_products(app: web.Application):
     #
     from ..constants import APP_SETTINGS_KEY
     from ..rabbitmq import setup_rabbitmq
-    from . import _rest, _rpc, _web_events, _web_middlewares
+    from . import _web_events, _web_middlewares
+    from ._controller import rest, rpc
 
     assert app[APP_SETTINGS_KEY].WEBSERVER_PRODUCTS is True  # nosec
 
@@ -38,12 +39,12 @@ def setup_products(app: web.Application):
     app.middlewares.append(_web_middlewares.discover_product_middleware)
 
     # setup rest
-    app.router.add_routes(_rest.routes)
+    app.router.add_routes(rest.routes)
 
     # setup rpc
     setup_rabbitmq(app)
     if app[APP_SETTINGS_KEY].WEBSERVER_RABBITMQ:
-        app.on_startup.append(_rpc.register_rpc_routes_on_startup)
+        app.on_startup.append(rpc.register_rpc_routes_on_startup)
 
     # setup events
     app.on_startup.append(

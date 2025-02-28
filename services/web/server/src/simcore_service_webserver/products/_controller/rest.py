@@ -8,14 +8,14 @@ from models_library.api_schemas_webserver.product import (
 )
 from servicelib.aiohttp.requests_validation import parse_request_path_parameters_as
 
-from .._meta import API_VTAG as VTAG
-from ..login.decorators import login_required
-from ..security.decorators import permission_required
-from ..utils_aiohttp import envelope_json_response
-from . import _service, products_web
-from ._repository import ProductRepository
-from ._rest_schemas import ProductsRequestContext, ProductsRequestParams
-from .models import Product
+from ..._meta import API_VTAG as VTAG
+from ...login.decorators import login_required
+from ...security.decorators import permission_required
+from ...utils_aiohttp import envelope_json_response
+from .. import _service, products_web
+from .._repository import ProductRepository
+from ..models import Product
+from .rest_schemas import ProductsRequestContext, ProductsRequestParams
 
 routes = web.RouteTableDef()
 
