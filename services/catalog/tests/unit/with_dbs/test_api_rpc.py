@@ -405,6 +405,7 @@ async def test_rpc_batch_get_my_services(
     mocked_director_service_api: MockRouter,
     rpc_client: RabbitMQRPCClient,
     product_name: ProductName,
+    user: dict[str, Any],
     user_id: UserID,
     app: FastAPI,
     create_fake_service_data: Callable,
@@ -413,7 +414,8 @@ async def test_rpc_batch_get_my_services(
     # Create fake services data
     service_key = "simcore/services/comp/test-batch-service"
     service_version_1 = "1.0.0"
-    service_version_2 = "2.0.0"
+    service_version_2 = "1.0.5"
+
     other_service_key = "simcore/services/comp/other-batch-service"
     other_service_version = "1.0.0"
 
@@ -442,10 +444,9 @@ async def test_rpc_batch_get_my_services(
     # Inject fake services into the database
     await services_db_tables_injector([fake_service_1, fake_service_2, fake_service_3])
 
-    # Batch get my services
+    # Batch get my services: project with two, not three
     ids = [
         (service_key, service_version_1),
-        (service_key, service_version_2),
         (other_service_key, other_service_version),
     ]
 
@@ -456,19 +457,23 @@ async def test_rpc_batch_get_my_services(
         ids=ids,
     )
 
-    assert len(my_services) == 3
+    assert len(my_services) == 2
 
-    # Check access rights
+    # Check access rights to all of them
     assert my_services[0].my_access_rights.model_dump() == {
-        "execute": False,
-        "write": False,
+        "execute": True,
+        "write": True,
     }
+    assert my_services[0].owner == user["primary_gid"]
+    assert my_services[0].key == service_key
+    assert my_services[0].release.version == service_version_1
+    assert my_services[0].release.compatibility
+    assert (
+        my_services[0].release.compatibility.can_update_to.version == service_version_2
+    )
+
     assert my_services[1].my_access_rights.model_dump() == {
         "execute": True,
-        "write": False,
+        "write": True,
     }
-    assert my_services[2].my_access_rights.model_dump() == {
-        "execute": False,
-        "write": False,
-    }
-    assert my_services[2].owner is not None
+    assert my_services[1].owner == user["primary_gid"]

@@ -179,7 +179,7 @@ class ServicesRepository(BaseRepository):
         product_name: str | None = None,
     ) -> ServiceMetaDataDBGet | None:
 
-        query = sa.select(SERVICES_META_DATA_COLS)
+        query = sa.select(*SERVICES_META_DATA_COLS)
 
         if gids or execute_access or write_access:
             conditions = [
