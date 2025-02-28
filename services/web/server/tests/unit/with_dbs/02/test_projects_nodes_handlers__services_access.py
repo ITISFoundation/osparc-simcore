@@ -19,6 +19,7 @@ from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import UserInfoDict
 from servicelib.aiohttp import status
+from servicelib.rabbitmq import RPCServerError
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects.models import ProjectDict
 from yarl import URL
@@ -550,3 +551,36 @@ async def test_get_project_services(
             },
         ],
     }
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_get_project_services_service_unavailable(
+    client: TestClient,
+    user_project: ProjectDict,
+    mocker: MockerFixture,
+    logged_user: UserInfoDict,
+):
+    mocker.patch(
+        "simcore_service_webserver.catalog._api.catalog_rpc.batch_get_my_services",
+        spec=True,
+        side_effect=RPCServerError(
+            exc_message="Service Unavailable",
+            method_name="batch_get_my_services",
+            exc_type="Exception",
+        ),
+    )
+
+    assert client.app
+
+    project_id = user_project["uuid"]
+
+    expected_url = client.app.router["get_project_services"].url_for(
+        project_id=project_id
+    )
+    assert URL(f"/v0/projects/{project_id}/nodes/-/services") == expected_url
+
+    resp = await client.get(f"/v0/projects/{project_id}/nodes/-/services")
+    data, error = await assert_status(resp, status.HTTP_503_SERVICE_UNAVAILABLE)
+
+    assert error
+    assert not data
