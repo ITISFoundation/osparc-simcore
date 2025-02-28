@@ -111,9 +111,9 @@ qx.Class.define("osparc.store.Pricing", {
         data: pricingUnitData
       };
       return osparc.data.Resources.fetch("pricingUnits", "post", params)
-        .then(() => {
+        .then(newPricingUnitData => {
           const pricingPlan = this.getPricingPlan(pricingPlanId);
-          this.__addPricingUnitToCache(pricingPlan, pricingUnitData);
+          this.__addPricingUnitToCache(pricingPlan, newPricingUnitData);
           return pricingPlan;
         })
     },
