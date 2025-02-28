@@ -17,7 +17,7 @@ from models_library.projects import ProjectID
 from models_library.projects_comments import CommentID, ProjectsCommentsAPI
 from pydantic import NonNegativeInt
 from simcore_service_webserver._meta import API_VTAG
-from simcore_service_webserver.projects._controller._comments_rest import (
+from simcore_service_webserver.projects._controller.comments_rest import (
     _ProjectCommentsBodyParams,
     _ProjectCommentsPathParams,
     _ProjectCommentsWithCommentPathParams,

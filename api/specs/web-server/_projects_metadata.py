@@ -18,7 +18,7 @@ from models_library.api_schemas_webserver.projects_metadata import (
 )
 from models_library.generics import Envelope
 from simcore_service_webserver._meta import API_VTAG
-from simcore_service_webserver.projects._controller._metadata_rest import (
+from simcore_service_webserver.projects._controller.metadata_rest import (
     ProjectPathParams,
 )
 

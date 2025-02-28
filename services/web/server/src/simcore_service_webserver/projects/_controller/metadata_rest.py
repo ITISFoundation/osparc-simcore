@@ -28,8 +28,8 @@ from ...login.decorators import login_required
 from ...security.decorators import permission_required
 from ...utils_aiohttp import envelope_json_response
 from .. import _metadata_service
-from .._common.exceptions_handlers import handle_plugin_requests_exceptions
 from .._common.models import ProjectPathParams, RequestContext
+from ._rest_exceptions_handlers import handle_plugin_requests_exceptions
 
 routes = web.RouteTableDef()
 

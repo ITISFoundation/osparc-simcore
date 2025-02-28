@@ -17,10 +17,10 @@ from ...resource_usage import service as rut_api
 from ...security.decorators import permission_required
 from ...utils_aiohttp import envelope_json_response
 from .. import _projects_service
-from .._common.exceptions_handlers import handle_plugin_requests_exceptions
 from .._common.models import RequestContext
 from .._projects_repository_legacy import ProjectDBAPI
-from ._nodes_rest import NodePathParams
+from ._rest_exceptions_handlers import handle_plugin_requests_exceptions
+from .nodes_rest import NodePathParams
 
 _logger = logging.getLogger(__name__)
 

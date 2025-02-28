@@ -15,10 +15,10 @@ from simcore_service_webserver.folders._common.models import (
     FoldersPathParams,
     FolderTrashQueryParams,
 )
-from simcore_service_webserver.projects._common.exceptions_handlers import (
+from simcore_service_webserver.projects._controller._rest_exceptions_handlers import (
     _TO_HTTP_ERROR_MAP,
 )
-from simcore_service_webserver.projects._controller._trash_rest import ProjectPathParams
+from simcore_service_webserver.projects._controller.trash_rest import ProjectPathParams
 from simcore_service_webserver.workspaces._common.models import (
     WorkspacesPathParams,
     WorkspaceTrashQueryParams,

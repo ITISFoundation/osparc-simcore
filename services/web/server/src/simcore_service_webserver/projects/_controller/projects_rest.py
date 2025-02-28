@@ -54,7 +54,6 @@ from .. import (
     _projects_service_read,
     _wallets_service,
 )
-from .._common.exceptions_handlers import handle_plugin_requests_exceptions
 from .._common.models import ProjectPathParams, RequestContext
 from .._projects_models import (
     ProjectActiveQueryParams,
@@ -70,6 +69,7 @@ from .._projects_service_utils import (
 )
 from ..exceptions import ProjectStartsTooManyDynamicNodesError
 from ..models import ProjectDict
+from ._rest_exceptions_handlers import handle_plugin_requests_exceptions
 
 # When the user requests a project with a repo, the working copy might differ from
 # the repo project. A middleware in the meta module (if active) will resolve
