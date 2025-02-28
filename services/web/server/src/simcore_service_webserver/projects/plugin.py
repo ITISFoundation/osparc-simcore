@@ -9,22 +9,7 @@ import logging
 from aiohttp import web
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
-from ._controller import (
-    comments_rest,
-    folders_rest,
-    groups_rest,
-    metadata_rest,
-    nodes_pricing_unit_rest,
-    nodes_rest,
-    ports_rest,
-    projects_rest,
-    projects_slots,
-    tags_rest,
-    trash_rest,
-    wallets_rest,
-)
-
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 @app_module_setup(
@@ -32,12 +17,24 @@ logger = logging.getLogger(__name__)
     ModuleCategory.ADDON,
     settings_name="WEBSERVER_PROJECTS",
     depends=[f"simcore_service_webserver.{mod}" for mod in ("rest", "db")],
-    logger=logger,
+    logger=_logger,
 )
 def setup_projects(app: web.Application) -> bool:
     from ..constants import APP_SETTINGS_KEY
     from . import _projects_repository_legacy, _security_service
     from ._controller import (
+        comments_rest,
+        folders_rest,
+        groups_rest,
+        metadata_rest,
+        nodes_pricing_unit_rest,
+        nodes_rest,
+        ports_rest,
+        projects_rest,
+        projects_slots,
+        tags_rest,
+        trash_rest,
+        wallets_rest,
         workspaces_rest,
     )
 

@@ -1,9 +1,3 @@
-""" Handlers for STANDARD methods on /projects colletions
-
-Standard methods or CRUD that states for Create+Read(Get&List)+Update+Delete
-
-"""
-
 from models_library.projects import ProjectID
 from pydantic import BaseModel, ConfigDict, Field
 

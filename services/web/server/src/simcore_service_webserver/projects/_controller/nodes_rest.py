@@ -63,7 +63,6 @@ from ...users.api import get_user_id_from_gid, get_user_role
 from ...utils_aiohttp import envelope_json_response
 from .. import _projects_service
 from .._access_rights_service import has_user_project_access_rights
-from .._common.models import ProjectPathParams, RequestContext
 from .._nodes_service import NodeScreenshot, get_node_screenshots
 from ..exceptions import (
     NodeNotFoundError,
@@ -71,6 +70,7 @@ from ..exceptions import (
     ProjectNodeResourcesInvalidError,
 )
 from ._rest_exceptions_handlers import handle_plugin_requests_exceptions
+from ._rest_schemas import ProjectPathParams, RequestContext
 
 _logger = logging.getLogger(__name__)
 
