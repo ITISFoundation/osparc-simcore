@@ -225,41 +225,20 @@ _EXAMPLE_SLEEPER: dict[str, Any] = {
 }
 
 
-class ServiceGet(api_schemas_catalog_services.ServiceGet):
-    # pylint: disable=too-many-ancestors
-    inputs: Annotated[
-        ServiceInputsGetDict, Field(description="inputs with extended information")
-    ]
-    outputs: Annotated[
-        ServiceOutputsGetDict, Field(description="outputs with extended information")
-    ]
-
-    @staticmethod
-    def _update_json_schema_extra(schema: JsonDict) -> None:
-        schema.update({"examples": [_EXAMPLE_FILEPICKER, _EXAMPLE_SLEEPER]})
-
-    model_config = ConfigDict(
-        **OutputSchema.model_config,
-        json_schema_extra=_update_json_schema_extra,
-    )
-
-
 ServiceResourcesGet: TypeAlias = api_schemas_catalog_services.ServiceResourcesGet
 
 
 class CatalogServiceListItem(api_schemas_catalog_services.ServiceListItem):
-    inputs: ServiceInputsGetDict
-    outputs: ServiceOutputsGetDict
+    inputs: ServiceInputsGetDict  # type: ignore[assignment]
+    outputs: ServiceOutputsGetDict  # type: ignore[assignment]
 
 
 class CatalogServiceGet(api_schemas_catalog_services.ServiceGetV2):
-    # NOTE: will replace ServiceGet!
-
     # pylint: disable=too-many-ancestors
-    inputs: Annotated[
+    inputs: Annotated[  # type: ignore[assignment]
         ServiceInputsGetDict, Field(description="inputs with extended information")
     ]
-    outputs: Annotated[
+    outputs: Annotated[  # type: ignore[assignment]
         ServiceOutputsGetDict, Field(description="outputs with extended information")
     ]
 
