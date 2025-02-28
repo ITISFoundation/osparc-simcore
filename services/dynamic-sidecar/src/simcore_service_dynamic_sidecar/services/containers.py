@@ -1,12 +1,12 @@
 import logging
 
 from fastapi import FastAPI
+from models_library.api_schemas_dynamic_sidecar.containers import DcokerComposeYamlStr
 
 from ..core.settings import ApplicationSettings
-from ..core.utils import MountedVolumes
 from ..core.validation import ComposeSpecValidation, validate_compose_spec
-from ..models.schemas.containers import DcokerComposeYamlStr
 from ..models.shared_store import SharedStore, get_shared_store
+from ..modules.mounted_fs import MountedVolumes
 
 _logger = logging.getLogger(__name__)
 

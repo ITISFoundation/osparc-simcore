@@ -64,6 +64,8 @@ async def store_compose_spec(
     containers_compose_spec: ContainersComposeSpec,
     app: Annotated[FastAPI, Depends(get_application)],
 ):
+    """Validates and stores the docker compose spec for the user services."""
+
     _ = request
     await containers.store_conpose_spec(
         app,
