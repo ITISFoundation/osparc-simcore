@@ -15,6 +15,7 @@ from faker import Faker
 from models_library.products import ProductName
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_login import NewUser, UserInfoDict
 from servicelib.aiohttp import status
@@ -226,11 +227,12 @@ async def app_environment(
     app_environment: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
 ) -> EnvVarsDict:
-    webserver_garbage_collector = '{"GARBAGE_COLLECTOR_INTERVAL_S": 30, "GARBAGE_COLLECTOR_PRUNE_APIKEYS_INTERVAL_S": 1}'
-    monkeypatch.setenv("WEBSERVER_GARBAGE_COLLECTOR", webserver_garbage_collector)
-    return app_environment | {
-        "WEBSERVER_GARBAGE_COLLECTOR": webserver_garbage_collector
-    }
+    return app_environment | setenvs_from_dict(
+        monkeypatch,
+        {
+            "WEBSERVER_GARBAGE_COLLECTOR": '{"GARBAGE_COLLECTOR_INTERVAL_S": 30, "GARBAGE_COLLECTOR_PRUNE_APIKEYS_INTERVAL_S": 1}'
+        },
+    )
 
 
 async def test_prune_expired_api_keys_task_is_triggered(
