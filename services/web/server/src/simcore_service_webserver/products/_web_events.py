@@ -1,21 +1,17 @@
 import logging
 import tempfile
-from collections import OrderedDict
 from pathlib import Path
 
 from aiohttp import web
-from aiopg.sa.engine import Engine
-from aiopg.sa.result import RowProxy
-from pydantic import ValidationError
-from servicelib.exceptions import InvalidConfig
+from models_library.products import ProductName
 from simcore_postgres_database.utils_products import (
-    get_default_product_name,
     get_or_create_product_group,
 )
 
-from ..constants import APP_PRODUCTS_KEY, FRONTEND_APP_DEFAULT, FRONTEND_APPS_AVAILABLE
+from ..constants import APP_PRODUCTS_KEY
 from ..db.plugin import get_database_engine
-from ._repository import get_product_payment_fields, iter_products
+from . import _service
+from ._repository import iter_products
 from .models import Product
 
 _logger = logging.getLogger(__name__)
@@ -62,7 +58,7 @@ async def auto_create_products_groups(app: web.Application) -> None:
 
 def _set_app_state(
     app: web.Application,
-    app_products: OrderedDict[str, Product],
+    app_products: dict[ProductName, Product],
     default_product_name: str,
 ):
     app[APP_PRODUCTS_KEY] = app_products
@@ -74,34 +70,12 @@ async def load_products_on_startup(app: web.Application):
     """
     Loads info on products stored in the database into app's storage (i.e. memory)
     """
-    app_products: OrderedDict[str, Product] = OrderedDict()
-    engine: Engine = get_database_engine(app)
-    async with engine.acquire() as connection:
-        async for row in iter_products(connection):
-            assert isinstance(row, RowProxy)  # nosec
-            try:
-                name = row.name
+    app_products: dict[ProductName, Product] = {
+        product.name: product for product in await _service.load_products(app)
+    }
 
-                payments = await get_product_payment_fields(
-                    connection, product_name=name
-                )
-
-                app_products[name] = Product(
-                    **dict(row.items()),
-                    is_payment_enabled=payments.enabled,
-                    credits_per_usd=payments.credits_per_usd,
-                )
-
-                assert name in FRONTEND_APPS_AVAILABLE  # nosec
-
-            except ValidationError as err:
-                msg = f"Invalid product configuration in db '{row}':\n {err}"
-                raise InvalidConfig(msg) from err
-
-        assert FRONTEND_APP_DEFAULT in app_products  # nosec
-
-        default_product_name = await get_default_product_name(connection)
+    default_product_name = await _service.get_default_product_name(app)
 
     _set_app_state(app, app_products, default_product_name)
 
-    _logger.debug("Product loaded: %s", [p.name for p in app_products.values()])
+    _logger.debug("Product loaded: %s", list(app_products))
