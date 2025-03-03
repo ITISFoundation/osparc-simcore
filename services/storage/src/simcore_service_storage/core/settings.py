@@ -36,13 +36,6 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     STORAGE_MONITORING_ENABLED: bool = False
     STORAGE_PROFILING: bool = False
 
-    BF_API_KEY: str | None = Field(
-        None, description="Pennsieve API key ONLY for testing purposes"
-    )
-    BF_API_SECRET: str | None = Field(
-        None, description="Pennsieve API secret ONLY for testing purposes"
-    )
-
     STORAGE_POSTGRES: PostgresSettings | None = Field(
         json_schema_extra={"auto_default_from_env": True}
     )
