@@ -8,9 +8,9 @@ from collections.abc import AsyncIterator
 
 import pytest
 import sqlalchemy as sa
+from asyncpg.exceptions import CheckViolationError, ForeignKeyViolationError
 from faker import Faker
 from pytest_simcore.helpers.faker_factories import random_product
-from simcore_postgres_database.errors import CheckViolation, ForeignKeyViolation
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.products_prices import products_prices
 from simcore_postgres_database.utils_products_prices import (
@@ -62,7 +62,7 @@ async def test_non_negative_price_not_allowed(
     connection: AsyncConnection, fake_product: Row, faker: Faker
 ):
     # negative price not allowed
-    with pytest.raises(CheckViolation) as exc_info:
+    with pytest.raises(CheckViolationError) as exc_info:
         await connection.execute(
             products_prices.insert().values(
                 product_name=fake_product.name,
@@ -102,7 +102,7 @@ async def test_delete_price_constraints(
     )
 
     # should not be able to delete a product w/o deleting price first
-    with pytest.raises(ForeignKeyViolation) as exc_info:
+    with pytest.raises(ForeignKeyViolationError) as exc_info:
         await connection.execute(products.delete())
 
     assert exc_info.match("delete")
