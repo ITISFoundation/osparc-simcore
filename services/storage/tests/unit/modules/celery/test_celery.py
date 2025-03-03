@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import time
 from collections.abc import Callable
@@ -6,12 +7,43 @@ from random import randint
 import pytest
 from celery import Celery, Task
 from celery.contrib.abortable import AbortableTask
+from models_library.progress_bar import ProgressReport
 from simcore_service_storage.main import CeleryTaskQueueClient
-from simcore_service_storage.modules.celery.example_tasks import sync_archive
 from simcore_service_storage.modules.celery.models import TaskContext
+from simcore_service_storage.modules.celery.utils import (
+    get_celery_worker,
+    get_event_loop,
+)
+from simcore_service_storage.modules.celery.worker import CeleryTaskQueueWorker
 from tenacity import Retrying, retry_if_exception_type, stop_after_delay, wait_fixed
 
 _logger = logging.getLogger(__name__)
+
+
+async def _async_archive(
+    celery_app: Celery, task_name: str, task_id: str, files: list[str]
+) -> str:
+    worker: CeleryTaskQueueWorker = get_celery_worker(celery_app)
+
+    for n, file in enumerate(files, start=1):
+        _logger.info("Processing file %s", file)
+        worker.set_task_progress(
+            task_name=task_name,
+            task_id=task_id,
+            report=ProgressReport(actual_value=n / len(files) * 10),
+        )
+        await asyncio.sleep(0.1)
+
+    return "archive.zip"
+
+
+def sync_archive(task: Task, files: list[str]) -> str:
+    assert task.name
+    _logger.info("Calling async_archive")
+    return asyncio.run_coroutine_threadsafe(
+        _async_archive(task.app, task.name, task.request.id, files),
+        get_event_loop(task.app),
+    ).result()
 
 
 def failure_task(task: Task) -> str:
