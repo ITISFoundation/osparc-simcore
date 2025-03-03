@@ -18,7 +18,6 @@ from .worker import CeleryTaskQueueWorker
 
 _settings = ApplicationSettings.create_from_envs()
 
-# SEE https://github.com/ITISFoundation/osparc-simcore/issues/3148
 logging.basicConfig(level=_settings.log_level)  # NOSONAR
 logging.root.setLevel(_settings.log_level)
 config_all_loggers(
