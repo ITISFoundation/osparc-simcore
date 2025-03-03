@@ -1,0 +1,44 @@
+# This workflow holds jobs which are required to pass before merging into master
+
+name: PR CI
+on:
+  pull_request:
+    branches:
+      - "master"
+  # https://github.blog/changelog/2023-02-08-pull-request-merge-queue-public-beta/
+  merge_group:
+    branches:
+      - "master"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pact-tests:
+    timeout-minutes: 10
+    name: "Run PACT tests"
+    runs-on: ubuntu-latest
+    env:
+      # secrets can be set in settings/secrets on github
+      PACT_BROKER_URL: ${{ secrets.PACT_BROKER_URL }}
+      PACT_BROKER_USERNAME: ${{ secrets.PACT_BROKER_USERNAME }}
+      PACT_BROKER_PASSWORD: ${{ secrets.PACT_BROKER_PASSWORD }}
+    steps:
+      - name: setup python environment
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "0.5.x"
+          enable-cache: false
+      - name: checkout source branch
+        uses: actions/checkout@v4
+      - name: Run pact tests
+        run: |
+          make devenv
+          source .venv/bin/activate
+          cd services/api-server
+          make test-pacts
