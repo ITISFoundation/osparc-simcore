@@ -5,22 +5,23 @@ import pytest
 
 def pytest_addoption(parser: pytest.Parser) -> None:
     group = parser.getgroup(
-        "oSparc e2e options", description="oSPARC-e2e specific parameters"
+        "Pact broker contract test",
+        description="Pact broker contract test specific parameters",
     )
     group.addoption(
-        "--broker-url",
+        "--pact-broker-url",
         action="store",
         default=None,
         help="URL pointing to the deployment to be tested",
     )
     group.addoption(
-        "--broker-username",
+        "--pact-broker-username",
         action="store",
         default=None,
         help="User name for logging into the deployment",
     )
     group.addoption(
-        "--broker-password",
+        "--pact-broker-password",
         action="store",
         default=None,
         help="User name for logging into the deployment",
@@ -42,9 +43,20 @@ def pact_broker_credentials(
         "PACT_BROKER_PASSWORD"
     )
 
-    if not broker_username or not broker_password or not broker_url:
+    # Identify missing credentials
+    missing = [
+        name
+        for name, value in {
+            "PACT_BROKER_URL": broker_url,
+            "PACT_BROKER_USERNAME": broker_username,
+            "PACT_BROKER_PASSWORD": broker_password,
+        }.items()
+        if not value
+    ]
+
+    if missing:
         pytest.fail(
-            "Missing Pact Broker credentials. Set PACT_BROKER_USERNAME and PACT_BROKER_PASSWORD and PACT_BROKER_URL or pass them as CLI arguments."
+            f"Missing Pact Broker credentials: {', '.join(missing)}. Set them as environment variables or pass them as CLI arguments."
         )
 
     return broker_url, broker_username, broker_password

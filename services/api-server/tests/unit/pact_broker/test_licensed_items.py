@@ -206,8 +206,10 @@ def run_test_server(
     reason="This test runs only if PACT_BROKER_URL is provided",
 )
 def test_provider_against_pact(
-    pact_broker_credentials, mock_wb_api_server_rpc, run_test_server
-):
+    pact_broker_credentials: tuple[str, str, str],
+    mock_wb_api_server_rpc: MockerFixture,
+    run_test_server: str,
+) -> None:
     """
     Use the Pact Verifier to check the real provider
     against the generated contract.
@@ -225,7 +227,7 @@ def test_provider_against_pact(
         )
     )
 
-    # NOTE: If you want to filter/test agains specific contract use tags
+    # NOTE: If you want to filter/test against specific contract use tags
     verifier = broker_builder.consumer_tags(
         "licensed_items"  # <-- Here you define which pact to verify
     ).build()

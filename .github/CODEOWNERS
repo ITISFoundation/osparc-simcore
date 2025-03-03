@@ -23,6 +23,7 @@ Makefile                                  @pcrespov @sanderegg
 /requirements/                            @pcrespov @matusdrobuliak66
 /services/agent/                          @GitHK
 /services/api-server/                     @pcrespov
+/services/api-server/tests/unit/pact_broker/        @matusdrobuliak66
 /services/autoscaling/                    @sanderegg
 /services/catalog/                        @pcrespov @sanderegg
 /services/clusters-keeper/                @sanderegg
