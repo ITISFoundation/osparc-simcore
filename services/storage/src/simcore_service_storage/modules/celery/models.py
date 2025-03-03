@@ -27,6 +27,7 @@ _TASK_DONE = {TaskState.SUCCESS, TaskState.ERROR, TaskState.ABORTED}
 class TaskState(StrEnum):
     PENDING = auto()
     STARTED = auto()
+    PROGRESS = auto()
     SUCCESS = auto()
     FAILURE = auto()
     ABORTED = auto()
