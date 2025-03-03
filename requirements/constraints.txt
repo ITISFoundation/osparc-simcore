@@ -76,7 +76,7 @@ referencing<=0.35.1
 # SEE https://github.com/ITISFoundation/osparc-simcore/issues/7086
 moto<5.0.21
 
-# Pin boto3<1.36.0 till the following is addressed https://github.com/boto/botocore/issues/2308
+# Pin boto3<1.38.0 till the following is addressed https://github.com/boto/botocore/issues/2308
 # when removing this pin, also update the aws cli inside ci/github/helpers/install_aws_cli_v2.bash
 # SEE https://github.com/ITISFoundation/osparc-simcore/issues/7127
-boto3<1.36.0
+boto3<1.38.0
