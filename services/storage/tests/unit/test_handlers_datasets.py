@@ -4,7 +4,6 @@
 # pylint:disable=too-many-arguments
 # pylint:disable=no-name-in-module
 
-
 from collections.abc import Awaitable, Callable
 from pathlib import Path
 
@@ -17,7 +16,7 @@ from models_library.api_schemas_storage.storage_schemas import (
     FileMetaDataGet,
 )
 from models_library.projects import ProjectID
-from models_library.projects_nodes_io import SimcoreS3FileID
+from models_library.projects_nodes_io import LocationID, SimcoreS3FileID
 from models_library.users import UserID
 from pydantic import ByteSize
 from pytest_mock import MockerFixture
@@ -39,7 +38,7 @@ async def test_list_dataset_files_metadata_with_no_files_returns_empty_array(
     client: AsyncClient,
     user_id: UserID,
     project_id: ProjectID,
-    location_id: int,
+    location_id: LocationID,
 ):
     url = url_from_operation_id(
         client,
@@ -72,7 +71,7 @@ async def test_list_dataset_files_metadata(
     client: AsyncClient,
     user_id: UserID,
     project_id: ProjectID,
-    location_id: int,
+    location_id: LocationID,
     file_size: ByteSize,
     faker: Faker,
 ):
@@ -111,7 +110,7 @@ async def test_list_datasets_metadata(
     initialized_app: FastAPI,
     client: AsyncClient,
     user_id: UserID,
-    location_id: int,
+    location_id: LocationID,
     project_id: ProjectID,
 ):
     url = url_from_operation_id(
@@ -144,7 +143,7 @@ async def test_ensure_expand_dirs_defaults_true(
     client: AsyncClient,
     user_id: UserID,
     project_id: ProjectID,
-    location_id: int,
+    location_id: LocationID,
 ):
     mocked_object = mocker.patch(
         "simcore_service_storage.simcore_s3_dsm.SimcoreS3DataManager.list_files_in_dataset",

@@ -974,6 +974,12 @@ async def test_download_file_no_file_was_uploaded(
     assert missing_file in error["errors"][0]
 
 
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
 async def test_download_file_1_to_1_with_file_meta_data(
     initialized_app: FastAPI,
     client: httpx.AsyncClient,
@@ -1014,6 +1020,12 @@ async def test_download_file_1_to_1_with_file_meta_data(
     )
 
 
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
 async def test_download_file_from_inside_a_directory(
     initialized_app: FastAPI,
     client: httpx.AsyncClient,
@@ -1076,6 +1088,12 @@ async def test_download_file_from_inside_a_directory(
     )
 
 
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
 async def test_download_file_the_file_is_missing_from_the_directory(
     initialized_app: FastAPI,
     client: httpx.AsyncClient,
@@ -1288,6 +1306,12 @@ async def _list_files_and_directories(
     )
 
 
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
 @pytest.mark.parametrize("link_type", LinkType)
 @pytest.mark.parametrize(
     "file_size",
@@ -1329,6 +1353,12 @@ async def test_is_directory_link_forces_link_type_and_size(
     assert files_and_directories[0].file_size == 0
 
 
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
 async def test_ensure_expand_dirs_defaults_true(
     initialized_app: FastAPI,
     mocker: MockerFixture,
@@ -1355,6 +1385,12 @@ async def test_ensure_expand_dirs_defaults_true(
     assert call_args_list.kwargs["expand_dirs"] is True
 
 
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
 async def test_upload_file_is_directory_and_remove_content(
     initialized_app: FastAPI,
     create_empty_directory: Callable[
@@ -1496,6 +1532,12 @@ async def test_listing_more_than_1000_objects_in_bucket(
     assert len(list_of_files) == 1000
 
 
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
 @pytest.mark.parametrize("uuid_filter", [True, False])
 @pytest.mark.parametrize(
     "project_params",
