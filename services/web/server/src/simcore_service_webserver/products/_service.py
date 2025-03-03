@@ -2,7 +2,10 @@ from decimal import Decimal
 from typing import Any, cast
 
 from aiohttp import web
+from models_library.groups import GroupID
 from models_library.products import CreditResultGet, ProductName, ProductStripeInfoGet
+from pydantic import ValidationError
+from servicelib.exceptions import InvalidConfig
 from simcore_postgres_database.utils_products_prices import ProductPriceInfo
 
 from ..constants import APP_PRODUCTS_KEY
@@ -14,6 +17,20 @@ from .errors import (
     ProductTemplateNotFoundError,
 )
 from .models import Product
+
+
+async def load_products(app: web.Application) -> list[Product]:
+    repo = ProductRepository.create_from_app(app)
+    try:
+        # NOTE: list_products implemented as fails-fast!
+        return await repo.list_products()
+    except ValidationError as err:
+        msg = f"Invalid product configuration in db:\n {err}"
+        raise InvalidConfig(msg) from err
+
+
+async def get_default_product_name(app: web.Application) -> ProductName:
+    raise NotImplementedError
 
 
 def get_product(app: web.Application, product_name: ProductName) -> Product:
@@ -109,3 +126,10 @@ async def get_template_content(app: web.Application, *, template_name: str):
     if not content:
         raise ProductTemplateNotFoundError(template_name=template_name)
     return content
+
+
+async def auto_create_products_groups(
+    app: web.Application,
+) -> dict[ProductName, GroupID]:
+    repo = ProductRepository.create_from_app(app)
+    return await repo.auto_create_products_groups()
