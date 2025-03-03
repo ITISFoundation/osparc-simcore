@@ -27,7 +27,7 @@ class CelerySettings(BaseCustomSettings):
         Field(
             description="If set to True, result messages will be persistent (after a broker restart)."
         ),
-    ] = False
+    ] = True
 
     model_config = SettingsConfigDict(
         json_schema_extra={
