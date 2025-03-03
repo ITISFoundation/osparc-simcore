@@ -47,9 +47,4 @@ def setup_products(app: web.Application):
         app.on_startup.append(rpc.register_rpc_routes_on_startup)
 
     # setup events
-    app.on_startup.append(
-        # NOTE: must go BEFORE load_products_on_startup
-        _web_events.auto_create_products_groups
-    )
-    app.on_startup.append(_web_events.load_products_on_startup)
-    app.cleanup_ctx.append(_web_events.setup_product_templates)
+    _web_events.setup_web_events(app)
