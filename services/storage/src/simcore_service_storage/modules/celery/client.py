@@ -12,13 +12,13 @@ from .models import TaskContext, TaskID, TaskStatus, TaskUUID
 
 _logger = logging.getLogger(__name__)
 
-_CELERY_INSPECT_TASK_STATUSES = (
+_CELERY_INSPECT_TASK_STATUSES: Final[tuple[str, ...]] = (
     "active",
     "registered",
     "scheduled",
     "revoked",
 )
-_CELERY_TASK_META_PREFIX = "celery-task-meta-"
+_CELERY_TASK_META_PREFIX: Final[str] = "celery-task-meta-"
 _CELERY_TASK_ID_PREFIX: Final[str] = "celery"
 
 
