@@ -4,7 +4,7 @@ from collections.abc import Iterator
 import pytest
 import respx
 from faker import Faker
-from fastapi_pagination import LimitOffsetParams, create_page
+from fastapi_pagination import Page, Params
 from servicelib.aiohttp import status
 from simcore_service_storage.modules.datcore_adapter.datcore_adapter_settings import (
     DatcoreAdapterSettings,
@@ -31,7 +31,9 @@ def datcore_adapter_service_mock(faker: Faker) -> Iterator[respx.MockRouter]:
         list_datasets_re = re.compile(rf"^{datcore_adapter_base_url}/datasets")
         respx_mocker.get(list_datasets_re, name="list_datasets").respond(
             status.HTTP_200_OK,
-            json=create_page([], 0, LimitOffsetParams()),
+            json=Page.create(items=[], params=Params(size=10), total=0).model_dump(
+                mode="json"
+            ),
         )
         respx_mocker.get(datcore_adapter_base_url, name="base_endpoint").respond(
             status.HTTP_200_OK, json={}
