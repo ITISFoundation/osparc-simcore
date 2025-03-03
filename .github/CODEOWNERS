@@ -4,46 +4,46 @@
 
 
 # files and folders recursively
-.env-*                                    @mrnicegyu11 @YuryHrytsuk
-Makefile                                  @pcrespov @sanderegg
+.env-*                                             @mrnicegyu11 @YuryHrytsuk
+Makefile                                           @pcrespov @sanderegg
 
 
 # NOTE: '/' denotes the root of the repository
-/.github/                                 @sanderegg @pcrespov
-/api/                                     @sanderegg @pcrespov @matusdrobuliak66
-/ci/                                      @sanderegg @pcrespov
-/docs/                                    @pcrespov
-/packages/common-library/                 @giancarloromeo
-/packages/models-library/                 @sanderegg @pcrespov @matusdrobuliak66 @giancarloromeo
-/packages/postgres-database/              @matusdrobuliak66
-/packages/pytest-simcore/                 @pcrespov @sanderegg
-/packages/service-integration/            @pcrespov @sanderegg @GitHK
-/packages/service-library/                @pcrespov
-/packages/settings-library/               @pcrespov @sanderegg
-/requirements/                            @pcrespov @matusdrobuliak66
-/services/agent/                          @GitHK
-/services/api-server/                     @pcrespov
-/services/api-server/tests/unit/pact_broker/        @matusdrobuliak66
-/services/autoscaling/                    @sanderegg
-/services/catalog/                        @pcrespov @sanderegg
-/services/clusters-keeper/                @sanderegg
-/services/datcore-adapter/                @sanderegg
-/services/director*/                      @sanderegg @pcrespov @GitHK
-/services/docker-compose*.yml             @sanderegg @mrnicegyu11 @YuryHrytsuk
-/services/dynamic-sidecar/                @GitHK
-/services/efs-guardian/                   @matusdrobuliak66
-/services/invitations/                    @pcrespov
-/services/migration/                      @pcrespov
-/services/payments/                       @pcrespov @matusdrobuliak66
-/services/resource-usage-tracker/         @matusdrobuliak66
-/services/static-webserver/               @GitHK
-/services/static-webserver/client/        @odeimaiz
-/services/storage/                        @sanderegg
-/services/web/server/                     @pcrespov @sanderegg @GitHK @matusdrobuliak66
-/tests/e2e-frontend/                      @odeimaiz
-/tests/e2e-playwright/                    @matusdrobuliak66
-/tests/environment-setup/                 @pcrespov
-/tests/performance/                       @pcrespov @sanderegg
-/tests/public-api/                        @pcrespov
-requirements/*                            @pcrespov
-tools/*                                   @pcrespov
+/.github/                                          @sanderegg @pcrespov
+/api/                                              @sanderegg @pcrespov @matusdrobuliak66
+/ci/                                               @sanderegg @pcrespov
+/docs/                                             @pcrespov
+/packages/common-library/                          @giancarloromeo
+/packages/models-library/                          @sanderegg @pcrespov @matusdrobuliak66 @giancarloromeo
+/packages/postgres-database/                       @matusdrobuliak66
+/packages/pytest-simcore/                          @pcrespov @sanderegg
+/packages/service-integration/                     @pcrespov @sanderegg @GitHK
+/packages/service-library/                         @pcrespov
+/packages/settings-library/                        @pcrespov @sanderegg
+/requirements/                                     @pcrespov @matusdrobuliak66
+/services/agent/                                   @GitHK
+/services/api-server/                              @pcrespov
+/services/api-server/tests/unit/pact_broker/       @matusdrobuliak66
+/services/autoscaling/                             @sanderegg
+/services/catalog/                                 @pcrespov @sanderegg
+/services/clusters-keeper/                         @sanderegg
+/services/datcore-adapter/                         @sanderegg
+/services/director*/                               @sanderegg @pcrespov @GitHK
+/services/docker-compose*.yml                      @sanderegg @mrnicegyu11 @YuryHrytsuk
+/services/dynamic-sidecar/                         @GitHK
+/services/efs-guardian/                            @matusdrobuliak66
+/services/invitations/                             @pcrespov
+/services/migration/                               @pcrespov
+/services/payments/                                @pcrespov @matusdrobuliak66
+/services/resource-usage-tracker/                  @matusdrobuliak66
+/services/static-webserver/                        @GitHK
+/services/static-webserver/client/                 @odeimaiz
+/services/storage/                                 @sanderegg
+/services/web/server/                              @pcrespov @sanderegg @GitHK @matusdrobuliak66
+/tests/e2e-frontend/                               @odeimaiz
+/tests/e2e-playwright/                             @matusdrobuliak66
+/tests/environment-setup/                          @pcrespov
+/tests/performance/                                @pcrespov @sanderegg
+/tests/public-api/                                 @pcrespov
+requirements/*                                     @pcrespov
+tools/*                                            @pcrespov
