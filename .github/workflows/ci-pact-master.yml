@@ -1,6 +1,6 @@
 # This workflow holds jobs which are required to pass before merging into master
 
-name: Master deploy CI
+name: CI PACT Master
 on:
   push:
     branches:
