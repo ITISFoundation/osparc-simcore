@@ -414,7 +414,18 @@ qx.Class.define("osparc.file.FilePicker", {
         if (files.length === 1) {
           const fileUploader = new osparc.file.FileUploader(this.getNode());
           fileUploader.addListener("uploadAborted", () => this.__resetOutput());
-          fileUploader.addListener("fileUploaded", () => {
+          fileUploader.addListener("fileUploaded", e => {
+            const fileMetadata = e.getData();
+            if (
+              "location" in fileMetadata &&
+              "dataset" in fileMetadata &&
+              "path" in fileMetadata &&
+              "name" in fileMetadata
+            ) {
+              osparc.file.FilePicker.setOutputValueFromStore(this.getNode(), fileMetadata["location"], fileMetadata["dataset"], fileMetadata["path"], fileMetadata["name"]);
+            } else {
+              console.error("metadata info missing", fileMetadata);
+            }
             this.fireEvent("fileUploaded");
             this.getNode().fireEvent("fileUploaded");
           }, this);
