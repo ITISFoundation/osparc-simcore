@@ -133,7 +133,7 @@ qx.Class.define("osparc.file.FileUploader", {
             const nProgress = Math.min(Math.max(100*progress-min, min), max);
             this.getNode().getStatus().setProgress(nProgress);
             if (this.__uploadedParts.every(uploadedPart => uploadedPart["e_tag"] !== null)) {
-              this.__checkCompleteUpload(file);
+              this.__checkCompleteUpload();
             }
           }
         } catch (err) {
@@ -162,7 +162,7 @@ qx.Class.define("osparc.file.FileUploader", {
     },
 
     // Use XMLHttpRequest to complete the upload to S3
-    __checkCompleteUpload: function(file) {
+    __checkCompleteUpload: function() {
       if (this.getNode()["fileUploadAbortRequested"]) {
         this.__abortUpload();
         return;
@@ -179,7 +179,7 @@ qx.Class.define("osparc.file.FileUploader", {
           this.__abortUpload();
         } else if ("data" in resp) {
           if (xhr.status == 202) {
-            console.log("waiting for completion", file.name);
+            console.log("waiting for completion", this.__fileMetadata.name);
             // @odeimaiz: we need to poll the received new location in the response
             // we do have links.state -> poll that link until it says ok
             // right now this kind of work if files are small and this happens fast
