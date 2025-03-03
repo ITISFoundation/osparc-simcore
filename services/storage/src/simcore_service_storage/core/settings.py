@@ -121,7 +121,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     ]
 
     STORAGE_WORKER_MODE: Annotated[
-        bool | None, Field(description="If True, run as a worker")
+        bool, Field(description="If True, run as a worker")
     ] = False
 
     @field_validator("LOG_LEVEL", mode="before")
