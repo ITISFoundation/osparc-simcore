@@ -185,7 +185,6 @@ async def batch_get_my_services(
 ) -> list[MyServiceGet]:
     assert app.state.engine  # nosec
 
-    # TODO: id not found?
     services = await services_api.batch_get_my_services(
         repo=ServicesRepository(app.state.engine),
         groups_repo=GroupsRepository(app.state.engine),
