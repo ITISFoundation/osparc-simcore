@@ -126,10 +126,6 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     ]
 
     STORAGE_WORKER_MODE: Annotated[
-        bool, Field(description="If True, run as a worker")
-    ] = False
-
-    STORAGE_WORKER_MODE: Annotated[
         bool | None, Field(description="If True, run as a worker")
     ] = False
 
