@@ -1,3 +1,8 @@
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+# pylint: disable=too-many-arguments
+
 import os
 from threading import Thread
 from time import sleep
@@ -144,7 +149,7 @@ class DummyRpcClient:
 
 
 @pytest.fixture
-async def mock_wb_api_server_rcp(app: FastAPI, mocker: MockerFixture) -> MockerFixture:
+async def mock_wb_api_server_rpc(app: FastAPI, mocker: MockerFixture) -> MockerFixture:
 
     app.dependency_overrides[get_wb_api_rpc_client] = lambda: WbApiRpcClient(
         _client=DummyRpcClient()
@@ -199,7 +204,7 @@ def run_test_server(
     reason="This test runs only if PACT_BROKER_URL is provided",
 )
 def test_provider_against_pact(
-    pact_broker_credentials, mock_wb_api_server_rcp, run_test_server
+    pact_broker_credentials, mock_wb_api_server_rpc, run_test_server
 ):
     """
     Use the Pact Verifier to check the real provider
