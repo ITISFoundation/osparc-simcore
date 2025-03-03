@@ -356,7 +356,7 @@ qx.Class.define("osparc.vipMarket.LicensedItemDetails", {
       });
       importButton.addListener("execute", () => {
         this.fireDataEvent("modelImportRequested", {
-          modelId: anatomicalModelsData.getLicensedResources()[selectedIdx]["id"],
+          modelId: anatomicalModelsData.getLicensedResources()[selectedIdx].getModelId(),
           categoryId: anatomicalModelsData.getCategoryId(),
         });
       }, this);
