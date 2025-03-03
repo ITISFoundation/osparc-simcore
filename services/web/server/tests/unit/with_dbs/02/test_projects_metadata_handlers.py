@@ -31,7 +31,7 @@ from servicelib.aiohttp import status
 from simcore_postgres_database.utils_projects_metadata import (
     get as get_db_project_metadata,
 )
-from simcore_service_webserver.projects import _crud_api_delete
+from simcore_service_webserver.projects import _projects_service_delete
 from simcore_service_webserver.projects.models import ProjectDict
 
 
@@ -96,7 +96,7 @@ async def test_custom_metadata_handlers(
     await assert_status(response, expected_status_code=expected.no_content)
 
     async def _wait_until_deleted():
-        tasks = _crud_api_delete.get_scheduled_tasks(
+        tasks = _projects_service_delete.get_scheduled_tasks(
             project_uuid=user_project["uuid"], user_id=logged_user["id"]
         )
         await tasks[0]

@@ -1,4 +1,4 @@
-""" Computations API
+"""Computations API
 
 Wraps interactions to the director-v2 service
 

@@ -1,4 +1,4 @@
-""" handles access to *public* studies
+"""handles access to *public* studies
 
     Handles a request to share a given sharable study via '/study/{id}'
 
@@ -28,19 +28,18 @@ from servicelib.logging_errors import create_troubleshotting_log_kwargs
 
 from ..constants import INDEX_RESOURCE_NAME
 from ..director_v2._core_computations import create_or_update_pipeline
-from ..dynamic_scheduler import api as dynamic_scheduler_api
+from ..dynamic_scheduler import api as dynamic_scheduler_service
 from ..products import products_web
-from ..projects._groups_db import get_project_group
-from ..projects.api import check_user_project_permission
-from ..projects.db import ProjectDBAPI
+from ..projects import projects_access_rights_service, projects_groups_repository
 from ..projects.exceptions import (
     ProjectGroupNotFoundError,
     ProjectInvalidRightsError,
     ProjectNotFoundError,
 )
 from ..projects.models import ProjectDict
-from ..security.api import is_anonymous, remember_identity
-from ..storage.api import copy_data_folders_from_project
+from ..projects.projects_service_legacy import ProjectDBAPI
+from ..security import api as security_service
+from ..storage import api as storage_service
 from ..utils import compose_support_error_msg
 from ..utils_aiohttp import create_redirect_to_page_response
 from ._constants import (
@@ -91,7 +90,7 @@ async def _get_published_template_project(
             only_published=only_public_projects,
         )
         # 3. MUST be shared with EVERYONE=1 in read mode, i.e.
-        project_group_get = await get_project_group(
+        project_group_get = await projects_groups_repository.get_project_group(
             request.app, project_id=ProjectID(project_uuid), group_id=1
         )
         if project_group_get.read is False:
@@ -141,8 +140,8 @@ async def copy_study_to_account(
     - Replaces template parameters by values passed in query
     - Avoids multiple copies of the same template on each account
     """
-    from ..projects.db import APP_PROJECT_DBAPI
-    from ..projects.utils import clone_project_document, substitute_parameterized_inputs
+    from ..projects import projects_service_legacy
+    from ..projects._projects_repository_legacy import APP_PROJECT_DBAPI
 
     db: ProjectDBAPI = request.config_dict[APP_PROJECT_DBAPI]
     template_parameters = dict(request.query)
@@ -154,7 +153,7 @@ async def copy_study_to_account(
 
     try:
         product_name = await db.get_project_product(template_project["uuid"])
-        await check_user_project_permission(
+        await projects_access_rights_service.check_user_project_permission(
             request.app,
             project_id=template_project["uuid"],
             user_id=user["id"],
@@ -167,7 +166,7 @@ async def copy_study_to_account(
 
     except ProjectNotFoundError:
         # New project cloned from template
-        project, nodes_map = clone_project_document(
+        project, nodes_map = projects_service_legacy.clone_project_document(
             template_project, forced_copy_project_id=UUID(project_uuid)
         )
 
@@ -182,7 +181,10 @@ async def copy_study_to_account(
                 "Substituting parameters '%s' in template", template_parameters
             )
             project = (
-                substitute_parameterized_inputs(project, template_parameters) or project
+                projects_service_legacy.substitute_parameterized_inputs(
+                    project, template_parameters
+                )
+                or project
             )
         # add project model + copy data TODO: guarantee order and atomicity
         product_name = products_web.get_product_name(request)
@@ -193,7 +195,7 @@ async def copy_study_to_account(
             force_project_uuid=True,
             project_nodes=None,
         )
-        async for lr_task in copy_data_folders_from_project(
+        async for lr_task in storage_service.copy_data_folders_from_project(
             request.app,
             template_project,
             project,
@@ -212,7 +214,7 @@ async def copy_study_to_account(
         await create_or_update_pipeline(
             request.app, user["id"], project["uuid"], product_name
         )
-        await dynamic_scheduler_api.update_projects_networks(
+        await dynamic_scheduler_service.update_projects_networks(
             request.app, project_id=ProjectID(project["uuid"])
         )
 
@@ -295,7 +297,7 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
 
     # Checks USER
     user = None
-    is_anonymous_user = await is_anonymous(request)
+    is_anonymous_user = await security_service.is_anonymous(request)
     if not is_anonymous_user:
         # NOTE: covers valid cookie with unauthorized user (e.g. expired guest/banned)
         user = await get_authorized_user(request)
@@ -400,7 +402,7 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
     if is_anonymous_user:
         _logger.debug("Auto login for anonymous user %s", user["name"])
 
-        await remember_identity(
+        await security_service.remember_identity(
             request,
             response,
             user_email=user["email"],

@@ -1,5 +1,4 @@
-""" Implements `tags` plugin **service layer**
-"""
+"""Implements `tags` plugin **service layer**"""
 
 from aiohttp import web
 from common_library.groups_dicts import AccessRightsDict

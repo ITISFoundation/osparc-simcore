@@ -74,8 +74,7 @@ class CodePageParams(BaseModel):
     next_url: str | None = None
 
 
-class LoginNextPage(NextPage[CodePageParams]):
-    ...
+class LoginNextPage(NextPage[CodePageParams]): ...
 
 
 @routes.post(f"/{API_VTAG}/auth/login", name="auth_login")

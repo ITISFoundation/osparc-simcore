@@ -1,9 +1,9 @@
-""" Configuration for unit testing with a postgress fixture
+"""Configuration for unit testing with a postgress fixture
 
-    - Unit testing of webserver app with a postgress service as fixture
-    - Starts test session by running a postgres container as a fixture (see postgress_service)
+- Unit testing of webserver app with a postgress service as fixture
+- Starts test session by running a postgres container as a fixture (see postgress_service)
 
-    IMPORTANT: remember that these are still unit-tests!
+IMPORTANT: remember that these are still unit-tests!
 """
 
 # nopycln: file
@@ -288,8 +288,8 @@ def catalog_subsystem_mock(
         return services_in_project
 
     for namespace in (
-        "simcore_service_webserver.projects._crud_api_read.get_services_for_user_in_product",
-        "simcore_service_webserver.projects._crud_handlers.get_services_for_user_in_product",
+        "simcore_service_webserver.projects._projects_service_read.catalog_service.get_services_for_user_in_product",
+        "simcore_service_webserver.projects._projects_rest.catalog_service.get_services_for_user_in_product",
     ):
         mock = mocker.patch(
             namespace,
@@ -370,26 +370,26 @@ async def storage_subsystem_mock(mocker: MockerFixture) -> MockedStorageSubsyste
         )
 
     mock = mocker.patch(
-        "simcore_service_webserver.projects._crud_api_create.copy_data_folders_from_project",
+        "simcore_service_webserver.projects._projects_service_create.copy_data_folders_from_project",
         autospec=True,
         side_effect=_mock_copy_data_from_project,
     )
 
     async_mock = mocker.AsyncMock(return_value="")
     mock1 = mocker.patch(
-        "simcore_service_webserver.projects._crud_api_delete.delete_data_folders_of_project",
+        "simcore_service_webserver.projects._projects_service_delete.delete_data_folders_of_project",
         autospec=True,
         side_effect=async_mock,
     )
 
     mock2 = mocker.patch(
-        "simcore_service_webserver.projects.projects_service.storage_api.delete_data_folders_of_project_node",
+        "simcore_service_webserver.projects._projects_service.storage_service.delete_data_folders_of_project_node",
         autospec=True,
         return_value=None,
     )
 
     mock3 = mocker.patch(
-        "simcore_service_webserver.projects._crud_api_create.get_project_total_size_simcore_s3",
+        "simcore_service_webserver.projects._projects_service_create.get_project_total_size_simcore_s3",
         autospec=True,
         return_value=TypeAdapter(ByteSize).validate_python("1Gib"),
     )

@@ -1,7 +1,4 @@
-""" Basic healthckeck and configuration handles to the rest API
-
-
-"""
+"""Basic healthckeck and configuration handles to the rest API"""
 
 import datetime
 import logging
