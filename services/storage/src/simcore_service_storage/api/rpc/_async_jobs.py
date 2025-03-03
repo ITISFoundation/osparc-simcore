@@ -17,7 +17,7 @@ from models_library.api_schemas_rpc_async_jobs.exceptions import (
 from servicelib.rabbitmq import RPCRouter
 
 from ...modules.celery._utils import get_celery_client
-from ...modules.celery.models import TaskStatus, TaskUUID
+from ...modules.celery.models import TaskStatus
 
 router = RPCRouter()
 
@@ -73,7 +73,7 @@ async def list_jobs(
 ) -> list[AsyncJobGet]:
     assert app  # nosec
 
-    task_uuids: set[TaskUUID] = await get_celery_client(app).get_task_uuids(
+    task_uuids = await get_celery_client(app).get_task_uuids(
         task_context=job_id_data.model_dump(),
     )
 
