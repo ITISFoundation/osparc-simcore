@@ -30,6 +30,6 @@ class CeleryTaskQueueWorker:
         ):
             self.celery_app.tasks[task_name].update_state(
                 task_id=task_id,
-                state=TaskState.PROGRESS.value,
+                state=TaskState.RUNNING.value,
                 meta=report.model_dump(mode="json"),
             )
