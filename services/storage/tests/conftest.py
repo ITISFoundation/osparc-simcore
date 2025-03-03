@@ -242,11 +242,9 @@ def simcore_file_id(
 @pytest.fixture(
     params=[
         SimcoreS3DataManager.get_location_id(),
-        # DatCoreDataManager.get_location_id(),
     ],
     ids=[
         SimcoreS3DataManager.get_location_name(),
-        # DatCoreDataManager.get_location_name(),
     ],
 )
 def location_id(request: pytest.FixtureRequest) -> LocationID:
@@ -855,7 +853,10 @@ async def with_random_project_with_files(
         ],
     ],
     project_params: ProjectWithFilesParams,
-) -> tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],]:
+) -> tuple[
+    dict[str, Any],
+    dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],
+]:
     return await random_project_with_files(project_params)
 
 
