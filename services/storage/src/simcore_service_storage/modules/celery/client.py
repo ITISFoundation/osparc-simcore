@@ -19,7 +19,7 @@ _CELERY_INSPECT_TASK_STATUSES = (
     "revoked",
 )
 _CELERY_TASK_META_PREFIX = "celery-task-meta-"
-_CELERY_TASK_ID_PREFIX: Final[str] = "ct"  # short for celery task, not Catania
+_CELERY_TASK_ID_PREFIX: Final[str] = "celery"
 
 
 def _build_context_prefix(task_context: TaskContext) -> list[str]:
