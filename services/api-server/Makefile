@@ -94,7 +94,7 @@ test-api: ## Runs schemathesis against development server (NOTE: make up-devel f
 
 
 test-pacts: guard-PACT_BROKER_USERNAME guard-PACT_BROKER_PASSWORD guard-PACT_BROKER_URL _check_venv_active ## Test pacts
-	pytest tests/unit/pact_broker/test_licensed_items.py
+	pytest tests/unit/pact_broker/test*
 
 # Usage:
 # PACT_BROKER_USERNAME=your_username \
