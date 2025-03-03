@@ -1179,7 +1179,7 @@ services:
       S3_ENDPOINT: ${S3_ENDPOINT}
       S3_REGION: ${S3_REGION}
       S3_SECRET_KEY: ${S3_SECRET_KEY}
-      STORAGE_WORKER_MODE: 0
+      STORAGE_WORKER_MODE: "false"
       STORAGE_LOGLEVEL: ${STORAGE_LOGLEVEL}
       STORAGE_MONITORING_ENABLED: 1
       STORAGE_PROFILING: ${STORAGE_PROFILING}
@@ -1192,12 +1192,12 @@ services:
       - storage_subnet
 
   sto-worker:
-    image: ${DOCKER_REGISTRY:-itisfoundation}/storage:${DOCKER_IMAGE_TAG:-latest}
+    image: ${DOCKER_REGISTRY:-itisfoundation}/storage:${DOCKER_IMAGE_TAG:-master-github-latest}
     init: true
     hostname: "sto-worker-{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:
       <<: *storage_environment
-      STORAGE_WORKER_MODE: 1
+      STORAGE_WORKER_MODE: "true"
     networks: *storage_networks
 
   rabbit:
