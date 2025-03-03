@@ -9,10 +9,10 @@ from celery import Celery
 from celery.signals import worker_init, worker_shutdown
 from servicelib.background_task import cancel_wait_task
 from servicelib.logging_utils import config_all_loggers
-from simcore_service_storage.modules.celery.utils import set_celery_worker
 
 from ...core.application import create_app
 from ...core.settings import ApplicationSettings
+from ...modules.celery.utils import set_celery_worker
 from .common import create_app as create_celery_app
 from .example_tasks import sync_archive
 from .worker import CeleryTaskQueueWorker
