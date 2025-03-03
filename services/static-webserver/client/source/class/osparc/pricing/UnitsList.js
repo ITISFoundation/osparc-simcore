@@ -99,9 +99,7 @@ qx.Class.define("osparc.pricing.UnitsList", {
     },
 
     __openCreatePricingUnit: function() {
-      const puCreator = new osparc.pricing.UnitEditor().set({
-        pricingPlanId: this.getPricingPlanId()
-      });
+      const puCreator = new osparc.pricing.UnitEditor(this.getPricingPlanId(), null);
       const title = this.tr("Pricing Unit Creator");
       const win = osparc.ui.window.Window.popUpInWindow(puCreator, title, 400, 250);
       puCreator.addListener("done", () => {
@@ -112,9 +110,7 @@ qx.Class.define("osparc.pricing.UnitsList", {
     },
 
     __openUpdatePricingUnit: function(pricingUnit) {
-      const puEditor = new osparc.pricing.UnitEditor(pricingUnit).set({
-        pricingPlanId: this.getPricingPlanId()
-      });
+      const puEditor = new osparc.pricing.UnitEditor(this.getPricingPlanId(), pricingUnit);
       const title = this.tr("Pricing Unit Editor");
       const win = osparc.ui.window.Window.popUpInWindow(puEditor, title, 400, 250);
       puEditor.addListener("done", () => {
