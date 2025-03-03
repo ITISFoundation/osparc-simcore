@@ -38,8 +38,8 @@ qx.Class.define("osparc.study.StudyPricingUnits", {
   },
 
   statics: {
-    includeInList: function(node) {
-      return !osparc.data.model.Node.isFrontend(node);
+    includeInList: function(nodeData) {
+      return !osparc.data.model.Node.isFrontend(nodeData);
     },
   },
 
@@ -61,9 +61,9 @@ qx.Class.define("osparc.study.StudyPricingUnits", {
       if ("workbench" in this.__studyData) {
         const workbench = this.__studyData["workbench"];
         Object.keys(workbench).forEach(nodeId => {
-          const node = workbench[nodeId];
-          if (this.self().includeInList(node)) {
-            const nodePricingUnits = new osparc.study.NodePricingUnits(this.__studyData["uuid"], nodeId, node);
+          const nodeData = workbench[nodeId];
+          if (this.self().includeInList(nodeData)) {
+            const nodePricingUnits = new osparc.study.NodePricingUnits(this.__studyData["uuid"], nodeId, nodeData);
             this.__nodePricingUnits.push(nodePricingUnits);
             this._add(nodePricingUnits);
             promises.push(nodePricingUnits.showPricingUnits());
