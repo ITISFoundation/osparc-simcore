@@ -14,7 +14,6 @@ from ...core.application import create_app
 from ...core.settings import ApplicationSettings
 from ._common import create_app as create_celery_app
 from ._utils import set_celery_worker
-from .example_tasks import sync_archive
 from .worker import CeleryTaskQueueWorker
 
 _settings = ApplicationSettings.create_from_envs()
@@ -82,7 +81,6 @@ def on_worker_shutdown(sender, **_kwargs):
 celery_app = create_celery_app(_settings)
 
 celery_worker = CeleryTaskQueueWorker(celery_app)
-celery_worker.register_task(sync_archive)
 set_celery_worker(celery_app, CeleryTaskQueueWorker(celery_app))
 
 app = celery_app
