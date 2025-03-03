@@ -240,7 +240,9 @@ async def test_list_services_that_are_deprecated(
 ):
 
     # injects fake data in db
-    deprecation_date = datetime.utcnow() + timedelta(days=1)
+    deprecation_date = datetime.utcnow() + timedelta(  # NOTE: old offset-naive column
+        days=1
+    )
     deprecated_service = create_fake_service_data(
         "simcore/services/dynamic/jupyterlab",
         "1.0.1",

@@ -11,3 +11,7 @@ class CatalogItemNotFoundError(CatalogApiBaseError):
 
 class CatalogForbiddenError(CatalogApiBaseError):
     msg_template = "Insufficient access rights for {name}"
+
+
+class CatalogServiceError(CatalogApiBaseError):
+    msg_template = "Catalog service failed unexpectedly"
