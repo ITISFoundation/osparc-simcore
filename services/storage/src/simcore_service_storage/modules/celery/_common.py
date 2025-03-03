@@ -20,4 +20,5 @@ def create_app(settings: ApplicationSettings) -> Celery:
     )
     app.conf.result_expires = celery_settings.CELERY_RESULT_EXPIRES
     app.conf.result_extended = True  # original args are included in the results
+    app.conf.task_track_started = True
     return app
