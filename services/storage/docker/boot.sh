@@ -56,10 +56,10 @@ if [ "${SC_BOOT_MODE}" = "debug" ]; then
       --log-level \"${SERVER_LOG_LEVEL}\"
   "
 else
-  if [ "${STORAGE_WORKER_MODE}" = "1" ]; then
+  if [ "${STORAGE_WORKER_MODE}" = "true" ]; then
     exec celery \
       --app=simcore_service_storage.modules.celery.worker_main:app \
-      worker --pool=threads \
+      worker \
       --loglevel="${SERVER_LOG_LEVEL}" \
       --hostname="${HOSTNAME}"
   else
