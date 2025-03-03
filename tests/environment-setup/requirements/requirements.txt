@@ -22,7 +22,7 @@ pydantic==2.10.6
     #   -r requirements/requirements.in
 pydantic-core==2.27.2
     # via pydantic
-pytest==8.3.4
+pytest==8.3.5
     # via
     #   -r requirements/requirements.in
     #   pytest-asyncio

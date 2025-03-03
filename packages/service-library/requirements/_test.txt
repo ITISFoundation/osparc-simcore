@@ -1,9 +1,9 @@
-aiohappyeyeballs==2.4.4
+aiohappyeyeballs==2.4.6
     # via
     #   -c requirements/_aiohttp.txt
     #   -c requirements/_base.txt
     #   aiohttp
-aiohttp==3.11.11
+aiohttp==3.11.13
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_aiohttp.txt
@@ -29,9 +29,9 @@ attrs==25.1.0
     #   jsonschema
     #   pytest-docker
     #   referencing
-botocore==1.36.6
+botocore==1.37.4
     # via -r requirements/_test.in
-certifi==2024.12.14
+certifi==2025.1.31
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -43,7 +43,7 @@ charset-normalizer==3.4.1
     # via
     #   -c requirements/_base.txt
     #   requests
-coverage==7.6.10
+coverage==7.6.12
     # via
     #   -r requirements/_test.in
     #   pytest-cov
@@ -51,7 +51,7 @@ docker==7.1.0
     # via -r requirements/_test.in
 execnet==2.1.1
     # via pytest-xdist
-faker==35.0.0
+faker==36.1.1
     # via -r requirements/_test.in
 flaky==3.8.1
     # via -r requirements/_test.in
@@ -115,11 +115,11 @@ multidict==6.1.0
     #   -c requirements/_base.txt
     #   aiohttp
     #   yarl
-mypy==1.14.1
+mypy==1.15.0
     # via sqlalchemy
 mypy-extensions==1.0.0
     # via mypy
-numpy==2.2.2
+numpy==2.2.3
     # via -r requirements/_test.in
 openapi-schema-validator==0.6.3
     # via openapi-spec-validator
@@ -136,13 +136,13 @@ pathable==0.4.4
     # via jsonschema-path
 pillow==11.1.0
     # via -r requirements/_test.in
-pip==25.0
+pip==25.0.1
     # via -r requirements/_test.in
 pluggy==1.5.0
     # via pytest
 pprintpp==0.4.0
     # via pytest-icdiff
-propcache==0.2.1
+propcache==0.3.0
     # via
     #   -c requirements/_aiohttp.txt
     #   -c requirements/_base.txt
@@ -150,7 +150,7 @@ propcache==0.2.1
     #   yarl
 py-cpuinfo==9.0.0
     # via pytest-benchmark
-pytest==8.3.4
+pytest==8.3.5
     # via
     #   -r requirements/_test.in
     #   pytest-aiohttp
@@ -174,7 +174,7 @@ pytest-benchmark==5.1.0
     # via -r requirements/_test.in
 pytest-cov==6.0.0
     # via -r requirements/_test.in
-pytest-docker==3.1.1
+pytest-docker==3.2.0
     # via -r requirements/_test.in
 pytest-icdiff==0.9
     # via -r requirements/_test.in
@@ -192,7 +192,6 @@ python-dateutil==2.9.0.post0
     # via
     #   -c requirements/_base.txt
     #   botocore
-    #   faker
 python-dotenv==1.0.1
     # via
     #   -c requirements/_base.txt
@@ -219,7 +218,7 @@ respx==0.22.0
     # via -r requirements/_test.in
 rfc3339-validator==0.1.4
     # via openapi-schema-validator
-rpds-py==0.22.3
+rpds-py==0.23.1
     # via
     #   -c requirements/_aiohttp.txt
     #   -c requirements/_base.txt
@@ -247,22 +246,23 @@ termcolor==2.5.0
     # via pytest-sugar
 types-aiofiles==24.1.0.20241221
     # via -r requirements/_test.in
-types-psutil==6.1.0.20241221
+types-psutil==7.0.0.20250218
     # via -r requirements/_test.in
 types-psycopg2==2.9.21.20250121
     # via -r requirements/_test.in
-types-requests==2.32.0.20241016
+types-requests==2.32.0.20250301
     # via types-tqdm
-types-tqdm==4.67.0.20241221
+types-tqdm==4.67.0.20250301
     # via -r requirements/_test.in
 typing-extensions==4.12.2
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_fastapi.txt
     #   anyio
-    #   faker
     #   mypy
     #   sqlalchemy2-stubs
+tzdata==2025.1
+    # via faker
 urllib3==2.3.0
     # via
     #   -c requirements/../../../requirements/constraints.txt

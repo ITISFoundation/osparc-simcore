@@ -1,6 +1,6 @@
 astroid==3.3.8
     # via pylint
-black==24.10.0
+black==25.1.0
     # via -r requirements/../../../requirements/devenv.txt
 build==1.2.2.post1
     # via pip-tools
@@ -19,15 +19,15 @@ distlib==0.3.9
     # via virtualenv
 filelock==3.17.0
     # via virtualenv
-identify==2.6.6
+identify==2.6.8
     # via pre-commit
-isort==5.13.2
+isort==6.0.1
     # via
     #   -r requirements/../../../requirements/devenv.txt
     #   pylint
 mccabe==0.7.0
     # via pylint
-mypy==1.14.1
+mypy==1.15.0
     # via -r requirements/../../../requirements/devenv.txt
 mypy-extensions==1.0.0
     # via
@@ -43,7 +43,7 @@ packaging==24.2
     #   build
 pathspec==0.12.1
     # via black
-pip==25.0
+pip==25.0.1
     # via pip-tools
 pip-tools==7.4.1
     # via -r requirements/../../../requirements/devenv.txt
@@ -54,7 +54,7 @@ platformdirs==4.3.6
     #   virtualenv
 pre-commit==4.1.0
     # via -r requirements/../../../requirements/devenv.txt
-pylint==3.3.3
+pylint==3.3.4
     # via -r requirements/../../../requirements/devenv.txt
 pyproject-hooks==1.2.0
     # via
@@ -65,9 +65,9 @@ pyyaml==6.0.2
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   pre-commit
-ruff==0.9.3
+ruff==0.9.9
     # via -r requirements/../../../requirements/devenv.txt
-setuptools==75.8.0
+setuptools==75.8.2
     # via pip-tools
 tomlkit==0.13.2
     # via pylint
@@ -76,7 +76,7 @@ typing-extensions==4.12.2
     #   -c requirements/_base.txt
     #   -c requirements/_test.txt
     #   mypy
-virtualenv==20.29.1
+virtualenv==20.29.2
     # via pre-commit
 wheel==0.45.1
     # via pip-tools

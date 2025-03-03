@@ -1,4 +1,4 @@
-certifi==2024.12.14
+certifi==2025.1.31
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   requests

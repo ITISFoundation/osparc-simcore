@@ -1,4 +1,4 @@
-aio-pika==9.5.4
+aio-pika==9.5.5
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 aioboto3==13.3.0
     # via -r requirements/_base.in
@@ -16,9 +16,9 @@ aiofiles==24.1.0
     # via
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   aioboto3
-aiohappyeyeballs==2.4.4
+aiohappyeyeballs==2.4.6
     # via aiohttp
-aiohttp==3.11.11
+aiohttp==3.11.13
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -77,9 +77,9 @@ botocore==1.35.81
     #   aiobotocore
     #   boto3
     #   s3transfer
-botocore-stubs==1.36.6
+botocore-stubs==1.37.4
     # via types-aiobotocore
-certifi==2024.12.14
+certifi==2025.1.31
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -98,7 +98,7 @@ charset-normalizer==3.4.1
     # via requests
 click==8.1.8
     # via typer
-deprecated==1.2.17
+deprecated==1.2.18
     # via
     #   opentelemetry-api
     #   opentelemetry-exporter-otlp-proto-grpc
@@ -112,13 +112,13 @@ exceptiongroup==1.2.2
     # via aio-pika
 fast-depends==2.4.12
     # via faststream
-faststream==0.5.34
+faststream==0.5.35
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 frozenlist==1.5.0
     # via
     #   aiohttp
     #   aiosignal
-googleapis-common-protos==1.66.0
+googleapis-common-protos==1.68.0
     # via
     #   opentelemetry-exporter-otlp-proto-grpc
     #   opentelemetry-exporter-otlp-proto-http
@@ -150,7 +150,7 @@ multidict==6.1.0
     # via
     #   aiohttp
     #   yarl
-opentelemetry-api==1.29.0
+opentelemetry-api==1.30.0
     # via
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   opentelemetry-exporter-otlp-proto-grpc
@@ -163,50 +163,50 @@ opentelemetry-api==1.29.0
     #   opentelemetry-propagator-aws-xray
     #   opentelemetry-sdk
     #   opentelemetry-semantic-conventions
-opentelemetry-exporter-otlp==1.29.0
+opentelemetry-exporter-otlp==1.30.0
     # via -r requirements/../../../packages/service-library/requirements/_base.in
-opentelemetry-exporter-otlp-proto-common==1.29.0
+opentelemetry-exporter-otlp-proto-common==1.30.0
     # via
     #   opentelemetry-exporter-otlp-proto-grpc
     #   opentelemetry-exporter-otlp-proto-http
-opentelemetry-exporter-otlp-proto-grpc==1.29.0
+opentelemetry-exporter-otlp-proto-grpc==1.30.0
     # via opentelemetry-exporter-otlp
-opentelemetry-exporter-otlp-proto-http==1.29.0
+opentelemetry-exporter-otlp-proto-http==1.30.0
     # via opentelemetry-exporter-otlp
-opentelemetry-instrumentation==0.50b0
+opentelemetry-instrumentation==0.51b0
     # via
     #   opentelemetry-instrumentation-botocore
     #   opentelemetry-instrumentation-logging
     #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-requests
-opentelemetry-instrumentation-botocore==0.50b0
+opentelemetry-instrumentation-botocore==0.51b0
     # via -r requirements/_base.in
-opentelemetry-instrumentation-logging==0.50b0
+opentelemetry-instrumentation-logging==0.51b0
     # via -r requirements/../../../packages/service-library/requirements/_base.in
-opentelemetry-instrumentation-redis==0.50b0
+opentelemetry-instrumentation-redis==0.51b0
     # via -r requirements/../../../packages/service-library/requirements/_base.in
-opentelemetry-instrumentation-requests==0.50b0
+opentelemetry-instrumentation-requests==0.51b0
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 opentelemetry-propagator-aws-xray==1.0.2
     # via opentelemetry-instrumentation-botocore
-opentelemetry-proto==1.29.0
+opentelemetry-proto==1.30.0
     # via
     #   opentelemetry-exporter-otlp-proto-common
     #   opentelemetry-exporter-otlp-proto-grpc
     #   opentelemetry-exporter-otlp-proto-http
-opentelemetry-sdk==1.29.0
+opentelemetry-sdk==1.30.0
     # via
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   opentelemetry-exporter-otlp-proto-grpc
     #   opentelemetry-exporter-otlp-proto-http
-opentelemetry-semantic-conventions==0.50b0
+opentelemetry-semantic-conventions==0.51b0
     # via
     #   opentelemetry-instrumentation
     #   opentelemetry-instrumentation-botocore
     #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-requests
     #   opentelemetry-sdk
-opentelemetry-util-http==0.50b0
+opentelemetry-util-http==0.51b0
     # via opentelemetry-instrumentation-requests
 orjson==3.10.15
     # via
@@ -234,7 +234,7 @@ packaging==24.2
     # via opentelemetry-instrumentation
 pamqp==3.3.0
     # via aiormq
-propcache==0.2.1
+propcache==0.3.0
     # via
     #   aiohttp
     #   yarl
@@ -242,7 +242,7 @@ protobuf==5.29.3
     # via
     #   googleapis-common-protos
     #   opentelemetry-proto
-psutil==6.1.1
+psutil==7.0.0
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 pycryptodome==3.21.0
     # via stream-zip
@@ -287,8 +287,20 @@ pydantic-extra-types==2.10.2
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/_base.in
-pydantic-settings==2.7.1
+pydantic-settings==2.7.0
     # via
+    #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
@@ -356,13 +368,13 @@ rich==13.9.4
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
     #   typer
-rpds-py==0.22.3
+rpds-py==0.23.1
     # via
     #   jsonschema
     #   referencing
 s3transfer==0.10.4
     # via boto3
-sh==2.2.1
+sh==2.2.2
     # via -r requirements/_base.in
 shellingham==1.5.4
     # via typer
@@ -378,19 +390,19 @@ toolz==1.0.0
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 tqdm==4.67.1
     # via -r requirements/../../../packages/service-library/requirements/_base.in
-typer==0.15.1
+typer==0.15.2
     # via
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
-types-aiobotocore==2.19.0
+types-aiobotocore==2.21.0
     # via -r requirements/_base.in
-types-aiobotocore-ec2==2.19.0
+types-aiobotocore-ec2==2.21.0
     # via types-aiobotocore
-types-aiobotocore-s3==2.19.0
+types-aiobotocore-s3==2.21.0
     # via types-aiobotocore
-types-aiobotocore-ssm==2.19.0
+types-aiobotocore-ssm==2.21.0
     # via types-aiobotocore
-types-awscrt==0.23.7
+types-awscrt==0.23.10
     # via botocore-stubs
 types-python-dateutil==2.9.0.20241206
     # via arrow
