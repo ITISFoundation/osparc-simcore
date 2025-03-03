@@ -6,7 +6,7 @@ from celery.contrib.abortable import AbortableTask
 from models_library.progress_bar import ProgressReport
 from servicelib.logging_utils import log_context
 
-from .models import TaskID
+from .models import TaskID, TaskState
 
 _logger = logging.getLogger(__name__)
 
@@ -30,6 +30,6 @@ class CeleryTaskQueueWorker:
         ):
             self.celery_app.tasks[task_name].update_state(
                 task_id=task_id,
-                state="PROGRESS",
+                state=TaskState.PROGRESS.value,
                 meta=report.model_dump(mode="json"),
             )

@@ -13,6 +13,7 @@ TaskUUID: TypeAlias = UUID
 class TaskState(StrEnum):
     PENDING = auto()
     STARTED = auto()
+    PROGRESS = auto()
     SUCCESS = auto()
     FAILURE = auto()
     ABORTED = auto()
