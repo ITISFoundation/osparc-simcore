@@ -6705,7 +6705,7 @@
           },
           "licensed_resources": {
             "items": {
-              "type": "object"
+              "$ref": "#/components/schemas/LicensedResource"
             },
             "type": "array",
             "title": "Licensed Resources"
@@ -6745,6 +6745,129 @@
           "modified_at"
         ],
         "title": "LicensedItemGet"
+      },
+      "LicensedResource": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "thumbnail": {
+            "type": "string",
+            "title": "Thumbnail"
+          },
+          "features": {
+            "$ref": "#/components/schemas/LicensedResourceFeaturesDict"
+          },
+          "doi": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Doi"
+          },
+          "license_key": {
+            "type": "string",
+            "title": "License Key"
+          },
+          "license_version": {
+            "type": "string",
+            "title": "License Version"
+          },
+          "protection": {
+            "type": "string",
+            "enum": [
+              "Code",
+              "PayPal"
+            ],
+            "title": "Protection"
+          },
+          "available_from_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2083,
+                "minLength": 1,
+                "format": "uri"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Available From Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "description",
+          "thumbnail",
+          "features",
+          "doi",
+          "license_key",
+          "license_version",
+          "protection",
+          "available_from_url"
+        ],
+        "title": "LicensedResource"
+      },
+      "LicensedResourceFeaturesDict": {
+        "properties": {
+          "age": {
+            "type": "string",
+            "title": "Age"
+          },
+          "date": {
+            "type": "string",
+            "format": "date",
+            "title": "Date"
+          },
+          "ethnicity": {
+            "type": "string",
+            "title": "Ethnicity"
+          },
+          "functionality": {
+            "type": "string",
+            "title": "Functionality"
+          },
+          "height": {
+            "type": "string",
+            "title": "Height"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "sex": {
+            "type": "string",
+            "title": "Sex"
+          },
+          "species": {
+            "type": "string",
+            "title": "Species"
+          },
+          "version": {
+            "type": "string",
+            "title": "Version"
+          },
+          "weight": {
+            "type": "string",
+            "title": "Weight"
+          }
+        },
+        "type": "object",
+        "required": [
+          "date"
+        ],
+        "title": "LicensedResourceFeaturesDict"
       },
       "LicensedResourceType": {
         "type": "string",

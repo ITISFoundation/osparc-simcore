@@ -1,14 +1,20 @@
 # Models added here "cover" models from within the deployment in order to restore backwards compatibility
 
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
-from typing import Annotated, Any
+from typing import Annotated, Literal, NotRequired
 
 from models_library.api_schemas_api_server.pricing_plans import (
     ServicePricingPlanGet as _ServicePricingPlanGet,
 )
 from models_library.api_schemas_webserver.licensed_items import (
     LicensedItemRpcGet as _LicensedItemGet,
+)
+from models_library.api_schemas_webserver.licensed_items import (
+    LicensedResource as _LicensedResource,
+)
+from models_library.api_schemas_webserver.licensed_items import (
+    LicensedResourceFeaturesDict as _LicensedResourceFeaturesDict,
 )
 from models_library.api_schemas_webserver.licensed_items_checkouts import (
     LicensedItemCheckoutRpcGet as _LicensedItemCheckoutRpcGet,
@@ -46,10 +52,12 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
+    HttpUrl,
     NonNegativeFloat,
     NonNegativeInt,
     PlainSerializer,
 )
+from typing_extensions import TypedDict
 
 
 class GetCreditPriceLegacy(BaseModel):
@@ -77,7 +85,7 @@ class GetCreditPriceLegacy(BaseModel):
     )
 
 
-assert set(GetCreditPriceLegacy.model_fields.keys()) == set(
+assert set(GetCreditPriceLegacy.model_fields.keys()) == set(  # nosec
     _GetCreditPrice.model_fields.keys()
 )
 
@@ -97,7 +105,7 @@ class PricingUnitGetLegacy(BaseModel):
     )
 
 
-assert set(PricingUnitGetLegacy.model_fields.keys()) == set(
+assert set(PricingUnitGetLegacy.model_fields.keys()) == set(  # nosec
     _PricingUnitGet.model_fields.keys()
 )
 
@@ -119,7 +127,7 @@ class WalletGetWithAvailableCreditsLegacy(BaseModel):
     )
 
 
-assert set(WalletGetWithAvailableCreditsLegacy.model_fields.keys()) == set(
+assert set(WalletGetWithAvailableCreditsLegacy.model_fields.keys()) == set(  # nosec
     _WalletGetWithAvailableCredits.model_fields.keys()
 )
 
@@ -137,9 +145,57 @@ class ServicePricingPlanGetLegacy(BaseModel):
     )
 
 
-assert set(ServicePricingPlanGetLegacy.model_fields.keys()) == set(
+assert set(ServicePricingPlanGetLegacy.model_fields.keys()) == set(  # nosec
     _ServicePricingPlanGet.model_fields.keys()
 )
+
+
+class LicensedResourceFeaturesDict(TypedDict):
+    age: NotRequired[str]
+    date: date
+    ethnicity: NotRequired[str]
+    functionality: NotRequired[str]
+    height: NotRequired[str]
+    name: NotRequired[str]
+    sex: NotRequired[str]
+    species: NotRequired[str]
+    version: NotRequired[str]
+    weight: NotRequired[str]
+
+
+assert set(LicensedResourceFeaturesDict.__annotations__.keys()) == set(  # nosec
+    _LicensedResourceFeaturesDict.__annotations__.keys()
+), "LicensedResourceFeaturesDict keys do not match"
+
+for key in LicensedResourceFeaturesDict.__annotations__:
+    assert (  # nosec
+        LicensedResourceFeaturesDict.__annotations__[key]
+        == _LicensedResourceFeaturesDict.__annotations__[key]
+    ), f"Type of {key} in LicensedResourceFeaturesDict does not match"
+
+
+class LicensedResource(BaseModel):
+    id: int
+    description: str
+    thumbnail: str
+    features: LicensedResourceFeaturesDict
+    doi: str | None
+    license_key: str
+    license_version: str
+    protection: Literal["Code", "PayPal"]
+    available_from_url: HttpUrl | None
+
+
+assert set(LicensedResource.model_fields.keys()) == set(  # nosec
+    _LicensedResource.model_fields.keys()
+), "LicensedResource keys do not match"
+
+for key in LicensedResource.model_fields.keys():
+    if key == "features":
+        continue
+    assert (  # nosec
+        LicensedResource.__annotations__[key] == _LicensedResource.__annotations__[key]
+    ), f"Type of {key} in LicensedResource does not match"
 
 
 class LicensedItemGet(BaseModel):
@@ -148,7 +204,7 @@ class LicensedItemGet(BaseModel):
     version: LicensedItemVersion
     display_name: str
     licensed_resource_type: LicensedResourceType
-    licensed_resources: list[dict[str, Any]]
+    licensed_resources: list[LicensedResource]
     pricing_plan_id: PricingPlanId
     is_hidden_on_market: bool
     created_at: datetime
@@ -158,7 +214,7 @@ class LicensedItemGet(BaseModel):
     )
 
 
-assert set(LicensedItemGet.model_fields.keys()) == set(
+assert set(LicensedItemGet.model_fields.keys()) == set(  # nosec
     _LicensedItemGet.model_fields.keys()
 )
 
@@ -176,6 +232,6 @@ class LicensedItemCheckoutGet(BaseModel):
     num_of_seats: int
 
 
-assert set(LicensedItemCheckoutGet.model_fields.keys()) == set(
+assert set(LicensedItemCheckoutGet.model_fields.keys()) == set(  # nosec
     _LicensedItemCheckoutRpcGet.model_fields.keys()
 )

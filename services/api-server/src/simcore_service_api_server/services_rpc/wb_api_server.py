@@ -46,7 +46,11 @@ from ..exceptions.backend_errors import (
 )
 from ..exceptions.service_errors_utils import service_exception_mapper
 from ..models.pagination import Page, PaginationParams
-from ..models.schemas.model_adapter import LicensedItemCheckoutGet, LicensedItemGet
+from ..models.schemas.model_adapter import (
+    LicensedItemCheckoutGet,
+    LicensedItemGet,
+    LicensedResource,
+)
 
 _exception_mapper = partial(service_exception_mapper, service_name="WebApiServer")
 
@@ -62,7 +66,10 @@ def _create_licensed_items_get_page(
                 version=elm.version,
                 display_name=elm.display_name,
                 licensed_resource_type=elm.licensed_resource_type,
-                licensed_resources=elm.licensed_resources,
+                licensed_resources=[
+                    LicensedResource.model_validate(res.model_dump())
+                    for res in elm.licensed_resources
+                ],
                 pricing_plan_id=elm.pricing_plan_id,
                 is_hidden_on_market=elm.is_hidden_on_market,
                 created_at=elm.created_at,
