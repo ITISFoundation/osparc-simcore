@@ -16,6 +16,7 @@ from urllib.parse import quote
 import httpx
 import pytest
 import sqlalchemy as sa
+from faker import Faker
 from fastapi import FastAPI, status
 from fastapi_pagination.cursor import CursorPage
 from models_library.api_schemas_storage.storage_schemas import (
@@ -729,3 +730,22 @@ async def test_path_compute_size(
         )
 
     assert workspace_total_size == accumulated_subfolder_size
+
+
+async def test_path_compute_size_inexistent_path(
+    initialized_app: FastAPI,
+    client: httpx.AsyncClient,
+    location_id: LocationID,
+    user_id: UserID,
+    faker: Faker,
+    fake_datcore_tokens: tuple[str, str],
+):
+
+    await _assert_compute_path_total_size(
+        initialized_app,
+        client,
+        location_id,
+        user_id,
+        path=Path(faker.file_path(absolute=False)),
+        expected_total_size=0,
+    )
