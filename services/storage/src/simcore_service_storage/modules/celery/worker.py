@@ -17,8 +17,8 @@ class CeleryTaskQueueWorker:
 
     def register_task(self, fn: Callable, task_name: str | None = None) -> None:
         name = task_name or fn.__name__
-        _logger.info("Registering %s task", name)
-        self.celery_app.task(name=name, base=AbortableTask, bind=True)(fn)
+        with log_context(_logger, logging.INFO, msg=f"Registering {name} task"):
+            self.celery_app.task(name=name, base=AbortableTask, bind=True)(fn)
 
     def set_task_progress(
         self, task_name: str, task_id: TaskID, report: ProgressReport
