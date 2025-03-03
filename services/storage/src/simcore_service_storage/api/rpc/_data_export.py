@@ -52,7 +52,9 @@ async def start_data_export(
         ) from err
 
     task_uuid = await get_celery_client(app).send_task(
-        "export_data", task_context=job_id_data.model_dump()
+        "export_data",
+        task_context=job_id_data.model_dump(),
+        files=data_export_start.file_and_folder_ids,  # ANE: adapt here your signature
     )
 
     return AsyncJobGet(
