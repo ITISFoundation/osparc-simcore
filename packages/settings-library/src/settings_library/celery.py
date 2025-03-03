@@ -10,10 +10,10 @@ from .base import BaseCustomSettings
 
 
 class CelerySettings(BaseCustomSettings):
-    CELERY_BROKER: Annotated[
+    CELERY_RABBIT_BROKER: Annotated[
         RabbitSettings, Field(json_schema_extra={"auto_default_from_env": True})
     ]
-    CELERY_RESULT_BACKEND: Annotated[
+    CELERY_REDIS_RESULT_BACKEND: Annotated[
         RedisSettings, Field(json_schema_extra={"auto_default_from_env": True})
     ]
     CELERY_RESULT_EXPIRES: Annotated[
@@ -33,14 +33,14 @@ class CelerySettings(BaseCustomSettings):
         json_schema_extra={
             "examples": [
                 {
-                    "CELERY_BROKER": {
+                    "CELERY_RABBIT_BROKER": {
                         "RABBIT_USER": "guest",
                         "RABBIT_SECURE": False,
                         "RABBIT_PASSWORD": "guest",
                         "RABBIT_HOST": "localhost",
                         "RABBIT_PORT": 5672,
                     },
-                    "CELERY_RESULT_BACKEND": {
+                    "CELERY_REDIS_RESULT_BACKEND": {
                         "REDIS_HOST": "localhost",
                         "REDIS_PORT": 6379,
                     },

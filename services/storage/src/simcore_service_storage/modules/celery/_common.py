@@ -13,8 +13,8 @@ def create_app(settings: ApplicationSettings) -> Celery:
     assert celery_settings
 
     app = Celery(
-        broker=celery_settings.CELERY_BROKER.dsn,
-        backend=celery_settings.CELERY_RESULT_BACKEND.build_redis_dsn(
+        broker=celery_settings.CELERY_RABBIT_BROKER.dsn,
+        backend=celery_settings.CELERY_REDIS_RESULT_BACKEND.build_redis_dsn(
             RedisDatabase.CELERY_TASKS,
         ),
     )
