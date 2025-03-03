@@ -85,6 +85,7 @@ async def test_submitting_task_with_failure_results_with_error(
     for attempt in Retrying(
         retry=retry_if_exception_type(AssertionError),
         wait=wait_fixed(1),
+        stop=stop_after_delay(30),
     ):
         with attempt:
             result = await celery_task_queue_client.get_result(task_context, task_uuid)
