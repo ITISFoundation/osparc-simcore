@@ -21,7 +21,7 @@ class CreateFakeServiceDataCallable(Protocol):
         everyone_access: str | None = None,
         product: ProductName = "osparc",
         deprecated: datetime | None = None,  # DB column
-    ) -> tuple[dict[str, Any], ...]:
+    ) -> tuple[dict[str, Any], ...]:  # type: ignore
         """
         Returns a fake factory that creates catalog DATA that can be used to fill
         both services_meta_data and services_access_rights tables
@@ -39,4 +39,3 @@ class CreateFakeServiceDataCallable(Protocol):
             owner_access, team_access, everyone_access = fake_access_rights
 
         """
-        ...
