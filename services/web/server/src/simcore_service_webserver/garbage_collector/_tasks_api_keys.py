@@ -12,7 +12,7 @@ from tenacity import retry
 from tenacity.before_sleep import before_sleep_log
 from tenacity.wait import wait_exponential
 
-from ..api_keys.service_api_keys import prune_expired_api_keys
+from ..api_keys.api_keys_service import prune_expired_api_keys
 
 logger = logging.getLogger(__name__)
 
