@@ -29,6 +29,7 @@ from pytest_simcore.helpers.fastapi import url_from_operation_id
 from pytest_simcore.helpers.httpx_assert_checks import assert_status
 from pytest_simcore.helpers.storage_utils import FileIDDict, ProjectWithFilesParams
 from simcore_postgres_database.models.projects import projects
+from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 pytest_simcore_core_services_selection = ["postgres"]
@@ -118,6 +119,7 @@ async def test_list_paths_root_folder_of_empty_returns_nothing(
     client: httpx.AsyncClient,
     location_id: LocationID,
     user_id: UserID,
+    fake_datcore_tokens: tuple[str, str],
 ):
     await _assert_list_paths(
         initialized_app,
@@ -129,6 +131,12 @@ async def test_list_paths_root_folder_of_empty_returns_nothing(
     )
 
 
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
 @pytest.mark.parametrize(
     "project_params",
     [
@@ -206,6 +214,12 @@ async def test_list_paths_pagination(
         )
 
 
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
 @pytest.mark.parametrize(
     "project_params, num_projects",
     [
@@ -369,6 +383,12 @@ async def test_list_paths(
 
 
 @pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
+@pytest.mark.parametrize(
     "project_params",
     [
         ProjectWithFilesParams(
@@ -529,6 +549,12 @@ async def _assert_compute_path_total_size(
     return received.size
 
 
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
 @pytest.mark.parametrize(
     "project_params",
     [
