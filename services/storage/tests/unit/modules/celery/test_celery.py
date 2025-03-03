@@ -9,11 +9,11 @@ from celery import Celery, Task
 from celery.contrib.abortable import AbortableTask
 from models_library.progress_bar import ProgressReport
 from simcore_service_storage.main import CeleryTaskQueueClient
-from simcore_service_storage.modules.celery.models import TaskContext
-from simcore_service_storage.modules.celery.utils import (
+from simcore_service_storage.modules.celery._utils import (
     get_celery_worker,
     get_event_loop,
 )
+from simcore_service_storage.modules.celery.models import TaskContext
 from simcore_service_storage.modules.celery.worker import CeleryTaskQueueWorker
 from tenacity import Retrying, retry_if_exception_type, stop_after_delay, wait_fixed
 

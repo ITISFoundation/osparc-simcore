@@ -14,7 +14,7 @@ from servicelib.rabbitmq import RPCRouter
 from ...datcore_dsm import DatCoreDataManager
 from ...dsm import get_dsm_provider
 from ...exceptions.errors import FileAccessRightError
-from ...modules.celery.utils import get_celery_client
+from ...modules.celery._utils import get_celery_client
 from ...modules.datcore_adapter.datcore_adapter_exceptions import DatcoreAdapterError
 from ...simcore_s3_dsm import SimcoreS3DataManager
 

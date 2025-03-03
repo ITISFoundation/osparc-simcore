@@ -3,15 +3,15 @@
 import logging
 
 from servicelib.logging_utils import config_all_loggers
-from simcore_service_storage.modules.celery.utils import (
+from simcore_service_storage.modules.celery._utils import (
     set_celery_app,
     set_celery_client,
 )
 
 from .core.application import create_app
 from .core.settings import ApplicationSettings
+from .modules.celery._common import create_app as create_celery_app
 from .modules.celery.client import CeleryTaskQueueClient
-from .modules.celery.common import create_app as create_celery_app
 
 _settings = ApplicationSettings.create_from_envs()
 

@@ -12,8 +12,8 @@ from servicelib.logging_utils import config_all_loggers
 
 from ...core.application import create_app
 from ...core.settings import ApplicationSettings
-from ...modules.celery.utils import set_celery_worker
-from .common import create_app as create_celery_app
+from ._common import create_app as create_celery_app
+from ._utils import set_celery_worker
 from .example_tasks import sync_archive
 from .worker import CeleryTaskQueueWorker
 

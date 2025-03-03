@@ -16,8 +16,8 @@ from models_library.api_schemas_rpc_async_jobs.exceptions import (
 )
 from servicelib.rabbitmq import RPCRouter
 
+from ...modules.celery._utils import get_celery_client
 from ...modules.celery.models import TaskStatus, TaskUUID
-from ...modules.celery.utils import get_celery_client
 
 router = RPCRouter()
 
