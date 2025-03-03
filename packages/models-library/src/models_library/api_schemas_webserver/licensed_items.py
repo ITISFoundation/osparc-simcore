@@ -74,7 +74,14 @@ class LicensedItemRpcGet(BaseModel):
                     "version": "1.0.0",
                     "display_name": "best-model",
                     "licensed_resource_type": f"{LicensedResourceType.VIP_MODEL}",
-                    "licensed_resources": [cast(JsonDict, VIP_DETAILS_EXAMPLE)],
+                    "licensed_resources": [
+                        {
+                            "source": cast(JsonDict, VIP_DETAILS_EXAMPLE),
+                            "category_id": "HumanWholeBody",
+                            "category_display": "Humans",
+                            "terms_of_use_url": None,
+                        }
+                    ],
                     "pricing_plan_id": "15",
                     "is_hidden_on_market": False,
                     "created_at": "2024-12-12 09:59:26.422140",
