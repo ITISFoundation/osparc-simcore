@@ -423,6 +423,8 @@ qx.Class.define("osparc.file.FilePicker", {
               "name" in fileMetadata
             ) {
               osparc.file.FilePicker.setOutputValueFromStore(this.getNode(), fileMetadata["location"], fileMetadata["dataset"], fileMetadata["path"], fileMetadata["name"]);
+            } else {
+              console.error("metadata info missing", fileMetadata);
             }
             this.fireEvent("fileUploaded");
             this.getNode().fireEvent("fileUploaded");
