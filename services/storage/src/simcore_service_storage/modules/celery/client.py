@@ -1,3 +1,4 @@
+import contextlib
 import logging
 from typing import Any, Final
 from uuid import uuid4
@@ -75,10 +76,8 @@ class CeleryTaskQueueClient:
         task_id = _build_task_id(task_context, task_uuid)
         result = self._celery_app.AsyncResult(task_id).result
         if result:
-            try:
+            with contextlib.suppress(ValidationError):
                 return ProgressReport.model_validate(result)
-            except ValidationError:
-                pass
         return None
 
     @make_async()
