@@ -52,6 +52,7 @@ qx.Class.define("osparc.data.model.LicensedItemResource", {
     }
 
     this.set({
+      modelId: licensedItemResourceData.id,
       description: description,
       title: title,
       subtitle: subtitle,
@@ -66,6 +67,13 @@ qx.Class.define("osparc.data.model.LicensedItemResource", {
   },
 
   properties: {
+    modelId: {
+      check: "Number",
+      nullable: false,
+      init: null,
+      event: "changeModelId",
+    },
+
     description: {
       check: "String",
       nullable: false,

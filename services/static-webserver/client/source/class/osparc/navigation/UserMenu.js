@@ -86,7 +86,7 @@ qx.Class.define("osparc.navigation.UserMenu", {
           this.add(control);
           break;
         case "market":
-          control = new qx.ui.menu.Button(this.tr("Model Store"));
+          control = new qx.ui.menu.Button(this.tr("The Shop"));
           control.addListener("execute", () => osparc.vipMarket.MarketWindow.openWindow());
           this.add(control);
           break;
