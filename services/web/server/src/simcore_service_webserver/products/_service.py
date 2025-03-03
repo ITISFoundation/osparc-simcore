@@ -2,6 +2,7 @@ from decimal import Decimal
 from typing import Any, cast
 
 from aiohttp import web
+from models_library.groups import GroupID
 from models_library.products import CreditResultGet, ProductName, ProductStripeInfoGet
 from pydantic import ValidationError
 from servicelib.exceptions import InvalidConfig
@@ -125,3 +126,10 @@ async def get_template_content(app: web.Application, *, template_name: str):
     if not content:
         raise ProductTemplateNotFoundError(template_name=template_name)
     return content
+
+
+async def auto_create_products_groups(
+    app: web.Application,
+) -> dict[ProductName, GroupID]:
+    repo = ProductRepository.create_from_app(app)
+    return await repo.auto_create_products_groups()
