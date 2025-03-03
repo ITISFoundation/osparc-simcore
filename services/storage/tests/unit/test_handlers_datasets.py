@@ -28,6 +28,7 @@ from pytest_simcore.helpers.parametrizations import (
     parametrized_file_size,
 )
 from servicelib.aiohttp import status
+from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 
 pytest_simcore_core_services_selection = ["postgres"]
 pytest_simcore_ops_services_selection = ["adminer"]
@@ -54,6 +55,12 @@ async def test_list_dataset_files_metadata_with_no_files_returns_empty_array(
     assert not error
 
 
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
 @pytest.mark.parametrize(
     "file_size",
     [parametrized_file_size("100Mib")],
@@ -94,6 +101,12 @@ async def test_list_dataset_files_metadata(
         assert fmd.file_size == file.stat().st_size
 
 
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
 async def test_list_datasets_metadata(
     initialized_app: FastAPI,
     client: AsyncClient,
@@ -119,6 +132,12 @@ async def test_list_datasets_metadata(
     assert dataset.dataset_id == project_id
 
 
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
 async def test_ensure_expand_dirs_defaults_true(
     mocker: MockerFixture,
     initialized_app: FastAPI,
