@@ -19,7 +19,7 @@ class CelerySettings(BaseCustomSettings):
     CELERY_RESULT_EXPIRES: Annotated[
         timedelta,
         Field(
-            description="Time (in seconds, or a timedelta object) for when after stored task tombstones will be deleted."
+            description="Time after which task results will be deleted (default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)."
         ),
     ] = timedelta(days=7)
     CELERY_RESULT_PERSISTENT: Annotated[
