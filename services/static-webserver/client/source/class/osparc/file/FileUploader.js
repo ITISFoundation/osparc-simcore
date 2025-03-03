@@ -39,7 +39,7 @@ qx.Class.define("osparc.file.FileUploader", {
 
   events: {
     "uploadAborted": "qx.event.type.Event",
-    "fileUploaded": "qx.event.type.Event"
+    "fileUploaded": "qx.event.type.Data",
   },
 
   statics: {
@@ -60,6 +60,7 @@ qx.Class.define("osparc.file.FileUploader", {
   members: {
     __presignedLinkData: null,
     __uploadedParts: null,
+    __fileMetadata: null,
 
     // Request to the server an upload URL.
     retrieveUrlAndUpload: function(file) {
@@ -80,6 +81,14 @@ qx.Class.define("osparc.file.FileUploader", {
         .then(presignedLinkData => {
           if (presignedLinkData.resp.urls) {
             this.__presignedLinkData = presignedLinkData;
+
+            this.__fileMetadata = {
+              location: presignedLinkData.locationId,
+              dataset: studyId,
+              path: presignedLinkData.fileUuid,
+              name: file.name
+            };
+
             try {
               this.__uploadFile(file);
             } catch (error) {
@@ -162,16 +171,8 @@ qx.Class.define("osparc.file.FileUploader", {
       const presignedLinkData = this.__presignedLinkData;
       this.getNode().getStatus().setProgress(this.self().PROGRESS_VALUES.COMPLETING);
       const completeUrl = presignedLinkData.resp.links.complete_upload;
-      const location = presignedLinkData.locationId;
-      const path = presignedLinkData.fileUuid;
       const xhr = new XMLHttpRequest();
       xhr.onloadend = () => {
-        const fileMetadata = {
-          location,
-          dataset: this.getNode().getStudy().getUuid(),
-          path,
-          name: file.name
-        };
         const resp = JSON.parse(xhr.responseText);
         if ("error" in resp && resp["error"]) {
           console.error(resp["error"]);
@@ -182,9 +183,9 @@ qx.Class.define("osparc.file.FileUploader", {
             // @odeimaiz: we need to poll the received new location in the response
             // we do have links.state -> poll that link until it says ok
             // right now this kind of work if files are small and this happens fast
-            this.__pollFileUploadState(resp["data"]["links"]["state"], fileMetadata);
+            this.__pollFileUploadState(resp["data"]["links"]["state"]);
           } else if (xhr.status == 200) {
-            this.__completeUpload(fileMetadata);
+            this.__completeUpload();
           }
         }
       };
@@ -196,30 +197,27 @@ qx.Class.define("osparc.file.FileUploader", {
       xhr.send(JSON.stringify(body));
     },
 
-    __pollFileUploadState: function(stateLink, fileMetadata) {
+    __pollFileUploadState: function(stateLink) {
       const xhr = new XMLHttpRequest();
       xhr.open("POST", stateLink, true);
       xhr.setRequestHeader("Content-Type", "application/json");
       xhr.onloadend = () => {
         const resp = JSON.parse(xhr.responseText);
         if ("data" in resp && resp["data"] && resp["data"]["state"] === "ok") {
-          this.__completeUpload(fileMetadata);
+          this.__completeUpload();
         } else {
           const interval = 2000;
-          qx.event.Timer.once(() => this.__pollFileUploadState(stateLink, fileMetadata), this, interval);
+          qx.event.Timer.once(() => this.__pollFileUploadState(stateLink), this, interval);
         }
       };
       xhr.send();
     },
 
-    __completeUpload: function(fileMetadata) {
+    __completeUpload: function() {
       this.getNode()["fileUploadAbortRequested"] = false;
 
-      if ("location" in fileMetadata && "dataset" in fileMetadata && "path" in fileMetadata && "name" in fileMetadata) {
-        osparc.file.FilePicker.setOutputValueFromStore(this.getNode(), fileMetadata["location"], fileMetadata["dataset"], fileMetadata["path"], fileMetadata["name"]);
-      }
       this.__presignedLinkData = null;
-      this.fireEvent("fileUploaded");
+      this.fireDataEvent("fileUploaded", this.__fileMetadata);
     },
 
     __abortUpload: function() {
