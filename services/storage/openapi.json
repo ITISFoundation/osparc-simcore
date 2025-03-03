@@ -2443,7 +2443,7 @@
             "type": "string",
             "format": "path",
             "title": "Display Path",
-            "description": "the path to display with UUID replaced"
+            "description": "the path to display with UUID replaced (URL Encoded by parts as names may contain '/')"
           },
           "file_meta_data": {
             "anyOf": [
