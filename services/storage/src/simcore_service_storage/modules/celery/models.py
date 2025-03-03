@@ -1,3 +1,4 @@
+from enum import StrEnum, auto
 from typing import Any, TypeAlias
 from uuid import UUID
 
@@ -9,7 +10,15 @@ TaskID: TypeAlias = str
 TaskUUID: TypeAlias = UUID
 
 
+class TaskState(StrEnum):
+    PENDING = auto()
+    STARTED = auto()
+    SUCCESS = auto()
+    FAILURE = auto()
+    ABORTED = auto()
+
+
 class TaskStatus(BaseModel):
     task_uuid: TaskUUID
-    task_state: str  # add enum
+    task_state: TaskState
     progress_report: ProgressReport | None = None
