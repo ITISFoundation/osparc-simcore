@@ -11,7 +11,17 @@ pytest_simcore_core_services_selection = ["postgres"]
 pytest_simcore_ops_services_selection = ["adminer"]
 
 
-@pytest.mark.parametrize("entrypoint", ["list_paths"])
+@pytest.mark.parametrize(
+    "entrypoint",
+    [
+        "list_datasets_metadata",
+        # "list_dataset_files_metadata", needs dataset_id
+        "list_files_metadata",
+        # "get_file_metadata", needs file_id
+        # "download_file", needs file_id
+        "list_paths",
+    ],
+)
 @pytest.mark.parametrize(
     "location_id",
     [DatCoreDataManager.get_location_id()],
