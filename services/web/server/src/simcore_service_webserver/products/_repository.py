@@ -3,7 +3,6 @@ from decimal import Decimal
 from typing import Any
 
 import sqlalchemy as sa
-from aiopg.sa.connection import SAConnection
 from models_library.groups import GroupID
 from models_library.products import ProductName, ProductStripeInfoGet
 from simcore_postgres_database.constants import QUANTIZE_EXP_ARG
@@ -57,7 +56,7 @@ _PRODUCTS_COLUMNS = [
 
 
 async def get_product_payment_fields(
-    conn: SAConnection, product_name: ProductName
+    conn: AsyncConnection, product_name: ProductName
 ) -> PaymentFieldsTuple:
     price_info = await get_product_latest_price_info_or_none(
         conn, product_name=product_name
