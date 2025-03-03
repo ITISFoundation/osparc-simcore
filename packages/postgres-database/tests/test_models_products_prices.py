@@ -4,10 +4,10 @@
 # pylint: disable=too-many-arguments
 
 
+from collections.abc import AsyncIterator
+
 import pytest
 import sqlalchemy as sa
-from aiopg.sa.connection import SAConnection
-from aiopg.sa.result import RowProxy
 from faker import Faker
 from pytest_simcore.helpers.faker_factories import random_product
 from simcore_postgres_database.errors import CheckViolation, ForeignKeyViolation
@@ -18,23 +18,30 @@ from simcore_postgres_database.utils_products_prices import (
     get_product_latest_stripe_info,
     is_payment_enabled,
 )
+from sqlalchemy.engine.row import Row
+from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
 
 @pytest.fixture
-async def fake_product(connection: SAConnection) -> RowProxy:
+async def connection(asyncpg_engine: AsyncEngine) -> AsyncIterator[AsyncConnection]:
+    async with asyncpg_engine.begin() as conn:
+        yield conn
+
+
+@pytest.fixture
+async def fake_product(connection: AsyncConnection) -> Row:
     result = await connection.execute(
         products.insert()
         .values(random_product(group_id=None))
         .returning(sa.literal_column("*"))
     )
-    product = await result.first()
-    assert product is not None
-    return product
+    return result.one()
 
 
 async def test_creating_product_prices(
-    connection: SAConnection, fake_product: RowProxy, faker: Faker
+    connection: AsyncConnection, fake_product: Row, faker: Faker
 ):
+
     # a price per product
     result = await connection.execute(
         products_prices.insert()
@@ -47,12 +54,12 @@ async def test_creating_product_prices(
         )
         .returning(sa.literal_column("*"))
     )
-    product_prices = await result.first()
+    product_prices = result.one()
     assert product_prices
 
 
 async def test_non_negative_price_not_allowed(
-    connection: SAConnection, fake_product: RowProxy, faker: Faker
+    connection: AsyncConnection, fake_product: Row, faker: Faker
 ):
     # negative price not allowed
     with pytest.raises(CheckViolation) as exc_info:
@@ -81,7 +88,7 @@ async def test_non_negative_price_not_allowed(
 
 
 async def test_delete_price_constraints(
-    connection: SAConnection, fake_product: RowProxy, faker: Faker
+    connection: AsyncConnection, fake_product: Row, faker: Faker
 ):
     # products_prices
     await connection.execute(
@@ -106,7 +113,7 @@ async def test_delete_price_constraints(
 
 
 async def test_get_product_latest_price_or_none(
-    connection: SAConnection, fake_product: RowProxy, faker: Faker
+    connection: AsyncConnection, fake_product: Row, faker: Faker
 ):
     # undefined product
     assert (
@@ -130,7 +137,7 @@ async def test_get_product_latest_price_or_none(
 
 
 async def test_price_history_of_a_product(
-    connection: SAConnection, fake_product: RowProxy, faker: Faker
+    connection: AsyncConnection, fake_product: Row, faker: Faker
 ):
     # initial price
     await connection.execute(
@@ -163,7 +170,7 @@ async def test_price_history_of_a_product(
 
 
 async def test_get_product_latest_stripe_info(
-    connection: SAConnection, fake_product: RowProxy, faker: Faker
+    connection: AsyncConnection, fake_product: Row, faker: Faker
 ):
     stripe_price_id_value = faker.word()
     stripe_tax_rate_id_value = faker.word()
@@ -187,5 +194,5 @@ async def test_get_product_latest_stripe_info(
     assert product_stripe_info[1] == stripe_tax_rate_id_value
 
     # undefined product
-    with pytest.raises(ValueError) as exc_info:
+    with pytest.raises(ValueError, match="undefined"):
         await get_product_latest_stripe_info(connection, product_name="undefined")
