@@ -58,6 +58,7 @@ from simcore_service_storage.models import FileDownloadResponse, S3BucketName, U
 from simcore_service_storage.modules.long_running_tasks import (
     get_completed_upload_tasks,
 )
+from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 from sqlalchemy.ext.asyncio import AsyncEngine
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
@@ -87,9 +88,9 @@ async def assert_multipart_uploads_in_progress(
     expected_upload_ids: list[str] | None,
 ):
     """if None is passed, then it checks that no uploads are in progress"""
-    list_uploads: list[
-        tuple[UploadID, S3ObjectKey]
-    ] = await storage_s3_client.list_ongoing_multipart_uploads(bucket=storage_s3_bucket)
+    list_uploads: list[tuple[UploadID, S3ObjectKey]] = (
+        await storage_s3_client.list_ongoing_multipart_uploads(bucket=storage_s3_bucket)
+    )
     if expected_upload_ids is None:
         assert (
             not list_uploads
@@ -587,6 +588,12 @@ async def test_upload_real_file(
 
 
 @pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
+@pytest.mark.parametrize(
     "file_size",
     [
         (TypeAdapter(ByteSize).validate_python("1Mib")),
@@ -831,6 +838,12 @@ async def test_upload_real_file_with_s3_client(
 
 
 @pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
+@pytest.mark.parametrize(
     "file_size",
     [
         TypeAdapter(ByteSize).validate_python("160Mib"),
@@ -930,7 +943,7 @@ async def _assert_file_downloaded(
 async def test_download_file_no_file_was_uploaded(
     initialized_app: FastAPI,
     client: httpx.AsyncClient,
-    location_id: int,
+    location_id: LocationID,
     project_id: ProjectID,
     node_id: NodeID,
     user_id: UserID,
@@ -966,7 +979,7 @@ async def test_download_file_1_to_1_with_file_meta_data(
     client: httpx.AsyncClient,
     file_size: ByteSize,
     upload_file: Callable[[ByteSize, str], Awaitable[tuple[Path, SimcoreS3FileID]]],
-    location_id: int,
+    location_id: LocationID,
     user_id: UserID,
     storage_s3_client: SimcoreS3API,
     storage_s3_bucket: S3BucketName,
@@ -1005,7 +1018,7 @@ async def test_download_file_from_inside_a_directory(
     initialized_app: FastAPI,
     client: httpx.AsyncClient,
     file_size: ByteSize,
-    location_id: int,
+    location_id: LocationID,
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
@@ -1066,7 +1079,7 @@ async def test_download_file_from_inside_a_directory(
 async def test_download_file_the_file_is_missing_from_the_directory(
     initialized_app: FastAPI,
     client: httpx.AsyncClient,
-    location_id: int,
+    location_id: LocationID,
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
@@ -1099,7 +1112,7 @@ async def test_download_file_the_file_is_missing_from_the_directory(
 async def test_download_file_access_rights(
     initialized_app: FastAPI,
     client: httpx.AsyncClient,
-    location_id: int,
+    location_id: LocationID,
     user_id: UserID,
     storage_s3_client: SimcoreS3API,
     storage_s3_bucket: S3BucketName,
@@ -1144,7 +1157,7 @@ async def test_delete_file(
     client: httpx.AsyncClient,
     file_size: ByteSize,
     upload_file: Callable[[ByteSize, str], Awaitable[tuple[Path, SimcoreS3FileID]]],
-    location_id: int,
+    location_id: LocationID,
     user_id: UserID,
     faker: Faker,
 ):
@@ -1321,7 +1334,7 @@ async def test_ensure_expand_dirs_defaults_true(
     mocker: MockerFixture,
     client: httpx.AsyncClient,
     user_id: UserID,
-    location_id: int,
+    location_id: LocationID,
 ):
     mocked_object = mocker.patch(
         "simcore_service_storage.simcore_s3_dsm.SimcoreS3DataManager.list_files",
