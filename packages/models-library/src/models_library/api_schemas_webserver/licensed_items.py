@@ -21,7 +21,7 @@ from ._base import OutputSchema
 # RPC
 
 
-class LicensedResourceFeaturesDict(TypedDict):
+class LicensedResourceSourceFeaturesDict(TypedDict):
     age: NotRequired[str]
     date: date
     ethnicity: NotRequired[str]
@@ -34,16 +34,23 @@ class LicensedResourceFeaturesDict(TypedDict):
     weight: NotRequired[str]
 
 
-class LicensedResource(BaseModel):
+class LicensedResourceSource(BaseModel):
     id: int
     description: str
     thumbnail: str
-    features: LicensedResourceFeaturesDict
+    features: LicensedResourceSourceFeaturesDict
     doi: str | None
     license_key: str
     license_version: str
     protection: Literal["Code", "PayPal"]
     available_from_url: HttpUrl | None
+
+
+class LicensedResource(BaseModel):
+    source: LicensedResourceSource
+    category_id: IDStr
+    category_display: str
+    terms_of_use_url: HttpUrl | None = None
 
 
 class LicensedItemRpcGet(BaseModel):

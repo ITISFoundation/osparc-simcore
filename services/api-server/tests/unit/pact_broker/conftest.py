@@ -1,5 +1,4 @@
 import os
-import socket
 
 import pytest
 
@@ -26,16 +25,6 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         default=None,
         help="User name for logging into the deployment",
     )
-
-
-@pytest.fixture()
-def get_free_port() -> int:
-    """Utility to pick a free TCP port."""
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.bind(("127.0.0.1", 0))
-    port = sock.getsockname()[1]
-    sock.close()
-    return port
 
 
 @pytest.fixture()

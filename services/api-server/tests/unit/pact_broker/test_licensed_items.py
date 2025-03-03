@@ -16,6 +16,7 @@ from models_library.api_schemas_webserver.licensed_items import (
 )
 from pact.v3 import Verifier
 from pytest_mock import MockerFixture
+from servicelib.utils import unused_port
 from simcore_service_api_server._meta import API_VERSION
 from simcore_service_api_server.api.dependencies.authentication import (
     Identity,
@@ -165,7 +166,8 @@ async def mock_wb_api_server_rpc(app: FastAPI, mocker: MockerFixture) -> MockerF
 
 @pytest.fixture()
 def run_test_server(
-    get_free_port: int,
+    # get_free_port: int,
+    # get_unused_port: int,
     app: FastAPI,
 ):
     """
@@ -176,7 +178,7 @@ def run_test_server(
     # Override
     app.dependency_overrides[get_current_identity] = mock_get_current_identity
 
-    port = get_free_port
+    port = unused_port()
     base_url = f"http://localhost:{port}"
 
     config = uvicorn.Config(
