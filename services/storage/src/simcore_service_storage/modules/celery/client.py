@@ -8,6 +8,7 @@ from celery.contrib.abortable import AbortableAsyncResult
 from common_library.async_tools import make_async
 from models_library.progress_bar import ProgressReport
 from pydantic import ValidationError
+from servicelib.logging_utils import log_context
 
 from .models import TaskContext, TaskID, TaskStatus, TaskUUID
 
@@ -48,9 +49,13 @@ class CeleryTaskQueueClient:
     ) -> TaskUUID:
         task_uuid = uuid4()
         task_id = _build_task_id(task_context, task_uuid)
-        _logger.debug("Submitting task %s: %s", task_name, task_id)
-        self._celery_app.send_task(task_name, task_id=task_id, kwargs=task_params)
-        return task_uuid
+        with log_context(
+            _logger,
+            logging.DEBUG,
+            msg=f"Submitting task {task_name}: {task_id=} {task_params=}",
+        ):
+            self._celery_app.send_task(task_name, task_id=task_id, kwargs=task_params)
+            return task_uuid
 
     @make_async()
     def get_task(self, task_context: TaskContext, task_uuid: TaskUUID) -> Any:
