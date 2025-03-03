@@ -30,6 +30,7 @@ from pytest_simcore.helpers.fastapi import url_from_operation_id
 from pytest_simcore.helpers.httpx_assert_checks import assert_status
 from pytest_simcore.helpers.storage_utils import FileIDDict, ProjectWithFilesParams
 from simcore_postgres_database.models.projects import projects
+from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 pytest_simcore_core_services_selection = ["postgres"]
@@ -119,6 +120,7 @@ async def test_list_paths_root_folder_of_empty_returns_nothing(
     client: httpx.AsyncClient,
     location_id: LocationID,
     user_id: UserID,
+    fake_datcore_tokens: tuple[str, str],
 ):
     await _assert_list_paths(
         initialized_app,
@@ -130,6 +132,12 @@ async def test_list_paths_root_folder_of_empty_returns_nothing(
     )
 
 
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
 @pytest.mark.parametrize(
     "project_params",
     [
@@ -208,6 +216,12 @@ async def test_list_paths_pagination(
 
 
 @pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
+@pytest.mark.parametrize(
     "project_params",
     [
         ProjectWithFilesParams(
@@ -249,6 +263,12 @@ async def test_list_paths_pagination_large_page(
     )
 
 
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
 @pytest.mark.parametrize(
     "project_params, num_projects",
     [
@@ -412,6 +432,12 @@ async def test_list_paths(
 
 
 @pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
+@pytest.mark.parametrize(
     "project_params",
     [
         ProjectWithFilesParams(
@@ -492,9 +518,9 @@ async def test_list_paths_with_display_name_containing_slashes(
     )
     assert page_of_paths.items[0].display_path == Path(
         quote(project_name_with_slashes, safe="")
-    ) / quote(
-        node_name_with_non_ascii, safe=""
-    ), "display path parts should be url encoded"
+    ) / quote(node_name_with_non_ascii, safe=""), (
+        "display path parts should be url encoded"
+    )
 
     # ls in the node workspace
     selected_node_id = NodeID(random.choice(list(project["workbench"])))  # noqa: S311
@@ -538,9 +564,9 @@ async def test_list_paths_with_display_name_containing_slashes(
                 *(expected_paths[0][0].parts[2:]),
             ],
         )
-        assert page_of_paths.items[0].display_path == Path(
-            expected_display_path
-        ), "display path parts should be url encoded"
+        assert page_of_paths.items[0].display_path == Path(expected_display_path), (
+            "display path parts should be url encoded"
+        )
 
 
 async def _assert_compute_path_total_size(
@@ -573,6 +599,12 @@ async def _assert_compute_path_total_size(
 
 
 @pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
+@pytest.mark.parametrize(
     "project_params",
     [
         ProjectWithFilesParams(
@@ -594,9 +626,9 @@ async def test_path_compute_size(
     ],
     project_params: ProjectWithFilesParams,
 ):
-    assert (
-        len(project_params.allowed_file_sizes) == 1
-    ), "test preconditions are not filled! allowed file sizes should have only 1 option for this test"
+    assert len(project_params.allowed_file_sizes) == 1, (
+        "test preconditions are not filled! allowed file sizes should have only 1 option for this test"
+    )
     project, list_of_files = with_random_project_with_files
 
     total_num_files = sum(
