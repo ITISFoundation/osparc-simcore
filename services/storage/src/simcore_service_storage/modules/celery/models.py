@@ -24,6 +24,14 @@ class TaskState(StrEnum):
 _TASK_DONE = {TaskState.SUCCESS, TaskState.ERROR, TaskState.ABORTED}
 
 
+class TaskState(StrEnum):
+    PENDING = auto()
+    STARTED = auto()
+    SUCCESS = auto()
+    FAILURE = auto()
+    ABORTED = auto()
+
+
 class TaskStatus(BaseModel):
     task_uuid: TaskUUID
     task_state: TaskState
