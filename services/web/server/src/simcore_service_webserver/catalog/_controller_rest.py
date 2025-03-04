@@ -38,8 +38,11 @@ from ..login.decorators import login_required
 from ..resource_usage.service import get_default_service_pricing_plan
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
-from . import _catalog_rest_client, _handlers_errors, _service
-from ._exceptions import DefaultPricingUnitForServiceNotFoundError
+from . import _catalog_rest_client, _service
+from ._exceptions import (
+    DefaultPricingUnitForServiceNotFoundError,
+    reraise_catalog_exceptions_as_http_errors,
+)
 from ._models import CatalogRequestContext, ListServiceParams, ServicePathParams
 
 _logger = logging.getLogger(__name__)
@@ -56,7 +59,7 @@ routes = RouteTableDef()
 )
 @login_required
 @permission_required("services.catalog.*")
-@_handlers_errors.reraise_catalog_exceptions_as_http_errors
+@reraise_catalog_exceptions_as_http_errors
 async def list_services_latest(request: Request):
     request_ctx = CatalogRequestContext.create(request)
     query_params: ListServiceParams = parse_request_query_parameters_as(
@@ -94,7 +97,7 @@ async def list_services_latest(request: Request):
 )
 @login_required
 @permission_required("services.catalog.*")
-@_handlers_errors.reraise_catalog_exceptions_as_http_errors
+@reraise_catalog_exceptions_as_http_errors
 async def get_service(request: Request):
     request_ctx = CatalogRequestContext.create(request)
     path_params = parse_request_path_parameters_as(ServicePathParams, request)
@@ -120,7 +123,7 @@ async def get_service(request: Request):
 )
 @login_required
 @permission_required("services.catalog.*")
-@_handlers_errors.reraise_catalog_exceptions_as_http_errors
+@reraise_catalog_exceptions_as_http_errors
 async def update_service(request: Request):
     request_ctx = CatalogRequestContext.create(request)
     path_params = parse_request_path_parameters_as(ServicePathParams, request)
@@ -350,7 +353,7 @@ async def get_service_resources(request: Request):
 )
 @login_required
 @permission_required("services.catalog.*")
-@_handlers_errors.reraise_catalog_exceptions_as_http_errors
+@reraise_catalog_exceptions_as_http_errors
 async def get_service_pricing_plan(request: Request):
     ctx = CatalogRequestContext.create(request)
     path_params = parse_request_path_parameters_as(ServicePathParams, request)
