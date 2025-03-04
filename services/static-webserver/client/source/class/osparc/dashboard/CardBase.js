@@ -644,7 +644,6 @@ qx.Class.define("osparc.dashboard.CardBase", {
 
       if (this.isResourceType("study") || this.isResourceType("template")) {
         // OM here
-        return;
         const params = {
           url: {
             studyId: this.getResourceData()["uuid"]

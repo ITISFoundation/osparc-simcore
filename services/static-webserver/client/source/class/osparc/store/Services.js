@@ -32,6 +32,9 @@ qx.Class.define("osparc.store.Services", {
 
         osparc.data.Resources.getInstance().getAllPages("servicesV2")
           .then(servicesArray => {
+            // OM: remove history, it will be retired
+            servicesArray.forEach(service => delete service["history"]);
+
             const servicesObj = osparc.service.Utils.convertArrayToObject(servicesArray);
             this.__addHits(servicesObj);
             this.__addTSRInfos(servicesObj);
