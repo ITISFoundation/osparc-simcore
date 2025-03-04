@@ -5,7 +5,8 @@ from models_library.api_schemas_webserver import WEBSERVER_RPC_NAMESPACE
 from models_library.products import CreditResultGet, ProductName
 from servicelib.rabbitmq import RPCRouter
 
-from ...rabbitmq import get_rabbitmq_rpc_server
+from ...constants import APP_SETTINGS_KEY
+from ...rabbitmq import get_rabbitmq_rpc_server, setup_rabbitmq
 from .. import _service
 
 router = RPCRouter()
@@ -24,6 +25,12 @@ async def get_credit_amount(
     return credit_result_get
 
 
-async def register_rpc_routes_on_startup(app: web.Application):
+async def _register_rpc_routes_on_startup(app: web.Application):
     rpc_server = get_rabbitmq_rpc_server(app)
     await rpc_server.register_router(router, WEBSERVER_RPC_NAMESPACE, app)
+
+
+def setup_rpc(app: web.Application):
+    setup_rabbitmq(app)
+    if app[APP_SETTINGS_KEY].WEBSERVER_RABBITMQ:
+        app.on_startup.append(_register_rpc_routes_on_startup)
