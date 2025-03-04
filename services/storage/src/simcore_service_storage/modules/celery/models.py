@@ -12,8 +12,7 @@ TaskUUID: TypeAlias = UUID
 
 class TaskState(StrEnum):
     PENDING = auto()
-    STARTED = auto()
-    PROGRESS = auto()
+    RUNNING = auto()
     SUCCESS = auto()
     FAILURE = auto()
     ABORTED = auto()
@@ -22,4 +21,4 @@ class TaskState(StrEnum):
 class TaskStatus(BaseModel):
     task_uuid: TaskUUID
     task_state: TaskState
-    progress_report: ProgressReport | None = None
+    progress_report: ProgressReport

@@ -10,7 +10,7 @@ from models_library.progress_bar import ProgressReport
 from pydantic import ValidationError
 from servicelib.logging_utils import log_context
 
-from .models import TaskContext, TaskID, TaskStatus, TaskUUID
+from .models import TaskContext, TaskID, TaskState, TaskStatus, TaskUUID
 
 _logger = logging.getLogger(__name__)
 
@@ -77,13 +77,20 @@ class CeleryTaskQueueClient:
 
     def _get_progress_report(
         self, task_context: TaskContext, task_uuid: TaskUUID
-    ) -> ProgressReport | None:
+    ) -> ProgressReport:
         task_id = _build_task_id(task_context, task_uuid)
         result = self._celery_app.AsyncResult(task_id).result
-        if result:
+        state = self._celery_app.AsyncResult(task_id).state
+        if result and state == TaskState.RUNNING.value:
             with contextlib.suppress(ValidationError):
                 return ProgressReport.model_validate(result)
-        return None
+        if state in (
+            TaskState.ABORTED.value,
+            TaskState.FAILURE.value,
+            TaskState.SUCCESS.value,
+        ):
+            return ProgressReport(actual_value=100.0)
+        return ProgressReport(actual_value=0.0)
 
     @make_async()
     def get_task_status(
