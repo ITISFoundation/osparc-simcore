@@ -29,22 +29,15 @@ def setup_products(app: web.Application):
     # specially if this plugin is not set up to be loaded
     #
     from ..constants import APP_SETTINGS_KEY
-    from ..rabbitmq import setup_rabbitmq
     from . import _web_events, _web_middlewares
     from ._controller import rest, rpc
 
     assert app[APP_SETTINGS_KEY].WEBSERVER_PRODUCTS is True  # nosec
 
-    # set middlewares
     app.middlewares.append(_web_middlewares.discover_product_middleware)
 
-    # setup rest
     app.router.add_routes(rest.routes)
 
-    # setup rpc
-    setup_rabbitmq(app)
-    if app[APP_SETTINGS_KEY].WEBSERVER_RABBITMQ:
-        app.on_startup.append(rpc.register_rpc_routes_on_startup)
+    rpc.setup_rpc(app)
 
-    # setup events
     _web_events.setup_web_events(app)
