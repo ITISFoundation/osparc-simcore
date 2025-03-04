@@ -1,5 +1,4 @@
 # pylint: disable=unused-argument
-from datetime import datetime
 
 from fastapi import FastAPI
 from models_library.api_schemas_rpc_async_jobs.async_jobs import (
@@ -46,8 +45,6 @@ async def get_status(
         job_id=job_id,
         progress=task_status.progress_report,
         done=False,
-        started=datetime.now(),  # TODO: retrieve that
-        stopped=None,  # TODO: retrieve that
     )
 
 
@@ -69,7 +66,7 @@ async def get_result(
 
 @router.expose()
 async def list_jobs(
-    app: FastAPI, filter_: str, job_id_data: AsyncJobNameData  # TODO: implement filter
+    app: FastAPI, filter_: str, job_id_data: AsyncJobNameData
 ) -> list[AsyncJobGet]:
     assert app  # nosec
 
