@@ -167,7 +167,7 @@ def test_provider_against_pact(
     broker_url, broker_username, broker_password = pact_broker_credentials
 
     broker_builder = (
-        Verifier("OsparcApiProvider")
+        Verifier("OsparcApiServerLicensedItems")
         .add_transport(url=run_test_server)
         .broker_source(
             broker_url,

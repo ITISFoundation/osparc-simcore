@@ -1,9 +1,9 @@
 {
   "consumer": {
-    "name": "XOsparcApiClient"
+    "name": "Sim4Life"
   },
   "provider": {
-    "name": "OsparcApiProvider"
+    "name": "OsparcApiServerLicensedItems"
   },
   "interactions": [
     {
