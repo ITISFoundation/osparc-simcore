@@ -1,6 +1,15 @@
 import os
+from threading import Thread
+from time import sleep
 
 import pytest
+import uvicorn
+from fastapi import FastAPI
+from servicelib.utils import unused_port
+from simcore_service_api_server.api.dependencies.authentication import (
+    Identity,
+    get_current_identity,
+)
 
 
 def pytest_addoption(parser: pytest.Parser) -> None:
@@ -60,3 +69,42 @@ def pact_broker_credentials(
         )
 
     return broker_url, broker_username, broker_password
+
+
+def mock_get_current_identity() -> Identity:
+    return Identity(user_id=1, product_name="osparc", email="test@itis.swiss")
+
+
+@pytest.fixture()
+def run_test_server(
+    app: FastAPI,
+):
+    """
+    Spins up a FastAPI server in a background thread and yields a base URL.
+    The 'mocked_catalog_service' fixture ensures the function is already
+    patched by the time we start the server.
+    """
+    # Override
+    app.dependency_overrides[get_current_identity] = mock_get_current_identity
+
+    port = unused_port()
+    base_url = f"http://localhost:{port}"
+
+    config = uvicorn.Config(
+        app,
+        host="localhost",
+        port=port,
+        log_level="info",
+    )
+    server = uvicorn.Server(config)
+
+    thread = Thread(target=server.run, daemon=True)
+    thread.start()
+
+    # Wait a bit for the server to be ready
+    sleep(1)
+
+    yield base_url  # , before_server_start
+
+    server.should_exit = True
+    thread.join()
