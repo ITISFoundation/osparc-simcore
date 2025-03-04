@@ -10,19 +10,26 @@ from http import HTTPStatus
 from http.client import HTTPException
 
 import pytest
+import tenacity
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from models_library.products import ProductName
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_login import NewUser, UserInfoDict
 from servicelib.aiohttp import status
+from servicelib.aiohttp.application_keys import APP_SETTINGS_KEY
 from simcore_service_webserver.api_keys import _repository as repo
 from simcore_service_webserver.api_keys._models import ApiKey
 from simcore_service_webserver.api_keys._service import (
     get_or_create_api_key,
     prune_expired_api_keys,
 )
+from simcore_service_webserver.application_settings import GarbageCollectorSettings
 from simcore_service_webserver.db.models import UserRole
+from tenacity import retry_if_exception_type, stop_after_attempt, wait_fixed
 
 
 @pytest.fixture
@@ -215,3 +222,36 @@ async def test_get_not_existing_api_key(
 
     if not errors:
         assert data is None
+
+
+@pytest.fixture
+async def app_environment(
+    app_environment: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
+) -> EnvVarsDict:
+    return app_environment | setenvs_from_dict(
+        monkeypatch,
+        {
+            "WEBSERVER_GARBAGE_COLLECTOR": '{"GARBAGE_COLLECTOR_INTERVAL_S": 30, "GARBAGE_COLLECTOR_PRUNE_APIKEYS_INTERVAL_S": 1}'
+        },
+    )
+
+
+async def test_prune_expired_api_keys_task_is_triggered(
+    app_environment: EnvVarsDict, mocker: MockerFixture, client: TestClient
+):
+    mock = mocker.patch(
+        "simcore_service_webserver.api_keys._service._repository.prune_expired"
+    )
+    settings = client.server.app[  # type: ignore
+        APP_SETTINGS_KEY
+    ].WEBSERVER_GARBAGE_COLLECTOR
+    assert isinstance(settings, GarbageCollectorSettings)
+    async for attempt in tenacity.AsyncRetrying(
+        stop=stop_after_attempt(5),
+        wait=wait_fixed(1),
+        retry=retry_if_exception_type(AssertionError),
+        reraise=True,
+    ):
+        with attempt:
+            mock.assert_called()
