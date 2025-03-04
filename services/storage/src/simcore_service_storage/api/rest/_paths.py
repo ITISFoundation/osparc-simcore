@@ -29,7 +29,7 @@ async def list_paths(
     dsm: Annotated[BaseDataManager, Depends(get_data_manager)],
     user_id: UserID,
     file_filter: Path | None = None,
-) -> CustomizedPathsCursorPage[PathMetaDataGet]:
+):
     """Returns one level of files (paginated)"""
     page_params = resolve_params()
     items, next_cursor, total_number = await dsm.list_paths(
