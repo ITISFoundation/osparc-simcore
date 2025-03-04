@@ -1,8 +1,8 @@
 from typing import TypeAlias, TypeVar
 
 from fastapi import Query
-from fastapi_pagination.cursor import CursorPage
-from fastapi_pagination.customization import (
+from fastapi_pagination.cursor import CursorPage  # type: ignore[import-not-found]
+from fastapi_pagination.customization import (  # type: ignore[import-not-found]
     CustomizedPage,
     UseParamsFields,
 )
