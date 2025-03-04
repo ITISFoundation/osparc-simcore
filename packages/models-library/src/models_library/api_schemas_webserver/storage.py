@@ -1,11 +1,11 @@
 from datetime import datetime
 from pathlib import Path
-from typing import Any, TypeVar
+from typing import Annotated, Any, TypeVar
 
 from fastapi import Query
 from fastapi_pagination.cursor import CursorPage
 from fastapi_pagination.customization import CustomizedPage, UseParamsFields
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from ..api_schemas_rpc_async_jobs.async_jobs import (
     AsyncJobGet,
@@ -16,7 +16,9 @@ from ..api_schemas_rpc_async_jobs.async_jobs import (
 from ..api_schemas_storage.data_export_async_jobs import DataExportTaskStartInput
 from ..progress_bar import ProgressReport
 from ..projects_nodes_io import LocationID, StorageFileID
-from ..rest_pagination import CursorQueryParameters
+from ..rest_pagination import (
+    CursorQueryParameters,
+)
 from ._base import InputSchema, OutputSchema
 
 _T = TypeVar("_T")
@@ -41,6 +43,13 @@ class StorageLocationPathParams(BaseModel):
 
 class ListPathsQueryParams(InputSchema, CursorQueryParameters):
     file_filter: Path | None = None
+
+    size: Annotated[
+        int,
+        Field(
+            description="maximum number of items to return (pagination)", ge=1, lt=1000
+        ),
+    ] = 20
 
 
 class DataExportPost(InputSchema):

@@ -6011,7 +6011,7 @@ paths:
           exclusiveMaximum: true
           default: 20
           title: Size
-          maximum: 50
+          maximum: 1000
       - name: cursor
         in: query
         required: false
