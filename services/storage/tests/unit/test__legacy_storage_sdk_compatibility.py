@@ -12,16 +12,16 @@ used in simcore_sdk since legacy services are planned to be deprecated.
 """
 
 import logging
+from collections.abc import AsyncIterator
 from pathlib import Path
 from threading import Thread
-from typing import AsyncIterator
 
 import aiohttp
 import httpx
 import pytest
 import uvicorn
 from faker import Faker
-from models_library.projects_nodes_io import LocationID, SimcoreS3FileID
+from models_library.projects_nodes_io import SimcoreS3FileID
 from models_library.users import UserID
 from pytest_simcore.helpers.logging_tools import log_context
 from servicelib.utils import unused_port
@@ -112,21 +112,22 @@ def file_id(simcore_file_id: SimcoreS3FileID) -> str:
 
 
 @pytest.fixture
-def location_id() -> LocationID:
-    return SimcoreS3DataManager.get_location_id()
-
-
-@pytest.fixture
-def location_name() -> str:
+def simcore_location_name() -> str:
     return SimcoreS3DataManager.get_location_name()
 
 
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
 async def test_storage_client_used_in_simcore_sdk_0_3_2(
     real_storage_server: URL,
     str_user_id: str,
     file_id: str,
     location_id: int,
-    location_name: str,
+    simcore_location_name: str,
     tmp_path: Path,
     faker: Faker,
 ):
@@ -211,7 +212,7 @@ async def test_storage_client_used_in_simcore_sdk_0_3_2(
         resp_model = await api.get_storage_locations(user_id=str_user_id)
         print(f"{resp_model=}")
         for location in resp_model.data:
-            assert location["name"] == location_name
+            assert location["name"] == simcore_location_name
             assert location["id"] == location_id
 
         # _get_download_link
