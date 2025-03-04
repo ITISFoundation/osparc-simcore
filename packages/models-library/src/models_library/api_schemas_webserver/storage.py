@@ -84,8 +84,6 @@ class StorageAsyncJobStatus(OutputSchema):
     job_id: AsyncJobId
     progress: ProgressReport
     done: bool
-    started: datetime
-    stopped: datetime | None
     links: AsyncJobLinks
 
     @classmethod
@@ -96,8 +94,6 @@ class StorageAsyncJobStatus(OutputSchema):
             job_id=async_job_rpc_status.job_id,
             progress=async_job_rpc_status.progress,
             done=async_job_rpc_status.done,
-            started=async_job_rpc_status.started,
-            stopped=async_job_rpc_status.stopped,
             links=AsyncJobLinks.from_job_id(
                 app=app, job_id=f"{async_job_rpc_status.job_id}"
             ),
