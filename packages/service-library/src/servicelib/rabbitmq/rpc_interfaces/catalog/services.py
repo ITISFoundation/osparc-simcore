@@ -4,7 +4,12 @@ import logging
 from typing import Any, cast
 
 from models_library.api_schemas_catalog import CATALOG_RPC_NAMESPACE
-from models_library.api_schemas_catalog.services import ServiceGetV2, ServiceUpdateV2
+from models_library.api_schemas_catalog.services import (
+    MyServiceGet,
+    ServiceGetV2,
+    ServiceListItem,
+    ServiceUpdateV2,
+)
 from models_library.products import ProductName
 from models_library.rabbitmq_basic_types import RPCMethodName
 from models_library.rpc_pagination import (
@@ -30,7 +35,7 @@ async def list_services_paginated(  # pylint: disable=too-many-arguments
     user_id: UserID,
     limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
     offset: NonNegativeInt = 0,
-) -> PageRpc[ServiceGetV2]:
+) -> PageRpc[ServiceListItem]:
     """
     Raises:
         ValidationError: on invalid arguments
@@ -57,10 +62,10 @@ async def list_services_paginated(  # pylint: disable=too-many-arguments
     result = await _call(
         product_name=product_name, user_id=user_id, limit=limit, offset=offset
     )
-    assert (
-        TypeAdapter(PageRpc[ServiceGetV2]).validate_python(result) is not None
-    )  # nosec
-    return cast(PageRpc[ServiceGetV2], result)
+    assert (  # nosec
+        TypeAdapter(PageRpc[ServiceListItem]).validate_python(result) is not None
+    )
+    return cast(PageRpc[ServiceListItem], result)
 
 
 @log_decorator(_logger, level=logging.DEBUG)
@@ -191,3 +196,42 @@ async def check_for_service(
         service_key=service_key,
         service_version=service_version,
     )
+
+
+@log_decorator(_logger, level=logging.DEBUG)
+async def batch_get_my_services(
+    rpc_client: RabbitMQRPCClient,
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    ids: list[
+        tuple[
+            ServiceKey,
+            ServiceVersion,
+        ]
+    ],
+) -> list[MyServiceGet]:
+    """
+    Raises:
+        ValidationError: on invalid arguments
+        CatalogForbiddenError: no access-rights to list services
+    """
+
+    @validate_call()
+    async def _call(
+        product_name: ProductName,
+        user_id: UserID,
+        ids: list[tuple[ServiceKey, ServiceVersion]],
+    ):
+        return await rpc_client.request(
+            CATALOG_RPC_NAMESPACE,
+            TypeAdapter(RPCMethodName).validate_python("batch_get_my_services"),
+            product_name=product_name,
+            user_id=user_id,
+            ids=ids,
+            timeout_s=40 * RPC_REQUEST_DEFAULT_TIMEOUT_S,
+        )
+
+    result = await _call(product_name=product_name, user_id=user_id, ids=ids)
+    assert TypeAdapter(list[MyServiceGet]).validate_python(result) is not None  # nosec
+    return cast(list[MyServiceGet], result)
