@@ -37,4 +37,5 @@ jobs:
           make devenv
           source .venv/bin/activate
           cd services/api-server
+          make install-ci
           make test-pacts
