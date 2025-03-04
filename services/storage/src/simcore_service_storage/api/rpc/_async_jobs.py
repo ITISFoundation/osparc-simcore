@@ -66,7 +66,7 @@ async def get_result(
 
 @router.expose()
 async def list_jobs(
-    app: FastAPI, filter_: str, job_id_data: AsyncJobNameData  # TODO: implement filter
+    app: FastAPI, filter_: str, job_id_data: AsyncJobNameData
 ) -> list[AsyncJobGet]:
     assert app  # nosec
 
