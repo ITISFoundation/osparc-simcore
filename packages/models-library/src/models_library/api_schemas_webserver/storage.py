@@ -1,6 +1,6 @@
 from datetime import datetime
 from pathlib import Path
-from typing import Annotated, Any, Final, TypeVar
+from typing import Annotated, Any, Final, TypeAlias, TypeVar
 
 from fastapi import Query
 from fastapi_pagination.cursor import CursorPage
@@ -36,6 +36,7 @@ CustomizedPathsCursorPage = CustomizedPage[
         )
     ),
 ]
+CustomizedPathsCursorPageParams: TypeAlias = CustomizedPathsCursorPage.__params_type__  # type: ignore
 
 
 class StorageLocationPathParams(BaseModel):
