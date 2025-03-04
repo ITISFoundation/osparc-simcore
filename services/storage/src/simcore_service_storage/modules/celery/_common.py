@@ -1,15 +1,13 @@
 import logging
 
 from celery import Celery
+from settings_library.celery import CelerySettings
 from settings_library.redis import RedisDatabase
-
-from ...core.settings import ApplicationSettings
 
 _logger = logging.getLogger(__name__)
 
 
-def create_app(settings: ApplicationSettings) -> Celery:
-    celery_settings = settings.STORAGE_CELERY
+def create_app(celery_settings: CelerySettings) -> Celery:
     assert celery_settings
 
     app = Celery(

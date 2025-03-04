@@ -3,16 +3,25 @@
 import asyncio
 import logging
 import threading
+from typing import Final
 
 from asgi_lifespan import LifespanManager
 from celery import Celery
 from celery.signals import worker_init, worker_shutdown
+from fastapi import FastAPI
 from servicelib.background_task import cancel_wait_task
 from servicelib.logging_utils import config_all_loggers
+from simcore_service_storage.modules.celery import get_event_loop, set_event_loop
+from simcore_service_storage.modules.celery.utils import (
+    CeleryTaskQueueWorker,
+    get_fastapi_app,
+    set_celery_worker,
+    set_fastapi_app,
+)
 
 from ...core.application import create_app
 from ...core.settings import ApplicationSettings
-from ._utils import create_celery_app_worker
+from ._common import create_app as create_celery_app
 
 _settings = ApplicationSettings.create_from_envs()
 
@@ -25,6 +34,8 @@ config_all_loggers(
 )
 
 _logger = logging.getLogger(__name__)
+
+_LIFESPAN_TIMEOUT: Final[int] = 10
 
 
 @worker_init.connect
@@ -39,8 +50,8 @@ def on_worker_init(sender, **_kwargs):
         async def lifespan():
             async with LifespanManager(
                 fastapi_app,
-                startup_timeout=10,
-                shutdown_timeout=10,
+                startup_timeout=_LIFESPAN_TIMEOUT,
+                shutdown_timeout=_LIFESPAN_TIMEOUT,
             ):
                 try:
                     await shutdown_event.wait()
@@ -50,9 +61,10 @@ def on_worker_init(sender, **_kwargs):
         lifespan_task = loop.create_task(lifespan())
         fastapi_app.state.lifespan_task = lifespan_task
         fastapi_app.state.shutdown_event = shutdown_event
+        set_event_loop(fastapi_app, loop)
 
-        sender.app.conf["fastapi_app"] = fastapi_app
-        sender.app.conf["loop"] = loop
+        set_fastapi_app(sender.app, fastapi_app)
+        set_celery_worker(sender.app, CeleryTaskQueueWorker(sender.app))
 
         loop.run_forever()
 
@@ -64,15 +76,17 @@ def on_worker_init(sender, **_kwargs):
 def on_worker_shutdown(sender, **_kwargs):
     assert isinstance(sender.app, Celery)
 
-    loop = sender.app.conf["loop"]
-    fastapi_app = sender.app.conf["fastapi_app"]
+    fastapi_app = get_fastapi_app(sender.app)
+    assert isinstance(fastapi_app, FastAPI)
+    event_loop = get_event_loop(fastapi_app)
 
     async def shutdown():
         fastapi_app.state.shutdown_event.set()
 
         await cancel_wait_task(fastapi_app.state.lifespan_task, max_delay=5)
 
-    asyncio.run_coroutine_threadsafe(shutdown(), loop)
+    asyncio.run_coroutine_threadsafe(shutdown(), event_loop)
 
 
-app = create_celery_app_worker(_settings)
+assert _settings.STORAGE_CELERY
+app = create_celery_app(_settings.STORAGE_CELERY)

@@ -8,13 +8,14 @@ import pytest
 from celery import Celery, Task
 from celery.contrib.abortable import AbortableTask
 from models_library.progress_bar import ProgressReport
-from simcore_service_storage.main import CeleryTaskQueueClient
-from simcore_service_storage.modules.celery._utils import (
+from servicelib.logging_utils import log_context
+from simcore_service_storage.modules.celery import get_event_loop
+from simcore_service_storage.modules.celery.client import CeleryTaskQueueClient
+from simcore_service_storage.modules.celery.models import TaskContext, TaskState
+from simcore_service_storage.modules.celery.utils import (
     get_celery_worker,
-    get_event_loop,
+    get_fastapi_app,
 )
-from simcore_service_storage.modules.celery.models import TaskContext
-from simcore_service_storage.modules.celery.worker import CeleryTaskQueueWorker
 from tenacity import Retrying, retry_if_exception_type, stop_after_delay, wait_fixed
 
 _logger = logging.getLogger(__name__)
@@ -23,16 +24,19 @@ _logger = logging.getLogger(__name__)
 async def _async_archive(
     celery_app: Celery, task_name: str, task_id: str, files: list[str]
 ) -> str:
-    worker: CeleryTaskQueueWorker = get_celery_worker(celery_app)
+    worker = get_celery_worker(celery_app)
+
+    def sleep_for(seconds: float) -> None:
+        time.sleep(seconds)
 
     for n, file in enumerate(files, start=1):
-        _logger.info("Processing file %s", file)
-        worker.set_task_progress(
-            task_name=task_name,
-            task_id=task_id,
-            report=ProgressReport(actual_value=n / len(files) * 10),
-        )
-        await asyncio.sleep(0.1)
+        with log_context(_logger, logging.INFO, msg=f"Processing file {file}"):
+            worker.set_task_progress(
+                task_name=task_name,
+                task_id=task_id,
+                report=ProgressReport(actual_value=n / len(files) * 10),
+            )
+            await asyncio.get_event_loop().run_in_executor(None, sleep_for, 1)
 
     return "archive.zip"
 
@@ -42,7 +46,7 @@ def sync_archive(task: Task, files: list[str]) -> str:
     _logger.info("Calling async_archive")
     return asyncio.run_coroutine_threadsafe(
         _async_archive(task.app, task.name, task.request.id, files),
-        get_event_loop(task.app),
+        get_event_loop(get_fastapi_app(task.app)),
     ).result()
 
 
@@ -74,19 +78,16 @@ def register_celery_tasks() -> Callable[[Celery], None]:
     return _
 
 
-@pytest.fixture
-def task_context() -> TaskContext:
-    return TaskContext(user_id=1, product_name="test")
-
-
-@pytest.mark.usefixtures("celery_client_app", "celery_worker_app")
+@pytest.mark.usefixtures("celery_worker")
 async def test_sumitting_task_calling_async_function_results_with_success_state(
-    celery_task_queue_client: CeleryTaskQueueClient, task_context: TaskContext
+    celery_client: CeleryTaskQueueClient,
 ):
-    task_uuid = await celery_task_queue_client.send_task(
+    task_context = TaskContext(user_id=42)
+
+    task_uuid = await celery_client.send_task(
         "sync_archive",
         task_context=task_context,
-        files=[f"file{n}" for n in range(30)],
+        files=[f"file{n}" for n in range(5)],
     )
 
     for attempt in Retrying(
@@ -95,24 +96,21 @@ async def test_sumitting_task_calling_async_function_results_with_success_state(
         stop=stop_after_delay(30),
     ):
         with attempt:
-            progress = await celery_task_queue_client.get_task_status(
-                task_context, task_uuid
-            )
-            assert progress.task_state == "SUCCESS"
+            progress = await celery_client.get_task_status(task_context, task_uuid)
+            assert progress.task_state == TaskState.SUCCESS
 
     assert (
-        await celery_task_queue_client.get_task_status(task_context, task_uuid)
-    ).task_state == "SUCCESS"
+        await celery_client.get_task_status(task_context, task_uuid)
+    ).task_state == TaskState.SUCCESS
 
 
-@pytest.mark.usefixtures("celery_client_app", "celery_worker_app")
+@pytest.mark.usefixtures("celery_worker")
 async def test_submitting_task_with_failure_results_with_error(
-    celery_task_queue_client: CeleryTaskQueueClient,
-    task_context: TaskContext,
+    celery_client: CeleryTaskQueueClient,
 ):
-    task_uuid = await celery_task_queue_client.send_task(
-        "failure_task", task_context=task_context
-    )
+    task_context = TaskContext(user_id=42)
+
+    task_uuid = await celery_client.send_task("failure_task", task_context=task_context)
 
     for attempt in Retrying(
         retry=retry_if_exception_type(AssertionError),
@@ -120,27 +118,29 @@ async def test_submitting_task_with_failure_results_with_error(
         stop=stop_after_delay(30),
     ):
         with attempt:
-            result = await celery_task_queue_client.get_result(task_context, task_uuid)
+            result = await celery_client.get_result(task_context, task_uuid)
             assert isinstance(result, ValueError)
 
     assert (
-        await celery_task_queue_client.get_task_status(task_context, task_uuid)
-    ).task_state == "FAILURE"
-    result = await celery_task_queue_client.get_result(task_context, task_uuid)
+        await celery_client.get_task_status(task_context, task_uuid)
+    ).task_state == TaskState.FAILURE
+    result = await celery_client.get_result(task_context, task_uuid)
     assert isinstance(result, ValueError)
     assert f"{result}" == "my error here"
 
 
-@pytest.mark.usefixtures("celery_client_app", "celery_worker_app")
+@pytest.mark.usefixtures("celery_worker")
 async def test_aborting_task_results_with_aborted_state(
-    celery_task_queue_client: CeleryTaskQueueClient, task_context: TaskContext
+    celery_client: CeleryTaskQueueClient,
 ):
-    task_uuid = await celery_task_queue_client.send_task(
+    task_context = TaskContext(user_id=42)
+
+    task_uuid = await celery_client.send_task(
         "dreamer_task",
         task_context=task_context,
     )
 
-    await celery_task_queue_client.abort_task(task_context, task_uuid)
+    await celery_client.abort_task(task_context, task_uuid)
 
     for attempt in Retrying(
         retry=retry_if_exception_type(AssertionError),
@@ -148,11 +148,9 @@ async def test_aborting_task_results_with_aborted_state(
         stop=stop_after_delay(30),
     ):
         with attempt:
-            progress = await celery_task_queue_client.get_task_status(
-                task_context, task_uuid
-            )
-            assert progress.task_state == "ABORTED"
+            progress = await celery_client.get_task_status(task_context, task_uuid)
+            assert progress.task_state == TaskState.ABORTED
 
     assert (
-        await celery_task_queue_client.get_task_status(task_context, task_uuid)
-    ).task_state == "ABORTED"
+        await celery_client.get_task_status(task_context, task_uuid)
+    ).task_state == TaskState.ABORTED

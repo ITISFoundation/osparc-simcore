@@ -22,6 +22,14 @@ _CELERY_INSPECT_TASK_STATUSES: Final[tuple[str, ...]] = (
 )
 _CELERY_TASK_META_PREFIX: Final[str] = "celery-task-meta-"
 _CELERY_TASK_ID_PREFIX: Final[str] = "celery"
+_CELERY_STATES_MAPPING: Final[dict[str, TaskState]] = {
+    "PENDING": TaskState.PENDING,
+    "STARTED": TaskState.PENDING,
+    "RUNNING": TaskState.RUNNING,
+    "SUCCESS": TaskState.SUCCESS,
+    "ABORTED": TaskState.ABORTED,
+    "FAILURE": TaskState.FAILURE,
+}
 
 
 def _build_context_prefix(task_context: TaskContext) -> list[str]:
@@ -80,26 +88,29 @@ class CeleryTaskQueueClient:
     ) -> ProgressReport:
         task_id = _build_task_id(task_context, task_uuid)
         result = self._celery_app.AsyncResult(task_id).result
-        state = self._celery_app.AsyncResult(task_id).state
-        if result and state == TaskState.RUNNING.value:
+        state = self._get_state(task_context, task_uuid)
+        if result and state == TaskState.RUNNING:
             with contextlib.suppress(ValidationError):
                 return ProgressReport.model_validate(result)
         if state in (
-            TaskState.ABORTED.value,
-            TaskState.FAILURE.value,
-            TaskState.SUCCESS.value,
+            TaskState.ABORTED,
+            TaskState.FAILURE,
+            TaskState.SUCCESS,
         ):
             return ProgressReport(actual_value=100.0)
         return ProgressReport(actual_value=0.0)
+
+    def _get_state(self, task_context: TaskContext, task_uuid: TaskUUID) -> TaskState:
+        task_id = _build_task_id(task_context, task_uuid)
+        return _CELERY_STATES_MAPPING[self._celery_app.AsyncResult(task_id).state]
 
     @make_async()
     def get_task_status(
         self, task_context: TaskContext, task_uuid: TaskUUID
     ) -> TaskStatus:
-        task_id = _build_task_id(task_context, task_uuid)
         return TaskStatus(
             task_uuid=task_uuid,
-            task_state=self._celery_app.AsyncResult(task_id).state,
+            task_state=self._get_state(task_context, task_uuid),
             progress_report=self._get_progress_report(task_context, task_uuid),
         )
 
