@@ -1,7 +1,8 @@
 import logging
 import re
 import string
-from typing import Annotated, Any
+from decimal import Decimal
+from typing import Annotated, Any, NamedTuple
 
 from models_library.basic_regex import (
     PUBLIC_VARIABLE_NAME_RE,
@@ -35,6 +36,12 @@ from simcore_postgres_database.models.products import (
 from ..constants import FRONTEND_APPS_AVAILABLE
 
 _logger = logging.getLogger(__name__)
+
+
+class PaymentFieldsTuple(NamedTuple):
+    enabled: bool
+    credits_per_usd: Decimal | None
+    min_payment_amount_usd: Decimal | None
 
 
 class Product(BaseModel):
