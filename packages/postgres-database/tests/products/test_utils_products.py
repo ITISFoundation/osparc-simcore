@@ -3,7 +3,6 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 
-import asyncio
 from collections.abc import Callable
 
 import pytest
@@ -13,7 +12,6 @@ from simcore_postgres_database.models.products import products
 from simcore_postgres_database.utils_products import (
     execute_get_or_create_product_group,
     get_default_product_name,
-    get_or_create_product_group,
     get_product_group_id,
 )
 from sqlalchemy.ext.asyncio import AsyncEngine
@@ -22,7 +20,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 async def test_default_product(
     asyncpg_engine: AsyncEngine, make_products_table: Callable
 ):
-    async with asyncpg_engine.connect() as conn:
+    async with asyncpg_engine.begin() as conn:
         await make_products_table(conn)
         default_product = await get_default_product_name(conn)
         assert default_product == "s4l"
@@ -31,7 +29,7 @@ async def test_default_product(
 @pytest.mark.parametrize("pg_sa_engine", ["sqlModels"], indirect=True)
 async def test_default_product_undefined(asyncpg_engine: AsyncEngine):
     async with asyncpg_engine.connect() as conn:
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="No product"):
             await get_default_product_name(conn)
 
 
@@ -100,32 +98,3 @@ async def test_get_or_create_group_product(
                 conn, product_name=product_row.name
             )
             assert product_group_id is None
-
-
-@pytest.mark.skip(
-    reason="Not relevant. Will review in https://github.com/ITISFoundation/osparc-simcore/issues/3754"
-)
-async def test_get_or_create_group_product_concurrent(
-    asyncpg_engine: AsyncEngine, make_products_table: Callable
-):
-    async with asyncpg_engine.connect() as conn:
-        await make_products_table(conn)
-
-    async def _auto_create_products_groups():
-        async with asyncpg_engine.connect() as conn:
-            async for product_row in await conn.stream(
-                sa.select(products.c.name, products.c.group_id).order_by(
-                    products.c.priority
-                )
-            ):
-                # get or create
-                return await get_or_create_product_group(
-                    conn, product_name=product_row.name
-                )
-            return None
-
-    tasks = [asyncio.create_task(_auto_create_products_groups()) for _ in range(5)]
-
-    results = await asyncio.gather(*tasks)
-
-    assert all(res == results[0] for res in results[1:])

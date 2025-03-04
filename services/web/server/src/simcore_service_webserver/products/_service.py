@@ -54,10 +54,7 @@ async def get_credit_price_info(
     app: web.Application, product_name: ProductName
 ) -> ProductPriceInfo | None:
     repo = ProductRepository.create_from_app(app)
-    return cast(  # mypy: not sure why
-        ProductPriceInfo | None,
-        await repo.get_product_latest_price_info_or_none(product_name),
-    )
+    return await repo.get_product_latest_price_info_or_none(product_name)
 
 
 async def get_product_ui(
