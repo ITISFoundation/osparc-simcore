@@ -8,7 +8,7 @@ from models_library.products import ProductName
 
 from ..constants import APP_PRODUCTS_KEY
 from . import _service
-from .models import Product
+from ._models import Product
 
 _logger = logging.getLogger(__name__)
 

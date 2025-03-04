@@ -10,6 +10,7 @@ from simcore_postgres_database.models.jinja2_templates import jinja2_templates
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.utils_products import (
     execute_get_or_create_product_group,
+    get_default_product_name,
 )
 from simcore_postgres_database.utils_products_prices import (
     ProductPriceInfo,
@@ -54,7 +55,7 @@ _PRODUCTS_COLUMNS = [
 ]
 
 
-async def get_product_payment_fields(
+async def _get_product_payment_fields(
     conn: AsyncConnection, product_name: ProductName
 ) -> PaymentFieldsTuple:
     price_info = await get_product_latest_price_info_or_none(
@@ -98,7 +99,7 @@ class ProductRepository(BaseRepositoryV2):
             async for row in rows:
                 name = row.name
 
-                payments = await get_product_payment_fields(conn, product_name=name)
+                payments = await _get_product_payment_fields(conn, product_name=name)
 
                 app_products.append(
                     Product(
@@ -130,9 +131,10 @@ class ProductRepository(BaseRepositoryV2):
         async with pass_or_acquire_connection(self.engine, connection) as conn:
 
             result = await conn.execute(query)
-            row = result.one_or_none()
-            if row:
-                payments = await get_product_payment_fields(conn, product_name=row.name)
+            if row := result.one_or_none():
+                payments = await _get_product_payment_fields(
+                    conn, product_name=row.name
+                )
                 return Product(
                     **row._asdict(),
                     is_payment_enabled=payments.enabled,
@@ -143,7 +145,8 @@ class ProductRepository(BaseRepositoryV2):
     async def get_default_product_name(
         self, connection: AsyncConnection | None = None
     ) -> ProductName:
-        raise NotImplementedError
+        async with pass_or_acquire_connection(self.engine, connection) as conn:
+            return await get_default_product_name(conn)
 
     async def get_product_latest_price_info_or_none(
         self, product_name: str, connection: AsyncConnection | None = None
