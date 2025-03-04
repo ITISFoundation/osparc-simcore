@@ -160,24 +160,73 @@ class _MockAioQueue:
 @pytest.mark.parametrize(
     "event, expected_port_key",
     [
-        (FileCreatedEvent(src_path=f"{_STATE_PATH}/untitled.txt", dest_path=""), None),
-        (DirModifiedEvent(src_path=f"{_STATE_PATH}", dest_path=""), None),
-        (FileClosedEvent(src_path=f"{_STATE_PATH}/untitled.txt", dest_path=""), None),
-        (
+        pytest.param(
+            FileCreatedEvent(src_path=f"{_STATE_PATH}/untitled.txt", dest_path=""),
+            None,
+            id="file_create_outside",
+        ),
+        pytest.param(
+            FileCreatedEvent(
+                src_path=f"{_STATE_PATH}/output_1/untitled1.txt",
+                dest_path="",
+            ),
+            "output_1",
+            id="file_create_inside_monitored_port",
+        ),
+        pytest.param(
+            FileCreatedEvent(
+                src_path=f"{_STATE_PATH}/output_9/untitled1.txt",
+                dest_path="",
+            ),
+            None,
+            id="file_create_inside_not_monitored_port",
+        ),
+        pytest.param(
             FileMovedEvent(
                 src_path=f"{_STATE_PATH}/untitled.txt",
                 dest_path=f"{_STATE_PATH}/asdsadsasad.txt",
             ),
             None,
+            id="move_outside_any_port",
         ),
-        (
+        pytest.param(
             FileMovedEvent(
                 src_path=f"{_STATE_PATH}/asdsadsasad.txt",
                 dest_path=f"{_STATE_PATH}/output_1/asdsadsasad.txt",
             ),
             "output_1",
+            id="move_to_monitored_port",
         ),
-        (DirModifiedEvent(src_path=f"{_STATE_PATH}/output_1", dest_path=""), None),
+        pytest.param(
+            FileMovedEvent(
+                src_path=f"{_STATE_PATH}/asdsadsasad.txt",
+                dest_path=f"{_STATE_PATH}/output_9/asdsadsasad.txt",
+            ),
+            None,
+            id="move_outside_monitored_port",
+        ),
+        pytest.param(
+            DirModifiedEvent(src_path=f"{_STATE_PATH}/output_1", dest_path=""),
+            None,
+            id="modified_port_dir_does_nothing",
+        ),
+        pytest.param(
+            DirModifiedEvent(src_path=f"{_STATE_PATH}", dest_path=""),
+            None,
+            id="modified_outer_dir_does_nothing",
+        ),
+        pytest.param(
+            FileClosedEvent(src_path=f"{_STATE_PATH}/untitled.txt", dest_path=""),
+            None,
+            id="close_file_outside_does_nothing",
+        ),
+        pytest.param(
+            FileClosedEvent(
+                src_path=f"{_STATE_PATH}/output_1/asdsadsasad.txt", dest_path=""
+            ),
+            "output_1",
+            id="close_file_inside_triggers_event",
+        ),
     ],
 )
 def test_port_keys_event_handler_triggers_for_events(
