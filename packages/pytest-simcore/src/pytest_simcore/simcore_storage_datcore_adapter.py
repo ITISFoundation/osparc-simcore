@@ -5,6 +5,7 @@ import pytest
 import respx
 from faker import Faker
 from fastapi_pagination import Page, Params
+from pytest_simcore.helpers.host import get_localhost_ip
 from servicelib.aiohttp import status
 from simcore_service_storage.modules.datcore_adapter.datcore_adapter_settings import (
     DatcoreAdapterSettings,
@@ -21,21 +22,23 @@ def datcore_adapter_service_mock(faker: Faker) -> Iterator[respx.MockRouter]:
         assert_all_called=False,
         assert_all_mocked=True,
     ) as respx_mocker:
+        # NOTE: passthrough the locahost and the local ip
+        respx_mocker.route(host="127.0.0.1").pass_through()
+        respx_mocker.route(host=get_localhost_ip()).pass_through()
         respx_mocker.get(
-            datcore_adapter_base_url,
+            "/",
             name="healthcheck",
-        ).respond(status.HTTP_200_OK)
-        respx_mocker.get(
-            f"{datcore_adapter_base_url}/user/profile", name="get_user_profile"
-        ).respond(status.HTTP_200_OK, json=faker.pydict(allowed_types=(str,)))
-        list_datasets_re = re.compile(rf"^{datcore_adapter_base_url}/datasets")
+        ).respond(status.HTTP_200_OK, json={"message": "ok"})
+        respx_mocker.get("", name="base_endpoint").respond(status.HTTP_200_OK, json={})
+        respx_mocker.get("/user/profile", name="get_user_profile").respond(
+            status.HTTP_200_OK, json=faker.pydict(allowed_types=(str,))
+        )
+        list_datasets_re = re.compile(r"/datasets")
         respx_mocker.get(list_datasets_re, name="list_datasets").respond(
             status.HTTP_200_OK,
             json=Page.create(items=[], params=Params(size=10), total=0).model_dump(
                 mode="json"
             ),
         )
-        respx_mocker.get(datcore_adapter_base_url, name="base_endpoint").respond(
-            status.HTTP_200_OK, json={}
-        )
+
         yield respx_mocker
