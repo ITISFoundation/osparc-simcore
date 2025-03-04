@@ -125,6 +125,10 @@ qx.Class.define("osparc.data.Resources", {
             method: "GET",
             url: statics.API + "/projects/{studyId}"
           },
+          getServices: {
+            method: "GET",
+            url: statics.API + "/projects/{studyId}/nodes/-/services"
+          },
           getActive: {
             useCache: false,
             method: "GET",
@@ -208,11 +212,6 @@ qx.Class.define("osparc.data.Resources", {
           delete: {
             method: "DELETE",
             url: statics.API + "/projects/{studyId}"
-          },
-          getServices: {
-            useCache: false,
-            method: "POST",
-            url: statics.API + "/projects/{studyId}/nodes/-/services"
           },
           addNode: {
             useCache: false,
