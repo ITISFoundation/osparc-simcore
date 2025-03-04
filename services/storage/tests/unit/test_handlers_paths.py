@@ -740,7 +740,6 @@ async def test_path_compute_size_inexistent_path(
     faker: Faker,
     fake_datcore_tokens: tuple[str, str],
 ):
-
     await _assert_compute_path_total_size(
         initialized_app,
         client,

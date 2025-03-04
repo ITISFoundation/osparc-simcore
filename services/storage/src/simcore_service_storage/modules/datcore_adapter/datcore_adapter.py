@@ -2,7 +2,7 @@ import logging
 from typing import Any, TypeAlias, cast
 
 import httpx
-from fastapi import FastAPI
+from fastapi import FastAPI, status
 from fastapi_pagination import Page
 from models_library.api_schemas_datcore_adapter.datasets import (
     DatasetMetaData as DatCoreDatasetMetaData,
@@ -33,7 +33,11 @@ from ...models import (
     TotalNumber,
 )
 from .datcore_adapter_client_utils import request, retrieve_all_pages
-from .datcore_adapter_exceptions import DatcoreAdapterError
+from .datcore_adapter_exceptions import (
+    DatcoreAdapterError,
+    DatcoreAdapterFileNotFoundError,
+    DatcoreAdapterResponseError,
+)
 from .utils import (
     create_path_meta_data_from_datcore_fmd,
     create_path_meta_data_from_datcore_package,
@@ -316,11 +320,16 @@ async def list_datasets(
 async def get_file_download_presigned_link(
     app: FastAPI, api_key: str, api_secret: str, file_id: str
 ) -> AnyUrl:
-    file_download_data = cast(
-        dict[str, Any],
-        await request(app, api_key, api_secret, "GET", f"/files/{file_id}"),
-    )
-    return TypeAdapter(AnyUrl).validate_python(file_download_data["link"])
+    try:
+        file_download_data = cast(
+            dict[str, Any],
+            await request(app, api_key, api_secret, "GET", f"/files/{file_id}"),
+        )
+        return TypeAdapter(AnyUrl).validate_python(file_download_data["link"])
+    except DatcoreAdapterResponseError as exc:
+        if exc.status == status.HTTP_404_NOT_FOUND:
+            raise DatcoreAdapterFileNotFoundError(file_id=file_id) from exc
+        raise
 
 
 async def get_package_files(
