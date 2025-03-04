@@ -3,6 +3,7 @@ from models_library.api_schemas_webserver import WEBSERVER_RPC_NAMESPACE
 from models_library.api_schemas_webserver.licensed_items import (
     LicensedItemRpcGet,
     LicensedItemRpcGetPage,
+    LicensedResource,
 )
 from models_library.api_schemas_webserver.licensed_items_checkouts import (
     LicensedItemCheckoutRpcGet,
@@ -53,13 +54,16 @@ async def get_licensed_items(
 
     licensed_item_get_page: LicensedItemRpcGetPage = LicensedItemRpcGetPage(
         items=[
-            LicensedItemRpcGet.model_construct(
+            LicensedItemRpcGet(
                 licensed_item_id=licensed_item.licensed_item_id,
                 key=licensed_item.key,
                 version=licensed_item.version,
                 display_name=licensed_item.display_name,
                 licensed_resource_type=licensed_item.licensed_resource_type,
-                licensed_resources=licensed_item.licensed_resources,
+                licensed_resources=[
+                    LicensedResource(**resource)
+                    for resource in licensed_item.licensed_resources
+                ],
                 pricing_plan_id=licensed_item.pricing_plan_id,
                 is_hidden_on_market=licensed_item.is_hidden_on_market,
                 created_at=licensed_item.created_at,

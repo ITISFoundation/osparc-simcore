@@ -1,0 +1,81 @@
+{
+  "consumer": {
+    "name": "Sim4Life"
+  },
+  "provider": {
+    "name": "OsparcApiServerCheckoutRelease"
+  },
+  "interactions": [
+    {
+      "description": "Checkout one license",
+      "request": {
+        "method": "POST",
+        "path": "/v0/wallets/35/licensed-items/99580844-77fa-41bb-ad70-02dfaf1e3965/checkout",
+        "headers": {
+          "Accept": "application/json",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "number_of_seats": 1,
+          "service_run_id": "1740149365_21a9352a-1d46-41f9-9a9b-42ac888f5afb"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Length": "294",
+          "Content-Type": "application/json",
+          "Server": "uvicorn"
+        },
+        "body": {
+          "key": "MODEL_IX_HEAD",
+          "licensed_item_checkout_id": "25262183-392c-4268-9311-3c4256c46012",
+          "licensed_item_id": "99580844-77fa-41bb-ad70-02dfaf1e3965",
+          "num_of_seats": 1,
+          "product_name": "s4l",
+          "started_at": "2025-02-21T15:04:47.673828Z",
+          "stopped_at": null,
+          "user_id": 425,
+          "version": "1.0.0",
+          "wallet_id": 35
+        }
+      }
+    },
+    {
+      "description": "Release item",
+      "request": {
+        "method": "POST",
+        "path": "/v0/licensed-items/99580844-77fa-41bb-ad70-02dfaf1e3965/checked-out-items/25262183-392c-4268-9311-3c4256c46012/release",
+        "headers": {
+          "Accept": "application/json",
+          "Content-Type": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Length": "319",
+          "Content-Type": "application/json",
+          "Server": "uvicorn"
+        },
+        "body": {
+          "key": "MODEL_IX_HEAD",
+          "licensed_item_checkout_id": "25262183-392c-4268-9311-3c4256c46012",
+          "licensed_item_id": "99580844-77fa-41bb-ad70-02dfaf1e3965",
+          "num_of_seats": 1,
+          "product_name": "s4l",
+          "started_at": "2025-02-21T15:04:47.673828Z",
+          "stopped_at": "2025-02-21T15:04:47.901169Z",
+          "user_id": 425,
+          "version": "1.0.0",
+          "wallet_id": 35
+        }
+      }
+    }
+  ],
+  "metadata": {
+    "pactSpecification": {
+      "version": "3.0.0"
+    }
+  }
+}
