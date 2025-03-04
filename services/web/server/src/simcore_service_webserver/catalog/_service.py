@@ -143,22 +143,6 @@ async def update_service_v2(
     return data
 
 
-async def list_services(
-    app: web.Application,
-    *,
-    user_id: UserID,
-    product_name: str,
-    unit_registry: UnitRegistry,
-):
-    services = await _catalog_rest_client.get_services_for_user_in_product(
-        app, user_id, product_name, only_key_versions=False
-    )
-    for service in services:
-        await _safe_replace_service_input_outputs(service, unit_registry)
-
-    return services
-
-
 async def list_service_inputs(
     service_key: ServiceKey, service_version: ServiceVersion, ctx: CatalogRequestContext
 ) -> list[ServiceInputGet]:

@@ -8,6 +8,7 @@ from unittest.mock import MagicMock
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
+from aioresponses import aioresponses as AioResponsesMock
 from faker import Faker
 from models_library.api_schemas_catalog.services import ServiceGetV2
 from models_library.api_schemas_webserver.catalog import (
@@ -154,6 +155,30 @@ async def test_list_services_latest(
     assert len(model.data) == model.meta.count
 
     assert mocked_rpc_catalog_service_api["list_services_paginated"].call_count == 1
+
+
+@pytest.mark.parametrize(
+    "user_role",
+    [UserRole.USER],
+)
+async def test_get_inputs(
+    client: TestClient, logged_user: UserInfoDict, aioresponses_mocker: AioResponsesMock
+):
+
+    aioresponses_mocker.get(
+        r"http://catalog:8000/v0/services/simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/0.1.0?user_id=1"
+    )
+
+    service_key = "simcore/services/comp/itis/sleeper"
+    service_version = "0.1.0"
+    assert client.app and client.app.router
+    url = client.app.router["list_service_inputs"].url_for(
+        service_key=urllib.parse.quote(service_key, safe=""),
+        service_version=service_version,
+    )
+
+    response = await client.get(f"{url}")
+    data, error = await assert_status(response, status.HTTP_200_OK)
 
 
 @pytest.mark.parametrize(
