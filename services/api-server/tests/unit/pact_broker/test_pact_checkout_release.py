@@ -4,6 +4,8 @@
 # pylint: disable=too-many-arguments
 
 
+import os
+
 import pytest
 from fastapi import FastAPI
 from models_library.api_schemas_webserver.licensed_items_checkouts import (
@@ -105,10 +107,10 @@ async def mock_rut_server_rpc(app: FastAPI, mocker: MockerFixture) -> MockerFixt
     return mocker
 
 
-# @pytest.mark.skipif(
-#     not os.getenv("PACT_BROKER_URL"),
-#     reason="This test runs only if PACT_BROKER_URL is provided",
-# )
+@pytest.mark.skipif(
+    not os.getenv("PACT_BROKER_URL"),
+    reason="This test runs only if PACT_BROKER_URL is provided",
+)
 def test_provider_against_pact(
     pact_broker_credentials: tuple[str, str, str],
     mock_wb_api_server_rpc: MockerFixture,
