@@ -39,6 +39,7 @@ async def test_list_dataset_files_metadata_with_no_files_returns_empty_array(
     user_id: UserID,
     project_id: ProjectID,
     location_id: LocationID,
+    fake_datcore_tokens: tuple[str, str],
 ):
     url = url_from_operation_id(
         client,
