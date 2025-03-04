@@ -14,7 +14,10 @@ from models_library.api_schemas_webserver.licensed_items import (
     LicensedResource as _LicensedResource,
 )
 from models_library.api_schemas_webserver.licensed_items import (
-    LicensedResourceFeaturesDict as _LicensedResourceFeaturesDict,
+    LicensedResourceSource as _LicensedResourceSource,
+)
+from models_library.api_schemas_webserver.licensed_items import (
+    LicensedResourceSourceFeaturesDict as _LicensedResourceSourceFeaturesDict,
 )
 from models_library.api_schemas_webserver.licensed_items_checkouts import (
     LicensedItemCheckoutRpcGet as _LicensedItemCheckoutRpcGet,
@@ -150,7 +153,7 @@ assert set(ServicePricingPlanGetLegacy.model_fields.keys()) == set(  # nosec
 )
 
 
-class LicensedResourceFeaturesDict(TypedDict):
+class LicensedResourceSourceFeaturesDict(TypedDict):
     age: NotRequired[str]
     date: date
     ethnicity: NotRequired[str]
@@ -163,22 +166,22 @@ class LicensedResourceFeaturesDict(TypedDict):
     weight: NotRequired[str]
 
 
-assert set(LicensedResourceFeaturesDict.__annotations__.keys()) == set(  # nosec
-    _LicensedResourceFeaturesDict.__annotations__.keys()
-), "LicensedResourceFeaturesDict keys do not match"
+assert set(LicensedResourceSourceFeaturesDict.__annotations__.keys()) == set(  # nosec
+    _LicensedResourceSourceFeaturesDict.__annotations__.keys()
+), "LicensedResourceSourceFeaturesDict keys do not match"
 
-for key in LicensedResourceFeaturesDict.__annotations__:
+for key in LicensedResourceSourceFeaturesDict.__annotations__:
     assert (  # nosec
-        LicensedResourceFeaturesDict.__annotations__[key]
-        == _LicensedResourceFeaturesDict.__annotations__[key]
-    ), f"Type of {key} in LicensedResourceFeaturesDict does not match"
+        LicensedResourceSourceFeaturesDict.__annotations__[key]
+        == _LicensedResourceSourceFeaturesDict.__annotations__[key]
+    ), f"Type of {key} in LicensedResourceSourceFeaturesDict does not match"
 
 
-class LicensedResource(BaseModel):
+class LicensedResourceSource(BaseModel):
     id: int
     description: str
     thumbnail: str
-    features: LicensedResourceFeaturesDict
+    features: LicensedResourceSourceFeaturesDict
     doi: str | None
     license_key: str
     license_version: str
@@ -186,16 +189,29 @@ class LicensedResource(BaseModel):
     available_from_url: HttpUrl | None
 
 
-assert set(LicensedResource.model_fields.keys()) == set(  # nosec
-    _LicensedResource.model_fields.keys()
-), "LicensedResource keys do not match"
+assert set(LicensedResourceSource.model_fields.keys()) == set(  # nosec
+    _LicensedResourceSource.model_fields.keys()
+), "LicensedResourceSource keys do not match"
 
-for key in LicensedResource.model_fields.keys():
+for key in LicensedResourceSource.model_fields.keys():
     if key == "features":
         continue
     assert (  # nosec
-        LicensedResource.__annotations__[key] == _LicensedResource.__annotations__[key]
-    ), f"Type of {key} in LicensedResource does not match"
+        LicensedResourceSource.__annotations__[key]
+        == _LicensedResourceSource.__annotations__[key]
+    ), f"Type of {key} in LicensedResourceSource does not match"
+
+
+class LicensedResource(BaseModel):
+    source: LicensedResourceSource
+    category_id: IDStr
+    category_display: str
+    terms_of_use_url: HttpUrl | None
+
+
+assert set(LicensedResource.__annotations__.keys()) == set(  # nosec
+    _LicensedResource.__annotations__.keys()
+), "LicensedResource keys do not match"
 
 
 class LicensedItemGet(BaseModel):
