@@ -145,7 +145,7 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
       this.getNode().getStatus().addListener("changeProgress", e => {
         const progress = e.getData();
         if (progress > 0 && progress < 100) {
-          this.getChildControl("label").setValue(this.tr("Uploading"));
+          this.getChildControl("label").setValue(this.tr("Uploading..."));
         }
       });
     }
