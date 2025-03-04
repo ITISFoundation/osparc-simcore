@@ -55,7 +55,7 @@ qx.Class.define("osparc.file.FolderContent", {
     "selectionChanged": "qx.event.type.Data", // tap
     "multiSelectionChanged": "qx.event.type.Data", // tap
     "openItemSelected": "qx.event.type.Data", // dbltap
-    "requestDatasetFiles": "qx.event.type.Data",
+    "requestPathItems": "qx.event.type.Data",
   },
 
   statics: {
@@ -131,16 +131,16 @@ qx.Class.define("osparc.file.FolderContent", {
       return control || this.base(arguments, id);
     },
 
-    __convertEntries: function(content) {
+    __convertChildren: function(children) {
       const datas = [];
-      content.forEach(entry => {
+      children.forEach(child => {
         const data = {
-          icon: entry.getIcon ? entry.getIcon() : this.__getIcon(entry),
-          label: entry.getLabel(),
-          lastModified: entry.getLastModified ? osparc.utils.Utils.formatDateAndTime(new Date(entry.getLastModified())) : "",
-          size: entry.getSize ? osparc.utils.Utils.bytesToSize(entry.getSize()) : "",
-          itemId: entry.getItemId ? entry.getItemId() : null,
-          entry: entry,
+          icon: child.getIcon ? child.getIcon() : this.__getIcon(child),
+          label: child.getLabel(),
+          lastModified: child.getLastModified ? osparc.utils.Utils.formatDateAndTime(new Date(child.getLastModified())) : "",
+          size: child.getSize ? osparc.utils.Utils.bytesToSize(child.getSize()) : "",
+          itemId: child.getItemId ? child.getItemId() : null,
+          entry: child,
         };
         datas.push(data);
       });
@@ -198,7 +198,7 @@ qx.Class.define("osparc.file.FolderContent", {
     __getEntries: function() {
       if (this.getFolder()) {
         const children = this.getFolder().getChildren().toArray();
-        return this.__convertEntries(children);
+        return this.__convertChildren(children);
       }
       return [];
     },
@@ -206,9 +206,9 @@ qx.Class.define("osparc.file.FolderContent", {
     __applyFolder: function(folder) {
       if (folder) {
         if (folder.getLoaded && !folder.getLoaded()) {
-          this.fireDataEvent("requestDatasetFiles", {
+          this.fireDataEvent("requestPathItems", {
             locationId: folder.getLocation(),
-            datasetId: folder.getPath()
+            path: folder.getPath()
           });
         }
 

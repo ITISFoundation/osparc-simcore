@@ -132,37 +132,7 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
             column: osparc.dashboard.ListButtonBase.POS.OPTIONS
           });
           break;
-        case "tick-unselected": {
-          const menuSelectionStack = this.getChildControl("menu-selection-stack");
-          control = new qx.ui.basic.Atom().set({
-            appearance: "form-button-outlined",
-            width: this.self().MENU_BTN_DIMENSIONS,
-            height: this.self().MENU_BTN_DIMENSIONS,
-            focusable: false
-          });
-          control.getContentElement().setStyles({
-            "border-radius": `${this.self().MENU_BTN_DIMENSIONS / 2}px`
-          });
-          menuSelectionStack.addAt(control, 1);
-          break;
-        }
-        case "tick-selected": {
-          const menuSelectionStack = this.getChildControl("menu-selection-stack");
-          control = new qx.ui.basic.Image("@FontAwesome5Solid/check/12").set({
-            appearance: "form-button-outlined",
-            width: this.self().MENU_BTN_DIMENSIONS,
-            height: this.self().MENU_BTN_DIMENSIONS,
-            padding: [6, 5],
-            focusable: false
-          });
-          control.getContentElement().setStyles({
-            "border-radius": `${this.self().MENU_BTN_DIMENSIONS / 2}px`
-          });
-          menuSelectionStack.addAt(control, 2);
-          break;
-        }
         case "menu-button": {
-          const menuSelectionStack = this.getChildControl("menu-selection-stack");
           control = new qx.ui.form.MenuButton().set({
             appearance: "form-button-outlined",
             padding: [0, 8],
@@ -176,7 +146,37 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
             "border-radius": `${this.self().MENU_BTN_DIMENSIONS / 2}px`
           });
           osparc.utils.Utils.setIdToWidget(control, "studyItemMenuButton");
+          const menuSelectionStack = this.getChildControl("menu-selection-stack");
           menuSelectionStack.addAt(control, 0);
+          break;
+        }
+        case "tick-unselected": {
+          control = new qx.ui.basic.Atom().set({
+            appearance: "form-button-outlined",
+            width: this.self().MENU_BTN_DIMENSIONS,
+            height: this.self().MENU_BTN_DIMENSIONS,
+            focusable: false
+          });
+          control.getContentElement().setStyles({
+            "border-radius": `${this.self().MENU_BTN_DIMENSIONS / 2}px`
+          });
+          const menuSelectionStack = this.getChildControl("menu-selection-stack");
+          menuSelectionStack.addAt(control, 1);
+          break;
+        }
+        case "tick-selected": {
+          control = new qx.ui.basic.Image("@FontAwesome5Solid/check/12").set({
+            appearance: "form-button-outlined",
+            width: this.self().MENU_BTN_DIMENSIONS,
+            height: this.self().MENU_BTN_DIMENSIONS,
+            padding: [6, 5],
+            focusable: false
+          });
+          control.getContentElement().setStyles({
+            "border-radius": `${this.self().MENU_BTN_DIMENSIONS / 2}px`
+          });
+          const menuSelectionStack = this.getChildControl("menu-selection-stack");
+          menuSelectionStack.addAt(control, 2);
           break;
         }
       }

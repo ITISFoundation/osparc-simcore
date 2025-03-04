@@ -138,13 +138,16 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
         }
         case "header": {
           const hGrid = new qx.ui.layout.Grid().set({
-            spacing: 0, // the sub-elements will take care of the padding
+            spacing: 6,
           });
           hGrid.setColumnFlex(1, 1);
-          hGrid.setRowAlign(0, "left", "middle");
+          hGrid.setColumnAlign(0, "right", "middle");
+          hGrid.setColumnAlign(1, "left", "middle");
+          hGrid.setColumnAlign(2, "center", "middle");
           control = new qx.ui.container.Composite().set({
             backgroundColor: "background-card-overlay",
-            padding: 0,
+            paddingBottom: 6,
+            paddingRight: 4,
             maxWidth: this.self().ITEM_WIDTH,
             maxHeight: this.self().ITEM_HEIGHT
           });
@@ -189,37 +192,23 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
           control = new qx.ui.basic.Label().set({
             textColor: "contrasted-text-light",
             font: "text-14",
-            padding: this.self().TITLE_PADDING,
-            maxWidth: this.self().ITEM_WIDTH,
           });
           layout = this.getChildControl("header");
-          layout.addAt(control, 0, {
+          layout.add(control, {
             column: 1,
             row: 0,
           });
           break;
-        case "subtitle":
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(6)).set({
-            anonymous: true,
-            height: 20,
-            padding: 6,
-            paddingLeft: 20, // align with icon
-          });
-          layout = this.getChildControl("header");
-          layout.addAt(control, 0, {
-            column: 0,
-            row: 1,
-            colSpan: 2,
-          });
-          break;
         case "subtitle-icon": {
           control = new qx.ui.basic.Image().set({
-            alignY: "middle",
             allowGrowX: false,
-            allowShrinkX: false
+            allowShrinkX: false,
           });
-          const subtitleLayout = this.getChildControl("subtitle");
-          subtitleLayout.addAt(control, 0);
+          layout = this.getChildControl("header");
+          layout.add(control, {
+            column: 0,
+            row: 1,
+          });
           break;
         }
         case "subtitle-text": {
@@ -233,9 +222,10 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
             font: "text-12",
             allowGrowY: false
           });
-          const subtitleLayout = this.getChildControl("subtitle");
-          subtitleLayout.addAt(control, 1, {
-            flex: 1
+          layout = this.getChildControl("header");
+          layout.add(control, {
+            column: 1,
+            row: 1,
           });
           break;
         }
@@ -269,9 +259,10 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
             width: 13,
             margin: [0, 1]
           });
-          layout = this.getChildControl("subtitle");
-          layout.set({
-            visibility: "visible"
+          layout = this.getChildControl("header");
+          layout.add(control, {
+            column: 2,
+            row: 1,
           });
           layout.addAt(control, 2);
           break;
