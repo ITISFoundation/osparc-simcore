@@ -9,11 +9,11 @@ from celery.signals import worker_init, worker_shutdown
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_service_storage.modules.celery.client import CeleryTaskQueueClient
-from simcore_service_storage.modules.celery.worker import CeleryTaskQueueWorker
-from simcore_service_storage.modules.celery.worker_main import (
+from simcore_service_storage.modules.celery.signals import (
     on_worker_init,
     on_worker_shutdown,
 )
+from simcore_service_storage.modules.celery.worker import CeleryTaskQueueWorker
 
 
 @pytest.fixture
