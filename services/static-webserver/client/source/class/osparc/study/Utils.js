@@ -359,7 +359,7 @@ qx.Class.define("osparc.study.Utils", {
     },
 
     getNonFrontendNodes: function(studyData) {
-      return Object.values(studyData["workbench"]).filter(node => !osparc.data.model.Node.isFrontend(node));
+      return Object.values(studyData["workbench"]).filter(nodeData => !osparc.data.model.Node.isFrontend(nodeData));
     },
 
     guessIcon: function(studyData) {

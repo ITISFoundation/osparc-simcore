@@ -180,40 +180,6 @@ async def delete_api_key(
         await conn.execute(stmt)
 
 
-async def delete_by_name(
-    app: web.Application,
-    connection: AsyncConnection | None = None,
-    *,
-    display_name: str,
-    user_id: UserID,
-    product_name: ProductName,
-) -> None:
-    async with transaction_context(get_asyncpg_engine(app), connection) as conn:
-        stmt = api_keys.delete().where(
-            (api_keys.c.user_id == user_id)
-            & (api_keys.c.display_name == display_name)
-            & (api_keys.c.product_name == product_name)
-        )
-        await conn.execute(stmt)
-
-
-async def delete_by_key(
-    app: web.Application,
-    connection: AsyncConnection | None = None,
-    *,
-    api_key: str,
-    user_id: UserID,
-    product_name: ProductName,
-) -> None:
-    async with transaction_context(get_asyncpg_engine(app), connection) as conn:
-        stmt = api_keys.delete().where(
-            (api_keys.c.user_id == user_id)
-            & (api_keys.c.api_key == api_key)
-            & (api_keys.c.product_name == product_name)
-        )
-        await conn.execute(stmt)
-
-
 async def prune_expired(
     app: web.Application, connection: AsyncConnection | None = None
 ) -> list[str]:
