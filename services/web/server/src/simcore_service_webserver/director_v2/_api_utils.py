@@ -6,10 +6,10 @@ from pydantic import TypeAdapter
 
 from ..application_settings import get_application_settings
 from ..products.models import Product
-from ..projects import api as projects_api
+from ..projects import projects_wallets_service
 from ..users import preferences_api as user_preferences_api
 from ..users.exceptions import UserDefaultWalletNotFoundError
-from ..wallets import api as wallets_api
+from ..wallets import api as _wallets_service
 
 
 async def get_wallet_info(
@@ -25,7 +25,9 @@ async def get_wallet_info(
         product.is_payment_enabled and app_settings.WEBSERVER_CREDIT_COMPUTATION_ENABLED
     ):
         return None
-    project_wallet = await projects_api.get_project_wallet(app, project_id=project_id)
+    project_wallet = await projects_wallets_service.get_project_wallet(
+        app, project_id=project_id
+    )
     if project_wallet is None:
         user_default_wallet_preference = await user_preferences_api.get_frontend_user_preference(
             app,
@@ -38,7 +40,7 @@ async def get_wallet_info(
         project_wallet_id = TypeAdapter(WalletID).validate_python(
             user_default_wallet_preference.value
         )
-        await projects_api.connect_wallet_to_project(
+        await projects_wallets_service.connect_wallet_to_project(
             app,
             product_name=product_name,
             project_id=project_id,
@@ -49,11 +51,13 @@ async def get_wallet_info(
         project_wallet_id = project_wallet.wallet_id
 
     # Check whether user has access to the wallet
-    wallet = await wallets_api.get_wallet_with_available_credits_by_user_and_wallet(
-        app,
-        user_id=user_id,
-        wallet_id=project_wallet_id,
-        product_name=product_name,
+    wallet = (
+        await _wallets_service.get_wallet_with_available_credits_by_user_and_wallet(
+            app,
+            user_id=user_id,
+            wallet_id=project_wallet_id,
+            product_name=product_name,
+        )
     )
     return WalletInfo(
         wallet_id=project_wallet_id,

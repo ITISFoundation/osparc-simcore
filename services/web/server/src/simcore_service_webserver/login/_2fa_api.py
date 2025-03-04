@@ -1,4 +1,4 @@
-""" two-factor-authentication utils
+"""two-factor-authentication utils
 
 Currently includes two parts:
 

@@ -6,7 +6,7 @@ from models_library.services_resources import (
     ServiceResourcesDictHelpers,
 )
 from pydantic import TypeAdapter
-from simcore_service_webserver.projects._nodes_utils import (
+from simcore_service_webserver.projects._nodes_service_utils import (
     validate_new_service_resources,
 )
 from simcore_service_webserver.projects.exceptions import (

@@ -1,7 +1,7 @@
-""" Defines **async** handlers for socket.io server
+"""Defines **async** handlers for socket.io server
 
-    SEE https://pypi.python.org/pypi/python-socketio
-    SEE http://python-socketio.readthedocs.io/en/latest/
+SEE https://pypi.python.org/pypi/python-socketio
+SEE http://python-socketio.readthedocs.io/en/latest/
 """
 
 import logging
