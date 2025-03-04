@@ -26,7 +26,7 @@ from pydantic import BaseModel, ConfigDict
 from servicelib.aiohttp.requests_validation import handle_validation_as_http_error
 from servicelib.rabbitmq._errors import RPCServerError
 from servicelib.rabbitmq.rpc_interfaces.catalog import services as catalog_rpc
-from servicelib.rabbitmq.rpc_interfaces.catalog.errors import CatalogServiceError
+from servicelib.rabbitmq.rpc_interfaces.catalog.errors import CatalogNotAvailableError
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
 from ..constants import RQ_PRODUCT_KEY, RQT_USERID_KEY
@@ -128,7 +128,7 @@ async def batch_get_my_services(
             ids=services_ids,
         )
     except RPCServerError as err:
-        raise CatalogServiceError(
+        raise CatalogNotAvailableError(
             user_id=user_id,
             product_name=product_name,
         ) from err
