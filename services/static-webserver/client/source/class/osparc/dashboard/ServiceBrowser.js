@@ -48,9 +48,24 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
     // overridden
     initResources: function() {
       this._resourcesList = [];
-      this.getChildControl("resources-layout");
-      this.reloadResources();
-      this._hideLoadingPage();
+      osparc.store.Services.getServicesLatest(false)
+        .then(services => {
+          // Show "Contact Us" message if services.length === 0
+          // Most probably is a product-stranger user (it can also be that the catalog is down)
+          if (Object.keys(services).length === 0) {
+            let msg = this.tr("It seems you don't have access to this product.");
+            msg += "</br>";
+            msg += this.tr("Please contact us:");
+            msg += "</br>";
+            const supportEmail = osparc.store.VendorInfo.getInstance().getSupportEmail();
+            msg += supportEmail;
+            osparc.FlashMessenger.getInstance().logAs(msg, "WARNING");
+          }
+
+          this.getChildControl("resources-layout");
+          this.reloadResources();
+          this._hideLoadingPage();
+        });
     },
 
     reloadResources: function() {
