@@ -237,7 +237,7 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
 
       const form = new qx.ui.form.Form();
       form.add(hideFullname, "Hide Full Name", null, "hideFullname");
-      form.add(hideEmail, "Hide email", null, "hideEmail");
+      form.add(hideEmail, "Hide Email", null, "hideEmail");
       box.add(new qx.ui.form.renderer.Single(form));
 
       // binding to a model
