@@ -19,6 +19,7 @@ import sqlalchemy as sa
 from fastapi import FastAPI, status
 from fastapi_pagination.cursor import CursorPage
 from models_library.api_schemas_storage.storage_schemas import PathMetaDataGet
+from models_library.api_schemas_webserver.storage import MAX_NUMBER_OF_PATHS_PER_PAGE
 from models_library.projects_nodes_io import LocationID, NodeID, SimcoreS3FileID
 from models_library.users import UserID
 from pydantic import ByteSize, TypeAdapter
@@ -209,7 +210,7 @@ async def test_list_paths_pagination(
         ProjectWithFilesParams(
             num_nodes=1,
             allowed_file_sizes=(TypeAdapter(ByteSize).validate_python("0b"),),
-            workspace_files_count=1000,
+            workspace_files_count=MAX_NUMBER_OF_PATHS_PER_PAGE,
         )
     ],
     ids=str,
@@ -241,7 +242,7 @@ async def test_list_paths_pagination_large_page(
         file_filter=workspace_file_filter,
         expected_paths=expected_paths,
         check_total=False,
-        limit=1000,
+        limit=MAX_NUMBER_OF_PATHS_PER_PAGE,
     )
 
 
