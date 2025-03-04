@@ -2,7 +2,7 @@ import logging
 import re
 import string
 from decimal import Decimal
-from typing import Annotated, Any
+from typing import Annotated, Any, NamedTuple
 
 from models_library.basic_regex import (
     PUBLIC_VARIABLE_NAME_RE,
