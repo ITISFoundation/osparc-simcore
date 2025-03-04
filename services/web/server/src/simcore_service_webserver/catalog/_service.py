@@ -3,7 +3,6 @@ from collections.abc import Iterator
 from typing import Any, cast
 
 from aiohttp import web
-from aiohttp.web import Request
 from models_library.api_schemas_catalog.services import ServiceUpdateV2
 from models_library.api_schemas_webserver.catalog import (
     ServiceInputGet,
@@ -22,41 +21,19 @@ from models_library.services import (
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pint import UnitRegistry
-from pydantic import BaseModel, ConfigDict
-from servicelib.aiohttp.requests_validation import handle_validation_as_http_error
 from servicelib.rabbitmq.rpc_interfaces.catalog import services as catalog_rpc
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
-from ..constants import RQ_PRODUCT_KEY, RQT_USERID_KEY
 from ..rabbitmq import get_rabbitmq_rpc_client
 from . import client
 from ._api_units import can_connect, replace_service_input_outputs
-from ._models import ServiceInputGetFactory, ServiceOutputGetFactory
+from ._models import (
+    CatalogRequestContext,
+    ServiceInputGetFactory,
+    ServiceOutputGetFactory,
+)
 
 _logger = logging.getLogger(__name__)
-
-
-class CatalogRequestContext(BaseModel):
-    app: web.Application
-    user_id: UserID
-    product_name: str
-    unit_registry: UnitRegistry
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-
-    @classmethod
-    def create(cls, request: Request) -> "CatalogRequestContext":
-        with handle_validation_as_http_error(
-            error_msg_template="Invalid request",
-            resource_name=request.rel_url.path,
-            use_error_v1=True,
-        ):
-            assert request.app  # nosec
-            return cls(
-                app=request.app,
-                user_id=request[RQT_USERID_KEY],
-                product_name=request[RQ_PRODUCT_KEY],
-                unit_registry=request.app[UnitRegistry.__name__],
-            )
 
 
 async def _safe_replace_service_input_outputs(

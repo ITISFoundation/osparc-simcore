@@ -1,4 +1,4 @@
-""" rest api handlers
+"""rest api handlers
 
 - Take into account that part of the API is also needed in the public API so logic
 should live in the catalog service in his final version
@@ -39,8 +39,8 @@ from ..login.decorators import login_required
 from ..resource_usage.service import get_default_service_pricing_plan
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
-from . import _api, _handlers_errors, client
-from ._api import CatalogRequestContext
+from . import _handlers_errors, _service, client
+from ._models import CatalogRequestContext
 from .exceptions import DefaultPricingUnitForServiceNotFoundError
 
 _logger = logging.getLogger(__name__)
@@ -68,8 +68,7 @@ class ServicePathParams(BaseModel):
         return v
 
 
-class ListServiceParams(PageQueryParameters):
-    ...
+class ListServiceParams(PageQueryParameters): ...
 
 
 @routes.get(
@@ -85,7 +84,7 @@ async def list_services_latest(request: Request):
         ListServiceParams, request
     )
 
-    page_items, page_meta = await _api.list_latest_services(
+    page_items, page_meta = await _service.list_latest_services(
         request.app,
         user_id=request_ctx.user_id,
         product_name=request_ctx.product_name,
@@ -124,7 +123,7 @@ async def get_service(request: Request):
     assert request_ctx  # nosec
     assert path_params  # nosec
 
-    service = await _api.get_service_v2(
+    service = await _service.get_service_v2(
         request.app,
         user_id=request_ctx.user_id,
         product_name=request_ctx.product_name,
@@ -154,7 +153,7 @@ async def update_service(request: Request):
     assert path_params  # nosec
     assert update  # nosec
 
-    updated = await _api.update_service_v2(
+    updated = await _service.update_service_v2(
         request.app,
         user_id=request_ctx.user_id,
         product_name=request_ctx.product_name,
@@ -178,7 +177,7 @@ async def list_service_inputs(request: Request):
     path_params = parse_request_path_parameters_as(ServicePathParams, request)
 
     # Evaluate and return validated model
-    response_model = await _api.list_service_inputs(
+    response_model = await _service.list_service_inputs(
         path_params.service_key, path_params.service_version, ctx
     )
 
@@ -203,7 +202,7 @@ async def get_service_input(request: Request):
     path_params = parse_request_path_parameters_as(_ServiceInputsPathParams, request)
 
     # Evaluate and return validated model
-    response_model = await _api.get_service_input(
+    response_model = await _service.get_service_input(
         path_params.service_key,
         path_params.service_version,
         path_params.input_key,
@@ -236,7 +235,7 @@ async def get_compatible_inputs_given_source_output(request: Request):
     )
 
     # Evaluate and return validated model
-    data = await _api.get_compatible_inputs_given_source_output(
+    data = await _service.get_compatible_inputs_given_source_output(
         path_params.service_key,
         path_params.service_version,
         query_params.from_service_key,
@@ -261,7 +260,7 @@ async def list_service_outputs(request: Request):
     path_params = parse_request_path_parameters_as(ServicePathParams, request)
 
     # Evaluate and return validated model
-    response_model = await _api.list_service_outputs(
+    response_model = await _service.list_service_outputs(
         path_params.service_key, path_params.service_version, ctx
     )
 
@@ -286,7 +285,7 @@ async def get_service_output(request: Request):
     path_params = parse_request_path_parameters_as(_ServiceOutputsPathParams, request)
 
     # Evaluate and return validated model
-    response_model = await _api.get_service_output(
+    response_model = await _service.get_service_output(
         path_params.service_key,
         path_params.service_version,
         path_params.output_key,
@@ -323,7 +322,7 @@ async def get_compatible_outputs_given_target_input(request: Request):
         _ToServiceInputsParams, request
     )
 
-    data = await _api.get_compatible_outputs_given_target_input(
+    data = await _service.get_compatible_outputs_given_target_input(
         path_params.service_key,
         path_params.service_version,
         query_params.to_service_key,
