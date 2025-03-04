@@ -68,8 +68,8 @@ async def _get_product_payment_fields(
             min_payment_amount_usd=None,
         )
 
-    assert price_info.usd_per_credit > 0
-    assert price_info.min_payment_amount_usd > 0
+    assert price_info.usd_per_credit > 0  # nosec
+    assert price_info.min_payment_amount_usd > 0  # nosec
 
     return PaymentFieldsTuple(
         enabled=True,
