@@ -30,6 +30,9 @@ def datcore_adapter_service_mock(faker: Faker) -> Iterator[respx.MockRouter]:
         respx_mocker.get("/user/profile", name="get_user_profile").respond(
             status.HTTP_200_OK, json=faker.pydict(allowed_types=(str,))
         )
+        respx_mocker.get(
+            re.compile(r"/datasets/(?P<dataset_id>[^/]+)/files_legacy")
+        ).respond(status.HTTP_200_OK, json=[])
         list_datasets_re = re.compile(r"/datasets")
         respx_mocker.get(list_datasets_re, name="list_datasets").respond(
             status.HTTP_200_OK,
