@@ -6009,7 +6009,7 @@ paths:
           type: integer
           minimum: 1
           exclusiveMaximum: true
-          default: 20
+          default: 50
           title: Size
           maximum: 1000
       - name: cursor

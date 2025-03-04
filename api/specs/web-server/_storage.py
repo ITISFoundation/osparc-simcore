@@ -20,7 +20,6 @@ from models_library.api_schemas_storage.storage_schemas import (
     PresignedLink,
 )
 from models_library.api_schemas_webserver.storage import (
-    CustomizedPathsCursorPage,
     DataExportPost,
     ListPathsQueryParams,
     StorageAsyncJobGet,
@@ -32,6 +31,7 @@ from models_library.generics import Envelope
 from models_library.projects_nodes_io import LocationID
 from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize
+from servicelib.fastapi.rest_pagination import CustomizedPathsCursorPage
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.storage.schemas import DatasetMetaData, FileMetaData
 
