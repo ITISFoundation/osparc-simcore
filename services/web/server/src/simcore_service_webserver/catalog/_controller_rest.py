@@ -38,7 +38,7 @@ from ..login.decorators import login_required
 from ..resource_usage.service import get_default_service_pricing_plan
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
-from . import _handlers_errors, _service, client
+from . import _catalog_rest_client, _handlers_errors, _service
 from ._exceptions import DefaultPricingUnitForServiceNotFoundError
 from ._models import CatalogRequestContext, ListServiceParams, ServicePathParams
 
@@ -329,11 +329,13 @@ async def get_service_resources(request: Request):
     """
     ctx = CatalogRequestContext.create(request)
     path_params = parse_request_path_parameters_as(ServicePathParams, request)
-    service_resources: ServiceResourcesDict = await client.get_service_resources(
-        request.app,
-        user_id=ctx.user_id,
-        service_key=path_params.service_key,
-        service_version=path_params.service_version,
+    service_resources: ServiceResourcesDict = (
+        await _catalog_rest_client.get_service_resources(
+            request.app,
+            user_id=ctx.user_id,
+            service_key=path_params.service_key,
+            service_version=path_params.service_version,
+        )
     )
 
     data = ServiceResourcesDictHelpers.create_jsonable(service_resources)

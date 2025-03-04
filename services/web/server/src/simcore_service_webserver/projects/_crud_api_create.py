@@ -27,7 +27,7 @@ from simcore_postgres_database.utils_projects_nodes import (
 from simcore_postgres_database.webserver_models import ProjectType as ProjectTypeDB
 
 from ..application_settings import get_application_settings
-from ..catalog import client as catalog_client
+from ..catalog import catalog_service
 from ..director_v2 import api as director_v2_api
 from ..dynamic_scheduler import api as dynamic_scheduler_api
 from ..folders import _folders_repository as _folders_repository
@@ -219,7 +219,7 @@ async def _compose_project_data(
             NodeID(node_id): ProjectNodeCreate(
                 node_id=NodeID(node_id),
                 required_resources=jsonable_encoder(
-                    await catalog_client.get_service_resources(
+                    await catalog_service.get_service_resources(
                         app, user_id, node_data["key"], node_data["version"]
                     )
                 ),
@@ -419,9 +419,9 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
         user_specific_project_data_db = (
             await _projects_repository.get_user_specific_project_data_db(
                 project_uuid=new_project["uuid"],
-                private_workspace_user_id_or_none=user_id
-                if workspace_id is None
-                else None,
+                private_workspace_user_id_or_none=(
+                    user_id if workspace_id is None else None
+                ),
             )
         )
         new_project["folderId"] = user_specific_project_data_db.folder_id
