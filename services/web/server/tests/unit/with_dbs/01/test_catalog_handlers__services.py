@@ -166,7 +166,9 @@ async def test_get_inputs(
 ):
 
     aioresponses_mocker.get(
-        r"http://catalog:8000/v0/services/simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/0.1.0?user_id=1"
+        r"http://catalog:8000/v0/services/simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/0.1.0?user_id=1",
+        status=status.HTTP_200_OK,
+        payload=ServiceGetV2.model_json_schema()["examples"][0],
     )
 
     service_key = "simcore/services/comp/itis/sleeper"
