@@ -5,11 +5,11 @@ from typing import Annotated
 from fastapi import APIRouter, Depends
 from fastapi_pagination import create_page
 from models_library.api_schemas_storage.storage_schemas import PathMetaDataGet
-from models_library.api_schemas_webserver.storage import (
+from models_library.users import UserID
+from servicelib.fastapi.rest_pagination import (
     CustomizedPathsCursorPage,
     CustomizedPathsCursorPageParams,
 )
-from models_library.users import UserID
 
 from ...dsm_factory import BaseDataManager
 from .dependencies.dsm_prodiver import get_data_manager

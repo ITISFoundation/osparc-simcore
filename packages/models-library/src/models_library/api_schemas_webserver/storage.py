@@ -1,10 +1,11 @@
 from datetime import datetime
 from pathlib import Path
-from typing import Annotated, Any, Final, TypeAlias, TypeVar
+from typing import Annotated, Any
 
-from fastapi import Query
-from fastapi_pagination.cursor import CursorPage
-from fastapi_pagination.customization import CustomizedPage, UseParamsFields
+from models_library.api_schemas_storage.storage_schemas import (
+    DEFAULT_NUMBER_OF_PATHS_PER_PAGE,
+    MAX_NUMBER_OF_PATHS_PER_PAGE,
+)
 from pydantic import BaseModel, Field
 
 from ..api_schemas_rpc_async_jobs.async_jobs import (
@@ -20,23 +21,6 @@ from ..rest_pagination import (
     CursorQueryParameters,
 )
 from ._base import InputSchema, OutputSchema
-
-_T = TypeVar("_T")
-DEFAULT_NUMBER_OF_PATHS_PER_PAGE: Final[int] = 50
-MAX_NUMBER_OF_PATHS_PER_PAGE: Final[int] = 1000
-CustomizedPathsCursorPage = CustomizedPage[
-    CursorPage[_T],
-    # Customizes the maximum value to fit frontend needs
-    UseParamsFields(
-        size=Query(
-            DEFAULT_NUMBER_OF_PATHS_PER_PAGE,
-            ge=1,
-            le=MAX_NUMBER_OF_PATHS_PER_PAGE,
-            description="Page size",
-        )
-    ),
-]
-CustomizedPathsCursorPageParams: TypeAlias = CustomizedPathsCursorPage.__params_type__  # type: ignore
 
 
 class StorageLocationPathParams(BaseModel):
