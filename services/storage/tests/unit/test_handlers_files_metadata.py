@@ -41,6 +41,12 @@ class CreateProjectAccessRightsCallable(Protocol):
     ) -> None: ...
 
 
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
 async def test_list_files_metadata(
     upload_file: Callable[[ByteSize, str], Awaitable[tuple[Path, SimcoreS3FileID]]],
     create_project_access_rights: CreateProjectAccessRightsCallable,
