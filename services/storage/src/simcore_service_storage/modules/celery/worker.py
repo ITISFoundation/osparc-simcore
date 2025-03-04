@@ -4,7 +4,7 @@ from celery import Celery   # type: ignore[import-untyped]
 from models_library.progress_bar import ProgressReport
 from servicelib.logging_utils import log_context
 
-from .models import TaskID, TaskState
+from .models import TaskID
 
 _logger = logging.getLogger(__name__)
 
