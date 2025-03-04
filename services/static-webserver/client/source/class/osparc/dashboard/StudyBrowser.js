@@ -122,6 +122,21 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             .then(notifications => {
               osparc.notification.Notifications.getInstance().addNotifications(notifications);
             });
+
+          // Show "Contact Us" message if services.length === 0
+          // Most probably is a product-stranger user (it can also be that the catalog is down)
+          osparc.store.Services.getServicesLatest()
+            .then(services => {
+              if (Object.keys(services).length === 0) {
+                let msg = this.tr("It seems you don't have access to this product.");
+                msg += "</br>";
+                msg += this.tr("Please contact us:");
+                msg += "</br>";
+                const supportEmail = osparc.store.VendorInfo.getInstance().getSupportEmail();
+                msg += supportEmail;
+                osparc.FlashMessenger.getInstance().logAs(msg, "WARNING");
+              }
+            });
         })
         .catch(err => {
           console.error(err);
@@ -266,28 +281,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .then(tasks => {
           if (tasks && tasks.length) {
             this.__tasksReceived(tasks);
-          }
-        });
-
-      // Show "Contact Us" message if services.length === 0
-      // Most probably is a product-stranger user (it can also be that the catalog is down)
-      osparc.store.Services.getServicesLatest()
-        .then(services => {
-          if (Object.keys(services).length === 0) {
-            const noAccessText = new qx.ui.basic.Label().set({
-              selectable: true,
-              rich: true,
-              font: "text-18",
-              paddingTop: 20
-            });
-            let msg = this.tr("It seems you don't have access to this product.");
-            msg += "</br>";
-            msg += "</br>";
-            msg += this.tr("Please contact us:");
-            msg += "</br>";
-            const supportEmail = osparc.store.VendorInfo.getInstance().getSupportEmail();
-            noAccessText.setValue(msg + supportEmail);
-            this._addToLayout(noAccessText);
           }
         });
 
