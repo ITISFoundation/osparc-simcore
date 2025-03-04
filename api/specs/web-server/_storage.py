@@ -8,7 +8,6 @@ from typing import Annotated, TypeAlias
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, status
-from fastapi_pagination.cursor import CursorPage
 from models_library.api_schemas_storage.storage_schemas import (
     FileLocation,
     FileMetaDataGet,
@@ -32,6 +31,7 @@ from models_library.generics import Envelope
 from models_library.projects_nodes_io import LocationID
 from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize
+from servicelib.fastapi.rest_pagination import CustomizedPathsCursorPage
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.storage.schemas import DatasetMetaData, FileMetaData
 
@@ -59,7 +59,7 @@ async def list_storage_locations():
 
 @router.get(
     "/storage/locations/{location_id}/paths",
-    response_model=CursorPage[PathMetaDataGet],
+    response_model=CustomizedPathsCursorPage[PathMetaDataGet],
 )
 async def list_storage_paths(
     _path: Annotated[StorageLocationPathParams, Depends()],

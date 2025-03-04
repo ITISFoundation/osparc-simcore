@@ -9,7 +9,7 @@ IMPORTANT: DO NOT COUPLE these schemas until storage is refactored
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import Annotated, Any, Literal, Self, TypeAlias
+from typing import Annotated, Any, Final, Literal, Self, TypeAlias
 from uuid import UUID
 
 from pydantic import (
@@ -402,6 +402,10 @@ class FoldersBody(BaseModel):
 
 class SoftCopyBody(BaseModel):
     link_id: SimcoreS3FileID
+
+
+DEFAULT_NUMBER_OF_PATHS_PER_PAGE: Final[int] = 50
+MAX_NUMBER_OF_PATHS_PER_PAGE: Final[int] = 1000
 
 
 class PathMetaDataGet(BaseModel):
