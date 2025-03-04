@@ -1,12 +1,11 @@
-""" Common functions to access products table
-
-"""
+"""Common functions to access products table"""
 
 import warnings
 
 import sqlalchemy as sa
+from aiopg.sa.connection import SAConnection
+from sqlalchemy.ext.asyncio import AsyncConnection
 
-from ._protocols import AiopgConnection, DBConnection
 from .models.groups import GroupType, groups
 from .models.products import products
 
@@ -14,7 +13,7 @@ from .models.products import products
 _GroupID = int
 
 
-async def get_default_product_name(conn: DBConnection) -> str:
+async def get_default_product_name(conn: AsyncConnection | SAConnection) -> str:
     """The first row in the table is considered as the default product
 
     :: raises ValueError if undefined
@@ -31,7 +30,7 @@ async def get_default_product_name(conn: DBConnection) -> str:
 
 
 async def get_product_group_id(
-    connection: DBConnection, product_name: str
+    connection: SAConnection, product_name: str
 ) -> _GroupID | None:
     group_id = await connection.scalar(
         sa.select(products.c.group_id).where(products.c.name == product_name)
@@ -39,7 +38,9 @@ async def get_product_group_id(
     return None if group_id is None else _GroupID(group_id)
 
 
-async def execute_get_or_create_product_group(conn, product_name: str) -> int:
+async def execute_get_or_create_product_group(
+    conn: AsyncConnection, product_name: str
+) -> int:
     #
     # NOTE: Separated so it can be used in asyncpg and aiopg environs while both
     #       coexist
@@ -73,7 +74,7 @@ async def execute_get_or_create_product_group(conn, product_name: str) -> int:
 
 
 async def get_or_create_product_group(
-    connection: AiopgConnection, product_name: str
+    connection: SAConnection, product_name: str
 ) -> _GroupID:
     """
     Returns group_id of a product. Creates it if undefined
