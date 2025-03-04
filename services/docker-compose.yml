@@ -1198,6 +1198,7 @@ services:
     environment:
       <<: *storage_environment
       STORAGE_WORKER_MODE: "true"
+      CELERY_CONCURRENCY: 1
     networks: *storage_networks
 
   rabbit:
