@@ -25,6 +25,10 @@ _HEART_BEAT_MARK: Final = 1
 _logger = logging.getLogger(__name__)
 
 
+def _get_first_entry_or_none(data: list[str]) -> str | None:
+    return data[0] if len(data) > 0 else None
+
+
 class _PortKeysEventHandler(SafeFileSystemEventHandler):
     # NOTE: runs in the created process
 
@@ -42,6 +46,15 @@ class _PortKeysEventHandler(SafeFileSystemEventHandler):
     def handle_toggle_event_propagation(self, *, is_enabled: bool) -> None:
         self._is_event_propagation_enabled = is_enabled
 
+    def _get_relative_path_parents(self, path: bytes | str) -> list[str]:
+        try:
+            spath_relative_to_outputs = Path(
+                path.decode() if isinstance(path, bytes) else path
+            ).relative_to(self.outputs_path)
+        except ValueError:
+            return []
+        return [f"{x}" for x in spath_relative_to_outputs.parents]
+
     def event_handler(self, event: FileSystemEvent) -> None:
         if not self._is_event_propagation_enabled:
             return
@@ -49,25 +62,29 @@ class _PortKeysEventHandler(SafeFileSystemEventHandler):
         # NOTE: ignoring all events which are not relative to modifying
         # the contents of the `port_key` folders from the outputs directory
 
-        path_relative_to_outputs = Path(
-            event.src_path.decode()
-            if isinstance(event.src_path, bytes)
-            else event.src_path
-        ).relative_to(self.outputs_path)
+        # NOTE: the `port_key` will be present in either the src_path or the dest_path
+        # depending on the type of event
+
+        src_relative_path_parents = self._get_relative_path_parents(event.src_path)
+        dst_relative_path_parents = self._get_relative_path_parents(event.dest_path)
 
         # discard event if not part of a subfolder
-        relative_path_parents = path_relative_to_outputs.parents
-        event_in_subdirs = len(relative_path_parents) > 0
+        event_in_subdirs = (
+            len(src_relative_path_parents) > 0 or len(dst_relative_path_parents) > 0
+        )
         if not event_in_subdirs:
             return
 
         # only accept events generated inside `port_key` subfolder
-        port_key_candidate = f"{relative_path_parents[0]}"
+        src_port_key_candidate = _get_first_entry_or_none(src_relative_path_parents)
+        dst_port_key_candidate = _get_first_entry_or_none(dst_relative_path_parents)
 
-        if port_key_candidate in self._outputs_port_keys:
-            # messages in this queue (part of the process),
-            # will be consumed by the asyncio thread
-            self.port_key_events_queue.put(port_key_candidate)
+        for port_key_candidate in (src_port_key_candidate, dst_port_key_candidate):
+            if port_key_candidate in self._outputs_port_keys:
+                # messages in this queue (part of the process),
+                # will be consumed by the asyncio thread
+                self.port_key_events_queue.put(port_key_candidate)
+                break
 
 
 class _EventHandlerProcess:
@@ -137,9 +154,7 @@ class _EventHandlerProcess:
 
         # Propagate `outputs_port_keys` changes to the `_PortKeysEventHandler`.
         while True:
-            message: dict[
-                str, Any
-            ] | None = (
+            message: dict[str, Any] | None = (
                 self.outputs_context.file_system_event_handler_queue.get()  # pylint:disable=no-member
             )
             _logger.debug("received message %s", message)
