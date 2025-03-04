@@ -13,7 +13,7 @@ from .models.products import products
 _GroupID = int
 
 
-async def get_default_product_name(conn: AsyncConnection | SAConnection) -> str:
+async def get_default_product_name(conn: AsyncConnection) -> str:
     """The first row in the table is considered as the default product
 
     :: raises ValueError if undefined
@@ -30,7 +30,7 @@ async def get_default_product_name(conn: AsyncConnection | SAConnection) -> str:
 
 
 async def get_product_group_id(
-    connection: SAConnection, product_name: str
+    connection: AsyncConnection, product_name: str
 ) -> _GroupID | None:
     group_id = await connection.scalar(
         sa.select(products.c.group_id).where(products.c.name == product_name)
@@ -39,7 +39,7 @@ async def get_product_group_id(
 
 
 async def execute_get_or_create_product_group(
-    conn: AsyncConnection, product_name: str
+    conn: AsyncConnection | SAConnection, product_name: str
 ) -> int:
     #
     # NOTE: Separated so it can be used in asyncpg and aiopg environs while both
