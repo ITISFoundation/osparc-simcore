@@ -20,8 +20,8 @@ from models_library.api_schemas_storage.storage_schemas import (
     PresignedLink,
 )
 from models_library.api_schemas_webserver.storage import (
+    CustomizedPathsCursorPage,
     DataExportPost,
-    LargeLimitedPage,
     ListPathsQueryParams,
     StorageAsyncJobGet,
     StorageAsyncJobResult,
@@ -59,7 +59,7 @@ async def list_storage_locations():
 
 @router.get(
     "/storage/locations/{location_id}/paths",
-    response_model=LargeLimitedPage[PathMetaDataGet],
+    response_model=CustomizedPathsCursorPage[PathMetaDataGet],
 )
 async def list_storage_paths(
     _path: Annotated[StorageLocationPathParams, Depends()],

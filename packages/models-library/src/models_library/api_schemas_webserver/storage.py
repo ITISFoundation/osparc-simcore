@@ -1,6 +1,6 @@
 from datetime import datetime
 from pathlib import Path
-from typing import Annotated, Any, TypeVar
+from typing import Annotated, Any, Final, TypeVar
 
 from fastapi import Query
 from fastapi_pagination.cursor import CursorPage
@@ -22,15 +22,16 @@ from ..rest_pagination import (
 from ._base import InputSchema, OutputSchema
 
 _T = TypeVar("_T")
-
-LargeLimitedPage = CustomizedPage[
+DEFAULT_NUMBER_OF_PATHS_PER_PAGE: Final[int] = 50
+MAX_NUMBER_OF_PATHS_PER_PAGE: Final[int] = 1000
+CustomizedPathsCursorPage = CustomizedPage[
     CursorPage[_T],
     # Customizes the maximum value to fit frontend needs
     UseParamsFields(
         size=Query(
-            50,
+            DEFAULT_NUMBER_OF_PATHS_PER_PAGE,
             ge=1,
-            le=1000,
+            le=MAX_NUMBER_OF_PATHS_PER_PAGE,
             description="Page size",
         )
     ),
