@@ -1176,6 +1176,12 @@ async def test_download_file_the_file_is_missing_from_the_directory(
     assert missing_s3_file_id in error["errors"][0]
 
 
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
 async def test_download_file_access_rights(
     initialized_app: FastAPI,
     client: httpx.AsyncClient,
@@ -1209,6 +1215,12 @@ async def test_download_file_access_rights(
     assert "Insufficient access rights" in error["errors"][0]
 
 
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
 @pytest.mark.parametrize(
     "file_size",
     [
@@ -1257,6 +1269,12 @@ async def test_delete_file(
         )
 
 
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
 async def test_copy_as_soft_link(
     initialized_app: FastAPI,
     client: httpx.AsyncClient,
@@ -1549,6 +1567,12 @@ async def test_upload_file_is_directory_and_remove_content(
     assert len(files_and_directories) == 0
 
 
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
 @pytest.mark.parametrize("files_count", [1002])
 async def test_listing_more_than_1000_objects_in_bucket(
     create_directory_with_files: Callable[
