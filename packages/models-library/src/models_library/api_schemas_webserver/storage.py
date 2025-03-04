@@ -1,4 +1,3 @@
-from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -47,8 +46,6 @@ class StorageAsyncJobStatus(OutputSchema):
     job_id: AsyncJobId
     progress: ProgressReport
     done: bool
-    started: datetime
-    stopped: datetime | None
 
     @classmethod
     def from_rpc_schema(
@@ -58,8 +55,6 @@ class StorageAsyncJobStatus(OutputSchema):
             job_id=async_job_rpc_status.job_id,
             progress=async_job_rpc_status.progress,
             done=async_job_rpc_status.done,
-            started=async_job_rpc_status.started,
-            stopped=async_job_rpc_status.stopped,
         )
 
 
