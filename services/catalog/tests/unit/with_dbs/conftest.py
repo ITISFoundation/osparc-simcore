@@ -18,9 +18,11 @@ from models_library.products import ProductName
 from models_library.services import ServiceMetaDataPublished
 from models_library.users import UserID
 from pydantic import ConfigDict, TypeAdapter
+from pytest_simcore.helpers.catalog_services import CreateFakeServiceDataCallable
 from pytest_simcore.helpers.faker_factories import (
     random_service_access_rights,
     random_service_meta_data,
+    random_user,
 )
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.postgres_tools import (
@@ -155,6 +157,24 @@ async def user(
         values=user,
         pk_col=users.c.id,
         pk_value=user["id"],
+    ) as row:
+        yield row
+
+
+@pytest.fixture
+async def other_user(
+    user_id: UserID,
+    sqlalchemy_async_engine: AsyncEngine,
+    faker: Faker,
+) -> AsyncIterator[dict[str, Any]]:
+
+    _user = random_user(fake=faker, id=user_id + 1)
+    async with insert_and_get_row_lifespan(  # pylint:disable=contextmanager-generator-missing-cleanup
+        sqlalchemy_async_engine,
+        table=users,
+        values=_user,
+        pk_col=users.c.id,
+        pk_value=_user["id"],
     ) as row:
         yield row
 
@@ -354,12 +374,12 @@ async def service_metadata_faker(faker: Faker) -> Callable:
     return _fake_factory
 
 
-@pytest.fixture()
+@pytest.fixture
 async def create_fake_service_data(
     user_groups_ids: list[int],
     products_names: list[str],
     faker: Faker,
-) -> Callable:
+) -> CreateFakeServiceDataCallable:
     """Returns a fake factory that creates catalog DATA that can be used to fill
     both services_meta_data and services_access_rights tables
 
@@ -376,11 +396,11 @@ async def create_fake_service_data(
         owner_access, team_access, everyone_access = fake_access_rights
 
     """
-    everyone_gid, user_gid, team_gid = user_groups_ids
+    everyone_gid, user_primary_gid, team_standard_gid = user_groups_ids
 
     def _random_service(**overrides) -> dict[str, Any]:
         return random_service_meta_data(
-            owner_primary_gid=user_gid,
+            owner_primary_gid=user_primary_gid,
             fake=faker,
             **overrides,
         )
@@ -396,9 +416,9 @@ async def create_fake_service_data(
     def _fake_factory(
         key,
         version,
-        team_access=None,
-        everyone_access=None,
-        product=products_names[0],
+        team_access: str | None = None,
+        everyone_access: str | None = None,
+        product: ProductName = products_names[0],
         deprecated: datetime | None = None,
     ) -> tuple[dict[str, Any], ...]:
         service = _random_service(key=key, version=version, deprecated=deprecated)
@@ -420,7 +440,7 @@ async def create_fake_service_data(
             fakes.append(
                 _random_access(
                     service,
-                    gid=team_gid,
+                    gid=team_standard_gid,
                     execute_access="x" in team_access,
                     write_access="w" in team_access,
                     product_name=product,

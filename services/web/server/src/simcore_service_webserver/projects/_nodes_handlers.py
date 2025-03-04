@@ -1,6 +1,4 @@
-""" Handlers for CRUD operations on /projects/{*}/nodes/{*}
-
-"""
+"""Handlers for CRUD operations on /projects/{*}/nodes/{*}"""
 
 import asyncio
 import logging
@@ -10,6 +8,7 @@ from common_library.json_serialization import json_dumps
 from models_library.api_schemas_catalog.service_access_rights import (
     ServiceAccessRightsGet,
 )
+from models_library.api_schemas_catalog.services import MyServiceGet
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     DynamicServiceStop,
@@ -23,12 +22,15 @@ from models_library.api_schemas_webserver.projects_nodes import (
     NodeOutputs,
     NodePatch,
     NodeRetrieve,
+    NodeServiceGet,
+    ProjectNodeServicesGet,
 )
 from models_library.groups import EVERYONE_GROUP_ID, Group, GroupID, GroupType
 from models_library.projects import Project, ProjectID
 from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.services import ServiceKeyVersion
 from models_library.services_resources import ServiceResourcesDict
+from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import BaseModel, Field
 from servicelib.aiohttp import status
@@ -55,6 +57,7 @@ from servicelib.services_utils import get_status_as_dict
 from simcore_postgres_database.models.users import UserRole
 
 from .._meta import API_VTAG as VTAG
+from ..catalog import catalog_service
 from ..catalog import client as catalog_client
 from ..dynamic_scheduler import api as dynamic_scheduler_api
 from ..groups.api import get_group_from_gid, list_all_user_groups_ids
@@ -64,6 +67,8 @@ from ..projects.api import has_user_project_access_rights
 from ..security.decorators import permission_required
 from ..users.api import get_user_id_from_gid, get_user_role
 from ..utils_aiohttp import envelope_json_response
+from . import _access_rights_api as access_rights_service
+from . import _nodes_api as _nodes_service
 from . import nodes_utils, projects_service
 from ._common.exceptions_handlers import handle_plugin_requests_exceptions
 from ._common.models import ProjectPathParams, RequestContext
@@ -465,15 +470,56 @@ class _ProjectGroupAccess(BaseModel):
 
 
 @routes.get(
+    f"/{VTAG}/projects/{{project_id}}/nodes/-/services",
+    name="get_project_services",
+)
+@login_required
+@permission_required("project.read")
+@handle_plugin_requests_exceptions
+async def get_project_services(request: web.Request) -> web.Response:
+    req_ctx = RequestContext.model_validate(request)
+    path_params = parse_request_path_parameters_as(ProjectPathParams, request)
+
+    await access_rights_service.check_user_project_permission(
+        request.app,
+        product_name=req_ctx.product_name,
+        user_id=req_ctx.user_id,
+        project_id=path_params.project_id,
+        permission="read",
+    )
+
+    services_in_project: list[tuple[ServiceKey, ServiceVersion]] = (
+        await _nodes_service.get_project_nodes_services(
+            request.app, project_uuid=path_params.project_id
+        )
+    )
+
+    services: list[MyServiceGet] = await catalog_service.batch_get_my_services(
+        request.app,
+        product_name=req_ctx.product_name,
+        user_id=req_ctx.user_id,
+        services_ids=services_in_project,
+    )
+
+    return envelope_json_response(
+        ProjectNodeServicesGet(
+            project_uuid=path_params.project_id,
+            services=[
+                NodeServiceGet.model_validate(sv, from_attributes=True)
+                for sv in services
+            ],
+        )
+    )
+
+
+@routes.get(
     f"/{VTAG}/projects/{{project_id}}/nodes/-/services:access",
     name="get_project_services_access_for_gid",
 )
 @login_required
 @permission_required("project.read")
 @handle_plugin_requests_exceptions
-async def get_project_services_access_for_gid(
-    request: web.Request,
-) -> web.Response:
+async def get_project_services_access_for_gid(request: web.Request) -> web.Response:
     req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
     query_params: _ServicesAccessQuery = parse_request_query_parameters_as(
