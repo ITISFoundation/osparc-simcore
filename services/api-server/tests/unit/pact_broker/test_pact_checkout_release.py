@@ -14,9 +14,6 @@ from models_library.api_schemas_webserver.licensed_items_checkouts import (
 from pact.v3 import Verifier
 from pytest_mock import MockerFixture
 from simcore_service_api_server._meta import API_VERSION
-from simcore_service_api_server.api.dependencies.authentication import (
-    Identity,
-)
 from simcore_service_api_server.api.dependencies.resource_usage_tracker_rpc import (
     get_resource_usage_tracker_client,
 )
@@ -27,11 +24,6 @@ from simcore_service_api_server.services_rpc.resource_usage_tracker import (
     ResourceUsageTrackerClient,
 )
 from simcore_service_api_server.services_rpc.wb_api_server import WbApiRpcClient
-
-
-def mock_get_current_identity() -> Identity:
-    return Identity(user_id=1, product_name="osparc", email="test@itis.swiss")
-
 
 # Fake response based on values from 01_checkout_release.json
 EXPECTED_CHECKOUT = LicensedItemCheckoutRpcGet.model_validate(
@@ -73,7 +65,7 @@ class DummyRpcClient:
 
 
 @pytest.fixture
-async def mock_wb_api_server_rpc(app: FastAPI, mocker: MockerFixture) -> MockerFixture:
+async def mock_wb_api_server_rpc(app: FastAPI, mocker: MockerFixture) -> None:
 
     app.dependency_overrides[get_wb_api_rpc_client] = lambda: WbApiRpcClient(
         _client=DummyRpcClient()
@@ -89,11 +81,9 @@ async def mock_wb_api_server_rpc(app: FastAPI, mocker: MockerFixture) -> MockerF
         return_value=EXPECTED_RELEASE,
     )
 
-    return mocker
-
 
 @pytest.fixture
-async def mock_rut_server_rpc(app: FastAPI, mocker: MockerFixture) -> MockerFixture:
+async def mock_rut_server_rpc(app: FastAPI, mocker: MockerFixture) -> None:
 
     app.dependency_overrides[get_resource_usage_tracker_client] = (
         lambda: ResourceUsageTrackerClient(_client=DummyRpcClient())
@@ -104,8 +94,6 @@ async def mock_rut_server_rpc(app: FastAPI, mocker: MockerFixture) -> MockerFixt
         return_value=EXPECTED_CHECKOUT,
     )
 
-    return mocker
-
 
 @pytest.mark.skipif(
     not os.getenv("PACT_BROKER_URL"),
@@ -113,9 +101,9 @@ async def mock_rut_server_rpc(app: FastAPI, mocker: MockerFixture) -> MockerFixt
 )
 def test_provider_against_pact(
     pact_broker_credentials: tuple[str, str, str],
-    mock_wb_api_server_rpc: MockerFixture,
-    mock_rut_server_rpc: MockerFixture,
-    run_test_server: str,
+    mock_wb_api_server_rpc: None,
+    mock_rut_server_rpc: None,
+    running_test_server_url: str,
 ) -> None:
     """
     Use the Pact Verifier to check the real provider
@@ -125,7 +113,7 @@ def test_provider_against_pact(
 
     broker_builder = (
         Verifier("OsparcApiServerCheckoutRelease")
-        .add_transport(url=run_test_server)
+        .add_transport(url=running_test_server_url)
         .broker_source(
             broker_url,
             username=broker_username,

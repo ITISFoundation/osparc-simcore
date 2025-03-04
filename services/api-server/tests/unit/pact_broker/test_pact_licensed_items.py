@@ -137,7 +137,7 @@ class DummyRpcClient:
 
 
 @pytest.fixture
-async def mock_wb_api_server_rpc(app: FastAPI, mocker: MockerFixture) -> MockerFixture:
+async def mock_wb_api_server_rpc(app: FastAPI, mocker: MockerFixture) -> None:
 
     app.dependency_overrides[get_wb_api_rpc_client] = lambda: WbApiRpcClient(
         _client=DummyRpcClient()
@@ -148,8 +148,6 @@ async def mock_wb_api_server_rpc(app: FastAPI, mocker: MockerFixture) -> MockerF
         return_value=EXPECTED_LICENSED_ITEMS_PAGE,
     )
 
-    return mocker
-
 
 @pytest.mark.skipif(
     not os.getenv("PACT_BROKER_URL"),
@@ -157,8 +155,8 @@ async def mock_wb_api_server_rpc(app: FastAPI, mocker: MockerFixture) -> MockerF
 )
 def test_provider_against_pact(
     pact_broker_credentials: tuple[str, str, str],
-    mock_wb_api_server_rpc: MockerFixture,
-    run_test_server: str,
+    mock_wb_api_server_rpc: None,
+    running_test_server_url: str,
 ) -> None:
     """
     Use the Pact Verifier to check the real provider
@@ -168,7 +166,7 @@ def test_provider_against_pact(
 
     broker_builder = (
         Verifier("OsparcApiServerLicensedItems")
-        .add_transport(url=run_test_server)
+        .add_transport(url=running_test_server_url)
         .broker_source(
             broker_url,
             username=broker_username,
