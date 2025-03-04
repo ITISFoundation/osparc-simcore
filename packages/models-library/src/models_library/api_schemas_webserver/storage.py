@@ -49,9 +49,11 @@ class ListPathsQueryParams(InputSchema, CursorQueryParameters):
     size: Annotated[
         int,
         Field(
-            description="maximum number of items to return (pagination)", ge=1, lt=1000
+            description="maximum number of items to return (pagination)",
+            ge=1,
+            lt=MAX_NUMBER_OF_PATHS_PER_PAGE,
         ),
-    ] = 20
+    ] = DEFAULT_NUMBER_OF_PATHS_PER_PAGE
 
 
 class DataExportPost(InputSchema):
