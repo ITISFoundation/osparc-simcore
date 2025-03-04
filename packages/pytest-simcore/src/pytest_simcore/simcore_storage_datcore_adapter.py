@@ -1,6 +1,7 @@
 import re
 from collections.abc import Iterator
 
+import httpx
 import pytest
 import respx
 from faker import Faker
@@ -25,11 +26,7 @@ def datcore_adapter_service_mock(faker: Faker) -> Iterator[respx.MockRouter]:
         # NOTE: passthrough the locahost and the local ip
         respx_mocker.route(host="127.0.0.1").pass_through()
         respx_mocker.route(host=get_localhost_ip()).pass_through()
-        respx_mocker.get(
-            "/",
-            name="healthcheck",
-        ).respond(status.HTTP_200_OK, json={"message": "ok"})
-        respx_mocker.get("", name="base_endpoint").respond(status.HTTP_200_OK, json={})
+
         respx_mocker.get("/user/profile", name="get_user_profile").respond(
             status.HTTP_200_OK, json=faker.pydict(allowed_types=(str,))
         )
@@ -39,6 +36,24 @@ def datcore_adapter_service_mock(faker: Faker) -> Iterator[respx.MockRouter]:
             json=Page.create(items=[], params=Params(size=10), total=0).model_dump(
                 mode="json"
             ),
+        )
+
+        def _create_download_link(request, file_id):
+            return httpx.Response(
+                status.HTTP_404_NOT_FOUND,
+                json={"error": f"{file_id} not found!"},
+            )
+
+        respx_mocker.get(
+            re.compile(r"/files/(?P<file_id>[^/]+)"), name="get_file_dowload_link"
+        ).mock(side_effect=_create_download_link)
+
+        respx_mocker.get(
+            "/",
+            name="healthcheck",
+        ).respond(status.HTTP_200_OK, json={"message": "ok"})
+        respx_mocker.get("", name="base_endpoint").respond(
+            status.HTTP_200_OK, json={"message": "root entrypoint"}
         )
 
         yield respx_mocker

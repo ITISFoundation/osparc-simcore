@@ -111,6 +111,12 @@ class SingleLinkParam:
 
 
 @pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
+@pytest.mark.parametrize(
     "single_link_param",
     [
         pytest.param(
@@ -240,6 +246,12 @@ async def create_upload_file_link_v1(
 
 
 @pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
+@pytest.mark.parametrize(
     "single_link_param",
     [
         pytest.param(
@@ -320,6 +332,12 @@ class MultiPartParam:
     expected_chunk_size: ByteSize
 
 
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
 @pytest.mark.parametrize(
     "test_param",
     [
@@ -419,6 +437,12 @@ async def test_create_upload_file_presigned_with_file_size_returns_multipart_lin
 
 
 @pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
+@pytest.mark.parametrize(
     "link_type, file_size",
     [
         (LinkType.PRESIGNED, TypeAdapter(ByteSize).validate_python("1000Mib")),
@@ -482,6 +506,12 @@ async def test_delete_unuploaded_file_correctly_cleans_up_db_and_s3(
     )
 
 
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
 @pytest.mark.parametrize(
     "link_type, file_size",
     [
@@ -568,6 +598,12 @@ def complex_file_name(faker: Faker) -> str:
     return f"subfolder_1/sub_folder 2/some file name with spaces and special characters  -_ü!öäàé+|}} {{3245_{faker.file_name()}"
 
 
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
 @pytest.mark.parametrize(
     "file_size",
     [
@@ -695,6 +731,12 @@ async def test_upload_real_file_with_emulated_storage_restart_after_completion_w
     assert s3_metadata.e_tag == completion_etag
 
 
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
 async def test_upload_of_single_presigned_link_lazily_update_database_on_get(
     sqlalchemy_async_engine: AsyncEngine,
     storage_s3_client: SimcoreS3API,
@@ -738,6 +780,12 @@ async def test_upload_of_single_presigned_link_lazily_update_database_on_get(
     assert received_fmd.entity_tag == upload_e_tag
 
 
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
 async def test_upload_real_file_with_s3_client(
     sqlalchemy_async_engine: AsyncEngine,
     storage_s3_client: SimcoreS3API,
@@ -949,6 +997,7 @@ async def test_download_file_no_file_was_uploaded(
     user_id: UserID,
     storage_s3_client: SimcoreS3API,
     storage_s3_bucket: S3BucketName,
+    fake_datcore_tokens: tuple[str, str],
 ):
     missing_file = TypeAdapter(SimcoreS3FileID).validate_python(
         f"{project_id}/{node_id}/missing.file"

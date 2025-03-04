@@ -10,7 +10,9 @@ from models_library.api_schemas_datcore_adapter.datasets import (
 from models_library.api_schemas_datcore_adapter.datasets import (
     FileMetaData as DatCoreFileMetaData,
 )
-from models_library.api_schemas_datcore_adapter.datasets import PackageMetaData
+from models_library.api_schemas_datcore_adapter.datasets import (
+    PackageMetaData,
+)
 from models_library.api_schemas_storage.storage_schemas import (
     DatCoreCollectionName,
     DatCoreDatasetName,
