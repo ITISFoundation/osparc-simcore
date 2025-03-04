@@ -66,6 +66,7 @@ def celery_client(
 
 @pytest.fixture
 def celery_worker_controller(
+    app_environment: EnvVarsDict,
     register_celery_tasks: Callable[[Celery], None],
     celery_app: Celery,
 ) -> Iterable[TestWorkController]:
