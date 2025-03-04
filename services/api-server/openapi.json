@@ -805,9 +805,9 @@
             "required": false,
             "schema": {
               "type": "integer",
-              "maximum": 100,
+              "maximum": 50,
               "minimum": 1,
-              "default": 50,
+              "default": 20,
               "title": "Limit"
             }
           },
@@ -3352,9 +3352,9 @@
             "required": false,
             "schema": {
               "type": "integer",
-              "maximum": 100,
+              "maximum": 50,
               "minimum": 1,
-              "default": 50,
+              "default": 20,
               "title": "Limit"
             }
           },
@@ -4164,9 +4164,9 @@
             "required": false,
             "schema": {
               "type": "integer",
-              "maximum": 100,
+              "maximum": 50,
               "minimum": 1,
-              "default": 50,
+              "default": 20,
               "title": "Limit"
             }
           },
@@ -5351,9 +5351,9 @@
             "required": false,
             "schema": {
               "type": "integer",
-              "maximum": 100,
+              "maximum": 50,
               "minimum": 1,
-              "default": 50,
+              "default": 20,
               "title": "Limit"
             }
           },
@@ -5648,9 +5648,9 @@
             "required": false,
             "schema": {
               "type": "integer",
-              "maximum": 100,
+              "maximum": 50,
               "minimum": 1,
-              "default": 50,
+              "default": 20,
               "title": "Limit"
             }
           },

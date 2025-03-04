@@ -1,4 +1,4 @@
-""" Overrides models in fastapi_pagination
+"""Overrides models in fastapi_pagination
 
 Usage:
     from fastapi_pagination.api import create_page
@@ -11,7 +11,6 @@ from typing import Generic, TypeAlias, TypeVar
 
 from fastapi import Query
 from fastapi_pagination.customization import CustomizedPage, UseName, UseParamsFields
-from fastapi_pagination.limit_offset import LimitOffsetParams as _LimitOffsetParams
 from fastapi_pagination.links import LimitOffsetPage as _LimitOffsetPage
 from models_library.rest_pagination import (
     DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
@@ -43,7 +42,7 @@ Page = CustomizedPage[
     UseName(name="Page"),
 ]
 
-PaginationParams: TypeAlias = _LimitOffsetParams
+PaginationParams: TypeAlias = Page.__params_type__  # type: ignore
 
 
 class OnePage(BaseModel, Generic[T]):
