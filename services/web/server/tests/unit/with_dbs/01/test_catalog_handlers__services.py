@@ -111,17 +111,17 @@ def mocked_rpc_catalog_service_api(mocker: MockerFixture) -> dict[str, MagicMock
 
     return {
         "list_services_paginated": mocker.patch(
-            "simcore_service_webserver.catalog._api.catalog_rpc.list_services_paginated",
+            "simcore_service_webserver.catalog._service.catalog_rpc.list_services_paginated",
             autospec=True,
             side_effect=_list,
         ),
         "get_service": mocker.patch(
-            "simcore_service_webserver.catalog._api.catalog_rpc.get_service",
+            "simcore_service_webserver.catalog._service.catalog_rpc.get_service",
             autospec=True,
             side_effect=_get,
         ),
         "update_service": mocker.patch(
-            "simcore_service_webserver.catalog._api.catalog_rpc.update_service",
+            "simcore_service_webserver.catalog._service.catalog_rpc.update_service",
             autospec=True,
             side_effect=_update,
         ),

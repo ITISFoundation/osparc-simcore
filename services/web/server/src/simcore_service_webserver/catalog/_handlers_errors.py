@@ -4,7 +4,7 @@ from aiohttp import web
 from servicelib.aiohttp.typing_extension import Handler
 
 from ..resource_usage.errors import DefaultPricingPlanNotFoundError
-from .exceptions import (
+from ._exceptions import (
     CatalogForbiddenError,
     CatalogItemNotFoundError,
     DefaultPricingUnitForServiceNotFoundError,

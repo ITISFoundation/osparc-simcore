@@ -1,4 +1,5 @@
 import logging
+import urllib.parse
 from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any, Final
@@ -12,10 +13,15 @@ from models_library.api_schemas_webserver.catalog import (
     ServiceOutputGet,
     ServiceOutputKey,
 )
-from models_library.services import BaseServiceIOModel
+from models_library.rest_pagination import PageQueryParameters
+from models_library.services import BaseServiceIOModel, ServiceKey, ServiceVersion
 from models_library.users import UserID
 from pint import PintError, Quantity, UnitRegistry
-from pydantic import BaseModel, ConfigDict  # type: ignore[import-untyped]
+from pydantic import (  # type: ignore[import-untyped]
+    BaseModel,
+    ConfigDict,
+    field_validator,
+)
 from servicelib.aiohttp.requests_validation import handle_validation_as_http_error
 
 from ..constants import RQ_PRODUCT_KEY, RQT_USERID_KEY
@@ -161,3 +167,23 @@ class CatalogRequestContext(BaseModel):
                 product_name=request[RQ_PRODUCT_KEY],
                 unit_registry=request.app[UnitRegistry.__name__],
             )
+
+
+class ServicePathParams(BaseModel):
+    service_key: ServiceKey
+    service_version: ServiceVersion
+    model_config = ConfigDict(
+        populate_by_name=True,
+        extra="forbid",
+    )
+
+    @field_validator("service_key", mode="before")
+    @classmethod
+    def ensure_unquoted(cls, v):
+        # NOTE: this is needed as in pytest mode, the aiohttp server does not seem to unquote automatically
+        if v is not None:
+            return urllib.parse.unquote(v)
+        return v
+
+
+class ListServiceParams(PageQueryParameters): ...

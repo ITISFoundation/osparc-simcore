@@ -14,7 +14,7 @@ from models_library.api_schemas_webserver.catalog import (
 from models_library.generics import Envelope
 from models_library.rest_pagination import Page
 from simcore_service_webserver._meta import API_VTAG
-from simcore_service_webserver.catalog._handlers import (
+from simcore_service_webserver.catalog._controller_rest import (
     ListServiceParams,
     ServicePathParams,
     _FromServiceOutputParams,
@@ -48,8 +48,7 @@ def list_services_latest(_query_params: Annotated[ListServiceParams, Depends()])
     "/catalog/services/{service_key}/{service_version}",
     response_model=Envelope[CatalogServiceGet],
 )
-def get_service(_path_params: Annotated[ServicePathParams, Depends()]):
-    ...
+def get_service(_path_params: Annotated[ServicePathParams, Depends()]): ...
 
 
 @router.patch(
@@ -59,8 +58,7 @@ def get_service(_path_params: Annotated[ServicePathParams, Depends()]):
 def update_service(
     _path_params: Annotated[ServicePathParams, Depends()],
     _update: CatalogServiceUpdate,
-):
-    ...
+): ...
 
 
 @router.get(
@@ -69,8 +67,7 @@ def update_service(
 )
 def list_service_inputs(
     _path_params: Annotated[ServicePathParams, Depends()],
-):
-    ...
+): ...
 
 
 @router.get(
@@ -79,8 +76,7 @@ def list_service_inputs(
 )
 def get_service_input(
     _path_params: Annotated[_ServiceInputsPathParams, Depends()],
-):
-    ...
+): ...
 
 
 @router.get(
@@ -90,8 +86,7 @@ def get_service_input(
 def get_compatible_inputs_given_source_output(
     _path_params: Annotated[ServicePathParams, Depends()],
     _query_params: Annotated[_FromServiceOutputParams, Depends()],
-):
-    ...
+): ...
 
 
 @router.get(
@@ -100,8 +95,7 @@ def get_compatible_inputs_given_source_output(
 )
 def list_service_outputs(
     _path_params: Annotated[ServicePathParams, Depends()],
-):
-    ...
+): ...
 
 
 @router.get(
@@ -110,8 +104,7 @@ def list_service_outputs(
 )
 def get_service_output(
     _path_params: Annotated[_ServiceOutputsPathParams, Depends()],
-):
-    ...
+): ...
 
 
 @router.get(
@@ -121,8 +114,7 @@ def get_service_output(
 def get_compatible_outputs_given_target_input(
     _path_params: Annotated[ServicePathParams, Depends()],
     _query_params: Annotated[_ToServiceInputsParams, Depends()],
-):
-    ...
+): ...
 
 
 @router.get(
@@ -131,8 +123,7 @@ def get_compatible_outputs_given_target_input(
 )
 def get_service_resources(
     _params: Annotated[ServicePathParams, Depends()],
-):
-    ...
+): ...
 
 
 @router.get(
@@ -143,5 +134,4 @@ def get_service_resources(
 )
 async def get_service_pricing_plan(
     _params: Annotated[ServicePathParams, Depends()],
-):
-    ...
+): ...

@@ -7,7 +7,6 @@ should live in the catalog service in his final version
 
 import asyncio
 import logging
-import urllib.parse
 from typing import Final
 
 from aiohttp import web
@@ -26,7 +25,7 @@ from models_library.services_resources import (
     ServiceResourcesDict,
     ServiceResourcesDictHelpers,
 )
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, Field
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
@@ -40,8 +39,8 @@ from ..resource_usage.service import get_default_service_pricing_plan
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
 from . import _handlers_errors, _service, client
-from ._models import CatalogRequestContext
-from .exceptions import DefaultPricingUnitForServiceNotFoundError
+from ._exceptions import DefaultPricingUnitForServiceNotFoundError
+from ._models import CatalogRequestContext, ListServiceParams, ServicePathParams
 
 _logger = logging.getLogger(__name__)
 
@@ -49,26 +48,6 @@ VTAG: Final[str] = f"/{API_VTAG}"
 VTAG_DEV: Final[str] = f"{VTAG}/dev"
 
 routes = RouteTableDef()
-
-
-class ServicePathParams(BaseModel):
-    service_key: ServiceKey
-    service_version: ServiceVersion
-    model_config = ConfigDict(
-        populate_by_name=True,
-        extra="forbid",
-    )
-
-    @field_validator("service_key", mode="before")
-    @classmethod
-    def ensure_unquoted(cls, v):
-        # NOTE: this is needed as in pytest mode, the aiohttp server does not seem to unquote automatically
-        if v is not None:
-            return urllib.parse.unquote(v)
-        return v
-
-
-class ListServiceParams(PageQueryParameters): ...
 
 
 @routes.get(

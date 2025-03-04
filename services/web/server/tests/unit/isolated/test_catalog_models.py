@@ -10,7 +10,7 @@ import pytest
 from pint import UnitRegistry
 from pytest_benchmark.fixture import BenchmarkFixture
 from simcore_service_webserver.catalog._api_units import replace_service_input_outputs
-from simcore_service_webserver.catalog._handlers import RESPONSE_MODEL_POLICY
+from simcore_service_webserver.catalog._controller_rest import RESPONSE_MODEL_POLICY
 
 
 @pytest.fixture(params=["UnitRegistry", None])

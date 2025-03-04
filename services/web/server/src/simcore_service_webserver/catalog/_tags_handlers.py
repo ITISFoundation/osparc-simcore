@@ -7,7 +7,7 @@ from servicelib.aiohttp.requests_validation import parse_request_path_parameters
 from .._meta import API_VTAG
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
-from ._handlers import ServicePathParams
+from ._controller_rest import ServicePathParams
 
 _logger = logging.getLogger(__name__)
 
