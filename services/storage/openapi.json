@@ -1047,8 +1047,8 @@
             "required": false,
             "schema": {
               "type": "integer",
-              "maximum": 100,
-              "minimum": 0,
+              "maximum": 1000,
+              "minimum": 1,
               "default": 50,
               "title": "Size"
             }
@@ -1060,7 +1060,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CursorPage_PathMetaDataGet_"
+                  "$ref": "#/components/schemas/CursorPage__T_Customized_PathMetaDataGet_"
                 }
               }
             }
@@ -1419,7 +1419,7 @@
         ],
         "title": "AppStatusCheck"
       },
-      "CursorPage_PathMetaDataGet_": {
+      "CursorPage__T_Customized_PathMetaDataGet_": {
         "properties": {
           "items": {
             "items": {
@@ -1493,7 +1493,7 @@
         "required": [
           "items"
         ],
-        "title": "CursorPage[PathMetaDataGet]"
+        "title": "CursorPage[~T]Customized[PathMetaDataGet]"
       },
       "DatasetMetaDataGet": {
         "properties": {

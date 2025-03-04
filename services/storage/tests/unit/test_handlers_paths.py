@@ -204,6 +204,48 @@ async def test_list_paths_pagination(
 
 
 @pytest.mark.parametrize(
+    "project_params",
+    [
+        ProjectWithFilesParams(
+            num_nodes=1,
+            allowed_file_sizes=(TypeAdapter(ByteSize).validate_python("0b"),),
+            workspace_files_count=1000,
+        )
+    ],
+    ids=str,
+)
+async def test_list_paths_pagination_large_page(
+    initialized_app: FastAPI,
+    client: httpx.AsyncClient,
+    location_id: LocationID,
+    user_id: UserID,
+    with_random_project_with_files: tuple[
+        dict[str, Any],
+        dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],
+    ],
+):
+    project, list_of_files = with_random_project_with_files
+    selected_node_id = NodeID(random.choice(list(project["workbench"])))  # noqa: S311
+    selected_node_s3_keys = [
+        Path(s3_object_id) for s3_object_id in list_of_files[selected_node_id]
+    ]
+    workspace_file_filter = Path(project["uuid"]) / f"{selected_node_id}" / "workspace"
+    expected_paths = _filter_and_group_paths_one_level_deeper(
+        selected_node_s3_keys, workspace_file_filter
+    )
+    await _assert_list_paths(
+        initialized_app,
+        client,
+        location_id,
+        user_id,
+        file_filter=workspace_file_filter,
+        expected_paths=expected_paths,
+        check_total=False,
+        limit=1000,
+    )
+
+
+@pytest.mark.parametrize(
     "project_params, num_projects",
     [
         (
