@@ -12,7 +12,7 @@ from tenacity import retry
 from tenacity.before_sleep import before_sleep_log
 from tenacity.wait import wait_exponential
 
-from ..api_keys.api_keys_service import prune_expired_api_keys
+from ..api_keys import api_keys_service
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +32,7 @@ async def _run_task(app: web.Application):
 
     It is resilient, i.e. if update goes wrong, it waits a bit and retries
     """
-    if deleted := await prune_expired_api_keys(app):
+    if deleted := await api_keys_service.prune_expired_api_keys(app):
         # broadcast force logout of user_id
         for api_key in deleted:
             logger.info("API-key %s expired and was removed", f"{api_key=}")
