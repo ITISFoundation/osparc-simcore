@@ -60,7 +60,7 @@ def mocked_catalog_service_api(
         json=[
             # one solver
             faker_catalog.create_service_out(
-                key="simcore/services/comp/Foo", name="Foo"
+                key="simcore/services/comp/foo", name="foo"
             ),
             # two version of the same solver
             faker_catalog.create_service_out(version="0.0.1"),
