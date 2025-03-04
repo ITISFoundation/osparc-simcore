@@ -1060,7 +1060,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CursorPage__T_Customized_PathMetaDataGet_"
+                  "$ref": "#/components/schemas/CursorPage___T_Customized_PathMetaDataGet_"
                 }
               }
             }
@@ -1419,7 +1419,7 @@
         ],
         "title": "AppStatusCheck"
       },
-      "CursorPage__T_Customized_PathMetaDataGet_": {
+      "CursorPage___T_Customized_PathMetaDataGet_": {
         "properties": {
           "items": {
             "items": {
@@ -1493,7 +1493,7 @@
         "required": [
           "items"
         ],
-        "title": "CursorPage[~T]Customized[PathMetaDataGet]"
+        "title": "CursorPage[~_T]Customized[PathMetaDataGet]"
       },
       "DatasetMetaDataGet": {
         "properties": {

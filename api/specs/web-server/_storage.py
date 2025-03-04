@@ -8,7 +8,6 @@ from typing import Annotated, TypeAlias
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, status
-from fastapi_pagination.cursor import CursorPage
 from models_library.api_schemas_storage.storage_schemas import (
     FileLocation,
     FileMetaDataGet,
@@ -22,6 +21,7 @@ from models_library.api_schemas_storage.storage_schemas import (
 )
 from models_library.api_schemas_webserver.storage import (
     DataExportPost,
+    LargeLimitedPage,
     ListPathsQueryParams,
     StorageAsyncJobGet,
     StorageAsyncJobResult,
@@ -59,7 +59,7 @@ async def list_storage_locations():
 
 @router.get(
     "/storage/locations/{location_id}/paths",
-    response_model=CursorPage[PathMetaDataGet],
+    response_model=LargeLimitedPage[PathMetaDataGet],
 )
 async def list_storage_paths(
     _path: Annotated[StorageLocationPathParams, Depends()],

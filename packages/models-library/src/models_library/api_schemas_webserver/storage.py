@@ -1,7 +1,10 @@
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, TypeVar
 
+from fastapi import Query
+from fastapi_pagination.cursor import CursorPage
+from fastapi_pagination.customization import CustomizedPage, UseParamsFields
 from pydantic import BaseModel
 
 from ..api_schemas_rpc_async_jobs.async_jobs import (
@@ -15,6 +18,21 @@ from ..progress_bar import ProgressReport
 from ..projects_nodes_io import LocationID, StorageFileID
 from ..rest_pagination import CursorQueryParameters
 from ._base import InputSchema, OutputSchema
+
+_T = TypeVar("_T")
+
+LargeLimitedPage = CustomizedPage[
+    CursorPage[_T],
+    # Customizes the maximum value to fit frontend needs
+    UseParamsFields(
+        size=Query(
+            50,
+            ge=1,
+            le=1000,
+            description="Page size",
+        )
+    ),
+]
 
 
 class StorageLocationPathParams(BaseModel):
