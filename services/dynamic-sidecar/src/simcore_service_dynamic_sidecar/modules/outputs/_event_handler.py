@@ -26,7 +26,7 @@ _logger = logging.getLogger(__name__)
 
 
 def _get_first_entry_or_none(data: list[str]) -> str | None:
-    return data[0] if len(data) > 0 else None
+    return next(iter(data), None)
 
 
 class _PortKeysEventHandler(SafeFileSystemEventHandler):
