@@ -7,6 +7,7 @@ from models_library.groups import GroupID
 from models_library.products import ProductName, ProductStripeInfoGet
 from simcore_postgres_database.constants import QUANTIZE_EXP_ARG
 from simcore_postgres_database.models.jinja2_templates import jinja2_templates
+from simcore_postgres_database.models.products import products
 from simcore_postgres_database.utils_products import (
     execute_get_or_create_product_group,
 )
@@ -24,9 +25,7 @@ from sqlalchemy.ext.asyncio import AsyncConnection
 
 from ..constants import FRONTEND_APPS_AVAILABLE
 from ..db.base_repository import BaseRepositoryV2
-from ..db.models import products
-from ._models import PaymentFieldsTuple
-from .models import Product
+from ._models import PaymentFieldsTuple, Product
 
 _logger = logging.getLogger(__name__)
 
