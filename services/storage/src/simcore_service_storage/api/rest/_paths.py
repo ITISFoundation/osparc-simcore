@@ -4,9 +4,12 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends
 from fastapi_pagination import create_page
-from fastapi_pagination.cursor import CursorPage, CursorParams
 from models_library.api_schemas_storage.storage_schemas import PathMetaDataGet
 from models_library.users import UserID
+from servicelib.fastapi.rest_pagination import (
+    CustomizedPathsCursorPage,
+    CustomizedPathsCursorPageParams,
+)
 
 from ...dsm_factory import BaseDataManager
 from .dependencies.dsm_prodiver import get_data_manager
@@ -22,10 +25,10 @@ router = APIRouter(
 
 @router.get(
     "/locations/{location_id}/paths",
-    response_model=CursorPage[PathMetaDataGet],
+    response_model=CustomizedPathsCursorPage[PathMetaDataGet],
 )
 async def list_paths(
-    page_params: Annotated[CursorParams, Depends()],
+    page_params: Annotated[CustomizedPathsCursorPageParams, Depends()],
     dsm: Annotated[BaseDataManager, Depends(get_data_manager)],
     user_id: UserID,
     file_filter: Path | None = None,
