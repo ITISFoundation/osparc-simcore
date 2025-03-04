@@ -30,7 +30,8 @@ async def load_products(app: web.Application) -> list[Product]:
 
 
 async def get_default_product_name(app: web.Application) -> ProductName:
-    raise NotImplementedError
+    repo = ProductRepository.create_from_app(app)
+    return await repo.get_default_product_name()
 
 
 def get_product(app: web.Application, product_name: ProductName) -> Product:
