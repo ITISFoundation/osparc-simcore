@@ -191,8 +191,8 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
               const workbench = newStudyData["workbench"];
               const nodesIdsListed = [];
               Object.keys(workbench).forEach(nodeId => {
-                const node = workbench[nodeId];
-                if (osparc.study.StudyPricingUnits.includeInList(node)) {
+                const nodeData = workbench[nodeId];
+                if (osparc.study.StudyPricingUnits.includeInList(nodeData)) {
                   nodesIdsListed.push(nodeId);
                 }
               });
