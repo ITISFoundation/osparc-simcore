@@ -21,7 +21,6 @@ _CELERY_INSPECT_TASK_STATUSES: Final[tuple[str, ...]] = (
     "revoked",
 )
 _CELERY_TASK_META_PREFIX: Final[str] = "celery-task-meta-"
-_CELERY_TASK_ID_PREFIX: Final[str] = "celery"
 _CELERY_STATES_MAPPING: Final[dict[str, TaskState]] = {
     "PENDING": TaskState.PENDING,
     "STARTED": TaskState.PENDING,
@@ -33,18 +32,15 @@ _CELERY_STATES_MAPPING: Final[dict[str, TaskState]] = {
 
 
 def _build_context_prefix(task_context: TaskContext) -> list[str]:
-    return [
-        _CELERY_TASK_ID_PREFIX,
-        *[f"{task_context[key]}" for key in sorted(task_context)],
-    ]
+    return [f"{task_context[key]}" for key in sorted(task_context)]
 
 
 def _build_task_id_prefix(task_context: TaskContext) -> str:
-    return "::".join(_build_context_prefix(task_context))
+    return ":".join(_build_context_prefix(task_context))
 
 
 def _build_task_id(task_context: TaskContext, task_uuid: TaskUUID) -> TaskID:
-    return "::".join([_build_task_id_prefix(task_context), f"{task_uuid}"])
+    return ":".join([_build_task_id_prefix(task_context), f"{task_uuid}"])
 
 
 class CeleryTaskQueueClient:
