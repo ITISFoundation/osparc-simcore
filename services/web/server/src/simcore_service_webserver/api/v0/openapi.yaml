@@ -6031,9 +6031,9 @@ paths:
           type: integer
           minimum: 1
           exclusiveMaximum: true
-          default: 20
+          default: 50
           title: Size
-          maximum: 50
+          maximum: 1000
       - name: cursor
         in: query
         required: false
@@ -6057,7 +6057,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CursorPage_PathMetaDataGet_'
+                $ref: '#/components/schemas/CursorPage___T_Customized_PathMetaDataGet_'
   /v0/storage/locations/{location_id}/datasets:
     get:
       tags:
@@ -8541,7 +8541,7 @@ components:
       - usdPerCredit
       - minPaymentAmountUsd
       title: CreditPriceGet
-    CursorPage_PathMetaDataGet_:
+    CursorPage___T_Customized_PathMetaDataGet_:
       properties:
         items:
           items:
@@ -8581,7 +8581,7 @@ components:
       type: object
       required:
       - items
-      title: CursorPage[PathMetaDataGet]
+      title: CursorPage[~_T]Customized[PathMetaDataGet]
     DatCoreFileLink:
       properties:
         store:
