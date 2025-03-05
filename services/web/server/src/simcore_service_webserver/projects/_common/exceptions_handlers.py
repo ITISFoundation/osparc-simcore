@@ -6,6 +6,7 @@ from servicelib.aiohttp import status
 from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
     CatalogForbiddenError,
     CatalogItemNotFoundError,
+    CatalogNotAvailableError,
 )
 
 from ...exception_handling import (
@@ -163,6 +164,10 @@ _PRICING_ERRORS: ExceptionToHttpErrorMap = {
 
 
 _OTHER_ERRORS: ExceptionToHttpErrorMap = {
+    CatalogNotAvailableError: HttpErrorInfo(
+        status.HTTP_503_SERVICE_UNAVAILABLE,
+        "This service is currently not available",
+    ),
     ClustersKeeperNotAvailableError: HttpErrorInfo(
         status.HTTP_503_SERVICE_UNAVAILABLE,
         "Clusters-keeper service is not available",
