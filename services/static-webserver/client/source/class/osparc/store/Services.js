@@ -105,7 +105,7 @@ qx.Class.define("osparc.store.Services", {
         const params = {
           url: osparc.data.Resources.getServiceUrl(key, version)
         };
-        osparc.data.Resources.getOne("servicesV2", params)
+        osparc.data.Resources.fetch("servicesV2", "getOne", params)
           .then(service => {
             this.__addHit(service);
             this.__addTSRInfo(service);
