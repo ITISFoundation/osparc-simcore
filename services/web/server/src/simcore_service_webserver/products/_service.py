@@ -1,5 +1,5 @@
 from decimal import Decimal
-from typing import Any, cast
+from typing import Any
 
 from aiohttp import web
 from models_library.groups import GroupID
@@ -115,7 +115,7 @@ async def get_product_stripe_info(
     ):
         msg = f"Missing product stripe for product {product_name}"
         raise ValueError(msg)
-    return cast(ProductStripeInfoGet, product_stripe_info)  # mypy: not sure why
+    return product_stripe_info
 
 
 async def get_template_content(app: web.Application, *, template_name: str):
