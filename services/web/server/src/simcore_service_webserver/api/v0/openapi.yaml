@@ -14950,10 +14950,7 @@ components:
       - done
       - started
       - stopped
-      - links
       title: StorageAsyncJobStatus
-    Structure:
-      properties:
         key:
           anyOf:
           - type: string

@@ -554,22 +554,7 @@ async def get_async_job_result(request: web.Request) -> web.Response:
     _req_ctx = RequestContext.model_validate(request)
 
     rabbitmq_rpc_client = get_rabbitmq_rpc_client(request.app)
-    async_job_get = parse_request_path_parameters_as(_StorageAsyncJobId, request)
-
-    async_job_rpc_status = await get_status(
-        rabbitmq_rpc_client=rabbitmq_rpc_client,
-        rpc_namespace=STORAGE_RPC_NAMESPACE,
-        job_id=async_job_get.job_id,
-        job_id_data=AsyncJobNameData(
-            user_id=_req_ctx.user_id, product_name=_req_ctx.product_name
-        ),
-    )
-    if not async_job_rpc_status.done:
-        return create_data_response(
-            async_job_rpc_status,
-            status=status.HTTP_404_NOT_FOUND,
-        )
-
+    async_job_get = parse_request_path_parameters_as(_PathParams, request)
     async_job_rpc_result = await get_result(
         rabbitmq_rpc_client=rabbitmq_rpc_client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
