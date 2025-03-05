@@ -362,6 +362,7 @@ qx.Class.define("osparc.file.FilesTree", {
           parentModel.setLoaded(true);
         }
         parentModel.getChildren().removeAll();
+        const itemModels = [];
         items.forEach(item => {
           if (item["file_meta_data"]) {
             const datasetId = osparc.data.Converters.pathToDatasetId(path);
@@ -373,7 +374,7 @@ qx.Class.define("osparc.file.FilesTree", {
               item["file_meta_data"],
             );
             const model = this.__createModel(locationId, item["path"], data);
-            parentModel.getChildren().append(model);
+            itemModels.push(model);
           } else {
             const data = osparc.data.Converters.createFolderEntry(
               item["display_path"],
@@ -382,7 +383,7 @@ qx.Class.define("osparc.file.FilesTree", {
             );
             data.loaded = false;
             const model = this.__createModel(locationId, item["path"], data);
-            parentModel.getChildren().append(model);
+            itemModels.push(model);
             this.__pathModels.push({
               locationId,
               path: item["path"],
@@ -391,6 +392,7 @@ qx.Class.define("osparc.file.FilesTree", {
             this.self().addLoadingChild(model);
           }
         });
+        parentModel.getChildren().append(itemModels);
         // sort files
         osparc.data.Converters.sortModelByLabel(parentModel);
 
@@ -410,6 +412,7 @@ qx.Class.define("osparc.file.FilesTree", {
       this.__locations.add(locationId);
       locationModel.getChildren().removeAll();
       let openThis = null;
+      const datasetItems = [];
       items.forEach(item => {
         const datasetData = osparc.data.Converters.createFolderEntry(
           item["display_path"],
@@ -419,8 +422,8 @@ qx.Class.define("osparc.file.FilesTree", {
         datasetData.loaded = false;
         datasetData["pathLabel"] = locationModel.getPathLabel().concat(datasetData["label"]);
         const datasetModel = this.__createModel(locationId, item["path"], datasetData);
+        datasetItems.push(datasetModel);
         this.self().addLoadingChild(datasetModel);
-        locationModel.getChildren().append(datasetModel);
 
         // add cached files
         const path = item["path"];
@@ -428,6 +431,7 @@ qx.Class.define("osparc.file.FilesTree", {
           openThis = datasetModel;
         }
       });
+      locationModel.getChildren().append(datasetItems);
       // sort datasets
       osparc.data.Converters.sortModelByLabel(locationModel);
 
