@@ -5,7 +5,7 @@
 # pylint: disable=unused-variable
 
 
-from collections.abc import AsyncIterator, Callable
+from collections.abc import Callable
 from typing import Any
 
 import pytest
@@ -16,9 +16,8 @@ from models_library.rest_pagination import MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from pydantic import ValidationError
-from pytest_simcore.helpers.faker_factories import random_icon_url, random_user
+from pytest_simcore.helpers.faker_factories import random_icon_url
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
-from pytest_simcore.helpers.postgres_tools import insert_and_get_row_lifespan
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from respx.router import MockRouter
 from servicelib.rabbitmq import RabbitMQRPCClient
@@ -27,13 +26,12 @@ from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
     CatalogItemNotFoundError,
 )
 from servicelib.rabbitmq.rpc_interfaces.catalog.services import (
+    batch_get_my_services,
     check_for_service,
     get_service,
     list_services_paginated,
     update_service,
 )
-from simcore_postgres_database.models.users import users
-from sqlalchemy.ext.asyncio import AsyncEngine
 
 pytest_simcore_core_services_selection = [
     "rabbit",
@@ -164,8 +162,8 @@ async def test_rpc_catalog_client(
     assert got.key == service_key
     assert got.version == service_version
 
-    assert got == next(
-        item
+    assert got.model_dump() == next(
+        item.model_dump()
         for item in page.data
         if (item.key == service_key and item.version == service_version)
     )
@@ -258,24 +256,6 @@ async def test_rpc_check_for_service(
             service_key="simcore/services/dynamic/unknown",
             service_version="1.0.0",
         )
-
-
-@pytest.fixture
-async def other_user(
-    user_id: UserID,
-    sqlalchemy_async_engine: AsyncEngine,
-    faker: Faker,
-) -> AsyncIterator[dict[str, Any]]:
-
-    _user = random_user(fake=faker, id=user_id + 1)
-    async with insert_and_get_row_lifespan(  # pylint:disable=contextmanager-generator-missing-cleanup
-        sqlalchemy_async_engine,
-        table=users,
-        values=_user,
-        pk_col=users.c.id,
-        pk_value=_user["id"],
-    ) as row:
-        yield row
 
 
 async def test_rpc_get_service_access_rights(
@@ -418,3 +398,82 @@ async def test_rpc_get_service_access_rights(
         "name": "foo",
         "description": "bar",
     }
+
+
+async def test_rpc_batch_get_my_services(
+    background_sync_task_mocked: None,
+    mocked_director_service_api: MockRouter,
+    rpc_client: RabbitMQRPCClient,
+    product_name: ProductName,
+    user: dict[str, Any],
+    user_id: UserID,
+    app: FastAPI,
+    create_fake_service_data: Callable,
+    services_db_tables_injector: Callable,
+):
+    # Create fake services data
+    service_key = "simcore/services/comp/test-batch-service"
+    service_version_1 = "1.0.0"
+    service_version_2 = "1.0.5"
+
+    other_service_key = "simcore/services/comp/other-batch-service"
+    other_service_version = "1.0.0"
+
+    fake_service_1 = create_fake_service_data(
+        service_key,
+        service_version_1,
+        team_access=None,
+        everyone_access=None,
+        product=product_name,
+    )
+    fake_service_2 = create_fake_service_data(
+        service_key,
+        service_version_2,
+        team_access="x",
+        everyone_access=None,
+        product=product_name,
+    )
+    fake_service_3 = create_fake_service_data(
+        other_service_key,
+        other_service_version,
+        team_access=None,
+        everyone_access=None,
+        product=product_name,
+    )
+
+    # Inject fake services into the database
+    await services_db_tables_injector([fake_service_1, fake_service_2, fake_service_3])
+
+    # Batch get my services: project with two, not three
+    ids = [
+        (service_key, service_version_1),
+        (other_service_key, other_service_version),
+    ]
+
+    my_services = await batch_get_my_services(
+        rpc_client,
+        product_name=product_name,
+        user_id=user_id,
+        ids=ids,
+    )
+
+    assert len(my_services) == 2
+
+    # Check access rights to all of them
+    assert my_services[0].my_access_rights.model_dump() == {
+        "execute": True,
+        "write": True,
+    }
+    assert my_services[0].owner == user["primary_gid"]
+    assert my_services[0].key == service_key
+    assert my_services[0].release.version == service_version_1
+    assert my_services[0].release.compatibility
+    assert (
+        my_services[0].release.compatibility.can_update_to.version == service_version_2
+    )
+
+    assert my_services[1].my_access_rights.model_dump() == {
+        "execute": True,
+        "write": True,
+    }
+    assert my_services[1].owner == user["primary_gid"]
