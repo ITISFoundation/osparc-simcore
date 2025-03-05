@@ -1,9 +1,6 @@
 """Common functions to access products table"""
 
-import warnings
-
 import sqlalchemy as sa
-from aiopg.sa.connection import SAConnection
 from sqlalchemy.ext.asyncio import AsyncConnection
 
 from .models.groups import GroupType, groups
@@ -39,7 +36,7 @@ async def get_product_group_id(
 
 
 async def execute_get_or_create_product_group(
-    conn: AsyncConnection | SAConnection, product_name: str
+    conn: AsyncConnection, product_name: str
 ) -> int:
     #
     # NOTE: Separated so it can be used in asyncpg and aiopg environs while both
@@ -71,23 +68,3 @@ async def execute_get_or_create_product_group(
         )
 
     return group_id
-
-
-async def get_or_create_product_group(
-    connection: SAConnection, product_name: str
-) -> _GroupID:
-    """
-    Returns group_id of a product. Creates it if undefined
-    """
-    warnings.warn(
-        f"{__name__}.get_or_create_product_group uses aiopg which has been deprecated in this repo. Please use the asyncpg equivalent version instead"
-        "See https://github.com/ITISFoundation/osparc-simcore/issues/4529",
-        DeprecationWarning,
-        stacklevel=1,
-    )
-
-    async with connection.begin():
-        group_id = await execute_get_or_create_product_group(
-            connection, product_name=product_name
-        )
-        return _GroupID(group_id)
