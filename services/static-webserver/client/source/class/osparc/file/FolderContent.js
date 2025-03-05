@@ -22,7 +22,8 @@ qx.Class.define("osparc.file.FolderContent", {
     this.base(arguments);
 
     this.getChildControl("icons-layout");
-    this.getChildControl("table");
+    const table = this.getChildControl("table");
+    this.__attachListenersToTable(table);
   },
 
   properties: {
@@ -225,7 +226,6 @@ qx.Class.define("osparc.file.FolderContent", {
       if (this.getMode() === "list") {
         const table = this.getChildControl("table");
         table.setData(entries);
-        this.__attachListenersToTableItem(table);
       } else if (this.getMode() === "icons") {
         const iconsLayout = this.getChildControl("icons-layout");
         iconsLayout.removeAll();
@@ -306,7 +306,7 @@ qx.Class.define("osparc.file.FolderContent", {
       }, this);
     },
 
-    __attachListenersToTableItem: function(table) {
+    __attachListenersToTable: function(table) {
       table.addListener("cellTap", e => {
         if (e.getNativeEvent().ctrlKey) {
           this.setMultiSelect(true);
