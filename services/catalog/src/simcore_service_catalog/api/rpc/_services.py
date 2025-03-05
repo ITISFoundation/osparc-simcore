@@ -4,6 +4,7 @@ from typing import cast
 
 from fastapi import FastAPI
 from models_library.api_schemas_catalog.services import (
+    MyServiceGet,
     PageRpcServicesGetV2,
     ServiceGetV2,
     ServiceUpdateV2,
@@ -12,7 +13,7 @@ from models_library.products import ProductName
 from models_library.rpc_pagination import DEFAULT_NUMBER_OF_ITEMS_PER_PAGE, PageLimitInt
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
-from pydantic import NonNegativeInt
+from pydantic import NonNegativeInt, ValidationError, validate_call
 from pyinstrument import Profiler
 from servicelib.logging_utils import log_decorator
 from servicelib.rabbitmq import RPCRouter
@@ -20,6 +21,7 @@ from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
     CatalogForbiddenError,
     CatalogItemNotFoundError,
 )
+from simcore_service_catalog.db.repositories.groups import GroupsRepository
 
 from ...db.repositories.services import ServicesRepository
 from ...services import services_api
@@ -51,8 +53,9 @@ def _profile_rpc_call(coro):
     return _wrapper
 
 
-@router.expose(reraise_if_error_type=(CatalogForbiddenError,))
+@router.expose(reraise_if_error_type=(CatalogForbiddenError, ValidationError))
 @_profile_rpc_call
+@validate_call(config={"arbitrary_types_allowed": True})
 async def list_services_paginated(
     app: FastAPI,
     *,
@@ -86,9 +89,16 @@ async def list_services_paginated(
     )
 
 
-@router.expose(reraise_if_error_type=(CatalogItemNotFoundError, CatalogForbiddenError))
+@router.expose(
+    reraise_if_error_type=(
+        CatalogItemNotFoundError,
+        CatalogForbiddenError,
+        ValidationError,
+    )
+)
 @log_decorator(_logger, level=logging.DEBUG)
 @_profile_rpc_call
+@validate_call(config={"arbitrary_types_allowed": True})
 async def get_service(
     app: FastAPI,
     *,
@@ -114,8 +124,15 @@ async def get_service(
     return service
 
 
-@router.expose(reraise_if_error_type=(CatalogItemNotFoundError, CatalogForbiddenError))
+@router.expose(
+    reraise_if_error_type=(
+        CatalogItemNotFoundError,
+        CatalogForbiddenError,
+        ValidationError,
+    )
+)
 @log_decorator(_logger, level=logging.DEBUG)
+@validate_call(config={"arbitrary_types_allowed": True})
 async def update_service(
     app: FastAPI,
     *,
@@ -145,8 +162,15 @@ async def update_service(
     return service
 
 
-@router.expose(reraise_if_error_type=(CatalogItemNotFoundError, CatalogForbiddenError))
+@router.expose(
+    reraise_if_error_type=(
+        CatalogItemNotFoundError,
+        CatalogForbiddenError,
+        ValidationError,
+    )
+)
 @log_decorator(_logger, level=logging.DEBUG)
+@validate_call(config={"arbitrary_types_allowed": True})
 async def check_for_service(
     app: FastAPI,
     *,
@@ -165,3 +189,33 @@ async def check_for_service(
         service_key=service_key,
         service_version=service_version,
     )
+
+
+@router.expose(reraise_if_error_type=(CatalogForbiddenError, ValidationError))
+@log_decorator(_logger, level=logging.DEBUG)
+@validate_call(config={"arbitrary_types_allowed": True})
+async def batch_get_my_services(
+    app: FastAPI,
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    ids: list[
+        tuple[
+            ServiceKey,
+            ServiceVersion,
+        ]
+    ],
+) -> list[MyServiceGet]:
+    assert app.state.engine  # nosec
+
+    services = await services_api.batch_get_my_services(
+        repo=ServicesRepository(app.state.engine),
+        groups_repo=GroupsRepository(app.state.engine),
+        product_name=product_name,
+        user_id=user_id,
+        ids=ids,
+    )
+
+    assert [(sv.key, sv.release.version) for sv in services] == ids  # nosec
+
+    return services

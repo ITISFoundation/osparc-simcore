@@ -225,7 +225,7 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
         maxWidth: 500
       });
 
-      const label = osparc.ui.window.TabbedView.createHelpLabel(this.tr("For Privacy reasons, you might want to hide your Full Name and/or the email to other users"));
+      const label = osparc.ui.window.TabbedView.createHelpLabel(this.tr("For Privacy reasons, you might want to hide your First and Last Names and/or the Email to other users"));
       box.add(label);
 
       const hideFullname = new qx.ui.form.CheckBox().set({
@@ -237,7 +237,7 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
 
       const form = new qx.ui.form.Form();
       form.add(hideFullname, "Hide Full Name", null, "hideFullname");
-      form.add(hideEmail, "Hide email", null, "hideEmail");
+      form.add(hideEmail, "Hide Email", null, "hideEmail");
       box.add(new qx.ui.form.renderer.Single(form));
 
       // binding to a model
