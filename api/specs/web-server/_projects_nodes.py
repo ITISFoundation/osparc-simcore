@@ -18,6 +18,7 @@ from models_library.api_schemas_webserver.projects_nodes import (
     NodePatch,
     NodeRetrieve,
     NodeRetrieved,
+    ProjectNodeServicesGet,
     ServiceResourcesDict,
 )
 from models_library.generics import Envelope
@@ -154,6 +155,13 @@ def replace_node_resources(
 #
 # projects/*/nodes/-/services
 #
+
+
+@router.get(
+    "/projects/{project_id}/nodes/-/services",
+    response_model=Envelope[ProjectNodeServicesGet],
+)
+async def get_project_services(project_id: ProjectID): ...
 
 
 @router.get(

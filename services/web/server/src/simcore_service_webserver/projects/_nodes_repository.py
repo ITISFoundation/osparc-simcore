@@ -5,11 +5,13 @@ from aiohttp import web
 from models_library.projects import ProjectID
 from models_library.projects_nodes import Node, PartialNode
 from models_library.projects_nodes_io import NodeID
+from models_library.services_types import ServiceKey, ServiceVersion
+from simcore_postgres_database.utils_projects_nodes import ProjectNodesRepo
 from simcore_postgres_database.utils_repos import transaction_context
 from simcore_postgres_database.webserver_models import projects_nodes
 from sqlalchemy.ext.asyncio import AsyncConnection
 
-from ..db.plugin import get_asyncpg_engine
+from ..db.plugin import get_asyncpg_engine, get_database_engine
 from .exceptions import NodeNotFoundError
 
 _logger = logging.getLogger(__name__)
@@ -79,3 +81,15 @@ async def update(
                 & (projects_nodes.c.node_id == f"{node_id}")
             )
         )
+
+
+async def get_project_nodes_services(
+    app: web.Application, *, project_uuid: ProjectID
+) -> list[tuple[ServiceKey, ServiceVersion]]:
+    repo = ProjectNodesRepo(project_uuid=project_uuid)
+
+    async with get_database_engine(app).acquire() as conn:
+        nodes = await repo.list(conn)
+
+    # removes duplicates by preserving order
+    return list(dict.fromkeys((node.key, node.version) for node in nodes))

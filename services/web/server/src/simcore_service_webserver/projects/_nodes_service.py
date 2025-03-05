@@ -8,12 +8,13 @@ from typing import Any, Final, NamedTuple
 
 from aiohttp import web
 from aiohttp.client import ClientError
-from models_library.api_schemas_storage.storage_schemas import FileMetaDataGet
 from common_library.json_serialization import json_dumps
+from models_library.api_schemas_storage.storage_schemas import FileMetaDataGet
 from models_library.basic_types import KeyIDStr
 from models_library.projects import ProjectID
 from models_library.projects_nodes import Node, PartialNode
 from models_library.projects_nodes_io import NodeID, NodeIDStr, SimCoreFileLink
+from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from pydantic import (
     BaseModel,
@@ -74,6 +75,19 @@ def get_total_project_dynamic_nodes_creation_interval(
     director-v2. Note: these calls are sent one after the other.
     """
     return max_nodes * _NODE_START_INTERVAL_S.total_seconds()
+
+
+async def get_project_nodes_services(
+    app: web.Application, *, project_uuid: ProjectID
+) -> list[tuple[ServiceKey, ServiceVersion]]:
+    return await _nodes_repository.get_project_nodes_services(
+        app, project_uuid=project_uuid
+    )
+
+
+#
+# PREVIEWS
+#
 
 
 def _guess_mimetype_from_name(name: str) -> str | None:
