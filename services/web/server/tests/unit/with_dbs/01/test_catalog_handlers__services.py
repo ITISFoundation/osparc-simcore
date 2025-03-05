@@ -2,6 +2,7 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
+import re
 import urllib.parse
 from unittest.mock import MagicMock
 
@@ -29,6 +30,7 @@ from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_login import UserInfoDict
 from servicelib.aiohttp import status
+from simcore_service_webserver.catalog._models import ServiceInputGet
 from simcore_service_webserver.db.models import UserRole
 
 
@@ -165,10 +167,12 @@ async def test_get_inputs(
     client: TestClient, logged_user: UserInfoDict, aioresponses_mocker: AioResponsesMock
 ):
 
+    url_pattern = re.compile(r"http://catalog:8000/v0/services/.*")
+    service_payload = ServiceGetV2.model_json_schema()["examples"][0]
     aioresponses_mocker.get(
-        r"http://catalog:8000/v0/services/simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/0.1.0?user_id=1",
+        url_pattern,
         status=status.HTTP_200_OK,
-        payload=ServiceGetV2.model_json_schema()["examples"][0],
+        payload=service_payload,
     )
 
     service_key = "simcore/services/comp/itis/sleeper"
@@ -181,6 +185,7 @@ async def test_get_inputs(
 
     response = await client.get(f"{url}")
     data, error = await assert_status(response, status.HTTP_200_OK)
+    TypeAdapter(list[ServiceInputGet]).validate_python(data)
 
 
 @pytest.mark.parametrize(
