@@ -78,6 +78,10 @@ qx.Class.define("osparc.file.FolderContent", {
       return item;
     },
 
+    getIcon: function(entry) {
+      return osparc.file.FilesTree.isDir(entry) ? "@MaterialIcons/folder" : "@MaterialIcons/insert_drive_file";
+    },
+
     T_POS: {
       TYPE: 0,
       NAME: 1,
@@ -136,7 +140,7 @@ qx.Class.define("osparc.file.FolderContent", {
       const datas = [];
       children.forEach(child => {
         const data = {
-          icon: child.getIcon ? child.getIcon() : this.__getIcon(child),
+          icon: child.getIcon ? child.getIcon() : this.self().getIcon(child),
           label: child.getLabel(),
           lastModified: child.getLastModified ? osparc.utils.Utils.formatDateAndTime(new Date(child.getLastModified())) : "",
           size: child.getSize ? osparc.utils.Utils.bytesToSize(child.getSize()) : "",
@@ -190,10 +194,6 @@ qx.Class.define("osparc.file.FolderContent", {
         });
       }
       return items;
-    },
-
-    __getIcon: function(entry) {
-      return osparc.file.FilesTree.isDir(entry) ? "@MaterialIcons/folder" : "@MaterialIcons/insert_drive_file";
     },
 
     __getEntries: function() {
