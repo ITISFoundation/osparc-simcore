@@ -163,7 +163,7 @@ async def test_list_services_latest(
     "user_role",
     [UserRole.USER],
 )
-async def test_get_inputs(
+async def test_list_inputs(
     client: TestClient, logged_user: UserInfoDict, aioresponses_mocker: AioResponsesMock
 ):
 
@@ -186,6 +186,34 @@ async def test_get_inputs(
     response = await client.get(f"{url}")
     data, error = await assert_status(response, status.HTTP_200_OK)
     TypeAdapter(list[ServiceInputGet]).validate_python(data)
+
+
+@pytest.mark.parametrize(
+    "user_role",
+    [UserRole.USER],
+)
+async def test_get_inputs(
+    client: TestClient, logged_user: UserInfoDict, aioresponses_mocker: AioResponsesMock
+):
+    url_pattern = re.compile(r"http://catalog:8000/v0/services/.*")
+    service_payload = ServiceGetV2.model_json_schema()["examples"][0]
+    aioresponses_mocker.get(
+        url_pattern,
+        status=status.HTTP_200_OK,
+        payload=service_payload,
+    )
+
+    service_key = "simcore/services/comp/itis/sleeper"
+    service_version = "0.1.0"
+    assert client.app and client.app.router
+    url = client.app.router["get_service_input"].url_for(
+        service_key=urllib.parse.quote(service_key, safe=""),
+        service_version=service_version,
+        input_key=next(iter(service_payload["inputs"].keys())),
+    )
+    response = await client.get(f"{url}")
+    data, error = await assert_status(response, status.HTTP_200_OK)
+    ServiceInputGet.model_validate(data)
 
 
 @pytest.mark.parametrize(
