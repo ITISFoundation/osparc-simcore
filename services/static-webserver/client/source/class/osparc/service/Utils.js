@@ -189,7 +189,10 @@ qx.Class.define("osparc.service.Utils", {
     },
 
     extractVersionDisplay: function(metadata) {
-      return metadata["versionDisplay"] ? metadata["versionDisplay"] : metadata["version"];
+      if (metadata) {
+        return metadata["versionDisplay"] ? metadata["versionDisplay"] : metadata["version"];
+      }
+      return "";
     },
 
     getReleasedDate: function(key, version) {

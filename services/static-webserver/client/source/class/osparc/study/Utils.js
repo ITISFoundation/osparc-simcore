@@ -74,6 +74,40 @@ qx.Class.define("osparc.study.Utils", {
       return msg;
     },
 
+    anyServiceRetired: function(studyServices) {
+      const isRetired = studyServices.some(service => {
+        if (service["release"] && service["release"]["retired"]) {
+          const retirementDate = new Date(service["release"]["retired"]);
+          const currentDate = new Date();
+          return retirementDate < currentDate;
+        }
+        return false;
+      });
+      return isRetired;
+    },
+
+    anyServiceDeprecated: function(studyServices) {
+      const isDeprecated = studyServices.some(service => {
+        if (service["release"] && service["release"]["retired"]) {
+          const retirementDate = new Date(service["release"]["retired"]);
+          const currentDate = new Date();
+          return retirementDate > currentDate;
+        }
+        return false;
+      });
+      return isDeprecated;
+    },
+
+    anyServiceUpdatable: function(studyServices) {
+      const isUpdatable = studyServices.some(service => {
+        if (service["release"] && service["release"]["compatibility"]) {
+          return Boolean(service["release"]["compatibility"]);
+        }
+        return false;
+      });
+      return isUpdatable;
+    },
+
     isWorkbenchUpdatable: function(workbench) {
       const services = new Set(this.extractUniqueServices(workbench));
       const isUpdatable = Array.from(services).some(srv => osparc.service.Utils.isUpdatable(srv));

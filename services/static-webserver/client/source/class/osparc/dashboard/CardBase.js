@@ -643,7 +643,6 @@ qx.Class.define("osparc.dashboard.CardBase", {
       }
 
       if (this.isResourceType("study") || this.isResourceType("template")) {
-        // OM here
         const params = {
           url: {
             studyId: this.getResourceData()["uuid"]
@@ -652,29 +651,25 @@ qx.Class.define("osparc.dashboard.CardBase", {
         osparc.data.Resources.fetch("studies", "getServices", params)
           .then(resp => {
             const services = resp["services"];
-            console.log("OM get Study Services", services);
             this.setEmptyWorkbench(services.length === 0);
 
             // Updatable study
-            if (osparc.study.Utils.isWorkbenchRetired(workbench)) {
+            if (osparc.study.Utils.anyServiceRetired(services)) {
               this.setUpdatable("retired");
-            } else if (osparc.study.Utils.isWorkbenchDeprecated(workbench)) {
+            } else if (osparc.study.Utils.anyServiceDeprecated(services)) {
               this.setUpdatable("deprecated");
-            } else {
-              const updatable = osparc.study.Utils.isWorkbenchUpdatable(workbench)
-              if (updatable) {
-                this.setUpdatable("updatable");
-              }
+            } else if (osparc.study.Utils.anyServiceUpdatable(services)) {
+              this.setUpdatable("updatable");
             }
 
             // Block card
             const unaccessibleServices = services.filter(service => service["execute"] === false);
             if (unaccessibleServices.length) {
               this.setBlocked("UNKNOWN_SERVICES");
-              let image = "@FontAwesome5Solid/ban/";
-              let toolTipText = this.tr("Service info missing");
+              const image = "@FontAwesome5Solid/ban/";
+              let toolTipText = this.tr("Unaccessible service(s):");
               unaccessibleServices.forEach(unSrv => {
-                toolTipText += "<br>" + unSrv.key + ":" + unSrv.release.version;
+                toolTipText += "<br>" + unSrv.key + ":" + osparc.service.Utils.extractVersionDisplay(unSrv.release);
               });
               this.__showBlockedCard(image, toolTipText);
             }
