@@ -44,7 +44,7 @@ async def get_status(
     return AsyncJobStatus(
         job_id=job_id,
         progress=task_status.progress_report,
-        done=False,
+        done=task_status.is_done,
     )
 
 

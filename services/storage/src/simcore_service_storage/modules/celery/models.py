@@ -21,10 +21,17 @@ class TaskState(StrEnum):
     ABORTED = auto()
 
 
+_TASK_DONE = {TaskState.SUCCESS, TaskState.FAILURE, TaskState.ABORTED}
+
+
 class TaskStatus(BaseModel):
     task_uuid: TaskUUID
     task_state: TaskState
     progress_report: ProgressReport
+
+    @property
+    def is_done(self) -> bool:
+        return self.task_state in _TASK_DONE
 
     @model_validator(mode="after")
     def _check_consistency(self) -> Self:
