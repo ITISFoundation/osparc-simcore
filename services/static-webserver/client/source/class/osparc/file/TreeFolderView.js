@@ -84,33 +84,38 @@ qx.Class.define("osparc.file.TreeFolderView", {
       const folderTree = this.getChildControl("folder-tree");
       const folderViewer = this.getChildControl("folder-viewer");
 
-      // Connect elements
       folderTree.addListener("selectionChanged", () => {
-        const selectedFolder = folderTree.getSelectedItem();
-        if (selectedFolder) {
-          if (selectedFolder.getPath()) {
-            folderTree.requestPathItems(selectedFolder.getLocation(), selectedFolder.getPath())
+        const selectedModel = folderTree.getSelectedItem();
+        if (selectedModel) {
+          if (selectedModel.getPath() && !selectedModel.getLoaded()) {
+            folderTree.requestPathItems(selectedModel.getLocation(), selectedModel.getPath())
               .then(pathModel => {
                 if (osparc.file.FilesTree.isDir(pathModel)) {
                   folderViewer.setFolder(pathModel);
                 }
               });
-          } else if (osparc.file.FilesTree.isDir(selectedFolder)) {
-            folderViewer.setFolder(selectedFolder);
+          } else if (osparc.file.FilesTree.isDir(selectedModel)) {
+            folderViewer.setFolder(selectedModel);
           }
         }
       }, this);
 
       folderViewer.addListener("openItemSelected", e => {
-        const data = e.getData();
-        folderTree.requestPathItems(data.getLocation(), data.getPath())
-          .then(pathModel => {
-            folderTree.openNodeAndParents(pathModel);
-            folderTree.setSelection(new qx.data.Array([pathModel]));
-            if (osparc.file.FilesTree.isDir(pathModel)) {
-              folderViewer.setFolder(pathModel);
-            }
-          });
+        const selectedModel = e.getData();
+        if (selectedModel) {
+          if (selectedModel.getPath() && !selectedModel.getLoaded()) {
+            folderTree.requestPathItems(selectedModel.getLocation(), selectedModel.getPath())
+              .then(pathModel => {
+                folderTree.openNodeAndParents(pathModel);
+                folderTree.setSelection(new qx.data.Array([pathModel]));
+                if (osparc.file.FilesTree.isDir(pathModel)) {
+                  folderViewer.setFolder(pathModel);
+                }
+              });
+          } else if (osparc.file.FilesTree.isDir(selectedModel)) {
+            folderViewer.setFolder(selectedModel);
+          }
+        }
       }, this);
 
       folderViewer.addListener("folderUp", e => {
