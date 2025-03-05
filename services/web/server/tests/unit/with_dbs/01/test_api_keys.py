@@ -28,7 +28,12 @@ from simcore_service_webserver.api_keys._service import (
 )
 from simcore_service_webserver.application_settings import GarbageCollectorSettings
 from simcore_service_webserver.db.models import UserRole
-from tenacity import retry_if_exception_type, stop_after_attempt, wait_fixed
+from tenacity import (
+    retry_if_exception_type,
+    stop_after_attempt,
+    stop_after_delay,
+    wait_fixed,
+)
 
 
 @pytest.fixture
@@ -174,7 +179,7 @@ async def test_create_api_key_with_expiration(
         async for attempt in tenacity.AsyncRetrying(
             wait=wait_fixed(1),
             retry=retry_if_exception_type(AssertionError),
-            stop=stop_after_attempt(5),
+            stop=stop_after_delay(5 * expiration_interval.seconds),
             reraise=True,
         ):
             with attempt:
