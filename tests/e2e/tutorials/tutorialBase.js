@@ -26,6 +26,7 @@ class TutorialBase {
     this.__responsesQueue = null;
 
     this.__services = null;
+    this.__studyId = null;
 
     this.__interval = null;
 
@@ -216,8 +217,9 @@ class TutorialBase {
     let resp = null;
     try {
       resp = await this.__responsesQueue.waitUntilResponse(":open");
-    }
-    catch (err) {
+      const studyId = this.__studyId = resp["data"]["uuid"];
+      console.log("Study ID:", studyId);
+    } catch (err) {
       console.error("Error:", this.__templateName, "could not be started", err);
       throw (err);
     }
@@ -234,10 +236,9 @@ class TutorialBase {
       await auto.dashboardNewTIPlan(this.__page);
       await this.__responsesQueue.waitUntilResponse("projects?from_study=");
       resp = await this.__responsesQueue.waitUntilResponse(":open");
-      const studyId = resp["data"]["uuid"];
+      const studyId = this.__studyId = resp["data"]["uuid"];
       console.log("Study ID:", studyId);
-    }
-    catch (err) {
+    } catch (err) {
       console.error(`Error: Classic TI could not be started:\n`, err);
       throw (err);
     }
@@ -254,10 +255,9 @@ class TutorialBase {
       await this.waitFor(2000);
       await auto.dashboardStartSim4LifeLite(this.__page);
       resp = await this.__responsesQueue.waitUntilResponse(":open");
-      const studyId = resp["data"]["uuid"];
+      const studyId = this.__studyId = resp["data"]["uuid"];
       console.log("Study ID:", studyId);
-    }
-    catch (err) {
+    } catch (err) {
       console.error(`Error: Sim4Life Lite could not be started:\n`, err);
       throw (err);
     }
@@ -274,10 +274,9 @@ class TutorialBase {
       await this.__goTo();
       resp = await this.__responsesQueue.waitUntilResponse(":open", openStudyTimeout);
       await this.__printMe();
-      const studyId = resp["data"]["uuid"];
+      const studyId = this.__studyId = resp["data"]["uuid"];
       console.log("Study ID:", studyId);
-    }
-    catch (err) {
+    } catch (err) {
       console.error("Error:", this.__templateName, "could not be started", err);
       throw (err);
     }
@@ -294,10 +293,9 @@ class TutorialBase {
       assert(templateFound, "Expected template, got nothing. TIP: did you inject templates in database??")
       await this.__responsesQueue.waitUntilResponse("projects?from_study=");
       resp = await this.__responsesQueue.waitUntilResponse(":open");
-      const studyId = resp["data"]["uuid"];
+      const studyId = this.__studyId = resp["data"]["uuid"];
       console.log("Study ID:", studyId);
-    }
-    catch (err) {
+    } catch (err) {
       console.error(`Error: "${this.__templateName}" template could not be started:\n`, err);
       throw (err);
     }
@@ -314,10 +312,9 @@ class TutorialBase {
       const serviceFound = await auto.dashboardOpenService(this.__page, this.__templateName);
       assert(serviceFound, "Expected service, got nothing. TIP: is it available??");
       resp = await this.__responsesQueue.waitUntilResponse(":open");
-      const studyId = resp["data"]["uuid"];
+      const studyId = this.__studyId = resp["data"]["uuid"];
       console.log("Study ID:", studyId);
-    }
-    catch (err) {
+    } catch (err) {
       console.error(`Error: "${this.__templateName}" service could not be started:\n`, err);
       throw (err);
     }
@@ -448,24 +445,26 @@ class TutorialBase {
   }
 
   async openNodeFiles(nodeId) {
-    this.__responsesQueue.addResponseListener("storage/locations/0/files/metadata?uuid_filter=" + nodeId);
+    const pathFilter = `${this.__studyId}/${nodeId}`;
+    const path = "storage/locations/0/files/paths?file_filter=" + pathFilter;
+    this.__responsesQueue.addResponseListener(path);
     await auto.openNodeFiles(this.__page);
     try {
-      await this.__responsesQueue.waitUntilResponse("storage/locations/0/files/metadata?uuid_filter=" + nodeId);
-    }
-    catch (err) {
+      await this.__responsesQueue.waitUntilResponse(path);
+    } catch (err) {
       console.error("Error: open node files", err);
       throw (err);
     }
   }
 
   async openNodeFilesAppMode(nodeId) {
-    this.__responsesQueue.addResponseListener("storage/locations/0/files/metadata?uuid_filter=" + nodeId);
+    const pathFilter = `${this.__studyId}/${nodeId}`;
+    const path = "storage/locations/0/files/paths?file_filter=" + pathFilter;
+    this.__responsesQueue.addResponseListener(path);
     await auto.openNodeFilesAppMode(this.__page);
     try {
-      await this.__responsesQueue.waitUntilResponse("storage/locations/0/files/metadata?uuid_filter=" + nodeId);
-    }
-    catch (err) {
+      await this.__responsesQueue.waitUntilResponse(path);
+    } catch (err) {
       console.error("Error: open node files", err);
       throw (err);
     }
@@ -532,8 +531,7 @@ class TutorialBase {
       const nodeId = await auto.openNode(this.__page, nodePos);
       await this.openNodeFiles(nodeId);
       await this.__checkNItemsInFolder(fileNames, openOutputsFolder);
-    }
-    catch (err) {
+    } catch (err) {
       console.error("Error: Checking Node Outputs:", err);
       throw (err)
     }
@@ -543,8 +541,7 @@ class TutorialBase {
     try {
       await this.openNodeFilesAppMode(nodeId);
       await this.__checkNItemsInFolder(fileNames, openOutputsFolder);
-    }
-    catch (err) {
+    } catch (err) {
       console.error("Error: Checking Node Outputs:", err);
       throw (err)
     }

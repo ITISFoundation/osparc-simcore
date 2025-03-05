@@ -42,11 +42,11 @@ qx.Class.define("osparc.file.FolderViewer", {
     const selectedFileLayout = this.getChildControl("selected-file-layout");
 
     this.bind("folder", this.getChildControl("folder-up"), "enabled", {
-      converter: folder => Boolean(folder && folder.getPathLabel && folder.getPathLabel().length > 1)
+      converter: folder => Boolean(folder && folder.getDisplayPath && folder.getDisplayPath())
     });
 
     this.bind("folder", this.getChildControl("folder-path"), "value", {
-      converter: folder => folder ? folder.getPathLabel().join(" / ") : this.tr("Select folder")
+      converter: folder => folder && folder.getDisplayPath ? folder.getDisplayPath() : this.tr("Select folder")
     });
 
     this.bind("folder", folderContent, "folder");
@@ -69,7 +69,7 @@ qx.Class.define("osparc.file.FolderViewer", {
       multiSelectButton.setValue(false);
     });
 
-    folderContent.addListener("requestDatasetFiles", e => this.fireDataEvent("requestDatasetFiles", e.getData()));
+    folderContent.addListener("requestPathItems", e => this.fireDataEvent("requestPathItems", e.getData()));
     folderContent.addListener("selectionChanged", e => {
       const selectionData = e.getData();
       selectedFileLayout.setItemSelected(selectionData);
@@ -81,9 +81,6 @@ qx.Class.define("osparc.file.FolderViewer", {
     folderContent.addListener("openItemSelected", e => {
       const entry = e.getData();
       this.fireDataEvent("openItemSelected", entry);
-      if (osparc.file.FilesTree.isDir(entry)) {
-        this.setFolder(entry);
-      }
     });
   },
 
@@ -100,7 +97,7 @@ qx.Class.define("osparc.file.FolderViewer", {
   events: {
     "openItemSelected": "qx.event.type.Data", // dbltap
     "folderUp": "qx.event.type.Data",
-    "requestDatasetFiles": "qx.event.type.Data"
+    "requestPathItems": "qx.event.type.Data"
   },
 
   members: {
@@ -128,6 +125,7 @@ qx.Class.define("osparc.file.FolderViewer", {
             marginLeft: 10,
             marginRight: 10
           });
+          control.bind("value", control, "toolTipText");
           header.addAt(control, 1, {
             flex: 1
           });

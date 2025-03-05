@@ -38,14 +38,10 @@ qx.Class.define("osparc.store.Data", {
   members: {
     __locationsCached: null,
     __datasetsByLocationCached: null,
-    __filesByLocationAndDatasetCached: null,
 
     resetCache: function() {
       this.__locationsCached = [];
       this.__datasetsByLocationCached = {};
-      this.__filesByLocationAndDatasetCached = {};
-
-      osparc.store.Store.getInstance().reset("storageLocations");
     },
 
     getLocationsCached: function() {
@@ -62,8 +58,7 @@ qx.Class.define("osparc.store.Data", {
         if (cachedData) {
           resolve(cachedData);
         } else {
-          // Get available storage locations
-          osparc.data.Resources.get("storageLocations")
+          osparc.data.Resources.fetch("storageLocations", "getLocations")
             .then(locations => {
               // Add them to cache
               this.__locationsCached = locations;
@@ -90,14 +85,13 @@ qx.Class.define("osparc.store.Data", {
     },
 
     getDatasetsByLocation: function(locationId) {
-      const emptyData = {
+      const data = {
         location: locationId,
-        datasets: []
+        items: []
       };
       return new Promise((resolve, reject) => {
-        // Get list of datasets
         if (locationId === 1 && !osparc.data.Permissions.getInstance().canDo("storage.datcore.read")) {
-          reject(emptyData);
+          reject(data);
         }
 
         const cachedData = this.getDatasetsByLocationCached(locationId);
@@ -109,96 +103,40 @@ qx.Class.define("osparc.store.Data", {
               locationId
             }
           };
-          osparc.data.Resources.fetch("storageDatasets", "getByLocation", params)
-            .then(datasets => {
-              const data = {
-                location: locationId,
-                datasets: []
-              };
-              if (datasets && datasets.length>0) {
-                data.datasets = datasets;
+          osparc.data.Resources.fetch("storagePaths", "getDatasets", params)
+            .then(pagResp => {
+              if (pagResp["items"] && pagResp["items"].length>0) {
+                data.items = pagResp["items"];
               }
               // Add it to cache
-              this.__datasetsByLocationCached[locationId] = data.datasets;
+              this.__datasetsByLocationCached[locationId] = data.items;
               resolve(data);
             })
             .catch(err => {
               console.error(err);
-              reject(emptyData);
+              reject(data);
             });
         }
       });
     },
 
-    getFilesByLocationAndDatasetCached: function(locationId, datasetId) {
-      const cache = this.__filesByLocationAndDatasetCached;
-      if (locationId in cache && datasetId in cache[locationId]) {
-        const data = {
-          location: locationId,
-          dataset: datasetId,
-          files: cache[locationId][datasetId]
-        };
-        return data;
-      }
-      return null;
-    },
-
-    getFilesByLocationAndDataset: function(locationId, datasetId) {
-      const emptyData = {
-        location: locationId,
-        dataset: datasetId,
-        files: []
-      };
+    getItemsByLocationAndPath: function(locationId, path) {
       return new Promise((resolve, reject) => {
         // Get list of file meta data
         if (locationId === 1 && !osparc.data.Permissions.getInstance().canDo("storage.datcore.read")) {
-          reject(emptyData);
+          reject([]);
         }
 
-        const cachedData = this.getFilesByLocationAndDatasetCached(locationId, datasetId);
-        if (cachedData) {
-          resolve(cachedData);
-        } else {
-          const params = {
-            url: {
-              locationId,
-              datasetId
-            }
-          };
-          osparc.data.Resources.fetch("storageFiles", "getByLocationAndDataset", params)
-            .then(files => {
-              const data = {
-                location: locationId,
-                dataset: datasetId,
-                files: files && files.length>0 ? files : []
-              };
-              // Add it to cache
-              if (!(locationId in this.__filesByLocationAndDatasetCached)) {
-                this.__filesByLocationAndDatasetCached[locationId] = {};
-              }
-              this.__filesByLocationAndDatasetCached[locationId][datasetId] = data.files;
-              resolve(data);
-            })
-            .catch(err => {
-              console.error(err);
-              reject(emptyData);
-            });
-        }
-      });
-    },
-
-    getNodeFiles: function(nodeId) {
-      return new Promise((resolve, reject) => {
         const params = {
           url: {
-            nodeId: encodeURIComponent(nodeId)
+            locationId,
+            path,
           }
         };
-        osparc.data.Resources.fetch("storageFiles", "getByNode", params)
-          .then(files => {
-            console.log("Node Files", files);
-            if (files && files.length>0) {
-              resolve(files);
+        osparc.data.Resources.fetch("storagePaths", "getPaths", params)
+          .then(pagResp => {
+            if (pagResp["items"] && pagResp["items"].length>0) {
+              resolve(pagResp["items"]);
             } else {
               resolve([]);
             }
@@ -241,6 +179,7 @@ qx.Class.define("osparc.store.Data", {
             resolve(presignedLinkData);
           })
           .catch(err => {
+            console.log("remove the FP");
             console.error(err);
             reject(err);
           });
@@ -264,7 +203,7 @@ qx.Class.define("osparc.store.Data", {
           fileUuid: encodeURIComponent(fileUuid)
         }
       };
-      osparc.data.Resources.fetch("storageFiles", "put", params)
+      osparc.data.Resources.fetch("storageFiles", "copy", params)
         .then(files => {
           const data = {
             data: files,
