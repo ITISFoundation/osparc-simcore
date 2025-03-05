@@ -107,8 +107,8 @@ def mock_catalog_api(
 @pytest.fixture
 async def user_project(
     client: TestClient,
-    fake_project,
-    logged_user,
+    fake_project: ProjectDict,
+    logged_user: UserInfoDict,
     tests_data_dir: Path,
     osparc_product_name: str,
 ) -> AsyncIterator[ProjectDict]:
@@ -223,7 +223,7 @@ async def create_template_project(
 
 @pytest.fixture
 def fake_services(
-    create_dynamic_service_mock: Callable[..., Awaitable[DynamicServiceGet]]
+    create_dynamic_service_mock: Callable[..., Awaitable[DynamicServiceGet]],
 ) -> Callable[..., Awaitable[list[DynamicServiceGet]]]:
     async def create_fakes(number_services: int) -> list[DynamicServiceGet]:
         return [await create_dynamic_service_mock() for _ in range(number_services)]

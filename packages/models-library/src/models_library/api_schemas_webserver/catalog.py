@@ -1,4 +1,4 @@
-from typing import Any, TypeAlias
+from typing import Annotated, Any, TypeAlias
 
 from pydantic import ConfigDict, Field
 from pydantic.config import JsonDict
@@ -32,9 +32,9 @@ class _BaseCommonApiExtension(BaseModel):
 class ServiceInputGet(ServiceInput, _BaseCommonApiExtension):
     """Extends fields of api_schemas_catalog.services.ServiceGet.outputs[*]"""
 
-    key_id: ServiceInputKey = Field(
-        ..., description="Unique name identifier for this input"
-    )
+    key_id: Annotated[
+        ServiceInputKey, Field(description="Unique name identifier for this input")
+    ]
 
     @staticmethod
     def _update_json_schema_extra(schema: JsonDict) -> None:
@@ -78,9 +78,9 @@ class ServiceInputGet(ServiceInput, _BaseCommonApiExtension):
 class ServiceOutputGet(ServiceOutput, _BaseCommonApiExtension):
     """Extends fields of api_schemas_catalog.services.ServiceGet.outputs[*]"""
 
-    key_id: ServiceOutputKey = Field(
-        ..., description="Unique name identifier for this input"
-    )
+    key_id: Annotated[
+        ServiceOutputKey, Field(description="Unique name identifier for this input")
+    ]
 
     @staticmethod
     def _update_json_schema_extra(schema: JsonDict) -> None:
@@ -225,38 +225,22 @@ _EXAMPLE_SLEEPER: dict[str, Any] = {
 }
 
 
-class ServiceGet(api_schemas_catalog_services.ServiceGet):
-    # pylint: disable=too-many-ancestors
-    inputs: ServiceInputsGetDict = Field(  # type: ignore[assignment]
-        ..., description="inputs with extended information"
-    )
-    outputs: ServiceOutputsGetDict = Field(  # type: ignore[assignment]
-        ..., description="outputs with extended information"
-    )
-
-    @staticmethod
-    def _update_json_schema_extra(schema: JsonDict) -> None:
-        schema.update({"examples": [_EXAMPLE_FILEPICKER, _EXAMPLE_SLEEPER]})
-
-    model_config = ConfigDict(
-        **OutputSchema.model_config,
-        json_schema_extra=_update_json_schema_extra,
-    )
-
-
 ServiceResourcesGet: TypeAlias = api_schemas_catalog_services.ServiceResourcesGet
 
 
-class CatalogServiceGet(api_schemas_catalog_services.ServiceGetV2):
-    # NOTE: will replace ServiceGet!
+class CatalogServiceListItem(api_schemas_catalog_services.ServiceListItem):
+    inputs: ServiceInputsGetDict  # type: ignore[assignment]
+    outputs: ServiceOutputsGetDict  # type: ignore[assignment]
 
+
+class CatalogServiceGet(api_schemas_catalog_services.ServiceGetV2):
     # pylint: disable=too-many-ancestors
-    inputs: ServiceInputsGetDict = Field(  # type: ignore[assignment]
-        ..., description="inputs with extended information"
-    )
-    outputs: ServiceOutputsGetDict = Field(  # type: ignore[assignment]
-        ..., description="outputs with extended information"
-    )
+    inputs: Annotated[  # type: ignore[assignment]
+        ServiceInputsGetDict, Field(description="inputs with extended information")
+    ]
+    outputs: Annotated[  # type: ignore[assignment]
+        ServiceOutputsGetDict, Field(description="outputs with extended information")
+    ]
 
     @staticmethod
     def _update_json_schema_extra(schema: JsonDict) -> None:

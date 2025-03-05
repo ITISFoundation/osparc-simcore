@@ -18,6 +18,7 @@ from models_library.api_schemas_webserver.projects_nodes import (
     NodePatch,
     NodeRetrieve,
     NodeRetrieved,
+    ProjectNodeServicesGet,
     ServiceResourcesDict,
 )
 from models_library.generics import Envelope
@@ -76,8 +77,7 @@ def delete_node(project_id: str, node_id: str):  # noqa: ARG001
 )
 def retrieve_node(
     project_id: str, node_id: str, _retrieve: NodeRetrieve  # noqa: ARG001
-):
-    ...
+): ...
 
 
 @router.post(
@@ -147,13 +147,19 @@ def get_node_resources(project_id: str, node_id: str):  # noqa: ARG001
 )
 def replace_node_resources(
     project_id: str, node_id: str, _new: ServiceResourcesDict  # noqa: ARG001
-):
-    ...
+): ...
 
 
 #
 # projects/*/nodes/-/services
 #
+
+
+@router.get(
+    "/projects/{project_id}/nodes/-/services",
+    response_model=Envelope[ProjectNodeServicesGet],
+)
+async def get_project_services(project_id: ProjectID): ...
 
 
 @router.get(
@@ -163,8 +169,7 @@ def replace_node_resources(
 )
 async def get_project_services_access_for_gid(
     project_id: ProjectID, for_gid: GroupID  # noqa: ARG001
-):
-    ...
+): ...
 
 
 assert_handler_signature_against_model(
@@ -197,8 +202,7 @@ assert_handler_signature_against_model(list_project_nodes_previews, ProjectPathP
 )
 async def get_project_node_preview(
     project_id: ProjectID, node_id: NodeID  # noqa: ARG001
-):
-    ...
+): ...
 
 
 assert_handler_signature_against_model(get_project_node_preview, NodePathParams)

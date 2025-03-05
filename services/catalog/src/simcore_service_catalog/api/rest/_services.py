@@ -152,7 +152,7 @@ async def list_services(
         services_owner_emails,
     ) = await asyncio.gather(
         cached_registry_services(),
-        services_repo.list_services_access_rights(
+        services_repo.batch_get_services_access_rights(
             key_versions=services_in_db,
             product_name=x_simcore_products_name,
         ),
