@@ -35,8 +35,11 @@ async def get_default_product_name(app: web.Application) -> ProductName:
 
 
 def get_product(app: web.Application, product_name: ProductName) -> Product:
-    product: Product = app[APP_PRODUCTS_KEY][product_name]
-    return product
+    try:
+        product: Product = app[APP_PRODUCTS_KEY][product_name]
+        return product
+    except KeyError as exc:
+        raise ProductNotFoundError(product_name=product_name) from exc
 
 
 def list_products(app: web.Application) -> list[Product]:
