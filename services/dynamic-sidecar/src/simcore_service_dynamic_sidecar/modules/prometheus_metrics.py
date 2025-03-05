@@ -107,13 +107,13 @@ class UserServicesMetrics:
             )
             self._metrics_response = MetricsResponse.from_reply(metrics_fetch_result)
         except ContainerExecContainerNotFoundError as e:
-            _logger.info(
-                "Container %s was not found could nto recover metrics",
+            _logger.debug(
+                "Container %s was not found could not recover metrics",
                 container_name,
             )
             self._metrics_response = MetricsResponse.from_error(e)
         except Exception as e:  # pylint: disable=broad-exception-caught
-            _logger.info("Unexpected exception", exc_info=True)
+            _logger.debug("Unexpected exception", exc_info=True)
             self._metrics_response = MetricsResponse.from_error(e)
 
     async def _task_metrics_recovery(self) -> None:
