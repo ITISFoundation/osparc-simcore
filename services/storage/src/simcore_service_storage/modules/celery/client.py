@@ -24,6 +24,7 @@ _CELERY_TASK_META_PREFIX: Final[str] = "celery-task-meta-"
 _CELERY_STATES_MAPPING: Final[dict[str, TaskState]] = {
     "PENDING": TaskState.PENDING,
     "STARTED": TaskState.PENDING,
+    "RETRY": TaskState.PENDING,
     "RUNNING": TaskState.RUNNING,
     "SUCCESS": TaskState.SUCCESS,
     "ABORTED": TaskState.ABORTED,
