@@ -113,7 +113,12 @@ qx.Class.define("osparc.file.TreeFolderView", {
 
       folderViewer.addListener("requestPathItems", e => {
         const data = e.getData();
-        folderTree.requestPathItems(data.locationId, data.path);
+        folderTree.requestPathItems(data.locationId, data.path)
+          .then(pathModel => {
+            if (osparc.file.FilesTree.isDir(pathModel)) {
+              folderViewer.setFolder(pathModel);
+            }
+          });
       }, this);
     },
 

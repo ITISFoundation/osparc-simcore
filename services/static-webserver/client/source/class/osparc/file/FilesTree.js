@@ -197,9 +197,9 @@ qx.Class.define("osparc.file.FilesTree", {
 
     requestPathItems: function(locationId, path) {
       const dataStore = osparc.store.Data.getInstance();
-      dataStore.getItemsByLocationAndPath(locationId, path)
+      return dataStore.getItemsByLocationAndPath(locationId, path)
         .then(items => {
-          this.__itemsToTree(locationId, path, items);
+          return this.__itemsToTree(locationId, path, items);
         });
     },
 
@@ -402,6 +402,7 @@ qx.Class.define("osparc.file.FilesTree", {
       }
 
       this.__filesReceived(locationId, path, items);
+      return parentModel || null;
     },
 
     __itemsToLocation: function(locationId, items) {
