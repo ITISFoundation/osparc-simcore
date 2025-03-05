@@ -3,7 +3,7 @@ from collections.abc import Iterator
 from typing import Any, cast
 
 from aiohttp import web
-from models_library.api_schemas_catalog.services import ServiceUpdateV2
+from models_library.api_schemas_catalog.services import MyServiceGet, ServiceUpdateV2
 from models_library.api_schemas_webserver.catalog import (
     ServiceInputGet,
     ServiceInputKey,
@@ -21,7 +21,9 @@ from models_library.services import (
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pint import UnitRegistry
+from servicelib.rabbitmq._errors import RPCServerError
 from servicelib.rabbitmq.rpc_interfaces.catalog import services as catalog_rpc
+from servicelib.rabbitmq.rpc_interfaces.catalog.errors import CatalogNotAvailableError
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
 from ..rabbitmq import get_rabbitmq_rpc_client
@@ -85,6 +87,28 @@ async def list_latest_services(
         await _safe_replace_service_input_outputs(data, unit_registry)
 
     return page_data, page.meta
+
+
+async def batch_get_my_services(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    services_ids: list[tuple[ServiceKey, ServiceVersion]],
+) -> list[MyServiceGet]:
+    try:
+
+        return await catalog_rpc.batch_get_my_services(
+            get_rabbitmq_rpc_client(app),
+            user_id=user_id,
+            product_name=product_name,
+            ids=services_ids,
+        )
+    except RPCServerError as err:
+        raise CatalogNotAvailableError(
+            user_id=user_id,
+            product_name=product_name,
+        ) from err
 
 
 async def get_service_v2(

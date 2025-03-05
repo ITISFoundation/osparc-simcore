@@ -7,4 +7,5 @@ __all__: tuple[str, ...] = (
     "get_service",
     "get_service_resources",
     "get_service_access_rights",
+    "batch_get_my_services",
 )

@@ -137,7 +137,7 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
 
     __addLowDiskSpaceSetting: function() {
       const box = osparc.ui.window.TabbedView.createSectionBox(this.tr("Low Disk Space Threshold"));
-      const label = osparc.ui.window.TabbedView.createHelpLabel(this.tr("Set the warning Threshold for low Disk Space availability."), "text-13-italic");
+      const label = osparc.ui.window.TabbedView.createHelpLabel(this.tr("Set the warning Threshold for Low Disk Space availability"), "text-13-italic");
       box.add(label);
       const form = new qx.ui.form.Form();
       const diskUsageSpinner = new qx.ui.form.Spinner().set({
