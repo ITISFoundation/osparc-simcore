@@ -9,6 +9,9 @@ from models_library.api_schemas_catalog.service_access_rights import (
 )
 from pytest_simcore.helpers.webserver_login import UserInfoDict
 from servicelib.aiohttp import status
+from simcore_service_webserver.catalog._exceptions import (
+    DefaultPricingUnitForServiceNotFoundError,
+)
 from simcore_service_webserver.catalog.catalog_service import (
     get_service_access_rights,
     get_services_for_user_in_product,
@@ -98,3 +101,11 @@ async def test_get_service_access_rights(
         product_name="osparc",
     )
     assert isinstance(access_rights, ServiceAccessRightsGet)
+
+
+async def test_catalog_exceptions():
+
+    error = DefaultPricingUnitForServiceNotFoundError(
+        service_key="key", service_version="version"
+    )
+    assert isinstance(error.debug_message(), str)
