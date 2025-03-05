@@ -17,10 +17,15 @@ alembic==1.14.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
+annotated-types==0.7.0
+    # via
+    #   -c requirements/_base.txt
+    #   pydantic
 anyio==4.7.0
     # via
     #   -c requirements/_base.txt
     #   httpx
+    #   starlette
 asgi-lifespan==2.1.0
     # via -r requirements/_test.in
 attrs==24.2.0
@@ -61,6 +66,7 @@ cffi==1.17.1
     # via
     #   -c requirements/_base.txt
     #   cryptography
+    #   pact-python
 cfn-lint==0.72.0
     # via
     #   -c requirements/./constraints.txt
@@ -74,6 +80,8 @@ click==8.1.7
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
     #   flask
+    #   pact-python
+    #   uvicorn
 coverage==7.6.12
     # via pytest-cov
 cryptography==44.0.0
@@ -94,6 +102,10 @@ ecdsa==0.19.0
     #   sshpubkeys
 faker==36.1.1
     # via -r requirements/_test.in
+fastapi==0.115.6
+    # via
+    #   -c requirements/_base.txt
+    #   pact-python
 flask==2.1.3
     # via
     #   flask-cors
@@ -115,6 +127,7 @@ h11==0.14.0
     # via
     #   -c requirements/_base.txt
     #   httpcore
+    #   uvicorn
 httpcore==1.0.7
     # via
     #   -c requirements/_base.txt
@@ -206,6 +219,8 @@ packaging==24.2
     #   -c requirements/_base.txt
     #   aioresponses
     #   pytest
+pact-python==2.3.1
+    # via -r requirements/_test.in
 pbr==6.1.1
     # via
     #   jschema-to-python
@@ -217,7 +232,11 @@ propcache==0.2.1
     #   -c requirements/_base.txt
     #   aiohttp
     #   yarl
-pyasn1==0.4.8
+psutil==6.1.0
+    # via
+    #   -c requirements/_base.txt
+    #   pact-python
+pyasn1==0.6.1
     # via
     #   python-jose
     #   rsa
@@ -225,6 +244,15 @@ pycparser==2.22
     # via
     #   -c requirements/_base.txt
     #   cffi
+pydantic==2.10.3
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -c requirements/_base.txt
+    #   fastapi
+pydantic-core==2.27.1
+    # via
+    #   -c requirements/_base.txt
+    #   pydantic
 pyinstrument==5.0.0
     # via
     #   -c requirements/_base.txt
@@ -277,6 +305,7 @@ requests==2.32.3
     #   -c requirements/_base.txt
     #   docker
     #   moto
+    #   pact-python
     #   responses
 responses==0.25.6
     # via moto
@@ -303,6 +332,7 @@ six==1.17.0
     #   ecdsa
     #   jsonschema
     #   junit-xml
+    #   pact-python
     #   python-dateutil
 sniffio==1.3.1
     # via
@@ -320,6 +350,11 @@ sqlalchemy2-stubs==0.0.2a38
     # via sqlalchemy
 sshpubkeys==3.3.1
     # via moto
+starlette==0.41.3
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -c requirements/_base.txt
+    #   fastapi
 types-aiofiles==24.1.0.20241221
     # via -r requirements/_test.in
 types-awscrt==0.23.10
@@ -333,7 +368,11 @@ typing-extensions==4.12.2
     #   -c requirements/_base.txt
     #   alembic
     #   anyio
+    #   faker
+    #   fastapi
     #   mypy
+    #   pydantic
+    #   pydantic-core
     #   sqlalchemy2-stubs
     #   types-boto3
 tzdata==2025.1
@@ -346,6 +385,10 @@ urllib3==2.2.3
     #   docker
     #   requests
     #   responses
+uvicorn==0.32.1
+    # via
+    #   -c requirements/_base.txt
+    #   pact-python
 werkzeug==2.1.2
     # via
     #   flask
@@ -361,3 +404,4 @@ yarl==1.18.3
     # via
     #   -c requirements/_base.txt
     #   aiohttp
+    #   pact-python
