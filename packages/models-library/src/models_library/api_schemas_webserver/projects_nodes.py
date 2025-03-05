@@ -1,8 +1,12 @@
 # mypy: disable-error-code=truthy-function
 from typing import Annotated, Any, Literal, TypeAlias
 
+from models_library.groups import GroupID
+from models_library.projects import ProjectID
+from models_library.services_history import ServiceRelease
 from pydantic import ConfigDict, Field
 
+from ..access_rights import ExecutableAccessRights
 from ..api_schemas_directorv2.dynamic_services import RetrieveDataOut
 from ..basic_types import PortInt
 from ..projects_nodes import InputID, InputsDict, PartialNode
@@ -40,7 +44,7 @@ class NodePatch(InputSchemaWithoutCamelCase):
     ]
     inputs_required: Annotated[
         list[InputID] | None,
-         Field(alias="inputsRequired"),
+        Field(alias="inputsRequired"),
     ] = None
     input_nodes: Annotated[
         list[NodeID] | None,
@@ -55,9 +59,9 @@ class NodePatch(InputSchemaWithoutCamelCase):
         ),
     ] = None
     boot_options: Annotated[BootOptions | None, Field(alias="bootOptions")] = None
-    outputs: dict[
-        str, Any
-    ] | None = None  # NOTE: it is used by frontend for File Picker
+    outputs: dict[str, Any] | None = (
+        None  # NOTE: it is used by frontend for File Picker
+    )
 
     def to_domain_model(self) -> PartialNode:
         data = self.model_dump(
@@ -197,3 +201,20 @@ class NodeRetrieve(InputSchemaWithoutCamelCase):
 
 class NodeRetrieved(RetrieveDataOut):
     model_config = OutputSchema.model_config
+
+
+class NodeServiceGet(OutputSchema):
+    key: ServiceKey
+    release: ServiceRelease
+    owner: Annotated[
+        GroupID | None,
+        Field(
+            description="Service owner primary group id or None if ownership still not defined"
+        ),
+    ]
+    my_access_rights: ExecutableAccessRights
+
+
+class ProjectNodeServicesGet(OutputSchema):
+    project_uuid: ProjectID
+    services: list[NodeServiceGet]
