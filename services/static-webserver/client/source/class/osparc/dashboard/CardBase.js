@@ -651,9 +651,9 @@ qx.Class.define("osparc.dashboard.CardBase", {
         };
         osparc.data.Resources.fetch("studies", "getServices", params)
           .then(resp => {
-            console.log("OM getServices", resp);
-
-            this.setEmptyWorkbench(Object.keys(workbench).length === 0);
+            const services = resp["services"];
+            console.log("OM get Study Services", services);
+            this.setEmptyWorkbench(services.length === 0);
 
             // Updatable study
             if (osparc.study.Utils.isWorkbenchRetired(workbench)) {
@@ -668,13 +668,13 @@ qx.Class.define("osparc.dashboard.CardBase", {
             }
 
             // Block card
-            const unaccessibleServices = osparc.study.Utils.getInaccessibleServices(workbench)
+            const unaccessibleServices = services.filter(service => service["execute"] === false);
             if (unaccessibleServices.length) {
               this.setBlocked("UNKNOWN_SERVICES");
               let image = "@FontAwesome5Solid/ban/";
               let toolTipText = this.tr("Service info missing");
               unaccessibleServices.forEach(unSrv => {
-                toolTipText += "<br>" + unSrv.key + ":" + unSrv.version;
+                toolTipText += "<br>" + unSrv.key + ":" + unSrv.release.version;
               });
               this.__showBlockedCard(image, toolTipText);
             }
