@@ -155,17 +155,19 @@ qx.Class.define("osparc.file.FilePicker", {
         const params = {
           url: {
             locationId: outValue.store,
-            path: outValue.dataset
+            path: outValue.path
           }
         };
         osparc.data.Resources.fetch("storagePaths", "getPaths", params)
-          .then(files => {
-            const fileMetadata = files.find(file => file.file_id === outValue.path);
-            if (fileMetadata) {
-              resolve(fileMetadata);
-            } else {
-              reject();
+          .then(pagResp => {
+            if (pagResp["items"]) {
+              const file = pagResp["items"].find(item => item.path === outValue.path);
+              if (file) {
+                resolve(file["file_meta_data"]);
+                return;
+              }
             }
+            reject();
           })
           .catch(() => reject());
       });
