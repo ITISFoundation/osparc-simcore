@@ -187,9 +187,4 @@ qx.Class.define("osparc.file.FileTreeItem", {
       }
     }
   },
-
-  destruct: function() {
-    this._dateFormat.dispose();
-    this._dateFormat = null;
-  }
 });
