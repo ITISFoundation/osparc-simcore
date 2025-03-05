@@ -97,6 +97,9 @@ qx.Class.define("osparc.file.TreeFolderView", {
         const data = e.getData();
         folderTree.openNodeAndParents(data);
         folderTree.setSelection(new qx.data.Array([data]));
+        if (osparc.file.FilesTree.isDir(data)) {
+          folderViewer.setFolder(data);
+        }
       }, this);
 
       folderViewer.addListener("folderUp", e => {

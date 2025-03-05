@@ -81,9 +81,6 @@ qx.Class.define("osparc.file.FolderViewer", {
     folderContent.addListener("openItemSelected", e => {
       const entry = e.getData();
       this.fireDataEvent("openItemSelected", entry);
-      if (osparc.file.FilesTree.isDir(entry)) {
-        this.setFolder(entry);
-      }
     });
   },
 
