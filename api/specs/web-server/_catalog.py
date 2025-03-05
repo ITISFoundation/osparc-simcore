@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends
 from models_library.api_schemas_api_server.pricing_plans import ServicePricingPlanGet
 from models_library.api_schemas_webserver.catalog import (
     CatalogServiceGet,
+    CatalogServiceListItem,
     CatalogServiceUpdate,
     ServiceInputGet,
     ServiceInputKey,
@@ -31,16 +32,11 @@ router = APIRouter(
 )
 
 
-#
-# /catalog/services/* COLLECTION
-#
-
-
 @router.get(
     "/catalog/services/-/latest",
-    response_model=Page[CatalogServiceGet],
+    response_model=Page[CatalogServiceListItem],
 )
-def list_services_latest(_query_params: Annotated[ListServiceParams, Depends()]):
+def list_services_latest(_query: Annotated[ListServiceParams, Depends()]):
     pass
 
 
@@ -48,8 +44,7 @@ def list_services_latest(_query_params: Annotated[ListServiceParams, Depends()])
     "/catalog/services/{service_key}/{service_version}",
     response_model=Envelope[CatalogServiceGet],
 )
-def get_service(_path_params: Annotated[ServicePathParams, Depends()]):
-    ...
+def get_service(_path: Annotated[ServicePathParams, Depends()]): ...
 
 
 @router.patch(
@@ -57,10 +52,9 @@ def get_service(_path_params: Annotated[ServicePathParams, Depends()]):
     response_model=Envelope[CatalogServiceGet],
 )
 def update_service(
-    _path_params: Annotated[ServicePathParams, Depends()],
-    _update: CatalogServiceUpdate,
-):
-    ...
+    _path: Annotated[ServicePathParams, Depends()],
+    _body: CatalogServiceUpdate,
+): ...
 
 
 @router.get(
@@ -68,9 +62,8 @@ def update_service(
     response_model=Envelope[list[ServiceInputGet]],
 )
 def list_service_inputs(
-    _path_params: Annotated[ServicePathParams, Depends()],
-):
-    ...
+    _path: Annotated[ServicePathParams, Depends()],
+): ...
 
 
 @router.get(
@@ -78,9 +71,8 @@ def list_service_inputs(
     response_model=Envelope[ServiceInputGet],
 )
 def get_service_input(
-    _path_params: Annotated[_ServiceInputsPathParams, Depends()],
-):
-    ...
+    _path: Annotated[_ServiceInputsPathParams, Depends()],
+): ...
 
 
 @router.get(
@@ -88,10 +80,9 @@ def get_service_input(
     response_model=Envelope[list[ServiceInputKey]],
 )
 def get_compatible_inputs_given_source_output(
-    _path_params: Annotated[ServicePathParams, Depends()],
-    _query_params: Annotated[_FromServiceOutputParams, Depends()],
-):
-    ...
+    _path: Annotated[ServicePathParams, Depends()],
+    _query: Annotated[_FromServiceOutputParams, Depends()],
+): ...
 
 
 @router.get(
@@ -99,9 +90,8 @@ def get_compatible_inputs_given_source_output(
     response_model=Envelope[list[ServiceOutputKey]],
 )
 def list_service_outputs(
-    _path_params: Annotated[ServicePathParams, Depends()],
-):
-    ...
+    _path: Annotated[ServicePathParams, Depends()],
+): ...
 
 
 @router.get(
@@ -109,9 +99,8 @@ def list_service_outputs(
     response_model=Envelope[list[ServiceOutputGet]],
 )
 def get_service_output(
-    _path_params: Annotated[_ServiceOutputsPathParams, Depends()],
-):
-    ...
+    _path: Annotated[_ServiceOutputsPathParams, Depends()],
+): ...
 
 
 @router.get(
@@ -119,10 +108,9 @@ def get_service_output(
     response_model=Envelope[list[ServiceOutputKey]],
 )
 def get_compatible_outputs_given_target_input(
-    _path_params: Annotated[ServicePathParams, Depends()],
-    _query_params: Annotated[_ToServiceInputsParams, Depends()],
-):
-    ...
+    _path: Annotated[ServicePathParams, Depends()],
+    _query: Annotated[_ToServiceInputsParams, Depends()],
+): ...
 
 
 @router.get(
@@ -130,9 +118,8 @@ def get_compatible_outputs_given_target_input(
     response_model=Envelope[ServiceResourcesGet],
 )
 def get_service_resources(
-    _params: Annotated[ServicePathParams, Depends()],
-):
-    ...
+    _path: Annotated[ServicePathParams, Depends()],
+): ...
 
 
 @router.get(
@@ -142,6 +129,5 @@ def get_service_resources(
     tags=["pricing-plans"],
 )
 async def get_service_pricing_plan(
-    _params: Annotated[ServicePathParams, Depends()],
-):
-    ...
+    _path: Annotated[ServicePathParams, Depends()],
+): ...
