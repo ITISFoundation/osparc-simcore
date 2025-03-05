@@ -69,7 +69,7 @@ qx.Class.define("osparc.desktop.MainPageHandler", {
           "studyId": studyId
         }
       };
-      osparc.data.Resources.getOne("studies", params)
+      osparc.data.Resources.fetch("studies", "getOne", params)
         .then(studyData => {
           if (!studyData) {
             const msg = qx.locale.Manager.tr("Study not found");

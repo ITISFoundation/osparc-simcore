@@ -163,7 +163,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
           "studyId": this.__resourceData["uuid"]
         }
       };
-      osparc.data.Resources.getOne("studies", params)
+      osparc.data.Resources.fetch("studies", "getOne", params)
         .then(updatedStudyData => {
           openButton.setFetching(false);
           const updatableServices = osparc.metadata.ServicesInStudyUpdate.updatableNodeIds(updatedStudyData.workbench);

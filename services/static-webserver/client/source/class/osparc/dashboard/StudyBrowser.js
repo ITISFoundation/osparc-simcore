@@ -361,7 +361,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
                 studyId
               }
             };
-            osparc.data.Resources.getOne("studies", params)
+            osparc.data.Resources.fetch("studies", "getOne", params)
               .then(studyData => {
                 this.__studyStateReceived(study["uuid"], studyData["state"]);
               });
@@ -2057,7 +2057,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
               "studyId": data["data"]["uuid"]
             }
           };
-          osparc.data.Resources.getOne("studies", params)
+          osparc.data.Resources.fetch("studies", "getOne", params)
             .then(studyData => this._updateStudyData(studyData))
             .catch(err => {
               console.error(err);

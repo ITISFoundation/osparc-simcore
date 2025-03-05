@@ -134,7 +134,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           "studyId": studyData.uuid
         }
       };
-      osparc.data.Resources.getOne("studies", params)
+      osparc.data.Resources.fetch("studies", "getOne", params)
         .then(latestStudyData => {
           const study = new osparc.data.model.Study(latestStudyData);
           this.setStudy(study);
