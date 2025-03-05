@@ -84,18 +84,38 @@ qx.Class.define("osparc.file.TreeFolderView", {
       const folderTree = this.getChildControl("folder-tree");
       const folderViewer = this.getChildControl("folder-viewer");
 
-      // Connect elements
       folderTree.addListener("selectionChanged", () => {
-        const selectedFolder = folderTree.getSelectedItem();
-        if (selectedFolder && (osparc.file.FilesTree.isDir(selectedFolder) || (selectedFolder.getChildren && selectedFolder.getChildren().length))) {
-          folderViewer.setFolder(selectedFolder);
+        const selectedModel = folderTree.getSelectedItem();
+        if (selectedModel) {
+          if (selectedModel.getPath() && !selectedModel.getLoaded()) {
+            folderTree.requestPathItems(selectedModel.getLocation(), selectedModel.getPath())
+              .then(pathModel => {
+                if (osparc.file.FilesTree.isDir(pathModel)) {
+                  folderViewer.setFolder(pathModel);
+                }
+              });
+          } else if (osparc.file.FilesTree.isDir(selectedModel)) {
+            folderViewer.setFolder(selectedModel);
+          }
         }
       }, this);
 
       folderViewer.addListener("openItemSelected", e => {
-        const data = e.getData();
-        folderTree.openNodeAndParents(data);
-        folderTree.setSelection(new qx.data.Array([data]));
+        const selectedModel = e.getData();
+        if (selectedModel) {
+          if (selectedModel.getPath() && !selectedModel.getLoaded()) {
+            folderTree.requestPathItems(selectedModel.getLocation(), selectedModel.getPath())
+              .then(pathModel => {
+                folderTree.openNodeAndParents(pathModel);
+                folderTree.setSelection(new qx.data.Array([pathModel]));
+                if (osparc.file.FilesTree.isDir(pathModel)) {
+                  folderViewer.setFolder(pathModel);
+                }
+              });
+          } else if (osparc.file.FilesTree.isDir(selectedModel)) {
+            folderViewer.setFolder(selectedModel);
+          }
+        }
       }, this);
 
       folderViewer.addListener("folderUp", e => {
@@ -103,13 +123,10 @@ qx.Class.define("osparc.file.TreeFolderView", {
         const parent = folderTree.getParent(currentFolder);
         if (parent) {
           folderTree.setSelection(new qx.data.Array([parent]));
-          folderViewer.setFolder(parent);
+          if (osparc.file.FilesTree.isDir(parent)) {
+            folderViewer.setFolder(parent);
+          }
         }
-      }, this);
-
-      folderViewer.addListener("requestDatasetFiles", e => {
-        const data = e.getData();
-        folderTree.requestDatasetFiles(data.locationId, data.datasetId);
       }, this);
     },
 

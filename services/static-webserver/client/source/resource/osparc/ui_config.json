@@ -106,14 +106,18 @@
         "resourceType": "service",
         "expectedKey": "simcore/services/dynamic/s4l-ui",
         "title": "Sim4Life",
-        "newStudyLabel": "New S4L project",
+        "newStudyLabel": "New Sim4Life",
         "idToWidget": "startS4LButton"
       }, {
         "resourceType": "service",
         "expectedKey": "simcore/services/dynamic/s4l-jupyter",
         "title": "Jupyter Lab",
-        "icon": "https://upload.wikimedia.org/wikipedia/commons/3/38/Jupyter_logo.svg",
         "newStudyLabel": "New S4L Jupyter Lab"
+      }, {
+        "resourceType": "service",
+        "expectedKey": "simcore/services/dynamic/iseg-web",
+        "title": "Segmentation",
+        "newStudyLabel": "Segmentation"
       }]
     }
   },
@@ -123,14 +127,18 @@
         "resourceType": "service",
         "expectedKey": "simcore/services/dynamic/s4l-ui",
         "title": "Sim4Life",
-        "newStudyLabel": "New S4L project",
+        "newStudyLabel": "New Sim4Life",
         "idToWidget": "startS4LButton"
       }, {
         "resourceType": "service",
         "expectedKey": "simcore/services/dynamic/s4l-jupyter",
-        "icon": "https://upload.wikimedia.org/wikipedia/commons/3/38/Jupyter_logo.svg",
         "title": "Jupyter Lab",
         "newStudyLabel": "New S4L Jupyter Lab"
+      }, {
+        "resourceType": "service",
+        "expectedKey": "simcore/services/dynamic/iseg-web",
+        "title": "Segmentation",
+        "newStudyLabel": "Segmentation"
       }]
     }
   },
