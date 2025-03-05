@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: simcore-service-webserver
   description: Main service with an interface (http-API & websockets) to the web front-end
-  version: 0.60.0
+  version: 0.61.0
 servers:
 - url: ''
   description: webserver
@@ -2027,7 +2027,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Page_CatalogServiceGet_'
+                $ref: '#/components/schemas/Page_CatalogServiceListItem_'
   /v0/catalog/services/{service_key}/{service_version}:
     get:
       tags:
@@ -4927,6 +4927,28 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_dict_Annotated_str__StringConstraints___ImageResources__'
+  /v0/projects/{project_id}/nodes/-/services:
+    get:
+      tags:
+      - projects
+      - nodes
+      summary: Get Project Services
+      operationId: get_project_services
+      parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Project Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_ProjectNodeServicesGet_'
   /v0/projects/{project_id}/nodes/-/services:access:
     get:
       tags:
@@ -8016,6 +8038,121 @@ components:
         type: computational
         version: 2.2.1
         version_display: 2 Xtreme
+    CatalogServiceListItem:
+      properties:
+        key:
+          type: string
+          pattern: ^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$
+          title: Key
+        version:
+          type: string
+          pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
+          title: Version
+        name:
+          type: string
+          title: Name
+        thumbnail:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Thumbnail
+        icon:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Icon
+        description:
+          type: string
+          title: Description
+        descriptionUi:
+          type: boolean
+          title: Descriptionui
+          default: false
+        versionDisplay:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Versiondisplay
+        type:
+          $ref: '#/components/schemas/ServiceType'
+        contact:
+          anyOf:
+          - type: string
+            format: email
+          - type: 'null'
+          title: Contact
+        authors:
+          items:
+            $ref: '#/components/schemas/Author'
+          type: array
+          minItems: 1
+          title: Authors
+        owner:
+          anyOf:
+          - type: string
+            format: email
+          - type: 'null'
+          title: Owner
+          description: None when the owner email cannot be found in the database
+        inputs:
+          type: object
+          title: Inputs
+        outputs:
+          type: object
+          title: Outputs
+        bootOptions:
+          anyOf:
+          - type: object
+          - type: 'null'
+          title: Bootoptions
+        minVisibleInputs:
+          anyOf:
+          - type: integer
+            minimum: 0
+          - type: 'null'
+          title: Minvisibleinputs
+        accessRights:
+          anyOf:
+          - additionalProperties:
+              $ref: '#/components/schemas/ServiceGroupAccessRightsV2'
+            type: object
+          - type: 'null'
+          title: Accessrights
+        classifiers:
+          anyOf:
+          - items:
+              type: string
+            type: array
+          - type: 'null'
+          title: Classifiers
+          default: []
+        quality:
+          type: object
+          title: Quality
+          default: {}
+        history:
+          items:
+            $ref: '#/components/schemas/ServiceRelease'
+          type: array
+          title: History
+          description: History will be replaced by current 'release' instead
+          default: []
+          deprecated: true
+      additionalProperties: false
+      type: object
+      required:
+      - key
+      - version
+      - name
+      - description
+      - type
+      - contact
+      - authors
+      - owner
+      - inputs
+      - outputs
+      - accessRights
+      title: CatalogServiceListItem
     CatalogServiceUpdate:
       properties:
         name:
@@ -9089,6 +9226,19 @@ components:
           title: Error
       type: object
       title: Envelope[ProjectMetadataGet]
+    Envelope_ProjectNodeServicesGet_:
+      properties:
+        data:
+          anyOf:
+          - $ref: '#/components/schemas/ProjectNodeServicesGet'
+          - type: 'null'
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[ProjectNodeServicesGet]
     Envelope_ProjectState_:
       properties:
         data:
@@ -10133,6 +10283,22 @@ components:
       - resource
       - field
       title: ErrorItemType
+    ExecutableAccessRights:
+      properties:
+        write:
+          type: boolean
+          title: Write
+          description: can change executable settings
+        execute:
+          type: boolean
+          title: Execute
+          description: can run executable
+      additionalProperties: false
+      type: object
+      required:
+      - write
+      - execute
+      title: ExecutableAccessRights
     FeaturesDict:
       properties:
         age:
@@ -12044,6 +12210,32 @@ components:
       - thumbnail_url
       - file_url
       title: NodeScreenshot
+    NodeServiceGet:
+      properties:
+        key:
+          type: string
+          pattern: ^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$
+          title: Key
+        release:
+          $ref: '#/components/schemas/ServiceRelease'
+        owner:
+          anyOf:
+          - type: integer
+            exclusiveMinimum: true
+            minimum: 0
+          - type: 'null'
+          title: Owner
+          description: Service owner primary group id or None if ownership still not
+            defined
+        myAccessRights:
+          $ref: '#/components/schemas/ExecutableAccessRights'
+      type: object
+      required:
+      - key
+      - release
+      - owner
+      - myAccessRights
+      title: NodeServiceGet
     NodeState:
       properties:
         modified:
@@ -12190,7 +12382,7 @@ components:
       - total
       - count
       title: PageMetaInfoLimitOffset
-    Page_CatalogServiceGet_:
+    Page_CatalogServiceListItem_:
       properties:
         _meta:
           $ref: '#/components/schemas/PageMetaInfoLimitOffset'
@@ -12198,7 +12390,7 @@ components:
           $ref: '#/components/schemas/PageLinks'
         data:
           items:
-            $ref: '#/components/schemas/CatalogServiceGet'
+            $ref: '#/components/schemas/CatalogServiceListItem'
           type: array
           title: Data
       additionalProperties: false
@@ -12207,7 +12399,7 @@ components:
       - _meta
       - _links
       - data
-      title: Page[CatalogServiceGet]
+      title: Page[CatalogServiceListItem]
     Page_LicensedItemPurchaseGet_:
       properties:
         _meta:
@@ -13532,6 +13724,22 @@ components:
       required:
       - custom
       title: ProjectMetadataUpdate
+    ProjectNodeServicesGet:
+      properties:
+        projectUuid:
+          type: string
+          format: uuid
+          title: Projectuuid
+        services:
+          items:
+            $ref: '#/components/schemas/NodeServiceGet'
+          type: array
+          title: Services
+      type: object
+      required:
+      - projectUuid
+      - services
+      title: ProjectNodeServicesGet
     ProjectOutputGet:
       properties:
         key:
@@ -14384,9 +14592,9 @@ components:
             format: date-time
           - type: 'null'
           title: Retired
-          description: 'whether this service is planned to be retired. If None, the
+          description: whether this service is planned to be retired. If None, the
             service is still active. If now<retired then the service is deprecated.
-            If retired<now then the service is retired and should not be used. '
+            If retired<now then the service is retired and should not be used.
         compatibility:
           anyOf:
           - $ref: '#/components/schemas/Compatibility'
