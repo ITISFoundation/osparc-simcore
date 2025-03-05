@@ -87,19 +87,30 @@ qx.Class.define("osparc.file.TreeFolderView", {
       // Connect elements
       folderTree.addListener("selectionChanged", () => {
         const selectedFolder = folderTree.getSelectedItem();
-        // if (selectedFolder && (osparc.file.FilesTree.isDir(selectedFolder) || (selectedFolder.getChildren && selectedFolder.getChildren().length))) {
-        if (selectedFolder && osparc.file.FilesTree.isDir(selectedFolder)) {
-          folderViewer.setFolder(selectedFolder);
+        if (selectedFolder) {
+          if (selectedFolder.getPath()) {
+            folderTree.requestPathItems(selectedFolder.getLocation(), selectedFolder.getPath())
+              .then(pathModel => {
+                if (osparc.file.FilesTree.isDir(pathModel)) {
+                  folderViewer.setFolder(pathModel);
+                }
+              });
+          } else if (osparc.file.FilesTree.isDir(selectedFolder)) {
+            folderViewer.setFolder(selectedFolder);
+          }
         }
       }, this);
 
       folderViewer.addListener("openItemSelected", e => {
         const data = e.getData();
-        folderTree.openNodeAndParents(data);
-        folderTree.setSelection(new qx.data.Array([data]));
-        if (osparc.file.FilesTree.isDir(data)) {
-          folderViewer.setFolder(data);
-        }
+        folderTree.requestPathItems(data.getLocation(), data.getPath())
+          .then(pathModel => {
+            folderTree.openNodeAndParents(pathModel);
+            folderTree.setSelection(new qx.data.Array([pathModel]));
+            if (osparc.file.FilesTree.isDir(pathModel)) {
+              folderViewer.setFolder(pathModel);
+            }
+          });
       }, this);
 
       folderViewer.addListener("folderUp", e => {
@@ -107,18 +118,10 @@ qx.Class.define("osparc.file.TreeFolderView", {
         const parent = folderTree.getParent(currentFolder);
         if (parent) {
           folderTree.setSelection(new qx.data.Array([parent]));
-          folderViewer.setFolder(parent);
+          if (osparc.file.FilesTree.isDir(parent)) {
+            folderViewer.setFolder(parent);
+          }
         }
-      }, this);
-
-      folderViewer.addListener("requestPathItems", e => {
-        const data = e.getData();
-        folderTree.requestPathItems(data.locationId, data.path)
-          .then(pathModel => {
-            if (osparc.file.FilesTree.isDir(pathModel)) {
-              folderViewer.setFolder(pathModel);
-            }
-          });
       }, this);
     },
 
