@@ -805,9 +805,9 @@
             "required": false,
             "schema": {
               "type": "integer",
-              "maximum": 100,
+              "maximum": 50,
               "minimum": 1,
-              "default": 50,
+              "default": 20,
               "title": "Limit"
             }
           },
@@ -3352,9 +3352,9 @@
             "required": false,
             "schema": {
               "type": "integer",
-              "maximum": 100,
+              "maximum": 50,
               "minimum": 1,
-              "default": 50,
+              "default": 20,
               "title": "Limit"
             }
           },
@@ -4164,9 +4164,9 @@
             "required": false,
             "schema": {
               "type": "integer",
-              "maximum": 100,
+              "maximum": 50,
               "minimum": 1,
-              "default": 50,
+              "default": 20,
               "title": "Limit"
             }
           },
@@ -5351,9 +5351,9 @@
             "required": false,
             "schema": {
               "type": "integer",
-              "maximum": 100,
+              "maximum": 50,
               "minimum": 1,
-              "default": 50,
+              "default": 20,
               "title": "Limit"
             }
           },
@@ -5648,9 +5648,9 @@
             "required": false,
             "schema": {
               "type": "integer",
-              "maximum": 100,
+              "maximum": 50,
               "minimum": 1,
-              "default": 50,
+              "default": 20,
               "title": "Limit"
             }
           },
@@ -6748,6 +6748,45 @@
       },
       "LicensedResource": {
         "properties": {
+          "source": {
+            "$ref": "#/components/schemas/LicensedResourceSource"
+          },
+          "category_id": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Category Id"
+          },
+          "category_display": {
+            "type": "string",
+            "title": "Category Display"
+          },
+          "terms_of_use_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2083,
+                "minLength": 1,
+                "format": "uri"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Terms Of Use Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "source",
+          "category_id",
+          "category_display",
+          "terms_of_use_url"
+        ],
+        "title": "LicensedResource"
+      },
+      "LicensedResourceSource": {
+        "properties": {
           "id": {
             "type": "integer",
             "title": "Id"
@@ -6761,7 +6800,7 @@
             "title": "Thumbnail"
           },
           "features": {
-            "$ref": "#/components/schemas/LicensedResourceFeaturesDict"
+            "$ref": "#/components/schemas/LicensedResourceSourceFeaturesDict"
           },
           "doi": {
             "anyOf": [
@@ -6817,9 +6856,9 @@
           "protection",
           "available_from_url"
         ],
-        "title": "LicensedResource"
+        "title": "LicensedResourceSource"
       },
-      "LicensedResourceFeaturesDict": {
+      "LicensedResourceSourceFeaturesDict": {
         "properties": {
           "age": {
             "type": "string",
@@ -6867,7 +6906,7 @@
         "required": [
           "date"
         ],
-        "title": "LicensedResourceFeaturesDict"
+        "title": "LicensedResourceSourceFeaturesDict"
       },
       "LicensedResourceType": {
         "type": "string",
