@@ -3,6 +3,7 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
+from collections.abc import Callable
 from typing import Any
 from urllib.parse import quote
 
@@ -10,6 +11,7 @@ import pytest
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from fastapi_pagination.cursor import CursorPage
+from models_library.api_schemas_rpc_async_jobs.async_jobs import AsyncJobGet, AsyncJobId
 from models_library.api_schemas_storage.storage_schemas import (
     DatasetMetaDataGet,
     FileLocation,
@@ -17,10 +19,14 @@ from models_library.api_schemas_storage.storage_schemas import (
     FileUploadSchema,
     PathMetaDataGet,
 )
+from models_library.api_schemas_webserver.storage import StorageAsyncJobGet
 from models_library.projects_nodes_io import LocationID, StorageFileID
 from pydantic import TypeAdapter
 from pytest_simcore.helpers.assert_checks import assert_status
 from servicelib.aiohttp import status
+from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import (
+    submit_job,
+)
 from simcore_postgres_database.models.users import UserRole
 
 API_VERSION = "v0"
@@ -78,6 +84,51 @@ async def test_list_storage_paths(
     data, error = await assert_status(resp, expected)
     if not error:
         TypeAdapter(CursorPage[PathMetaDataGet]).validate_python(data)
+
+
+_faker = Faker()
+
+
+@pytest.mark.parametrize(
+    "user_role,expected",
+    [
+        (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
+        (UserRole.GUEST, status.HTTP_202_ACCEPTED),
+        (UserRole.USER, status.HTTP_202_ACCEPTED),
+        (UserRole.TESTER, status.HTTP_202_ACCEPTED),
+    ],
+)
+@pytest.mark.parametrize(
+    "backend_result_or_exception",
+    [
+        AsyncJobGet(job_id=AsyncJobId(f"{_faker.uuid4()}")),
+    ],
+    ids=lambda x: type(x).__name__,
+)
+async def test_compute_path_size(
+    client: TestClient,
+    logged_user: dict[str, Any],
+    expected: int,
+    location_id: LocationID,
+    faker: Faker,
+    create_storage_rpc_client_mock: Callable[[str, Any], None],
+    backend_result_or_exception: Any,
+):
+    create_storage_rpc_client_mock(
+        submit_job.__name__,
+        backend_result_or_exception,
+    )
+
+    assert client.app
+    url = client.app.router["compute_path_size"].url_for(
+        location_id=f"{location_id}",
+        path=quote(faker.file_path(absolute=False), safe=""),
+    )
+
+    resp = await client.post(f"{url}", params={"user_id": logged_user["id"]})
+    data, error = await assert_status(resp, expected)
+    if not error:
+        TypeAdapter(StorageAsyncJobGet).validate_python(data)
 
 
 @pytest.mark.parametrize(
