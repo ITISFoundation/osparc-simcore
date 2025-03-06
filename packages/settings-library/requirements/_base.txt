@@ -23,8 +23,11 @@ pydantic-core==2.27.2
     # via pydantic
 pydantic-extra-types==2.10.2
     # via -r requirements/../../../packages/common-library/requirements/_base.in
-pydantic-settings==2.7.1
-    # via -r requirements/_base.in
+pydantic-settings==2.7.0
+    # via
+    #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -r requirements/_base.in
 pygments==2.19.1
     # via rich
 python-dotenv==1.0.1
@@ -35,7 +38,7 @@ rich==13.9.4
     #   typer
 shellingham==1.5.4
     # via typer
-typer==0.15.1
+typer==0.15.2
     # via -r requirements/_base.in
 typing-extensions==4.12.2
     # via
