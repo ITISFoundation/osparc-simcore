@@ -373,7 +373,14 @@ qx.Class.define("osparc.dashboard.CardBase", {
     workbench: {
       check: "Object",
       nullable: true,
-      apply: "__applyWorkbench"
+    },
+
+    services: {
+      check: "Array",
+      init: true,
+      nullable: false,
+      apply: "__applyServices",
+      event: "changeServices",
     },
 
     uiMode: {
@@ -519,6 +526,10 @@ qx.Class.define("osparc.dashboard.CardBase", {
         hits: resourceData.hits ? resourceData.hits : defaultHits,
         workbench
       });
+
+      if (resourceData["resourceType"] === "study" || resourceData["resourceType"] === "template") {
+        this.__fetchServices();
+      }
     },
 
     __applyMultiSelectionMode: function(value) {
@@ -634,12 +645,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
       }
     },
 
-    __applyWorkbench: function(workbench) {
-      if (workbench === null) {
-        // it is a service
-        return;
-      }
-
+    __fetchServices: function() {
       if (this.isResourceType("study") || this.isResourceType("template")) {
         const params = {
           url: {
@@ -649,29 +655,33 @@ qx.Class.define("osparc.dashboard.CardBase", {
         osparc.data.Resources.fetch("studies", "getServices", params)
           .then(resp => {
             const services = resp["services"];
-            this.setEmptyWorkbench(services.length === 0);
-
-            // Updatable study
-            if (osparc.study.Utils.anyServiceRetired(services)) {
-              this.setUpdatable("retired");
-            } else if (osparc.study.Utils.anyServiceDeprecated(services)) {
-              this.setUpdatable("deprecated");
-            } else if (osparc.study.Utils.anyServiceUpdatable(services)) {
-              this.setUpdatable("updatable");
-            }
-
-            // Block card
-            const unaccessibleServices = osparc.study.Utils.getInaccessibleServices2(services);
-            if (unaccessibleServices.length) {
-              this.setBlocked("UNKNOWN_SERVICES");
-              const image = "@FontAwesome5Solid/ban/";
-              let toolTipText = this.tr("Unaccessible service(s):");
-              unaccessibleServices.forEach(unSrv => {
-                toolTipText += "<br>" + unSrv.key + ":" + osparc.service.Utils.extractVersionDisplay(unSrv.release);
-              });
-              this.__showBlockedCard(image, toolTipText);
-            }
+            this.setServices(services);
           });
+      }
+    },
+
+    __applyServices: function(services) {
+      this.setEmptyWorkbench(services.length === 0);
+
+      // Updatable study
+      if (osparc.study.Utils.anyServiceRetired(services)) {
+        this.setUpdatable("retired");
+      } else if (osparc.study.Utils.anyServiceDeprecated(services)) {
+        this.setUpdatable("deprecated");
+      } else if (osparc.study.Utils.anyServiceUpdatable(services)) {
+        this.setUpdatable("updatable");
+      }
+
+      // Block card
+      const unaccessibleServices = osparc.study.Utils.getInaccessibleServices2(services);
+      if (unaccessibleServices.length) {
+        this.setBlocked("UNKNOWN_SERVICES");
+        const image = "@FontAwesome5Solid/ban/";
+        let toolTipText = this.tr("Unaccessible service(s):");
+        unaccessibleServices.forEach(unSrv => {
+          toolTipText += "<br>" + unSrv.key + ":" + osparc.service.Utils.extractVersionDisplay(unSrv.release);
+        });
+        this.__showBlockedCard(image, toolTipText);
       }
     },
 
