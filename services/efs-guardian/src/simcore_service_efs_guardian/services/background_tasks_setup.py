@@ -48,7 +48,7 @@ def _on_app_startup(app: FastAPI) -> Callable[[], Awaitable[None]]:
             # Setup periodic tasks
             for task in _EFS_GUARDIAN_BACKGROUND_TASKS:
                 app.state.efs_guardian_background_tasks.append(
-                    asyncio.create_task(task["task_func"](), name=task["name"])
+                    await asyncio.create_task(task["task_func"](), name=task["name"])
                 )
 
     return _startup
