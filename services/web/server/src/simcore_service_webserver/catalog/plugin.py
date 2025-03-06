@@ -6,7 +6,7 @@ from aiohttp import web
 from pint import UnitRegistry
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
-from . import _controller_rest, _tags_handlers
+from . import _controller_rest, _controller_rest_tags_handlers
 
 _logger = logging.getLogger(__name__)
 
@@ -26,7 +26,7 @@ def setup_catalog(app: web.Application):
     )
 
     app.add_routes(_controller_rest.routes)
-    app.add_routes(_tags_handlers.routes)
+    app.add_routes(_controller_rest_tags_handlers.routes)
 
     # prepares units registry
     app[UnitRegistry.__name__] = UnitRegistry()

@@ -9,7 +9,7 @@ import pytest
 from models_library.function_services_catalog.services import demo_units
 from models_library.services import ServiceInput, ServiceOutput
 from pint import UnitRegistry
-from simcore_service_webserver.catalog._api_units import can_connect
+from simcore_service_webserver.catalog._service_api_units import can_connect
 
 
 def _create_port_data(schema: dict[str, Any]):

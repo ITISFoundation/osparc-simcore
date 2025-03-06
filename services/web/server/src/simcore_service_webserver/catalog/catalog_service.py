@@ -1,4 +1,4 @@
-from ._catalog_rest_client import *  # noqa
+from ._service_catalog_rest_client import *  # noqa
 
 __all__: tuple[str, ...] = (
     "is_catalog_service_responsive",
