@@ -182,6 +182,7 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
       } else if (this.__selection.length) {
         const selection = this.__selection[0];
         if (selection) {
+          toBeDeleted.push(selection);
           if (osparc.file.FilesTree.isDir(selection)) {
             isFolderSelected = true;
           }
