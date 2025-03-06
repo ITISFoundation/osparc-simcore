@@ -3,7 +3,6 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import arrow
-from aws_library.s3._errors import S3KeyNotFoundError
 from fastapi import FastAPI
 from models_library.api_schemas_storage.storage_schemas import (
     DatCoreCollectionName,
@@ -32,7 +31,6 @@ from .models import (
 from .modules.datcore_adapter import datcore_adapter
 from .modules.datcore_adapter.datcore_adapter_exceptions import (
     DatcoreAdapterMultipleFilesError,
-    DatcoreAdapterResponseError,
 )
 from .modules.db.tokens import get_api_token_and_secret
 
@@ -279,13 +277,9 @@ class DatCoreDataManager(BaseDataManager):
     ) -> AnyUrl:
         api_token, api_secret = await self._get_datcore_tokens(user_id)
         api_token, api_secret = _check_api_credentials(api_token, api_secret)
-        try:
-            return await datcore_adapter.get_file_download_presigned_link(
-                self.app, api_token, api_secret, file_id
-            )
-        except DatcoreAdapterResponseError as exc:
-            if exc.status == status.HTTP_404_NOT_FOUND:
-                raise S3KeyNotFoundError(key=file_id, bucket=self.buck)
+        return await datcore_adapter.get_file_download_presigned_link(
+            self.app, api_token, api_secret, file_id
+        )
 
     async def delete_file(self, user_id: UserID, file_id: StorageFileID) -> None:
         api_token, api_secret = await self._get_datcore_tokens(user_id)
