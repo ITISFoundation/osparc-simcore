@@ -35,7 +35,6 @@ from simcore_service_webserver.products._repository import ProductRepository
 from simcore_service_webserver.products._web_middlewares import (
     _get_default_product_name,
 )
-from simcore_service_webserver.products.errors import MissingStripeConfigError
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 
@@ -233,12 +232,12 @@ async def test_product_repository_get_product_stripe_info(
     product_repository: ProductRepository,
 ):
     product_name = "tis"
-    stripe_info = await product_repository.get_product_stripe_info(product_name)
+    stripe_info = await product_repository.get_product_stripe_info_or_none(product_name)
     assert isinstance(stripe_info, ProductStripeInfoGet)
 
     product_name = "s4l"
-    with pytest.raises(MissingStripeConfigError, match=product_name):
-        stripe_info = await product_repository.get_product_stripe_info(product_name)
+    stripe_info = await product_repository.get_product_stripe_info_or_none(product_name)
+    assert stripe_info is None
 
 
 async def test_product_repository_get_template_content(

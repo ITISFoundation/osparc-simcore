@@ -22,7 +22,6 @@ from simcore_postgres_database.utils_repos import (
     transaction_context,
 )
 from simcore_service_webserver.constants import FRONTEND_APPS_AVAILABLE
-from simcore_service_webserver.products.errors import MissingStripeConfigError
 from sqlalchemy.engine import Row
 from sqlalchemy.ext.asyncio import AsyncConnection
 
@@ -157,17 +156,15 @@ class ProductRepository(BaseRepositoryV2):
                 conn, product_name=product_name
             )
 
-    async def get_product_stripe_info(
+    async def get_product_stripe_info_or_none(
         self, product_name: str, connection: AsyncConnection | None = None
-    ) -> ProductStripeInfoGet:
+    ) -> ProductStripeInfoGet | None:
         async with pass_or_acquire_connection(self.engine, connection) as conn:
             latest_stripe_info = await get_product_latest_stripe_info_or_none(
                 conn, product_name=product_name
             )
             if latest_stripe_info is None:
-                exc = MissingStripeConfigError(product_name=product_name)
-                exc.add_note("Stripe config missing in database")
-                raise exc
+                return None
 
             stripe_price_id, stripe_tax_rate_id = latest_stripe_info
             return ProductStripeInfoGet(

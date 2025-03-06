@@ -112,9 +112,10 @@ async def get_product_stripe_info(
 ) -> ProductStripeInfoGet:
     repo = ProductRepository.create_from_app(app)
 
-    product_stripe_info = await repo.get_product_stripe_info(product_name)
+    product_stripe_info = await repo.get_product_stripe_info_or_none(product_name)
     if (
-        "missing!!" in product_stripe_info.stripe_price_id
+        product_stripe_info is None
+        or "missing!!" in product_stripe_info.stripe_price_id
         or "missing!!" in product_stripe_info.stripe_tax_rate_id
     ):
         exc = MissingStripeConfigError(
