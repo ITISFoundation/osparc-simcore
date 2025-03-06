@@ -2,7 +2,7 @@ annotated-types==0.7.0
     # via pydantic
 anyio==4.8.0
     # via httpx
-certifi==2024.12.14
+certifi==2025.1.31
     # via
     #   -c requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
@@ -54,8 +54,10 @@ pydantic-core==2.27.2
     # via pydantic
 pydantic-extra-types==2.10.2
     # via -r requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/_base.in
-pydantic-settings==2.7.1
+pydantic-settings==2.7.0
     # via
+    #   -c requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
     #   osparc
 pygments==2.19.1
@@ -80,7 +82,7 @@ tenacity==9.0.0
     # via osparc
 tqdm==4.67.1
     # via osparc
-typer==0.15.1
+typer==0.15.2
     # via -r requirements/../../../packages/settings-library/requirements/_base.in
 typing-extensions==4.12.2
     # via

@@ -217,7 +217,7 @@ def test_sleepers(
             sleeper.click()
             # waiting for this response is not enough, the frontend needs some time to show the files
             # therefore _get_file_names is wrapped with tenacity
-            with page.expect_response(re.compile(r"files/metadata")):
+            with page.expect_response(re.compile(r"paths\?file_filter=")):
                 page.get_by_test_id("nodeFilesBtn").click()
                 output_file_names_found = _get_file_names(page)
 
