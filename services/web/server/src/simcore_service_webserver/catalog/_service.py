@@ -28,7 +28,7 @@ from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
 from ..rabbitmq import get_rabbitmq_rpc_client
 from . import _service_catalog_rest_client
-from ._service_api_units import can_connect, replace_service_input_outputs
+from ._service_units import can_connect, replace_service_input_outputs
 from .controller_rest_schemas import (
     CatalogRequestContext,
     ServiceInputGetFactory,

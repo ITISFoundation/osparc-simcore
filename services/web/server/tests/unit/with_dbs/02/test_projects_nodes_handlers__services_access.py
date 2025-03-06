@@ -59,7 +59,7 @@ def fake_project(
 @pytest.fixture
 def mock_catalog_api_get_service_access_rights_response(mocker: MockerFixture):
     mocker.patch(
-        "simcore_service_webserver.projects._nodes_handlers.catalog_client.get_service_access_rights",
+        "simcore_service_webserver.projects._nodes_handlers.catalog_service.get_service_access_rights",
         spec=True,
         side_effect=[
             ServiceAccessRightsGet(
@@ -130,7 +130,7 @@ async def test_accessible_thanks_to_everyone_group_id(
     logged_user: UserInfoDict,
 ):
     mocker.patch(
-        "simcore_service_webserver.projects._nodes_handlers.catalog_client.get_service_access_rights",
+        "simcore_service_webserver.projects._nodes_handlers.catalog_service.get_service_access_rights",
         spec=True,
         side_effect=[
             ServiceAccessRightsGet(
@@ -185,7 +185,7 @@ async def test_accessible_thanks_to_concrete_group_id(
     for_gid = logged_user["primary_gid"]
 
     mocker.patch(
-        "simcore_service_webserver.projects._nodes_handlers.catalog_client.get_service_access_rights",
+        "simcore_service_webserver.projects._nodes_handlers.catalog_service.get_service_access_rights",
         spec=True,
         side_effect=[
             ServiceAccessRightsGet(
@@ -238,7 +238,7 @@ async def test_accessible_through_product_group(
     for_gid = logged_user["primary_gid"]
 
     mocker.patch(
-        "simcore_service_webserver.projects._nodes_handlers.catalog_client.get_service_access_rights",
+        "simcore_service_webserver.projects._nodes_handlers.catalog_service.get_service_access_rights",
         spec=True,
         side_effect=[
             ServiceAccessRightsGet(
@@ -297,7 +297,7 @@ async def test_accessible_for_one_service(
     for_gid = logged_user["primary_gid"]
 
     mocker.patch(
-        "simcore_service_webserver.projects._nodes_handlers.catalog_client.get_service_access_rights",
+        "simcore_service_webserver.projects._nodes_handlers.catalog_service.get_service_access_rights",
         spec=True,
         side_effect=[
             ServiceAccessRightsGet(
@@ -355,7 +355,7 @@ async def test_not_accessible_for_more_services(
     logged_user: UserInfoDict,
 ):
     mocker.patch(
-        "simcore_service_webserver.projects._nodes_handlers.catalog_client.get_service_access_rights",
+        "simcore_service_webserver.projects._nodes_handlers.catalog_service.get_service_access_rights",
         spec=True,
         side_effect=[
             ServiceAccessRightsGet(
@@ -421,7 +421,7 @@ async def test_not_accessible_for_service_because_of_execute_access_false(
     for_gid = logged_user["primary_gid"]
 
     mocker.patch(
-        "simcore_service_webserver.projects._nodes_handlers.catalog_client.get_service_access_rights",
+        "simcore_service_webserver.projects._nodes_handlers.catalog_service.get_service_access_rights",
         spec=True,
         side_effect=[
             ServiceAccessRightsGet(
