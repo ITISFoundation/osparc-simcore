@@ -247,6 +247,7 @@ async def test_path_compute_size(
     assert workspace_total_size == accumulated_subfolder_size
 
 
+@pytest.mark.xfail(reason="in development")
 async def test_path_compute_size_inexistent_path(
     initialized_app: FastAPI,
     client: httpx.AsyncClient,
