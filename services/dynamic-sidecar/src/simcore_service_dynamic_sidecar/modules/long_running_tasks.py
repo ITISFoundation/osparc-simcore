@@ -56,7 +56,7 @@ from ..modules.container_utils import run_command_in_container
 from ..modules.mounted_fs import MountedVolumes
 from ..modules.notifications._notifications_ports import PortNotifier
 from ..modules.outputs import OutputsManager, event_propagation_disabled
-from .long_running_tasksutils import run_before_shutdown_actions
+from .long_running_tasks_utils import run_before_shutdown_actions
 from .resource_tracking import send_service_started, send_service_stopped
 
 _logger = logging.getLogger(__name__)

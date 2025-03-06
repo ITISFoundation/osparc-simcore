@@ -9,7 +9,7 @@ from ..core.errors import (
     ContainerExecTimeoutError,
 )
 from ..models.shared_store import SharedStore
-from ..modules.container_utils import run_command_in_container
+from .container_utils import run_command_in_container
 
 _logger = logging.getLogger(__name__)
 
