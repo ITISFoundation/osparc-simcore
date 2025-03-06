@@ -1,6 +1,6 @@
 import contextlib
 import logging
-from typing import Any, Final, Type
+from typing import Any, Final
 from uuid import uuid4
 
 from celery import Celery
@@ -10,7 +10,7 @@ from models_library.progress_bar import ProgressReport
 from pydantic import TypeAdapter, ValidationError
 from servicelib.logging_utils import log_context
 
-from .models import TaskContext, TaskError, TaskID, TaskResult, TaskState, TaskStatus, TaskUUID
+from .models import TaskContext, TaskID, TaskResult, TaskState, TaskStatus, TaskUUID
 
 _logger = logging.getLogger(__name__)
 
