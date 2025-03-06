@@ -92,12 +92,12 @@ def mock_catalog_api(
 ) -> dict[str, mock.Mock]:
     return {
         "get_service_resources": mocker.patch(
-            "simcore_service_webserver.projects.projects_service.catalog_client.get_service_resources",
+            "simcore_service_webserver.projects.projects_service.catalog_service.get_service_resources",
             return_value=mock_service_resources,
             autospec=True,
         ),
         "get_service": mocker.patch(
-            "simcore_service_webserver.projects.projects_service.catalog_client.get_service",
+            "simcore_service_webserver.projects.projects_service.catalog_service.get_service",
             return_value=mock_service,
             autospec=True,
         ),
