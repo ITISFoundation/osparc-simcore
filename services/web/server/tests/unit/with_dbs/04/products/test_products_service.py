@@ -10,7 +10,10 @@ from aiohttp.test_utils import TestServer
 from models_library.products import ProductName
 from simcore_service_webserver.products import products_service
 from simcore_service_webserver.products._repository import ProductRepository
-from simcore_service_webserver.products.errors import ProductPriceNotDefinedError
+from simcore_service_webserver.products.errors import (
+    MissingStripeConfigError,
+    ProductPriceNotDefinedError,
+)
 
 
 @pytest.fixture
@@ -46,7 +49,7 @@ async def test_get_product_stripe_info(
     # this feature is currently setup from adminer by an operator
 
     # default is not configured
-    with pytest.raises(ValueError, match=default_product_name):
+    with pytest.raises(MissingStripeConfigError, match=default_product_name):
         await products_service.get_product_stripe_info(
             app, product_name=default_product_name
         )

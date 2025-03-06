@@ -12,6 +12,7 @@ from ..constants import APP_PRODUCTS_KEY
 from ._repository import ProductRepository
 from .errors import (
     BelowMinimumPaymentError,
+    MissingStripeConfigError,
     ProductNotFoundError,
     ProductPriceNotDefinedError,
     ProductTemplateNotFoundError,
@@ -116,8 +117,9 @@ async def get_product_stripe_info(
         or "missing!!" in product_stripe_info.stripe_price_id
         or "missing!!" in product_stripe_info.stripe_tax_rate_id
     ):
-        msg = f"Missing product stripe for product {product_name}"
-        raise ValueError(msg)
+        raise MissingStripeConfigError(
+            product_name=product_name, product_stripe_info=product_stripe_info
+        )
     return product_stripe_info
 
 

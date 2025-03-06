@@ -1,8 +1,7 @@
 from ..errors import WebServerBaseError
 
 
-class ProductError(WebServerBaseError, ValueError):
-    ...
+class ProductError(WebServerBaseError, ValueError): ...
 
 
 class ProductNotFoundError(ProductError):
@@ -19,3 +18,7 @@ class BelowMinimumPaymentError(ProductError):
 
 class ProductTemplateNotFoundError(ProductError):
     msg_template = "Missing template {template_name} for product"
+
+
+class MissingStripeConfigError(ProductError):
+    msg_template = "Missing product stripe for product {product_name}"
