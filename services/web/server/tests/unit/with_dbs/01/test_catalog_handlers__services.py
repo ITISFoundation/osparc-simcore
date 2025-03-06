@@ -30,7 +30,10 @@ from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_login import UserInfoDict
 from servicelib.aiohttp import status
-from simcore_service_webserver.catalog._models import ServiceInputGet, ServiceOutputGet
+from simcore_service_webserver.catalog.controller_rest_schemas import (
+    ServiceInputGet,
+    ServiceOutputGet,
+)
 from simcore_service_webserver.db.models import UserRole
 
 

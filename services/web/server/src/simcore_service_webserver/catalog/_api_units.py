@@ -3,7 +3,11 @@ from typing import Any
 from models_library.services import BaseServiceIOModel, ServiceInput, ServiceOutput
 from pint import PintError, UnitRegistry
 
-from ._models import ServiceInputGetFactory, ServiceOutputGetFactory, get_unit_name
+from .controller_rest_schemas import (
+    ServiceInputGetFactory,
+    ServiceOutputGetFactory,
+    get_unit_name,
+)
 
 
 def _get_type_name(port: BaseServiceIOModel) -> str:

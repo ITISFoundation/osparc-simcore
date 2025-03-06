@@ -43,7 +43,11 @@ from ._exceptions import (
     DefaultPricingUnitForServiceNotFoundError,
     reraise_catalog_exceptions_as_http_errors,
 )
-from ._models import CatalogRequestContext, ListServiceParams, ServicePathParams
+from .controller_rest_schemas import (
+    CatalogRequestContext,
+    ListServiceParams,
+    ServicePathParams,
+)
 
 _logger = logging.getLogger(__name__)
 
