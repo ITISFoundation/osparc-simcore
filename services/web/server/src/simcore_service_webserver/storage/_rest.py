@@ -23,6 +23,7 @@ from models_library.api_schemas_webserver.storage import (
     StorageAsyncJobGet,
     StorageAsyncJobResult,
     StorageAsyncJobStatus,
+    StoragePathComputeSizeParams,
 )
 from models_library.projects_nodes_io import LocationID
 from models_library.utils.change_case import camel_to_snake
@@ -172,6 +173,34 @@ async def list_storage_locations(request: web.Request) -> web.Response:
 async def list_paths(request: web.Request) -> web.Response:
     payload, resp_status = await _forward_request_to_storage(request, "GET", body=None)
     return create_data_response(payload, status=resp_status)
+
+
+@routes.post(
+    f"{_storage_locations_prefix}/{{location_id}}/paths/{{path}}:size",
+    name="compute_path_size",
+)
+@login_required
+@permission_required("storage.files.*")
+async def compute_path_size(request: web.Request) -> web.Response:
+    _req_ctx = RequestContext.model_validate(request)
+    _path_params = parse_request_path_parameters_as(
+        StoragePathComputeSizeParams, request
+    )
+    rabbitmq_rpc_client = get_rabbitmq_rpc_client(request.app)
+    async_job_rpc_get = await submit_job(
+        rabbitmq_rpc_client=rabbitmq_rpc_client,
+        rpc_namespace=STORAGE_RPC_NAMESPACE,
+        method_name="compute_path_size",
+        job_id_data=AsyncJobNameData(
+            user_id=_req_ctx.user_id, product_name=_req_ctx.product_name
+        ),
+        location_id=_path_params.location_id,
+        path=_path_params.path,
+    )
+    return create_data_response(
+        StorageAsyncJobGet.from_rpc_schema(async_job_rpc_get),
+        status=status.HTTP_202_ACCEPTED,
+    )
 
 
 @routes.get(

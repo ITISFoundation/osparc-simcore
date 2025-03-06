@@ -26,6 +26,7 @@ from models_library.api_schemas_webserver.storage import (
     StorageAsyncJobResult,
     StorageAsyncJobStatus,
     StorageLocationPathParams,
+    StoragePathComputeSizeParams,
 )
 from models_library.generics import Envelope
 from models_library.projects_nodes_io import LocationID
@@ -66,6 +67,14 @@ async def list_storage_paths(
     _query: Annotated[ListPathsQueryParams, Depends()],
 ):
     """Lists the files/directories in WorkingDirectory"""
+
+
+@router.post(
+    "/storage/locations/{location_id}/paths/{path}:size",
+    response_model=Envelope[StorageAsyncJobGet],
+)
+async def compute_path_size(_path: Annotated[StoragePathComputeSizeParams, Depends()]):
+    """Compute the size of a path"""
 
 
 @router.get(
