@@ -130,12 +130,15 @@ class CeleryTaskQueueClient:
     def get_task_uuids(self, task_context: TaskContext) -> set[TaskUUID]:
         all_task_ids = self._get_completed_task_uuids(task_context)
 
+        search_key = (
+            _CELERY_TASK_META_PREFIX + _build_task_id_prefix(task_context)
+        )
         for task_inspect_status in _CELERY_INSPECT_TASK_STATUSES:
             if task_ids := getattr(
                 self._celery_app.control.inspect(), task_inspect_status
             )():
                 for values in task_ids.values():
                     for value in values:
-                        all_task_ids.add(TaskUUID(value.decode(_CELERY_TASK_ID_KEY_ENCODING)))
+                        all_task_ids.add(TaskUUID(value.removeprefix(search_key + _CELERY_TASK_ID_KEY_SEPARATOR)))
 
         return all_task_ids
