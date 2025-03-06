@@ -15,7 +15,7 @@ from models_library.api_schemas_webserver.catalog import (
 from models_library.generics import Envelope
 from models_library.rest_pagination import Page
 from simcore_service_webserver._meta import API_VTAG
-from simcore_service_webserver.catalog._controller_rest import (
+from simcore_service_webserver.catalog._rest_controller import (
     ListServiceParams,
     ServicePathParams,
     _FromServiceOutputParams,

@@ -27,8 +27,8 @@ from servicelib.rabbitmq.rpc_interfaces.catalog.errors import CatalogNotAvailabl
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
 from ..rabbitmq import get_rabbitmq_rpc_client
-from . import _service_catalog_rest_client
-from ._service_units import can_connect, replace_service_input_outputs
+from . import _catalog_rest_client_service
+from ._units_service import can_connect, replace_service_input_outputs
 from .controller_rest_schemas import (
     CatalogRequestContext,
     ServiceInputGetFactory,
@@ -170,7 +170,7 @@ async def update_service_v2(
 async def list_service_inputs(
     service_key: ServiceKey, service_version: ServiceVersion, ctx: CatalogRequestContext
 ) -> list[ServiceInputGet]:
-    service = await _service_catalog_rest_client.get_service(
+    service = await _catalog_rest_client_service.get_service(
         ctx.app, ctx.user_id, service_key, service_version, ctx.product_name
     )
     return [
@@ -187,7 +187,7 @@ async def get_service_input(
     input_key: ServiceInputKey,
     ctx: CatalogRequestContext,
 ) -> ServiceInputGet:
-    service = await _service_catalog_rest_client.get_service(
+    service = await _catalog_rest_client_service.get_service(
         ctx.app, ctx.user_id, service_key, service_version, ctx.product_name
     )
     service_input: ServiceInputGet = (
@@ -246,7 +246,7 @@ async def list_service_outputs(
     service_version: ServiceVersion,
     ctx: CatalogRequestContext,
 ) -> list[ServiceOutputGet]:
-    service = await _service_catalog_rest_client.get_service(
+    service = await _catalog_rest_client_service.get_service(
         ctx.app, ctx.user_id, service_key, service_version, ctx.product_name
     )
     return [
@@ -263,7 +263,7 @@ async def get_service_output(
     output_key: ServiceOutputKey,
     ctx: CatalogRequestContext,
 ) -> ServiceOutputGet:
-    service = await _service_catalog_rest_client.get_service(
+    service = await _catalog_rest_client_service.get_service(
         ctx.app, ctx.user_id, service_key, service_version, ctx.product_name
     )
     return cast(  # mypy -> aiocache is not typed.
