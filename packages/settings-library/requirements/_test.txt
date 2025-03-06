@@ -1,8 +1,8 @@
-coverage==7.6.10
+coverage==7.6.12
     # via
     #   -r requirements/_test.in
     #   pytest-cov
-faker==35.0.0
+faker==36.1.1
     # via -r requirements/_test.in
 iniconfig==2.0.0
     # via pytest
@@ -12,7 +12,7 @@ packaging==24.2
     #   pytest-sugar
 pluggy==1.5.0
     # via pytest
-pytest==8.3.4
+pytest==8.3.5
     # via
     #   -r requirements/_test.in
     #   pytest-cov
@@ -29,17 +29,11 @@ pytest-runner==6.0.1
     # via -r requirements/_test.in
 pytest-sugar==1.0.0
     # via -r requirements/_test.in
-python-dateutil==2.9.0.post0
-    # via faker
 python-dotenv==1.0.1
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-six==1.17.0
-    # via python-dateutil
 termcolor==2.5.0
     # via pytest-sugar
-typing-extensions==4.12.2
-    # via
-    #   -c requirements/_base.txt
-    #   faker
+tzdata==2025.1
+    # via faker
