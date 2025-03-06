@@ -50,7 +50,7 @@
         "event": "tap"
       },
       "anchorEl": "osparc-test-id=notificationsContainer",
-      "text": "By clicking on the Bell, you will you see notifications about which Studies, Credits and Organizations have been shared with you.",
+      "text": "By clicking on the Bell, you will you see notifications about which Studies, Templates and Organizations have been shared with you.",
       "placement": "bottom"
     }, {
       "beforeClick": {
@@ -66,7 +66,7 @@
         "action": "open"
       },
       "anchorEl": "osparc-test-id=userMenuMenu",
-      "text": "The User Menu gives you access to Your Account, Billing Center, Preferences, Organizations and more.",
+      "text": "The User Menu gives you access to Your Account, Organizations and more.",
       "placement": "left"
     }]
   },
