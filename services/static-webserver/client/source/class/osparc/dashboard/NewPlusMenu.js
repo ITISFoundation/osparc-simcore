@@ -70,6 +70,8 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
       spacingX: 20,
     });
 
+    osparc.utils.Utils.setIdToWidget(this, "newPlusMenu");
+
     this.getContentElement().setStyles({
       "border-color": qx.theme.manager.Color.getInstance().resolve("strong-main"),
     });

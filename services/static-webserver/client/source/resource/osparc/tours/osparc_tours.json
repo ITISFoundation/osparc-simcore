@@ -74,19 +74,20 @@
     "id": "studies",
     "name": "Studies",
     "description": "All you need to know about Study handling",
-    "context": "osparc-test-id=studiesTabBtn",
+    "context": "osparc-test-id=newPlusBtn",
     "steps": [{
       "beforeClick": {
-        "selector": "osparc-test-id=studiesTabBtn"
+        "selector": "osparc-test-id=newPlusBtn",
+        "action": "open"
       },
-      "anchorEl": "osparc-test-id=startS4LButton",
-      "title": "Start Sim4Life",
-      "text": "Clicking on this (+) Start Sim4Life button, allows you to create and open a new Sim4Life project",
+      "anchorEl": "osparc-test-id=newPlusMenu",
+      "title": "Create Studies",
+      "text": "Clicking on the plus (+) button, allows you to create New Studies or New Folders to organize the studies",
       "placement": "right"
     }, {
       "anchorEl": "osparc-test-id=searchBarFilter-textField-study",
       "title": "Filter and Search",
-      "text": "This tool allows you to filter Studies, Tutorials and Services.<br>You can search and filter by:<br>- Title, description, owner, id...<br>- Tags<br>- Shared with",
+      "text": "This tool allows you to search Studies, Tutorials and Services.<br>You can search and filter by:<br>- Title, description, owner, id...<br>- Tags<br>- Shared with",
       "placement": "bottom"
     }, {
       "beforeClick": {
