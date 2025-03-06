@@ -53,7 +53,7 @@ botocore==1.35.99
     #   boto3
     #   moto
     #   s3transfer
-botocore-stubs==1.36.6
+botocore-stubs==1.37.4
     # via types-boto3
 certifi==2024.8.30
     # via
@@ -82,7 +82,7 @@ click==8.1.7
     #   flask
     #   pact-python
     #   uvicorn
-coverage==7.6.10
+coverage==7.6.12
     # via pytest-cov
 cryptography==44.0.0
     # via
@@ -100,7 +100,7 @@ ecdsa==0.19.0
     #   moto
     #   python-jose
     #   sshpubkeys
-faker==35.0.0
+faker==36.1.1
     # via -r requirements/_test.in
 fastapi==0.115.6
     # via
@@ -110,7 +110,7 @@ flask==2.1.3
     # via
     #   flask-cors
     #   moto
-flask-cors==5.0.0
+flask-cors==5.0.1
     # via moto
 frozenlist==1.5.0
     # via
@@ -167,7 +167,7 @@ jsondiff==2.2.1
     # via moto
 jsonpatch==1.33
     # via cfn-lint
-jsonpickle==4.0.1
+jsonpickle==4.0.2
     # via jschema-to-python
 jsonpointer==3.0.0
     # via jsonpatch
@@ -204,7 +204,7 @@ multidict==6.1.0
     #   -c requirements/_base.txt
     #   aiohttp
     #   yarl
-mypy==1.14.1
+mypy==1.15.0
     # via sqlalchemy
 mypy-extensions==1.0.0
     # via mypy
@@ -221,7 +221,7 @@ packaging==24.2
     #   pytest
 pact-python==2.3.1
     # via -r requirements/_test.in
-pbr==6.1.0
+pbr==6.1.1
     # via
     #   jschema-to-python
     #   sarif-om
@@ -263,7 +263,7 @@ pyrsistent==0.20.0
     # via
     #   -c requirements/_base.txt
     #   jsonschema
-pytest==8.3.4
+pytest==8.3.5
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
@@ -276,7 +276,7 @@ pytest-asyncio==0.23.8
     #   -r requirements/_test.in
 pytest-cov==6.0.0
     # via -r requirements/_test.in
-pytest-docker==3.1.1
+pytest-docker==3.2.0
     # via -r requirements/_test.in
 pytest-mock==3.14.0
     # via -r requirements/_test.in
@@ -286,11 +286,10 @@ python-dateutil==2.9.0.post0
     # via
     #   -c requirements/_base.txt
     #   botocore
-    #   faker
     #   moto
-python-jose==3.3.0
+python-jose==3.4.0
     # via moto
-pytz==2024.2
+pytz==2025.1
     # via moto
 pyyaml==6.0.2
     # via
@@ -326,6 +325,7 @@ setuptools==75.6.0
     #   jsonschema
     #   moto
     #   openapi-spec-validator
+    #   pbr
 six==1.17.0
     # via
     #   -c requirements/_base.txt
@@ -357,11 +357,11 @@ starlette==0.41.3
     #   fastapi
 types-aiofiles==24.1.0.20241221
     # via -r requirements/_test.in
-types-awscrt==0.23.7
+types-awscrt==0.23.10
     # via botocore-stubs
-types-boto3==1.36.6
+types-boto3==1.37.4
     # via -r requirements/_test.in
-types-s3transfer==0.11.2
+types-s3transfer==0.11.3
     # via types-boto3
 typing-extensions==4.12.2
     # via
@@ -375,6 +375,8 @@ typing-extensions==4.12.2
     #   pydantic-core
     #   sqlalchemy2-stubs
     #   types-boto3
+tzdata==2025.1
+    # via faker
 urllib3==2.2.3
     # via
     #   -c requirements/../../../requirements/constraints.txt
@@ -390,6 +392,7 @@ uvicorn==0.32.1
 werkzeug==2.1.2
     # via
     #   flask
+    #   flask-cors
     #   moto
 wrapt==1.17.0
     # via
