@@ -74,7 +74,7 @@ qx.Class.define("osparc.study.Utils", {
       return msg;
     },
 
-    getInaccessibleServices2: function(studyServices = []) {
+    getNoExecuteServices: function(studyServices = []) {
       return studyServices.filter(service => service["myAccessRights"]["execute"] === false);
     },
 
@@ -290,8 +290,8 @@ qx.Class.define("osparc.study.Utils", {
     },
 
     __getBlockedState: function(studyData) {
-      if (studyData["workbench"]) {
-        const unaccessibleServices = osparc.study.Utils.getInaccessibleServices(studyData["workbench"])
+      if (studyData["services"]) {
+        const unaccessibleServices = osparc.study.Utils.getNoExecuteServices(studyData["services"])
         if (unaccessibleServices.length) {
           return "UNKNOWN_SERVICES";
         }
