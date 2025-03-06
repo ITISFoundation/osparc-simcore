@@ -69,11 +69,6 @@ class CeleryTaskQueueClient:
             return task_uuid
 
     @make_async()
-    def get_task(self, task_context: TaskContext, task_uuid: TaskUUID) -> Any:
-        task_id = _build_task_id(task_context, task_uuid)
-        return self._celery_app.tasks(task_id)
-
-    @make_async()
     def abort_task(  # pylint: disable=R6301
         self, task_context: TaskContext, task_uuid: TaskUUID
     ) -> None:
