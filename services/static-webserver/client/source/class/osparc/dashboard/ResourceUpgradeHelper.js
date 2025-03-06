@@ -37,7 +37,6 @@ qx.Class.define("osparc.dashboard.ResourceUpgradeHelper", {
     this.bind("secondaryText", secondaryButton, "label");
     secondaryButton.addListener("execute", () => {
       this.setConfirmed(false);
-      this.close(1);
     }, this);
     this.addButton(secondaryButton);
 
@@ -50,7 +49,6 @@ qx.Class.define("osparc.dashboard.ResourceUpgradeHelper", {
     this.bind("primaryText", primaryButton, "label");
     primaryButton.addListener("execute", () => {
       this.setConfirmed(true);
-      this.close(1);
     }, this);
     const command = new qx.ui.command.Command("Enter");
     primaryButton.setCommand(command);
@@ -86,7 +84,8 @@ qx.Class.define("osparc.dashboard.ResourceUpgradeHelper", {
 
     confirmed: {
       check: "Boolean",
-      init: false
+      init: null,
+      event: "changeConfirmed"
     }
   },
 
