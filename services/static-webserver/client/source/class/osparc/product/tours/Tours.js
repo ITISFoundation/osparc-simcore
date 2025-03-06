@@ -26,6 +26,9 @@ qx.Class.define("osparc.product.tours.Tours", {
 
   statics: {
     TOURS: {
+      "osparc": {
+        fetchTours: () => osparc.product.tours.Tours.fetchTours("/resource/osparc/tours/osparc_tours.json")
+      },
       "s4l": {
         fetchTours: () => osparc.product.tours.Tours.fetchTours("/resource/osparc/tours/s4l_tours.json")
       },

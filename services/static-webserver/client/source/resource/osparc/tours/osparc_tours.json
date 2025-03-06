@@ -1,0 +1,100 @@
+{
+  "dashboard": {
+    "id": "dashboard",
+    "name": "Dashboard",
+    "description": "Introduction to the Dashboard tabs",
+    "context": "osparc-test-id=dashboardTabs",
+    "steps": [{
+      "anchorEl": "osparc-test-id=dashboardTabs",
+      "title": "Dashboard Menu",
+      "text": "The menu tabs give you quick access to a set of core elements of the platform, namely Studies, Templates and Services.",
+      "placement": "bottom"
+    }, {
+      "beforeClick": {
+        "selector": "osparc-test-id=studiesTabBtn"
+      },
+      "anchorEl": "osparc-test-id=studiesTabBtn",
+      "text": "Any Study is accessible via the Dashboard. The Studies, which belong to or are shared with you, can be found here.",
+      "placement": "bottom"
+    }, {
+      "beforeClick": {
+        "selector": "osparc-test-id=templatesTabBtn"
+      },
+      "anchorEl": "osparc-test-id=templatesTabBtn",
+      "text": "Clicking on a Template will create a copy of that Study, which will appear in your own Studies tab with the same name as the Template. Any changes you make to this copy will not affect the original Template.",
+      "placement": "bottom"
+    }, {
+      "beforeClick": {
+        "selector": "osparc-test-id=servicesTabBtn"
+      },
+      "anchorEl": "osparc-test-id=servicesTabBtn",
+      "text": "Every Study in Sim4Life is composed of at lease one so-called Service.<br>Services are building blocks for Studies and can provide data/files, visualize results (2D, 3D), implement code in Jupyter notebooks or perform computations to execute simulations within a Study.",
+      "placement": "bottom"
+    }]
+  },
+  "navbar": {
+    "id": "navbar",
+    "name": "Navigation Bar",
+    "description": "Introduction to the Navigation Bar",
+    "context": "osparc-test-id=navigationBar",
+    "steps": [{
+      "beforeClick": {
+        "selector": "osparc-test-id=notificationsButton",
+        "event": "tap"
+      },
+      "anchorEl": "osparc-test-id=notificationsContainer",
+      "text": "By clicking on the Bell, you will you see notifications about which Studies, Credits and Organizations have been shared with you.",
+      "placement": "bottom"
+    }, {
+      "beforeClick": {
+        "selector": "osparc-test-id=helpNavigationBtn",
+        "action": "open"
+      },
+      "anchorEl": "osparc-test-id=helpNavigationMenu",
+      "text": "Under the question mark, you will find Manuals, Support and ways to give us Feedback. It also provides quick access to other Guided Tours.",
+      "placement": "left"
+    }, {
+      "beforeClick": {
+        "selector": "osparc-test-id=userMenuBtn",
+        "action": "open"
+      },
+      "anchorEl": "osparc-test-id=userMenuMenu",
+      "text": "The User Menu gives you access to Your Account, Billing Center, Preferences, Organizations and more.",
+      "placement": "left"
+    }]
+  },
+  "studies": {
+    "id": "studies",
+    "name": "Studies",
+    "description": "All you need to know about Study handling",
+    "context": "osparc-test-id=studiesTabBtn",
+    "steps": [{
+      "beforeClick": {
+        "selector": "osparc-test-id=studiesTabBtn"
+      },
+      "anchorEl": "osparc-test-id=startS4LButton",
+      "title": "Start Sim4Life",
+      "text": "Clicking on this (+) Start Sim4Life button, allows you to create and open a new Sim4Life project",
+      "placement": "right"
+    }, {
+      "anchorEl": "osparc-test-id=searchBarFilter-textField-study",
+      "title": "Filter and Search",
+      "text": "This tool allows you to filter Studies, Tutorials and Services.<br>You can search and filter by:<br>- Title, description, owner, id...<br>- Tags<br>- Shared with",
+      "placement": "bottom"
+    }, {
+      "beforeClick": {
+        "selector": "osparc-test-id=studyItemMenuButton",
+        "action": "open"
+      },
+      "anchorEl": "osparc-test-id=studyItemMenuMenu",
+      "title": "More options button",
+      "text": "On the Study card, you can use the three dots button to access more information and operation on the Study.",
+      "placement": "left"
+    }, {
+      "anchorEl": "osparc-test-id=updateStudyBtn",
+      "title": "Update Services",
+      "text": "On the Study card, you can use the Update button to update the corresponding service to the latest version.",
+      "placement": "bottom"
+    }]
+  }
+}
