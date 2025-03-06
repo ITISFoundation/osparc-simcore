@@ -4,7 +4,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any, Final
 
-from aiocache import cached
+from aiocache import cached  # type: ignore[import-untyped]
 from aiohttp import web
 from aiohttp.web import Request
 from models_library.api_schemas_webserver.catalog import (
@@ -18,7 +18,7 @@ from models_library.rest_pagination import PageQueryParameters
 from models_library.services import BaseServiceIOModel, ServiceKey, ServiceVersion
 from models_library.users import UserID
 from pint import PintError, Quantity, UnitRegistry
-from pydantic import (  # type: ignore[import-untyped]
+from pydantic import (
     BaseModel,
     ConfigDict,
     field_validator,
