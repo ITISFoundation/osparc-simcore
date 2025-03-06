@@ -678,6 +678,8 @@ qx.Class.define("osparc.dashboard.CardBase", {
         });
         this.__showBlockedCard(image, toolTipText);
       }
+
+      this.evaluateMenuButtons();
     },
 
     __applyEmptyWorkbench: function(isEmpty) {
