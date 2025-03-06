@@ -7,6 +7,7 @@
 # pylint:disable=unused-variable
 
 
+import logging
 import random
 from collections.abc import Awaitable, Callable
 from pathlib import Path
@@ -16,16 +17,27 @@ import httpx
 import pytest
 from faker import Faker
 from fastapi import FastAPI
-from models_library.api_schemas_storage.storage_schemas import (
-    PathTotalSizeCreate,
-)
+from models_library.api_schemas_rpc_async_jobs.async_jobs import AsyncJobId
+from models_library.api_schemas_storage import STORAGE_RPC_NAMESPACE
+from models_library.api_schemas_webserver.storage import StorageAsyncJobGet
 from models_library.projects_nodes_io import LocationID, NodeID, SimcoreS3FileID
 from models_library.users import UserID
 from pydantic import ByteSize, TypeAdapter
 from pytest_simcore.helpers.storage_utils import FileIDDict, ProjectWithFilesParams
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
+from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import (
+    get_result,
+    get_status,
+)
 from servicelib.rabbitmq.rpc_interfaces.storage.paths import compute_path_size
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
+from tenacity import (
+    before_sleep_log,
+    retry,
+    retry_if_exception_type,
+    stop_after_delay,
+    wait_fixed,
+)
 
 pytest_simcore_core_services_selection = ["postgres", "rabbit"]
 pytest_simcore_ops_services_selection = ["adminer"]
@@ -59,6 +71,9 @@ def _filter_and_group_paths_one_level_deeper(
     )
 
 
+_logger = logging.getLogger(__name__)
+
+
 async def _assert_compute_path_size(
     rpc_client: RabbitMQRPCClient,
     location_id: LocationID,
@@ -67,16 +82,40 @@ async def _assert_compute_path_size(
     path: Path,
     expected_total_size: int,
 ) -> ByteSize:
-    received = await compute_path_size(
+    received, job_id_data = await compute_path_size(
         rpc_client, user_id=user_id, product_name="", location_id=location_id, path=path
     )
 
-    assert isinstance(received, PathTotalSizeCreate)
+    assert isinstance(received, StorageAsyncJobGet)
 
-    assert received
-    assert received.path == path
-    assert received.size == expected_total_size
-    return received.size
+    @retry(
+        wait=wait_fixed(1),
+        stop=stop_after_delay(10),
+        retry=retry_if_exception_type(AssertionError),
+        before_sleep=before_sleep_log(_logger, logging.WARNING),
+    )
+    async def _wait_for_job_completion(job_id: AsyncJobId) -> None:
+        job_status = await get_status(
+            rpc_client,
+            rpc_namespace=STORAGE_RPC_NAMESPACE,
+            job_id=job_id,
+            job_id_data=job_id_data,
+        )
+        assert job_status.done
+
+    await _wait_for_job_completion(received.job_id)
+    job_result = await get_result(
+        rpc_client,
+        rpc_namespace=STORAGE_RPC_NAMESPACE,
+        job_id=received.job_id,
+        job_id_data=job_id_data,
+    )
+    assert job_result.result is not None
+    assert job_result.error is None
+    response = job_result.result
+    assert isinstance(response, ByteSize)
+    assert response == expected_total_size
+    return response
 
 
 @pytest.mark.parametrize(
@@ -97,8 +136,8 @@ async def _assert_compute_path_size(
     ids=str,
 )
 async def test_path_compute_size(
+    enabled_rabbitmq,
     initialized_app: FastAPI,
-    client: httpx.AsyncClient,
     storage_rabbitmq_rpc_client: RabbitMQRPCClient,
     location_id: LocationID,
     user_id: UserID,
