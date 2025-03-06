@@ -74,8 +74,8 @@ qx.Class.define("osparc.study.Utils", {
       return msg;
     },
 
-    getInaccessibleServices2: function(studyServices) {
-      return studyServices.filter(service => service["execute"] === false);
+    getInaccessibleServices2: function(studyServices = []) {
+      return studyServices.filter(service => service["myAccessRights"]["execute"] === false);
     },
 
     anyServiceRetired: function(studyServices) {
