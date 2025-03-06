@@ -4,6 +4,10 @@ from ..errors import WebServerBaseError
 class ProductError(WebServerBaseError, ValueError): ...
 
 
+class UnknownProductError(ProductError):
+    msg_template = "Cannot determine which is the product in the current context"
+
+
 class ProductNotFoundError(ProductError):
     msg_template = "Undefined product '{product_name}'"
 

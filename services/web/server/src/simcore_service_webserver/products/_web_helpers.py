@@ -8,6 +8,7 @@ from simcore_postgres_database.utils_products_prices import ProductPriceInfo
 from simcore_service_webserver.products.errors import (
     FileTemplateNotFoundError,
     ProductNotFoundError,
+    UnknownProductError,
 )
 
 from .._resources import webserver_resources
@@ -19,7 +20,13 @@ from .models import Product
 
 def get_product_name(request: web.Request) -> str:
     """Returns product name in request but might be undefined"""
-    product_name: str = request[RQ_PRODUCT_KEY]
+    # NOTE: introduced by middleware
+    try:
+        product_name: str = request[RQ_PRODUCT_KEY]
+    except KeyError as exc:
+        error = UnknownProductError()
+        error.add_note("TIP: Check products middleware")
+        raise error from exc
     return product_name
 
 
@@ -33,7 +40,7 @@ def get_current_product(request: web.Request) -> Product:
 
 
 def _get_current_product_or_none(request: web.Request) -> Product | None:
-    with contextlib.suppress(ProductNotFoundError, KeyError):
+    with contextlib.suppress(ProductNotFoundError, UnknownProductError):
         product: Product = get_current_product(request)
         return product
     return None
