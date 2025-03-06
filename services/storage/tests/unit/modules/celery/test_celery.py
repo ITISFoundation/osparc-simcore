@@ -4,14 +4,16 @@ import time
 from collections.abc import Callable
 from random import randint
 
+from pydantic import ValidationError
 import pytest
 from celery import Celery, Task
 from celery.contrib.abortable import AbortableTask
 from models_library.progress_bar import ProgressReport
 from servicelib.logging_utils import log_context
 from simcore_service_storage.modules.celery import get_event_loop
+from simcore_service_storage.modules.celery._common import define_task
 from simcore_service_storage.modules.celery.client import CeleryTaskQueueClient
-from simcore_service_storage.modules.celery.models import TaskContext, TaskState
+from simcore_service_storage.modules.celery.models import TaskContext, TaskError, TaskState
 from simcore_service_storage.modules.celery.utils import (
     get_celery_worker,
     get_fastapi_app,
@@ -69,11 +71,9 @@ def dreamer_task(task: AbortableTask) -> list[int]:
 @pytest.fixture
 def register_celery_tasks() -> Callable[[Celery], None]:
     def _(celery_app: Celery) -> None:
-        celery_app.task(name="sync_archive", bind=True)(sync_archive)
-        celery_app.task(name="failure_task", bind=True)(failure_task)
-        celery_app.task(name="dreamer_task", base=AbortableTask, bind=True)(
-            dreamer_task
-        )
+        define_task(celery_app, sync_archive)
+        define_task(celery_app, failure_task)
+        define_task(celery_app, dreamer_task)
 
     return _
 
@@ -100,6 +100,9 @@ async def test_sumitting_task_calling_async_function_results_with_success_state(
             assert progress.task_state == TaskState.SUCCESS
 
     assert (
+        await celery_client.get_task_result(task_context, task_uuid)
+    ) == "archive.zip"
+    assert (
         await celery_client.get_task_status(task_context, task_uuid)
     ).task_state == TaskState.SUCCESS
 
@@ -113,20 +116,19 @@ async def test_submitting_task_with_failure_results_with_error(
     task_uuid = await celery_client.send_task("failure_task", task_context=task_context)
 
     for attempt in Retrying(
-        retry=retry_if_exception_type(AssertionError),
+        retry=retry_if_exception_type((AssertionError, ValidationError)),
         wait=wait_fixed(1),
         stop=stop_after_delay(30),
     ):
         with attempt:
-            result = await celery_client.get_result(task_context, task_uuid)
-            assert isinstance(result, ValueError)
+            result = await celery_client.get_task_result(task_context, task_uuid)
+            assert isinstance(result, TaskError)
 
     assert (
         await celery_client.get_task_status(task_context, task_uuid)
-    ).task_state == TaskState.FAILURE
-    result = await celery_client.get_result(task_context, task_uuid)
-    assert isinstance(result, ValueError)
-    assert f"{result}" == "my error here"
+    ).task_state == TaskState.ERROR
+    result = await celery_client.get_task_result(task_context, task_uuid)
+    assert f"{result.exc_msg}" == "my error here"
 
 
 @pytest.mark.usefixtures("celery_worker")

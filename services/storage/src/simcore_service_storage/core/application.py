@@ -83,7 +83,8 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
     setup_client_session(app)
 
     setup_rabbitmq(app)
-    setup_rpc_api_routes(app)
+    if not settings.STORAGE_WORKER_MODE:
+        setup_rpc_api_routes(app)
     setup_rest_api_long_running_tasks_for_uploads(app)
     setup_rest_api_routes(app, API_VTAG)
     set_exception_handlers(app)
@@ -91,7 +92,7 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
     setup_redis(app)
 
     setup_dsm(app)
-    if settings.STORAGE_CLEANER_INTERVAL_S:
+    if settings.STORAGE_CLEANER_INTERVAL_S and not settings.STORAGE_WORKER_MODE:
         setup_dsm_cleaner(app)
 
     if settings.STORAGE_PROFILING:

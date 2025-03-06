@@ -2,7 +2,6 @@
 
 import logging
 
-from celery.contrib.abortable import AbortableTask
 from celery.signals import worker_init, worker_shutdown
 from servicelib.logging_utils import config_all_loggers
 from simcore_service_storage.modules.celery.signals import (
@@ -11,8 +10,8 @@ from simcore_service_storage.modules.celery.signals import (
 )
 
 from ...core.settings import ApplicationSettings
-from ._common import create_app as create_celery_app
-from .tasks import export_data
+from ._common import create_app as create_celery_app, define_task
+from .tasks import export_data, export_data_with_error
 
 _settings = ApplicationSettings.create_from_envs()
 
@@ -30,4 +29,6 @@ assert _settings.STORAGE_CELERY
 app = create_celery_app(_settings.STORAGE_CELERY)
 worker_init.connect(on_worker_init)
 worker_shutdown.connect(on_worker_shutdown)
-app.task(name="export_data", bind=True, base=AbortableTask)(export_data)
+
+define_task(app, export_data)
+define_task(app, export_data_with_error)

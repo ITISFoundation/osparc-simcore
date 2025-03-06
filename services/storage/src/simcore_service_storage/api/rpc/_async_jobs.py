@@ -56,7 +56,7 @@ async def get_result(
     assert job_id  # nosec
     assert job_id_data  # nosec
 
-    result = await get_celery_client(app).get_result(
+    result = await get_celery_client(app).get_task_result(
         task_context=job_id_data.model_dump(),
         task_uuid=job_id,
     )

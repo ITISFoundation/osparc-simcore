@@ -1,9 +1,9 @@
 from enum import StrEnum, auto
-from typing import Any, Final, Self, TypeAlias
+from typing import Annotated, Any, Final, Self, TypeAlias
 from uuid import UUID
 
 from models_library.progress_bar import ProgressReport
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, Field, model_validator
 
 TaskContext: TypeAlias = dict[str, Any]
 TaskID: TypeAlias = str
@@ -17,11 +17,11 @@ class TaskState(StrEnum):
     PENDING = auto()
     RUNNING = auto()
     SUCCESS = auto()
-    FAILURE = auto()
+    ERROR = auto()
     ABORTED = auto()
 
 
-_TASK_DONE = {TaskState.SUCCESS, TaskState.FAILURE, TaskState.ABORTED}
+_TASK_DONE = {TaskState.SUCCESS, TaskState.ERROR, TaskState.ABORTED}
 
 
 class TaskStatus(BaseModel):
@@ -42,7 +42,7 @@ class TaskStatus(BaseModel):
             TaskState.RUNNING: _MIN_PROGRESS <= value <= _MAX_PROGRESS,
             TaskState.SUCCESS: value == _MAX_PROGRESS,
             TaskState.ABORTED: value == _MAX_PROGRESS,
-            TaskState.FAILURE: value == _MAX_PROGRESS,
+            TaskState.ERROR: value == _MAX_PROGRESS,
         }
 
         if not valid_states.get(self.task_state, True):
@@ -50,3 +50,13 @@ class TaskStatus(BaseModel):
             raise ValueError(msg)
 
         return self
+
+
+class TaskError(BaseModel):
+    exc_type: str
+    exc_msg: str
+
+
+TaskResult: TypeAlias = Annotated[
+    TaskError | Any, Field(union_mode="left_to_right")
+]
