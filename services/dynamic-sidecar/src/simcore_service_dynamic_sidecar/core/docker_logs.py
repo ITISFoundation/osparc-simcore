@@ -1,15 +1,15 @@
 """
-    BackgroundLogFetcher:
-        Creates background task that
-        reads every line of a container's log and
-        posts it as a message to rabbit's log channel (logger)
+BackgroundLogFetcher:
+    Creates background task that
+    reads every line of a container's log and
+    posts it as a message to rabbit's log channel (logger)
 """
-
 
 import logging
 from asyncio import CancelledError, Task, create_task
+from collections.abc import AsyncGenerator, Callable, Coroutine
 from contextlib import suppress
-from typing import Any, AsyncGenerator, Callable, Coroutine, cast
+from typing import Any, cast
 
 from aiodocker import DockerError
 from fastapi import FastAPI
@@ -85,7 +85,9 @@ class BackgroundLogFetcher:
             return
 
         task.cancel()
-        with suppress(CancelledError):
+        
+        # NOTE: sometime the docker engine causes a TimeoutError after the task is cancelled
+        with suppress(CancelledError, TimeoutError):
             await task
 
         logger.debug("Logs fetching stopped for container '%s'", container_name)
