@@ -19,7 +19,7 @@ from models_library.api_schemas_storage.storage_schemas import (
     DatCorePackageName,
 )
 from models_library.users import UserID
-from pydantic import AnyUrl, BaseModel, NonNegativeInt, TypeAdapter
+from pydantic import AnyUrl, BaseModel, ByteSize, NonNegativeInt, TypeAdapter
 from servicelib.fastapi.client_session import get_client_session
 from servicelib.utils import logged_gather
 
@@ -314,6 +314,31 @@ async def list_datasets(
         ],
         next_cursor,
         total,
+    )
+
+
+async def get_dataset(
+    app: FastAPI,
+    *,
+    api_key: str,
+    api_secret: str,
+    dataset_id: DatCoreDatasetName,
+) -> tuple[DatasetMetaData, ByteSize | None]:
+    response = await request(
+        app,
+        api_key,
+        api_secret,
+        "GET",
+        f"/datasets/{dataset_id}",
+    )
+    assert isinstance(response, dict)  # nosec
+    datcore_dataset = DatCoreDatasetMetaData(**response)
+
+    return (
+        DatasetMetaData(
+            dataset_id=datcore_dataset.id, display_name=datcore_dataset.display_name
+        ),
+        datcore_dataset.size,
     )
 
 

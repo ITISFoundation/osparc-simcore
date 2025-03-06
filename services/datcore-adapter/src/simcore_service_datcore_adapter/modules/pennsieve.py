@@ -14,6 +14,7 @@ from models_library.api_schemas_datcore_adapter.datasets import (
     DataType,
     FileMetaData,
 )
+from pydantic import ByteSize
 from servicelib.logging_utils import log_context
 from servicelib.utils import logged_gather
 from starlette import status
@@ -81,9 +82,9 @@ class PennsieveAuthorizationHeaders(TypedDict):
     Authorization: str
 
 
-_TTL_CACHE_AUTHORIZATION_HEADERS_SECONDS: Final[
-    int
-] = 3530  # NOTE: observed while developing this code, pennsieve authorizes 3600 seconds, so we cache a bit less
+_TTL_CACHE_AUTHORIZATION_HEADERS_SECONDS: Final[int] = (
+    3530  # NOTE: observed while developing this code, pennsieve authorizes 3600 seconds, so we cache a bit less
+)
 
 ExpirationTimeSecs = int
 
@@ -346,10 +347,23 @@ class PennsieveApiClient(BaseServiceClientApi):
                 DatasetMetaData(
                     id=d["content"]["id"],
                     display_name=d["content"]["name"],
+                    size=ByteSize(d["storage"]) if d["storage"] > 0 else None,
                 )
                 for d in dataset_page["datasets"]
             ],
             dataset_page["totalCount"],
+        )
+
+    async def get_dataset(
+        self, api_key: str, api_secret: str, dataset_id: str
+    ) -> DatasetMetaData:
+        dataset_pck = await self._get_dataset(api_key, api_secret, dataset_id)
+        return DatasetMetaData(
+            id=dataset_pck["content"]["id"],
+            display_name=dataset_pck["content"]["name"],
+            size=(
+                ByteSize(dataset_pck["storage"]) if dataset_pck["storage"] > 0 else None
+            ),
         )
 
     async def list_packages_in_dataset(

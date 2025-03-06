@@ -5,6 +5,7 @@ from pathlib import Path
 import arrow
 from fastapi import FastAPI
 from models_library.api_schemas_storage.storage_schemas import (
+    UNDEFINED_SIZE_TYPE,
     DatCoreCollectionName,
     DatCoreDatasetName,
     DatCorePackageName,
@@ -16,6 +17,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import LocationID, LocationName, StorageFileID
 from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize, NonNegativeInt, TypeAdapter, ValidationError
+from servicelib.utils import limited_as_completed
 
 from .constants import DATCORE_ID, DATCORE_STR
 from .dsm_factory import BaseDataManager
@@ -191,12 +193,53 @@ class DatCoreDataManager(BaseDataManager):
         """returns the total size of an arbitrary path"""
         api_token, api_secret = await self._get_datcore_tokens(user_id)
         api_token, api_secret = _check_api_credentials(api_token, api_secret)
-        try:
-            paths = await self.list_paths(
-                user_id, file_filter=path, cursor=None, limit=1
+
+        # if this is a dataset we might have the size directly
+        with contextlib.suppress(ValidationError):
+            dataset_id = TypeAdapter(DatCoreDatasetName).validate_python(f"{path}")
+            _, dataset_size = await datcore_adapter.get_dataset(
+                self.app,
+                api_key=api_token,
+                api_secret=api_secret,
+                dataset_id=dataset_id,
             )
+            if dataset_size is not None:
+                return dataset_size
+
+        # generic computation
+        try:
+            paths, cursor, total_number = await self.list_paths(
+                user_id, file_filter=path, cursor=None, limit=50
+            )
+            accumulated_size = ByteSize(0)
+
+            next_folders: list[PathMetaData] = []
+            for p in paths:
+                if p.file_meta_data is not None:
+                    # this is a file
+                    assert (
+                        p.file_meta_data.file_size is not UNDEFINED_SIZE_TYPE
+                    )  # nosec
+                    assert isinstance(p.file_meta_data.file_size, ByteSize)  # nosec
+                    accumulated_size = ByteSize(
+                        accumulated_size + p.file_meta_data.file_size
+                    )
+                else:
+                    next_folders.append(p)
+            async for sbfolder_size_future in limited_as_completed(
+                (
+                    self.compute_path_total_size(user_id, path=sub_folder.path)
+                    for sub_folder in next_folders
+                ),
+                limit=3,
+            ):
+                size = await sbfolder_size_future
+                accumulated_size = ByteSize(accumulated_size + size)
+
+            return accumulated_size
             if len(paths) == 0:
                 return ByteSize(0)
+
         except ValidationError:
             # invalid path
             return ByteSize(0)
