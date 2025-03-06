@@ -3,7 +3,6 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
-import asyncio
 from collections.abc import AsyncIterable
 from datetime import timedelta
 from http import HTTPStatus
@@ -29,7 +28,12 @@ from simcore_service_webserver.api_keys._service import (
 )
 from simcore_service_webserver.application_settings import GarbageCollectorSettings
 from simcore_service_webserver.db.models import UserRole
-from tenacity import retry_if_exception_type, stop_after_attempt, wait_fixed
+from tenacity import (
+    retry_if_exception_type,
+    stop_after_attempt,
+    stop_after_delay,
+    wait_fixed,
+)
 
 
 @pytest.fixture
@@ -172,9 +176,15 @@ async def test_create_api_key_with_expiration(
         assert [d["displayName"] for d in data] == ["foo"]
 
         # wait for api-key for it to expire and force-run scheduled task
-        await asyncio.sleep(expiration_interval.seconds)
-        deleted = await prune_expired_api_keys(client.app)
-        assert deleted == ["foo"]
+        async for attempt in tenacity.AsyncRetrying(
+            wait=wait_fixed(1),
+            retry=retry_if_exception_type(AssertionError),
+            stop=stop_after_delay(5 * expiration_interval.seconds),
+            reraise=True,
+        ):
+            with attempt:
+                deleted = await prune_expired_api_keys(client.app)
+                assert deleted == ["foo"]
 
         resp = await client.get("/v0/auth/api-keys")
         data, _ = await assert_status(resp, expected)

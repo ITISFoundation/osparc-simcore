@@ -91,7 +91,18 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
           layout = this.getChildControl("main-layout");
           layout.add(control, osparc.dashboard.GridButtonBase.POS.TAGS);
           break;
-        case "menu-button":
+        case "menu-selection-stack":
+          control = new qx.ui.container.Stack();
+          control.set({
+            alignX: "center",
+            alignY: "middle"
+          });
+          this.getChildControl("header").add(control, {
+            column: 2,
+            row: 0,
+          });
+          break;
+        case "menu-button": {
           this.getChildControl("title").set({
             maxWidth: osparc.dashboard.GridButtonBase.ITEM_WIDTH - osparc.dashboard.CardBase.ICON_SIZE - this.self().MENU_BTN_DIMENSIONS - 2,
           });
@@ -110,12 +121,11 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
             "border-radius": `${this.self().MENU_BTN_DIMENSIONS / 2}px`
           });
           osparc.utils.Utils.setIdToWidget(control, "studyItemMenuButton");
-          this._add(control, {
-            top: 6,
-            right: 6,
-          });
+          const menuSelectionStack = this.getChildControl("menu-selection-stack");
+          menuSelectionStack.addAt(control, 0);
           break;
-        case "tick-unselected":
+        }
+        case "tick-unselected": {
           control = new qx.ui.basic.Atom().set({
             appearance: "form-button-outlined",
             width: this.self().MENU_BTN_DIMENSIONS,
@@ -126,12 +136,11 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
           control.getContentElement().setStyles({
             "border-radius": `${this.self().MENU_BTN_DIMENSIONS / 2}px`
           });
-          this._add(control, {
-            top: 8,
-            right: 8
-          });
+          const menuSelectionStack = this.getChildControl("menu-selection-stack");
+          menuSelectionStack.addAt(control, 1);
           break;
-        case "tick-selected":
+        }
+        case "tick-selected": {
           control = new qx.ui.basic.Image().set({
             appearance: "form-button",
             width: this.self().MENU_BTN_DIMENSIONS,
@@ -146,11 +155,10 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
           control.getContentElement().setStyles({
             "border-radius": `${this.self().MENU_BTN_DIMENSIONS / 2}px`
           });
-          this._add(control, {
-            top: 8,
-            right: 8
-          });
+          const menuSelectionStack = this.getChildControl("menu-selection-stack");
+          menuSelectionStack.addAt(control, 2);
           break;
+        }
         case "lock-status":
           control = new osparc.ui.basic.Thumbnail();
           this._add(control, {
