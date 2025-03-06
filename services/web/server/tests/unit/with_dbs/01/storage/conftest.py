@@ -5,10 +5,10 @@
 
 import logging
 import random
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from pathlib import Path
 from threading import Thread
-from typing import Annotated
+from typing import Annotated, Any
 
 import pytest
 import uvicorn
@@ -32,6 +32,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import LocationID, StorageFileID
 from models_library.users import UserID
 from pydantic import AnyUrl, TypeAdapter
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from servicelib.utils import unused_port
@@ -234,8 +235,7 @@ def fake_storage_app(storage_vtag: str) -> FastAPI:  # noqa: C901
         file_id: StorageFileID,
         body: FileUploadCompletionBody,
         request: Request,
-    ):
-        ...
+    ): ...
 
     @router.post(
         "/locations/{location_id}/files/{file_id:path}:abort",
@@ -246,8 +246,7 @@ def fake_storage_app(storage_vtag: str) -> FastAPI:  # noqa: C901
         location_id: LocationID,
         file_id: StorageFileID,
         request: Request,
-    ):
-        ...
+    ): ...
 
     app.include_router(router)
 
@@ -311,3 +310,21 @@ def app_environment(
 @pytest.fixture
 def location_id(faker: Faker) -> LocationID:
     return TypeAdapter(LocationID).validate_python(faker.pyint(min_value=0))
+
+
+@pytest.fixture
+def create_storage_rpc_client_mock(mocker: MockerFixture) -> Callable[[str, Any], None]:
+    def _(method: str, result_or_exception: Any):
+        def side_effect(*args, **kwargs):
+            if isinstance(result_or_exception, Exception):
+                raise result_or_exception
+
+            return result_or_exception
+
+        for fct in (
+            f"simcore_service_webserver.storage._rest.{method}",
+            f"servicelib.rabbitmq.rpc_interfaces.storage.paths.{method}",
+        ):
+            mocker.patch(fct, side_effect=side_effect)
+
+    return _
