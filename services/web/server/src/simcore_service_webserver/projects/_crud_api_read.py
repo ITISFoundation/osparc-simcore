@@ -1,4 +1,4 @@
-""" Utils to implement READ operations (from cRud) on the project resource
+"""Utils to implement READ operations (from cRud) on the project resource
 
 
 Read operations are list, get
@@ -19,7 +19,7 @@ from servicelib.utils import logged_gather
 from simcore_postgres_database.models.projects import ProjectType
 from simcore_postgres_database.webserver_models import ProjectType as ProjectTypeDB
 
-from ..catalog.client import get_services_for_user_in_product
+from ..catalog import catalog_service
 from ..folders import _folders_repository
 from ..workspaces._workspaces_service import check_user_workspace_access
 from . import projects_service
@@ -104,8 +104,10 @@ async def list_projects(  # pylint: disable=too-many-arguments
 ) -> tuple[list[ProjectDict], int]:
     db = ProjectDBAPI.get_from_app_context(app)
 
-    user_available_services: list[dict] = await get_services_for_user_in_product(
-        app, user_id, product_name, only_key_versions=True
+    user_available_services: list[dict] = (
+        await catalog_service.get_services_for_user_in_product(
+            app, user_id, product_name, only_key_versions=True
+        )
     )
 
     workspace_is_private = True
@@ -184,8 +186,10 @@ async def list_projects_full_depth(
 ) -> tuple[list[ProjectDict], int]:
     db = ProjectDBAPI.get_from_app_context(app)
 
-    user_available_services: list[dict] = await get_services_for_user_in_product(
-        app, user_id, product_name, only_key_versions=True
+    user_available_services: list[dict] = (
+        await catalog_service.get_services_for_user_in_product(
+            app, user_id, product_name, only_key_versions=True
+        )
     )
 
     db_projects, db_project_types, total_number_projects = await db.list_projects_dicts(

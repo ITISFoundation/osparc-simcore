@@ -2,12 +2,14 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
+import re
 import urllib.parse
 from unittest.mock import MagicMock
 
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
+from aioresponses import aioresponses as AioResponsesMock
 from faker import Faker
 from models_library.api_schemas_catalog.services import ServiceGetV2
 from models_library.api_schemas_webserver.catalog import (
@@ -28,6 +30,10 @@ from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_login import UserInfoDict
 from servicelib.aiohttp import status
+from simcore_service_webserver.catalog.controller_rest_schemas import (
+    ServiceInputGet,
+    ServiceOutputGet,
+)
 from simcore_service_webserver.db.models import UserRole
 
 
@@ -111,17 +117,17 @@ def mocked_rpc_catalog_service_api(mocker: MockerFixture) -> dict[str, MagicMock
 
     return {
         "list_services_paginated": mocker.patch(
-            "simcore_service_webserver.catalog._api.catalog_rpc.list_services_paginated",
+            "simcore_service_webserver.catalog._service.catalog_rpc.list_services_paginated",
             autospec=True,
             side_effect=_list,
         ),
         "get_service": mocker.patch(
-            "simcore_service_webserver.catalog._api.catalog_rpc.get_service",
+            "simcore_service_webserver.catalog._service.catalog_rpc.get_service",
             autospec=True,
             side_effect=_get,
         ),
         "update_service": mocker.patch(
-            "simcore_service_webserver.catalog._api.catalog_rpc.update_service",
+            "simcore_service_webserver.catalog._service.catalog_rpc.update_service",
             autospec=True,
             side_effect=_update,
         ),
@@ -154,6 +160,196 @@ async def test_list_services_latest(
     assert len(model.data) == model.meta.count
 
     assert mocked_rpc_catalog_service_api["list_services_paginated"].call_count == 1
+
+
+@pytest.mark.parametrize(
+    "user_role",
+    [UserRole.USER],
+)
+async def test_list_inputs(
+    client: TestClient, logged_user: UserInfoDict, aioresponses_mocker: AioResponsesMock
+):
+
+    url_pattern = re.compile(r"http://catalog:8000/v0/services/.*")
+    service_payload = ServiceGetV2.model_json_schema()["examples"][0]
+    aioresponses_mocker.get(
+        url_pattern,
+        status=status.HTTP_200_OK,
+        payload=service_payload,
+    )
+
+    service_key = "simcore/services/comp/itis/sleeper"
+    service_version = "0.1.0"
+    assert client.app and client.app.router
+    url = client.app.router["list_service_inputs"].url_for(
+        service_key=urllib.parse.quote(service_key, safe=""),
+        service_version=service_version,
+    )
+
+    response = await client.get(f"{url}")
+    data, _ = await assert_status(response, status.HTTP_200_OK)
+    TypeAdapter(list[ServiceInputGet]).validate_python(data)
+
+
+@pytest.mark.parametrize(
+    "user_role",
+    [UserRole.USER],
+)
+async def test_list_outputs(
+    client: TestClient, logged_user: UserInfoDict, aioresponses_mocker: AioResponsesMock
+):
+
+    url_pattern = re.compile(r"http://catalog:8000/v0/services/.*")
+    service_payload = ServiceGetV2.model_json_schema()["examples"][0]
+    aioresponses_mocker.get(
+        url_pattern,
+        status=status.HTTP_200_OK,
+        payload=service_payload,
+    )
+
+    service_key = "simcore/services/comp/itis/sleeper"
+    service_version = "0.1.0"
+    assert client.app and client.app.router
+    url = client.app.router["list_service_outputs"].url_for(
+        service_key=urllib.parse.quote(service_key, safe=""),
+        service_version=service_version,
+    )
+
+    response = await client.get(f"{url}")
+    data, _ = await assert_status(response, status.HTTP_200_OK)
+    TypeAdapter(list[ServiceOutputGet]).validate_python(data)
+
+
+@pytest.mark.parametrize(
+    "user_role",
+    [UserRole.USER],
+)
+async def test_get_outputs(
+    client: TestClient, logged_user: UserInfoDict, aioresponses_mocker: AioResponsesMock
+):
+
+    url_pattern = re.compile(r"http://catalog:8000/v0/services/.*")
+    service_payload = ServiceGetV2.model_json_schema()["examples"][0]
+    aioresponses_mocker.get(
+        url_pattern,
+        status=status.HTTP_200_OK,
+        payload=service_payload,
+    )
+
+    service_key = "simcore/services/comp/itis/sleeper"
+    service_version = "0.1.0"
+    assert client.app and client.app.router
+    url = client.app.router["get_service_output"].url_for(
+        service_key=urllib.parse.quote(service_key, safe=""),
+        service_version=service_version,
+        output_key=next(iter(service_payload["outputs"].keys())),
+    )
+
+    response = await client.get(f"{url}")
+    data, _ = await assert_status(response, status.HTTP_200_OK)
+    ServiceOutputGet.model_validate(data)
+
+
+@pytest.mark.parametrize(
+    "user_role",
+    [UserRole.USER],
+)
+async def test_get_inputs(
+    client: TestClient, logged_user: UserInfoDict, aioresponses_mocker: AioResponsesMock
+):
+    url_pattern = re.compile(r"http://catalog:8000/v0/services/.*")
+    service_payload = ServiceGetV2.model_json_schema()["examples"][0]
+    aioresponses_mocker.get(
+        url_pattern,
+        status=status.HTTP_200_OK,
+        payload=service_payload,
+    )
+
+    service_key = "simcore/services/comp/itis/sleeper"
+    service_version = "0.1.0"
+    assert client.app and client.app.router
+    url = client.app.router["get_service_input"].url_for(
+        service_key=urllib.parse.quote(service_key, safe=""),
+        service_version=service_version,
+        input_key=next(iter(service_payload["inputs"].keys())),
+    )
+    response = await client.get(f"{url}")
+    data, _ = await assert_status(response, status.HTTP_200_OK)
+    ServiceInputGet.model_validate(data)
+
+
+@pytest.mark.parametrize(
+    "user_role",
+    [UserRole.USER],
+)
+async def test_get_compatible_inputs_given_source_outputs(
+    client: TestClient, logged_user: UserInfoDict, aioresponses_mocker: AioResponsesMock
+):
+    url_pattern = re.compile(r"http://catalog:8000/v0/services/.*")
+    service_payload = ServiceGetV2.model_json_schema()["examples"][0]
+    for _ in range(2):
+        aioresponses_mocker.get(
+            url_pattern,
+            status=status.HTTP_200_OK,
+            payload=service_payload,
+        )
+
+    service_key = "simcore/services/comp/itis/sleeper"
+    service_version = "0.1.0"
+    assert client.app and client.app.router
+    url = (
+        client.app.router["get_compatible_inputs_given_source_output"]
+        .url_for(
+            service_key=urllib.parse.quote(service_key, safe=""),
+            service_version=service_version,
+        )
+        .with_query(
+            {
+                "fromService": "simcore/services/comp/itis/sleeper",
+                "fromVersion": "0.1.0",
+                "fromOutput": "output_1",
+            }
+        )
+    )
+    response = await client.get(f"{url}")
+    _, _ = await assert_status(response, status.HTTP_200_OK)
+
+
+@pytest.mark.parametrize(
+    "user_role",
+    [UserRole.USER],
+)
+async def test_get_compatible_outputs_given_target_inptuts(
+    client: TestClient, logged_user: UserInfoDict, aioresponses_mocker: AioResponsesMock
+):
+    url_pattern = re.compile(r"http://catalog:8000/v0/services/.*")
+    service_payload = ServiceGetV2.model_json_schema()["examples"][0]
+    for _ in range(2):
+        aioresponses_mocker.get(
+            url_pattern,
+            status=status.HTTP_200_OK,
+            payload=service_payload,
+        )
+
+    service_key = "simcore/services/comp/itis/sleeper"
+    service_version = "0.1.0"
+    assert client.app and client.app.router
+    url = (
+        client.app.router["get_compatible_outputs_given_target_input"]
+        .url_for(
+            service_key=urllib.parse.quote(service_key, safe=""),
+            service_version=service_version,
+        )
+        .with_query(
+            {
+                "toService": "simcore/services/comp/itis/sleeper",
+                "toVersion": "0.1.0",
+                "toInput": "input_1",
+            }
+        )
+    )
+    response = await client.get(f"{url}")
+    _, _ = await assert_status(response, status.HTTP_200_OK)
 
 
 @pytest.mark.parametrize(
