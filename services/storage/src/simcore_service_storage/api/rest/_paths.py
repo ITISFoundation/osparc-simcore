@@ -56,13 +56,13 @@ async def list_paths(
     "/locations/{location_id}/paths/{path:path}:size",
     response_model=Envelope[PathTotalSizeCreate],
 )
-async def compute_path_total_size(
+async def compute_path_size(
     dsm: Annotated[BaseDataManager, Depends(get_data_manager)],
     user_id: UserID,
     path: Path,
 ):
     return Envelope[PathTotalSizeCreate](
         data=PathTotalSizeCreate(
-            path=path, size=await dsm.compute_path_total_size(user_id, path=path)
+            path=path, size=await dsm.compute_path_size(user_id, path=path)
         )
     )

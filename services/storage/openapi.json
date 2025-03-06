@@ -1083,8 +1083,8 @@
         "tags": [
           "files"
         ],
-        "summary": "Compute Path Total Size",
-        "operationId": "compute_path_total_size_v0_locations__location_id__paths__path__size_post",
+        "summary": "Compute Path Size",
+        "operationId": "compute_path_size_v0_locations__location_id__paths__path__size_post",
         "parameters": [
           {
             "name": "path",

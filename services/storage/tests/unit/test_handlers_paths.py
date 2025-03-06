@@ -519,9 +519,9 @@ async def test_list_paths_with_display_name_containing_slashes(
     )
     assert page_of_paths.items[0].display_path == Path(
         quote(project_name_with_slashes, safe="")
-    ) / quote(node_name_with_non_ascii, safe=""), (
-        "display path parts should be url encoded"
-    )
+    ) / quote(
+        node_name_with_non_ascii, safe=""
+    ), "display path parts should be url encoded"
 
     # ls in the node workspace
     selected_node_id = NodeID(random.choice(list(project["workbench"])))  # noqa: S311
@@ -565,12 +565,12 @@ async def test_list_paths_with_display_name_containing_slashes(
                 *(expected_paths[0][0].parts[2:]),
             ],
         )
-        assert page_of_paths.items[0].display_path == Path(expected_display_path), (
-            "display path parts should be url encoded"
-        )
+        assert page_of_paths.items[0].display_path == Path(
+            expected_display_path
+        ), "display path parts should be url encoded"
 
 
-async def _assert_compute_path_total_size(
+async def _assert_compute_path_size(
     initialized_app: FastAPI,
     client: httpx.AsyncClient,
     location_id: LocationID,
@@ -582,7 +582,7 @@ async def _assert_compute_path_total_size(
     url = url_from_operation_id(
         client,
         initialized_app,
-        "compute_path_total_size",
+        "compute_path_size",
         location_id=f"{location_id}",
         path=f"{path}",
     ).with_query(user_id=user_id)
@@ -627,9 +627,9 @@ async def test_path_compute_size(
     ],
     project_params: ProjectWithFilesParams,
 ):
-    assert len(project_params.allowed_file_sizes) == 1, (
-        "test preconditions are not filled! allowed file sizes should have only 1 option for this test"
-    )
+    assert (
+        len(project_params.allowed_file_sizes) == 1
+    ), "test preconditions are not filled! allowed file sizes should have only 1 option for this test"
     project, list_of_files = with_random_project_with_files
 
     total_num_files = sum(
@@ -639,7 +639,7 @@ async def test_path_compute_size(
     # get size of a full project
     expected_total_size = project_params.allowed_file_sizes[0] * total_num_files
     path = Path(project["uuid"])
-    await _assert_compute_path_total_size(
+    await _assert_compute_path_size(
         initialized_app,
         client,
         location_id,
@@ -657,7 +657,7 @@ async def test_path_compute_size(
     expected_total_size = project_params.allowed_file_sizes[0] * len(
         selected_node_s3_keys
     )
-    await _assert_compute_path_total_size(
+    await _assert_compute_path_size(
         initialized_app,
         client,
         location_id,
@@ -676,7 +676,7 @@ async def test_path_compute_size(
     expected_total_size = project_params.allowed_file_sizes[0] * len(
         selected_node_s3_keys
     )
-    await _assert_compute_path_total_size(
+    await _assert_compute_path_size(
         initialized_app,
         client,
         location_id,
@@ -695,7 +695,7 @@ async def test_path_compute_size(
     expected_total_size = project_params.allowed_file_sizes[0] * len(
         selected_node_s3_keys
     )
-    workspace_total_size = await _assert_compute_path_total_size(
+    workspace_total_size = await _assert_compute_path_size(
         initialized_app,
         client,
         location_id,
@@ -720,7 +720,7 @@ async def test_path_compute_size(
         expected_total_size = project_params.allowed_file_sizes[0] * len(
             selected_node_s3_keys
         )
-        accumulated_subfolder_size += await _assert_compute_path_total_size(
+        accumulated_subfolder_size += await _assert_compute_path_size(
             initialized_app,
             client,
             location_id,
@@ -740,7 +740,7 @@ async def test_path_compute_size_inexistent_path(
     faker: Faker,
     fake_datcore_tokens: tuple[str, str],
 ):
-    await _assert_compute_path_total_size(
+    await _assert_compute_path_size(
         initialized_app,
         client,
         location_id,
