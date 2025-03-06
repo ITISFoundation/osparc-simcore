@@ -9,7 +9,7 @@ from celery.contrib.abortable import AbortableTask
 from settings_library.celery import CelerySettings
 from settings_library.redis import RedisDatabase
 
-from .models import TaskError
+from .models import TaskError, TaskState
 
 _logger = logging.getLogger(__name__)
 
@@ -47,14 +47,14 @@ def error_handling(func: Callable):
             )
 
             task.update_state(
-                state="ERROR",
+                state=TaskState.ERROR.upper(),
                 meta=TaskError(
                     exc_type=exc_type,
                     exc_msg=exc_message,
                 ).model_dump(mode="json"),
                 traceback=exc_traceback
             )
-            raise Ignore from exc
+            raise Ignore from exc   # ignore doing state updates
     return wrapper
 
 
