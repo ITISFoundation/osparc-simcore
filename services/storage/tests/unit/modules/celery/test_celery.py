@@ -96,15 +96,15 @@ async def test_sumitting_task_calling_async_function_results_with_success_state(
         stop=stop_after_delay(30),
     ):
         with attempt:
-            progress = await celery_client.get_task_status(task_context, task_uuid)
-            assert progress.task_state == TaskState.SUCCESS
+            status = await celery_client.get_task_status(task_context, task_uuid)
+            assert status.task_state == TaskState.SUCCESS
 
-    assert (
-        await celery_client.get_task_result(task_context, task_uuid)
-    ) == "archive.zip"
     assert (
         await celery_client.get_task_status(task_context, task_uuid)
     ).task_state == TaskState.SUCCESS
+    assert (
+        await celery_client.get_task_result(task_context, task_uuid)
+    ) == "archive.zip"
 
 
 @pytest.mark.usefixtures("celery_worker")

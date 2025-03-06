@@ -40,6 +40,12 @@ def error_handling(func: Callable):
             exc_message = f"{exc}"
             exc_traceback = traceback.format_exc().split('\n')
 
+            _logger.exception(
+                "Task %s failed with exception: %s",
+                task.request.id,
+                exc_message,
+            )
+
             task.update_state(
                 state="ERROR",
                 meta=TaskError(

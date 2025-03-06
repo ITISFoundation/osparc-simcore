@@ -34,6 +34,9 @@ _CELERY_STATES_MAPPING: Final[dict[str, TaskState]] = {
 _CELERY_TASK_ID_KEY_SEPARATOR: Final[str] = ":"
 _CELERY_TASK_ID_KEY_ENCODING = "utf-8"
 
+_MIN_PROGRESS_VALUE = 0.0
+_MAX_PROGRESS_VALUE = 100.0
+
 
 def _build_context_prefix(task_context: TaskContext) -> list[str]:
     return [f"{task_context[key]}" for key in sorted(task_context)]
@@ -97,8 +100,8 @@ class CeleryTaskQueueClient:
             TaskState.ERROR,
             TaskState.SUCCESS,
         ):
-            return ProgressReport(actual_value=100.0)
-        return ProgressReport(actual_value=0.0)
+            return ProgressReport(actual_value=_MAX_PROGRESS_VALUE)
+        return ProgressReport(actual_value=_MIN_PROGRESS_VALUE)
 
     def _get_state(self, task_context: TaskContext, task_uuid: TaskUUID) -> TaskState:
         task_id = _build_task_id(task_context, task_uuid)
