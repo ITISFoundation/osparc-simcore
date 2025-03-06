@@ -1,4 +1,4 @@
-""" two-factor-authentication utils
+"""two-factor-authentication utils
 
 Currently includes two parts:
 
@@ -10,6 +10,7 @@ Currently includes two parts:
 import asyncio
 import logging
 
+import twilio.rest
 from aiohttp import web
 from models_library.users import UserID
 from pydantic import BaseModel, Field
@@ -17,7 +18,6 @@ from servicelib.logging_utils import log_decorator
 from servicelib.utils_secrets import generate_passcode
 from settings_library.twilio import TwilioSettings
 from twilio.base.exceptions import TwilioException  # type: ignore[import-untyped]
-from twilio.rest import Client  # type: ignore[import-untyped]
 
 from ..login.errors import SendingVerificationEmailError, SendingVerificationSmsError
 from ..products.models import Product
@@ -118,7 +118,8 @@ async def send_sms_code(
             #
             # SEE https://www.twilio.com/docs/sms/quickstart/python
             #
-            client = Client(
+            # NOTE: this is mocked
+            client = twilio.rest.Client(
                 twilio_auth.TWILIO_ACCOUNT_SID, twilio_auth.TWILIO_AUTH_TOKEN
             )
             message = client.messages.create(**create_kwargs)
