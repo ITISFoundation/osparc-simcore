@@ -50,6 +50,7 @@ async def _load_products_on_startup(app: web.Application):
     default_product_name = await _service.get_default_product_name(app)
 
     _set_app_state(app, app_products, default_product_name)
+    assert APP_PRODUCTS_KEY in app  # nosec
 
     _logger.debug("Product loaded: %s", list(app_products))
 
