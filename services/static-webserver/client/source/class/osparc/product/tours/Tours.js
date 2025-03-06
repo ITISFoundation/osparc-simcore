@@ -32,6 +32,9 @@ qx.Class.define("osparc.product.tours.Tours", {
       "s4l": {
         fetchTours: () => osparc.product.tours.Tours.fetchTours("/resource/osparc/tours/s4l_tours.json")
       },
+      "s4lacad": {
+        fetchTours: () => osparc.product.tours.Tours.fetchTours("/resource/osparc/tours/s4l_tours.json")
+      },
       "tis": {
         fetchTours: () => osparc.product.tours.Tours.fetchTours("/resource/osparc/tours/tis_tours.json")
       },
