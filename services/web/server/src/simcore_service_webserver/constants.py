@@ -38,14 +38,18 @@ assert FRONTEND_APP_DEFAULT in FRONTEND_APPS_AVAILABLE  # nosec
 # main index route name = front-end
 INDEX_RESOURCE_NAME: Final[str] = "get_cached_frontend_index"
 
-MSG_UNDER_DEVELOPMENT: Final[
-    str
-] = "Under development. Use WEBSERVER_DEV_FEATURES_ENABLED=1 to enable current implementation"
+MSG_UNDER_DEVELOPMENT: Final[str] = (
+    "Under development. Use WEBSERVER_DEV_FEATURES_ENABLED=1 to enable current implementation"
+)
 
 
 # Request storage keys
 RQ_PRODUCT_KEY: Final[str] = f"{__name__}.RQ_PRODUCT_KEY"
 
+
+MSG_TRY_AGAIN_OR_SUPPORT: Final[str] = (
+    "Please try again in a moment and if the problem persist, please contact support"
+)
 
 __all__: tuple[str, ...] = (
     "APP_AIOPG_ENGINE_KEY",

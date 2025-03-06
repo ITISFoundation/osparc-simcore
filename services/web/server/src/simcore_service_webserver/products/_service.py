@@ -111,15 +111,18 @@ async def get_product_stripe_info(
     app: web.Application, *, product_name: ProductName
 ) -> ProductStripeInfoGet:
     repo = ProductRepository.create_from_app(app)
+
     product_stripe_info = await repo.get_product_stripe_info(product_name)
     if (
-        not product_stripe_info
-        or "missing!!" in product_stripe_info.stripe_price_id
+        "missing!!" in product_stripe_info.stripe_price_id
         or "missing!!" in product_stripe_info.stripe_tax_rate_id
     ):
-        raise MissingStripeConfigError(
-            product_name=product_name, product_stripe_info=product_stripe_info
+        exc = MissingStripeConfigError(
+            product_name=product_name,
+            product_stripe_info=product_stripe_info,
         )
+        exc.add_note("Probably stripe side is not configured")
+        raise exc
     return product_stripe_info
 
 

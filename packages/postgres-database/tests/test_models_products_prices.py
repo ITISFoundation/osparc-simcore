@@ -15,7 +15,7 @@ from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.products_prices import products_prices
 from simcore_postgres_database.utils_products_prices import (
     get_product_latest_price_info_or_none,
-    get_product_latest_stripe_info,
+    get_product_latest_stripe_info_or_none,
     is_payment_enabled,
 )
 from sqlalchemy.engine.row import Row
@@ -257,12 +257,15 @@ async def test_get_product_latest_stripe_info(
         )
 
     # undefined product
-    with pytest.raises(ValueError, match="undefined"):
-        await get_product_latest_stripe_info(connection, product_name="undefined")
+    undefined_product_stripe_info = await get_product_latest_stripe_info_or_none(
+        connection, product_name="undefined"
+    )
+    assert undefined_product_stripe_info is None
 
     # defined product
-    product_stripe_info = await get_product_latest_stripe_info(
+    product_stripe_info = await get_product_latest_stripe_info_or_none(
         connection, product_name=fake_product.name
     )
+    assert product_stripe_info
     assert product_stripe_info[0] == stripe_price_id_value
     assert product_stripe_info[1] == stripe_tax_rate_id_value

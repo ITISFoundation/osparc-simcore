@@ -43,9 +43,9 @@ async def get_product_latest_price_info_or_none(
     return None
 
 
-async def get_product_latest_stripe_info(
+async def get_product_latest_stripe_info_or_none(
     conn: AsyncConnection, product_name: str
-) -> tuple[StripePriceID, StripeTaxRateID]:
+) -> tuple[StripePriceID, StripeTaxRateID] | None:
     # Stripe info of a product for latest price
     result = await conn.execute(
         sa.select(
@@ -58,10 +58,7 @@ async def get_product_latest_stripe_info(
     )
 
     row = result.one_or_none()
-    if row is None:
-        msg = f"Required Stripe information missing from product {product_name=}"
-        raise ValueError(msg)
-    return (row.stripe_price_id, row.stripe_tax_rate_id)
+    return (row.stripe_price_id, row.stripe_tax_rate_id) if row else None
 
 
 async def is_payment_enabled(conn: AsyncConnection, product_name: str) -> bool:
