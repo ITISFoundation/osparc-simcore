@@ -1,6 +1,4 @@
-""" Handler functions and routing for diagnostics
-
-"""
+"""Handler functions and routing for diagnostics"""
 
 import asyncio
 import logging
@@ -15,7 +13,7 @@ from servicelib.aiohttp.requests_validation import parse_request_query_parameter
 from servicelib.utils import logged_gather
 
 from .._meta import API_VERSION, APP_NAME, api_version_prefix
-from ..catalog.client import is_catalog_service_responsive
+from ..catalog import catalog_service
 from ..db import plugin
 from ..director_v2 import api as director_v2_api
 from ..login.decorators import login_required
@@ -131,7 +129,7 @@ async def get_app_status(request: web.Request):
 
     async def _check_catalog():
         check.services["catalog"] = {
-            "healthy": await is_catalog_service_responsive(request.app)
+            "healthy": await catalog_service.is_catalog_service_responsive(request.app)
         }
 
     async def _check_resource_usage_tracker():
