@@ -74,6 +74,10 @@ qx.Class.define("osparc.study.Utils", {
       return msg;
     },
 
+    getInaccessibleServices2: function(studyServices) {
+      return studyServices.filter(service => service["execute"] === false);
+    },
+
     anyServiceRetired: function(studyServices) {
       const isRetired = studyServices.some(service => {
         if (service["release"] && service["release"]["retired"]) {
@@ -108,47 +112,6 @@ qx.Class.define("osparc.study.Utils", {
       return isUpdatable;
     },
 
-    isWorkbenchUpdatable: function(workbench) {
-      const services = new Set(this.extractUniqueServices(workbench));
-      const isUpdatable = Array.from(services).some(srv => osparc.service.Utils.isUpdatable(srv));
-      return isUpdatable;
-    },
-
-    isWorkbenchRetired: function(workbench) {
-      const allServices = osparc.store.Services.servicesCached;
-      const services = new Set(this.extractUniqueServices(workbench));
-      const isRetired = Array.from(services).some(srv => {
-        if (srv.key in allServices && srv.version in allServices[srv.key]) {
-          const serviceMD = allServices[srv.key][srv.version];
-          if (serviceMD["retired"]) {
-            const retirementDate = new Date(serviceMD["retired"]);
-            const currentDate = new Date();
-            return retirementDate < currentDate;
-          }
-          return false;
-        }
-        return false;
-      });
-      return isRetired;
-    },
-
-    isWorkbenchDeprecated: function(workbench) {
-      const allServices = osparc.store.Services.servicesCached;
-      const services = new Set(this.extractUniqueServices(workbench));
-      const isRetired = Array.from(services).some(srv => {
-        if (srv.key in allServices && srv.version in allServices[srv.key]) {
-          const serviceMD = allServices[srv.key][srv.version];
-          if ("retired" in serviceMD && serviceMD["retired"]) {
-            const retirementDate = new Date(serviceMD["retired"]);
-            const currentDate = new Date();
-            return retirementDate > currentDate;
-          }
-          return false;
-        }
-        return false;
-      });
-      return isRetired;
-    },
 
     createStudyFromService: function(key, version, existingStudies, newStudyLabel, contextProps = {}) {
       return new Promise((resolve, reject) => {
