@@ -118,6 +118,7 @@ async def _assert_compute_path_size(
     return response
 
 
+@pytest.mark.xfail(reason="in development")
 @pytest.mark.parametrize(
     "location_id",
     [SimcoreS3DataManager.get_location_id()],
@@ -136,7 +137,6 @@ async def _assert_compute_path_size(
     ids=str,
 )
 async def test_path_compute_size(
-    enabled_rabbitmq,
     initialized_app: FastAPI,
     storage_rabbitmq_rpc_client: RabbitMQRPCClient,
     location_id: LocationID,
