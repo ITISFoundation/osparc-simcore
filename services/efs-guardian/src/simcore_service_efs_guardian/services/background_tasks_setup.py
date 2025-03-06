@@ -18,7 +18,7 @@ def _on_app_startup(app: FastAPI) -> Callable[[], Awaitable[None]]:
     async def _startup() -> None:
         with (
             log_context(_logger, logging.INFO, msg="Efs Guardian background task "),
-            log_catch(_logger, reraise=True),
+            log_catch(_logger, reraise=False),
         ):
             app.state.efs_guardian_removal_policy_background_task = None
 
@@ -34,7 +34,7 @@ def _on_app_startup(app: FastAPI) -> Callable[[], Awaitable[None]]:
 
             app.state.efs_guardian_removal_policy_background_task = asyncio.create_task(
                 _periodic_removal_policy_task(),
-                name="efs_removal_policy_task",
+                name=_periodic_removal_policy_task.__name__,
             )
 
     return _startup
