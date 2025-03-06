@@ -52,7 +52,7 @@ async def test_list_storage_locations(
     url = "/v0/storage/locations"
     assert url.startswith(PREFIX)
 
-    resp = await client.get(url, params={"user_id": logged_user["id"]})
+    resp = await client.get(url)
     data, error = await assert_status(resp, expected)
 
     if not error:
@@ -80,7 +80,7 @@ async def test_list_storage_paths(
     assert client.app
     url = client.app.router["list_storage_paths"].url_for(location_id=f"{location_id}")
 
-    resp = await client.get(f"{url}", params={"user_id": logged_user["id"]})
+    resp = await client.get(f"{url}")
     data, error = await assert_status(resp, expected)
     if not error:
         TypeAdapter(CursorPage[PathMetaDataGet]).validate_python(data)
@@ -125,7 +125,7 @@ async def test_compute_path_size(
         path=quote(faker.file_path(absolute=False), safe=""),
     )
 
-    resp = await client.post(f"{url}", params={"user_id": logged_user["id"]})
+    resp = await client.post(f"{url}")
     data, error = await assert_status(resp, expected)
     if not error:
         TypeAdapter(StorageAsyncJobGet).validate_python(data)
@@ -152,7 +152,7 @@ async def test_list_datasets_metadata(
 
     assert url == str(_url)
 
-    resp = await client.get(url, params={"user_id": logged_user["id"]})
+    resp = await client.get(url)
     data, error = await assert_status(resp, expected)
 
     if not error:
@@ -185,7 +185,7 @@ async def test_list_dataset_files_metadata(
 
     assert url == str(_url)
 
-    resp = await client.get(url, params={"user_id": logged_user["id"]})
+    resp = await client.get(url)
     data, error = await assert_status(resp, expected)
 
     if not error:
@@ -220,7 +220,7 @@ async def test_storage_file_meta(
 
     assert url.startswith(PREFIX)
 
-    resp = await client.get(url, params={"user_id": logged_user["id"]})
+    resp = await client.get(url)
     data, error = await assert_status(resp, expected)
 
     if not error:
@@ -251,7 +251,7 @@ async def test_storage_list_filter(
 
     assert url.startswith(PREFIX)
 
-    resp = await client.get(url, params={"user_id": logged_user["id"]})
+    resp = await client.get(url)
     data, error = await assert_status(resp, expected)
 
     if not error:
@@ -264,7 +264,7 @@ async def test_storage_list_filter(
 @pytest.fixture
 def file_id(faker: Faker) -> StorageFileID:
     return TypeAdapter(StorageFileID).validate_python(
-        f"{faker.uuid4()}/{faker.uuid4()}/{faker.file_name()} with spaces.dat"
+        f"{faker.uuid4()}/{faker.uuid4()}/{faker.file_name()} with spaces().dat"
     )
 
 
@@ -287,7 +287,7 @@ async def test_upload_file(
 
     assert url.startswith(PREFIX)
 
-    resp = await client.put(url, params={"user_id": logged_user["id"]})
+    resp = await client.put(url)
     data, error = await assert_status(resp, expected)
     if not error:
         assert not error
@@ -295,10 +295,7 @@ async def test_upload_file(
         file_upload_schema = FileUploadSchema.model_validate(data)
 
         # let's abort
-        resp = await client.post(
-            f"{file_upload_schema.links.abort_upload.path}",
-            params={"user_id": logged_user["id"]},
-        )
+        resp = await client.post(f"{file_upload_schema.links.abort_upload.path}")
         data, error = await assert_status(resp, status.HTTP_204_NO_CONTENT)
         assert not error
         assert not data
