@@ -1,16 +1,16 @@
 import contextlib
 import logging
-from typing import Any, Final
+from typing import Any, Final, Type
 from uuid import uuid4
 
 from celery import Celery   # type: ignore[import-untyped]
 from celery.contrib.abortable import AbortableAsyncResult   # type: ignore[import-untyped]
 from common_library.async_tools import make_async
 from models_library.progress_bar import ProgressReport
-from pydantic import ValidationError
+from pydantic import TypeAdapter, ValidationError
 from servicelib.logging_utils import log_context
 
-from .models import TaskContext, TaskID, TaskState, TaskStatus, TaskUUID
+from .models import TaskContext, TaskError, TaskID, TaskResult, TaskState, TaskStatus, TaskUUID
 
 _logger = logging.getLogger(__name__)
 
@@ -79,7 +79,9 @@ class CeleryTaskQueueClient:
     @make_async()
     def get_task_result(self, task_context: TaskContext, task_uuid: TaskUUID) -> Any:
         task_id = _build_task_id(task_context, task_uuid)
-        return self._celery_app.AsyncResult(task_id).result
+        return TypeAdapter(TaskResult).validate_python(
+            self._celery_app.AsyncResult(task_id).result
+        )
 
     def _get_progress_report(
         self, task_context: TaskContext, task_uuid: TaskUUID
