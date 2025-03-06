@@ -1,9 +1,7 @@
 import functools
 import logging
-import os
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from datetime import timedelta
 from pathlib import Path
 from typing import Final
 
@@ -52,11 +50,13 @@ from ..models.schemas.application_health import ApplicationHealth
 from ..models.schemas.containers import ContainersCreate
 from ..models.shared_store import SharedStore
 from ..modules import nodeports, user_services_preferences
-from ..modules.container_utils import run_command_in_container
 from ..modules.mounted_fs import MountedVolumes
 from ..modules.notifications._notifications_ports import PortNotifier
 from ..modules.outputs import OutputsManager, event_propagation_disabled
-from .long_running_tasks_utils import run_before_shutdown_actions
+from .long_running_tasks_utils import (
+    ensure_read_permissions_on_user_service_data,
+    run_before_shutdown_actions,
+)
 from .resource_tracking import send_service_started, send_service_stopped
 
 _logger = logging.getLogger(__name__)
@@ -67,7 +67,6 @@ _logger = logging.getLogger(__name__)
 # NOTE: most services have only 1 "working" directory
 CONCURRENCY_STATE_SAVE_RESTORE: Final[int] = 2
 _MINUTE: Final[int] = 60
-_TIMEOUT_PERMISSION_CHANGES: Final[timedelta] = timedelta(minutes=5)
 
 
 def _raise_for_errors(
@@ -317,18 +316,7 @@ async def task_runs_docker_compose_down(
         await _send_resource_tracking_stop(SimcorePlatformStatus.OK)
         raise
 
-    # make sure sidecar has access to the files and that the user did not accidetally remove read access
-    # NOTE: command runs inside self container since the user service container might not always be running
-    self_container = os.environ["HOSTNAME"]
-    for path_to_store in (  # apply changes to otuputs and all state folders
-        *mounted_volumes.disk_state_paths_iter(),
-        mounted_volumes.disk_outputs_path,
-    ):
-        await run_command_in_container(
-            self_container,
-            command=f"chmod -R go+rX {path_to_store}",
-            timeout=_TIMEOUT_PERMISSION_CHANGES.total_seconds(),
-        )
+    await ensure_read_permissions_on_user_service_data(mounted_volumes)
 
     await _send_resource_tracking_stop(SimcorePlatformStatus.OK)
 
