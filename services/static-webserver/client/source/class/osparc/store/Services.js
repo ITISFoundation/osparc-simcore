@@ -55,6 +55,28 @@ qx.Class.define("osparc.store.Services", {
       });
     },
 
+    getService: function(key, version, useCache = true) {
+      return new Promise(resolve => {
+        if (useCache && this.__isInCache(key, version)) {
+          resolve(this.servicesCached[key][version]);
+          return;
+        }
+
+        const params = {
+          url: osparc.data.Resources.getServiceUrl(key, version)
+        };
+        osparc.data.Resources.fetch("servicesV2", "getOne", params)
+          .then(service => {
+            this.__addHit(service);
+            this.__addTSRInfo(service);
+            this.__addExtraTypeInfo(service);
+            this.__addToCache(service)
+            resolve(service);
+          })
+          .catch(console.error);
+      });
+    },
+
     getServicesLatestList: function(excludeFrontend = true, excludeDeprecated = true) {
       return new Promise(resolve => {
         const servicesList = [];
@@ -92,28 +114,6 @@ qx.Class.define("osparc.store.Services", {
             console.error(err);
           })
           .finally(() => resolve(servicesList));
-      });
-    },
-
-    getService: function(key, version, useCache = true) {
-      return new Promise(resolve => {
-        if (useCache && this.__isInCache(key, version)) {
-          resolve(this.servicesCached[key][version]);
-          return;
-        }
-
-        const params = {
-          url: osparc.data.Resources.getServiceUrl(key, version)
-        };
-        osparc.data.Resources.fetch("servicesV2", "getOne", params)
-          .then(service => {
-            this.__addHit(service);
-            this.__addTSRInfo(service);
-            this.__addExtraTypeInfo(service);
-            this.__addToCache(service)
-            resolve(service);
-          })
-          .catch(console.error);
       });
     },
 
