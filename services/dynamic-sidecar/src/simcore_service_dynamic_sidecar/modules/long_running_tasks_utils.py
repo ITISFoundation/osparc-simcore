@@ -11,8 +11,8 @@ from ..core.errors import (
     ContainerExecContainerNotFoundError,
     ContainerExecTimeoutError,
 )
-from ..core.utils import MountedVolumes
 from ..models.shared_store import SharedStore
+from ..modules.mounted_fs import MountedVolumes
 from .container_utils import run_command_in_container
 
 _logger = logging.getLogger(__name__)
