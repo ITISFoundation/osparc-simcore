@@ -60,19 +60,6 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
       return nodeIds;
     },
 
-    getLatestVersion: function(studyData, nodeId) {
-      if (nodeId in studyData["workbench"]) {
-        const node = studyData["workbench"][nodeId];
-        if (osparc.service.Utils.isUpdatable(node)) {
-          const latestCompatible = osparc.service.Utils.getLatestCompatible(node["key"], node["version"]);
-          if (latestCompatible["version"] !== node["version"]) {
-            return latestCompatible["version"];
-          }
-        }
-      }
-      return null;
-    },
-
     colorVersionLabel: function(versionLabel, metadata) {
       const isDeprecated = osparc.service.Utils.isDeprecated(metadata);
       const isRetired = osparc.service.Utils.isRetired(metadata);
