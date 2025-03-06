@@ -23,7 +23,7 @@ async def _auto_create_products_groups(app: web.Application) -> None:
     NOTE: could not add this in 'setup_groups' (groups plugin)
     since it has to be executed BEFORE 'load_products_on_startup'
     """
-    product_groups_map = _service.auto_create_products_groups(app)
+    product_groups_map = await _service.auto_create_products_groups(app)
     _logger.debug("Products group IDs: %s", pformat(product_groups_map))
 
 
