@@ -13,6 +13,7 @@ from models_library.api_schemas_webserver.catalog import (
     ServiceOutputGet,
     ServiceOutputKey,
 )
+from models_library.basic_types import IdInt
 from models_library.rest_pagination import PageQueryParameters
 from models_library.services import BaseServiceIOModel, ServiceKey, ServiceVersion
 from models_library.users import UserID
@@ -187,3 +188,7 @@ class ServicePathParams(BaseModel):
 
 
 class ListServiceParams(PageQueryParameters): ...
+
+
+class ServiceTagPathParams(ServicePathParams):
+    tag_id: IdInt
