@@ -7,11 +7,6 @@ from models_library.api_schemas_rpc_async_jobs.async_jobs import (
     AsyncJobGet,
     AsyncJobId,
 )
-from models_library.api_schemas_storage.data_export_async_jobs import (
-    AccessRightError,
-    DataExportError,
-    InvalidFileIdentifierError,
-)
 from models_library.projects_nodes_io import LocationID
 from models_library.users import UserID
 from servicelib.rabbitmq import RPCRouter
@@ -21,13 +16,7 @@ from ...dsm import get_dsm_provider
 router = RPCRouter()
 
 
-@router.expose(
-    reraise_if_error_type=(
-        InvalidFileIdentifierError,
-        AccessRightError,
-        DataExportError,
-    )
-)
+@router.expose(reraise_if_error_type=())
 async def compute_path_size(
     app: FastAPI,
     user_id: UserID,
