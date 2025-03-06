@@ -244,7 +244,6 @@ class DatCoreDataManager(BaseDataManager):
         except ValidationError:
             # invalid path
             return ByteSize(0)
-        raise NotImplementedError
 
     async def list_files(
         self,
