@@ -20,13 +20,14 @@ async def compute_path_size(
     product_name: str,
     location_id: LocationID,
     path: Path,
-) -> StorageAsyncJobGet:
+) -> tuple[StorageAsyncJobGet, AsyncJobNameData]:
+    job_id_data = AsyncJobNameData(user_id=user_id, product_name=product_name)
     async_job_rpc_get = await submit_job(
         rabbitmq_rpc_client=client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
         method_name=RPCMethodName("compute_path_size"),
-        job_id_data=AsyncJobNameData(user_id=user_id, product_name=product_name),
+        job_id_data=job_id_data,
         location_id=location_id,
         path=path,
     )
-    return StorageAsyncJobGet.from_rpc_schema(async_job_rpc_get)
+    return StorageAsyncJobGet.from_rpc_schema(async_job_rpc_get), job_id_data
