@@ -1,11 +1,12 @@
 from pathlib import Path
 from typing import Annotated, Any
 
+from aiohttp import web
 from models_library.api_schemas_storage.storage_schemas import (
     DEFAULT_NUMBER_OF_PATHS_PER_PAGE,
     MAX_NUMBER_OF_PATHS_PER_PAGE,
 )
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, HttpUrl
 
 from ..api_schemas_rpc_async_jobs.async_jobs import (
     AsyncJobGet,
@@ -49,12 +50,33 @@ class DataExportPost(InputSchema):
         )
 
 
+class AsyncJobLinks(OutputSchema):
+    status_href: HttpUrl
+    abort_href: HttpUrl
+    result_href: HttpUrl
+
+
 class StorageAsyncJobGet(OutputSchema):
     job_id: AsyncJobId
+    links: AsyncJobLinks
 
     @classmethod
-    def from_rpc_schema(cls, async_job_rpc_get: AsyncJobGet) -> "StorageAsyncJobGet":
-        return StorageAsyncJobGet(job_id=async_job_rpc_get.job_id)
+    def from_rpc_schema(
+        cls, app: web.Application, async_job_rpc_get: AsyncJobGet
+    ) -> "StorageAsyncJobGet":
+        job_id = f"{async_job_rpc_get.job_id}"
+        links = AsyncJobLinks(
+            status_href=HttpUrl(
+                f"{app.router['get_async_job_status'].url_for(job_id=job_id)}"
+            ),
+            abort_href=HttpUrl(
+                f"{app.router['abort_async_job'].url_for(job_id=job_id)}"
+            ),
+            result_href=HttpUrl(
+                f"{app.router['get_async_job_result'].url_for(job_id=job_id)}"
+            ),
+        )
+        return StorageAsyncJobGet(job_id=async_job_rpc_get.job_id, links=links)
 
 
 class StorageAsyncJobStatus(OutputSchema):
