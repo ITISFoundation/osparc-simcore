@@ -41,7 +41,7 @@ from ..utils_aiohttp import envelope_json_response
 from . import _service, _service_catalog_rest_client
 from ._exceptions import (
     DefaultPricingUnitForServiceNotFoundError,
-    reraise_catalog_exceptions_as_http_errors,
+    handle_plugin_requests_exceptions,
 )
 from .controller_rest_schemas import (
     CatalogRequestContext,
@@ -63,7 +63,7 @@ routes = RouteTableDef()
 )
 @login_required
 @permission_required("services.catalog.*")
-@reraise_catalog_exceptions_as_http_errors
+@handle_plugin_requests_exceptions
 async def list_services_latest(request: Request):
     request_ctx = CatalogRequestContext.create(request)
     query_params: ListServiceParams = parse_request_query_parameters_as(
@@ -101,7 +101,7 @@ async def list_services_latest(request: Request):
 )
 @login_required
 @permission_required("services.catalog.*")
-@reraise_catalog_exceptions_as_http_errors
+@handle_plugin_requests_exceptions
 async def get_service(request: Request):
     request_ctx = CatalogRequestContext.create(request)
     path_params = parse_request_path_parameters_as(ServicePathParams, request)
@@ -127,7 +127,7 @@ async def get_service(request: Request):
 )
 @login_required
 @permission_required("services.catalog.*")
-@reraise_catalog_exceptions_as_http_errors
+@handle_plugin_requests_exceptions
 async def update_service(request: Request):
     request_ctx = CatalogRequestContext.create(request)
     path_params = parse_request_path_parameters_as(ServicePathParams, request)
@@ -357,7 +357,7 @@ async def get_service_resources(request: Request):
 )
 @login_required
 @permission_required("services.catalog.*")
-@reraise_catalog_exceptions_as_http_errors
+@handle_plugin_requests_exceptions
 async def get_service_pricing_plan(request: Request):
     ctx = CatalogRequestContext.create(request)
     path_params = parse_request_path_parameters_as(ServicePathParams, request)
