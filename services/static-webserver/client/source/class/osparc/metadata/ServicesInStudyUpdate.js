@@ -90,14 +90,6 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
         const inaccessibleLabel = new qx.ui.basic.Label(inaccessibleText);
         labels.push(inaccessibleLabel);
       }
-      if (this.self().anyServiceDeprecated(this._studyData)) {
-        let deprecatedText = this.tr("Services marked in yellow are deprecated, they will be retired soon.");
-        if (canIWrite) {
-          deprecatedText += " " + this.tr("They can be updated by pressing the Update button.");
-        }
-        const deprecatedLabel = new qx.ui.basic.Label(deprecatedText);
-        labels.push(deprecatedLabel);
-      }
       if (this.self().anyServiceRetired(this._studyData)) {
         let retiredText = this.tr("Services marked in red are retired: you cannot use them anymore.");
         if (canIWrite) {
@@ -108,6 +100,14 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
         }
         const retiredLabel = new qx.ui.basic.Label(retiredText);
         labels.push(retiredLabel);
+      }
+      if (this.self().anyServiceDeprecated(this._studyData)) {
+        let deprecatedText = this.tr("Services marked in yellow are deprecated, they will be retired soon.");
+        if (canIWrite) {
+          deprecatedText += " " + this.tr("They can be updated by pressing the Update button.");
+        }
+        const deprecatedLabel = new qx.ui.basic.Label(deprecatedText);
+        labels.push(deprecatedLabel);
       }
       const updatableServices = this.self().updatableNodeIds(this._studyData["workbench"]);
       if (updatableServices.length === 0) {
