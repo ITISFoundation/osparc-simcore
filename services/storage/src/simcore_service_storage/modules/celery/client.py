@@ -134,6 +134,7 @@ class CeleryTaskQueueClient:
             if task_ids := getattr(
                 self._celery_app.control.inspect(), task_inspect_status
             )():
-                all_task_ids.add(task_ids)
+                for values in task_ids.values():
+                    all_task_ids.add(values)
 
         return all_task_ids
