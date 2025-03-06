@@ -7,14 +7,14 @@
     "steps": [{
       "anchorEl": "osparc-test-id=dashboardTabs",
       "title": "Dashboard Menu",
-      "text": "The menu tabs give you quick access to a set of core elements of the platform, namely Studies, Templates and Services.",
+      "text": "The menu tabs give you quick access to a set of core elements of the platform, namely Studies, Templates, Services and Data.",
       "placement": "bottom"
     }, {
       "beforeClick": {
         "selector": "osparc-test-id=studiesTabBtn"
       },
       "anchorEl": "osparc-test-id=studiesTabBtn",
-      "text": "Any Study is accessible via the Dashboard. The Studies, which belong to or are shared with you, can be found here.",
+      "text": "Any Study is accessible via the Dashboard. The Studies, which belong to or are shared with you, can be found here. You can also create Folders to help you organize the Studies",
       "placement": "bottom"
     }, {
       "beforeClick": {
@@ -28,7 +28,14 @@
         "selector": "osparc-test-id=servicesTabBtn"
       },
       "anchorEl": "osparc-test-id=servicesTabBtn",
-      "text": "Every Study in Sim4Life is composed of at lease one so-called Service.<br>Services are building blocks for Studies and can provide data/files, visualize results (2D, 3D), implement code in Jupyter notebooks or perform computations to execute simulations within a Study.",
+      "text": "Every Study in oSparc is composed of so-called Services.<br>These are building blocks for Studies and can provide data/files, visualize results (2D, 3D), implement code in Jupyter notebooks or perform computations to execute simulations within a Study.",
+      "placement": "bottom"
+    }, {
+      "beforeClick": {
+        "selector": "osparc-test-id=dataTabBtn"
+      },
+      "anchorEl": "osparc-test-id=dataTabBtn",
+      "text": "All the Data of the Studies you have access to can bre explored here.",
       "placement": "bottom"
     }]
   },
