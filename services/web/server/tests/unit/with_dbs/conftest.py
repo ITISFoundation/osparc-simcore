@@ -1,15 +1,7 @@
-"""Configuration for unit testing with a postgress fixture
-
-- Unit testing of webserver app with a postgress service as fixture
-- Starts test session by running a postgres container as a fixture (see postgress_service)
-
-IMPORTANT: remember that these are still unit-tests!
-"""
-
-# nopycln: file
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
+# pylint: disable=too-many-arguments
 
 import asyncio
 import random
@@ -36,7 +28,6 @@ import sqlalchemy as sa
 from aiohttp import web
 from aiohttp.test_utils import TestClient, TestServer
 from aiopg.sa import create_engine
-from aiopg.sa.connection import SAConnection
 from faker import Faker
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.products import ProductName
@@ -715,7 +706,7 @@ async def with_permitted_override_services_specifications(
 
 
 @pytest.fixture
-async def all_products_names(
+async def app_products_names(
     asyncpg_engine: AsyncEngine,
 ) -> AsyncIterable[list[ProductName]]:
     async with asyncpg_engine.connect() as conn:
@@ -766,7 +757,7 @@ async def all_products_names(
 @pytest.fixture
 async def all_product_prices(
     asyncpg_engine: AsyncEngine,
-    all_products_names: list[ProductName],
+    app_products_names: list[ProductName],
     faker: Faker,
 ) -> dict[ProductName, Decimal | None]:
     """Initial list of prices for all products"""
@@ -782,7 +773,7 @@ async def all_product_prices(
     }
 
     result = {}
-    for product_name in all_products_names:
+    for product_name in app_products_names:
         usd_or_none = product_price.get(product_name)
         if usd_or_none is not None:
             async with asyncpg_engine.begin() as conn:
@@ -805,23 +796,23 @@ async def all_product_prices(
 @pytest.fixture
 async def latest_osparc_price(
     all_product_prices: dict[ProductName, Decimal],
-    _pre_connection: SAConnection,
+    asyncpg_engine: AsyncEngine,
 ) -> Decimal:
     """This inserts a new price for osparc in the history
     (i.e. the old price of osparc is still in the database)
     """
-
-    usd = await _pre_connection.scalar(
-        products_prices.insert()
-        .values(
-            product_name="osparc",
-            usd_per_credit=all_product_prices["osparc"] + 5,
-            comment="New price for osparc",
-            stripe_price_id="stripe-price-id",
-            stripe_tax_rate_id="stripe-tax-rate-id",
+    async with asyncpg_engine.begin() as conn:
+        usd = await conn.scalar(
+            products_prices.insert()
+            .values(
+                product_name="osparc",
+                usd_per_credit=all_product_prices["osparc"] + 5,
+                comment="New price for osparc",
+                stripe_price_id="stripe-price-id",
+                stripe_tax_rate_id="stripe-tax-rate-id",
+            )
+            .returning(products_prices.c.usd_per_credit)
         )
-        .returning(products_prices.c.usd_per_credit)
-    )
     assert usd is not None
     assert usd != all_product_prices["osparc"]
     return Decimal(usd)
