@@ -103,10 +103,6 @@ class CeleryTaskQueueClient:
         task_id = _build_task_id(task_context, task_uuid)
         return _CELERY_STATES_MAPPING[self._celery_app.AsyncResult(task_id).state]
 
-    def _get_state(self, task_context: TaskContext, task_uuid: TaskUUID) -> TaskState:
-        task_id = _build_task_id(task_context, task_uuid)
-        return _CELERY_STATES_MAPPING[self._celery_app.AsyncResult(task_id).state]
-
     @make_async()
     def get_task_status(
         self, task_context: TaskContext, task_uuid: TaskUUID
