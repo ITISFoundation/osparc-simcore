@@ -48,25 +48,33 @@ qx.Class.define("osparc.file.FileTreeItem", {
     this.set({
       indent: 12, // defaults to 19,
       decorator: "rounded",
+      alignY: "middle",
     });
-
-    // create a date format like "Oct. 19, 2018 11:31 AM"
-    this._dateFormat = new qx.util.format.DateFormat(
-      qx.locale.Date.getDateFormat("medium") + " " +
-      qx.locale.Date.getTimeFormat("short")
-    );
   },
 
   properties: {
+    loaded: {
+      check: "Boolean",
+      event: "changeLoaded",
+      init: true,
+      nullable: false
+    },
+
     location: {
       check: "String",
-      event: "changePath",
+      event: "changeLocation",
       nullable: true
     },
 
     path: {
       check: "String",
       event: "changePath",
+      nullable: true
+    },
+
+    displayPath: {
+      check: "String",
+      event: "changeDisplayPath",
       nullable: true
     },
 
@@ -83,24 +91,10 @@ qx.Class.define("osparc.file.FileTreeItem", {
       nullable: true
     },
 
-    isDataset: {
-      check: "Boolean",
-      event: "changeIsDataset",
-      init: false,
-      nullable: false
-    },
-
     datasetId: {
       check: "String",
       event: "changeDatasetId",
       nullable: true
-    },
-
-    loaded: {
-      check: "Boolean",
-      event: "changeLoaded",
-      init: true,
-      nullable: false
     },
 
     fileId: {
@@ -119,12 +113,17 @@ qx.Class.define("osparc.file.FileTreeItem", {
       check: "String",
       event: "changeSize",
       nullable: true
-    }
+    },
+
+    type: {
+      check: ["folder", "file", "loading"],
+      event: "changeType",
+      init: null,
+      nullable: false,
+    },
   },
 
-  members: { // eslint-disable-line qx-rules/no-refs-in-members
-    _dateFormat: null,
-
+  members: {
     // overridden
     _addWidgets: function() {
       // Here's our indentation and tree-lines
@@ -145,38 +144,32 @@ qx.Class.define("osparc.file.FileTreeItem", {
       // Add lastModified
       const lastModifiedWidget = new qx.ui.basic.Label().set({
         maxWidth: 140,
-        textAlign: "right"
+        textAlign: "right",
+        alignY: "middle",
+        paddingLeft: 10,
       });
-      let that = this;
       this.bind("lastModified", lastModifiedWidget, "value", {
-        converter: function(value) {
-          if (value === null) {
-            return "";
-          }
-          const date = new Date(value);
-          return that._dateFormat.format(date); // eslint-disable-line no-underscore-dangle
-        }
+        converter: value => value ? osparc.utils.Utils.formatDateAndTime(new Date(value)) : ""
       });
       this.addWidget(lastModifiedWidget);
 
       // Add size
       const sizeWidget = new qx.ui.basic.Label().set({
-        maxWidth: 70,
-        textAlign: "right"
+        maxWidth: 90,
+        textAlign: "right",
+        alignY: "middle",
+        paddingLeft: 10,
       });
       this.bind("size", sizeWidget, "value", {
-        converter: function(value) {
-          if (value === null) {
-            return "";
-          }
-          return osparc.utils.Utils.bytesToSize(value);
-        }
+        converter: value => value ? osparc.utils.Utils.bytesToSize(value) : ""
       });
       this.addWidget(sizeWidget);
     },
 
     __applyItemId: function(value, old) {
-      osparc.utils.Utils.setIdToWidget(this, "fileTreeItem_" + value);
+      if (value) {
+        osparc.utils.Utils.setIdToWidget(this, "fileTreeItem_" + value);
+      }
     },
 
     // override
@@ -194,9 +187,4 @@ qx.Class.define("osparc.file.FileTreeItem", {
       }
     }
   },
-
-  destruct: function() {
-    this._dateFormat.dispose();
-    this._dateFormat = null;
-  }
 });
