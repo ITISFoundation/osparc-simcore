@@ -85,6 +85,8 @@ class BackgroundLogFetcher:
             return
 
         task.cancel()
+        
+        # NOTE: sometime the docker engine causes a TimeoutError after the task is cancelled
         with suppress(CancelledError, TimeoutError):
             await task
 
