@@ -51,7 +51,9 @@ async def run_before_shutdown_actions(
 async def ensure_read_permissions_on_user_service_data(
     mounted_volumes: MountedVolumes,
 ) -> None:
-    # make sure sidecar has access to the files and that the user did not accidetally remove read access
+    # Makes sure sidecar has access to all files in the user services.
+    # The user could have removed read permissions form a file, which will cause an error.
+
     # NOTE: command runs inside self container since the user service container might not always be running
     self_container = os.environ["HOSTNAME"]
     for path_to_store in (  # apply changes to otuputs and all state folders

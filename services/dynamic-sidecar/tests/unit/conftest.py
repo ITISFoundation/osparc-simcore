@@ -11,6 +11,7 @@ import pytest
 from aiodocker.volumes import DockerVolume
 from async_asgi_testclient import TestClient
 from fastapi import FastAPI
+from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from simcore_service_dynamic_sidecar.core.application import AppState, create_app
 from simcore_service_dynamic_sidecar.core.docker_compose_utils import (
@@ -156,4 +157,11 @@ def port_notifier(app: FastAPI) -> PortNotifier:
         settings.DY_SIDECAR_USER_ID,
         settings.DY_SIDECAR_PROJECT_ID,
         settings.DY_SIDECAR_NODE_ID,
+    )
+
+
+@pytest.fixture
+def mock_ensure_read_permissions_on_user_service_data(mocker: MockerFixture) -> None:
+    mocker.patch(
+        "simcore_service_dynamic_sidecar.modules.long_running_tasks.ensure_read_permissions_on_user_service_data",
     )
