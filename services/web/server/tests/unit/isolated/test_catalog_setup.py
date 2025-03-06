@@ -9,7 +9,7 @@ import pytest
 from aiohttp.test_utils import TestClient
 from servicelib.aiohttp.application import create_safe_application
 from simcore_service_webserver._meta import api_version_prefix
-from simcore_service_webserver.catalog.client import to_backend_service
+from simcore_service_webserver.catalog import catalog_service
 from simcore_service_webserver.catalog.plugin import setup_catalog
 from yarl import URL
 
@@ -35,6 +35,8 @@ def test_url_translation():
     assert rel_url.path.startswith(f"/{api_version_prefix}/catalog")
 
     api_target_origin = URL("http://catalog:8000")
-    api_target_url = to_backend_service(rel_url, api_target_origin, "v5")
+    api_target_url = catalog_service.to_backend_service(
+        rel_url, api_target_origin, "v5"
+    )
 
     assert str(api_target_url) == "http://catalog:8000/v5/dags/123?page_size=6"

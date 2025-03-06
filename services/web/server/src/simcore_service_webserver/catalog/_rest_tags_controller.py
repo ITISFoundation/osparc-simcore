@@ -1,19 +1,14 @@
 import logging
 
 from aiohttp import web
-from models_library.basic_types import IdInt
 from servicelib.aiohttp.requests_validation import parse_request_path_parameters_as
 
 from .._meta import API_VTAG
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
-from ._handlers import ServicePathParams
+from .controller_rest_schemas import ServicePathParams, ServiceTagPathParams
 
 _logger = logging.getLogger(__name__)
-
-
-class ServiceTagPathParams(ServicePathParams):
-    tag_id: IdInt
 
 
 routes = web.RouteTableDef()

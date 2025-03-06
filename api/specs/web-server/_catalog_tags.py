@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends
 from models_library.api_schemas_webserver.catalog import CatalogServiceGet
 from models_library.generics import Envelope
 from simcore_service_webserver._meta import API_VTAG
-from simcore_service_webserver.catalog._tags_handlers import (
+from simcore_service_webserver.catalog._rest_tags_controller import (
     ServicePathParams,
     ServiceTagPathParams,
 )
@@ -31,8 +31,7 @@ router = APIRouter(
 )
 def list_service_tags(
     _path_params: Annotated[ServicePathParams, Depends()],
-):
-    ...
+): ...
 
 
 @router.post(
@@ -41,8 +40,7 @@ def list_service_tags(
 )
 def add_service_tag(
     _path_params: Annotated[ServiceTagPathParams, Depends()],
-):
-    ...
+): ...
 
 
 @router.post(
@@ -51,5 +49,4 @@ def add_service_tag(
 )
 def remove_service_tag(
     _path_params: Annotated[ServiceTagPathParams, Depends()],
-):
-    ...
+): ...
