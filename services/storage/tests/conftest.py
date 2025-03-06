@@ -191,6 +191,7 @@ def enabled_rabbitmq(
 @pytest.fixture
 def app_settings(
     app_environment: EnvVarsDict,
+    enabled_rabbitmq: RabbitSettings,
     sqlalchemy_async_engine: AsyncEngine,
     postgres_host_config: dict[str, str],
     mocked_s3_server_envs: EnvVarsDict,
