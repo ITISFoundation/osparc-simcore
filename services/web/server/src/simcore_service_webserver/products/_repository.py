@@ -55,6 +55,18 @@ _PRODUCTS_COLUMNS = [
     products.c.group_id,
 ]
 
+assert {column.name for column in _PRODUCTS_COLUMNS}.issubset(  # nosec
+    set(Product.model_fields)
+)
+
+
+def _to_domain(products_row: Row, payments: PaymentFieldsTuple) -> Product:
+    return Product(
+        **products_row._asdict(),
+        is_payment_enabled=payments.enabled,
+        credits_per_usd=payments.credits_per_usd,
+    )
+
 
 async def _get_product_payment_fields(
     conn: AsyncConnection, product_name: ProductName
@@ -78,14 +90,6 @@ async def _get_product_payment_fields(
             QUANTIZE_EXP_ARG
         ),
         min_payment_amount_usd=price_info.min_payment_amount_usd,
-    )
-
-
-def _to_domain(row: Row, payments: PaymentFieldsTuple) -> Product:
-    return Product(
-        **row._asdict(),
-        is_payment_enabled=payments.enabled,
-        credits_per_usd=payments.credits_per_usd,
     )
 
 
@@ -130,7 +134,6 @@ class ProductRepository(BaseRepositoryV2):
         query = sa.select(*_PRODUCTS_COLUMNS).where(products.c.name == product_name)
 
         async with pass_or_acquire_connection(self.engine, connection) as conn:
-
             result = await conn.execute(query)
             if row := result.one_or_none():
                 payments = await _get_product_payment_fields(
@@ -157,9 +160,11 @@ class ProductRepository(BaseRepositoryV2):
         self, product_name: str, connection: AsyncConnection | None = None
     ) -> ProductStripeInfoGet:
         async with pass_or_acquire_connection(self.engine, connection) as conn:
-            row = await get_product_latest_stripe_info(conn, product_name=product_name)
+            stripe_price_id, stripe_tax_rate_id = await get_product_latest_stripe_info(
+                conn, product_name=product_name
+            )
             return ProductStripeInfoGet(
-                stripe_price_id=row[0], stripe_tax_rate_id=row[1]
+                stripe_price_id=stripe_price_id, stripe_tax_rate_id=stripe_tax_rate_id
             )
 
     async def get_template_content(
@@ -211,8 +216,8 @@ class ProductRepository(BaseRepositoryV2):
         connection: AsyncConnection | None = None,
     ) -> dict[ProductName, GroupID]:
         product_groups_map: dict[ProductName, GroupID] = {}
-        product_names = await self.list_products_names(connection)
 
+        product_names = await self.list_products_names(connection)
         for product_name in product_names:
             # NOTE: transaction is per product. fail-fast!
             async with transaction_context(self.engine, connection) as conn:
