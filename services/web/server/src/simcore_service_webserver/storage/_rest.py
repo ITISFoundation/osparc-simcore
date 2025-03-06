@@ -45,6 +45,9 @@ from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import (
     list_jobs,
     submit_job,
 )
+from servicelib.rabbitmq.rpc_interfaces.storage.paths import (
+    compute_path_size as remote_compute_path_size,
+)
 from servicelib.request_keys import RQT_USERID_KEY
 from servicelib.rest_responses import unwrap_envelope
 from yarl import URL
@@ -182,23 +185,22 @@ async def list_paths(request: web.Request) -> web.Response:
 @login_required
 @permission_required("storage.files.*")
 async def compute_path_size(request: web.Request) -> web.Response:
-    _req_ctx = RequestContext.model_validate(request)
-    _path_params = parse_request_path_parameters_as(
+    req_ctx = RequestContext.model_validate(request)
+    path_params = parse_request_path_parameters_as(
         StoragePathComputeSizeParams, request
     )
+
     rabbitmq_rpc_client = get_rabbitmq_rpc_client(request.app)
-    async_job_rpc_get = await submit_job(
-        rabbitmq_rpc_client=rabbitmq_rpc_client,
-        rpc_namespace=STORAGE_RPC_NAMESPACE,
-        method_name="compute_path_size",
-        job_id_data=AsyncJobNameData(
-            user_id=_req_ctx.user_id, product_name=_req_ctx.product_name
-        ),
-        location_id=_path_params.location_id,
-        path=_path_params.path,
+    async_job = await remote_compute_path_size(
+        rabbitmq_rpc_client,
+        user_id=req_ctx.user_id,
+        product_name=req_ctx.product_name,
+        location_id=path_params.location_id,
+        path=path_params.path,
     )
+
     return create_data_response(
-        StorageAsyncJobGet.from_rpc_schema(async_job_rpc_get),
+        async_job,
         status=status.HTTP_202_ACCEPTED,
     )
 
