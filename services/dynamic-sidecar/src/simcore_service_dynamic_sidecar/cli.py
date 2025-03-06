@@ -1,8 +1,8 @@
 import asyncio
 import json
 import logging
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from typing import AsyncIterator
 
 import typer
 from fastapi import FastAPI
@@ -17,7 +17,11 @@ from .modules.mounted_fs import MountedVolumes, setup_mounted_fs
 from .modules.outputs import OutputsManager, setup_outputs
 
 log = logging.getLogger(__name__)
-main = typer.Typer(name=PROJECT_NAME)
+main = typer.Typer(
+    name=PROJECT_NAME,
+    pretty_exceptions_enable=False,
+    pretty_exceptions_show_locals=False,
+)
 
 
 main.command()(create_settings_command(settings_cls=ApplicationSettings, logger=log))
