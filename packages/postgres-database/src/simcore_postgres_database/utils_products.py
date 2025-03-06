@@ -35,9 +35,7 @@ async def get_product_group_id(
     return None if group_id is None else _GroupID(group_id)
 
 
-async def execute_get_or_create_product_group(
-    conn: AsyncConnection, product_name: str
-) -> int:
+async def get_or_create_product_group(conn: AsyncConnection, product_name: str) -> int:
     #
     # NOTE: Separated so it can be used in asyncpg and aiopg environs while both
     #       coexist

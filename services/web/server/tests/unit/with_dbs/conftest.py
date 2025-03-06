@@ -64,8 +64,8 @@ from simcore_postgres_database.models.groups_extra_properties import (
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.products_prices import products_prices
 from simcore_postgres_database.utils_products import (
-    execute_get_or_create_product_group,
     get_default_product_name,
+    get_or_create_product_group,
 )
 from simcore_service_webserver.application import create_application
 from simcore_service_webserver.application_settings_utils import AppConfigDict
@@ -744,7 +744,7 @@ async def all_products_names(
                         )
                     )
                 )
-                await execute_get_or_create_product_group(conn, product_name=name)
+                await get_or_create_product_group(conn, product_name=name)
             priority += 1
 
     async with asyncpg_engine.connect() as conn:

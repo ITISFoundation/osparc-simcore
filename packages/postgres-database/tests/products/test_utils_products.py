@@ -10,8 +10,8 @@ import sqlalchemy as sa
 from simcore_postgres_database.models.groups import GroupType, groups
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.utils_products import (
-    execute_get_or_create_product_group,
     get_default_product_name,
+    get_or_create_product_group,
     get_product_group_id,
 )
 from sqlalchemy.ext.asyncio import AsyncEngine
@@ -45,7 +45,7 @@ async def test_get_or_create_group_product(
             )
         ):
             # get or create
-            product_group_id = await execute_get_or_create_product_group(
+            product_group_id = await get_or_create_product_group(
                 conn, product_name=product_row.name
             )
 
@@ -67,7 +67,7 @@ async def test_get_or_create_group_product(
             # idempotent
             for _ in range(3):
                 assert (
-                    await execute_get_or_create_product_group(
+                    await get_or_create_product_group(
                         conn, product_name=product_row.name
                     )
                     == product_group_id

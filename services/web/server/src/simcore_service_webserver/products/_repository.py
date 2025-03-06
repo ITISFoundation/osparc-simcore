@@ -9,8 +9,8 @@ from simcore_postgres_database.constants import QUANTIZE_EXP_ARG
 from simcore_postgres_database.models.jinja2_templates import jinja2_templates
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.utils_products import (
-    execute_get_or_create_product_group,
     get_default_product_name,
+    get_or_create_product_group,
 )
 from simcore_postgres_database.utils_products_prices import (
     ProductPriceInfo,
@@ -101,13 +101,10 @@ class ProductRepository(BaseRepositoryV2):
 
                 payments = await _get_product_payment_fields(conn, product_name=name)
 
-                app_products.append(
-                    Product(
-                        **dict(row.items()),
-                        is_payment_enabled=payments.enabled,
-                        credits_per_usd=payments.credits_per_usd,
-                    )
-                )
+                product = Product.model_validate(row, from_attributes=True)
+                product.is_payment_enabled = payments.enabled
+                product.credits_per_usd = payments.credits_per_usd
+                app_products.append(product)
 
                 assert name in FRONTEND_APPS_AVAILABLE  # nosec
 
@@ -219,7 +216,7 @@ class ProductRepository(BaseRepositoryV2):
         for product_name in product_names:
             # NOTE: transaction is per product. fail-fast!
             async with transaction_context(self.engine, connection) as conn:
-                product_group_id: GroupID = await execute_get_or_create_product_group(
+                product_group_id: GroupID = await get_or_create_product_group(
                     conn, product_name
                 )
                 product_groups_map[product_name] = product_group_id
