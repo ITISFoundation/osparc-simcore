@@ -22,6 +22,7 @@ from simcore_postgres_database.utils_repos import (
     transaction_context,
 )
 from simcore_service_webserver.constants import FRONTEND_APPS_AVAILABLE
+from sqlalchemy.engine import Row
 from sqlalchemy.ext.asyncio import AsyncConnection
 
 from ..constants import FRONTEND_APPS_AVAILABLE
@@ -80,6 +81,14 @@ async def _get_product_payment_fields(
     )
 
 
+def _to_domain(row: Row, payments: PaymentFieldsTuple) -> Product:
+    return Product(
+        **row._asdict(),
+        is_payment_enabled=payments.enabled,
+        credits_per_usd=payments.credits_per_usd,
+    )
+
+
 class ProductRepository(BaseRepositoryV2):
 
     async def list_products(
@@ -98,13 +107,8 @@ class ProductRepository(BaseRepositoryV2):
             rows = await conn.stream(query)
             async for row in rows:
                 name = row.name
-
                 payments = await _get_product_payment_fields(conn, product_name=name)
-
-                product = Product.model_validate(row, from_attributes=True)
-                product.is_payment_enabled = payments.enabled
-                product.credits_per_usd = payments.credits_per_usd
-                app_products.append(product)
+                app_products.append(_to_domain(row, payments))
 
                 assert name in FRONTEND_APPS_AVAILABLE  # nosec
 
@@ -132,11 +136,7 @@ class ProductRepository(BaseRepositoryV2):
                 payments = await _get_product_payment_fields(
                     conn, product_name=row.name
                 )
-                return Product(
-                    **row._asdict(),
-                    is_payment_enabled=payments.enabled,
-                    credits_per_usd=payments.credits_per_usd,
-                )
+                return _to_domain(row, payments)
             return None
 
     async def get_default_product_name(
