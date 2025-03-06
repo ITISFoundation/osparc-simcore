@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends
 from models_library.api_schemas_webserver.catalog import CatalogServiceGet
 from models_library.generics import Envelope
 from simcore_service_webserver._meta import API_VTAG
-from simcore_service_webserver.catalog._controller_rest_tags_handlers import (
+from simcore_service_webserver.catalog._controller_rest_tags import (
     ServicePathParams,
     ServiceTagPathParams,
 )
