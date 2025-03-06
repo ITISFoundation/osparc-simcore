@@ -528,7 +528,17 @@ qx.Class.define("osparc.dashboard.CardBase", {
       });
 
       if (resourceData["resourceType"] === "study" || resourceData["resourceType"] === "template") {
-        this.__fetchServices();
+        const params = {
+          url: {
+            studyId: this.getResourceData()["uuid"]
+          }
+        };
+        osparc.data.Resources.fetch("studies", "getServices", params)
+          .then(resp => {
+            const services = resp["services"];
+            resourceData["services"] = services;
+            this.setServices(services);
+          });
       }
     },
 
@@ -642,21 +652,6 @@ qx.Class.define("osparc.dashboard.CardBase", {
       if (hits !== null) {
         const hitsLabel = this.getChildControl("hits-service");
         hitsLabel.setValue(this.tr("Hits: ") + String(hits));
-      }
-    },
-
-    __fetchServices: function() {
-      if (this.isResourceType("study") || this.isResourceType("template")) {
-        const params = {
-          url: {
-            studyId: this.getResourceData()["uuid"]
-          }
-        };
-        osparc.data.Resources.fetch("studies", "getServices", params)
-          .then(resp => {
-            const services = resp["services"];
-            this.setServices(services);
-          });
       }
     },
 
