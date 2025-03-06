@@ -79,11 +79,9 @@ class CeleryTaskQueueClient:
         AbortableAsyncResult(task_id).abort()
 
     @make_async()
-    def get_task_result(self, task_context: TaskContext, task_uuid: TaskUUID) -> TaskResult:
+    def get_task_result(self, task_context: TaskContext, task_uuid: TaskUUID) -> Any:
         task_id = _build_task_id(task_context, task_uuid)
-        return TypeAdapter(TaskResult).validate_python(
-            self._celery_app.AsyncResult(task_id).result
-        )
+        return self._celery_app.AsyncResult(task_id).result
 
     def _get_progress_report(
         self, task_context: TaskContext, task_uuid: TaskUUID

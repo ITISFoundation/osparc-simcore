@@ -4,7 +4,7 @@ import time
 from collections.abc import Callable
 from random import randint
 
-from pydantic import ValidationError
+from pydantic import TypeAdapter, ValidationError
 import pytest
 from celery import Celery, Task
 from celery.contrib.abortable import AbortableTask
@@ -121,13 +121,15 @@ async def test_submitting_task_with_failure_results_with_error(
         stop=stop_after_delay(30),
     ):
         with attempt:
-            result = await celery_client.get_task_result(task_context, task_uuid)
+            raw_result = await celery_client.get_task_result(task_context, task_uuid)
+            result = TypeAdapter(TaskError).validate_python(raw_result)
             assert isinstance(result, TaskError)
 
     assert (
         await celery_client.get_task_status(task_context, task_uuid)
     ).task_state == TaskState.ERROR
-    result = await celery_client.get_task_result(task_context, task_uuid)
+    raw_result = await celery_client.get_task_result(task_context, task_uuid)
+    result = TypeAdapter(TaskError).validate_python(raw_result)
     assert f"{result.exc_msg}" == "my error here"
 
 
