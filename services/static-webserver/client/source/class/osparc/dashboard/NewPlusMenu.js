@@ -209,17 +209,9 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
     __addIcon: function(menuButton, resourceInfo, resourceMetadata) {
       let source = null;
       if (resourceInfo && resourceInfo["icon"]) {
-        // first the one set in the ui_config
         source = resourceInfo["icon"];
-      } else if (resourceMetadata && resourceMetadata["icon"]) {
-        // second the icon from the resource
-        source = resourceMetadata["icon"];
-      } else if (resourceMetadata && resourceMetadata["thumbnail"]) {
-        // third the thumbnail from the resource
-        source = resourceMetadata["thumbnail"];
       } else {
-        // finally product icon
-        source = osparc.dashboard.CardBase.PRODUCT_ICON;
+        source = osparc.utils.Utils.getIconFromResource(resourceMetadata);
       }
 
       if (source) {
