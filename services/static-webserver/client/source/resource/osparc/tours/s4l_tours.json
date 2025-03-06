@@ -1,4 +1,39 @@
 {
+  "projects": {
+    "id": "projects",
+    "name": "Projects",
+    "description": "All you need to know about Project handling",
+    "context": "osparc-test-id=newPlusBtn",
+    "steps": [{
+      "beforeClick": {
+        "selector": "osparc-test-id=newPlusBtn",
+        "action": "open"
+      },
+      "anchorEl": "osparc-test-id=newPlusMenu",
+      "title": "Start Sim4Life and more",
+      "text": "Clicking on the (+) New button, allows you to create new Sim4Life projects or new Folders to organize the projects",
+      "placement": "right"
+    }, {
+      "anchorEl": "osparc-test-id=searchBarFilter-textField-study",
+      "title": "Filter and Search",
+      "text": "This tool allows you to search Projects, Tutorials and Services.<br>You can search and filter by:<br>- Title, description, owner, id...<br>- Tags<br>- Shared with",
+      "placement": "bottom"
+    }, {
+      "beforeClick": {
+        "selector": "osparc-test-id=studyItemMenuButton",
+        "action": "open"
+      },
+      "anchorEl": "osparc-test-id=studyItemMenuMenu",
+      "title": "More options button",
+      "text": "On the Project card, you can use the three dots button to access more information and operation on the Project.",
+      "placement": "left"
+    }, {
+      "anchorEl": "osparc-test-id=updateStudyBtn",
+      "title": "Update Services",
+      "text": "On the Project card, you can use the Update button to update the corresponding service to the latest version.",
+      "placement": "bottom"
+    }]
+  },
   "dashboard": {
     "id": "dashboard",
     "name": "Dashboard",
@@ -28,7 +63,7 @@
         "selector": "osparc-test-id=servicesTabBtn"
       },
       "anchorEl": "osparc-test-id=servicesTabBtn",
-      "text": "Every Project in Sim4Life is composed of at lease one so-called Service.<br>Services are building blocks for Projects and can provide data/files, visualize results (2D, 3D), implement code in Jupyter notebooks or perform computations to execute simulations within a Project.",
+      "text": "Every Project in Sim4Life is composed of at least one so-called Service.<br>Services are building blocks for Projects and can provide data/files, visualize results (2D, 3D), implement code in Jupyter notebooks or perform computations to execute simulations within a Project.",
       "placement": "bottom"
     }]
   },
@@ -61,40 +96,6 @@
       "anchorEl": "osparc-test-id=userMenuMenu",
       "text": "The User Menu gives you access to Your Account, Billing Center, Preferences, Organizations and more.",
       "placement": "left"
-    }]
-  },
-  "projects": {
-    "id": "projects",
-    "name": "Projects",
-    "description": "All you need to know about Project handling",
-    "context": "osparc-test-id=studiesTabBtn",
-    "steps": [{
-      "beforeClick": {
-        "selector": "osparc-test-id=studiesTabBtn"
-      },
-      "anchorEl": "osparc-test-id=startS4LButton",
-      "title": "Start Sim4Life",
-      "text": "Clicking on this (+) Start Sim4Life button, allows you to create and open a new Sim4Life project",
-      "placement": "right"
-    }, {
-      "anchorEl": "osparc-test-id=searchBarFilter-textField-study",
-      "title": "Filter and Search",
-      "text": "This tool allows you to filter Projects, Tutorials and Services.<br>You can search and filter by:<br>- Title, description, owner, id...<br>- Tags<br>- Shared with",
-      "placement": "bottom"
-    }, {
-      "beforeClick": {
-        "selector": "osparc-test-id=studyItemMenuButton",
-        "action": "open"
-      },
-      "anchorEl": "osparc-test-id=studyItemMenuMenu",
-      "title": "More options button",
-      "text": "On the Project card, you can use the three dots button to access more information and operation on the Project.",
-      "placement": "left"
-    }, {
-      "anchorEl": "osparc-test-id=updateStudyBtn",
-      "title": "Update Services",
-      "text": "On the Project card, you can use the Update button to update the corresponding service to the latest version.",
-      "placement": "bottom"
     }]
   }
 }
