@@ -7,10 +7,10 @@ from celery import Celery
 from celery.contrib.abortable import AbortableAsyncResult
 from common_library.async_tools import make_async
 from models_library.progress_bar import ProgressReport
-from pydantic import TypeAdapter, ValidationError
+from pydantic import ValidationError
 from servicelib.logging_utils import log_context
 
-from .models import TaskContext, TaskID, TaskResult, TaskState, TaskStatus, TaskUUID
+from .models import TaskContext, TaskID, TaskState, TaskStatus, TaskUUID
 
 _logger = logging.getLogger(__name__)
 
