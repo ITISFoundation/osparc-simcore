@@ -1,6 +1,6 @@
 aiofiles==24.1.0
     # via -r requirements/_base.in
-aiosmtplib==3.0.2
+aiosmtplib==4.0.0
     # via -r requirements/_base.in
 alembic==1.14.1
     # via -r requirements/../../../packages/postgres-database/requirements/_base.in
@@ -16,7 +16,7 @@ attrs==25.1.0
     #   referencing
 click==8.1.8
     # via typer
-deprecated==1.2.17
+deprecated==1.2.18
     # via
     #   opentelemetry-api
     #   opentelemetry-semantic-conventions
@@ -47,7 +47,7 @@ jsonschema==4.23.0
     # via -r requirements/../../../packages/models-library/requirements/_base.in
 jsonschema-specifications==2024.10.1
     # via jsonschema
-mako==1.3.8
+mako==1.3.9
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -68,16 +68,16 @@ mdurl==0.1.2
     # via markdown-it-py
 multidict==6.1.0
     # via yarl
-opentelemetry-api==1.29.0
+opentelemetry-api==1.30.0
     # via
     #   opentelemetry-instrumentation
     #   opentelemetry-instrumentation-asyncpg
     #   opentelemetry-semantic-conventions
-opentelemetry-instrumentation==0.50b0
+opentelemetry-instrumentation==0.51b0
     # via opentelemetry-instrumentation-asyncpg
-opentelemetry-instrumentation-asyncpg==0.50b0
+opentelemetry-instrumentation-asyncpg==0.51b0
     # via -r requirements/../../../packages/postgres-database/requirements/_base.in
-opentelemetry-semantic-conventions==0.50b0
+opentelemetry-semantic-conventions==0.51b0
     # via
     #   opentelemetry-instrumentation
     #   opentelemetry-instrumentation-asyncpg
@@ -98,7 +98,7 @@ orjson==3.10.15
     #   -r requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/_base.in
 packaging==24.2
     # via opentelemetry-instrumentation
-propcache==0.2.1
+propcache==0.3.0
     # via yarl
 psycopg2-binary==2.9.10
     # via sqlalchemy
@@ -130,8 +130,16 @@ pydantic-extra-types==2.10.2
     #   -r requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/postgres-database/requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/_base.in
-pydantic-settings==2.7.1
+pydantic-settings==2.7.0
     # via
+    #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/postgres-database/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
 pygments==2.19.1
@@ -156,7 +164,7 @@ rich==13.9.4
     # via
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
     #   typer
-rpds-py==0.22.3
+rpds-py==0.23.1
     # via
     #   jsonschema
     #   referencing
@@ -176,7 +184,7 @@ sqlalchemy==1.4.54
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
     #   alembic
-typer==0.15.1
+typer==0.15.2
     # via -r requirements/../../../packages/settings-library/requirements/_base.in
 types-python-dateutil==2.9.0.20241206
     # via arrow
