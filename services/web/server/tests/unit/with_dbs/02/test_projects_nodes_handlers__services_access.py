@@ -479,7 +479,7 @@ async def test_get_project_services(
     ]
 
     mocker.patch(
-        "simcore_service_webserver.catalog._api.catalog_rpc.batch_get_my_services",
+        "simcore_service_webserver.catalog._service.catalog_rpc.batch_get_my_services",
         spec=True,
         return_value=[
             MyServiceGet(
@@ -561,7 +561,7 @@ async def test_get_project_services_service_unavailable(
     logged_user: UserInfoDict,
 ):
     mocker.patch(
-        "simcore_service_webserver.catalog._api.catalog_rpc.batch_get_my_services",
+        "simcore_service_webserver.catalog._service.catalog_rpc.batch_get_my_services",
         spec=True,
         side_effect=RPCServerError(
             exc_message="Service Unavailable",
