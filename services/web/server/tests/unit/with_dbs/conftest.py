@@ -1,9 +1,9 @@
-""" Configuration for unit testing with a postgress fixture
+"""Configuration for unit testing with a postgress fixture
 
-    - Unit testing of webserver app with a postgress service as fixture
-    - Starts test session by running a postgres container as a fixture (see postgress_service)
+- Unit testing of webserver app with a postgress service as fixture
+- Starts test session by running a postgres container as a fixture (see postgress_service)
 
-    IMPORTANT: remember that these are still unit-tests!
+IMPORTANT: remember that these are still unit-tests!
 """
 
 # nopycln: file
@@ -288,8 +288,7 @@ def catalog_subsystem_mock(
         return services_in_project
 
     for namespace in (
-        "simcore_service_webserver.projects._crud_api_read.get_services_for_user_in_product",
-        "simcore_service_webserver.projects._crud_handlers.get_services_for_user_in_product",
+        "simcore_service_webserver.projects._crud_api_read.catalog_service.get_services_for_user_in_product",
     ):
         mock = mocker.patch(
             namespace,

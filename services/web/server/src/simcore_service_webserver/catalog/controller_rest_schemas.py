@@ -1,17 +1,31 @@
 import logging
+import urllib.parse
 from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any, Final
 
 from aiocache import cached  # type: ignore[import-untyped]
+from aiohttp import web
+from aiohttp.web import Request
 from models_library.api_schemas_webserver.catalog import (
     ServiceInputGet,
     ServiceInputKey,
     ServiceOutputGet,
     ServiceOutputKey,
 )
-from models_library.services import BaseServiceIOModel
+from models_library.basic_types import IdInt
+from models_library.rest_pagination import PageQueryParameters
+from models_library.services import BaseServiceIOModel, ServiceKey, ServiceVersion
+from models_library.users import UserID
 from pint import PintError, Quantity, UnitRegistry
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    field_validator,
+)
+from servicelib.aiohttp.requests_validation import handle_validation_as_http_error
+
+from ..constants import RQ_PRODUCT_KEY, RQT_USERID_KEY
 
 _logger = logging.getLogger(__name__)
 
@@ -131,3 +145,50 @@ class ServiceOutputGetFactory:
             )
 
         return port
+
+
+class CatalogRequestContext(BaseModel):
+    app: web.Application
+    user_id: UserID
+    product_name: str
+    unit_registry: UnitRegistry
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    @classmethod
+    def create(cls, request: Request) -> "CatalogRequestContext":
+        with handle_validation_as_http_error(
+            error_msg_template="Invalid request",
+            resource_name=request.rel_url.path,
+            use_error_v1=True,
+        ):
+            assert request.app  # nosec
+            return cls(
+                app=request.app,
+                user_id=request[RQT_USERID_KEY],
+                product_name=request[RQ_PRODUCT_KEY],
+                unit_registry=request.app[UnitRegistry.__name__],
+            )
+
+
+class ServicePathParams(BaseModel):
+    service_key: ServiceKey
+    service_version: ServiceVersion
+    model_config = ConfigDict(
+        populate_by_name=True,
+        extra="forbid",
+    )
+
+    @field_validator("service_key", mode="before")
+    @classmethod
+    def ensure_unquoted(cls, v):
+        # NOTE: this is needed as in pytest mode, the aiohttp server does not seem to unquote automatically
+        if v is not None:
+            return urllib.parse.unquote(v)
+        return v
+
+
+class ListServiceParams(PageQueryParameters): ...
+
+
+class ServiceTagPathParams(ServicePathParams):
+    tag_id: IdInt
