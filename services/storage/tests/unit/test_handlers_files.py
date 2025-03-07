@@ -58,6 +58,7 @@ from simcore_service_storage.models import FileDownloadResponse, S3BucketName, U
 from simcore_service_storage.modules.long_running_tasks import (
     get_completed_upload_tasks,
 )
+from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 from sqlalchemy.ext.asyncio import AsyncEngine
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
@@ -87,9 +88,9 @@ async def assert_multipart_uploads_in_progress(
     expected_upload_ids: list[str] | None,
 ):
     """if None is passed, then it checks that no uploads are in progress"""
-    list_uploads: list[
-        tuple[UploadID, S3ObjectKey]
-    ] = await storage_s3_client.list_ongoing_multipart_uploads(bucket=storage_s3_bucket)
+    list_uploads: list[tuple[UploadID, S3ObjectKey]] = (
+        await storage_s3_client.list_ongoing_multipart_uploads(bucket=storage_s3_bucket)
+    )
     if expected_upload_ids is None:
         assert (
             not list_uploads
@@ -109,6 +110,12 @@ class SingleLinkParam:
     expected_chunk_size: ByteSize
 
 
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
 @pytest.mark.parametrize(
     "single_link_param",
     [
@@ -239,6 +246,12 @@ async def create_upload_file_link_v1(
 
 
 @pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
+@pytest.mark.parametrize(
     "single_link_param",
     [
         pytest.param(
@@ -319,6 +332,12 @@ class MultiPartParam:
     expected_chunk_size: ByteSize
 
 
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
 @pytest.mark.parametrize(
     "test_param",
     [
@@ -418,6 +437,12 @@ async def test_create_upload_file_presigned_with_file_size_returns_multipart_lin
 
 
 @pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
+@pytest.mark.parametrize(
     "link_type, file_size",
     [
         (LinkType.PRESIGNED, TypeAdapter(ByteSize).validate_python("1000Mib")),
@@ -481,6 +506,12 @@ async def test_delete_unuploaded_file_correctly_cleans_up_db_and_s3(
     )
 
 
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
 @pytest.mark.parametrize(
     "link_type, file_size",
     [
@@ -568,6 +599,12 @@ def complex_file_name(faker: Faker) -> str:
 
 
 @pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
+@pytest.mark.parametrize(
     "file_size",
     [
         (TypeAdapter(ByteSize).validate_python("1Mib")),
@@ -586,6 +623,12 @@ async def test_upload_real_file(
     await upload_file(file_size, complex_file_name)
 
 
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
 @pytest.mark.parametrize(
     "file_size",
     [
@@ -688,6 +731,12 @@ async def test_upload_real_file_with_emulated_storage_restart_after_completion_w
     assert s3_metadata.e_tag == completion_etag
 
 
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
 async def test_upload_of_single_presigned_link_lazily_update_database_on_get(
     sqlalchemy_async_engine: AsyncEngine,
     storage_s3_client: SimcoreS3API,
@@ -731,6 +780,12 @@ async def test_upload_of_single_presigned_link_lazily_update_database_on_get(
     assert received_fmd.entity_tag == upload_e_tag
 
 
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
 async def test_upload_real_file_with_s3_client(
     sqlalchemy_async_engine: AsyncEngine,
     storage_s3_client: SimcoreS3API,
@@ -831,6 +886,12 @@ async def test_upload_real_file_with_s3_client(
 
 
 @pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
+@pytest.mark.parametrize(
     "file_size",
     [
         TypeAdapter(ByteSize).validate_python("160Mib"),
@@ -930,12 +991,13 @@ async def _assert_file_downloaded(
 async def test_download_file_no_file_was_uploaded(
     initialized_app: FastAPI,
     client: httpx.AsyncClient,
-    location_id: int,
+    location_id: LocationID,
     project_id: ProjectID,
     node_id: NodeID,
     user_id: UserID,
     storage_s3_client: SimcoreS3API,
     storage_s3_bucket: S3BucketName,
+    fake_datcore_tokens: tuple[str, str],
 ):
     missing_file = TypeAdapter(SimcoreS3FileID).validate_python(
         f"{project_id}/{node_id}/missing.file"
@@ -961,12 +1023,18 @@ async def test_download_file_no_file_was_uploaded(
     assert missing_file in error["errors"][0]
 
 
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
 async def test_download_file_1_to_1_with_file_meta_data(
     initialized_app: FastAPI,
     client: httpx.AsyncClient,
     file_size: ByteSize,
     upload_file: Callable[[ByteSize, str], Awaitable[tuple[Path, SimcoreS3FileID]]],
-    location_id: int,
+    location_id: LocationID,
     user_id: UserID,
     storage_s3_client: SimcoreS3API,
     storage_s3_bucket: S3BucketName,
@@ -1001,11 +1069,17 @@ async def test_download_file_1_to_1_with_file_meta_data(
     )
 
 
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
 async def test_download_file_from_inside_a_directory(
     initialized_app: FastAPI,
     client: httpx.AsyncClient,
     file_size: ByteSize,
-    location_id: int,
+    location_id: LocationID,
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
@@ -1063,10 +1137,16 @@ async def test_download_file_from_inside_a_directory(
     )
 
 
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
 async def test_download_file_the_file_is_missing_from_the_directory(
     initialized_app: FastAPI,
     client: httpx.AsyncClient,
-    location_id: int,
+    location_id: LocationID,
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
@@ -1096,10 +1176,16 @@ async def test_download_file_the_file_is_missing_from_the_directory(
     assert missing_s3_file_id in error["errors"][0]
 
 
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
 async def test_download_file_access_rights(
     initialized_app: FastAPI,
     client: httpx.AsyncClient,
-    location_id: int,
+    location_id: LocationID,
     user_id: UserID,
     storage_s3_client: SimcoreS3API,
     storage_s3_bucket: S3BucketName,
@@ -1130,6 +1216,12 @@ async def test_download_file_access_rights(
 
 
 @pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
+@pytest.mark.parametrize(
     "file_size",
     [
         pytest.param(TypeAdapter(ByteSize).validate_python("1Mib")),
@@ -1144,7 +1236,7 @@ async def test_delete_file(
     client: httpx.AsyncClient,
     file_size: ByteSize,
     upload_file: Callable[[ByteSize, str], Awaitable[tuple[Path, SimcoreS3FileID]]],
-    location_id: int,
+    location_id: LocationID,
     user_id: UserID,
     faker: Faker,
 ):
@@ -1177,6 +1269,12 @@ async def test_delete_file(
         )
 
 
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
 async def test_copy_as_soft_link(
     initialized_app: FastAPI,
     client: httpx.AsyncClient,
@@ -1275,6 +1373,12 @@ async def _list_files_and_directories(
     )
 
 
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
 @pytest.mark.parametrize("link_type", LinkType)
 @pytest.mark.parametrize(
     "file_size",
@@ -1316,12 +1420,18 @@ async def test_is_directory_link_forces_link_type_and_size(
     assert files_and_directories[0].file_size == 0
 
 
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
 async def test_ensure_expand_dirs_defaults_true(
     initialized_app: FastAPI,
     mocker: MockerFixture,
     client: httpx.AsyncClient,
     user_id: UserID,
-    location_id: int,
+    location_id: LocationID,
 ):
     mocked_object = mocker.patch(
         "simcore_service_storage.simcore_s3_dsm.SimcoreS3DataManager.list_files",
@@ -1342,6 +1452,12 @@ async def test_ensure_expand_dirs_defaults_true(
     assert call_args_list.kwargs["expand_dirs"] is True
 
 
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
 async def test_upload_file_is_directory_and_remove_content(
     initialized_app: FastAPI,
     create_empty_directory: Callable[
@@ -1451,6 +1567,12 @@ async def test_upload_file_is_directory_and_remove_content(
     assert len(files_and_directories) == 0
 
 
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
 @pytest.mark.parametrize("files_count", [1002])
 async def test_listing_more_than_1000_objects_in_bucket(
     create_directory_with_files: Callable[
@@ -1483,6 +1605,12 @@ async def test_listing_more_than_1000_objects_in_bucket(
     assert len(list_of_files) == 1000
 
 
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
 @pytest.mark.parametrize("uuid_filter", [True, False])
 @pytest.mark.parametrize(
     "project_params",

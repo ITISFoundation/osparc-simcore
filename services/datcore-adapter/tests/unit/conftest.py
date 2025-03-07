@@ -231,7 +231,13 @@ def pennsieve_random_fake_datasets(
 ) -> dict[str, Any]:
     return {
         "datasets": [
-            {"content": {"id": create_pennsieve_fake_dataset_id(), "name": fake.text()}}
+            {
+                "content": {
+                    "id": create_pennsieve_fake_dataset_id(),
+                    "name": fake.text(),
+                },
+                "storage": fake.pyint(),
+            }
             for _ in range(10)
         ],
         "totalCount": 20,
@@ -308,7 +314,11 @@ async def pennsieve_subsystem_mock(
             ).respond(
                 status.HTTP_200_OK,
                 json={
-                    "content": {"name": "Some dataset name that is awesome"},
+                    "content": {
+                        "name": "Some dataset name that is awesome",
+                        "id": pennsieve_dataset_id,
+                    },
+                    "storage": fake.pyint(),
                     "children": pennsieve_mock_dataset_packages["packages"],
                 },
             )
