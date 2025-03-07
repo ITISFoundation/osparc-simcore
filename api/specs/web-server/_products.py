@@ -8,7 +8,7 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends
-from models_library.api_schemas_webserver.product import (
+from models_library.api_schemas_webserver.products import (
     CreditPriceGet,
     InvitationGenerate,
     InvitationGenerated,
@@ -33,8 +33,7 @@ router = APIRouter(
     "/credits-price",
     response_model=Envelope[CreditPriceGet],
 )
-async def get_current_product_price():
-    ...
+async def get_current_product_price(): ...
 
 
 @router.get(
@@ -45,16 +44,14 @@ async def get_current_product_price():
         "po",
     ],
 )
-async def get_product(_params: Annotated[ProductsRequestParams, Depends()]):
-    ...
+async def get_product(_params: Annotated[ProductsRequestParams, Depends()]): ...
 
 
 @router.get(
     "/products/current/ui",
     response_model=Envelope[ProductUIGet],
 )
-async def get_current_product_ui():
-    ...
+async def get_current_product_ui(): ...
 
 
 @router.post(
@@ -64,5 +61,4 @@ async def get_current_product_ui():
         "po",
     ],
 )
-async def generate_invitation(_body: InvitationGenerate):
-    ...
+async def generate_invitation(_body: InvitationGenerate): ...

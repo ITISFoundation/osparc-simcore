@@ -10,7 +10,7 @@ from http import HTTPStatus
 
 import pytest
 from aiohttp.test_utils import TestClient
-from models_library.api_schemas_webserver.product import ProductGet, ProductUIGet
+from models_library.api_schemas_webserver.products import ProductGet, ProductUIGet
 from models_library.products import ProductName
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import UserInfoDict

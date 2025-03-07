@@ -1,7 +1,7 @@
 import logging
 
 from aiohttp import web
-from models_library.api_schemas_webserver.product import (
+from models_library.api_schemas_webserver.products import (
     CreditPriceGet,
     ProductGet,
     ProductUIGet,
