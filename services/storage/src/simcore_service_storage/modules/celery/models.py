@@ -55,8 +55,3 @@ class TaskStatus(BaseModel):
 class TaskError(BaseModel):
     exc_type: str
     exc_msg: str
-
-
-TaskResult: TypeAlias = Annotated[
-    TaskError | Any, Field(union_mode="left_to_right")
-]
