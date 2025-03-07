@@ -80,6 +80,9 @@ def disable_gc_manual_guest_users(mocker: MockFixture) -> None:
 
 @pytest.fixture
 def disabled_setup_garbage_collector(mocker: MockFixture) -> MockType:
+    # WARNING: add it BEFORE `client` to have effect
     return mocker.patch(
-        "simcore_service_webserver.application.setup_garbage_collector", autospec=True
+        "simcore_service_webserver.application.setup_garbage_collector",
+        autospec=True,
+        return_value=False,
     )

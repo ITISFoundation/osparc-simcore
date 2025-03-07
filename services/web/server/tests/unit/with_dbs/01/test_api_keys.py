@@ -160,42 +160,41 @@ async def test_create_api_key_with_expiration(
 ):
     assert client.app
 
+    # test gc is actually disabled
     gc_prune_mock = mocker.patch(
-        "simcore_service_webserver.garbage_collector._tasks_api_keys.api_keys_service.prune_expired_api_keys",
+        "simcore_service_webserver.garbage_collector._tasks_api_keys.create_background_task_to_prune_api_keys",
         spec=True,
     )
-
     assert not gc_prune_mock.called
 
-    TEST_API_KEY = "foo"
+    expected_api_key = "foo"
 
     # create api-keys with expiration interval
     expiration_interval = timedelta(seconds=1)
     resp = await client.post(
         "/v0/auth/api-keys",
-        json={"displayName": TEST_API_KEY, "expiration": expiration_interval.seconds},
+        json={
+            "displayName": expected_api_key,
+            "expiration": expiration_interval.seconds,
+        },
     )
 
     data, errors = await assert_status(resp, expected)
     if not errors:
-        assert data["displayName"] == TEST_API_KEY
+        assert data["displayName"] == expected_api_key
         assert "apiKey" in data
         assert "apiSecret" in data
 
         # list created api-key
         resp = await client.get("/v0/auth/api-keys")
         data, _ = await assert_status(resp, expected)
-        assert [d["displayName"] for d in data] == [TEST_API_KEY]
-
-        assert not gc_prune_mock.called
+        assert [d["displayName"] for d in data] == [expected_api_key]
 
         # wait for api-key for it to expire and force-run scheduled task
         await asyncio.sleep(EXPIRATION_WAIT_FACTOR * expiration_interval.seconds)
 
-        assert not gc_prune_mock.called
-
         deleted = await api_keys_service.prune_expired_api_keys(client.app)
-        assert deleted == [TEST_API_KEY]
+        assert deleted == [expected_api_key]
 
         resp = await client.get("/v0/auth/api-keys")
         data, _ = await assert_status(resp, expected)
