@@ -68,7 +68,7 @@ from .._projects_service_utils import (
 )
 from ..exceptions import ProjectStartsTooManyDynamicNodesError
 from ..models import ProjectDict
-from ._rest_exceptions_handlers import handle_plugin_requests_exceptions
+from ._rest_exceptions import handle_plugin_requests_exceptions
 from ._rest_schemas import ProjectPathParams, RequestContext
 
 # When the user requests a project with a repo, the working copy might differ from

@@ -20,7 +20,7 @@ from ...login.decorators import login_required
 from ...security.decorators import permission_required
 from ...utils_aiohttp import envelope_json_response
 from .. import _projects_service, _wallets_service
-from ._rest_exceptions_handlers import handle_plugin_requests_exceptions
+from ._rest_exceptions import handle_plugin_requests_exceptions
 from ._rest_schemas import ProjectPathParams, RequestContext
 
 _logger = logging.getLogger(__name__)

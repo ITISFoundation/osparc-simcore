@@ -72,7 +72,7 @@ from . import _nodes_api as _nodes_service
 from ._common.exceptions_handlers import handle_plugin_requests_exceptions
 from ._common.models import ProjectPathParams, RequestContext
 from ._nodes_api import NodeScreenshot, get_node_screenshots
-from ._rest_exceptions_handlers import handle_plugin_requests_exceptions
+from ._rest_exceptions import handle_plugin_requests_exceptions
 from ._rest_schemas import ProjectPathParams, RequestContext
 from .exceptions import (
     NodeNotFoundError,

@@ -19,7 +19,7 @@ from ...products import products_web
 from ...security.decorators import permission_required
 from .. import _trash_service
 from ..exceptions import ProjectRunningConflictError, ProjectStoppingError
-from ._rest_exceptions_handlers import handle_plugin_requests_exceptions
+from ._rest_exceptions import handle_plugin_requests_exceptions
 from ._rest_schemas import ProjectPathParams, RemoveQueryParams
 
 _logger = logging.getLogger(__name__)

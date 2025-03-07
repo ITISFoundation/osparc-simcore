@@ -33,7 +33,7 @@ from .. import _ports_service, _projects_service
 from .._access_rights_service import check_user_project_permission
 from .._projects_repository_legacy import ProjectDBAPI
 from ..models import ProjectDict
-from ._rest_exceptions_handlers import handle_plugin_requests_exceptions
+from ._rest_exceptions import handle_plugin_requests_exceptions
 from ._rest_schemas import ProjectPathParams, RequestContext
 
 log = logging.getLogger(__name__)
