@@ -226,6 +226,12 @@ async def abort_async_job(job_id: AsyncJobId):
     "/storage/async-jobs/{job_id}/result",
     response_model=Envelope[StorageAsyncJobResult],
     name="get_async_job_result",
+    responses={
+        status.HTTP_404_NOT_FOUND: {
+            "description": "Result not found",
+            "model": StorageAsyncJobStatus,
+        }
+    },
 )
 async def get_async_job_result(job_id: AsyncJobId):
     """Get the result of the async job"""
