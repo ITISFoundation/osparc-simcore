@@ -17,7 +17,7 @@ from pydantic.config import JsonDict
 
 from ..basic_types import IDStr, NonNegativeDecimal
 from ..emails import LowerCaseEmailStr
-from ..products import ProductName, StripePriceID, StripeTaxRateID
+from ..products import ProductName
 from ._base import InputSchema, OutputSchema
 
 
@@ -33,28 +33,6 @@ class CreditResultRpcGet(BaseModel):
                     {
                         "product_name": "s4l",
                         "credit_amount": Decimal("15.5"),  # type: ignore[dict-item]
-                    },
-                ]
-            }
-        )
-
-    model_config = ConfigDict(
-        json_schema_extra=_update_json_schema_extra,
-    )
-
-
-class ProductStripeInfoGet(BaseModel):
-    stripe_price_id: StripePriceID
-    stripe_tax_rate_id: StripeTaxRateID
-
-    @staticmethod
-    def _update_json_schema_extra(schema: JsonDict) -> None:
-        schema.update(
-            {
-                "examples": [
-                    {
-                        "stripe_price_id": "stripe-price-id",
-                        "stripe_tax_rate_id": "stripe-tax-rate-id",
                     },
                 ]
             }

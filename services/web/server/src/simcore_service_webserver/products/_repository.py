@@ -3,7 +3,6 @@ from decimal import Decimal
 from typing import Any
 
 import sqlalchemy as sa
-from models_library.api_schemas_webserver.products import ProductStripeInfoGet
 from models_library.groups import GroupID
 from models_library.products import ProductName
 from simcore_postgres_database.constants import QUANTIZE_EXP_ARG
@@ -28,7 +27,7 @@ from sqlalchemy.ext.asyncio import AsyncConnection
 
 from ..constants import FRONTEND_APPS_AVAILABLE
 from ..db.base_repository import BaseRepository
-from ._models import PaymentFieldsTuple, Product
+from ._models import PaymentFieldsTuple, Product, ProductStripeInfo
 
 _logger = logging.getLogger(__name__)
 
@@ -159,7 +158,7 @@ class ProductRepository(BaseRepository):
 
     async def get_product_stripe_info_or_none(
         self, product_name: str, connection: AsyncConnection | None = None
-    ) -> ProductStripeInfoGet | None:
+    ) -> ProductStripeInfo | None:
         async with pass_or_acquire_connection(self.engine, connection) as conn:
             latest_stripe_info = await get_product_latest_stripe_info_or_none(
                 conn, product_name=product_name
@@ -168,7 +167,7 @@ class ProductRepository(BaseRepository):
                 return None
 
             stripe_price_id, stripe_tax_rate_id = latest_stripe_info
-            return ProductStripeInfoGet(
+            return ProductStripeInfo(
                 stripe_price_id=stripe_price_id, stripe_tax_rate_id=stripe_tax_rate_id
             )
 

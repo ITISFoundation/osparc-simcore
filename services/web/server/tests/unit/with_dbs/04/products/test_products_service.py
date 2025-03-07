@@ -9,13 +9,13 @@ from decimal import Decimal
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestServer
-from models_library.api_schemas_webserver.products import ProductStripeInfoGet
 from models_library.products import ProductName
 from pydantic import TypeAdapter, ValidationError
 from pytest_mock import MockerFixture
 from servicelib.exceptions import InvalidConfig
 from simcore_postgres_database.utils_products_prices import ProductPriceInfo
 from simcore_service_webserver.products import _service, products_service
+from simcore_service_webserver.products._models import ProductStripeInfo
 from simcore_service_webserver.products._repository import ProductRepository
 from simcore_service_webserver.products.errors import (
     BelowMinimumPaymentError,
@@ -166,7 +166,7 @@ async def test_get_product_stripe_info_with_repo_faking_data(
     )
 
     # Test when stripe info is returned successfully
-    expected_stripe_info = ProductStripeInfoGet(
+    expected_stripe_info = ProductStripeInfo(
         stripe_price_id="price_id", stripe_tax_rate_id="tax_id"
     )
 

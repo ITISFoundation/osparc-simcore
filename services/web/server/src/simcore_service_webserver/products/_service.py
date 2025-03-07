@@ -2,9 +2,6 @@ from decimal import Decimal
 from typing import Any
 
 from aiohttp import web
-from models_library.api_schemas_webserver.products import (
-    ProductStripeInfoGet,
-)
 from models_library.groups import GroupID
 from models_library.products import ProductName
 from pydantic import ValidationError
@@ -12,7 +9,7 @@ from servicelib.exceptions import InvalidConfig
 from simcore_postgres_database.utils_products_prices import ProductPriceInfo
 
 from ..constants import APP_PRODUCTS_KEY
-from ._models import CreditResultDict
+from ._models import CreditResultDict, ProductStripeInfo
 from ._repository import ProductRepository
 from .errors import (
     BelowMinimumPaymentError,
@@ -113,7 +110,7 @@ async def get_credit_amount(
 
 async def get_product_stripe_info(
     app: web.Application, *, product_name: ProductName
-) -> ProductStripeInfoGet:
+) -> ProductStripeInfo:
     repo = ProductRepository.create_from_app(app)
 
     product_stripe_info = await repo.get_product_stripe_info_or_none(product_name)

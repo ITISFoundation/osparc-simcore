@@ -10,7 +10,7 @@ from models_library.basic_regex import (
 )
 from models_library.basic_types import NonNegativeDecimal
 from models_library.emails import LowerCaseEmailStr
-from models_library.products import ProductName
+from models_library.products import ProductName, StripePriceID, StripeTaxRateID
 from models_library.utils.change_case import snake_to_camel
 from pydantic import (
     BaseModel,
@@ -42,6 +42,11 @@ _logger = logging.getLogger(__name__)
 class CreditResultDict(TypedDict):
     product_name: ProductName
     credit_amount: Decimal
+
+
+class ProductStripeInfo(NamedTuple):
+    stripe_price_id: StripePriceID
+    stripe_tax_rate_id: StripeTaxRateID
 
 
 class PaymentFieldsTuple(NamedTuple):
