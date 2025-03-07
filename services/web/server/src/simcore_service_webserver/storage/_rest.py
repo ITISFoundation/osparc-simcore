@@ -10,7 +10,10 @@ from urllib.parse import quote, unquote
 from uuid import UUID
 
 from aiohttp import ClientTimeout, web
-from models_library.api_schemas_rpc_async_jobs.async_jobs import AsyncJobNameData
+from models_library.api_schemas_rpc_async_jobs.async_jobs import (
+    AsyncJobId,
+    AsyncJobNameData,
+)
 from models_library.api_schemas_storage import STORAGE_RPC_NAMESPACE
 from models_library.api_schemas_storage.storage_schemas import (
     FileUploadCompleteResponse,
@@ -21,7 +24,6 @@ from models_library.api_schemas_storage.storage_schemas import (
 from models_library.api_schemas_webserver.storage import (
     DataExportPost,
     StorageAsyncJobGet,
-    StorageAsyncJobId,
     StorageAsyncJobResult,
     StorageAsyncJobStatus,
 )
@@ -470,6 +472,10 @@ async def get_async_jobs(request: web.Request) -> web.Response:
     )
 
 
+class _StorageAsyncJobId(BaseModel):
+    job_id: AsyncJobId
+
+
 @routes.get(
     _storage_prefix + "/async-jobs/{job_id}/status",
     name="get_async_job_status",
@@ -485,7 +491,7 @@ async def get_async_job_status(request: web.Request) -> web.Response:
     _req_ctx = RequestContext.model_validate(request)
     rabbitmq_rpc_client = get_rabbitmq_rpc_client(request.app)
 
-    async_job_get = parse_request_path_parameters_as(StorageAsyncJobId, request)
+    async_job_get = parse_request_path_parameters_as(_StorageAsyncJobId, request)
     async_job_rpc_status = await get_status(
         rabbitmq_rpc_client=rabbitmq_rpc_client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
@@ -516,7 +522,7 @@ async def abort_async_job(request: web.Request) -> web.Response:
     _req_ctx = RequestContext.model_validate(request)
 
     rabbitmq_rpc_client = get_rabbitmq_rpc_client(request.app)
-    async_job_get = parse_request_path_parameters_as(StorageAsyncJobId, request)
+    async_job_get = parse_request_path_parameters_as(_StorageAsyncJobId, request)
     async_job_rpc_abort = await abort(
         rabbitmq_rpc_client=rabbitmq_rpc_client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
@@ -548,7 +554,7 @@ async def get_async_job_result(request: web.Request) -> web.Response:
     _req_ctx = RequestContext.model_validate(request)
 
     rabbitmq_rpc_client = get_rabbitmq_rpc_client(request.app)
-    async_job_get = parse_request_path_parameters_as(StorageAsyncJobId, request)
+    async_job_get = parse_request_path_parameters_as(_StorageAsyncJobId, request)
     async_job_rpc_result = await get_result(
         rabbitmq_rpc_client=rabbitmq_rpc_client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
