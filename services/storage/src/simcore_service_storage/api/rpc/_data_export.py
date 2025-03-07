@@ -1,3 +1,4 @@
+from celery.exceptions import CeleryError
 from fastapi import FastAPI
 from models_library.api_schemas_rpc_async_jobs.async_jobs import (
     AsyncJobGet,
@@ -10,6 +11,7 @@ from models_library.api_schemas_storage.data_export_async_jobs import (
     InvalidFileIdentifierError,
 )
 from servicelib.rabbitmq import RPCRouter
+from simcore_service_storage.api.rpc._async_jobs import JobSchedulerError
 
 from ...datcore_dsm import DatCoreDataManager
 from ...dsm import get_dsm_provider
@@ -26,6 +28,7 @@ router = RPCRouter()
         InvalidFileIdentifierError,
         AccessRightError,
         DataExportError,
+        JobSchedulerError,
     )
 )
 async def start_data_export(
@@ -51,12 +54,14 @@ async def start_data_export(
             location_id=data_export_start.location_id,
         ) from err
 
-    task_uuid = await get_celery_client(app).send_task(
-        "export_data_with_error",
-        task_context=job_id_data.model_dump(),
-        files=data_export_start.file_and_folder_ids,  # ANE: adapt here your signature
-    )
-
+    try:
+        task_uuid = await get_celery_client(app).send_task(
+            "export_data_with_error",
+            task_context=job_id_data.model_dump(),
+            files=data_export_start.file_and_folder_ids,  # ANE: adapt here your signature
+        )
+    except CeleryError as exc:
+        raise JobSchedulerError(exc=f"{exc}") from exc
     return AsyncJobGet(
         job_id=task_uuid,
     )
