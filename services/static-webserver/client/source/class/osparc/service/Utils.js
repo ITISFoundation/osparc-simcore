@@ -162,8 +162,14 @@ qx.Class.define("osparc.service.Utils", {
     RETIRED_AUTOUPDATABLE_INSTRUCTIONS: qx.locale.Manager.tr("Please Update the Service"),
 
     isUpdatable: function(metadata) {
-      const latestCompatible = this.getLatestCompatible(metadata["key"], metadata["version"]);
-      return latestCompatible && (metadata["key"] !== latestCompatible["key"] || metadata["version"] !== latestCompatible["version"]);
+      if (metadata["history"]) {
+        const found = metadata["history"].find(history => history["version"] === metadata["version"]);
+        if (found && found["compatibility"] && found["compatibility"]["canUpdateTo"]) {
+          const latestCompatible = found["compatibility"]["canUpdateTo"];
+          return latestCompatible && (metadata["key"] !== latestCompatible["key"] || metadata["version"] !== latestCompatible["version"]);
+        }
+      }
+      return false;
     },
 
     isDeprecated: function(metadata) {

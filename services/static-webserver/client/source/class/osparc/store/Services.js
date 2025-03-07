@@ -317,29 +317,12 @@ qx.Class.define("osparc.store.Services", {
         this.__servicesCached[key] = {};
       }
       this.__servicesCached[key][version] = service;
-
-      if ("history" in service) {
-        this.__servicesCached[key][version]["cached"] = true;
-        service["history"].forEach(historyEntry => {
-          const hVersion = historyEntry.version;
-          if (!(hVersion in this.__servicesCached[key])) {
-            this.__servicesCached[key][hVersion] = {};
-            this.__servicesCached[key][hVersion]["cached"] = false;
-          }
-          // merge history data into current metadata
-          this.__servicesCached[key][hVersion] = {
-            ...this.__servicesCached[key][hVersion],
-            ...historyEntry
-          };
-        });
-      }
     },
 
     __isInCache: function(key, version) {
       return (
         key in this.__servicesCached &&
-        version in this.__servicesCached[key] &&
-        this.__servicesCached[key][version]["cached"]
+        version in this.__servicesCached[key]
       );
     },
 

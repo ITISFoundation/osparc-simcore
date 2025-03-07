@@ -207,8 +207,8 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
           column: this.self().GRID_POS.COMPATIBLE_VERSION
         });
 
-        const isUpdatable = osparc.service.Utils.isUpdatable(node);
         if (latestCompatible && canIWrite) {
+          const isUpdatable = osparc.service.Utils.isUpdatable(metadata);
           const updateButton = new osparc.ui.form.FetchButton(null, "@MaterialIcons/update/14");
           updateButton.set({
             enabled: isUpdatable
