@@ -8,7 +8,7 @@ bump2version==1.0.1
     # via -r requirements/../../../requirements/devenv.txt
 cfgv==3.4.0
     # via pre-commit
-click==8.1.7
+click==8.1.8
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_test.txt
@@ -80,7 +80,7 @@ typing-extensions==4.12.2
     #   -c requirements/_base.txt
     #   -c requirements/_test.txt
     #   mypy
-virtualenv==20.29.2
+virtualenv==20.29.3
     # via pre-commit
 wheel==0.45.1
     # via pip-tools
