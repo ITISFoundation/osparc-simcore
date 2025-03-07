@@ -85,7 +85,7 @@ qx.Class.define("osparc.store.Services", {
     getVersionDisplay: function(key, version) {
       const services = this.__servicesCached;
       if (key in services && version in services[key]) {
-        return this.extractVersionDisplay(services[key][version]);
+        return osparc.service.Utils.extractVersionDisplay(services[key][version]);
       }
       return null;
     },
