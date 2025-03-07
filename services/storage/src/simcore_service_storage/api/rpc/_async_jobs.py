@@ -5,7 +5,6 @@ import logging
 from celery.exceptions import CeleryError
 from fastapi import FastAPI
 from models_library.api_schemas_rpc_async_jobs.async_jobs import (
-    AsyncJobAbort,
     AsyncJobGet,
     AsyncJobId,
     AsyncJobNameData,
@@ -28,13 +27,17 @@ _logger = logging.getLogger(__name__)
 router = RPCRouter()
 
 
-@router.expose()
-async def abort(
-    app: FastAPI, job_id: AsyncJobId, job_id_data: AsyncJobNameData
-) -> AsyncJobAbort:
+@router.expose(reraise_if_error_type=(JobSchedulerError,))
+async def abort(app: FastAPI, job_id: AsyncJobId, job_id_data: AsyncJobNameData):
     assert app  # nosec
     assert job_id_data  # nosec
-    return AsyncJobAbort(result=True, job_id=job_id)
+    try:
+        await get_celery_client(app).abort_task(
+            task_context=job_id_data.model_dump(),
+            task_uuid=job_id,
+        )
+    except CeleryError as exc:
+        raise JobSchedulerError(exc=f"{exc}") from exc
 
 
 @router.expose(reraise_if_error_type=(JobSchedulerError,))
