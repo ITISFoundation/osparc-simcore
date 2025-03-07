@@ -202,14 +202,24 @@ class _BaseServiceGetV2(CatalogOutputSchema):
 
     access_rights: dict[GroupID, ServiceGroupAccessRightsV2] | None
 
-    classifiers: list[str] | None = []
-    quality: dict[str, Any] = {}
+    classifiers: Annotated[
+        list[str] | None,
+        Field(default_factory=list),
+    ] = DEFAULT_FACTORY
+
+    quality: Annotated[
+        dict[str, Any],
+        Field(default_factory=dict),
+    ] = DEFAULT_FACTORY
 
     model_config = ConfigDict(
         extra="forbid",
         populate_by_name=True,
         alias_generator=snake_to_camel,
     )
+
+
+class LatestServiceGet(_BaseServiceGetV2): ...
 
 
 class ServiceGetV2(_BaseServiceGetV2):
@@ -288,21 +298,9 @@ class ServiceGetV2(_BaseServiceGetV2):
     )
 
 
-class ServiceListItem(_BaseServiceGetV2):
-    history: Annotated[
-        list[ServiceRelease],
-        Field(
-            default_factory=list,
-            deprecated=True,
-            description="History will be replaced by current 'release' instead",
-            json_schema_extra={"default": []},
-        ),
-    ] = DEFAULT_FACTORY
-
-
 PageRpcServicesGetV2: TypeAlias = PageRpc[
     # WARNING: keep this definition in models_library and not in the RPC interface
-    ServiceListItem
+    LatestServiceGet
 ]
 
 ServiceResourcesGet: TypeAlias = ServiceResourcesDict

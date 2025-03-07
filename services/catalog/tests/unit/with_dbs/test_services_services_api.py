@@ -125,7 +125,7 @@ async def test_list_services_paginated(
 
     assert not mocked_director_service_api["get_service"].called
 
-    total_count, page_items = await services_api.list_services_paginated(
+    total_count, page_items = await services_api.list_latest_services(
         services_repo,
         director_client,
         product_name=target_product,
@@ -143,7 +143,6 @@ async def test_list_services_paginated(
     for item in page_items:
         assert item.access_rights
         assert item.owner is not None
-        assert item.history[0].version == item.version
 
         got = await services_api.get_service(
             services_repo,
@@ -154,7 +153,7 @@ async def test_list_services_paginated(
             service_version=item.version,
         )
 
-        assert got.model_dump() == item.model_dump()
+        assert got.model_dump(exclude={"history"}) == item.model_dump()
 
     # since it is cached, it should only call it `limit` times
     assert mocked_director_service_api["get_service"].call_count == limit

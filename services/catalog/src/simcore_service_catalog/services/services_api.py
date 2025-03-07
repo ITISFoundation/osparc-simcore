@@ -2,9 +2,9 @@ import logging
 from contextlib import suppress
 
 from models_library.api_schemas_catalog.services import (
+    LatestServiceGet,
     MyServiceGet,
     ServiceGetV2,
-    ServiceListItem,
     ServiceUpdateV2,
 )
 from models_library.groups import GroupID
@@ -36,7 +36,45 @@ from .function_services import is_function_service
 _logger = logging.getLogger(__name__)
 
 
-def _db_to_api_model(
+def _to_latest_get_schema(
+    service_db: ServiceWithHistoryDBGet,
+    access_rights_db: list[ServiceAccessRightsAtDB],
+    service_manifest: ServiceMetaDataPublished,
+) -> LatestServiceGet:
+
+    assert len(service_db.history) == 0  # nosec
+
+    return LatestServiceGet(
+        key=service_db.key,
+        version=service_db.version,
+        name=service_db.name,
+        thumbnail=HttpUrl(service_db.thumbnail) if service_db.thumbnail else None,
+        icon=HttpUrl(service_db.icon) if service_db.icon else None,
+        description=service_db.description,
+        description_ui=service_db.description_ui,
+        version_display=service_db.version_display,
+        service_type=service_manifest.service_type,
+        contact=service_manifest.contact,
+        authors=service_manifest.authors,
+        owner=(service_db.owner_email if service_db.owner_email else None),
+        inputs=service_manifest.inputs or {},
+        outputs=service_manifest.outputs or {},
+        boot_options=service_manifest.boot_options,
+        min_visible_inputs=service_manifest.min_visible_inputs,
+        access_rights={
+            a.gid: ServiceGroupAccessRightsV2.model_construct(
+                execute=a.execute_access,
+                write=a.write_access,
+            )
+            for a in access_rights_db
+        },
+        classifiers=service_db.classifiers,
+        quality=service_db.quality,
+        # NOTE: History section is removed
+    )
+
+
+def _to_get_schema(
     service_db: ServiceWithHistoryDBGet,
     access_rights_db: list[ServiceAccessRightsAtDB],
     service_manifest: ServiceMetaDataPublished,
@@ -83,14 +121,14 @@ def _db_to_api_model(
     )
 
 
-async def list_services_paginated(
+async def list_latest_services(
     repo: ServicesRepository,
     director_api: DirectorApi,
     product_name: ProductName,
     user_id: UserID,
     limit: PageLimitInt | None,
     offset: NonNegativeInt = 0,
-) -> tuple[NonNegativeInt, list[ServiceListItem]]:
+) -> tuple[NonNegativeInt, list[LatestServiceGet]]:
 
     # defines the order
     total_count, services = await repo.list_latest_services(
@@ -101,7 +139,7 @@ async def list_services_paginated(
         # injects access-rights
         access_rights: dict[tuple[str, str], list[ServiceAccessRightsAtDB]] = (
             await repo.batch_get_services_access_rights(
-                ((s.key, s.version) for s in services), product_name=product_name
+                ((sc.key, sc.version) for sc in services), product_name=product_name
             )
         )
         if not access_rights:
@@ -113,45 +151,33 @@ async def list_services_paginated(
 
     # get manifest of those with access rights
     got = await manifest.get_batch_services(
-        [(s.key, s.version) for s in services if access_rights.get((s.key, s.version))],
+        [
+            (sc.key, sc.version)
+            for sc in services
+            if access_rights.get((sc.key, sc.version))
+        ],
         director_api,
     )
     service_manifest = {
-        (s.key, s.version): s for s in got if isinstance(s, ServiceMetaDataPublished)
+        (sc.key, sc.version): sc
+        for sc in got
+        if isinstance(sc, ServiceMetaDataPublished)
     }
 
     items = [
-        _db_to_api_model(
+        _to_latest_get_schema(
             service_db=sc,
             access_rights_db=ar,
             service_manifest=sm,
-            compatibility_map=cm,
         )
         for sc in services
         if (
             (ar := access_rights.get((sc.key, sc.version)))
             and (sm := service_manifest.get((sc.key, sc.version)))
-            and (
-                # NOTE: This operation might be resource-intensive.
-                # It is temporarily implemented on a trial basis.
-                cm := await evaluate_service_compatibility_map(
-                    repo,
-                    product_name=product_name,
-                    user_id=user_id,
-                    service_release_history=sc.history,
-                )
-            )
         )
     ]
 
-    return total_count, [
-        ServiceListItem.model_validate(
-            {
-                **it.model_dump(exclude_unset=True, by_alias=True),
-            }
-        )
-        for it in items
-    ]
+    return total_count, items
 
 
 async def get_service(
@@ -206,7 +232,7 @@ async def get_service(
         service_release_history=service.history,
     )
 
-    return _db_to_api_model(service, access_rights, service_manifest, compatibility_map)
+    return _to_get_schema(service, access_rights, service_manifest, compatibility_map)
 
 
 async def update_service(
