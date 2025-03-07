@@ -196,12 +196,12 @@ async def _list_projects_access_rights(
 
 
 async def get_project_access_rights(
-    conn: AsyncConnection, user_id: UserID, project_id: ProjectID
+    connection: AsyncConnection, user_id: UserID, project_id: ProjectID
 ) -> AccessRights:
     """
     Returns access-rights of user (user_id) over a project resource (project_id)
     """
-    user_group_ids: list[GroupID] = await _get_user_groups_ids(conn, user_id)
+    user_group_ids: list[GroupID] = await _get_user_groups_ids(connection, user_id)
 
     private_workspace_query = (
         sa.select(
@@ -246,7 +246,7 @@ async def get_project_access_rights(
 
     combined_query = sa.union_all(private_workspace_query, shared_workspace_query)
 
-    result = await conn.execute(combined_query)
+    result = await connection.execute(combined_query)
     row = result.one_or_none()
 
     if not row:

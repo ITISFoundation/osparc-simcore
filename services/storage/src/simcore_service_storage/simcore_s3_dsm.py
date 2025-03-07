@@ -332,7 +332,7 @@ class SimcoreS3DataManager(BaseDataManager):
         async with self.engine.connect() as conn:
             if project_id is not None:
                 project_access_rights = await get_project_access_rights(
-                    conn=conn, user_id=user_id, project_id=project_id
+                    connection=conn, user_id=user_id, project_id=project_id
                 )
                 if not project_access_rights.read:
                     raise ProjectAccessRightError(
