@@ -3,8 +3,8 @@ from typing import Annotated
 from fastapi import APIRouter, Depends
 from models_library.api_schemas_api_server.pricing_plans import ServicePricingPlanGet
 from models_library.api_schemas_webserver.catalog import (
+    CatalogLatestServiceGet,
     CatalogServiceGet,
-    CatalogServiceListItem,
     CatalogServiceUpdate,
     ServiceInputGet,
     ServiceInputKey,
@@ -34,10 +34,9 @@ router = APIRouter(
 
 @router.get(
     "/catalog/services/-/latest",
-    response_model=Page[CatalogServiceListItem],
+    response_model=Page[CatalogLatestServiceGet],
 )
-def list_services_latest(_query: Annotated[ListServiceParams, Depends()]):
-    pass
+def list_services_latest(_query: Annotated[ListServiceParams, Depends()]): ...
 
 
 @router.get(
