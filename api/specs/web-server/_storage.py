@@ -237,4 +237,4 @@ async def get_async_job_result(job_id: AsyncJobId):
     name="get_async_jobs",
 )
 async def get_async_jobs(user_id: UserID):
-    """Retrunsa list of async jobs for the user"""
+    """Returns a list of async jobs for the user"""
