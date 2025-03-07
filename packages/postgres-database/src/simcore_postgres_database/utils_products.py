@@ -10,6 +10,9 @@ from .models.products import products
 _GroupID = int
 
 
+class EmptyProductsError(ValueError): ...
+
+
 async def get_default_product_name(conn: AsyncConnection) -> str:
     """The first row in the table is considered as the default product
 
@@ -19,14 +22,14 @@ async def get_default_product_name(conn: AsyncConnection) -> str:
         sa.select(products.c.name).order_by(products.c.priority)
     )
     if not product_name:
-        msg = "No product defined in database"
-        raise ValueError(msg)
+        msg = "No product was defined in database. Upon construction, at least one product is added but there are none."
+        raise EmptyProductsError(msg)
 
     assert isinstance(product_name, str)  # nosec
     return product_name
 
 
-async def get_product_group_id(
+async def get_product_group_id_or_none(
     connection: AsyncConnection, product_name: str
 ) -> _GroupID | None:
     group_id = await connection.scalar(
@@ -35,7 +38,9 @@ async def get_product_group_id(
     return None if group_id is None else _GroupID(group_id)
 
 
-async def get_or_create_product_group(conn: AsyncConnection, product_name: str) -> int:
+async def get_or_create_product_group(
+    conn: AsyncConnection, product_name: str
+) -> _GroupID:
     #
     # NOTE: Separated so it can be used in asyncpg and aiopg environs while both
     #       coexist

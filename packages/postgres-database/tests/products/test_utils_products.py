@@ -10,9 +10,10 @@ import sqlalchemy as sa
 from simcore_postgres_database.models.groups import GroupType, groups
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.utils_products import (
+    EmptyProductsError,
     get_default_product_name,
     get_or_create_product_group,
-    get_product_group_id,
+    get_product_group_id_or_none,
 )
 from sqlalchemy.ext.asyncio import AsyncEngine
 
@@ -29,7 +30,7 @@ async def test_default_product(
 @pytest.mark.parametrize("pg_sa_engine", ["sqlModels"], indirect=True)
 async def test_default_product_undefined(asyncpg_engine: AsyncEngine):
     async with asyncpg_engine.connect() as conn:
-        with pytest.raises(ValueError, match="No product"):
+        with pytest.raises(EmptyProductsError):
             await get_default_product_name(conn)
 
 
@@ -79,7 +80,7 @@ async def test_get_or_create_group_product(
             )
             assert result.one()
 
-            assert product_group_id == await get_product_group_id(
+            assert product_group_id == await get_product_group_id_or_none(
                 conn, product_name=product_row.name
             )
 
@@ -87,14 +88,14 @@ async def test_get_or_create_group_product(
             await conn.execute(
                 groups.update().where(groups.c.gid == product_group_id).values(gid=1000)
             )
-            product_group_id = await get_product_group_id(
+            product_group_id = await get_product_group_id_or_none(
                 conn, product_name=product_row.name
             )
             assert product_group_id == 1000
 
             # if group is DELETED -> product.group_id=null
             await conn.execute(groups.delete().where(groups.c.gid == product_group_id))
-            product_group_id = await get_product_group_id(
+            product_group_id = await get_product_group_id_or_none(
                 conn, product_name=product_row.name
             )
             assert product_group_id is None
