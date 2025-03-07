@@ -11,7 +11,7 @@ from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from simcore_postgres_database.errors import DatabaseError
 from simcore_postgres_database.models.users import UserRole
 
-from ..projects._projects_repository_legacy import ProjectDBAPI
+from ..projects import projects_service_legacy
 from ..projects.exceptions import ProjectDeleteError, ProjectNotFoundError
 from ..projects.projects_service import get_project_for_user, submit_delete_project_task
 from ..redis import get_redis_lock_manager_client
@@ -56,9 +56,11 @@ async def _delete_all_projects_for_user(app: web.Application, user_id: int) -> N
         return
 
     # fetch all projects for the user
-    user_project_uuids = await ProjectDBAPI.get_from_app_context(
-        app
-    ).list_projects_uuids(user_id=user_id)
+    user_project_uuids = (
+        await projects_service_legacy.ProjectDBAPI.get_from_app_context(
+            app
+        ).list_projects_uuids(user_id=user_id)
+    )
 
     _logger.info(
         "Removing or transfering projects of user with %s, %s: %s",
