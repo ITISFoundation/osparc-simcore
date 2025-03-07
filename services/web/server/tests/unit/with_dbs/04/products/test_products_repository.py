@@ -12,7 +12,8 @@ import pytest
 import sqlalchemy as sa
 from aiohttp import web
 from aiohttp.test_utils import TestClient, make_mocked_request
-from models_library.products import ProductName, ProductStripeInfoGet
+from models_library.api_schemas_webserver.products import ProductStripeInfoGet
+from models_library.products import ProductName
 from pytest_simcore.helpers.faker_factories import random_product, random_product_price
 from pytest_simcore.helpers.postgres_tools import sync_insert_and_get_row_lifespan
 from simcore_postgres_database import utils_products

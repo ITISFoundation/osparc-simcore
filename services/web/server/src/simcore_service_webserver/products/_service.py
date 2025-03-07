@@ -2,8 +2,12 @@ from decimal import Decimal
 from typing import Any
 
 from aiohttp import web
+from models_library.api_schemas_webserver.products import (
+    CreditResultGet,
+    ProductStripeInfoGet,
+)
 from models_library.groups import GroupID
-from models_library.products import CreditResultGet, ProductName, ProductStripeInfoGet
+from models_library.products import ProductName
 from pydantic import ValidationError
 from servicelib.exceptions import InvalidConfig
 from simcore_postgres_database.utils_products_prices import ProductPriceInfo

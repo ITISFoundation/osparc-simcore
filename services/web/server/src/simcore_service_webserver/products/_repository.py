@@ -3,8 +3,9 @@ from decimal import Decimal
 from typing import Any
 
 import sqlalchemy as sa
+from models_library.api_schemas_webserver.products import ProductStripeInfoGet
 from models_library.groups import GroupID
-from models_library.products import ProductName, ProductStripeInfoGet
+from models_library.products import ProductName
 from simcore_postgres_database.constants import QUANTIZE_EXP_ARG
 from simcore_postgres_database.models.jinja2_templates import jinja2_templates
 from simcore_postgres_database.models.products import products

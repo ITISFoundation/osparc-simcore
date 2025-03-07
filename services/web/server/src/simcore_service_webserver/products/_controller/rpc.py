@@ -2,7 +2,8 @@ from decimal import Decimal
 
 from aiohttp import web
 from models_library.api_schemas_webserver import WEBSERVER_RPC_NAMESPACE
-from models_library.products import CreditResultGet, ProductName
+from models_library.api_schemas_webserver.products import CreditResultGet
+from models_library.products import ProductName
 from servicelib.rabbitmq import RPCRouter
 
 from ...constants import APP_SETTINGS_KEY

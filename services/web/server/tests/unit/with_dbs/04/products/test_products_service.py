@@ -9,7 +9,8 @@ from decimal import Decimal
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestServer
-from models_library.products import ProductName, ProductStripeInfoGet
+from models_library.api_schemas_webserver.products import ProductStripeInfoGet
+from models_library.products import ProductName
 from pydantic import TypeAdapter, ValidationError
 from pytest_mock import MockerFixture
 from servicelib.exceptions import InvalidConfig

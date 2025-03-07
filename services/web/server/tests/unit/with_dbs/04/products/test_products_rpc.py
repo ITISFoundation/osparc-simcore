@@ -8,7 +8,7 @@ from decimal import Decimal
 
 import pytest
 from models_library.api_schemas_webserver import WEBSERVER_RPC_NAMESPACE
-from models_library.products import CreditResultGet, ProductName
+from models_library.products import ProductName
 from models_library.rabbitmq_basic_types import RPCMethodName
 from pydantic import TypeAdapter
 from pytest_mock import MockerFixture

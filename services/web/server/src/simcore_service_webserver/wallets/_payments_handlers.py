@@ -2,6 +2,7 @@ import asyncio
 import logging
 
 from aiohttp import web
+from models_library.api_schemas_webserver.products import CreditResultGet
 from models_library.api_schemas_webserver.wallets import (
     CreateWalletPayment,
     GetWalletAutoRecharge,
@@ -12,7 +13,6 @@ from models_library.api_schemas_webserver.wallets import (
     ReplaceWalletAutoRecharge,
     WalletPaymentInitiated,
 )
-from models_library.products import CreditResultGet
 from models_library.rest_pagination import Page, PageQueryParameters
 from models_library.rest_pagination_utils import paginate_data
 from servicelib.aiohttp import status

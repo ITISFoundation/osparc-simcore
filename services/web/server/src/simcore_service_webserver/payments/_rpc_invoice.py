@@ -2,9 +2,13 @@ from decimal import Decimal
 
 from aiohttp import web
 from models_library.api_schemas_webserver import WEBSERVER_RPC_NAMESPACE
+from models_library.api_schemas_webserver.products import (
+    CreditResultGet,
+    ProductStripeInfoGet,
+)
 from models_library.emails import LowerCaseEmailStr
 from models_library.payments import InvoiceDataGet, UserInvoiceAddress
-from models_library.products import CreditResultGet, ProductName, ProductStripeInfoGet
+from models_library.products import ProductName
 from models_library.users import UserID
 from servicelib.rabbitmq import RPCRouter
 
