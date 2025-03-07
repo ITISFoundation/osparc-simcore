@@ -12,6 +12,7 @@ from unittest import mock
 import pytest
 from aiohttp.test_utils import TestClient
 from models_library.api_schemas_webserver.folders_v2 import FolderGet
+from models_library.groups import GroupID
 from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
@@ -23,11 +24,10 @@ from pytest_simcore.helpers.webserver_parametrizations import (
 from servicelib.aiohttp import status
 from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
 from simcore_service_webserver.db.models import UserRole
-from simcore_service_webserver.projects._groups_db import (
-    GroupID,
+from simcore_service_webserver.projects.models import ProjectDict
+from simcore_service_webserver.projects.projects_groups_repository import (
     update_or_insert_project_group,
 )
-from simcore_service_webserver.projects.models import ProjectDict
 
 
 @pytest.mark.parametrize(*standard_role_response(), ids=str)
@@ -274,7 +274,7 @@ async def test_project_folder_movement_full_workflow(
 @pytest.fixture
 def mock_catalog_api_get_services_for_user_in_product(mocker: MockerFixture):
     mocker.patch(
-        "simcore_service_webserver.projects._crud_api_read.catalog_service.get_services_for_user_in_product",
+        "simcore_service_webserver.projects._projects_service_read.catalog_service.get_services_for_user_in_product",
         spec=True,
         return_value=[],
     )
@@ -387,15 +387,15 @@ def mock_storage_delete_data_folders(mocker: MockerFixture) -> mock.Mock:
         autospec=True,
     )
     mocker.patch(
-        "simcore_service_webserver.projects.projects_service.remove_project_dynamic_services",
+        "simcore_service_webserver.projects._projects_service.remove_project_dynamic_services",
         autospec=True,
     )
     mocker.patch(
-        "simcore_service_webserver.projects._crud_api_delete.api.delete_pipeline",
+        "simcore_service_webserver.projects._projects_service_delete.director_v2_service.delete_pipeline",
         autospec=True,
     )
     return mocker.patch(
-        "simcore_service_webserver.projects._crud_api_delete.delete_data_folders_of_project",
+        "simcore_service_webserver.projects._projects_service_delete.delete_data_folders_of_project",
         return_value=None,
     )
 

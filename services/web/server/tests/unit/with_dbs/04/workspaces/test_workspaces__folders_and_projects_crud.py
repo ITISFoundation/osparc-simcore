@@ -26,13 +26,18 @@ from simcore_service_webserver.projects.models import ProjectDict
 
 @pytest.fixture
 def mock_catalog_api_get_services_for_user_in_product(mocker: MockerFixture):
+    for namespace in [
+        "simcore_service_webserver.projects._projects_rest",
+        "simcore_service_webserver.projects._projects_service_read",
+    ]:
+        mocker.patch(
+            f"{namespace}.catalog_service.get_services_for_user_in_product",
+            spec=True,
+            return_value=[],
+        )
+
     mocker.patch(
-        "simcore_service_webserver.projects._crud_api_read.catalog_service.get_services_for_user_in_product",
-        spec=True,
-        return_value=[],
-    )
-    mocker.patch(
-        "simcore_service_webserver.projects._crud_handlers.project_uses_available_services",
+        "simcore_service_webserver.projects._projects_rest.project_uses_available_services",
         spec=True,
         return_value=True,
     )
@@ -254,15 +259,15 @@ def mock_storage_delete_data_folders(mocker: MockerFixture) -> mock.Mock:
         autospec=True,
     )
     mocker.patch(
-        "simcore_service_webserver.projects.projects_service.remove_project_dynamic_services",
+        "simcore_service_webserver.projects._projects_service.remove_project_dynamic_services",
         autospec=True,
     )
     mocker.patch(
-        "simcore_service_webserver.projects._crud_api_delete.api.delete_pipeline",
+        "simcore_service_webserver.projects._projects_service_delete.director_v2_service.delete_pipeline",
         autospec=True,
     )
     return mocker.patch(
-        "simcore_service_webserver.projects._crud_api_delete.delete_data_folders_of_project",
+        "simcore_service_webserver.projects._projects_service_delete.delete_data_folders_of_project",
         return_value=None,
     )
 

@@ -1,6 +1,5 @@
-""" Handles requests to the Rest API
+"""Handles requests to the Rest API"""
 
-"""
 import logging
 from dataclasses import asdict
 

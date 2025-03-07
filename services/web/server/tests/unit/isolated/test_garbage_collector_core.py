@@ -91,7 +91,7 @@ async def mock_is_node_id_present_in_any_project_workbench(
 @pytest.fixture
 async def mock_list_dynamic_services(mocker: MockerFixture) -> mock.AsyncMock:
     return mocker.patch(
-        f"{MODULE_GC_CORE_ORPHANS}.dynamic_scheduler_api.list_dynamic_services",
+        f"{MODULE_GC_CORE_ORPHANS}.dynamic_scheduler_service.list_dynamic_services",
         autospec=True,
         return_value=[],
     )
@@ -100,7 +100,7 @@ async def mock_list_dynamic_services(mocker: MockerFixture) -> mock.AsyncMock:
 @pytest.fixture
 async def mock_stop_dynamic_service(mocker: MockerFixture) -> mock.AsyncMock:
     return mocker.patch(
-        f"{MODULE_GC_CORE_ORPHANS}.dynamic_scheduler_api.stop_dynamic_service",
+        f"{MODULE_GC_CORE_ORPHANS}.dynamic_scheduler_service.stop_dynamic_service",
         autospec=True,
     )
 

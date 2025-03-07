@@ -1,4 +1,4 @@
-""" Helper script to automatically generate OAS
+"""Helper script to automatically generate OAS
 
 This OAS are the source of truth
 """
@@ -17,8 +17,10 @@ from models_library.generics import Envelope
 from models_library.projects import ProjectID
 from models_library.wallets import WalletID
 from simcore_service_webserver._meta import API_VTAG
-from simcore_service_webserver.projects._common.models import ProjectPathParams
-from simcore_service_webserver.projects._wallets_handlers import (
+from simcore_service_webserver.projects._controller._rest_schemas import (
+    ProjectPathParams,
+)
+from simcore_service_webserver.projects._controller.wallets_rest import (
     _PayProjectDebtBody,
     _ProjectWalletPathParams,
 )
@@ -36,8 +38,7 @@ router = APIRouter(
     response_model=Envelope[WalletGet | None],
     description="Get current connected wallet to the project.",
 )
-async def get_project_wallet(project_id: ProjectID):
-    ...
+async def get_project_wallet(project_id: ProjectID): ...
 
 
 assert_handler_signature_against_model(get_project_wallet, ProjectPathParams)
@@ -51,8 +52,7 @@ assert_handler_signature_against_model(get_project_wallet, ProjectPathParams)
 async def connect_wallet_to_project(
     project_id: ProjectID,
     wallet_id: WalletID,
-):
-    ...
+): ...
 
 
 assert_handler_signature_against_model(connect_wallet_to_project, ProjectPathParams)
@@ -65,8 +65,7 @@ assert_handler_signature_against_model(connect_wallet_to_project, ProjectPathPar
 async def pay_project_debt(
     _path: Annotated[_ProjectWalletPathParams, Depends()],
     _body: Annotated[_PayProjectDebtBody, Depends()],
-):
-    ...
+): ...
 
 
 assert_handler_signature_against_model(connect_wallet_to_project, ProjectPathParams)

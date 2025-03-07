@@ -21,9 +21,9 @@ from models_library.services import ServiceKey, ServiceVersion
 from pydantic import AnyUrl, HttpUrl, TypeAdapter
 from servicelib.logging_utils import log_decorator
 
-from ..projects.db import ProjectDBAPI
+from ..projects import projects_service
+from ..projects._projects_repository_legacy import ProjectDBAPI
 from ..projects.exceptions import ProjectInvalidRightsError, ProjectNotFoundError
-from ..projects.projects_service import get_project_for_user
 from ..utils import now_str
 from ._core import compose_uuid_from
 from ._models import FileParams, ServiceInfo, ViewerInfo
@@ -189,7 +189,7 @@ async def _add_new_project(
     # TODO: this piece was taken from the end of projects.projects_handlers.create_projects
 
     from ..director_v2.api import create_or_update_pipeline
-    from ..projects.db import APP_PROJECT_DBAPI
+    from ..projects._projects_repository_legacy import APP_PROJECT_DBAPI
 
     db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
 
@@ -221,7 +221,7 @@ async def _project_exists(
     project_uuid: ProjectID,
 ):
     try:
-        await get_project_for_user(
+        await projects_service.get_project_for_user(
             app=app,
             project_uuid=f"{project_uuid}",
             user_id=user_id,
@@ -257,7 +257,7 @@ async def get_or_create_project_with_file_and_service(
     file_picker_id, service_id = _generate_nodeids(project_uid)
 
     try:
-        project_db: dict = await get_project_for_user(
+        project_db: dict = await projects_service.get_project_for_user(
             app, f"{project_uid}", user.id, include_state=False
         )
 
@@ -309,7 +309,7 @@ async def get_or_create_project_with_service(
     _, service_id = _generate_nodeids(project_uid)
 
     try:
-        await get_project_for_user(
+        await projects_service.get_project_for_user(
             app=app,
             project_uuid=f"{project_uid}",
             user_id=user.id,

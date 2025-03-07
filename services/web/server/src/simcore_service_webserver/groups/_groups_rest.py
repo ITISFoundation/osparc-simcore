@@ -73,9 +73,9 @@ async def list_groups(request: web.Request):
             GroupGet.from_domain_model(*gi) for gi in groups_by_type.standard
         ],
         all=GroupGet.from_domain_model(*groups_by_type.everyone),
-        product=GroupGet.from_domain_model(*my_product_group)
-        if my_product_group
-        else None,
+        product=(
+            GroupGet.from_domain_model(*my_product_group) if my_product_group else None
+        ),
     )
 
     return envelope_json_response(my_groups)

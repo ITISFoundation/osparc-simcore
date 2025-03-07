@@ -61,7 +61,7 @@ def current_product(client: TestClient) -> Product:
 
 @pytest.fixture
 def fake_osparc_invitation(
-    invitations_service_openapi_specs: dict[str, Any]
+    invitations_service_openapi_specs: dict[str, Any],
 ) -> ApiInvitationContent:
     """
     Emulates an invitation for osparc product
