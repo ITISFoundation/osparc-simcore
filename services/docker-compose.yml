@@ -1152,9 +1152,7 @@ services:
     image: ${DOCKER_REGISTRY:-itisfoundation}/storage:${DOCKER_IMAGE_TAG:-latest}
     init: true
     hostname: "sto-{{.Node.Hostname}}-{{.Task.Slot}}"
-    environment: &storage_environment
-      BF_API_KEY: ${BF_API_KEY}
-      BF_API_SECRET: ${BF_API_SECRET}
+    environment:
       DATCORE_ADAPTER_HOST: ${DATCORE_ADAPTER_HOST:-datcore-adapter}
       LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
       LOG_FILTER_MAPPING : ${LOG_FILTER_MAPPING}

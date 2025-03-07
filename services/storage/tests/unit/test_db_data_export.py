@@ -34,6 +34,7 @@ from simcore_service_storage.api.rpc._data_export import AccessRightError
 from simcore_service_storage.core.settings import ApplicationSettings
 from simcore_service_storage.modules.celery.client import TaskUUID
 from simcore_service_storage.modules.celery.models import TaskState
+from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 
 pytest_plugins = [
     "pytest_simcore.rabbit_service",
@@ -124,6 +125,12 @@ class UserWithFile(NamedTuple):
 
 
 @pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
+@pytest.mark.parametrize(
     "project_params,_type",
     [
         (
@@ -155,10 +162,9 @@ async def test_start_data_export_success(
     user_id: UserID,
     _type: Literal["file", "folder"],
 ):
-
     _, list_of_files = with_random_project_with_files
     workspace_files = [
-        p for p in list(list_of_files.values())[0].keys() if "/workspace/" in p
+        p for p in next(iter(list_of_files.values())) if "/workspace/" in p
     ]
     assert len(workspace_files) > 0
     file_or_folder_id: SimcoreS3FileID
@@ -193,7 +199,6 @@ async def test_start_data_export_fail(
     user_id: UserID,
     faker: Faker,
 ):
-
     with pytest.raises(AccessRightError):
         _ = await async_jobs.submit_job(
             rpc_client,

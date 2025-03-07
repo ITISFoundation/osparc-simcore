@@ -30,15 +30,6 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     STORAGE_MONITORING_ENABLED: bool = False
     STORAGE_PROFILING: bool = False
 
-    BF_API_KEY: Annotated[
-        str | None,
-        Field(None, description="Pennsieve API key ONLY for testing purposes"),
-    ]
-    BF_API_SECRET: Annotated[
-        str | None,
-        Field(None, description="Pennsieve API secret ONLY for testing purposes"),
-    ]
-
     STORAGE_POSTGRES: Annotated[
         PostgresSettings | None,
         Field(json_schema_extra={"auto_default_from_env": True}),
@@ -80,6 +71,26 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         Field(
             30,
             description="Interval in seconds when task cleaning pending uploads runs. setting to NULL disables the cleaner.",
+
+    STORAGE_CLEANER_INTERVAL_S: int | None = Field(
+        30,
+        description="Interval in seconds when task cleaning pending uploads runs. setting to NULL disables the cleaner.",
+    )
+
+    STORAGE_RABBITMQ: RabbitSettings | None = Field(
+        json_schema_extra={"auto_default_from_env": True},
+    )
+
+    STORAGE_S3_CLIENT_MAX_TRANSFER_CONCURRENCY: int = Field(
+        4,
+        description="Maximal amount of threads used by underlying S3 client to transfer data to S3 backend",
+    )
+
+    STORAGE_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
+        default=False,
+        validation_alias=AliasChoices(
+            "STORAGE_LOG_FORMAT_LOCAL_DEV_ENABLED",
+            "LOG_FORMAT_LOCAL_DEV_ENABLED",
         ),
     ]
 
