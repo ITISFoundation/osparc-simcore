@@ -314,24 +314,15 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
         menuButton.setEnabled(false);
 
         const key = newStudyData["expectedKey"];
-        // Include deprecated versions, they should all be updatable to a non deprecated version
-        const versions = osparc.store.Services.getVersions(key, false);
-        if (versions.length && newStudyData) {
-          // scale to latest compatible
-          const latestVersion = versions[0];
-          const latestCompatible = osparc.store.Services.getLatestCompatible(key, latestVersion);
-          osparc.store.Services.getService(latestCompatible["key"], latestCompatible["version"])
-            .then(latestMetadata => {
-              // make sure this one is not deprecated
-              if (osparc.service.Utils.isDeprecated(latestMetadata)) {
-                return;
-              }
-              menuButton.setEnabled(true);
-              this.__addIcon(menuButton, newStudyData, latestMetadata);
-              this.__addFromResourceButton(menuButton, newStudyData["category"]);
-              addListenerToButton(menuButton, latestMetadata);
-            });
+        const latestMetadata = osparc.store.Services.getLatest(key);
+        // make sure this one is not deprecated
+        if (osparc.service.Utils.isDeprecated(latestMetadata)) {
+          return;
         }
+        menuButton.setEnabled(true);
+        this.__addIcon(menuButton, newStudyData, latestMetadata);
+        this.__addFromResourceButton(menuButton, newStudyData["category"]);
+        addListenerToButton(menuButton, latestMetadata);
       } else if ("myMostUsed" in newStudyData) {
         const excludeFrontend = true;
         const excludeDeprecated = true

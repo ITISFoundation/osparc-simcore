@@ -953,30 +953,21 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __addNewStudyFromServiceButton: function(newStudyData) {
       if ("expectedKey" in newStudyData) {
         const key = newStudyData["expectedKey"];
-        // Include deprecated versions, they should all be updatable to a non deprecated version
-        const versions = osparc.store.Services.getVersions(key, false);
-        if (versions.length && newStudyData) {
-          // scale to latest compatible
-          const latestVersion = versions[0];
-          const latestCompatible = osparc.store.Services.getLatestCompatible(key, latestVersion);
-          osparc.store.Services.getService(latestCompatible["key"], latestCompatible["version"])
-            .then(latestMetadata => {
-              // make sure this one is not deprecated
-              if (osparc.service.Utils.isDeprecated(latestMetadata)) {
-                return;
-              }
-              const title = newStudyData.title + " " + osparc.service.Utils.extractVersionDisplay(latestMetadata);
-              const desc = newStudyData.description;
-              const mode = this._resourcesContainer.getMode();
-              const newStudyFromServiceButton = (mode === "grid") ? new osparc.dashboard.GridButtonNew(title, desc) : new osparc.dashboard.ListButtonNew(title, desc);
-              newStudyFromServiceButton.setCardKey("new-"+key);
-              if (newStudyData["idToWidget"]) {
-                osparc.utils.Utils.setIdToWidget(newStudyFromServiceButton, newStudyData["idToWidget"]);
-              }
-              newStudyFromServiceButton.addListener("tap", () => this.__newStudyFromServiceBtnClicked(latestMetadata["key"], latestMetadata["version"], newStudyData.newStudyLabel));
-              this._resourcesContainer.addNonResourceCard(newStudyFromServiceButton);
-            })
+        const latestMetadata = osparc.store.Services.getLatest(key);
+        // make sure this one is not deprecated
+        if (osparc.service.Utils.isDeprecated(latestMetadata)) {
+          return;
         }
+        const title = newStudyData.title + " " + osparc.service.Utils.extractVersionDisplay(latestMetadata);
+        const desc = newStudyData.description;
+        const mode = this._resourcesContainer.getMode();
+        const newStudyFromServiceButton = (mode === "grid") ? new osparc.dashboard.GridButtonNew(title, desc) : new osparc.dashboard.ListButtonNew(title, desc);
+        newStudyFromServiceButton.setCardKey("new-"+key);
+        if (newStudyData["idToWidget"]) {
+          osparc.utils.Utils.setIdToWidget(newStudyFromServiceButton, newStudyData["idToWidget"]);
+        }
+        newStudyFromServiceButton.addListener("tap", () => this.__newStudyFromServiceBtnClicked(latestMetadata["key"], latestMetadata["version"], newStudyData.newStudyLabel));
+        this._resourcesContainer.addNonResourceCard(newStudyFromServiceButton);
       } else if ("myMostUsed" in newStudyData) {
         const excludeFrontend = true;
         const excludeDeprecated = true

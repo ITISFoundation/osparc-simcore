@@ -51,10 +51,29 @@ qx.Class.define("osparc.store.Services", {
       });
     },
 
+    __getVersions: function(key, filterDeprecated = true) {
+      const services = this.__servicesCached;
+      let versions = [];
+      if (key in services) {
+        const serviceVersions = services[key];
+        versions = versions.concat(Object.keys(serviceVersions));
+        if (filterDeprecated) {
+          versions = versions.filter(version => {
+            if (services[key][version]["retired"]) {
+              return false;
+            }
+            return true;
+          });
+        }
+        versions.sort(osparc.utils.Utils.compareVersionNumbers);
+      }
+      return versions.reverse();
+    },
+
     getLatest: function(key) {
       const services = this.__servicesCached;
       if (key in services) {
-        const versions = this.getVersions(key, true);
+        const versions = this.__getVersions(key);
         if (versions.length) {
           return services[key][versions[0]];
         }
@@ -134,38 +153,19 @@ qx.Class.define("osparc.store.Services", {
       return [];
     },
 
-    getVersions2: function(key, version, filterDeprecated = true) {
+    getVersions: function(key, version, filterDeprecated = true) {
       return new Promise(resolve => {
-        if (this.__isInCache(key, version)) {
+        const returnFromCache = () => {
           const versions = this.__getVersionsFromCache(key, version, filterDeprecated);
           resolve(versions);
+        };
+        if (this.__servicesCached[key][version]["history"]) {
+          returnFromCache();
         } else {
           this.getService(key, version)
-            .then(() => {
-              const versions = this.__getVersionsFromCache(key, version, filterDeprecated);
-              resolve(versions);
-            });
+            .then(() => returnFromCache());
         }
       });
-    },
-
-    getVersions: function(key, filterDeprecated = true) {
-      const services = this.__servicesCached;
-      let versions = [];
-      if (key in services) {
-        const serviceVersions = services[key];
-        versions = versions.concat(Object.keys(serviceVersions));
-        if (filterDeprecated) {
-          versions = versions.filter(version => {
-            if (services[key][version]["retired"]) {
-              return false;
-            }
-            return true;
-          });
-        }
-        versions.sort(osparc.utils.Utils.compareVersionNumbers);
-      }
-      return versions.reverse();
     },
 
     getServicesLatestList: function(excludeFrontend = true, excludeDeprecated = true) {
