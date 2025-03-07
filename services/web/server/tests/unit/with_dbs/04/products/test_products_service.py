@@ -140,8 +140,8 @@ async def test_get_credit_amount_with_repo_faking_data(
     credit_result = await products_service.get_credit_amount(
         app, dollar_amount=Decimal("10.0"), product_name=default_product_name
     )
-    assert credit_result["credit_amount"] == Decimal("1.0")
-    assert credit_result["product_name"] == default_product_name
+    assert credit_result.credit_amount == Decimal("1.0")
+    assert credit_result.product_name == default_product_name
 
 
 async def test_get_product_stripe_info(
