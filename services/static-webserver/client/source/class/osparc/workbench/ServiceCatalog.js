@@ -139,7 +139,7 @@ qx.Class.define("osparc.workbench.ServiceCatalog", {
       this.__serviceList.addListener("changeSelected", e => {
         if (e.getData() && e.getData().getService()) {
           const selectedService = e.getData().getService();
-          this.__changedSelection(selectedService.getKey());
+          this.__changedSelection(selectedService.getKey(), selectedService.getVersion());
         } else {
           this.__changedSelection(null);
         }
@@ -239,21 +239,23 @@ qx.Class.define("osparc.workbench.ServiceCatalog", {
       this.__serviceList.setModel(new qx.data.Array(groupedServicesList));
     },
 
-    __changedSelection: function(key) {
+    __changedSelection: function(key, version) {
       if (this.__versionsBox) {
-        let selectBox = this.__versionsBox;
+        const selectBox = this.__versionsBox;
         selectBox.removeAll();
         if (key in this.__filteredServicesObj) {
           const latest = new qx.ui.form.ListItem(this.self().LATEST);
           latest.version = this.self().LATEST;
           selectBox.add(latest);
-          const versions = osparc.service.Utils.getVersions(key);
-          versions.forEach(version => {
-            const listItem = osparc.service.Utils.versionToListItem(key, version);
-            selectBox.add(listItem);
-          });
-          osparc.utils.Utils.growSelectBox(selectBox, 200);
-          selectBox.setSelection([latest]);
+          osparc.store.Services.getVersions(key, version)
+            .then(versions => {
+              versions.forEach(vrsn => {
+                const listItem = osparc.service.Utils.versionToListItem(key, vrsn);
+                selectBox.add(listItem);
+              });
+              osparc.utils.Utils.growSelectBox(selectBox, 200);
+              selectBox.setSelection([latest]);
+            });
         }
       }
       if (this.__addBtn) {
