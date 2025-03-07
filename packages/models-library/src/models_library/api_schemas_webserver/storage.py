@@ -65,10 +65,6 @@ class AsyncJobLinks(OutputSchema):
         )
 
 
-class StorageAsyncJobId(InputSchema):
-    job_id: AsyncJobId
-
-
 class StorageAsyncJobGet(OutputSchema):
     job_id: AsyncJobId
     links: AsyncJobLinks
