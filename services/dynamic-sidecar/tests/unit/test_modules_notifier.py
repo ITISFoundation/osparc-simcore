@@ -217,7 +217,7 @@ async def test_notifier_publish_disk_usage(
                 jsonable_encoder(ServiceDiskUsage(node_id=node_id, usage=usage))
             )
 
-    await _assert_call_count(server_disconnect, call_count=_NUMBER_OF_CLIENTS)
+    await _assert_call_count(server_disconnect, call_count=_NUMBER_OF_CLIENTS * 2)
 
 
 @pytest.fixture
@@ -311,7 +311,7 @@ async def test_notifier_send_input_port_status(
                 )
             )
 
-    await _assert_call_count(server_disconnect, call_count=_NUMBER_OF_CLIENTS)
+    await _assert_call_count(server_disconnect, call_count=_NUMBER_OF_CLIENTS * 2)
 
 
 def _get_on_output_port_spy(
@@ -400,4 +400,4 @@ async def test_notifier_send_output_port_status(
                 )
             )
 
-    await _assert_call_count(server_disconnect, call_count=_NUMBER_OF_CLIENTS)
+    await _assert_call_count(server_disconnect, call_count=_NUMBER_OF_CLIENTS * 2)
