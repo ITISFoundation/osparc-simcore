@@ -18,7 +18,7 @@ from models_library.groups import (
     StandardGroupUpdate,
 )
 from models_library.users import UserID
-from simcore_postgres_database.errors import UniqueViolation
+from simcore_postgres_database.aiopg_errors import UniqueViolation
 from simcore_postgres_database.models.users import users
 from simcore_postgres_database.utils_products import get_or_create_product_group
 from simcore_postgres_database.utils_repos import (

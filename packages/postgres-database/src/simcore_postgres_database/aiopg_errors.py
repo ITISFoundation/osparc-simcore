@@ -1,5 +1,8 @@
 """aiopg errors
 
+WARNING: these errors are not raised by asyncpg. Therefore all code using new sqlalchemy.ext.asyncio
+         MUST use instead import sqlalchemy.exc exceptions!!!!
+
 StandardError
 |__ Warning
 |__ Error
