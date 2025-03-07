@@ -456,9 +456,14 @@ def _open_with_resources(page: Page, *, click_it: bool):
 def _select_service_version(page: Page, *, version: str) -> None:
     try:
         # since https://github.com/ITISFoundation/osparc-simcore/pull/7060
-        page.get_by_test_id("serviceSelectBox").select_option(
-            f"serviceVersionItem_{version}"
-        )
+        with log_context(logging.INFO, msg=f"selecting version {version}"):
+            page.get_by_test_id("serviceSelectBox").click(timeout=5 * SECOND)
+            with page.expect_response(
+                re.compile(r"/catalog/services/.+/resources"), timeout=1.5 * 5 * SECOND
+            ):
+                page.get_by_test_id(f"serviceVersionItem_{version}").click(
+                    timeout=5 * SECOND
+                )
     except TimeoutError:
         # we try the non robust way
         page.get_by_label("Version").select_option(version)
@@ -480,8 +485,7 @@ def create_new_project_and_delete(
     created_project_uuids = []
 
     def _(
-        expected_states: tuple[RunningState] = (RunningState.NOT_STARTED,),
-        *,
+        expected_states: tuple[RunningState],
         press_open: bool,
         template_id: str | None,
         service_version: str | None,
@@ -509,8 +513,6 @@ def create_new_project_and_delete(
             ):
                 open_with_resources_clicked = False
                 # Project detail view pop-ups shows
-                if service_version is not None:
-                    _select_service_version(page, version=service_version)
                 if press_open:
                     open_button = page.get_by_test_id("openResource")
                     if template_id is not None:
@@ -559,6 +561,8 @@ def create_new_project_and_delete(
                                 # not expected in the sim4life context though
                                 ...
                     else:
+                        if service_version is not None:
+                            _select_service_version(page, version=service_version)
                         open_button.click()
                         if is_product_billable:
                             _open_with_resources(page, click_it=True)

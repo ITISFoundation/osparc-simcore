@@ -161,6 +161,12 @@ $(SLEEPERS_INPUT_FILE) $(JUPYTER_LAB_INPUT_FILE) $(CLASSIC_TIP_INPUT_FILE) $(S4L
 	if [ "$@" = "$(JUPYTER_LAB_INPUT_FILE)" ]; then \
 		read -p "Enter the size of the large file (human readable form e.g. 3Gib): " LARGE_FILE_SIZE; \
 		echo "--service-key=jupyter-math --large-file-size=$$LARGE_FILE_SIZE" >> $@; \
+		read -p "Enter the service version (default to latest): " SERVICE_VERSION; \
+			if [ -z "$$SERVICE_VERSION" ]; then \
+				echo "No service version specified, using default."; \
+			else \
+				echo "--service-version=$$SERVICE_VERSION" >> $@; \
+			fi; \
 	elif [ "$@" = "$(S4L_INPUT_FILE)" ]; then \
 		read -p "Do you want to check the videostreaming ? (requires to run with chrome/msedge) [y/n]: " VIDEOSTREAM; \
 		if [ "$$VIDEOSTREAM" = "y" ]; then \
