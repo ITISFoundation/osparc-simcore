@@ -7780,6 +7780,23 @@ components:
       - app_name
       - version
       title: AppStatusCheck
+    AsyncJobLinks:
+      properties:
+        statusHref:
+          type: string
+          title: Statushref
+        abortHref:
+          type: string
+          title: Aborthref
+        resultHref:
+          type: string
+          title: Resulthref
+      type: object
+      required:
+      - statusHref
+      - abortHref
+      - resultHref
+      title: AsyncJobLinks
     Author:
       properties:
         name:
@@ -14873,9 +14890,12 @@ components:
           type: string
           format: uuid
           title: Jobid
+        links:
+          $ref: '#/components/schemas/AsyncJobLinks'
       type: object
       required:
       - jobId
+      - links
       title: StorageAsyncJobGet
     StorageAsyncJobResult:
       properties:
@@ -14905,11 +14925,26 @@ components:
         done:
           type: boolean
           title: Done
+        started:
+          type: string
+          format: date-time
+          title: Started
+        stopped:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Stopped
+        links:
+          $ref: '#/components/schemas/AsyncJobLinks'
       type: object
       required:
       - jobId
       - progress
       - done
+      - started
+      - stopped
+      - links
       title: StorageAsyncJobStatus
     Structure:
       properties:

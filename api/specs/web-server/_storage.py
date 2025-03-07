@@ -5,9 +5,9 @@
 
 
 from typing import Annotated, TypeAlias
-from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, status
+from models_library.api_schemas_rpc_async_jobs.async_jobs import AsyncJobId
 from models_library.api_schemas_storage.storage_schemas import (
     FileLocation,
     FileMetaDataGet,
@@ -210,7 +210,7 @@ async def export_data(data_export: DataExportPost, location_id: LocationID):
     response_model=Envelope[StorageAsyncJobStatus],
     name="get_async_job_status",
 )
-async def get_async_job_status(job_id: UUID):
+async def get_async_job_status(job_id: AsyncJobId):
     """Get async job status"""
 
 
@@ -218,7 +218,7 @@ async def get_async_job_status(job_id: UUID):
     "/storage/async-jobs/{job_id}:abort",
     name="abort_async_job",
 )
-async def abort_async_job(job_id: UUID):
+async def abort_async_job(job_id: AsyncJobId):
     """aborts execution of an async job"""
 
 
@@ -227,7 +227,7 @@ async def abort_async_job(job_id: UUID):
     response_model=Envelope[StorageAsyncJobResult],
     name="get_async_job_result",
 )
-async def get_async_job_result(job_id: UUID):
+async def get_async_job_result(job_id: AsyncJobId):
     """Get the result of the async job"""
 
 

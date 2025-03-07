@@ -64,6 +64,10 @@ class AsyncJobLinks(OutputSchema):
         )
 
 
+class StorageAsyncJobId(InputSchema):
+    job_id: AsyncJobId
+
+
 class StorageAsyncJobGet(OutputSchema):
     job_id: AsyncJobId
     links: AsyncJobLinks
@@ -72,10 +76,11 @@ class StorageAsyncJobGet(OutputSchema):
     def from_rpc_schema(
         cls, *, app: web.Application, async_job_rpc_get: AsyncJobGet
     ) -> "StorageAsyncJobGet":
-        job_id = f"{async_job_rpc_get.job_id}"
         return StorageAsyncJobGet(
             job_id=async_job_rpc_get.job_id,
-            links=AsyncJobLinks.from_job_id(app=app, job_id=job_id),
+            links=AsyncJobLinks.from_job_id(
+                app=app, job_id=f"{async_job_rpc_get.job_id}"
+            ),
         )
 
 
