@@ -472,7 +472,7 @@ def create_new_project_and_delete(
     api_request_context: APIRequestContext,
     product_url: AnyUrl,
     service_version: str | None,
-) -> Iterator[Callable[[tuple[RunningState], bool], dict[str, Any]]]:
+) -> Iterator[Callable[[tuple[RunningState], bool, str | None], dict[str, Any]]]:
     """The first available service currently displayed in the dashboard will be opened
     NOTE: cannot be used multiple times or going back to dashboard will fail!!
     """
@@ -484,9 +484,9 @@ def create_new_project_and_delete(
         press_open: bool = True,
         template_id: str | None = None,
     ) -> dict[str, Any]:
-        assert len(created_project_uuids) == 0, (
-            "misuse of this fixture! only 1 study can be opened at a time. Otherwise please modify the fixture"
-        )
+        assert (
+            len(created_project_uuids) == 0
+        ), "misuse of this fixture! only 1 study can be opened at a time. Otherwise please modify the fixture"
         with log_context(
             logging.INFO,
             f"Open project in {product_url=} as {is_product_billable=}",
@@ -603,9 +603,9 @@ def create_new_project_and_delete(
             response = api_request_context.delete(
                 f"{product_url}v0/projects/{project_uuid}"
             )
-            assert response.status == 204, (
-                f"Unexpected error while deleting project: '{response.json()}'"
-            )
+            assert (
+                response.status == 204
+            ), f"Unexpected error while deleting project: '{response.json()}'"
 
 
 # SEE https://github.com/ITISFoundation/osparc-simcore/pull/5618#discussion_r1553943415
@@ -646,9 +646,12 @@ def find_and_click_template_in_dashboard(
 @pytest.fixture
 def find_and_start_service_in_dashboard(
     page: Page,
-) -> Callable[[ServiceType, str, str | None], None]:
+) -> Callable[[ServiceType, str, str | None, str | None], None]:
     def _(
-        service_type: ServiceType, service_name: str, service_key_prefix: str | None
+        service_type: ServiceType,
+        service_name: str,
+        service_key_prefix: str | None,
+        service_version: str | None,
     ) -> None:
         with log_context(logging.INFO, f"Finding {service_name=} in dashboard"):
             page.get_by_test_id("servicesTabBtn").click()
@@ -674,7 +677,7 @@ def create_project_from_new_button(
     def _(plus_button_test_id: str) -> dict[str, Any]:
         start_study_from_plus_button(plus_button_test_id)
         expected_states = (RunningState.UNKNOWN,)
-        return create_new_project_and_delete(expected_states, press_open=False)
+        return create_new_project_and_delete(expected_states, False)
 
     return _
 
@@ -683,32 +686,35 @@ def create_project_from_new_button(
 def create_project_from_template_dashboard(
     find_and_click_template_in_dashboard: Callable[[str], None],
     create_new_project_and_delete: Callable[[tuple[RunningState]], dict[str, Any]],
-) -> Callable[[ServiceType, str, str | None], dict[str, Any]]:
+) -> Callable[[str], dict[str, Any]]:
     def _(template_id: str) -> dict[str, Any]:
         find_and_click_template_in_dashboard(template_id)
         expected_states = (RunningState.UNKNOWN,)
-        return create_new_project_and_delete(
-            expected_states, press_open=True, template_id=template_id
-        )
+        return create_new_project_and_delete(expected_states, True, template_id)
 
     return _
 
 
 @pytest.fixture
 def create_project_from_service_dashboard(
-    find_and_start_service_in_dashboard: Callable[[ServiceType, str, str | None], None],
+    find_and_start_service_in_dashboard: Callable[
+        [ServiceType, str, str | None, str | None], None
+    ],
     create_new_project_and_delete: Callable[[tuple[RunningState]], dict[str, Any]],
-) -> Callable[[ServiceType, str, str | None], dict[str, Any]]:
+) -> Callable[[ServiceType, str, str | None, str | None], dict[str, Any]]:
     def _(
-        service_type: ServiceType, service_name: str, service_key_prefix: str | None
+        service_type: ServiceType,
+        service_name: str,
+        service_key_prefix: str | None,
+        service_version: str | None,
     ) -> dict[str, Any]:
         find_and_start_service_in_dashboard(
-            service_type, service_name, service_key_prefix
+            service_type, service_name, service_key_prefix, service_version
         )
         expected_states = (RunningState.UNKNOWN,)
         if service_type is ServiceType.COMPUTATIONAL:
             expected_states = (RunningState.NOT_STARTED,)
-        return create_new_project_and_delete(expected_states, press_open=True)
+        return create_new_project_and_delete(expected_states, True)
 
     return _
 

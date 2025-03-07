@@ -23,7 +23,7 @@ from pytest_simcore.helpers.playwright_sim4life import (
 def test_sim4life(
     page: Page,
     create_project_from_service_dashboard: Callable[
-        [ServiceType, str, str | None], dict[str, Any]
+        [ServiceType, str, str | None, str | None], dict[str, Any]
     ],
     create_project_from_new_button: Callable[[str], dict[str, Any]],
     log_in_and_out: RestartableWebSocket,
@@ -39,7 +39,7 @@ def test_sim4life(
         project_data = create_project_from_new_button(service_key)
     else:
         project_data = create_project_from_service_dashboard(
-            ServiceType.DYNAMIC, service_key, None
+            ServiceType.DYNAMIC, service_key, None, service_version
         )
 
     assert "workbench" in project_data, "Expected workbench to be in project data!"
