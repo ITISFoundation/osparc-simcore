@@ -8,6 +8,7 @@ from contextlib import suppress
 from typing import Final
 from unittest.mock import AsyncMock
 
+import nicegui
 import pytest
 from fastapi import FastAPI, status
 from httpx import AsyncClient
@@ -69,6 +70,9 @@ def server_host_port() -> str:
 
 @pytest.fixture
 def not_initialized_app(app_environment: EnvVarsDict) -> FastAPI:
+    # forces rebuild of middleware stack on next test
+    nicegui.app.user_middleware.clear()
+    nicegui.app.middleware_stack = None
     return create_app()
 
 
