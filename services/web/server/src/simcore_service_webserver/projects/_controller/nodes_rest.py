@@ -56,29 +56,24 @@ from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler.errors import (
 from servicelib.services_utils import get_status_as_dict
 from simcore_postgres_database.models.users import UserRole
 
+from ..._meta import API_VTAG as VTAG
+from ...catalog import catalog_service
 from ...dynamic_scheduler import api as dynamic_scheduler_service
-from .. import _projects_service
-from .._access_rights_service import has_user_project_access_rights
-from .._meta import API_VTAG as VTAG
-from ..catalog import catalog_service
-from ..groups.api import get_group_from_gid, list_all_user_groups_ids
-from ..groups.exceptions import GroupNotFoundError
-from ..login.decorators import login_required
-from ..security.decorators import permission_required
-from ..users.api import get_user_id_from_gid, get_user_role
-from ..utils_aiohttp import envelope_json_response
-from . import _access_rights_api as access_rights_service
-from . import _nodes_api as _nodes_service
-from ._common.exceptions_handlers import handle_plugin_requests_exceptions
-from ._common.models import ProjectPathParams, RequestContext
-from ._nodes_api import NodeScreenshot, get_node_screenshots
-from ._rest_exceptions import handle_plugin_requests_exceptions
-from ._rest_schemas import ProjectPathParams, RequestContext
-from .exceptions import (
+from ...groups.api import get_group_from_gid, list_all_user_groups_ids
+from ...groups.exceptions import GroupNotFoundError
+from ...login.decorators import login_required
+from ...security.decorators import permission_required
+from ...users.api import get_user_id_from_gid, get_user_role
+from ...utils_aiohttp import envelope_json_response
+from .. import _access_rights_service, _nodes_service, _projects_service
+from .._nodes_service import NodeScreenshot
+from ..exceptions import (
     NodeNotFoundError,
     ProjectNodeResourcesInsufficientRightsError,
     ProjectNodeResourcesInvalidError,
 )
+from ._rest_exceptions import handle_plugin_requests_exceptions
+from ._rest_schemas import ProjectPathParams, RequestContext
 
 _logger = logging.getLogger(__name__)
 
@@ -324,7 +319,7 @@ async def stop_node(request: web.Request) -> web.Response:
     req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(NodePathParams, request)
 
-    save_state = await has_user_project_access_rights(
+    save_state = await _access_rights_service.has_user_project_access_rights(
         request.app,
         project_id=path_params.project_id,
         user_id=req_ctx.user_id,
@@ -483,7 +478,7 @@ async def get_project_services(request: web.Request) -> web.Response:
     req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
-    await access_rights_service.check_user_project_permission(
+    await _access_rights_service.check_user_project_permission(
         request.app,
         product_name=req_ctx.product_name,
         user_id=req_ctx.user_id,
@@ -654,7 +649,7 @@ async def list_project_nodes_previews(request: web.Request) -> web.Response:
     project = Project.model_validate(project_data)
 
     for node_id, node in project.workbench.items():
-        screenshots = await get_node_screenshots(
+        screenshots = await _nodes_service.get_node_screenshots(
             app=request.app,
             user_id=req_ctx.user_id,
             project_id=path_params.project_id,
