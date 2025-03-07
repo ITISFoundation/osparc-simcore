@@ -14931,11 +14931,14 @@ components:
         done:
           type: boolean
           title: Done
+        links:
+          $ref: '#/components/schemas/AsyncJobLinks'
       type: object
       required:
       - jobId
       - progress
       - done
+      - links
       title: StorageAsyncJobStatus
     Structure:
       properties:
