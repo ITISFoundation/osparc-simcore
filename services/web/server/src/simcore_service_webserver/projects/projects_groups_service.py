@@ -1,4 +1,4 @@
-from ._groups_service import (
+from ._access_rights_service import (
     create_project_group_without_checking_permissions,
     delete_project_group_without_checking_permissions,
 )

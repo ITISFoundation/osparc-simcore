@@ -29,7 +29,7 @@ from servicelib.logging_utils import get_log_record_extra
 from servicelib.utils import logged_gather
 
 from ..application_settings import get_application_settings
-from ..storage.api import get_download_link, get_files_in_node_folder
+from ..storage import api as storage_service
 from . import _access_rights_service, _nodes_repository
 from ._projects_repository_legacy import APP_PROJECT_DBAPI, ProjectDBAPI
 from .exceptions import ProjectStartsTooManyDynamicNodesError
@@ -183,7 +183,7 @@ def _get_files_with_thumbnails(
 async def __get_link(
     app: web.Application, user_id: UserID, file_meta_data: FileMetaDataGet
 ) -> tuple[str, HttpUrl]:
-    return __get_search_key(file_meta_data), await get_download_link(
+    return __get_search_key(file_meta_data), await storage_service.get_download_link(
         app,
         user_id,
         SimCoreFileLink.model_validate({"store": "0", "path": file_meta_data.file_id}),
@@ -243,7 +243,7 @@ async def get_node_screenshots(
 
             filelink = SimCoreFileLink.model_validate(node.outputs[KeyIDStr("outFile")])
 
-            file_url = await get_download_link(app, user_id, filelink)
+            file_url = await storage_service.get_download_link(app, user_id, filelink)
             screenshots.append(
                 NodeScreenshot(
                     thumbnail_url=f"https://placehold.co/170x120?text={text}",  # type: ignore[arg-type]
@@ -261,12 +261,14 @@ async def get_node_screenshots(
         # when dealing with dynamic service scan the assets directory and
         # pull in all the assets that have been dropped in there
 
-        assets_files: list[FileMetaDataGet] = await get_files_in_node_folder(
-            app=app,
-            user_id=user_id,
-            project_id=project_id,
-            node_id=node_id,
-            folder_name=ASSETS_FOLDER,
+        assets_files: list[FileMetaDataGet] = (
+            await storage_service.get_files_in_node_folder(
+                app=app,
+                user_id=user_id,
+                project_id=project_id,
+                node_id=node_id,
+                folder_name=ASSETS_FOLDER,
+            )
         )
 
         resolved_screenshots: list[NodeScreenshot] = await _get_node_screenshots(

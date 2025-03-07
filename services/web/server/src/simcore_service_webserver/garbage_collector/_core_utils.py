@@ -8,15 +8,12 @@ from models_library.users import UserID
 from simcore_postgres_database.errors import DatabaseError
 
 from ..groups.api import get_group_from_gid
+from ..projects import projects_groups_service
 from ..projects._projects_repository_legacy import (
     APP_PROJECT_DBAPI,
     ProjectAccessRights,
 )
 from ..projects.exceptions import ProjectNotFoundError
-from ..projects.projects_groups_service import (
-    create_project_group_without_checking_permissions,
-    delete_project_group_without_checking_permissions,
-)
 from ..users.api import get_user, get_user_id_from_gid, get_users_in_group
 from ..users.exceptions import UserNotFoundError
 
@@ -164,7 +161,7 @@ async def replace_current_owner(
     # syncing back project data
     try:
         # Remove previous owner access rights
-        await delete_project_group_without_checking_permissions(
+        await projects_groups_service.delete_project_group_without_checking_permissions(
             app, project_id=ProjectID(project_uuid), group_id=user_primary_gid
         )
         # Update project owner in projects table
@@ -174,7 +171,7 @@ async def replace_current_owner(
             project_uuid=project_uuid,
         )
         # Add new owner access rights
-        await create_project_group_without_checking_permissions(
+        await projects_groups_service.create_project_group_without_checking_permissions(
             app,
             project_id=ProjectID(project_uuid),
             group_id=new_project_owner_gid,

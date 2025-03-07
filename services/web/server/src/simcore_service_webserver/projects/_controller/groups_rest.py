@@ -16,17 +16,13 @@ from ..._meta import api_version_prefix as VTAG
 from ...login.decorators import login_required
 from ...security.decorators import permission_required
 from ...utils_aiohttp import envelope_json_response
-from .. import _groups_service
-from .._groups_service import ProjectGroupGet
+from .. import _access_rights_service
+from .._access_rights_service import ProjectGroupGet
 from ._rest_exceptions import handle_plugin_requests_exceptions
 from ._rest_schemas import ProjectPathParams, RequestContext
 
 _logger = logging.getLogger(__name__)
 
-
-#
-# projects groups COLLECTION -------------------------
-#
 
 routes = web.RouteTableDef()
 
@@ -55,7 +51,7 @@ async def create_project_group(request: web.Request):
     path_params = parse_request_path_parameters_as(_ProjectsGroupsPathParams, request)
     body_params = await parse_request_body_as(_ProjectsGroupsBodyParams, request)
 
-    project_groups: ProjectGroupGet = await _groups_service.create_project_group(
+    project_groups: ProjectGroupGet = await _access_rights_service.create_project_group(
         request.app,
         user_id=req_ctx.user_id,
         project_id=path_params.project_id,
@@ -78,7 +74,7 @@ async def list_project_groups(request: web.Request):
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
     project_groups: list[ProjectGroupGet] = (
-        await _groups_service.list_project_groups_by_user_and_project(
+        await _access_rights_service.list_project_groups_by_user_and_project(
             request.app,
             user_id=req_ctx.user_id,
             project_id=path_params.project_id,
@@ -86,7 +82,7 @@ async def list_project_groups(request: web.Request):
         )
     )
 
-    return envelope_json_response(project_groups, web.HTTPOk)
+    return envelope_json_response(project_groups)
 
 
 @routes.put(
@@ -101,7 +97,7 @@ async def replace_project_group(request: web.Request):
     path_params = parse_request_path_parameters_as(_ProjectsGroupsPathParams, request)
     body_params = await parse_request_body_as(_ProjectsGroupsBodyParams, request)
 
-    return await _groups_service.replace_project_group(
+    new_project_group = await _access_rights_service.replace_project_group(
         app=request.app,
         user_id=req_ctx.user_id,
         project_id=path_params.project_id,
@@ -111,6 +107,7 @@ async def replace_project_group(request: web.Request):
         delete=body_params.delete,
         product_name=req_ctx.product_name,
     )
+    return envelope_json_response(new_project_group)
 
 
 @routes.delete(
@@ -124,7 +121,7 @@ async def delete_project_group(request: web.Request):
     req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(_ProjectsGroupsPathParams, request)
 
-    await _groups_service.delete_project_group(
+    await _access_rights_service.delete_project_group(
         app=request.app,
         user_id=req_ctx.user_id,
         project_id=path_params.project_id,

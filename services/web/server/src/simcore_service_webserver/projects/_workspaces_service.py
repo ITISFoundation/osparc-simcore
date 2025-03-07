@@ -10,8 +10,8 @@ from simcore_postgres_database.utils_repos import transaction_context
 from ..db.plugin import get_asyncpg_engine
 from ..users.api import get_user
 from ..workspaces.api import check_user_workspace_access
+from . import _access_rights_repository as project_groups_db
 from . import _folders_repository as project_to_folders_db
-from . import _groups_repository as project_groups_db
 from . import _projects_repository
 from ._access_rights_service import get_user_project_access_rights
 from .exceptions import ProjectInvalidRightsError
