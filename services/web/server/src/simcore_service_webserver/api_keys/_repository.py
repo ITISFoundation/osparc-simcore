@@ -7,13 +7,16 @@ from asyncpg.exceptions import UniqueViolationError
 from models_library.products import ProductName
 from models_library.users import UserID
 from simcore_postgres_database.models.api_keys import api_keys
-from simcore_postgres_database.utils_repos import transaction_context
+from simcore_postgres_database.utils_repos import (
+    pass_or_acquire_connection,
+    transaction_context,
+)
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncConnection
 
 from ..db.plugin import get_asyncpg_engine
-from ._models import ApiKey
 from .errors import ApiKeyDuplicatedDisplayNameError
+from .models import ApiKey
 
 _logger = logging.getLogger(__name__)
 
@@ -45,7 +48,7 @@ async def create_api_key(
             )
 
             result = await conn.stream(stmt)
-            row = await result.first()
+            row = await result.one()
 
             return ApiKey(
                 id=f"{row.id}",  # NOTE See: https://github.com/ITISFoundation/osparc-simcore/issues/6919
@@ -111,7 +114,7 @@ async def list_api_keys(
     user_id: UserID,
     product_name: ProductName,
 ) -> list[ApiKey]:
-    async with transaction_context(get_asyncpg_engine(app), connection) as conn:
+    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         stmt = sa.select(api_keys.c.id, api_keys.c.display_name).where(
             (api_keys.c.user_id == user_id) & (api_keys.c.product_name == product_name)
         )
@@ -136,7 +139,7 @@ async def get_api_key(
     user_id: UserID,
     product_name: ProductName,
 ) -> ApiKey | None:
-    async with transaction_context(get_asyncpg_engine(app), connection) as conn:
+    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         stmt = sa.select(api_keys).where(
             (
                 api_keys.c.id == int(api_key_id)
@@ -145,8 +148,8 @@ async def get_api_key(
             & (api_keys.c.product_name == product_name)
         )
 
-        result = await conn.stream(stmt)
-        row = await result.first()
+        result = await conn.execute(stmt)
+        row = result.one_or_none()
 
         return (
             ApiKey(
@@ -180,7 +183,7 @@ async def delete_api_key(
         await conn.execute(stmt)
 
 
-async def prune_expired(
+async def delete_expired_api_keys(
     app: web.Application, connection: AsyncConnection | None = None
 ) -> list[str]:
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
@@ -192,6 +195,6 @@ async def prune_expired(
             )
             .returning(api_keys.c.display_name)
         )
-        result = await conn.stream(stmt)
-        rows = [row async for row in result]
+        result = await conn.execute(stmt)
+        rows = result.fetchall()
         return [r.display_name for r in rows]

@@ -1,23 +1,33 @@
 import logging
-from collections.abc import AsyncIterator
 from decimal import Decimal
-from typing import Any, NamedTuple
+from typing import Any
 
 import sqlalchemy as sa
-from aiopg.sa.connection import SAConnection
-from aiopg.sa.result import ResultProxy, RowProxy
-from models_library.products import ProductName, ProductStripeInfoGet
+from models_library.groups import GroupID
+from models_library.products import ProductName
 from simcore_postgres_database.constants import QUANTIZE_EXP_ARG
 from simcore_postgres_database.models.jinja2_templates import jinja2_templates
+from simcore_postgres_database.models.products import products
+from simcore_postgres_database.utils_products import (
+    get_default_product_name,
+    get_or_create_product_group,
+)
 from simcore_postgres_database.utils_products_prices import (
     ProductPriceInfo,
     get_product_latest_price_info_or_none,
-    get_product_latest_stripe_info,
+    get_product_latest_stripe_info_or_none,
 )
+from simcore_postgres_database.utils_repos import (
+    pass_or_acquire_connection,
+    transaction_context,
+)
+from simcore_service_webserver.constants import FRONTEND_APPS_AVAILABLE
+from sqlalchemy.engine import Row
+from sqlalchemy.ext.asyncio import AsyncConnection
 
+from ..constants import FRONTEND_APPS_AVAILABLE
 from ..db.base_repository import BaseRepository
-from ..db.models import products
-from .models import Product
+from ._models import PaymentFields, Product, ProductStripeInfo
 
 _logger = logging.getLogger(__name__)
 
@@ -45,30 +55,36 @@ _PRODUCTS_COLUMNS = [
     products.c.group_id,
 ]
 
-
-class PaymentFieldsTuple(NamedTuple):
-    enabled: bool
-    credits_per_usd: Decimal | None
-    min_payment_amount_usd: Decimal | None
+assert {column.name for column in _PRODUCTS_COLUMNS}.issubset(  # nosec
+    set(Product.model_fields)
+)
 
 
-async def get_product_payment_fields(
-    conn: SAConnection, product_name: ProductName
-) -> PaymentFieldsTuple:
+def _to_domain(products_row: Row, payments: PaymentFields) -> Product:
+    return Product(
+        **products_row._asdict(),
+        is_payment_enabled=payments.enabled,
+        credits_per_usd=payments.credits_per_usd,
+    )
+
+
+async def _get_product_payment_fields(
+    conn: AsyncConnection, product_name: ProductName
+) -> PaymentFields:
     price_info = await get_product_latest_price_info_or_none(
         conn, product_name=product_name
     )
     if price_info is None or price_info.usd_per_credit == 0:
-        return PaymentFieldsTuple(
+        return PaymentFields(
             enabled=False,
             credits_per_usd=None,
             min_payment_amount_usd=None,
         )
 
-    assert price_info.usd_per_credit > 0
-    assert price_info.min_payment_amount_usd > 0
+    assert price_info.usd_per_credit > 0  # nosec
+    assert price_info.min_payment_amount_usd > 0  # nosec
 
-    return PaymentFieldsTuple(
+    return PaymentFields(
         enabled=True,
         credits_per_usd=Decimal(1 / price_info.usd_per_credit).quantize(
             QUANTIZE_EXP_ARG
@@ -77,93 +93,141 @@ async def get_product_payment_fields(
     )
 
 
-async def iter_products(conn: SAConnection) -> AsyncIterator[ResultProxy]:
-    """Iterates on products sorted by priority i.e. the first is considered the default"""
-    async for row in conn.execute(
-        sa.select(*_PRODUCTS_COLUMNS).order_by(products.c.priority)
-    ):
-        assert row  # nosec
-        yield row
-
-
 class ProductRepository(BaseRepository):
-    async def list_products_names(self) -> list[ProductName]:
-        async with self.engine.acquire() as conn:
-            query = sa.select(products.c.name).order_by(products.c.priority)
-            result = await conn.execute(query)
-            rows = await result.fetchall()
-            return [ProductName(row.name) for row in rows]
 
-    async def get_product(self, product_name: str) -> Product | None:
-        async with self.engine.acquire() as conn:
-            result: ResultProxy = await conn.execute(
-                sa.select(*_PRODUCTS_COLUMNS).where(products.c.name == product_name)
-            )
-            row: RowProxy | None = await result.first()
-            if row:
-                # NOTE: MD Observation: Currently we are not defensive, we assume automatically
-                # that the product is not billable when there is no product in the products_prices table
-                # or it's price is 0. We should change it and always assume that the product is billable, unless
-                # explicitely stated that it is free
-                payments = await get_product_payment_fields(conn, product_name=row.name)
-                return Product(
-                    **dict(row.items()),
-                    is_payment_enabled=payments.enabled,
-                    credits_per_usd=payments.credits_per_usd,
+    async def list_products(
+        self,
+        connection: AsyncConnection | None = None,
+    ) -> list[Product]:
+        """
+        Raises:
+            ValidationError:if products are not setup correctly in the database
+        """
+        app_products: list[Product] = []
+
+        query = sa.select(*_PRODUCTS_COLUMNS).order_by(products.c.priority)
+
+        async with pass_or_acquire_connection(self.engine, connection) as conn:
+            rows = await conn.stream(query)
+            async for row in rows:
+                name = row.name
+                payments = await _get_product_payment_fields(conn, product_name=name)
+                app_products.append(_to_domain(row, payments))
+
+                assert name in FRONTEND_APPS_AVAILABLE  # nosec
+
+        return app_products
+
+    async def list_products_names(
+        self,
+        connection: AsyncConnection | None = None,
+    ) -> list[ProductName]:
+        query = sa.select(products.c.name).order_by(products.c.priority)
+
+        async with pass_or_acquire_connection(self.engine, connection) as conn:
+            rows = await conn.stream(query)
+            return [ProductName(row.name) async for row in rows]
+
+    async def get_product(
+        self, product_name: str, connection: AsyncConnection | None = None
+    ) -> Product | None:
+        query = sa.select(*_PRODUCTS_COLUMNS).where(products.c.name == product_name)
+
+        async with pass_or_acquire_connection(self.engine, connection) as conn:
+            result = await conn.execute(query)
+            if row := result.one_or_none():
+                payments = await _get_product_payment_fields(
+                    conn, product_name=row.name
                 )
+                return _to_domain(row, payments)
             return None
 
+    async def get_default_product_name(
+        self, connection: AsyncConnection | None = None
+    ) -> ProductName:
+        async with pass_or_acquire_connection(self.engine, connection) as conn:
+            return await get_default_product_name(conn)
+
     async def get_product_latest_price_info_or_none(
-        self, product_name: str
+        self, product_name: str, connection: AsyncConnection | None = None
     ) -> ProductPriceInfo | None:
-        """newest price of a product or None if not billable"""
-        async with self.engine.acquire() as conn:
+        async with pass_or_acquire_connection(self.engine, connection) as conn:
             return await get_product_latest_price_info_or_none(
                 conn, product_name=product_name
             )
 
-    async def get_product_stripe_info(self, product_name: str) -> ProductStripeInfoGet:
-        async with self.engine.acquire() as conn:
-            row = await get_product_latest_stripe_info(conn, product_name=product_name)
-            return ProductStripeInfoGet(
-                stripe_price_id=row[0], stripe_tax_rate_id=row[1]
+    async def get_product_stripe_info_or_none(
+        self, product_name: str, connection: AsyncConnection | None = None
+    ) -> ProductStripeInfo | None:
+        async with pass_or_acquire_connection(self.engine, connection) as conn:
+            latest_stripe_info = await get_product_latest_stripe_info_or_none(
+                conn, product_name=product_name
+            )
+            if latest_stripe_info is None:
+                return None
+
+            stripe_price_id, stripe_tax_rate_id = latest_stripe_info
+            return ProductStripeInfo(
+                stripe_price_id=stripe_price_id, stripe_tax_rate_id=stripe_tax_rate_id
             )
 
     async def get_template_content(
-        self,
-        template_name: str,
+        self, template_name: str, connection: AsyncConnection | None = None
     ) -> str | None:
-        async with self.engine.acquire() as conn:
-            template_content: str | None = await conn.scalar(
-                sa.select(jinja2_templates.c.content).where(
-                    jinja2_templates.c.name == template_name
-                )
-            )
+        query = sa.select(jinja2_templates.c.content).where(
+            jinja2_templates.c.name == template_name
+        )
+
+        async with pass_or_acquire_connection(self.engine, connection) as conn:
+            template_content: str | None = await conn.scalar(query)
             return template_content
 
     async def get_product_template_content(
         self,
         product_name: str,
         product_template: sa.Column = products.c.registration_email_template,
+        connection: AsyncConnection | None = None,
     ) -> str | None:
-        async with self.engine.acquire() as conn:
-            oj = sa.join(
-                products,
-                jinja2_templates,
-                product_template == jinja2_templates.c.name,
-                isouter=True,
+        query = (
+            sa.select(jinja2_templates.c.content)
+            .select_from(
+                sa.join(
+                    products,
+                    jinja2_templates,
+                    product_template == jinja2_templates.c.name,
+                    isouter=True,
+                )
             )
-            content = await conn.scalar(
-                sa.select(jinja2_templates.c.content)
-                .select_from(oj)
-                .where(products.c.name == product_name)
-            )
-            return f"{content}" if content else None
+            .where(products.c.name == product_name)
+        )
 
-    async def get_product_ui(self, product_name: ProductName) -> dict[str, Any] | None:
-        async with self.engine.acquire() as conn:
-            result = await conn.execute(
-                sa.select(products.c.ui).where(products.c.name == product_name)
-            )
-            row: RowProxy | None = await result.first()
+        async with pass_or_acquire_connection(self.engine, connection) as conn:
+            template_content: str | None = await conn.scalar(query)
+            return template_content
+
+    async def get_product_ui(
+        self, product_name: ProductName, connection: AsyncConnection | None = None
+    ) -> dict[str, Any] | None:
+        query = sa.select(products.c.ui).where(products.c.name == product_name)
+
+        async with pass_or_acquire_connection(self.engine, connection) as conn:
+            result = await conn.execute(query)
+            row = result.one_or_none()
             return dict(**row.ui) if row else None
+
+    async def auto_create_products_groups(
+        self,
+        connection: AsyncConnection | None = None,
+    ) -> dict[ProductName, GroupID]:
+        product_groups_map: dict[ProductName, GroupID] = {}
+
+        product_names = await self.list_products_names(connection)
+        for product_name in product_names:
+            # NOTE: transaction is per product. fail-fast!
+            async with transaction_context(self.engine, connection) as conn:
+                product_group_id: GroupID = await get_or_create_product_group(
+                    conn, product_name
+                )
+                product_groups_map[product_name] = product_group_id
+
+        return product_groups_map

@@ -11,7 +11,7 @@ from typing import Final
 import pytest
 from aiohttp.test_utils import TestClient
 from faker import Faker
-from models_library.api_schemas_webserver.product import (
+from models_library.api_schemas_webserver.products import (
     InvitationGenerate,
     InvitationGenerated,
 )

@@ -12,7 +12,6 @@ from models_library.api_schemas_webserver.wallets import (
     ReplaceWalletAutoRecharge,
     WalletPaymentInitiated,
 )
-from models_library.products import CreditResultGet
 from models_library.rest_pagination import Page, PageQueryParameters
 from models_library.rest_pagination_utils import paginate_data
 from servicelib.aiohttp import status
@@ -24,6 +23,7 @@ from servicelib.aiohttp.requests_validation import (
 )
 from servicelib.logging_utils import get_log_record_extra, log_context
 from servicelib.utils import fire_and_forget_task
+from simcore_service_webserver.products._models import CreditResult
 
 from .._meta import API_VTAG as VTAG
 from ..login.decorators import login_required
@@ -79,7 +79,7 @@ async def _create_payment(request: web.Request):
         log_duration=True,
         extra=get_log_record_extra(user_id=req_ctx.user_id),
     ):
-        credit_result: CreditResultGet = await products_service.get_credit_amount(
+        credit_result: CreditResult = await products_service.get_credit_amount(
             request.app,
             dollar_amount=body_params.price_dollars,
             product_name=req_ctx.product_name,
@@ -351,7 +351,7 @@ async def _pay_with_payment_method(request: web.Request):
         log_duration=True,
         extra=get_log_record_extra(user_id=req_ctx.user_id),
     ):
-        credit_result: CreditResultGet = await products_service.get_credit_amount(
+        credit_result: CreditResult = await products_service.get_credit_amount(
             request.app,
             dollar_amount=body_params.price_dollars,
             product_name=req_ctx.product_name,

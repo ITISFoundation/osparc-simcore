@@ -9,8 +9,8 @@ from models_library.users import UserID
 from servicelib.utils_secrets import generate_token_secret_key
 
 from . import _repository
-from ._models import ApiKey
 from .errors import ApiKeyNotFoundError
+from .models import ApiKey
 
 _PUNCTUATION_REGEX = re.compile(
     pattern="[" + re.escape(string.punctuation.replace("_", "")) + "]"
@@ -32,8 +32,8 @@ async def create_api_key(
     *,
     user_id: UserID,
     product_name: ProductName,
-    display_name=str,
-    expiration=dt.timedelta,
+    display_name: str,
+    expiration: dt.timedelta | None,
 ) -> ApiKey:
     api_key, api_secret = _generate_api_key_and_secret(display_name)
 
@@ -119,5 +119,5 @@ async def delete_api_key(
 
 
 async def prune_expired_api_keys(app: web.Application) -> list[str]:
-    names: list[str] = await _repository.prune_expired(app)
+    names: list[str] = await _repository.delete_expired_api_keys(app)
     return names

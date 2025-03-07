@@ -8,7 +8,7 @@ import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import ResultProxy, RowProxy
 
-from . import errors
+from . import aiopg_errors
 from .models.payments_transactions import PaymentTransactionState, payments_transactions
 
 _logger = logging.getLogger(__name__)
@@ -29,16 +29,13 @@ class PaymentFailure:
         return False
 
 
-class PaymentAlreadyExists(PaymentFailure):
-    ...
+class PaymentAlreadyExists(PaymentFailure): ...
 
 
-class PaymentNotFound(PaymentFailure):
-    ...
+class PaymentNotFound(PaymentFailure): ...
 
 
-class PaymentAlreadyAcked(PaymentFailure):
-    ...
+class PaymentAlreadyAcked(PaymentFailure): ...
 
 
 async def insert_init_payment_transaction(
@@ -69,7 +66,7 @@ async def insert_init_payment_transaction(
                 initiated_at=initiated_at,
             )
         )
-    except errors.UniqueViolation:
+    except aiopg_errors.UniqueViolation:
         return PaymentAlreadyExists(payment_id)
 
     return payment_id

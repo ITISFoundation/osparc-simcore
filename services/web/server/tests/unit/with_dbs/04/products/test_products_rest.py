@@ -10,7 +10,7 @@ from http import HTTPStatus
 
 import pytest
 from aiohttp.test_utils import TestClient
-from models_library.api_schemas_webserver.product import ProductGet, ProductUIGet
+from models_library.api_schemas_webserver.products import ProductGet, ProductUIGet
 from models_library.products import ProductName
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import UserInfoDict
@@ -128,7 +128,7 @@ async def test_get_product(
     ],
 )
 async def test_get_current_product_ui(
-    all_products_names: list[ProductName],
+    app_products_names: list[ProductName],
     product_name: ProductName,
     logged_user: UserInfoDict,
     client: TestClient,
@@ -136,7 +136,7 @@ async def test_get_current_product_ui(
     expected_status_code: int,
 ):
     assert logged_user["role"] == user_role.value
-    assert product_name in all_products_names
+    assert product_name in app_products_names
 
     # give access to user to this product
     assert client.app

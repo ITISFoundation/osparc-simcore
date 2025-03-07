@@ -1,6 +1,4 @@
-""" AUTHoriZation (auth) policy
-
-"""
+"""AUTHoriZation (auth) policy"""
 
 import contextlib
 import logging
@@ -14,7 +12,7 @@ from aiohttp_security.abc import (  # type: ignore[import-untyped]
 )
 from models_library.products import ProductName
 from models_library.users import UserID
-from simcore_postgres_database.errors import DatabaseError
+from simcore_postgres_database.aiopg_errors import DatabaseError
 
 from ..db.plugin import get_database_engine
 from ._authz_access_model import (

@@ -275,7 +275,7 @@ async def list_trashed_folders(
     NOTE: this is app-wide i.e. no product, user or workspace filtered
     TODO: check with MD about workspaces
     """
-    base_query = sql.select(_FOLDER_DB_MODEL_COLS).where(
+    base_query = sql.select(*_FOLDER_DB_MODEL_COLS).where(
         folders_v2.c.trashed.is_not(None)
     )
 
@@ -306,7 +306,9 @@ async def list_trashed_folders(
 
 
 def _create_base_select_query(folder_id: FolderID, product_name: ProductName) -> Select:
-    return sql.select(*_FOLDER_DB_MODEL_COLS,).where(
+    return sql.select(
+        *_FOLDER_DB_MODEL_COLS,
+    ).where(
         (folders_v2.c.product_name == product_name)
         & (folders_v2.c.folder_id == folder_id)
     )

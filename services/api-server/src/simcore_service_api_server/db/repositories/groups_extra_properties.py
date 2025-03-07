@@ -1,7 +1,7 @@
 import logging
 
 from models_library.users import UserID
-from simcore_postgres_database.errors import DatabaseError
+from simcore_postgres_database.aiopg_errors import DatabaseError
 from simcore_postgres_database.utils_groups_extra_properties import (
     GroupExtraPropertiesRepo,
 )

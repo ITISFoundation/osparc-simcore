@@ -10,7 +10,7 @@ from models_library.projects_state import RunningState
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import PositiveInt
-from simcore_postgres_database.errors import ForeignKeyViolation
+from simcore_postgres_database.aiopg_errors import ForeignKeyViolation
 from sqlalchemy.sql import or_
 from sqlalchemy.sql.elements import literal_column
 from sqlalchemy.sql.expression import desc
