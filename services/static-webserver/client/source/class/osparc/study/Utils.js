@@ -45,35 +45,6 @@ qx.Class.define("osparc.study.Utils", {
       return services;
     },
 
-    getInaccessibleServices: function(workbench) {
-      const allServices = osparc.store.Services.servicesCached;
-      const unaccessibleServices = [];
-      const wbServices = new Set(this.extractUniqueServices(workbench));
-      wbServices.forEach(srv => {
-        if (srv.key in allServices && srv.version in allServices[srv.key]) {
-          return;
-        }
-        const idx = unaccessibleServices.findIndex(unSrv => unSrv.key === srv.key && unSrv.version === srv.version);
-        if (idx === -1) {
-          unaccessibleServices.push(srv);
-        }
-      });
-      return unaccessibleServices;
-    },
-
-    getInaccessibleServicesMsg: function(inaccessibleServices, workbench) {
-      let msg = qx.locale.Manager.tr("Service(s) not accessible:<br>");
-      Object.values(workbench).forEach(node => {
-        const inaccessibleService = inaccessibleServices.find(srv => srv.key === node.key && srv.version === node.version);
-        if (inaccessibleService) {
-          const n = inaccessibleService.key.lastIndexOf("/");
-          const friendlyKey = inaccessibleService.key.substring(n + 1);
-          msg += `- ${node.label} (${friendlyKey}:${inaccessibleService.version})<br>`;
-        }
-      });
-      return msg;
-    },
-
     getCantExecuteServices: function(studyServices = []) {
       return studyServices.filter(service => service["myAccessRights"]["execute"] === false);
     },
@@ -154,9 +125,9 @@ qx.Class.define("osparc.study.Utils", {
             if (!("mode" in minStudyData["ui"])) {
               minStudyData["ui"]["mode"] = "standalone";
             }
-            const inaccessibleServices = this.getInaccessibleServices(minStudyData["workbench"])
+            const inaccessibleServices = osparc.store.Services.getInaccessibleServices(minStudyData["workbench"])
             if (inaccessibleServices.length) {
-              const msg = this.getInaccessibleServicesMsg(inaccessibleServices, minStudyData["workbench"]);
+              const msg = osparc.store.Services.getInaccessibleServicesMsg(inaccessibleServices, minStudyData["workbench"]);
               reject({
                 message: msg
               });
@@ -201,9 +172,9 @@ qx.Class.define("osparc.study.Utils", {
 
     createStudyFromTemplate: function(templateData, loadingPage, contextProps = {}) {
       return new Promise((resolve, reject) => {
-        const inaccessibleServices = this.getInaccessibleServices(templateData["workbench"]);
+        const inaccessibleServices = osparc.store.Services.getInaccessibleServices(templateData["workbench"]);
         if (inaccessibleServices.length) {
-          const msg = this.getInaccessibleServicesMsg(inaccessibleServices, templateData["workbench"]);
+          const msg = osparc.store.Services.getInaccessibleServicesMsg(inaccessibleServices, templateData["workbench"]);
           reject({
             message: msg
           });

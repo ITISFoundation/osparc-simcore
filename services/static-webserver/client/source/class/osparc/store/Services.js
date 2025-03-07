@@ -186,6 +186,35 @@ qx.Class.define("osparc.store.Services", {
         });
     },
 
+    getInaccessibleServices: function(workbench) {
+      const allServices = this.servicesCached;
+      const unaccessibleServices = [];
+      const wbServices = new Set(this.extractUniqueServices(workbench));
+      wbServices.forEach(srv => {
+        if (srv.key in allServices && srv.version in allServices[srv.key]) {
+          return;
+        }
+        const idx = unaccessibleServices.findIndex(unSrv => unSrv.key === srv.key && unSrv.version === srv.version);
+        if (idx === -1) {
+          unaccessibleServices.push(srv);
+        }
+      });
+      return unaccessibleServices;
+    },
+
+    getInaccessibleServicesMsg: function(inaccessibleServices, workbench) {
+      let msg = qx.locale.Manager.tr("Service(s) not accessible:<br>");
+      Object.values(workbench).forEach(node => {
+        const inaccessibleService = inaccessibleServices.find(srv => srv.key === node.key && srv.version === node.version);
+        if (inaccessibleService) {
+          const n = inaccessibleService.key.lastIndexOf("/");
+          const friendlyKey = inaccessibleService.key.substring(n + 1);
+          msg += `- ${node.label} (${friendlyKey}:${inaccessibleService.version})<br>`;
+        }
+      });
+      return msg;
+    },
+
     __addToCache: function(service) {
       const key = service.key;
       const version = service.version;
