@@ -53,7 +53,10 @@ from ..modules import nodeports, user_services_preferences
 from ..modules.mounted_fs import MountedVolumes
 from ..modules.notifications._notifications_ports import PortNotifier
 from ..modules.outputs import OutputsManager, event_propagation_disabled
-from .long_running_tasksutils import run_before_shutdown_actions
+from .long_running_tasks_utils import (
+    ensure_read_permissions_on_user_service_data,
+    run_before_shutdown_actions,
+)
 from .resource_tracking import send_service_started, send_service_stopped
 
 _logger = logging.getLogger(__name__)
@@ -237,6 +240,7 @@ async def task_runs_docker_compose_down(
     app: FastAPI,
     shared_store: SharedStore,
     settings: ApplicationSettings,
+    mounted_volumes: MountedVolumes,
 ) -> None:
     if shared_store.compose_spec is None:
         _logger.warning("No compose-spec was found")
@@ -311,6 +315,8 @@ async def task_runs_docker_compose_down(
         # NOTE: https://github.com/ITISFoundation/osparc-simcore/issues/4952
         await _send_resource_tracking_stop(SimcorePlatformStatus.OK)
         raise
+
+    await ensure_read_permissions_on_user_service_data(mounted_volumes)
 
     await _send_resource_tracking_stop(SimcorePlatformStatus.OK)
 

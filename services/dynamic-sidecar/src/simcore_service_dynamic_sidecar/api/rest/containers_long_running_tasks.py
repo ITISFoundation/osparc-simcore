@@ -124,6 +124,7 @@ async def runs_docker_compose_down_task(
     settings: Annotated[ApplicationSettings, Depends(get_settings)],
     shared_store: Annotated[SharedStore, Depends(get_shared_store)],
     app: Annotated[FastAPI, Depends(get_application)],
+    mounted_volumes: Annotated[MountedVolumes, Depends(get_mounted_volumes)],
 ) -> TaskId:
     assert request  # nosec
 
@@ -135,6 +136,7 @@ async def runs_docker_compose_down_task(
             app=app,
             shared_store=shared_store,
             settings=settings,
+            mounted_volumes=mounted_volumes,
         )
     except TaskAlreadyRunningError as e:
         return cast(str, e.managed_task.task_id)  # type: ignore[attr-defined] # pylint:disable=no-member

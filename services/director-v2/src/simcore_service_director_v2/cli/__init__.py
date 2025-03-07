@@ -26,7 +26,11 @@ DEFAULT_SAVE_STATE_ATTEMPTS: Final[int] = 3
 DEFAULT_OUTPUTS_PUSH_ATTEMPTS: Final[int] = 3
 DEFAULT_TASK_UPDATE_INTERVAL_S: Final[int] = 1
 
-main = typer.Typer(name=PROJECT_NAME)
+main = typer.Typer(
+    name=PROJECT_NAME,
+    pretty_exceptions_enable=False,
+    pretty_exceptions_show_locals=False,
+)
 
 _logger = logging.getLogger(__name__)
 
