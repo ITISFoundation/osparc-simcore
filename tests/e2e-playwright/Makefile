@@ -173,6 +173,12 @@ $(SLEEPERS_INPUT_FILE) $(JUPYTER_LAB_INPUT_FILE) $(CLASSIC_TIP_INPUT_FILE) $(S4L
 		else \
 			read -p "Enter the service key: " SERVICE_KEY; \
 			echo "--service-key=$$SERVICE_KEY" >> $@; \
+			read -p "Enter the service version (default to latest): " SERVICE_VERSION; \
+			if [ -z "$$SERVICE_VERSION" ]; then \
+				echo "No service version specified, using default."; \
+			else \
+				echo "--service-version=$$SERVICE_VERSION" >> $@; \
+			fi; \
 		fi; \
 	elif [ "$@" = "$(SLEEPERS_INPUT_FILE)" ]; then \
 		read -p "Enter the number of sleepers: " NUM_SLEEPERS; \
