@@ -1,8 +1,10 @@
+from collections.abc import Callable
+
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 import pytest
 from aiohttp.test_utils import TestClient
@@ -15,7 +17,7 @@ from models_library.api_schemas_rpc_async_jobs.async_jobs import (
     AsyncJobStatus,
 )
 from models_library.api_schemas_rpc_async_jobs.exceptions import (
-    ResultError,
+    JobError,
     StatusError,
 )
 from models_library.api_schemas_storage.data_export_async_jobs import (
@@ -169,7 +171,7 @@ async def test_abort_async_jobs(
     "backend_result_or_exception",
     [
         AsyncJobResult(result=None, error=_faker.text()),
-        ResultError(job_id=_faker.uuid4()),
+        JobError(job_id=_faker.uuid4()),
     ],
     ids=lambda x: type(x).__name__,
 )
@@ -188,7 +190,7 @@ async def test_get_async_job_result(
 
     if isinstance(backend_result_or_exception, AsyncJobResult):
         assert response.status == status.HTTP_200_OK
-    elif isinstance(backend_result_or_exception, ResultError):
+    elif isinstance(backend_result_or_exception, JobError):
         assert response.status == status.HTTP_500_INTERNAL_SERVER_ERROR
     else:
         pytest.fail("Incorrectly configured test")
