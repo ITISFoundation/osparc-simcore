@@ -48,7 +48,7 @@ RQ_PRODUCT_KEY: Final[str] = f"{__name__}.RQ_PRODUCT_KEY"
 
 
 MSG_TRY_AGAIN_OR_SUPPORT: Final[str] = (
-    "Please try again in a moment and if the problem persist, please contact support"
+    "Please try again shortly. If the issue persists, contact support."
 )
 
 __all__: tuple[str, ...] = (
