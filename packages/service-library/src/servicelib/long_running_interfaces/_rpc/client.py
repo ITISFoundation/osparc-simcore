@@ -7,12 +7,11 @@ from settings_library.rabbit import RabbitSettings
 
 from ...rabbitmq import RabbitMQRPCClient
 from .._models import (
-    JobName,
     JobStatus,
     JobUniqueId,
+    LongRunningNamespace,
     ResultModel,
     StartParams,
-    UniqueRPCID,
 )
 from ._utils import get_rpc_namespace
 
@@ -26,12 +25,12 @@ class ClientRPCInterface:
     def __init__(
         self,
         rabbit_settings: RabbitSettings,
-        unique_rpc_id: UniqueRPCID,
+        long_running_namespace: LongRunningNamespace,
     ) -> None:
         self.rabbit_settings = rabbit_settings
 
         self._rabbitmq_rpc_client: RabbitMQRPCClient | None = None
-        self._rpc_namespace = get_rpc_namespace(unique_rpc_id)
+        self._rpc_namespace = get_rpc_namespace(long_running_namespace)
 
     async def setup(self) -> None:
         self._rabbitmq_rpc_client = await RabbitMQRPCClient.create(
@@ -42,15 +41,12 @@ class ClientRPCInterface:
         if self._rabbitmq_rpc_client is not None:
             await self._rabbitmq_rpc_client.close()
 
-    async def start(
-        self, name: JobName, unique_id: JobUniqueId, **params: StartParams
-    ) -> None:
+    async def start(self, unique_id: JobUniqueId, **params: StartParams) -> None:
         assert self._rabbitmq_rpc_client  # nosec
 
         result = await self._rabbitmq_rpc_client.request(
             self._rpc_namespace,
             TypeAdapter(RPCMethodName).validate_python("start"),
-            name=name,
             unique_id=unique_id,
             params=params,
         )

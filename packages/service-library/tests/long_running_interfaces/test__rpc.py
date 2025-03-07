@@ -9,13 +9,17 @@ from typing import Any
 import pytest
 from servicelib.async_utils import cancel_wait_task
 from servicelib.background_task import create_periodic_task
+from servicelib.long_running_interfaces._errors import (
+    JobNotFoundError,
+    NoResultIsAvailableError,
+)
 from servicelib.long_running_interfaces._models import (
     JobName,
     JobStatus,
     JobUniqueId,
+    LongRunningNamespace,
     ResultModel,
     StartParams,
-    UniqueRPCID,
 )
 from servicelib.long_running_interfaces._rpc.client import ClientRPCInterface
 from servicelib.long_running_interfaces._rpc.server import (
@@ -36,15 +40,15 @@ pytest_simcore_core_services_selection = [
 
 
 @pytest.fixture
-def unique_rpc_id() -> UniqueRPCID:
-    return "unique_test_id"
+def long_running_namespace() -> LongRunningNamespace:
+    return "unique_test_namespace"
 
 
 @pytest.fixture
 async def client_rpc_interface(
-    rabbit_service: RabbitSettings, unique_rpc_id: UniqueRPCID
+    rabbit_service: RabbitSettings, long_running_namespace: LongRunningNamespace
 ) -> AsyncIterable[ClientRPCInterface]:
-    client = ClientRPCInterface(rabbit_service, unique_rpc_id)
+    client = ClientRPCInterface(rabbit_service, long_running_namespace)
     await client.setup()
     yield client
     await client.teardown()
@@ -80,36 +84,27 @@ class MockServerInterface(BaseServerJobInterface):
             raise RuntimeError(msg)
         return self._storage[unique_id]
 
-    async def start(
-        self, name: JobName, unique_id: JobUniqueId, **params: StartParams
-    ) -> None:
-        self._storage[unique_id] = {"name": name, "params": params, "time_remaining": 5}
+    async def start(self, unique_id: JobUniqueId, **params: StartParams) -> None:
+        self._storage[unique_id] = {"params": params, "time_remaining": 5}
 
     async def remove(self, unique_id: JobUniqueId) -> None:
         del self._storage[unique_id]
 
-    def _is_running(self, unique_id: JobUniqueId) -> bool:
+    async def is_present(self, unique_id: JobName) -> bool:
+        return unique_id in self._storage
+
+    async def is_running(self, unique_id: JobName) -> bool:
+        if unique_id not in self._storage:
+            return False
         data = self._get_from_storage(unique_id)
         is_running: bool = data.get("time_remaining", 0) > 0
         return is_running
 
-    async def status(self, unique_id: JobUniqueId) -> JobStatus:
-        try:
-            is_running = self._is_running(unique_id)
-        except RuntimeError:
-            return JobStatus.NOT_FOUND
+    async def get_result(self, unique_id: JobUniqueId) -> ResultModel:
+        if await self.is_running(unique_id):
+            raise RuntimeError("still not finished")
 
-        return JobStatus.RUNNING if is_running else JobStatus.FINISHED
-
-    async def result(self, unique_id: JobUniqueId) -> ResultModel:
-        try:
-            is_running = self._is_running(unique_id)
-        except RuntimeError:
-            return ResultModel(error=f"{unique_id} was not found")
-
-        if is_running:
-            return ResultModel(error=f"{unique_id} is still running")
-
+        # TODO: also emulate errors
         return ResultModel(data="done")
 
 
@@ -124,11 +119,11 @@ async def initilized_server_interface() -> AsyncIterable[MockServerInterface]:
 @pytest.fixture
 async def server_rpc_interface(
     rabbit_service: RabbitSettings,
-    unique_rpc_id: UniqueRPCID,
+    long_running_namespace: LongRunningNamespace,
     initilized_server_interface: MockServerInterface,
 ) -> AsyncIterable[ServerRPCInterface]:
     server = ServerRPCInterface(
-        rabbit_service, unique_rpc_id, initilized_server_interface
+        rabbit_service, long_running_namespace, initilized_server_interface
     )
     await server.setup()
     yield server
@@ -142,17 +137,15 @@ async def test_workflow(
 
     # not started yet
     assert await client_rpc_interface.get_status(unique_id) == JobStatus.NOT_FOUND
-    assert await client_rpc_interface.get_result(unique_id) == ResultModel(
-        error=f"{unique_id} was not found"
-    )
+    with pytest.raises(JobNotFoundError):
+        assert await client_rpc_interface.get_result(unique_id)
 
     # after start
-    await client_rpc_interface.start("some", unique_id)
+    await client_rpc_interface.start(unique_id)
 
     assert await client_rpc_interface.get_status(unique_id) == JobStatus.RUNNING
-    assert await client_rpc_interface.get_result(unique_id) == ResultModel(
-        error=f"{unique_id} is still running"
-    )
+    with pytest.raises(NoResultIsAvailableError):
+        assert await client_rpc_interface.get_result(unique_id)
 
     # wait to be finsiehd
     async for attempt in AsyncRetrying(
@@ -168,3 +161,6 @@ async def test_workflow(
 
     # finally the result
     assert await client_rpc_interface.get_result(unique_id) == ResultModel(data="done")
+
+
+# TODO: we need to figure out how to deal with errors and unexpected errors, how do we pass those on via the result interface?

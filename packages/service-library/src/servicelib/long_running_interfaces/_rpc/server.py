@@ -4,13 +4,13 @@ from servicelib.rabbitmq import RPCRouter
 from settings_library.rabbit import RabbitSettings
 
 from ...rabbitmq import RabbitMQRPCClient
+from .._errors import AlreadyStartedError, JobNotFoundError, NoResultIsAvailableError
 from .._models import (
-    JobName,
     JobStatus,
     JobUniqueId,
+    LongRunningNamespace,
     ResultModel,
     StartParams,
-    UniqueRPCID,
 )
 from ._utils import get_rpc_namespace
 
@@ -19,29 +19,31 @@ class BaseServerJobInterface(ABC):
     """allows the server side jobs to be implemented however the user pleases"""
 
     @abstractmethod
-    async def start(
-        self, name: JobName, unique_id: JobUniqueId, **params: StartParams
-    ) -> None:
-        """used to start a jbo, raises AlreadyStartedError"""
+    async def start(self, unique_id: JobUniqueId, **params: StartParams) -> None:
+        """used to start a jbo"""
 
     @abstractmethod
     async def remove(self, unique_id: JobUniqueId) -> None:
         """aborts and removes a job"""
 
     @abstractmethod
-    async def status(self, unique_id: JobUniqueId) -> JobStatus:
-        """returns the job's current status"""
+    async def is_present(self, unique_id: JobUniqueId) -> bool:
+        """returns True if the job exists"""
 
     @abstractmethod
-    async def result(self, unique_id: JobUniqueId) -> ResultModel:
-        """provides the result of the job, raises NoResultIsAvailableError"""
+    async def is_running(self, unique_id: JobUniqueId) -> bool:
+        """returns True if the job is currently running"""
+
+    @abstractmethod
+    async def get_result(self, unique_id: JobUniqueId) -> ResultModel:
+        """provides the result of the job once finished"""
 
 
 class ServerRPCInterface:
     def __init__(
         self,
         rabbit_settings: RabbitSettings,
-        unique_rpc_id: UniqueRPCID,
+        long_running_namespace: LongRunningNamespace,
         job_interface: BaseServerJobInterface,
     ) -> None:
         self.rabbit_settings = rabbit_settings
@@ -49,7 +51,7 @@ class ServerRPCInterface:
 
         self._rabbitmq_rpc_server: RabbitMQRPCClient | None = None
 
-        self._rpc_namespace = get_rpc_namespace(unique_rpc_id)
+        self._rpc_namespace = get_rpc_namespace(long_running_namespace)
 
     async def setup(self) -> None:
         self._rabbitmq_rpc_server = await RabbitMQRPCClient.create(
@@ -64,7 +66,9 @@ class ServerRPCInterface:
             self.status,
             self.result,
         ):
-            router.expose()(handler)
+            router.expose(
+                reraise_if_error_type=(JobNotFoundError, NoResultIsAvailableError)
+            )(handler)
 
         await self._rabbitmq_rpc_server.register_router(router, self._rpc_namespace)
 
@@ -72,16 +76,30 @@ class ServerRPCInterface:
         if self._rabbitmq_rpc_server is not None:
             await self._rabbitmq_rpc_server.close()
 
-    async def start(
-        self, name: JobName, unique_id: JobUniqueId, **params: StartParams
-    ) -> None:
-        await self.job_interface.start(name, unique_id, **params)
+    async def start(self, unique_id: JobUniqueId, **params: StartParams) -> None:
+        if await self.job_interface.is_present(unique_id):
+            raise AlreadyStartedError(unique_id=unique_id)
+
+        await self.job_interface.start(unique_id, **params)
 
     async def remove(self, unique_id: JobUniqueId) -> None:
-        await self.job_interface.remove(unique_id)
+        if await self.job_interface.is_present(unique_id):
+            await self.job_interface.remove(unique_id)
 
     async def status(self, unique_id: JobUniqueId) -> JobStatus:
-        return await self.job_interface.status(unique_id)
+        if not await self.job_interface.is_present(unique_id):
+            return JobStatus.NOT_FOUND
+
+        if await self.job_interface.is_running(unique_id):
+            return JobStatus.RUNNING
+
+        return JobStatus.FINISHED
 
     async def result(self, unique_id: JobUniqueId) -> ResultModel:
-        return await self.job_interface.result(unique_id)
+        if not await self.job_interface.is_present(unique_id):
+            raise JobNotFoundError(unique_id=unique_id)
+
+        if await self.job_interface.is_running(unique_id):
+            raise NoResultIsAvailableError(unique_id=unique_id)
+
+        return await self.job_interface.get_result(unique_id)
