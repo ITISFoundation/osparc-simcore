@@ -210,7 +210,7 @@ async def export_data(data_export: DataExportPost, location_id: LocationID):
     response_model=Envelope[StorageAsyncJobStatus],
     name="get_async_job_status",
 )
-async def get_async_job_status(storage_async_job_get: StorageAsyncJobGet, job_id: UUID):
+async def get_async_job_status(job_id: UUID):
     """Get async job status"""
 
 
@@ -218,7 +218,7 @@ async def get_async_job_status(storage_async_job_get: StorageAsyncJobGet, job_id
     "/storage/async-jobs/{job_id}:abort",
     name="abort_async_job",
 )
-async def abort_async_job(storage_async_job_get: StorageAsyncJobGet, job_id: UUID):
+async def abort_async_job(job_id: UUID):
     """aborts execution of an async job"""
 
 
@@ -227,7 +227,7 @@ async def abort_async_job(storage_async_job_get: StorageAsyncJobGet, job_id: UUI
     response_model=Envelope[StorageAsyncJobResult],
     name="get_async_job_result",
 )
-async def get_async_job_result(storage_async_job_get: StorageAsyncJobGet, job_id: UUID):
+async def get_async_job_result(job_id: UUID):
     """Get the result of the async job"""
 
 

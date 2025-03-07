@@ -6427,12 +6427,6 @@ paths:
           type: string
           format: uuid
           title: Job Id
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/StorageAsyncJobGet'
       responses:
         '200':
           description: Successful Response
@@ -6455,12 +6449,6 @@ paths:
           type: string
           format: uuid
           title: Job Id
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/StorageAsyncJobGet'
       responses:
         '200':
           description: Successful Response
@@ -6482,12 +6470,6 @@ paths:
           type: string
           format: uuid
           title: Job Id
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/StorageAsyncJobGet'
       responses:
         '200':
           description: Successful Response
@@ -14923,23 +14905,11 @@ components:
         done:
           type: boolean
           title: Done
-        started:
-          type: string
-          format: date-time
-          title: Started
-        stopped:
-          anyOf:
-          - type: string
-            format: date-time
-          - type: 'null'
-          title: Stopped
       type: object
       required:
       - jobId
       - progress
       - done
-      - started
-      - stopped
       title: StorageAsyncJobStatus
     Structure:
       properties:
