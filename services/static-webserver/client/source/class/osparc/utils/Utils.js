@@ -111,6 +111,18 @@ qx.Class.define("osparc.utils.Utils", {
       return newName;
     },
 
+    getIconFromResource: function(resourceMetadata) {
+      if (resourceMetadata) {
+        if (resourceMetadata["icon"]) {
+          return resourceMetadata["icon"];
+        }
+        if (resourceMetadata["thumbnail"]) {
+          return resourceMetadata["thumbnail"];
+        }
+      }
+      return osparc.dashboard.CardBase.PRODUCT_ICON;
+    },
+
     isEmail: function(value) {
       const reg = /^([A-Za-z0-9_\-.+])+@([A-Za-z0-9_\-.])+\.([A-Za-z]{2,})$/;
       return reg.test(value);

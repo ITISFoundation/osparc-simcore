@@ -235,7 +235,7 @@ qx.Class.define("osparc.service.StatusUI", {
       const chip = new osparc.ui.basic.Chip().set({
         label: osparc.service.Utils.DEPRECATED_SERVICE_TEXT,
         icon: osparc.service.StatusUI.getIconSource("deprecated"),
-        textColor: "contrasted-text-dark",
+        textColor: "text-on-warning",
         backgroundColor: osparc.service.StatusUI.getColor("deprecated"),
         allowGrowX: false
       });
@@ -246,7 +246,7 @@ qx.Class.define("osparc.service.StatusUI", {
       const chip = new osparc.ui.basic.Chip().set({
         label: osparc.service.Utils.RETIRED_SERVICE_TEXT,
         icon: osparc.service.StatusUI.getIconSource("retired"),
-        textColor: "contrasted-text-dark",
+        textColor: "text-on-warning",
         backgroundColor: osparc.service.StatusUI.getColor("retired"),
         allowGrowX: false
       });

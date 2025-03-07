@@ -7,7 +7,7 @@ from typing import Any, Final
 from aiohttp import web
 from servicelib.pools import non_blocking_process_pool_executor
 
-from ...catalog.client import get_service
+from ...catalog import catalog_service
 from ...projects.exceptions import BaseProjectError
 from ...projects.models import ProjectDict
 from ...projects.projects_service import get_project_for_user
@@ -183,7 +183,7 @@ async def create_sds_directory(
         service_version = entry["version"]
         label = entry["label"]
 
-        service_data = await get_service(
+        service_data = await catalog_service.get_service(
             app=app,
             user_id=user_id,
             service_key=service_key,

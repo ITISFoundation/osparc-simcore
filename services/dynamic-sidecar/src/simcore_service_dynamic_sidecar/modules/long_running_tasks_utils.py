@@ -1,4 +1,7 @@
 import logging
+import os
+from datetime import timedelta
+from typing import Final
 
 from models_library.callbacks_mapping import UserServiceCommand
 from servicelib.logging_utils import log_context
@@ -9,9 +12,12 @@ from ..core.errors import (
     ContainerExecTimeoutError,
 )
 from ..models.shared_store import SharedStore
-from ..modules.container_utils import run_command_in_container
+from ..modules.mounted_fs import MountedVolumes
+from .container_utils import run_command_in_container
 
 _logger = logging.getLogger(__name__)
+
+_TIMEOUT_PERMISSION_CHANGES: Final[timedelta] = timedelta(minutes=5)
 
 
 async def run_before_shutdown_actions(
@@ -40,3 +46,22 @@ async def run_before_shutdown_actions(
                     container_name,
                     exc_info=True,
                 )
+
+
+async def ensure_read_permissions_on_user_service_data(
+    mounted_volumes: MountedVolumes,
+) -> None:
+    # Makes sure sidecar has access to all files in the user services.
+    # The user could have removed read permissions form a file, which will cause an error.
+
+    # NOTE: command runs inside self container since the user service container might not always be running
+    self_container = os.environ["HOSTNAME"]
+    for path_to_store in (  # apply changes to otuputs and all state folders
+        *mounted_volumes.disk_state_paths_iter(),
+        mounted_volumes.disk_outputs_path,
+    ):
+        await run_command_in_container(
+            self_container,
+            command=f"chmod -R o+rX '{path_to_store}'",
+            timeout=_TIMEOUT_PERMISSION_CHANGES.total_seconds(),
+        )

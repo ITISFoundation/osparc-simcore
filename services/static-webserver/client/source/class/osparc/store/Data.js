@@ -77,7 +77,7 @@ qx.Class.define("osparc.store.Data", {
       if (locationId in cache && cache[locationId] && cache[locationId].length) {
         const data = {
           location: locationId,
-          datasets: cache[locationId]
+          items: cache[locationId]
         };
         return data;
       }

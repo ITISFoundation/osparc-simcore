@@ -26,11 +26,17 @@ qx.Class.define("osparc.product.tours.Tours", {
 
   statics: {
     TOURS: {
-      "s4llite": {
-        fetchTours: () => osparc.product.tours.Tours.fetchTours("/resource/osparc/tours/s4llite_tours.json")
+      "osparc": {
+        fetchTours: () => osparc.product.tours.Tours.fetchTours("/resource/osparc/tours/osparc_tours.json")
       },
       "s4l": {
         fetchTours: () => osparc.product.tours.Tours.fetchTours("/resource/osparc/tours/s4l_tours.json")
+      },
+      "s4lacad": {
+        fetchTours: () => osparc.product.tours.Tours.fetchTours("/resource/osparc/tours/s4l_tours.json")
+      },
+      "s4llite": {
+        fetchTours: () => osparc.product.tours.Tours.fetchTours("/resource/osparc/tours/s4llite_tours.json")
       },
       "tis": {
         fetchTours: () => osparc.product.tours.Tours.fetchTours("/resource/osparc/tours/tis_tours.json")

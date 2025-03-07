@@ -234,8 +234,8 @@ qx.Class.define("osparc.service.Utils", {
     },
 
     isDeprecated: function(metadata) {
-      if (metadata && "deprecated" in metadata && ![null, undefined].includes(metadata["deprecated"])) {
-        const deprecationTime = new Date(metadata["deprecated"]);
+      if (metadata && "retired" in metadata && ![null, undefined].includes(metadata["retired"])) {
+        const deprecationTime = new Date(metadata["retired"]);
         const now = new Date();
         return deprecationTime.getTime() > now.getTime();
       }
@@ -243,8 +243,8 @@ qx.Class.define("osparc.service.Utils", {
     },
 
     isRetired: function(metadata) {
-      if (metadata && "deprecated" in metadata && ![null, undefined].includes(metadata["deprecated"])) {
-        const deprecationTime = new Date(metadata["deprecated"]);
+      if (metadata && "retired" in metadata && ![null, undefined].includes(metadata["retired"])) {
+        const deprecationTime = new Date(metadata["retired"]);
         const now = new Date();
         return deprecationTime.getTime() < now.getTime();
       }
@@ -252,7 +252,7 @@ qx.Class.define("osparc.service.Utils", {
     },
 
     getDeprecationDateText: function(metadata) {
-      const deprecationTime = new Date(metadata["deprecated"]);
+      const deprecationTime = new Date(metadata["retired"]);
       return qx.locale.Manager.tr("It will be Retired: ") + osparc.utils.Utils.formatDate(deprecationTime);
     },
 

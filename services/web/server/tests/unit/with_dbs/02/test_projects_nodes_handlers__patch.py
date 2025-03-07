@@ -29,7 +29,7 @@ API_PREFIX = "/" + api_version_prefix
 @pytest.fixture
 def mock_catalog_api_get_services_for_user_in_product(mocker: MockerFixture):
     mocker.patch(
-        "simcore_service_webserver.projects._crud_handlers.get_services_for_user_in_product",
+        "simcore_service_webserver.projects._crud_handlers.catalog_service.get_services_for_user_in_product",
         spec=True,
         return_value=[],
     )

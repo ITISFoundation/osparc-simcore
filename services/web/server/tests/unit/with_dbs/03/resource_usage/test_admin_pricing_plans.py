@@ -23,7 +23,7 @@ from simcore_service_webserver.db.models import UserRole
 def mock_catalog_client(mocker: MockerFixture, faker: Faker) -> dict[str, MagicMock]:
     return {
         "get_service": mocker.patch(
-            "simcore_service_webserver.resource_usage._pricing_plans_admin_service.catalog_client.get_service",
+            "simcore_service_webserver.resource_usage._pricing_plans_admin_service.catalog_service.get_service",
             autospec=True,
         )
     }
