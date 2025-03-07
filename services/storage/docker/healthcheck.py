@@ -20,6 +20,7 @@ Q&A:
 
 
 import os
+import socket
 import subprocess
 import sys
 from urllib.request import urlopen
@@ -50,7 +51,7 @@ def _is_celery_worker_healthy():
                 "inspect",
                 "ping",
                 "--destination",
-                "celery@" + os.getenv("HOSTNAME", ""),
+                "celery@" + socket.gethostname(),
             ],
             capture_output=True,
             text=True,
