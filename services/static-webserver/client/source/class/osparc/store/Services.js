@@ -285,6 +285,32 @@ qx.Class.define("osparc.store.Services", {
       return msg;
     },
 
+    getFilePicker: function() {
+      return this.getLatest("simcore/services/frontend/file-picker");
+    },
+
+    getParametersMetadata: function() {
+      const parametersMetadata = [];
+      const services = this.__servicesCached;
+      for (const key in services) {
+        if (key.includes("simcore/services/frontend/parameter/")) {
+          const latest = this.getLatest(key);
+          if (latest) {
+            parametersMetadata.push(latest);
+          }
+        }
+      }
+      return parametersMetadata;
+    },
+
+    getParameterMetadata: function(type) {
+      return this.getLatest("simcore/services/frontend/parameter/"+type);
+    },
+
+    getProbeMetadata: function(type) {
+      return this.getLatest("simcore/services/frontend/iterator-consumer/probe/"+type);
+    },
+
     __addToCache: function(service) {
       const key = service.key;
       const version = service.version;

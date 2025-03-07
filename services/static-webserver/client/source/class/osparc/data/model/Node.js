@@ -1205,7 +1205,7 @@ qx.Class.define("osparc.data.model.Node", {
       if (!["int"].includes(type)) {
         return;
       }
-      const newMetadata = osparc.service.Utils.getParameterMetadata("integer");
+      const newMetadata = osparc.store.Services.getParameterMetadata("integer");
       if (newMetadata) {
         const value = this.__getInputData()["linspace_start"];
         const label = this.getLabel();

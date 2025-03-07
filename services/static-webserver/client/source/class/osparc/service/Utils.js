@@ -189,32 +189,6 @@ qx.Class.define("osparc.service.Utils", {
       return qx.locale.Manager.tr("It will be Retired: ") + osparc.utils.Utils.formatDate(deprecationTime);
     },
 
-    getFilePicker: function() {
-      return this.self().getLatest("simcore/services/frontend/file-picker");
-    },
-
-    getParametersMetadata: function() {
-      const parametersMetadata = [];
-      const services = osparc.store.Services.servicesCached;
-      for (const key in services) {
-        if (key.includes("simcore/services/frontend/parameter/")) {
-          const latest = this.self().getLatest(key);
-          if (latest) {
-            parametersMetadata.push(latest);
-          }
-        }
-      }
-      return parametersMetadata;
-    },
-
-    getParameterMetadata: function(type) {
-      return this.self().getLatest("simcore/services/frontend/parameter/"+type);
-    },
-
-    getProbeMetadata: function(type) {
-      return this.self().getLatest("simcore/services/frontend/iterator-consumer/probe/"+type);
-    },
-
     removeFileToKeyMap: function(service) {
       [
         "inputs",
