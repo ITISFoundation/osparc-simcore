@@ -5,9 +5,23 @@ class BaseAsyncjobRpcError(OsparcErrorMixin, RuntimeError):
     pass
 
 
+class JobSchedulerError(BaseAsyncjobRpcError):
+    msg_template: str = "Celery exception: {exc}"
+
+
 class StatusError(BaseAsyncjobRpcError):
     msg_template: str = "Could not get status of job {job_id}"
 
 
-class ResultError(BaseAsyncjobRpcError):
-    msg_template: str = "Could not get results of job {job_id}"
+class JobNotDoneError(BaseAsyncjobRpcError):
+    msg_template: str = "Job {job_id} not done"
+
+
+class JobAbortedError(BaseAsyncjobRpcError):
+    msg_template: str = "Job {job_id} not done"
+
+
+class JobError(BaseAsyncjobRpcError):
+    msg_template: str = (
+        "Job {job_id} failed with exception type {exc_type} and message {exc_msg}"
+    )
