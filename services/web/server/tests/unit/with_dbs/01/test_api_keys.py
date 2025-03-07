@@ -20,12 +20,8 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_login import NewUser, UserInfoDict
 from servicelib.aiohttp import status
 from servicelib.aiohttp.application_keys import APP_SETTINGS_KEY
-from simcore_service_webserver.api_keys import _repository as repo
-from simcore_service_webserver.api_keys._models import ApiKey
-from simcore_service_webserver.api_keys._service import (
-    get_or_create_api_key,
-    prune_expired_api_keys,
-)
+from simcore_service_webserver.api_keys import _repository, _service, api_keys_service
+from simcore_service_webserver.api_keys.models import ApiKey
 from simcore_service_webserver.application_settings import GarbageCollectorSettings
 from simcore_service_webserver.db.models import UserRole
 from tenacity import (
@@ -45,7 +41,7 @@ async def fake_user_api_keys(
 ) -> AsyncIterable[list[int]]:
     assert client.app
     api_keys: list[ApiKey] = [
-        await repo.create_api_key(
+        await _repository.create_api_key(
             client.app,
             user_id=logged_user["id"],
             product_name=osparc_product_name,
@@ -60,7 +56,7 @@ async def fake_user_api_keys(
     yield api_keys
 
     for api_key in api_keys:
-        await repo.delete_api_key(
+        await _repository.delete_api_key(
             client.app,
             api_key_id=api_key.id,
             user_id=logged_user["id"],
@@ -183,7 +179,7 @@ async def test_create_api_key_with_expiration(
             reraise=True,
         ):
             with attempt:
-                deleted = await prune_expired_api_keys(client.app)
+                deleted = await api_keys_service.prune_expired_api_keys(client.app)
                 assert deleted == ["foo"]
 
         resp = await client.get("/v0/auth/api-keys")
@@ -207,13 +203,15 @@ async def test_get_or_create_api_key(
         }
 
         # create once
-        created = await get_or_create_api_key(client.app, **options)
+        created = await _service.get_or_create_api_key(client.app, **options)
         assert created.display_name == "foo"
         assert created.api_key != created.api_secret
 
         # idempotent
         for _ in range(3):
-            assert await get_or_create_api_key(client.app, **options) == created
+            assert (
+                await _service.get_or_create_api_key(client.app, **options) == created
+            )
 
 
 @pytest.mark.parametrize(

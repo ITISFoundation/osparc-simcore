@@ -12,8 +12,8 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncConnection
 
 from ..db.plugin import get_asyncpg_engine
-from ._models import ApiKey
 from .errors import ApiKeyDuplicatedDisplayNameError
+from .models import ApiKey
 
 _logger = logging.getLogger(__name__)
 
@@ -193,5 +193,6 @@ async def prune_expired(
             .returning(api_keys.c.display_name)
         )
         result = await conn.stream(stmt)
-        rows = [row async for row in result]
-        return [r.display_name for r in rows]
+
+    rows = [row async for row in result]
+    return [r.display_name for r in rows]

@@ -9,8 +9,8 @@ from models_library.users import UserID
 from servicelib.utils_secrets import generate_token_secret_key
 
 from . import _repository
-from ._models import ApiKey
 from .errors import ApiKeyNotFoundError
+from .models import ApiKey
 
 _PUNCTUATION_REGEX = re.compile(
     pattern="[" + re.escape(string.punctuation.replace("_", "")) + "]"
