@@ -462,3 +462,31 @@ class PathMetaDataGet(BaseModel):
     model_config = ConfigDict(
         extra="forbid", json_schema_extra=_update_json_schema_extra
     )
+
+
+class PathTotalSizeCreate(BaseModel):
+    path: Path
+    size: ByteSize
+
+    @staticmethod
+    def _update_json_schema_extra(schema: JsonDict) -> None:
+        schema.update(
+            {
+                "examples": [
+                    # a folder
+                    {
+                        "path": "f8da77a9-24b9-4eab-aee7-1f0608da1e3e",
+                        "size": 15728640,
+                    },
+                    # 1 file
+                    {
+                        "path": f"f8da77a9-24b9-4eab-aee7-1f0608da1e3e/2f94f80f-633e-4dfa-a983-226b7babe3d7/outputs/output5/{FileMetaDataGet.model_json_schema()['examples'][0]['file_name']}",
+                        "size": 1024,
+                    },
+                ]
+            }
+        )
+
+    model_config = ConfigDict(
+        extra="forbid", json_schema_extra=_update_json_schema_extra
+    )
