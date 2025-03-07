@@ -1,12 +1,15 @@
 # pylint: disable=W0621
 # pylint: disable=W0613
 from collections.abc import Awaitable, Callable
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Literal, NamedTuple
+from uuid import UUID
 
 import pytest
 from faker import Faker
 from fastapi import FastAPI
+from models_library.api_schemas_long_running_tasks.tasks import TaskResult
 from models_library.api_schemas_rpc_async_jobs.async_jobs import (
     AsyncJobAbort,
     AsyncJobGet,
@@ -18,7 +21,6 @@ from models_library.api_schemas_storage import STORAGE_RPC_NAMESPACE
 from models_library.api_schemas_storage.data_export_async_jobs import (
     DataExportTaskStartInput,
 )
-from models_library.progress_bar import ProgressReport
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
 from models_library.users import UserID
 from pydantic import ByteSize, TypeAdapter
@@ -28,12 +30,12 @@ from pytest_simcore.helpers.storage_utils import FileIDDict, ProjectWithFilesPar
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.async_jobs import async_jobs
+from servicelib.rabbitmq.rpc_interfaces.storage.data_export import start_data_export
 from settings_library.rabbit import RabbitSettings
 from simcore_service_storage.api.rpc._async_jobs import AsyncJobNameData, TaskStatus
 from simcore_service_storage.api.rpc._data_export import AccessRightError
 from simcore_service_storage.core.settings import ApplicationSettings
 from simcore_service_storage.modules.celery.client import TaskUUID
-from simcore_service_storage.modules.celery.models import TaskState
 
 pytest_plugins = [
     "pytest_simcore.rabbit_service",
@@ -54,27 +56,50 @@ async def mock_rabbit_setup(mocker: MockerFixture):
     pass
 
 
+@dataclass
 class _MockCeleryClient:
+    send_task_object: UUID | Exception | None = None
+    get_task_status_object: TaskStatus | Exception | None = None
+    get_result_object: TaskResult | Exception | None = None
+    get_task_uuids_object: set[UUID] | Exception | None = None
+
     async def send_task(self, *args, **kwargs) -> TaskUUID:
-        return _faker.uuid4()
+        assert self.send_task_object is not None
+        if isinstance(self.send_task_object, Exception):
+            raise self.send_task_object
+        return self.send_task_object
 
     async def get_task_status(self, *args, **kwargs) -> TaskStatus:
-        return TaskStatus(
-            task_uuid=_faker.uuid4(),
-            task_state=TaskState.RUNNING,
-            progress_report=ProgressReport(actual_value=42.0),
-        )
+        assert self.get_task_status_object is not None
+        if isinstance(self.get_task_status_object, Exception):
+            raise self.get_task_status_object
+        return self.get_task_status_object
 
     async def get_result(self, *args, **kwargs) -> Any:
-        return {}
+        assert self.get_result_object is not None
+        if isinstance(self.get_result_object, Exception):
+            raise self.get_result_object
+        return self.get_result_object
 
     async def get_task_uuids(self, *args, **kwargs) -> set[TaskUUID]:
-        return {_faker.uuid4()}
+        assert self.get_task_uuids_object is not None
+        if isinstance(self.get_task_uuids_object, Exception):
+            raise self.get_task_uuids_object
+        return self.get_task_uuids_object
 
 
 @pytest.fixture
-async def mock_celery_client(mocker: MockerFixture) -> MockerFixture:
-    _celery_client = _MockCeleryClient()
+async def mock_celery_client(
+    mocker: MockerFixture,
+    request: pytest.FixtureRequest,
+) -> MockerFixture:
+    params = request.param if hasattr(request, "param") else {}
+    _celery_client = _MockCeleryClient(
+        send_task_object=params.get("send_task_object", None),
+        get_task_status_object=params.get("get_task_status_object", None),
+        get_result_object=params.get("get_result_object", None),
+        get_task_uuids_object=params.get("get_task_uuids_object", None),
+    )
     mocker.patch(
         "simcore_service_storage.api.rpc._async_jobs.get_celery_client",
         return_value=_celery_client,
@@ -145,6 +170,13 @@ class UserWithFile(NamedTuple):
     ],
     ids=str,
 )
+@pytest.mark.parametrize(
+    "mock_celery_client",
+    [
+        {"send_task_object": TaskUUID(_faker.uuid4())},
+    ],
+    indirect=True,
+)
 async def test_start_data_export_success(
     rpc_client: RabbitMQRPCClient,
     mock_celery_client: MockerFixture,
@@ -174,10 +206,8 @@ async def test_start_data_export_success(
     else:
         pytest.fail("invalid parameter: to_check")
 
-    result = await async_jobs.submit_job(
+    result = await start_data_export(
         rpc_client,
-        rpc_namespace=STORAGE_RPC_NAMESPACE,
-        method_name="start_data_export",
         job_id_data=AsyncJobNameData(user_id=user_id, product_name="osparc"),
         data_export_start=DataExportTaskStartInput(
             location_id=0,
@@ -246,7 +276,10 @@ async def test_get_data_export_status(
 async def test_get_data_export_result(
     rpc_client: RabbitMQRPCClient,
     mock_celery_client: MockerFixture,
+    mocker: MockerFixture,
 ):
+    mocker.patch("simcore_service_storage.api.rpc._async_jobs")
+
     _job_id = AsyncJobId(_faker.uuid4())
     result = await async_jobs.get_result(
         rpc_client,

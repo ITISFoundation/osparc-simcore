@@ -6,7 +6,6 @@ from models_library.api_schemas_rpc_async_jobs.async_jobs import (
 )
 from models_library.api_schemas_storage.data_export_async_jobs import (
     AccessRightError,
-    DataExportError,
     DataExportTaskStartInput,
     InvalidFileIdentifierError,
 )
@@ -27,7 +26,6 @@ router = RPCRouter()
     reraise_if_error_type=(
         InvalidFileIdentifierError,
         AccessRightError,
-        DataExportError,
         JobSchedulerError,
     )
 )
