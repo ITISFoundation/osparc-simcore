@@ -174,10 +174,15 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
           "studyId": this.__resourceData["uuid"]
         }
       };
-      osparc.data.Resources.fetch("studies", "getOne", params)
-        .then(updatedStudyData => {
+      Promise.all([
+        osparc.data.Resources.fetch("studies", "getOne", params),
+        osparc.data.Resources.fetch("studies", "getServices", params)
+      ])
+        .then(values => {
+          const updatedStudyData = values[0];
+          const servicesResp = values[1];
           openButton.setFetching(false);
-          const updatableServices = osparc.metadata.ServicesInStudyUpdate.updatableNodeIds(updatedStudyData.workbench);
+          const updatableServices = osparc.metadata.ServicesInStudyUpdate.updatableNodeIds(updatedStudyData.workbench, servicesResp["services"]);
           if (updatableServices.length && osparc.data.model.Study.canIWrite(updatedStudyData["accessRights"])) {
             this.__confirmUpdate();
           } else {

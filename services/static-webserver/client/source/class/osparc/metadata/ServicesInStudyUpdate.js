@@ -27,11 +27,12 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
       UPDATE_BUTTON: Object.keys(osparc.metadata.ServicesInStudy.GRID_POS).length+2
     },
 
-    updatableNodeIds: function(workbench) {
+    updatableNodeIds: function(workbench, services) {
       const nodeIds = [];
       for (const nodeId in workbench) {
         const node = workbench[nodeId];
-        if (osparc.service.Utils.isUpdatable(node)) {
+        const serviceFound = services.find(service => service["key"] === node["key"] && service["release"]["version"] === node["version"]);
+        if (serviceFound && serviceFound["release"] && serviceFound["release"]["compatibility"]) {
           nodeIds.push(nodeId);
         }
       }
@@ -167,6 +168,7 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
       const canIWrite = osparc.data.model.Study.canIWrite(this._studyData["accessRights"]);
 
       let i = 0;
+      const updatableServices = [];
       const workbench = this._studyData["workbench"];
       for (const nodeId in workbench) {
         i++;
@@ -208,8 +210,8 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
         });
 
         if (latestCompatible && canIWrite) {
-          const isUpdatable = osparc.service.Utils.isUpdatable(metadata);
           const updateButton = new osparc.ui.form.FetchButton(null, "@MaterialIcons/update/14");
+          const isUpdatable = osparc.service.Utils.isUpdatable(metadata);
           updateButton.set({
             enabled: isUpdatable
           });
@@ -223,6 +225,7 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
               label: this.tr("Update"),
               center: true
             });
+            updatableServices.push(nodeId);
           }
           updateButton.addListener("execute", () => this.__updateService(nodeId, node["key"], node["version"], updateButton), this);
           this._servicesGrid.add(updateButton, {
@@ -232,7 +235,6 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
         }
       }
 
-      const updatableServices = osparc.metadata.ServicesInStudyUpdate.updatableNodeIds(workbench);
       if (updatableServices.length && canIWrite) {
         const updateAllButton = this.__updateAllButton;
         updateAllButton.show();
