@@ -84,7 +84,7 @@ from simcore_postgres_database.webserver_models import ProjectType
 from yarl import URL
 
 from ..application_settings import get_application_settings
-from ..catalog import client as catalog_service
+from ..catalog import catalog_service
 from ..director_v2 import api as director_v2_service
 from ..dynamic_scheduler import api as dynamic_scheduler_service
 from ..products import products_web
