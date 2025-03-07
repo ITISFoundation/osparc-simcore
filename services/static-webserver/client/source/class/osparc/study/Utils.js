@@ -331,29 +331,35 @@ qx.Class.define("osparc.study.Utils", {
     },
 
     guessIcon: function(studyData) {
-      if (osparc.product.Utils.isProduct("tis") || osparc.product.Utils.isProduct("tiplite")) {
-        return this.__guessTIPIcon(studyData);
-      }
-      return this.__guessIcon(studyData);
+      return new Promise(resolve => {
+        if (osparc.product.Utils.isProduct("tis") || osparc.product.Utils.isProduct("tiplite")) {
+          resolve(this.__guessTIPIcon(studyData));
+        } else {
+          resolve(this.__guessIcon(studyData));
+        }
+      });
     },
 
     __guessIcon: function(studyData) {
-      // the was to guess the TI type is to check the boot mode of the ti-postpro in the pipeline
-      const wbServices = this.self().getNonFrontendNodes(studyData);
-      if (wbServices.length === 1) {
-        const wbService = wbServices[0];
-        const allServices = osparc.store.Services.servicesCached;
-        if (wbService.key in allServices && wbService.version in allServices[wbService.key]) {
-          const serviceMetadata = allServices[wbService.key][wbService.version];
-          if (serviceMetadata["icon"]) {
-            return serviceMetadata["icon"];
-          }
+      const defaultIcon = osparc.dashboard.CardBase.PRODUCT_ICON;
+      return new Promise(resolve => {
+        // the was to guess the TI type is to check the boot mode of the ti-postpro in the pipeline
+        const wbServices = this.self().getNonFrontendNodes(studyData);
+        if (wbServices.length === 1) {
+          const wbService = wbServices[0];
+          osparc.store.Services.getService(wbService.key, wbService.version)
+            .then(serviceMetadata => {
+              if (serviceMetadata["icon"]) {
+                resolve(serviceMetadata["icon"]);
+              }
+              resolve(defaultIcon);
+            });
+        } else if (wbServices.length > 1) {
+          resolve("osparc/icons/diagram.png");
+        } else {
+          resolve(defaultIcon);
         }
-      }
-      if (wbServices.length > 1) {
-        return "osparc/icons/diagram.png";
-      }
-      return osparc.dashboard.CardBase.PRODUCT_ICON;
+      });
     },
 
     __guessTIPIcon: function(studyData) {

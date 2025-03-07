@@ -343,7 +343,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
             });
             for (let i=0; i<newStudyData["myMostUsed"]; i++) {
               const latestMetadata = servicesList[i];
-              if (latestMetadata["hits"] > 0) {
+              if (latestMetadata && latestMetadata["hits"] > 0) {
                 const menuButton = new qx.ui.menu.Button().set({
                   label: latestMetadata["name"],
                   font: "text-16",
