@@ -10,7 +10,7 @@ Currently includes two parts:
 import asyncio
 import logging
 
-import twilio.rest
+import twilio.rest  # type: ignore[import-untyped]
 from aiohttp import web
 from models_library.users import UserID
 from pydantic import BaseModel, Field
