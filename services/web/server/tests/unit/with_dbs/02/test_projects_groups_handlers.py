@@ -20,7 +20,7 @@ from simcore_service_webserver.projects.models import ProjectDict
 @pytest.fixture
 def mock_catalog_api_get_services_for_user_in_product(mocker: MockerFixture):
     mocker.patch(
-        "simcore_service_webserver.projects._crud_handlers.get_services_for_user_in_product",
+        "simcore_service_webserver.projects._crud_handlers.catalog_service.get_services_for_user_in_product",
         spec=True,
         return_value=[],
     )
@@ -35,15 +35,6 @@ def mock_project_uses_available_services(mocker: MockerFixture):
     )
 
 
-@pytest.fixture
-def mock_catalog_api_get_services_for_user_in_product_2(mocker: MockerFixture):
-    mocker.patch(
-        "simcore_service_webserver.projects._crud_api_read.get_services_for_user_in_product",
-        spec=True,
-        return_value=[],
-    )
-
-
 @pytest.mark.acceptance_test(
     "Driving test for https://github.com/ITISFoundation/osparc-issues/issues/1547"
 )
@@ -55,7 +46,6 @@ async def test_projects_groups_full_workflow(
     expected: HTTPStatus,
     mock_catalog_api_get_services_for_user_in_product,
     mock_project_uses_available_services,
-    mock_catalog_api_get_services_for_user_in_product_2,
 ):
     assert client.app
     # check the default project permissions

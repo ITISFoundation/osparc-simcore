@@ -94,7 +94,7 @@ from simcore_postgres_database.utils_projects_nodes import (
 from simcore_postgres_database.webserver_models import ProjectType
 
 from ..application_settings import get_application_settings
-from ..catalog import client as catalog_client
+from ..catalog import catalog_service
 from ..director_v2 import api as director_v2_api
 from ..dynamic_scheduler import api as dynamic_scheduler_api
 from ..products import products_web
@@ -412,9 +412,9 @@ async def _get_default_pricing_and_hardware_info(
     )
 
 
-_MACHINE_TOTAL_RAM_SAFE_MARGIN_RATIO: Final[
-    float
-] = 0.1  # NOTE: machines always have less available RAM than advertised
+_MACHINE_TOTAL_RAM_SAFE_MARGIN_RATIO: Final[float] = (
+    0.1  # NOTE: machines always have less available RAM than advertised
+)
 _SIDECARS_OPS_SAFE_RAM_MARGIN: Final[ByteSize] = TypeAdapter(ByteSize).validate_python(
     "1GiB"
 )
@@ -437,11 +437,11 @@ async def update_project_node_resources_from_hardware_info(
         return
     try:
         rabbitmq_rpc_client = get_rabbitmq_rpc_client(app)
-        unordered_list_ec2_instance_types: list[
-            EC2InstanceTypeGet
-        ] = await get_instance_type_details(
-            rabbitmq_rpc_client,
-            instance_type_names=set(hardware_info.aws_ec2_instances),
+        unordered_list_ec2_instance_types: list[EC2InstanceTypeGet] = (
+            await get_instance_type_details(
+                rabbitmq_rpc_client,
+                instance_type_names=set(hardware_info.aws_ec2_instances),
+            )
         )
 
         assert unordered_list_ec2_instance_types  # nosec
@@ -817,7 +817,7 @@ async def add_project_node(
     )
 
     node_uuid = NodeID(service_id if service_id else f"{uuid4()}")
-    default_resources = await catalog_client.get_service_resources(
+    default_resources = await catalog_service.get_service_resources(
         request.app, user_id, service_key, service_version
     )
     db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(request.app)
@@ -1366,10 +1366,10 @@ async def try_open_project_for_user(
 
                 # Assign project_id to current_session
                 current_session: UserSessionID = user_session.get_id()
-                sessions_with_project: list[
-                    UserSessionID
-                ] = await user_session.find_users_of_resource(
-                    app, PROJECT_ID_KEY, f"{project_uuid}"
+                sessions_with_project: list[UserSessionID] = (
+                    await user_session.find_users_of_resource(
+                        app, PROJECT_ID_KEY, f"{project_uuid}"
+                    )
                 )
                 if not sessions_with_project:
                     # no one has the project so we assign it
@@ -1418,10 +1418,10 @@ async def try_close_project_for_user(
 ):
     with managed_resource(user_id, client_session_id, app) as user_session:
         current_session: UserSessionID = user_session.get_id()
-        all_sessions_with_project: list[
-            UserSessionID
-        ] = await user_session.find_users_of_resource(
-            app, key=PROJECT_ID_KEY, value=project_uuid
+        all_sessions_with_project: list[UserSessionID] = (
+            await user_session.find_users_of_resource(
+                app, key=PROJECT_ID_KEY, value=project_uuid
+            )
         )
 
         # first check whether other sessions registered this project
@@ -1616,7 +1616,7 @@ async def is_service_deprecated(
     service_version: str,
     product_name: str,
 ) -> bool:
-    service = await catalog_client.get_service(
+    service = await catalog_service.get_service(
         app, user_id, service_key, service_version, product_name
     )
     if deprecation_date := service.get("deprecated"):
@@ -1665,7 +1665,7 @@ async def get_project_node_resources(
         )
         if not node_resources:
             # get default resources
-            node_resources = await catalog_client.get_service_resources(
+            node_resources = await catalog_service.get_service_resources(
                 app, user_id, service_key, service_version
             )
         return node_resources
@@ -1696,7 +1696,7 @@ async def update_project_node_resources(
         if not current_resources:
             # NOTE: this can happen after the migration
             # get default resources
-            current_resources = await catalog_client.get_service_resources(
+            current_resources = await catalog_service.get_service_resources(
                 app, user_id, service_key, service_version
             )
 

@@ -47,11 +47,11 @@ charset-normalizer==3.4.0
     # via
     #   -c requirements/_base.txt
     #   requests
-coverage==7.6.10
+coverage==7.6.12
     # via pytest-cov
 docker==7.1.0
     # via -r requirements/_test.in
-faker==35.0.0
+faker==36.1.1
     # via -r requirements/_test.in
 flaky==3.8.1
     # via -r requirements/_test.in
@@ -81,7 +81,7 @@ multidict==6.1.0
     #   aiohttp
     #   async-asgi-testclient
     #   yarl
-mypy==1.14.1
+mypy==1.15.0
     # via sqlalchemy
 mypy-extensions==1.0.0
     # via mypy
@@ -96,7 +96,7 @@ propcache==0.2.0
     #   -c requirements/_base.txt
     #   aiohttp
     #   yarl
-pytest==8.3.4
+pytest==8.3.5
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
@@ -114,7 +114,6 @@ python-dateutil==2.9.0.post0
     # via
     #   -c requirements/_base.txt
     #   botocore
-    #   faker
 python-dotenv==1.0.1
     # via
     #   -c requirements/_base.txt
@@ -141,21 +140,22 @@ sqlalchemy==1.4.54
     #   -r requirements/_test.in
 sqlalchemy2-stubs==0.0.2a38
     # via sqlalchemy
-types-aiobotocore-s3==2.19.0
+types-aiobotocore-s3==2.21.0
     # via -r requirements/_test.in
 types-aiofiles==24.1.0.20241221
     # via -r requirements/_test.in
-types-psutil==6.1.0.20241221
+types-psutil==7.0.0.20250218
     # via -r requirements/_test.in
 types-pyyaml==6.0.12.20241230
     # via -r requirements/_test.in
 typing-extensions==4.12.2
     # via
     #   -c requirements/_base.txt
-    #   faker
     #   mypy
     #   sqlalchemy2-stubs
     #   types-aiobotocore-s3
+tzdata==2025.1
+    # via faker
 urllib3==2.2.3
     # via
     #   -c requirements/../../../requirements/constraints.txt

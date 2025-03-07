@@ -1,7 +1,5 @@
-""" Requests to catalog service API
+"""Requests to catalog service API"""
 
-"""
-import asyncio
 import logging
 import urllib.parse
 from collections.abc import Iterator
@@ -47,7 +45,7 @@ def _handle_client_exceptions(app: web.Application) -> Iterator[ClientSession]:
             reason=MSG_CATALOG_SERVICE_UNAVAILABLE
         ) from err
 
-    except (asyncio.TimeoutError, ClientConnectionError) as err:
+    except (TimeoutError, ClientConnectionError) as err:
         _logger.debug("Request to catalog service failed: %s", err)
         raise web.HTTPServiceUnavailable(
             reason=MSG_CATALOG_SERVICE_UNAVAILABLE
