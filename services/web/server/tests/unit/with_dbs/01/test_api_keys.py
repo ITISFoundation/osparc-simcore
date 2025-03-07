@@ -14,20 +14,22 @@ import tenacity
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from models_library.products import ProductName
-from pytest_mock import MockerFixture
+from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_login import NewUser, UserInfoDict
 from servicelib.aiohttp import status
-from servicelib.aiohttp.application_keys import APP_SETTINGS_KEY
 from simcore_service_webserver.api_keys import _repository, _service, api_keys_service
 from simcore_service_webserver.api_keys.models import ApiKey
-from simcore_service_webserver.application_settings import GarbageCollectorSettings
+from simcore_service_webserver.application_settings import (
+    ApplicationSettings,
+    get_application_settings,
+)
 from simcore_service_webserver.db.models import UserRole
 from tenacity import (
     retry_if_exception_type,
-    stop_after_attempt,
+    stop_after_delay,
     wait_fixed,
 )
 
@@ -38,8 +40,9 @@ async def fake_user_api_keys(
     logged_user: UserInfoDict,
     osparc_product_name: ProductName,
     faker: Faker,
-) -> AsyncIterable[list[int]]:
+) -> AsyncIterable[list[ApiKey]]:
     assert client.app
+
     api_keys: list[ApiKey] = [
         await _repository.create_api_key(
             client.app,
@@ -85,7 +88,7 @@ async def test_list_api_keys(
     logged_user: UserInfoDict,
     user_role: UserRole,
     expected: HTTPStatus,
-    disable_gc_manual_guest_users: None,
+    disabled_setup_garbage_collector: MockType,
 ):
     resp = await client.get("/v0/auth/api-keys")
     data, errors = await assert_status(resp, expected)
@@ -103,7 +106,7 @@ async def test_create_api_key(
     logged_user: UserInfoDict,
     user_role: UserRole,
     expected: HTTPStatus,
-    disable_gc_manual_guest_users: None,
+    disabled_setup_garbage_collector: MockType,
 ):
     display_name = "foo"
     resp = await client.post("/v0/auth/api-keys", json={"displayName": display_name})
@@ -130,7 +133,7 @@ async def test_delete_api_keys(
     logged_user: UserInfoDict,
     user_role: UserRole,
     expected: HTTPStatus,
-    disable_gc_manual_guest_users: None,
+    disabled_setup_garbage_collector: MockType,
 ):
     resp = await client.delete("/v0/auth/api-keys/0")
     await assert_status(resp, expected)
@@ -138,6 +141,9 @@ async def test_delete_api_keys(
     for api_key in fake_user_api_keys:
         resp = await client.delete(f"/v0/auth/api-keys/{api_key.id}")
         await assert_status(resp, expected)
+
+
+EXPIRATION_WAIT_FACTOR = 1.2
 
 
 @pytest.mark.parametrize(
@@ -149,7 +155,7 @@ async def test_create_api_key_with_expiration(
     logged_user: UserInfoDict,
     user_role: UserRole,
     expected: HTTPStatus,
-    disable_gc_manual_guest_users: None,
+    disabled_setup_garbage_collector: MockType,
 ):
     assert client.app
 
@@ -172,7 +178,7 @@ async def test_create_api_key_with_expiration(
         assert [d["displayName"] for d in data] == ["foo"]
 
         # wait for api-key for it to expire and force-run scheduled task
-        await asyncio.sleep(1.1 * expiration_interval.seconds)
+        await asyncio.sleep(EXPIRATION_WAIT_FACTOR * expiration_interval.seconds)
 
         deleted = await api_keys_service.prune_expired_api_keys(client.app)
         assert deleted == ["foo"]
@@ -184,6 +190,7 @@ async def test_create_api_key_with_expiration(
 
 async def test_get_or_create_api_key(
     client: TestClient,
+    disabled_setup_garbage_collector: MockType,
 ):
     async with NewUser(
         app=client.app,
@@ -218,7 +225,7 @@ async def test_get_not_existing_api_key(
     logged_user: UserInfoDict,
     user_role: UserRole,
     expected: HTTPException,
-    disable_gc_manual_guest_users: None,
+    disabled_setup_garbage_collector: MockType,
 ):
     resp = await client.get("/v0/auth/api-keys/42")
     data, errors = await assert_status(resp, expected)
@@ -241,20 +248,31 @@ async def app_environment(
 
 
 async def test_prune_expired_api_keys_task_is_triggered(
-    app_environment: EnvVarsDict, mocker: MockerFixture, client: TestClient
+    app_environment: EnvVarsDict,
+    mocker: MockerFixture,
+    client: TestClient,
 ):
-    mock = mocker.patch(
-        "simcore_service_webserver.api_keys._service._repository.prune_expired"
-    )
-    settings = client.server.app[  # type: ignore
-        APP_SETTINGS_KEY
-    ].WEBSERVER_GARBAGE_COLLECTOR
-    assert isinstance(settings, GarbageCollectorSettings)
+    assert app_environment["WEBSERVER_GARBAGE_COLLECTOR"] is not None
+
+    delete_expired_spy = mocker.spy(_repository, "delete_expired_api_keys")
+
+    assert client.app
+
+    settings: ApplicationSettings = get_application_settings(client.app)
+    assert settings.WEBSERVER_GARBAGE_COLLECTOR
+
+    assert not delete_expired_spy.called
+
     async for attempt in tenacity.AsyncRetrying(
-        stop=stop_after_attempt(5),
+        stop=stop_after_delay(
+            timedelta(
+                seconds=EXPIRATION_WAIT_FACTOR
+                * settings.WEBSERVER_GARBAGE_COLLECTOR.GARBAGE_COLLECTOR_EXPIRED_USERS_CHECK_INTERVAL_S
+            )
+        ),
         wait=wait_fixed(1),
         retry=retry_if_exception_type(AssertionError),
         reraise=True,
     ):
         with attempt:
-            mock.assert_called()
+            delete_expired_spy.assert_called()

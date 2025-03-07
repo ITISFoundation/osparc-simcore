@@ -10,10 +10,10 @@ import sys
 from collections.abc import Callable, Iterable
 from pathlib import Path
 from typing import Any
-from unittest.mock import MagicMock
 
 import pytest
 import yaml
+from pytest_mock import MockFixture, MockType
 from pytest_simcore.helpers.webserver_projects import empty_project_data
 from simcore_service_webserver.application_settings_utils import AppConfigDict
 
@@ -62,7 +62,7 @@ def activity_data(fake_data_dir: Path) -> Iterable[dict[str, Any]]:
 
 
 @pytest.fixture
-def mock_orphaned_services(mocker) -> MagicMock:
+def mock_orphaned_services(mocker: MockFixture) -> MockType:
     return mocker.patch(
         "simcore_service_webserver.garbage_collector._core.remove_orphaned_services",
         return_value="",
@@ -70,9 +70,16 @@ def mock_orphaned_services(mocker) -> MagicMock:
 
 
 @pytest.fixture
-def disable_gc_manual_guest_users(mocker):
+def disable_gc_manual_guest_users(mocker: MockFixture) -> None:
     """Disable to avoid an almost instant cleanup of GUEST users with their projects"""
     mocker.patch(
         "simcore_service_webserver.garbage_collector._core.remove_users_manually_marked_as_guests",
         return_value=None,
+    )
+
+
+@pytest.fixture
+def disabled_setup_garbage_collector(mocker: MockFixture) -> MockType:
+    return mocker.patch(
+        "simcore_service_webserver.application.setup_garbage_collector", autospec=True
     )
