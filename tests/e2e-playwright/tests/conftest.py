@@ -113,6 +113,13 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         help="Whether service is a legacy service (no sidecar)",
     )
     group.addoption(
+        "--service-version",
+        action="store",
+        type=str,
+        default=None,
+        help="The service version option defines a service specific version",
+    )
+    group.addoption(
         "--template-id",
         action="store",
         type=str,
@@ -270,6 +277,14 @@ def service_key(request: pytest.FixtureRequest) -> str:
 def is_service_legacy(request: pytest.FixtureRequest) -> bool:
     autoscaled = request.config.getoption("--service-is-legacy")
     return TypeAdapter(bool).validate_python(autoscaled)
+
+
+@pytest.fixture(scope="session")
+def service_version(request: pytest.FixtureRequest) -> str | None:
+    if key := request.config.getoption("--service-version"):
+        assert isinstance(key, str)
+        return key
+    return None
 
 
 @pytest.fixture(scope="session")
@@ -438,6 +453,22 @@ def _open_with_resources(page: Page, *, click_it: bool):
     return open_with_resources_button
 
 
+def _select_service_version(page: Page, *, version: str) -> None:
+    try:
+        # since https://github.com/ITISFoundation/osparc-simcore/pull/7060
+        with log_context(logging.INFO, msg=f"selecting version {version}"):
+            page.get_by_test_id("serviceSelectBox").click(timeout=5 * SECOND)
+            with page.expect_response(
+                re.compile(r"/catalog/services/.+/resources"), timeout=1.5 * 5 * SECOND
+            ):
+                page.get_by_test_id(f"serviceVersionItem_{version}").click(
+                    timeout=5 * SECOND
+                )
+    except TimeoutError:
+        # we try the non robust way
+        page.get_by_label("Version").select_option(version)
+
+
 @pytest.fixture
 def create_new_project_and_delete(
     page: Page,
@@ -445,16 +476,19 @@ def create_new_project_and_delete(
     is_product_billable: bool,
     api_request_context: APIRequestContext,
     product_url: AnyUrl,
-) -> Iterator[Callable[[tuple[RunningState], bool], dict[str, Any]]]:
+) -> Iterator[
+    Callable[[tuple[RunningState], bool, str | None, str | None], dict[str, Any]]
+]:
     """The first available service currently displayed in the dashboard will be opened
     NOTE: cannot be used multiple times or going back to dashboard will fail!!
     """
     created_project_uuids = []
 
     def _(
-        expected_states: tuple[RunningState] = (RunningState.NOT_STARTED,),
-        press_open: bool = True,
-        template_id: str | None = None,
+        expected_states: tuple[RunningState],
+        press_open: bool,
+        template_id: str | None,
+        service_version: str | None,
     ) -> dict[str, Any]:
         assert (
             len(created_project_uuids) == 0
@@ -527,6 +561,8 @@ def create_new_project_and_delete(
                                 # not expected in the sim4life context though
                                 ...
                     else:
+                        if service_version is not None:
+                            _select_service_version(page, version=service_version)
                         open_button.click()
                         if is_product_billable:
                             _open_with_resources(page, click_it=True)
@@ -618,7 +654,9 @@ def find_and_start_service_in_dashboard(
     page: Page,
 ) -> Callable[[ServiceType, str, str | None], None]:
     def _(
-        service_type: ServiceType, service_name: str, service_key_prefix: str | None
+        service_type: ServiceType,
+        service_name: str,
+        service_key_prefix: str | None,
     ) -> None:
         with log_context(logging.INFO, f"Finding {service_name=} in dashboard"):
             page.get_by_test_id("servicesTabBtn").click()
@@ -638,13 +676,13 @@ def find_and_start_service_in_dashboard(
 def create_project_from_new_button(
     start_study_from_plus_button: Callable[[str], None],
     create_new_project_and_delete: Callable[
-        [tuple[RunningState], bool], dict[str, Any]
+        [tuple[RunningState], bool, str | None, str | None], dict[str, Any]
     ],
 ) -> Callable[[str], dict[str, Any]]:
     def _(plus_button_test_id: str) -> dict[str, Any]:
         start_study_from_plus_button(plus_button_test_id)
         expected_states = (RunningState.UNKNOWN,)
-        return create_new_project_and_delete(expected_states, False)
+        return create_new_project_and_delete(expected_states, False, None, None)
 
     return _
 
@@ -652,12 +690,14 @@ def create_project_from_new_button(
 @pytest.fixture
 def create_project_from_template_dashboard(
     find_and_click_template_in_dashboard: Callable[[str], None],
-    create_new_project_and_delete: Callable[[tuple[RunningState]], dict[str, Any]],
-) -> Callable[[ServiceType, str, str | None], dict[str, Any]]:
+    create_new_project_and_delete: Callable[
+        [tuple[RunningState], bool, str | None, str | None], dict[str, Any]
+    ],
+) -> Callable[[str], dict[str, Any]]:
     def _(template_id: str) -> dict[str, Any]:
         find_and_click_template_in_dashboard(template_id)
         expected_states = (RunningState.UNKNOWN,)
-        return create_new_project_and_delete(expected_states, True, template_id)
+        return create_new_project_and_delete(expected_states, True, template_id, None)
 
     return _
 
@@ -665,10 +705,15 @@ def create_project_from_template_dashboard(
 @pytest.fixture
 def create_project_from_service_dashboard(
     find_and_start_service_in_dashboard: Callable[[ServiceType, str, str | None], None],
-    create_new_project_and_delete: Callable[[tuple[RunningState]], dict[str, Any]],
-) -> Callable[[ServiceType, str, str | None], dict[str, Any]]:
+    create_new_project_and_delete: Callable[
+        [tuple[RunningState], bool, str | None, str | None], dict[str, Any]
+    ],
+) -> Callable[[ServiceType, str, str | None, str | None], dict[str, Any]]:
     def _(
-        service_type: ServiceType, service_name: str, service_key_prefix: str | None
+        service_type: ServiceType,
+        service_name: str,
+        service_key_prefix: str | None,
+        service_version: str | None,
     ) -> dict[str, Any]:
         find_and_start_service_in_dashboard(
             service_type, service_name, service_key_prefix
@@ -676,7 +721,9 @@ def create_project_from_service_dashboard(
         expected_states = (RunningState.UNKNOWN,)
         if service_type is ServiceType.COMPUTATIONAL:
             expected_states = (RunningState.NOT_STARTED,)
-        return create_new_project_and_delete(expected_states, True)
+        return create_new_project_and_delete(
+            expected_states, True, None, service_version
+        )
 
     return _
 
