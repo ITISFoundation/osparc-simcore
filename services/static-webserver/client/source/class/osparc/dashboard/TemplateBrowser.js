@@ -390,7 +390,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
         return null;
       }
 
-      const editButton = new qx.ui.menu.Button(this.tr("Edit"));
+      const editButton = new qx.ui.menu.Button(this.tr("Open"));
       editButton.addListener("execute", () => this.__editTemplate(templateData), this);
       return editButton;
     },
