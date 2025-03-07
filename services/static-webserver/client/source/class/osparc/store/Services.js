@@ -42,7 +42,7 @@ qx.Class.define("osparc.store.Services", {
 
             // use response to populate servicesCached
             Object.values(servicesObj).forEach(serviceKey => {
-              Object.values(serviceKey).forEach(srv => this.__addToCache(srv));
+              Object.values(serviceKey).forEach(service => this.__addToCache(service));
             });
 
             resolve(servicesObj);
