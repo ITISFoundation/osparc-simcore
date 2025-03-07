@@ -21,9 +21,9 @@ from ..products import ProductName, StripePriceID, StripeTaxRateID
 from ._base import InputSchema, OutputSchema
 
 
-class CreditResultGet(BaseModel):
+class CreditResultRpcGet(BaseModel):
     product_name: ProductName
-    credit_amount: Decimal = Field(..., description="")
+    credit_amount: Decimal
 
     @staticmethod
     def _update_json_schema_extra(schema: JsonDict) -> None:

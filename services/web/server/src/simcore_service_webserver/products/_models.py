@@ -32,10 +32,16 @@ from simcore_postgres_database.models.products import (
     WebFeedback,
     products,
 )
+from typing_extensions import TypedDict
 
 from ..constants import FRONTEND_APPS_AVAILABLE
 
 _logger = logging.getLogger(__name__)
+
+
+class CreditResultDict(TypedDict):
+    product_name: ProductName
+    credit_amount: Decimal
 
 
 class PaymentFieldsTuple(NamedTuple):
