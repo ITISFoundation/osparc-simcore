@@ -57,6 +57,7 @@ from pytest_simcore.helpers.storage_utils_file_meta_data import (
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.aiohttp import status
 from servicelib.utils import limited_gather
+from settings_library.rabbit import RabbitSettings
 from simcore_postgres_database.models.tokens import tokens
 from simcore_postgres_database.storage_models import file_meta_data, projects, users
 from simcore_service_storage.core.application import create_app
@@ -92,6 +93,7 @@ pytest_plugins = [
     "pytest_simcore.openapi_specs",
     "pytest_simcore.postgres_service",
     "pytest_simcore.pytest_global_environs",
+    "pytest_simcore.rabbit_service",
     "pytest_simcore.repository_paths",
     "pytest_simcore.simcore_storage_data_models",
     "pytest_simcore.simcore_storage_datcore_adapter",
@@ -165,7 +167,6 @@ def app_environment(
     mock_env_devel_environment: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
     external_envfile_dict: EnvVarsDict,
-    mock_rabbit_setup: MockerFixture,
 ) -> EnvVarsDict:
     if external_envfile_dict:
         delenvs_from_dict(monkeypatch, mock_env_devel_environment, raising=False)
@@ -176,8 +177,21 @@ def app_environment(
 
 
 @pytest.fixture
+def disabled_rabbitmq(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setenv("STORAGE_RABBITMQ", "null")
+
+
+@pytest.fixture
+def enabled_rabbitmq(
+    app_environment: EnvVarsDict, rabbit_service: RabbitSettings
+) -> RabbitSettings:
+    return rabbit_service
+
+
+@pytest.fixture
 def app_settings(
     app_environment: EnvVarsDict,
+    enabled_rabbitmq: RabbitSettings,
     sqlalchemy_async_engine: AsyncEngine,
     postgres_host_config: dict[str, str],
     mocked_s3_server_envs: EnvVarsDict,
