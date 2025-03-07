@@ -1,13 +1,17 @@
 from datetime import datetime
 from enum import Enum, unique
 from pathlib import Path
+from typing import Annotated
 
-from pydantic import BaseModel, ByteSize
+from pydantic import BaseModel, ByteSize, Field
 
 
 class DatasetMetaData(BaseModel):
     id: str
     display_name: str
+    size: Annotated[
+        ByteSize | None, Field(description="Size of the dataset in bytes if available")
+    ]
 
 
 @unique

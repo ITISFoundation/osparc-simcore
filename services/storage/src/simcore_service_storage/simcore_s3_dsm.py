@@ -34,7 +34,7 @@ from models_library.projects_nodes_io import (
     StorageFileID,
 )
 from models_library.users import UserID
-from pydantic import AnyUrl, ByteSize, NonNegativeInt, TypeAdapter
+from pydantic import AnyUrl, ByteSize, NonNegativeInt, TypeAdapter, ValidationError
 from servicelib.aiohttp.long_running_tasks.server import TaskProgress
 from servicelib.fastapi.client_session import get_client_session
 from servicelib.logging_utils import log_context
@@ -81,6 +81,7 @@ from .utils.s3_utils import S3TransferDataCB, update_task_progress
 from .utils.simcore_s3_dsm_utils import (
     compute_file_id_prefix,
     expand_directory,
+    get_accessible_project_ids,
     get_directory_file_id,
     list_child_paths_from_repository,
     list_child_paths_from_s3,
@@ -191,17 +192,9 @@ class SimcoreS3DataManager(BaseDataManager):
             project_id = ProjectID(file_filter.parts[0]) if file_filter else None
 
         async with self.engine.connect() as conn:
-            if project_id:
-                project_access_rights = await get_project_access_rights(
-                    conn=conn, user_id=user_id, project_id=project_id
-                )
-                if not project_access_rights.read:
-                    raise ProjectAccessRightError(
-                        access_right="read", project_id=project_id
-                    )
-                accessible_projects_ids = [project_id]
-            else:
-                accessible_projects_ids = await get_readable_project_ids(conn, user_id)
+            accessible_projects_ids = await get_accessible_project_ids(
+                conn, user_id=user_id, project_id=project_id
+            )
 
             # check if the file_filter is a directory or inside one
             dir_fmd = None
@@ -250,6 +243,69 @@ class SimcoreS3DataManager(BaseDataManager):
                 path.update_display_fields(id_name_map)
 
         return paths_metadata, next_cursor, total
+
+    async def compute_path_size(self, user_id: UserID, *, path: Path) -> ByteSize:
+        """returns the total size of an arbitrary path"""
+        # check access rights first
+        project_id = None
+        with contextlib.suppress(ValueError):
+            # NOTE: we currently do not support anything else than project_id/node_id/file_path here, sorry chap
+            project_id = ProjectID(path.parts[0])
+        async with self.engine.connect() as conn:
+            accessible_projects_ids = await get_accessible_project_ids(
+                conn, user_id=user_id, project_id=project_id
+            )
+
+        # use-cases:
+        # 1. path is not a valid StorageFileID (e.g. a project or project/node) --> all entries are in the DB (files and folder)
+        #   2. path is valid StorageFileID and not in the DB --> entries are only in S3
+        #   3. path is valid StorageFileID and in the DB --> return directly from the DB
+
+        use_db_data = True
+        with contextlib.suppress(ValidationError):
+            file_id: StorageFileID = TypeAdapter(StorageFileID).validate_python(
+                f"{path}"
+            )
+            # path is a valid StorageFileID
+            async with self.engine.connect() as conn:
+                if (
+                    dir_fmd := await file_meta_data.try_get_directory(conn, path)
+                ) and dir_fmd.file_id != file_id:
+                    # this is pure S3 aka use-case 2
+                    use_db_data = False
+
+        if not use_db_data:
+            assert file_id  # nosec
+            s3_metadata = await get_s3_client(self.app).get_directory_metadata(
+                bucket=self.simcore_bucket_name, prefix=file_id
+            )
+            assert s3_metadata.size  # nosec
+            return s3_metadata.size
+
+        # all other use-cases are in the DB
+        async with self.engine.connect() as conn:
+            fmds = await file_meta_data.list_filter_with_partial_file_id(
+                conn,
+                user_or_project_filter=UserOrProjectFilter(
+                    user_id=user_id, project_ids=accessible_projects_ids
+                ),
+                file_id_prefix=f"{path}",
+                partial_file_id=None,
+                sha256_checksum=None,
+                is_directory=None,
+            )
+
+        # ensure file sizes are uptodate
+        updated_fmds = []
+        for metadata in fmds:
+            if is_file_entry_valid(metadata):
+                updated_fmds.append(convert_db_to_model(metadata))
+                continue
+            updated_fmds.append(
+                convert_db_to_model(await self._update_database_from_storage(metadata))
+            )
+
+        return ByteSize(sum(fmd.file_size for fmd in updated_fmds))
 
     async def list_files(
         self,
@@ -711,9 +767,9 @@ class SimcoreS3DataManager(BaseDataManager):
                 task_progress, f"Collecting files of '{src_project['name']}'..."
             )
             async with self.engine.connect() as conn:
-                src_project_files: list[
-                    FileMetaDataAtDB
-                ] = await file_meta_data.list_fmds(conn, project_ids=[src_project_uuid])
+                src_project_files: list[FileMetaDataAtDB] = (
+                    await file_meta_data.list_fmds(conn, project_ids=[src_project_uuid])
+                )
 
             with log_context(
                 _logger,
@@ -827,19 +883,19 @@ class SimcoreS3DataManager(BaseDataManager):
         offset: int | None = None,
     ) -> list[FileMetaData]:
         async with self.engine.connect() as conn:
-            file_metadatas: list[
-                FileMetaDataAtDB
-            ] = await file_meta_data.list_filter_with_partial_file_id(
-                conn,
-                user_or_project_filter=UserOrProjectFilter(
-                    user_id=user_id, project_ids=[]
-                ),
-                file_id_prefix=file_id_prefix,
-                partial_file_id=None,
-                is_directory=False,
-                sha256_checksum=sha256_checksum,
-                limit=limit,
-                offset=offset,
+            file_metadatas: list[FileMetaDataAtDB] = (
+                await file_meta_data.list_filter_with_partial_file_id(
+                    conn,
+                    user_or_project_filter=UserOrProjectFilter(
+                        user_id=user_id, project_ids=[]
+                    ),
+                    file_id_prefix=file_id_prefix,
+                    partial_file_id=None,
+                    is_directory=False,
+                    sha256_checksum=sha256_checksum,
+                    limit=limit,
+                    offset=offset,
+                )
             )
         resolved_fmds = []
         for fmd in file_metadatas:

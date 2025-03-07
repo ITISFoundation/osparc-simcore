@@ -1078,6 +1078,69 @@
         }
       }
     },
+    "/v0/locations/{location_id}/paths/{path}:size": {
+      "post": {
+        "tags": [
+          "files"
+        ],
+        "summary": "Compute Path Size",
+        "operationId": "compute_path_size_v0_locations__location_id__paths__path__size_post",
+        "parameters": [
+          {
+            "name": "path",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "path",
+              "title": "Path"
+            }
+          },
+          {
+            "name": "location_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Location Id"
+            }
+          },
+          {
+            "name": "user_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": true,
+              "title": "User Id",
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_PathTotalSizeCreate_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v0/simcore-s3:access": {
       "post": {
         "tags": [
@@ -1747,6 +1810,31 @@
         },
         "type": "object",
         "title": "Envelope[HealthCheck]"
+      },
+      "Envelope_PathTotalSizeCreate_": {
+        "properties": {
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PathTotalSizeCreate"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "error": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          }
+        },
+        "type": "object",
+        "title": "Envelope[PathTotalSizeCreate]"
       },
       "Envelope_S3Settings_": {
         "properties": {
@@ -2464,6 +2552,27 @@
           "display_path"
         ],
         "title": "PathMetaDataGet"
+      },
+      "PathTotalSizeCreate": {
+        "properties": {
+          "path": {
+            "type": "string",
+            "format": "path",
+            "title": "Path"
+          },
+          "size": {
+            "type": "integer",
+            "minimum": 0,
+            "title": "Size"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "path",
+          "size"
+        ],
+        "title": "PathTotalSizeCreate"
       },
       "S3Settings": {
         "properties": {
