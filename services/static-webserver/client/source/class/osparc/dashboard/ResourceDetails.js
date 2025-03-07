@@ -24,18 +24,29 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
     this.__resourceData = resourceData;
 
     this.__resourceModel = null;
+    const initPromises = [];
     switch (resourceData["resourceType"]) {
       case "study":
-      case "template":
+      case "template": {
         this.__resourceModel = new osparc.data.model.Study(resourceData);
+        const params = {
+          url: {
+            "studyId": this.__resourceData["uuid"]
+          }
+        };
+        initPromises.push(osparc.data.Resources.fetch("studies", "getOne", params))
         break;
-      case "service":
+      }
+      case "service": {
         this.__resourceModel = new osparc.data.model.Service(resourceData);
+        initPromises.push(osparc.store.Services.getService(this.__resourceData["key"], this.__resourceData["version"]))
         break;
+      }
     }
     this.__resourceModel["resourceType"] = resourceData["resourceType"];
 
-    this.__addPages();
+    Promise.all(initPromises)
+      .then(() => this.__addPages());
   },
 
   events: {
