@@ -36,6 +36,41 @@ from .function_services import is_function_service
 _logger = logging.getLogger(__name__)
 
 
+def _aggregate(
+    service_db: ServiceWithHistoryDBGet,
+    access_rights_db: list[ServiceAccessRightsAtDB],
+    service_manifest: ServiceMetaDataPublished,
+) -> dict:
+    return {
+        "key": service_db.key,
+        "version": service_db.version,
+        "name": service_db.name,
+        "thumbnail": HttpUrl(service_db.thumbnail) if service_db.thumbnail else None,
+        "icon": HttpUrl(service_db.icon) if service_db.icon else None,
+        "description": service_db.description,
+        "description_ui": service_db.description_ui,
+        "version_display": service_db.version_display,
+        "service_type": service_manifest.service_type,
+        "contact": service_manifest.contact,
+        "authors": service_manifest.authors,
+        "owner": (service_db.owner_email if service_db.owner_email else None),
+        "inputs": service_manifest.inputs or {},
+        "outputs": service_manifest.outputs or {},
+        "boot_options": service_manifest.boot_options,
+        "min_visible_inputs": service_manifest.min_visible_inputs,
+        "access_rights": {
+            a.gid: ServiceGroupAccessRightsV2.model_construct(
+                execute=a.execute_access,
+                write=a.write_access,
+            )
+            for a in access_rights_db
+        },
+        "classifiers": service_db.classifiers,
+        "quality": service_db.quality,
+        # NOTE: History section is removed
+    }
+
+
 def _to_latest_get_schema(
     service_db: ServiceWithHistoryDBGet,
     access_rights_db: list[ServiceAccessRightsAtDB],
@@ -44,33 +79,8 @@ def _to_latest_get_schema(
 
     assert len(service_db.history) == 0  # nosec
 
-    return LatestServiceGet(
-        key=service_db.key,
-        version=service_db.version,
-        name=service_db.name,
-        thumbnail=HttpUrl(service_db.thumbnail) if service_db.thumbnail else None,
-        icon=HttpUrl(service_db.icon) if service_db.icon else None,
-        description=service_db.description,
-        description_ui=service_db.description_ui,
-        version_display=service_db.version_display,
-        service_type=service_manifest.service_type,
-        contact=service_manifest.contact,
-        authors=service_manifest.authors,
-        owner=(service_db.owner_email if service_db.owner_email else None),
-        inputs=service_manifest.inputs or {},
-        outputs=service_manifest.outputs or {},
-        boot_options=service_manifest.boot_options,
-        min_visible_inputs=service_manifest.min_visible_inputs,
-        access_rights={
-            a.gid: ServiceGroupAccessRightsV2.model_construct(
-                execute=a.execute_access,
-                write=a.write_access,
-            )
-            for a in access_rights_db
-        },
-        classifiers=service_db.classifiers,
-        quality=service_db.quality,
-        # NOTE: History section is removed
+    return LatestServiceGet.model_validate(
+        _aggregate(service_db, access_rights_db, service_manifest)
     )
 
 
@@ -82,42 +92,20 @@ def _to_get_schema(
 ) -> ServiceGetV2:
     compatibility_map = compatibility_map or {}
 
-    return ServiceGetV2(
-        key=service_db.key,
-        version=service_db.version,
-        name=service_db.name,
-        thumbnail=HttpUrl(service_db.thumbnail) if service_db.thumbnail else None,
-        icon=HttpUrl(service_db.icon) if service_db.icon else None,
-        description=service_db.description,
-        description_ui=service_db.description_ui,
-        version_display=service_db.version_display,
-        service_type=service_manifest.service_type,
-        contact=service_manifest.contact,
-        authors=service_manifest.authors,
-        owner=(service_db.owner_email if service_db.owner_email else None),
-        inputs=service_manifest.inputs or {},
-        outputs=service_manifest.outputs or {},
-        boot_options=service_manifest.boot_options,
-        min_visible_inputs=service_manifest.min_visible_inputs,
-        access_rights={
-            a.gid: ServiceGroupAccessRightsV2.model_construct(
-                execute=a.execute_access,
-                write=a.write_access,
-            )
-            for a in access_rights_db
-        },
-        classifiers=service_db.classifiers,
-        quality=service_db.quality,
-        history=[
-            ServiceRelease.model_construct(
-                version=h.version,
-                version_display=h.version_display,
-                released=h.created,
-                retired=h.deprecated,
-                compatibility=compatibility_map.get(h.version),
-            )
-            for h in service_db.history
-        ],
+    return ServiceGetV2.model_validate(
+        {
+            **_aggregate(service_db, access_rights_db, service_manifest),
+            "history": [
+                ServiceRelease.model_construct(
+                    version=h.version,
+                    version_display=h.version_display,
+                    released=h.created,
+                    retired=h.deprecated,
+                    compatibility=compatibility_map.get(h.version),
+                )
+                for h in service_db.history
+            ],
+        }
     )
 
 
