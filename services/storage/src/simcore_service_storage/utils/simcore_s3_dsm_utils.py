@@ -10,13 +10,18 @@ from models_library.projects_nodes_io import (
     SimcoreS3FileID,
     StorageFileID,
 )
+from models_library.users import UserID
 from pydantic import ByteSize, NonNegativeInt, TypeAdapter
 from servicelib.utils import ensure_ends_with
 from sqlalchemy.ext.asyncio import AsyncConnection
 
-from ..exceptions.errors import FileMetaDataNotFoundError
+from ..exceptions.errors import FileMetaDataNotFoundError, ProjectAccessRightError
 from ..models import FileMetaData, FileMetaDataAtDB, GenericCursor, PathMetaData
 from ..modules.db import file_meta_data
+from ..modules.db.access_layer import (
+    get_project_access_rights,
+    get_readable_project_ids,
+)
 from .utils import convert_db_to_model
 
 
@@ -207,3 +212,16 @@ async def list_child_paths_from_repository(
         )
 
     return paths_metadata, next_cursor, total
+
+
+async def get_accessible_project_ids(
+    conn: AsyncConnection, *, user_id: UserID, project_id: ProjectID | None
+) -> list[ProjectID]:
+    if project_id:
+        project_access_rights = await get_project_access_rights(
+            conn=conn, user_id=user_id, project_id=project_id
+        )
+        if not project_access_rights.read:
+            raise ProjectAccessRightError(access_right="read", project_id=project_id)
+        return [project_id]
+    return await get_readable_project_ids(conn, user_id)
