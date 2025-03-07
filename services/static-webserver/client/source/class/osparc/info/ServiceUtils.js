@@ -71,7 +71,7 @@ qx.Class.define("osparc.info.ServiceUtils", {
     },
 
     createReleasedDate: function(key, version) {
-      const releasedDate = osparc.service.Utils.getReleasedDate(key, version);
+      const releasedDate = osparc.store.Services.getReleasedDate(key, version);
       if (releasedDate) {
         const label = new qx.ui.basic.Label();
         label.set({
