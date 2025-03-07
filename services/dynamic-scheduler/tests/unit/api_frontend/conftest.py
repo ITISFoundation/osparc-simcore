@@ -19,8 +19,8 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from settings_library.utils_service import DEFAULT_FASTAPI_PORT
-from simcore_service_dynamic_scheduler.api.frontend._utils import get_settings
 from simcore_service_dynamic_scheduler.core.application import create_app
+from simcore_service_dynamic_scheduler.core.settings import ApplicationSettings
 from tenacity import AsyncRetrying, stop_after_delay, wait_fixed
 
 _MODULE: Final["str"] = "simcore_service_dynamic_scheduler"
@@ -93,8 +93,10 @@ async def app_runner(
 
     server_task = asyncio.create_task(_run_server())
 
+    settings: ApplicationSettings = not_initialized_app.state.settings
+
     home_page_url = (
-        f"http://{server_host_port}{get_settings().DYNAMIC_SCHEDULER_UI_MOUNT_PATH}"
+        f"http://{server_host_port}{settings.DYNAMIC_SCHEDULER_UI_MOUNT_PATH}"
     )
     async for attempt in AsyncRetrying(
         reraise=True, wait=wait_fixed(0.1), stop=stop_after_delay(2)
