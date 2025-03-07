@@ -22,6 +22,7 @@ from models_library.api_schemas_storage import STORAGE_RPC_NAMESPACE
 from models_library.api_schemas_storage.data_export_async_jobs import (
     DataExportTaskStartInput,
 )
+from models_library.progress_bar import ProgressReport
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
 from models_library.users import UserID
 from pydantic import ByteSize, TypeAdapter
@@ -42,7 +43,6 @@ from simcore_service_storage.api.rpc._data_export import AccessRightError
 from simcore_service_storage.core.settings import ApplicationSettings
 from simcore_service_storage.modules.celery.client import TaskUUID
 from simcore_service_storage.modules.celery.models import TaskState
-from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 
 pytest_plugins = [
     "pytest_simcore.rabbit_service",
@@ -356,6 +356,19 @@ async def test_abort_data_export_scheduler_error(
         )
 
 
+@pytest.mark.parametrize(
+    "mock_celery_client",
+    [
+        {
+            "get_task_status_object": TaskStatus(
+                task_uuid=TaskUUID(_faker.uuid4()),
+                task_state=TaskState.RUNNING,
+                progress_report=ProgressReport(actual_value=0),
+            )
+        },
+    ],
+    indirect=True,
+)
 async def test_get_data_export_status(
     rpc_client: RabbitMQRPCClient,
     mock_celery_client: MockerFixture,
@@ -371,6 +384,29 @@ async def test_get_data_export_status(
     )
     assert isinstance(result, AsyncJobStatus)
     assert result.job_id == _job_id
+
+
+@pytest.mark.parametrize(
+    "mock_celery_client",
+    [
+        {"get_task_status_object": CeleryError("error")},
+    ],
+    indirect=True,
+)
+async def test_get_data_export_status_scheduler_error(
+    rpc_client: RabbitMQRPCClient,
+    mock_celery_client: MockerFixture,
+):
+    _job_id = AsyncJobId(_faker.uuid4())
+    with pytest.raises(JobSchedulerError):
+        _ = await async_jobs.get_status(
+            rpc_client,
+            rpc_namespace=STORAGE_RPC_NAMESPACE,
+            job_id=_job_id,
+            job_id_data=AsyncJobNameData(
+                user_id=_faker.pyint(min_value=1, max_value=100), product_name="osparc"
+            ),
+        )
 
 
 async def test_get_data_export_result(
