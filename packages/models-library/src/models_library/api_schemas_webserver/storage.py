@@ -7,7 +7,7 @@ from models_library.api_schemas_storage.storage_schemas import (
     DEFAULT_NUMBER_OF_PATHS_PER_PAGE,
     MAX_NUMBER_OF_PATHS_PER_PAGE,
 )
-from pydantic import BaseModel, Field, HttpUrl
+from pydantic import BaseModel, Field
 
 from ..api_schemas_rpc_async_jobs.async_jobs import (
     AsyncJobGet,
@@ -52,9 +52,17 @@ class DataExportPost(InputSchema):
 
 
 class AsyncJobLinks(OutputSchema):
-    status_href: HttpUrl
-    abort_href: HttpUrl
-    result_href: HttpUrl
+    status_href: str
+    abort_href: str
+    result_href: str
+
+    @classmethod
+    def from_job_id(cls, app: web.Application, job_id: str) -> "AsyncJobLinks":
+        return AsyncJobLinks(
+            status_href=f"{app.router['get_async_job_status'].url_for(job_id=job_id)}",
+            abort_href=f"{app.router['abort_async_job'].url_for(job_id=job_id)}",
+            result_href=f"{app.router['get_async_job_result'].url_for(job_id=job_id)}",
+        )
 
 
 class StorageAsyncJobGet(OutputSchema):
@@ -63,21 +71,13 @@ class StorageAsyncJobGet(OutputSchema):
 
     @classmethod
     def from_rpc_schema(
-        cls, app: web.Application, async_job_rpc_get: AsyncJobGet
+        cls, *, app: web.Application, async_job_rpc_get: AsyncJobGet
     ) -> "StorageAsyncJobGet":
         job_id = f"{async_job_rpc_get.job_id}"
-        links = AsyncJobLinks(
-            status_href=HttpUrl(
-                f"{app.router['get_async_job_status'].url_for(job_id=job_id)}"
-            ),
-            abort_href=HttpUrl(
-                f"{app.router['abort_async_job'].url_for(job_id=job_id)}"
-            ),
-            result_href=HttpUrl(
-                f"{app.router['get_async_job_result'].url_for(job_id=job_id)}"
-            ),
+        return StorageAsyncJobGet(
+            job_id=async_job_rpc_get.job_id,
+            links=AsyncJobLinks.from_job_id(app=app, job_id=job_id),
         )
-        return StorageAsyncJobGet(job_id=async_job_rpc_get.job_id, links=links)
 
 
 class StorageAsyncJobStatus(OutputSchema):
@@ -86,10 +86,11 @@ class StorageAsyncJobStatus(OutputSchema):
     done: bool
     started: datetime
     stopped: datetime | None
+    links: AsyncJobLinks
 
     @classmethod
     def from_rpc_schema(
-        cls, async_job_rpc_status: AsyncJobStatus
+        cls, *, app: web.Application, async_job_rpc_status: AsyncJobStatus
     ) -> "StorageAsyncJobStatus":
         return StorageAsyncJobStatus(
             job_id=async_job_rpc_status.job_id,
@@ -97,6 +98,9 @@ class StorageAsyncJobStatus(OutputSchema):
             done=async_job_rpc_status.done,
             started=async_job_rpc_status.started,
             stopped=async_job_rpc_status.stopped,
+            links=AsyncJobLinks.from_job_id(
+                app=app, job_id=f"{async_job_rpc_status.job_id}"
+            ),
         )
 
 

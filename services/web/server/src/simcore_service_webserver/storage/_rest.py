@@ -432,7 +432,9 @@ async def export_data(request: web.Request) -> web.Response:
         ),
     )
     return create_data_response(
-        StorageAsyncJobGet.from_rpc_schema(async_job_rpc_get),
+        StorageAsyncJobGet.from_rpc_schema(
+            app=request.app, async_job_rpc_get=async_job_rpc_get
+        ),
         status=status.HTTP_202_ACCEPTED,
     )
 
@@ -458,7 +460,10 @@ async def get_async_jobs(request: web.Request) -> web.Response:
         filter_="",
     )
     return create_data_response(
-        [StorageAsyncJobGet.from_rpc_schema(job) for job in user_async_jobs],
+        [
+            StorageAsyncJobGet.from_rpc_schema(app=request.app, async_job_rpc_get=job)
+            for job in user_async_jobs
+        ],
         status=status.HTTP_200_OK,
     )
 
@@ -484,7 +489,9 @@ async def get_async_job_status(request: web.Request) -> web.Response:
         ),
     )
     return create_data_response(
-        StorageAsyncJobStatus.from_rpc_schema(async_job_rpc_status),
+        StorageAsyncJobStatus.from_rpc_schema(
+            app=request.app, async_job_rpc_status=async_job_rpc_status
+        ),
         status=status.HTTP_200_OK,
     )
 
@@ -510,9 +517,11 @@ async def abort_async_job(request: web.Request) -> web.Response:
         ),
     )
     return web.Response(
-        status=status.HTTP_200_OK
-        if async_job_rpc_abort.result
-        else status.HTTP_500_INTERNAL_SERVER_ERROR
+        status=(
+            status.HTTP_200_OK
+            if async_job_rpc_abort.result
+            else status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
     )
 
 
