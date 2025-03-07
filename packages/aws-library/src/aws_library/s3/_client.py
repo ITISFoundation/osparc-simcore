@@ -29,7 +29,7 @@ from settings_library.s3 import S3Settings
 from types_aiobotocore_s3 import S3Client
 from types_aiobotocore_s3.literals import BucketLocationConstraintType
 from types_aiobotocore_s3.type_defs import (
-    ListObjectsV2RequestRequestTypeDef,
+    ListObjectsV2RequestTypeDef,
     ObjectIdentifierTypeDef,
 )
 
@@ -64,13 +64,11 @@ ListAnyUrlTypeAdapter: Final[TypeAdapter[list[AnyUrl]]] = TypeAdapter(list[AnyUr
 
 
 class UploadedBytesTransferredCallback(Protocol):
-    def __call__(self, bytes_transferred: int, *, file_name: str) -> None:
-        ...
+    def __call__(self, bytes_transferred: int, *, file_name: str) -> None: ...
 
 
 class CopiedBytesTransferredCallback(Protocol):
-    def __call__(self, total_bytes_copied: int, *, file_name: str) -> None:
-        ...
+    def __call__(self, total_bytes_copied: int, *, file_name: str) -> None: ...
 
 
 @dataclass(frozen=True)
@@ -238,7 +236,7 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
             msg = f"num_objects must be <= {_AWS_MAX_ITEMS_PER_PAGE}"
             raise ValueError(msg)
 
-        list_config: ListObjectsV2RequestRequestTypeDef = {
+        list_config: ListObjectsV2RequestTypeDef = {
             "Bucket": bucket,
             "Prefix": create_final_prefix(prefix, is_partial_prefix=is_partial_prefix),
             "MaxKeys": limit,

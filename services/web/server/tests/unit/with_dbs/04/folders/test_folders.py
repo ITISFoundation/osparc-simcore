@@ -274,7 +274,7 @@ async def test_project_folder_movement_full_workflow(
 @pytest.fixture
 def mock_catalog_api_get_services_for_user_in_product(mocker: MockerFixture):
     mocker.patch(
-        "simcore_service_webserver.projects._crud_api_read.get_services_for_user_in_product",
+        "simcore_service_webserver.projects._crud_api_read.catalog_service.get_services_for_user_in_product",
         spec=True,
         return_value=[],
     )

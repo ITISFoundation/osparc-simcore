@@ -1,6 +1,7 @@
 import asyncio
 import logging
 from typing import Annotated, cast
+from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from models_library.api_schemas_storage.storage_schemas import (
@@ -202,11 +203,15 @@ async def upload_file(
     abort_url = (
         URL(f"{request.url}")
         .with_path(
-            request.app.url_path_for(
-                "abort_upload_file",
-                location_id=f"{location_id}",
-                file_id=file_id,
-            )
+            quote(
+                request.app.url_path_for(
+                    "abort_upload_file",
+                    location_id=f"{location_id}",
+                    file_id=file_id,
+                ),
+                safe=":/",
+            ),
+            encoded=True,
         )
         .with_query(user_id=query_params.user_id)
     )
@@ -214,11 +219,15 @@ async def upload_file(
     complete_url = (
         URL(f"{request.url}")
         .with_path(
-            request.app.url_path_for(
-                "complete_upload_file",
-                location_id=f"{location_id}",
-                file_id=file_id,
-            )
+            quote(
+                request.app.url_path_for(
+                    "complete_upload_file",
+                    location_id=f"{location_id}",
+                    file_id=file_id,
+                ),
+                safe=":/",
+            ),
+            encoded=True,
         )
         .with_query(user_id=query_params.user_id)
     )
@@ -273,12 +282,16 @@ async def complete_upload_file(
     route = (
         URL(f"{request.url}")
         .with_path(
-            request.app.url_path_for(
-                "is_completed_upload_file",
-                location_id=f"{location_id}",
-                file_id=file_id,
-                future_id=task.get_name(),
-            )
+            quote(
+                request.app.url_path_for(
+                    "is_completed_upload_file",
+                    location_id=f"{location_id}",
+                    file_id=file_id,
+                    future_id=task.get_name(),
+                ),
+                safe=":/",
+            ),
+            encoded=True,
         )
         .with_query(user_id=query_params.user_id)
     )
