@@ -2,6 +2,7 @@ from collections.abc import Callable
 from functools import wraps
 import logging
 import traceback
+from typing import Any
 
 from celery import Celery, Task
 from celery.exceptions import Ignore
@@ -30,9 +31,9 @@ def create_app(celery_settings: CelerySettings) -> Celery:
     return app
 
 
-def error_handling(func: Callable):
+def error_handling(func: Callable[..., Any]) -> Callable[..., Any]:
     @wraps(func)
-    def wrapper(task: Task, *args, **kwargs):
+    def wrapper(task: Task, *args: Any, **kwargs: Any) -> Any:
         try:
             return func(task, *args, **kwargs)
         except Exception as exc:
