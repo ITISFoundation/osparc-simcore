@@ -24,7 +24,7 @@ from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker import (
     pricing_units,
 )
 
-from ..catalog import client as catalog_service
+from ..catalog import catalog_service
 from ..rabbitmq import get_rabbitmq_rpc_client
 
 ## Pricing Plans

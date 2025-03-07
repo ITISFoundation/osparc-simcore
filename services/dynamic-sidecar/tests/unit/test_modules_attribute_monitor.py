@@ -125,6 +125,7 @@ async def logging_event_handler_observer(
     ],
 )
 async def test_chown_triggers_event(
+    mock_ensure_read_permissions_on_user_service_data: None,
     logging_event_handler_observer: None,
     fake_dy_volumes_mount_dir: Path,
     command_template: str,

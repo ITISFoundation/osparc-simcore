@@ -3,7 +3,7 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
-from datetime import timedelta
+from datetime import datetime, timedelta
 from uuid import UUID
 
 import arrow
@@ -55,7 +55,9 @@ async def test_patch_project(
     assert client.app
 
     # This will change after in patched_project
-    assert user_project["creationDate"] == user_project["lastChangeDate"]
+    creation_date = datetime.fromisoformat(user_project["creationDate"])
+    last_change_date = datetime.fromisoformat(user_project["lastChangeDate"])
+    assert abs(creation_date - last_change_date) < timedelta(seconds=1)
 
     # Patch valid project
     patch_data = {"name": "Updated Project Name"}

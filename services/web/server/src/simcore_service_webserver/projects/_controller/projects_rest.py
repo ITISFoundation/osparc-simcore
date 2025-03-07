@@ -35,7 +35,7 @@ from simcore_postgres_database.webserver_models import ProjectType
 from simcore_service_webserver.products import products_web
 
 from ..._meta import API_VTAG as VTAG
-from ...catalog import client as catalog_service
+from ...catalog import catalog_service
 from ...director_v2.exceptions import DirectorServiceError
 from ...login.decorators import login_required
 from ...notifications import project_logs as notifications_service

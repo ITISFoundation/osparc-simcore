@@ -37,9 +37,9 @@ _WAITING_FOR_PIPELINE_TO_CHANGE_STATE: Final[int] = 1 * MINUTE
 _WAITING_FOR_CLUSTER_MAX_WAITING_TIME: Final[int] = 5 * MINUTE
 _WAITING_FOR_STARTED_MAX_WAITING_TIME: Final[int] = 5 * MINUTE
 _WAITING_FOR_SUCCESS_MAX_WAITING_TIME_PER_SLEEPER: Final[int] = 1 * MINUTE
-_WAITING_FOR_FILE_NAMES_MAX_WAITING_TIME: Final[
-    datetime.timedelta
-] = datetime.timedelta(seconds=30)
+_WAITING_FOR_FILE_NAMES_MAX_WAITING_TIME: Final[datetime.timedelta] = (
+    datetime.timedelta(seconds=30)
+)
 _WAITING_FOR_FILE_NAMES_WAIT_INTERVAL: Final[datetime.timedelta] = datetime.timedelta(
     seconds=1
 )
@@ -82,14 +82,14 @@ def test_sleepers(
     page: Page,
     log_in_and_out: RestartableWebSocket,
     create_project_from_service_dashboard: Callable[
-        [ServiceType, str, str | None], dict[str, Any]
+        [ServiceType, str, str | None, str | None], dict[str, Any]
     ],
     start_and_stop_pipeline: Callable[..., SocketIOEvent],
     num_sleepers: int,
     input_sleep_time: int | None,
 ):
     project_data = create_project_from_service_dashboard(
-        ServiceType.COMPUTATIONAL, "sleeper", "itis"
+        ServiceType.COMPUTATIONAL, "sleeper", "itis", None
     )
 
     # we are now in the workbench
@@ -217,7 +217,7 @@ def test_sleepers(
             sleeper.click()
             # waiting for this response is not enough, the frontend needs some time to show the files
             # therefore _get_file_names is wrapped with tenacity
-            with page.expect_response(re.compile(r"files/metadata")):
+            with page.expect_response(re.compile(r"paths\?file_filter=")):
                 page.get_by_test_id("nodeFilesBtn").click()
                 output_file_names_found = _get_file_names(page)
 

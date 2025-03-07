@@ -27,10 +27,10 @@ from simcore_postgres_database.utils_projects_nodes import (
 from simcore_postgres_database.webserver_models import ProjectType as ProjectTypeDB
 
 from ..application_settings import get_application_settings
-from ..catalog import client as catalog_service
+from ..catalog import catalog_service
 from ..director_v2 import api as director_v2_service
 from ..dynamic_scheduler import api as dynamic_scheduler_service
-from ..folders import _folders_repository as _folders_repository
+from ..folders import _folders_repository as folders_service_repository
 from ..redis import get_redis_lock_manager_client_sdk
 from ..storage.api import (
     copy_data_folders_from_project,
@@ -293,7 +293,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
                 )
             if folder_id := predefined_project.get("folderId", None):
                 # Check user has access to folder
-                await _folders_repository.get_for_user_or_workspace(
+                await folders_service_repository.get_for_user_or_workspace(
                     request.app,
                     folder_id=folder_id,
                     product_name=product_name,
@@ -419,9 +419,9 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
         user_specific_project_data_db = (
             await _projects_repository.get_user_specific_project_data_db(
                 project_uuid=new_project["uuid"],
-                private_workspace_user_id_or_none=user_id
-                if workspace_id is None
-                else None,
+                private_workspace_user_id_or_none=(
+                    user_id if workspace_id is None else None
+                ),
             )
         )
         new_project["folderId"] = user_specific_project_data_db.folder_id

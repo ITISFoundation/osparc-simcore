@@ -19,7 +19,7 @@ from servicelib.utils import logged_gather
 from simcore_postgres_database.models.projects import ProjectType
 from simcore_postgres_database.webserver_models import ProjectType as ProjectTypeDB
 
-from ..catalog import client as catalog_service
+from ..catalog import catalog_service
 from ..folders import _folders_repository
 from ..workspaces._workspaces_service import check_user_workspace_access
 from . import _projects_service
