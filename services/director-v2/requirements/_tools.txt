@@ -53,6 +53,7 @@ pip-tools==7.4.1
     # via -r requirements/../../../requirements/devenv.txt
 platformdirs==4.3.6
     # via
+    #   -c requirements/_base.txt
     #   black
     #   pylint
     #   virtualenv
@@ -82,7 +83,7 @@ typing-extensions==4.12.2
     #   -c requirements/_base.txt
     #   -c requirements/_test.txt
     #   mypy
-virtualenv==20.29.2
+virtualenv==20.29.3
     # via pre-commit
 watchdog==6.0.0
     # via -r requirements/_tools.in
