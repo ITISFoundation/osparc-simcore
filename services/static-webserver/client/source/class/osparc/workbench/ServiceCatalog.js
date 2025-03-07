@@ -247,7 +247,7 @@ qx.Class.define("osparc.workbench.ServiceCatalog", {
           const latest = new qx.ui.form.ListItem(this.self().LATEST);
           latest.version = this.self().LATEST;
           selectBox.add(latest);
-          osparc.store.Services.getVersions(key, version)
+          osparc.store.Services.getVersions2(key, version)
             .then(versions => {
               versions.forEach(vrsn => {
                 const listItem = osparc.service.Utils.versionToListItem(key, vrsn);

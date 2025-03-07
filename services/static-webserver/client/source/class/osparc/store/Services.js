@@ -19,11 +19,11 @@ qx.Class.define("osparc.store.Services", {
   type: "static",
 
   statics: {
-    servicesCached: {},
+    __servicesCached: {},
 
     getServicesLatest: function(useCache = true) {
       return new Promise(resolve => {
-        if (useCache && Object.keys(this.servicesCached)) {
+        if (useCache && Object.keys(this.__servicesCached)) {
           // return latest only
           const latest = this.__getLatestCached();
           resolve(latest);
@@ -56,7 +56,7 @@ qx.Class.define("osparc.store.Services", {
     },
 
     getLatest: function(key) {
-      const services = this.servicesCached;
+      const services = this.__servicesCached;
       if (key in services) {
         const versions = this.getVersions(key, true);
         if (versions.length) {
@@ -66,10 +66,50 @@ qx.Class.define("osparc.store.Services", {
       return null;
     },
 
+    getLatestCompatible: function(key, version) {
+      const services = this.__servicesCached;
+      if (key in services && version in services[key]) {
+        const serviceMD = services[key][version];
+        if (serviceMD["compatibility"] && serviceMD["compatibility"]["canUpdateTo"]) {
+          const canUpdateTo = serviceMD["compatibility"]["canUpdateTo"];
+          return {
+            key: "key" in canUpdateTo ? canUpdateTo["key"] : key, // key is optional
+            version: canUpdateTo["version"]
+          }
+        }
+        // the provided key/version itself is the latest compatible
+        return {
+          key,
+          version
+        }
+      }
+      return null;
+    },
+
+    getVersionDisplay: function(key, version) {
+      const services = this.__servicesCached;
+      if (key in services && version in services[key]) {
+        return this.extractVersionDisplay(services[key][version]);
+      }
+      return null;
+    },
+
+    getReleasedDate: function(key, version) {
+      const services = this.__servicesCached;
+      if (
+        key in services &&
+        version in services[key] &&
+        "released" in services[key][version]
+      ) {
+        return services[key][version]["released"];
+      }
+      return null;
+    },
+
     getService: function(key, version, useCache = true) {
       return new Promise(resolve => {
         if (useCache && this.__isInCache(key, version)) {
-          resolve(this.servicesCached[key][version]);
+          resolve(this.__servicesCached[key][version]);
           return;
         }
 
@@ -89,8 +129,8 @@ qx.Class.define("osparc.store.Services", {
     },
 
     __getVersionsFromCache: function(key, version, filterDeprecated = true) {
-      if (this.servicesCached[key][version]["history"]) {
-        const versions = this.servicesCached[key][version]["history"]
+      if (this.__servicesCached[key][version]["history"]) {
+        const versions = this.__servicesCached[key][version]["history"]
           .filter(entry => !filterDeprecated || entry["retired"] === null)
           .map(entry => entry["version"]);
         return versions;
@@ -98,7 +138,7 @@ qx.Class.define("osparc.store.Services", {
       return [];
     },
 
-    getVersions: function(key, version, filterDeprecated = true) {
+    getVersions2: function(key, version, filterDeprecated = true) {
       return new Promise(resolve => {
         if (this.__isInCache(key, version)) {
           const versions = this.__getVersionsFromCache(key, version, filterDeprecated);
@@ -111,6 +151,25 @@ qx.Class.define("osparc.store.Services", {
             });
         }
       });
+    },
+
+    getVersions: function(key, filterDeprecated = true) {
+      const services = this.__servicesCached;
+      let versions = [];
+      if (key in services) {
+        const serviceVersions = services[key];
+        versions = versions.concat(Object.keys(serviceVersions));
+        if (filterDeprecated) {
+          versions = versions.filter(version => {
+            if (services[key][version]["retired"]) {
+              return false;
+            }
+            return true;
+          });
+        }
+        versions.sort(osparc.utils.Utils.compareVersionNumbers);
+      }
+      return versions.reverse();
     },
 
     getServicesLatestList: function(excludeFrontend = true, excludeDeprecated = true) {
@@ -128,11 +187,11 @@ qx.Class.define("osparc.store.Services", {
               }
               if (excludeDeprecated && serviceLatest["retired"]) {
                 // first check if a previous version of this service isn't retired
-                let versions = Object.keys(this.servicesCached[key]);
+                let versions = Object.keys(this.__servicesCached[key]);
                 versions = versions.sort(osparc.utils.Utils.compareVersionNumbers).reverse();
                 for (let j=0; j<versions.length; j++) {
                   const version = versions[j];
-                  if (!this.servicesCached[key][version]["retired"]) {
+                  if (!this.__servicesCached[key][version]["retired"]) {
                     // one older non retired version found
                     serviceLatest = await this.getService(key, version);
                     break;
@@ -157,9 +216,9 @@ qx.Class.define("osparc.store.Services", {
       return new Promise(resolve => {
         if (
           this.__isInCache(key, version) &&
-          "resources" in this.servicesCached[key][version]
+          "resources" in this.__servicesCached[key][version]
         ) {
-          resolve(this.servicesCached[key][version]["resources"]);
+          resolve(this.__servicesCached[key][version]["resources"]);
           return;
         }
 
@@ -168,7 +227,7 @@ qx.Class.define("osparc.store.Services", {
         };
         osparc.data.Resources.get("serviceResources", params)
           .then(resources => {
-            this.servicesCached[key][version]["resources"] = resources;
+            this.__servicesCached[key][version]["resources"] = resources;
             resolve(resources);
           });
       });
@@ -176,7 +235,7 @@ qx.Class.define("osparc.store.Services", {
 
     getMetadata: function(key, version) {
       if (this.__isInCache(key, version)) {
-        return this.servicesCached[key][version];
+        return this.__servicesCached[key][version];
       }
       return null;
     },
@@ -192,13 +251,13 @@ qx.Class.define("osparc.store.Services", {
       };
       return osparc.data.Resources.fetch("servicesV2", "patch", params)
         .then(() => {
-          this.servicesCached[key][version][fieldKey] = value;
+          this.__servicesCached[key][version][fieldKey] = value;
           serviceData[fieldKey] = value;
         });
     },
 
     getInaccessibleServices: function(workbench) {
-      const allServices = this.servicesCached;
+      const allServices = this.__servicesCached;
       const unaccessibleServices = [];
       const wbServices = new Set(this.extractUniqueServices(workbench));
       wbServices.forEach(srv => {
@@ -229,22 +288,22 @@ qx.Class.define("osparc.store.Services", {
     __addToCache: function(service) {
       const key = service.key;
       const version = service.version;
-      if (!(key in this.servicesCached)) {
-        this.servicesCached[key] = {};
+      if (!(key in this.__servicesCached)) {
+        this.__servicesCached[key] = {};
       }
-      this.servicesCached[key][version] = service;
+      this.__servicesCached[key][version] = service;
 
       if ("history" in service) {
-        this.servicesCached[key][version]["cached"] = true;
+        this.__servicesCached[key][version]["cached"] = true;
         service["history"].forEach(historyEntry => {
           const hVersion = historyEntry.version;
-          if (!(hVersion in this.servicesCached[key])) {
-            this.servicesCached[key][hVersion] = {};
-            this.servicesCached[key][hVersion]["cached"] = false;
+          if (!(hVersion in this.__servicesCached[key])) {
+            this.__servicesCached[key][hVersion] = {};
+            this.__servicesCached[key][hVersion]["cached"] = false;
           }
           // merge history data into current metadata
-          this.servicesCached[key][hVersion] = {
-            ...this.servicesCached[key][hVersion],
+          this.__servicesCached[key][hVersion] = {
+            ...this.__servicesCached[key][hVersion],
             ...historyEntry
           };
         });
@@ -253,18 +312,18 @@ qx.Class.define("osparc.store.Services", {
 
     __isInCache: function(key, version) {
       return (
-        key in this.servicesCached &&
-        version in this.servicesCached[key] &&
-        this.servicesCached[key][version]["cached"]
+        key in this.__servicesCached &&
+        version in this.__servicesCached[key] &&
+        this.__servicesCached[key][version]["cached"]
       );
     },
 
     __getLatestCached: function() {
       const latestServices = {};
-      for (const key in this.servicesCached) {
-        let versions = Object.keys(this.servicesCached[key]);
+      for (const key in this.__servicesCached) {
+        let versions = Object.keys(this.__servicesCached[key]);
         versions = versions.sort(osparc.utils.Utils.compareVersionNumbers).reverse();
-        const latest = this.servicesCached[key][versions[0]];
+        const latest = this.__servicesCached[key][versions[0]];
         latestServices[key] = osparc.utils.Utils.deepCloneObject(latest);
       }
       return latestServices;

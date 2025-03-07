@@ -315,7 +315,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
 
         const key = newStudyData["expectedKey"];
         // Include deprecated versions, they should all be updatable to a non deprecated version
-        const versions = osparc.service.Utils.getVersions(key, false);
+        const versions = osparc.store.Services.getVersions(key, false);
         if (versions.length && newStudyData) {
           // scale to latest compatible
           const latestVersion = versions[0];

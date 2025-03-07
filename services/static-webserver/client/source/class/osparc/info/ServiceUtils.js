@@ -64,7 +64,7 @@ qx.Class.define("osparc.info.ServiceUtils", {
     },
 
     createVersionDisplay: function(key, version) {
-      const versionDisplay = osparc.service.Utils.getVersionDisplay(key, version);
+      const versionDisplay = osparc.store.Services.getVersionDisplay(key, version);
       const label = new qx.ui.basic.Label(versionDisplay);
       osparc.utils.Utils.setIdToWidget(label, "serviceVersion");
       return label;

@@ -130,53 +130,6 @@ qx.Class.define("osparc.service.Utils", {
       return services;
     },
 
-    getVersions: function(key, filterDeprecated = true) {
-      const services = osparc.store.Services.servicesCached;
-      let versions = [];
-      if (key in services) {
-        const serviceVersions = services[key];
-        versions = versions.concat(Object.keys(serviceVersions));
-        if (filterDeprecated) {
-          versions = versions.filter(version => {
-            if (services[key][version]["retired"]) {
-              return false;
-            }
-            return true;
-          });
-        }
-        versions.sort(osparc.utils.Utils.compareVersionNumbers);
-      }
-      return versions.reverse();
-    },
-
-    getLatestCompatible: function(key, version) {
-      const services = osparc.store.Services.servicesCached;
-      if (key in services && version in services[key]) {
-        const serviceMD = services[key][version];
-        if (serviceMD["compatibility"] && serviceMD["compatibility"]["canUpdateTo"]) {
-          const canUpdateTo = serviceMD["compatibility"]["canUpdateTo"];
-          return {
-            key: "key" in canUpdateTo ? canUpdateTo["key"] : key, // key is optional
-            version: canUpdateTo["version"]
-          }
-        }
-        // the provided key/version itself is the latest compatible
-        return {
-          key,
-          version
-        }
-      }
-      return null;
-    },
-
-    getVersionDisplay: function(key, version) {
-      const services = osparc.store.Services.servicesCached;
-      if (key in services && version in services[key]) {
-        return this.extractVersionDisplay(services[key][version]);
-      }
-      return null;
-    },
-
     extractVersionDisplay: function(metadata) {
       if (metadata) {
         return metadata["versionDisplay"] ? metadata["versionDisplay"] : metadata["version"];
@@ -184,20 +137,8 @@ qx.Class.define("osparc.service.Utils", {
       return "";
     },
 
-    getReleasedDate: function(key, version) {
-      const services = osparc.store.Services.servicesCached;
-      if (
-        key in services &&
-        version in services[key] &&
-        "released" in services[key][version]
-      ) {
-        return services[key][version]["released"];
-      }
-      return null;
-    },
-
     versionToListItem: function(key, version) {
-      const versionDisplay = this.getVersionDisplay(key, version);
+      const versionDisplay = osparc.store.Services.getVersionDisplay(key, version);
       const listItem = new qx.ui.form.ListItem(versionDisplay);
       osparc.utils.Utils.setIdToWidget(listItem, "serviceVersionItem_" + versionDisplay);
       listItem.version = version;
