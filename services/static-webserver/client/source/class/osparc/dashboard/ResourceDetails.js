@@ -466,7 +466,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       if (
         osparc.utils.Resources.isService(resourceData) ||
         !osparc.product.Utils.showStudyPreview() ||
-        !osparc.study.Utils.getUiMode(resourceData) === "workbench"
+        !(osparc.study.Utils.getUiMode(resourceData) === "workbench")
       ) {
         // there is no pipelining or don't show it
         return null;
