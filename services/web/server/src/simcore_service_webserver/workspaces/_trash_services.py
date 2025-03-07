@@ -11,7 +11,7 @@ from simcore_postgres_database.utils_repos import transaction_context
 
 from ..db.plugin import get_asyncpg_engine
 from ..folders._trash_service import trash_folder, untrash_folder
-from ..projects._trash_service import trash_project, untrash_project
+from ..projects import projects_trash_service
 from . import _workspaces_repository, _workspaces_service
 
 _logger = logging.getLogger(__name__)
@@ -76,7 +76,7 @@ async def trash_workspace(
         ]
 
         for project_id in child_projects:
-            await trash_project(
+            await projects_trash_service.trash_project(
                 app,
                 product_name=product_name,
                 user_id=user_id,
@@ -124,6 +124,6 @@ async def untrash_workspace(
         ]
 
         for project_id in child_projects:
-            await untrash_project(
+            await projects_trash_service.untrash_project(
                 app, product_name=product_name, user_id=user_id, project_id=project_id
             )

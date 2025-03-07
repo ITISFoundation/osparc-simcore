@@ -16,7 +16,7 @@ from simcore_postgres_database.utils_repos import transaction_context
 from sqlalchemy.ext.asyncio import AsyncConnection
 
 from ..db.plugin import get_asyncpg_engine
-from ..projects._trash_service import trash_project, untrash_project
+from ..projects import projects_trash_service
 from ..workspaces.api import check_user_workspace_access
 from . import _folders_repository, _folders_service
 from .errors import FolderBatchDeleteError, FolderNotTrashedError
@@ -132,19 +132,21 @@ async def trash_folder(
         )
 
         # 2. Trash all child projects that I am an owner
-        child_projects: list[
-            ProjectID
-        ] = await _folders_repository.get_projects_recursively_only_if_user_is_owner(
-            app,
-            connection,
-            folder_id=folder_id,
-            private_workspace_user_id_or_none=user_id if workspace_is_private else None,
-            user_id=user_id,
-            product_name=product_name,
+        child_projects: list[ProjectID] = (
+            await _folders_repository.get_projects_recursively_only_if_user_is_owner(
+                app,
+                connection,
+                folder_id=folder_id,
+                private_workspace_user_id_or_none=(
+                    user_id if workspace_is_private else None
+                ),
+                user_id=user_id,
+                product_name=product_name,
+            )
         )
 
         for project_id in child_projects:
-            await trash_project(
+            await projects_trash_service.trash_project(
                 app,
                 # NOTE: this needs to be included in the unit-of-work, i.e. connection,
                 product_name=product_name,
@@ -178,18 +180,18 @@ async def untrash_folder(
     )
 
     # 3.2 UNtrash all child projects that I am an owner
-    child_projects: list[
-        ProjectID
-    ] = await _folders_repository.get_projects_recursively_only_if_user_is_owner(
-        app,
-        folder_id=folder_id,
-        private_workspace_user_id_or_none=user_id if workspace_is_private else None,
-        user_id=user_id,
-        product_name=product_name,
+    child_projects: list[ProjectID] = (
+        await _folders_repository.get_projects_recursively_only_if_user_is_owner(
+            app,
+            folder_id=folder_id,
+            private_workspace_user_id_or_none=user_id if workspace_is_private else None,
+            user_id=user_id,
+            product_name=product_name,
+        )
     )
 
     for project_id in child_projects:
-        await untrash_project(
+        await projects_trash_service.untrash_project(
             app, product_name=product_name, user_id=user_id, project_id=project_id
         )
 
