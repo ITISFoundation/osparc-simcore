@@ -958,7 +958,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         if (versions.length && newStudyData) {
           // scale to latest compatible
           const latestVersion = versions[0];
-          const latestCompatible = osparc.service.Utils.getLatestCompatible(key, latestVersion);
+          const latestCompatible = osparc.store.Services.getLatestCompatible(key, latestVersion);
           osparc.store.Services.getService(latestCompatible["key"], latestCompatible["version"])
             .then(latestMetadata => {
               // make sure this one is not deprecated

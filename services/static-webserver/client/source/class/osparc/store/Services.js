@@ -55,6 +55,17 @@ qx.Class.define("osparc.store.Services", {
       });
     },
 
+    getLatest: function(key) {
+      const services = this.servicesCached;
+      if (key in services) {
+        const versions = this.getVersions(key, true);
+        if (versions.length) {
+          return services[key][versions[0]];
+        }
+      }
+      return null;
+    },
+
     getService: function(key, version, useCache = true) {
       return new Promise(resolve => {
         if (useCache && this.__isInCache(key, version)) {

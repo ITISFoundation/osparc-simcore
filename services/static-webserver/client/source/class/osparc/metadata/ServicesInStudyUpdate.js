@@ -113,7 +113,7 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
     },
 
     __updateService: async function(nodeId, key, version, button) {
-      const latestCompatible = osparc.service.Utils.getLatestCompatible(key, version);
+      const latestCompatible = osparc.store.Services.getLatestCompatible(key, version);
       const patchData = {};
       if (key !== latestCompatible["key"]) {
         patchData["key"] = latestCompatible["key"];
@@ -184,7 +184,7 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
         const compatibleVersionLabel = new qx.ui.basic.Label().set({
           font: "text-14"
         });
-        const latestCompatible = osparc.service.Utils.getLatestCompatible(node["key"], node["version"]);
+        const latestCompatible = osparc.store.Services.getLatestCompatible(node["key"], node["version"]);
         if (latestCompatible) {
           // updatable
           osparc.store.Services.getService(latestCompatible["key"], latestCompatible["version"])
