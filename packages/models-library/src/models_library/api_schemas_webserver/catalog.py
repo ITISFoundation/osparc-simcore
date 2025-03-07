@@ -228,7 +228,7 @@ _EXAMPLE_SLEEPER: dict[str, Any] = {
 ServiceResourcesGet: TypeAlias = api_schemas_catalog_services.ServiceResourcesGet
 
 
-class CatalogServiceListItem(api_schemas_catalog_services.ServiceListItem):
+class CatalogLatestServiceGet(api_schemas_catalog_services.LatestServiceGet):
     inputs: ServiceInputsGetDict  # type: ignore[assignment]
     outputs: ServiceOutputsGetDict  # type: ignore[assignment]
 

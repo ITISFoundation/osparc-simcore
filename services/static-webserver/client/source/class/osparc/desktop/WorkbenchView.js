@@ -1015,7 +1015,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
       // HEADER
       const nodeMetadata = node.getMetaData();
-      const version = osparc.service.Utils.getVersionDisplay(nodeMetadata["key"], nodeMetadata["version"]);
+      const version = osparc.store.Services.getVersionDisplay(nodeMetadata["key"], nodeMetadata["version"]);
       const header = new qx.ui.basic.Label(`${nodeMetadata["name"]} ${version}`).set({
         paddingLeft: 5
       });

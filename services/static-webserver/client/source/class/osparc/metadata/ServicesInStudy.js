@@ -45,6 +45,7 @@ qx.Class.define("osparc.metadata.ServicesInStudy", {
     const servicesInStudy = osparc.study.Utils.extractUniqueServices(this._studyData["workbench"]);
     if (servicesInStudy.length) {
       const promises = [];
+      // the following calls make sure the history of each service is there
       servicesInStudy.forEach(srv => promises.push(osparc.store.Services.getService(srv.key, srv.version)));
       Promise.all(promises)
         .then(() => this._populateLayout());

@@ -32,7 +32,7 @@ def list_services_stmt(
     combine_access_with_and: bool | None = True,
     product_name: str | None = None,
 ) -> Select:
-    stmt = sa.select(SERVICES_META_DATA_COLS)
+    stmt = sa.select(*SERVICES_META_DATA_COLS)
     if gids or execute_access or write_access:
         conditions: list[Any] = []
 
@@ -135,7 +135,7 @@ def total_count_stmt(
     )
 
 
-def list_latest_services_with_history_stmt(
+def list_latest_services_stmt(
     *,
     product_name: ProductName,
     user_id: UserID,
@@ -174,7 +174,7 @@ def list_latest_services_with_history_stmt(
     )
 
     # get all information of latest's services listed in CTE
-    latest_query = (
+    latest_stmt = (
         sa.select(
             services_meta_data.c.key,
             services_meta_data.c.version,
@@ -206,126 +206,26 @@ def list_latest_services_with_history_stmt(
         .subquery("latest_sq")
     )
 
-    # get history for every unique service-key in CTE
-    _accessible_sq = (
-        sa.select(
-            services_meta_data.c.key,
-            services_meta_data.c.version,
-        )
-        .distinct()
-        .select_from(
-            services_meta_data.join(
-                cte,
-                services_meta_data.c.key == cte.c.key,
-            )
-            # joins because access-rights might change per version
-            .join(
-                services_access_rights,
-                (services_meta_data.c.key == services_access_rights.c.key)
-                & (services_meta_data.c.version == services_access_rights.c.version)
-                & (services_access_rights.c.product_name == product_name),
-            )
-            .join(
-                user_to_groups,
-                (user_to_groups.c.gid == services_access_rights.c.gid)
-                & (user_to_groups.c.uid == user_id),
-            )
-            .outerjoin(
-                services_compatibility,
-                (services_meta_data.c.key == services_compatibility.c.key)
-                & (services_meta_data.c.version == services_compatibility.c.version),
-            )
-        )
-        .where(access_rights)
-        .subquery("accessible_sq")
-    )
-
-    history_subquery = (
-        sa.select(
-            services_meta_data.c.key,
-            services_meta_data.c.version,
-            services_meta_data.c.version_display,
-            services_meta_data.c.deprecated,
-            services_meta_data.c.created,
-            services_compatibility.c.custom_policy,  # CompatiblePolicyDict | None
-        )
-        .select_from(
-            services_meta_data.join(
-                _accessible_sq,
-                (services_meta_data.c.key == _accessible_sq.c.key)
-                & (services_meta_data.c.version == _accessible_sq.c.version),
-            ).outerjoin(
-                services_compatibility,
-                (services_meta_data.c.key == services_compatibility.c.key)
-                & (services_meta_data.c.version == services_compatibility.c.version),
-            )
-        )
-        .order_by(
-            services_meta_data.c.key,
-            sa.desc(_version(services_meta_data.c.version)),  # latest version first
-        )
-        .subquery("history_sq")
-    )
-
-    return (
-        sa.select(
-            latest_query.c.key,
-            latest_query.c.version,
-            # display
-            latest_query.c.name,
-            latest_query.c.description,
-            latest_query.c.description_ui,
-            latest_query.c.thumbnail,
-            latest_query.c.icon,
-            latest_query.c.version_display,
-            # ownership
-            latest_query.c.owner_email,
-            # tags
-            latest_query.c.classifiers,
-            latest_query.c.quality,
-            # lifetime
-            latest_query.c.created,
-            latest_query.c.modified,
-            latest_query.c.deprecated,
-            # releases (NOTE: at some points we should limit this list?)
-            array_agg(
-                func.json_build_object(
-                    "version",
-                    history_subquery.c.version,
-                    "version_display",
-                    history_subquery.c.version_display,
-                    "deprecated",
-                    history_subquery.c.deprecated,
-                    "created",
-                    history_subquery.c.created,
-                    "compatibility_policy",  # NOTE: this is the `policy`
-                    history_subquery.c.custom_policy,
-                )
-            ).label("history"),
-        )
-        .join(
-            history_subquery,
-            latest_query.c.key == history_subquery.c.key,
-        )
-        .group_by(
-            history_subquery.c.key,
-            latest_query.c.key,
-            latest_query.c.version,
-            latest_query.c.owner_email,
-            latest_query.c.name,
-            latest_query.c.description,
-            latest_query.c.description_ui,
-            latest_query.c.thumbnail,
-            latest_query.c.icon,
-            latest_query.c.version_display,
-            latest_query.c.classifiers,
-            latest_query.c.created,
-            latest_query.c.modified,
-            latest_query.c.deprecated,
-            latest_query.c.quality,
-        )
-        .order_by(history_subquery.c.key)
-    )
+    return sa.select(
+        latest_stmt.c.key,
+        latest_stmt.c.version,
+        # display
+        latest_stmt.c.name,
+        latest_stmt.c.description,
+        latest_stmt.c.description_ui,
+        latest_stmt.c.thumbnail,
+        latest_stmt.c.icon,
+        latest_stmt.c.version_display,
+        # ownership
+        latest_stmt.c.owner_email,
+        # tags
+        latest_stmt.c.classifiers,
+        latest_stmt.c.quality,
+        # lifetime
+        latest_stmt.c.created,
+        latest_stmt.c.modified,
+        latest_stmt.c.deprecated,
+    ).order_by(latest_stmt.c.key)
 
 
 def can_get_service_stmt(

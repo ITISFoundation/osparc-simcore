@@ -69,7 +69,7 @@ qx.Class.define("osparc.desktop.MainPageHandler", {
           "studyId": studyId
         }
       };
-      osparc.data.Resources.getOne("studies", params)
+      osparc.data.Resources.fetch("studies", "getOne", params)
         .then(studyData => {
           if (!studyData) {
             const msg = qx.locale.Manager.tr("Study not found");
@@ -110,9 +110,9 @@ qx.Class.define("osparc.desktop.MainPageHandler", {
 
       this.setLoadingPageHeader(qx.locale.Manager.tr("Loading ") + studyData.name);
       this.showLoadingPage();
-      const inaccessibleServices = osparc.study.Utils.getInaccessibleServices(studyData["workbench"])
+      const inaccessibleServices = osparc.store.Services.getInaccessibleServices(studyData["workbench"])
       if (inaccessibleServices.length) {
-        const msg = osparc.study.Utils.getInaccessibleServicesMsg(inaccessibleServices, studyData["workbench"]);
+        const msg = osparc.store.Services.getInaccessibleServicesMsg(inaccessibleServices, studyData["workbench"]);
         osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
         this.showDashboard();
         return;

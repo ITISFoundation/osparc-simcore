@@ -426,7 +426,7 @@ qx.Class.define("osparc.data.model.Workbench", {
     },
 
     __filePickerNodeRequested: async function(nodeId, portId, file) {
-      const filePickerMetadata = osparc.service.Utils.getFilePicker();
+      const filePickerMetadata = osparc.store.Services.getFilePicker();
       const filePicker = await this.createNode(filePickerMetadata["key"], filePickerMetadata["version"]);
       if (filePicker === null) {
         return;
@@ -469,7 +469,7 @@ qx.Class.define("osparc.data.model.Workbench", {
 
       // create a new ParameterNode
       const type = osparc.utils.Ports.getPortType(requesterNode.getMetaData()["inputs"], portId);
-      const parameterMetadata = osparc.service.Utils.getParameterMetadata(type);
+      const parameterMetadata = osparc.store.Services.getParameterMetadata(type);
       if (parameterMetadata) {
         const parameterNode = await this.createNode(parameterMetadata["key"], parameterMetadata["version"]);
         if (parameterNode === null) {
@@ -499,7 +499,7 @@ qx.Class.define("osparc.data.model.Workbench", {
       // create a new ProbeNode
       const requesterPortMD = requesterNode.getMetaData()["outputs"][portId];
       const type = osparc.utils.Ports.getPortType(requesterNode.getMetaData()["outputs"], portId);
-      const probeMetadata = osparc.service.Utils.getProbeMetadata(type);
+      const probeMetadata = osparc.store.Services.getProbeMetadata(type);
       if (probeMetadata) {
         const probeNode = await this.createNode(probeMetadata["key"], probeMetadata["version"]);
         if (probeNode === null) {

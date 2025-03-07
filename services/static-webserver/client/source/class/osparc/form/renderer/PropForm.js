@@ -84,7 +84,7 @@ qx.Class.define("osparc.form.renderer.PropForm", {
 
     isFieldParametrizable: function(field) {
       const supportedTypes = [];
-      const paramsMD = osparc.service.Utils.getParametersMetadata();
+      const paramsMD = osparc.store.Services.getParametersMetadata();
       paramsMD.forEach(paramMD => {
         supportedTypes.push(osparc.node.ParameterEditor.getParameterOutputTypeFromMD(paramMD));
       });

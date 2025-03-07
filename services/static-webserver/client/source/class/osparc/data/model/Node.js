@@ -1205,7 +1205,7 @@ qx.Class.define("osparc.data.model.Node", {
       if (!["int"].includes(type)) {
         return;
       }
-      const newMetadata = osparc.service.Utils.getParameterMetadata("integer");
+      const newMetadata = osparc.store.Services.getParameterMetadata("integer");
       if (newMetadata) {
         const value = this.__getInputData()["linspace_start"];
         const label = this.getLabel();
@@ -1222,7 +1222,7 @@ qx.Class.define("osparc.data.model.Node", {
       if (!["int"].includes(type)) {
         return;
       }
-      const metadata = osparc.service.Utils.getLatest("simcore/services/frontend/data-iterator/int-range")
+      const metadata = osparc.store.Services.getLatest("simcore/services/frontend/data-iterator/int-range")
       if (metadata) {
         const value = this.__getOutputData("out_1");
         const label = this.getLabel();

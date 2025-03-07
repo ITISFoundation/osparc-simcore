@@ -162,7 +162,7 @@ async def test_rpc_catalog_client(
     assert got.key == service_key
     assert got.version == service_version
 
-    assert got.model_dump() == next(
+    assert got.model_dump(exclude={"history"}) == next(
         item.model_dump()
         for item in page.data
         if (item.key == service_key and item.version == service_version)

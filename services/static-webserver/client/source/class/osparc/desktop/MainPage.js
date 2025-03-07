@@ -308,7 +308,7 @@ qx.Class.define("osparc.desktop.MainPage", {
               "studyId": studyId
             }
           };
-          osparc.data.Resources.getOne("studies", params2)
+          osparc.data.Resources.fetch("studies", "getOne", params2)
             .then(studyData => {
               if (!studyData) {
                 const msg = this.tr("Study not found");
@@ -348,7 +348,7 @@ qx.Class.define("osparc.desktop.MainPage", {
         }
       };
       // OM TODO. DO NOT ADD ITERATIONS TO STUDIES CACHE
-      osparc.data.Resources.getOne("studies", params)
+      osparc.data.Resources.fetch("studies", "getOne", params)
         .then(studyData => {
           if (!studyData) {
             const msg = this.tr("Iteration not found");

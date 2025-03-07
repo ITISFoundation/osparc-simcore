@@ -373,7 +373,14 @@ qx.Class.define("osparc.dashboard.CardBase", {
     workbench: {
       check: "Object",
       nullable: true,
-      apply: "__applyWorkbench"
+    },
+
+    services: {
+      check: "Array",
+      init: true,
+      nullable: false,
+      apply: "__applyServices",
+      event: "changeServices",
     },
 
     uiMode: {
@@ -484,13 +491,11 @@ qx.Class.define("osparc.dashboard.CardBase", {
           uuid = resourceData.uuid ? resourceData.uuid : null;
           owner = resourceData.prjOwner ? resourceData.prjOwner : "";
           workbench = resourceData.workbench ? resourceData.workbench : {};
-          icon = osparc.study.Utils.guessIcon(resourceData);
           break;
         case "template":
           uuid = resourceData.uuid ? resourceData.uuid : null;
           owner = resourceData.prjOwner ? resourceData.prjOwner : "";
           workbench = resourceData.workbench ? resourceData.workbench : {};
-          icon = osparc.study.Utils.guessIcon(resourceData);
           break;
         case "service":
           uuid = resourceData.key ? resourceData.key : null;
@@ -519,6 +524,23 @@ qx.Class.define("osparc.dashboard.CardBase", {
         hits: resourceData.hits ? resourceData.hits : defaultHits,
         workbench
       });
+
+      if (resourceData["resourceType"] === "study" || resourceData["resourceType"] === "template") {
+        const params = {
+          url: {
+            studyId: this.getResourceData()["uuid"]
+          }
+        };
+        osparc.data.Resources.fetch("studies", "getServices", params)
+          .then(resp => {
+            const services = resp["services"];
+            resourceData["services"] = services;
+            this.setServices(services);
+          });
+
+        osparc.study.Utils.guessIcon(resourceData)
+          .then(iconSource => this.setIcon(iconSource));
+      }
     },
 
     __applyMultiSelectionMode: function(value) {
@@ -634,39 +656,31 @@ qx.Class.define("osparc.dashboard.CardBase", {
       }
     },
 
-    __applyWorkbench: function(workbench) {
-      if (workbench === null) {
-        // it is a service
-        return;
-      }
-
-      if (this.isResourceType("study") || this.isResourceType("template")) {
-        this.setEmptyWorkbench(Object.keys(workbench).length === 0);
-      }
+    __applyServices: function(services) {
+      this.setEmptyWorkbench(services.length === 0);
 
       // Updatable study
-      if (osparc.study.Utils.isWorkbenchRetired(workbench)) {
+      if (osparc.study.Utils.anyServiceRetired(services)) {
         this.setUpdatable("retired");
-      } else if (osparc.study.Utils.isWorkbenchDeprecated(workbench)) {
+      } else if (osparc.study.Utils.anyServiceDeprecated(services)) {
         this.setUpdatable("deprecated");
-      } else {
-        const updatable = osparc.study.Utils.isWorkbenchUpdatable(workbench)
-        if (updatable) {
-          this.setUpdatable("updatable");
-        }
+      } else if (osparc.study.Utils.anyServiceUpdatable(services)) {
+        this.setUpdatable("updatable");
       }
 
       // Block card
-      const unaccessibleServices = osparc.study.Utils.getInaccessibleServices(workbench)
+      const unaccessibleServices = osparc.study.Utils.getCantExecuteServices(services);
       if (unaccessibleServices.length) {
         this.setBlocked("UNKNOWN_SERVICES");
-        let image = "@FontAwesome5Solid/ban/";
-        let toolTipText = this.tr("Service info missing");
+        const image = "@FontAwesome5Solid/ban/";
+        let toolTipText = this.tr("Unaccessible service(s):");
         unaccessibleServices.forEach(unSrv => {
-          toolTipText += "<br>" + unSrv.key + ":" + unSrv.version;
+          toolTipText += "<br>" + unSrv.key + ":" + osparc.service.Utils.extractVersionDisplay(unSrv.release);
         });
         this.__showBlockedCard(image, toolTipText);
       }
+
+      this.evaluateMenuButtons();
     },
 
     __applyEmptyWorkbench: function(isEmpty) {
