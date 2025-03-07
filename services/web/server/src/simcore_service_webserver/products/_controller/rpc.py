@@ -9,7 +9,7 @@ from servicelib.rabbitmq import RPCRouter
 from ...constants import APP_SETTINGS_KEY
 from ...rabbitmq import get_rabbitmq_rpc_server, setup_rabbitmq
 from .. import _service
-from .._models import CreditResultDict
+from .._models import CreditResult
 
 router = RPCRouter()
 
@@ -21,10 +21,10 @@ async def get_credit_amount(
     dollar_amount: Decimal,
     product_name: ProductName,
 ) -> CreditResultRpcGet:
-    credit_result: CreditResultDict = await _service.get_credit_amount(
+    credit_result: CreditResult = await _service.get_credit_amount(
         app, dollar_amount=dollar_amount, product_name=product_name
     )
-    return CreditResultRpcGet.model_validate(credit_result)
+    return CreditResultRpcGet.model_validate(credit_result, from_attributes=True)
 
 
 async def _register_rpc_routes_on_startup(app: web.Application):

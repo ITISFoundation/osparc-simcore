@@ -1,8 +1,9 @@
 import logging
 import re
 import string
+from dataclasses import dataclass
 from decimal import Decimal
-from typing import Annotated, Any, NamedTuple
+from typing import Annotated, Any
 
 from models_library.basic_regex import (
     PUBLIC_VARIABLE_NAME_RE,
@@ -32,24 +33,26 @@ from simcore_postgres_database.models.products import (
     WebFeedback,
     products,
 )
-from typing_extensions import TypedDict
 
 from ..constants import FRONTEND_APPS_AVAILABLE
 
 _logger = logging.getLogger(__name__)
 
 
-class CreditResultDict(TypedDict):
+@dataclass(frozen=True)
+class CreditResult:
     product_name: ProductName
     credit_amount: Decimal
 
 
-class ProductStripeInfo(NamedTuple):
+@dataclass(frozen=True)
+class ProductStripeInfo:
     stripe_price_id: StripePriceID
     stripe_tax_rate_id: StripeTaxRateID
 
 
-class PaymentFieldsTuple(NamedTuple):
+@dataclass(frozen=True)
+class PaymentFields:
     enabled: bool
     credits_per_usd: Decimal | None
     min_payment_amount_usd: Decimal | None

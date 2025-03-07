@@ -27,7 +27,7 @@ from sqlalchemy.ext.asyncio import AsyncConnection
 
 from ..constants import FRONTEND_APPS_AVAILABLE
 from ..db.base_repository import BaseRepository
-from ._models import PaymentFieldsTuple, Product, ProductStripeInfo
+from ._models import PaymentFields, Product, ProductStripeInfo
 
 _logger = logging.getLogger(__name__)
 
@@ -60,7 +60,7 @@ assert {column.name for column in _PRODUCTS_COLUMNS}.issubset(  # nosec
 )
 
 
-def _to_domain(products_row: Row, payments: PaymentFieldsTuple) -> Product:
+def _to_domain(products_row: Row, payments: PaymentFields) -> Product:
     return Product(
         **products_row._asdict(),
         is_payment_enabled=payments.enabled,
@@ -70,12 +70,12 @@ def _to_domain(products_row: Row, payments: PaymentFieldsTuple) -> Product:
 
 async def _get_product_payment_fields(
     conn: AsyncConnection, product_name: ProductName
-) -> PaymentFieldsTuple:
+) -> PaymentFields:
     price_info = await get_product_latest_price_info_or_none(
         conn, product_name=product_name
     )
     if price_info is None or price_info.usd_per_credit == 0:
-        return PaymentFieldsTuple(
+        return PaymentFields(
             enabled=False,
             credits_per_usd=None,
             min_payment_amount_usd=None,
@@ -84,7 +84,7 @@ async def _get_product_payment_fields(
     assert price_info.usd_per_credit > 0  # nosec
     assert price_info.min_payment_amount_usd > 0  # nosec
 
-    return PaymentFieldsTuple(
+    return PaymentFields(
         enabled=True,
         credits_per_usd=Decimal(1 / price_info.usd_per_credit).quantize(
             QUANTIZE_EXP_ARG

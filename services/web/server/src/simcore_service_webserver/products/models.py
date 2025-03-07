@@ -1,9 +1,9 @@
 from models_library.products import ProductName
 
-from ._models import CreditResultDict, Product, ProductStripeInfo
+from ._models import CreditResult, Product, ProductStripeInfo
 
 __all__: tuple[str, ...] = (
-    "CreditResultDict",
+    "CreditResult",
     "Product",
     "ProductName",
     "ProductStripeInfo",

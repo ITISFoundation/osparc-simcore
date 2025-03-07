@@ -9,7 +9,7 @@ from servicelib.exceptions import InvalidConfig
 from simcore_postgres_database.utils_products_prices import ProductPriceInfo
 
 from ..constants import APP_PRODUCTS_KEY
-from ._models import CreditResultDict, ProductStripeInfo
+from ._models import CreditResult, ProductStripeInfo
 from ._repository import ProductRepository
 from .errors import (
     BelowMinimumPaymentError,
@@ -77,7 +77,7 @@ async def get_credit_amount(
     *,
     dollar_amount: Decimal,
     product_name: ProductName,
-) -> CreditResultDict:
+) -> CreditResult:
     """For provided dollars and product gets credit amount.
 
     NOTE: Contrary to other product api functions (e.g. get_current_product) this function
@@ -105,7 +105,7 @@ async def get_credit_amount(
         )
 
     credit_amount = dollar_amount / price_info.usd_per_credit
-    return CreditResultDict(product_name=product_name, credit_amount=credit_amount)
+    return CreditResult(product_name=product_name, credit_amount=credit_amount)
 
 
 async def get_product_stripe_info(
