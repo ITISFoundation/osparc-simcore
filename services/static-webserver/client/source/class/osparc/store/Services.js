@@ -255,7 +255,7 @@ qx.Class.define("osparc.store.Services", {
     getInaccessibleServices: function(workbench) {
       const allServices = this.__servicesCached;
       const unaccessibleServices = [];
-      const wbServices = new Set(this.extractUniqueServices(workbench));
+      const wbServices = new Set(osparc.study.Utils.extractUniqueServices(workbench));
       wbServices.forEach(srv => {
         if (srv.key in allServices && srv.version in allServices[srv.key]) {
           return;
