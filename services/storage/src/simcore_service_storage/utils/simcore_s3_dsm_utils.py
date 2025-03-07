@@ -215,13 +215,16 @@ async def list_child_paths_from_repository(
 
 
 async def get_accessible_project_ids(
-    conn: AsyncConnection, *, user_id: UserID, project_id: ProjectID | None
+    *,
+    user_id: UserID,
+    project_id: ProjectID | None,
+    connection: AsyncConnection | None = None,
 ) -> list[ProjectID]:
     if project_id:
         project_access_rights = await get_project_access_rights(
-            conn=conn, user_id=user_id, project_id=project_id
+            connection=connection, user_id=user_id, project_id=project_id
         )
         if not project_access_rights.read:
             raise ProjectAccessRightError(access_right="read", project_id=project_id)
         return [project_id]
-    return await get_readable_project_ids(conn, user_id)
+    return await get_readable_project_ids(connection, user_id)
