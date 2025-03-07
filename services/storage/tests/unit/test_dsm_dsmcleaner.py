@@ -214,6 +214,12 @@ async def test_clean_expired_uploads_deletes_expired_pending_uploads(
 
 
 @pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
+@pytest.mark.parametrize(
     "file_size",
     [
         TypeAdapter(ByteSize).validate_python("10Mib"),
@@ -389,9 +395,9 @@ async def test_clean_expired_uploads_does_not_clean_multipart_upload_on_creation
     assert len(started_multipart_uploads_upload_id) == len(file_ids_to_upload)
 
     # ensure we have now an upload id
-    all_ongoing_uploads: list[
-        tuple[UploadID, SimcoreS3FileID]
-    ] = await storage_s3_client.list_ongoing_multipart_uploads(bucket=storage_s3_bucket)
+    all_ongoing_uploads: list[tuple[UploadID, SimcoreS3FileID]] = (
+        await storage_s3_client.list_ongoing_multipart_uploads(bucket=storage_s3_bucket)
+    )
     assert len(all_ongoing_uploads) == len(file_ids_to_upload)
 
     for ongoing_upload_id, ongoing_file_id in all_ongoing_uploads:
