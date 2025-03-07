@@ -1,8 +1,8 @@
 {
-  "projects": {
-    "id": "projects",
-    "name": "Projects",
-    "description": "All you need to know about Project handling",
+  "studies": {
+    "id": "studies",
+    "name": "Studies",
+    "description": "All you need to know about Study handling",
     "context": "osparc-test-id=newPlusBtn",
     "steps": [{
       "beforeClick": {
@@ -10,13 +10,13 @@
         "action": "open"
       },
       "anchorEl": "osparc-test-id=newPlusMenu",
-      "title": "Start Sim4Life and more",
-      "text": "Clicking on the (+) New button, allows you to create new Sim4Life projects or new Folders to organize the projects",
+      "title": "Create Studies",
+      "text": "Clicking on the (+) New button, allows you to create new Studies or new Folders to organize the studies",
       "placement": "right"
     }, {
       "anchorEl": "osparc-test-id=searchBarFilter-textField-study",
       "title": "Filter and Search",
-      "text": "This tool allows you to search Projects, Tutorials and Services.<br>You can search and filter by:<br>- Title, description, owner, id...<br>- Tags<br>- Shared with",
+      "text": "This tool allows you to search Studies, Tutorials and Services.<br>You can search and filter by:<br>- Title, description, owner, id...<br>- Tags<br>- Shared with",
       "placement": "bottom"
     }, {
       "beforeClick": {
@@ -25,12 +25,12 @@
       },
       "anchorEl": "osparc-test-id=studyItemMenuMenu",
       "title": "More options button",
-      "text": "On the Project card, you can use the three dots button to access more information and operation on the Project.",
+      "text": "On the Study card, you can use the three dots button to access more information and operation on the Study.",
       "placement": "left"
     }, {
       "anchorEl": "osparc-test-id=updateStudyBtn",
       "title": "Update Services",
-      "text": "On the Project card, you can use the Update button to update the corresponding service to the latest version.",
+      "text": "On the Study card, you can use the Update button to update the corresponding service to the latest version.",
       "placement": "bottom"
     }]
   },
@@ -42,28 +42,35 @@
     "steps": [{
       "anchorEl": "osparc-test-id=dashboardTabs",
       "title": "Dashboard Menu",
-      "text": "The menu tabs give you quick access to a set of core elements of the platform, namely Projects, Tutorials and Services.",
+      "text": "The menu tabs give you quick access to a set of core elements of the platform, namely Studies, Templates, Services and Data.",
       "placement": "bottom"
     }, {
       "beforeClick": {
         "selector": "osparc-test-id=studiesTabBtn"
       },
       "anchorEl": "osparc-test-id=studiesTabBtn",
-      "text": "Any Project is accessible via the Dashboard. The Projects, which belong to or are shared with you, can be found here.",
+      "text": "Any Study is accessible via the Dashboard. The Studies, which belong to or are shared with you, can be found here. You can also create Folders to help you organize the Studies",
       "placement": "bottom"
     }, {
       "beforeClick": {
         "selector": "osparc-test-id=templatesTabBtn"
       },
       "anchorEl": "osparc-test-id=templatesTabBtn",
-      "text": "Clicking on a Tutorial will create a copy of that Project, which will appear in your own Projects tab with the same name as the Tutorial. Any changes you make to this copy will not affect the original Tutorial.",
+      "text": "Clicking on a Template will create a copy of that Study, which will appear in your own Studies tab with the same name as the Template. Any changes you make to this copy will not affect the original Template.",
       "placement": "bottom"
     }, {
       "beforeClick": {
         "selector": "osparc-test-id=servicesTabBtn"
       },
       "anchorEl": "osparc-test-id=servicesTabBtn",
-      "text": "Every Project in Sim4Life is composed of at least one so-called Service.<br>Services are building blocks for Projects and can provide data/files, visualize results (2D, 3D), implement code in Jupyter notebooks or perform computations to execute simulations within a Project.",
+      "text": "Every Study in oSparc is composed of so-called Services.<br>These are building blocks for Studies and can provide data/files, visualize results (2D, 3D), implement code in Jupyter notebooks or perform computations to execute simulations within a Study.",
+      "placement": "bottom"
+    }, {
+      "beforeClick": {
+        "selector": "osparc-test-id=dataTabBtn"
+      },
+      "anchorEl": "osparc-test-id=dataTabBtn",
+      "text": "All the Data of the Studies you have access to can bre explored here.",
       "placement": "bottom"
     }]
   },
@@ -78,7 +85,7 @@
         "event": "tap"
       },
       "anchorEl": "osparc-test-id=notificationsContainer",
-      "text": "By clicking on the Bell, you will you see notifications about which Projects, Credits and Organizations have been shared with you.",
+      "text": "By clicking on the Bell, you will you see notifications about which Studies, Templates and Organizations have been shared with you.",
       "placement": "bottom"
     }, {
       "beforeClick": {
@@ -86,7 +93,7 @@
         "action": "open"
       },
       "anchorEl": "osparc-test-id=helpNavigationMenu",
-      "text": "Under the question mark, you find Manuals, Support and ways to give us Feedback. It also provides quick access to other Guided Tours.",
+      "text": "Under the question mark, you will find Manuals, Support and ways to give us Feedback. It also provides quick access to other Guided Tours.",
       "placement": "left"
     }, {
       "beforeClick": {
@@ -94,7 +101,7 @@
         "action": "open"
       },
       "anchorEl": "osparc-test-id=userMenuMenu",
-      "text": "The User Menu gives you access to Your Account, Billing Center, Preferences, Organizations and more.",
+      "text": "The User Menu gives you access to Your Account, Organizations and more.",
       "placement": "left"
     }]
   }

@@ -188,12 +188,13 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       });
       win.center();
       win.open();
-      win.addListenerOnce("close", () => {
+      win.addListener("changeConfirmed", e => {
         if (win.getConfirmed()) {
           this.openUpdateServices();
         } else {
           this.__openResource();
         }
+        win.close();
       });
     },
 
