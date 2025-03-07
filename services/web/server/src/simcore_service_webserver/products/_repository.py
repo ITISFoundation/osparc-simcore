@@ -26,7 +26,7 @@ from sqlalchemy.engine import Row
 from sqlalchemy.ext.asyncio import AsyncConnection
 
 from ..constants import FRONTEND_APPS_AVAILABLE
-from ..db.base_repository import BaseRepositoryV2
+from ..db.base_repository import BaseRepository
 from ._models import PaymentFieldsTuple, Product
 
 _logger = logging.getLogger(__name__)
@@ -93,7 +93,7 @@ async def _get_product_payment_fields(
     )
 
 
-class ProductRepository(BaseRepositoryV2):
+class ProductRepository(BaseRepository):
 
     async def list_products(
         self,
