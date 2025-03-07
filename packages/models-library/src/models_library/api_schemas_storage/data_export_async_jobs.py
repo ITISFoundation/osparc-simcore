@@ -26,8 +26,6 @@ class InvalidFileIdentifierError(StorageRpcBaseError):
 
 
 class AccessRightError(StorageRpcBaseError):
-    msg_template: str = "User {user_id} does not have access to file {file_id} with location {location_id}"
-
-
-class DataExportError(StorageRpcBaseError):
-    msg_template: str = "Could not complete data export job with id {job_id}"
+    msg_template: str = (
+        "User {user_id} does not have access to file {file_id} with location {location_id}"
+    )
