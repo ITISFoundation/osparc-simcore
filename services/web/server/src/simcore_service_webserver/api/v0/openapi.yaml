@@ -6477,12 +6477,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_StorageAsyncJobResult_'
+        '404':
+          description: Result not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StorageAsyncJobStatus'
   /v0/storage/async-jobs:
     get:
       tags:
       - storage
       summary: Get Async Jobs
-      description: Retrunsa list of async jobs for the user
+      description: Returns a list of async jobs for the user
       operationId: get_async_jobs
       parameters:
       - name: user_id
