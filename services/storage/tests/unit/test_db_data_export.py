@@ -331,7 +331,6 @@ async def test_abort_data_export(
         ),
         job_id=_job_id,
     )
-    print("something")
 
 
 @pytest.mark.parametrize(
@@ -355,7 +354,6 @@ async def test_abort_data_export_scheduler_error(
             ),
             job_id=_job_id,
         )
-    print("something")
 
 
 async def test_get_data_export_status(
