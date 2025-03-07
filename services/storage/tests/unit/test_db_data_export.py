@@ -18,6 +18,7 @@ from models_library.api_schemas_storage import STORAGE_RPC_NAMESPACE
 from models_library.api_schemas_storage.data_export_async_jobs import (
     DataExportTaskStartInput,
 )
+from models_library.progress_bar import ProgressReport
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
 from models_library.users import UserID
 from pydantic import ByteSize, TypeAdapter
@@ -28,9 +29,11 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.async_jobs import async_jobs
 from settings_library.rabbit import RabbitSettings
-from simcore_service_storage.api.rpc._async_jobs import AsyncJobNameData
+from simcore_service_storage.api.rpc._async_jobs import AsyncJobNameData, TaskStatus
 from simcore_service_storage.api.rpc._data_export import AccessRightError
 from simcore_service_storage.core.settings import ApplicationSettings
+from simcore_service_storage.modules.celery.client import TaskUUID
+from simcore_service_storage.modules.celery.models import TaskState
 
 pytest_plugins = [
     "pytest_simcore.rabbit_service",
@@ -42,11 +45,45 @@ pytest_simcore_core_services_selection = [
     "postgres",
 ]
 
+_faker = Faker()
+
 
 @pytest.fixture
 async def mock_rabbit_setup(mocker: MockerFixture):
     # fixture to avoid mocking the rabbit
     pass
+
+
+class _MockCeleryClient:
+    async def send_task(self, *args, **kwargs) -> TaskUUID:
+        return _faker.uuid4()
+
+    async def get_task_status(self, *args, **kwargs) -> TaskStatus:
+        return TaskStatus(
+            task_uuid=_faker.uuid4(),
+            task_state=TaskState.RUNNING,
+            progress_report=ProgressReport(actual_value=42.0),
+        )
+
+    async def get_result(self, *args, **kwargs) -> Any:
+        return {}
+
+    async def get_task_uuids(self, *args, **kwargs) -> set[TaskUUID]:
+        return {_faker.uuid4()}
+
+
+@pytest.fixture
+async def mock_celery_client(mocker: MockerFixture) -> MockerFixture:
+    _celery_client = _MockCeleryClient()
+    mocker.patch(
+        "simcore_service_storage.api.rpc._async_jobs.get_celery_client",
+        return_value=_celery_client,
+    )
+    mocker.patch(
+        "simcore_service_storage.api.rpc._data_export.get_celery_client",
+        return_value=_celery_client,
+    )
+    return mocker
 
 
 @pytest.fixture
@@ -110,6 +147,7 @@ class UserWithFile(NamedTuple):
 )
 async def test_start_data_export_success(
     rpc_client: RabbitMQRPCClient,
+    mock_celery_client: MockerFixture,
     with_random_project_with_files: tuple[
         dict[str, Any],
         dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],
@@ -150,7 +188,10 @@ async def test_start_data_export_success(
 
 
 async def test_start_data_export_fail(
-    rpc_client: RabbitMQRPCClient, user_id: UserID, faker: Faker
+    rpc_client: RabbitMQRPCClient,
+    mock_celery_client: MockerFixture,
+    user_id: UserID,
+    faker: Faker,
 ):
 
     with pytest.raises(AccessRightError):
@@ -168,13 +209,16 @@ async def test_start_data_export_fail(
         )
 
 
-async def test_abort_data_export(rpc_client: RabbitMQRPCClient, faker: Faker):
-    _job_id = AsyncJobId(faker.uuid4())
+async def test_abort_data_export(
+    rpc_client: RabbitMQRPCClient,
+    mock_celery_client: MockerFixture,
+):
+    _job_id = AsyncJobId(_faker.uuid4())
     result = await async_jobs.abort(
         rpc_client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
         job_id_data=AsyncJobNameData(
-            user_id=faker.pyint(min_value=1, max_value=100), product_name="osparc"
+            user_id=_faker.pyint(min_value=1, max_value=100), product_name="osparc"
         ),
         job_id=_job_id,
     )
@@ -182,39 +226,48 @@ async def test_abort_data_export(rpc_client: RabbitMQRPCClient, faker: Faker):
     assert result.job_id == _job_id
 
 
-async def test_get_data_export_status(rpc_client: RabbitMQRPCClient, faker: Faker):
-    _job_id = AsyncJobId(faker.uuid4())
+async def test_get_data_export_status(
+    rpc_client: RabbitMQRPCClient,
+    mock_celery_client: MockerFixture,
+):
+    _job_id = AsyncJobId(_faker.uuid4())
     result = await async_jobs.get_status(
         rpc_client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
         job_id=_job_id,
         job_id_data=AsyncJobNameData(
-            user_id=faker.pyint(min_value=1, max_value=100), product_name="osparc"
+            user_id=_faker.pyint(min_value=1, max_value=100), product_name="osparc"
         ),
     )
     assert isinstance(result, AsyncJobStatus)
     assert result.job_id == _job_id
 
 
-async def test_get_data_export_result(rpc_client: RabbitMQRPCClient, faker: Faker):
-    _job_id = AsyncJobId(faker.uuid4())
+async def test_get_data_export_result(
+    rpc_client: RabbitMQRPCClient,
+    mock_celery_client: MockerFixture,
+):
+    _job_id = AsyncJobId(_faker.uuid4())
     result = await async_jobs.get_result(
         rpc_client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
         job_id=_job_id,
         job_id_data=AsyncJobNameData(
-            user_id=faker.pyint(min_value=1, max_value=100), product_name="osparc"
+            user_id=_faker.pyint(min_value=1, max_value=100), product_name="osparc"
         ),
     )
     assert isinstance(result, AsyncJobResult)
 
 
-async def test_list_jobs(rpc_client: RabbitMQRPCClient, faker: Faker):
+async def test_list_jobs(
+    rpc_client: RabbitMQRPCClient,
+    mock_celery_client: MockerFixture,
+):
     result = await async_jobs.list_jobs(
         rpc_client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
         job_id_data=AsyncJobNameData(
-            user_id=faker.pyint(min_value=1, max_value=100), product_name="osparc"
+            user_id=_faker.pyint(min_value=1, max_value=100), product_name="osparc"
         ),
         filter_="",
     )
