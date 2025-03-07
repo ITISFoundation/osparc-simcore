@@ -40,7 +40,6 @@ qx.Class.define("osparc.store.Services", {
             this.__addTSRInfos(servicesObj);
             this.__addExtraTypeInfos(servicesObj);
 
-            // use response to populate servicesCached
             Object.values(servicesObj).forEach(serviceKey => {
               Object.values(serviceKey).forEach(service => this.__addToCache(service));
             });

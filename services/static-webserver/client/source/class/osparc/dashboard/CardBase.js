@@ -491,13 +491,11 @@ qx.Class.define("osparc.dashboard.CardBase", {
           uuid = resourceData.uuid ? resourceData.uuid : null;
           owner = resourceData.prjOwner ? resourceData.prjOwner : "";
           workbench = resourceData.workbench ? resourceData.workbench : {};
-          // icon = osparc.study.Utils.guessIcon(resourceData);
           break;
         case "template":
           uuid = resourceData.uuid ? resourceData.uuid : null;
           owner = resourceData.prjOwner ? resourceData.prjOwner : "";
           workbench = resourceData.workbench ? resourceData.workbench : {};
-          // icon = osparc.study.Utils.guessIcon(resourceData);
           break;
         case "service":
           uuid = resourceData.key ? resourceData.key : null;
@@ -540,7 +538,8 @@ qx.Class.define("osparc.dashboard.CardBase", {
             this.setServices(services);
           });
 
-        // icon = osparc.study.Utils.guessIcon(resourceData);
+        osparc.study.Utils.guessIcon(resourceData)
+          .then(iconSource => this.setIcon(iconSource));
       }
     },
 
