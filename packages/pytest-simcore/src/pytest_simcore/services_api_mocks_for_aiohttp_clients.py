@@ -93,7 +93,7 @@ def create_computation_cb(url, **kwargs) -> CallbackResult:
                 "62237c33-8d6c-4709-aa92-c3cf693dd6d2",
                 "0bdf824f-57cb-4e38-949e-fd12c184f000",
             ]
-            node_states[node_id] = {"state": {"modified": True, "dependencies": []}}
+            node_states[node_id] = {"modified": True, "dependencies": []}
         node_states["62237c33-8d6c-4709-aa92-c3cf693dd6d2"] = {
             "modified": True,
             "dependencies": ["2f493631-30b4-4ad8-90f2-a74e4b46fe73"],
