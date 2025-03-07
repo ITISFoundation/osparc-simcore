@@ -1,7 +1,6 @@
 from typing import Final
 
 from models_library.api_schemas_rpc_async_jobs.async_jobs import (
-    AsyncJobAbort,
     AsyncJobGet,
     AsyncJobId,
     AsyncJobNameData,
@@ -24,16 +23,14 @@ async def abort(
     rpc_namespace: RPCNamespace,
     job_id: AsyncJobId,
     job_id_data: AsyncJobNameData
-) -> AsyncJobAbort:
-    result = await rabbitmq_rpc_client.request(
+) -> None:
+    await rabbitmq_rpc_client.request(
         rpc_namespace,
         _RPC_METHOD_NAME_ADAPTER.validate_python("abort"),
         job_id=job_id,
         job_id_data=job_id_data,
         timeout_s=_DEFAULT_TIMEOUT_S,
     )
-    assert isinstance(result, AsyncJobAbort)
-    return result
 
 
 async def get_status(

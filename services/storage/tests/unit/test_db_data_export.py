@@ -13,7 +13,6 @@ from faker import Faker
 from fastapi import FastAPI
 from models_library.api_schemas_long_running_tasks.tasks import TaskResult
 from models_library.api_schemas_rpc_async_jobs.async_jobs import (
-    AsyncJobAbort,
     AsyncJobGet,
     AsyncJobId,
     AsyncJobResult,
@@ -70,6 +69,7 @@ class _MockCeleryClient:
     get_task_status_object: TaskStatus | Exception | None = None
     get_result_object: TaskResult | Exception | None = None
     get_task_uuids_object: set[UUID] | Exception | None = None
+    abort_task_object: Exception | None = None
 
     async def send_task(self, *args, **kwargs) -> TaskUUID:
         assert self.send_task_object is not None
@@ -95,6 +95,12 @@ class _MockCeleryClient:
             raise self.get_task_uuids_object
         return self.get_task_uuids_object
 
+    async def abort_task(self, *args, **kwargs) -> None:
+        if isinstance(self.abort_task_object, Exception):
+            raise self.abort_task_object
+        else:
+            return self.abort_task_object
+
 
 @pytest.fixture
 async def mock_celery_client(
@@ -107,6 +113,7 @@ async def mock_celery_client(
         get_task_status_object=params.get("get_task_status_object", None),
         get_result_object=params.get("get_result_object", None),
         get_task_uuids_object=params.get("get_task_uuids_object", None),
+        abort_task_object=params.get("abort_task_object", None),
     )
     mocker.patch(
         "simcore_service_storage.api.rpc._async_jobs.get_celery_client",
@@ -304,12 +311,19 @@ async def test_start_data_export_access_error(
         )
 
 
+@pytest.mark.parametrize(
+    "mock_celery_client",
+    [
+        {"abort_task_object": None},
+    ],
+    indirect=True,
+)
 async def test_abort_data_export(
     rpc_client: RabbitMQRPCClient,
     mock_celery_client: MockerFixture,
 ):
     _job_id = AsyncJobId(_faker.uuid4())
-    result = await async_jobs.abort(
+    await async_jobs.abort(
         rpc_client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
         job_id_data=AsyncJobNameData(
@@ -317,8 +331,31 @@ async def test_abort_data_export(
         ),
         job_id=_job_id,
     )
-    assert isinstance(result, AsyncJobAbort)
-    assert result.job_id == _job_id
+    print("something")
+
+
+@pytest.mark.parametrize(
+    "mock_celery_client",
+    [
+        {"abort_task_object": CeleryError("error")},
+    ],
+    indirect=True,
+)
+async def test_abort_data_export_scheduler_error(
+    rpc_client: RabbitMQRPCClient,
+    mock_celery_client: MockerFixture,
+):
+    _job_id = AsyncJobId(_faker.uuid4())
+    with pytest.raises(JobSchedulerError):
+        _ = await async_jobs.abort(
+            rpc_client,
+            rpc_namespace=STORAGE_RPC_NAMESPACE,
+            job_id_data=AsyncJobNameData(
+                user_id=_faker.pyint(min_value=1, max_value=100), product_name="osparc"
+            ),
+            job_id=_job_id,
+        )
+    print("something")
 
 
 async def test_get_data_export_status(
