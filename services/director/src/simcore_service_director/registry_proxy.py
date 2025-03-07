@@ -156,7 +156,9 @@ async def _auth_registry_request(  # noqa: C901
         return (resp_data, resp_headers)
     if auth_type == "Basic":
         # basic authentication should not be since we tried already...
-        resp_wbasic = await getattr(session, method.lower())(url, auth=auth, **kwargs)
+        resp_wbasic = await getattr(session, method.lower())(
+            str(url), auth=auth, **kwargs
+        )
         assert isinstance(resp_wbasic, httpx.Response)  # nosec
         if resp_wbasic.status_code == status.HTTP_404_NOT_FOUND:
             raise ServiceNotAvailableError(service_name=f"{url}")
