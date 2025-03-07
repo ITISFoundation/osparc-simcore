@@ -84,11 +84,11 @@ def _get_user_access_parametrizations(expected_authed_status_code):
     _get_user_access_parametrizations(status.HTTP_200_OK),
 )
 async def test_list_api_keys(
+    disabled_setup_garbage_collector: MockType,
     client: TestClient,
     logged_user: UserInfoDict,
     user_role: UserRole,
     expected: HTTPStatus,
-    disabled_setup_garbage_collector: MockType,
 ):
     resp = await client.get("/v0/auth/api-keys")
     data, errors = await assert_status(resp, expected)
@@ -102,11 +102,11 @@ async def test_list_api_keys(
     _get_user_access_parametrizations(status.HTTP_200_OK),
 )
 async def test_create_api_key(
+    disabled_setup_garbage_collector: MockType,
     client: TestClient,
     logged_user: UserInfoDict,
     user_role: UserRole,
     expected: HTTPStatus,
-    disabled_setup_garbage_collector: MockType,
 ):
     display_name = "foo"
     resp = await client.post("/v0/auth/api-keys", json={"displayName": display_name})
@@ -128,12 +128,12 @@ async def test_create_api_key(
     _get_user_access_parametrizations(status.HTTP_204_NO_CONTENT),
 )
 async def test_delete_api_keys(
+    disabled_setup_garbage_collector: MockType,
     client: TestClient,
     fake_user_api_keys: list[ApiKey],
     logged_user: UserInfoDict,
     user_role: UserRole,
     expected: HTTPStatus,
-    disabled_setup_garbage_collector: MockType,
 ):
     resp = await client.delete("/v0/auth/api-keys/0")
     await assert_status(resp, expected)
@@ -151,37 +151,51 @@ EXPIRATION_WAIT_FACTOR = 1.2
     _get_user_access_parametrizations(status.HTTP_200_OK),
 )
 async def test_create_api_key_with_expiration(
+    disabled_setup_garbage_collector: MockType,
     client: TestClient,
     logged_user: UserInfoDict,
     user_role: UserRole,
     expected: HTTPStatus,
-    disabled_setup_garbage_collector: MockType,
+    mocker: MockerFixture,
 ):
     assert client.app
+
+    gc_prune_mock = mocker.patch(
+        "simcore_service_webserver.garbage_collector._tasks_api_keys.api_keys_service.prune_expired_api_keys",
+        spec=True,
+    )
+
+    assert not gc_prune_mock.called
+
+    TEST_API_KEY = "foo"
 
     # create api-keys with expiration interval
     expiration_interval = timedelta(seconds=1)
     resp = await client.post(
         "/v0/auth/api-keys",
-        json={"displayName": "foo", "expiration": expiration_interval.seconds},
+        json={"displayName": TEST_API_KEY, "expiration": expiration_interval.seconds},
     )
 
     data, errors = await assert_status(resp, expected)
     if not errors:
-        assert data["displayName"] == "foo"
+        assert data["displayName"] == TEST_API_KEY
         assert "apiKey" in data
         assert "apiSecret" in data
 
         # list created api-key
         resp = await client.get("/v0/auth/api-keys")
         data, _ = await assert_status(resp, expected)
-        assert [d["displayName"] for d in data] == ["foo"]
+        assert [d["displayName"] for d in data] == [TEST_API_KEY]
+
+        assert not gc_prune_mock.called
 
         # wait for api-key for it to expire and force-run scheduled task
         await asyncio.sleep(EXPIRATION_WAIT_FACTOR * expiration_interval.seconds)
 
+        assert not gc_prune_mock.called
+
         deleted = await api_keys_service.prune_expired_api_keys(client.app)
-        assert deleted == ["foo"]
+        assert deleted == [TEST_API_KEY]
 
         resp = await client.get("/v0/auth/api-keys")
         data, _ = await assert_status(resp, expected)
@@ -189,8 +203,8 @@ async def test_create_api_key_with_expiration(
 
 
 async def test_get_or_create_api_key(
-    client: TestClient,
     disabled_setup_garbage_collector: MockType,
+    client: TestClient,
 ):
     async with NewUser(
         app=client.app,
@@ -221,11 +235,11 @@ async def test_get_or_create_api_key(
     _get_user_access_parametrizations(status.HTTP_404_NOT_FOUND),
 )
 async def test_get_not_existing_api_key(
+    disabled_setup_garbage_collector: MockType,
     client: TestClient,
     logged_user: UserInfoDict,
     user_role: UserRole,
     expected: HTTPException,
-    disabled_setup_garbage_collector: MockType,
 ):
     resp = await client.get("/v0/auth/api-keys/42")
     data, errors = await assert_status(resp, expected)
