@@ -1,3 +1,4 @@
+import asyncio
 import contextlib
 import uuid
 from collections.abc import AsyncGenerator
@@ -61,9 +62,9 @@ async def test_db_connection(state: AppState) -> bool:
     try:
         async with contextlib.AsyncExitStack() as stack:
             engine = await stack.enter_async_context(db_engine(state))
-            db_connection = await stack.enter_async_context(engine.connect())
-            # Perform a simple query to test the connection
-            result = await db_connection.execute(sa.text("SELECT 1"))
+            async with asyncio.timeout(5):
+                db_connection = await stack.enter_async_context(engine.connect())
+                result = await db_connection.execute(sa.text("SELECT 1"))
             result.one()
             rich.print(
                 "[green]Database connection test completed successfully![/green]"
