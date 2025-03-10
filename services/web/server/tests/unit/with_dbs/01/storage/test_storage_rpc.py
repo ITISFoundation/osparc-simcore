@@ -16,7 +16,9 @@ from models_library.api_schemas_rpc_async_jobs.async_jobs import (
     AsyncJobStatus,
 )
 from models_library.api_schemas_rpc_async_jobs.exceptions import (
+    JobAbortedError,
     JobError,
+    JobNotDoneError,
     JobSchedulerError,
 )
 from models_library.api_schemas_storage.data_export_async_jobs import (
@@ -171,10 +173,13 @@ async def test_abort_async_jobs(
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
 @pytest.mark.parametrize(
-    "backend_result_or_exception",
+    "result_or_exception, expected_status",
     [
-        AsyncJobResult(result=None, error=_faker.text()),
-        JobError(job_id=_faker.uuid4()),
+        (JobNotDoneError(job_id=_faker.uuid4()), status.HTTP_409_CONFLICT),
+        (AsyncJobResult(result=None), status.HTTP_200_OK),
+        (JobError(job_id=_faker.uuid4()), status.HTTP_500_INTERNAL_SERVER_ERROR),
+        (JobAbortedError(job_id=_faker.uuid4()), status.HTTP_410_GONE),
+        (JobSchedulerError(exc=_faker.text()), status.HTTP_500_INTERNAL_SERVER_ERROR),
     ],
     ids=lambda x: type(x).__name__,
 )
@@ -184,19 +189,14 @@ async def test_get_async_job_result(
     client: TestClient,
     create_storage_rpc_client_mock: Callable[[str, Any], None],
     faker: Faker,
-    backend_result_or_exception: Any,
+    result_or_exception: Any,
+    expected_status: int,
 ):
     _job_id = AsyncJobId(faker.uuid4())
-    create_storage_rpc_client_mock(get_result.__name__, backend_result_or_exception)
+    create_storage_rpc_client_mock(get_result.__name__, result_or_exception)
 
     response = await client.get(f"/v0/storage/async-jobs/{_job_id}/result")
-
-    if isinstance(backend_result_or_exception, AsyncJobResult):
-        assert response.status == status.HTTP_200_OK
-    elif isinstance(backend_result_or_exception, JobError):
-        assert response.status == status.HTTP_500_INTERNAL_SERVER_ERROR
-    else:
-        pytest.fail("Incorrectly configured test")
+    assert response.status == expected_status
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])

@@ -102,12 +102,9 @@ class StorageAsyncJobStatus(OutputSchema):
 
 class StorageAsyncJobResult(OutputSchema):
     result: Any | None
-    error: Any | None
 
     @classmethod
     def from_rpc_schema(
         cls, async_job_rpc_result: AsyncJobResult
     ) -> "StorageAsyncJobResult":
-        return StorageAsyncJobResult(
-            result=async_job_rpc_result.result, error=async_job_rpc_result.error
-        )
+        return StorageAsyncJobResult(result=async_job_rpc_result.result)

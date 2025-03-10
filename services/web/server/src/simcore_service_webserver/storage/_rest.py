@@ -529,13 +529,7 @@ async def abort_async_job(request: web.Request) -> web.Response:
             user_id=_req_ctx.user_id, product_name=_req_ctx.product_name
         ),
     )
-    return web.Response(
-        status=(
-            status.HTTP_200_OK
-            if async_job_rpc_abort.result
-            else status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
-    )
+    return web.Response(status=status.HTTP_200_OK)
 
 
 @routes.get(
