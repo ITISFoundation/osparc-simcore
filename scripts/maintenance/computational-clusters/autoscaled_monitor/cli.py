@@ -1,4 +1,5 @@
 import asyncio
+import os
 from pathlib import Path
 from typing import Annotated, Optional
 
@@ -40,7 +41,7 @@ def _parse_repo_config(deploy_config: Path) -> dict[str, str | None]:
         rich.print(
             f"[red]{repo_config} does not exist! Please run `make repo.config` in {deploy_config} to generate it[/red]"
         )
-        raise typer.Exit(1)
+        raise typer.Exit(os.EX_DATAERR)
 
     environment = dotenv_values(repo_config)
 
@@ -54,7 +55,7 @@ def _parse_inventory(deploy_config: Path) -> BastionHost:
         rich.print(
             f"[red]{inventory_path} does not exist! Please run `make inventory` in {deploy_config} to generate it[/red]"
         )
-        raise typer.Exit(1)
+        raise typer.Exit(os.EX_DATAERR)
 
     loader = DataLoader()
     inventory = InventoryManager(loader=loader, sources=[f"{inventory_path}"])
@@ -65,8 +66,10 @@ def _parse_inventory(deploy_config: Path) -> BastionHost:
             user_name=inventory.groups["CAULDRON_UNIX"].get_vars()["bastion_user"],
         )
     except KeyError as err:
-        msg = "Unable to find bastion_ip in the inventory file."
-        raise RuntimeError(msg) from err
+        rich.print(
+            f"[red]{inventory_path} invalid! Unable to find bastion_ip in the inventory file. TIP: Please run `make inventory` in {deploy_config} to generate it[/red]"
+        )
+        raise typer.Exit(os.EX_DATAERR) from err
 
 
 @app.callback()
@@ -183,9 +186,9 @@ def trigger_cluster_termination(
 
 
 @app.command()
-def test_database_connection() -> None:
+def check_database_connection() -> None:
     """this will check the connection to simcore database is ready"""
-    asyncio.run(api.test_database_connection(state))
+    asyncio.run(api.check_database_connection(state))
 
 
 if __name__ == "__main__":

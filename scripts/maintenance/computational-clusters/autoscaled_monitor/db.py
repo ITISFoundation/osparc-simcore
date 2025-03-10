@@ -80,7 +80,7 @@ async def abort_job_in_db(
         rich.print(f"set comp_tasks for {project_id=}/{node_id=} set to ABORTED")
 
 
-async def test_db_connection(state: AppState) -> bool:
+async def check_db_connection(state: AppState) -> bool:
     try:
         async with contextlib.AsyncExitStack() as stack:
             engine = await stack.enter_async_context(db_engine(state))
