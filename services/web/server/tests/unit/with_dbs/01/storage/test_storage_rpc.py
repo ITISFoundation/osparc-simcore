@@ -26,6 +26,7 @@ from models_library.api_schemas_storage.data_export_async_jobs import (
     InvalidFileIdentifierError,
 )
 from models_library.api_schemas_webserver.storage import (
+    AsyncJobLinks,
     DataExportPost,
     StorageAsyncJobGet,
 )
@@ -200,17 +201,37 @@ async def test_get_async_job_result(
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
+@pytest.mark.parametrize(
+    "backend_result_or_exception, expected_status",
+    [
+        (
+            [
+                StorageAsyncJobGet(
+                    job_id=AsyncJobId(_faker.uuid4()),
+                    links=AsyncJobLinks(
+                        status_href=_faker.uri(),
+                        abort_href=_faker.uri(),
+                        result_href=_faker.uri(),
+                    ),
+                )
+            ],
+            status.HTTP_200_OK,
+        ),
+        (JobSchedulerError(exc=_faker.text()), status.HTTP_500_INTERNAL_SERVER_ERROR),
+    ],
+    ids=lambda x: type(x).__name__,
+)
 async def test_get_user_async_jobs(
     user_role: UserRole,
     logged_user: UserInfoDict,
     client: TestClient,
     create_storage_rpc_client_mock: Callable[[str, Any], None],
+    backend_result_or_exception: Any,
+    expected_status: int,
 ):
-    create_storage_rpc_client_mock(
-        list_jobs.__name__, [StorageAsyncJobGet(job_id=AsyncJobId(_faker.uuid4()))]
-    )
+    create_storage_rpc_client_mock(list_jobs.__name__, backend_result_or_exception)
 
     response = await client.get("/v0/storage/async-jobs")
-
-    assert response.status == status.HTTP_200_OK
-    Envelope[list[StorageAsyncJobGet]].model_validate(await response.json())
+    assert response.status == expected_status
+    if response.status == status.HTTP_200_OK:
+        Envelope[list[StorageAsyncJobGet]].model_validate(await response.json())
