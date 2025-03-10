@@ -1,12 +1,15 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
+# pylint: disable=too-many-arguments
+
 
 import asyncio
 from collections.abc import Callable
 
 import pytest
 from aiohttp.test_utils import TestClient, TestServer
+from pytest_mock import MockType
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import NewUser, parse_link, parse_test_marks
 from servicelib.aiohttp import status
@@ -41,7 +44,7 @@ def client(
     event_loop: asyncio.AbstractEventLoop,
     aiohttp_client: Callable,
     web_server: TestServer,
-    mock_orphaned_services,
+    disabled_setup_garbage_collector: MockType,
     mocked_email_core_remove_comments: None,
 ) -> TestClient:
     return event_loop.run_until_complete(aiohttp_client(web_server))
@@ -53,7 +56,7 @@ async def test_unknown_email(
     fake_user_email: str,
 ):
     assert client.app
-    reset_url = client.app.router["auth_reset_password"].url_for()
+    reset_url = client.app.router["initiate_reset_password"].url_for()
 
     response = await client.post(
         f"{reset_url}",
@@ -84,7 +87,7 @@ async def test_blocked_user(
     expected_msg: str,
 ):
     assert client.app
-    reset_url = client.app.router["auth_reset_password"].url_for()
+    reset_url = client.app.router["initiate_reset_password"].url_for()
 
     async with NewUser({"status": user_status.name}, app=client.app) as user:
         response = await client.post(
@@ -104,7 +107,7 @@ async def test_blocked_user(
 
 async def test_inactive_user(client: TestClient, capsys: pytest.CaptureFixture):
     assert client.app
-    reset_url = client.app.router["auth_reset_password"].url_for()
+    reset_url = client.app.router["initiate_reset_password"].url_for()
 
     async with NewUser(
         {"status": UserStatus.CONFIRMATION_PENDING.name}, app=client.app
@@ -129,7 +132,7 @@ async def test_too_often(
     capsys: pytest.CaptureFixture,
 ):
     assert client.app
-    reset_url = client.app.router["auth_reset_password"].url_for()
+    reset_url = client.app.router["initiate_reset_password"].url_for()
 
     async with NewUser(app=client.app) as user:
         confirmation = await db.create_confirmation(
@@ -156,7 +159,7 @@ async def test_reset_and_confirm(
     assert client.app
 
     async with NewUser(app=client.app) as user:
-        reset_url = client.app.router["auth_reset_password"].url_for()
+        reset_url = client.app.router["initiate_reset_password"].url_for()
         response = await client.post(
             f"{reset_url}",
             json={

@@ -1,10 +1,12 @@
 import logging
+from contextlib import suppress
 
 from aiohttp import web
 from aiohttp.web import RouteTableDef
 from models_library.emails import LowerCaseEmailStr
 from pydantic import SecretStr, field_validator
 from servicelib.aiohttp.requests_validation import parse_request_body_as
+from servicelib.logging_errors import create_troubleshotting_log_kwargs
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.request_keys import RQT_USERID_KEY
 from simcore_postgres_database.utils_users import UsersRepo
@@ -16,14 +18,12 @@ from ..products.models import Product
 from ..security.api import check_password, encrypt_password
 from ..utils import HOUR
 from ..utils_rate_limiting import global_rate_limit_route
-from ._confirmation import is_confirmation_allowed, make_confirmation_link
+from ._confirmation import is_confirmation_valid, make_confirmation_link
 from ._constants import (
     MSG_CANT_SEND_MAIL,
     MSG_CHANGE_EMAIL_REQUESTED,
     MSG_EMAIL_SENT,
-    MSG_OFTEN_RESET_PASSWORD,
     MSG_PASSWORD_CHANGED,
-    MSG_UNKNOWN_EMAIL,
     MSG_WRONG_PASSWORD,
 )
 from ._models import InputSchema, create_password_match_validator
@@ -49,10 +49,11 @@ class ResetPasswordBody(InputSchema):
     email: str
 
 
-@routes.post(f"/{API_VTAG}/auth/reset-password", name="auth_reset_password")
+@routes.post(f"/{API_VTAG}/auth/reset-password", name="initiate_reset_password")
 @global_rate_limit_route(number_of_requests=10, interval_seconds=HOUR)
-async def submit_request_to_reset_password(request: web.Request):
-    """
+async def initiate_reset_password(request: web.Request):
+    """First of the "Two-Step Action Confirmation pattern"
+
         1. confirm user exists
         2. check user status
         3. send email with link to reset password
@@ -71,23 +72,46 @@ async def submit_request_to_reset_password(request: web.Request):
 
     request_body = await parse_request_body_as(ResetPasswordBody, request)
 
+    # NOTE: Always same response: never want to confirm or deny the existence of an account
+    # with a given email or username.
+    response = flash_response(MSG_EMAIL_SENT.format(email=request_body.email), "INFO")
+
+    # check user exists
     user = await db.get_user({"email": request_body.email})
     if not user:
-        raise web.HTTPUnprocessableEntity(
-            reason=MSG_UNKNOWN_EMAIL, content_type=MIMETYPE_APPLICATION_JSON
-        )  # 422
+        _logger.warning(
+            "Password reset requested for non-existent email '%s' from IP: %s",
+            request_body.email,
+            request.remote,
+        )
+        return response
 
-    validate_user_status(user=dict(user), support_email=product.support_email)
+    # check user state
+    try:
+        validate_user_status(user=dict(user), support_email=product.support_email)
+    except web.HTTPError as err:
+        _logger.warning(
+            "User status invalidated for email '%s'. Details: %s",
+            request_body.email,
+            err,
+        )
+        return response
 
     assert user["status"] == ACTIVE  # nosec
     assert user["email"] == request_body.email  # nosec
 
-    if not await is_confirmation_allowed(cfg, db, user, action=RESET_PASSWORD):
-        raise web.HTTPUnauthorized(
-            reason=MSG_OFTEN_RESET_PASSWORD,
-            content_type=MIMETYPE_APPLICATION_JSON,
-        )  # 401
+    # check access to product
+    # TODO:
 
+    if await is_confirmation_valid(cfg, db, user, action=RESET_PASSWORD):
+        _logger.warning(
+            "User is requesting password reset but already a valid confirmation code for this action"
+            # Extend expiration and resend email?
+        )
+        # delete previous and resend new?
+        return response
+
+    # TODO: create confirmation code,
     confirmation = await db.create_confirmation(user["id"], action=RESET_PASSWORD)
     link = make_confirmation_link(request, confirmation)
     try:
@@ -104,11 +128,18 @@ async def submit_request_to_reset_password(request: web.Request):
             },
         )
     except Exception as err:  # pylint: disable=broad-except
-        _logger.exception("Can not send email")
-        await db.delete_confirmation(confirmation)
+        _logger.exception(
+            **create_troubleshotting_log_kwargs(
+                "Unable to send email",
+                error=err,
+                error_context={"product_name": product.name, "user_id": user["id"]},
+            )
+        )
+        with suppress(Exception):
+            await db.delete_confirmation(confirmation)
         raise web.HTTPServiceUnavailable(reason=MSG_CANT_SEND_MAIL) from err
 
-    return flash_response(MSG_EMAIL_SENT.format(email=request_body.email), "INFO")
+    return response
 
 
 class ChangeEmailBody(InputSchema):
