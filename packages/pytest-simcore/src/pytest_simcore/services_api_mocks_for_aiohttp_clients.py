@@ -106,17 +106,12 @@ def create_computation_cb(url, **kwargs) -> CallbackResult:
             ],
         }
 
-    assert "json_schema_extra" in ComputationTask.model_config
-    assert isinstance(ComputationTask.model_config["json_schema_extra"], dict)
+    json_schema = ComputationTask.model_json_schema()
+    assert isinstance(json_schema["examples"], list)
     assert isinstance(
-        ComputationTask.model_config["json_schema_extra"]["examples"], list
+        json_schema["examples"][0], dict
     )
-    assert isinstance(
-        ComputationTask.model_config["json_schema_extra"]["examples"][0], dict
-    )
-    computation: dict[str, Any] = ComputationTask.model_config["json_schema_extra"][
-        "examples"
-    ][0].copy()
+    computation: dict[str, Any] = json_schema["examples"][0].copy()
     computation.update(
         {
             "id": f"{kwargs['json']['project_id']}",
@@ -143,16 +138,16 @@ def get_computation_cb(url, **kwargs) -> CallbackResult:
     state = RunningState.NOT_STARTED
     pipeline: dict[str, list[str]] = FULL_PROJECT_PIPELINE_ADJACENCY
     node_states = FULL_PROJECT_NODE_STATES
-    assert "json_schema_extra" in ComputationGet.model_config
-    assert isinstance(ComputationGet.model_config["json_schema_extra"], dict)
+
+    json_schema = ComputationTask.model_json_schema()
     assert isinstance(
-        ComputationGet.model_config["json_schema_extra"]["examples"], list
+        json_schema["examples"], list
     )
     assert isinstance(
-        ComputationGet.model_config["json_schema_extra"]["examples"][0], dict
+        json_schema["examples"][0], dict
     )
 
-    computation: dict[str, Any] = ComputationGet.model_config["json_schema_extra"][
+    computation: dict[str, Any] = json_schema[
         "examples"
     ][0].copy()
     computation.update(
