@@ -71,27 +71,33 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         Field(
             30,
             description="Interval in seconds when task cleaning pending uploads runs. setting to NULL disables the cleaner.",
-
-    STORAGE_CLEANER_INTERVAL_S: int | None = Field(
-        30,
-        description="Interval in seconds when task cleaning pending uploads runs. setting to NULL disables the cleaner.",
-    )
-
-    STORAGE_RABBITMQ: RabbitSettings | None = Field(
-        json_schema_extra={"auto_default_from_env": True},
-    )
-
-    STORAGE_S3_CLIENT_MAX_TRANSFER_CONCURRENCY: int = Field(
-        4,
-        description="Maximal amount of threads used by underlying S3 client to transfer data to S3 backend",
-    )
-
-    STORAGE_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
-        default=False,
-        validation_alias=AliasChoices(
-            "STORAGE_LOG_FORMAT_LOCAL_DEV_ENABLED",
-            "LOG_FORMAT_LOCAL_DEV_ENABLED",
         ),
+    ]
+
+    STORAGE_RABBITMQ: Annotated[
+        RabbitSettings | None,
+        Field(
+            json_schema_extra={"auto_default_from_env": True},
+        )
+    ]
+
+    STORAGE_S3_CLIENT_MAX_TRANSFER_CONCURRENCY: Annotated[
+        int,
+        Field(
+            4,
+            description="Maximal amount of threads used by underlying S3 client to transfer data to S3 backend",
+        ),
+    ]
+
+    STORAGE_LOG_FORMAT_LOCAL_DEV_ENABLED: Annotated[
+        bool,
+        Field(
+            default=False,
+            validation_alias=AliasChoices(
+                "STORAGE_LOG_FORMAT_LOCAL_DEV_ENABLED",
+                "LOG_FORMAT_LOCAL_DEV_ENABLED",
+            ),
+        )
     ]
 
     STORAGE_RABBITMQ: Annotated[
