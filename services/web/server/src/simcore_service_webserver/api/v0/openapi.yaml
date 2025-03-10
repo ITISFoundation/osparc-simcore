@@ -253,9 +253,8 @@ paths:
     post:
       tags:
       - auth
-      summary: Reset Password
-      description: a non logged-in user requests a password reset
-      operationId: auth_reset_password
+      summary: Initiate Reset Password
+      operationId: initiate_reset_password
       requestBody:
         content:
           application/json:
@@ -279,9 +278,8 @@ paths:
     post:
       tags:
       - auth
-      summary: Reset Password Allowed
-      description: changes password using a token code without being logged in
-      operationId: auth_reset_password_allowed
+      summary: Complete Reset Password
+      operationId: complete_reset_password
       parameters:
       - name: code
         in: path
@@ -303,7 +301,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Envelope_Log_'
         '401':
-          description: unauthorized reset due to invalid token code
+          description: Invalid token code
           content:
             application/json:
               schema:
