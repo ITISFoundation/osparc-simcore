@@ -282,18 +282,15 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       hBox.add(versionsBox);
 
 
-      osparc.store.Services.getVersions(this.__resourceData["key"], this.__resourceData["version"])
-        .then(versions => {
+      osparc.store.Services.versionsToSelectBox(this.__resourceData["key"], versionsBox)
+        .then(() => {
           let selectedItem = null;
 
           // first setSelection
-          versions.forEach(version => {
-            selectedItem = osparc.service.Utils.versionToListItem(this.__resourceData, version);
-            versionsBox.add(selectedItem);
-            if (this.__resourceData["version"] === version) {
-              versionsBox.setSelection([selectedItem]);
-            }
-          });
+          const versionFound = versionsBox.getSelectables().find(selectable => selectable.version === this.__resourceData["version"]);
+          if (versionFound) {
+            versionsBox.setSelection([selectedItem]);
+          }
           osparc.utils.Utils.growSelectBox(versionsBox, 200);
 
           // then listen to changes

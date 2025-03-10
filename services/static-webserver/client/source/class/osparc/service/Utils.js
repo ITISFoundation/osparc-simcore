@@ -137,14 +137,6 @@ qx.Class.define("osparc.service.Utils", {
       return "";
     },
 
-    versionToListItem: function(key, version) {
-      const versionDisplay = osparc.store.Services.getVersionDisplay(key, version);
-      const listItem = new qx.ui.form.ListItem(versionDisplay);
-      osparc.utils.Utils.setIdToWidget(listItem, "serviceVersionItem_" + versionDisplay);
-      listItem.version = version;
-      return listItem;
-    },
-
     canIWrite: function(serviceAccessRights) {
       const groupsStore = osparc.store.Groups.getInstance();
       const orgIDs = groupsStore.getOrganizationIds();
