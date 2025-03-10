@@ -428,11 +428,13 @@ async def summary(state: AppState, user_id: int | None, wallet_id: int | None) -
         state.ec2_resource_autoscaling.meta.client.meta.region_name,
     )
 
-    dynamic_services_in_error = False
-    for instance in dynamic_autoscaled_instances:
-        for service in instance.running_services:
-            if service.needs_manual_intervention:
-                dynamic_services_in_error = True
+    time_threshold = arrow.utcnow().shift(minutes=-30).datetime
+
+    dynamic_services_in_error = any(
+        service.needs_manual_intervention and service.created_at < time_threshold
+        for instance in dynamic_autoscaled_instances
+        for service in instance.running_services
+    )
 
     assert state.ec2_resource_clusters_keeper
     computational_instances = await ec2.list_computational_instances_from_ec2(
@@ -447,8 +449,7 @@ async def summary(state: AppState, user_id: int | None, wallet_id: int | None) -
         state.ec2_resource_clusters_keeper.meta.client.meta.region_name,
     )
 
-    if dynamic_services_in_error:
-        return False
+    return not dynamic_services_in_error
 
 
 def _print_computational_tasks(
