@@ -39,15 +39,16 @@ from ..resource_usage.service import get_default_service_pricing_plan
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
 from . import _catalog_rest_client_service, _service
-from ._exceptions import (
+from ._controller_rest_exceptions import (
     DefaultPricingUnitForServiceNotFoundError,
     handle_plugin_requests_exceptions,
 )
-from .controller_rest_schemas import (
+from ._controller_rest_schemas import (
     CatalogRequestContext,
     ListServiceParams,
     ServicePathParams,
 )
+from .controller_rest_schemas import ServicePathParams
 
 _logger = logging.getLogger(__name__)
 
@@ -377,3 +378,43 @@ async def get_service_pricing_plan(request: Request):
     return envelope_json_response(
         PricingPlanGet.model_validate(pricing_plan.model_dump())
     )
+
+
+@routes.get(
+    f"/{API_VTAG}/catalog/services/{{service_key}}/{{service_version}}/tags",
+    name="list_service_tags",
+)
+@login_required
+@permission_required("service.tag.*")
+async def list_service_tags(request: web.Request):
+    path_params = parse_request_path_parameters_as(ServicePathParams, request)
+    assert path_params  # nosec
+    raise NotImplementedError
+
+
+@routes.post(
+    f"/{API_VTAG}/catalog/services/{{service_key}}/{{service_version}}/tags/{{tag_id}}:add",
+    name="add_service_tag",
+)
+@login_required
+@permission_required("service.tag.*")
+async def add_service_tag(request: web.Request):
+    path_params = parse_request_path_parameters_as(ServiceTagPathParams, request)
+    assert path_params  # nosec
+
+    # responds with parent's resource to get the current state (as with patch/update)
+    raise NotImplementedError
+
+
+@routes.post(
+    f"/{API_VTAG}/catalog/services/{{service_key}}/{{service_version}}/tags/{{tag_id}}:remove",
+    name="remove_service_tag",
+)
+@login_required
+@permission_required("service.tag.*")
+async def remove_service_tag(request: web.Request):
+    path_params = parse_request_path_parameters_as(ServiceTagPathParams, request)
+    assert path_params  # nosec
+
+    # responds with parent's resource to get the current state (as with patch/update)
+    raise NotImplementedError
