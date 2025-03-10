@@ -9,7 +9,7 @@ from common_library.errors_classes import OsparcErrorMixin
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
-from .errors import ForeignKeyViolation, UniqueViolation
+from .aiopg_errors import ForeignKeyViolation, UniqueViolation
 from .models.projects_node_to_pricing_unit import projects_node_to_pricing_unit
 from .models.projects_nodes import projects_nodes
 
@@ -30,11 +30,15 @@ class ProjectNodesNodeNotFoundError(BaseProjectNodesError):
 
 
 class ProjectNodesNonUniqueNodeFoundError(BaseProjectNodesError):
-    msg_template: str = "Multiple project found containing node {node_id}. TIP: misuse, the same node ID was found in several projects."
+    msg_template: str = (
+        "Multiple project found containing node {node_id}. TIP: misuse, the same node ID was found in several projects."
+    )
 
 
 class ProjectNodesDuplicateNodeError(BaseProjectNodesError):
-    msg_template: str = "Project node already exists, you cannot have 2x the same node in the same project."
+    msg_template: str = (
+        "Project node already exists, you cannot have 2x the same node in the same project."
+    )
 
 
 class ProjectNodeCreate(BaseModel):

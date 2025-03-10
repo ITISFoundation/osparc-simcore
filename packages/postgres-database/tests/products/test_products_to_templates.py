@@ -10,12 +10,12 @@ from pathlib import Path
 
 import pytest
 import sqlalchemy as sa
-from aiopg.sa.connection import SAConnection
 from faker import Faker
 from simcore_postgres_database.models.jinja2_templates import jinja2_templates
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.products_to_templates import products_to_templates
 from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 
 @pytest.fixture
@@ -48,54 +48,58 @@ def templates_dir(
 
 @pytest.fixture
 async def product_templates_in_db(
-    connection: SAConnection,
+    asyncpg_engine: AsyncEngine,
     make_products_table: Callable,
     products_names: list[str],
     templates_names: list[str],
 ):
-    await make_products_table(connection)
+    async with asyncpg_engine.begin() as conn:
+        await make_products_table(conn)
 
-    # one version of all tempaltes
-    for template_name in templates_names:
-        await connection.execute(
-            jinja2_templates.insert().values(
-                name=template_name, content="fake template in database"
-            )
-        )
-
-        # only even products have templates
-        for product_name in products_names[0::2]:
-            await connection.execute(
-                products_to_templates.insert().values(
-                    template_name=template_name, product_name=product_name
+        # one version of all tempaltes
+        for template_name in templates_names:
+            await conn.execute(
+                jinja2_templates.insert().values(
+                    name=template_name, content="fake template in database"
                 )
             )
 
+            # only even products have templates
+            for product_name in products_names[0::2]:
+                await conn.execute(
+                    products_to_templates.insert().values(
+                        template_name=template_name, product_name=product_name
+                    )
+                )
+
 
 async def test_export_and_import_table(
-    connection: SAConnection,
+    asyncpg_engine: AsyncEngine,
     product_templates_in_db: None,
 ):
-    exported_values = []
-    excluded_names = {"created", "modified", "group_id"}
-    async for row in connection.execute(
-        sa.select(*(c for c in products.c if c.name not in excluded_names))
-    ):
-        assert row
-        exported_values.append(dict(row))
 
-    # now just upsert them
-    for values in exported_values:
-        values["display_name"] += "-changed"
-        await connection.execute(
-            pg_insert(products)
-            .values(**values)
-            .on_conflict_do_update(index_elements=[products.c.name], set_=values)
+    async with asyncpg_engine.connect() as connection:
+        exported_values = []
+        excluded_names = {"created", "modified", "group_id"}
+        result = await connection.stream(
+            sa.select(*(c for c in products.c if c.name not in excluded_names))
         )
+        async for row in result:
+            assert row
+            exported_values.append(row._asdict())
+
+        # now just upsert them
+        for values in exported_values:
+            values["display_name"] += "-changed"
+            await connection.execute(
+                pg_insert(products)
+                .values(**values)
+                .on_conflict_do_update(index_elements=[products.c.name], set_=values)
+            )
 
 
 async def test_create_templates_products_folder(
-    connection: SAConnection,
+    asyncpg_engine: AsyncEngine,
     templates_dir: Path,
     products_names: list[str],
     tmp_path: Path,
@@ -121,20 +125,22 @@ async def test_create_templates_products_folder(
                     shutil.copy(p, product_folder / p.name, follow_symlinks=False)
 
         # overrides if with files in database
-        async for row in connection.execute(
-            sa.select(
-                products_to_templates.c.product_name,
-                jinja2_templates.c.name,
-                jinja2_templates.c.content,
+        async with asyncpg_engine.connect() as conn:
+            result = await conn.stream(
+                sa.select(
+                    products_to_templates.c.product_name,
+                    jinja2_templates.c.name,
+                    jinja2_templates.c.content,
+                )
+                .select_from(products_to_templates.join(jinja2_templates))
+                .where(products_to_templates.c.product_name == product_name)
             )
-            .select_from(products_to_templates.join(jinja2_templates))
-            .where(products_to_templates.c.product_name == product_name)
-        ):
-            assert row
 
-            template_path = product_folder / row.name
-            template_path.write_text(row.content)
+            async for row in result:
+                assert row
+                template_path = product_folder / row.name
+                template_path.write_text(row.content)
 
-        assert sorted(
-            product_folder / template_name for template_name in templates_names
-        ) == sorted(product_folder.rglob("*.*"))
+            assert sorted(
+                product_folder / template_name for template_name in templates_names
+            ) == sorted(product_folder.rglob("*.*"))

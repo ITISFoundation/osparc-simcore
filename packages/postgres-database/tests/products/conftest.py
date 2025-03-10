@@ -7,7 +7,6 @@
 from collections.abc import Callable
 
 import pytest
-from aiopg.sa.exc import ResourceClosedError
 from faker import Faker
 from pytest_simcore.helpers.faker_factories import random_product
 from simcore_postgres_database.webserver_models import products
@@ -15,7 +14,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 
 @pytest.fixture
-def products_regex() -> dict:
+def products_regex() -> dict[str, str]:
     return {
         "s4l": r"(^s4l[\.-])|(^sim4life\.)",
         "osparc": r"^osparc.",
@@ -24,12 +23,12 @@ def products_regex() -> dict:
 
 
 @pytest.fixture
-def products_names(products_regex: dict) -> list[str]:
+def products_names(products_regex: dict[str, str]) -> list[str]:
     return list(products_regex)
 
 
 @pytest.fixture
-def make_products_table(products_regex: dict, faker: Faker) -> Callable:
+def make_products_table(products_regex: dict[str, str], faker: Faker) -> Callable:
     async def _make(conn) -> None:
         for n, (name, regex) in enumerate(products_regex.items()):
 
@@ -37,6 +36,7 @@ def make_products_table(products_regex: dict, faker: Faker) -> Callable:
                 pg_insert(products)
                 .values(
                     **random_product(
+                        fake=faker,
                         name=name,
                         display_name=f"Product {name.capitalize()}",
                         short_name=name[:3].lower(),
@@ -45,6 +45,7 @@ def make_products_table(products_regex: dict, faker: Faker) -> Callable:
                     )
                 )
                 .on_conflict_do_update(
+                    # osparc might be already injected as default!
                     index_elements=[products.c.name],
                     set_={
                         "display_name": f"Product {name.capitalize()}",
@@ -55,9 +56,7 @@ def make_products_table(products_regex: dict, faker: Faker) -> Callable:
                 )
             )
 
-            assert result.closed
+            assert not result.closed
             assert not result.returns_rows
-            with pytest.raises(ResourceClosedError):
-                await result.scalar()
 
     return _make
