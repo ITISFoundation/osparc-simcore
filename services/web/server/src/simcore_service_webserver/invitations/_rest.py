@@ -2,7 +2,7 @@ import logging
 
 from aiohttp import web
 from models_library.api_schemas_invitations.invitations import ApiInvitationInputs
-from models_library.api_schemas_webserver.product import (
+from models_library.api_schemas_webserver.products import (
     InvitationGenerate,
     InvitationGenerated,
 )

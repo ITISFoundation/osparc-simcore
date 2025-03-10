@@ -3,15 +3,10 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 
-
-import json
 from collections.abc import Callable
 from pathlib import Path
-from pprint import pprint
 
 import sqlalchemy as sa
-from aiopg.sa.engine import Engine
-from aiopg.sa.result import ResultProxy, RowProxy
 from simcore_postgres_database.models.jinja2_templates import jinja2_templates
 from simcore_postgres_database.models.products import (
     EmailFeedback,
@@ -23,40 +18,37 @@ from simcore_postgres_database.models.products import (
 )
 from simcore_postgres_database.webserver_models import products
 from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 
 async def test_load_products(
-    aiopg_engine: Engine, make_products_table: Callable, products_regex: dict
+    asyncpg_engine: AsyncEngine, make_products_table: Callable, products_regex: dict
 ):
     exclude = {
         products.c.created,
         products.c.modified,
     }
 
-    async with aiopg_engine.acquire() as conn:
+    async with asyncpg_engine.connect() as conn:
         await make_products_table(conn)
 
         stmt = sa.select(*[c for c in products.columns if c not in exclude])
-        result: ResultProxy = await conn.execute(stmt)
-        assert result.returns_rows
-
-        rows: list[RowProxy] = await result.fetchall()
+        result = await conn.execute(stmt)
+        rows = result.fetchall()
         assert rows
 
-        assert {
-            row[products.c.name]: row[products.c.host_regex] for row in rows
-        } == products_regex
+        assert {row.name: row.host_regex for row in rows} == products_regex
 
 
 async def test_jinja2_templates_table(
-    aiopg_engine: Engine, osparc_simcore_services_dir: Path
+    asyncpg_engine: AsyncEngine, osparc_simcore_services_dir: Path
 ):
     templates_common_dir = (
         osparc_simcore_services_dir
         / "web/server/src/simcore_service_webserver/templates/common"
     )
 
-    async with aiopg_engine.acquire() as conn:
+    async with asyncpg_engine.connect() as conn:
         templates = []
         # templates table
         for p in templates_common_dir.glob("*.jinja2"):
@@ -105,10 +97,9 @@ async def test_jinja2_templates_table(
             products.c.name, jinja2_templates.c.name, products.c.short_name
         ).select_from(j)
 
-        result: ResultProxy = await conn.execute(stmt)
-        assert result.rowcount == 2
-        rows = await result.fetchall()
-        assert sorted(r.as_tuple() for r in rows) == sorted(
+        result = await conn.execute(stmt)
+        rows = result.fetchall()
+        assert sorted(tuple(r) for r in rows) == sorted(
             [
                 ("osparc", "registration_email.jinja2", "osparc"),
                 ("s4l", "registration_email.jinja2", "s4l web"),
@@ -135,7 +126,7 @@ async def test_jinja2_templates_table(
 
 
 async def test_insert_select_product(
-    aiopg_engine: Engine,
+    asyncpg_engine: AsyncEngine,
 ):
     osparc_product = {
         "name": "osparc",
@@ -172,9 +163,7 @@ async def test_insert_select_product(
         ],
     }
 
-    print(json.dumps(osparc_product))
-
-    async with aiopg_engine.acquire() as conn:
+    async with asyncpg_engine.begin() as conn:
         # writes
         stmt = (
             pg_insert(products)
@@ -188,11 +177,8 @@ async def test_insert_select_product(
 
         # reads
         stmt = sa.select(products).where(products.c.name == name)
-        row = await (await conn.execute(stmt)).fetchone()
-        print(row)
+        row = (await conn.execute(stmt)).one_or_none()
         assert row
-
-        pprint(dict(**row))
 
         assert row.manuals
         assert row.manuals == osparc_product["manuals"]
