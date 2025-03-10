@@ -23,7 +23,7 @@ from servicelib.aiohttp.requests_validation import (
 )
 from servicelib.logging_errors import create_troubleshotting_log_kwargs
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
-from simcore_postgres_database.errors import UniqueViolation
+from simcore_postgres_database.aiopg_errors import UniqueViolation
 from yarl import URL
 
 from ..products import products_web

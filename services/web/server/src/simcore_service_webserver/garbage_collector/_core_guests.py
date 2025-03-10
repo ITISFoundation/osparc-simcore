@@ -8,7 +8,7 @@ from models_library.projects import ProjectID
 from models_library.users import UserID, UserNameID
 from redis.asyncio import Redis
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
-from simcore_postgres_database.errors import DatabaseError
+from simcore_postgres_database.aiopg_errors import DatabaseError
 from simcore_postgres_database.models.users import UserRole
 
 from ..projects import projects_service_legacy
