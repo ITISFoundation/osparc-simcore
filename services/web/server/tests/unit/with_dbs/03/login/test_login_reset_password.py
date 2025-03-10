@@ -138,14 +138,16 @@ async def test_unknown_email(
 
     # email is not sent
     out, _ = capsys.readouterr()
-    assert not parse_test_marks(out)
+    assert not parse_test_marks(out), "Expected no email to be sent"
 
     # Check logger warning
+    logged_warnings = [
+        record.message for record in caplog.records if record.levelname == "WARNING"
+    ]
+
     assert any(
-        record.levelname == "WARNING"
-        and record.message.startswith("Password reset initiated")
-        for record in caplog.records
-    )
+        message.startswith("Password reset initiated") for message in logged_warnings
+    ), f"Missing warning in {logged_warnings}"
 
 
 @pytest.mark.parametrize(
@@ -158,6 +160,7 @@ async def test_unknown_email(
 async def test_blocked_user(
     client: TestClient,
     capsys: pytest.CaptureFixture,
+    caplog: pytest.LogCaptureFixture,
     user_status: UserStatus,
     expected_msg: str,
 ):
@@ -175,12 +178,24 @@ async def test_blocked_user(
     assert response.url.path == reset_url.path
     await assert_status(response, status.HTTP_200_OK, MSG_EMAIL_SENT.format(**user))
 
+    # email is not sent
     out, _ = capsys.readouterr()
+    assert not parse_test_marks(out), "Expected no email to be sent"
+
     # expected_msg contains {support_email} at the end of the string
-    assert expected_msg[:-20] in parse_test_marks(out)["reason"]
+    logged_warnings = [
+        record.message for record in caplog.records if record.levelname == "WARNING"
+    ]
+
+    assert any(
+        message.startswith("Password reset initiated") and expected_msg[:50] in message
+        for message in logged_warnings
+    ), f"Missing warning in {logged_warnings}"
 
 
-async def test_inactive_user(client: TestClient, capsys: pytest.CaptureFixture):
+async def test_inactive_user(
+    client: TestClient, capsys: pytest.CaptureFixture, caplog: pytest.LogCaptureFixture
+):
     assert client.app
     reset_url = client.app.router["initiate_reset_password"].url_for()
 
@@ -197,8 +212,19 @@ async def test_inactive_user(client: TestClient, capsys: pytest.CaptureFixture):
     assert response.url.path == reset_url.path
     await assert_status(response, status.HTTP_200_OK, MSG_EMAIL_SENT.format(**user))
 
+    # email is not sent
     out, _ = capsys.readouterr()
-    assert parse_test_marks(out)["reason"] == MSG_ACTIVATION_REQUIRED
+    assert not parse_test_marks(out), "Expected no email to be sent"
+
+    logged_warnings = [
+        record.message for record in caplog.records if record.levelname == "WARNING"
+    ]
+
+    assert any(
+        message.startswith("Password reset initiated")
+        and MSG_ACTIVATION_REQUIRED[:20] in message
+        for message in logged_warnings
+    ), f"Missing warning in {logged_warnings}"
 
 
 async def test_too_often(

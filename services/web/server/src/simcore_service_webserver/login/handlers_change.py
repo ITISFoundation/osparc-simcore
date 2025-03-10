@@ -49,14 +49,6 @@ class ResetPasswordBody(InputSchema):
     email: str
 
 
-def _get_request_context(request: web.Request) -> dict[str, str]:
-    return {
-        "request.remote": f"{request.remote}",
-        "request.method": f"{request.method}",
-        "request.path": f"{request.path}",
-    }
-
-
 @routes.post(f"/{API_VTAG}/auth/reset-password", name="initiate_reset_password")
 @global_rate_limit_route(number_of_requests=10, interval_seconds=HOUR)
 async def initiate_reset_password(request: web.Request):
@@ -80,26 +72,49 @@ async def initiate_reset_password(request: web.Request):
 
     request_body = await parse_request_body_as(ResetPasswordBody, request)
 
+    _error_msg_prefix = "Password reset initiated"
+
+    def _get_error_context(
+        user=None,
+    ) -> dict[str, str]:
+        ctx = {
+            "user_email": request_body.email,
+            "product_name": product.name,
+            "request.remote": f"{request.remote}",
+            "request.method": f"{request.method}",
+            "request.path": f"{request.path}",
+        }
+
+        if user:
+            ctx.update(
+                {
+                    "user_email": request_body.email,
+                    "user_id": user["id"],
+                    "user_status": user["status"],
+                    "user_role": user["role"],
+                }
+            )
+        return ctx
+
     # NOTE: Always same response: never want to confirm or deny the existence of an account
     # with a given email or username.
     initiated_response = flash_response(
         MSG_EMAIL_SENT.format(email=request_body.email), "INFO"
     )
+
     # CHECK user exists
     user = await db.get_user({"email": request_body.email})
     if not user:
         _logger.warning(
             **create_troubleshotting_log_kwargs(
-                "Password reset initiated for non-existent email. Ignoring request.",
+                "{_error_msg_prefix} for non-existent email. Ignoring request.",
                 error=Exception("No user found with this email"),
-                error_context={
-                    "user_email": request_body.email,
-                    "product_name": product.name,
-                    **_get_request_context(request),
-                },
+                error_context=_get_error_context(),
             )
         )
         return initiated_response
+
+    assert user["email"] == request_body.email  # nosec
 
     # CHECK user state
     try:
@@ -109,20 +124,14 @@ async def initiate_reset_password(request: web.Request):
         # do not want to forward but rather log due to the special rules in this entrypoint
         _logger.warning(
             **create_troubleshotting_log_kwargs(
-                "Password reset initiated for invalid user. Ignoring request.",
+                f"{_error_msg_prefix} for invalid user. Ignoring request.",
                 error=err,
-                error_context={
-                    "user_id": user["id"],
-                    "user": user,
-                    "product_name": product.name,
-                    **_get_request_context(request),
-                },
+                error_context=_get_error_context(user),
             )
         )
         return initiated_response
 
     assert user["status"] == ACTIVE  # nosec
-    assert user["email"] == request_body.email  # nosec
     assert isinstance(user["id"], int)  # nosec
 
     # CHECK access to product
@@ -131,14 +140,9 @@ async def initiate_reset_password(request: web.Request):
     ):
         _logger.warning(
             **create_troubleshotting_log_kwargs(
-                "Password reset initiated for a user with NO access to this product. Ignoring request.",
+                f"{_error_msg_prefix} for a user with NO access to this product. Ignoring request.",
                 error=Exception("User cannot access this product"),
-                error_context={
-                    "user_id": user["id"],
-                    "user": user,
-                    "product_name": product.name,
-                    **_get_request_context(request),
-                },
+                error_context=_get_error_context(user),
             )
         )
         return initiated_response
@@ -169,11 +173,7 @@ async def initiate_reset_password(request: web.Request):
             **create_troubleshotting_log_kwargs(
                 "Unable to send email",
                 error=err,
-                error_context={
-                    "product_name": product.name,
-                    "user_id": user["id"],
-                    **_get_request_context(request),
-                },
+                error_context=_get_error_context(user),
             )
         )
         raise web.HTTPServiceUnavailable(reason=MSG_CANT_SEND_MAIL) from err
