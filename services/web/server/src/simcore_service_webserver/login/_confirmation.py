@@ -8,6 +8,7 @@ Codes have expiration date (duration time is configurable)
 
 import logging
 from datetime import datetime
+from typing import Any
 from urllib.parse import quote
 
 from aiohttp import web
@@ -61,23 +62,29 @@ def get_expiration_date(
     return confirmation["created_at"] + lifetime
 
 
-async def is_confirmation_valid(
-    cfg: LoginOptions, db: AsyncpgStorage, user, action: ConfirmationAction
-) -> bool:
+async def get_or_create_confirmation(
+    cfg: LoginOptions,
+    db: AsyncpgStorage,
+    user: dict[str, Any],
+    action: ConfirmationAction,
+) -> ConfirmationTokenDict:
+
     confirmation: ConfirmationTokenDict | None = await db.get_confirmation(
         {"user": user, "action": action}
     )
-    if not confirmation:
-        return False
 
-    if is_confirmation_expired(cfg, confirmation):
+    if confirmation is not None and is_confirmation_expired(cfg, confirmation):
         await db.delete_confirmation(confirmation)
         log.warning(
             "Used expired token [%s]. Deleted from confirmations table.",
             confirmation,
         )
-        return False
-    return True
+        confirmation = None
+
+    if confirmation is None:
+        confirmation = await db.create_confirmation(user["id"], action=action.value)
+
+    return confirmation
 
 
 def is_confirmation_expired(cfg: LoginOptions, confirmation: ConfirmationTokenDict):
