@@ -72,63 +72,41 @@ async def submit_request_to_reset_password(request: web.Request):
     request_body = await parse_request_body_as(ResetPasswordBody, request)
 
     user = await db.get_user({"email": request_body.email})
+    if not user:
+        raise web.HTTPUnprocessableEntity(
+            reason=MSG_UNKNOWN_EMAIL, content_type=MIMETYPE_APPLICATION_JSON
+        )  # 422
+
+    validate_user_status(user=dict(user), support_email=product.support_email)
+
+    assert user["status"] == ACTIVE  # nosec
+    assert user["email"] == request_body.email  # nosec
+
+    if not await is_confirmation_allowed(cfg, db, user, action=RESET_PASSWORD):
+        raise web.HTTPUnauthorized(
+            reason=MSG_OFTEN_RESET_PASSWORD,
+            content_type=MIMETYPE_APPLICATION_JSON,
+        )  # 401
+
+    confirmation = await db.create_confirmation(user["id"], action=RESET_PASSWORD)
+    link = make_confirmation_link(request, confirmation)
     try:
-        if not user:
-            raise web.HTTPUnprocessableEntity(
-                reason=MSG_UNKNOWN_EMAIL, content_type=MIMETYPE_APPLICATION_JSON
-            )  # 422
-
-        validate_user_status(user=dict(user), support_email=product.support_email)
-
-        assert user["status"] == ACTIVE  # nosec
-        assert user["email"] == request_body.email  # nosec
-
-        if not await is_confirmation_allowed(cfg, db, user, action=RESET_PASSWORD):
-            raise web.HTTPUnauthorized(
-                reason=MSG_OFTEN_RESET_PASSWORD,
-                content_type=MIMETYPE_APPLICATION_JSON,
-            )  # 401
-
-    except web.HTTPError as err:
-        try:
-            await send_email_from_template(
-                request,
-                from_=product.support_email,
-                to=request_body.email,
-                template=await get_template_path(
-                    request, "reset_password_email_failed.jinja2"
-                ),
-                context={
-                    "host": request.host,
-                    "reason": err.reason,
-                    "product": product,
-                },
-            )
-        except Exception as err_mail:  # pylint: disable=broad-except
-            _logger.exception("Cannot send email")
-            raise web.HTTPServiceUnavailable(reason=MSG_CANT_SEND_MAIL) from err_mail
-    else:
-        confirmation = await db.create_confirmation(user["id"], action=RESET_PASSWORD)
-        link = make_confirmation_link(request, confirmation)
-        try:
-            # primary reset email with a URL and the normal instructions.
-            await send_email_from_template(
-                request,
-                from_=product.support_email,
-                to=request_body.email,
-                template=await get_template_path(
-                    request, "reset_password_email.jinja2"
-                ),
-                context={
-                    "host": request.host,
-                    "link": link,
-                    "product": product,
-                },
-            )
-        except Exception as err:  # pylint: disable=broad-except
-            _logger.exception("Can not send email")
-            await db.delete_confirmation(confirmation)
-            raise web.HTTPServiceUnavailable(reason=MSG_CANT_SEND_MAIL) from err
+        # primary reset email with a URL and the normal instructions.
+        await send_email_from_template(
+            request,
+            from_=product.support_email,
+            to=request_body.email,
+            template=await get_template_path(request, "reset_password_email.jinja2"),
+            context={
+                "host": request.host,
+                "link": link,
+                "product": product,
+            },
+        )
+    except Exception as err:  # pylint: disable=broad-except
+        _logger.exception("Can not send email")
+        await db.delete_confirmation(confirmation)
+        raise web.HTTPServiceUnavailable(reason=MSG_CANT_SEND_MAIL) from err
 
     return flash_response(MSG_EMAIL_SENT.format(email=request_body.email), "INFO")
 
