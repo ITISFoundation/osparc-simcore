@@ -147,33 +147,6 @@ qx.Class.define("osparc.store.Services", {
       });
     },
 
-    __getVersionsFromCache: function(key, version, filterDeprecated = true) {
-      if (this.__servicesCached[key][version]["history"]) {
-        const versions = this.__servicesCached[key][version]["history"]
-          .filter(entry => !filterDeprecated || entry["retired"] === null)
-          .map(entry => entry["version"]);
-        return versions;
-      }
-      return [];
-    },
-
-    getVersions: function(key, version, filterDeprecated = true) {
-      return new Promise(resolve => {
-        const versionsFromCache = () => {
-          const versions = this.__getVersionsFromCache(key, version, filterDeprecated);
-          resolve(versions);
-        };
-
-        if (this.__servicesCached[key][version]["history"]) {
-          versionsFromCache();
-        } else {
-          const useCache = false;
-          this.getService(key, version, useCache)
-            .then(() => versionsFromCache());
-        }
-      });
-    },
-
     populateVersionsSelectBox: function(key, selectBox) {
       const latest = this.getLatest(key);
       return this.getService(key, latest["version"])
