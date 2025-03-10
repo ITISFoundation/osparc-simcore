@@ -446,70 +446,61 @@ async def test_get_data_export_result_success(
 
 
 @pytest.mark.parametrize(
-    "mock_celery_client",
+    "mock_celery_client, expected_exception",
     [
-        {
-            "get_task_status_object": TaskStatus(
-                task_uuid=TaskUUID(_faker.uuid4()),
-                task_state=TaskState.RUNNING,
-                progress_report=ProgressReport(actual_value=50),
-            ),
-            "get_task_result_object": "status",
-        },
-        {
-            "get_task_status_object": TaskStatus(
-                task_uuid=TaskUUID(_faker.uuid4()),
-                task_state=TaskState.ABORTED,
-                progress_report=ProgressReport(actual_value=100),
-            ),
-            "get_task_result_object": "status",
-        },
-        {
-            "get_task_status_object": TaskStatus(
-                task_uuid=TaskUUID(_faker.uuid4()),
-                task_state=TaskState.ERROR,
-                progress_report=ProgressReport(actual_value=100),
-            ),
-            "get_task_result_object": "status",
-        },
-        {
-            "get_task_status_object": CeleryError("error"),
-            "get_task_result_object": "status",
-        },
+        (
+            {
+                "get_task_status_object": TaskStatus(
+                    task_uuid=TaskUUID(_faker.uuid4()),
+                    task_state=TaskState.RUNNING,
+                    progress_report=ProgressReport(actual_value=50),
+                ),
+                "get_task_result_object": _faker.text(),
+            },
+            JobNotDoneError,
+        ),
+        (
+            {
+                "get_task_status_object": TaskStatus(
+                    task_uuid=TaskUUID(_faker.uuid4()),
+                    task_state=TaskState.ABORTED,
+                    progress_report=ProgressReport(actual_value=100),
+                ),
+                "get_task_result_object": _faker.text(),
+            },
+            JobAbortedError,
+        ),
+        (
+            {
+                "get_task_status_object": TaskStatus(
+                    task_uuid=TaskUUID(_faker.uuid4()),
+                    task_state=TaskState.ERROR,
+                    progress_report=ProgressReport(actual_value=100),
+                ),
+                "get_task_result_object": _faker.text(),
+            },
+            JobError,
+        ),
+        (
+            {
+                "get_task_status_object": CeleryError("error"),
+                "get_task_result_object": _faker.text(),
+            },
+            JobSchedulerError,
+        ),
     ],
-    indirect=True,
+    indirect=["mock_celery_client"],
 )
 async def test_get_data_export_result_error(
     rpc_client: RabbitMQRPCClient,
     mock_celery_client: _MockCeleryClient,
     mocker: MockerFixture,
+    expected_exception: type[Exception],
 ):
     mocker.patch("simcore_service_storage.api.rpc._async_jobs")
     _job_id = AsyncJobId(_faker.uuid4())
 
-    exception_cls_raised: type[Exception]
-    task_status_object = mock_celery_client.get_task_status_object
-    if (
-        isinstance(task_status_object, TaskStatus)
-        and task_status_object.task_state == TaskState.RUNNING
-    ):
-        exception_cls_raised = JobNotDoneError
-    elif (
-        isinstance(task_status_object, TaskStatus)
-        and task_status_object.task_state == TaskState.ABORTED
-    ):
-        exception_cls_raised = JobAbortedError
-    elif (
-        isinstance(task_status_object, TaskStatus)
-        and task_status_object.task_state == TaskState.ERROR
-    ):
-        exception_cls_raised = JobError
-    elif isinstance(task_status_object, CeleryError):
-        exception_cls_raised = JobSchedulerError
-    else:
-        pytest.fail("invalid parameters")
-
-    with pytest.raises(exception_cls_raised):
+    with pytest.raises(expected_exception):
         _ = await async_jobs.get_result(
             rpc_client,
             rpc_namespace=STORAGE_RPC_NAMESPACE,
