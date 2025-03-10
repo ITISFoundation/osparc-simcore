@@ -50,6 +50,71 @@ def client(
     return event_loop.run_until_complete(aiohttp_client(web_server))
 
 
+async def test_reset_password_two_steps_action_confirmation_workflow(
+    client: TestClient, login_options: LoginOptions, capsys: pytest.CaptureFixture
+):
+    assert client.app
+
+    async with NewUser(app=client.app) as user:
+        reset_url = client.app.router["initiate_reset_password"].url_for()
+        response = await client.post(
+            f"{reset_url}",
+            json={
+                "email": user["email"],
+            },
+        )
+        assert response.url.path == reset_url.path
+        await assert_status(response, status.HTTP_200_OK, MSG_EMAIL_SENT.format(**user))
+
+        out, err = capsys.readouterr()
+        confirmation_url = parse_link(out)
+        code = URL(confirmation_url).parts[-1]
+
+        # emulates user click on email url
+        response = await client.get(confirmation_url)
+        assert response.status == 200
+        assert (
+            response.url.path_qs
+            == URL(login_options.LOGIN_REDIRECT)
+            .with_fragment(f"reset-password?code={code}")
+            .path_qs
+        )
+
+        # api/specs/webserver/v0/components/schemas/auth.yaml#/ResetPasswordForm
+        reset_allowed_url = client.app.router["complete_reset_password"].url_for(
+            code=code
+        )
+        new_password = generate_password(10)
+        response = await client.post(
+            f"{reset_allowed_url}",
+            json={
+                "password": new_password,
+                "confirm": new_password,
+            },
+        )
+        payload = await response.json()
+        assert response.status == 200, payload
+        assert response.url.path == reset_allowed_url.path
+        await assert_status(response, status.HTTP_200_OK, MSG_PASSWORD_CHANGED)
+
+        # Try new password
+        logout_url = client.app.router["auth_logout"].url_for()
+        response = await client.post(f"{logout_url}")
+        assert response.url.path == logout_url.path
+        await assert_status(response, status.HTTP_401_UNAUTHORIZED, "Unauthorized")
+
+        login_url = client.app.router["auth_login"].url_for()
+        response = await client.post(
+            f"{login_url}",
+            json={
+                "email": user["email"],
+                "password": new_password,
+            },
+        )
+        assert response.url.path == login_url.path
+        await assert_status(response, status.HTTP_200_OK, MSG_LOGGED_IN)
+
+
 async def test_unknown_email(
     client: TestClient,
     capsys: pytest.CaptureFixture,
@@ -151,68 +216,3 @@ async def test_too_often(
 
     out, _ = capsys.readouterr()
     assert parse_test_marks(out)["reason"] == MSG_OFTEN_RESET_PASSWORD
-
-
-async def test_reset_and_confirm(
-    client: TestClient, login_options: LoginOptions, capsys: pytest.CaptureFixture
-):
-    assert client.app
-
-    async with NewUser(app=client.app) as user:
-        reset_url = client.app.router["initiate_reset_password"].url_for()
-        response = await client.post(
-            f"{reset_url}",
-            json={
-                "email": user["email"],
-            },
-        )
-        assert response.url.path == reset_url.path
-        await assert_status(response, status.HTTP_200_OK, MSG_EMAIL_SENT.format(**user))
-
-        out, err = capsys.readouterr()
-        confirmation_url = parse_link(out)
-        code = URL(confirmation_url).parts[-1]
-
-        # emulates user click on email url
-        response = await client.get(confirmation_url)
-        assert response.status == 200
-        assert (
-            response.url.path_qs
-            == URL(login_options.LOGIN_REDIRECT)
-            .with_fragment(f"reset-password?code={code}")
-            .path_qs
-        )
-
-        # api/specs/webserver/v0/components/schemas/auth.yaml#/ResetPasswordForm
-        reset_allowed_url = client.app.router["complete_reset_password"].url_for(
-            code=code
-        )
-        new_password = generate_password(10)
-        response = await client.post(
-            f"{reset_allowed_url}",
-            json={
-                "password": new_password,
-                "confirm": new_password,
-            },
-        )
-        payload = await response.json()
-        assert response.status == 200, payload
-        assert response.url.path == reset_allowed_url.path
-        await assert_status(response, status.HTTP_200_OK, MSG_PASSWORD_CHANGED)
-
-        # Try new password
-        logout_url = client.app.router["auth_logout"].url_for()
-        response = await client.post(f"{logout_url}")
-        assert response.url.path == logout_url.path
-        await assert_status(response, status.HTTP_401_UNAUTHORIZED, "Unauthorized")
-
-        login_url = client.app.router["auth_login"].url_for()
-        response = await client.post(
-            f"{login_url}",
-            json={
-                "email": user["email"],
-                "password": new_password,
-            },
-        )
-        assert response.url.path == login_url.path
-        await assert_status(response, status.HTTP_200_OK, MSG_LOGGED_IN)
