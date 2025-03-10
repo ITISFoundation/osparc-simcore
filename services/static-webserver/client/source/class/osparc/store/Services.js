@@ -245,6 +245,15 @@ qx.Class.define("osparc.store.Services", {
         });
     },
 
+    getStudyServicesMetadata: function(studyData) {
+      const wbServices = new Set(osparc.study.Utils.extractUniqueServices(studyData["workbench"]));
+      const promises = [];
+      wbServices.forEach(srv => {
+        promises.push(this.getService(srv["key"], srv["version"]));
+      });
+      return Promise.all(promises);
+    },
+
     getInaccessibleServices: function(workbench) {
       const allServices = this.__servicesCached;
       const unaccessibleServices = [];

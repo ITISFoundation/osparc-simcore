@@ -48,16 +48,21 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         switch (resourceData["resourceType"]) {
           case "study":
           case "template": {
-            this.__resourceModel = new osparc.data.model.Study(latestResourceData);
+            osparc.store.Services.getStudyServicesMetadata(latestResourceData)
+              .then(() => {
+                this.__resourceModel = new osparc.data.model.Study(latestResourceData);
+                this.__resourceModel["resourceType"] = resourceData["resourceType"];
+                this.__addPages();
+              })
             break;
           }
           case "service": {
             this.__resourceModel = new osparc.data.model.Service(latestResourceData);
+            this.__resourceModel["resourceType"] = resourceData["resourceType"];
+            this.__addPages();
             break;
           }
         }
-        this.__resourceModel["resourceType"] = resourceData["resourceType"];
-        this.__addPages();
       });
   },
 
