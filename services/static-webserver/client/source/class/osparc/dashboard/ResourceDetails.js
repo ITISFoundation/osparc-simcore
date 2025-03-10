@@ -284,12 +284,10 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
 
       osparc.store.Services.populateVersionsSelectBox(this.__resourceData["key"], versionsBox)
         .then(() => {
-          let selectedItem = null;
-
           // first setSelection
           const versionFound = versionsBox.getSelectables().find(selectable => selectable.version === this.__resourceData["version"]);
           if (versionFound) {
-            versionsBox.setSelection([selectedItem]);
+            versionsBox.setSelection([versionFound]);
           }
           osparc.utils.Utils.growSelectBox(versionsBox, 200);
 

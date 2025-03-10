@@ -480,12 +480,14 @@ qx.Class.define("osparc.data.model.Node", {
         }
       }
 
-      this.__initLogger();
-
-      this.initIframeHandler();
-
       if (this.isParameter()) {
         this.__initParameter();
+      }
+
+      if (osparc.store.Store.getInstance().getCurrentStudy()) {
+        // do not initialize the logger and iframe if the study isn't open
+        this.__initLogger();
+        this.initIframeHandler();
       }
     },
 
