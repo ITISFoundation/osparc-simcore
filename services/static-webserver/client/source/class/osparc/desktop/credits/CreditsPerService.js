@@ -90,7 +90,8 @@ qx.Class.define("osparc.desktop.credits.CreditsPerService", {
             });
           } else {
             const nothingFound = new qx.ui.basic.Label(this.tr("No usage found")).set({
-              font: "text-14"
+              font: "text-14",
+              padding: 20,
             });
             this._add(nothingFound);
           }
