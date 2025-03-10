@@ -1,5 +1,4 @@
 import logging
-from contextlib import suppress
 
 from aiohttp import web
 from aiohttp.web import RouteTableDef
@@ -19,7 +18,7 @@ from ..security.api import check_password, encrypt_password
 from ..users import api as users_service
 from ..utils import HOUR
 from ..utils_rate_limiting import global_rate_limit_route
-from ._confirmation import is_confirmation_valid, make_confirmation_link
+from ._confirmation import get_or_create_confirmation, make_confirmation_link
 from ._constants import (
     MSG_CANT_SEND_MAIL,
     MSG_CHANGE_EMAIL_REQUESTED,
@@ -50,6 +49,14 @@ class ResetPasswordBody(InputSchema):
     email: str
 
 
+def _get_request_context(request: web.Request) -> dict[str, str]:
+    return {
+        "request.remote": f"{request.remote}",
+        "request.method": f"{request.method}",
+        "request.path": f"{request.path}",
+    }
+
+
 @routes.post(f"/{API_VTAG}/auth/reset-password", name="initiate_reset_password")
 @global_rate_limit_route(number_of_requests=10, interval_seconds=HOUR)
 async def initiate_reset_password(request: web.Request):
@@ -75,28 +82,44 @@ async def initiate_reset_password(request: web.Request):
 
     # NOTE: Always same response: never want to confirm or deny the existence of an account
     # with a given email or username.
-    response = flash_response(MSG_EMAIL_SENT.format(email=request_body.email), "INFO")
-
+    initiated_response = flash_response(
+        MSG_EMAIL_SENT.format(email=request_body.email), "INFO"
+    )
     # CHECK user exists
     user = await db.get_user({"email": request_body.email})
     if not user:
         _logger.warning(
-            "Password reset requested for non-existent email '%s' from IP: %s",
-            request_body.email,
-            request.remote,
+            **create_troubleshotting_log_kwargs(
+                "Password reset initiated for non-existent email. Ignoring request.",
+                error=Exception("No user found with this email"),
+                error_context={
+                    "user_email": request_body.email,
+                    "product_name": product.name,
+                    **_get_request_context(request),
+                },
+            )
         )
-        return response
+        return initiated_response
 
     # CHECK user state
     try:
         validate_user_status(user=dict(user), support_email=product.support_email)
     except web.HTTPError as err:
+        # NOTE: we abuse here by reusing `validate_user_status` and catching http errors that we
+        # do not want to forward but rather log due to the special rules in this entrypoint
         _logger.warning(
-            "User status invalidated for email '%s'. Details: %s",
-            request_body.email,
-            err,
+            **create_troubleshotting_log_kwargs(
+                "Password reset initiated for invalid user. Ignoring request.",
+                error=err,
+                error_context={
+                    "user_id": user["id"],
+                    "user": user,
+                    "product_name": product.name,
+                    **_get_request_context(request),
+                },
+            )
         )
-        return response
+        return initiated_response
 
     assert user["status"] == ACTIVE  # nosec
     assert user["email"] == request_body.email  # nosec
@@ -107,21 +130,26 @@ async def initiate_reset_password(request: web.Request):
         request.app, user_id=user["id"], product_name=product.name
     ):
         _logger.warning(
-            "Password rest requested for a registered user but wihtout access to product"
+            **create_troubleshotting_log_kwargs(
+                "Password reset initiated for a user with NO access to this product. Ignoring request.",
+                error=Exception("User cannot access this product"),
+                error_context={
+                    "user_id": user["id"],
+                    "user": user,
+                    "product_name": product.name,
+                    **_get_request_context(request),
+                },
+            )
         )
-        return response
-
-    if await is_confirmation_valid(cfg, db, user, action=RESET_PASSWORD):
-        _logger.warning(
-            "User is requesting password reset but already a valid confirmation code for this action"
-            # Extend expiration and resend email?
-        )
-        # delete previous and resend new?
-        return response
+        return initiated_response
 
     try:
+        # confirmation token that includes code to complete_reset_password
+        confirmation = await get_or_create_confirmation(
+            cfg, db, dict(user), action=RESET_PASSWORD
+        )
+
         # Produce a link so that the front-end can hit `complete_reset_password`
-        confirmation = await db.create_confirmation(user["id"], action=RESET_PASSWORD)
         link = make_confirmation_link(request, confirmation)
 
         # primary reset email with a URL and the normal instructions.
@@ -141,14 +169,16 @@ async def initiate_reset_password(request: web.Request):
             **create_troubleshotting_log_kwargs(
                 "Unable to send email",
                 error=err,
-                error_context={"product_name": product.name, "user_id": user["id"]},
+                error_context={
+                    "product_name": product.name,
+                    "user_id": user["id"],
+                    **_get_request_context(request),
+                },
             )
         )
-        with suppress(Exception):
-            await db.delete_confirmation(confirmation)
         raise web.HTTPServiceUnavailable(reason=MSG_CANT_SEND_MAIL) from err
 
-    return response
+    return initiated_response
 
 
 class ChangeEmailBody(InputSchema):
