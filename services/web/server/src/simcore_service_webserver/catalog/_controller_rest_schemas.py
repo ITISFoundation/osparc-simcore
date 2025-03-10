@@ -21,6 +21,7 @@ from pint import PintError, Quantity, UnitRegistry
 from pydantic import (
     BaseModel,
     ConfigDict,
+    Field,
     field_validator,
 )
 from servicelib.aiohttp.requests_validation import handle_validation_as_http_error
@@ -192,3 +193,23 @@ class ListServiceParams(PageQueryParameters): ...
 
 class ServiceTagPathParams(ServicePathParams):
     tag_id: IdInt
+
+
+class ServiceInputsPathParams(ServicePathParams):
+    input_key: ServiceInputKey
+
+
+class FromServiceOutputQueryParams(BaseModel):
+    from_service_key: ServiceKey = Field(..., alias="fromService")
+    from_service_version: ServiceVersion = Field(..., alias="fromVersion")
+    from_output_key: ServiceOutputKey = Field(..., alias="fromOutput")
+
+
+class ServiceOutputsPathParams(ServicePathParams):
+    output_key: ServiceOutputKey
+
+
+class ToServiceInputsQueryParams(BaseModel):
+    to_service_key: ServiceKey = Field(..., alias="toService")
+    to_service_version: ServiceVersion = Field(..., alias="toVersion")
+    to_input_key: ServiceInputKey = Field(..., alias="toInput")

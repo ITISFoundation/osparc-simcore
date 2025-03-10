@@ -14,18 +14,14 @@ from aiohttp.web import Request, RouteTableDef
 from models_library.api_schemas_webserver.catalog import (
     CatalogServiceGet,
     CatalogServiceUpdate,
-    ServiceInputKey,
-    ServiceOutputKey,
 )
 from models_library.api_schemas_webserver.resource_usage import PricingPlanGet
-from models_library.rest_pagination import Page, PageQueryParameters
+from models_library.rest_pagination import Page
 from models_library.rest_pagination_utils import paginate_data
-from models_library.services import ServiceKey, ServiceVersion
 from models_library.services_resources import (
     ServiceResourcesDict,
     ServiceResourcesDictHelpers,
 )
-from pydantic import BaseModel, Field
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
@@ -45,9 +41,13 @@ from ._controller_rest_exceptions import (
 )
 from ._controller_rest_schemas import (
     CatalogRequestContext,
+    FromServiceOutputQueryParams,
     ListServiceParams,
+    ServiceInputsPathParams,
+    ServiceOutputsPathParams,
     ServicePathParams,
     ServiceTagPathParams,
+    ToServiceInputsQueryParams,
 )
 
 _logger = logging.getLogger(__name__)
@@ -76,9 +76,8 @@ async def list_services_latest(request: Request):
         user_id=request_ctx.user_id,
         product_name=request_ctx.product_name,
         unit_registry=request_ctx.unit_registry,
-        page_params=PageQueryParameters.model_construct(
-            offset=query_params.offset, limit=query_params.limit
-        ),
+        offset=query_params.offset,
+        limit=query_params.limit,
     )
 
     assert page_meta.limit == query_params.limit  # nosec
@@ -174,10 +173,6 @@ async def list_service_inputs(request: Request):
     )
 
 
-class _ServiceInputsPathParams(ServicePathParams):
-    input_key: ServiceInputKey
-
-
 @routes.get(
     f"{VTAG}/catalog/services/{{service_key}}/{{service_version}}/inputs/{{input_key}}",
     name="get_service_input",
@@ -186,7 +181,7 @@ class _ServiceInputsPathParams(ServicePathParams):
 @permission_required("services.catalog.*")
 async def get_service_input(request: Request):
     ctx = CatalogRequestContext.create(request)
-    path_params = parse_request_path_parameters_as(_ServiceInputsPathParams, request)
+    path_params = parse_request_path_parameters_as(ServiceInputsPathParams, request)
 
     # Evaluate and return validated model
     response_model = await _service.get_service_input(
@@ -202,12 +197,6 @@ async def get_service_input(request: Request):
     )
 
 
-class _FromServiceOutputParams(BaseModel):
-    from_service_key: ServiceKey = Field(..., alias="fromService")
-    from_service_version: ServiceVersion = Field(..., alias="fromVersion")
-    from_output_key: ServiceOutputKey = Field(..., alias="fromOutput")
-
-
 @routes.get(
     f"{VTAG}/catalog/services/{{service_key}}/{{service_version}}/inputs:match",
     name="get_compatible_inputs_given_source_output",
@@ -217,8 +206,8 @@ class _FromServiceOutputParams(BaseModel):
 async def get_compatible_inputs_given_source_output(request: Request):
     ctx = CatalogRequestContext.create(request)
     path_params = parse_request_path_parameters_as(ServicePathParams, request)
-    query_params: _FromServiceOutputParams = parse_request_query_parameters_as(
-        _FromServiceOutputParams, request
+    query_params: FromServiceOutputQueryParams = parse_request_query_parameters_as(
+        FromServiceOutputQueryParams, request
     )
 
     # Evaluate and return validated model
@@ -257,10 +246,6 @@ async def list_service_outputs(request: Request):
     )
 
 
-class _ServiceOutputsPathParams(ServicePathParams):
-    output_key: ServiceOutputKey
-
-
 @routes.get(
     f"{VTAG}/catalog/services/{{service_key}}/{{service_version}}/outputs/{{output_key}}",
     name="get_service_output",
@@ -269,7 +254,7 @@ class _ServiceOutputsPathParams(ServicePathParams):
 @permission_required("services.catalog.*")
 async def get_service_output(request: Request):
     ctx = CatalogRequestContext.create(request)
-    path_params = parse_request_path_parameters_as(_ServiceOutputsPathParams, request)
+    path_params = parse_request_path_parameters_as(ServiceOutputsPathParams, request)
 
     # Evaluate and return validated model
     response_model = await _service.get_service_output(
@@ -283,12 +268,6 @@ async def get_service_output(request: Request):
     return await asyncio.get_event_loop().run_in_executor(
         None, envelope_json_response, data
     )
-
-
-class _ToServiceInputsParams(BaseModel):
-    to_service_key: ServiceKey = Field(..., alias="toService")
-    to_service_version: ServiceVersion = Field(..., alias="toVersion")
-    to_input_key: ServiceInputKey = Field(..., alias="toInput")
 
 
 @routes.get(
@@ -305,8 +284,8 @@ async def get_compatible_outputs_given_target_input(request: Request):
     """
     ctx = CatalogRequestContext.create(request)
     path_params = parse_request_path_parameters_as(ServicePathParams, request)
-    query_params: _ToServiceInputsParams = parse_request_query_parameters_as(
-        _ToServiceInputsParams, request
+    query_params: ToServiceInputsQueryParams = parse_request_query_parameters_as(
+        ToServiceInputsQueryParams, request
     )
 
     data = await _service.get_compatible_outputs_given_target_input(
