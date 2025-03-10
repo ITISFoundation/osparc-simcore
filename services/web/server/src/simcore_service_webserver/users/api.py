@@ -14,13 +14,17 @@ from ._users_service import (
     get_user_primary_group_id,
     get_user_role,
     get_users_in_group,
+    is_user_in_product,
     set_user_as_deleted,
     update_expired_users,
 )
 
 __all__: tuple[str, ...] = (
+    "FullNameDict",
+    "UserDisplayAndIdNamesTuple",
     "delete_user_without_projects",
     "get_guest_user_ids_and_names",
+    "get_user",
     "get_user_credentials",
     "get_user_display_and_id_names",
     "get_user_fullname",
@@ -29,11 +33,9 @@ __all__: tuple[str, ...] = (
     "get_user_name_and_email",
     "get_user_primary_group_id",
     "get_user_role",
-    "get_user",
     "get_users_in_group",
+    "is_user_in_product",
     "set_user_as_deleted",
     "update_expired_users",
-    "FullNameDict",
-    "UserDisplayAndIdNamesTuple",
 )
 # nopycln: file
