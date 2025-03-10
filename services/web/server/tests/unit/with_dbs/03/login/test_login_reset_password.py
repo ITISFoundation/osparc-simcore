@@ -21,7 +21,6 @@ from simcore_service_webserver.login._constants import (
     MSG_LOGGED_IN,
     MSG_OFTEN_RESET_PASSWORD,
     MSG_PASSWORD_CHANGED,
-    MSG_UNKNOWN_EMAIL,
     MSG_USER_BANNED,
     MSG_USER_EXPIRED,
 )
@@ -68,6 +67,7 @@ async def test_reset_password_two_steps_action_confirmation_workflow(
         assert response.url.path == reset_url.path
         await assert_status(response, status.HTTP_200_OK, MSG_EMAIL_SENT.format(**user))
 
+        # Email is printed in the out
         out, _ = capsys.readouterr()
         confirmation_url = parse_link(out)
         code = URL(confirmation_url).parts[-1]
@@ -119,6 +119,7 @@ async def test_reset_password_two_steps_action_confirmation_workflow(
 async def test_unknown_email(
     client: TestClient,
     capsys: pytest.CaptureFixture,
+    caplog: pytest.LogCaptureFixture,
     fake_user_email: str,
 ):
     assert client.app
@@ -135,8 +136,16 @@ async def test_unknown_email(
         response, status.HTTP_200_OK, MSG_EMAIL_SENT.format(email=fake_user_email)
     )
 
+    # email is not sent
     out, _ = capsys.readouterr()
-    assert parse_test_marks(out)["reason"] == MSG_UNKNOWN_EMAIL
+    assert not parse_test_marks(out)
+
+    # Check logger warning
+    assert any(
+        record.levelname == "WARNING"
+        and record.message.startswith("Password reset initiated")
+        for record in caplog.records
+    )
 
 
 @pytest.mark.parametrize(
