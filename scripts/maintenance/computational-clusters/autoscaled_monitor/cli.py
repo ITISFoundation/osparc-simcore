@@ -50,7 +50,7 @@ def _parse_environment(deploy_config: Path) -> dict[str, str | None]:
 def main(
     deploy_config: Annotated[
         Path, typer.Option(help="path to the deploy configuration")
-    ]
+    ],
 ):
     """Manages external clusters"""
 
@@ -155,6 +155,12 @@ def trigger_cluster_termination(
         wallet_id -- the wallet ID
     """
     asyncio.run(api.trigger_cluster_termination(state, user_id, wallet_id))
+
+
+@app.command()
+def test_database_connection() -> None:
+    """this will check the connection to simcore database is ready"""
+    asyncio.run(api.test_database_connection(state))
 
 
 if __name__ == "__main__":

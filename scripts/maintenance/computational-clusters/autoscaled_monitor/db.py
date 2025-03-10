@@ -57,6 +57,23 @@ async def abort_job_in_db(
         rich.print(f"set comp_tasks for {project_id=}/{node_id=} set to ABORTED")
 
 
+async def test_db_connection(state: AppState) -> bool:
+    try:
+        async with contextlib.AsyncExitStack() as stack:
+            engine = await stack.enter_async_context(db_engine(state))
+            db_connection = await stack.enter_async_context(engine.connect())
+            # Perform a simple query to test the connection
+            result = await db_connection.execute(sa.text("SELECT 1"))
+            result.one()
+            rich.print(
+                "[green]Database connection test completed successfully![/green]"
+            )
+            return True
+    except Exception as e:  # pylint: disable=broad-exception-caught
+        rich.print(f"[red]Database connection test failed: {e}[/red]")
+    return False
+
+
 async def list_computational_tasks_from_db(
     state: AppState, user_id: int
 ) -> list[ComputationalTask]:

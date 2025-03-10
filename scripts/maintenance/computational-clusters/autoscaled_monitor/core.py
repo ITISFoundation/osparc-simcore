@@ -638,3 +638,7 @@ async def trigger_cluster_termination(
         )
     else:
         rich.print("not deleting anything")
+
+
+async def test_database_connection(state: AppState) -> None:
+    await db.test_db_connection(state)
