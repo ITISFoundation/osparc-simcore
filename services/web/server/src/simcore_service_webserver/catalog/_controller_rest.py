@@ -47,8 +47,8 @@ from ._controller_rest_schemas import (
     CatalogRequestContext,
     ListServiceParams,
     ServicePathParams,
+    ServiceTagPathParams,
 )
-from .controller_rest_schemas import ServicePathParams
 
 _logger = logging.getLogger(__name__)
 
