@@ -5,6 +5,6 @@ from ._base import BaseRepository
 
 class ProductsRepository(BaseRepository):
     async def get_default_product_name(self) -> str:
-        async with self.db_engine.begin() as conn:
+        async with self.db_engine.connect() as conn:
             product_name: str = await get_default_product_name(conn)
             return product_name

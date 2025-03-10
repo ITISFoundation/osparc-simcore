@@ -62,7 +62,7 @@ async def list_trashed_projects(
     order_by: OrderBy = _OLDEST_TRASHED_FIRST,
 ) -> tuple[int, list[ProjectDBGet]]:
 
-    base_query = sql.select(PROJECT_DB_COLS).where(projects.c.trashed.is_not(None))
+    base_query = sql.select(*PROJECT_DB_COLS).where(projects.c.trashed.is_not(None))
 
     if is_set(trashed_explicitly):
         assert isinstance(trashed_explicitly, bool)  # nosec
