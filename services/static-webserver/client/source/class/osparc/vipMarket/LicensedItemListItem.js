@@ -186,6 +186,9 @@ qx.Class.define("osparc.vipMarket.LicensedItemListItem", {
     },
 
     __applySeats: function(seats) {
+      if (seats === null || seats.length === 0) {
+        return;
+      }
       const nSeatsLabel = this.getChildControl("n-seats");
       const nSeats = osparc.store.LicensedItems.seatsToNSeats(seats);
       if (nSeats) {
