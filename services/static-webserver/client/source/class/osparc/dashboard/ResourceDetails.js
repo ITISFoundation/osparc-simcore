@@ -21,6 +21,8 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
   construct: function(resourceData) {
     this.base(arguments);
 
+    this.__resourceData = resourceData;
+
     let latestPromise = null;
     switch (resourceData["resourceType"]) {
       case "study":
