@@ -1,6 +1,7 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
+# pylint: disable=too-many-arguments
 
 from collections import Counter
 from collections.abc import Callable
@@ -10,7 +11,6 @@ import pytest
 from models_library.products import ProductName
 from models_library.users import UserID
 from packaging import version
-from packaging.version import Version
 from pydantic import EmailStr, HttpUrl, TypeAdapter
 from simcore_service_catalog.db.repositories.services import ServicesRepository
 from simcore_service_catalog.models.services_db import (
