@@ -82,7 +82,7 @@ async def get_or_create_confirmation(
         confirmation = None
 
     if confirmation is None:
-        confirmation = await db.create_confirmation(user["id"], action=action.value)
+        confirmation = await db.create_confirmation(user["id"], action=action)
 
     return confirmation
 
