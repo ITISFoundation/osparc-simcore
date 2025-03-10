@@ -4,7 +4,7 @@
 from asyncio import Task
 from collections.abc import AsyncIterable
 from datetime import timedelta
-from typing import Any
+from typing import Any, Final
 
 import pytest
 from servicelib.async_utils import cancel_wait_task
@@ -38,6 +38,8 @@ pytest_simcore_core_services_selection = [
     "rabbit",
 ]
 
+_ERROR_MESSAGE: Final[str] = "raising as requested"
+
 
 @pytest.fixture
 async def client_rpc_interface(
@@ -52,8 +54,8 @@ async def client_rpc_interface(
 class MockServerInterface(BaseServerJobInterface):
     def __init__(self) -> None:
         self._storage: dict[JobUniqueId, Any] = {}
-
         self._task: Task | None = None
+        self.result_raises: bool = False
 
     async def _worker(self) -> None:
         # decreates duration for each task
@@ -75,12 +77,19 @@ class MockServerInterface(BaseServerJobInterface):
 
     def _get_from_storage(self, unique_id: JobUniqueId) -> dict:
         if unique_id not in self._storage:
-            msg = "job {unique_id} not found"
-            raise RuntimeError(msg)
+            raise RuntimeError(_ERROR_MESSAGE)
         return self._storage[unique_id]
 
-    async def start(self, unique_id: JobUniqueId, **params: StartParams) -> None:
-        self._storage[unique_id] = {"params": params, "time_remaining": 5}
+    async def start(
+        self,
+        unique_id: JobUniqueId,
+        timeout: timedelta,  # noqa: ASYNC109
+        **params: StartParams,
+    ) -> None:
+        self._storage[unique_id] = {
+            "params": params,
+            "time_remaining": int(timeout.total_seconds()),
+        }
 
     async def remove(self, unique_id: JobUniqueId) -> None:
         del self._storage[unique_id]
@@ -96,11 +105,11 @@ class MockServerInterface(BaseServerJobInterface):
         return is_running
 
     async def get_result(self, unique_id: JobUniqueId) -> ResultModel:
-        if await self.is_running(unique_id):
-            raise RuntimeError("still not finished")
+        if self.result_raises:
+            msg = "raising as requested"
+            raise RuntimeError(msg)
 
-        # TODO: also emulate errors
-        return ResultModel(data="done")
+        return ResultModel(data=f"{unique_id} done")
 
 
 @pytest.fixture
@@ -129,7 +138,7 @@ async def test_workflow(
     server_rpc_interface: ServerRPCInterface,
     client_rpc_interface: ClientRPCInterface,
     unique_id: JobUniqueId,
-    job_timeout: timedelta,
+    initilized_server_interface: MockServerInterface,
 ) -> None:
 
     # not started yet
@@ -138,7 +147,7 @@ async def test_workflow(
         assert await client_rpc_interface.get_result(unique_id)
 
     # after start
-    await client_rpc_interface.start(unique_id, timeout=job_timeout)
+    await client_rpc_interface.start(unique_id, timeout=timedelta(seconds=4))
 
     assert await client_rpc_interface.get_status(unique_id) == JobStatus.RUNNING
     with pytest.raises(NoResultIsAvailableError):
@@ -157,7 +166,13 @@ async def test_workflow(
             )
 
     # finally the result
-    assert await client_rpc_interface.get_result(unique_id) == ResultModel(data="done")
+    assert await client_rpc_interface.get_result(unique_id) == ResultModel(
+        data=f"{unique_id} done"
+    )
 
-
-# TODO: we need to figure out how to deal with errors and unexpected errors, how do we pass those on via the result interface?
+    # simulates an error in the result
+    initilized_server_interface.result_raises = True
+    result = await client_rpc_interface.get_result(unique_id)
+    assert result.error
+    assert "RuntimeError" in result.error.traceback
+    assert result.error.error_message == _ERROR_MESSAGE

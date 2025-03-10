@@ -1,4 +1,5 @@
 import logging
+from datetime import timedelta
 from typing import TypeVar
 
 from models_library.rabbitmq_basic_types import RPCMethodName
@@ -41,7 +42,13 @@ class ClientRPCInterface:
         if self._rabbitmq_rpc_client is not None:
             await self._rabbitmq_rpc_client.close()
 
-    async def start(self, unique_id: JobUniqueId, **params: StartParams) -> None:
+    async def start(
+        self,
+        unique_id: JobUniqueId,
+        *,
+        timeout: timedelta,  # noqa: ASYNC109
+        **params: StartParams
+    ) -> None:
         assert self._rabbitmq_rpc_client  # nosec
 
         result = await self._rabbitmq_rpc_client.request(
@@ -49,6 +56,7 @@ class ClientRPCInterface:
             TypeAdapter(RPCMethodName).validate_python("start"),
             unique_id=unique_id,
             params=params,
+            timeout=timeout,
         )
         assert result is None  # nosec
 
