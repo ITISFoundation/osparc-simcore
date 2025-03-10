@@ -48,7 +48,6 @@ from ...users import api as users_service
 from ...utils_aiohttp import envelope_json_response
 from .. import (
     _permalink_service,
-    _projects_rest_utils,
     _projects_service,
     _projects_service_create,
     _projects_service_read,
@@ -68,6 +67,7 @@ from .._projects_service_utils import (
 )
 from ..exceptions import ProjectStartsTooManyDynamicNodesError
 from ..models import ProjectDict
+from . import _projects_rest_utils
 from ._rest_exceptions import handle_plugin_requests_exceptions
 from ._rest_schemas import ProjectPathParams, RequestContext
 
