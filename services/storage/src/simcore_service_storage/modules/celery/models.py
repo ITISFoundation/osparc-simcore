@@ -1,5 +1,5 @@
 from enum import StrEnum, auto
-from typing import Annotated, Any, Final, Self, TypeAlias
+from typing import Any, Final, Self, TypeAlias
 from uuid import UUID
 
 from models_library.progress_bar import ProgressReport

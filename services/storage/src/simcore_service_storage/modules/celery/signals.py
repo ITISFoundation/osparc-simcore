@@ -7,15 +7,15 @@ from asgi_lifespan import LifespanManager
 from celery import Celery
 from fastapi import FastAPI
 from servicelib.async_utils import cancel_wait_task
-from simcore_service_storage.core.application import create_app
-from simcore_service_storage.core.settings import ApplicationSettings
-from simcore_service_storage.modules.celery import get_event_loop, set_event_loop
-from simcore_service_storage.modules.celery.utils import (
+from ...core.application import create_app
+from ...core.settings import ApplicationSettings
+from ...modules.celery import get_event_loop, set_event_loop
+from ...modules.celery.utils import (
     get_fastapi_app,
     set_celery_worker,
     set_fastapi_app,
 )
-from simcore_service_storage.modules.celery.worker import CeleryTaskQueueWorker
+from ...modules.celery.worker import CeleryTaskQueueWorker
 
 _logger = logging.getLogger(__name__)
 
