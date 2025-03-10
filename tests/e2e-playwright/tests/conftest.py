@@ -459,11 +459,13 @@ def _select_service_version(page: Page, *, version: str) -> None:
         with log_context(logging.INFO, msg=f"selecting version {version}"):
             page.get_by_test_id("serviceSelectBox").click(timeout=5 * SECOND)
             with page.expect_response(
-                re.compile(r"/catalog/services/.+/resources"), timeout=1.5 * 5 * SECOND
+                re.compile(r"/catalog/services/[^/]+/(?P<version>.+)"),
+                timeout=1.5 * 5 * SECOND,
             ):
                 page.get_by_test_id(f"serviceVersionItem_{version}").click(
                     timeout=5 * SECOND
                 )
+
     except TimeoutError:
         # we try the non robust way
         page.get_by_label("Version").select_option(version)
