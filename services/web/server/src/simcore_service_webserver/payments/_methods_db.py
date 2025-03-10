@@ -1,7 +1,7 @@
 import datetime
 import logging
 
-import simcore_postgres_database.errors as db_errors
+import simcore_postgres_database.aiopg_errors as db_errors
 import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa.result import ResultProxy
