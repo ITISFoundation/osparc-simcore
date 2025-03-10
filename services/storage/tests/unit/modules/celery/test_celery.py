@@ -8,6 +8,7 @@ from pydantic import TypeAdapter, ValidationError
 import pytest
 from celery import Celery, Task
 from celery.contrib.abortable import AbortableTask
+from common_library.errors_classes import OsparcErrorMixin
 from models_library.progress_bar import ProgressReport
 from servicelib.logging_utils import log_context
 from simcore_service_storage.modules.celery import get_event_loop
@@ -52,9 +53,13 @@ def sync_archive(task: Task, files: list[str]) -> str:
     ).result()
 
 
-def failure_task(task: Task) -> str:
-    msg = "my error here"
-    raise ValueError(msg)
+class MyError(OsparcErrorMixin, Exception):
+   msg_template = "Something strange happened: {msg}"
+
+
+def failure_task(task: Task):
+    msg = "BOOM!"
+    raise MyError(msg=msg)
 
 
 def dreamer_task(task: AbortableTask) -> list[int]:
@@ -130,7 +135,7 @@ async def test_submitting_task_with_failure_results_with_error(
     ).task_state == TaskState.ERROR
     raw_result = await celery_client.get_task_result(task_context, task_uuid)
     result = TypeAdapter(TaskError).validate_python(raw_result)
-    assert f"{result.exc_msg}" == "my error here"
+    assert f"{result.exc_msg}" == "Something strange happened: BOOM!"
 
 
 @pytest.mark.usefixtures("celery_worker")

@@ -11,7 +11,7 @@ from simcore_service_storage.modules.celery.signals import (
 
 from ...core.settings import ApplicationSettings
 from ._common import create_app as create_celery_app, define_task
-from .tasks import export_data, export_data_with_error
+from .tasks import export_data
 
 _settings = ApplicationSettings.create_from_envs()
 
@@ -31,4 +31,3 @@ worker_init.connect(on_worker_init)
 worker_shutdown.connect(on_worker_shutdown)
 
 define_task(app, export_data)
-define_task(app, export_data_with_error)
