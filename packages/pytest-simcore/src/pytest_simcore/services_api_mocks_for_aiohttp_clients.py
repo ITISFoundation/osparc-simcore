@@ -93,7 +93,7 @@ def create_computation_cb(url, **kwargs) -> CallbackResult:
                 "62237c33-8d6c-4709-aa92-c3cf693dd6d2",
                 "0bdf824f-57cb-4e38-949e-fd12c184f000",
             ]
-            node_states[node_id] = {"state": {"modified": True, "dependencies": []}}
+            node_states[node_id] = {"modified": True, "dependencies": []}
         node_states["62237c33-8d6c-4709-aa92-c3cf693dd6d2"] = {
             "modified": True,
             "dependencies": ["2f493631-30b4-4ad8-90f2-a74e4b46fe73"],
@@ -105,10 +105,15 @@ def create_computation_cb(url, **kwargs) -> CallbackResult:
                 "62237c33-8d6c-4709-aa92-c3cf693dd6d2",
             ],
         }
-    returned_computation = ComputationTask.model_validate(
-        ComputationTask.model_config["json_schema_extra"]["examples"][0]
-    ).model_copy(
-        update={
+
+    json_schema = ComputationTask.model_json_schema()
+    assert isinstance(json_schema["examples"], list)
+    assert isinstance(
+        json_schema["examples"][0], dict
+    )
+    computation: dict[str, Any] = json_schema["examples"][0].copy()
+    computation.update(
+        {
             "id": f"{kwargs['json']['project_id']}",
             "state": state,
             "pipeline_details": {
@@ -118,6 +123,10 @@ def create_computation_cb(url, **kwargs) -> CallbackResult:
             },
         }
     )
+    returned_computation = ComputationTask.model_validate(
+        computation
+    )
+
     return CallbackResult(
         status=201,
         # NOTE: aioresponses uses json.dump which does NOT encode serialization of UUIDs
@@ -129,15 +138,20 @@ def get_computation_cb(url, **kwargs) -> CallbackResult:
     state = RunningState.NOT_STARTED
     pipeline: dict[str, list[str]] = FULL_PROJECT_PIPELINE_ADJACENCY
     node_states = FULL_PROJECT_NODE_STATES
-    assert "json_schema_extra" in ComputationGet.model_config
-    assert isinstance(ComputationGet.model_config["json_schema_extra"], dict)
+
+    json_schema = ComputationGet.model_json_schema()
     assert isinstance(
-        ComputationGet.model_config["json_schema_extra"]["examples"], list
+        json_schema["examples"], list
     )
-    returned_computation = ComputationGet.model_validate(
-        ComputationGet.model_config["json_schema_extra"]["examples"][0]
-    ).model_copy(
-        update={
+    assert isinstance(
+        json_schema["examples"][0], dict
+    )
+
+    computation: dict[str, Any] = json_schema[
+        "examples"
+    ][0].copy()
+    computation.update(
+        {
             "id": Path(url.path).name,
             "state": state,
             "pipeline_details": {
@@ -147,6 +161,7 @@ def get_computation_cb(url, **kwargs) -> CallbackResult:
             },
         }
     )
+    returned_computation = ComputationGet.model_validate(computation)
 
     return CallbackResult(
         status=200,
