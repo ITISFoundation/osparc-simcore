@@ -184,7 +184,7 @@ async def test_reset_and_confirm(
         )
 
         # api/specs/webserver/v0/components/schemas/auth.yaml#/ResetPasswordForm
-        reset_allowed_url = client.app.router["auth_reset_password_allowed"].url_for(
+        reset_allowed_url = client.app.router["complete_reset_password"].url_for(
             code=code
         )
         new_password = generate_password(10)

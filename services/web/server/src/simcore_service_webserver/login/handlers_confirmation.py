@@ -273,11 +273,12 @@ class ResetPasswordConfirmation(InputSchema):
     _password_confirm_match = field_validator("confirm")(check_confirm_password_match)
 
 
-@routes.post("/v0/auth/reset-password/{code}", name="auth_reset_password_allowed")
-async def reset_password(request: web.Request):
-    """Changes password using a token code without being logged in
+@routes.post("/v0/auth/reset-password/{code}", name="complete_reset_password")
+async def complete_reset_password(request: web.Request):
+    """Last of the "Two-Step Action Confirmation pattern": initiate_reset_password + complete_reset_password(code)
 
-    Code is provided via email by calling first submit_request_to_reset_password
+    - Changes password using a token code without login
+    - Code is provided via email by calling first initiate_reset_password
     """
     db: AsyncpgStorage = get_plugin_storage(request.app)
     cfg: LoginOptions = get_plugin_options(request.app)

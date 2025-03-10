@@ -178,16 +178,15 @@ async def initiate_reset_password(_body: ResetPasswordBody): ...
 @router.post(
     "/auth/reset-password/{code}",
     response_model=Envelope[Log],
-    operation_id="auth_reset_password_allowed",
+    operation_id="complete_reset_password",
     responses={
         status.HTTP_401_UNAUTHORIZED: {
             "model": EnvelopedError,
-            "description": "unauthorized reset due to invalid token code",
+            "description": "Invalid token code",
         }
     },
 )
-async def reset_password_allowed(code: str, _body: ResetPasswordConfirmation):
-    """changes password using a token code without being logged in"""
+async def complete_reset_password(code: str, _body: ResetPasswordConfirmation): ...
 
 
 @router.post(
