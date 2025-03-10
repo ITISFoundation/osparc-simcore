@@ -5,7 +5,7 @@ from aiohttp import web
 from models_library.groups import Group, GroupID, GroupType
 from models_library.projects import ProjectID
 from models_library.users import UserID
-from simcore_postgres_database.errors import DatabaseError
+from simcore_postgres_database.aiopg_errors import DatabaseError
 
 from ..groups.api import get_group_from_gid
 from ..projects.api import (

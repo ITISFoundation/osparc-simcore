@@ -113,7 +113,7 @@ def _extract_invitation_code_from_url(invitation_url: HttpUrl) -> str:
 @pytest.mark.acceptance_test()
 async def test_registration_to_different_product(
     mocker: MockerFixture,
-    all_products_names: list[ProductName],
+    app_products_names: list[ProductName],
     client: TestClient,
     guest_email: str,
     guest_password: str,
@@ -146,8 +146,8 @@ async def test_registration_to_different_product(
             headers={X_PRODUCT_NAME_HEADER: product_deployed},
         )
 
-    product_a = all_products_names[0]
-    product_b = all_products_names[1]
+    product_a = app_products_names[0]
+    product_b = app_products_names[1]
 
     # PO creates an two invitations for guest in product A and product B
     invitation_product_a = await generate_invitation(

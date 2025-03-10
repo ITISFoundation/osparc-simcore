@@ -1,7 +1,7 @@
-""" Database API
+"""Database API
 
-    - Adds a layer to the postgres API with a focus on the projects data
-    - Shall be used as entry point for all the queries to the database regarding projects
+- Adds a layer to the postgres API with a focus on the projects data
+- Shall be used as entry point for all the queries to the database regarding projects
 
 """
 
@@ -36,7 +36,7 @@ from pydantic import TypeAdapter
 from pydantic.types import PositiveInt
 from servicelib.aiohttp.application_keys import APP_AIOPG_ENGINE_KEY
 from servicelib.logging_utils import get_log_record_extra, log_context
-from simcore_postgres_database.errors import UniqueViolation
+from simcore_postgres_database.aiopg_errors import UniqueViolation
 from simcore_postgres_database.models.groups import user_to_groups
 from simcore_postgres_database.models.project_to_groups import project_to_groups
 from simcore_postgres_database.models.projects_nodes import projects_nodes
