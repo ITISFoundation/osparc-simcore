@@ -78,7 +78,7 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
         .then(resp => {
           const services = resp["services"];
           if (osparc.study.Utils.getCantExecuteServices(services).length) {
-            msg += this.tr("Some services' are not accessible. Please contact service owner:");
+            msg += this.tr("Some services are not accessible. Please contact service owner:");
             msg += "<br><br>";
           }
           if (osparc.study.Utils.anyServiceRetired(services)) {

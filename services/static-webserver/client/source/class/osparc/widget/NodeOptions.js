@@ -63,14 +63,13 @@ qx.Class.define("osparc.widget.NodeOptions", {
       }
 
       // Life Cycle
-      if (
-        node.isDynamic() &&
-        (node.isUpdatable() || node.isDeprecated() || node.isRetired())
-      ) {
+      if ((node.isUpdatable() || node.isDeprecated() || node.isRetired())) {
         const lifeCycleView = new osparc.node.LifeCycleView(node);
         sections.push(lifeCycleView);
 
-        showStartStopButton = true;
+        if (node.isDynamic()) {
+          showStartStopButton = true;
+        }
       }
 
       // Boot Options
