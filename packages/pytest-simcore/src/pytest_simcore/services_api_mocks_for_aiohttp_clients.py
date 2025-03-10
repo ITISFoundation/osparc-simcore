@@ -139,7 +139,7 @@ def get_computation_cb(url, **kwargs) -> CallbackResult:
     pipeline: dict[str, list[str]] = FULL_PROJECT_PIPELINE_ADJACENCY
     node_states = FULL_PROJECT_NODE_STATES
 
-    json_schema = ComputationTask.model_json_schema()
+    json_schema = ComputationGet.model_json_schema()
     assert isinstance(
         json_schema["examples"], list
     )
