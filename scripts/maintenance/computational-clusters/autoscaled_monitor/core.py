@@ -1,7 +1,6 @@
 #! /usr/bin/env python3
 
 import asyncio
-import contextlib
 import datetime
 import json
 from dataclasses import replace
@@ -32,7 +31,6 @@ from .models import (
     TaskId,
     TaskState,
 )
-from .ssh import ssh_tunnel
 
 
 @utils.to_async
@@ -651,27 +649,4 @@ async def trigger_cluster_termination(
 
 
 async def test_database_connection(state: AppState) -> None:
-    bastion_host = state.main_bastion_host
-    async with contextlib.AsyncExitStack() as stack:
-        if bastion_host:
-            assert state  # nosec
-            assert state.ssh_key_path  # nosec
-            assert state.environment  # nosec
-            assert state.environment["POSTGRES_ENDPOINT"]  # nosec
-            db_endpoint = state.environment["POSTGRES_ENDPOINT"]
-            db_host, db_port = db_endpoint.split(":")
-            tunnel = stack.enter_context(
-                ssh_tunnel(
-                    ssh_host=bastion_host.ip,
-                    username=bastion_host.user_name,
-                    private_key_path=state.ssh_key_path,
-                    remote_bind_host=db_host,
-                    remote_bind_port=int(db_port),
-                )
-            )
-            assert tunnel
-            state.environment["POSTGRES_ENDPOINT"] = (
-                f"{tunnel.local_bind_address[0]}:{tunnel.local_bind_address[1]}"
-            )
-
-        await db.test_db_connection(state)
+    await db.test_db_connection(state)

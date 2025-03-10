@@ -10,37 +10,59 @@ from pydantic import PostgresDsn, TypeAdapter
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
 from .models import AppState, ComputationalTask, PostgresDB
+from .ssh import ssh_tunnel
 
 
 @contextlib.asynccontextmanager
-async def db_engine(state: AppState) -> AsyncGenerator[AsyncEngine, Any]:
-    engine = None
-    try:
-        for env in [
-            "POSTGRES_USER",
-            "POSTGRES_PASSWORD",
-            "POSTGRES_ENDPOINT",
-            "POSTGRES_DB",
-        ]:
-            assert state.environment[env]
-        postgres_db = PostgresDB(
-            dsn=TypeAdapter(PostgresDsn).validate_python(
-                f"postgresql+asyncpg://{state.environment['POSTGRES_USER']}:{state.environment['POSTGRES_PASSWORD']}@{state.environment['POSTGRES_ENDPOINT']}/{state.environment['POSTGRES_DB']}"
+async def db_engine(
+    state: AppState,
+) -> AsyncGenerator[AsyncEngine, Any]:
+    async with contextlib.AsyncExitStack() as stack:
+        assert state.environment["POSTGRES_ENDPOINT"]  # nosec
+        db_endpoint = state.environment["POSTGRES_ENDPOINT"]
+        if state.main_bastion_host:
+            assert state.ssh_key_path  # nosec
+            db_host, db_port = db_endpoint.split(":")
+            tunnel = stack.enter_context(
+                ssh_tunnel(
+                    ssh_host=state.main_bastion_host.ip,
+                    username=state.main_bastion_host.user_name,
+                    private_key_path=state.ssh_key_path,
+                    remote_bind_host=db_host,
+                    remote_bind_port=int(db_port),
+                )
             )
-        )
+            assert tunnel
+            db_endpoint = (
+                f"{tunnel.local_bind_address[0]}:{tunnel.local_bind_address[1]}"
+            )
 
-        engine = create_async_engine(
-            f"{postgres_db.dsn}",
-            connect_args={
-                "server_settings": {
-                    "application_name": "osparc-clusters-monitoring-script"
-                }
-            },
-        )
-        yield engine
-    finally:
-        if engine:
-            await engine.dispose()
+        engine = None
+        try:
+            for env in [
+                "POSTGRES_USER",
+                "POSTGRES_PASSWORD",
+                "POSTGRES_DB",
+            ]:
+                assert state.environment[env]
+            postgres_db = PostgresDB(
+                dsn=TypeAdapter(PostgresDsn).validate_python(
+                    f"postgresql+asyncpg://{state.environment['POSTGRES_USER']}:{state.environment['POSTGRES_PASSWORD']}@{db_endpoint}/{state.environment['POSTGRES_DB']}"
+                )
+            )
+
+            engine = create_async_engine(
+                f"{postgres_db.dsn}",
+                connect_args={
+                    "server_settings": {
+                        "application_name": "osparc-clusters-monitoring-script"
+                    }
+                },
+            )
+            yield engine
+        finally:
+            if engine:
+                await engine.dispose()
 
 
 async def abort_job_in_db(
