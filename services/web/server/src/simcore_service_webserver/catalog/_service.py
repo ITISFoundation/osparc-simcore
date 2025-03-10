@@ -61,9 +61,6 @@ async def _safe_replace_service_input_outputs(
         )
 
 
-# IMPLEMENTATION --------------------------------------------------------------------------------
-
-
 async def list_latest_services(
     app: web.Application,
     *,
