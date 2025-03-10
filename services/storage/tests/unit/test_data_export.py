@@ -511,7 +511,14 @@ async def test_get_data_export_result_error(
         )
 
 
-async def test_list_jobs(
+@pytest.mark.parametrize(
+    "mock_celery_client",
+    [
+        {"get_task_uuids_object": [_faker.uuid4() for _ in range(_faker.pyint(1, 10))]},
+    ],
+    indirect=True,
+)
+async def test_list_jobs_success(
     rpc_client: RabbitMQRPCClient,
     mock_celery_client: MockerFixture,
 ):
@@ -525,3 +532,25 @@ async def test_list_jobs(
     )
     assert isinstance(result, list)
     assert all(isinstance(elm, AsyncJobGet) for elm in result)
+
+
+@pytest.mark.parametrize(
+    "mock_celery_client",
+    [
+        {"get_task_uuids_object": CeleryError("error")},
+    ],
+    indirect=True,
+)
+async def test_list_jobs_error(
+    rpc_client: RabbitMQRPCClient,
+    mock_celery_client: MockerFixture,
+):
+    with pytest.raises(JobSchedulerError):
+        _ = await async_jobs.list_jobs(
+            rpc_client,
+            rpc_namespace=STORAGE_RPC_NAMESPACE,
+            job_id_data=AsyncJobNameData(
+                user_id=_faker.pyint(min_value=1, max_value=100), product_name="osparc"
+            ),
+            filter_="",
+        )
