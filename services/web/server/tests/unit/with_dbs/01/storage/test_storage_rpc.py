@@ -18,7 +18,7 @@ from models_library.api_schemas_rpc_async_jobs.async_jobs import (
 )
 from models_library.api_schemas_rpc_async_jobs.exceptions import (
     JobError,
-    StatusError,
+    JobStatusError,
 )
 from models_library.api_schemas_storage.data_export_async_jobs import (
     AccessRightError,
@@ -116,7 +116,7 @@ async def test_data_export(
             started=datetime.now(),
             stopped=None,
         ),
-        StatusError(job_id=_faker.uuid4()),
+        JobStatusError(job_id=_faker.uuid4()),
     ],
     ids=lambda x: type(x).__name__,
 )
@@ -137,7 +137,7 @@ async def test_get_async_jobs_status(
             Envelope[StorageAsyncJobGet].model_validate(await response.json()).data
         )
         assert response_body_data is not None
-    elif isinstance(backend_result_or_exception, StatusError):
+    elif isinstance(backend_result_or_exception, JobStatusError):
         assert response.status == status.HTTP_500_INTERNAL_SERVER_ERROR
     else:
         pytest.fail("Incorrectly configured test")

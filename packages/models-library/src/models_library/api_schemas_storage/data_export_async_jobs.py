@@ -17,10 +17,6 @@ class StorageRpcBaseError(OsparcErrorMixin, RuntimeError):
     pass
 
 
-class InvalidLocationIdError(StorageRpcBaseError):
-    msg_template: str = "Invalid location_id {location_id}"
-
-
 class InvalidFileIdentifierError(StorageRpcBaseError):
     msg_template: str = "Could not find the file {file_id}"
 
