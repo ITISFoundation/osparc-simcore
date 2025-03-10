@@ -5,12 +5,9 @@ include ../../scripts/common.Makefile
 include ../../scripts/common-service.Makefile
 
 
-.env-ignore:
-	$(APP_CLI_NAME) echo-dotenv > $@
-
 .PHONY: openapi.json
 openapi-specs: openapi.json
-openapi.json: .env-ignore
+openapi.json: .env
 	# generating openapi specs file (need to have the environment set for this)
 	@set -o allexport; \
 	source $<; \
