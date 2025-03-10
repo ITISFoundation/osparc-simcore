@@ -92,8 +92,8 @@ def mocked_nodeports_storage_client(mocker, faker: Faker) -> dict[str, mock.Magi
             autospec=True,
             return_value=faker.url(),
         ),
-        "get_storage_locations": mocker.patch(
-            "simcore_sdk.node_ports_common.storage_client.get_storage_locations",
+        "list_storage_locations": mocker.patch(
+            "simcore_sdk.node_ports_common.storage_client.list_storage_locations",
             autospec=True,
             return_value=[
                 Loc(name="simcore.s3", id=0),
@@ -159,7 +159,7 @@ async def test_get_all_tasks_log_files(
     )
 
     # calls storage
-    mocked_nodeports_storage_client["get_storage_locations"].assert_not_called()
+    mocked_nodeports_storage_client["list_storage_locations"].assert_not_called()
     assert mocked_nodeports_storage_client["get_download_file_link"].called
 
     # test expected response according to OAS!
@@ -207,7 +207,6 @@ async def test_get_tasks_outputs(
 
 
 async def test_get_tasks_outputs_not_found(node_id: NodeID, client: httpx.AsyncClient):
-
     invalid_project = uuid4()
     resp = await client.post(
         f"/v2/computations/{invalid_project}/tasks/-/outputs:batchGet",

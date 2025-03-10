@@ -36,6 +36,7 @@ class ErrorDict(_ErrorDictRequired, total=False):
 
 RABBITMQ_CLIENT_UNHEALTHY_MSG = "RabbitMQ client is in a bad state!"
 REDIS_CLIENT_UNHEALTHY_MSG = "Redis cannot be reached!"
+DOCKER_API_PROXY_UNHEALTHY_MSG = "docker-api-proxy service is not reachable!"
 
 
 # NOTE: Here we do not just import as 'from pydantic.error_wrappers import ErrorDict'

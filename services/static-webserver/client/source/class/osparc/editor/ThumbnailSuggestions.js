@@ -209,15 +209,18 @@ qx.Class.define("osparc.editor.ThumbnailSuggestions", {
       this.setSuggestions(this.__thumbnails);
     },
 
-    thumbnailTapped: function(thumbnail) {
+    __thumbnailTapped: function(thumbnail) {
+      // reset decoration
+      const unselectedBorderColor = qx.theme.manager.Color.getInstance().resolve("text");
+      const unselectedBGColor = qx.theme.manager.Color.getInstance().resolve("fab-background");
       this.getChildren().forEach(thumbnailImg => {
-        osparc.utils.Utils.updateBorderColor(thumbnailImg, qx.theme.manager.Color.getInstance().resolve("box-shadow"));
-        osparc.utils.Utils.addBackground(thumbnailImg, qx.theme.manager.Color.getInstance().resolve("fab-background"));
+        osparc.utils.Utils.updateBorderColor(thumbnailImg, unselectedBorderColor);
+        osparc.utils.Utils.addBackground(thumbnailImg, unselectedBGColor);
       });
-      const color = qx.theme.manager.Color.getInstance().resolve("background-selected-dark");
-      const bgColor = qx.theme.manager.Color.getInstance().resolve("background-selected");
-      osparc.utils.Utils.updateBorderColor(thumbnail, color);
-      osparc.utils.Utils.addBackground(thumbnail, bgColor);
+      const selectedBorderColor = qx.theme.manager.Color.getInstance().resolve("strong-main");
+      const selectedBGColor = qx.theme.manager.Color.getInstance().resolve("background-selected");
+      osparc.utils.Utils.updateBorderColor(thumbnail, selectedBorderColor);
+      osparc.utils.Utils.addBackground(thumbnail, selectedBGColor);
       this.fireDataEvent("thumbnailTapped", {
         type: thumbnail.thumbnailType || "templateThumbnail",
         source: thumbnail.thumbnailFileUrl || thumbnail.getSource()
@@ -238,9 +241,7 @@ qx.Class.define("osparc.editor.ThumbnailSuggestions", {
         thumbnail.thumbnailFileUrl = suggestion.fileUrl || suggestion;
         thumbnail.addListener("mouseover", () => thumbnail.set({decorator: "thumbnail-selected"}), this);
         thumbnail.addListener("mouseout", () => thumbnail.set({decorator: "thumbnail"}), this);
-        thumbnail.addListener("tap", () => {
-          this.thumbnailTapped(thumbnail);
-        }, this);
+        thumbnail.addListener("tap", () => this.__thumbnailTapped(thumbnail), this);
         this.add(thumbnail);
       });
     }

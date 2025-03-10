@@ -1,12 +1,11 @@
-""" Extends assertions for testing
+"""Extends assertions for testing"""
 
-"""
 from http import HTTPStatus
 from pprint import pformat
 
 from aiohttp import ClientResponse
 from servicelib.aiohttp import status
-from servicelib.aiohttp.rest_responses import unwrap_envelope
+from servicelib.rest_responses import unwrap_envelope
 from servicelib.status_codes_utils import get_code_display_name, is_error
 
 
@@ -30,8 +29,10 @@ async def assert_status(
     data, error = unwrap_envelope(json_response)
 
     assert response.status == expected_status_code, (
-        f"received {response.status}: ({data},{error})"
-        f", expected {get_code_display_name(expected_status_code)} : {expected_msg or ''}"
+        f"Expected: {get_code_display_name(expected_status_code)} : {expected_msg or ''}"
+        f"Got: {response.status}:\n"
+        f"  - data :{pformat(data)}\n"
+        f"  - error:{pformat(error)}\n)"
     )
 
     if is_error(expected_status_code):

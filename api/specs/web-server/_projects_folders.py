@@ -26,7 +26,7 @@ router = APIRouter(
 @router.put(
     "/projects/{project_id}/folders/{folder_id}",
     status_code=status.HTTP_204_NO_CONTENT,
-    summary="Move project to the folder",
+    description="Move project to the folder",
 )
 async def replace_project_folder(
     _path: Annotated[_ProjectsFoldersPathParams, Depends()],

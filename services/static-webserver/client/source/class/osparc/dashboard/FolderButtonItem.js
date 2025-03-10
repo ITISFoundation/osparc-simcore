@@ -253,7 +253,7 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
         const dateBy = this.getChildControl("date-by");
         dateBy.set({
           date: value,
-          toolTipText: this.tr("Moved to the bin"),
+          toolTipText: this.tr("Deleted"),
         });
       }
     },
@@ -269,9 +269,10 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
       const menuButton = this.getChildControl("menu-button");
       menuButton.setVisibility("visible");
 
-      const menu = new qx.ui.menu.Menu();
-      menu.setPosition("bottom-right");
-      osparc.utils.Utils.prettifyMenu(menu);
+      const menu = new qx.ui.menu.Menu().set({
+        appearance: "menu-wider",
+        position: "bottom-right",
+      });
 
       const studyBrowserContext = osparc.store.Store.getInstance().getStudyBrowserContext();
       if (
@@ -302,7 +303,7 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
 
         menu.addSeparator();
 
-        const trashButton = new qx.ui.menu.Button(this.tr("Move to Bin"), "@FontAwesome5Solid/trash/12");
+        const trashButton = new qx.ui.menu.Button(this.tr("Delete"), "@FontAwesome5Solid/trash/12");
         trashButton.addListener("execute", () => this.fireDataEvent("trashFolderRequested", this.getFolderId()), this);
         menu.add(trashButton);
       } else if (studyBrowserContext === "trash") {

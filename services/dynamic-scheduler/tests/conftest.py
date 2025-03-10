@@ -25,6 +25,7 @@ pytest_plugins = [
     "pytest_simcore.docker_swarm",
     "pytest_simcore.environment_configs",
     "pytest_simcore.faker_projects_data",
+    "pytest_simcore.faker_users_data",
     "pytest_simcore.rabbit_service",
     "pytest_simcore.redis_service",
     "pytest_simcore.repository_paths",
@@ -107,7 +108,7 @@ def disable_deferred_manager_lifespan(mocker: MockerFixture) -> None:
 
 @pytest.fixture
 def disable_notifier_lifespan(mocker: MockerFixture) -> None:
-    mocker.patch(f"{_PATH_APPLICATION}.get_notifier_lifespans")
+    mocker.patch(f"{_PATH_APPLICATION}.get_lifespans_notifier")
 
 
 @pytest.fixture

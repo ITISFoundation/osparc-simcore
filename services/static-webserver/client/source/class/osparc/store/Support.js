@@ -132,6 +132,14 @@ qx.Class.define("osparc.store.Support", {
       });
     },
 
+    addReleaseNotesToMenu: function(menu) {
+      const releaseTag = osparc.utils.Utils.getReleaseTag();
+      const releaseLink = osparc.utils.Utils.getReleaseLink();
+      const releaseBtn = new qx.ui.menu.Button(qx.locale.Manager.tr("Release Notes") + " " + releaseTag, "@FontAwesome5Solid/book/14");
+      releaseBtn.addListener("execute", () => window.open(releaseLink), this);
+      menu.add(releaseBtn);
+    },
+
     mailToLink: function(email, subject, centered = true) {
       const color = qx.theme.manager.Color.getInstance().resolve("text");
       let textLink = `<a href="mailto:${email}?subject=${subject}" style='color: ${color}' target='_blank'>${email}</a>`;
@@ -181,6 +189,6 @@ qx.Class.define("osparc.store.Support", {
       }
       createAccountWindow.center();
       createAccountWindow.open();
-    }
+    },
   }
 });

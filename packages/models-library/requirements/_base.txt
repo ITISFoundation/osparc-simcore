@@ -36,8 +36,11 @@ pydantic-extra-types==2.10.2
     # via
     #   -r requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/_base.in
-pydantic-settings==2.7.1
-    # via -r requirements/_base.in
+pydantic-settings==2.7.0
+    # via
+    #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -r requirements/_base.in
 python-dateutil==2.9.0.post0
     # via arrow
 python-dotenv==1.0.1
@@ -48,7 +51,7 @@ referencing==0.35.1
     #   -c requirements/../../../requirements/constraints.txt
     #   jsonschema
     #   jsonschema-specifications
-rpds-py==0.22.3
+rpds-py==0.23.1
     # via
     #   jsonschema
     #   referencing

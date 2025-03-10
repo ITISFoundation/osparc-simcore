@@ -72,7 +72,7 @@ qx.Class.define("osparc.ui.basic.Thumbnail", {
             allowStretchX: true,
             allowStretchY: true,
             alignX: "center",
-            alignY: "middle"
+            alignY: "middle",
           });
           this.addCenteredWidget(control);
           break;
@@ -96,10 +96,16 @@ qx.Class.define("osparc.ui.basic.Thumbnail", {
         if (srcWidth && srcHeight) {
           const aspectRatio = srcWidth/srcHeight;
           if (this.getBounds() && this.getBounds().width < image.getMaxWidth()) {
-            image.setMaxWidth(this.getBounds().width);
+            image.set({
+              minWidth: parseInt(this.getBounds().width),
+              maxWidth: parseInt(this.getBounds().width),
+            });
           }
           if (this.getBounds() && this.getBounds().height < image.getMaxHeight()) {
-            image.setMaxHeight(this.getBounds().height);
+            image.set({
+              minHeight: parseInt(this.getBounds().height),
+              maxHeight: parseInt(this.getBounds().height),
+            });
           }
           const maxWidth = image.getMaxWidth();
           const maxHeight = image.getMaxHeight();
@@ -107,12 +113,18 @@ qx.Class.define("osparc.ui.basic.Thumbnail", {
           if (maxWidth && maxHeight) {
             const newMaxHeight = maxWidth/aspectRatio;
             if (newMaxHeight < maxHeight) {
-              image.setMaxHeight(parseInt(newMaxHeight));
+              image.set({
+                minHeight: parseInt(newMaxHeight),
+                maxHeight: parseInt(newMaxHeight),
+              });
               return;
             }
             const newMaxWidth = maxHeight*aspectRatio;
             if (newMaxWidth < maxWidth) {
-              image.setMaxWidth(parseInt(newMaxWidth));
+              image.set({
+                minWidth: parseInt(newMaxWidth),
+                maxWidth: parseInt(newMaxWidth),
+              });
               return;
             }
             return;
@@ -120,13 +132,19 @@ qx.Class.define("osparc.ui.basic.Thumbnail", {
 
           if (maxWidth) {
             const newMaxHeight = maxWidth/aspectRatio;
-            image.setMaxHeight(parseInt(newMaxHeight));
+            image.set({
+              minHeight: parseInt(newMaxHeight),
+              maxHeight: parseInt(newMaxHeight),
+            });
             return;
           }
 
           if (maxHeight) {
             const newMaxWidth = maxHeight*aspectRatio;
-            image.setMaxWidth(parseInt(newMaxWidth));
+            image.set({
+              minWidth: parseInt(newMaxWidth),
+              maxWidth: parseInt(newMaxWidth),
+            });
             return;
           }
         }

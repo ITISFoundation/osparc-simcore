@@ -479,6 +479,8 @@ psutil==6.1.0
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   distributed
+pycryptodome==3.21.0
+    # via stream-zip
 pydantic==2.10.3
     # via
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -716,6 +718,10 @@ starlette==0.41.3
     #   -c requirements/../../../requirements/constraints.txt
     #   fastapi
     #   prometheus-fastapi-instrumentator
+stream-zip==0.0.83
+    # via
+    #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
 tblib==3.0.0
     # via
     #   -c requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
@@ -746,13 +752,13 @@ typer==0.15.1
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
-types-aiobotocore==2.15.2.post3
+types-aiobotocore==2.19.0
     # via -r requirements/../../../packages/aws-library/requirements/_base.in
-types-aiobotocore-ec2==2.15.2
+types-aiobotocore-ec2==2.19.0
     # via types-aiobotocore
-types-aiobotocore-s3==2.15.2.post1
+types-aiobotocore-s3==2.19.0
     # via types-aiobotocore
-types-aiobotocore-ssm==2.15.2
+types-aiobotocore-ssm==2.19.0
     # via types-aiobotocore
 types-awscrt==0.23.3
     # via botocore-stubs

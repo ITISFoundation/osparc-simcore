@@ -18,7 +18,7 @@ from models_library.workspaces import WorkspaceID
 from pydantic import BaseModel, BeforeValidator, ConfigDict, Field
 from servicelib.request_keys import RQT_USERID_KEY
 
-from ..._constants import RQ_PRODUCT_KEY
+from ...constants import RQ_PRODUCT_KEY
 
 _logger = logging.getLogger(__name__)
 

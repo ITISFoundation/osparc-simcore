@@ -127,6 +127,22 @@ qx.Class.define("osparc.ui.basic.SVGImage", {
       const brightnessValue = l3 => l3;
       const contrastValue = l4 => l4 > 50 ? 50 : l4;
       return `invert(${invertValue(l)}%) sepia(${sepiaValue(s)}%) saturate(${saturateValue(s)}%) hue-rotate(${h}deg) brightness(${brightnessValue(l)}%) contrast(${contrastValue(l)}%)`;
+    },
+
+    setColorToImage: function(image, keywordOrRgb) {
+      if (keywordOrRgb === null) {
+        keywordOrRgb = "text";
+      }
+      let filterValue = this.self().keywordToCSSFilter(keywordOrRgb);
+      if (filterValue === null) {
+        const hexColor = qx.theme.manager.Color.getInstance().resolve(keywordOrRgb);
+        const rgbColor = qx.util.ColorUtil.hexStringToRgb(hexColor);
+        filterValue = this.self().rgbToCSSFilter(rgbColor);
+      }
+      const myStyle = {
+        "filter": filterValue
+      };
+      image.getContentElement().setStyles(myStyle);
     }
   },
 
@@ -160,19 +176,7 @@ qx.Class.define("osparc.ui.basic.SVGImage", {
       * @param keywordOrRgb {string} predefined keyword or rgb in the following format "0,255,0"
       */
     __applyImageColor: function(keywordOrRgb) {
-      if (keywordOrRgb === null) {
-        keywordOrRgb = "text";
-      }
-      let filterValue = this.self().keywordToCSSFilter(keywordOrRgb);
-      if (filterValue === null) {
-        const hexColor = qx.theme.manager.Color.getInstance().resolve(keywordOrRgb);
-        const rgbColor = qx.util.ColorUtil.hexStringToRgb(hexColor);
-        filterValue = this.self().rgbToCSSFilter(rgbColor);
-      }
-      const myStyle = {
-        "filter": filterValue
-      };
-      this.getChildControl("image").getContentElement().setStyles(myStyle);
-    }
+      this.self().setColorToImage(this.getChildControl("image"), keywordOrRgb);
+    },
   }
 });

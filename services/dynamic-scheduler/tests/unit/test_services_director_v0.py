@@ -10,7 +10,6 @@ from fastapi import FastAPI
 from models_library.api_schemas_directorv2.dynamic_services_service import (
     RunningDynamicServiceDetails,
 )
-from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from pydantic import TypeAdapter
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -33,9 +32,7 @@ def app_environment(
 
 
 @pytest.fixture
-def legacy_service_details(
-    node_id: NodeID, project_id: ProjectID
-) -> RunningDynamicServiceDetails:
+def legacy_service_details() -> RunningDynamicServiceDetails:
     return TypeAdapter(RunningDynamicServiceDetails).validate_python(
         RunningDynamicServiceDetails.model_json_schema()["examples"][0]
     )

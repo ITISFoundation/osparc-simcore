@@ -1,5 +1,5 @@
-""" Free functions, repository pattern, errors and data structures for the users resource
-    i.e. models.users main table and all its relations
+"""Free functions, repository pattern, errors and data structures for the users resource
+i.e. models.users main table and all its relations
 """
 
 import re
@@ -12,7 +12,7 @@ from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
 from sqlalchemy import Column
 
-from .errors import UniqueViolation
+from .aiopg_errors import UniqueViolation
 from .models.users import UserRole, UserStatus, users
 from .models.users_details import users_pre_registration_details
 
@@ -65,7 +65,7 @@ class UsersRepo:
                 user_id = await conn.scalar(
                     users.insert().values(**data).returning(users.c.id)
                 )
-            except UniqueViolation:  # noqa: PERF203
+            except UniqueViolation:
                 data["name"] = generate_alternative_username(data["name"])
 
         result = await conn.execute(
@@ -78,7 +78,7 @@ class UsersRepo:
             ).where(users.c.id == user_id)
         )
         row = await result.first()
-        assert row  # nosec
+        assert isinstance(row, RowProxy)  # nosec
         return row
 
     @staticmethod

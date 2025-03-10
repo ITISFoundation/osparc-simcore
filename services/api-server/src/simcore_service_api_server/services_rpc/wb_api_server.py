@@ -46,7 +46,11 @@ from ..exceptions.backend_errors import (
 )
 from ..exceptions.service_errors_utils import service_exception_mapper
 from ..models.pagination import Page, PaginationParams
-from ..models.schemas.model_adapter import LicensedItemCheckoutGet, LicensedItemGet
+from ..models.schemas.model_adapter import (
+    LicensedItemCheckoutGet,
+    LicensedItemGet,
+    LicensedResource,
+)
 
 _exception_mapper = partial(service_exception_mapper, service_name="WebApiServer")
 
@@ -58,10 +62,16 @@ def _create_licensed_items_get_page(
         [
             LicensedItemGet(
                 licensed_item_id=elm.licensed_item_id,
+                key=elm.key,
+                version=elm.version,
                 display_name=elm.display_name,
                 licensed_resource_type=elm.licensed_resource_type,
-                licensed_resource_data=elm.licensed_resource_data,
+                licensed_resources=[
+                    LicensedResource.model_validate(res.model_dump())
+                    for res in elm.licensed_resources
+                ],
                 pricing_plan_id=elm.pricing_plan_id,
+                is_hidden_on_market=elm.is_hidden_on_market,
                 created_at=elm.created_at,
                 modified_at=elm.modified_at,
             )
@@ -118,6 +128,7 @@ class WbApiRpcClient(SingletonInAppStateMixin):
             NotEnoughAvailableSeatsError: InsufficientNumberOfSeatsError,
             CanNotCheckoutNotEnoughAvailableSeatsError: InsufficientNumberOfSeatsError,
             _CanNotCheckoutServiceIsNotRunningError: CanNotCheckoutServiceIsNotRunningError,
+            # NOTE: missing WalletAccessForbiddenError
         }
     )
     async def checkout_licensed_item_for_wallet(
@@ -142,6 +153,8 @@ class WbApiRpcClient(SingletonInAppStateMixin):
         return LicensedItemCheckoutGet(
             licensed_item_checkout_id=licensed_item_checkout_get.licensed_item_checkout_id,
             licensed_item_id=licensed_item_checkout_get.licensed_item_id,
+            key=licensed_item_checkout_get.key,
+            version=licensed_item_checkout_get.version,
             wallet_id=licensed_item_checkout_get.wallet_id,
             user_id=licensed_item_checkout_get.user_id,
             product_name=licensed_item_checkout_get.product_name,
@@ -171,6 +184,8 @@ class WbApiRpcClient(SingletonInAppStateMixin):
         return LicensedItemCheckoutGet(
             licensed_item_checkout_id=licensed_item_checkout_get.licensed_item_checkout_id,
             licensed_item_id=licensed_item_checkout_get.licensed_item_id,
+            key=licensed_item_checkout_get.key,
+            version=licensed_item_checkout_get.version,
             wallet_id=licensed_item_checkout_get.wallet_id,
             user_id=licensed_item_checkout_get.user_id,
             product_name=licensed_item_checkout_get.product_name,

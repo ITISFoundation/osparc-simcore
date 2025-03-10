@@ -13,7 +13,7 @@ from settings_library.basic_types import PortInt
 from settings_library.utils_service import DEFAULT_FASTAPI_PORT, MixinServiceSettings
 from yarl import URL
 
-from .._constants import APP_SETTINGS_KEY
+from ..constants import APP_SETTINGS_KEY
 
 _MINUTE = 60
 _HOUR = 60 * _MINUTE

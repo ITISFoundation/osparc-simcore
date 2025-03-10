@@ -81,6 +81,7 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
           control = new qx.ui.basic.Label().set({
             font: "text-14"
           });
+          control.bind("value", control, "toolTipText");
           this._add(control, {
             row: 0,
             column: 0,

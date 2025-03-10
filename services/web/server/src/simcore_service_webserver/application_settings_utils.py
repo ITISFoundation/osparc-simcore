@@ -14,8 +14,8 @@ from common_library.pydantic_fields_extension import get_type, is_nullable
 from pydantic.types import SecretStr
 from servicelib.aiohttp.typing_extension import Handler
 
-from ._constants import MSG_UNDER_DEVELOPMENT
 from .application_settings import ApplicationSettings, get_application_settings
+from .constants import MSG_UNDER_DEVELOPMENT
 
 _logger = logging.getLogger(__name__)
 
@@ -164,7 +164,6 @@ def convert_to_app_config(app_settings: ApplicationSettings) -> AppConfigDict:
         "director-v2": {"enabled": app_settings.is_enabled("WEBSERVER_DIRECTOR_V2")},
         "exporter": {"enabled": app_settings.WEBSERVER_EXPORTER is not None},
         "groups": {"enabled": app_settings.WEBSERVER_GROUPS},
-        "meta_modeling": {"enabled": app_settings.WEBSERVER_META_MODELING},
         "products": {"enabled": app_settings.WEBSERVER_PRODUCTS},
         "publications": {"enabled": app_settings.WEBSERVER_PUBLICATIONS},
         "remote_debug": {"enabled": app_settings.WEBSERVER_REMOTE_DEBUG},
@@ -180,7 +179,6 @@ def convert_to_app_config(app_settings: ApplicationSettings) -> AppConfigDict:
         },
         "tags": {"enabled": app_settings.WEBSERVER_TAGS},
         "users": {"enabled": app_settings.WEBSERVER_USERS is not None},
-        "version_control": {"enabled": app_settings.WEBSERVER_VERSION_CONTROL},
         "wallets": {"enabled": app_settings.WEBSERVER_WALLETS},
         "folders": {"enabled": app_settings.WEBSERVER_FOLDERS},
         "workspaces": {"enabled": app_settings.WEBSERVER_WORKSPACES},
@@ -313,7 +311,6 @@ def convert_to_environ_vars(  # noqa: C901, PLR0915, PLR0912
     for settings_name in (
         "WEBSERVER_GARBAGE_COLLECTOR",
         "WEBSERVER_GROUPS",
-        "WEBSERVER_META_MODELING",
         "WEBSERVER_PRODUCTS",
         "WEBSERVER_PROJECTS",
         "WEBSERVER_PUBLICATIONS",
@@ -324,7 +321,6 @@ def convert_to_environ_vars(  # noqa: C901, PLR0915, PLR0912
         "WEBSERVER_STUDIES_DISPATCHER",
         "WEBSERVER_TAGS",
         "WEBSERVER_USERS",
-        "WEBSERVER_VERSION_CONTROL",
         "WEBSERVER_WALLETS",
         "WEBSERVER_FOLDERS",
     ):

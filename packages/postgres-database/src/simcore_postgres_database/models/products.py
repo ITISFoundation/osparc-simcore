@@ -146,6 +146,7 @@ products = sa.Table(
         nullable=False,
         doc="Regular expression that matches product hostname from an url string",
     ),
+    # EMAILS --------------------
     sa.Column(
         "support_email",
         sa.String,
@@ -201,6 +202,13 @@ products = sa.Table(
         "SEE LoginSettingsForProduct",
     ),
     sa.Column(
+        "ui",
+        JSONB,
+        nullable=False,
+        server_default=sa.text("'{}'::jsonb"),
+        doc="Front-end owned UI configuration",
+    ),
+    sa.Column(
         "registration_email_template",
         sa.String,
         sa.ForeignKey(
@@ -212,6 +220,7 @@ products = sa.Table(
         nullable=True,
         doc="Custom jinja2 template for registration email",
     ),
+    # lifecycle
     sa.Column(
         "created",
         sa.DateTime(),

@@ -34,7 +34,7 @@ router = APIRouter(
 @router.get(
     "/projects/{project_id}/wallet",
     response_model=Envelope[WalletGet | None],
-    summary="Get current connected wallet to the project.",
+    description="Get current connected wallet to the project.",
 )
 async def get_project_wallet(project_id: ProjectID):
     ...
@@ -46,7 +46,7 @@ assert_handler_signature_against_model(get_project_wallet, ProjectPathParams)
 @router.put(
     "/projects/{project_id}/wallet/{wallet_id}",
     response_model=Envelope[WalletGet],
-    summary="Connect wallet to the project (Project can have only one wallet)",
+    description="Connect wallet to the project (Project can have only one wallet)",
 )
 async def connect_wallet_to_project(
     project_id: ProjectID,

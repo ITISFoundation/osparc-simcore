@@ -6,7 +6,7 @@ import logging
 
 from aiohttp import web
 
-from ..products.api import list_products
+from ..products import products_service
 from ..products.errors import BelowMinimumPaymentError
 from .settings import get_plugin_settings
 
@@ -16,7 +16,7 @@ _logger = logging.getLogger(__name__)
 async def validate_prices_in_product_settings_on_startup(app: web.Application):
     payment_settings = get_plugin_settings(app)
 
-    for product in list_products(app):
+    for product in products_service.list_products(app):
         if product.min_payment_amount_usd is not None:
             if (
                 product.min_payment_amount_usd

@@ -2,7 +2,6 @@
 
 """
 
-import functools
 import logging
 
 from aiohttp import web
@@ -13,7 +12,6 @@ from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.resource_tracker import PricingPlanId, PricingUnitId
 from pydantic import BaseModel, ConfigDict
 from servicelib.aiohttp.requests_validation import parse_request_path_parameters_as
-from servicelib.aiohttp.typing_extension import Handler
 
 from .._meta import API_VTAG
 from ..login.decorators import login_required
@@ -21,10 +19,10 @@ from ..resource_usage import service as rut_api
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
 from . import projects_service
+from ._common.exceptions_handlers import handle_plugin_requests_exceptions
 from ._common.models import RequestContext
 from ._nodes_handlers import NodePathParams
 from .db import ProjectDBAPI
-from .exceptions import ProjectInvalidRightsError, ProjectNotFoundError
 
 _logger = logging.getLogger(__name__)
 
@@ -37,21 +35,6 @@ class PricingUnitNotFoundError(PricingUnitError):
     msg_template = "Pricing unit not found"
 
 
-def _handle_projects_nodes_pricing_unit_exceptions(handler: Handler):
-    @functools.wraps(handler)
-    async def wrapper(request: web.Request) -> web.StreamResponse:
-        try:
-            return await handler(request)
-
-        except ProjectNotFoundError as exc:
-            raise web.HTTPNotFound(reason=f"{exc}") from exc
-
-        except (PricingUnitNotFoundError, ProjectInvalidRightsError) as exc:
-            raise web.HTTPForbidden(reason=f"{exc}") from exc
-
-    return wrapper
-
-
 routes = web.RouteTableDef()
 
 
@@ -61,7 +44,7 @@ routes = web.RouteTableDef()
 )
 @login_required
 @permission_required("project.wallet.*")
-@_handle_projects_nodes_pricing_unit_exceptions
+@handle_plugin_requests_exceptions
 async def get_project_node_pricing_unit(request: web.Request):
     db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(request.app)
     req_ctx = RequestContext.model_validate(request)
@@ -108,7 +91,7 @@ class _ProjectNodePricingUnitPathParams(BaseModel):
 )
 @login_required
 @permission_required("project.wallet.*")
-@_handle_projects_nodes_pricing_unit_exceptions
+@handle_plugin_requests_exceptions
 async def connect_pricing_unit_to_project_node(request: web.Request):
     db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(request.app)
     req_ctx = RequestContext.model_validate(request)

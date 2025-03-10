@@ -11,8 +11,8 @@ from http import HTTPStatus
 import pytest
 from aiohttp.test_utils import TestClient
 from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
-    PricingPlanGet,
-    PricingUnitGet,
+    RutPricingPlanGet,
+    RutPricingUnitGet,
 )
 from models_library.api_schemas_webserver import resource_usage as webserver_api
 from models_library.utils.fastapi_encoders import jsonable_encoder
@@ -32,12 +32,12 @@ def mock_rut_api_responses(
     assert client.app
     settings: ResourceUsageTrackerSettings = get_plugin_settings(client.app)
 
-    pricing_unit_get = PricingUnitGet.model_validate(
-        PricingUnitGet.model_config["json_schema_extra"]["examples"][0]
+    pricing_unit_get = RutPricingUnitGet.model_validate(
+        RutPricingUnitGet.model_config["json_schema_extra"]["examples"][0]
     )
 
-    service_pricing_plan_get = PricingPlanGet.model_validate(
-        PricingPlanGet.model_config["json_schema_extra"]["examples"][0],
+    service_pricing_plan_get = RutPricingPlanGet.model_validate(
+        RutPricingPlanGet.model_config["json_schema_extra"]["examples"][0],
     )
 
     aioresponses_mocker.get(

@@ -3,7 +3,6 @@ from datetime import datetime
 from typing import cast
 
 import sqlalchemy as sa
-from models_library.licenses import LicensedItemID
 from models_library.products import ProductName
 from models_library.resource_tracker_licensed_items_checkouts import (
     LicensedItemCheckoutID,
@@ -28,6 +27,7 @@ from ....models.licensed_items_checkouts import (
     CreateLicensedItemCheckoutDB,
     LicensedItemCheckoutDB,
 )
+from . import utils as db_utils
 
 _logger = logging.getLogger(__name__)
 
@@ -35,6 +35,8 @@ _logger = logging.getLogger(__name__)
 _SELECTION_ARGS = (
     resource_tracker_licensed_items_checkouts.c.licensed_item_checkout_id,
     resource_tracker_licensed_items_checkouts.c.licensed_item_id,
+    resource_tracker_licensed_items_checkouts.c.key,
+    resource_tracker_licensed_items_checkouts.c.version,
     resource_tracker_licensed_items_checkouts.c.wallet_id,
     resource_tracker_licensed_items_checkouts.c.user_id,
     resource_tracker_licensed_items_checkouts.c.user_email,
@@ -62,6 +64,8 @@ async def create(
             resource_tracker_licensed_items_checkouts.insert()
             .values(
                 licensed_item_id=data.licensed_item_id,
+                key=data.key,
+                version=data.version,
                 wallet_id=data.wallet_id,
                 user_id=data.user_id,
                 user_email=data.user_email,
@@ -107,12 +111,19 @@ async def list_(
     # Ordering and pagination
     if order_by.direction == OrderDirection.ASC:
         list_query = base_query.order_by(
-            sa.asc(getattr(resource_tracker_licensed_items_checkouts.c, order_by.field))
+            sa.asc(
+                getattr(resource_tracker_licensed_items_checkouts.c, order_by.field)
+            ),
+            resource_tracker_licensed_items_checkouts.c.licensed_item_checkout_id,
         )
     else:
         list_query = base_query.order_by(
             sa.desc(
-                getattr(resource_tracker_licensed_items_checkouts.c, order_by.field)
+                getattr(
+                    resource_tracker_licensed_items_checkouts.c,
+                    order_by.field,
+                    resource_tracker_licensed_items_checkouts.c.licensed_item_checkout_id,
+                )
             )
         )
     list_query = list_query.offset(offset).limit(limit)
@@ -194,21 +205,25 @@ async def update(
         return LicensedItemCheckoutDB.model_validate(row)
 
 
-async def get_currently_used_seats_for_item_and_wallet(
+async def get_currently_used_seats_for_key_version_wallet(
     engine: AsyncEngine,
     connection: AsyncConnection | None = None,
     *,
-    licensed_item_id: LicensedItemID,
+    key: str,
+    version: str,
     wallet_id: WalletID,
     product_name: ProductName,
 ) -> int:
+
     sum_stmt = sa.select(
         sa.func.sum(resource_tracker_licensed_items_checkouts.c.num_of_seats)
     ).where(
         (resource_tracker_licensed_items_checkouts.c.wallet_id == wallet_id)
+        & (resource_tracker_licensed_items_checkouts.c.key == key)
+        # If purchased version >= requested version, it covers that version
         & (
-            resource_tracker_licensed_items_checkouts.c.licensed_item_id
-            == licensed_item_id
+            db_utils.version(resource_tracker_licensed_items_checkouts.c.version)
+            >= db_utils.version(version)
         )
         & (resource_tracker_licensed_items_checkouts.c.product_name == product_name)
         & (resource_tracker_licensed_items_checkouts.c.stopped_at.is_(None))

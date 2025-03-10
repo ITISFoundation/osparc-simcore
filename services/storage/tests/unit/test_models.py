@@ -1,7 +1,7 @@
 import uuid
 
 import pytest
-from models_library.api_schemas_storage import S3BucketName
+from models_library.api_schemas_storage.storage_schemas import S3BucketName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileID, StorageFileID
 from pydantic import TypeAdapter, ValidationError

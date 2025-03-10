@@ -4,12 +4,16 @@ from pathlib import Path
 from typing import Final
 
 import aiofiles
+import httpx
 import orjson
-from aiohttp import ClientSession
 from aws_library.s3 import MultiPartUploadLinks
-from models_library.api_schemas_storage import ETag, FileUploadSchema, UploadedPart
+from fastapi import status
+from models_library.api_schemas_storage.storage_schemas import (
+    ETag,
+    FileUploadSchema,
+    UploadedPart,
+)
 from pydantic import AnyUrl, ByteSize, TypeAdapter
-from servicelib.aiohttp import status
 from servicelib.utils import limited_as_completed, logged_gather
 from types_aiobotocore_s3 import S3Client
 
@@ -37,7 +41,7 @@ async def _file_sender(
 
 
 async def upload_file_part(
-    session: ClientSession,
+    session: httpx.AsyncClient,
     file: Path,
     part_index: int,
     file_offset: int,
@@ -48,11 +52,11 @@ async def upload_file_part(
     raise_while_uploading: bool = False,
 ) -> tuple[int, ETag]:
     print(
-        f"--> uploading {this_file_chunk_size=} of {file=}, [{part_index+1}/{num_parts}]..."
+        f"--> uploading {this_file_chunk_size=} of {file=}, [{part_index + 1}/{num_parts}]..."
     )
     response = await session.put(
         str(upload_url),
-        data=_file_sender(
+        content=_file_sender(
             file,
             offset=file_offset,
             bytes_to_send=this_file_chunk_size,
@@ -64,12 +68,12 @@ async def upload_file_part(
     )
     response.raise_for_status()
     # NOTE: the response from minio does not contain a json body
-    assert response.status == status.HTTP_200_OK
+    assert response.status_code == status.HTTP_200_OK
     assert response.headers
     assert "Etag" in response.headers
     received_e_tag = orjson.loads(response.headers["Etag"])
     print(
-        f"--> completed upload {this_file_chunk_size=} of {file=}, [{part_index+1}/{num_parts}], {received_e_tag=}"
+        f"--> completed upload {this_file_chunk_size=} of {file=}, [{part_index + 1}/{num_parts}], {received_e_tag=}"
     )
     return (part_index, received_e_tag)
 
@@ -80,7 +84,7 @@ async def upload_file_to_presigned_link(
     file_size = file.stat().st_size
 
     with log_context(logging.INFO, msg=f"uploading {file} via {file_upload_link=}"):
-        async with ClientSession() as session:
+        async with httpx.AsyncClient() as session:
             file_chunk_size = int(file_upload_link.chunk_size)
             num_urls = len(file_upload_link.urls)
             last_chunk_size = file_size - file_chunk_size * (num_urls - 1)
@@ -100,7 +104,7 @@ async def upload_file_to_presigned_link(
                         upload_url,
                     )
                 )
-            results = await logged_gather(*upload_tasks, max_concurrency=0)
+            results = await logged_gather(*upload_tasks, max_concurrency=20)
         return [UploadedPart(number=index + 1, e_tag=e_tag) for index, e_tag in results]
 
 

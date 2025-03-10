@@ -11,7 +11,7 @@ from models_library.rabbitmq_messages import (
     RabbitResourceTrackingStoppedMessage,
     SimcorePlatformStatus,
 )
-from models_library.resource_tracker import UnitExtraInfo
+from models_library.resource_tracker import UnitExtraInfoTier
 from servicelib.rabbitmq import RabbitMQClient
 from simcore_postgres_database.models.resource_tracker_credit_transactions import (
     resource_tracker_credit_transactions,
@@ -58,7 +58,7 @@ def resource_tracker_pricing_tables_db(postgres_db: sa.engine.Engine) -> Iterato
             resource_tracker_pricing_units.insert().values(
                 pricing_plan_id=1,
                 unit_name="S",
-                unit_extra_info=UnitExtraInfo.model_config["json_schema_extra"][
+                unit_extra_info=UnitExtraInfoTier.model_config["json_schema_extra"][
                     "examples"
                 ][0],
                 default=False,
@@ -85,7 +85,7 @@ def resource_tracker_pricing_tables_db(postgres_db: sa.engine.Engine) -> Iterato
             resource_tracker_pricing_units.insert().values(
                 pricing_plan_id=1,
                 unit_name="M",
-                unit_extra_info=UnitExtraInfo.model_config["json_schema_extra"][
+                unit_extra_info=UnitExtraInfoTier.model_config["json_schema_extra"][
                     "examples"
                 ][0],
                 default=True,
@@ -112,7 +112,7 @@ def resource_tracker_pricing_tables_db(postgres_db: sa.engine.Engine) -> Iterato
             resource_tracker_pricing_units.insert().values(
                 pricing_plan_id=1,
                 unit_name="L",
-                unit_extra_info=UnitExtraInfo.model_config["json_schema_extra"][
+                unit_extra_info=UnitExtraInfoTier.model_config["json_schema_extra"][
                     "examples"
                 ][0],
                 default=False,

@@ -186,8 +186,11 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
 
     getProgress: function(report) {
       if (report.unit) {
+        const attempt = ("attempt" in report && report["attempt"] > 1) ? `(attempt ${report["attempt"]}) ` : "";
+        const current_value = osparc.utils.Utils.bytesToSize(report["actual_value"], 1, false);
+        const total_value = osparc.utils.Utils.bytesToSize(report["total"], 1, false)
         return {
-          progressLabel: `${osparc.utils.Utils.bytesToSize(report["actual_value"], 1, false)} / ${osparc.utils.Utils.bytesToSize(report["total"], 1, false)}`,
+          progressLabel: `${attempt}${current_value} / ${total_value}`,
           value: report["actual_value"] / report["total"]
         }
       }

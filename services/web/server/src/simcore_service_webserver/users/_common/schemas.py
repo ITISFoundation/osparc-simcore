@@ -18,7 +18,7 @@ from models_library.users import UserID
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from servicelib.request_keys import RQT_USERID_KEY
 
-from ..._constants import RQ_PRODUCT_KEY
+from ...constants import RQ_PRODUCT_KEY
 
 
 class UsersRequestContext(BaseModel):

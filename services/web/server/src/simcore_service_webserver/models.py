@@ -3,7 +3,7 @@ from models_library.users import UserID
 from pydantic import Field
 from servicelib.request_keys import RQT_USERID_KEY
 
-from ._constants import RQ_PRODUCT_KEY
+from .constants import RQ_PRODUCT_KEY
 
 
 class RequestContext(RequestParameters):

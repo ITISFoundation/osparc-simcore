@@ -10,7 +10,6 @@ from models_library.api_schemas_long_running_tasks.base import (
     ProgressPercent,
     TaskProgress,
 )
-from models_library.basic_types import IDStr
 from models_library.generated_models.docker_rest_api import ContainerState
 from models_library.rabbitmq_messages import ProgressType, SimcorePlatformStatus
 from pydantic import PositiveInt
@@ -54,7 +53,10 @@ from ..modules import nodeports, user_services_preferences
 from ..modules.mounted_fs import MountedVolumes
 from ..modules.notifications._notifications_ports import PortNotifier
 from ..modules.outputs import OutputsManager, event_propagation_disabled
-from .long_running_tasksutils import run_before_shutdown_actions
+from .long_running_tasks_utils import (
+    ensure_read_permissions_on_user_service_data,
+    run_before_shutdown_actions,
+)
 from .resource_tracking import send_service_started, send_service_stopped
 
 _logger = logging.getLogger(__name__)
@@ -178,7 +180,7 @@ async def task_create_service_containers(
             app,
             ProgressType.SERVICE_CONTAINERS_STARTING,
         ),
-        description=IDStr("starting software"),
+        description="starting software",
     ) as progress_bar:
         with log_context(_logger, logging.INFO, "load user services preferences"):
             if user_services_preferences.is_feature_enabled(app):
@@ -238,6 +240,7 @@ async def task_runs_docker_compose_down(
     app: FastAPI,
     shared_store: SharedStore,
     settings: ApplicationSettings,
+    mounted_volumes: MountedVolumes,
 ) -> None:
     if shared_store.compose_spec is None:
         _logger.warning("No compose-spec was found")
@@ -313,6 +316,8 @@ async def task_runs_docker_compose_down(
         await _send_resource_tracking_stop(SimcorePlatformStatus.OK)
         raise
 
+    await ensure_read_permissions_on_user_service_data(mounted_volumes)
+
     await _send_resource_tracking_stop(SimcorePlatformStatus.OK)
 
     # removing compose-file spec
@@ -382,7 +387,7 @@ async def task_restore_state(
             app,
             ProgressType.SERVICE_STATE_PULLING,
         ),
-        description=IDStr("pulling states"),
+        description="pulling states",
     ) as root_progress:
         await logged_gather(
             *(
@@ -446,7 +451,7 @@ async def task_save_state(
             app,
             ProgressType.SERVICE_STATE_PUSHING,
         ),
-        description=IDStr("pushing state"),
+        description="pushing state",
     ) as root_progress:
         await logged_gather(
             *[
@@ -494,7 +499,7 @@ async def task_ports_inputs_pull(
             app,
             ProgressType.SERVICE_INPUTS_PULLING,
         ),
-        description=IDStr("pulling inputs"),
+        description="pulling inputs",
     ) as root_progress:
         with log_directory_changes(
             mounted_volumes.disk_inputs_path, _logger, logging.INFO
@@ -539,7 +544,7 @@ async def task_ports_outputs_pull(
             app,
             ProgressType.SERVICE_OUTPUTS_PULLING,
         ),
-        description=IDStr("pulling outputs"),
+        description="pulling outputs",
     ) as root_progress:
         transferred_bytes = await nodeports.download_target_ports(
             nodeports.PortTypeName.OUTPUTS,

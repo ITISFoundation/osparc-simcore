@@ -2,6 +2,7 @@ import logging
 import os
 
 import typer
+from settings_library.docker_api_proxy import DockerApiProxysettings
 from settings_library.rabbit import RabbitSettings
 from settings_library.utils_cli import (
     create_settings_command,
@@ -55,6 +56,14 @@ def echo_dotenv(ctx: typer.Context, *, minimal: bool = True):
         DYNAMIC_SCHEDULER_UI_STORAGE_SECRET=os.environ.get(
             "DYNAMIC_SCHEDULER_UI_STORAGE_SECRET",
             "replace-with-ui-storage-secret",
+        ),
+        DYNAMIC_SCHEDULER_DOCKER_API_PROXY=os.environ.get(
+            "DYNAMIC_SCHEDULER_DOCKER_API_PROXY",
+            DockerApiProxysettings.create_from_envs(
+                DOCKER_API_PROXY_HOST=os.environ.get(
+                    "DOCKER_API_PROXY_HOST", "replace-with-proxy-host"
+                )
+            ),
         ),
     )
 

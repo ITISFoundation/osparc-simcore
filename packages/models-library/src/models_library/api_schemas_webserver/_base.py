@@ -13,6 +13,13 @@ from ..utils.change_case import snake_to_camel
 class EmptyModel(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
+    def to_domain_model(self) -> dict[str, Any]:
+        return self.model_dump(
+            exclude_unset=True,
+            by_alias=True,
+            exclude_none=True,
+        )
+
 
 class InputSchemaWithoutCamelCase(BaseModel):
     model_config = ConfigDict(

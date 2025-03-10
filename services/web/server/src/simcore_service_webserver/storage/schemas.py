@@ -1,7 +1,6 @@
 from enum import Enum
 from typing import Any, TypeAlias
 
-from models_library.api_schemas_storage import TableSynchronisation
 from pydantic import BaseModel, ConfigDict, Field, RootModel
 
 # NOTE: storage generates URLs that contain double encoded
@@ -77,11 +76,6 @@ class DatasetMetaDataArray(RootModel[list[DatasetMetaData]]):
 class FileLocationEnveloped(BaseModel):
     data: FileLocation
     error: Any | None = None
-
-
-class TableSynchronisationEnveloped(BaseModel):
-    data: TableSynchronisation
-    error: Any
 
 
 class FileUploadEnveloped(BaseModel):

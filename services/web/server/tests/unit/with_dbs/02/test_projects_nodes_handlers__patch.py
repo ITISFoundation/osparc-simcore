@@ -29,7 +29,7 @@ API_PREFIX = "/" + api_version_prefix
 @pytest.fixture
 def mock_catalog_api_get_services_for_user_in_product(mocker: MockerFixture):
     mocker.patch(
-        "simcore_service_webserver.projects._crud_handlers.get_services_for_user_in_product",
+        "simcore_service_webserver.projects._crud_handlers.catalog_service.get_services_for_user_in_product",
         spec=True,
         return_value=[],
     )
@@ -356,7 +356,7 @@ async def test_patch_project_node_service_key_with_error(
 ):
     node_id = next(iter(user_project["workbench"]))
     assert client.app
-    base_url = client.app.router["patch_project_node"].url_for(
+    url = client.app.router["patch_project_node"].url_for(
         project_id=user_project["uuid"], node_id=node_id
     )
     _patch_version = {"version": "2.0.9"}
@@ -365,12 +365,12 @@ async def test_patch_project_node_service_key_with_error(
         "simcore_service_webserver.projects.projects_service.catalog_rpc.check_for_service",
         side_effect=CatalogForbiddenError(name="test"),
     ):
-        resp = await client.patch(f"{base_url}", json=_patch_version)
+        resp = await client.patch(f"{url}", json=_patch_version)
         assert resp.status == status.HTTP_403_FORBIDDEN
 
     with mocker.patch(
         "simcore_service_webserver.projects.projects_service.catalog_rpc.check_for_service",
         side_effect=CatalogItemNotFoundError(name="test"),
     ):
-        resp = await client.patch(f"{base_url}", json=_patch_version)
+        resp = await client.patch(f"{url}", json=_patch_version)
         assert resp.status == status.HTTP_404_NOT_FOUND

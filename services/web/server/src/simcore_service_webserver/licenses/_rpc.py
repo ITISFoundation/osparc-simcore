@@ -3,6 +3,7 @@ from models_library.api_schemas_webserver import WEBSERVER_RPC_NAMESPACE
 from models_library.api_schemas_webserver.licensed_items import (
     LicensedItemRpcGet,
     LicensedItemRpcGetPage,
+    LicensedResource,
 )
 from models_library.api_schemas_webserver.licensed_items_checkouts import (
     LicensedItemCheckoutRpcGet,
@@ -44,20 +45,27 @@ async def get_licensed_items(
         await _licensed_items_service.list_licensed_items(
             app=app,
             product_name=product_name,
+            include_hidden_items_on_market=True,
             offset=offset,
             limit=limit,
-            order_by=OrderBy(field=IDStr("licensed_resource_name")),
+            order_by=OrderBy(field=IDStr("display_name")),
         )
     )
 
     licensed_item_get_page: LicensedItemRpcGetPage = LicensedItemRpcGetPage(
         items=[
-            LicensedItemRpcGet.model_construct(
+            LicensedItemRpcGet(
                 licensed_item_id=licensed_item.licensed_item_id,
+                key=licensed_item.key,
+                version=licensed_item.version,
                 display_name=licensed_item.display_name,
                 licensed_resource_type=licensed_item.licensed_resource_type,
-                licensed_resource_data=licensed_item.licensed_resource_data,
+                licensed_resources=[
+                    LicensedResource(**resource)
+                    for resource in licensed_item.licensed_resources
+                ],
                 pricing_plan_id=licensed_item.pricing_plan_id,
+                is_hidden_on_market=licensed_item.is_hidden_on_market,
                 created_at=licensed_item.created_at,
                 modified_at=licensed_item.modified_at,
             )
@@ -101,9 +109,9 @@ async def checkout_licensed_item_for_wallet(
     licensed_item_get = (
         await _licensed_items_checkouts_service.checkout_licensed_item_for_wallet(
             app,
-            licensed_item_id=licensed_item_id,
             wallet_id=wallet_id,
             product_name=product_name,
+            licensed_item_id=licensed_item_id,
             num_of_seats=num_of_seats,
             service_run_id=service_run_id,
             user_id=user_id,
@@ -112,6 +120,8 @@ async def checkout_licensed_item_for_wallet(
     return LicensedItemCheckoutRpcGet.model_construct(
         licensed_item_checkout_id=licensed_item_get.licensed_item_checkout_id,
         licensed_item_id=licensed_item_get.licensed_item_id,
+        key=licensed_item_get.key,
+        version=licensed_item_get.version,
         wallet_id=licensed_item_get.wallet_id,
         user_id=licensed_item_get.user_id,
         product_name=licensed_item_get.product_name,
@@ -140,6 +150,8 @@ async def release_licensed_item_for_wallet(
     return LicensedItemCheckoutRpcGet.model_construct(
         licensed_item_checkout_id=licensed_item_get.licensed_item_checkout_id,
         licensed_item_id=licensed_item_get.licensed_item_id,
+        key=licensed_item_get.key,
+        version=licensed_item_get.version,
         wallet_id=licensed_item_get.wallet_id,
         user_id=licensed_item_get.user_id,
         product_name=licensed_item_get.product_name,

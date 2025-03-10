@@ -23,6 +23,16 @@ resource_tracker_licensed_items_checkouts = sa.Table(
         nullable=True,
     ),
     sa.Column(
+        "key",
+        sa.String,
+        nullable=False,
+    ),
+    sa.Column(
+        "version",
+        sa.String,
+        nullable=False,
+    ),
+    sa.Column(
         "wallet_id",
         sa.BigInteger,
         nullable=False,
@@ -36,7 +46,7 @@ resource_tracker_licensed_items_checkouts = sa.Table(
     sa.Column(
         "user_email",
         sa.String,
-        nullable=True,
+        nullable=False,
     ),
     sa.Column("product_name", sa.String, nullable=False, doc="Product name"),
     sa.Column(
@@ -73,4 +83,5 @@ resource_tracker_licensed_items_checkouts = sa.Table(
         onupdate=RefActions.CASCADE,
         ondelete=RefActions.RESTRICT,
     ),
+    sa.Index("idx_licensed_items_checkouts_key_version", "key", "version"),
 )

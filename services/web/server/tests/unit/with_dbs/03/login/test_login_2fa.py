@@ -35,7 +35,9 @@ from simcore_service_webserver.login._constants import (
     MSG_2FA_UNAVAILABLE_OEC,
 )
 from simcore_service_webserver.login.storage import AsyncpgStorage
-from simcore_service_webserver.products.api import Product, get_current_product
+from simcore_service_webserver.products import products_web
+from simcore_service_webserver.products.errors import UnknownProductError
+from simcore_service_webserver.products.models import Product
 from simcore_service_webserver.users import preferences_api as user_preferences_api
 from twilio.base.exceptions import TwilioRestException
 
@@ -369,9 +371,9 @@ async def test_send_email_code(
 ):
     request = make_mocked_request("GET", "/dummy", app=client.app)
 
-    with pytest.raises(KeyError):
+    with pytest.raises(UnknownProductError):
         # NOTE: this is a fake request and did not go through middlewares
-        get_current_product(request)
+        products_web.get_current_product(request)
 
     user_email = faker.email()
     support_email = faker.email()
@@ -417,9 +419,9 @@ async def test_2fa_sms_failure_during_login(
 ):
     assert client.app
 
-    # Mocks error in graylog https://monitoring.osparc.io/graylog/search/649e7619ce6e0838a96e9bf1?q=%222FA%22&rangetype=relative&from=172800
     mocker.patch(
-        "simcore_service_webserver.login._2fa_api.TwilioSettings.is_alphanumeric_supported",
+        # MD: Emulates error in graylog https://monitoring.osparc.io/graylog/search/649e7619ce6e0838a96e9bf1?q=%222FA%22&rangetype=relative&from=172800
+        "simcore_service_webserver.login._2fa_api.twilio.rest.Client",
         autospec=True,
         side_effect=TwilioRestException(
             status=400,

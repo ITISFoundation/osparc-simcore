@@ -29,7 +29,7 @@ from ..garbage_collector.settings import GUEST_USER_RC_LOCK_FORMAT
 from ..groups.api import auto_add_user_to_product_group
 from ..login.storage import AsyncpgStorage, get_plugin_storage
 from ..login.utils import ACTIVE, GUEST
-from ..products.api import get_product_name
+from ..products import products_web
 from ..redis import get_redis_lock_manager_client
 from ..security.api import (
     check_user_authorized,
@@ -103,7 +103,7 @@ async def create_temporary_guest_user(request: web.Request):
     db: AsyncpgStorage = get_plugin_storage(request.app)
     redis_locks_client: aioredis.Redis = get_redis_lock_manager_client(request.app)
     settings: StudiesDispatcherSettings = get_plugin_settings(app=request.app)
-    product_name = get_product_name(request)
+    product_name = products_web.get_product_name(request)
 
     random_user_name = "".join(
         secrets.choice(string.ascii_lowercase) for _ in range(10)

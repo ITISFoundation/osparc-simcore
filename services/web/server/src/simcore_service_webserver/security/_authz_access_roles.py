@@ -61,6 +61,7 @@ ROLES_PERMISSIONS: dict[UserRole, PermissionDict] = {
             "groups.*",
             "catalog/licensed-items.*",
             "product.price.read",
+            "product.ui.read",
             "project.folders.*",
             "project.access_rights.update",
             "project.classifier.*",

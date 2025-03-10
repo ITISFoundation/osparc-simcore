@@ -2,7 +2,6 @@
 
 """
 
-import functools
 import logging
 from typing import Any
 
@@ -22,7 +21,6 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_path_parameters_as,
     parse_request_query_parameters_as,
 )
-from servicelib.aiohttp.typing_extension import Handler
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
@@ -31,25 +29,10 @@ from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
 from . import _comments_api, projects_service
+from ._common.exceptions_handlers import handle_plugin_requests_exceptions
 from ._common.models import RequestContext
-from .exceptions import ProjectInvalidRightsError, ProjectNotFoundError
 
 _logger = logging.getLogger(__name__)
-
-
-def _handle_project_comments_exceptions(handler: Handler):
-    @functools.wraps(handler)
-    async def wrapper(request: web.Request) -> web.StreamResponse:
-        try:
-            return await handler(request)
-
-        except ProjectNotFoundError as exc:
-            raise web.HTTPNotFound(reason=f"{exc}") from exc
-        except ProjectInvalidRightsError as exc:
-            raise web.HTTPForbidden(reason=f"{exc}") from exc
-
-    return wrapper
-
 
 #
 # projects/*/comments COLLECTION -------------------------
@@ -79,7 +62,7 @@ class _ProjectCommentsBodyParams(BaseModel):
 )
 @login_required
 @permission_required("project.read")
-@_handle_project_comments_exceptions
+@handle_plugin_requests_exceptions
 async def create_project_comment(request: web.Request):
     req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(_ProjectCommentsPathParams, request)
@@ -119,7 +102,7 @@ class _ListProjectCommentsQueryParams(BaseModel):
 @routes.get(f"/{VTAG}/projects/{{project_uuid}}/comments", name="list_project_comments")
 @login_required
 @permission_required("project.read")
-@_handle_project_comments_exceptions
+@handle_plugin_requests_exceptions
 async def list_project_comments(request: web.Request):
     req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(_ProjectCommentsPathParams, request)
@@ -168,6 +151,7 @@ async def list_project_comments(request: web.Request):
 )
 @login_required
 @permission_required("project.read")
+@handle_plugin_requests_exceptions
 async def update_project_comment(request: web.Request):
     req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(
@@ -183,12 +167,13 @@ async def update_project_comment(request: web.Request):
         include_state=False,
     )
 
-    return await _comments_api.update_project_comment(
+    updated_comment = await _comments_api.update_project_comment(
         request=request,
         comment_id=path_params.comment_id,
         project_uuid=path_params.project_uuid,
         contents=body_params.contents,
     )
+    return envelope_json_response(updated_comment)
 
 
 @routes.delete(
@@ -197,7 +182,7 @@ async def update_project_comment(request: web.Request):
 )
 @login_required
 @permission_required("project.read")
-@_handle_project_comments_exceptions
+@handle_plugin_requests_exceptions
 async def delete_project_comment(request: web.Request):
     req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(
@@ -225,7 +210,7 @@ async def delete_project_comment(request: web.Request):
 )
 @login_required
 @permission_required("project.read")
-@_handle_project_comments_exceptions
+@handle_plugin_requests_exceptions
 async def get_project_comment(request: web.Request):
     req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(
@@ -240,7 +225,8 @@ async def get_project_comment(request: web.Request):
         include_state=False,
     )
 
-    return await _comments_api.get_project_comment(
+    comment = await _comments_api.get_project_comment(
         request=request,
         comment_id=path_params.comment_id,
     )
+    return envelope_json_response(comment)

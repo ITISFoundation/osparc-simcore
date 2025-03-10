@@ -27,7 +27,7 @@ from .projects_nodes_io import (
     PortLink,
     SimCoreFileLink,
 )
-from .projects_nodes_ui import Position
+from .projects_nodes_layout import Position
 from .projects_state import RunningState
 from .services import ServiceKey, ServiceVersion
 

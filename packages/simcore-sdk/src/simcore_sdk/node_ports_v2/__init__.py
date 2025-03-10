@@ -1,6 +1,6 @@
 import logging
 
-from models_library.api_schemas_storage import LinkType as FileLinkType
+from models_library.api_schemas_storage.storage_schemas import LinkType as FileLinkType
 from models_library.projects import ProjectIDStr
 from models_library.projects_nodes_io import NodeIDStr
 from models_library.users import UserID

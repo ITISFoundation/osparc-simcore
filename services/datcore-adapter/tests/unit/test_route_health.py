@@ -17,8 +17,7 @@ async def test_live_entrypoint(async_client: httpx.AsyncClient):
     assert response.text
     assert datetime.fromisoformat(response.text.split("@")[1])
     assert (
-        response.text.split("@")[0]
-        == "simcore_service_datcore_adapter.api.routes.health"
+        response.text.split("@")[0] == "simcore_service_datcore_adapter.api.rest.health"
     )
 
 

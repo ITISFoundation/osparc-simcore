@@ -47,6 +47,7 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
     __userProfileModel: null,
     __userPrivacyData: null,
     __userPrivacyModel: null,
+    __userProfileForm: null,
 
     __fetchProfile: function() {
       osparc.data.Resources.getOne("profile", {}, null, false)
@@ -106,7 +107,7 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
         readOnly: true
       });
 
-      const form = new qx.ui.form.Form();
+      const form = this.__userProfileForm = new qx.ui.form.Form();
       form.add(username, "Username", null, "username");
       form.add(firstName, "First Name", null, "firstName");
       form.add(lastName, "Last Name", null, "lastName");
@@ -224,7 +225,7 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
         maxWidth: 500
       });
 
-      const label = osparc.ui.window.TabbedView.createHelpLabel(this.tr("For Privacy reasons, you might want to hide your Full Name and/or the email to other users"));
+      const label = osparc.ui.window.TabbedView.createHelpLabel(this.tr("For Privacy reasons, you might want to hide your First and Last Names and/or the Email to other users"));
       box.add(label);
 
       const hideFullname = new qx.ui.form.CheckBox().set({
@@ -236,7 +237,7 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
 
       const form = new qx.ui.form.Form();
       form.add(hideFullname, "Hide Full Name", null, "hideFullname");
-      form.add(hideEmail, "Hide email", null, "hideEmail");
+      form.add(hideEmail, "Hide Email", null, "hideEmail");
       box.add(new qx.ui.form.renderer.Single(form));
 
       // binding to a model
@@ -269,6 +270,19 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
         }
         if (this.__userPrivacyData["hideEmail"] !== model.getHideEmail()) {
           patchData["privacy"]["hideEmail"] = model.getHideEmail();
+        }
+
+        if (
+          "hideFullname" in patchData["privacy"] &&
+          patchData["privacy"]["hideFullname"] === false &&
+          this.__userProfileData["first_name"] === null
+        ) {
+          this.__userProfileForm.getItem("firstName").set({
+            invalidMessage: qx.locale.Manager.tr("Name is required"),
+            valid: false
+          });
+          osparc.FlashMessenger.getInstance().logAs(this.tr("Set the Name first"), "WARNING");
+          return;
         }
 
         if (Object.keys(patchData["privacy"]).length) {

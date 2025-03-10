@@ -17,7 +17,7 @@ from settings_library.utils_service import (
     URLPart,
 )
 
-from .._constants import APP_SETTINGS_KEY
+from ..constants import APP_SETTINGS_KEY
 
 _INVITATION_VTAG_V1: Final[VersionTag] = TypeAdapter(VersionTag).validate_python("v1")
 

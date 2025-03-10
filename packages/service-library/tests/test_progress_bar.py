@@ -15,6 +15,7 @@ from pytest_mock import MockerFixture
 from servicelib.progress_bar import (
     _INITIAL_VALUE,
     _MIN_PROGRESS_UPDATE_PERCENT,
+    _PROGRESS_ALREADY_REACGED_MAXIMUM,
     ProgressBarData,
 )
 
@@ -258,8 +259,41 @@ async def test_set_progress(caplog: pytest.LogCaptureFixture, faker: Faker):
         assert root._current_steps == pytest.approx(34)  # noqa: SLF001
         await root.set_(58)
         assert root._current_steps == pytest.approx(50)  # noqa: SLF001
-        assert "already reached maximum" in caplog.messages[0]
+        assert "WARNING" in caplog.text
+        assert _PROGRESS_ALREADY_REACGED_MAXIMUM in caplog.messages[0]
         assert "TIP:" in caplog.messages[0]
+
+
+async def test_reset_progress(caplog: pytest.LogCaptureFixture, faker: Faker):
+    async with ProgressBarData(num_steps=50, description=faker.pystr()) as root:
+        assert root._current_steps == pytest.approx(0)  # noqa: SLF001
+        assert root.num_steps == 50
+        assert root.step_weights is None
+        await root.set_(50)
+        assert root._current_steps == pytest.approx(50)  # noqa: SLF001
+        assert "WARNING" not in caplog.text
+        assert _PROGRESS_ALREADY_REACGED_MAXIMUM not in caplog.text
+        await root.set_(51)
+        assert root._current_steps == pytest.approx(50)  # noqa: SLF001
+        assert "WARNING" in caplog.text
+        assert _PROGRESS_ALREADY_REACGED_MAXIMUM in caplog.text
+
+        caplog.clear()
+        root.reset()
+
+        assert root._current_steps == pytest.approx(-1)  # noqa: SLF001
+        assert "WARNING" not in caplog.text
+        assert _PROGRESS_ALREADY_REACGED_MAXIMUM not in caplog.text
+
+        await root.set_(12)
+        assert root._current_steps == pytest.approx(12)  # noqa: SLF001
+        assert "WARNING" not in caplog.text
+        assert _PROGRESS_ALREADY_REACGED_MAXIMUM not in caplog.text
+
+        await root.set_(51)
+        assert root._current_steps == pytest.approx(50)  # noqa: SLF001
+        assert "WARNING" in caplog.text
+        assert _PROGRESS_ALREADY_REACGED_MAXIMUM in caplog.text
 
 
 async def test_concurrent_progress_bar(faker: Faker):
@@ -304,7 +338,7 @@ async def test_too_many_updates_does_not_raise_but_show_warning_with_stack(
         await root.update()
         await root.update()
         await root.update()
-        assert "already reached maximum" in caplog.messages[0]
+        assert _PROGRESS_ALREADY_REACGED_MAXIMUM in caplog.messages[0]
         assert "TIP:" in caplog.messages[0]
 
 

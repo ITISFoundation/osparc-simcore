@@ -47,9 +47,6 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
     TITLE_PADDING: 6,
     SPACING_IN: 5,
     SPACING: 15,
-    ICON_SIZE: 32,
-    // TITLE_MAX_HEIGHT: 34, // two lines in Roboto
-    TITLE_MAX_HEIGHT: 40, // two lines in Manrope
     THUMBNAIL_SIZE: 50,
     POS: {
       TITLE: {
@@ -119,7 +116,6 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
           grid.setSpacing(this.self().SPACING_IN);
           grid.setRowFlex(2, 1);
           grid.setColumnFlex(0, 1);
-          grid.setRowMaxHeight(0, this.self().TITLE_MAX_HEIGHT);
 
           control = new qx.ui.container.Composite().set({
             maxWidth: this.self().ITEM_WIDTH,
@@ -142,13 +138,16 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
         }
         case "header": {
           const hGrid = new qx.ui.layout.Grid().set({
-            spacing: 0, // the sub-elements will take care of the padding
+            spacing: 6,
           });
           hGrid.setColumnFlex(1, 1);
-          hGrid.setRowAlign(0, "left", "middle");
+          hGrid.setColumnAlign(0, "right", "middle");
+          hGrid.setColumnAlign(1, "left", "middle");
+          hGrid.setColumnAlign(2, "center", "middle");
           control = new qx.ui.container.Composite().set({
             backgroundColor: "background-card-overlay",
-            padding: 0,
+            paddingBottom: 6,
+            paddingRight: 4,
             maxWidth: this.self().ITEM_WIDTH,
             maxHeight: this.self().ITEM_HEIGHT
           });
@@ -181,17 +180,7 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
           break;
         }
         case "icon": {
-          control = new osparc.ui.basic.Thumbnail(null, this.self().ICON_SIZE, this.self().ICON_SIZE).set({
-            minHeight: this.self().ICON_SIZE,
-            minWidth: this.self().ICON_SIZE,
-          });
-          control.getChildControl("image").set({
-            anonymous: true,
-            alignY: "top",
-            alignX: "left",
-            allowGrowX: true,
-            allowGrowY: true,
-          });
+          control = osparc.dashboard.CardBase.createCardIcon();
           layout = this.getChildControl("header");
           layout.add(control, {
             column: 0,
@@ -203,38 +192,23 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
           control = new qx.ui.basic.Label().set({
             textColor: "contrasted-text-light",
             font: "text-14",
-            padding: this.self().TITLE_PADDING,
-            maxWidth: this.self().ITEM_WIDTH,
-            maxHeight: this.self().TITLE_MAX_HEIGHT,
           });
           layout = this.getChildControl("header");
-          layout.addAt(control, 0, {
+          layout.add(control, {
             column: 1,
             row: 0,
           });
           break;
-        case "subtitle":
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(6)).set({
-            anonymous: true,
-            height: 20,
-            padding: 6,
-            paddingLeft: 20, // align with icon
-          });
-          layout = this.getChildControl("header");
-          layout.addAt(control, 0, {
-            column: 0,
-            row: 1,
-            colSpan: 2,
-          });
-          break;
         case "subtitle-icon": {
           control = new qx.ui.basic.Image().set({
-            alignY: "middle",
             allowGrowX: false,
-            allowShrinkX: false
+            allowShrinkX: false,
           });
-          const subtitleLayout = this.getChildControl("subtitle");
-          subtitleLayout.addAt(control, 0);
+          layout = this.getChildControl("header");
+          layout.add(control, {
+            column: 0,
+            row: 1,
+          });
           break;
         }
         case "subtitle-text": {
@@ -248,9 +222,10 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
             font: "text-12",
             allowGrowY: false
           });
-          const subtitleLayout = this.getChildControl("subtitle");
-          subtitleLayout.addAt(control, 1, {
-            flex: 1
+          layout = this.getChildControl("header");
+          layout.add(control, {
+            column: 1,
+            row: 1,
           });
           break;
         }
@@ -279,14 +254,15 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
         case "project-status":
           control = new qx.ui.basic.Image().set({
             alignY: "middle",
-            textColor: "status_icon",
+            textColor: "text",
             height: 13,
             width: 13,
             margin: [0, 1]
           });
-          layout = this.getChildControl("subtitle");
-          layout.set({
-            visibility: "visible"
+          layout = this.getChildControl("header");
+          layout.add(control, {
+            column: 2,
+            row: 1,
           });
           layout.addAt(control, 2);
           break;
@@ -300,8 +276,8 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
         const image = this.getChildControl("icon").getChildControl("image");
         image.set({
           source: value,
-          decorator: "rounded",
         });
+        osparc.utils.Utils.setAltToImage(image, "card-icon");
       }
     },
 

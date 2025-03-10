@@ -8,9 +8,14 @@ from uuid import UUID
 
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
-from models_library.api_schemas_storage import FileMetaDataArray
-from models_library.api_schemas_storage import FileMetaDataGet as StorageFileMetaData
-from models_library.api_schemas_storage import FileUploadSchema, PresignedLink
+from models_library.api_schemas_storage.storage_schemas import FileMetaDataArray
+from models_library.api_schemas_storage.storage_schemas import (
+    FileMetaDataGet as StorageFileMetaData,
+)
+from models_library.api_schemas_storage.storage_schemas import (
+    FileUploadSchema,
+    PresignedLink,
+)
 from models_library.basic_types import SHA256Str
 from models_library.generics import Envelope
 from pydantic import AnyUrl, PositiveInt

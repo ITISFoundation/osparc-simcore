@@ -12,7 +12,6 @@ from models_library.api_schemas_webserver.wallets import (
     ReplaceWalletAutoRecharge,
     WalletPaymentInitiated,
 )
-from models_library.products import CreditResultGet
 from models_library.rest_pagination import Page, PageQueryParameters
 from models_library.rest_pagination_utils import paginate_data
 from servicelib.aiohttp import status
@@ -24,6 +23,7 @@ from servicelib.aiohttp.requests_validation import (
 )
 from servicelib.logging_utils import get_log_record_extra, log_context
 from servicelib.utils import fire_and_forget_task
+from simcore_service_webserver.products._models import CreditResult
 
 from .._meta import API_VTAG as VTAG
 from ..login.decorators import login_required
@@ -42,7 +42,7 @@ from ..payments.api import (
     pay_with_payment_method,
     replace_wallet_payment_autorecharge,
 )
-from ..products.api import get_credit_amount
+from ..products import products_service
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
 from ._handlers import (
@@ -79,7 +79,7 @@ async def _create_payment(request: web.Request):
         log_duration=True,
         extra=get_log_record_extra(user_id=req_ctx.user_id),
     ):
-        credit_result: CreditResultGet = await get_credit_amount(
+        credit_result: CreditResult = await products_service.get_credit_amount(
             request.app,
             dollar_amount=body_params.price_dollars,
             product_name=req_ctx.product_name,
@@ -351,7 +351,7 @@ async def _pay_with_payment_method(request: web.Request):
         log_duration=True,
         extra=get_log_record_extra(user_id=req_ctx.user_id),
     ):
-        credit_result: CreditResultGet = await get_credit_amount(
+        credit_result: CreditResult = await products_service.get_credit_amount(
             request.app,
             dollar_amount=body_params.price_dollars,
             product_name=req_ctx.product_name,
@@ -420,7 +420,7 @@ async def _get_wallet_autorecharge(request: web.Request):
     )
 
     # NOTE: just to check that top_up is under limit. Guaranteed by _validate_prices_in_product_settings
-    assert await get_credit_amount(  # nosec
+    assert await products_service.get_credit_amount(  # nosec
         request.app,
         dollar_amount=auto_recharge.top_up_amount_in_usd,
         product_name=req_ctx.product_name,
@@ -441,7 +441,7 @@ async def _replace_wallet_autorecharge(request: web.Request):
     path_params = parse_request_path_parameters_as(WalletsPathParams, request)
     body_params = await parse_request_body_as(ReplaceWalletAutoRecharge, request)
 
-    await get_credit_amount(
+    await products_service.get_credit_amount(
         request.app,
         dollar_amount=body_params.top_up_amount_in_usd,
         product_name=req_ctx.product_name,

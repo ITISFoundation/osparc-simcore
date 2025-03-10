@@ -14,7 +14,6 @@ from typing import cast
 import magic
 from aiofiles.os import remove
 from aiofiles.tempfile import TemporaryDirectory as AioTemporaryDirectory
-from models_library.basic_types import IDStr
 from models_library.projects import ProjectIDStr
 from models_library.projects_nodes_io import NodeIDStr
 from models_library.services_types import ServicePortKey
@@ -132,7 +131,7 @@ async def upload_outputs(  # pylint:disable=too-many-statements  # noqa: PLR0915
                     2 if is_file_type(port.property_type) else 1
                     for port in ports_to_set
                 ),
-                description=IDStr("uploading outputs"),
+                description="uploading outputs",
             )
         )
         for port in ports_to_set:
@@ -245,7 +244,7 @@ async def _get_data_from_port(
 ) -> tuple[Port, ItemConcreteValue | None, ByteSize]:
     async with progress_bar.sub_progress(
         steps=2 if is_file_type(port.property_type) else 1,
-        description=IDStr("getting data"),
+        description="getting data",
     ) as sub_progress:
         with log_context(_logger, logging.DEBUG, f"getting {port.key=}"):
             port_data = await port.get(sub_progress)
@@ -363,7 +362,7 @@ async def download_target_ports(
             raise
 
     async with progress_bar.sub_progress(
-        steps=len(ports_to_get), description=IDStr("downloading")
+        steps=len(ports_to_get), description="downloading"
     ) as sub_progress:
         results = await limited_gather(
             *[

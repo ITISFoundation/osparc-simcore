@@ -38,9 +38,8 @@ qx.Class.define("osparc.dashboard.Dashboard", {
   construct: function() {
     this.base(arguments);
 
-    this.getChildControl("bar").set({
-      visibility: "excluded",
-    });
+    osparc.utils.Utils.setIdToWidget(this.getChildControl("bar"), "dashboardTabs");
+    osparc.utils.Utils.setIdToWidget(this, "dashboard");
 
     this.set({
       contentPadding: this.self().PADDING,
@@ -48,7 +47,8 @@ qx.Class.define("osparc.dashboard.Dashboard", {
       barPosition: "top"
     });
 
-    osparc.wrapper.Plotly.getInstance().init();
+    // osparc.wrapper.Plotly.getInstance().init();
+    // osparc.wrapper.Three.getInstance().init();
     osparc.wrapper.Svg.getInstance().init();
     osparc.wrapper.JsonDiffPatch.getInstance().init();
     osparc.wrapper.JsonTreeViewer.getInstance().init();

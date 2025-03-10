@@ -12,7 +12,7 @@ from models_library.rabbitmq_messages import (
     SimcorePlatformStatus,
     WalletCreditsLimitReachedMessage,
 )
-from models_library.resource_tracker import UnitExtraInfo
+from models_library.resource_tracker import UnitExtraInfoTier
 from pytest_mock.plugin import MockerFixture
 from servicelib.rabbitmq import RabbitMQClient
 from simcore_postgres_database.models.resource_tracker_credit_transactions import (
@@ -65,7 +65,7 @@ def resource_tracker_pricing_tables_db(postgres_db: sa.engine.Engine) -> Iterato
             resource_tracker_pricing_units.insert().values(
                 pricing_plan_id=1,
                 unit_name="S",
-                unit_extra_info=UnitExtraInfo.model_config["json_schema_extra"][
+                unit_extra_info=UnitExtraInfoTier.model_config["json_schema_extra"][
                     "examples"
                 ][0],
                 default=False,

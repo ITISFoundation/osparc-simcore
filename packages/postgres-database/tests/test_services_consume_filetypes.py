@@ -15,7 +15,7 @@ from pytest_simcore.helpers.webserver_fake_services_data import (
     FAKE_FILE_CONSUMER_SERVICES,
     list_supported_filetypes,
 )
-from simcore_postgres_database.errors import CheckViolation
+from simcore_postgres_database.aiopg_errors import CheckViolation
 from simcore_postgres_database.models.services import services_meta_data
 from simcore_postgres_database.models.services_consume_filetypes import (
     services_consume_filetypes,

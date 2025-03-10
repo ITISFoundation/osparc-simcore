@@ -11,7 +11,7 @@ from packaging.version import Version
 from simcore_service_catalog.utils.versioning import as_version
 
 from ..db.repositories.services import ServicesRepository
-from ..models.services_db import ReleaseFromDB
+from ..models.services_db import ReleaseDBGet
 
 
 def _get_default_compatibility_specs(target: ServiceVersion | Version) -> SpecifierSet:
@@ -41,7 +41,7 @@ def _get_latest_compatible_version(
     return max(compatible_versions, default=None)
 
 
-def _convert_to_versions(service_history: list[ReleaseFromDB]) -> list[Version]:
+def _convert_to_versions(service_history: list[ReleaseDBGet]) -> list[Version]:
     return sorted(
         (as_version(h.version) for h in service_history if not h.deprecated),
         reverse=True,  # latest first
@@ -94,11 +94,15 @@ async def evaluate_service_compatibility_map(
     repo: ServicesRepository,
     product_name: ProductName,
     user_id: UserID,
-    service_release_history: list[ReleaseFromDB],
+    service_release_history: list[ReleaseDBGet],
 ) -> dict[ServiceVersion, Compatibility | None]:
-    released_versions = _convert_to_versions(service_release_history)
-    result: dict[ServiceVersion, Compatibility | None] = {}
+    """
+    Evaluates the compatibility among a list of service releases for a given product and user.
 
+    """
+    compatibility_map: dict[ServiceVersion, Compatibility | None] = {}
+
+    released_versions = _convert_to_versions(service_release_history)
     for release in service_release_history:
         compatibility = None
         if release.compatibility_policy:
@@ -108,7 +112,7 @@ async def evaluate_service_compatibility_map(
                 repo=repo,
                 target_version=release.version,
                 released_versions=released_versions,
-                compatibility_policy={**release.compatibility_policy},
+                compatibility_policy=dict(release.compatibility_policy),
             )
         elif latest_version := _get_latest_compatible_version(
             release.version,
@@ -117,6 +121,6 @@ async def evaluate_service_compatibility_map(
             compatibility = Compatibility(
                 can_update_to=CompatibleService(version=f"{latest_version}")
             )
-        result[release.version] = compatibility
+        compatibility_map[release.version] = compatibility
 
-    return result
+    return compatibility_map

@@ -126,6 +126,7 @@ qx.Class.define("osparc.widget.logger.LoggerView", {
       switch (id) {
         case "toolbar":
           control = new qx.ui.toolbar.ToolBar();
+          control.setBackgroundColor("transparent");
           this._add(control);
           break;
         case "pin-node": {
@@ -143,7 +144,9 @@ qx.Class.define("osparc.widget.logger.LoggerView", {
           control = new qx.ui.form.TextField().set({
             appearance: "toolbar-textfield",
             liveUpdate: true,
-            placeholder: this.tr("Filter")
+            placeholder: this.tr("Filter"),
+            marginLeft: 5,
+            marginRight: 5,
           });
           osparc.utils.Utils.setIdToWidget(control, "logsFilterField");
           toolbar.add(control, {
@@ -221,7 +224,7 @@ qx.Class.define("osparc.widget.logger.LoggerView", {
             toolTipText: this.tr("Download logs"),
             appearance: "toolbar-button"
           });
-          osparc.utils.Utils.setIdToWidget(control, "downloadLogsButton");
+          osparc.utils.Utils.setIdToWidget(control, "__downloadLogsButton");
           toolbar.add(control);
           break;
         }
@@ -256,7 +259,7 @@ qx.Class.define("osparc.widget.logger.LoggerView", {
       toolbar.add(copySelectedToClipboardButton);
 
       const downloadButton = this.getChildControl("download-logs-button");
-      downloadButton.addListener("execute", () => this.downloadLogs(), this);
+      downloadButton.addListener("execute", () => this.__downloadLogs(), this);
       toolbar.add(downloadButton);
 
       return toolbar;
@@ -345,7 +348,7 @@ qx.Class.define("osparc.widget.logger.LoggerView", {
       }
     },
 
-    downloadLogs: function() {
+    __downloadLogs: function() {
       const logs = this.__getLogsString();
       const blob = new Blob([logs], {type: "text/plain"});
       osparc.utils.Utils.downloadBlobContent(blob, "logs.log");

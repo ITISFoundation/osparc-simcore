@@ -21,7 +21,7 @@ import pytest
 from aiohttp.client import ClientSession
 from aioresponses import aioresponses as AioResponsesMock
 from faker import Faker
-from models_library.api_schemas_storage import FileMetaDataGet
+from models_library.api_schemas_storage.storage_schemas import FileMetaDataGet
 from models_library.projects_nodes_io import LocationID
 from pydantic import TypeAdapter, ValidationError
 from pytest_mock.plugin import MockerFixture
@@ -219,7 +219,7 @@ async def mock_filemanager(mocker: MockerFixture, e_tag: str, faker: Faker) -> N
     mocker.patch(
         "simcore_sdk.node_ports_common.filemanager._get_file_meta_data",
         return_value=TypeAdapter(FileMetaDataGet).validate_python(
-            FileMetaDataGet.model_config["json_schema_extra"]["examples"][0],
+            FileMetaDataGet.model_json_schema()["examples"][0],
         ),
     )
     mocker.patch(

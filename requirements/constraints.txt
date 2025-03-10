@@ -80,3 +80,6 @@ moto<5.0.21
 # when removing this pin, also update the aws cli inside ci/github/helpers/install_aws_cli_v2.bash
 # SEE https://github.com/ITISFoundation/osparc-simcore/issues/7127
 boto3<1.36.0
+
+# See issue https://github.com/ITISFoundation/osparc-simcore/issues/7300
+pydantic-settings<2.7.1

@@ -5,10 +5,10 @@ from typing import Any, TypeAlias
 from aiopg.sa.result import RowProxy
 from common_library.dict_tools import remap_keys
 from models_library.api_schemas_webserver.projects import ProjectPatch
+from models_library.api_schemas_webserver.projects_ui import StudyUI
 from models_library.folders import FolderID
 from models_library.groups import GroupID
 from models_library.projects import ClassifierID, ProjectID
-from models_library.projects_ui import StudyUI
 from models_library.users import UserID
 from models_library.utils.common_validators import (
     empty_str_to_none_pre_validator,
@@ -36,7 +36,7 @@ class ProjectTypeAPI(str, Enum):
         }[api_type]
 
 
-class ProjectDB(BaseModel):
+class ProjectDBGet(BaseModel):
     # NOTE: model intented to read one-to-one columns of the `projects` table
     id: int
     type: ProjectType
@@ -71,12 +71,12 @@ class ProjectDB(BaseModel):
     )
 
 
-class ProjectWithTrashExtra(ProjectDB):
+class ProjectWithTrashExtra(ProjectDBGet):
     # This field is not part of the tables
     trashed_by_primary_gid: GroupID | None = None
 
 
-class UserSpecificProjectDataDB(ProjectDB):
+class UserSpecificProjectDataDBGet(ProjectDBGet):
     folder_id: FolderID | None
 
     model_config = ConfigDict(from_attributes=True)

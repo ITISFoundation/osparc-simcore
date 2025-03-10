@@ -16,7 +16,7 @@ from models_library.wallets import WalletID
 from pydantic import BaseModel, ConfigDict, Field
 from servicelib.request_keys import RQT_USERID_KEY
 
-from ..._constants import RQ_PRODUCT_KEY
+from ...constants import RQ_PRODUCT_KEY
 
 
 class LicensedItemsRequestContext(RequestParameters):

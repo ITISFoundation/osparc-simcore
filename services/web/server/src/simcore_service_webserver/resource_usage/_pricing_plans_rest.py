@@ -96,12 +96,14 @@ async def list_pricing_plans(request: web.Request):
         PageQueryParameters, request
     )
 
-    pricing_plan_page = await pricing_plans_admin_service.list_pricing_plans(
-        app=request.app,
-        product_name=req_ctx.product_name,
-        exclude_inactive=True,
-        offset=query_params.offset,
-        limit=query_params.limit,
+    pricing_plan_page = (
+        await pricing_plans_admin_service.list_pricing_plans_without_pricing_units(
+            app=request.app,
+            product_name=req_ctx.product_name,
+            exclude_inactive=True,
+            offset=query_params.offset,
+            limit=query_params.limit,
+        )
     )
     webserver_pricing_plans = [
         PricingPlanGet(

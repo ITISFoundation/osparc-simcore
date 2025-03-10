@@ -15,7 +15,7 @@ from aiohttp.test_utils import TestClient
 from faker import Faker
 from models_library.api_schemas_clusters_keeper.ec2_instances import EC2InstanceTypeGet
 from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
-    PricingUnitGet,
+    RutPricingUnitGet,
 )
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pytest_mock.plugin import MockerFixture
@@ -97,8 +97,8 @@ def mock_rut_api_responses(
     assert client.app
     settings: ResourceUsageTrackerSettings = get_plugin_settings(client.app)
 
-    pricing_unit_get_base = PricingUnitGet.model_validate(
-        PricingUnitGet.model_config["json_schema_extra"]["examples"][0]
+    pricing_unit_get_base = RutPricingUnitGet.model_validate(
+        RutPricingUnitGet.model_config["json_schema_extra"]["examples"][0]
     )
     pricing_unit_get_1 = pricing_unit_get_base.model_copy()
     pricing_unit_get_1.pricing_unit_id = _PRICING_UNIT_ID_1

@@ -6,12 +6,29 @@
 import httpx
 import respx
 from fastapi_pagination import Page
-from pydantic import TypeAdapter
-from simcore_service_datcore_adapter.models.schemas.datasets import (
+from models_library.api_schemas_datcore_adapter.datasets import (
     DatasetMetaData,
     FileMetaData,
 )
+from pydantic import TypeAdapter
 from starlette import status
+
+
+async def test_get_dataset_entrypoint(
+    async_client: httpx.AsyncClient,
+    pennsieve_dataset_id: str,
+    pennsieve_subsystem_mock: respx.MockRouter | None,
+    pennsieve_api_headers: dict[str, str],
+):
+    response = await async_client.get(
+        f"v0/datasets/{pennsieve_dataset_id}",
+        headers=pennsieve_api_headers,
+    )
+
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    assert data
+    TypeAdapter(DatasetMetaData).validate_python(data)
 
 
 async def test_list_datasets_entrypoint(

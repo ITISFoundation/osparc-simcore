@@ -49,10 +49,8 @@ qx.Class.define("osparc.product.AboutProduct", {
     __buildLayout: function() {
       switch (osparc.product.Utils.getProductName()) {
         case "s4l":
-          this.__buildS4LLayout();
-          break;
         case "s4lacad":
-          this.__buildS4LAcademicLayout();
+          this.__buildS4LLayout();
           break;
         case "s4llite":
           this.__buildS4LLiteLayout();
@@ -73,33 +71,13 @@ qx.Class.define("osparc.product.AboutProduct", {
     __buildS4LLayout: function() {
       const licenseUrl = osparc.store.Support.getLicenseURL();
       const text = this.tr(`
-        sim4life.io is a native implementation of the most advanced simulation platform, Sim4Life, in the cloud. \
+        Sim4Life.web is a native implementation of the most advanced simulation platform, Sim4Life, in the cloud. \
         The platform empowers users to simulate, analyze, and predict complex, multifaceted, and dynamic biological interactions within the full anatomical complexity of the human body. \
         It provides the ability to set up and run complex simulations directly within any browser, utilizing cloud technology.
         <br><br>
-        sim4life.io makes use of technologies developed by our research partner for the o<sup>2</sup>S<sup>2</sup>PARC platform, the IT’IS Foundation, and co-funded by the U.S. National Institutes of Health’s SPARC initiative.\
+        Sim4Life.web makes use of technologies developed by our research partner for the o<sup>2</sup>S<sup>2</sup>PARC platform, the IT’IS Foundation, and co-funded by the U.S. National Institutes of Health’s SPARC initiative.\
         <br><br>
         For more information about Sim4Life, please visit ${osparc.utils.Utils.createHTMLLink("sim4life.swiss", "https://sim4life.swiss/")}.
-        <br><br>
-        To review license agreements, click ${osparc.utils.Utils.createHTMLLink("here", licenseUrl)}.
-        <br><br>
-        Send us an email ${this.__getMailTo()}
-      `);
-
-      const label = osparc.product.quickStart.Utils.createLabel(text);
-      this.add(label);
-    },
-
-    __buildS4LAcademicLayout: function() {
-      const licenseUrl = osparc.store.Support.getLicenseURL();
-      const text = this.tr(`
-        sim4life.science is a native implementation of the most advanced simulation platform, Sim4Life, in the cloud. \
-        The platform empowers users to simulate, analyze, and predict complex, multifaceted, and dynamic biological interactions within the full anatomical complexity of the human body. \
-        It provides the ability to set up and run complex simulations directly within any browser, utilizing cloud technology.
-        <br><br>
-        sim4life.science makes use of technologies developed by our research partner for the o<sup>2</sup>S<sup>2</sup>PARC platform, the IT’IS Foundation, and co-funded by the U.S. National Institutes of Health’s SPARC initiative.\
-        <br><br>
-        For more information about Sim4Life, please visit ${osparc.utils.Utils.createHTMLLink("sim4life.swiss", "href='https://sim4life.swiss/")}.
         <br><br>
         To review license agreements, click ${osparc.utils.Utils.createHTMLLink("here", licenseUrl)}.
         <br><br>

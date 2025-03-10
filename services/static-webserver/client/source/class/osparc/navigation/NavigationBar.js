@@ -50,6 +50,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       paddingLeft: 10,
       paddingRight: 10,
       height: this.self().HEIGHT,
+      backgroundColor: "background-main-1",
     });
 
     osparc.utils.Utils.setIdToWidget(this, "navigationBar");
@@ -57,7 +58,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
 
   events: {
     "backToDashboardPressed": "qx.event.type.Event",
-    "downloadStudyLogs": "qx.event.type.Event"
+    "openLogger": "qx.event.type.Event"
   },
 
   properties: {
@@ -91,11 +92,6 @@ qx.Class.define("osparc.navigation.NavigationBar", {
     },
 
     __buildLayout: function() {
-      const colorStr = qx.theme.manager.Color.getInstance().resolve("background-main-1");
-      const color = qx.util.ColorUtil.stringToRgb(colorStr);
-      this.getContentElement().setStyles({
-        "background": `linear-gradient(0deg, rgba(1, 18, 26, 0.1) 0%, ${qx.util.ColorUtil.rgbToRgbString(color)} 4%)`
-      });
       this.getChildControl("left-items");
       this.getChildControl("center-items");
       this.getChildControl("right-items");
@@ -200,7 +196,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           break;
         case "study-title-options":
           control = new osparc.navigation.StudyTitleWOptions();
-          control.addListener("downloadStudyLogs", () => this.fireEvent("downloadStudyLogs"));
+          control.addListener("openLogger", () => this.fireEvent("openLogger"));
           this.getChildControl("left-items").add(control);
           break;
         case "read-only-info": {
@@ -296,7 +292,8 @@ qx.Class.define("osparc.navigation.NavigationBar", {
 
     __createHelpMenuBtn: function() {
       const menu = new qx.ui.menu.Menu().set({
-        position: "top-right"
+        position: "top-right",
+        appearance: "menu-wider",
       });
       const menuButton = new qx.ui.form.MenuButton(null, "@FontAwesome5Regular/question-circle/22", menu).set({
         backgroundColor: "transparent"
@@ -304,7 +301,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
 
       osparc.utils.Utils.setIdToWidget(menu, "helpNavigationMenu");
 
-      // menus
+      // quick starts and manuals
       osparc.store.Support.addQuickStartToMenu(menu);
       osparc.store.Support.addGuidedToursToMenu(menu);
       osparc.store.Support.addManualButtonsToMenu(menu, menuButton);
@@ -312,8 +309,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
 
       // feedback
       osparc.store.Support.addSupportButtonsToMenu(menu, menuButton);
-
-      osparc.utils.Utils.prettifyMenu(menu);
+      osparc.store.Support.addReleaseNotesToMenu(menu);
 
       return menuButton;
     },
@@ -322,6 +318,15 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       const registerButton = new qx.ui.form.Button(this.tr("Log in"), "@FontAwesome5Solid/edit/14");
       registerButton.addListener("execute", () => window.open(window.location.href, "_blank"));
       return registerButton;
+    },
+
+    addDashboardTabButtons: function(tabButtons) {
+      this.__tabButtons = tabButtons;
+      this.getChildControl("center-items").add(tabButtons);
+      this.bind("study", this.__tabButtons, "visibility", {
+        converter: s => s ? "excluded" : "visible"
+      });
+      this.__navBarResized();
     },
 
     __applyStudy: function(study) {

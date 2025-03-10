@@ -18,6 +18,7 @@ from models_library.api_schemas_webserver.projects_nodes import (
     NodePatch,
     NodeRetrieve,
     NodeRetrieved,
+    ProjectNodeServicesGet,
     ServiceResourcesDict,
 )
 from models_library.generics import Envelope
@@ -76,8 +77,7 @@ def delete_node(project_id: str, node_id: str):  # noqa: ARG001
 )
 def retrieve_node(
     project_id: str, node_id: str, _retrieve: NodeRetrieve  # noqa: ARG001
-):
-    ...
+): ...
 
 
 @router.post(
@@ -147,8 +147,7 @@ def get_node_resources(project_id: str, node_id: str):  # noqa: ARG001
 )
 def replace_node_resources(
     project_id: str, node_id: str, _new: ServiceResourcesDict  # noqa: ARG001
-):
-    ...
+): ...
 
 
 #
@@ -157,14 +156,20 @@ def replace_node_resources(
 
 
 @router.get(
+    "/projects/{project_id}/nodes/-/services",
+    response_model=Envelope[ProjectNodeServicesGet],
+)
+async def get_project_services(project_id: ProjectID): ...
+
+
+@router.get(
     "/projects/{project_id}/nodes/-/services:access",
     response_model=Envelope[_ProjectGroupAccess],
-    summary="Check whether provided group has access to the project services",
+    description="Check whether provided group has access to the project services",
 )
 async def get_project_services_access_for_gid(
     project_id: ProjectID, for_gid: GroupID  # noqa: ARG001
-):
-    ...
+): ...
 
 
 assert_handler_signature_against_model(
@@ -180,7 +185,7 @@ assert_handler_signature_against_model(
 @router.get(
     "/projects/{project_id}/nodes/-/preview",
     response_model=Envelope[list[_ProjectNodePreview]],
-    summary="Lists all previews in the node's project",
+    description="Lists all previews in the node's project",
 )
 async def list_project_nodes_previews(project_id: ProjectID):  # noqa: ARG001
     ...
@@ -192,13 +197,12 @@ assert_handler_signature_against_model(list_project_nodes_previews, ProjectPathP
 @router.get(
     "/projects/{project_id}/nodes/{node_id}/preview",
     response_model=Envelope[_ProjectNodePreview],
-    summary="Gets a give node's preview",
+    description="Gets a give node's preview",
     responses={status.HTTP_404_NOT_FOUND: {"description": "Node has no preview"}},
 )
 async def get_project_node_preview(
     project_id: ProjectID, node_id: NodeID  # noqa: ARG001
-):
-    ...
+): ...
 
 
 assert_handler_signature_against_model(get_project_node_preview, NodePathParams)

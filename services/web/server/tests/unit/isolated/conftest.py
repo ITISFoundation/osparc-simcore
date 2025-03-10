@@ -102,6 +102,8 @@ def mock_env_devel_environment(
         monkeypatch,
         envs={
             "WEBSERVER_DEV_FEATURES_ENABLED": "1",
+            "TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT": "null",
+            "TRACING_OPENTELEMETRY_COLLECTOR_PORT": "null",
         },
     )
 
@@ -251,7 +253,7 @@ def mocked_login_required(mocker: MockerFixture):
     )
 
     mocker.patch(
-        "simcore_service_webserver.login.decorators.get_product_name",
+        "simcore_service_webserver.login.decorators.products_web.get_product_name",
         spec=True,
         return_value="osparc",
     )

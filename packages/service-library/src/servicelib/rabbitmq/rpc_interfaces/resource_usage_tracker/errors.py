@@ -34,3 +34,14 @@ LICENSES_ERRORS = (
 
 class WalletTransactionError(OsparcErrorMixin, Exception):
     msg_template = "{msg}"
+
+
+### Pricing Plans Error
+
+
+class PricingPlanBaseError(OsparcErrorMixin, Exception):
+    ...
+
+
+class PricingUnitDuplicationError(PricingPlanBaseError):
+    msg_template = "Pricing unit with that name already exists in given product."

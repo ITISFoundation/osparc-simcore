@@ -31,6 +31,23 @@ DEFAULT_NUMBER_OF_ITEMS_PER_PAGE: Final[PageLimitInt] = TypeAdapter(
 ).validate_python(20)
 
 
+class CursorQueryParameters(RequestParameters):
+    """Use as pagination options in query parameters"""
+
+    size: PageLimitInt = Field(
+        default=TypeAdapter(PageLimitInt).validate_python(
+            DEFAULT_NUMBER_OF_ITEMS_PER_PAGE
+        ),
+        description="maximum number of items to return (pagination)",
+    )
+    cursor: Annotated[
+        str | None,
+        Field(
+            description="unique identifier that represent the position in the dataset"
+        ),
+    ] = None
+
+
 class PageQueryParameters(RequestParameters):
     """Use as pagination options in query parameters"""
 

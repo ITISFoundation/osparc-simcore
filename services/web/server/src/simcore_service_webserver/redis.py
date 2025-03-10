@@ -6,8 +6,8 @@ from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setu
 from servicelib.redis import RedisClientSDK, RedisClientsManager, RedisManagerDBConfig
 from settings_library.redis import RedisDatabase, RedisSettings
 
-from ._constants import APP_SETTINGS_KEY
 from ._meta import APP_NAME
+from .constants import APP_SETTINGS_KEY
 
 _logger = logging.getLogger(__name__)
 

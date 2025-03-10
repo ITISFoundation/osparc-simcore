@@ -10,7 +10,7 @@ from urllib.parse import quote
 from aiohttp import ClientResponse, ClientSession
 from aiohttp import client as aiohttp_client_module
 from aiohttp.client_exceptions import ClientConnectionError, ClientResponseError
-from models_library.api_schemas_storage import (
+from models_library.api_schemas_storage.storage_schemas import (
     FileLocationArray,
     FileMetaDataGet,
     FileUploadSchema,
@@ -46,7 +46,7 @@ R = TypeVar("R")
 
 
 def handle_client_exception(
-    handler: Callable[P, Coroutine[Any, Any, R]]
+    handler: Callable[P, Coroutine[Any, Any, R]],
 ) -> Callable[P, Coroutine[Any, Any, R]]:
     @wraps(handler)
     async def wrapped(*args: P.args, **kwargs: P.kwargs) -> R:
@@ -121,12 +121,13 @@ async def retry_request(
             async with _session_method(session, method, url, **kwargs) as response:
                 if response.status != expected_status:
                     # this is a more precise raise_for_status()
+                    error_msg = await response.json()
                     response.release()
                     raise ClientResponseError(
                         response.request_info,
                         response.history,
                         status=response.status,
-                        message=f"Received {response.status} but was expecting {expected_status=}",
+                        message=f"Received {response.status} but was expecting {expected_status=}: '{error_msg=}'",
                         headers=response.headers,
                     )
 
@@ -134,7 +135,7 @@ async def retry_request(
 
 
 @handle_client_exception
-async def get_storage_locations(
+async def list_storage_locations(
     *, session: ClientSession, user_id: UserID
 ) -> FileLocationArray:
     async with retry_request(
@@ -211,7 +212,7 @@ async def get_upload_file_links(
     async with retry_request(
         session,
         "PUT",
-        f"{get_base_url()}/locations/{location_id}/files/{quote(file_id, safe='')}",
+        f"{get_base_url()}/locations/{location_id}/files/{file_id}",
         expected_status=status.HTTP_200_OK,
         params=query_params,
     ) as response:
@@ -239,7 +240,6 @@ async def get_file_metadata(
         expected_status=status.HTTP_200_OK,
         params={"user_id": f"{user_id}"},
     ) as response:
-
         payload = await response.json()
         if not payload.get("data"):
             # NOTE: keeps backwards compatibility

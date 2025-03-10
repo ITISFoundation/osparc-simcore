@@ -43,6 +43,8 @@ async def test_rpc_licensed_items_purchases_workflow(
     _create_data = LicensedItemsPurchasesCreate(
         product_name="osparc",
         licensed_item_id="beb16d18-d57d-44aa-a638-9727fa4a72ef",
+        key="Duke",
+        version="1.0.0",
         wallet_id=1,
         wallet_name="My Wallet",
         pricing_plan_id=1,

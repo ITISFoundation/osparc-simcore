@@ -12,7 +12,7 @@ from aioresponses import aioresponses as AioResponsesMock
 from aioresponses.core import CallbackResult
 from faker import Faker
 from models_library.api_schemas_directorv2.comp_tasks import ComputationGet
-from models_library.api_schemas_storage import (
+from models_library.api_schemas_storage.storage_schemas import (
     FileMetaDataGet,
     FileUploadCompleteFutureResponse,
     FileUploadCompleteResponse,
@@ -297,9 +297,7 @@ async def storage_v0_service_mock(
     aioresponses_mocker.get(
         get_file_metadata_pattern,
         status=status.HTTP_200_OK,
-        payload={
-            "data": FileMetaDataGet.model_config["json_schema_extra"]["examples"][0]
-        },
+        payload={"data": FileMetaDataGet.model_json_schema()["examples"][0]},
         repeat=True,
     )
     aioresponses_mocker.get(

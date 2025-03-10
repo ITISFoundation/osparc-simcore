@@ -11,18 +11,17 @@ from servicelib.background_task_utils import exclusive_periodic
 from servicelib.logging_utils import log_catch, log_context
 from simcore_service_webserver.licenses import (
     _itis_vip_service,
-    _licensed_items_service,
+    _licensed_resources_service,
 )
-from simcore_service_webserver.licenses._itis_vip_settings import ItisVipSettings
 
 from ..redis import get_redis_lock_manager_client_sdk, setup_redis
 from ._itis_vip_models import CategoryTuple, ItisVipData, ItisVipResourceData
-from ._licensed_items_service import RegistrationState
+from ._licensed_resources_service import RegistrationState
 
 _logger = logging.getLogger(__name__)
 
 
-async def sync_resources_with_licensed_items(
+async def sync_licensed_resources(
     app: web.Application, categories: list[CategoryTuple]
 ):
     async with AsyncClient() as http_client:
@@ -47,7 +46,7 @@ async def sync_resources_with_licensed_items(
                 with log_context(
                     _logger, logging.INFO, "Registering %s", licensed_resource_name
                 ), log_catch(_logger, reraise=False):
-                    result = await _licensed_items_service.register_resource_as_licensed_item(
+                    result = await _licensed_resources_service.register_licensed_resource(
                         app,
                         licensed_item_display_name=f"{vip_data.features.get('name', 'UNNAMED!!')} "
                         f"{vip_data.features.get('version', 'UNVERSIONED!!')}",
@@ -76,9 +75,9 @@ async def sync_resources_with_licensed_items(
                         )  # nosec
                         # NOTE: inform since needs curation
                         _logger.info(
-                            "%s . New licensed_item_id=%s pending for activation.",
+                            "%s . New licensed_resource_id=%s pending for activation.",
                             result.message,
-                            result.registered.licensed_item_id,
+                            result.registered.licensed_resource_id,
                         )
 
 
@@ -86,15 +85,10 @@ _BACKGROUND_TASK_NAME = f"{__name__}.itis_vip_syncer_cleanup_ctx._periodic_sync"
 
 
 def setup_itis_vip_syncer(
-    app: web.Application, settings: ItisVipSettings, resync_after: datetime.timedelta
+    app: web.Application,
+    categories: list[CategoryTuple],
+    resync_after: datetime.timedelta,
 ):
-    categories = settings.to_categories()
-    if not categories:
-        _logger.warning(
-            "Skipping setup_itis_vip_syncer. %s did not provide any category", settings
-        )
-        return
-
     setup_redis(app)
 
     async def _lifespan(app_: web.Application):
@@ -110,10 +104,10 @@ def setup_itis_vip_syncer(
             @exclusive_periodic(
                 get_redis_lock_manager_client_sdk(app_),
                 task_interval=resync_after,
-                retry_after=timedelta(minutes=2),
+                retry_after=timedelta(minutes=1),
             )
             async def _periodic_sync() -> None:
-                await sync_resources_with_licensed_items(app_, categories=categories)
+                await sync_licensed_resources(app_, categories=categories)
 
             background_task = asyncio.create_task(
                 _periodic_sync(), name=_BACKGROUND_TASK_NAME

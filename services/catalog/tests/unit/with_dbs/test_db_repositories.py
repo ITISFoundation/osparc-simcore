@@ -14,7 +14,9 @@ from pydantic import EmailStr, TypeAdapter
 from simcore_service_catalog.db.repositories.services import ServicesRepository
 from simcore_service_catalog.models.services_db import (
     ServiceAccessRightsAtDB,
-    ServiceMetaDataAtDB,
+    ServiceMetaDataDBCreate,
+    ServiceMetaDataDBGet,
+    ServiceMetaDataDBPatch,
 )
 from simcore_service_catalog.utils.versioning import is_patch_release
 from sqlalchemy.ext.asyncio import AsyncEngine
@@ -109,18 +111,18 @@ async def test_create_services(
     )
 
     # validation
-    service = ServiceMetaDataAtDB.model_validate(fake_service)
+    service_db_create = ServiceMetaDataDBCreate.model_validate(fake_service)
     service_access_rights = [
         ServiceAccessRightsAtDB.model_validate(a) for a in fake_access_rights
     ]
 
     new_service = await services_repo.create_or_update_service(
-        service, service_access_rights
+        service_db_create, service_access_rights
     )
 
-    assert (
-        new_service.model_dump(include=set(fake_service.keys())) == service.model_dump()
-    )
+    assert new_service.model_dump(
+        include=service_db_create.model_fields_set
+    ) == service_db_create.model_dump(exclude_unset=True)
 
 
 async def test_read_services(
@@ -201,7 +203,7 @@ async def test_list_service_releases(
     fake_catalog_with_jupyterlab: FakeCatalogInfo,
     services_repo: ServicesRepository,
 ):
-    services: list[ServiceMetaDataAtDB] = await services_repo.list_service_releases(
+    services: list[ServiceMetaDataDBGet] = await services_repo.list_service_releases(
         "simcore/services/dynamic/jupyterlab"
     )
     assert len(services) == fake_catalog_with_jupyterlab.expected_services_count
@@ -239,7 +241,7 @@ async def test_list_service_releases_version_filtered(
     assert latest.version == fake_catalog_with_jupyterlab.expected_latest
 
     releases_1_1_x: list[
-        ServiceMetaDataAtDB
+        ServiceMetaDataDBGet
     ] = await services_repo.list_service_releases(
         "simcore/services/dynamic/jupyterlab", major=1, minor=1
     )
@@ -248,7 +250,7 @@ async def test_list_service_releases_version_filtered(
     ] == fake_catalog_with_jupyterlab.expected_1_1_x
 
     expected_0_x_x: list[
-        ServiceMetaDataAtDB
+        ServiceMetaDataDBGet
     ] = await services_repo.list_service_releases(
         "simcore/services/dynamic/jupyterlab", major=0
     )
@@ -386,15 +388,15 @@ async def test_get_and_update_service_meta_data(
     assert got.version == service_version
 
     await services_repo.update_service(
-        ServiceMetaDataAtDB.model_construct(
-            key=service_key, version=service_version, name="foo"
-        ),
+        service_key,
+        service_version,
+        ServiceMetaDataDBPatch(name="foo"),
     )
     updated = await services_repo.get_service(service_key, service_version)
+    assert updated
 
-    assert got.model_copy(update={"name": "foo"}) == updated
-
-    assert await services_repo.get_service(service_key, service_version) == updated
+    expected = got.model_copy(update={"name": "foo", "modified": updated.modified})
+    assert updated == expected
 
 
 async def test_can_get_service(

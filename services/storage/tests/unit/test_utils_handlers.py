@@ -1,63 +1,187 @@
+# pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
 
+from collections.abc import AsyncIterator
+
+import httpx
 import pytest
-from aiohttp import web
-from aiohttp.typedefs import Handler
-from aws_library.s3 import S3KeyNotFoundError
-from pydantic import BaseModel, ValidationError
-from pytest_mock import MockerFixture
-from servicelib.aiohttp.aiopg_utils import DBAPIError
-from simcore_service_storage.db_access_layer import InvalidFileIdentifierError
-from simcore_service_storage.exceptions import (
+from asyncpg import PostgresError
+from aws_library.s3._errors import S3AccessError, S3KeyNotFoundError
+from fastapi import FastAPI, HTTPException, status
+from fastapi.exceptions import RequestValidationError
+from httpx import AsyncClient
+from pydantic import ValidationError
+from pytest_simcore.helpers.httpx_assert_checks import assert_status
+from simcore_service_storage.exceptions.errors import (
     FileAccessRightError,
     FileMetaDataNotFoundError,
+    LinkAlreadyExistsError,
     ProjectAccessRightError,
     ProjectNotFoundError,
 )
-from simcore_service_storage.utils_handlers import dsm_exception_handler
-
-
-@pytest.fixture()
-async def raising_handler(
-    mocker: MockerFixture, handler_exception: type[Exception]
-) -> Handler:
-    mock = mocker.patch("aiohttp.typedefs.Handler", autospec=True)
-    mock.side_effect = handler_exception
-    return mock
+from simcore_service_storage.exceptions.handlers import set_exception_handlers
+from simcore_service_storage.modules.datcore_adapter.datcore_adapter_exceptions import (
+    DatcoreAdapterTimeoutError,
+)
+from simcore_service_storage.modules.db.access_layer import InvalidFileIdentifierError
 
 
 @pytest.fixture
-def mock_request(mocker: MockerFixture) -> web.Request:
-    return mocker.patch("aiohttp.web.Request", autospec=True)
+def initialized_app() -> FastAPI:
+    app = FastAPI()
+    set_exception_handlers(app)
+    return app
 
 
-class FakeErrorModel(BaseModel):
-    dummy: int = 1
+@pytest.fixture
+async def client(initialized_app: FastAPI) -> AsyncIterator[AsyncClient]:
+    async with AsyncClient(
+        transport=httpx.ASGITransport(app=initialized_app),
+        base_url="http://test",
+        headers={"Content-Type": "application/json"},
+    ) as client:
+        yield client
 
 
 @pytest.mark.parametrize(
-    "handler_exception, expected_web_response",
+    "exception, status_code",
     [
-        (InvalidFileIdentifierError(identifier="x"), web.HTTPUnprocessableEntity),
-        (FileMetaDataNotFoundError(file_id="x"), web.HTTPNotFound),
-        (S3KeyNotFoundError(key="x", bucket="x"), web.HTTPNotFound),
-        (ProjectNotFoundError(project_id="x"), web.HTTPNotFound),
-        (FileAccessRightError(file_id="x", access_right="x"), web.HTTPForbidden),
-        (ProjectAccessRightError(project_id="x", access_right="x"), web.HTTPForbidden),
         (
-            ValidationError.from_exception_data(title="test", line_errors=[]),
-            web.HTTPUnprocessableEntity,
+            InvalidFileIdentifierError(
+                identifier="pytest file identifier", details="pytest details"
+            ),
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
         ),
-        (DBAPIError, web.HTTPServiceUnavailable),
+        (
+            FileMetaDataNotFoundError(file_id="pytest file ID"),
+            status.HTTP_404_NOT_FOUND,
+        ),
+        (
+            S3KeyNotFoundError(key="pytest key", bucket="pytest bucket"),
+            status.HTTP_404_NOT_FOUND,
+        ),
+        (
+            ProjectNotFoundError(project_id="pytest project ID"),
+            status.HTTP_404_NOT_FOUND,
+        ),
+        (
+            FileAccessRightError(
+                access_right="pytest access rights", file_id="pytest file ID"
+            ),
+            status.HTTP_403_FORBIDDEN,
+        ),
+        (
+            ProjectAccessRightError(
+                access_right="pytest access rights", project_id="pytest project ID"
+            ),
+            status.HTTP_403_FORBIDDEN,
+        ),
+        (
+            LinkAlreadyExistsError(file_id="pytest file ID"),
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+        ),
+        (
+            PostgresError("pytest postgres error"),
+            status.HTTP_503_SERVICE_UNAVAILABLE,
+        ),
+        (
+            S3AccessError(),
+            status.HTTP_503_SERVICE_UNAVAILABLE,
+        ),
+        (
+            DatcoreAdapterTimeoutError(msg="pytest datcore adapter timeout"),
+            status.HTTP_504_GATEWAY_TIMEOUT,
+        ),
+        (
+            NotImplementedError("pytest not implemented error"),
+            status.HTTP_501_NOT_IMPLEMENTED,
+        ),
     ],
+    ids=str,
 )
-async def test_dsm_exception_handler(
-    mock_request: web.Request,
-    raising_handler: Handler,
-    expected_web_response: type[web.HTTPClientError],
+async def test_exception_handlers(
+    initialized_app: FastAPI,
+    client: AsyncClient,
+    exception: Exception,
+    status_code: int,
 ):
-    with pytest.raises(expected_web_response):
-        await dsm_exception_handler(mock_request, raising_handler)
+    @initialized_app.get("/test")
+    async def test_endpoint():
+        raise exception
+
+    response = await client.get("/test")
+    assert_status(response, status_code, None, expected_msg=f"{exception}")
+
+
+async def test_generic_http_exception_handler(
+    initialized_app: FastAPI, client: AsyncClient
+):
+    @initialized_app.get("/test")
+    async def test_endpoint():
+        raise HTTPException(status_code=status.HTTP_410_GONE)
+
+    response = await client.get("/test")
+    assert_status(response, status.HTTP_410_GONE, None, expected_msg="Gone")
+
+
+async def test_request_validation_error_handler(
+    initialized_app: FastAPI, client: AsyncClient
+):
+    _error_msg = "pytest request validation error"
+
+    @initialized_app.get("/test")
+    async def test_endpoint():
+        raise RequestValidationError(errors=[_error_msg])
+
+    response = await client.get("/test")
+    assert_status(
+        response,
+        status.HTTP_422_UNPROCESSABLE_ENTITY,
+        None,
+        expected_msg=_error_msg,
+    )
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+
+
+async def test_validation_error_handler(initialized_app: FastAPI, client: AsyncClient):
+    _error_msg = "pytest request validation error"
+
+    @initialized_app.get("/test")
+    async def test_endpoint():
+        raise ValidationError.from_exception_data(
+            _error_msg,
+            line_errors=[],
+        )
+
+    response = await client.get("/test")
+    assert_status(
+        response,
+        status.HTTP_500_INTERNAL_SERVER_ERROR,
+        None,
+        expected_msg=f"0 validation errors for {_error_msg}",
+    )
+
+
+@pytest.mark.xfail(
+    reason="Generic exception handler is not working as expected as shown in https://github.com/ITISFoundation/osparc-simcore/blob/5732a12e07e63d5ce55010ede9b9ab543bb9b278/packages/service-library/tests/fastapi/test_exceptions_utils.py"
+)
+async def test_generic_exception_handler(initialized_app: FastAPI, client: AsyncClient):
+    _error_msg = "Generic pytest exception"
+
+    @initialized_app.get("/test")
+    async def test_endpoint():
+        raise Exception(  # pylint: disable=broad-exception-raised # noqa: TRY002
+            _error_msg
+        )
+
+    response = await client.get("/test")
+    assert_status(
+        response,
+        status.HTTP_500_INTERNAL_SERVER_ERROR,
+        None,
+        expected_msg=_error_msg,
+    )

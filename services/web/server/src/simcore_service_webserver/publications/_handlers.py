@@ -14,7 +14,7 @@ from .._meta import API_VTAG as VTAG
 from ..login.decorators import login_required
 from ..login.storage import AsyncpgStorage, get_plugin_storage
 from ..login.utils_email import AttachmentTuple, send_email_from_template, themed
-from ..products.api import get_current_product
+from ..products import products_web
 
 _logger = logging.getLogger(__name__)
 
@@ -26,7 +26,7 @@ routes = web.RouteTableDef()
 @routes.post(f"/{VTAG}/publications/service-submission", name="service_submission")
 @login_required
 async def service_submission(request: web.Request):
-    product = get_current_product(request)
+    product = products_web.get_current_product(request)
     reader = MultipartReader.from_response(request)  # type: ignore[arg-type] # PC, IP Whoever is in charge of this. please have a look. this looks very weird
     data = None
     filename = None
