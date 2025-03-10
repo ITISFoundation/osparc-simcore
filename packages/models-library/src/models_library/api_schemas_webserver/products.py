@@ -1,8 +1,10 @@
 from datetime import datetime
+from decimal import Decimal
 from typing import Annotated, Any, TypeAlias
 
 from common_library.basic_types import DEFAULT_FACTORY
 from pydantic import (
+    BaseModel,
     ConfigDict,
     Field,
     HttpUrl,
@@ -17,6 +19,28 @@ from ..basic_types import IDStr, NonNegativeDecimal
 from ..emails import LowerCaseEmailStr
 from ..products import ProductName
 from ._base import InputSchema, OutputSchema
+
+
+class CreditResultRpcGet(BaseModel):
+    product_name: ProductName
+    credit_amount: Decimal
+
+    @staticmethod
+    def _update_json_schema_extra(schema: JsonDict) -> None:
+        schema.update(
+            {
+                "examples": [
+                    {
+                        "product_name": "s4l",
+                        "credit_amount": Decimal("15.5"),  # type: ignore[dict-item]
+                    },
+                ]
+            }
+        )
+
+    model_config = ConfigDict(
+        json_schema_extra=_update_json_schema_extra,
+    )
 
 
 class CreditPriceGet(OutputSchema):
