@@ -16,6 +16,7 @@ from ..db.plugin import get_database_engine
 from ..products import products_web
 from ..products.models import Product
 from ..security.api import check_password, encrypt_password
+from ..users import api as users_service
 from ..utils import HOUR
 from ..utils_rate_limiting import global_rate_limit_route
 from ._confirmation import is_confirmation_valid, make_confirmation_link
@@ -52,7 +53,7 @@ class ResetPasswordBody(InputSchema):
 @routes.post(f"/{API_VTAG}/auth/reset-password", name="initiate_reset_password")
 @global_rate_limit_route(number_of_requests=10, interval_seconds=HOUR)
 async def initiate_reset_password(request: web.Request):
-    """First of the "Two-Step Action Confirmation pattern"
+    """First of the "Two-Step Action Confirmation pattern": initiate_reset_password + complete_reset_password(code)
 
         1. confirm user exists
         2. check user status
@@ -76,7 +77,7 @@ async def initiate_reset_password(request: web.Request):
     # with a given email or username.
     response = flash_response(MSG_EMAIL_SENT.format(email=request_body.email), "INFO")
 
-    # check user exists
+    # CHECK user exists
     user = await db.get_user({"email": request_body.email})
     if not user:
         _logger.warning(
@@ -86,7 +87,7 @@ async def initiate_reset_password(request: web.Request):
         )
         return response
 
-    # check user state
+    # CHECK user state
     try:
         validate_user_status(user=dict(user), support_email=product.support_email)
     except web.HTTPError as err:
@@ -99,9 +100,16 @@ async def initiate_reset_password(request: web.Request):
 
     assert user["status"] == ACTIVE  # nosec
     assert user["email"] == request_body.email  # nosec
+    assert isinstance(user["id"], int)  # nosec
 
-    # check access to product
-    # TODO:
+    # CHECK access to product
+    if not await users_service.is_user_in_product(
+        request.app, user_id=user["id"], product_name=product.name
+    ):
+        _logger.warning(
+            "Password rest requested for a registered user but wihtout access to product"
+        )
+        return response
 
     if await is_confirmation_valid(cfg, db, user, action=RESET_PASSWORD):
         _logger.warning(
@@ -111,10 +119,11 @@ async def initiate_reset_password(request: web.Request):
         # delete previous and resend new?
         return response
 
-    # TODO: create confirmation code,
-    confirmation = await db.create_confirmation(user["id"], action=RESET_PASSWORD)
-    link = make_confirmation_link(request, confirmation)
     try:
+        # Produce a link so that the front-end can hit `complete_reset_password`
+        confirmation = await db.create_confirmation(user["id"], action=RESET_PASSWORD)
+        link = make_confirmation_link(request, confirmation)
+
         # primary reset email with a URL and the normal instructions.
         await send_email_from_template(
             request,
