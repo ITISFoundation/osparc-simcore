@@ -157,20 +157,6 @@ qx.Class.define("osparc.store.Services", {
       return [];
     },
 
-    versionsToSelectBox: function(key, selectBox) {
-      const metadata = this.getLatest(key);
-      return this.getVersions(key, metadata["version"])
-        .then(versions => {
-          versions.forEach(vrsn => {
-            const versionDisplay = this.getVersionDisplay(key, vrsn);
-            const listItem = new qx.ui.form.ListItem(versionDisplay);
-            osparc.utils.Utils.setIdToWidget(listItem, "serviceVersionItem_" + versionDisplay);
-            listItem.version = vrsn;
-            selectBox.add(listItem);
-          });
-        });
-    },
-
     getVersions: function(key, version, filterDeprecated = true) {
       return new Promise(resolve => {
         const versionsFromCache = () => {
@@ -186,6 +172,20 @@ qx.Class.define("osparc.store.Services", {
             .then(() => versionsFromCache());
         }
       });
+    },
+
+    populateVersionsSelectBox: function(key, selectBox) {
+      const latest = this.getLatest(key);
+      return this.getService(key, latest["version"])
+        .then(latestMetadata => {
+          latestMetadata["history"].forEach(entry => {
+            const versionDisplay = osparc.service.Utils.extractVersionDisplay(entry);
+            const listItem = new qx.ui.form.ListItem(versionDisplay);
+            osparc.utils.Utils.setIdToWidget(listItem, "serviceVersionItem_" + versionDisplay);
+            listItem.version = entry["version"];
+            selectBox.add(listItem);
+          });
+        });
     },
 
     getServicesLatestList: function(excludeFrontend = true, excludeDeprecated = true) {

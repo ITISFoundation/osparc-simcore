@@ -282,7 +282,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       hBox.add(versionsBox);
 
 
-      osparc.store.Services.versionsToSelectBox(this.__resourceData["key"], versionsBox)
+      osparc.store.Services.populateVersionsSelectBox(this.__resourceData["key"], versionsBox)
         .then(() => {
           let selectedItem = null;
 
