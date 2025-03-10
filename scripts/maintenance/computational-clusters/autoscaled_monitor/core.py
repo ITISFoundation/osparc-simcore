@@ -1,6 +1,7 @@
 #! /usr/bin/env python3
 
 import asyncio
+import contextlib
 import datetime
 import json
 from dataclasses import replace
@@ -31,6 +32,7 @@ from .models import (
     TaskId,
     TaskState,
 )
+from .ssh import ssh_tunnel
 
 
 @utils.to_async
@@ -142,7 +144,7 @@ def _print_dynamic_instances(
                     f"Up: {utils.timedelta_formatting(time_now - instance.ec2_instance.launch_time, color_code=True)}",
                     f"ExtIP: {instance.ec2_instance.public_ip_address}",
                     f"IntIP: {instance.ec2_instance.private_ip_address}",
-                    f"/mnt/docker(free): {utils.color_encode_with_threshold(instance.disk_space.human_readable(), instance.disk_space,  TypeAdapter(ByteSize).validate_python('15Gib'))}",
+                    f"/mnt/docker(free): {utils.color_encode_with_threshold(instance.disk_space.human_readable(), instance.disk_space, TypeAdapter(ByteSize).validate_python('15Gib'))}",
                 ]
             ),
             service_table,
@@ -190,7 +192,7 @@ def _print_computational_clusters(
                     f"UserID: {cluster.primary.user_id}",
                     f"WalletID: {cluster.primary.wallet_id}",
                     f"Heartbeat: {utils.timedelta_formatting(time_now - cluster.primary.last_heartbeat) if cluster.primary.last_heartbeat else 'n/a'}",
-                    f"/mnt/docker(free): {utils.color_encode_with_threshold(cluster.primary.disk_space.human_readable(), cluster.primary.disk_space,  TypeAdapter(ByteSize).validate_python('15Gib'))}",
+                    f"/mnt/docker(free): {utils.color_encode_with_threshold(cluster.primary.disk_space.human_readable(), cluster.primary.disk_space, TypeAdapter(ByteSize).validate_python('15Gib'))}",
                 ]
             ),
             "\n".join(
@@ -223,7 +225,7 @@ def _print_computational_clusters(
             table.add_row(
                 "\n".join(
                     [
-                        f"[italic]{utils.color_encode_with_state(f'Worker {index+1}', worker.ec2_instance)}[/italic]",
+                        f"[italic]{utils.color_encode_with_state(f'Worker {index + 1}', worker.ec2_instance)}[/italic]",
                         f"Name: {worker.name}",
                         f"ID: {worker.ec2_instance.id}",
                         f"AMI: {worker.ec2_instance.image_id}",
@@ -232,7 +234,7 @@ def _print_computational_clusters(
                         f"ExtIP: {worker.ec2_instance.public_ip_address}",
                         f"IntIP: {worker.ec2_instance.private_ip_address}",
                         f"DaskWorkerIP: {worker.dask_ip}",
-                        f"/mnt/docker(free): {utils.color_encode_with_threshold(worker.disk_space.human_readable(), worker.disk_space,  TypeAdapter(ByteSize).validate_python('15Gib'))}",
+                        f"/mnt/docker(free): {utils.color_encode_with_threshold(worker.disk_space.human_readable(), worker.disk_space, TypeAdapter(ByteSize).validate_python('15Gib'))}",
                         "",
                     ]
                 ),
@@ -301,7 +303,6 @@ async def _analyze_computational_instances(
     computational_instances: list[ComputationalInstance],
     ssh_key_path: Path | None,
 ) -> list[ComputationalCluster]:
-
     all_disk_spaces = [UNDEFINED_BYTESIZE] * len(computational_instances)
     if ssh_key_path is not None:
         all_disk_spaces = await asyncio.gather(
@@ -650,4 +651,27 @@ async def trigger_cluster_termination(
 
 
 async def test_database_connection(state: AppState) -> None:
-    await db.test_db_connection(state)
+    bastion_host = state.main_bastion_host
+    async with contextlib.AsyncExitStack() as stack:
+        if bastion_host:
+            assert state  # nosec
+            assert state.ssh_key_path  # nosec
+            assert state.environment  # nosec
+            assert state.environment["POSTGRES_ENDPOINT"]  # nosec
+            db_endpoint = state.environment["POSTGRES_ENDPOINT"]
+            db_host, db_port = db_endpoint.split(":")
+            tunnel = stack.enter_context(
+                ssh_tunnel(
+                    ssh_host=bastion_host.ip,
+                    username=bastion_host.user_name,
+                    private_key_path=state.ssh_key_path,
+                    remote_bind_host=db_host,
+                    remote_bind_port=int(db_port),
+                )
+            )
+            assert tunnel
+            state.environment["POSTGRES_ENDPOINT"] = (
+                f"{tunnel.local_bind_address[0]}:{tunnel.local_bind_address[1]}"
+            )
+
+        await db.test_db_connection(state)

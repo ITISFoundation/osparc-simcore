@@ -15,6 +15,7 @@ from pydantic import BaseModel, ByteSize, PostgresDsn
 @dataclass(kw_only=True, frozen=True, slots=True)
 class BastionHost:
     ip: str
+    user_name: str
 
 
 @dataclass(kw_only=True)

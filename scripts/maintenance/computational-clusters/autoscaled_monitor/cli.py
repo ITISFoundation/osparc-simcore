@@ -60,8 +60,10 @@ def _parse_inventory(deploy_config: Path) -> BastionHost:
     inventory = InventoryManager(loader=loader, sources=[f"{inventory_path}"])
 
     try:
-        bastion_ip = inventory.groups["CAULDRON_UNIX"].get_vars()["bastion_ip"]
-        return BastionHost(ip=bastion_ip)
+        return BastionHost(
+            ip=inventory.groups["CAULDRON_UNIX"].get_vars()["bastion_ip"],
+            user_name=inventory.groups["CAULDRON_UNIX"].get_vars()["bastion_user"],
+        )
     except KeyError as err:
         msg = "Unable to find bastion_ip in the inventory file."
         raise RuntimeError(msg) from err
