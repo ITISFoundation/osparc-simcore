@@ -110,15 +110,19 @@ qx.Class.define("osparc.desktop.MainPageHandler", {
 
       this.setLoadingPageHeader(qx.locale.Manager.tr("Loading ") + studyData.name);
       this.showLoadingPage();
-      const inaccessibleServices = osparc.store.Services.getInaccessibleServices(studyData["workbench"])
-      if (inaccessibleServices.length) {
-        const msg = osparc.store.Services.getInaccessibleServicesMsg(inaccessibleServices, studyData["workbench"]);
-        osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
-        this.showDashboard();
-        return;
-      }
-      this.showStudyEditor();
-      this.__studyEditor.setStudyData(studyData);
+
+      osparc.store.Services.getStudyServicesMetadata(studyData)
+        .finally(() => {
+          const inaccessibleServices = osparc.store.Services.getInaccessibleServices(studyData["workbench"])
+          if (inaccessibleServices.length) {
+            const msg = osparc.store.Services.getInaccessibleServicesMsg(inaccessibleServices, studyData["workbench"]);
+            osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
+            this.showDashboard();
+            return;
+          }
+          this.showStudyEditor();
+          this.__studyEditor.setStudyData(studyData);
+        });
     }
   }
 });
