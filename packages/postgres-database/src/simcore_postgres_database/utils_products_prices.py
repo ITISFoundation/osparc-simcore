@@ -2,7 +2,7 @@ from decimal import Decimal
 from typing import NamedTuple, TypeAlias
 
 import sqlalchemy as sa
-from aiopg.sa.connection import SAConnection
+from sqlalchemy.ext.asyncio import AsyncConnection
 
 from .constants import QUANTIZE_EXP_ARG
 from .models.products_prices import products_prices
@@ -17,9 +17,9 @@ class ProductPriceInfo(NamedTuple):
 
 
 async def get_product_latest_price_info_or_none(
-    conn: SAConnection, product_name: str
+    conn: AsyncConnection, product_name: str
 ) -> ProductPriceInfo | None:
-    """None menans the product is not billable"""
+    """If the product is not billable, it returns None"""
     # newest price of a product
     result = await conn.execute(
         sa.select(
@@ -30,7 +30,7 @@ async def get_product_latest_price_info_or_none(
         .order_by(sa.desc(products_prices.c.valid_from))
         .limit(1)
     )
-    row = await result.first()
+    row = result.one_or_none()
 
     if row and row.usd_per_credit is not None:
         assert row.min_payment_amount_usd is not None  # nosec
@@ -43,27 +43,24 @@ async def get_product_latest_price_info_or_none(
     return None
 
 
-async def get_product_latest_stripe_info(
-    conn: SAConnection, product_name: str
-) -> tuple[StripePriceID, StripeTaxRateID]:
+async def get_product_latest_stripe_info_or_none(
+    conn: AsyncConnection, product_name: str
+) -> tuple[StripePriceID, StripeTaxRateID] | None:
     # Stripe info of a product for latest price
-    row = await (
-        await conn.execute(
-            sa.select(
-                products_prices.c.stripe_price_id,
-                products_prices.c.stripe_tax_rate_id,
-            )
-            .where(products_prices.c.product_name == product_name)
-            .order_by(sa.desc(products_prices.c.valid_from))
-            .limit(1)
+    result = await conn.execute(
+        sa.select(
+            products_prices.c.stripe_price_id,
+            products_prices.c.stripe_tax_rate_id,
         )
-    ).fetchone()
-    if row is None:
-        msg = f"Required Stripe information missing from product {product_name=}"
-        raise ValueError(msg)
-    return (row.stripe_price_id, row.stripe_tax_rate_id)
+        .where(products_prices.c.product_name == product_name)
+        .order_by(sa.desc(products_prices.c.valid_from))
+        .limit(1)
+    )
+
+    row = result.one_or_none()
+    return (row.stripe_price_id, row.stripe_tax_rate_id) if row else None
 
 
-async def is_payment_enabled(conn: SAConnection, product_name: str) -> bool:
+async def is_payment_enabled(conn: AsyncConnection, product_name: str) -> bool:
     p = await get_product_latest_price_info_or_none(conn, product_name=product_name)
     return bool(p)  # zero or None is disabled
