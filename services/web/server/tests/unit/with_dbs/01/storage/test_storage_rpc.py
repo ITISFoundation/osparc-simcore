@@ -2,7 +2,6 @@ from collections.abc import Callable
 
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
-from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -18,11 +17,11 @@ from models_library.api_schemas_rpc_async_jobs.async_jobs import (
 )
 from models_library.api_schemas_rpc_async_jobs.exceptions import (
     JobError,
+    JobSchedulerError,
     JobStatusError,
 )
 from models_library.api_schemas_storage.data_export_async_jobs import (
     AccessRightError,
-    DataExportError,
     InvalidFileIdentifierError,
 )
 from models_library.api_schemas_webserver.storage import (
@@ -39,8 +38,8 @@ from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import (
     get_result,
     get_status,
     list_jobs,
-    submit_job,
 )
+from servicelib.rabbitmq.rpc_interfaces.storage.data_export import start_data_export
 from simcore_postgres_database.models.users import UserRole
 
 _faker = Faker()
@@ -65,12 +64,20 @@ def create_storage_rpc_client_mock(mocker: MockerFixture) -> Callable[[str, Any]
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
 @pytest.mark.parametrize(
-    "backend_result_or_exception",
+    "backend_result_or_exception, expected_status",
     [
-        AsyncJobGet(job_id=AsyncJobId(f"{_faker.uuid4()}")),
-        InvalidFileIdentifierError(file_id=Path("/my/file")),
-        AccessRightError(user_id=_faker.pyint(min_value=0), file_id=Path("/my/file")),
-        DataExportError(job_id=_faker.pyint(min_value=0)),
+        (AsyncJobGet(job_id=AsyncJobId(f"{_faker.uuid4()}")), status.HTTP_202_ACCEPTED),
+        (
+            InvalidFileIdentifierError(file_id=Path("/my/file")),
+            status.HTTP_404_NOT_FOUND,
+        ),
+        (
+            AccessRightError(
+                user_id=_faker.pyint(min_value=0), file_id=Path("/my/file")
+            ),
+            status.HTTP_403_FORBIDDEN,
+        ),
+        (JobSchedulerError(exc=_faker.text()), status.HTTP_500_INTERNAL_SERVER_ERROR),
     ],
     ids=lambda x: type(x).__name__,
 )
@@ -81,9 +88,10 @@ async def test_data_export(
     create_storage_rpc_client_mock: Callable[[str, Any], None],
     faker: Faker,
     backend_result_or_exception: Any,
+    expected_status: int,
 ):
     create_storage_rpc_client_mock(
-        submit_job.__name__,
+        start_data_export.__name__,
         backend_result_or_exception,
     )
 
@@ -93,16 +101,9 @@ async def test_data_export(
     response = await client.post(
         "/v0/storage/locations/0/export-data", data=_body.model_dump_json()
     )
-    if isinstance(backend_result_or_exception, AsyncJobGet):
-        assert response.status == status.HTTP_202_ACCEPTED
+    assert response.status == expected_status
+    if response.status == status.HTTP_202_ACCEPTED:
         Envelope[StorageAsyncJobGet].model_validate(await response.json())
-    elif isinstance(backend_result_or_exception, InvalidFileIdentifierError):
-        assert response.status == status.HTTP_404_NOT_FOUND
-    elif isinstance(backend_result_or_exception, AccessRightError):
-        assert response.status == status.HTTP_403_FORBIDDEN
-    else:
-        assert isinstance(backend_result_or_exception, DataExportError)
-        assert response.status == status.HTTP_500_INTERNAL_SERVER_ERROR
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
@@ -110,11 +111,9 @@ async def test_data_export(
     "backend_result_or_exception",
     [
         AsyncJobStatus(
-            job_id=f"{_faker.uuid4()}",
+            job_id=AsyncJobId(f"{_faker.uuid4()}"),
             progress=ProgressReport(actual_value=0.5, total=1.0),
             done=False,
-            started=datetime.now(),
-            stopped=None,
         ),
         JobStatusError(job_id=_faker.uuid4()),
     ],

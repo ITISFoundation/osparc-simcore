@@ -1,8 +1,10 @@
-from models_library.api_schemas_rpc_async_jobs.async_jobs import AsyncJobGet
+from models_library.api_schemas_rpc_async_jobs.async_jobs import (
+    AsyncJobGet,
+    AsyncJobNameData,
+)
 from models_library.api_schemas_storage import STORAGE_RPC_NAMESPACE
 from models_library.rabbitmq_basic_types import RPCMethodName
 from pydantic import TypeAdapter
-from simcore_service_storage.api.rpc._async_jobs import AsyncJobNameData
 
 from ... import RabbitMQRPCClient
 from ..async_jobs.async_jobs import submit_job
