@@ -172,7 +172,9 @@ qx.Class.define("osparc.vipMarket.LicensedItemListItem", {
     },
 
     __applyThumbnail: function(value) {
-      this.getChildControl("thumbnail").setSource(value);
+      if (value) {
+        this.getChildControl("thumbnail").setSource(value);
+      }
     },
 
     __applyDisplayName: function(value) {
