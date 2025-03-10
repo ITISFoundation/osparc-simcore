@@ -40,11 +40,6 @@ pytest_simcore_core_services_selection = [
 
 
 @pytest.fixture
-def long_running_namespace() -> LongRunningNamespace:
-    return "unique_test_namespace"
-
-
-@pytest.fixture
 async def client_rpc_interface(
     rabbit_service: RabbitSettings, long_running_namespace: LongRunningNamespace
 ) -> AsyncIterable[ClientRPCInterface]:
@@ -131,9 +126,11 @@ async def server_rpc_interface(
 
 
 async def test_workflow(
-    server_rpc_interface: ServerRPCInterface, client_rpc_interface: ClientRPCInterface
+    server_rpc_interface: ServerRPCInterface,
+    client_rpc_interface: ClientRPCInterface,
+    unique_id: JobUniqueId,
+    job_timeout: timedelta,
 ) -> None:
-    unique_id = "a_unique_id"
 
     # not started yet
     assert await client_rpc_interface.get_status(unique_id) == JobStatus.NOT_FOUND
@@ -141,7 +138,7 @@ async def test_workflow(
         assert await client_rpc_interface.get_result(unique_id)
 
     # after start
-    await client_rpc_interface.start(unique_id)
+    await client_rpc_interface.start(unique_id, timeout=job_timeout)
 
     assert await client_rpc_interface.get_status(unique_id) == JobStatus.RUNNING
     with pytest.raises(NoResultIsAvailableError):
