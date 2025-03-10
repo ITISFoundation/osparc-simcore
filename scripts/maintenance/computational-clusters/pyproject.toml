@@ -19,6 +19,7 @@ dependencies = [
   "rich",
   "sqlalchemy[asyncio]",
   "sshtunnel",
+  "ansible>=10.7.0",
 ]
 name = "autoscaled-monitor"
 version = "1.0.0"

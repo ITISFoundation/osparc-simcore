@@ -5,6 +5,8 @@ from typing import Annotated, Optional
 import parse
 import rich
 import typer
+from ansible.inventory.manager import InventoryManager
+from ansible.parsing.dataloader import DataLoader
 from dotenv import dotenv_values
 
 from . import core as api
@@ -17,7 +19,7 @@ from .constants import (
     wallet_id_spec,
 )
 from .ec2 import autoscaling_ec2_client, cluster_keeper_ec2_client
-from .models import AppState
+from .models import AppState, BastionHost
 
 state: AppState = AppState(
     dynamic_parser=parse.compile(DEFAULT_DYNAMIC_EC2_FORMAT),
@@ -32,11 +34,11 @@ state: AppState = AppState(
 app = typer.Typer()
 
 
-def _parse_environment(deploy_config: Path) -> dict[str, str | None]:
+def _parse_repo_config(deploy_config: Path) -> dict[str, str | None]:
     repo_config = deploy_config / "repo.config"
     if not repo_config.exists():
         rich.print(
-            f"[red]{repo_config} does not exist! Please run OPS code to generate it[/red]"
+            f"[red]{repo_config} does not exist! Please run `make repo.config` in {deploy_config} to generate it[/red]"
         )
         raise typer.Exit(1)
 
@@ -44,6 +46,25 @@ def _parse_environment(deploy_config: Path) -> dict[str, str | None]:
 
     assert environment
     return environment
+
+
+def _parse_inventory(deploy_config: Path) -> BastionHost:
+    inventory_path = deploy_config / "ansible" / "inventory.ini"
+    if not inventory_path.exists():
+        rich.print(
+            f"[red]{inventory_path} does not exist! Please run `make inventory` in {deploy_config} to generate it[/red]"
+        )
+        raise typer.Exit(1)
+
+    loader = DataLoader()
+    inventory = InventoryManager(loader=loader, sources=[f"{inventory_path}"])
+
+    try:
+        bastion_ip = inventory.groups["CAULDRON_UNIX"].get_vars()["bastion_ip"]
+        return BastionHost(ip=bastion_ip)
+    except KeyError as err:
+        msg = "Unable to find bastion_ip in the inventory file."
+        raise RuntimeError(msg) from err
 
 
 @app.callback()
@@ -58,7 +79,8 @@ def main(
     assert (
         deploy_config.is_dir()
     ), "deploy-config argument is not pointing to a directory!"
-    state.environment = _parse_environment(deploy_config)
+    state.environment = _parse_repo_config(deploy_config)
+    state.main_bastion_host = _parse_inventory(deploy_config)
 
     # connect to ec2s
     state.ec2_resource_autoscaling = autoscaling_ec2_client(state)

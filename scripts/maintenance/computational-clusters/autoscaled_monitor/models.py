@@ -12,6 +12,11 @@ from mypy_boto3_ec2.service_resource import Instance
 from pydantic import BaseModel, ByteSize, PostgresDsn
 
 
+@dataclass(kw_only=True, frozen=True, slots=True)
+class BastionHost:
+    ip: str
+
+
 @dataclass(kw_only=True)
 class AppState:
     environment: dict[str, str | None] = field(default_factory=dict)
@@ -22,6 +27,7 @@ class AppState:
     computational_parser_workers: parse.Parser
     deploy_config: Path | None = None
     ssh_key_path: Path | None = None
+    main_bastion_host: BastionHost | None = None
 
     computational_bastion: Instance | None = None
     dynamic_bastion: Instance | None = None
