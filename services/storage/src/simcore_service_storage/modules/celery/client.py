@@ -89,6 +89,7 @@ class CeleryTaskQueueClient:
         state = self._get_state(task_context, task_uuid)
         if result and state == TaskState.RUNNING:
             with contextlib.suppress(ValidationError):
+                # avoids exception if result is not a ProgressReport (or overwritten by a Celery's state update)
                 return ProgressReport.model_validate(result)
         if state in (
             TaskState.ABORTED,
