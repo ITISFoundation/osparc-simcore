@@ -123,7 +123,11 @@ qx.Class.define("osparc.store.Services", {
 
     getService: function(key, version, useCache = true) {
       return new Promise(resolve => {
-        if (useCache && this.__isInCache(key, version)) {
+        if (
+          useCache &&
+          this.__isInCache(key, version) &&
+          "history" in this.__servicesCached[key][version]
+        ) {
           resolve(this.__servicesCached[key][version]);
           return;
         }
