@@ -25,7 +25,7 @@ import subprocess
 import sys
 from urllib.request import urlopen
 
-from simcore_service_storage.main import ApplicationSettings
+from simcore_service_storage.core.settings import ApplicationSettings
 
 SUCCESS, UNHEALTHY = 0, 1
 
@@ -35,10 +35,9 @@ ok = os.getenv("SC_BOOT_MODE", "").lower() == "debug"
 # Queries host
 # pylint: disable=consider-using-with
 
+app_settings = ApplicationSettings.create_from_envs()
 
 def _is_celery_worker_healthy():
-    app_settings = ApplicationSettings.create_from_envs()
-
     assert app_settings.STORAGE_CELERY
     broker_url = app_settings.STORAGE_CELERY.CELERY_RABBIT_BROKER.dsn
 
@@ -64,7 +63,7 @@ def _is_celery_worker_healthy():
 
 ok = (
     ok
-    or (bool(os.getenv("STORAGE_WORKER_MODE", "") and _is_celery_worker_healthy()))
+    or (app_settings.STORAGE_WORKER_MODE and _is_celery_worker_healthy())
     or urlopen(
         "{host}{baseurl}".format(
             host=sys.argv[1], baseurl=os.environ.get("SIMCORE_NODE_BASEPATH", "")
