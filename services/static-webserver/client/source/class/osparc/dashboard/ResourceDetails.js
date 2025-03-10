@@ -21,32 +21,41 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
   construct: function(resourceData) {
     this.base(arguments);
 
-    this.__resourceData = resourceData;
-
-    this.__resourceModel = null;
-    const initPromises = [];
+    let latestPromise = null;
     switch (resourceData["resourceType"]) {
       case "study":
       case "template": {
-        this.__resourceModel = new osparc.data.model.Study(resourceData);
         const params = {
           url: {
-            "studyId": this.__resourceData["uuid"]
+            "studyId": resourceData["uuid"]
           }
         };
-        initPromises.push(osparc.data.Resources.fetch("studies", "getOne", params));
+        latestPromise = osparc.data.Resources.fetch("studies", "getOne", params);
         break;
       }
       case "service": {
-        this.__resourceModel = new osparc.data.model.Service(resourceData);
-        initPromises.push(osparc.store.Services.getService(this.__resourceData["key"], this.__resourceData["version"]));
+        latestPromise = osparc.store.Services.getService(resourceData["key"], resourceData["version"]);
         break;
       }
     }
-    this.__resourceModel["resourceType"] = resourceData["resourceType"];
 
-    Promise.all(initPromises)
-      .then(() => this.__addPages());
+    latestPromise
+      .then(latestResourceData => {
+        this.__resourceData = latestResourceData;
+        switch (resourceData["resourceType"]) {
+          case "study":
+          case "template": {
+            this.__resourceModel = new osparc.data.model.Study(latestResourceData);
+            break;
+          }
+          case "service": {
+            this.__resourceModel = new osparc.data.model.Service(latestResourceData);
+            break;
+          }
+        }
+        this.__resourceModel["resourceType"] = resourceData["resourceType"];
+        this.__addPages();
+      });
   },
 
   events: {
@@ -276,7 +285,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
 
           // first setSelection
           versions.forEach(version => {
-            selectedItem = osparc.service.Utils.versionToListItem(this.__resourceData["key"], version);
+            selectedItem = osparc.service.Utils.versionToListItem(this.__resourceData, version);
             versionsBox.add(selectedItem);
             if (this.__resourceData["version"] === version) {
               versionsBox.setSelection([selectedItem]);
