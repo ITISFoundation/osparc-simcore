@@ -3,7 +3,7 @@ from typing import Any, Final, Self, TypeAlias
 from uuid import UUID
 
 from models_library.progress_bar import ProgressReport
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, model_validator
 
 TaskContext: TypeAlias = dict[str, Any]
 TaskID: TypeAlias = str

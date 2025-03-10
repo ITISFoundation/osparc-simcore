@@ -1,5 +1,6 @@
 # pylint: disable=W0621
 # pylint: disable=W0613
+# pylint: disable=R6301
 from collections.abc import Awaitable, Callable
 from pathlib import Path
 from typing import Any, Literal, NamedTuple
@@ -66,7 +67,7 @@ class _MockCeleryClient:
             progress_report=ProgressReport(actual_value=42.0),
         )
 
-    async def get_result(self, *args, **kwargs) -> Any:
+    async def get_task_result(self, *args, **kwargs) -> Any:
         return {}
 
     async def get_task_uuids(self, *args, **kwargs) -> set[TaskUUID]:
