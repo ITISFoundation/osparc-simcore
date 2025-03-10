@@ -3,7 +3,7 @@ from collections.abc import Callable
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 from pathlib import Path
-from typing import Any
+from typing import Any, Final
 
 import pytest
 from aiohttp.test_utils import TestClient
@@ -45,6 +45,13 @@ from servicelib.rabbitmq.rpc_interfaces.storage.data_export import start_data_ex
 from simcore_postgres_database.models.users import UserRole
 
 _faker = Faker()
+_user_roles: Final[list[UserRole]] = [
+    UserRole.GUEST,
+    UserRole.USER,
+    UserRole.TESTER,
+    UserRole.PRODUCT_OWNER,
+    UserRole.ADMIN,
+]
 
 
 @pytest.fixture
@@ -64,7 +71,7 @@ def create_storage_rpc_client_mock(mocker: MockerFixture) -> Callable[[str, Any]
     return _
 
 
-@pytest.mark.parametrize("user_role", [UserRole.USER])
+@pytest.mark.parametrize("user_role", _user_roles)
 @pytest.mark.parametrize(
     "backend_result_or_exception, expected_status",
     [
@@ -108,7 +115,7 @@ async def test_data_export(
         Envelope[StorageAsyncJobGet].model_validate(await response.json())
 
 
-@pytest.mark.parametrize("user_role", [UserRole.USER])
+@pytest.mark.parametrize("user_role", _user_roles)
 @pytest.mark.parametrize(
     "backend_result_or_exception, expected_status",
     [
@@ -144,7 +151,7 @@ async def test_get_async_jobs_status(
         assert response_body_data is not None
 
 
-@pytest.mark.parametrize("user_role", [UserRole.USER])
+@pytest.mark.parametrize("user_role", _user_roles)
 @pytest.mark.parametrize(
     "backend_result_or_exception, expected_status",
     [
@@ -172,7 +179,7 @@ async def test_abort_async_jobs(
     assert response.status == expected_status
 
 
-@pytest.mark.parametrize("user_role", [UserRole.USER])
+@pytest.mark.parametrize("user_role", _user_roles)
 @pytest.mark.parametrize(
     "result_or_exception, expected_status",
     [
@@ -200,7 +207,7 @@ async def test_get_async_job_result(
     assert response.status == expected_status
 
 
-@pytest.mark.parametrize("user_role", [UserRole.USER])
+@pytest.mark.parametrize("user_role", _user_roles)
 @pytest.mark.parametrize(
     "backend_result_or_exception, expected_status",
     [
