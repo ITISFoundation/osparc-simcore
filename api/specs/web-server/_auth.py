@@ -47,8 +47,7 @@ router = APIRouter(prefix=f"/{API_VTAG}", tags=["auth"])
     operation_id="request_product_account",
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def request_product_account(_body: AccountRequestInfo):
-    ...
+async def request_product_account(_body: AccountRequestInfo): ...
 
 
 @router.post(
@@ -75,8 +74,7 @@ async def register(_body: RegisterBody):
     status_code=status.HTTP_200_OK,
     responses={status.HTTP_409_CONFLICT: {"model": EnvelopedError}},
 )
-async def unregister_account(_body: UnregisterCheck):
-    ...
+async def unregister_account(_body: UnregisterCheck): ...
 
 
 @router.post(
@@ -171,11 +169,10 @@ async def check_auth():
 @router.post(
     "/auth/reset-password",
     response_model=Envelope[Log],
-    operation_id="auth_reset_password",
+    operation_id="initiate_reset_password",
     responses={status.HTTP_503_SERVICE_UNAVAILABLE: {"model": EnvelopedError}},
 )
-async def reset_password(_body: ResetPasswordBody):
-    """a non logged-in user requests a password reset"""
+async def initiate_reset_password(_body: ResetPasswordBody): ...
 
 
 @router.post(
@@ -268,5 +265,4 @@ async def email_confirmation(code: str):
     status_code=status.HTTP_200_OK,
     responses={status.HTTP_200_OK: {"content": {"image/png": {}}}},
 )
-async def request_captcha():
-    ...
+async def request_captcha(): ...

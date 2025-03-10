@@ -1,9 +1,9 @@
-""" Confirmation codes/tokens tools
+"""Confirmation codes/tokens tools
 
-    Codes are inserted in confirmation tables and they are associated to a user and an action
-    Used to validate some action (e.g. register, invitation, etc)
-    Codes can be used one time
-    Codes have expiration date (duration time is configurable)
+Codes are inserted in confirmation tables and they are associated to a user and an action
+Used to validate some action (e.g. register, invitation, etc)
+Codes can be used one time
+Codes have expiration date (duration time is configurable)
 """
 
 import logging
@@ -61,22 +61,23 @@ def get_expiration_date(
     return confirmation["created_at"] + lifetime
 
 
-async def is_confirmation_allowed(
+async def is_confirmation_valid(
     cfg: LoginOptions, db: AsyncpgStorage, user, action: ConfirmationAction
-):
+) -> bool:
     confirmation: ConfirmationTokenDict | None = await db.get_confirmation(
         {"user": user, "action": action}
     )
     if not confirmation:
-        return True
+        return False
+
     if is_confirmation_expired(cfg, confirmation):
         await db.delete_confirmation(confirmation)
         log.warning(
             "Used expired token [%s]. Deleted from confirmations table.",
             confirmation,
         )
-        return True
-    return False
+        return False
+    return True
 
 
 def is_confirmation_expired(cfg: LoginOptions, confirmation: ConfirmationTokenDict):
