@@ -142,26 +142,31 @@ async def test_get_async_jobs_status(
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
-@pytest.mark.parametrize("abort_success", [True, False])
+@pytest.mark.parametrize(
+    "backend_result_or_exception, expected_status",
+    [
+        (
+            AsyncJobAbort(result=True, job_id=AsyncJobId(_faker.uuid4())),
+            status.HTTP_200_OK,
+        ),
+        (JobSchedulerError(exc=_faker.text()), status.HTTP_500_INTERNAL_SERVER_ERROR),
+    ],
+    ids=lambda x: type(x).__name__,
+)
 async def test_abort_async_jobs(
     user_role: UserRole,
     logged_user: UserInfoDict,
     client: TestClient,
     create_storage_rpc_client_mock: Callable[[str, Any], None],
     faker: Faker,
-    abort_success: bool,
+    backend_result_or_exception: Any,
+    expected_status: int,
 ):
     _job_id = AsyncJobId(faker.uuid4())
-    create_storage_rpc_client_mock(
-        abort.__name__, AsyncJobAbort(result=abort_success, job_id=_job_id)
-    )
+    create_storage_rpc_client_mock(abort.__name__, backend_result_or_exception)
 
     response = await client.post(f"/v0/storage/async-jobs/{_job_id}:abort")
-
-    if abort_success:
-        assert response.status == status.HTTP_200_OK
-    else:
-        assert response.status == status.HTTP_500_INTERNAL_SERVER_ERROR
+    assert response.status == expected_status
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
