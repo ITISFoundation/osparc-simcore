@@ -414,7 +414,7 @@ async def _parse_dynamic_instances(
     return dynamic_instances
 
 
-async def summary(state: AppState, user_id: int | None, wallet_id: int | None) -> None:
+async def summary(state: AppState, user_id: int | None, wallet_id: int | None) -> bool:
     # get all the running instances
     assert state.ec2_resource_autoscaling
     dynamic_instances = await ec2.list_dynamic_instances_from_ec2(
@@ -429,6 +429,12 @@ async def summary(state: AppState, user_id: int | None, wallet_id: int | None) -
         state.ec2_resource_autoscaling.meta.client.meta.region_name,
     )
 
+    dynamic_services_in_error = False
+    for instance in dynamic_autoscaled_instances:
+        for service in instance.running_services:
+            if service.needs_manual_intervention:
+                dynamic_services_in_error = True
+
     assert state.ec2_resource_clusters_keeper
     computational_instances = await ec2.list_computational_instances_from_ec2(
         state, user_id, wallet_id
@@ -441,6 +447,9 @@ async def summary(state: AppState, user_id: int | None, wallet_id: int | None) -
         state.environment,
         state.ec2_resource_clusters_keeper.meta.client.meta.region_name,
     )
+
+    if dynamic_services_in_error:
+        return False
 
 
 def _print_computational_tasks(

@@ -113,7 +113,8 @@ def summary(
 
     """
 
-    asyncio.run(api.summary(state, user_id or None, wallet_id or None))
+    if not asyncio.run(api.summary(state, user_id or None, wallet_id or None)):
+        raise typer.Exit(1)
 
 
 @app.command()
