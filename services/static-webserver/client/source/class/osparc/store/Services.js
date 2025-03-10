@@ -159,16 +159,17 @@ qx.Class.define("osparc.store.Services", {
 
     getVersions: function(key, version, filterDeprecated = true) {
       return new Promise(resolve => {
-        const returnFromCache = () => {
+        const versionsFromCache = () => {
           const versions = this.__getVersionsFromCache(key, version, filterDeprecated);
           resolve(versions);
         };
+
         if (this.__servicesCached[key][version]["history"]) {
-          returnFromCache();
+          versionsFromCache();
         } else {
           const useCache = false;
           this.getService(key, version, useCache)
-            .then(() => returnFromCache());
+            .then(() => versionsFromCache());
         }
       });
     },
