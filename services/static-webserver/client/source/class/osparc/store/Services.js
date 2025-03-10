@@ -162,7 +162,8 @@ qx.Class.define("osparc.store.Services", {
         if (this.__servicesCached[key][version]["history"]) {
           returnFromCache();
         } else {
-          this.getService(key, version)
+          const useCache = false;
+          this.getService(key, version, useCache)
             .then(() => returnFromCache());
         }
       });

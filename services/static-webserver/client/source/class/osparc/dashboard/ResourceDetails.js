@@ -34,12 +34,12 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
             "studyId": this.__resourceData["uuid"]
           }
         };
-        initPromises.push(osparc.data.Resources.fetch("studies", "getOne", params))
+        initPromises.push(osparc.data.Resources.fetch("studies", "getOne", params));
         break;
       }
       case "service": {
         this.__resourceModel = new osparc.data.model.Service(resourceData);
-        initPromises.push(osparc.store.Services.getService(this.__resourceData["key"], this.__resourceData["version"]))
+        initPromises.push(osparc.store.Services.getService(this.__resourceData["key"], this.__resourceData["version"]));
         break;
       }
     }
