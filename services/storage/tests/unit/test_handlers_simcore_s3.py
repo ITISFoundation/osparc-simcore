@@ -210,6 +210,12 @@ def short_dsm_cleaner_interval(monkeypatch: pytest.MonkeyPatch) -> int:
 
 
 @pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
+@pytest.mark.parametrize(
     "project_params",
     [
         ProjectWithFilesParams(
@@ -285,6 +291,12 @@ async def test_copy_folders_from_valid_project_with_one_large_file(
             )
 
 
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
 @pytest.mark.parametrize(
     "project_params",
     [
@@ -462,6 +474,12 @@ async def test_connect_to_external(
 
 
 @pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
+@pytest.mark.parametrize(
     "project_params",
     [
         ProjectWithFilesParams(
@@ -498,6 +516,12 @@ async def test_create_and_delete_folders_from_project(
     )
 
 
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
 @pytest.mark.parametrize(
     "project_params",
     [
@@ -581,6 +605,12 @@ async def search_files_query_params(
     return q
 
 
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
 @pytest.mark.parametrize("expected_number_of_user_files", [0, 1, 3])
 @pytest.mark.parametrize("query_params_choice", ["default", "limited", "with_offset"])
 async def test_search_files_request(
@@ -612,6 +642,12 @@ async def test_search_files_request(
     assert [_.file_uuid for _ in found] == expected
 
 
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
 @pytest.mark.parametrize("search_startswith", [True, False])
 @pytest.mark.parametrize("search_sha256_checksum", [True, False])
 @pytest.mark.parametrize("kind", ["owned", "read", None])
