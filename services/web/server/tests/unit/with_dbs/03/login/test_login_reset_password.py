@@ -51,7 +51,9 @@ def client(
 
 
 async def test_reset_password_two_steps_action_confirmation_workflow(
-    client: TestClient, login_options: LoginOptions, capsys: pytest.CaptureFixture
+    client: TestClient,
+    login_options: LoginOptions,
+    capsys: pytest.CaptureFixture,
 ):
     assert client.app
 
@@ -66,11 +68,11 @@ async def test_reset_password_two_steps_action_confirmation_workflow(
         assert response.url.path == reset_url.path
         await assert_status(response, status.HTTP_200_OK, MSG_EMAIL_SENT.format(**user))
 
-        out, err = capsys.readouterr()
+        out, _ = capsys.readouterr()
         confirmation_url = parse_link(out)
         code = URL(confirmation_url).parts[-1]
 
-        # emulates user click on email url
+        # Emulates USER clicks on email's link
         response = await client.get(confirmation_url)
         assert response.status == 200
         assert (
@@ -78,26 +80,25 @@ async def test_reset_password_two_steps_action_confirmation_workflow(
             == URL(login_options.LOGIN_REDIRECT)
             .with_fragment(f"reset-password?code={code}")
             .path_qs
-        )
+        ), "Should redirect to front-end with special fragment"
 
-        # api/specs/webserver/v0/components/schemas/auth.yaml#/ResetPasswordForm
-        reset_allowed_url = client.app.router["complete_reset_password"].url_for(
-            code=code
-        )
+        # Emulates FRONT-END:
+        # SEE api/specs/webserver/v0/components/schemas/auth.yaml#/ResetPasswordForm
+        complete_reset_password_url = client.app.router[
+            "complete_reset_password"
+        ].url_for(code=code)
         new_password = generate_password(10)
         response = await client.post(
-            f"{reset_allowed_url}",
+            f"{complete_reset_password_url}",
             json={
                 "password": new_password,
                 "confirm": new_password,
             },
         )
-        payload = await response.json()
-        assert response.status == 200, payload
-        assert response.url.path == reset_allowed_url.path
         await assert_status(response, status.HTTP_200_OK, MSG_PASSWORD_CHANGED)
+        assert response.url.path == complete_reset_password_url.path
 
-        # Try new password
+        # Try NEW password
         logout_url = client.app.router["auth_logout"].url_for()
         response = await client.post(f"{logout_url}")
         assert response.url.path == logout_url.path
@@ -111,8 +112,8 @@ async def test_reset_password_two_steps_action_confirmation_workflow(
                 "password": new_password,
             },
         )
-        assert response.url.path == login_url.path
         await assert_status(response, status.HTTP_200_OK, MSG_LOGGED_IN)
+        assert response.url.path == login_url.path
 
 
 async def test_unknown_email(
