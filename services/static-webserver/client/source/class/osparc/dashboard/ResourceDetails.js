@@ -44,6 +44,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
     latestPromise
       .then(latestResourceData => {
         this.__resourceData = latestResourceData;
+        this.__resourceData["resourceType"] = resourceData["resourceType"];
         switch (resourceData["resourceType"]) {
           case "study":
           case "template": {
