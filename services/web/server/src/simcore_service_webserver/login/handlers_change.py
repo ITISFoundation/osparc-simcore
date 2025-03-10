@@ -96,12 +96,6 @@ async def initiate_reset_password(request: web.Request):
             )
         return ctx
 
-    # NOTE: Always same response: never want to confirm or deny the existence of an account
-    # with a given email or username.
-    initiated_response = flash_response(
-        MSG_EMAIL_SENT.format(email=request_body.email), "INFO"
-    )
-
     # CHECK user exists
     user = await db.get_user({"email": request_body.email})
     if not user:
@@ -112,73 +106,74 @@ async def initiate_reset_password(request: web.Request):
                 error_context=_get_error_context(),
             )
         )
-        return initiated_response
+    else:
+        assert user["email"] == request_body.email  # nosec
 
-    assert user["email"] == request_body.email  # nosec
-
-    # CHECK user state
-    try:
-        validate_user_status(user=dict(user), support_email=product.support_email)
-    except web.HTTPError as err:
-        # NOTE: we abuse here by reusing `validate_user_status` and catching http errors that we
-        # do not want to forward but rather log due to the special rules in this entrypoint
-        _logger.warning(
-            **create_troubleshotting_log_kwargs(
-                f"{_error_msg_prefix} for invalid user. Ignoring request.",
-                error=err,
-                error_context=_get_error_context(user),
+        # CHECK user state
+        try:
+            validate_user_status(user=dict(user), support_email=product.support_email)
+        except web.HTTPError as err:
+            # NOTE: we abuse here by reusing `validate_user_status` and catching http errors that we
+            # do not want to forward but rather log due to the special rules in this entrypoint
+            _logger.warning(
+                **create_troubleshotting_log_kwargs(
+                    f"{_error_msg_prefix} for invalid user. Ignoring request.",
+                    error=err,
+                    error_context=_get_error_context(user),
+                )
             )
-        )
-        return initiated_response
+        else:
+            assert user["status"] == ACTIVE  # nosec
+            assert isinstance(user["id"], int)  # nosec
 
-    assert user["status"] == ACTIVE  # nosec
-    assert isinstance(user["id"], int)  # nosec
+            # CHECK access to product
+            if not await users_service.is_user_in_product(
+                request.app, user_id=user["id"], product_name=product.name
+            ):
+                _logger.warning(
+                    **create_troubleshotting_log_kwargs(
+                        f"{_error_msg_prefix} for a user with NO access to this product. Ignoring request.",
+                        error=Exception("User cannot access this product"),
+                        error_context=_get_error_context(user),
+                    )
+                )
+            else:
+                try:
+                    # confirmation token that includes code to complete_reset_password
+                    confirmation = await get_or_create_confirmation(
+                        cfg, db, dict(user), action=RESET_PASSWORD
+                    )
 
-    # CHECK access to product
-    if not await users_service.is_user_in_product(
-        request.app, user_id=user["id"], product_name=product.name
-    ):
-        _logger.warning(
-            **create_troubleshotting_log_kwargs(
-                f"{_error_msg_prefix} for a user with NO access to this product. Ignoring request.",
-                error=Exception("User cannot access this product"),
-                error_context=_get_error_context(user),
-            )
-        )
-        return initiated_response
+                    # Produce a link so that the front-end can hit `complete_reset_password`
+                    link = make_confirmation_link(request, confirmation)
 
-    try:
-        # confirmation token that includes code to complete_reset_password
-        confirmation = await get_or_create_confirmation(
-            cfg, db, dict(user), action=RESET_PASSWORD
-        )
+                    # primary reset email with a URL and the normal instructions.
+                    await send_email_from_template(
+                        request,
+                        from_=product.support_email,
+                        to=request_body.email,
+                        template=await get_template_path(
+                            request, "reset_password_email.jinja2"
+                        ),
+                        context={
+                            "host": request.host,
+                            "link": link,
+                            "product": product,
+                        },
+                    )
+                except Exception as err:  # pylint: disable=broad-except
+                    _logger.exception(
+                        **create_troubleshotting_log_kwargs(
+                            "Unable to send email",
+                            error=err,
+                            error_context=_get_error_context(user),
+                        )
+                    )
+                    raise web.HTTPServiceUnavailable(reason=MSG_CANT_SEND_MAIL) from err
 
-        # Produce a link so that the front-end can hit `complete_reset_password`
-        link = make_confirmation_link(request, confirmation)
-
-        # primary reset email with a URL and the normal instructions.
-        await send_email_from_template(
-            request,
-            from_=product.support_email,
-            to=request_body.email,
-            template=await get_template_path(request, "reset_password_email.jinja2"),
-            context={
-                "host": request.host,
-                "link": link,
-                "product": product,
-            },
-        )
-    except Exception as err:  # pylint: disable=broad-except
-        _logger.exception(
-            **create_troubleshotting_log_kwargs(
-                "Unable to send email",
-                error=err,
-                error_context=_get_error_context(user),
-            )
-        )
-        raise web.HTTPServiceUnavailable(reason=MSG_CANT_SEND_MAIL) from err
-
-    return initiated_response
+    # NOTE: Always same response: never want to confirm or deny the existence of an account
+    # with a given email or username.
+    return flash_response(MSG_EMAIL_SENT.format(email=request_body.email), "INFO")
 
 
 class ChangeEmailBody(InputSchema):
