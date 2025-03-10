@@ -2,7 +2,7 @@
 
 import logging
 
-from celery.signals import worker_init, worker_shutdown
+from celery.signals import worker_init, worker_shutdown # type: ignore[import-untyped]
 from servicelib.logging_utils import config_all_loggers
 from simcore_service_storage.modules.celery.signals import (
     on_worker_init,

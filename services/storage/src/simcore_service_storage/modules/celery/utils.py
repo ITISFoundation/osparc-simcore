@@ -1,4 +1,4 @@
-from celery import Celery
+from celery import Celery   # type: ignore[import-untyped]
 from fastapi import FastAPI
 
 from .worker import CeleryTaskQueueWorker

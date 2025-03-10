@@ -4,9 +4,9 @@ import logging
 import traceback
 from typing import Any
 
-from celery import Celery, Task
-from celery.exceptions import Ignore
-from celery.contrib.abortable import AbortableTask
+from celery import Celery, Task # type: ignore[import-untyped]
+from celery.exceptions import Ignore    # type: ignore[import-untyped]
+from celery.contrib.abortable import AbortableTask  # type: ignore[import-untyped]
 from settings_library.celery import CelerySettings
 from settings_library.redis import RedisDatabase
 

@@ -4,7 +4,7 @@ import threading
 from typing import Final
 
 from asgi_lifespan import LifespanManager
-from celery import Celery
+from celery import Celery   # type: ignore[import-untyped]
 from fastapi import FastAPI
 from servicelib.async_utils import cancel_wait_task
 from ...core.application import create_app

@@ -1,6 +1,6 @@
 import logging
 
-from celery import Celery
+from celery import Celery   # type: ignore[import-untyped]
 from models_library.progress_bar import ProgressReport
 from servicelib.logging_utils import log_context
 
