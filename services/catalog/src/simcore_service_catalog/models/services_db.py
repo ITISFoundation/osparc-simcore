@@ -9,7 +9,14 @@ from models_library.services_access import ServiceGroupAccessRights
 from models_library.services_base import ServiceKeyVersion
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.utils.common_validators import empty_str_to_none_pre_validator
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import (
+    BaseModel,
+    BeforeValidator,
+    ConfigDict,
+    Field,
+    HttpUrl,
+    field_validator,
+)
 from pydantic.config import JsonDict
 from simcore_postgres_database.models.services_compatibility import CompatiblePolicyDict
 
@@ -83,6 +90,12 @@ class ServiceMetaDataDBGet(BaseModel):
     )
 
 
+def _httpurl_to_str(value: HttpUrl | str | None) -> str | None:
+    if isinstance(value, HttpUrl):
+        return f"{value}"
+    return value
+
+
 class ServiceMetaDataDBCreate(BaseModel):
     # primary-keys
     key: ServiceKey
@@ -96,7 +109,7 @@ class ServiceMetaDataDBCreate(BaseModel):
     description: str
     description_ui: bool = False
     thumbnail: str | None = None
-    icon: str | None = None
+    icon: Annotated[str | None, BeforeValidator(_httpurl_to_str)] = None
     version_display: str | None = None
 
     # tagging
