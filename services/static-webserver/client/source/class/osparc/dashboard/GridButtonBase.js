@@ -285,8 +285,7 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
     _applyThumbnail: function(value, old) {
       if (value.includes("@FontAwesome5Solid/")) {
         value += this.self().THUMBNAIL_SIZE;
-        const image = this.getChildControl("thumbnail").getChildControl("image");
-        image.set({
+        const image = this.getChildControl("thumbnail").set({
           source: value,
         });
 
