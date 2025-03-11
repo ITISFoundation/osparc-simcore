@@ -1,18 +1,23 @@
 
 # Error and Warning Message Guidelines
 
-- These guidelines ensure that messages are user-friendly, clear, and helpful while maintaining a professional tone. 🚀
-- Originated from [guidelines](https://wiki.speag.com/projects/SuperMash/wiki/Concepts/GUI) by @eofli and refined with ChatGPT
+These guidelines ensure that messages are user-friendly, clear, and helpful while maintaining a professional tone. 🚀
+
+Some details:
+
+- Originated from [guidelines](https://wiki.speag.com/projects/SuperMash/wiki/Concepts/GUI) by @eofli and refined iterating with AI
 - Here’s the fully expanded and rewritten list of **error and warning message guidelines**, each with:
   - A **guideline**
   - A **rationale**
   - A ❌ **bad example**
   - A ✅ **good example**
   - A **reference**
+- This list is intended to be short enough to be read and understood for humans as well as complete so that it can be used as context for automatic correction of error/warning messages
 
 ---
 
-### **1. Be Clear and Concise**
+## 1. Be Clear and Concise
+
 - **Guideline:** Use straightforward language to describe the issue without unnecessary words.
 - **Rationale:** Users can quickly understand the problem and take corrective action when messages are simple and to the point.
 - ❌ **Bad Example:**
@@ -23,7 +28,8 @@
 
 ---
 
-### **2. Provide Specific and Actionable Information**
+## 2. Provide Specific and Actionable Information
+
 - **Guideline:** Clearly state what went wrong and how the user can fix it.
 - **Rationale:** Specific guidance helps users resolve issues efficiently, reducing frustration.
 - ❌ **Bad Example:**
@@ -34,7 +40,8 @@
 
 ---
 
-### **3. Avoid Technical Jargon**
+## 3. Avoid Technical Jargon
+
 - **Guideline:** Use plain language instead of technical terms or codes.
 - **Rationale:** Non-technical users may not understand complex terminology, hindering their ability to resolve the issue.
 - ❌ **Bad Example:**
@@ -45,7 +52,8 @@
 
 ---
 
-### **4. Use a Polite and Non-Blaming Tone**
+## 4. Use a Polite and Non-Blaming Tone
+
 - **Guideline:** Frame messages in a way that doesn't place blame on the user.
 - **Rationale:** A respectful tone maintains a positive user experience and encourages users to continue using the application.
 - ❌ **Bad Example:**
@@ -56,7 +64,8 @@
 
 ---
 
-### **5. Avoid Negative Words and Phrases**
+## 5. Avoid Negative Words and Phrases
+
 - **Guideline:** Steer clear of words like "error," "failed," "invalid," or "illegal."
 - **Rationale:** Positive language reduces user anxiety and creates a more supportive experience.
 - ❌ **Bad Example:**
@@ -67,7 +76,8 @@
 
 ---
 
-### **6. Place Messages Appropriately**
+## 6. Place Messages Appropriately
+
 - **Guideline:** Display error messages near the relevant input field or in a clear, noticeable location.
 - **Rationale:** Proper placement ensures users notice the message and understand where the issue occurred.
 - ❌ **Bad Example:**
@@ -78,7 +88,8 @@
 
 ---
 
-### **7. Use Inline Validation When Possible**
+## 7. Use Inline Validation When Possible
+
 - **Guideline:** Provide real-time feedback as users interact with input fields.
 - **Rationale:** Inline validation allows users to correct errors immediately, enhancing the flow and efficiency of the interaction.
 - ❌ **Bad Example:**
@@ -89,7 +100,8 @@
 
 ---
 
-### **8. Avoid Using All-Caps and Excessive Punctuation**
+## 8. Avoid Using All-Caps and Excessive Punctuation
+
 - **Guideline:** Refrain from writing messages in all capital letters or using multiple exclamation marks.
 - **Rationale:** All-caps and excessive punctuation can be perceived as shouting, which may frustrate users.
 - ❌ **Bad Example:**
@@ -100,7 +112,8 @@
 
 ---
 
-### **9. Use Humor Sparingly**
+## 9. Use Humor Sparingly
+
 - **Guideline:** Incorporate light-hearted language only when appropriate and aligned with the application's tone.
 - **Rationale:** While humor can ease tension, it may not be suitable for all users or situations and can sometimes be misinterpreted.
 - ❌ **Bad Example:**
@@ -111,7 +124,8 @@
 
 ---
 
-### **10. Offer Alternative Solutions or Support**
+## 10. Offer Alternative Solutions or Support
+
 - **Guideline:** If the user cannot resolve the issue independently, provide a way to contact support or access help resources.
 - **Rationale:** Offering support options ensures users don't feel stranded and can seek help to resolve their issues.
 - ❌ **Bad Example:**
