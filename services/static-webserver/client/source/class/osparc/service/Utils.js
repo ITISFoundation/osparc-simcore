@@ -153,20 +153,27 @@ qx.Class.define("osparc.service.Utils", {
     DEPRECATED_AUTOUPDATABLE_INSTRUCTIONS: qx.locale.Manager.tr("Please Stop the Service and then Update it"),
     RETIRED_AUTOUPDATABLE_INSTRUCTIONS: qx.locale.Manager.tr("Please Update the Service"),
 
-    isUpdatable: function(metadata) {
+    __extractVersionFromHistory: function(metadata) {
       if (metadata["history"]) {
         const found = metadata["history"].find(history => history["version"] === metadata["version"]);
-        if (found && found["compatibility"] && found["compatibility"]["canUpdateTo"]) {
-          const latestCompatible = found["compatibility"]["canUpdateTo"];
-          return latestCompatible && (metadata["key"] !== latestCompatible["key"] || metadata["version"] !== latestCompatible["version"]);
-        }
+        return found;
+      }
+      return null;
+    },
+
+    isUpdatable: function(metadata) {
+      const historyEntry = this.__extractVersionFromHistory(metadata);
+      if (historyEntry && historyEntry["compatibility"] && historyEntry["compatibility"]["canUpdateTo"]) {
+        const latestCompatible = historyEntry["compatibility"]["canUpdateTo"];
+        return latestCompatible && (metadata["key"] !== latestCompatible["key"] || metadata["version"] !== latestCompatible["version"]);
       }
       return false;
     },
 
     isDeprecated: function(metadata) {
-      if (metadata && "retired" in metadata && ![null, undefined].includes(metadata["retired"])) {
-        const deprecationTime = new Date(metadata["retired"]);
+      const historyEntry = this.__extractVersionFromHistory(metadata);
+      if (historyEntry && "retired" in historyEntry && ![null, undefined].includes(historyEntry["retired"])) {
+        const deprecationTime = new Date(historyEntry["retired"]);
         const now = new Date();
         return deprecationTime.getTime() > now.getTime();
       }
@@ -174,8 +181,9 @@ qx.Class.define("osparc.service.Utils", {
     },
 
     isRetired: function(metadata) {
-      if (metadata && "retired" in metadata && ![null, undefined].includes(metadata["retired"])) {
-        const deprecationTime = new Date(metadata["retired"]);
+      const historyEntry = this.__extractVersionFromHistory(metadata);
+      if (historyEntry && "retired" in historyEntry && ![null, undefined].includes(historyEntry["retired"])) {
+        const deprecationTime = new Date(historyEntry["retired"]);
         const now = new Date();
         return deprecationTime.getTime() < now.getTime();
       }
@@ -183,8 +191,12 @@ qx.Class.define("osparc.service.Utils", {
     },
 
     getDeprecationDateText: function(metadata) {
-      const deprecationTime = new Date(metadata["retired"]);
-      return qx.locale.Manager.tr("It will be Retired: ") + osparc.utils.Utils.formatDate(deprecationTime);
+      const historyEntry = this.__extractVersionFromHistory(metadata);
+      if (historyEntry && "retired" in historyEntry && ![null, undefined].includes(historyEntry["retired"])) {
+        const deprecationTime = new Date(historyEntry["retired"]);
+        return qx.locale.Manager.tr("It will be Retired: ") + osparc.utils.Utils.formatDate(deprecationTime);
+      }
+      return "";
     },
 
     removeFileToKeyMap: function(service) {
