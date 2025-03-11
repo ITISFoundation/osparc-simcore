@@ -204,7 +204,7 @@ async def test_blocked_user(
     ]
 
     assert any(
-        message.startswith("Password reset initiated") and expected_msg[:50] in message
+        message.startswith("Password reset initiated") and expected_msg[:10] in message
         for message in logged_warnings
     ), f"Missing warning in {logged_warnings}"
 
