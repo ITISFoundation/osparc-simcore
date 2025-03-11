@@ -70,14 +70,20 @@ jobs:
           python-version: "3.11"
       - name: checkout
         uses: actions/checkout@v4
+      - name: Set environment variables based on event type
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "REPO=${{ inputs.target_repo }}" >> $GITHUB_ENV
+            echo "BRANCH=${{ inputs.target_branch }}" >> $GITHUB_ENV
+          else
+            echo "REPO=${{ github.event.pull_request.base.repo.full_name }}" >> $GITHUB_ENV
+            echo "BRANCH=${{ github.base_ref }}" >> $GITHUB_ENV
+          fi
       - name: check api-server backwards compatibility
         run: |
           ./scripts/openapi-diff.bash breaking --fail-on ERR\
             "https://raw.githubusercontent.com/$REPO/refs/heads/$BRANCH/services/api-server/openapi.json" \
             /specs/services/api-server/openapi.json
-        env:
-          REPO: ${{ github.event.pull_request.base.repo.full_name }} if ${{ github.event_name == 'pull_request' }} else ${{ inputs.target_repo }}
-          BRANCH: ${{ github.base_ref }} if ${{ github.event_name == 'pull_request' }} else ${{ inputs.target_branch }}
 
   all-oas-breaking:
     needs: api-specs
@@ -92,11 +98,17 @@ jobs:
           python-version: "3.11"
       - name: checkout
         uses: actions/checkout@v4
+      - name: Set environment variables based on event type
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "REPO=${{ inputs.target_repo }}" >> $GITHUB_ENV
+            echo "BRANCH=${{ inputs.target_branch }}" >> $GITHUB_ENV
+          else
+            echo "REPO=${{ github.event.pull_request.base.repo.full_name }}" >> $GITHUB_ENV
+            echo "BRANCH=${{ github.base_ref }}" >> $GITHUB_ENV
+          fi
       - name: Check openapi-specs backwards compatibility
         run: |
           ./ci/github/helpers/openapi-specs-diff.bash breaking \
             "https://raw.githubusercontent.com/$REPO/refs/heads/$BRANCH" \
             .
-        env:
-          REPO: ${{ github.event.pull_request.base.repo.full_name }} if ${{ github.event_name == 'pull_request' }} else ${{ inputs.target_repo }}
-          BRANCH: ${{ github.base_ref }} if ${{ github.event_name == 'pull_request' }} else ${{ inputs.target_branch }}
