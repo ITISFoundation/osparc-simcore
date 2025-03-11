@@ -17,7 +17,6 @@ from simcore_postgres_database.models.resource_tracker_service_runs import (
     resource_tracker_service_runs,
 )
 from simcore_postgres_database.utils_repos import transaction_context
-from sqlalchemy.engine import Result
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
 from ....exceptions.errors import CreditTransactionNotCreatedDBError
@@ -165,8 +164,7 @@ async def batch_update_credit_transaction_status_for_in_debt_transactions(
             resource_tracker_service_runs.c.project_id == f"{project_id}"
         )
     async with transaction_context(engine, connection) as conn:
-        result: Result = await conn.execute(update_stmt)
-        # TODO: CHECK WITH MATUS! rowcount is a member of ResultCursor and it is hidden in +1.4
+        result = await conn.execute(update_stmt)
         if result.rowcount:
             _logger.info(
                 "Wallet %s and project %s transactions in DEBT were changed to BILLED. Num. of transaction %s",
