@@ -162,9 +162,9 @@ async def test_create_and_cache_statics_json_vendor_vcs_overwrite(
 @pytest.mark.parametrize(
     "vtag, expected_vtag",
     [
-        ("1.11.34", "1.11.0"),
-        ("1.11.8", "1.11.0"),
-        ("1.11.0", "1.11.0"),
+        ("v1.11.34", "v1.11.0"),
+        ("v1.11.8", "v1.11.0"),
+        ("v1.11.0", "v1.11.0"),
     ],
 )
 def test__get_release_notes_vtag(vtag: str, expected_vtag: str):

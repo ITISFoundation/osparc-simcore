@@ -96,7 +96,7 @@ async def create_cached_indexes(app: web.Application) -> None:
 
 def _get_release_notes_vtag(vtag: str) -> str:
     version = Version(vtag)
-    return f"{version.major}.{version.minor}.0"
+    return f"v{version.major}.{version.minor}.0"
 
 
 async def create_and_cache_statics_json(app: web.Application) -> None:
