@@ -480,7 +480,7 @@ async def is_user_in_product_name(
         .where((users.c.id == user_id) & (products.c.name == product_name))
     )
     async with pass_or_acquire_connection(engine, connection) as conn:
-        got_user_id = await conn.scalar(query)
+        got_user_id: UserID | None = await conn.scalar(query)
         return got_user_id == user_id
 
 
