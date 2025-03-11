@@ -1,9 +1,7 @@
 import logging
 import time
 
-
-from celery import Task
-from common_library.errors_classes import OsparcErrorMixin
+from celery import Task  # type: ignore[import-untyped]
 from models_library.progress_bar import ProgressReport
 from models_library.projects_nodes_io import StorageFileID
 from servicelib.logging_utils import log_context
@@ -29,12 +27,3 @@ def export_data(task: Task, files: list[StorageFileID]):
             )
             time.sleep(10)
     return "done"
-
-
-class MyError(OsparcErrorMixin, Exception):
-   msg_template = "Something strange happened: {msg}"
-
-
-def export_data_with_error(task: Task, files: list[StorageFileID]):
-    msg = "BOOM!"
-    raise MyError(msg=msg)
