@@ -23,6 +23,7 @@ from ._constants import (
     MSG_CANT_SEND_MAIL,
     MSG_CHANGE_EMAIL_REQUESTED,
     MSG_EMAIL_SENT,
+    MSG_OFTEN_RESET_PASSWORD,
     MSG_PASSWORD_CHANGED,
     MSG_WRONG_PASSWORD,
 )
@@ -49,7 +50,9 @@ class ResetPasswordBody(InputSchema):
 
 
 @routes.post(f"/{API_VTAG}/auth/reset-password", name="initiate_reset_password")
-@global_rate_limit_route(number_of_requests=10, interval_seconds=HOUR)
+@global_rate_limit_route(
+    number_of_requests=10, interval_seconds=HOUR, error_msg=MSG_OFTEN_RESET_PASSWORD
+)
 async def initiate_reset_password(request: web.Request):
     """First of the "Two-Step Action Confirmation pattern": initiate_reset_password + complete_reset_password(code)
 

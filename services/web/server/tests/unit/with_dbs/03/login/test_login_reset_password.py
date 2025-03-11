@@ -5,7 +5,8 @@
 
 
 import asyncio
-from collections.abc import Callable
+import contextlib
+from collections.abc import AsyncIterator, Callable
 
 import pytest
 from aiohttp.test_utils import TestClient, TestServer
@@ -22,13 +23,15 @@ from simcore_service_webserver.login._constants import (
     MSG_ACTIVATION_REQUIRED,
     MSG_EMAIL_SENT,
     MSG_LOGGED_IN,
-    MSG_OFTEN_RESET_PASSWORD,
     MSG_PASSWORD_CHANGED,
     MSG_USER_BANNED,
     MSG_USER_EXPIRED,
 )
 from simcore_service_webserver.login.settings import LoginOptions
-from simcore_service_webserver.login.storage import AsyncpgStorage
+from simcore_service_webserver.login.storage import (
+    AsyncpgStorage,
+    ConfirmationTokenDict,
+)
 from simcore_service_webserver.users import api as users_service
 from yarl import URL
 
@@ -297,29 +300,14 @@ async def test_unregistered_product(
         ), f"Missing warning in {logged_warnings}"
 
 
-@pytest.mark.skip(reason="UNDER DEVELOPEMNT")
-async def test_too_often(
-    client: TestClient,
-    db: AsyncpgStorage,
-    capsys: pytest.CaptureFixture,
-):
-    assert client.app
-    reset_url = client.app.router["initiate_reset_password"].url_for()
+@contextlib.asynccontextmanager
+async def confirmation_ctx(
+    db: AsyncpgStorage, user
+) -> AsyncIterator[ConfirmationTokenDict]:
+    confirmation = await db.create_confirmation(
+        user["id"], ConfirmationAction.RESET_PASSWORD.name
+    )
 
-    async with NewUser(app=client.app) as user:
-        confirmation = await db.create_confirmation(
-            user["id"], ConfirmationAction.RESET_PASSWORD.name
-        )
-        response = await client.post(
-            f"{reset_url}",
-            json={
-                "email": user["email"],
-            },
-        )
-        await db.delete_confirmation(confirmation)
+    yield confirmation
 
-    assert response.url.path == reset_url.path
-    await assert_status(response, status.HTTP_200_OK, MSG_EMAIL_SENT.format(**user))
-
-    out, _ = capsys.readouterr()
-    assert parse_test_marks(out)["reason"] == MSG_OFTEN_RESET_PASSWORD
+    await db.delete_confirmation(confirmation)
