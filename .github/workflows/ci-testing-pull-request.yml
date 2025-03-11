@@ -10,6 +10,20 @@ on:
     branches:
       - "master"
 
+  workflow_dispatch:
+    inputs:
+      target_repo:
+        description: full repository name (e.g. 'ITISFoundation/osparc-simcore') to check backwards compatibility against
+        required: true
+        default: "ITISFoundation/osparc-simcore"
+        type: environment
+      target_branch:
+        description: branch name (e.g. 'master') to check backwards compatibility against
+        required: true
+        default: "master"
+        type: environment
+
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -39,7 +53,7 @@ jobs:
       - name: Check openapi specs are up to date
         run: |
           if ! ./ci/github/helpers/openapi-specs-diff.bash diff \
-            https://raw.githubusercontent.com/${{ github.event.pull_request.head.repo.full_name }}/${{ github.event.pull_request.head.sha }} \
+            "https://raw.githubusercontent.com/$GITHUB_REPOSITORY/$GITHUB_SHA" \
             .; then \
             echo "::error:: OAS are not up to date. Run 'make openapi-specs' to update them"; exit 1; \
           fi
@@ -59,8 +73,11 @@ jobs:
       - name: check api-server backwards compatibility
         run: |
           ./scripts/openapi-diff.bash breaking --fail-on ERR\
-            https://raw.githubusercontent.com/${{ github.event.pull_request.base.repo.full_name }}/refs/heads/${{ github.base_ref }}/services/api-server/openapi.json \
+            "https://raw.githubusercontent.com/$REPO/refs/heads/$BRANCH/services/api-server/openapi.json" \
             /specs/services/api-server/openapi.json
+        env:
+          REPO: ${{ github.event.pull_request.base.repo.full_name }} if ${{ github.event_name == 'pull_request' }} else ${{ inputs.target_repo }}
+          BRANCH: ${{ github.base_ref }} if ${{ github.event_name == 'pull_request' }} else ${{ inputs.target_branch }}
 
   all-oas-breaking:
     needs: api-specs
@@ -78,5 +95,8 @@ jobs:
       - name: Check openapi-specs backwards compatibility
         run: |
           ./ci/github/helpers/openapi-specs-diff.bash breaking \
-            https://raw.githubusercontent.com/${{ github.event.pull_request.base.repo.full_name }}/refs/heads/${{ github.base_ref }} \
+            "https://raw.githubusercontent.com/$REPO/refs/heads/$BRANCH" \
             .
+        env:
+          REPO: ${{ github.event.pull_request.base.repo.full_name }} if ${{ github.event_name == 'pull_request' }} else ${{ inputs.target_repo }}
+          BRANCH: ${{ github.base_ref }} if ${{ github.event_name == 'pull_request' }} else ${{ inputs.target_branch }}
