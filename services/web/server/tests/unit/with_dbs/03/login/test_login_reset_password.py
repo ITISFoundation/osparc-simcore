@@ -9,12 +9,15 @@ from collections.abc import Callable
 
 import pytest
 from aiohttp.test_utils import TestClient, TestServer
+from models_library.products import ProductName
 from pytest_mock import MockType
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import NewUser, parse_link, parse_test_marks
 from servicelib.aiohttp import status
+from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
 from servicelib.utils_secrets import generate_password
 from simcore_service_webserver.db.models import ConfirmationAction, UserStatus
+from simcore_service_webserver.groups import api as groups_service
 from simcore_service_webserver.login._constants import (
     MSG_ACTIVATION_REQUIRED,
     MSG_EMAIL_SENT,
@@ -26,6 +29,7 @@ from simcore_service_webserver.login._constants import (
 )
 from simcore_service_webserver.login.settings import LoginOptions
 from simcore_service_webserver.login.storage import AsyncpgStorage
+from simcore_service_webserver.users import api as users_service
 from yarl import URL
 
 #
@@ -49,10 +53,11 @@ def client(
     return event_loop.run_until_complete(aiohttp_client(web_server))
 
 
-async def test_reset_password_two_steps_action_confirmation_workflow(
+async def test_two_steps_action_confirmation_workflow(
     client: TestClient,
     login_options: LoginOptions,
     capsys: pytest.CaptureFixture,
+    caplog: pytest.LogCaptureFixture,
 ):
     assert client.app
 
@@ -114,6 +119,11 @@ async def test_reset_password_two_steps_action_confirmation_workflow(
         )
         await assert_status(response, status.HTTP_200_OK, MSG_LOGGED_IN)
         assert response.url.path == login_url.path
+
+        # Ensure there are no warnings
+        assert not any(
+            record.levelname == "WARNING" for record in caplog.records
+        ), "Unexpected warnings found"
 
 
 async def test_unknown_email(
@@ -225,6 +235,55 @@ async def test_inactive_user(
         and MSG_ACTIVATION_REQUIRED[:20] in message
         for message in logged_warnings
     ), f"Missing warning in {logged_warnings}"
+
+
+async def test_unregistered_product(
+    default_product_name: ProductName,
+    app_products_names: list[ProductName],
+    client: TestClient,
+    capsys: pytest.CaptureFixture,
+    caplog: pytest.LogCaptureFixture,
+):
+    assert client.app
+
+    async with NewUser(app=client.app) as user:
+
+        await groups_service.auto_add_user_to_product_group(
+            client.app, user_id=user["id"], product_name=default_product_name
+        )
+        assert users_service.is_user_in_product(
+            client.app, user_id=user["id"], product_name=default_product_name
+        )
+
+        other_product = next(
+            name for name in app_products_names if name != default_product_name
+        )
+
+        # Simulate user registered in a different product
+        reset_url = client.app.router["initiate_reset_password"].url_for()
+        response = await client.post(
+            f"{reset_url}",
+            json={
+                "email": user["email"],
+            },
+            headers={X_PRODUCT_NAME_HEADER: other_product},
+        )
+        assert response.url.path == reset_url.path
+        await assert_status(response, status.HTTP_200_OK, MSG_EMAIL_SENT.format(**user))
+
+        # Email is printed in the out
+        out, _ = capsys.readouterr()
+        assert not parse_link(out), "Expected no email to be sent"
+
+        # expected_msg contains {support_email} at the end of the string
+        logged_warnings = [
+            record.message for record in caplog.records if record.levelname == "WARNING"
+        ]
+
+        assert any(
+            message.startswith("Password reset initiated")
+            for message in logged_warnings
+        ), f"Missing warning in {logged_warnings}"
 
 
 async def test_too_often(
