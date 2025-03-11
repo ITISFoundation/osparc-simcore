@@ -30,7 +30,6 @@ aiohttp_session[secure]
 aiopg[sa] # db
 aiosmtplib # email
 asyncpg # db
-bcrypt # security
 captcha
 cryptography # security
 deepdiff[optimize] # diffs data-structures
