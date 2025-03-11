@@ -3,10 +3,11 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from functools import wraps
 from math import ceil
-from typing import NamedTuple
+from typing import Final, NamedTuple
 
 from aiohttp.web_exceptions import HTTPTooManyRequests
-from common_library.json_serialization import json_dumps
+from models_library.rest_error import EnvelopedError, ErrorGet
+from servicelib.aiohttp import status
 
 
 class RateLimitSetup(NamedTuple):
@@ -14,7 +15,16 @@ class RateLimitSetup(NamedTuple):
     interval_seconds: float
 
 
-def global_rate_limit_route(number_of_requests: int, interval_seconds: float):
+MSG_TOO_MANY_REQUESTS: Final[str] = (
+    "Requests are being made too frequently. Please wait a moment before trying again."
+)
+
+
+def global_rate_limit_route(
+    number_of_requests: int,
+    interval_seconds: float,
+    error_msg: str = MSG_TOO_MANY_REQUESTS,
+):
     """
     Limits the requests per given interval to this endpoint
     from all incoming sources.
@@ -62,15 +72,17 @@ def global_rate_limit_route(number_of_requests: int, interval_seconds: float):
                         "Content-Type": "application/json",
                         "Retry-After": f"{retry_after_sec}",
                     },
-                    text=json_dumps(
-                        {
-                            "error": {
-                                "logs": [{"message": "API rate limit exceeded."}],
-                                "status": HTTPTooManyRequests.status_code,
-                            }
-                        }
-                    ),
+                    text=EnvelopedError(
+                        error=ErrorGet(
+                            message=error_msg,
+                            status=status.HTTP_429_TOO_MANY_REQUESTS,
+                        )
+                    ).model_dump_json(),
                 )
+
+            assert (  # nosec
+                HTTPTooManyRequests.status_code == status.HTTP_429_TOO_MANY_REQUESTS
+            )
 
             # increase counter and return original function call
             context.remaining -= 1
