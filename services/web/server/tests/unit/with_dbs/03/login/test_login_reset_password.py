@@ -259,6 +259,7 @@ async def test_unregistered_product(
 
     async with NewUser(app=client.app) as user:
 
+        # allow in
         await groups_service.auto_add_user_to_product_group(
             client.app, user_id=user["id"], product_name=default_product_name
         )
