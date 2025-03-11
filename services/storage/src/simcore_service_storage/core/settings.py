@@ -79,11 +79,15 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         description="Maximal amount of threads used by underlying S3 client to transfer data to S3 backend",
     )
 
-    STORAGE_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
-        default=False,
-        validation_alias=AliasChoices(
-            "STORAGE_LOG_FORMAT_LOCAL_DEV_ENABLED",
-            "LOG_FORMAT_LOCAL_DEV_ENABLED",
+    STORAGE_LOG_FORMAT_LOCAL_DEV_ENABLED: Annotated[
+        bool,
+        Field(
+            default=False,
+            validation_alias=AliasChoices(
+                "STORAGE_LOG_FORMAT_LOCAL_DEV_ENABLED",
+                "LOG_FORMAT_LOCAL_DEV_ENABLED",
+            ),
+            description="Enables local development _logger format. WARNING: make sure it is disabled if you want to have structured logs!",
         ),
     ]
 
@@ -91,7 +95,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         RabbitSettings | None,
         Field(
             json_schema_extra={"auto_default_from_env": True},
-        )
+        ),
     ]
 
     STORAGE_S3_CLIENT_MAX_TRANSFER_CONCURRENCY: Annotated[
