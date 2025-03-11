@@ -8,10 +8,10 @@ Codes have expiration date (duration time is configurable)
 
 import logging
 from datetime import datetime
-from typing import Any
 from urllib.parse import quote
 
 from aiohttp import web
+from models_library.users import UserID
 from yarl import URL
 
 from ..db.models import ConfirmationAction
@@ -65,12 +65,12 @@ def get_expiration_date(
 async def get_or_create_confirmation(
     cfg: LoginOptions,
     db: AsyncpgStorage,
-    user: dict[str, Any],
+    user_id: UserID,
     action: ConfirmationAction,
 ) -> ConfirmationTokenDict:
 
     confirmation: ConfirmationTokenDict | None = await db.get_confirmation(
-        {"user": user, "action": action}
+        {"user": {"id": user_id}, "action": action}
     )
 
     if confirmation is not None and is_confirmation_expired(cfg, confirmation):
@@ -82,7 +82,7 @@ async def get_or_create_confirmation(
         confirmation = None
 
     if confirmation is None:
-        confirmation = await db.create_confirmation(user["id"], action=action)
+        confirmation = await db.create_confirmation(user_id, action=action)
 
     return confirmation
 
