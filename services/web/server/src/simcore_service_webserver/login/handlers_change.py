@@ -71,7 +71,10 @@ async def initiate_reset_password(request: web.Request):
 
     request_body = await parse_request_body_as(ResetPasswordBody, request)
 
-    _error_msg_prefix = "Password reset initiated"
+    _error_msg_prefix, _error_msg_suffix = (
+        "Password reset initiated",
+        "Ignoring request.",
+    )
 
     def _get_error_context(
         user=None,
@@ -102,26 +105,26 @@ async def initiate_reset_password(request: web.Request):
     if not user:
         _logger.warning(
             **create_troubleshotting_log_kwargs(
-                "{_error_msg_prefix} for non-existent email. Ignoring request.",
+                f"{_error_msg_prefix} for non-existent email. {_error_msg_suffix}",
                 error=Exception("No user found with this email"),
                 error_context=_get_error_context(),
             )
         )
         ok = False
 
-    assert user
     if ok:
+        assert user  # nosec
         assert user["email"] == request_body.email  # nosec
 
         # CHECK user state
         try:
             validate_user_status(user=dict(user), support_email=product.support_email)
         except web.HTTPError as err:
-            # NOTE: we abuse here by reusing `validate_user_status` and catching http errors that we
+            # NOTE: we abuse here (untiby reusing `validate_user_status` and catching http errors that we
             # do not want to forward but rather log due to the special rules in this entrypoint
             _logger.warning(
                 **create_troubleshotting_log_kwargs(
-                    f"{_error_msg_prefix} for invalid user. Ignoring request.",
+                    f"{_error_msg_prefix} for invalid user. {_error_msg_suffix}.",
                     error=err,
                     error_context=_get_error_context(user),
                 )
@@ -129,6 +132,7 @@ async def initiate_reset_password(request: web.Request):
             ok = False
 
     if ok:
+        assert user  # nosec
         assert user["status"] == ACTIVE  # nosec
         assert isinstance(user["id"], int)  # nosec
 
@@ -138,7 +142,7 @@ async def initiate_reset_password(request: web.Request):
         ):
             _logger.warning(
                 **create_troubleshotting_log_kwargs(
-                    f"{_error_msg_prefix} for a user with NO access to this product. Ignoring request.",
+                    f"{_error_msg_prefix} for a user with NO access to this product. {_error_msg_suffix}.",
                     error=Exception("User cannot access this product"),
                     error_context=_get_error_context(user),
                 )
@@ -146,6 +150,8 @@ async def initiate_reset_password(request: web.Request):
             ok = False
 
     if ok:
+        assert user  # nosec
+
         try:
             # confirmation token that includes code to complete_reset_password
             confirmation = await get_or_create_confirmation(
