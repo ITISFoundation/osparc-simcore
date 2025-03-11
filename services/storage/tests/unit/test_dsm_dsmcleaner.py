@@ -169,11 +169,9 @@ async def test_clean_expired_uploads_deletes_expired_pending_uploads(
         is_directory=is_directory,
     )
     # ensure the database is correctly set up
-    FileMetaData
-    async with sqlalchemy_async_engine.connect() as conn:
-        fmd = await FileMetaDataRepository.instance(sqlalchemy_async_engine).get(
-            file_id=file_or_directory_id
-        )
+    fmd = await FileMetaDataRepository.instance(sqlalchemy_async_engine).get(
+        file_id=file_or_directory_id
+    )
     assert fmd
     assert fmd.upload_expires_at
     # ensure we have now an upload id IF the link was presigned ONLY

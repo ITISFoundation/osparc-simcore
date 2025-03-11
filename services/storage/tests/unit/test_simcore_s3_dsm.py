@@ -62,14 +62,13 @@ async def test__copy_path_s3_s3(
         )
 
     async def _copy_s3_path(s3_file_id_to_copy: SimcoreS3FileID) -> None:
-        async with sqlalchemy_async_engine.connect() as conn:
-            exiting_fmd = await FileMetaDataRepository.instance(
-                sqlalchemy_async_engine
-            ).get(file_id=s3_file_id_to_copy)
+        existing_fmd = await FileMetaDataRepository.instance(
+            sqlalchemy_async_engine
+        ).get(file_id=s3_file_id_to_copy)
 
         await simcore_s3_dsm._copy_path_s3_s3(  # noqa: SLF001
             user_id=user_id,
-            src_fmd=exiting_fmd,
+            src_fmd=existing_fmd,
             dst_file_id=_get_dest_file_id(s3_file_id_to_copy),
             bytes_transfered_cb=mock_copy_transfer_cb,
         )
