@@ -9,7 +9,7 @@ from copy import deepcopy
 import pytest
 from pint import UnitRegistry
 from pytest_benchmark.fixture import BenchmarkFixture
-from simcore_service_webserver.catalog._rest_controller import RESPONSE_MODEL_POLICY
+from simcore_service_webserver.catalog._controller_rest import RESPONSE_MODEL_POLICY
 from simcore_service_webserver.catalog._units_service import (
     replace_service_input_outputs,
 )

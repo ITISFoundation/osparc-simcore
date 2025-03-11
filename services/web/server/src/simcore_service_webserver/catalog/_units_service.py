@@ -3,7 +3,7 @@ from typing import Any
 from models_library.services import BaseServiceIOModel, ServiceInput, ServiceOutput
 from pint import PintError, UnitRegistry
 
-from .controller_rest_schemas import (
+from ._controller_rest_schemas import (
     ServiceInputGetFactory,
     ServiceOutputGetFactory,
     get_unit_name,
