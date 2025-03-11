@@ -1,8 +1,9 @@
+from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from functools import wraps
 from math import ceil
-from typing import Callable, NamedTuple
+from typing import NamedTuple
 
 from aiohttp.web_exceptions import HTTPTooManyRequests
 from common_library.json_serialization import json_dumps
@@ -41,7 +42,7 @@ def global_rate_limit_route(number_of_requests: int, interval_seconds: float):
 
         @wraps(decorated_function)
         async def _wrapper(*args, **kwargs):
-            utc_now = datetime.utcnow()
+            utc_now = datetime.now(UTC)
             utc_now_timestamp = datetime.timestamp(utc_now)
 
             # reset counter & first time initialization
