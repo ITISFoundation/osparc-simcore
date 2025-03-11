@@ -81,9 +81,10 @@ async def test_global_rate_limit_route(requests_per_second: float, client: TestC
 
     msg = []
     for i, task in enumerate(tasks):
-        event = asyncio.Event()
-        task.add_done_callback(lambda _: event.set())
-        await event.wait()
+
+        while not task.done():
+            await asyncio.sleep(0.01)
+
         assert not task.cancelled()
         assert not task.exception()
         msg.append(
