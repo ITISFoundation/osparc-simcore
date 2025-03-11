@@ -58,6 +58,7 @@ qx.Class.define("osparc.store.Services", {
         const serviceVersions = services[key];
         versions = versions.concat(Object.keys(serviceVersions));
         if (filterDeprecated) {
+          // OM: the list-latest-services endpoint doesn't return the "retired" info in its data anymore
           versions = versions.filter(version => {
             if (services[key][version]["retired"]) {
               return false;
@@ -85,6 +86,7 @@ qx.Class.define("osparc.store.Services", {
       const services = this.__servicesCached;
       if (key in services && version in services[key]) {
         const serviceMD = services[key][version];
+        // OM: the list-latest-services endpoint doesn't return the "compatibility" info in its data anymore
         if (serviceMD["compatibility"] && serviceMD["compatibility"]["canUpdateTo"]) {
           const canUpdateTo = serviceMD["compatibility"]["canUpdateTo"];
           return {
@@ -174,6 +176,7 @@ qx.Class.define("osparc.store.Services", {
                 // do not add frontend services
                 continue;
               }
+              // OM: the list-latest-services endpoint doesn't return the "retired" info in its data anymore
               if (excludeDeprecated && serviceLatest["retired"]) {
                 // first check if a previous version of this service isn't retired
                 let versions = Object.keys(this.__servicesCached[key]);
