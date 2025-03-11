@@ -142,7 +142,7 @@ def _print_dynamic_instances(
                     f"Up: {utils.timedelta_formatting(time_now - instance.ec2_instance.launch_time, color_code=True)}",
                     f"ExtIP: {instance.ec2_instance.public_ip_address}",
                     f"IntIP: {instance.ec2_instance.private_ip_address}",
-                    f"/mnt/docker(free): {utils.color_encode_with_threshold(instance.disk_space.human_readable(), instance.disk_space,  TypeAdapter(ByteSize).validate_python('15Gib'))}",
+                    f"/mnt/docker(free): {utils.color_encode_with_threshold(instance.disk_space.human_readable(), instance.disk_space, TypeAdapter(ByteSize).validate_python('15Gib'))}",
                 ]
             ),
             service_table,
@@ -190,7 +190,7 @@ def _print_computational_clusters(
                     f"UserID: {cluster.primary.user_id}",
                     f"WalletID: {cluster.primary.wallet_id}",
                     f"Heartbeat: {utils.timedelta_formatting(time_now - cluster.primary.last_heartbeat) if cluster.primary.last_heartbeat else 'n/a'}",
-                    f"/mnt/docker(free): {utils.color_encode_with_threshold(cluster.primary.disk_space.human_readable(), cluster.primary.disk_space,  TypeAdapter(ByteSize).validate_python('15Gib'))}",
+                    f"/mnt/docker(free): {utils.color_encode_with_threshold(cluster.primary.disk_space.human_readable(), cluster.primary.disk_space, TypeAdapter(ByteSize).validate_python('15Gib'))}",
                 ]
             ),
             "\n".join(
@@ -223,7 +223,7 @@ def _print_computational_clusters(
             table.add_row(
                 "\n".join(
                     [
-                        f"[italic]{utils.color_encode_with_state(f'Worker {index+1}', worker.ec2_instance)}[/italic]",
+                        f"[italic]{utils.color_encode_with_state(f'Worker {index + 1}', worker.ec2_instance)}[/italic]",
                         f"Name: {worker.name}",
                         f"ID: {worker.ec2_instance.id}",
                         f"AMI: {worker.ec2_instance.image_id}",
@@ -232,7 +232,7 @@ def _print_computational_clusters(
                         f"ExtIP: {worker.ec2_instance.public_ip_address}",
                         f"IntIP: {worker.ec2_instance.private_ip_address}",
                         f"DaskWorkerIP: {worker.dask_ip}",
-                        f"/mnt/docker(free): {utils.color_encode_with_threshold(worker.disk_space.human_readable(), worker.disk_space,  TypeAdapter(ByteSize).validate_python('15Gib'))}",
+                        f"/mnt/docker(free): {utils.color_encode_with_threshold(worker.disk_space.human_readable(), worker.disk_space, TypeAdapter(ByteSize).validate_python('15Gib'))}",
                         "",
                     ]
                 ),
@@ -301,7 +301,6 @@ async def _analyze_computational_instances(
     computational_instances: list[ComputationalInstance],
     ssh_key_path: Path | None,
 ) -> list[ComputationalCluster]:
-
     all_disk_spaces = [UNDEFINED_BYTESIZE] * len(computational_instances)
     if ssh_key_path is not None:
         all_disk_spaces = await asyncio.gather(
@@ -414,7 +413,7 @@ async def _parse_dynamic_instances(
     return dynamic_instances
 
 
-async def summary(state: AppState, user_id: int | None, wallet_id: int | None) -> None:
+async def summary(state: AppState, user_id: int | None, wallet_id: int | None) -> bool:
     # get all the running instances
     assert state.ec2_resource_autoscaling
     dynamic_instances = await ec2.list_dynamic_instances_from_ec2(
@@ -429,6 +428,14 @@ async def summary(state: AppState, user_id: int | None, wallet_id: int | None) -
         state.ec2_resource_autoscaling.meta.client.meta.region_name,
     )
 
+    time_threshold = arrow.utcnow().shift(minutes=-30).datetime
+
+    dynamic_services_in_error = any(
+        service.needs_manual_intervention and service.created_at < time_threshold
+        for instance in dynamic_autoscaled_instances
+        for service in instance.running_services
+    )
+
     assert state.ec2_resource_clusters_keeper
     computational_instances = await ec2.list_computational_instances_from_ec2(
         state, user_id, wallet_id
@@ -441,6 +448,8 @@ async def summary(state: AppState, user_id: int | None, wallet_id: int | None) -
         state.environment,
         state.ec2_resource_clusters_keeper.meta.client.meta.region_name,
     )
+
+    return not dynamic_services_in_error
 
 
 def _print_computational_tasks(
@@ -638,3 +647,7 @@ async def trigger_cluster_termination(
         )
     else:
         rich.print("not deleting anything")
+
+
+async def check_database_connection(state: AppState) -> None:
+    await db.check_db_connection(state)

@@ -64,9 +64,10 @@ def test_jupyterlab(
     page: Page,
     log_in_and_out: RestartableWebSocket,
     create_project_from_service_dashboard: Callable[
-        [ServiceType, str, str | None], dict[str, Any]
+        [ServiceType, str, str | None, str | None], dict[str, Any]
     ],
     service_key: str,
+    service_version: str | None,
     large_file_size: ByteSize,
     large_file_block_size: ByteSize,
     product_url: AnyUrl,
@@ -86,7 +87,7 @@ def test_jupyterlab(
         ),
     ):
         project_data = create_project_from_service_dashboard(
-            ServiceType.DYNAMIC, service_key, None
+            ServiceType.DYNAMIC, service_key, None, service_version
         )
         assert "workbench" in project_data, "Expected workbench to be in project data!"
         assert isinstance(

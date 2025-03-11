@@ -9,7 +9,7 @@ import sqlalchemy as sa
 from aiopg.sa.engine import Engine
 from aiopg.sa.result import ResultProxy
 from pytest_simcore.helpers.faker_factories import random_user
-from simcore_postgres_database.errors import ForeignKeyViolation, NotNullViolation
+from simcore_postgres_database.aiopg_errors import ForeignKeyViolation, NotNullViolation
 from simcore_postgres_database.models.cluster_to_groups import cluster_to_groups
 from simcore_postgres_database.models.clusters import ClusterType, clusters
 from simcore_postgres_database.models.users import users
@@ -41,7 +41,7 @@ async def user_group_id(aiopg_engine: Engine, user_id: int) -> int:
 
 
 async def test_cluster_without_owner_forbidden(
-    create_fake_cluster: Callable[..., Awaitable[int]]
+    create_fake_cluster: Callable[..., Awaitable[int]],
 ):
     with pytest.raises(NotNullViolation):
         await create_fake_cluster()

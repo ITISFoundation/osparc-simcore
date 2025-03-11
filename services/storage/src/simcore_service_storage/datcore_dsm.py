@@ -5,6 +5,7 @@ from pathlib import Path
 import arrow
 from fastapi import FastAPI
 from models_library.api_schemas_storage.storage_schemas import (
+    UNDEFINED_SIZE_TYPE,
     DatCoreCollectionName,
     DatCoreDatasetName,
     DatCorePackageName,
@@ -186,6 +187,63 @@ class DatCoreDataManager(BaseDataManager):
             None,
             1,
         )
+
+    async def compute_path_size(self, user_id: UserID, *, path: Path) -> ByteSize:
+        """returns the total size of an arbitrary path"""
+        api_token, api_secret = await self._get_datcore_tokens(user_id)
+        api_token, api_secret = _check_api_credentials(api_token, api_secret)
+
+        # if this is a dataset we might have the size directly
+        with contextlib.suppress(ValidationError):
+            dataset_id = TypeAdapter(DatCoreDatasetName).validate_python(f"{path}")
+            _, dataset_size = await datcore_adapter.get_dataset(
+                self.app,
+                api_key=api_token,
+                api_secret=api_secret,
+                dataset_id=dataset_id,
+            )
+            if dataset_size is not None:
+                return dataset_size
+
+        # generic computation (slow and unoptimized - could be improved if necessary by using datcore data better)
+        try:
+            accumulated_size = ByteSize(0)
+            paths_to_process = [path]
+
+            while paths_to_process:
+                current_path = paths_to_process.pop()
+                paths, cursor, _ = await self.list_paths(
+                    user_id, file_filter=current_path, cursor=None, limit=50
+                )
+
+                while paths:
+                    for p in paths:
+                        if p.file_meta_data is not None:
+                            # this is a file
+                            assert (
+                                p.file_meta_data.file_size is not UNDEFINED_SIZE_TYPE
+                            )  # nosec
+                            assert isinstance(
+                                p.file_meta_data.file_size, ByteSize
+                            )  # nosec
+                            accumulated_size = ByteSize(
+                                accumulated_size + p.file_meta_data.file_size
+                            )
+                            continue
+                        paths_to_process.append(p.path)
+
+                    if cursor:
+                        paths, cursor, _ = await self.list_paths(
+                            user_id, file_filter=current_path, cursor=cursor, limit=50
+                        )
+                    else:
+                        break
+
+            return accumulated_size
+
+        except ValidationError:
+            # invalid path
+            return ByteSize(0)
 
     async def list_files(
         self,
