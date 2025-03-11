@@ -33,7 +33,6 @@ from .storage import AsyncpgStorage, get_plugin_storage
 from .utils import (
     ACTIVE,
     CHANGE_EMAIL,
-    RESET_PASSWORD,
     flash_response,
     validate_user_status,
 )
@@ -150,7 +149,7 @@ async def initiate_reset_password(request: web.Request):
         try:
             # confirmation token that includes code to complete_reset_password
             confirmation = await get_or_create_confirmation(
-                cfg, db, user_id=user["id"], action=RESET_PASSWORD
+                cfg, db, user_id=user["id"], action="RESET_PASSWORD"
             )
 
             # Produce a link so that the front-end can hit `complete_reset_password`
@@ -213,7 +212,7 @@ async def submit_request_to_change_email(request: web.Request):
 
     # create new confirmation to ensure email is actually valid
     confirmation = await db.create_confirmation(
-        user["id"], CHANGE_EMAIL, request_body.email
+        user_id=user["id"], action="CHANGE_EMAIL", data=request_body.email
     )
     link = make_confirmation_link(request, confirmation)
     try:

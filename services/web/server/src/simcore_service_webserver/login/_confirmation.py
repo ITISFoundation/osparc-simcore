@@ -14,9 +14,8 @@ from aiohttp import web
 from models_library.users import UserID
 from yarl import URL
 
-from ..db.models import ConfirmationAction
 from .settings import LoginOptions
-from .storage import AsyncpgStorage, ConfirmationTokenDict
+from .storage import ActionLiteralStr, AsyncpgStorage, ConfirmationTokenDict
 
 log = logging.getLogger(__name__)
 
@@ -66,7 +65,7 @@ async def get_or_create_confirmation(
     cfg: LoginOptions,
     db: AsyncpgStorage,
     user_id: UserID,
-    action: ConfirmationAction,
+    action: ActionLiteralStr,
 ) -> ConfirmationTokenDict:
 
     confirmation: ConfirmationTokenDict | None = await db.get_confirmation(
