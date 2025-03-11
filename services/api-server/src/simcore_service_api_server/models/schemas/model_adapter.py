@@ -22,7 +22,7 @@ from models_library.api_schemas_webserver.licensed_items import (
 from models_library.api_schemas_webserver.licensed_items_checkouts import (
     LicensedItemCheckoutRpcGet as _LicensedItemCheckoutRpcGet,
 )
-from models_library.api_schemas_webserver.product import (
+from models_library.api_schemas_webserver.products import (
     CreditPriceGet as _GetCreditPrice,
 )
 from models_library.api_schemas_webserver.resource_usage import (

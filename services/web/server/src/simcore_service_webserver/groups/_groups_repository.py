@@ -18,9 +18,9 @@ from models_library.groups import (
     StandardGroupUpdate,
 )
 from models_library.users import UserID
-from simcore_postgres_database.errors import UniqueViolation
+from simcore_postgres_database.aiopg_errors import UniqueViolation
 from simcore_postgres_database.models.users import users
-from simcore_postgres_database.utils_products import execute_get_or_create_product_group
+from simcore_postgres_database.utils_products import get_or_create_product_group
 from simcore_postgres_database.utils_repos import (
     pass_or_acquire_connection,
     transaction_context,
@@ -173,7 +173,6 @@ async def get_all_user_groups_with_read_access(
     *,
     user_id: UserID,
 ) -> GroupsByTypeTuple:
-
     """
     Returns the user primary group, standard groups and the all group
     """
@@ -758,7 +757,7 @@ async def auto_add_user_to_product_group(
     product_name: str,
 ) -> GroupID:
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
-        product_group_id: GroupID = await execute_get_or_create_product_group(
+        product_group_id: GroupID = await get_or_create_product_group(
             conn, product_name
         )
 

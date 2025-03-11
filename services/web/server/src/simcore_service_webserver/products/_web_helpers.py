@@ -1,9 +1,15 @@
+import contextlib
 from pathlib import Path
 
 import aiofiles
 from aiohttp import web
 from models_library.products import ProductName
 from simcore_postgres_database.utils_products_prices import ProductPriceInfo
+from simcore_service_webserver.products.errors import (
+    FileTemplateNotFoundError,
+    ProductNotFoundError,
+    UnknownProductError,
+)
 
 from .._resources import webserver_resources
 from ..constants import RQ_PRODUCT_KEY
@@ -14,7 +20,13 @@ from .models import Product
 
 def get_product_name(request: web.Request) -> str:
     """Returns product name in request but might be undefined"""
-    product_name: str = request[RQ_PRODUCT_KEY]
+    # NOTE: introduced by middleware
+    try:
+        product_name: str = request[RQ_PRODUCT_KEY]
+    except KeyError as exc:
+        error = UnknownProductError()
+        error.add_note("TIP: Check products middleware")
+        raise error from exc
     return product_name
 
 
@@ -25,6 +37,13 @@ def get_current_product(request: web.Request) -> Product:
         request.app, product_name=product_name
     )
     return current_product
+
+
+def _get_current_product_or_none(request: web.Request) -> Product | None:
+    with contextlib.suppress(ProductNotFoundError, UnknownProductError):
+        product: Product = get_current_product(request)
+        return product
+    return None
 
 
 async def get_current_product_credit_price_info(
@@ -48,19 +67,10 @@ def _themed(dirname: str, template: str) -> Path:
     return path
 
 
-def _get_current_product_or_none(request: web.Request) -> Product | None:
-    try:
-        product: Product = get_current_product(request)
-        return product
-    except KeyError:
-        return None
-
-
 async def _get_common_template_path(filename: str) -> Path:
     common_template = _themed("templates/common", filename)
     if not common_template.exists():
-        msg = f"{filename} is not part of the templates/common"
-        raise ValueError(msg)
+        raise FileTemplateNotFoundError(filename=filename)
     return common_template
 
 

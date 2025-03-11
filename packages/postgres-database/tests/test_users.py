@@ -11,7 +11,10 @@ from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import ResultProxy, RowProxy
 from faker import Faker
 from pytest_simcore.helpers.faker_factories import random_user
-from simcore_postgres_database.errors import InvalidTextRepresentation, UniqueViolation
+from simcore_postgres_database.aiopg_errors import (
+    InvalidTextRepresentation,
+    UniqueViolation,
+)
 from simcore_postgres_database.models.users import UserRole, UserStatus, users
 from simcore_postgres_database.utils_users import (
     UsersRepo,

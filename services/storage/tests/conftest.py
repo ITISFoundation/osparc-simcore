@@ -57,9 +57,11 @@ from pytest_simcore.helpers.storage_utils_file_meta_data import (
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.aiohttp import status
 from servicelib.utils import limited_gather
+from simcore_postgres_database.models.tokens import tokens
 from simcore_postgres_database.storage_models import file_meta_data, projects, users
 from simcore_service_storage.core.application import create_app
 from simcore_service_storage.core.settings import ApplicationSettings
+from simcore_service_storage.datcore_dsm import DatCoreDataManager
 from simcore_service_storage.dsm import get_dsm_provider
 from simcore_service_storage.models import FileMetaData, FileMetaDataAtDB, S3BucketName
 from simcore_service_storage.modules.long_running_tasks import (
@@ -80,6 +82,7 @@ pytest_plugins = [
     "pytest_simcore.aws_s3_service",
     "pytest_simcore.aws_server",
     "pytest_simcore.cli_runner",
+    "pytest_simcore.disk_usage_monitoring",
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_swarm",
     "pytest_simcore.environment_configs",
@@ -242,11 +245,11 @@ def simcore_file_id(
 @pytest.fixture(
     params=[
         SimcoreS3DataManager.get_location_id(),
-        # DatCoreDataManager.get_location_id(),
+        DatCoreDataManager.get_location_id(),
     ],
     ids=[
         SimcoreS3DataManager.get_location_name(),
-        # DatCoreDataManager.get_location_name(),
+        DatCoreDataManager.get_location_name(),
     ],
 )
 def location_id(request: pytest.FixtureRequest) -> LocationID:
@@ -855,7 +858,10 @@ async def with_random_project_with_files(
         ],
     ],
     project_params: ProjectWithFilesParams,
-) -> tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],]:
+) -> tuple[
+    dict[str, Any],
+    dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],
+]:
     return await random_project_with_files(project_params)
 
 
@@ -893,4 +899,35 @@ async def output_file(
     async with sqlalchemy_async_engine.begin() as conn:
         result = await conn.execute(
             file_meta_data.delete().where(file_meta_data.c.file_id == row.file_id)
+        )
+
+
+@pytest.fixture
+async def fake_datcore_tokens(
+    user_id: UserID, sqlalchemy_async_engine: AsyncEngine, faker: Faker
+) -> AsyncIterator[tuple[str, str]]:
+    token_key = cast(str, faker.uuid4())
+    token_secret = cast(str, faker.uuid4())
+    created_token_ids = []
+    async with sqlalchemy_async_engine.begin() as conn:
+        result = await conn.execute(
+            tokens.insert()
+            .values(
+                user_id=user_id,
+                token_service="pytest",  # noqa: S106
+                token_data={
+                    "service": "pytest",
+                    "token_secret": token_secret,
+                    "token_key": token_key,
+                },
+            )
+            .returning(tokens.c.token_id)
+        )
+        row = result.one()
+        created_token_ids.append(row.token_id)
+    yield token_key, token_secret
+
+    async with sqlalchemy_async_engine.begin() as conn:
+        await conn.execute(
+            tokens.delete().where(tokens.c.token_id.in_(created_token_ids))
         )

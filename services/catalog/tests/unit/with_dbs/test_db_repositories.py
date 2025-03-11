@@ -10,7 +10,7 @@ from models_library.products import ProductName
 from models_library.users import UserID
 from packaging import version
 from packaging.version import Version
-from pydantic import EmailStr, TypeAdapter
+from pydantic import EmailStr, HttpUrl, TypeAdapter
 from simcore_service_catalog.db.repositories.services import ServicesRepository
 from simcore_service_catalog.models.services_db import (
     ServiceAccessRightsAtDB,
@@ -123,6 +123,31 @@ async def test_create_services(
     assert new_service.model_dump(
         include=service_db_create.model_fields_set
     ) == service_db_create.model_dump(exclude_unset=True)
+
+
+@pytest.mark.parametrize(
+    "url_object",
+    [
+        "https://github.com/some/path/to/image.png?raw=true",
+        TypeAdapter(HttpUrl).validate_python(
+            "https://github.com/some/path/to/image.png?raw=true"
+        ),
+        "",
+        None,
+    ],
+)
+async def test_regression_service_meta_data_db_create(
+    create_fake_service_data: Callable, url_object: str | HttpUrl | None
+):
+    fake_service, *_ = create_fake_service_data(
+        "simcore/services/dynamic/jupyterlab",
+        "1.0.0",
+        team_access="x",
+        everyone_access="x",
+    )
+
+    fake_service["icon"] = url_object
+    assert ServiceMetaDataDBCreate.model_validate(fake_service)
 
 
 async def test_read_services(
@@ -240,19 +265,19 @@ async def test_list_service_releases_version_filtered(
     assert latest
     assert latest.version == fake_catalog_with_jupyterlab.expected_latest
 
-    releases_1_1_x: list[
-        ServiceMetaDataDBGet
-    ] = await services_repo.list_service_releases(
-        "simcore/services/dynamic/jupyterlab", major=1, minor=1
+    releases_1_1_x: list[ServiceMetaDataDBGet] = (
+        await services_repo.list_service_releases(
+            "simcore/services/dynamic/jupyterlab", major=1, minor=1
+        )
     )
     assert [
         s.version for s in releases_1_1_x
     ] == fake_catalog_with_jupyterlab.expected_1_1_x
 
-    expected_0_x_x: list[
-        ServiceMetaDataDBGet
-    ] = await services_repo.list_service_releases(
-        "simcore/services/dynamic/jupyterlab", major=0
+    expected_0_x_x: list[ServiceMetaDataDBGet] = (
+        await services_repo.list_service_releases(
+            "simcore/services/dynamic/jupyterlab", major=0
+        )
     )
     assert [
         s.version for s in expected_0_x_x

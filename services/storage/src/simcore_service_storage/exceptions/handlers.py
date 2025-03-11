@@ -9,6 +9,7 @@ from servicelib.fastapi.http_error import (
 )
 
 from ..modules.datcore_adapter.datcore_adapter_exceptions import (
+    DatcoreAdapterFileNotFoundError,
     DatcoreAdapterTimeoutError,
 )
 from .errors import (
@@ -42,6 +43,7 @@ def set_exception_handlers(app: FastAPI) -> None:
         FileMetaDataNotFoundError,
         S3KeyNotFoundError,
         ProjectNotFoundError,
+        DatcoreAdapterFileNotFoundError,
     ):
         app.add_exception_handler(
             exc_not_found,

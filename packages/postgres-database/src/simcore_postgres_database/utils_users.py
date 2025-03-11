@@ -12,7 +12,7 @@ from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
 from sqlalchemy import Column
 
-from .errors import UniqueViolation
+from .aiopg_errors import UniqueViolation
 from .models.users import UserRole, UserStatus, users
 from .models.users_details import users_pre_registration_details
 

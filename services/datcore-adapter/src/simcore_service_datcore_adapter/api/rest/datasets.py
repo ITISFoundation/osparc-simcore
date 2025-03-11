@@ -57,6 +57,31 @@ async def list_datasets(
 
 
 @router.get(
+    "/datasets/{dataset_id}",
+    status_code=status.HTTP_200_OK,
+    response_model=DatasetMetaData,
+)
+@cancel_on_disconnect
+async def get_dataset(
+    request: Request,
+    x_datcore_api_key: Annotated[str, Header(..., description="Datcore API Key")],
+    x_datcore_api_secret: Annotated[str, Header(..., description="Datcore API Secret")],
+    pennsieve_client: Annotated[PennsieveApiClient, Depends(get_pennsieve_api_client)],
+    params: Annotated[Params, Depends()],
+    dataset_id: str,
+) -> DatasetMetaData:
+    assert request  # nosec
+    raw_params: RawParams = resolve_params(params).to_raw_params()
+    assert raw_params.limit is not None  # nosec
+    assert raw_params.offset is not None  # nosec
+    return await pennsieve_client.get_dataset(
+        api_key=x_datcore_api_key,
+        api_secret=x_datcore_api_secret,
+        dataset_id=dataset_id,
+    )
+
+
+@router.get(
     "/datasets/{dataset_id}/files",
     summary="list top level files/folders in a dataset",
     status_code=status.HTTP_200_OK,

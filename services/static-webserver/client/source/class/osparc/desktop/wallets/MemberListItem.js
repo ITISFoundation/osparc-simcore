@@ -40,7 +40,7 @@ qx.Class.define("osparc.desktop.wallets.MemberListItem", {
 
       // highlight me
       const email = osparc.auth.Data.getInstance().getEmail();
-      if (email === value) {
+      if (value && value.includes(email)) {
         this.addState("selected");
       }
     },
