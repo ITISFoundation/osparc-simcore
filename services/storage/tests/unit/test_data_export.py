@@ -46,6 +46,7 @@ from simcore_service_storage.api.rpc._data_export import AccessRightError
 from simcore_service_storage.core.settings import ApplicationSettings
 from simcore_service_storage.modules.celery.client import TaskUUID
 from simcore_service_storage.modules.celery.models import TaskState
+from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 
 pytest_plugins = [
     "pytest_simcore.rabbit_service",
