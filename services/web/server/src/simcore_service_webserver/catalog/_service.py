@@ -11,7 +11,11 @@ from models_library.api_schemas_webserver.catalog import (
     ServiceOutputKey,
 )
 from models_library.products import ProductName
-from models_library.rest_pagination import PageMetaInfoLimitOffset, PageQueryParameters
+from models_library.rest_pagination import (
+    PageLimitInt,
+    PageMetaInfoLimitOffset,
+    PageOffsetInt,
+)
 from models_library.services import (
     ServiceInput,
     ServiceKey,
@@ -28,12 +32,12 @@ from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
 from ..rabbitmq import get_rabbitmq_rpc_client
 from . import _catalog_rest_client_service
-from ._units_service import can_connect, replace_service_input_outputs
-from .controller_rest_schemas import (
+from ._controller_rest_schemas import (
     CatalogRequestContext,
     ServiceInputGetFactory,
     ServiceOutputGetFactory,
 )
+from ._units_service import can_connect, replace_service_input_outputs
 
 _logger = logging.getLogger(__name__)
 
@@ -61,16 +65,14 @@ async def _safe_replace_service_input_outputs(
         )
 
 
-# IMPLEMENTATION --------------------------------------------------------------------------------
-
-
 async def list_latest_services(
     app: web.Application,
     *,
     user_id: UserID,
     product_name: ProductName,
     unit_registry: UnitRegistry,
-    page_params: PageQueryParameters,
+    limit: PageLimitInt,
+    offset: PageOffsetInt,
 ) -> tuple[list, PageMetaInfoLimitOffset]:
     # NOTE: will replace list_services
 
@@ -78,8 +80,8 @@ async def list_latest_services(
         get_rabbitmq_rpc_client(app),
         product_name=product_name,
         user_id=user_id,
-        limit=page_params.limit,
-        offset=page_params.offset,
+        limit=limit,
+        offset=offset,
     )
 
     page_data = jsonable_encoder(page.data, exclude_unset=True)
