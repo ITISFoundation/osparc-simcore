@@ -91,7 +91,7 @@ qx.Class.define("osparc.utils.Utils", {
 
     FLOATING_Z_INDEX: 1000001 + 1,
 
-    setImageSource: function(image, imgSrc) {
+    setUrlSourceToImage: function(image, imgSrc) {
       let source = osparc.product.Utils.getThumbnailUrl();
       fetch(imgSrc, { method: "HEAD" })
         .then(response => {
