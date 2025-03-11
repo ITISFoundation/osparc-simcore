@@ -10,7 +10,7 @@ from models_library.api_schemas_catalog.service_access_rights import (
 )
 from pytest_simcore.helpers.webserver_login import UserInfoDict
 from servicelib.aiohttp import status
-from simcore_service_webserver.catalog._exceptions import (
+from simcore_service_webserver.catalog._controller_rest_exceptions import (
     DefaultPricingUnitForServiceNotFoundError,
 )
 from simcore_service_webserver.catalog.catalog_service import (
