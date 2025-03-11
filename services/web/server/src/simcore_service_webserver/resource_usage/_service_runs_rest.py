@@ -6,7 +6,6 @@ from models_library.api_schemas_resource_usage_tracker.service_runs import (
     OsparcCreditsAggregatedUsagesPage,
     ServiceRunPage,
 )
-from models_library.api_schemas_webserver.resource_usage import ServiceRunGet
 from models_library.basic_types import IDStr
 from models_library.resource_tracker import (
     ServiceResourceUsagesFilters,
@@ -52,33 +51,33 @@ def _handle_resource_usage_exceptions(handler: Handler):
     return wrapper
 
 
-_ResorceUsagesListOrderQueryParams: type[
-    RequestParameters
-] = create_ordering_query_model_class(
-    ordering_fields={
-        "wallet_id",
-        "wallet_name",
-        "user_id",
-        "user_email",
-        "project_id",
-        "project_name",
-        "node_id",
-        "node_name",
-        "root_parent_project_id",
-        "root_parent_project_name",
-        "service_key",
-        "service_version",
-        "service_type",
-        "started_at",
-        "stopped_at",
-        "service_run_status",
-        "credit_cost",
-        "transaction_status",
-    },
-    default=OrderBy(field=IDStr("started_at"), direction=OrderDirection.DESC),
-    ordering_fields_api_to_column_map={
-        "credit_cost": "osparc_credits",
-    },
+_ResorceUsagesListOrderQueryParams: type[RequestParameters] = (
+    create_ordering_query_model_class(
+        ordering_fields={
+            "wallet_id",
+            "wallet_name",
+            "user_id",
+            "user_email",
+            "project_id",
+            "project_name",
+            "node_id",
+            "node_name",
+            "root_parent_project_id",
+            "root_parent_project_name",
+            "service_key",
+            "service_version",
+            "service_type",
+            "started_at",
+            "stopped_at",
+            "service_run_status",
+            "credit_cost",
+            "transaction_status",
+        },
+        default=OrderBy(field=IDStr("started_at"), direction=OrderDirection.DESC),
+        ordering_fields_api_to_column_map={
+            "credit_cost": "osparc_credits",
+        },
+    )
 )
 
 
@@ -143,7 +142,7 @@ async def list_resource_usage_services(request: web.Request):
         ),
     )
 
-    page = Page[ServiceRunGet].model_validate(
+    page = Page[dict[str, Any]].model_validate(
         paginate_data(
             chunk=services.items,
             request_url=request.url,
