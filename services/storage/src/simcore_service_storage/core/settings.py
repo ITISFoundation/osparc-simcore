@@ -74,11 +74,6 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         description="Interval in seconds when task cleaning pending uploads runs. setting to NULL disables the cleaner.",
     )
 
-    STORAGE_S3_CLIENT_MAX_TRANSFER_CONCURRENCY: int = Field(
-        4,
-        description="Maximal amount of threads used by underlying S3 client to transfer data to S3 backend",
-    )
-
     STORAGE_LOG_FORMAT_LOCAL_DEV_ENABLED: Annotated[
         bool,
         Field(

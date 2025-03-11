@@ -102,8 +102,7 @@ class _MockCeleryClient:
     async def abort_task(self, *args, **kwargs) -> None:
         if isinstance(self.abort_task_object, Exception):
             raise self.abort_task_object
-        else:
-            return self.abort_task_object
+        return self.abort_task_object
 
 
 @pytest.fixture

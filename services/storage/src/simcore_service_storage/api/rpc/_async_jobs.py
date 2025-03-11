@@ -89,11 +89,11 @@ async def get_result(
             task_uuid=job_id,
         )
     except CeleryError as exc:
-        raise JobSchedulerError(exc=f"{exc}")
+        raise JobSchedulerError(exc=f"{exc}") from exc
 
     if status.task_state == TaskState.ABORTED:
         raise JobAbortedError(job_id=job_id)
-    elif status.task_state == TaskState.ERROR:
+    if status.task_state == TaskState.ERROR:
         exc_type = ""
         exc_msg = ""
         with log_catch(logger=_logger, reraise=False):
