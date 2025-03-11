@@ -967,9 +967,14 @@ qx.Class.define("osparc.dashboard.CardBase", {
       }
     },
 
-    __openMoreOptions: function() {
+    __openResourceDetails: function(openWindowCB) {
       const resourceData = this.getResourceData();
       const resourceDetails = new osparc.dashboard.ResourceDetails(resourceData);
+      resourceDetails.addListenerOnce("pagesAdded", () => {
+        if (openWindowCB in resourceDetails) {
+          resourceDetails[openWindowCB]();
+        }
+      })
       const win = osparc.dashboard.ResourceDetails.popUpInWindow(resourceDetails);
       [
         "updateStudy",
@@ -1001,28 +1006,23 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     openBilling: function() {
-      const moreOpts = this.__openMoreOptions();
-      moreOpts.openBillingSettings();
+      this.__openResourceDetails("openBillingSettings");
     },
 
     openAccessRights: function() {
-      const moreOpts = this.__openMoreOptions();
-      moreOpts.openAccessRights();
+      this.__openResourceDetails("openAccessRights");
     },
 
     openTags: function() {
-      const moreOpts = this.__openMoreOptions();
-      moreOpts.openTags();
+      this.__openResourceDetails("openTags");
     },
 
     __openQualityEditor: function() {
-      const moreOpts = this.__openMoreOptions();
-      moreOpts.openQuality();
+      this.__openResourceDetails("openQuality");
     },
 
     __openUpdateServices: function() {
-      const moreOpts = this.__openMoreOptions();
-      moreOpts.openUpdateServices();
+      this.__openResourceDetails("openUpdateServices");
     },
 
     _getEmptyWorkbenchIcon: function() {

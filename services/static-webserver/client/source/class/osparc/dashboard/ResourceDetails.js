@@ -67,13 +67,13 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
   },
 
   events: {
-    "openStudy": "qx.event.type.Data",
+    "pagesAdded": "qx.event.type.Event",
     "openTemplate": "qx.event.type.Data",
     "openService": "qx.event.type.Data",
     "updateStudy": "qx.event.type.Data",
     "updateTemplate": "qx.event.type.Data",
     "updateService": "qx.event.type.Data",
-    "publishTemplate": "qx.event.type.Data"
+    "publishTemplate": "qx.event.type.Data",
   },
 
 
@@ -376,6 +376,8 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
           tabsView.setSelection([pageFound]);
         }
       }
+
+      this.fireEvent("pagesAdded");
     },
 
     __getInfoPage: function() {
