@@ -25,10 +25,12 @@ from models_library.api_schemas_storage.data_export_async_jobs import (
     AccessRightError,
     InvalidFileIdentifierError,
 )
+from models_library.api_schemas_webserver._base import OutputSchema
 from models_library.api_schemas_webserver.storage import (
     AsyncJobLinks,
     DataExportPost,
     StorageAsyncJobGet,
+    StorageAsyncJobResult,
 )
 from models_library.generics import Envelope
 from models_library.progress_bar import ProgressReport
@@ -43,6 +45,7 @@ from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import (
 )
 from servicelib.rabbitmq.rpc_interfaces.storage.data_export import start_data_export
 from simcore_postgres_database.models.users import UserRole
+from simcore_service_webserver.storage._rest import StorageAsyncJobStatus
 
 _faker = Faker()
 _user_roles: Final[list[UserRole]] = [
@@ -242,3 +245,73 @@ async def test_get_user_async_jobs(
     assert response.status == expected_status
     if response.status == status.HTTP_200_OK:
         Envelope[list[StorageAsyncJobGet]].model_validate(await response.json())
+
+
+@pytest.mark.parametrize("user_role", _user_roles)
+@pytest.mark.parametrize(
+    "http_method, href, backend_method, backend_object, return_schema",
+    [
+        (
+            "GET",
+            "status_href",
+            get_status.__name__,
+            AsyncJobStatus(
+                job_id=AsyncJobId(_faker.uuid4()),
+                progress=ProgressReport(actual_value=0.5, total=1.0),
+                done=False,
+            ),
+            StorageAsyncJobStatus,
+        ),
+        (
+            "POST",
+            "abort_href",
+            abort.__name__,
+            AsyncJobAbort(result=True, job_id=AsyncJobId(_faker.uuid4())),
+            None,
+        ),
+        (
+            "GET",
+            "result_href",
+            get_result.__name__,
+            AsyncJobResult(result=None),
+            StorageAsyncJobResult,
+        ),
+    ],
+)
+async def test_get_async_job_links(
+    user_role: UserRole,
+    logged_user: UserInfoDict,
+    client: TestClient,
+    create_storage_rpc_client_mock: Callable[[str, Any], None],
+    faker: Faker,
+    http_method: str,
+    href: str,
+    backend_method: str,
+    backend_object: Any,
+    return_schema: OutputSchema | None,
+):
+    create_storage_rpc_client_mock(
+        start_data_export.__name__,
+        AsyncJobGet(job_id=AsyncJobId(f"{_faker.uuid4()}")),
+    )
+
+    _body = DataExportPost(
+        paths=[f"{faker.uuid4()}/{faker.uuid4()}/{faker.file_name()}"]
+    )
+    response = await client.post(
+        "/v0/storage/locations/0/export-data", data=_body.model_dump_json()
+    )
+    assert response.status == status.HTTP_202_ACCEPTED
+    response_body_data = (
+        Envelope[StorageAsyncJobGet].model_validate(await response.json()).data
+    )
+    assert response_body_data is not None
+
+    # Call the different links and check the correct model and return status
+    create_storage_rpc_client_mock(backend_method, backend_object)
+    response = await client.request(
+        http_method, getattr(response_body_data.links, href)
+    )
+    assert response.status == status.HTTP_200_OK
+    if return_schema:
+        Envelope[return_schema].model_validate(await response.json())
