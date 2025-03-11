@@ -296,8 +296,19 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
           image.addListener(eventName, () => this.__fitThumbnailHeight(), this);
         });
       } else {
+        fetch(value, { method: "HEAD" })
+          .then(() => {
+            this.getContentElement().setStyles({
+              "background-image": `url(${osparc.product.Utils.getThumbnailUrl()})`,
+              // "background-image": `url(${value})`,
+            })
+          })
+          .catch(() => {
+            this.getContentElement().setStyles({
+              "background-image": `url(${osparc.product.Utils.getThumbnailUrl()})`,
+            })
+          });
         this.getContentElement().setStyles({
-          "background-image": `url(${value})`,
           "background-repeat": "no-repeat",
           "background-size": "cover", // auto width, 85% height
           "background-position": "center center",
