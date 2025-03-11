@@ -91,12 +91,15 @@ qx.Class.define("osparc.utils.Utils", {
 
     FLOATING_Z_INDEX: 1000001 + 1,
 
-    setImageSource: function(image, source) {
-      fetch(source, { method: "HEAD" })
-        .then(() => image.setSource(source))
-        .catch(() => {
-          image.setSource(osparc.product.Utils.getThumbnailUrl());
-        });
+    setImageSource: function(image, imgSrc) {
+      let source = osparc.product.Utils.getThumbnailUrl();
+      fetch(imgSrc, { method: "HEAD" })
+        .then(response => {
+          if (response.ok) {
+            source = imgSrc;
+          }
+        })
+        .finally(() => image.setSource(source));
     },
 
     addWhiteSpaces: function(integer) {

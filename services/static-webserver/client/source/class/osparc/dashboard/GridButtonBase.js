@@ -296,24 +296,23 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
           image.addListener(eventName, () => this.__fitThumbnailHeight(), this);
         });
       } else {
+        let source = osparc.product.Utils.getThumbnailUrl();
         fetch(value, { method: "HEAD" })
-          .then(() => {
-            this.getContentElement().setStyles({
-              "background-image": `url(${osparc.product.Utils.getThumbnailUrl()})`,
-              // "background-image": `url(${value})`,
-            })
+          .then(response => {
+            if (!response.ok) {
+              throw new Error();
+            }
+            source = value
           })
-          .catch(() => {
+          .finally(() => {
             this.getContentElement().setStyles({
-              "background-image": `url(${osparc.product.Utils.getThumbnailUrl()})`,
-            })
+              "background-image": `url(${source})`,
+              "background-repeat": "no-repeat",
+              "background-size": "cover", // auto width, 85% height
+              "background-position": "center center",
+              "background-origin": "border-box"
+            });
           });
-        this.getContentElement().setStyles({
-          "background-repeat": "no-repeat",
-          "background-size": "cover", // auto width, 85% height
-          "background-position": "center center",
-          "background-origin": "border-box"
-        });
       }
     },
 
