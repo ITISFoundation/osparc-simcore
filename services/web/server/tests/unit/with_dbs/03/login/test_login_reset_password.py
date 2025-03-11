@@ -262,10 +262,10 @@ async def test_unregistered_product(
         await groups_service.auto_add_user_to_product_group(
             client.app, user_id=user["id"], product_name=default_product_name
         )
-        assert users_service.is_user_in_product(
+        assert await users_service.is_user_in_product(
             client.app, user_id=user["id"], product_name=default_product_name
         )
-        assert not users_service.is_user_in_product(
+        assert not await users_service.is_user_in_product(
             client.app, user_id=user["id"], product_name=other_product_name
         )
 
