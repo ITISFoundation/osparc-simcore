@@ -23,8 +23,8 @@ from ..models import RequestContext
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
 from . import _service
-from ._exceptions_handlers import handle_plugin_requests_exceptions
-from ._models import ApiKey
+from ._controller_rest_exceptions import handle_plugin_requests_exceptions
+from .models import ApiKey
 
 _logger = logging.getLogger(__name__)
 

@@ -23,8 +23,8 @@ from servicelib.rabbitmq.rpc_interfaces.webserver.auth.api_keys import (
 from settings_library.rabbit import RabbitSettings
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.api_keys import _repository as repo
-from simcore_service_webserver.api_keys._models import ApiKey
 from simcore_service_webserver.api_keys.errors import ApiKeyNotFoundError
+from simcore_service_webserver.api_keys.models import ApiKey
 from simcore_service_webserver.application_settings import ApplicationSettings
 
 pytest_simcore_core_services_selection = [

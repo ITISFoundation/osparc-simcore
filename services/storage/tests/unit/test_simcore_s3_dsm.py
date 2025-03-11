@@ -29,12 +29,17 @@ def file_size() -> ByteSize:
 
 @pytest.fixture
 def mock_copy_transfer_cb() -> Callable[..., None]:
-    def copy_transfer_cb(total_bytes_copied: int, *, file_name: str) -> None:
-        ...
+    def copy_transfer_cb(total_bytes_copied: int, *, file_name: str) -> None: ...
 
     return copy_transfer_cb
 
 
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
 async def test__copy_path_s3_s3(
     simcore_s3_dsm: SimcoreS3DataManager,
     create_directory_with_files: Callable[
@@ -103,6 +108,12 @@ async def test__copy_path_s3_s3(
     await _copy_s3_path(simcore_file_id)
 
 
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
 async def test_upload_and_search(
     simcore_s3_dsm: SimcoreS3DataManager,
     upload_file: Callable[..., Awaitable[tuple[Path, SimcoreS3FileID]]],
