@@ -2,7 +2,7 @@ import logging
 import urllib.parse
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Final
+from typing import Annotated, Any, Final
 
 from aiocache import cached  # type: ignore[import-untyped]
 from aiohttp import web
@@ -21,6 +21,7 @@ from pint import PintError, Quantity, UnitRegistry
 from pydantic import (
     BaseModel,
     ConfigDict,
+    Field,
     field_validator,
 )
 from servicelib.aiohttp.requests_validation import handle_validation_as_http_error
@@ -180,7 +181,7 @@ class ServicePathParams(BaseModel):
 
     @field_validator("service_key", mode="before")
     @classmethod
-    def ensure_unquoted(cls, v):
+    def _ensure_unquoted(cls, v):
         # NOTE: this is needed as in pytest mode, the aiohttp server does not seem to unquote automatically
         if v is not None:
             return urllib.parse.unquote(v)
@@ -192,3 +193,23 @@ class ListServiceParams(PageQueryParameters): ...
 
 class ServiceTagPathParams(ServicePathParams):
     tag_id: IdInt
+
+
+class ServiceInputsPathParams(ServicePathParams):
+    input_key: ServiceInputKey
+
+
+class FromServiceOutputQueryParams(BaseModel):
+    from_service_key: Annotated[ServiceKey, Field(alias="fromService")]
+    from_service_version: Annotated[ServiceVersion, Field(alias="fromVersion")]
+    from_output_key: Annotated[ServiceOutputKey, Field(alias="fromOutput")]
+
+
+class ServiceOutputsPathParams(ServicePathParams):
+    output_key: ServiceOutputKey
+
+
+class ToServiceInputsQueryParams(BaseModel):
+    to_service_key: Annotated[ServiceKey, Field(alias="toService")]
+    to_service_version: Annotated[ServiceVersion, Field(alias="toVersion")]
+    to_input_key: Annotated[ServiceInputKey, Field(alias="toInput")]
