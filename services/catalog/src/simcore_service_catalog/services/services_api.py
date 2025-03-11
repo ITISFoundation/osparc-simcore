@@ -67,7 +67,7 @@ def _aggregate(
         },
         "classifiers": service_db.classifiers,
         "quality": service_db.quality,
-        # NOTE: History section is removed
+        # NOTE: history/release field is removed
     }
 
 
@@ -80,7 +80,16 @@ def _to_latest_get_schema(
     assert len(service_db.history) == 0  # nosec
 
     return LatestServiceGet.model_validate(
-        _aggregate(service_db, access_rights_db, service_manifest)
+        {
+            **_aggregate(service_db, access_rights_db, service_manifest),
+            "release": ServiceRelease.model_construct(
+                version=service_db.version,
+                version_display=service_db.version_display,
+                released=service_db.created,
+                retired=service_db.deprecated,
+                compatibility=None,
+            ),
+        }
     )
 
 

@@ -7945,6 +7945,9 @@ components:
         quality:
           type: object
           title: Quality
+        release:
+          $ref: '#/components/schemas/ServiceRelease'
+          description: release information of current (latest) service
       additionalProperties: false
       type: object
       required:
@@ -7959,6 +7962,7 @@ components:
       - inputs
       - outputs
       - accessRights
+      - release
       title: CatalogLatestServiceGet
     CatalogServiceGet:
       properties:

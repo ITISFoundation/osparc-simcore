@@ -219,7 +219,11 @@ class _BaseServiceGetV2(CatalogOutputSchema):
     )
 
 
-class LatestServiceGet(_BaseServiceGetV2): ...
+class LatestServiceGet(_BaseServiceGetV2):
+    release: Annotated[
+        ServiceRelease,
+        Field(description="release information of current (latest) service"),
+    ]
 
 
 class ServiceGetV2(_BaseServiceGetV2):
