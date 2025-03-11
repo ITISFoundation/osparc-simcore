@@ -7,6 +7,7 @@ from aiohttp import web
 from aiohttp.client import ClientSession
 from aiohttp.client_exceptions import ClientConnectionError, ClientError
 from common_library.json_serialization import json_dumps
+from packaging.version import Version
 from servicelib.aiohttp.client_session import get_client_session
 from tenacity.asyncio import AsyncRetrying
 from tenacity.before import before_log
@@ -93,6 +94,11 @@ async def create_cached_indexes(app: web.Application) -> None:
     app[APP_FRONTEND_CACHED_INDEXES_KEY] = cached_indexes
 
 
+def _get_release_notes_vtag(vtag: str) -> str:
+    version = Version(vtag)
+    return f"{version.major}.{version.minor}.0"
+
+
 async def create_and_cache_statics_json(app: web.Application) -> None:
     # NOTE: in devel model, the folder might be under construction
     # (qx-compile takes time), therefore we create statics.json
@@ -132,7 +138,8 @@ async def create_and_cache_statics_json(app: web.Application) -> None:
         ):
             # template URL should be somethign like:
             # https://github.com/ITISFoundation/osparc-issues/blob/master/release-notes/osparc/{vtag}.md
-            data["vcsReleaseUrl"] = template_url.format(vtag=vtag)
+            release_vtag = _get_release_notes_vtag(vtag)
+            data["vcsReleaseUrl"] = template_url.format(vtag=release_vtag)
 
         data_json = json_dumps(data)
         _logger.debug("Front-end statics.json: %s", data_json)
