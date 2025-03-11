@@ -225,6 +225,27 @@ class LatestServiceGet(_BaseServiceGetV2):
         Field(description="release information of current (latest) service"),
     ]
 
+    @staticmethod
+    def _update_json_schema_extra(schema: JsonDict) -> None:
+        schema.update(
+            {
+                "examples": [
+                    {
+                        **_EXAMPLE_SLEEPER,  # v2.2.1  (latest)
+                        "release": {
+                            "version": _EXAMPLE_SLEEPER["version"],
+                            "version_display": "Summer Release",
+                            "released": "2024-07-20T15:00:00",
+                        },
+                    }
+                ]
+            }
+        )
+
+    model_config = ConfigDict(
+        json_schema_extra=_update_json_schema_extra,
+    )
+
 
 class ServiceGetV2(_BaseServiceGetV2):
     # Model used in catalog's rpc and rest interfaces
