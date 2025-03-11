@@ -299,10 +299,9 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
         let source = osparc.product.Utils.getThumbnailUrl();
         fetch(value, { method: "HEAD" })
           .then(response => {
-            if (!response.ok) {
-              throw new Error();
+            if (response.ok) {
+              source = value;
             }
-            source = value
           })
           .finally(() => {
             this.getContentElement().setStyles({
