@@ -173,6 +173,7 @@ async def initiate_reset_password(request: web.Request):
                     request, "reset_password_email.jinja2"
                 ),
                 context={
+                    "name": user.get("first_name") or user["name"],
                     "host": request.host,
                     "link": link,
                     "product": product,
