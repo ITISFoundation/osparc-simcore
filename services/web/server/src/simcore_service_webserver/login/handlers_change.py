@@ -56,16 +56,37 @@ class ResetPasswordBody(InputSchema):
 async def initiate_reset_password(request: web.Request):
     """First of the "Two-Step Action Confirmation pattern": initiate_reset_password + complete_reset_password(code)
 
-        1. confirm user exists
-        2. check user status
-        3. send email with link to reset password
-        4. user clicks confirmation link -> auth/confirmation/{} -> reset_password_allowed
 
-    Follows guidelines from [1]: https://postmarkapp.com/guides/password-reset-email-best-practices
-     - You would never want to confirm or deny the existence of an account with a given email or username.
-     - Expiration of link
-     - Support contact information
-     - Who requested the reset?
+    ```mermaid
+    sequenceDiagram
+        participant User
+        participant Frontend
+        participant Backend
+        participant Email
+
+        User->>Backend: POST initiate_password_reset(email)
+        Backend->>Email: Send confirmation link with code
+        Note right of Email: Link: GET /auth_confirmation?code=XXX
+
+        User->>Backend: GET auth_confirmation?code=XXX
+        Backend-->>User: Redirect to /#35;reset-password?code=XXX
+
+        User->>Frontend: Access /#35;reset-password?code=XXX
+        Frontend->>User: Show form for new password (x2)
+
+        User->>Frontend: Enters new password and confirms
+        Frontend->>Backend: POST complete_password_reset(code, new_password)
+
+        Backend-->>User: Password reset confirmation
+        Backend->>Backend: Update user's password in database
+    ```
+
+
+    Follows guidelines from https://postmarkapp.com/guides/password-reset-email-best-practices
+     - 1. You would never want to confirm or deny the existence of an account with a given email or username.
+     - 2. Expiration of link
+     - 3. Support contact information
+     - 4. Who requested the reset?
     """
 
     db: AsyncpgStorage = get_plugin_storage(request.app)
@@ -82,6 +103,7 @@ async def initiate_reset_password(request: web.Request):
     def _get_error_context(
         user=None,
     ) -> dict[str, str]:
+        # NOTE: Guideline #4
         ctx = {
             "user_email": request_body.email,
             "product_name": product.name,
@@ -156,7 +178,8 @@ async def initiate_reset_password(request: web.Request):
         assert user  # nosec
 
         try:
-            # confirmation token that includes code to complete_reset_password
+            # Confirmation token that includes code to `complete_reset_password`.
+            # Recreated if non-existent or expired  (Guideline #2)
             confirmation = await get_or_create_confirmation(
                 cfg, db, user_id=user["id"], action="RESET_PASSWORD"
             )
@@ -176,6 +199,7 @@ async def initiate_reset_password(request: web.Request):
                     "name": user.get("first_name") or user["name"],
                     "host": request.host,
                     "link": link,
+                    # NOTE: Guideline #3
                     "product": product,
                 },
             )
@@ -189,8 +213,7 @@ async def initiate_reset_password(request: web.Request):
             )
             raise web.HTTPServiceUnavailable(reason=MSG_CANT_SEND_MAIL) from err
 
-    # NOTE: Always same response: never want to confirm or deny the existence of an account
-    # with a given email or username.
+    # NOTE: Always same response: guideline #1
     return flash_response(MSG_EMAIL_SENT.format(email=request_body.email), "INFO")
 
 
