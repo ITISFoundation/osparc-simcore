@@ -83,7 +83,7 @@ qx.Class.define("osparc.ui.basic.Thumbnail", {
     __applySource: function(val) {
       const image = this.getChildControl("image");
       if (val) {
-        image.setSource(val);
+        osparc.utils.Utils.setImageSource(image, val);
       }
     },
 
