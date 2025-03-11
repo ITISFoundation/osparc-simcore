@@ -3,7 +3,7 @@ import logging
 from aiohttp import web
 from aiohttp.web import RouteTableDef
 from models_library.emails import LowerCaseEmailStr
-from pydantic import EmailStr, SecretStr, field_validator
+from pydantic import SecretStr, field_validator
 from servicelib.aiohttp.requests_validation import parse_request_body_as
 from servicelib.logging_errors import create_troubleshotting_log_kwargs
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
@@ -46,7 +46,7 @@ routes = RouteTableDef()
 
 
 class ResetPasswordBody(InputSchema):
-    email: EmailStr
+    email: LowerCaseEmailStr
 
 
 @routes.post(f"/{API_VTAG}/auth/reset-password", name="initiate_reset_password")

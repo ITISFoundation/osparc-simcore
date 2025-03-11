@@ -14223,6 +14223,7 @@ components:
       properties:
         email:
           type: string
+          format: email
           title: Email
       additionalProperties: false
       type: object
