@@ -1152,7 +1152,7 @@ services:
     image: ${DOCKER_REGISTRY:-itisfoundation}/storage:${DOCKER_IMAGE_TAG:-latest}
     init: true
     hostname: "sto-{{.Node.Hostname}}-{{.Task.Slot}}"
-    environment:
+    environment: &storage_environment
       DATCORE_ADAPTER_HOST: ${DATCORE_ADAPTER_HOST:-datcore-adapter}
       LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
       LOG_FILTER_MAPPING : ${LOG_FILTER_MAPPING}
@@ -1177,16 +1177,27 @@ services:
       S3_ENDPOINT: ${S3_ENDPOINT}
       S3_REGION: ${S3_REGION}
       S3_SECRET_KEY: ${S3_SECRET_KEY}
+      STORAGE_WORKER_MODE: "false"
       STORAGE_LOGLEVEL: ${STORAGE_LOGLEVEL}
       STORAGE_MONITORING_ENABLED: 1
       STORAGE_PROFILING: ${STORAGE_PROFILING}
       STORAGE_PORT: ${STORAGE_PORT}
       TRACING_OPENTELEMETRY_COLLECTOR_PORT: ${TRACING_OPENTELEMETRY_COLLECTOR_PORT}
       TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT: ${TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT}
-    networks:
+    networks: &storage_networks
       - default
       - interactive_services_subnet
       - storage_subnet
+
+  sto-worker:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/storage:${DOCKER_IMAGE_TAG:-master-github-latest}
+    init: true
+    hostname: "sto-worker-{{.Node.Hostname}}-{{.Task.Slot}}"
+    environment:
+      <<: *storage_environment
+      STORAGE_WORKER_MODE: "true"
+      CELERY_CONCURRENCY: 1
+    networks: *storage_networks
 
   rabbit:
     image: itisfoundation/rabbitmq:3.11.2-management
@@ -1272,7 +1283,7 @@ services:
         "--loglevel",
         "verbose",
         "--databases",
-        "9",
+        "10",
         "--appendonly",
         "yes",
         "--requirepass",
