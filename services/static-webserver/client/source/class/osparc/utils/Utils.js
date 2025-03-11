@@ -91,6 +91,14 @@ qx.Class.define("osparc.utils.Utils", {
 
     FLOATING_Z_INDEX: 1000001 + 1,
 
+    setImageSource: function(image, source) {
+      fetch(source, { method: "HEAD" })
+        .then(() => image.setSource(source))
+        .catch(() => {
+          image.setSource(osparc.product.Utils.getThumbnailUrl());
+        });
+    },
+
     addWhiteSpaces: function(integer) {
       return new Intl.NumberFormat("fr-FR").format(integer); // french will add white spaces every 3 digits
     },
