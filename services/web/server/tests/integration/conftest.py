@@ -62,7 +62,7 @@ def webserver_environ(
     #   version tha loads only the subsystems under test. For that reason,
     #   the test webserver is built-up in webserver_service fixture that runs
     #   on the host.
-    EXCLUDED_SERVICES = ["dask-scheduler", "director"]
+    EXCLUDED_SERVICES = ["dask-scheduler", "director", "sto-worker"]
     services_with_published_ports = [
         name
         for name in core_services
