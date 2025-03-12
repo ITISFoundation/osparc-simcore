@@ -52,7 +52,7 @@ class VolumesManager(  # pylint:disable=too-many-instance-attributes
             task_name="volumes bookkeeping",
         )
         self._task_periodic_volume_cleanup = create_periodic_task(
-            self._bookkeeping_task,
+            self._periodic_volmue_cleanup_task,
             interval=self.volume_cleanup_interval,
             task_name="volume cleanup",
         )
