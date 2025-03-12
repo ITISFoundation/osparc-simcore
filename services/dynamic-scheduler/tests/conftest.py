@@ -6,6 +6,7 @@ from collections.abc import AsyncIterator
 from pathlib import Path
 from typing import Final
 
+import nicegui
 import pytest
 import simcore_service_dynamic_scheduler
 import yaml
@@ -124,6 +125,9 @@ MAX_TIME_FOR_APP_TO_SHUTDOWN: Final[float] = 10
 async def app(
     app_environment: EnvVarsDict, is_pdb_enabled: bool
 ) -> AsyncIterator[FastAPI]:
+    # forces rebuild of middleware stack on next test
+    nicegui.app.user_middleware.clear()
+    nicegui.app.middleware_stack = None
     test_app = create_app()
     async with LifespanManager(
         test_app,
