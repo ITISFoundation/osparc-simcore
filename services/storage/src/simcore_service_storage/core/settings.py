@@ -30,59 +30,47 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     STORAGE_MONITORING_ENABLED: bool = False
     STORAGE_PROFILING: bool = False
 
-    BF_API_KEY: str | None = Field(
-        None, description="Pennsieve API key ONLY for testing purposes"
-    )
-    BF_API_SECRET: str | None = Field(
-        None, description="Pennsieve API secret ONLY for testing purposes"
-    )
+    STORAGE_POSTGRES: Annotated[
+        PostgresSettings | None,
+        Field(json_schema_extra={"auto_default_from_env": True}),
+    ]
 
-    STORAGE_POSTGRES: PostgresSettings | None = Field(
-        json_schema_extra={"auto_default_from_env": True}
-    )
+    STORAGE_REDIS: Annotated[
+        RedisSettings | None, Field(json_schema_extra={"auto_default_from_env": True})
+    ]
 
-    STORAGE_REDIS: RedisSettings | None = Field(
-        json_schema_extra={"auto_default_from_env": True}
-    )
+    STORAGE_S3: Annotated[
+        S3Settings | None, Field(json_schema_extra={"auto_default_from_env": True})
+    ]
 
-    STORAGE_S3: S3Settings | None = Field(
-        json_schema_extra={"auto_default_from_env": True}
-    )
+    STORAGE_CELERY: Annotated[
+        CelerySettings | None, Field(json_schema_extra={"auto_default_from_env": True})
+    ]
 
-    STORAGE_CELERY: CelerySettings | None = Field(
-        json_schema_extra={"auto_default_from_env": True}
-    )
+    STORAGE_TRACING: Annotated[
+        TracingSettings | None, Field(json_schema_extra={"auto_default_from_env": True})
+    ]
 
-    STORAGE_TRACING: TracingSettings | None = Field(
-        json_schema_extra={"auto_default_from_env": True}
-    )
+    DATCORE_ADAPTER: Annotated[
+        DatcoreAdapterSettings, Field(json_schema_extra={"auto_default_from_env": True})
+    ]
 
-    DATCORE_ADAPTER: DatcoreAdapterSettings = Field(
-        json_schema_extra={"auto_default_from_env": True}
-    )
+    STORAGE_SYNC_METADATA_TIMEOUT: Annotated[
+        PositiveInt, Field(180, description="Timeout (seconds) for metadata sync task")
+    ]
 
-    STORAGE_SYNC_METADATA_TIMEOUT: PositiveInt = Field(
-        180, description="Timeout (seconds) for metadata sync task"
-    )
-
-    STORAGE_DEFAULT_PRESIGNED_LINK_EXPIRATION_SECONDS: int = Field(
-        3600, description="Default expiration time in seconds for presigned links"
-    )
-
-    STORAGE_CLEANER_INTERVAL_S: int | None = Field(
-        30,
-        description="Interval in seconds when task cleaning pending uploads runs. setting to NULL disables the cleaner.",
-    )
-
-    STORAGE_LOG_FORMAT_LOCAL_DEV_ENABLED: Annotated[
-        bool,
+    STORAGE_DEFAULT_PRESIGNED_LINK_EXPIRATION_SECONDS: Annotated[
+        int,
         Field(
-            default=False,
-            validation_alias=AliasChoices(
-                "STORAGE_LOG_FORMAT_LOCAL_DEV_ENABLED",
-                "LOG_FORMAT_LOCAL_DEV_ENABLED",
-            ),
-            description="Enables local development _logger format. WARNING: make sure it is disabled if you want to have structured logs!",
+            3600, description="Default expiration time in seconds for presigned links"
+        ),
+    ]
+
+    STORAGE_CLEANER_INTERVAL_S: Annotated[
+        int | None,
+        Field(
+            30,
+            description="Interval in seconds when task cleaning pending uploads runs. setting to NULL disables the cleaner.",
         ),
     ]
 
@@ -125,7 +113,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     ]
 
     STORAGE_WORKER_MODE: Annotated[
-        bool | None, Field(description="If True, run as a worker")
+        bool, Field(description="If True, run as a worker")
     ] = False
 
     @field_validator("LOG_LEVEL", mode="before")
