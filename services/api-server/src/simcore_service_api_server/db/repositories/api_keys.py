@@ -21,7 +21,6 @@ class ApiKeysRepository(BaseRepository):
     async def get_user(
         self, api_key: str, api_secret: str
     ) -> UserAndProductTuple | None:
-        # NOTE: this query is HIGHLY inefficient
         stmt = sa.select(tbl.api_keys.c.user_id, tbl.api_keys.c.product_name).where(
             (tbl.api_keys.c.api_key == api_key)
             & (
