@@ -21,36 +21,32 @@
         "expectedTemplateLabel": "mcTI Planning Tool",
         "title": "Multichannel TI",
         "newStudyLabel": "Multichannel TI",
-        "category": "precomputed",
-        "idToWidget": "newMTIPlanButton"
+        "category": "precomputed"
       }, {
         "resourceType": "template",
         "expectedTemplateLabel": "pmTI Planning Tool",
         "title": "Phase-modulation TI",
         "newStudyLabel": "Phase-modulation TI",
-        "category": "precomputed",
-        "idToWidget": "newPMTIPlanButton"
+        "category": "precomputed"
       }, {
         "resourceType": "template",
         "expectedTemplateLabel": "personalized TI Planning Tool",
         "title": "Personalized<br>Classic TI",
         "newStudyLabel": "Personalized Classic TI",
         "category": "personalized",
-        "idToWidget": "personalizationNewTIPlanButton"
+        "idToWidget": "newPTIPlanButton"
       }, {
         "resourceType": "template",
         "expectedTemplateLabel": "personalized mcTI Planning Tool",
         "title": "Personalized<br>Multichannel TI",
         "newStudyLabel": "Personalized Multichannel TI",
-        "category": "personalized",
-        "idToWidget": "personalizationNewMTIPlanButton"
+        "category": "personalized"
       }, {
         "resourceType": "template",
         "expectedTemplateLabel": "personalized pmTI Planning Tool",
         "title": "Personalized<br>Phase-modulation TI",
         "newStudyLabel": "Personalized Phase-modulation TI",
-        "category": "personalized",
-        "idToWidget": "personalizationNewPMTIPlanButton"
+        "category": "personalized"
       }]
     }
   },
@@ -86,7 +82,7 @@
         "reason": "Not available in ${replace_me_product_name}",
         "title": "Personalized<br>Classic TI",
         "category": "personalized",
-        "idToWidget": "personalizationNewTIPlanButton"
+        "idToWidget": "newPTIPlanButton"
       }, {
         "showDisabled": true,
         "reason": "Not available in ${replace_me_product_name}",
