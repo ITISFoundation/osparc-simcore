@@ -23,7 +23,7 @@ class ApiKeysRepository(BaseRepository):
     ) -> UserAndProductTuple | None:
         stmt = sa.select(tbl.api_keys.c.user_id, tbl.api_keys.c.product_name).where(
             (tbl.api_keys.c.api_key == api_key)
-            & (sa.func.crypt(api_secret) == tbl.api_keys.c.api_secret)
+            & (tbl.api_keys.c.api_secret == sa.func.crypt(api_secret))
         )
         result: UserAndProductTuple | None = None
         try:
