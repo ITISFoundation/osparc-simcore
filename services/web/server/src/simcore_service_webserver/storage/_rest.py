@@ -22,6 +22,7 @@ from models_library.api_schemas_storage.storage_schemas import (
     LinkType,
 )
 from models_library.api_schemas_webserver.storage import (
+    AsyncJobLinks,
     DataExportPost,
     StorageAsyncJobGet,
     StorageAsyncJobResult,
@@ -433,9 +434,21 @@ async def export_data(request: web.Request) -> web.Response:
             location_id=_path_params.location_id,
         ),
     )
+    _job_id = f"{async_job_rpc_get.job_id}"
     return create_data_response(
         StorageAsyncJobGet.from_rpc_schema(
-            app=request.app, async_job_rpc_get=async_job_rpc_get
+            async_job_rpc_get=async_job_rpc_get,
+            links=AsyncJobLinks(
+                status_href=request.app.router["get_async_job_status"].url_for(
+                    job_id=_job_id
+                ),
+                abort_href=request.app.router["abort_async_job"].url_for(
+                    job_id=_job_id
+                ),
+                result_href=request.app.router["get_async_job_result"].url_for(
+                    job_id=_job_id
+                ),
+            ),
         ),
         status=status.HTTP_202_ACCEPTED,
     )
@@ -463,7 +476,20 @@ async def get_async_jobs(request: web.Request) -> web.Response:
     )
     return create_data_response(
         [
-            StorageAsyncJobGet.from_rpc_schema(app=request.app, async_job_rpc_get=job)
+            StorageAsyncJobGet.from_rpc_schema(
+                async_job_rpc_get=job,
+                links=AsyncJobLinks(
+                    status_href=request.app.router["get_async_job_status"].url_for(
+                        job_id=f"{job.job_id}"
+                    ),
+                    abort_href=request.app.router["abort_async_job"].url_for(
+                        job_id=f"{job.job_id}"
+                    ),
+                    result_href=request.app.router["get_async_job_result"].url_for(
+                        job_id=f"{job.job_id}"
+                    ),
+                ),
+            )
             for job in user_async_jobs
         ],
         status=status.HTTP_200_OK,
@@ -498,9 +524,21 @@ async def get_async_job_status(request: web.Request) -> web.Response:
             user_id=_req_ctx.user_id, product_name=_req_ctx.product_name
         ),
     )
+    _job_id = f"{async_job_rpc_status.job_id}"
     return create_data_response(
         StorageAsyncJobStatus.from_rpc_schema(
-            app=request.app, async_job_rpc_status=async_job_rpc_status
+            async_job_rpc_status=async_job_rpc_status,
+            links=AsyncJobLinks(
+                status_href=request.app.router["get_async_job_status"].url_for(
+                    job_id=_job_id
+                ),
+                abort_href=request.app.router["abort_async_job"].url_for(
+                    job_id=_job_id
+                ),
+                result_href=request.app.router["get_async_job_result"].url_for(
+                    job_id=_job_id
+                ),
+            ),
         ),
         status=status.HTTP_200_OK,
     )

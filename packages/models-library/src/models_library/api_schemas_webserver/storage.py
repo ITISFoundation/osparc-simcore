@@ -1,7 +1,6 @@
 from pathlib import Path
 from typing import Annotated, Any
 
-from aiohttp import web
 from models_library.api_schemas_storage.storage_schemas import (
     DEFAULT_NUMBER_OF_PATHS_PER_PAGE,
     MAX_NUMBER_OF_PATHS_PER_PAGE,
@@ -55,14 +54,6 @@ class AsyncJobLinks(OutputSchema):
     abort_href: str
     result_href: str
 
-    @classmethod
-    def from_job_id(cls, app: web.Application, job_id: str) -> "AsyncJobLinks":
-        return AsyncJobLinks(
-            status_href=f"{app.router['get_async_job_status'].url_for(job_id=job_id)}",
-            abort_href=f"{app.router['abort_async_job'].url_for(job_id=job_id)}",
-            result_href=f"{app.router['get_async_job_result'].url_for(job_id=job_id)}",
-        )
-
 
 class StorageAsyncJobGet(OutputSchema):
     job_id: AsyncJobId
@@ -70,14 +61,9 @@ class StorageAsyncJobGet(OutputSchema):
 
     @classmethod
     def from_rpc_schema(
-        cls, *, app: web.Application, async_job_rpc_get: AsyncJobGet
+        cls, *, async_job_rpc_get: AsyncJobGet, links: AsyncJobLinks
     ) -> "StorageAsyncJobGet":
-        return StorageAsyncJobGet(
-            job_id=async_job_rpc_get.job_id,
-            links=AsyncJobLinks.from_job_id(
-                app=app, job_id=f"{async_job_rpc_get.job_id}"
-            ),
-        )
+        return StorageAsyncJobGet(job_id=async_job_rpc_get.job_id, links=links)
 
 
 class StorageAsyncJobStatus(OutputSchema):
@@ -88,15 +74,13 @@ class StorageAsyncJobStatus(OutputSchema):
 
     @classmethod
     def from_rpc_schema(
-        cls, *, app: web.Application, async_job_rpc_status: AsyncJobStatus
+        cls, *, async_job_rpc_status: AsyncJobStatus, links: AsyncJobLinks
     ) -> "StorageAsyncJobStatus":
         return StorageAsyncJobStatus(
             job_id=async_job_rpc_status.job_id,
             progress=async_job_rpc_status.progress,
             done=async_job_rpc_status.done,
-            links=AsyncJobLinks.from_job_id(
-                app=app, job_id=f"{async_job_rpc_status.job_id}"
-            ),
+            links=links,
         )
 
 
