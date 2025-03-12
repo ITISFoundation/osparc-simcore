@@ -37,6 +37,7 @@ _SERVICES_TO_SKIP = {
     "static-webserver",
     "traefik",
     "whoami",
+    "sto-worker",
 }
 # TODO: unify healthcheck policies see  https://github.com/ITISFoundation/osparc-simcore/pull/2281
 SERVICE_PUBLISHED_PORT = {}
