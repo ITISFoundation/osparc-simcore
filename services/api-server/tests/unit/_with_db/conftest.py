@@ -269,12 +269,12 @@ async def create_fake_api_keys(
                     api_secret=sa.func.crypt(api_secret, sa.func.gen_salt("bf", 10)),
                     **api_key_values,
                 )
-                .returning(sa.literal_column("*"))
+                .returning(*[col for col in api_keys.c if col.name != "api_secret"])
             )
             row = await result.fetchone()
             assert row
             _generate_fake_api_key.row_ids.append(row.id)
-            yield ApiKeyInDB.model_validate(api_key)
+            yield ApiKeyInDB.model_validate({"api_secret": api_secret, **row})
 
     _generate_fake_api_key.row_ids = []
     yield _generate_fake_api_key
