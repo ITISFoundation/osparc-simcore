@@ -52,7 +52,7 @@ class VolumesManager(  # pylint:disable=too-many-instance-attributes
             task_name="volumes bookkeeping",
         )
         self._task_periodic_volume_cleanup = create_periodic_task(
-            self._periodic_volmue_cleanup_task,
+            self._periodic_volume_cleanup_task,
             interval=self.volume_cleanup_interval,
             task_name="volume cleanup",
         )
@@ -96,7 +96,7 @@ class VolumesManager(  # pylint:disable=too-many-instance-attributes
                 requires_backup=requires_backup,
             )
 
-    async def _periodic_volmue_cleanup_task(self) -> None:
+    async def _periodic_volume_cleanup_task(self) -> None:
         with log_context(_logger, logging.DEBUG, "volume cleanup"):
             volumes_to_remove: set[str] = set()
             for volume_name, inactive_since in self._unused_volumes.items():
