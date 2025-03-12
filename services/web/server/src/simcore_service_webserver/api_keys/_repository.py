@@ -6,7 +6,6 @@ from aiohttp import web
 from models_library.products import ProductName
 from models_library.users import UserID
 from simcore_postgres_database.models.api_keys import api_keys
-from simcore_postgres_database.utils_api_keys import hash_secret
 from simcore_postgres_database.utils_repos import (
     pass_or_acquire_connection,
     transaction_context,
@@ -18,6 +17,10 @@ from ..db.plugin import get_asyncpg_engine
 from .models import ApiKey
 
 _logger = logging.getLogger(__name__)
+
+
+def _hash_secret(secret: str) -> sa.sql.ClauseElement:
+    return sa.func.crypt(secret, sa.func.gen_salt("bf", 10))
 
 
 async def create_api_key(
@@ -39,14 +42,14 @@ async def create_api_key(
                 user_id=user_id,
                 product_name=product_name,
                 api_key=api_key,
-                api_secret=hash_secret(api_secret),
+                api_secret=_hash_secret(api_secret),
                 expires_at=(sa.func.now() + expiration) if expiration else None,
             )
             .on_conflict_do_update(
                 index_elements=["user_id", "display_name"],
                 set_={
                     "api_key": api_key,
-                    "api_secret": hash_secret(api_secret),
+                    "api_secret": _hash_secret(api_secret),
                     "expires_at": (sa.func.now() + expiration) if expiration else None,
                 },
             )

@@ -38,13 +38,7 @@ class ApiKeysRepository(BaseRepository):
                     result = UserAndProductTuple(
                         user_id=row.user_id, product_name=row.product_name
                     )
-            _logger.info(
-                "Getting user=%s, product_name=%s, api_key=%s, api_secret=%s",
-                row.user_id,
-                row.product_name,
-                api_key,
-                api_secret,
-            )
+
         except DatabaseError as err:
             _logger.debug("Failed to get user id: %s", err)
 
