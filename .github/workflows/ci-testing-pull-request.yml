@@ -13,12 +13,12 @@ on:
   workflow_dispatch:
     inputs:
       target_repo:
-        description: full repository name (e.g. 'ITISFoundation/osparc-simcore') to check backwards compatibility against
+        description: full repository name (e.g. 'ITISFoundation/osparc-simcore')
         required: true
         default: "ITISFoundation/osparc-simcore"
         type: environment
       target_branch:
-        description: branch name (e.g. 'master') to check backwards compatibility against
+        description: Check backwards compatibility against target_branch in target_repo
         required: true
         default: "master"
         type: environment
