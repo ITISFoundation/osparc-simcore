@@ -21,12 +21,11 @@ from pydantic import TypeAdapter
 from servicelib.aiohttp import status
 from servicelib.aiohttp.client_session import get_client_session
 from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
-from settings_library.catalog import CatalogSettings
 from yarl import URL
 
 from .._meta import api_version_prefix
 from ._constants import MSG_CATALOG_SERVICE_NOT_FOUND, MSG_CATALOG_SERVICE_UNAVAILABLE
-from .settings import get_plugin_settings
+from .settings import CatalogSettings, get_plugin_settings
 
 _logger = logging.getLogger(__name__)
 

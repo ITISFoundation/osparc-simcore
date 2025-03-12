@@ -15,13 +15,13 @@ from models_library.api_schemas_webserver.catalog import (
 from models_library.generics import Envelope
 from models_library.rest_pagination import Page
 from simcore_service_webserver._meta import API_VTAG
-from simcore_service_webserver.catalog._rest_controller import (
+from simcore_service_webserver.catalog._controller_rest_schemas import (
+    FromServiceOutputQueryParams,
     ListServiceParams,
+    ServiceInputsPathParams,
+    ServiceOutputsPathParams,
     ServicePathParams,
-    _FromServiceOutputParams,
-    _ServiceInputsPathParams,
-    _ServiceOutputsPathParams,
-    _ToServiceInputsParams,
+    ToServiceInputsQueryParams,
 )
 
 router = APIRouter(
@@ -71,7 +71,7 @@ def list_service_inputs(
     response_model=Envelope[ServiceInputGet],
 )
 def get_service_input(
-    _path: Annotated[_ServiceInputsPathParams, Depends()],
+    _path: Annotated[ServiceInputsPathParams, Depends()],
 ): ...
 
 
@@ -81,7 +81,7 @@ def get_service_input(
 )
 def get_compatible_inputs_given_source_output(
     _path: Annotated[ServicePathParams, Depends()],
-    _query: Annotated[_FromServiceOutputParams, Depends()],
+    _query: Annotated[FromServiceOutputQueryParams, Depends()],
 ): ...
 
 
@@ -99,7 +99,7 @@ def list_service_outputs(
     response_model=Envelope[list[ServiceOutputGet]],
 )
 def get_service_output(
-    _path: Annotated[_ServiceOutputsPathParams, Depends()],
+    _path: Annotated[ServiceOutputsPathParams, Depends()],
 ): ...
 
 
@@ -109,7 +109,7 @@ def get_service_output(
 )
 def get_compatible_outputs_given_target_input(
     _path: Annotated[ServicePathParams, Depends()],
-    _query: Annotated[_ToServiceInputsParams, Depends()],
+    _query: Annotated[ToServiceInputsQueryParams, Depends()],
 ): ...
 
 

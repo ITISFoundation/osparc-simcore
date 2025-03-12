@@ -10,7 +10,9 @@ from models_library.generics import Envelope
 from models_library.rest_error import EnvelopedError
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.api_keys._controller_rest import ApiKeysPathParams
-from simcore_service_webserver.api_keys._exceptions_handlers import _TO_HTTP_ERROR_MAP
+from simcore_service_webserver.api_keys._controller_rest_exceptions import (
+    _TO_HTTP_ERROR_MAP,
+)
 
 router = APIRouter(
     prefix=f"/{API_VTAG}",
