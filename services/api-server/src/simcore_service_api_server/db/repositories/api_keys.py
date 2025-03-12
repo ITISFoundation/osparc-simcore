@@ -5,7 +5,6 @@ import sqlalchemy as sa
 from models_library.products import ProductName
 from pydantic.types import PositiveInt
 from simcore_postgres_database.aiopg_errors import DatabaseError
-from simcore_postgres_database.utils_api_keys import hash_secret
 
 from .. import tables as tbl
 from ._base import BaseRepository
@@ -22,9 +21,13 @@ class ApiKeysRepository(BaseRepository):
     async def get_user(
         self, api_key: str, api_secret: str
     ) -> UserAndProductTuple | None:
+        # NOTE: this query is HIGHLY inefficient
         stmt = sa.select(tbl.api_keys.c.user_id, tbl.api_keys.c.product_name).where(
             (tbl.api_keys.c.api_key == api_key)
-            & (tbl.api_keys.c.api_secret == hash_secret(api_secret)),
+            & (
+                sa.func.crypt(api_secret, tbl.api_keys.c.api_secret)
+                == tbl.api_keys.c.api_secret
+            ),
         )
         result: UserAndProductTuple | None = None
         try:
@@ -35,7 +38,13 @@ class ApiKeysRepository(BaseRepository):
                     result = UserAndProductTuple(
                         user_id=row.user_id, product_name=row.product_name
                     )
-
+            _logger.info(
+                "Getting user=%s, product_name=%s, api_key=%s, api_secret=%s",
+                row.user_id,
+                row.product_name,
+                api_key,
+                api_secret,
+            )
         except DatabaseError as err:
             _logger.debug("Failed to get user id: %s", err)
 
