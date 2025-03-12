@@ -15,7 +15,7 @@ from ..rabbitmq import get_rabbitmq_rpc_client
 #
 
 
-async def get_or_create_api_key_and_secret(
+async def create_api_key(
     app: FastAPI,
     *,
     product_name: ProductName,
@@ -26,7 +26,7 @@ async def get_or_create_api_key_and_secret(
     rpc_client = get_rabbitmq_rpc_client(app)
     result = await rpc_client.request(
         WEBSERVER_RPC_NAMESPACE,
-        TypeAdapter(RPCMethodName).validate_python("get_or_create_api_key"),
+        TypeAdapter(RPCMethodName).validate_python("create_api_key"),
         user_id=user_id,
         display_name=display_name,
         expiration=expiration,

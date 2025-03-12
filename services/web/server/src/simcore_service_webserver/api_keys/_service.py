@@ -48,16 +48,19 @@ async def create_api_key(
     )
 
 
-async def list_api_keys(
+async def delete_api_key(
     app: web.Application,
     *,
+    api_key_id: str,
     user_id: UserID,
     product_name: ProductName,
-) -> list[ApiKey]:
-    api_keys: list[ApiKey] = await _repository.list_api_keys(
-        app, user_id=user_id, product_name=product_name
+) -> None:
+    await _repository.delete_api_key(
+        app,
+        api_key_id=api_key_id,
+        user_id=user_id,
+        product_name=product_name,
     )
-    return api_keys
 
 
 async def get_api_key(
@@ -79,43 +82,16 @@ async def get_api_key(
     raise ApiKeyNotFoundError(api_key_id=api_key_id)
 
 
-async def get_or_create_api_key(
+async def list_api_keys(
     app: web.Application,
     *,
     user_id: UserID,
     product_name: ProductName,
-    display_name: str,
-    expiration: dt.timedelta | None = None,
-) -> ApiKey:
-
-    key, secret = _generate_api_key_and_secret(display_name)
-
-    api_key: ApiKey = await _repository.get_or_create_api_key(
-        app,
-        user_id=user_id,
-        product_name=product_name,
-        display_name=display_name,
-        expiration=expiration,
-        api_key=key,
-        api_secret=secret,
+) -> list[ApiKey]:
+    api_keys: list[ApiKey] = await _repository.list_api_keys(
+        app, user_id=user_id, product_name=product_name
     )
-
-    return api_key
-
-
-async def delete_api_key(
-    app: web.Application,
-    *,
-    api_key_id: str,
-    user_id: UserID,
-    product_name: ProductName,
-) -> None:
-    await _repository.delete_api_key(
-        app,
-        api_key_id=api_key_id,
-        user_id=user_id,
-        product_name=product_name,
-    )
+    return api_keys
 
 
 async def prune_expired_api_keys(app: web.Application) -> list[str]:

@@ -1,5 +1,4 @@
 import uuid
-from typing import cast
 from uuid import uuid5
 
 from aiocache import cached  # type: ignore[import-untyped]
@@ -8,7 +7,7 @@ from models_library.products import ProductName
 from models_library.rpc.webserver.auth.api_keys import ApiKeyGet
 from models_library.users import UserID
 
-from ._api_auth_rpc import get_or_create_api_key_and_secret
+from ._api_auth_rpc import create_api_key
 
 
 def create_unique_api_name_for(product_name: ProductName, user_id: UserID) -> str:
@@ -24,14 +23,14 @@ def _cache_key(fct, *_, **kwargs):
 
 
 @cached(ttl=3, key_builder=_cache_key)
-async def _get_or_create_for(
+async def _create_for(
     app: FastAPI,
     *,
     product_name: ProductName,
     user_id: UserID,
 ) -> ApiKeyGet:
     display_name = create_unique_api_name_for(product_name, user_id)
-    return await get_or_create_api_key_and_secret(
+    return await create_api_key(
         app,
         user_id=user_id,
         product_name=product_name,
@@ -40,34 +39,36 @@ async def _get_or_create_for(
     )
 
 
-async def get_or_create_user_api_key(
+async def create_user_api_key(
     app: FastAPI,
     product_name: ProductName,
     user_id: UserID,
 ) -> str:
-    data = await _get_or_create_for(
+    data: ApiKeyGet = await _create_for(
         app,
         product_name=product_name,
         user_id=user_id,
     )
-    return cast(str, data.api_key)
+    assert data.api_key
+    return data.api_key
 
 
-async def get_or_create_user_api_secret(
+async def create_user_api_secret(
     app: FastAPI,
     product_name: ProductName,
     user_id: UserID,
 ) -> str:
-    data = await _get_or_create_for(
+    data: ApiKeyGet = await _create_for(
         app,
         product_name=product_name,
         user_id=user_id,
     )
-    return cast(str, data.api_secret)
+    assert data.api_secret
+    return data.api_secret
 
 
 __all__: tuple[str, ...] = (
-    "get_or_create_user_api_key",
-    "get_or_create_user_api_secret",
     "create_unique_api_name_for",
+    "create_user_api_key",
+    "create_user_api_secret",
 )
