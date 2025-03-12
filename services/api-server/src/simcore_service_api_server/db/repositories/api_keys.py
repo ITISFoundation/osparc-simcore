@@ -5,6 +5,7 @@ import sqlalchemy as sa
 from models_library.products import ProductName
 from pydantic.types import PositiveInt
 from simcore_postgres_database.aiopg_errors import DatabaseError
+from simcore_postgres_database.utils_api_keys import hash_secret
 
 from .. import tables as tbl
 from ._base import BaseRepository
@@ -23,7 +24,7 @@ class ApiKeysRepository(BaseRepository):
     ) -> UserAndProductTuple | None:
         stmt = sa.select(tbl.api_keys.c.user_id, tbl.api_keys.c.product_name).where(
             (tbl.api_keys.c.api_key == api_key)
-            & (tbl.api_keys.c.api_secret == api_secret),
+            & (tbl.api_keys.c.api_secret == hash_secret(api_secret)),
         )
         result: UserAndProductTuple | None = None
         try:
