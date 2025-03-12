@@ -260,15 +260,21 @@ async def create_fake_api_keys(
         for _ in range(n):
             product = await anext(products)
             user = await anext(users)
+            api_key = random_api_key(product, user)
+            api_key_values = api_key.copy()
+            api_secret = api_key_values.pop("api_secret")
             result = await connection.execute(
                 api_keys.insert()
-                .values(**random_api_key(product, user))
+                .values(
+                    api_secret=sa.func.crypt(api_secret, sa.func.gen_salt("bf", 10)),
+                    **api_key_values,
+                )
                 .returning(sa.literal_column("*"))
             )
             row = await result.fetchone()
             assert row
             _generate_fake_api_key.row_ids.append(row.id)
-            yield ApiKeyInDB.model_validate(row)
+            yield ApiKeyInDB.model_validate(api_key)
 
     _generate_fake_api_key.row_ids = []
     yield _generate_fake_api_key
@@ -279,7 +285,7 @@ async def create_fake_api_keys(
 
 @pytest.fixture
 async def auth(
-    create_fake_api_keys: Callable[[PositiveInt], AsyncGenerator[ApiKeyInDB, None]]
+    create_fake_api_keys: Callable[[PositiveInt], AsyncGenerator[ApiKeyInDB, None]],
 ) -> httpx.BasicAuth:
     """overrides auth and uses access to real repositories instead of mocks"""
     async for key in create_fake_api_keys(1):
