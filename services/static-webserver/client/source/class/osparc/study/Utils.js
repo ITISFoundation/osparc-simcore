@@ -46,13 +46,13 @@ qx.Class.define("osparc.study.Utils", {
     },
 
     getCantExecuteServices: function(studyServices = []) {
-      return studyServices.filter(service => service["myAccessRights"]["execute"] === false);
+      return studyServices.filter(studyService => studyService["myAccessRights"]["execute"] === false);
     },
 
     anyServiceRetired: function(studyServices) {
-      const isRetired = studyServices.some(service => {
-        if (service["release"] && service["release"]["retired"]) {
-          const retirementDate = new Date(service["release"]["retired"]);
+      const isRetired = studyServices.some(studyService => {
+        if (studyService["release"] && studyService["release"]["retired"]) {
+          const retirementDate = new Date(studyService["release"]["retired"]);
           const currentDate = new Date();
           return retirementDate < currentDate;
         }
@@ -62,9 +62,9 @@ qx.Class.define("osparc.study.Utils", {
     },
 
     anyServiceDeprecated: function(studyServices) {
-      const isDeprecated = studyServices.some(service => {
-        if (service["release"] && service["release"]["retired"]) {
-          const retirementDate = new Date(service["release"]["retired"]);
+      const isDeprecated = studyServices.some(studyService => {
+        if (studyService["release"] && studyService["release"]["retired"]) {
+          const retirementDate = new Date(studyService["release"]["retired"]);
           const currentDate = new Date();
           return retirementDate > currentDate;
         }
@@ -74,9 +74,9 @@ qx.Class.define("osparc.study.Utils", {
     },
 
     anyServiceUpdatable: function(studyServices) {
-      const isUpdatable = studyServices.some(service => {
-        if (service["release"] && service["release"]["compatibility"]) {
-          return Boolean(service["release"]["compatibility"]);
+      const isUpdatable = studyServices.some(studyService => {
+        if (studyService["release"] && studyService["release"]["compatibility"]) {
+          return Boolean(studyService["release"]["compatibility"]);
         }
         return false;
       });
