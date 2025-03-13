@@ -1,7 +1,7 @@
-""" Core functionality and tools for user's registration
+"""Core functionality and tools for user's registration
 
-    - registration code
-    - invitation code
+- registration code
+- invitation code
 """
 
 import logging

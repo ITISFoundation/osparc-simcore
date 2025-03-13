@@ -1,10 +1,10 @@
-""" Users management
+"""Users management
 
- Keeps functionality that couples with the following app modules
-    - users,
-    - login
-    - security
-    - resource_manager
+Keeps functionality that couples with the following app modules
+   - users,
+   - login
+   - security
+   - resource_manager
 
 """
 

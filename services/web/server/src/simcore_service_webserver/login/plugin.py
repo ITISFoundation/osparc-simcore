@@ -93,11 +93,11 @@ async def _resolve_login_settings_per_product(app: web.Application):
         errors = {}
         for product in products_service.list_products(app):
             try:
-                login_settings_per_product[
-                    product.name
-                ] = LoginSettingsForProduct.create_from_composition(
-                    app_login_settings=app_login_settings,
-                    product_login_settings=product.login_settings,
+                login_settings_per_product[product.name] = (
+                    LoginSettingsForProduct.create_from_composition(
+                        app_login_settings=app_login_settings,
+                        product_login_settings=product.login_settings,
+                    )
                 )
             except ValidationError as err:  # noqa: PERF203
                 errors[product.name] = err

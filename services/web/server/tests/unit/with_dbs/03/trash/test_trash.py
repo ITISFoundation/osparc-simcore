@@ -23,7 +23,7 @@ from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import UserInfoDict
 from servicelib.aiohttp import status
 from simcore_service_webserver.db.models import UserRole
-from simcore_service_webserver.projects._groups_api import ProjectGroupGet
+from simcore_service_webserver.projects._accessrights_service import ProjectGroupGet
 from simcore_service_webserver.projects.models import ProjectDict
 from tenacity import AsyncRetrying, stop_after_attempt, wait_fixed
 from yarl import URL
@@ -66,7 +66,7 @@ async def test_trash_projects(  # noqa: PLR0915
         autospec=True,
     )
     mocker.patch(
-        "simcore_service_webserver.projects._trash_service.dynamic_scheduler_api.list_dynamic_services",
+        "simcore_service_webserver.projects._trash_service.dynamic_scheduler_service.list_dynamic_services",
         return_value=[mocker.MagicMock()] if is_project_running else [],
         autospec=True,
     )
