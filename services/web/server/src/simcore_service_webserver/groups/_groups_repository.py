@@ -118,7 +118,7 @@ async def _get_group_and_access_rights_or_raise(
         .select_from(groups.join(user_to_groups, user_to_groups.c.gid == groups.c.gid))
         .where((user_to_groups.c.uid == caller_id) & (user_to_groups.c.gid == group_id))
     )
-    row = result.first()
+    row = result.one_or_none()
     if not row:
         raise GroupNotFoundError(gid=group_id)
 
@@ -369,15 +369,14 @@ async def update_standard_group(
         # NOTE: update does not include access-rights
         access_rights = AccessRightsDict(**row.access_rights)  # type: ignore[typeddict-item]
 
-        result = await conn.stream(
+        result = await conn.execute(
             # pylint: disable=no-value-for-parameter
             groups.update()
             .values(**values)
             .where((groups.c.gid == group_id) & (groups.c.type == GroupType.STANDARD))
             .returning(*_GROUP_COLUMNS)
         )
-        row = await result.fetchone()
-        assert row  # nosec
+        row = result.one()
 
         group = _row_to_model(row)
         return group, access_rights
