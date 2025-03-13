@@ -51,6 +51,19 @@ def _create_timestamp() -> int:
     ts = datetime.now(UTC).timestamp() * _SECS_TO_MILISECS
     return int(ts)
 
+_LEN = 12  # chars (~48 bits)
+
+
+def _generate_error_fingerprint(exc: BaseException) -> str:
+    """
+    Unique error fingerprint for deduplication purposes
+    """
+    tb = traceback.extract_tb(exc.__traceback__)
+    frame_sigs = [f"{frame.name}:{frame.lineno}" for frame in tb]
+    fingerprint = f"{type(exc).__name__}|" + "|".join(frame_sigs)
+    # E.g. ZeroDivisionError|foo:23|main:10
+    return hashlib.sha256(fingerprint.encode()).hexdigest()[:_LEN]
+
 
 def create_error_code(exception: BaseException) -> ErrorCodeStr:
     """
