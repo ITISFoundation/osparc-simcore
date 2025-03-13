@@ -259,7 +259,7 @@ qx.Class.define("osparc.auth.ui.LoginView", {
           });
         });
 
-        osparc.FlashMessenger.logAs(msg, "ERROR");
+        osparc.FlashMessenger.logError(msg);
       };
 
       const manager = osparc.auth.Manager.getInstance();

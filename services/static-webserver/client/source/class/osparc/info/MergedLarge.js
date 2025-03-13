@@ -416,8 +416,8 @@ qx.Class.define("osparc.info.MergedLarge", {
         })
         .catch(err => {
           console.error(err);
-          const msg = err.message || this.tr("There was an error while updating the information.");
-          osparc.FlashMessenger.logAs(msg, "ERROR");
+          const msg = this.tr("There was an error while updating the information.");
+          osparc.FlashMessenger.logError(err, msg);
         });
     }
   }

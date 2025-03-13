@@ -309,10 +309,7 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
           }
           this.fireEvent("modelPurchased");
         })
-        .catch(err => {
-          const msg = err.message || this.tr("Cannot purchase model");
-          osparc.FlashMessenger.logAs(msg, "ERROR");
-        });
+        .catch(err => osparc.FlashMessenger.logError(err, this.tr("Cannot purchase model")));
     },
 
     __sendImportModelMessage: function(modelId, categoryId) {

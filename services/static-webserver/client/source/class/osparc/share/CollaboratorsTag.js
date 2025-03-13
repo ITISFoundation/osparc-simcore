@@ -83,7 +83,7 @@ qx.Class.define("osparc.share.CollaboratorsTag", {
         })
         .catch(err => {
           console.error(err);
-          osparc.FlashMessenger.logAs(this.tr("Something went wrong sharing the Tag"), "ERROR");
+          osparc.FlashMessenger.logError(err, this.tr("Something went wrong sharing the Tag"));
         });
     },
 
@@ -100,7 +100,7 @@ qx.Class.define("osparc.share.CollaboratorsTag", {
         })
         .catch(err => {
           console.error(err);
-          osparc.FlashMessenger.logAs(this.tr("Something went wrong removing ") + collaborator["name"], "ERROR");
+          osparc.FlashMessenger.logError(err, this.tr("Something went wrong removing ") + collaborator["name"]);
         })
         .finally(() => {
           if (item) {
@@ -120,7 +120,7 @@ qx.Class.define("osparc.share.CollaboratorsTag", {
         })
         .catch(err => {
           console.error(err);
-          osparc.FlashMessenger.logAs(failureMsg, "ERROR");
+          osparc.FlashMessenger.logError(err, failureMsg);
         })
         .finally(() => {
           if (item) {

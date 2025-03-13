@@ -81,7 +81,7 @@ qx.Class.define("osparc.share.CollaboratorsService", {
         })
         .catch(err => {
           console.error(err);
-          osparc.FlashMessenger.logAs(this.tr("Something went wrong sharing the Service"), "ERROR");
+          osparc.FlashMessenger.logError(err, this.tr("Something went wrong sharing the Service"));
         });
     },
 
@@ -92,7 +92,7 @@ qx.Class.define("osparc.share.CollaboratorsService", {
 
       const success = delete this._serializedDataCopy["accessRights"][collaborator["gid"]];
       if (!success) {
-        osparc.FlashMessenger.logAs(this.tr("Something went wrong removing Member"), "ERROR");
+        osparc.FlashMessenger.logError(this.tr("Something went wrong removing Member"));
         if (item) {
           item.setEnabled(true);
         }
@@ -107,7 +107,7 @@ qx.Class.define("osparc.share.CollaboratorsService", {
         })
         .catch(err => {
           console.error(err);
-          osparc.FlashMessenger.logAs(this.tr("Something went wrong removing ") + collaborator["name"], "ERROR");
+          osparc.FlashMessenger.logError(err, this.tr("Something went wrong removing ") + collaborator["name"]);
         })
         .finally(() => {
           if (item) {
@@ -127,7 +127,7 @@ qx.Class.define("osparc.share.CollaboratorsService", {
         })
         .catch(err => {
           console.error(err);
-          osparc.FlashMessenger.logAs(failureMsg, "ERROR");
+          osparc.FlashMessenger.logError(err, failureMsg);
         })
         .finally(() => item.setEnabled(true));
     },

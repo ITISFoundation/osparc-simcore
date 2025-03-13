@@ -121,7 +121,7 @@ qx.Class.define("osparc.desktop.account.DeleteAccount", {
         })
         .catch(err => {
           console.error(err);
-          osparc.FlashMessenger.logAs(err, "ERROR");
+          osparc.FlashMessenger.logError(err);
         })
         .finally(() => deleteBtn.setFetching(false));
     }

@@ -214,7 +214,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
             })
             .catch(err => {
               this._hideLoadingPage();
-              osparc.FlashMessenger.logAs(err, "ERROR");
+              osparc.FlashMessenger.logError(err);
               console.error(err);
             });
         });
@@ -237,7 +237,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
           })
           .catch(err => {
             this._hideLoadingPage();
-            osparc.FlashMessenger.logAs(err, "ERROR");
+            osparc.FlashMessenger.logError(err);
             console.error(err);
           });
       }
@@ -341,11 +341,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
         Promise.all(templatePromises)
           .then(() => this._updateTemplateData(uniqueTemplateData))
           .catch(err => {
-            if ("message" in err) {
-              osparc.FlashMessenger.logAs(err, "ERROR");
-            } else {
-              osparc.FlashMessenger.logAs(this.tr("Something went wrong"), "ERROR");
-            }
+            osparc.FlashMessenger.logError(err, this.tr("Something went wrong"));
           });
       }
     },
@@ -459,7 +455,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
         .then(() => this.__removeFromTemplateList(studyData.uuid))
         .catch(err => {
           console.error(err);
-          osparc.FlashMessenger.logAs(err, "ERROR");
+          osparc.FlashMessenger.logError(err);
         });
     },
 

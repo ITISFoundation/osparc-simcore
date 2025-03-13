@@ -175,7 +175,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         })
         .catch(err => {
           console.error(err);
-          osparc.FlashMessenger.logAs(err, "ERROR");
+          osparc.FlashMessenger.logError(err);
           openButton.setFetching(false);
         });
     },

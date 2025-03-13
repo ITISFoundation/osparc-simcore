@@ -205,7 +205,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
               msg += "<br>" + err["message"];
             }
           }
-          osparc.FlashMessenger.logAs(msg, "ERROR");
+          osparc.FlashMessenger.logError(msg);
           this.fireEvent("forceBackToDashboard");
         })
         .finally(() => this._hideLoadingPage());
@@ -382,7 +382,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           const usedWallet = store.getWallets().find(wallet => wallet.getWalletId() === walletId);
           const walletName = usedWallet.getName();
           const text = `Wallet "${walletName}", running your service(s) has run out of credits. Stopping service(s) gracefully.`;
-          osparc.FlashMessenger.logAs(this.tr(text), "ERROR", flashMessageDisplayDuration);
+          osparc.FlashMessenger.logError(this.tr(text), null, flashMessageDisplayDuration);
         }, this);
       }
     },
@@ -766,7 +766,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
             const store = osparc.store.Store.getInstance();
             store.getSnapshots().push(data);
           })
-          .catch(err => osparc.FlashMessenger.logAs(err, "ERROR"));
+          .catch(err => osparc.FlashMessenger.logError(err));
 
         win.close();
       }, this);

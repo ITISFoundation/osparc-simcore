@@ -434,7 +434,7 @@ qx.Class.define("osparc.file.FilePicker", {
           fileUploader.retrieveUrlAndUpload(files[0]);
           return true;
         }
-        osparc.FlashMessenger.logAs(osparc.file.FileDrop.ONE_FILE_ONLY, "ERROR");
+        osparc.FlashMessenger.logError(osparc.file.FileDrop.ONE_FILE_ONLY);
       }
       return false;
     },

@@ -221,8 +221,8 @@ qx.Class.define("osparc.pricing.PlanEditor", {
           this.fireEvent("done");
         })
         .catch(err => {
-          const errorMsg = err.message || this.tr("Something went wrong creating ") + name;
-          osparc.FlashMessenger.logAs(errorMsg, "ERROR");
+          const errorMsg = this.tr("Something went wrong creating ") + name;
+          osparc.FlashMessenger.logError(err, errorMsg);
           console.error(err);
         })
         .finally(() => this.getChildControl("create").setFetching(false));
@@ -242,8 +242,7 @@ qx.Class.define("osparc.pricing.PlanEditor", {
           this.fireEvent("done");
         })
         .catch(err => {
-          const errorMsg = err.message || this.tr("Something went wrong");
-          osparc.FlashMessenger.logAs(errorMsg, "ERROR");
+          osparc.FlashMessenger.logError(err, this.tr("Something went wrong"));
           console.error(err);
         })
         .finally(() => this.getChildControl("save").setFetching(false));

@@ -134,7 +134,7 @@ qx.Class.define("osparc.metadata.ClassifiersEditor", {
           osparc.store.Store.getInstance().getAllClassifiers(true);
         })
         .catch(err => {
-          osparc.FlashMessenger.logAs(err, "ERROR");
+          osparc.FlashMessenger.logError(err);
         })
         .finally(() => {
           btn.setFetching(false);
@@ -154,7 +154,7 @@ qx.Class.define("osparc.metadata.ClassifiersEditor", {
           })
           .catch(err => {
             console.error(err);
-            osparc.FlashMessenger.logAs(this.tr("Something went wrong editing Classifiers"), "ERROR");
+            osparc.FlashMessenger.logError(err, this.tr("Something went wrong editing Classifiers"));
           });
       } else {
         const serviceDataCopy = osparc.utils.Utils.deepCloneObject(this.__resourceData);
@@ -166,7 +166,7 @@ qx.Class.define("osparc.metadata.ClassifiersEditor", {
           })
           .catch(err => {
             console.error(err);
-            osparc.FlashMessenger.logAs(this.tr("Something went wrong editing Classifiers"), "ERROR");
+            osparc.FlashMessenger.logError(err, this.tr("Something went wrong editing Classifiers"));
           });
       }
     }

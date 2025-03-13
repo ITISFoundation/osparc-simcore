@@ -125,7 +125,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         })
         .catch(err => {
           console.error(err);
-          osparc.FlashMessenger.logAs(err, "ERROR");
+          osparc.FlashMessenger.logError(err);
         });
     },
 
@@ -339,7 +339,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         })
         .catch(err => {
           console.error(err);
-          osparc.FlashMessenger.logAs(err, "ERROR");
+          osparc.FlashMessenger.logError(err);
           // stop fetching
           if (this._resourcesContainer.getFlatList()) {
             this._resourcesContainer.getFlatList().nextRequest = null;
@@ -475,7 +475,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         })
         .catch(err => {
           console.error(err);
-          osparc.FlashMessenger.logAs(err, "ERROR");
+          osparc.FlashMessenger.logError(err);
         });
     },
 
@@ -489,7 +489,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         })
         .catch(err => {
           console.error(err);
-          osparc.FlashMessenger.logAs(err, "ERROR");
+          osparc.FlashMessenger.logError(err);
         });
     },
 
@@ -503,7 +503,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         })
         .catch(err => {
           console.error(err);
-          osparc.FlashMessenger.logAs(err, "ERROR");
+          osparc.FlashMessenger.logError(err);
         })
     },
     // /WORKSPACES
@@ -586,7 +586,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .then(() => this.__reloadFolders())
         .catch(err => {
           console.error(err);
-          osparc.FlashMessenger.logAs(err, "ERROR");
+          osparc.FlashMessenger.logError(err);
         });
     },
 
@@ -613,7 +613,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         })
         .catch(err => {
           console.error(err);
-          osparc.FlashMessenger.logAs(err, "ERROR");
+          osparc.FlashMessenger.logError(err);
         });
     },
 
@@ -645,7 +645,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         })
         .catch(err => {
           console.error(err);
-          osparc.FlashMessenger.logAs(err, "ERROR");
+          osparc.FlashMessenger.logError(err);
         })
     },
 
@@ -1521,7 +1521,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .then(studyData => this.__startStudyAfterCreating(studyData["uuid"]))
         .catch(err => {
           this._hideLoadingPage();
-          osparc.FlashMessenger.logAs(err, "ERROR");
+          osparc.FlashMessenger.logError(err);
           console.error(err);
         });
     },
@@ -1541,7 +1541,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .then(studyData => this.__startStudyAfterCreating(studyData["uuid"]))
         .catch(err => {
           this._hideLoadingPage();
-          osparc.FlashMessenger.logAs(err, "ERROR");
+          osparc.FlashMessenger.logError(err);
           console.error(err);
         });
     },
@@ -1556,7 +1556,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .then(studyId => this.__startStudyAfterCreating(studyId))
         .catch(err => {
           this._hideLoadingPage();
-          osparc.FlashMessenger.logAs(err, "ERROR");
+          osparc.FlashMessenger.logError(err);
           console.error(err);
         });
     },
@@ -1748,8 +1748,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .then(() => this._updateStudyData(studyData))
         .catch(err => {
           console.error(err);
-          const msg = err.message || this.tr("Something went wrong Renaming");
-          osparc.FlashMessenger.logAs(msg, "ERROR");
+          osparc.FlashMessenger.logError(err, this.tr("Something went wrong Renaming"));
         });
     },
 
@@ -1758,8 +1757,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .then(() => this._updateStudyData(studyData))
         .catch(err => {
           console.error(err);
-          const msg = err.message || this.tr("Something went wrong updating the Thumbnail");
-          osparc.FlashMessenger.logAs(msg, "ERROR");
+          osparc.FlashMessenger.logError(err, this.tr("Something went wrong updating the Thumbnail"));
         });
     },
 
@@ -1785,7 +1783,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .then(() => this.__removeFromStudyList(studyData["uuid"]))
         .catch(err => {
           console.error(err);
-          osparc.FlashMessenger.logAs(err, "ERROR");
+          osparc.FlashMessenger.logError(err);
         });
     },
 
@@ -1869,8 +1867,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         this.__updateUIMode(studyData, "workbench")
           .catch(err => {
             console.error(err);
-            const msg = err.message || this.tr("Something went wrong Converting to Pipeline");
-            osparc.FlashMessenger.logAs(msg, "ERROR");
+            osparc.FlashMessenger.logError(err, this.tr("Something went wrong Converting to Pipeline"));
           });
       }, this);
       return convertToPipelineButton;
@@ -1999,8 +1996,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .then(task => this.__taskDuplicateReceived(task, studyData["name"]))
         .catch(err => {
           console.error(err);
-          const msg = err.message || this.tr("Something went wrong Duplicating");
-          osparc.FlashMessenger.logAs(msg, "ERROR");
+          osparc.FlashMessenger.logError(err, this.tr("Something went wrong Duplicating"));
         });
     },
 
@@ -2020,7 +2016,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .catch(err => {
           console.error(err);
           const msg = osparc.data.Resources.getErrorMsg(JSON.parse(err.response)) || this.tr("Something went wrong Exporting the study");
-          osparc.FlashMessenger.logAs(msg, "ERROR");
+          osparc.FlashMessenger.logError(err, msg);
         })
         .finally(() => {
           exportTask.stop();
@@ -2083,8 +2079,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             .then(studyData => this._updateStudyData(studyData))
             .catch(err => {
               console.error(err);
-              const msg = this.tr("Something went wrong Fetching the study");
-              osparc.FlashMessenger.logAs(msg, "ERROR");
+              osparc.FlashMessenger.logError(err, this.tr("Something went wrong Fetching the study"));
             })
             .finally(() => {
               importTask.stop();
@@ -2094,7 +2089,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           importTask.stop();
           this._resourcesContainer.removeNonResourceCard(importingStudyCard);
           const msg = osparc.data.Resources.getErrorMsg(JSON.parse(req.response)) || this.tr("Something went wrong Importing the study");
-          osparc.FlashMessenger.logAs(msg, "ERROR");
+          osparc.FlashMessenger.logError(msg);
         }
       });
       req.addEventListener("error", e => {
@@ -2102,14 +2097,14 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         importTask.stop();
         this._resourcesContainer.removeNonResourceCard(importingStudyCard);
         const msg = osparc.data.Resources.getErrorMsg(e) || this.tr("Something went wrong Importing the study");
-        osparc.FlashMessenger.logAs(msg, "ERROR");
+        osparc.FlashMessenger.logError(msg);
       });
       req.addEventListener("abort", e => {
         // transferAborted
         importTask.stop();
         this._resourcesContainer.removeNonResourceCard(importingStudyCard);
         const msg = osparc.data.Resources.getErrorMsg(e) || this.tr("Something went wrong Importing the study");
-        osparc.FlashMessenger.logAs(msg, "ERROR");
+        osparc.FlashMessenger.logError(msg);
       });
       req.open("POST", "/v0/projects:import", true);
       req.send(body);
@@ -2125,7 +2120,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         })
         .catch(err => {
           console.error(err);
-          osparc.FlashMessenger.logAs(err, "ERROR");
+          osparc.FlashMessenger.logError(err);
         })
         .finally(() => this.resetSelection());
     },
@@ -2140,7 +2135,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         })
         .catch(err => {
           console.error(err);
-          osparc.FlashMessenger.logAs(err, "ERROR");
+          osparc.FlashMessenger.logError(err);
         })
         .finally(() => this.resetSelection());
     },
@@ -2177,7 +2172,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .then(() => this.__removeFromStudyList(studyData.uuid))
         .catch(err => {
           console.error(err);
-          osparc.FlashMessenger.logAs(err, "ERROR");
+          osparc.FlashMessenger.logError(err);
         })
         .finally(() => this.resetSelection());
     },

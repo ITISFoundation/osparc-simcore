@@ -134,7 +134,7 @@ qx.Class.define("osparc.workbench.DiskUsageController", {
         case "CRITICAL":
           if (shouldDisplayMessage(prevDiskUsageState, warningLevel)) {
             message = qx.locale.Manager.tr(`Out of Disk Space on "Service Filesystem" for ${nodeName}<br />The volume Service Filesystem has only ${freeSpace} disk space remaining. You can free up disk space by removing unused files in your service. Alternatively, you can run your service with a pricing plan that supports your storage requirements.`);
-            osparc.FlashMessenger.logAs(message, "ERROR");
+            osparc.FlashMessenger.logError(message);
             this.__prevDiskUsageStateList[objIndex].state = warningLevel;
           }
           break;

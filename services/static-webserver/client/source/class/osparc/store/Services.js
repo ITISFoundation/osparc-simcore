@@ -45,8 +45,7 @@ qx.Class.define("osparc.store.Services", {
             resolve(servicesObj);
           })
           .catch(err => {
-            const msg = err.message || qx.locale.Manager.tr("Unable to fetch Services");
-            osparc.FlashMessenger.logAs(msg, "ERROR");
+            osparc.FlashMessenger.logError(err, qx.locale.Manager.tr("Unable to fetch Services"));
             console.error(err);
           });
       });

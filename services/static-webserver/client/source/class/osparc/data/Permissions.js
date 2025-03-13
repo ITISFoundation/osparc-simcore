@@ -262,7 +262,7 @@ qx.Class.define("osparc.data.Permissions", {
         if (["anonymous", "guest"].includes(this.getRole())) {
           msg = "Please register to use this functionality";
         }
-        osparc.FlashMessenger.logAs(msg, "ERROR");
+        osparc.FlashMessenger.logError(msg);
       }
       return canDo;
     },

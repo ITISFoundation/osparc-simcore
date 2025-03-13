@@ -73,7 +73,7 @@ qx.Class.define("osparc.metadata.QualityEditor", {
 
     __initResourceData: function(resourceData) {
       if (!("quality" in resourceData)) {
-        osparc.FlashMessenger.logAs(this.tr("Quality Assessment data not found"), "ERROR");
+        osparc.FlashMessenger.logError(this.tr("Quality Assessment data not found"));
         return;
       }
 
@@ -128,7 +128,7 @@ qx.Class.define("osparc.metadata.QualityEditor", {
         console.error(errors);
         if (showMessage) {
           let message = `${errors[0].dataPath} ${errors[0].message}`;
-          osparc.FlashMessenger.logAs(message, "ERROR");
+          osparc.FlashMessenger.logError(message);
         }
         return false;
       }
@@ -154,7 +154,7 @@ qx.Class.define("osparc.metadata.QualityEditor", {
 
         this.__populateForms();
       } else {
-        osparc.FlashMessenger.logAs(this.tr("There was an error validating the metadata."), "ERROR");
+        osparc.FlashMessenger.logError(this.tr("There was an error validating the metadata."));
       }
     },
 
@@ -468,7 +468,7 @@ qx.Class.define("osparc.metadata.QualityEditor", {
             })
             .catch(err => {
               console.error(err);
-              osparc.FlashMessenger.logAs(this.tr("There was an error while updating the Quality Assessment."), "ERROR");
+              osparc.FlashMessenger.logError(this.tr("There was an error while updating the Quality Assessment."));
             })
             .finally(() => btn.setFetching(false));
         } else {
@@ -479,7 +479,7 @@ qx.Class.define("osparc.metadata.QualityEditor", {
             })
             .catch(err => {
               console.error(err);
-              osparc.FlashMessenger.logAs(this.tr("There was an error while updating the Quality Assessment."), "ERROR");
+              osparc.FlashMessenger.logError(this.tr("There was an error while updating the Quality Assessment."));
             })
             .finally(() => btn.setFetching(false));
         }

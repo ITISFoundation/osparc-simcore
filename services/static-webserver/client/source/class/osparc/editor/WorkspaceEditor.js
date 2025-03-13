@@ -223,7 +223,7 @@ qx.Class.define("osparc.editor.WorkspaceEditor", {
           .then(() => this.fireEvent("workspaceUpdated"))
           .catch(err => {
             console.error(err);
-            osparc.FlashMessenger.logAs(err, "ERROR");
+            osparc.FlashMessenger.logError(err);
           })
           .finally(() => editButton.setFetching(false));
       }
@@ -235,7 +235,7 @@ qx.Class.define("osparc.editor.WorkspaceEditor", {
           .then(() => this.fireEvent("workspaceDeleted"))
           .catch(err => {
             console.error(err);
-            osparc.FlashMessenger.logAs(err, "ERROR");
+            osparc.FlashMessenger.logError(err);
           });
       }
       this.fireEvent("cancel");

@@ -234,7 +234,8 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsList", {
               this.reloadOrganizations();
             })
             .catch(err => {
-              osparc.FlashMessenger.logAs(this.tr("Something went wrong deleting ") + name, "ERROR");
+              const errorMsg = this.tr("Something went wrong deleting ") + name;
+              osparc.FlashMessenger.logError(err, errorMsg);
               console.error(err);
             })
             .finally(() => {
@@ -258,7 +259,7 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsList", {
         })
         .catch(err => {
           const errorMessage = err["message"] || this.tr("Something went wrong creating ") + name;
-          osparc.FlashMessenger.logAs(errorMessage, "ERROR");
+          osparc.FlashMessenger.logError(err, errorMessage);
           button.setFetching(false);
           console.error(err);
         })
@@ -279,7 +280,8 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsList", {
           win.close();
         })
         .catch(err => {
-          osparc.FlashMessenger.logAs(this.tr("Something went wrong editing ") + name, "ERROR");
+          const msg = this.tr("Something went wrong editing ") + name;
+          osparc.FlashMessenger.logError(err, msg);
           button.setFetching(false);
           console.error(err);
         });

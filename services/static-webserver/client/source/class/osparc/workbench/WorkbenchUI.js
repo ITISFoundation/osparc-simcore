@@ -299,7 +299,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
         return null;
       }
       if (this.getStudy().isPipelineRunning()) {
-        osparc.FlashMessenger.logAs(osparc.data.model.Workbench.CANT_ADD_NODE, "ERROR");
+        osparc.FlashMessenger.logError(osparc.data.model.Workbench.CANT_ADD_NODE);
         return null;
       }
       const srvCat = new osparc.workbench.ServiceCatalog();
@@ -2013,10 +2013,10 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
               filePicker.addListener("fileUploaded", () => this.fireDataEvent("nodeSelected", nodeUI.getNodeId()), this);
             }
           } else {
-            osparc.FlashMessenger.logAs(osparc.file.FileDrop.ONE_FILE_ONLY, "ERROR");
+            osparc.FlashMessenger.logError(osparc.file.FileDrop.ONE_FILE_ONLY);
           }
         } else {
-          osparc.FlashMessenger.logAs(this.tr("Folders are not accepted. You might want to upload a zip file."), "ERROR");
+          osparc.FlashMessenger.logError(this.tr("Folders are not accepted. You might want to upload a zip file."));
         }
       }
     },

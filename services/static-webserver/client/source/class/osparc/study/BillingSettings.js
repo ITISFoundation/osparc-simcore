@@ -260,7 +260,7 @@ qx.Class.define("osparc.study.BillingSettings", {
         })
         .catch(err => {
           console.error(err);
-          osparc.FlashMessenger.logAs(err, "ERROR");
+          osparc.FlashMessenger.logError(err);
         });
     },
 
@@ -291,7 +291,7 @@ qx.Class.define("osparc.study.BillingSettings", {
         })
         .catch(err => {
           console.error(err);
-          osparc.FlashMessenger.logAs(err, "ERROR");
+          osparc.FlashMessenger.logError(err);
         })
         .finally(() => {
           creditAccountBox.setEnabled(true);

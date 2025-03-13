@@ -174,7 +174,7 @@ qx.Class.define("osparc.Preferences", {
         .then(() => preferencesSettings.set(preferenceId, newValue))
         .catch(err => {
           console.error(err);
-          osparc.FlashMessenger.logAs(err, "ERROR");
+          osparc.FlashMessenger.logError(err);
           preferenceField.setValue(oldValue);
         })
         .finally(() => preferenceField.setEnabled(true));
@@ -210,7 +210,7 @@ qx.Class.define("osparc.Preferences", {
         })
         .catch(err => {
           console.error(err);
-          osparc.FlashMessenger.logAs(err, "ERROR");
+          osparc.FlashMessenger.logError(err);
         });
     },
 

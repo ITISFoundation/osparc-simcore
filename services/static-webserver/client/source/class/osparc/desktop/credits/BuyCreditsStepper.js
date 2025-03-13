@@ -60,7 +60,7 @@ qx.Class.define("osparc.desktop.credits.BuyCreditsStepper", {
             })
             .catch(err => {
               console.error(err);
-              osparc.FlashMessenger.logAs(err, "ERROR");
+              osparc.FlashMessenger.logError(err);
               this.__form.setFetching(false);
             })
         } else {
@@ -81,7 +81,7 @@ qx.Class.define("osparc.desktop.credits.BuyCreditsStepper", {
             })
             .catch(err => {
               console.error(err);
-              osparc.FlashMessenger.logAs(err, "ERROR");
+              osparc.FlashMessenger.logError(err);
             })
             .finally(() => this.__form.setFetching(false));
         }
@@ -102,7 +102,7 @@ qx.Class.define("osparc.desktop.credits.BuyCreditsStepper", {
             break;
           case "CANCELED":
           case "FAILED":
-            osparc.FlashMessenger.logAs(msg, "ERROR");
+            osparc.FlashMessenger.logError(msg);
             break;
           default:
             console.error("completedStatus unknown");

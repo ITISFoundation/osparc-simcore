@@ -283,11 +283,12 @@ qx.Class.define("osparc.data.model.Workbench", {
 
     createNode: async function(key, version) {
       if (!osparc.data.Permissions.getInstance().canDo("study.node.create", true)) {
-        osparc.FlashMessenger.logAs(qx.locale.Manager.tr("You are not allowed to add nodes"), "ERROR");
+        const msg = qx.locale.Manager.tr("You are not allowed to add nodes");
+        osparc.FlashMessenger.logError(msg);
         return null;
       }
       if (this.getStudy().isPipelineRunning()) {
-        osparc.FlashMessenger.logAs(this.self().CANT_ADD_NODE, "ERROR");
+        osparc.FlashMessenger.logError(this.self().CANT_ADD_NODE);
         return null;
       }
 
@@ -330,7 +331,7 @@ qx.Class.define("osparc.data.model.Workbench", {
           level: "ERROR"
         };
         this.fireDataEvent("showInLogger", errorMsgData);
-        osparc.FlashMessenger.logAs(errorMsg, "ERROR");
+        osparc.FlashMessenger.logError(errorMsg);
         return null;
       }
     },
@@ -459,7 +460,7 @@ qx.Class.define("osparc.data.model.Workbench", {
           } else {
             this.removeNode(filePickerId);
             const msg = qx.locale.Manager.tr("File couldn't be assigned");
-            osparc.FlashMessenger.logAs(msg, "ERROR");
+            osparc.FlashMessenger.logError(msg);
           }
         });
     },
@@ -487,7 +488,7 @@ qx.Class.define("osparc.data.model.Workbench", {
         if (requesterNode.getPropsForm().addPortLink(portId, pmId, "out_1") !== true) {
           this.removeNode(pmId);
           const msg = qx.locale.Manager.tr("Parameter couldn't be assigned");
-          osparc.FlashMessenger.logAs(msg, "ERROR");
+          osparc.FlashMessenger.logError(msg);
         }
         this.fireEvent("reloadModel");
       }
@@ -519,7 +520,7 @@ qx.Class.define("osparc.data.model.Workbench", {
         if (probeNode.getPropsForm().addPortLink("in_1", nodeId, portId) !== true) {
           this.removeNode(probeId);
           const msg = qx.locale.Manager.tr("Probe couldn't be assigned");
-          osparc.FlashMessenger.logAs(msg, "ERROR");
+          osparc.FlashMessenger.logError(msg);
         }
         this.fireEvent("reloadModel");
       }

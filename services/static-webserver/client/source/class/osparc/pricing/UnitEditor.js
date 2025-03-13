@@ -382,7 +382,7 @@ qx.Class.define("osparc.pricing.UnitEditor", {
           this.fireEvent("done");
         })
         .catch(err => {
-          osparc.FlashMessenger.logAs(this.tr("Something went wrong"), "ERROR");
+          osparc.FlashMessenger.logError(err, this.tr("Something went wrong"));
           console.error(err);
         })
         .finally(() => this.getChildControl("create").setFetching(false));
@@ -429,7 +429,7 @@ qx.Class.define("osparc.pricing.UnitEditor", {
           this.fireEvent("done");
         })
         .catch(err => {
-          osparc.FlashMessenger.logAs(this.tr("Something went wrong"), "ERROR");
+          osparc.FlashMessenger.logError(err, this.tr("Something went wrong"));
           console.error(err);
         })
         .finally(() => this.getChildControl("save").setFetching(false));

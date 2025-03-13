@@ -94,7 +94,7 @@ qx.Class.define("osparc.po.PreRegistration", {
             const detailErrorMsg = `Error parsing Request Form JSON. ${err}`;
             findingStatus.setValue(detailErrorMsg);
 
-            osparc.FlashMessenger.logAs(flashErrorMsg, "ERROR");
+            osparc.FlashMessenger.logError(flashErrorMsg);
             submitBtn.setFetching(false);
             return
           }
@@ -112,7 +112,7 @@ qx.Class.define("osparc.po.PreRegistration", {
               const detailErrorMsg = this.tr(`Error during Pre-Registeristration: ${err.message}`)
               findingStatus.setValue(detailErrorMsg);
               console.error(err);
-              osparc.FlashMessenger.logAs(flashErrorMsg, "ERROR");
+              osparc.FlashMessenger.logError(flashErrorMsg);
             })
             .finally(() => submitBtn.setFetching(false));
         }

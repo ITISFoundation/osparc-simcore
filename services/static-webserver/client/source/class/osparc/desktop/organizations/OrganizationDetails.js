@@ -120,7 +120,7 @@ qx.Class.define("osparc.desktop.organizations.OrganizationDetails", {
           win.close();
         })
         .catch(err => {
-          osparc.FlashMessenger.logAs(this.tr("Something went wrong editing ") + name, "ERROR");
+          osparc.FlashMessenger.logError(this.tr("Something went wrong editing ") + name);
           button.setFetching(false);
           console.error(err);
         });

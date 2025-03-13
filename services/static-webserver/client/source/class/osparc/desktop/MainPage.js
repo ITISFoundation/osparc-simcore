@@ -247,7 +247,7 @@ qx.Class.define("osparc.desktop.MainPage", {
         })
         .catch(errMsg => {
           const msg = this.tr("Something went wrong Duplicating the study<br>") + errMsg;
-          osparc.FlashMessenger.logAs(msg, "ERROR");
+          osparc.FlashMessenger.logError(msg);
         });
     },
 
@@ -318,7 +318,7 @@ qx.Class.define("osparc.desktop.MainPage", {
             });
         })
         .catch(err => {
-          osparc.FlashMessenger.logAs(err, "ERROR");
+          osparc.FlashMessenger.logError(err);
           this.__showDashboard();
           return;
         });
@@ -357,7 +357,7 @@ qx.Class.define("osparc.desktop.MainPage", {
           osparc.desktop.MainPageHandler.getInstance().loadStudy(studyData);
         })
         .catch(err => {
-          osparc.FlashMessenger.logAs(err, "ERROR");
+          osparc.FlashMessenger.logError(err);
           this.__showDashboard();
           return;
         });
