@@ -152,12 +152,12 @@ qx.Class.define("osparc.store.Services", {
       const versions = this.__getVersions(key, filterDeprecated);
       return this.getService(key, versions[0])
         .then(latestMetadata => {
-          latestMetadata["history"].forEach(entry => {
-            if (!entry["retired"]) {
-              const versionDisplay = osparc.service.Utils.extractVersionDisplay(entry);
+          latestMetadata["history"].forEach(historyEntry => {
+            if (!historyEntry["retired"]) {
+              const versionDisplay = osparc.service.Utils.extractVersionDisplay(historyEntry);
               const listItem = new qx.ui.form.ListItem(versionDisplay);
               osparc.utils.Utils.setIdToWidget(listItem, "serviceVersionItem_" + versionDisplay);
-              listItem.version = entry["version"];
+              listItem.version = historyEntry["version"];
               selectBox.add(listItem);
             }
           });
