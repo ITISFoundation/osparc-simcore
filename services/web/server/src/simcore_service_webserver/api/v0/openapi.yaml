@@ -7948,7 +7948,6 @@ components:
         release:
           $ref: '#/components/schemas/ServiceRelease'
           description: release information of current (latest) service
-      additionalProperties: false
       type: object
       required:
       - key
@@ -7964,6 +7963,117 @@ components:
       - accessRights
       - release
       title: CatalogLatestServiceGet
+      example:
+        accessRights:
+          '1':
+            execute: true
+            write: false
+        authors:
+        - affiliation: ACME
+          email: author@acme.com
+          name: Author Bar
+        classifiers: []
+        contact: contact@acme.com
+        description: A service which awaits for time to pass, two times.
+        description_ui: true
+        icon: https://cdn-icons-png.flaticon.com/512/25/25231.png
+        inputs:
+          input_1:
+            description: Pick a file containing only one integer
+            displayOrder: 1
+            fileToKeyMap:
+              single_number.txt: input_1
+            keyId: input_1
+            label: File with int number
+            type: data:text/plain
+          input_2:
+            contentSchema:
+              minimum: 0
+              title: Sleep interval
+              type: integer
+              x_unit: second
+            defaultValue: 2
+            description: Choose an amount of time to sleep in range [0:]
+            displayOrder: 2
+            keyId: input_2
+            label: Sleep interval
+            type: ref_contentSchema
+            unitLong: second
+            unitShort: s
+          input_3:
+            defaultValue: false
+            description: If set to true will cause service to fail after it sleeps
+            displayOrder: 3
+            keyId: input_3
+            label: Fail after sleep
+            type: boolean
+          input_4:
+            contentSchema:
+              title: Distance to bed
+              type: integer
+              x_unit: meter
+            defaultValue: 0
+            description: It will first walk the distance to bed
+            displayOrder: 4
+            keyId: input_4
+            label: Distance to bed
+            type: ref_contentSchema
+            unitLong: meter
+            unitShort: m
+          input_5:
+            contentSchema:
+              minimum: 0
+              title: Dream of the night
+              type: integer
+              x_unit: byte
+            defaultValue: 0
+            description: Defines the size of the dream that will be generated [0:]
+            displayOrder: 5
+            keyId: input_5
+            label: Dream (or nightmare) of the night
+            type: ref_contentSchema
+            unitLong: byte
+            unitShort: B
+        key: simcore/services/comp/itis/sleeper
+        name: sleeper
+        outputs:
+          output_1:
+            description: Integer is generated in range [1-9]
+            displayOrder: 1
+            fileToKeyMap:
+              single_number.txt: output_1
+            keyId: output_1
+            label: File containing one random integer
+            type: data:text/plain
+          output_2:
+            contentSchema:
+              title: Random sleep interval
+              type: integer
+              x_unit: second
+            description: Interval is generated in range [1-9]
+            displayOrder: 2
+            keyId: output_2
+            label: Random sleep interval
+            type: ref_contentSchema
+            unitLong: second
+            unitShort: s
+          output_3:
+            description: Contains some random data representing a dream
+            displayOrder: 3
+            fileToKeyMap:
+              dream.txt: output_3
+            keyId: output_3
+            label: Dream output
+            type: data:text/plain
+        owner: owner@acme.com
+        quality: {}
+        release:
+          released: '2025-07-20T15:00:00'
+          version: 2.2.1
+          version_display: Summer Release
+        type: computational
+        version: 2.2.1
+        version_display: 2 Xtreme
     CatalogServiceGet:
       properties:
         key:
@@ -8092,7 +8202,7 @@ components:
         description: A service which awaits for time to pass, two times.
         description_ui: true
         history:
-        - released: '2024-07-20T15:00:00'
+        - released: '2024-07-21T15:00:00'
           version: 2.2.1
           version_display: Summer Release
         - compatibility:
@@ -8111,7 +8221,7 @@ components:
           released: '2024-01-20T18:49:17'
           version: 0.9.1
           versionDisplay: Matterhorn
-        - retired: '2024-07-20T15:00:00'
+        - retired: '2024-07-20T16:00:00'
           version: 0.9.0
         - version: 0.8.0
         - version: 0.1.0
