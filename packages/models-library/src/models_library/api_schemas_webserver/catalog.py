@@ -1,4 +1,4 @@
-from typing import Annotated, Any, TypeAlias
+from typing import Annotated, TypeAlias
 
 from pydantic import ConfigDict, Field
 from pydantic.config import JsonDict
@@ -106,131 +106,130 @@ class ServiceOutputGet(ServiceOutput, _BaseCommonApiExtension):
 
 ServiceInputsGetDict: TypeAlias = dict[ServicePortKey, ServiceInputGet]
 ServiceOutputsGetDict: TypeAlias = dict[ServicePortKey, ServiceOutputGet]
-
-
-_EXAMPLE_FILEPICKER: dict[str, Any] = {
-    **api_schemas_catalog_services.ServiceGet.model_json_schema()["examples"][1],
-    "inputs": {},
-    "outputs": {
-        "outFile": {
-            "displayOrder": 0,
-            "label": "File",
-            "description": "Chosen File",
-            "type": "data:*/*",
-            "fileToKeyMap": None,
-            "keyId": "outFile",
-        }
-    },
-}
-
-_EXAMPLE_SLEEPER: dict[str, Any] = {
-    **api_schemas_catalog_services.ServiceGet.model_json_schema()["examples"][0],
-    "inputs": {
-        "input_1": {
-            "displayOrder": 1,
-            "label": "File with int number",
-            "description": "Pick a file containing only one integer",
-            "type": "data:text/plain",
-            "fileToKeyMap": {"single_number.txt": "input_1"},
-            "keyId": "input_1",
-        },
-        "input_2": {
-            "unitLong": "second",
-            "unitShort": "s",
-            "label": "Sleep interval",
-            "description": "Choose an amount of time to sleep in range [0:]",
-            "keyId": "input_2",
-            "displayOrder": 2,
-            "type": "ref_contentSchema",
-            "contentSchema": {
-                "title": "Sleep interval",
-                "type": "integer",
-                "x_unit": "second",
-                "minimum": 0,
-            },
-            "defaultValue": 2,
-        },
-        "input_3": {
-            "displayOrder": 3,
-            "label": "Fail after sleep",
-            "description": "If set to true will cause service to fail after it sleeps",
-            "type": "boolean",
-            "defaultValue": False,
-            "keyId": "input_3",
-        },
-        "input_4": {
-            "unitLong": "meter",
-            "unitShort": "m",
-            "label": "Distance to bed",
-            "description": "It will first walk the distance to bed",
-            "keyId": "input_4",
-            "displayOrder": 4,
-            "type": "ref_contentSchema",
-            "contentSchema": {
-                "title": "Distance to bed",
-                "type": "integer",
-                "x_unit": "meter",
-            },
-            "defaultValue": 0,
-        },
-        "input_5": {
-            "unitLong": "byte",
-            "unitShort": "B",
-            "label": "Dream (or nightmare) of the night",
-            "description": "Defines the size of the dream that will be generated [0:]",
-            "keyId": "input_5",
-            "displayOrder": 5,
-            "type": "ref_contentSchema",
-            "contentSchema": {
-                "title": "Dream of the night",
-                "type": "integer",
-                "x_unit": "byte",
-                "minimum": 0,
-            },
-            "defaultValue": 0,
-        },
-    },
-    "outputs": {
-        "output_1": {
-            "displayOrder": 1,
-            "label": "File containing one random integer",
-            "description": "Integer is generated in range [1-9]",
-            "type": "data:text/plain",
-            "fileToKeyMap": {"single_number.txt": "output_1"},
-            "keyId": "output_1",
-        },
-        "output_2": {
-            "unitLong": "second",
-            "unitShort": "s",
-            "label": "Random sleep interval",
-            "description": "Interval is generated in range [1-9]",
-            "keyId": "output_2",
-            "displayOrder": 2,
-            "type": "ref_contentSchema",
-            "contentSchema": {
-                "title": "Random sleep interval",
-                "type": "integer",
-                "x_unit": "second",
-            },
-        },
-        "output_3": {
-            "displayOrder": 3,
-            "label": "Dream output",
-            "description": "Contains some random data representing a dream",
-            "type": "data:text/plain",
-            "fileToKeyMap": {"dream.txt": "output_3"},
-            "keyId": "output_3",
-        },
-    },
-}
-
-
 ServiceResourcesGet: TypeAlias = api_schemas_catalog_services.ServiceResourcesGet
 
 
 class CatalogLatestServiceGet(api_schemas_catalog_services.LatestServiceGet):
     inputs: ServiceInputsGetDict  # type: ignore[assignment]
     outputs: ServiceOutputsGetDict  # type: ignore[assignment]
+
+    @staticmethod
+    def _update_json_schema_extra(schema: JsonDict) -> None:
+        base_example = (
+            api_schemas_catalog_services.LatestServiceGet.model_json_schema()[
+                "examples"
+            ][0]
+        )
+
+        schema.update(
+            {
+                "example": {
+                    **base_example,
+                    "inputs": {
+                        "input_1": {
+                            "displayOrder": 1,
+                            "label": "File with int number",
+                            "description": "Pick a file containing only one integer",
+                            "type": "data:text/plain",
+                            "fileToKeyMap": {"single_number.txt": "input_1"},
+                            "keyId": "input_1",
+                        },
+                        "input_2": {
+                            "unitLong": "second",
+                            "unitShort": "s",
+                            "label": "Sleep interval",
+                            "description": "Choose an amount of time to sleep in range [0:]",
+                            "keyId": "input_2",
+                            "displayOrder": 2,
+                            "type": "ref_contentSchema",
+                            "contentSchema": {
+                                "title": "Sleep interval",
+                                "type": "integer",
+                                "x_unit": "second",
+                                "minimum": 0,
+                            },
+                            "defaultValue": 2,
+                        },
+                        "input_3": {
+                            "displayOrder": 3,
+                            "label": "Fail after sleep",
+                            "description": "If set to true will cause service to fail after it sleeps",
+                            "type": "boolean",
+                            "defaultValue": False,
+                            "keyId": "input_3",
+                        },
+                        "input_4": {
+                            "unitLong": "meter",
+                            "unitShort": "m",
+                            "label": "Distance to bed",
+                            "description": "It will first walk the distance to bed",
+                            "keyId": "input_4",
+                            "displayOrder": 4,
+                            "type": "ref_contentSchema",
+                            "contentSchema": {
+                                "title": "Distance to bed",
+                                "type": "integer",
+                                "x_unit": "meter",
+                            },
+                            "defaultValue": 0,
+                        },
+                        "input_5": {
+                            "unitLong": "byte",
+                            "unitShort": "B",
+                            "label": "Dream (or nightmare) of the night",
+                            "description": "Defines the size of the dream that will be generated [0:]",
+                            "keyId": "input_5",
+                            "displayOrder": 5,
+                            "type": "ref_contentSchema",
+                            "contentSchema": {
+                                "title": "Dream of the night",
+                                "type": "integer",
+                                "x_unit": "byte",
+                                "minimum": 0,
+                            },
+                            "defaultValue": 0,
+                        },
+                    },
+                    "outputs": {
+                        "output_1": {
+                            "displayOrder": 1,
+                            "label": "File containing one random integer",
+                            "description": "Integer is generated in range [1-9]",
+                            "type": "data:text/plain",
+                            "fileToKeyMap": {"single_number.txt": "output_1"},
+                            "keyId": "output_1",
+                        },
+                        "output_2": {
+                            "unitLong": "second",
+                            "unitShort": "s",
+                            "label": "Random sleep interval",
+                            "description": "Interval is generated in range [1-9]",
+                            "keyId": "output_2",
+                            "displayOrder": 2,
+                            "type": "ref_contentSchema",
+                            "contentSchema": {
+                                "title": "Random sleep interval",
+                                "type": "integer",
+                                "x_unit": "second",
+                            },
+                        },
+                        "output_3": {
+                            "displayOrder": 3,
+                            "label": "Dream output",
+                            "description": "Contains some random data representing a dream",
+                            "type": "data:text/plain",
+                            "fileToKeyMap": {"dream.txt": "output_3"},
+                            "keyId": "output_3",
+                        },
+                    },
+                }
+            }
+        )
+
+    model_config = ConfigDict(
+        **OutputSchema.model_config,
+        json_schema_extra=_update_json_schema_extra,
+    )
 
 
 class CatalogServiceGet(api_schemas_catalog_services.ServiceGetV2):
