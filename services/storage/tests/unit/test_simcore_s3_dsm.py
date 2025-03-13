@@ -13,7 +13,7 @@ from models_library.users import UserID
 from pydantic import ByteSize, TypeAdapter
 from pytest_simcore.helpers.storage_utils import FileIDDict
 from simcore_service_storage.models import FileMetaData
-from simcore_service_storage.modules.db import file_meta_data
+from simcore_service_storage.modules.db.file_meta_data import FileMetaDataRepository
 from simcore_service_storage.modules.s3 import get_s3_client
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 from sqlalchemy.ext.asyncio import AsyncEngine
@@ -62,12 +62,13 @@ async def test__copy_path_s3_s3(
         )
 
     async def _copy_s3_path(s3_file_id_to_copy: SimcoreS3FileID) -> None:
-        async with sqlalchemy_async_engine.connect() as conn:
-            exiting_fmd = await file_meta_data.get(conn, s3_file_id_to_copy)
+        existing_fmd = await FileMetaDataRepository.instance(
+            sqlalchemy_async_engine
+        ).get(file_id=s3_file_id_to_copy)
 
         await simcore_s3_dsm._copy_path_s3_s3(  # noqa: SLF001
             user_id=user_id,
-            src_fmd=exiting_fmd,
+            src_fmd=existing_fmd,
             dst_file_id=_get_dest_file_id(s3_file_id_to_copy),
             bytes_transfered_cb=mock_copy_transfer_cb,
         )
