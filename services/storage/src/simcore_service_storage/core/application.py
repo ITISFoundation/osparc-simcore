@@ -18,6 +18,7 @@ from servicelib.fastapi.prometheus_instrumentation import (
     setup_prometheus_instrumentation,
 )
 from servicelib.fastapi.tracing import initialize_tracing
+from simcore_service_storage.modules.celery import setup_celery_client
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from .._meta import (
@@ -86,6 +87,7 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
     setup_rabbitmq(app)
     if not settings.STORAGE_WORKER_MODE:
         setup_rpc_api_routes(app)
+        setup_celery_client(app)
     setup_rest_api_long_running_tasks_for_uploads(app)
     setup_rest_api_routes(app, API_VTAG)
     set_exception_handlers(app)

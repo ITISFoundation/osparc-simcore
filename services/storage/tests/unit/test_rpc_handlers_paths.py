@@ -118,7 +118,6 @@ async def _assert_compute_path_size(
     return response
 
 
-@pytest.mark.xfail(reason="in development")
 @pytest.mark.parametrize(
     "location_id",
     [SimcoreS3DataManager.get_location_id()],
