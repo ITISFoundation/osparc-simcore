@@ -301,10 +301,10 @@ qx.Class.define("osparc.file.FileDrop", {
               pos: this.__pointerFileEventToScreenPos(e)
             });
           } else {
-            osparc.FlashMessenger.getInstance().logAs(osparc.file.FileDrop.ONE_FILE_ONLY, "ERROR");
+            osparc.FlashMessenger.logAs(osparc.file.FileDrop.ONE_FILE_ONLY, "ERROR");
           }
         } else {
-          osparc.FlashMessenger.getInstance().logAs(this.tr("Folders are not accepted. You might want to upload a zip file."), "ERROR");
+          osparc.FlashMessenger.logAs(this.tr("Folders are not accepted. You might want to upload a zip file."), "ERROR");
         }
       }
     },

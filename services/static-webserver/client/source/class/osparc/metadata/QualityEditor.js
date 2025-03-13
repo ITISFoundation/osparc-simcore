@@ -468,7 +468,7 @@ qx.Class.define("osparc.metadata.QualityEditor", {
             })
             .catch(err => {
               console.error(err);
-              osparc.FlashMessenger.getInstance().logAs(this.tr("There was an error while updating the Quality Assessment."), "ERROR");
+              osparc.FlashMessenger.logAs(this.tr("There was an error while updating the Quality Assessment."), "ERROR");
             })
             .finally(() => btn.setFetching(false));
         } else {
@@ -479,7 +479,7 @@ qx.Class.define("osparc.metadata.QualityEditor", {
             })
             .catch(err => {
               console.error(err);
-              osparc.FlashMessenger.getInstance().logAs(this.tr("There was an error while updating the Quality Assessment."), "ERROR");
+              osparc.FlashMessenger.logAs(this.tr("There was an error while updating the Quality Assessment."), "ERROR");
             })
             .finally(() => btn.setFetching(false));
         }

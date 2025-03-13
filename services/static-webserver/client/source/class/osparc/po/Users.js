@@ -91,7 +91,7 @@ qx.Class.define("osparc.po.Users", {
             .catch(err => {
               findingStatus.setValue(this.tr("Error searching users"));
               console.error(err);
-              osparc.FlashMessenger.logAs(err.message, "ERROR");
+              osparc.FlashMessenger.logAs(err, "ERROR");
             })
             .finally(() => searchBtn.setFetching(false));
         }

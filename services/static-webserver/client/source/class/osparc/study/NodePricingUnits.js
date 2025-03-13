@@ -133,7 +133,7 @@ qx.Class.define("osparc.study.NodePricingUnits", {
                           .then(() => pricingUnitTiers.setSelectedUnitId(selectedPricingUnitId))
                           .catch(err => {
                             const msg = err.message || this.tr("Cannot change Tier");
-                            osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
+                            osparc.FlashMessenger.logAs(msg, "ERROR");
                           })
                           .finally(() => pricingUnitTiers.setEnabled(true));
                       }

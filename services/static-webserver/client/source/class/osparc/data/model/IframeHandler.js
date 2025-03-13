@@ -170,7 +170,7 @@ qx.Class.define("osparc.data.model.IframeHandler", {
           if ("status" in err && err.status === 406) {
             errorMsg = node.getKey() + ":" + node.getVersion() + "is retired";
             node.getStatus().setInteractive("retired");
-            osparc.FlashMessenger.getInstance().logAs(node.getLabel() + this.tr(" is retired"), "ERROR");
+            osparc.FlashMessenger.logAs(node.getLabel() + this.tr(" is retired"), "ERROR");
           }
           const errorMsgData = {
             nodeId: node.getNodeId(),
@@ -192,7 +192,7 @@ qx.Class.define("osparc.data.model.IframeHandler", {
             this.__unresponsiveRetries--;
           } else {
             node.getStatus().setInteractive("failed");
-            osparc.FlashMessenger.getInstance().logAs(this.tr("There was an error starting") + " " + node.getLabel(), "ERROR");
+            osparc.FlashMessenger.logAs(this.tr("There was an error starting") + " " + node.getLabel(), "ERROR");
           }
         });
     },

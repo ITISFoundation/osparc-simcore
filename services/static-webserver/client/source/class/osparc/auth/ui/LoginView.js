@@ -235,7 +235,7 @@ qx.Class.define("osparc.auth.ui.LoginView", {
 
       const twoFactorAuthCbk = (nextStep, message, retryAfter) => {
         this.__loginBtn.setFetching(false);
-        osparc.FlashMessenger.getInstance().logAs(message, "INFO");
+        osparc.FlashMessenger.logAs(message, "INFO");
         this.fireDataEvent("to2FAValidationCode", {
           userEmail: email.getValue(),
           nextStep,
@@ -259,7 +259,7 @@ qx.Class.define("osparc.auth.ui.LoginView", {
           });
         });
 
-        osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
+        osparc.FlashMessenger.logAs(msg, "ERROR");
       };
 
       const manager = osparc.auth.Manager.getInstance();

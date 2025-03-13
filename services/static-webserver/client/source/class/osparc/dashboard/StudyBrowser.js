@@ -125,7 +125,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         })
         .catch(err => {
           console.error(err);
-          osparc.FlashMessenger.logAs(err.message, "ERROR");
+          osparc.FlashMessenger.logAs(err, "ERROR");
         });
     },
 
@@ -339,7 +339,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         })
         .catch(err => {
           console.error(err);
-          osparc.FlashMessenger.logAs(err.message, "ERROR");
+          osparc.FlashMessenger.logAs(err, "ERROR");
           // stop fetching
           if (this._resourcesContainer.getFlatList()) {
             this._resourcesContainer.getFlatList().nextRequest = null;
@@ -470,12 +470,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .then(() => {
           this.__reloadWorkspaces();
           const msg = this.tr("Successfully deleted");
-          osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
+          osparc.FlashMessenger.logAs(msg, "INFO");
           this._resourceFilter.setTrashEmpty(false);
         })
         .catch(err => {
           console.error(err);
-          osparc.FlashMessenger.getInstance().logAs(err, "ERROR");
+          osparc.FlashMessenger.logAs(err, "ERROR");
         });
     },
 
@@ -484,12 +484,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .then(() => {
           this.__reloadWorkspaces();
           const msg = this.tr("Successfully restored");
-          osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
+          osparc.FlashMessenger.logAs(msg, "INFO");
           this._resourceFilter.evaluateTrashEmpty();
         })
         .catch(err => {
           console.error(err);
-          osparc.FlashMessenger.getInstance().logAs(err, "ERROR");
+          osparc.FlashMessenger.logAs(err, "ERROR");
         });
     },
 
@@ -498,12 +498,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .then(() => {
           this.__reloadWorkspaces();
           const msg = this.tr("Successfully deleted");
-          osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
+          osparc.FlashMessenger.logAs(msg, "INFO");
           this._resourceFilter.evaluateTrashEmpty();
         })
         .catch(err => {
           console.error(err);
-          osparc.FlashMessenger.logAs(err.message, "ERROR");
+          osparc.FlashMessenger.logAs(err, "ERROR");
         })
     },
     // /WORKSPACES
@@ -586,7 +586,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .then(() => this.__reloadFolders())
         .catch(err => {
           console.error(err);
-          osparc.FlashMessenger.getInstance().logAs(err, "ERROR");
+          osparc.FlashMessenger.logAs(err, "ERROR");
         });
     },
 
@@ -608,12 +608,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .then(() => {
           this.__reloadFolders();
           const msg = this.tr("Successfully deleted");
-          osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
+          osparc.FlashMessenger.logAs(msg, "INFO");
           this._resourceFilter.setTrashEmpty(false);
         })
         .catch(err => {
           console.error(err);
-          osparc.FlashMessenger.getInstance().logAs(err, "ERROR");
+          osparc.FlashMessenger.logAs(err, "ERROR");
         });
     },
 
@@ -640,12 +640,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .then(() => {
           this.__reloadFolders();
           const msg = this.tr("Successfully restored");
-          osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
+          osparc.FlashMessenger.logAs(msg, "INFO");
           this._resourceFilter.evaluateTrashEmpty();
         })
         .catch(err => {
           console.error(err);
-          osparc.FlashMessenger.getInstance().logAs(err, "ERROR");
+          osparc.FlashMessenger.logAs(err, "ERROR");
         })
     },
 
@@ -654,7 +654,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .then(() => {
           this.__reloadFolders();
           const msg = this.tr("Successfully deleted");
-          osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
+          osparc.FlashMessenger.logAs(msg, "INFO");
           this._resourceFilter.evaluateTrashEmpty();
         })
         .catch(err => console.error(err));
@@ -1521,7 +1521,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .then(studyData => this.__startStudyAfterCreating(studyData["uuid"]))
         .catch(err => {
           this._hideLoadingPage();
-          osparc.FlashMessenger.getInstance().logAs(err.message, "ERROR");
+          osparc.FlashMessenger.logAs(err, "ERROR");
           console.error(err);
         });
     },
@@ -1541,7 +1541,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .then(studyData => this.__startStudyAfterCreating(studyData["uuid"]))
         .catch(err => {
           this._hideLoadingPage();
-          osparc.FlashMessenger.getInstance().logAs(err.message, "ERROR");
+          osparc.FlashMessenger.logAs(err, "ERROR");
           console.error(err);
         });
     },
@@ -1556,7 +1556,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .then(studyId => this.__startStudyAfterCreating(studyId))
         .catch(err => {
           this._hideLoadingPage();
-          osparc.FlashMessenger.getInstance().logAs(err.message, "ERROR");
+          osparc.FlashMessenger.logAs(err, "ERROR");
           console.error(err);
         });
     },
@@ -1785,7 +1785,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .then(() => this.__removeFromStudyList(studyData["uuid"]))
         .catch(err => {
           console.error(err);
-          osparc.FlashMessenger.logAs(err.message, "ERROR");
+          osparc.FlashMessenger.logAs(err, "ERROR");
         });
     },
 
@@ -1982,7 +1982,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __duplicateStudy: function(studyData) {
       const text = this.tr("Duplicate process started and added to the background tasks");
-      osparc.FlashMessenger.getInstance().logAs(text, "INFO");
+      osparc.FlashMessenger.logAs(text, "INFO");
 
       const params = {
         url: {
@@ -2009,7 +2009,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       exportTask.start();
       exportTask.setSubtitle(this.tr("Preparing files"));
       const text = this.tr("Exporting process started and added to the background tasks");
-      osparc.FlashMessenger.getInstance().logAs(text, "INFO");
+      osparc.FlashMessenger.logAs(text, "INFO");
 
       const url = window.location.href + "v0/projects/" + studyData["uuid"] + ":xport";
       const progressCB = () => {
@@ -2034,7 +2034,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       importTask.setSubtitle(uploadingLabel);
 
       const text = this.tr("Importing process started and added to the background tasks");
-      osparc.FlashMessenger.getInstance().logAs(text, "INFO");
+      osparc.FlashMessenger.logAs(text, "INFO");
 
       const isGrid = this._resourcesContainer.getMode() === "grid";
       const importingStudyCard = isGrid ? new osparc.dashboard.GridButtonPlaceholder() : new osparc.dashboard.ListButtonPlaceholder();
@@ -2120,12 +2120,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .then(() => {
           this.__removeFromStudyList(studyData.uuid);
           const msg = this.tr("Successfully restored");
-          osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
+          osparc.FlashMessenger.logAs(msg, "INFO");
           this._resourceFilter.evaluateTrashEmpty();
         })
         .catch(err => {
           console.error(err);
-          osparc.FlashMessenger.getInstance().logAs(err, "ERROR");
+          osparc.FlashMessenger.logAs(err, "ERROR");
         })
         .finally(() => this.resetSelection());
     },
@@ -2135,12 +2135,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .then(() => {
           this.__removeFromStudyList(studyData.uuid);
           const msg = this.tr("Successfully deleted");
-          osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
+          osparc.FlashMessenger.logAs(msg, "INFO");
           this._resourceFilter.setTrashEmpty(false);
         })
         .catch(err => {
           console.error(err);
-          osparc.FlashMessenger.getInstance().logAs(err, "ERROR");
+          osparc.FlashMessenger.logAs(err, "ERROR");
         })
         .finally(() => this.resetSelection());
     },
@@ -2177,7 +2177,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .then(() => this.__removeFromStudyList(studyData.uuid))
         .catch(err => {
           console.error(err);
-          osparc.FlashMessenger.getInstance().logAs(err, "ERROR");
+          osparc.FlashMessenger.logAs(err, "ERROR");
         })
         .finally(() => this.resetSelection());
     },

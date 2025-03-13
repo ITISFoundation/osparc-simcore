@@ -115,12 +115,12 @@ qx.Class.define("osparc.desktop.organizations.OrganizationDetails", {
       const thumbnail = orgEditor.getThumbnail();
       osparc.store.Groups.getInstance().patchOrganization(groupId, name, description, thumbnail)
         .then(() => {
-          osparc.FlashMessenger.getInstance().logAs(name + this.tr(" successfully edited"));
+          osparc.FlashMessenger.logAs(name + this.tr(" successfully edited"));
           button.setFetching(false);
           win.close();
         })
         .catch(err => {
-          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong editing ") + name, "ERROR");
+          osparc.FlashMessenger.logAs(this.tr("Something went wrong editing ") + name, "ERROR");
           button.setFetching(false);
           console.error(err);
         });

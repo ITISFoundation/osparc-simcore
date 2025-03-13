@@ -214,7 +214,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
             })
             .catch(err => {
               this._hideLoadingPage();
-              osparc.FlashMessenger.getInstance().logAs(err.message, "ERROR");
+              osparc.FlashMessenger.logAs(err, "ERROR");
               console.error(err);
             });
         });
@@ -237,7 +237,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
           })
           .catch(err => {
             this._hideLoadingPage();
-            osparc.FlashMessenger.getInstance().logAs(err.message, "ERROR");
+            osparc.FlashMessenger.logAs(err, "ERROR");
             console.error(err);
           });
       }
@@ -342,9 +342,9 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
           .then(() => this._updateTemplateData(uniqueTemplateData))
           .catch(err => {
             if ("message" in err) {
-              osparc.FlashMessenger.getInstance().logAs(err.message, "ERROR");
+              osparc.FlashMessenger.logAs(err, "ERROR");
             } else {
-              osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong"), "ERROR");
+              osparc.FlashMessenger.logAs(this.tr("Something went wrong"), "ERROR");
             }
           });
       }
@@ -459,7 +459,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
         .then(() => this.__removeFromTemplateList(studyData.uuid))
         .catch(err => {
           console.error(err);
-          osparc.FlashMessenger.getInstance().logAs(err, "ERROR");
+          osparc.FlashMessenger.logAs(err, "ERROR");
         });
     },
 

@@ -99,7 +99,7 @@ qx.Class.define("osparc.desktop.preferences.pages.TokensPage", {
           })
           .catch(err => {
             const errorMsg = err.message || this.tr("Cannot create API Key");
-            osparc.FlashMessenger.getInstance().logAs(errorMsg, "ERROR");
+            osparc.FlashMessenger.logAs(errorMsg, "ERROR");
             console.error(err);
           })
           .finally(() => this.__requestAPIKeyBtn.setFetching(false));
@@ -162,7 +162,7 @@ qx.Class.define("osparc.desktop.preferences.pages.TokensPage", {
             .then(() => this.__rebuildAPIKeysList())
             .catch(err => {
               const errorMsg = err.message || this.tr("Cannot delete API Key");
-              osparc.FlashMessenger.getInstance().logAs(errorMsg, "ERROR");
+              osparc.FlashMessenger.logAs(errorMsg, "ERROR");
               console.error(err)
             });
         }

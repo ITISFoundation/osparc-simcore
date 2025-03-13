@@ -260,7 +260,7 @@ qx.Class.define("osparc.study.BillingSettings", {
         })
         .catch(err => {
           console.error(err);
-          osparc.FlashMessenger.logAs(err.message, "ERROR");
+          osparc.FlashMessenger.logAs(err, "ERROR");
         });
     },
 
@@ -287,11 +287,11 @@ qx.Class.define("osparc.study.BillingSettings", {
         .then(() => {
           this.__studyWalletId = walletId;
           const msg = this.tr("Credit Account saved");
-          osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
+          osparc.FlashMessenger.logAs(msg, "INFO");
         })
         .catch(err => {
           console.error(err);
-          osparc.FlashMessenger.logAs(err.message, "ERROR");
+          osparc.FlashMessenger.logAs(err, "ERROR");
         })
         .finally(() => {
           creditAccountBox.setEnabled(true);

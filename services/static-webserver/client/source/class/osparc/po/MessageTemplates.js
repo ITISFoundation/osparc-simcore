@@ -94,7 +94,7 @@ qx.Class.define("osparc.po.MessageTemplates", {
         .then(() => osparc.FlashMessenger.logAs(this.tr("Template updated"), "INFO"))
         .catch(err => {
           console.error(err);
-          osparc.FlashMessenger.logAs(err.message, "ERROR");
+          osparc.FlashMessenger.logAs(err, "ERROR");
         })
         .finally(() => this._buildLayout());
     }

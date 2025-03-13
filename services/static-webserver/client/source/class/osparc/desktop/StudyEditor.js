@@ -205,7 +205,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
               msg += "<br>" + err["message"];
             }
           }
-          osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
+          osparc.FlashMessenger.logAs(msg, "ERROR");
           this.fireEvent("forceBackToDashboard");
         })
         .finally(() => this._hideLoadingPage());
@@ -233,7 +233,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           let msg = this.tr("The Study contains more than ") + maxNumber + this.tr(" Interactive services.");
           msg += "<br>";
           msg += this.tr("Please start them manually.");
-          osparc.FlashMessenger.getInstance().logAs(msg, "WARNING");
+          osparc.FlashMessenger.logAs(msg, "WARNING");
         }
       }
 
@@ -241,7 +241,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         this.__startAutoSaveTimer();
       } else {
         const msg = this.self().READ_ONLY_TEXT;
-        osparc.FlashMessenger.getInstance().logAs(msg, "WARNING");
+        osparc.FlashMessenger.logAs(msg, "WARNING");
       }
 
 
@@ -382,7 +382,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           const usedWallet = store.getWallets().find(wallet => wallet.getWalletId() === walletId);
           const walletName = usedWallet.getName();
           const text = `Wallet "${walletName}", running your service(s) has run out of credits. Stopping service(s) gracefully.`;
-          osparc.FlashMessenger.getInstance().logAs(this.tr(text), "ERROR", flashMessageDisplayDuration);
+          osparc.FlashMessenger.logAs(this.tr(text), "ERROR", flashMessageDisplayDuration);
         }, this);
       }
     },
@@ -406,7 +406,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
               const node = workbench.getNode(nodeId);
               const label = node.getLabel();
               const text = `New inputs for service ${label}. Please reload to refresh service.`;
-              osparc.FlashMessenger.getInstance().logAs(text, "INFO");
+              osparc.FlashMessenger.logAs(text, "INFO");
             }
           }
         }, this);
@@ -609,7 +609,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           }, this);
         } else if (e.getTarget().getStatus() == "402") {
           const msg = await e.getTarget().getResponse().error.errors[0].message;
-          osparc.FlashMessenger.getInstance().logAs(msg, "WARNING");
+          osparc.FlashMessenger.logAs(msg, "WARNING");
         } else {
           this.getStudyLogger().error(null, "Unsuccessful pipeline submission");
         }
@@ -766,7 +766,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
             const store = osparc.store.Store.getInstance();
             store.getSnapshots().push(data);
           })
-          .catch(err => osparc.FlashMessenger.getInstance().logAs(err.message, "ERROR"));
+          .catch(err => osparc.FlashMessenger.logAs(err, "ERROR"));
 
         win.close();
       }, this);
@@ -896,7 +896,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
             console.log("Flash message blocked"); // Workaround for osparc-issues #1189
           } else {
             console.error(error);
-            osparc.FlashMessenger.getInstance().logAs(this.tr("Error saving the study"), "ERROR");
+            osparc.FlashMessenger.logAs(this.tr("Error saving the study"), "ERROR");
           }
           this.getStudyLogger().error(null, "Error updating pipeline");
           // Need to throw the error to be able to handle it later

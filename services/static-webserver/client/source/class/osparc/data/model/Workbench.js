@@ -283,11 +283,11 @@ qx.Class.define("osparc.data.model.Workbench", {
 
     createNode: async function(key, version) {
       if (!osparc.data.Permissions.getInstance().canDo("study.node.create", true)) {
-        osparc.FlashMessenger.getInstance().logAs(qx.locale.Manager.tr("You are not allowed to add nodes"), "ERROR");
+        osparc.FlashMessenger.logAs(qx.locale.Manager.tr("You are not allowed to add nodes"), "ERROR");
         return null;
       }
       if (this.getStudy().isPipelineRunning()) {
-        osparc.FlashMessenger.getInstance().logAs(this.self().CANT_ADD_NODE, "ERROR");
+        osparc.FlashMessenger.logAs(this.self().CANT_ADD_NODE, "ERROR");
         return null;
       }
 
@@ -330,7 +330,7 @@ qx.Class.define("osparc.data.model.Workbench", {
           level: "ERROR"
         };
         this.fireDataEvent("showInLogger", errorMsgData);
-        osparc.FlashMessenger.getInstance().logAs(errorMsg, "ERROR");
+        osparc.FlashMessenger.logAs(errorMsg, "ERROR");
         return null;
       }
     },
@@ -459,7 +459,7 @@ qx.Class.define("osparc.data.model.Workbench", {
           } else {
             this.removeNode(filePickerId);
             const msg = qx.locale.Manager.tr("File couldn't be assigned");
-            osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
+            osparc.FlashMessenger.logAs(msg, "ERROR");
           }
         });
     },
@@ -487,7 +487,7 @@ qx.Class.define("osparc.data.model.Workbench", {
         if (requesterNode.getPropsForm().addPortLink(portId, pmId, "out_1") !== true) {
           this.removeNode(pmId);
           const msg = qx.locale.Manager.tr("Parameter couldn't be assigned");
-          osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
+          osparc.FlashMessenger.logAs(msg, "ERROR");
         }
         this.fireEvent("reloadModel");
       }
@@ -519,7 +519,7 @@ qx.Class.define("osparc.data.model.Workbench", {
         if (probeNode.getPropsForm().addPortLink("in_1", nodeId, portId) !== true) {
           this.removeNode(probeId);
           const msg = qx.locale.Manager.tr("Probe couldn't be assigned");
-          osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
+          osparc.FlashMessenger.logAs(msg, "ERROR");
         }
         this.fireEvent("reloadModel");
       }
@@ -536,7 +536,7 @@ qx.Class.define("osparc.data.model.Workbench", {
         return false;
       }
       if (this.getStudy().isPipelineRunning()) {
-        osparc.FlashMessenger.getInstance().logAs(this.self().CANT_DELETE_NODE, "ERROR");
+        osparc.FlashMessenger.logAs(this.self().CANT_DELETE_NODE, "ERROR");
         return false;
       }
 

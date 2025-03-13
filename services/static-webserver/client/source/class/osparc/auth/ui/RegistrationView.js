@@ -76,7 +76,7 @@ qx.Class.define("osparc.auth.ui.RegistrationView", {
           })
           .catch(err => {
             console.error(err);
-            osparc.FlashMessenger.logAs(err.message, "ERROR");
+            osparc.FlashMessenger.logAs(err, "ERROR");
           });
       }
 
@@ -139,7 +139,7 @@ qx.Class.define("osparc.auth.ui.RegistrationView", {
         })
         .catch(err => {
           const msg = err.message || this.tr("Cannot register user");
-          osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
+          osparc.FlashMessenger.logAs(msg, "ERROR");
         })
         .finally(() => submitButton.setFetching(false));
     },

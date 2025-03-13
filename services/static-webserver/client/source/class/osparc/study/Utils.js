@@ -173,7 +173,7 @@ qx.Class.define("osparc.study.Utils", {
               .catch(err => reject(err));
           })
           .catch(err => {
-            osparc.FlashMessenger.getInstance().logAs(err.message, "ERROR");
+            osparc.FlashMessenger.logAs(err, "ERROR");
             console.error(err);
           });
       });

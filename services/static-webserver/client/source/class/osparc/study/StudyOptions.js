@@ -110,7 +110,7 @@ qx.Class.define("osparc.study.StudyOptions", {
         .catch(err => {
           console.error(err);
           const msg = err.message || qx.locale.Manager.tr("Error selecting Credit Account");
-          osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
+          osparc.FlashMessenger.logAs(msg, "ERROR");
         });
     },
   },

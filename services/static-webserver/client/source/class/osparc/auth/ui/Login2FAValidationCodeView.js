@@ -125,7 +125,7 @@ qx.Class.define("osparc.auth.ui.Login2FAValidationCodeView", {
             });
             this.restartSMSButton(retryAfter);
           })
-          .catch(err => osparc.FlashMessenger.logAs(err.message, "ERROR"))
+          .catch(err => osparc.FlashMessenger.logAs(err, "ERROR"))
           .finally(() => resendCodeSMSBtn.setFetching(false));
       }, this);
 
@@ -145,7 +145,7 @@ qx.Class.define("osparc.auth.ui.Login2FAValidationCodeView", {
             });
             this.restartEmailButton(retryAfter);
           })
-          .catch(err => osparc.FlashMessenger.logAs(err.message, "ERROR"))
+          .catch(err => osparc.FlashMessenger.logAs(err, "ERROR"))
           .finally(() => resendCodeEmailBtn.setFetching(false));
       }, this);
       this.add(resendLayout);
@@ -188,7 +188,7 @@ qx.Class.define("osparc.auth.ui.Login2FAValidationCodeView", {
         msg = String(msg) || this.tr("Invalid code");
         validationCodeTF.setInvalidMessage(msg);
 
-        osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
+        osparc.FlashMessenger.logAs(msg, "ERROR");
       };
 
       if (this._form.validate()) {

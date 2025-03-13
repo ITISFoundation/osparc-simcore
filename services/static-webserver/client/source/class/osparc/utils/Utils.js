@@ -971,7 +971,7 @@ qx.Class.define("osparc.utils.Utils", {
       document.body.removeChild(textArea);
 
       if (copied) {
-        osparc.FlashMessenger.getInstance().logAs(qx.locale.Manager.tr("Copied to clipboard"));
+        osparc.FlashMessenger.logAs(qx.locale.Manager.tr("Copied to clipboard"));
       }
 
       return copied;

@@ -215,7 +215,7 @@ qx.Class.define("osparc.store.Data", {
         .catch(err => {
           console.error(err);
           console.error("Unsuccessful file copy", fileUuid, "to", pathId);
-          osparc.FlashMessenger.getInstance().logAs(this.tr("Unsuccessful file copy"), "ERROR");
+          osparc.FlashMessenger.logAs(this.tr("Unsuccessful file copy"), "ERROR");
           this.fireDataEvent("fileCopied", null);
         });
 
@@ -246,7 +246,7 @@ qx.Class.define("osparc.store.Data", {
         })
         .catch(err => {
           console.error(err);
-          osparc.FlashMessenger.getInstance().logAs(this.tr("Unsuccessful file deletion"), "ERROR");
+          osparc.FlashMessenger.logAs(this.tr("Unsuccessful file deletion"), "ERROR");
         });
     }
   }

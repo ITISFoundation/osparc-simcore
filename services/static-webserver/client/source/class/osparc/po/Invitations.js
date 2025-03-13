@@ -118,7 +118,7 @@ qx.Class.define("osparc.po.Invitations", {
             })
             .catch(err => {
               console.error(err);
-              osparc.FlashMessenger.logAs(err.message, "ERROR");
+              osparc.FlashMessenger.logAs(err, "ERROR");
             })
             .finally(() => generateInvitationBtn.setFetching(false));
         }

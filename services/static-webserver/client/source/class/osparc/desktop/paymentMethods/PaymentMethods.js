@@ -118,7 +118,7 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethods", {
 
     __windowClosed: function(paymentMethodId) {
       const msg = this.tr("The window was closed. Try again and follow the instructions inside the opened window.");
-      osparc.FlashMessenger.getInstance().logAs(msg, "WARNING");
+      osparc.FlashMessenger.logAs(msg, "WARNING");
       this.__cancelPaymentMethod(paymentMethodId);
     },
 
@@ -166,7 +166,7 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethods", {
         .finally(() => this.__fetchingMsg.setVisibility("excluded"))
         .catch(err => {
           console.error(err)
-          osparc.FlashMessenger.getInstance().logAs(
+          osparc.FlashMessenger.logAs(
             this.tr("We could not retrieve your saved payment methods. Please try again later."),
             "ERROR"
           );

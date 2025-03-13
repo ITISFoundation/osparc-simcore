@@ -123,7 +123,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
         })
         .catch(err => {
           this._hideLoadingPage();
-          osparc.FlashMessenger.getInstance().logAs(err.message, "ERROR");
+          osparc.FlashMessenger.logAs(err, "ERROR");
           console.error(err);
         });
     },

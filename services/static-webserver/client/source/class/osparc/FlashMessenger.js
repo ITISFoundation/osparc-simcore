@@ -28,7 +28,7 @@
  * Here is a little example of how to use the class.
  *
  * <pre class='javascript'>
- *   osparc.FlashMessenger.getInstance().logAs(log);
+ *   osparc.FlashMessenger.logAs(log);
  * </pre>
  */
 
@@ -68,7 +68,7 @@ qx.Class.define("osparc.FlashMessenger", {
     /**
      * Public function to log a FlashMessage to the user.
      *
-     * @param {String} message Message that the message will show.
+     * @param {String || Object} message Message (or Object containing the message) that the message will show.
      * @param {String="INFO","DEBUG","WARNING","ERROR"} level Level of the warning. The color of the badge will change accordingly.
      * @param {Number} duration
      */

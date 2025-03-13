@@ -90,7 +90,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       const isLogged = osparc.auth.Manager.getInstance().isLoggedIn();
       if (!isLogged) {
         const msg = qx.locale.Manager.tr("You need to be logged in to create a study");
-        osparc.FlashMessenger.getInstance().logAs(msg);
+        osparc.FlashMessenger.logAs(msg);
       }
       return isLogged;
     },
@@ -155,7 +155,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
           })
           .catch(err => {
             console.error(err);
-            osparc.FlashMessenger.logAs(err.message, "ERROR");
+            osparc.FlashMessenger.logAs(err, "ERROR");
           });
       } else {
         openStudy();
@@ -446,7 +446,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       let isLogged = osparc.auth.Manager.getInstance().isLoggedIn();
       if (!isLogged) {
         const msg = this.tr("You need to be logged in to create a study");
-        osparc.FlashMessenger.getInstance().logAs(msg);
+        osparc.FlashMessenger.logAs(msg);
       }
       return isLogged;
     },

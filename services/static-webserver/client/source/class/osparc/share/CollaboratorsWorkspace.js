@@ -73,13 +73,13 @@ qx.Class.define("osparc.share.CollaboratorsWorkspace", {
       osparc.store.Workspaces.getInstance().addCollaborators(this.__workspace.getWorkspaceId(), newCollaborators)
         .then(() => {
           const text = this.tr("Workspace successfully shared");
-          osparc.FlashMessenger.getInstance().logAs(text);
+          osparc.FlashMessenger.logAs(text);
           this.fireDataEvent("updateAccessRights", this.__workspace.serialize());
           this._reloadCollaboratorsList();
         })
         .catch(err => {
           console.error(err);
-          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong sharing the Workspace"), "ERROR");
+          osparc.FlashMessenger.logAs(this.tr("Something went wrong sharing the Workspace"), "ERROR");
         });
     },
 
@@ -91,12 +91,12 @@ qx.Class.define("osparc.share.CollaboratorsWorkspace", {
       osparc.store.Workspaces.getInstance().removeCollaborator(this.__workspace.getWorkspaceId(), collaborator["gid"])
         .then(() => {
           this.fireDataEvent("updateAccessRights", this.__workspace.serialize());
-          osparc.FlashMessenger.getInstance().logAs(collaborator["name"] + this.tr(" successfully removed"));
+          osparc.FlashMessenger.logAs(collaborator["name"] + this.tr(" successfully removed"));
           this._reloadCollaboratorsList();
         })
         .catch(err => {
           console.error(err);
-          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong removing ") + collaborator["name"], "ERROR");
+          osparc.FlashMessenger.logAs(this.tr("Something went wrong removing ") + collaborator["name"], "ERROR");
         })
         .finally(() => {
           if (item) {
@@ -111,12 +111,12 @@ qx.Class.define("osparc.share.CollaboratorsWorkspace", {
       osparc.store.Workspaces.getInstance().updateCollaborator(this.__workspace.getWorkspaceId(), collaboratorGId, newAccessRights)
         .then(() => {
           this.fireDataEvent("updateAccessRights", this.__workspace.serialize());
-          osparc.FlashMessenger.getInstance().logAs(successMsg);
+          osparc.FlashMessenger.logAs(successMsg);
           this._reloadCollaboratorsList();
         })
         .catch(err => {
           console.error(err);
-          osparc.FlashMessenger.getInstance().logAs(failureMsg, "ERROR");
+          osparc.FlashMessenger.logAs(failureMsg, "ERROR");
         })
         .finally(() => {
           if (item) {

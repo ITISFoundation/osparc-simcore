@@ -120,14 +120,14 @@ qx.Class.define("osparc.desktop.wallets.WalletDetails", {
       };
       osparc.data.Resources.fetch("wallets", "put", params)
         .then(() => {
-          osparc.FlashMessenger.getInstance().logAs(name + this.tr(" successfully edited"));
+          osparc.FlashMessenger.logAs(name + this.tr(" successfully edited"));
           const wallet = osparc.desktop.credits.Utils.getWallet(walletId);
           wallet.set(params.data);
         })
         .catch(err => {
           console.error(err);
           const msg = err.message || (this.tr("Something went wrong editing ") + name);
-          osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
+          osparc.FlashMessenger.logAs(msg, "ERROR");
         })
         .finally(() => {
           button.setFetching(false);

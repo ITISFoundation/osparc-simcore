@@ -930,7 +930,7 @@ qx.Class.define("osparc.data.model.Node", {
         .then(() => this.checkState())
         .catch(err => {
           if ("status" in err && (err.status === 409 || err.status === 402)) {
-            osparc.FlashMessenger.getInstance().logAs(err.message, "WARNING");
+            osparc.FlashMessenger.logAs(err.message, "WARNING");
           } else {
             console.error(err);
           }

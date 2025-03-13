@@ -219,7 +219,7 @@ qx.Class.define("osparc.desktop.MainPage", {
 
     __publishTemplate: function(data) {
       const text = this.tr("Started template creation and added to the background tasks");
-      osparc.FlashMessenger.getInstance().logAs(text, "INFO");
+      osparc.FlashMessenger.logAs(text, "INFO");
 
       const params = {
         url: {
@@ -318,7 +318,7 @@ qx.Class.define("osparc.desktop.MainPage", {
             });
         })
         .catch(err => {
-          osparc.FlashMessenger.getInstance().logAs(err.message, "ERROR");
+          osparc.FlashMessenger.logAs(err, "ERROR");
           this.__showDashboard();
           return;
         });
@@ -357,7 +357,7 @@ qx.Class.define("osparc.desktop.MainPage", {
           osparc.desktop.MainPageHandler.getInstance().loadStudy(studyData);
         })
         .catch(err => {
-          osparc.FlashMessenger.getInstance().logAs(err.message, "ERROR");
+          osparc.FlashMessenger.logAs(err, "ERROR");
           this.__showDashboard();
           return;
         });

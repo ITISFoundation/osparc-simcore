@@ -143,7 +143,7 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
                 .catch(err => {
                   console.error(err);
                   const msg = err.message || (this.tr("Something went wrong updating the state"));
-                  osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
+                  osparc.FlashMessenger.logAs(msg, "ERROR");
                 });
             }
           }, this);

@@ -138,7 +138,7 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
             this.__enableEnterCommand(this.__validateCodeBtn);
           })
           .catch(err => {
-            osparc.FlashMessenger.logAs(err.message, "ERROR");
+            osparc.FlashMessenger.logAs(err, "ERROR");
             this.__verifyPhoneNumberBtn.setFetching(false);
             this.__itiInput.setEnabled(true);
           });
@@ -158,7 +158,7 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
       };
 
       const failFun = msg => {
-        osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
+        osparc.FlashMessenger.logAs(msg, "ERROR");
         this.__validateCodeBtn.setFetching(false);
         // TODO: can get field info from response here
         msg = String(msg) || this.tr("Invalid code");
@@ -185,7 +185,7 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
             retryAfter
           });
         })
-        .catch(err => osparc.FlashMessenger.logAs(err.message, "ERROR"))
+        .catch(err => osparc.FlashMessenger.logAs(err, "ERROR"))
         .finally(() => this.__sendViaEmail.setFetching(false));
     },
 

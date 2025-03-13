@@ -78,7 +78,7 @@ qx.Class.define("osparc.desktop.MainPageHandler", {
           this.loadStudy(studyData);
         })
         .catch(err => {
-          osparc.FlashMessenger.getInstance().logAs(err.message, "ERROR");
+          osparc.FlashMessenger.logAs(err, "ERROR");
           this.showDashboard();
           return;
         });
@@ -113,7 +113,7 @@ qx.Class.define("osparc.desktop.MainPageHandler", {
       const inaccessibleServices = osparc.study.Utils.getInaccessibleServices(studyData["workbench"])
       if (inaccessibleServices.length) {
         const msg = osparc.study.Utils.getInaccessibleServicesMsg(inaccessibleServices, studyData["workbench"]);
-        osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
+        osparc.FlashMessenger.logAs(msg, "ERROR");
         this.showDashboard();
         return;
       }
