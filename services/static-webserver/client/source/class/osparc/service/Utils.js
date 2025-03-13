@@ -153,7 +153,7 @@ qx.Class.define("osparc.service.Utils", {
     DEPRECATED_AUTOUPDATABLE_INSTRUCTIONS: qx.locale.Manager.tr("Please Stop the Service and then Update it"),
     RETIRED_AUTOUPDATABLE_INSTRUCTIONS: qx.locale.Manager.tr("Please Update the Service"),
 
-    __extractVersionFromHistory: function(metadata) {
+    extractVersionFromHistory: function(metadata) {
       if (metadata["history"]) {
         const found = metadata["history"].find(history => history["version"] === metadata["version"]);
         return found;
@@ -162,7 +162,7 @@ qx.Class.define("osparc.service.Utils", {
     },
 
     isUpdatable: function(metadata) {
-      const historyEntry = this.__extractVersionFromHistory(metadata);
+      const historyEntry = this.extractVersionFromHistory(metadata);
       if (historyEntry && historyEntry["compatibility"] && historyEntry["compatibility"]["canUpdateTo"]) {
         const latestCompatible = historyEntry["compatibility"]["canUpdateTo"];
         return latestCompatible && (metadata["key"] !== latestCompatible["key"] || metadata["version"] !== latestCompatible["version"]);
@@ -171,7 +171,7 @@ qx.Class.define("osparc.service.Utils", {
     },
 
     isDeprecated: function(metadata) {
-      const historyEntry = this.__extractVersionFromHistory(metadata);
+      const historyEntry = this.extractVersionFromHistory(metadata);
       if (historyEntry && "retired" in historyEntry && ![null, undefined].includes(historyEntry["retired"])) {
         const deprecationTime = new Date(historyEntry["retired"]);
         const now = new Date();
@@ -181,7 +181,7 @@ qx.Class.define("osparc.service.Utils", {
     },
 
     isRetired: function(metadata) {
-      const historyEntry = this.__extractVersionFromHistory(metadata);
+      const historyEntry = this.extractVersionFromHistory(metadata);
       if (historyEntry && "retired" in historyEntry && ![null, undefined].includes(historyEntry["retired"])) {
         const deprecationTime = new Date(historyEntry["retired"]);
         const now = new Date();
@@ -191,7 +191,7 @@ qx.Class.define("osparc.service.Utils", {
     },
 
     getDeprecationDateText: function(metadata) {
-      const historyEntry = this.__extractVersionFromHistory(metadata);
+      const historyEntry = this.extractVersionFromHistory(metadata);
       if (historyEntry && "retired" in historyEntry && ![null, undefined].includes(historyEntry["retired"])) {
         const deprecationTime = new Date(historyEntry["retired"]);
         return qx.locale.Manager.tr("It will be Retired: ") + osparc.utils.Utils.formatDate(deprecationTime);

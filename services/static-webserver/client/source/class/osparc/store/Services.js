@@ -184,7 +184,10 @@ qx.Class.define("osparc.store.Services", {
                   const version = versions[j];
                   if (!this.__servicesCached[key][version]["release"]["retired"]) {
                     // one older non retired version found
-                    serviceLatest = await this.getService(key, version);
+                    const olderNonRetired = await this.getService(key, version);
+                    serviceLatest = osparc.utils.Utils.deepCloneObject(olderNonRetired);
+                    // make service metadata latest model like
+                    serviceLatest["release"] = osparc.service.Utils.extractVersionFromHistory(olderNonRetired);
                     break;
                   }
                 }
