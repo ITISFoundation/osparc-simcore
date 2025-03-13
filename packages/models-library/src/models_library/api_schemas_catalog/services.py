@@ -235,7 +235,7 @@ class LatestServiceGet(_BaseServiceGetV2):
                         "release": {
                             "version": _EXAMPLE_SLEEPER["version"],
                             "version_display": "Summer Release",
-                            "released": "2024-07-20T15:00:00",
+                            "released": "2025-07-20T15:00:00",
                         },
                     }
                 ]
@@ -270,7 +270,7 @@ class ServiceGetV2(_BaseServiceGetV2):
                             {
                                 "version": _EXAMPLE_SLEEPER["version"],
                                 "version_display": "Summer Release",
-                                "released": "2024-07-20T15:00:00",
+                                "released": "2024-07-21T15:00:00",
                             },
                             {
                                 "version": "2.0.0",
@@ -298,7 +298,7 @@ class ServiceGetV2(_BaseServiceGetV2):
                             },
                             {
                                 "version": "0.9.0",
-                                "retired": "2024-07-20T15:00:00",
+                                "retired": "2024-07-20T16:00:00",
                             },
                             {"version": "0.8.0"},
                             {"version": "0.1.0"},
