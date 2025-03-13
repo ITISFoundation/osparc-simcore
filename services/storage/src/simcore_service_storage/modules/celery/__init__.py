@@ -10,7 +10,7 @@ from .client import CeleryTaskQueueClient
 _logger = logging.getLogger(__name__)
 
 
-def setup_celery(app: FastAPI) -> None:
+def setup_celery_client(app: FastAPI) -> None:
     async def on_startup() -> None:
         celery_settings = get_application_settings(app).STORAGE_CELERY
         assert celery_settings  # nosec
@@ -21,6 +21,7 @@ def setup_celery(app: FastAPI) -> None:
 
 
 def get_celery_client(app: FastAPI) -> CeleryTaskQueueClient:
+    assert hasattr(app.state, "celery_client")  # nosec
     celery_client = app.state.celery_client
     assert isinstance(celery_client, CeleryTaskQueueClient)
     return celery_client
