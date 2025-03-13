@@ -207,7 +207,7 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
               })
               .catch(err => {
                 this.__resetUserData();
-                const msg = err.message || this.tr("Failed to update profile");
+                const msg = err.message || this.tr("Unsuccessful profile update");
                 osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
                 console.error(err);
               });
@@ -297,7 +297,7 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
             })
             .catch(err => {
               this.__resetPrivacyData();
-              const msg = err.message || this.tr("Failed to update privacy");
+              const msg = err.message || this.tr("Unsuccessful privacy update");
               osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
               console.error(err);
             });
@@ -444,7 +444,7 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
             })
             .catch(err => {
               console.error(err);
-              osparc.FlashMessenger.getInstance().logAs(this.tr("Failed to reset password"), "ERROR");
+              osparc.FlashMessenger.getInstance().logAs(this.tr("Unsuccessful password reset"), "ERROR");
               [currentPassword, newPassword, confirm].forEach(item => {
                 item.resetValue();
               });

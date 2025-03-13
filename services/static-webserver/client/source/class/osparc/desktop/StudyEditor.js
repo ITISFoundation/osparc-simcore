@@ -611,7 +611,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           const msg = await e.getTarget().getResponse().error.errors[0].message;
           osparc.FlashMessenger.getInstance().logAs(msg, "WARNING");
         } else {
-          this.getStudyLogger().error(null, "Failed submitting pipeline");
+          this.getStudyLogger().error(null, "Unsuccessful pipeline submission");
         }
         this.getStudy().setPipelineRunning(false);
       }, this);

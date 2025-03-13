@@ -79,7 +79,7 @@ qx.Class.define("osparc.po.PreRegistration", {
         if (form.validate()) {
           submitBtn.setFetching(true);
 
-          const flashErrorMsg = this.tr("Pre-Registration Failed. See details below");
+          const flashErrorMsg = this.tr("Unsuccessful Pre-Registration. See details below");
           const findingStatus = this.getChildControl("finding-status");
           findingStatus.setValue(this.tr("Searching Pre-Registered users..."));
 

@@ -1063,7 +1063,7 @@ qx.Class.define("osparc.data.model.Node", {
               console.error(failure, error);
               const errorMsgData = {
                 nodeId: this.getNodeId(),
-                msg: "Failed retrieving inputs",
+                msg: "Unsuccessful input retrieval",
                 level: "ERROR"
               };
               this.fireDataEvent("showInLogger", errorMsgData);
