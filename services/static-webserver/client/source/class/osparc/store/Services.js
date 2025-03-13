@@ -51,31 +51,12 @@ qx.Class.define("osparc.store.Services", {
       });
     },
 
-    __getVersions: function(key, filterDeprecated = true) {
-      const services = this.__servicesCached;
-      let versions = [];
-      if (key in services) {
-        const serviceVersions = services[key];
-        versions = versions.concat(Object.keys(serviceVersions));
-        if (filterDeprecated) {
-          versions = versions.filter(version => {
-            if (services[key][version]["release"]["retired"]) {
-              return false;
-            }
-            return true;
-          });
-        }
-        versions.sort(osparc.utils.Utils.compareVersionNumbers);
-      }
-      return versions.reverse();
-    },
-
-    getLatest: function(key, filterDeprecated = true) {
+    getLatest: function(key) {
       const services = this.__servicesCached;
       if (key in services) {
-        const versions = this.__getVersions(key, filterDeprecated);
-        if (versions.length) {
-          return services[key][versions[0]];
+        const latestMetadata = Object.values(services[key])[0];
+        if (latestMetadata["release"]["retired"] === null) {
+          return latestMetadata;
         }
       }
       return null;
@@ -147,17 +128,38 @@ qx.Class.define("osparc.store.Services", {
       });
     },
 
+    __getVersions: function(key, filterDeprecated = true) {
+      const services = this.__servicesCached;
+      let versions = [];
+      if (key in services) {
+        const serviceVersions = services[key];
+        versions = versions.concat(Object.keys(serviceVersions));
+        if (filterDeprecated) {
+          versions = versions.filter(version => {
+            if (services[key][version]["release"]["retired"]) {
+              return false;
+            }
+            return true;
+          });
+        }
+        versions.sort(osparc.utils.Utils.compareVersionNumbers);
+      }
+      return versions.reverse();
+    },
+
     populateVersionsSelectBox: function(key, selectBox) {
       const filterDeprecated = false;
-      const latest = this.getLatest(key, filterDeprecated);
-      return this.getService(key, latest["version"])
+      const versions = this.__getVersions(key, filterDeprecated);
+      return this.getService(key, versions[0])
         .then(latestMetadata => {
           latestMetadata["history"].forEach(entry => {
-            const versionDisplay = osparc.service.Utils.extractVersionDisplay(entry);
-            const listItem = new qx.ui.form.ListItem(versionDisplay);
-            osparc.utils.Utils.setIdToWidget(listItem, "serviceVersionItem_" + versionDisplay);
-            listItem.version = entry["version"];
-            selectBox.add(listItem);
+            if (!entry["retired"]) {
+              const versionDisplay = osparc.service.Utils.extractVersionDisplay(entry);
+              const listItem = new qx.ui.form.ListItem(versionDisplay);
+              osparc.utils.Utils.setIdToWidget(listItem, "serviceVersionItem_" + versionDisplay);
+              listItem.version = entry["version"];
+              selectBox.add(listItem);
+            }
           });
         });
     },
