@@ -27,12 +27,12 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
       UPDATE_BUTTON: Object.keys(osparc.metadata.ServicesInStudy.GRID_POS).length+2
     },
 
-    updatableNodeIds: function(workbench, services) {
+    updatableNodeIds: function(workbench, studyServices) {
       const nodeIds = [];
       for (const nodeId in workbench) {
         const node = workbench[nodeId];
-        const serviceFound = services.find(service => service["key"] === node["key"] && service["release"]["version"] === node["version"]);
-        if (serviceFound && serviceFound["release"] && serviceFound["release"]["compatibility"]) {
+        const studyServiceFound = studyServices.find(studyService => studyService["key"] === node["key"] && studyService["release"]["version"] === node["version"]);
+        if (studyServiceFound && studyServiceFound["release"] && studyServiceFound["release"]["compatibility"]) {
           nodeIds.push(nodeId);
         }
       }
