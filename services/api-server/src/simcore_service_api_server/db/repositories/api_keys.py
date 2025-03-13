@@ -22,7 +22,7 @@ class ApiKeysRepository(BaseRepository):
         self, api_key: str, api_secret: str
     ) -> UserAndProductTuple | None:
         stmt = sa.select(tbl.api_keys.c.user_id, tbl.api_keys.c.product_name).where(
-            (tbl.api_keys.c.api_key == api_key)
+            (tbl.api_keys.c.api_key == api_key)  # NOTE: keep order, api_key is indexed
             & (
                 tbl.api_keys.c.api_secret
                 == sa.func.crypt(api_secret, tbl.api_keys.c.api_secret)
