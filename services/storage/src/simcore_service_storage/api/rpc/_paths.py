@@ -10,6 +10,7 @@ from models_library.projects_nodes_io import LocationID
 from servicelib.rabbitmq import RPCRouter
 
 from ...modules.celery import get_celery_client
+from .._worker_celery._paths import compute_path_size as remote_compute_path_size
 
 router = RPCRouter()
 
@@ -26,7 +27,7 @@ async def compute_path_size(
 
     # TODO: pass the job_id_data
     task_uuid = await get_celery_client(app).send_task(
-        "compute_path_size",
+        remote_compute_path_size.__name__,
         task_context=job_id_data.model_dump(),
         user_id=job_id_data.user_id,
         location_id=location_id,
