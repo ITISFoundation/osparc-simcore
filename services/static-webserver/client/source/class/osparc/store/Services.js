@@ -128,28 +128,19 @@ qx.Class.define("osparc.store.Services", {
       });
     },
 
-    __getVersions: function(key, filterDeprecated = true) {
+    __getAllVersions: function(key) {
       const services = this.__servicesCached;
       let versions = [];
       if (key in services) {
         const serviceVersions = services[key];
         versions = versions.concat(Object.keys(serviceVersions));
-        if (filterDeprecated) {
-          versions = versions.filter(version => {
-            if (services[key][version]["release"]["retired"]) {
-              return false;
-            }
-            return true;
-          });
-        }
         versions.sort(osparc.utils.Utils.compareVersionNumbers);
       }
       return versions.reverse();
     },
 
     populateVersionsSelectBox: function(key, selectBox) {
-      const filterDeprecated = false;
-      const versions = this.__getVersions(key, filterDeprecated);
+      const versions = this.__getAllVersions(key);
       return this.getService(key, versions[0])
         .then(latestMetadata => {
           latestMetadata["history"].forEach(historyEntry => {
