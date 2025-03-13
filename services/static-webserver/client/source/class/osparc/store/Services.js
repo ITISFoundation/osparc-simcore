@@ -59,7 +59,7 @@ qx.Class.define("osparc.store.Services", {
         versions = versions.concat(Object.keys(serviceVersions));
         if (filterDeprecated) {
           versions = versions.filter(version => {
-            if (services[key][version]["retired"]) {
+            if (services[key][version]["release"]["retired"]) {
               return false;
             }
             return true;
@@ -174,7 +174,7 @@ qx.Class.define("osparc.store.Services", {
                 // do not add frontend services
                 continue;
               }
-              if (excludeDeprecated && serviceLatest["retired"]) {
+              if (excludeDeprecated && serviceLatest["release"]["retired"]) {
                 // first check if a previous version of this service isn't retired
                 // getService to get its history
                 await this.getService(serviceLatest["key"], serviceLatest["key"]);
@@ -182,13 +182,13 @@ qx.Class.define("osparc.store.Services", {
                 versions = versions.sort(osparc.utils.Utils.compareVersionNumbers).reverse();
                 for (let j=0; j<versions.length; j++) {
                   const version = versions[j];
-                  if (!this.__servicesCached[key][version]["retired"]) {
+                  if (!this.__servicesCached[key][version]["release"]["retired"]) {
                     // one older non retired version found
                     serviceLatest = await this.getService(key, version);
                     break;
                   }
                 }
-                if (serviceLatest["retired"]) {
+                if (serviceLatest["release"]["retired"]) {
                   // do not add retired services
                   continue;
                 }
