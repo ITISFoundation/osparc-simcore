@@ -3,8 +3,10 @@ import logging
 from typing import Any, Final
 from uuid import uuid4
 
-from celery import Celery   # type: ignore[import-untyped]
-from celery.contrib.abortable import AbortableAsyncResult   # type: ignore[import-untyped]
+from celery import Celery  # type: ignore[import-untyped]
+from celery.contrib.abortable import (  # type: ignore[import-untyped]
+    AbortableAsyncResult,
+)
 from common_library.async_tools import make_async
 from models_library.progress_bar import ProgressReport
 from pydantic import ValidationError
@@ -47,7 +49,9 @@ def _build_task_id_prefix(task_context: TaskContext) -> str:
 
 
 def _build_task_id(task_context: TaskContext, task_uuid: TaskUUID) -> TaskID:
-    return _CELERY_TASK_ID_KEY_SEPARATOR.join([_build_task_id_prefix(task_context), f"{task_uuid}"])
+    return _CELERY_TASK_ID_KEY_SEPARATOR.join(
+        [_build_task_id_prefix(task_context), f"{task_uuid}"]
+    )
 
 
 class CeleryTaskQueueClient:
@@ -114,13 +118,13 @@ class CeleryTaskQueueClient:
         )
 
     def _get_completed_task_uuids(self, task_context: TaskContext) -> set[TaskUUID]:
-        search_key = (
-            _CELERY_TASK_META_PREFIX + _build_task_id_prefix(task_context)
-        )
+        search_key = _CELERY_TASK_META_PREFIX + _build_task_id_prefix(task_context)
         redis = self._celery_app.backend.client
         if hasattr(redis, "keys") and (keys := redis.keys(search_key + "*")):
             return {
-                TaskUUID(f"{key.decode(_CELERY_TASK_ID_KEY_ENCODING).removeprefix(search_key + _CELERY_TASK_ID_KEY_SEPARATOR)}")
+                TaskUUID(
+                    f"{key.decode(_CELERY_TASK_ID_KEY_ENCODING).removeprefix(search_key + _CELERY_TASK_ID_KEY_SEPARATOR)}"
+                )
                 for key in keys
             }
         return set()
@@ -129,15 +133,19 @@ class CeleryTaskQueueClient:
     def get_task_uuids(self, task_context: TaskContext) -> set[TaskUUID]:
         all_task_ids = self._get_completed_task_uuids(task_context)
 
-        search_key = (
-            _CELERY_TASK_META_PREFIX + _build_task_id_prefix(task_context)
-        )
+        search_key = _CELERY_TASK_META_PREFIX + _build_task_id_prefix(task_context)
         for task_inspect_status in _CELERY_INSPECT_TASK_STATUSES:
             if task_ids := getattr(
                 self._celery_app.control.inspect(), task_inspect_status
             )():
                 for values in task_ids.values():
                     for value in values:
-                        all_task_ids.add(TaskUUID(value.removeprefix(search_key + _CELERY_TASK_ID_KEY_SEPARATOR)))
+                        all_task_ids.add(
+                            TaskUUID(
+                                value.removeprefix(
+                                    search_key + _CELERY_TASK_ID_KEY_SEPARATOR
+                                )
+                            )
+                        )
 
         return all_task_ids
