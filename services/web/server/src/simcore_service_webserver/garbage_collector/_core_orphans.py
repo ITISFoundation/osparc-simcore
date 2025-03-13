@@ -1,4 +1,5 @@
 import logging
+import traceback
 from typing import Final
 
 from aiohttp import web
@@ -102,14 +103,34 @@ async def remove_orphaned_services(
         }
 
         known_opened_project_ids = await _list_opened_project_ids(registry)
-        potentially_running_service_ids: list[
-            set[NodeID] | BaseException
-        ] = await logged_gather(
-            *(list_node_ids_in_project(app, _) for _ in known_opened_project_ids),
-            log=_logger,
-            max_concurrency=_MAX_CONCURRENT_CALLS,
-            reraise=False,
+        potentially_running_service_ids: list[set[NodeID] | BaseException] = (
+            await logged_gather(
+                *(list_node_ids_in_project(app, r) for r in known_opened_project_ids),
+                log=_logger,
+                max_concurrency=_MAX_CONCURRENT_CALLS,
+                reraise=False,
+            )
         )
+
+        # NOTE: Always skip orphan repmoval when `list_node_ids_in_project` raises an error.
+        # Why? If a service is running but the nodes form the correspondign project cannot be listed,
+        # the service will be considered as orphaned and closed.
+        node_list_errors: set[BaseException] = {
+            x for x in potentially_running_service_ids if not isinstance(x, set)
+        }
+        if node_list_errors:
+            formatted_errors = []
+            for error in node_list_errors:
+                formatted_error = "".join(
+                    traceback.format_exception(type(error), error, error.__traceback__)
+                )
+                formatted_errors.append(formatted_error)
+            _logger.warning(
+                "Skipping orpahn removal. The follwoing issues were detected when listing projects %s",
+                formatted_errors,
+            )
+            return
+
         potentially_running_service_ids_set: set[NodeID] = set().union(
             *(_ for _ in potentially_running_service_ids if isinstance(_, set))
         )
