@@ -107,14 +107,24 @@ async function __dashboardServicesBrowser(page) {
 async function dashboardNewTIPlan(page) {
   console.log("Creating New Plan");
 
-  await utils.waitAndClick(page, '[osparc-test-id="newPlansBtn"]');
+  const uiConfig = await page.evaluate(async () => await osparc.store.Products.getInstance().fetchUiConfig());
+  if ("newStudies" in uiConfig) {
+    await utils.waitAndClick(page, '[osparc-test-id="newPlansBtn"]');
+  } else if ("plusButton" in uiConfig) {
+    await utils.waitAndClick(page, '[osparc-test-id="newPlusBtn"]');
+  }
+
   await utils.waitAndClick(page, '[osparc-test-id="newTIPlanButton"]');
 }
 
 async function dashboardStartSim4LifeLite(page) {
-  console.log("Start Sim4Lite from + button");
+  console.log("Start Sim4Life-Lite from + button");
 
-  await utils.waitAndClick(page, '[osparc-test-id="newPlansBtn"]');
+  const uiConfig = await page.evaluate(async () => await osparc.store.Products.getInstance().fetchUiConfig());
+  if ("plusButton" in uiConfig) {
+    await utils.waitAndClick(page, '[osparc-test-id="newPlusBtn"]');
+  }
+
   await utils.waitAndClick(page, '[osparc-test-id="startS4LButton"]');
 }
 
