@@ -177,7 +177,7 @@ qx.Class.define("osparc.store.Services", {
               if (excludeDeprecated && serviceLatest["release"]["retired"]) {
                 // first check if a previous version of this service isn't retired
                 // getService to get its history
-                await this.getService(serviceLatest["key"], serviceLatest["key"]);
+                await this.getService(serviceLatest["key"], serviceLatest["version"]);
                 let versions = Object.keys(this.__servicesCached[key]);
                 versions = versions.sort(osparc.utils.Utils.compareVersionNumbers).reverse();
                 for (let j=0; j<versions.length; j++) {
