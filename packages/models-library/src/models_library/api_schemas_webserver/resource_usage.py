@@ -6,6 +6,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from ..projects import ProjectID
 from ..projects_nodes_io import NodeID
 from ..resource_tracker import (
+    CreditTransactionStatus,
     HardwareInfo,
     PricingPlanClassification,
     PricingPlanId,
@@ -27,13 +28,15 @@ from ._base import InputSchema, OutputSchema
 
 class ServiceRunGet(
     BaseModel
-):  # NOTE: this is already in use so I didnt modidy inheritance from OutputSchema
+):  # NOTE: this is already in use so I didnt modify inheritance from OutputSchema
     service_run_id: ServiceRunID
     wallet_id: WalletID | None
     wallet_name: str | None
     user_id: UserID
+    user_email: str
     project_id: ProjectID
     project_name: str
+    project_tags: list[str]
     node_id: NodeID
     node_name: str
     root_parent_project_id: ProjectID
@@ -44,6 +47,9 @@ class ServiceRunGet(
     started_at: datetime
     stopped_at: datetime | None
     service_run_status: ServiceRunStatus
+    # Cost in credits
+    credit_cost: Decimal | None
+    transaction_status: CreditTransactionStatus | None
 
 
 class PricingUnitGet(OutputSchema):

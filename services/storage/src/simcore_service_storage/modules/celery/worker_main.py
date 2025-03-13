@@ -2,15 +2,16 @@
 
 import logging
 
-from celery.signals import worker_init, worker_shutdown # type: ignore[import-untyped]
+from celery.signals import worker_init, worker_shutdown  # type: ignore[import-untyped]
 from servicelib.logging_utils import config_all_loggers
-from simcore_service_storage.modules.celery.signals import (
+
+from ...core.settings import ApplicationSettings
+from ._common import create_app as create_celery_app
+from ._common import define_task
+from .signals import (
     on_worker_init,
     on_worker_shutdown,
 )
-
-from ...core.settings import ApplicationSettings
-from ._common import create_app as create_celery_app, define_task
 from .tasks import export_data
 
 _settings = ApplicationSettings.create_from_envs()

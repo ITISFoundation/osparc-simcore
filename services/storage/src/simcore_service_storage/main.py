@@ -3,10 +3,9 @@
 import logging
 
 from servicelib.logging_utils import config_all_loggers
+from simcore_service_storage.core.application import create_app
+from simcore_service_storage.core.settings import ApplicationSettings
 from simcore_service_storage.modules.celery import setup_celery
-
-from .core.application import create_app
-from .core.settings import ApplicationSettings
 
 _settings = ApplicationSettings.create_from_envs()
 

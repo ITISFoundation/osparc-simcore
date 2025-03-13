@@ -26,6 +26,7 @@ from .._meta import (
     APP_FINISHED_BANNER_MSG,
     APP_NAME,
     APP_STARTED_BANNER_MSG,
+    APP_WORKER_STARTED_BANNER_MSG,
 )
 from ..api.rest.routes import setup_rest_api_routes
 from ..api.rpc.routes import setup_rpc_api_routes
@@ -114,7 +115,10 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
         setup_prometheus_instrumentation(app)
 
     async def _on_startup() -> None:
-        print(APP_STARTED_BANNER_MSG, flush=True)  # noqa: T201
+        if settings.STORAGE_WORKER_MODE:
+            print(APP_WORKER_STARTED_BANNER_MSG, flush=True)  # noqa: T201
+        else:
+            print(APP_STARTED_BANNER_MSG, flush=True)  # noqa: T201
 
     async def _on_shutdown() -> None:
         print(APP_FINISHED_BANNER_MSG, flush=True)  # noqa: T201

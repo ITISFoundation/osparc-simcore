@@ -47,7 +47,7 @@ if [ "${SC_BOOT_MODE}" = "debug" ]; then
 
   exec sh -c "
     cd services/storage/src/simcore_service_storage && \
-    python -m debugpy --listen 0.0.0.0:${STORAGE_REMOTE_DEBUGGING_PORT} -m uvicorn main:the_app \
+    python -m debugpy --listen 0.0.0.0:${STORAGE_REMOTE_DEBUGGING_PORT} -m uvicorn main:app \
       --host 0.0.0.0 \
       --port ${STORAGE_PORT} \
       --reload \

@@ -2,10 +2,10 @@ import logging
 from asyncio import AbstractEventLoop
 
 from fastapi import FastAPI
-from simcore_service_storage.modules.celery._common import create_app
-from simcore_service_storage.modules.celery.client import CeleryTaskQueueClient
 
 from ...core.settings import get_application_settings
+from ._common import create_app
+from .client import CeleryTaskQueueClient
 
 _logger = logging.getLogger(__name__)
 
