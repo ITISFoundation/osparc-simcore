@@ -330,14 +330,12 @@ qx.Class.define("osparc.study.Utils", {
       return Object.values(studyData["workbench"]).filter(nodeData => !osparc.data.model.Node.isFrontend(nodeData));
     },
 
-    guessIcon: function(studyData) {
-      return new Promise(resolve => {
-        if (osparc.product.Utils.isProduct("tis") || osparc.product.Utils.isProduct("tiplite")) {
-          resolve(this.__guessTIPIcon(studyData));
-        } else {
-          resolve(this.__guessIcon(studyData));
-        }
-      });
+    guessIcon: async function(studyData) {
+      if (osparc.product.Utils.isProduct("tis") || osparc.product.Utils.isProduct("tiplite")) {
+        return this.__guessTIPIcon(studyData);
+      }
+      const icon = await this.__guessIcon(studyData);
+      return icon;
     },
 
     __guessIcon: function(studyData) {
