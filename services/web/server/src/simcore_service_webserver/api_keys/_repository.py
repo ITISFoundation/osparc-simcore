@@ -3,6 +3,7 @@ from datetime import timedelta
 
 import sqlalchemy as sa
 from aiohttp import web
+from asyncpg.exceptions import UniqueViolationError
 from models_library.products import ProductName
 from models_library.users import UserID
 from simcore_postgres_database.models.api_keys import api_keys
@@ -14,6 +15,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncConnection
 
 from ..db.plugin import get_asyncpg_engine
+from .errors import ApiKeyDuplicatedDisplayNameError
 from .models import ApiKey
 
 _logger = logging.getLogger(__name__)
@@ -33,7 +35,42 @@ async def create_api_key(
     expiration: timedelta | None,
     api_key: str,
     api_secret: str,
+    raise_on_conflict: bool = True,
 ) -> ApiKey:
+    async with transaction_context(get_asyncpg_engine(app), connection) as conn:
+        stmt = pg_insert(api_keys).values(
+            display_name=display_name,
+            user_id=user_id,
+            product_name=product_name,
+            api_key=api_key,
+            api_secret=_hash_secret(api_secret),
+            expires_at=(sa.func.now() + expiration) if expiration else None,
+        )
+
+        if not raise_on_conflict:
+            stmt = stmt.on_conflict_do_update(
+                index_elements=["user_id", "display_name"],
+                set_={
+                    "api_key": api_key,
+                    "api_secret": _hash_secret(api_secret),
+                    "expires_at": (sa.func.now() + expiration) if expiration else None,
+                },
+            )
+
+        try:
+            result = await conn.stream(stmt.returning(api_keys))
+            row = await result.one()
+        except UniqueViolationError as exc:
+            raise ApiKeyDuplicatedDisplayNameError(display_name=display_name) from exc
+
+        return ApiKey(
+            id=f"{row.id}",  # NOTE See: https://github.com/ITISFoundation/osparc-simcore/issues/6919
+            display_name=display_name,
+            expiration=expiration,
+            api_key=api_key,
+            api_secret=api_secret,
+        )
+
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         stmt = (
             pg_insert(api_keys)

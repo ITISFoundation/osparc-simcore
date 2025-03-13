@@ -21,6 +21,7 @@ async def create_api_key(
     user_id: UserID,
     product_name: ProductName,
     api_key: ApiKeyCreateRequest,
+    raise_on_conflict: bool = True,
 ) -> ApiKeyGet:
     created_api_key: ApiKey = await _service.create_api_key(
         app,
@@ -28,6 +29,7 @@ async def create_api_key(
         product_name=product_name,
         display_name=api_key.display_name,
         expiration=api_key.expiration,
+        raise_on_conflict=raise_on_conflict,
     )
 
     return ApiKeyGet.model_validate(created_api_key)

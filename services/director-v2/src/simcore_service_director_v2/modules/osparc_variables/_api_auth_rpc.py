@@ -31,5 +31,6 @@ async def create_api_key(
         display_name=display_name,
         expiration=expiration,
         product_name=product_name,
+        raise_on_conflict=False,
     )
     return ApiKeyGet.model_validate(result)

@@ -34,6 +34,7 @@ async def create_api_key(
     product_name: ProductName,
     display_name: str,
     expiration: dt.timedelta | None,
+    raise_on_conflict: bool = True,
 ) -> ApiKey:
     api_key, api_secret = _generate_api_key_and_secret(display_name)
 
@@ -45,6 +46,7 @@ async def create_api_key(
         expiration=expiration,
         api_key=api_key,
         api_secret=api_secret,
+        raise_on_conflict=raise_on_conflict,
     )
 
 
