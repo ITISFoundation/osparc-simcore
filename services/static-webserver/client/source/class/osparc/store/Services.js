@@ -70,10 +70,10 @@ qx.Class.define("osparc.store.Services", {
       return versions.reverse();
     },
 
-    getLatest: function(key) {
+    getLatest: function(key, filterDeprecated = true) {
       const services = this.__servicesCached;
       if (key in services) {
-        const versions = this.__getVersions(key);
+        const versions = this.__getVersions(key, filterDeprecated);
         if (versions.length) {
           return services[key][versions[0]];
         }
@@ -148,7 +148,8 @@ qx.Class.define("osparc.store.Services", {
     },
 
     populateVersionsSelectBox: function(key, selectBox) {
-      const latest = this.getLatest(key);
+      const filterDeprecated = false;
+      const latest = this.getLatest(key, filterDeprecated);
       return this.getService(key, latest["version"])
         .then(latestMetadata => {
           latestMetadata["history"].forEach(entry => {

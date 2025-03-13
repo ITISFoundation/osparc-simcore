@@ -315,8 +315,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
 
         const key = newStudyData["expectedKey"];
         const latestMetadata = osparc.store.Services.getLatest(key);
-        // make sure this one is not deprecated
-        if (osparc.service.Utils.isDeprecated(latestMetadata)) {
+        if (!latestMetadata) {
           return;
         }
         menuButton.setEnabled(true);

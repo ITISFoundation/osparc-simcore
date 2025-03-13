@@ -954,8 +954,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       if ("expectedKey" in newStudyData) {
         const key = newStudyData["expectedKey"];
         const latestMetadata = osparc.store.Services.getLatest(key);
-        // make sure this one is not deprecated
-        if (osparc.service.Utils.isDeprecated(latestMetadata)) {
+        if (!latestMetadata) {
           return;
         }
         const title = newStudyData.title + " " + osparc.service.Utils.extractVersionDisplay(latestMetadata);
