@@ -22,7 +22,10 @@ from simcore_service_webserver.rest.plugin import setup_rest
 from simcore_service_webserver.statics._constants import (
     APP_FRONTEND_CACHED_STATICS_JSON_KEY,
 )
-from simcore_service_webserver.statics._events import create_and_cache_statics_json
+from simcore_service_webserver.statics._events import (
+    _get_release_notes_vtag,
+    create_and_cache_statics_json,
+)
 from simcore_service_webserver.statics.plugin import setup_statics
 
 
@@ -154,3 +157,15 @@ async def test_create_and_cache_statics_json_vendor_vcs_overwrite(
         product_dict = json.loads(product_data)
         assert product_dict.get("vcsReleaseTag") == vcs_release_tag
         assert product_dict.get("vcsReleaseUrl") == expected_vcs_url
+
+
+@pytest.mark.parametrize(
+    "vtag, expected_vtag",
+    [
+        ("v1.11.34", "v1.11.0"),
+        ("v1.11.8", "v1.11.0"),
+        ("v1.11.0", "v1.11.0"),
+    ],
+)
+def test__get_release_notes_vtag(vtag: str, expected_vtag: str):
+    assert _get_release_notes_vtag(vtag) == expected_vtag

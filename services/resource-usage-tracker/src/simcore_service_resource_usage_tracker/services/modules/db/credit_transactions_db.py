@@ -17,6 +17,7 @@ from simcore_postgres_database.models.resource_tracker_service_runs import (
     resource_tracker_service_runs,
 )
 from simcore_postgres_database.utils_repos import transaction_context
+from sqlalchemy.engine import CursorResult
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
 from ....exceptions.errors import CreditTransactionNotCreatedDBError
@@ -165,6 +166,8 @@ async def batch_update_credit_transaction_status_for_in_debt_transactions(
         )
     async with transaction_context(engine, connection) as conn:
         result = await conn.execute(update_stmt)
+        # NOTE: see https://docs.sqlalchemy.org/en/20/tutorial/data_update.html#getting-affected-row-count-from-update-delete
+        assert isinstance(result, CursorResult)  # nosec
         if result.rowcount:
             _logger.info(
                 "Wallet %s and project %s transactions in DEBT were changed to BILLED. Num. of transaction %s",

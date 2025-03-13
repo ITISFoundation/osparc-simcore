@@ -12,9 +12,8 @@ from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.models.users import users
 from simcore_postgres_database.models.workspaces import workspaces
 from simcore_service_storage.modules.db.access_layer import (
+    AccessLayerRepository,
     AccessRights,
-    get_file_access_rights,
-    get_project_access_rights,
 )
 from sqlalchemy.ext.asyncio import AsyncEngine
 
@@ -27,15 +26,19 @@ pytest_simcore_ops_services_selection = [
 async def test_access_rights_on_owned_project(
     user_id: UserID, project_id: ProjectID, sqlalchemy_async_engine: AsyncEngine
 ):
-    async with sqlalchemy_async_engine.connect() as conn:
-        access = await get_project_access_rights(conn, user_id, project_id)
-        assert access == AccessRights.all()
+    access = await AccessLayerRepository.instance(
+        sqlalchemy_async_engine
+    ).get_project_access_rights(user_id=user_id, project_id=project_id)
+    assert access == AccessRights.all()
 
-        # still NOT registered in file_meta_data BUT with prefix {project_id} owned by user
-        access = await get_file_access_rights(
-            conn, user_id, f"{project_id}/node_id/not-in-file-metadata-table.txt"
-        )
-        assert access == AccessRights.all()
+    # still NOT registered in file_meta_data BUT with prefix {project_id} owned by user
+    access = await AccessLayerRepository.instance(
+        sqlalchemy_async_engine
+    ).get_file_access_rights(
+        user_id=user_id,
+        file_id=f"{project_id}/node_id/not-in-file-metadata-table.txt",
+    )
+    assert access == AccessRights.all()
 
 
 @pytest.fixture
@@ -82,12 +85,15 @@ async def test_access_rights_based_on_workspace(
     sqlalchemy_async_engine: AsyncEngine,
     prepare_db,
 ):
-    async with sqlalchemy_async_engine.connect() as conn:
-        access = await get_project_access_rights(conn, user_id, project_id)
-        assert access == AccessRights.all()
+    access = await AccessLayerRepository.instance(
+        sqlalchemy_async_engine
+    ).get_project_access_rights(user_id=user_id, project_id=project_id)
+    assert access == AccessRights.all()
 
-        # still NOT registered in file_meta_data BUT with prefix {project_id} owned by user
-        access = await get_file_access_rights(
-            conn, user_id, f"{project_id}/node_id/not-in-file-metadata-table.txt"
-        )
-        assert access == AccessRights.all()
+    # still NOT registered in file_meta_data BUT with prefix {project_id} owned by user
+    access = await AccessLayerRepository.instance(
+        sqlalchemy_async_engine
+    ).get_file_access_rights(
+        user_id=user_id, file_id=f"{project_id}/node_id/not-in-file-metadata-table.txt"
+    )
+    assert access == AccessRights.all()

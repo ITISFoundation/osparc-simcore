@@ -165,7 +165,7 @@ async def test_volumes_manager_periodic_task_cleanup(
 ):
     async def _run_volumes_clennup() -> None:
         await volumes_manager._bookkeeping_task()  # noqa: SLF001
-        await volumes_manager._periodic_volmue_cleanup_task()  # noqa: SLF001
+        await volumes_manager._periodic_volume_cleanup_task()  # noqa: SLF001
 
     await _run_volumes_clennup()
     assert spy_remove_volume.call_count == 0

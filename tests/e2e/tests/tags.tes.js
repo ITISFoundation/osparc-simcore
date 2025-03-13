@@ -48,7 +48,10 @@ describe('tags testing', () => {
     await page.goto(url);
     await auto.register(page, user, pass);
     // Create new study
-    await waitAndClick(page, '[osparc-test-id="newPlusBtn"]');
+    const uiConfig = await page.evaluate(async () => await osparc.store.Products.getInstance().fetchUiConfig());
+    if ("plusButton" in uiConfig) {
+      await waitAndClick(page, '[osparc-test-id="newPlusBtn"]');
+    }
     await waitAndClick(page, '[osparc-test-id="emptyStudyBtn"]');
     // Wait until project is created and Dashboard button is enabled
     await utils.sleep(4000);

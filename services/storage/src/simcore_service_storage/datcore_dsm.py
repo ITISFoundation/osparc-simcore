@@ -33,7 +33,8 @@ from .modules.datcore_adapter import datcore_adapter
 from .modules.datcore_adapter.datcore_adapter_exceptions import (
     DatcoreAdapterMultipleFilesError,
 )
-from .modules.db.tokens import get_api_token_and_secret
+from .modules.db import get_db_engine
+from .modules.db.tokens import TokenRepository
 
 
 def _check_api_credentials(
@@ -60,7 +61,9 @@ class DatCoreDataManager(BaseDataManager):
     async def _get_datcore_tokens(
         self, user_id: UserID
     ) -> tuple[str | None, str | None]:
-        return await get_api_token_and_secret(self.app, user_id)
+        return await TokenRepository.instance(
+            get_db_engine(self.app)
+        ).get_api_token_and_secret(user_id=user_id)
 
     @classmethod
     def get_location_id(cls) -> LocationID:
