@@ -126,8 +126,9 @@ async def remove_orphaned_services(
                 )
                 formatted_errors.append(formatted_error)
             _logger.warning(
-                "Skipping orpahn removal. The follwoing issues were detected when listing projects %s",
-                formatted_errors,
+                "Skipping orpahn services removal, '%s' calls to `list_node_ids_in_project` raised the following:\n%s",
+                len(formatted_errors),
+                "\n".join(formatted_errors),
             )
             return
 
