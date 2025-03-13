@@ -42,7 +42,7 @@ async def pass_or_acquire_connection(
 @asynccontextmanager
 async def transaction_context(
     engine: AsyncEngine, connection: AsyncConnection | None = None
-):
+) -> AsyncIterator[AsyncConnection]:
     """
     When to use: For WRITE operations!
     This function manages the database connection and ensures that a transaction context is established for write operations.

@@ -1458,13 +1458,17 @@
           },
           "url": {
             "type": "string",
+            "minLength": 1,
+            "format": "uri",
             "title": "Url",
             "description": "the link where to get the status of the task"
           },
           "stop_url": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "minLength": 1,
+                "format": "uri"
               },
               {
                 "type": "null"
@@ -3120,7 +3124,9 @@
           "download_link": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "minLength": 1,
+                "format": "uri"
               },
               {
                 "type": "null"
