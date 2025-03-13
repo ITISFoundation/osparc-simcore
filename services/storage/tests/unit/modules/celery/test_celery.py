@@ -88,7 +88,7 @@ def register_celery_tasks() -> Callable[[Celery], None]:
 
 
 @pytest.mark.usefixtures("celery_worker")
-async def test_sumitting_task_calling_async_function_results_with_success_state(
+async def test_submitting_task_calling_async_function_results_with_success_state(
     celery_client: CeleryTaskQueueClient,
 ):
     task_context = TaskContext(user_id=42)
