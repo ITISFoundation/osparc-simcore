@@ -43,12 +43,27 @@ SERVER_LOG_LEVEL=$(echo "${APP_LOG_LEVEL}" | tr '[:upper:]' '[:lower:]')
 echo "$INFO" "Log-level app/server: $APP_LOG_LEVEL/$SERVER_LOG_LEVEL"
 
 if [ "${STORAGE_WORKER_MODE}" = "true" ]; then
-  exec celery \
-    --app=simcore_service_storage.modules.celery.worker_main:app \
-    worker --pool=threads \
-    --loglevel="${SERVER_LOG_LEVEL}" \
-    --hostname="${HOSTNAME}" \
-    --concurrency="${CELERY_CONCURRENCY}"
+  if [ "${SC_BOOT_MODE}" = "debug" ]; then
+    exec watchmedo auto-restart \
+      --directory /devel/packages \
+      --directory services/storage \
+      --pattern "*.py" \
+      --recursive \
+      -- \
+      celery \
+      --app=simcore_service_storage.modules.celery.worker_main:app \
+      worker --pool=threads \
+      --loglevel="${SERVER_LOG_LEVEL}" \
+      --hostname="${HOSTNAME}" \
+      --concurrency="${CELERY_CONCURRENCY}"
+  else
+    exec celery \
+      --app=simcore_service_storage.modules.celery.worker_main:app \
+      worker --pool=threads \
+      --loglevel="${SERVER_LOG_LEVEL}" \
+      --hostname="${HOSTNAME}" \
+      --concurrency="${CELERY_CONCURRENCY}"
+  fi
 else
   if [ "${SC_BOOT_MODE}" = "debug" ]; then
     reload_dir_packages=$(find /devel/packages -maxdepth 3 -type d -path "*/src/*" ! -path "*.*" -exec echo '--reload-dir {} \' \;)
