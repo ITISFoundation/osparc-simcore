@@ -192,7 +192,7 @@ qx.Class.define("osparc.data.model.IframeHandler", {
             this.__unresponsiveRetries--;
           } else {
             node.getStatus().setInteractive("failed");
-            osparc.FlashMessenger.logAs(this.tr("There was an error starting") + " " + node.getLabel(), "ERROR");
+            osparc.FlashMessenger.logAs(this.tr("There was an issue starting") + " " + node.getLabel(), "ERROR");
           }
         });
     },

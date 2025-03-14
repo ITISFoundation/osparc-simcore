@@ -90,7 +90,7 @@ qx.Class.define("osparc.form.json.JsonSchemaForm", {
       } else {
         // Validation failed
         this._add(new qx.ui.basic.Label().set({
-          value: this.tr("There was an error generating the form or one or more schemas failed to validate. Check your Javascript console for more details."),
+          value: this.tr("There was an issue generating the form or one or more schemas failed to validate. Check your Javascript console for more details."),
           font: "title-16",
           textColor: "service-window-hint",
           rich: true,

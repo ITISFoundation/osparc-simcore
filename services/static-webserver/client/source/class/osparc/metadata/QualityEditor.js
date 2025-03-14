@@ -154,7 +154,7 @@ qx.Class.define("osparc.metadata.QualityEditor", {
 
         this.__populateForms();
       } else {
-        osparc.FlashMessenger.logError(this.tr("There was an error validating the metadata."));
+        osparc.FlashMessenger.logError(this.tr("There was an issue validating the metadata."));
       }
     },
 
@@ -466,7 +466,7 @@ qx.Class.define("osparc.metadata.QualityEditor", {
               this.__initResourceData(serviceDataCopy);
               this.fireDataEvent("updateQuality", serviceDataCopy);
             })
-            .catch(err => osparc.FlashMessenger.logError(err, this.tr("There was an error while updating the Quality Assessment.")))
+            .catch(err => osparc.FlashMessenger.logError(err, this.tr("There was an issue while updating the Quality Assessment.")))
             .finally(() => btn.setFetching(false));
         } else {
           osparc.store.Study.patchStudyData(this.__resourceData, "quality", newQuality)
@@ -474,7 +474,7 @@ qx.Class.define("osparc.metadata.QualityEditor", {
               this.__initResourceData(this.__resourceData);
               this.fireDataEvent("updateQuality", this.__resourceData);
             })
-            .catch(err => osparc.FlashMessenger.logError(err, this.tr("There was an error while updating the Quality Assessment.")))
+            .catch(err => osparc.FlashMessenger.logError(err, this.tr("There was an issue while updating the Quality Assessment.")))
             .finally(() => btn.setFetching(false));
         }
       }
