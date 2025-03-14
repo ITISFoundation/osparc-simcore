@@ -165,7 +165,7 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethods", {
         })
         .finally(() => this.__fetchingMsg.setVisibility("excluded"))
         .catch(err => {
-          const msg = this.tr("We could not retrieve your saved payment methods. Please try again later.");
+          const msg = this.tr("Could not retrieve your saved payment methods. Please try again later.");
           osparc.FlashMessenger.logError(err, msg);
         });
     },
