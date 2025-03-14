@@ -12,7 +12,7 @@ from models_library.progress_bar import ProgressReport
 from pydantic import TypeAdapter, ValidationError
 from servicelib.logging_utils import log_context
 from simcore_service_storage.modules.celery import get_event_loop
-from simcore_service_storage.modules.celery._common import define_task
+from simcore_service_storage.modules.celery._task import define_task
 from simcore_service_storage.modules.celery.client import CeleryTaskQueueClient
 from simcore_service_storage.modules.celery.models import (
     TaskContext,
