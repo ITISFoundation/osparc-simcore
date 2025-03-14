@@ -232,7 +232,7 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
 
     __deleteItem: function(itemId, locationId) {
       if (locationId !== 0 && locationId !== "0") {
-        osparc.FlashMessenger.logAs(this.tr("Only items in simcore.s3 can be deleted"));
+        osparc.FlashMessenger.logAs(this.tr("Externally managed items cannot be deleted"));
         return null;
       }
       const dataStore = osparc.store.Data.getInstance();
