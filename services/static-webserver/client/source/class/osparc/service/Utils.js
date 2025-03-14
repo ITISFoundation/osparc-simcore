@@ -155,7 +155,7 @@ qx.Class.define("osparc.service.Utils", {
 
     extractVersionFromHistory: function(metadata) {
       if (metadata["history"]) {
-        const found = metadata["history"].find(history => history["version"] === metadata["version"]);
+        const found = metadata["history"].find(historyEntry => historyEntry["version"] === metadata["version"]);
         return found;
       }
       return null;
