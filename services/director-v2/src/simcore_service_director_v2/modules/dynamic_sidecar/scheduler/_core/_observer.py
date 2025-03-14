@@ -146,9 +146,9 @@ async def observing_single_service(
         # With unhandled errors, let's generate and ID and send it to the end-user
         # so that we can trace the logs and debug the issue.
         user_error_msg = (
-            f"This service ({service_name}) unexpectedly failed."
-            " Our team has recorded the issue and is working to resolve it as quickly as possible."
-            " Thank you for your patience."
+            f"This service ({service_name}) unexpectedly failed. "
+            "Our team has recorded the issue. "
+            "Thank you for your patience."
         )
         error_code = create_error_code(exc)
 
