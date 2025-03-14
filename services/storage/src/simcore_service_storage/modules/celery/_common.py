@@ -27,7 +27,10 @@ def create_app(celery_settings: CelerySettings) -> Celery:
     app.conf.result_expires = celery_settings.CELERY_RESULT_EXPIRES
     app.conf.result_extended = True  # original args are included in the results
     app.conf.result_serializer = "json"
+    app.conf.task_send_sent_event = True
     app.conf.task_track_started = True
+    app.conf.worker_send_task_events = True  # enable tasks monitoring
+
     return app
 
 
