@@ -1,15 +1,30 @@
+import asyncio
+import logging
 from pathlib import Path
 
-from fastapi import FastAPI
+from celery import Task
 from models_library.projects_nodes_io import LocationID
 from models_library.users import UserID
 from pydantic import ByteSize
+from servicelib.logging_utils import log_context
 
 from ...dsm import get_dsm_provider
+from ...modules.celery import get_event_loop
+from ...modules.celery.utils import get_fastapi_app
+
+_logger = logging.getLogger(__name__)
 
 
-async def compute_path_size(
-    app: FastAPI, user_id: UserID, location_id: LocationID, path: Path
+def compute_path_size(
+    task: Task, user_id: UserID, location_id: LocationID, path: str
 ) -> ByteSize:
-    dsm = get_dsm_provider(app).get(location_id)
-    return await dsm.compute_path_size(user_id, path=path)
+    with log_context(
+        _logger,
+        logging.INFO,
+        msg=f"computing path size {user_id=}, {location_id=}, {path=}",
+    ):
+        dsm = get_dsm_provider(get_fastapi_app(task.app)).get(location_id)
+        return asyncio.run_coroutine_threadsafe(
+            dsm.compute_path_size(user_id, path=Path(path)),
+            get_event_loop(get_fastapi_app(task.app)),
+        ).result()
