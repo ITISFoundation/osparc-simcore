@@ -49,38 +49,46 @@ class DataExportPost(InputSchema):
         )
 
 
+class AsyncJobLinks(OutputSchema):
+    status_href: str
+    abort_href: str
+    result_href: str
+
+
 class StorageAsyncJobGet(OutputSchema):
     job_id: AsyncJobId
+    links: AsyncJobLinks
 
     @classmethod
-    def from_rpc_schema(cls, async_job_rpc_get: AsyncJobGet) -> "StorageAsyncJobGet":
-        return StorageAsyncJobGet(job_id=async_job_rpc_get.job_id)
+    def from_rpc_schema(
+        cls, *, async_job_rpc_get: AsyncJobGet, links: AsyncJobLinks
+    ) -> "StorageAsyncJobGet":
+        return StorageAsyncJobGet(job_id=async_job_rpc_get.job_id, links=links)
 
 
 class StorageAsyncJobStatus(OutputSchema):
     job_id: AsyncJobId
     progress: ProgressReport
     done: bool
+    links: AsyncJobLinks
 
     @classmethod
     def from_rpc_schema(
-        cls, async_job_rpc_status: AsyncJobStatus
+        cls, *, async_job_rpc_status: AsyncJobStatus, links: AsyncJobLinks
     ) -> "StorageAsyncJobStatus":
         return StorageAsyncJobStatus(
             job_id=async_job_rpc_status.job_id,
             progress=async_job_rpc_status.progress,
             done=async_job_rpc_status.done,
+            links=links,
         )
 
 
 class StorageAsyncJobResult(OutputSchema):
     result: Any | None
-    error: Any | None
 
     @classmethod
     def from_rpc_schema(
         cls, async_job_rpc_result: AsyncJobResult
     ) -> "StorageAsyncJobResult":
-        return StorageAsyncJobResult(
-            result=async_job_rpc_result.result, error=async_job_rpc_result.error
-        )
+        return StorageAsyncJobResult(result=async_job_rpc_result.result)

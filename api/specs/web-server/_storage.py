@@ -4,10 +4,10 @@
 # pylint: disable=too-many-arguments
 
 
-from typing import Annotated, TypeAlias
-from uuid import UUID
+from typing import Annotated, Any, TypeAlias
 
 from fastapi import APIRouter, Depends, Query, status
+from models_library.api_schemas_rpc_async_jobs.async_jobs import AsyncJobId
 from models_library.api_schemas_storage.storage_schemas import (
     FileLocation,
     FileMetaDataGet,
@@ -29,10 +29,13 @@ from models_library.api_schemas_webserver.storage import (
 )
 from models_library.generics import Envelope
 from models_library.projects_nodes_io import LocationID
-from models_library.users import UserID
+from models_library.rest_error import EnvelopedError
 from pydantic import AnyUrl, ByteSize
 from servicelib.fastapi.rest_pagination import CustomizedPathsCursorPage
 from simcore_service_webserver._meta import API_VTAG
+from simcore_service_webserver.storage._exception_handlers import (
+    _TO_HTTP_ERROR_MAP as data_export_http_error_map,
+)
 from simcore_service_webserver.storage.schemas import DatasetMetaData, FileMetaData
 
 router = APIRouter(
@@ -195,11 +198,18 @@ async def is_completed_upload_file(
 
 
 # data export
+_data_export_responses: dict[int | str, dict[str, Any]] = {
+    i.status_code: {"model": EnvelopedError}
+    for i in data_export_http_error_map.values()
+}
+
+
 @router.post(
     "/storage/locations/{location_id}/export-data",
     response_model=Envelope[StorageAsyncJobGet],
     name="export_data",
     description="Export data",
+    responses=_data_export_responses,
 )
 async def export_data(data_export: DataExportPost, location_id: LocationID):
     """Trigger data export. Returns async job id for getting status and results"""
@@ -209,16 +219,18 @@ async def export_data(data_export: DataExportPost, location_id: LocationID):
     "/storage/async-jobs/{job_id}/status",
     response_model=Envelope[StorageAsyncJobStatus],
     name="get_async_job_status",
+    responses=_data_export_responses,
 )
-async def get_async_job_status(job_id: UUID):
+async def get_async_job_status(job_id: AsyncJobId):
     """Get async job status"""
 
 
 @router.post(
     "/storage/async-jobs/{job_id}:abort",
     name="abort_async_job",
+    responses=_data_export_responses,
 )
-async def abort_async_job(job_id: UUID):
+async def abort_async_job(job_id: AsyncJobId):
     """aborts execution of an async job"""
 
 
@@ -226,8 +238,9 @@ async def abort_async_job(job_id: UUID):
     "/storage/async-jobs/{job_id}/result",
     response_model=Envelope[StorageAsyncJobResult],
     name="get_async_job_result",
+    responses=_data_export_responses,
 )
-async def get_async_job_result(job_id: UUID):
+async def get_async_job_result(job_id: AsyncJobId):
     """Get the result of the async job"""
 
 
@@ -235,6 +248,7 @@ async def get_async_job_result(job_id: UUID):
     "/storage/async-jobs",
     response_model=Envelope[list[StorageAsyncJobGet]],
     name="get_async_jobs",
+    responses=_data_export_responses,
 )
-async def get_async_jobs(user_id: UserID):
-    """Retrunsa list of async jobs for the user"""
+async def get_async_jobs():
+    """Returns the user's async jobs"""

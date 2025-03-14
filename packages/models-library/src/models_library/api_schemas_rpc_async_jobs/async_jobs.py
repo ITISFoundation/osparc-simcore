@@ -16,8 +16,7 @@ class AsyncJobStatus(BaseModel):
 
 
 class AsyncJobResult(BaseModel):
-    result: Any | None
-    error: Any | None
+    result: Any
 
 
 class AsyncJobGet(BaseModel):

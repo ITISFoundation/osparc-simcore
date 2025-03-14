@@ -6412,6 +6412,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_StorageAsyncJobGet_'
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
+        '410':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Gone
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Internal Server Error
   /v0/storage/async-jobs/{job_id}/status:
     get:
       tags:
@@ -6434,6 +6458,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_StorageAsyncJobStatus_'
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
+        '410':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Gone
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Internal Server Error
   /v0/storage/async-jobs/{job_id}:abort:
     post:
       tags:
@@ -6455,6 +6503,30 @@ paths:
           content:
             application/json:
               schema: {}
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
+        '410':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Gone
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Internal Server Error
   /v0/storage/async-jobs/{job_id}/result:
     get:
       tags:
@@ -6477,22 +6549,37 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_StorageAsyncJobResult_'
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
+        '410':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Gone
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Internal Server Error
   /v0/storage/async-jobs:
     get:
       tags:
       - storage
       summary: Get Async Jobs
-      description: Retrunsa list of async jobs for the user
+      description: Returns the user's async jobs
       operationId: get_async_jobs
-      parameters:
-      - name: user_id
-        in: query
-        required: true
-        schema:
-          type: integer
-          exclusiveMinimum: true
-          title: User Id
-          minimum: 0
       responses:
         '200':
           description: Successful Response
@@ -6500,6 +6587,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_list_StorageAsyncJobGet__'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+        '410':
+          description: Gone
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
   /v0/trash:empty:
     post:
       tags:
@@ -7780,6 +7891,23 @@ components:
       - app_name
       - version
       title: AppStatusCheck
+    AsyncJobLinks:
+      properties:
+        statusHref:
+          type: string
+          title: Statushref
+        abortHref:
+          type: string
+          title: Aborthref
+        resultHref:
+          type: string
+          title: Resulthref
+      type: object
+      required:
+      - statusHref
+      - abortHref
+      - resultHref
+      title: AsyncJobLinks
     Author:
       properties:
         name:
@@ -15005,9 +15133,12 @@ components:
           type: string
           format: uuid
           title: Jobid
+        links:
+          $ref: '#/components/schemas/AsyncJobLinks'
       type: object
       required:
       - jobId
+      - links
       title: StorageAsyncJobGet
     StorageAsyncJobResult:
       properties:
@@ -15016,15 +15147,9 @@ components:
           - {}
           - type: 'null'
           title: Result
-        error:
-          anyOf:
-          - {}
-          - type: 'null'
-          title: Error
       type: object
       required:
       - result
-      - error
       title: StorageAsyncJobResult
     StorageAsyncJobStatus:
       properties:
@@ -15037,11 +15162,14 @@ components:
         done:
           type: boolean
           title: Done
+        links:
+          $ref: '#/components/schemas/AsyncJobLinks'
       type: object
       required:
       - jobId
       - progress
       - done
+      - links
       title: StorageAsyncJobStatus
     Structure:
       properties:

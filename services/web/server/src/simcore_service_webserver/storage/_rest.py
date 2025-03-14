@@ -10,7 +10,10 @@ from urllib.parse import quote, unquote
 from uuid import UUID
 
 from aiohttp import ClientTimeout, web
-from models_library.api_schemas_rpc_async_jobs.async_jobs import AsyncJobNameData
+from models_library.api_schemas_rpc_async_jobs.async_jobs import (
+    AsyncJobId,
+    AsyncJobNameData,
+)
 from models_library.api_schemas_storage import STORAGE_RPC_NAMESPACE
 from models_library.api_schemas_storage.storage_schemas import (
     FileUploadCompleteResponse,
@@ -19,6 +22,7 @@ from models_library.api_schemas_storage.storage_schemas import (
     LinkType,
 )
 from models_library.api_schemas_webserver.storage import (
+    AsyncJobLinks,
     DataExportPost,
     StorageAsyncJobGet,
     StorageAsyncJobResult,
@@ -42,8 +46,8 @@ from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import (
     get_result,
     get_status,
     list_jobs,
-    submit_job,
 )
+from servicelib.rabbitmq.rpc_interfaces.storage.data_export import start_data_export
 from servicelib.request_keys import RQT_USERID_KEY
 from servicelib.rest_responses import unwrap_envelope
 from yarl import URL
@@ -421,10 +425,8 @@ async def export_data(request: web.Request) -> web.Response:
     data_export_post = await parse_request_body_as(
         model_schema_cls=DataExportPost, request=request
     )
-    async_job_rpc_get = await submit_job(
+    async_job_rpc_get = await start_data_export(
         rabbitmq_rpc_client=rabbitmq_rpc_client,
-        rpc_namespace=STORAGE_RPC_NAMESPACE,
-        method_name="start_data_export",
         job_id_data=AsyncJobNameData(
             user_id=_req_ctx.user_id, product_name=_req_ctx.product_name
         ),
@@ -432,8 +434,16 @@ async def export_data(request: web.Request) -> web.Response:
             location_id=_path_params.location_id,
         ),
     )
+    _job_id = f"{async_job_rpc_get.job_id}"
     return create_data_response(
-        StorageAsyncJobGet.from_rpc_schema(async_job_rpc_get),
+        StorageAsyncJobGet.from_rpc_schema(
+            async_job_rpc_get=async_job_rpc_get,
+            links=AsyncJobLinks(
+                status_href=f"{request.app.router['get_async_job_status'].url_for(job_id=_job_id)}",
+                abort_href=f"{request.app.router['abort_async_job'].url_for(job_id=_job_id)}",
+                result_href=f"{request.app.router['get_async_job_result'].url_for(job_id=_job_id)}",
+            ),
+        ),
         status=status.HTTP_202_ACCEPTED,
     )
 
@@ -459,9 +469,23 @@ async def get_async_jobs(request: web.Request) -> web.Response:
         filter_="",
     )
     return create_data_response(
-        [StorageAsyncJobGet.from_rpc_schema(job) for job in user_async_jobs],
+        [
+            StorageAsyncJobGet.from_rpc_schema(
+                async_job_rpc_get=job,
+                links=AsyncJobLinks(
+                    status_href=f"{request.app.router['get_async_job_status'].url_for(job_id=str(job.job_id))}",
+                    abort_href=f"{request.app.router['abort_async_job'].url_for(job_id=str(job.job_id))}",
+                    result_href=f"{request.app.router['get_async_job_result'].url_for(job_id=str(job.job_id))}",
+                ),
+            )
+            for job in user_async_jobs
+        ],
         status=status.HTTP_200_OK,
     )
+
+
+class _StorageAsyncJobId(BaseModel):
+    job_id: AsyncJobId
 
 
 @routes.get(
@@ -479,7 +503,7 @@ async def get_async_job_status(request: web.Request) -> web.Response:
     _req_ctx = RequestContext.model_validate(request)
     rabbitmq_rpc_client = get_rabbitmq_rpc_client(request.app)
 
-    async_job_get = parse_request_path_parameters_as(_PathParams, request)
+    async_job_get = parse_request_path_parameters_as(_StorageAsyncJobId, request)
     async_job_rpc_status = await get_status(
         rabbitmq_rpc_client=rabbitmq_rpc_client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
@@ -488,8 +512,16 @@ async def get_async_job_status(request: web.Request) -> web.Response:
             user_id=_req_ctx.user_id, product_name=_req_ctx.product_name
         ),
     )
+    _job_id = f"{async_job_rpc_status.job_id}"
     return create_data_response(
-        StorageAsyncJobStatus.from_rpc_schema(async_job_rpc_status),
+        StorageAsyncJobStatus.from_rpc_schema(
+            async_job_rpc_status=async_job_rpc_status,
+            links=AsyncJobLinks(
+                status_href=f"{request.app.router['get_async_job_status'].url_for(job_id=_job_id)}",
+                abort_href=f"{request.app.router['abort_async_job'].url_for(job_id=_job_id)}",
+                result_href=f"{request.app.router['get_async_job_result'].url_for(job_id=_job_id)}",
+            ),
+        ),
         status=status.HTTP_200_OK,
     )
 
@@ -508,8 +540,8 @@ async def abort_async_job(request: web.Request) -> web.Response:
     _req_ctx = RequestContext.model_validate(request)
 
     rabbitmq_rpc_client = get_rabbitmq_rpc_client(request.app)
-    async_job_get = parse_request_path_parameters_as(_PathParams, request)
-    async_job_rpc_abort = await abort(
+    async_job_get = parse_request_path_parameters_as(_StorageAsyncJobId, request)
+    await abort(
         rabbitmq_rpc_client=rabbitmq_rpc_client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
         job_id=async_job_get.job_id,
@@ -517,13 +549,7 @@ async def abort_async_job(request: web.Request) -> web.Response:
             user_id=_req_ctx.user_id, product_name=_req_ctx.product_name
         ),
     )
-    return web.Response(
-        status=(
-            status.HTTP_200_OK
-            if async_job_rpc_abort.result
-            else status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
-    )
+    return web.Response(status=status.HTTP_200_OK)
 
 
 @routes.get(
@@ -549,6 +575,7 @@ async def get_async_job_result(request: web.Request) -> web.Response:
             user_id=_req_ctx.user_id, product_name=_req_ctx.product_name
         ),
     )
+
     return create_data_response(
         StorageAsyncJobResult.from_rpc_schema(async_job_rpc_result),
         status=status.HTTP_200_OK,
