@@ -1,7 +1,7 @@
 import logging
 from pathlib import Path
 
-from celery import Task
+from celery import Task  # type: ignore[import-untyped]
 from models_library.projects_nodes_io import LocationID
 from models_library.users import UserID
 from pydantic import ByteSize
