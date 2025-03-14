@@ -8690,6 +8690,15 @@ components:
       - usdPerCredit
       - minPaymentAmountUsd
       title: CreditPriceGet
+    CreditTransactionStatus:
+      type: string
+      enum:
+      - PENDING
+      - BILLED
+      - IN_DEBT
+      - NOT_BILLED
+      - REQUIRES_MANUAL_REVIEW
+      title: CreditTransactionStatus
     CursorPage___T_Customized_PathMetaDataGet_:
       properties:
         items:
@@ -14793,6 +14802,9 @@ components:
           exclusiveMinimum: true
           title: User Id
           minimum: 0
+        user_email:
+          type: string
+          title: User Email
         project_id:
           type: string
           format: uuid
@@ -14800,6 +14812,11 @@ components:
         project_name:
           type: string
           title: Project Name
+        project_tags:
+          items:
+            type: string
+          type: array
+          title: Project Tags
         node_id:
           type: string
           format: uuid
@@ -14837,14 +14854,25 @@ components:
           title: Stopped At
         service_run_status:
           $ref: '#/components/schemas/ServiceRunStatus'
+        credit_cost:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Credit Cost
+        transaction_status:
+          anyOf:
+          - $ref: '#/components/schemas/CreditTransactionStatus'
+          - type: 'null'
       type: object
       required:
       - service_run_id
       - wallet_id
       - wallet_name
       - user_id
+      - user_email
       - project_id
       - project_name
+      - project_tags
       - node_id
       - node_name
       - root_parent_project_id
@@ -14855,6 +14883,8 @@ components:
       - started_at
       - stopped_at
       - service_run_status
+      - credit_cost
+      - transaction_status
       title: ServiceRunGet
     ServiceRunStatus:
       type: string
