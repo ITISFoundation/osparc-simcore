@@ -139,7 +139,7 @@ qx.Class.define("osparc.workbench.ServiceCatalog", {
       this.__serviceList.addListener("changeSelected", e => {
         if (e.getData() && e.getData().getService()) {
           const selectedService = e.getData().getService();
-          this.__changedSelection(selectedService.getKey(), selectedService.getVersion());
+          this.__changedSelection(selectedService.getKey());
         } else {
           this.__changedSelection(null);
         }
@@ -225,21 +225,18 @@ qx.Class.define("osparc.workbench.ServiceCatalog", {
       });
 
       osparc.service.Utils.sortObjectsBasedOn(filteredServices, this.__sortBy);
-      const filteredServicesObj = this.__filteredServicesObj = osparc.service.Utils.convertArrayToObject(filteredServices);
+      this.__filteredServicesObj = osparc.service.Utils.convertArrayToObject(filteredServices);
 
-      const groupedServicesList = [];
-      for (const key in filteredServicesObj) {
-        const serviceMetadata = osparc.store.Services.getLatest(key);
-        if (serviceMetadata) {
-          const service = new osparc.data.model.Service(serviceMetadata);
-          groupedServicesList.push(service);
-        }
-      }
+      const servicesModels = [];
+      filteredServices.forEach(filteredService => {
+        const service = new osparc.data.model.Service(filteredService);
+        servicesModels.push(service);
+      });
 
-      this.__serviceList.setModel(new qx.data.Array(groupedServicesList));
+      this.__serviceList.setModel(new qx.data.Array(servicesModels));
     },
 
-    __changedSelection: function(key, version) {
+    __changedSelection: function(key) {
       if (this.__versionsBox) {
         const selectBox = this.__versionsBox;
         selectBox.removeAll();
