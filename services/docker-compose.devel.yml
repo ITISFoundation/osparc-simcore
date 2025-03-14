@@ -189,6 +189,15 @@ services:
       STORAGE_PROFILING : ${STORAGE_PROFILING}
       STORAGE_LOGLEVEL: DEBUG
 
+  sto-worker:
+    volumes:
+      - ./storage:/devel/services/storage
+      - ../packages:/devel/packages
+    environment:
+      <<: *common-environment
+      STORAGE_PROFILING : ${STORAGE_PROFILING}
+      STORAGE_LOGLEVEL: DEBUG
+
   agent:
     environment:
       <<: *common-environment
