@@ -11,10 +11,43 @@ from common_library.error_codes import create_error_code, parse_error_code
 logger = logging.getLogger(__name__)
 
 
-def test_error_code_use_case(caplog: pytest.LogCaptureFixture):
-    """use case for error-codes"""
+def _level_three(v):
+    msg = f"An error occurred in level three with {v}"
+    raise RuntimeError(msg)
+
+
+def _level_two(v):
+    _level_three(v)
+
+
+def _level_one(v=None):
+    _level_two(v)
+
+
+def test_exception_fingerprint_consistency():
+    error_codes = []
+
+    for v in range(2):
+        # emulates different runs of the same function (e.g. different sessions)
+        try:
+            _level_one(v)  # same even if different value!
+        except Exception as err:
+            error_code = create_error_code(err)
+            error_codes.append(error_code)
+
+    assert error_codes == [error_codes[0]] * len(error_codes)
+
+    try:
+        # Same function but different location
+        _level_one(0)
+    except Exception as e2:
+        error_code_2 = create_error_code(e2)
+        assert error_code_2 != error_code[0]
+
+
+def test_create_log_and_parse_error_code(caplog: pytest.LogCaptureFixture):
     with pytest.raises(RuntimeError) as exc_info:
-        raise RuntimeError("Something unexpected went wrong")
+        _level_one()
 
     # 1. Unexpected ERROR
     err = exc_info.value
