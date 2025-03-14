@@ -72,7 +72,7 @@ qx.Class.define("osparc.FlashMessenger", {
       return defaultMessage;
     },
 
-    logError: function(error, defaultMessage = qx.locale.Manager.tr("Something went wrong"), duration = null) {
+    logError: function(error, defaultMessage = qx.locale.Manager.tr("Oops, something went wrong"), duration = null) {
       if (error) {
         console.error(error);
       }
