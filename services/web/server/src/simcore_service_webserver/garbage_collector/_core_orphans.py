@@ -137,7 +137,7 @@ async def remove_orphaned_services(
                 return
 
         potentially_running_service_ids_set: set[NodeID] = set().union(
-            *(_ for _ in potentially_running_service_ids)
+            *(node_id for node_id in potentially_running_service_ids)
         )
         _logger.debug(
             "Allowed service UUIDs from known opened projects: %s",
