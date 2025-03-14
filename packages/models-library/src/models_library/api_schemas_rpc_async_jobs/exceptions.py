@@ -18,7 +18,7 @@ class JobNotDoneError(BaseAsyncjobRpcError):
 
 
 class JobAbortedError(BaseAsyncjobRpcError):
-    msg_template: str = "Job {job_id} not done"
+    msg_template: str = "Job {job_id} aborted"
 
 
 class JobError(BaseAsyncjobRpcError):
