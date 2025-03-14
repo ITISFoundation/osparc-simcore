@@ -63,9 +63,9 @@ _UNDEFINED_LABEL_VALUE_STR: Final[str] = "undefined"
 _UNDEFINED_LABEL_VALUE_INT: Final[str] = "0"
 
 
-DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY: Final[
-    DockerLabelKey
-] = TypeAdapter(DockerLabelKey).validate_python("ec2-instance-type")
+DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY: Final[DockerLabelKey] = (
+    TypeAdapter(DockerLabelKey).validate_python("ec2-instance-type")
+)
 
 
 def to_simcore_runtime_docker_label_key(key: str) -> DockerLabelKey:
@@ -143,7 +143,7 @@ class StandardSimcoreDockerLabels(BaseModel):
         """returns a dictionary of strings as required by docker"""
         return {
             to_simcore_runtime_docker_label_key(k): f"{v}"
-            for k, v in sorted(self.model_dump().items())
+            for k, v in sorted(self.model_dump(warnings=False).items())
         }
 
     @classmethod
