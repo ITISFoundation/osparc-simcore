@@ -45,7 +45,7 @@ qx.Class.define("osparc.file.FileDownloadLink", {
         this.fireDataEvent("fileLinkAdded", downloadLink);
       } else {
         downloadLinkField.resetValue();
-        osparc.FlashMessenger.logAs(this.tr("Error checking link"), "WARNING");
+        osparc.FlashMessenger.logAs(this.tr("An issue occurred while checking link"), "WARNING");
       }
     }, this);
   },
