@@ -3,7 +3,6 @@ from pathlib import Path
 from fastapi import FastAPI
 from models_library.api_schemas_rpc_async_jobs.async_jobs import (
     AsyncJobGet,
-    AsyncJobId,
     AsyncJobNameData,
 )
 from models_library.projects_nodes_io import LocationID
@@ -31,9 +30,7 @@ async def compute_path_size(
         task_context=job_id_data.model_dump(),
         user_id=job_id_data.user_id,
         location_id=location_id,
-        path=path,
+        path=f"{path}",
     )
 
-    return AsyncJobGet(
-        job_id=AsyncJobId(task_uuid),
-    )
+    return AsyncJobGet(job_id=task_uuid)
