@@ -15,6 +15,7 @@ from typing import Any, TypeAlias
 
 import httpx
 import pytest
+from celery import Celery, Task
 from faker import Faker
 from fastapi import FastAPI
 from models_library.api_schemas_rpc_async_jobs.async_jobs import AsyncJobId
@@ -118,6 +119,36 @@ async def _assert_compute_path_size(
     return response
 
 
+@pytest.fixture(scope="session")
+def celery_config() -> dict[str, Any]:
+    return {
+        "broker_url": "amqp://admin:adminadmin@localhost",
+        "result_backend": "redis://redis:6789",
+        "result_extended": True,
+        "pool": "threads",
+    }
+
+
+@pytest.fixture(scope="session")
+def celery_app(celery_config):
+    app = Celery(**celery_config)
+    return app
+
+
+@pytest.fixture
+def fake_storage_worker(celery_app: Celery, celery_worker):
+    @celery_app.task
+    def compute_path_size(
+        task: Task, user_id: UserID, location_id: LocationID, path: Path
+    ):
+        return ByteSize(23243)
+
+    assert celery_worker.ready()
+
+
+def test_fake_storage_worker(fake_storage_worker): ...
+
+
 @pytest.mark.parametrize(
     "location_id",
     [SimcoreS3DataManager.get_location_id()],
@@ -136,6 +167,7 @@ async def _assert_compute_path_size(
     ids=str,
 )
 async def test_path_compute_size(
+    fake_storage_worker,
     initialized_app: FastAPI,
     storage_rabbitmq_rpc_client: RabbitMQRPCClient,
     location_id: LocationID,
