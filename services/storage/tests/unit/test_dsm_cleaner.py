@@ -10,7 +10,7 @@ from fastapi import FastAPI
 from pytest_mock import MockerFixture
 from simcore_service_storage.dsm_cleaner import _TASK_NAME_PERIODICALY_CLEAN_DSM
 
-pytest_simcore_core_services_selection = ["postgres"]
+pytest_simcore_core_services_selection = ["postgres", "rabbit"]
 pytest_simcore_ops_services_selection = ["adminer"]
 
 
