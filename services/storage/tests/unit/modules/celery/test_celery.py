@@ -72,7 +72,7 @@ def dreamer_task(task: AbortableTask) -> list[int]:
         if task.is_aborted():
             _logger.warning("Alarm clock")
             return numbers
-        numbers.append(randint(1, 90))
+        numbers.append(randint(1, 90))  # noqa: S311
         time.sleep(1)
     return numbers
 
