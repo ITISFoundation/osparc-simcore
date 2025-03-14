@@ -55,7 +55,7 @@ qx.Class.define("osparc.store.Services", {
       const services = this.__servicesCached;
       if (key in services) {
         const latestMetadata = Object.values(services[key])[0];
-        if (latestMetadata["release"]["retired"] === null) {
+        if (!osparc.service.Utils.isRetired(latestMetadata)) {
           return latestMetadata;
         }
       }
@@ -186,7 +186,7 @@ qx.Class.define("osparc.store.Services", {
                     }
                   }
                 }
-                if (serviceLatest["release"]["retired"]) {
+                if (osparc.service.Utils.isRetired(serviceLatest)) {
                   // do not add retired services
                   continue;
                 }
