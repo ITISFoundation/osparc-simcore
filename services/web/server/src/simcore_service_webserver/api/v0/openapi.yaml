@@ -6436,12 +6436,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Internal Server Error
-        '409':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
-          description: Conflict
   /v0/storage/async-jobs/{job_id}/status:
     get:
       tags:
@@ -6488,12 +6482,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Internal Server Error
-        '409':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
-          description: Conflict
   /v0/storage/async-jobs/{job_id}:abort:
     post:
       tags:
@@ -6539,12 +6527,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Internal Server Error
-        '409':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
-          description: Conflict
   /v0/storage/async-jobs/{job_id}/result:
     get:
       tags:
@@ -6591,28 +6573,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Internal Server Error
-        '409':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
-          description: Conflict
   /v0/storage/async-jobs:
     get:
       tags:
       - storage
       summary: Get Async Jobs
-      description: Returns a list of async jobs for the user
+      description: Returns the user's async jobs
       operationId: get_async_jobs
-      parameters:
-      - name: user_id
-        in: query
-        required: true
-        schema:
-          type: integer
-          exclusiveMinimum: true
-          title: User Id
-          minimum: 0
       responses:
         '200':
           description: Successful Response
@@ -6621,35 +6588,29 @@ paths:
               schema:
                 $ref: '#/components/schemas/Envelope_list_StorageAsyncJobGet__'
         '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
           description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
         '403':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
           description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
         '410':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
           description: Gone
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
         '500':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
           description: Internal Server Error
-        '409':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
-          description: Conflict
   /v0/trash:empty:
     post:
       tags:
