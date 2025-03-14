@@ -172,13 +172,12 @@ qx.Class.define("osparc.store.Services", {
                 // first check if a previous version of this service isn't retired
                 // getService to get its history
                 await this.getService(serviceLatest["key"], serviceLatest["version"]);
-                let versions = Object.keys(this.__servicesCached[key]);
-                versions = versions.sort(osparc.utils.Utils.compareVersionNumbers).reverse();
-                for (let j=0; j<versions.length; j++) {
-                  const version = versions[j];
-                  if (!this.__servicesCached[key][version]["release"]["retired"]) {
+                const serviceMetadata = this.__servicesCached[key][serviceLatest["version"]];
+                for (let j=0; j<serviceMetadata["history"].length; j++) {
+                  const historyEntry = serviceMetadata["history"][j];
+                  if (!historyEntry["retired"]) {
                     // one older non retired version found
-                    const olderNonRetired = await this.getService(key, version);
+                    const olderNonRetired = await this.getService(key, historyEntry["version"]);
                     serviceLatest = osparc.utils.Utils.deepCloneObject(olderNonRetired);
                     // make service metadata latest model like
                     serviceLatest["release"] = osparc.service.Utils.extractVersionFromHistory(olderNonRetired);
