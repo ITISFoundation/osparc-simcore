@@ -43,6 +43,9 @@ def celery_conf() -> dict[str, Any]:
         "result_expires": timedelta(days=7),
         "result_extended": True,
         "pool": "threads",
+        "worker_send_task_events": True,
+        "task_track_started": True,
+        "task_send_sent_event": True,
     }
 
 
@@ -77,7 +80,13 @@ def celery_worker_controller(
 
     register_celery_tasks(celery_app)
 
-    with start_worker(celery_app, loglevel="info", perform_ping_check=False) as worker:
+    with start_worker(
+        celery_app,
+        pool="threads",
+        loglevel="info",
+        perform_ping_check=False,
+        worker_kwargs={"hostname": "celery@worker1"},
+    ) as worker:
         worker_init.send(sender=worker)
 
         yield worker
