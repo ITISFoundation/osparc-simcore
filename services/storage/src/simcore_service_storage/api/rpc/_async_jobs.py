@@ -21,7 +21,7 @@ from servicelib.logging_utils import log_catch
 from servicelib.rabbitmq import RPCRouter
 
 from ...modules.celery import get_celery_client
-from ...modules.celery.models import TaskError, TaskState, TaskStatus
+from ...modules.celery.models import TaskError, TaskState
 
 _logger = logging.getLogger(__name__)
 router = RPCRouter()
@@ -48,7 +48,7 @@ async def get_status(
     assert job_id_data  # nosec
 
     try:
-        task_status: TaskStatus = await get_celery_client(app).get_task_status(
+        task_status = await get_celery_client(app).get_task_status(
             task_context=job_id_data.model_dump(),
             task_uuid=job_id,
         )
