@@ -152,7 +152,7 @@ qx.Class.define("osparc.metadata.ClassifiersEditor", {
             saveBtn.setFetching(false);
             this.fireDataEvent("updateClassifiers", this.__resourceData);
           })
-          .catch(err => osparc.FlashMessenger.logError(err, this.tr("Something went wrong editing Classifiers")));
+          .catch(err => osparc.FlashMessenger.logError(err, this.tr("Something went wrong while editing classifiers")));
       } else {
         const serviceDataCopy = osparc.utils.Utils.deepCloneObject(this.__resourceData);
         osparc.store.Services.patchServiceData(serviceDataCopy, "classifiers", newClassifiers)
@@ -161,7 +161,7 @@ qx.Class.define("osparc.metadata.ClassifiersEditor", {
             saveBtn.setFetching(false);
             this.fireDataEvent("updateClassifiers", serviceDataCopy);
           })
-          .catch(err => osparc.FlashMessenger.logError(err, this.tr("Something went wrong editing Classifiers")));
+          .catch(err => osparc.FlashMessenger.logError(err, this.tr("Something went wrong while editing classifiers")));
       }
     }
   }

@@ -495,7 +495,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       });
       task.addListener("pollingError", e => {
         const err = e.getData();
-        const msg = this.tr("Something went wrong Publishing the study<br>") + err.message;
+        const msg = this.tr("Something went wrong while publishing the study<br>") + err.message;
         finished(msg, "ERROR");
       });
     },

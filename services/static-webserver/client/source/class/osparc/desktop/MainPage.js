@@ -246,7 +246,7 @@ qx.Class.define("osparc.desktop.MainPage", {
           });
         })
         .catch(errMsg => {
-          const msg = this.tr("Something went wrong Duplicating the study<br>") + errMsg;
+          const msg = this.tr("Something went wrong while duplicating the study<br>") + errMsg;
           osparc.FlashMessenger.logError(msg);
         });
     },

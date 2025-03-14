@@ -124,7 +124,7 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
           this.__pushNotifications(gids);
           this.__checkShareePermissions(gids);
         })
-        .catch(err => osparc.FlashMessenger.logError(err, this.tr("Something went wrong sharing the ") + resourceAlias));
+        .catch(err => osparc.FlashMessenger.logError(err, this.tr("Something went wrong while sharing the ") + resourceAlias));
     },
 
     _deleteMember: function(collaborator, item) {
@@ -138,7 +138,7 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
           osparc.FlashMessenger.logAs(collaborator["name"] + this.tr(" successfully removed"));
           this._reloadCollaboratorsList();
         })
-        .catch(err => osparc.FlashMessenger.logError(err, this.tr("Something went wrong removing ") + collaborator["name"]))
+        .catch(err => osparc.FlashMessenger.logError(err, this.tr("Something went wrong while removing ") + collaborator["name"]))
         .finally(() => {
           if (item) {
             item.setEnabled(true);
@@ -168,7 +168,7 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
         collaborator["gid"],
         this.self().getCollaboratorAccessRight(),
         this.tr(`Successfully promoted to ${osparc.data.Roles.STUDY[2].label}`),
-        this.tr(`Something went wrong promoting to ${osparc.data.Roles.STUDY[2].label}`),
+        this.tr(`Something went wrong while promoting to ${osparc.data.Roles.STUDY[2].label}`),
         item
       );
     },
@@ -178,7 +178,7 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
         collaborator["gid"],
         this.self().getOwnerAccessRight(),
         this.tr(`Successfully promoted to ${osparc.data.Roles.STUDY[3].label}`),
-        this.tr(`Something went wrong promoting to ${osparc.data.Roles.STUDY[3].label}`),
+        this.tr(`Something went wrong while promoting to ${osparc.data.Roles.STUDY[3].label}`),
         item
       );
     },
@@ -190,7 +190,7 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
           gid,
           this.self().getViewerAccessRight(),
           this.tr(`Successfully demoted to ${osparc.data.Roles.STUDY[1].label}`),
-          this.tr(`Something went wrong demoting to ${osparc.data.Roles.STUDY[1].label}`),
+          this.tr(`Something went wrong while demoting to ${osparc.data.Roles.STUDY[1].label}`),
           itm
         );
       };
@@ -220,7 +220,7 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
         collaborator["gid"],
         this.self().getCollaboratorAccessRight(),
         this.tr(`Successfully demoted to ${osparc.data.Roles.STUDY[2].label}`),
-        this.tr(`Something went wrong demoting to ${osparc.data.Roles.STUDY[2].label}`),
+        this.tr(`Something went wrong while demoting to ${osparc.data.Roles.STUDY[2].label}`),
         item
       );
     },

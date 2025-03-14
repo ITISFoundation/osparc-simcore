@@ -141,7 +141,7 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
               osparc.data.Resources.fetch("wallets", "put", params)
                 .then(() => found.setStatus(newStatus))
                 .catch(err => {
-                  const msg = this.tr("Something went wrong updating the state");
+                  const msg = this.tr("Something went wrong while updating the state");
                   osparc.FlashMessenger.logError(err, msg);
                 });
             }

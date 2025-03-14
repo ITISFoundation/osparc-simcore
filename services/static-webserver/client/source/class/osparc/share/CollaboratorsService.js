@@ -79,7 +79,7 @@ qx.Class.define("osparc.share.CollaboratorsService", {
           osparc.FlashMessenger.logAs(text);
           this._reloadCollaboratorsList();
         })
-        .catch(err => osparc.FlashMessenger.logError(err, this.tr("Something went wrong sharing the Service")));
+        .catch(err => osparc.FlashMessenger.logError(err, this.tr("Something went wrong while sharing the service")));
     },
 
     _deleteMember: function(collaborator, item) {
@@ -89,7 +89,7 @@ qx.Class.define("osparc.share.CollaboratorsService", {
 
       const success = delete this._serializedDataCopy["accessRights"][collaborator["gid"]];
       if (!success) {
-        osparc.FlashMessenger.logError(this.tr("Something went wrong removing Member"));
+        osparc.FlashMessenger.logError(this.tr("Something went wrong while removing member"));
         if (item) {
           item.setEnabled(true);
         }
@@ -102,7 +102,7 @@ qx.Class.define("osparc.share.CollaboratorsService", {
           osparc.FlashMessenger.logAs(collaborator["name"] + this.tr(" successfully removed"));
           this._reloadCollaboratorsList();
         })
-        .catch(err => osparc.FlashMessenger.logError(err, this.tr("Something went wrong removing ") + collaborator["name"]))
+        .catch(err => osparc.FlashMessenger.logError(err, this.tr("Something went wrong while removing ") + collaborator["name"]))
         .finally(() => {
           if (item) {
             item.setEnabled(true);
@@ -128,7 +128,7 @@ qx.Class.define("osparc.share.CollaboratorsService", {
         collaborator["gid"],
         this.self().getOwnerAccessRight(),
         this.tr(`Successfully promoted to ${osparc.data.Roles.SERVICE[2].label}`),
-        this.tr(`Something went wrong promoting to ${osparc.data.Roles.SERVICE[2].label}`),
+        this.tr(`Something went wrong while promoting to ${osparc.data.Roles.SERVICE[2].label}`),
         item
       );
     },
@@ -142,7 +142,7 @@ qx.Class.define("osparc.share.CollaboratorsService", {
         collaborator["gid"],
         this.self().getCollaboratorAccessRight(),
         this.tr(`Successfully demoted to ${osparc.data.Roles.SERVICE[1].label}`),
-        this.tr(`Something went wrong demoting ${osparc.data.Roles.SERVICE[1].label}`),
+        this.tr(`Something went wrong while demoting ${osparc.data.Roles.SERVICE[1].label}`),
         item
       );
     },

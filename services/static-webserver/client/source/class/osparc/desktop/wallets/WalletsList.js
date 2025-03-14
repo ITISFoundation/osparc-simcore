@@ -204,7 +204,7 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
             wallet.set(params.data);
           })
           .catch(err => {
-            const msg = this.tr("Something went wrong updating the Credit Account");
+            const msg = this.tr("Something went wrong while updating the Credit Account");
             osparc.FlashMessenger.logError(err, msg);
           })
           .finally(() => {
