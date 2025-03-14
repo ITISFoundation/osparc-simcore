@@ -348,7 +348,7 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
           // push 'NEW_ORGANIZATION' notification
           osparc.notification.Notifications.postNewOrganization(newMember.getUserId(), orgId);
         })
-        .catch(err => osparc.FlashMessenger.logError(err, this.tr("Something went wrong adding the user")));
+        .catch(err => osparc.FlashMessenger.logError(err, this.tr("Something went wrong while adding the user")));
     },
 
     __promoteToUser: function(listedMember) {
