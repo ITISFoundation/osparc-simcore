@@ -37,7 +37,6 @@ describe('Calls after logging in', () => {
     await auto.register(page, user, pass);
     console.log("Registered");
 
-    await page.waitForNetworkIdle();
     await page.waitFor(5000);
   }, ourTimeout);
 
