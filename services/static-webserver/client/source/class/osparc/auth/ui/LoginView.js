@@ -251,7 +251,7 @@ qx.Class.define("osparc.auth.ui.LoginView", {
       const failFun = msg => {
         this.__loginBtn.setFetching(false);
         // TODO: can get field info from response here
-        msg = String(msg) || this.tr("Invalid email or password");
+        msg = String(msg) || this.tr("email or password don't look correct");
         [email, pass].forEach(item => {
           item.set({
             invalidMessage: msg,
