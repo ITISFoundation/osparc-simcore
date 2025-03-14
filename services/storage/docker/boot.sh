@@ -42,10 +42,18 @@ APP_LOG_LEVEL=${STORAGE_LOGLEVEL:-${LOG_LEVEL:-${LOGLEVEL:-INFO}}}
 SERVER_LOG_LEVEL=$(echo "${APP_LOG_LEVEL}" | tr '[:upper:]' '[:lower:]')
 echo "$INFO" "Log-level app/server: $APP_LOG_LEVEL/$SERVER_LOG_LEVEL"
 
-if [ "${SC_BOOT_MODE}" = "debug" ]; then
-  reload_dir_packages=$(find /devel/packages -maxdepth 3 -type d -path "*/src/*" ! -path "*.*" -exec echo '--reload-dir {} \' \;)
+if [ "${STORAGE_WORKER_MODE}" = "true" ]; then
+  exec celery \
+    --app=simcore_service_storage.modules.celery.worker_main:app \
+    worker --pool=threads \
+    --loglevel="${SERVER_LOG_LEVEL}" \
+    --hostname="${HOSTNAME}" \
+    --concurrency="${CELERY_CONCURRENCY}"
+else
+  if [ "${SC_BOOT_MODE}" = "debug" ]; then
+    reload_dir_packages=$(find /devel/packages -maxdepth 3 -type d -path "*/src/*" ! -path "*.*" -exec echo '--reload-dir {} \' \;)
 
-  exec sh -c "
+    exec sh -c "
     cd services/storage/src/simcore_service_storage && \
     python -m debugpy --listen 0.0.0.0:${STORAGE_REMOTE_DEBUGGING_PORT} -m uvicorn main:app \
       --host 0.0.0.0 \
@@ -55,14 +63,6 @@ if [ "${SC_BOOT_MODE}" = "debug" ]; then
       --reload-dir . \
       --log-level \"${SERVER_LOG_LEVEL}\"
   "
-else
-  if [ "${STORAGE_WORKER_MODE}" = "true" ]; then
-    exec celery \
-      --app=simcore_service_storage.modules.celery.worker_main:app \
-      worker --pool=threads \
-      --loglevel="${SERVER_LOG_LEVEL}" \
-      --hostname="${HOSTNAME}" \
-      --concurrency="${CELERY_CONCURRENCY}"
   else
     exec uvicorn simcore_service_storage.main:app \
       --host 0.0.0.0 \
