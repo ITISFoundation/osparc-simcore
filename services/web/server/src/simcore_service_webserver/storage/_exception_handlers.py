@@ -36,7 +36,7 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
         "Job {job_id} failed with exception type {exc_type} and message {exc_msg}",
     ),
     JobNotDoneError: HttpErrorInfo(
-        status.HTTP_409_CONFLICT,
+        status.HTTP_404_NOT_FOUND,
         "Job {job_id} is not done yet",
     ),
     JobSchedulerError: HttpErrorInfo(

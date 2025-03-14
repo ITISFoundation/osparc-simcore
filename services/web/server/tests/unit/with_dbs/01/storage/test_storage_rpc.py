@@ -186,7 +186,7 @@ async def test_abort_async_jobs(
 @pytest.mark.parametrize(
     "result_or_exception, expected_status",
     [
-        (JobNotDoneError(job_id=_faker.uuid4()), status.HTTP_409_CONFLICT),
+        (JobNotDoneError(job_id=_faker.uuid4()), status.HTTP_404_NOT_FOUND),
         (AsyncJobResult(result=None), status.HTTP_200_OK),
         (JobError(job_id=_faker.uuid4()), status.HTTP_500_INTERNAL_SERVER_ERROR),
         (JobAbortedError(job_id=_faker.uuid4()), status.HTTP_410_GONE),
