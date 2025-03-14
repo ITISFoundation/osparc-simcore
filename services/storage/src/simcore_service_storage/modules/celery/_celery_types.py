@@ -2,7 +2,7 @@ from functools import partial
 from pathlib import Path
 from typing import Any
 
-from kombu.utils.json import register_type
+from kombu.utils.json import register_type  # type: ignore[import-untyped]
 from pydantic import BaseModel
 
 
