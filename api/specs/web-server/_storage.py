@@ -30,7 +30,6 @@ from models_library.api_schemas_webserver.storage import (
 from models_library.generics import Envelope
 from models_library.projects_nodes_io import LocationID
 from models_library.rest_error import EnvelopedError
-from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize
 from servicelib.fastapi.rest_pagination import CustomizedPathsCursorPage
 from simcore_service_webserver._meta import API_VTAG
@@ -251,5 +250,5 @@ async def get_async_job_result(job_id: AsyncJobId):
     name="get_async_jobs",
     responses=_data_export_responses,
 )
-async def get_async_jobs(user_id: UserID):
-    """Returns a list of async jobs for the user"""
+async def get_async_jobs():
+    """Returns the user's async jobs"""
