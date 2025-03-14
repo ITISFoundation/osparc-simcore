@@ -59,7 +59,6 @@ from .settings import (
 )
 from .storage import AsyncpgStorage, ConfirmationTokenDict, get_plugin_storage
 from .utils import (
-    REGISTRATION,
     envelope_response,
     flash_response,
     get_user_name_from_email,
@@ -250,8 +249,8 @@ async def register(request: web.Request):
     if settings.LOGIN_REGISTRATION_CONFIRMATION_REQUIRED:
         # Confirmation required: send confirmation email
         _confirmation: ConfirmationTokenDict = await db.create_confirmation(
-            user["id"],
-            REGISTRATION,
+            user_id=user["id"],
+            action="REGISTRATION",
             data=invitation.model_dump_json() if invitation else None,
         )
 

@@ -21,7 +21,7 @@ from ._constants import (
 )
 
 
-def _to_names(enum_cls, names):
+def _to_names(enum_cls, names) -> list[str]:
     """ensures names are in enum be retrieving each of them"""
     return [getattr(enum_cls, att).name for att in names.split()]
 

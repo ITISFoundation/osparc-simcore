@@ -5,6 +5,7 @@ from aiohttp.web import RouteTableDef
 from models_library.emails import LowerCaseEmailStr
 from pydantic import SecretStr, field_validator
 from servicelib.aiohttp.requests_validation import parse_request_body_as
+from servicelib.logging_errors import create_troubleshotting_log_kwargs
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.request_keys import RQT_USERID_KEY
 from simcore_postgres_database.utils_users import UsersRepo
@@ -14,16 +15,16 @@ from ..db.plugin import get_database_engine
 from ..products import products_web
 from ..products.models import Product
 from ..security.api import check_password, encrypt_password
+from ..users import api as users_service
 from ..utils import HOUR
 from ..utils_rate_limiting import global_rate_limit_route
-from ._confirmation import is_confirmation_allowed, make_confirmation_link
+from ._confirmation import get_or_create_confirmation, make_confirmation_link
 from ._constants import (
     MSG_CANT_SEND_MAIL,
     MSG_CHANGE_EMAIL_REQUESTED,
     MSG_EMAIL_SENT,
     MSG_OFTEN_RESET_PASSWORD,
     MSG_PASSWORD_CHANGED,
-    MSG_UNKNOWN_EMAIL,
     MSG_WRONG_PASSWORD,
 )
 from ._models import InputSchema, create_password_match_validator
@@ -33,7 +34,6 @@ from .storage import AsyncpgStorage, get_plugin_storage
 from .utils import (
     ACTIVE,
     CHANGE_EMAIL,
-    RESET_PASSWORD,
     flash_response,
     validate_user_status,
 )
@@ -46,23 +46,47 @@ routes = RouteTableDef()
 
 
 class ResetPasswordBody(InputSchema):
-    email: str
+    email: LowerCaseEmailStr
 
 
-@routes.post(f"/{API_VTAG}/auth/reset-password", name="auth_reset_password")
-@global_rate_limit_route(number_of_requests=10, interval_seconds=HOUR)
-async def submit_request_to_reset_password(request: web.Request):
-    """
-        1. confirm user exists
-        2. check user status
-        3. send email with link to reset password
-        4. user clicks confirmation link -> auth/confirmation/{} -> reset_password_allowed
+@routes.post(f"/{API_VTAG}/auth/reset-password", name="initiate_reset_password")
+@global_rate_limit_route(
+    number_of_requests=10, interval_seconds=HOUR, error_msg=MSG_OFTEN_RESET_PASSWORD
+)
+async def initiate_reset_password(request: web.Request):
+    """First of the "Two-Step Action Confirmation pattern": initiate_reset_password + complete_reset_password(code)
 
-    Follows guidelines from [1]: https://postmarkapp.com/guides/password-reset-email-best-practices
-     - You would never want to confirm or deny the existence of an account with a given email or username.
-     - Expiration of link
-     - Support contact information
-     - Who requested the reset?
+
+    ```mermaid
+    sequenceDiagram
+        participant User
+        participant Frontend
+        participant Backend
+        participant Email
+
+        User->>Backend: POST initiate_password_reset(email)
+        Backend->>Email: Send confirmation link with code
+        Note right of Email: Link: GET /auth_confirmation?code=XXX
+
+        User->>Backend: GET auth_confirmation?code=XXX
+        Backend-->>User: Redirect to /#35;reset-password?code=XXX
+
+        User->>Frontend: Access /#35;reset-password?code=XXX
+        Frontend->>User: Show form for new password (x2)
+
+        User->>Frontend: Enters new password and confirms
+        Frontend->>Backend: POST complete_password_reset(code, new_password)
+
+        Backend-->>User: Password reset confirmation
+        Backend->>Backend: Update user's password in database
+    ```
+
+
+    Follows guidelines from https://postmarkapp.com/guides/password-reset-email-best-practices
+     - 1. You would never want to confirm or deny the existence of an account with a given email or username.
+     - 2. Expiration of link
+     - 3. Support contact information
+     - 4. Who requested the reset?
     """
 
     db: AsyncpgStorage = get_plugin_storage(request.app)
@@ -71,46 +95,98 @@ async def submit_request_to_reset_password(request: web.Request):
 
     request_body = await parse_request_body_as(ResetPasswordBody, request)
 
+    _error_msg_prefix, _error_msg_suffix = (
+        "Password reset initiated",
+        "Ignoring request.",
+    )
+
+    def _get_error_context(
+        user=None,
+    ) -> dict[str, str]:
+        # NOTE: Guideline #4
+        ctx = {
+            "user_email": request_body.email,
+            "product_name": product.name,
+            "request.remote": f"{request.remote}",
+            "request.method": f"{request.method}",
+            "request.path": f"{request.path}",
+        }
+
+        if user:
+            ctx.update(
+                {
+                    "user_email": request_body.email,
+                    "user_id": user["id"],
+                    "user_status": user["status"],
+                    "user_role": user["role"],
+                }
+            )
+        return ctx
+
+    ok = True
+
+    # CHECK user exists
     user = await db.get_user({"email": request_body.email})
-    try:
-        if not user:
-            raise web.HTTPUnprocessableEntity(
-                reason=MSG_UNKNOWN_EMAIL, content_type=MIMETYPE_APPLICATION_JSON
-            )  # 422
+    if not user:
+        _logger.warning(
+            **create_troubleshotting_log_kwargs(
+                f"{_error_msg_prefix} for non-existent email. {_error_msg_suffix}",
+                error=Exception("No user found with this email"),
+                error_context=_get_error_context(),
+            )
+        )
+        ok = False
 
-        validate_user_status(user=dict(user), support_email=product.support_email)
-
-        assert user["status"] == ACTIVE  # nosec
+    if ok:
+        assert user  # nosec
         assert user["email"] == request_body.email  # nosec
 
-        if not await is_confirmation_allowed(cfg, db, user, action=RESET_PASSWORD):
-            raise web.HTTPUnauthorized(
-                reason=MSG_OFTEN_RESET_PASSWORD,
-                content_type=MIMETYPE_APPLICATION_JSON,
-            )  # 401
-
-    except web.HTTPError as err:
+        # CHECK user state
         try:
-            await send_email_from_template(
-                request,
-                from_=product.support_email,
-                to=request_body.email,
-                template=await get_template_path(
-                    request, "reset_password_email_failed.jinja2"
-                ),
-                context={
-                    "host": request.host,
-                    "reason": err.reason,
-                    "product": product,
-                },
+            validate_user_status(user=dict(user), support_email=product.support_email)
+        except web.HTTPError as err:
+            # NOTE: we abuse here (untiby reusing `validate_user_status` and catching http errors that we
+            # do not want to forward but rather log due to the special rules in this entrypoint
+            _logger.warning(
+                **create_troubleshotting_log_kwargs(
+                    f"{_error_msg_prefix} for invalid user. {_error_msg_suffix}.",
+                    error=err,
+                    error_context=_get_error_context(user),
+                )
             )
-        except Exception as err_mail:  # pylint: disable=broad-except
-            _logger.exception("Cannot send email")
-            raise web.HTTPServiceUnavailable(reason=MSG_CANT_SEND_MAIL) from err_mail
-    else:
-        confirmation = await db.create_confirmation(user["id"], action=RESET_PASSWORD)
-        link = make_confirmation_link(request, confirmation)
+            ok = False
+
+    if ok:
+        assert user  # nosec
+        assert user["status"] == ACTIVE  # nosec
+        assert isinstance(user["id"], int)  # nosec
+
+        # CHECK access to product
+        if not await users_service.is_user_in_product(
+            request.app, user_id=user["id"], product_name=product.name
+        ):
+            _logger.warning(
+                **create_troubleshotting_log_kwargs(
+                    f"{_error_msg_prefix} for a user with NO access to this product. {_error_msg_suffix}.",
+                    error=Exception("User cannot access this product"),
+                    error_context=_get_error_context(user),
+                )
+            )
+            ok = False
+
+    if ok:
+        assert user  # nosec
+
         try:
+            # Confirmation token that includes code to `complete_reset_password`.
+            # Recreated if non-existent or expired  (Guideline #2)
+            confirmation = await get_or_create_confirmation(
+                cfg, db, user_id=user["id"], action="RESET_PASSWORD"
+            )
+
+            # Produce a link so that the front-end can hit `complete_reset_password`
+            link = make_confirmation_link(request, confirmation)
+
             # primary reset email with a URL and the normal instructions.
             await send_email_from_template(
                 request,
@@ -120,16 +196,24 @@ async def submit_request_to_reset_password(request: web.Request):
                     request, "reset_password_email.jinja2"
                 ),
                 context={
+                    "name": user.get("first_name") or user["name"],
                     "host": request.host,
                     "link": link,
+                    # NOTE: Guideline #3
                     "product": product,
                 },
             )
         except Exception as err:  # pylint: disable=broad-except
-            _logger.exception("Can not send email")
-            await db.delete_confirmation(confirmation)
+            _logger.exception(
+                **create_troubleshotting_log_kwargs(
+                    "Unable to send email",
+                    error=err,
+                    error_context=_get_error_context(user),
+                )
+            )
             raise web.HTTPServiceUnavailable(reason=MSG_CANT_SEND_MAIL) from err
 
+    # NOTE: Always same response: guideline #1
     return flash_response(MSG_EMAIL_SENT.format(email=request_body.email), "INFO")
 
 
@@ -161,7 +245,7 @@ async def submit_request_to_change_email(request: web.Request):
 
     # create new confirmation to ensure email is actually valid
     confirmation = await db.create_confirmation(
-        user["id"], CHANGE_EMAIL, request_body.email
+        user_id=user["id"], action="CHANGE_EMAIL", data=request_body.email
     )
     link = make_confirmation_link(request, confirmation)
     try:

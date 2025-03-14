@@ -1,9 +1,9 @@
-""" Confirmation codes/tokens tools
+"""Confirmation codes/tokens tools
 
-    Codes are inserted in confirmation tables and they are associated to a user and an action
-    Used to validate some action (e.g. register, invitation, etc)
-    Codes can be used one time
-    Codes have expiration date (duration time is configurable)
+Codes are inserted in confirmation tables and they are associated to a user and an action
+Used to validate some action (e.g. register, invitation, etc)
+Codes can be used one time
+Codes have expiration date (duration time is configurable)
 """
 
 import logging
@@ -11,11 +11,11 @@ from datetime import datetime
 from urllib.parse import quote
 
 from aiohttp import web
+from models_library.users import UserID
 from yarl import URL
 
-from ..db.models import ConfirmationAction
 from .settings import LoginOptions
-from .storage import AsyncpgStorage, ConfirmationTokenDict
+from .storage import ActionLiteralStr, AsyncpgStorage, ConfirmationTokenDict
 
 log = logging.getLogger(__name__)
 
@@ -61,22 +61,29 @@ def get_expiration_date(
     return confirmation["created_at"] + lifetime
 
 
-async def is_confirmation_allowed(
-    cfg: LoginOptions, db: AsyncpgStorage, user, action: ConfirmationAction
-):
+async def get_or_create_confirmation(
+    cfg: LoginOptions,
+    db: AsyncpgStorage,
+    user_id: UserID,
+    action: ActionLiteralStr,
+) -> ConfirmationTokenDict:
+
     confirmation: ConfirmationTokenDict | None = await db.get_confirmation(
-        {"user": user, "action": action}
+        {"user": {"id": user_id}, "action": action}
     )
-    if not confirmation:
-        return True
-    if is_confirmation_expired(cfg, confirmation):
+
+    if confirmation is not None and is_confirmation_expired(cfg, confirmation):
         await db.delete_confirmation(confirmation)
         log.warning(
             "Used expired token [%s]. Deleted from confirmations table.",
             confirmation,
         )
-        return True
-    return False
+        confirmation = None
+
+    if confirmation is None:
+        confirmation = await db.create_confirmation(user_id, action=action)
+
+    return confirmation
 
 
 def is_confirmation_expired(cfg: LoginOptions, confirmation: ConfirmationTokenDict):
