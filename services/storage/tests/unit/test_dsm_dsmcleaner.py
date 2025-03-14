@@ -34,7 +34,7 @@ from simcore_service_storage.modules.db.file_meta_data import FileMetaDataReposi
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-pytest_simcore_core_services_selection = ["postgres"]
+pytest_simcore_core_services_selection = ["postgres", "rabbit"]
 pytest_simcore_ops_services_selection = ["adminer"]
 
 _faker: Faker = Faker()
@@ -407,9 +407,9 @@ async def test_clean_expired_uploads_does_not_clean_multipart_upload_on_creation
     assert len(started_multipart_uploads_upload_id) == len(file_ids_to_upload)
 
     # ensure we have now an upload id
-    all_ongoing_uploads: list[
-        tuple[UploadID, SimcoreS3FileID]
-    ] = await storage_s3_client.list_ongoing_multipart_uploads(bucket=storage_s3_bucket)
+    all_ongoing_uploads: list[tuple[UploadID, SimcoreS3FileID]] = (
+        await storage_s3_client.list_ongoing_multipart_uploads(bucket=storage_s3_bucket)
+    )
     assert len(all_ongoing_uploads) == len(file_ids_to_upload)
 
     for ongoing_upload_id, ongoing_file_id in all_ongoing_uploads:
