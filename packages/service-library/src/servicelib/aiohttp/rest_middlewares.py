@@ -27,7 +27,7 @@ DEFAULT_API_VERSION = "v0"
 _FMSG_INTERNAL_ERROR_USER_FRIENDLY_WITH_OEC = (
     "We apologize for the inconvenience. "
     "Our team has recorded the issue [SupportID={error_code}]. "
-    "Thank you for your patience"
+    "If the issue persist please report it."
 )
 
 

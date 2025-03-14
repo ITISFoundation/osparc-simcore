@@ -148,7 +148,7 @@ async def observing_single_service(
         user_error_msg = (
             f"This service ({service_name}) unexpectedly failed. "
             "Our team has recorded the issue. "
-            "Thank you for your patience."
+            "If the issue persist please report it."
         )
         error_code = create_error_code(exc)
 
