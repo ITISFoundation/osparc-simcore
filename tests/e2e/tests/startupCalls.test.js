@@ -18,7 +18,7 @@ describe('Calls after logging in', () => {
   beforeAll(async () => {
     page.on('response', response => {
       const url = response.url();
-      if (url.includes('me')) {
+      if (url.endsWith('/me')) {
         responses.me = response.json();
       } else if (url.includes('projects?type=user')) {
         responses.studies = response.json();
