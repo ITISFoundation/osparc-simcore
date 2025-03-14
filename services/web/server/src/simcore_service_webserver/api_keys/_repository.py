@@ -21,6 +21,10 @@ from .models import ApiKey
 _logger = logging.getLogger(__name__)
 
 
+def _hash_secret(secret: str) -> sa.sql.ClauseElement:
+    return sa.func.crypt(secret, sa.func.gen_salt("bf", 10))
+
+
 async def create_api_key(
     app: web.Application,
     connection: AsyncConnection | None = None,
@@ -31,136 +35,73 @@ async def create_api_key(
     expiration: timedelta | None,
     api_key: str,
     api_secret: str,
+    raise_on_conflict: bool = True,
 ) -> ApiKey:
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
+        stmt = pg_insert(api_keys).values(
+            display_name=display_name,
+            user_id=user_id,
+            product_name=product_name,
+            api_key=api_key,
+            api_secret=_hash_secret(api_secret),
+            expires_at=(sa.func.now() + expiration) if expiration else None,
+        )
+
+        if not raise_on_conflict:
+            stmt = stmt.on_conflict_do_update(
+                index_elements=["user_id", "display_name"],
+                set_={
+                    "api_key": api_key,
+                    "api_secret": _hash_secret(api_secret),
+                    "expires_at": (sa.func.now() + expiration) if expiration else None,
+                },
+            )
+
         try:
-            stmt = (
-                api_keys.insert()
-                .values(
-                    display_name=display_name,
-                    user_id=user_id,
-                    product_name=product_name,
-                    api_key=api_key,
-                    api_secret=api_secret,
-                    expires_at=(sa.func.now() + expiration) if expiration else None,
-                )
-                .returning(api_keys.c.id)
-            )
-
-            result = await conn.stream(stmt)
+            result = await conn.stream(stmt.returning(api_keys))
             row = await result.one()
-
-            return ApiKey(
-                id=f"{row.id}",  # NOTE See: https://github.com/ITISFoundation/osparc-simcore/issues/6919
-                display_name=display_name,
-                expiration=expiration,
-                api_key=api_key,
-                api_secret=api_secret,
-            )
         except UniqueViolationError as exc:
             raise ApiKeyDuplicatedDisplayNameError(display_name=display_name) from exc
 
+        return ApiKey(
+            id=f"{row.id}",  # NOTE See: https://github.com/ITISFoundation/osparc-simcore/issues/6919
+            display_name=display_name,
+            expiration=expiration,
+            api_key=api_key,
+            api_secret=api_secret,
+        )
 
-async def get_or_create_api_key(
-    app: web.Application,
-    connection: AsyncConnection | None = None,
-    *,
-    user_id: UserID,
-    product_name: ProductName,
-    display_name: str,
-    expiration: timedelta | None,
-    api_key: str,
-    api_secret: str,
-) -> ApiKey:
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
-        # Implemented as "create or get"
-        insert_stmt = (
+        stmt = (
             pg_insert(api_keys)
             .values(
                 display_name=display_name,
                 user_id=user_id,
                 product_name=product_name,
                 api_key=api_key,
-                api_secret=api_secret,
+                api_secret=_hash_secret(api_secret),
                 expires_at=(sa.func.now() + expiration) if expiration else None,
             )
             .on_conflict_do_update(
                 index_elements=["user_id", "display_name"],
                 set_={
-                    "product_name": product_name
-                },  # dummy enable returning since on_conflict_do_nothing returns None
-                # NOTE: use this entry for reference counting in https://github.com/ITISFoundation/osparc-simcore/issues/5875
+                    "api_key": api_key,
+                    "api_secret": _hash_secret(api_secret),
+                    "expires_at": (sa.func.now() + expiration) if expiration else None,
+                },
             )
             .returning(api_keys)
         )
 
-        result = await conn.stream(insert_stmt)
-        row = await result.first()
-        assert row  # nosec
+        result = await conn.stream(stmt)
+        row = await result.one()
 
         return ApiKey(
             id=f"{row.id}",  # NOTE See: https://github.com/ITISFoundation/osparc-simcore/issues/6919
-            display_name=row.display_name,
-            expiration=row.expires_at,
-            api_key=row.api_key,
-            api_secret=row.api_secret,
-        )
-
-
-async def list_api_keys(
-    app: web.Application,
-    connection: AsyncConnection | None = None,
-    *,
-    user_id: UserID,
-    product_name: ProductName,
-) -> list[ApiKey]:
-    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-        stmt = sa.select(api_keys.c.id, api_keys.c.display_name).where(
-            (api_keys.c.user_id == user_id) & (api_keys.c.product_name == product_name)
-        )
-
-        result = await conn.stream(stmt)
-        rows = [row async for row in result]
-
-        return [
-            ApiKey(
-                id=f"{row.id}",  # NOTE See: https://github.com/ITISFoundation/osparc-simcore/issues/6919
-                display_name=row.display_name,
-            )
-            for row in rows
-        ]
-
-
-async def get_api_key(
-    app: web.Application,
-    connection: AsyncConnection | None = None,
-    *,
-    api_key_id: str,
-    user_id: UserID,
-    product_name: ProductName,
-) -> ApiKey | None:
-    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-        stmt = sa.select(api_keys).where(
-            (
-                api_keys.c.id == int(api_key_id)
-            )  # NOTE See: https://github.com/ITISFoundation/osparc-simcore/issues/6919
-            & (api_keys.c.user_id == user_id)
-            & (api_keys.c.product_name == product_name)
-        )
-
-        result = await conn.execute(stmt)
-        row = result.one_or_none()
-
-        return (
-            ApiKey(
-                id=f"{row.id}",  # NOTE See: https://github.com/ITISFoundation/osparc-simcore/issues/6919
-                display_name=row.display_name,
-                expiration=row.expires_at,
-                api_key=row.api_key,
-                api_secret=row.api_secret,
-            )
-            if row
-            else None
+            display_name=display_name,
+            expiration=expiration,
+            api_key=api_key,
+            api_secret=api_secret,
         )
 
 
@@ -198,3 +139,60 @@ async def delete_expired_api_keys(
         result = await conn.execute(stmt)
         rows = result.fetchall()
         return [r.display_name for r in rows]
+
+
+async def get_api_key(
+    app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
+    api_key_id: str,
+    user_id: UserID,
+    product_name: ProductName,
+) -> ApiKey | None:
+    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
+        stmt = sa.select(api_keys).where(
+            (
+                api_keys.c.id == int(api_key_id)
+            )  # NOTE See: https://github.com/ITISFoundation/osparc-simcore/issues/6919
+            & (api_keys.c.user_id == user_id)
+            & (api_keys.c.product_name == product_name)
+        )
+
+        result = await conn.execute(stmt)
+        row = result.one_or_none()
+
+        return (
+            ApiKey(
+                id=f"{row.id}",  # NOTE See: https://github.com/ITISFoundation/osparc-simcore/issues/6919
+                display_name=row.display_name,
+                expiration=row.expires_at,
+                api_key=row.api_key,
+                api_secret=row.api_secret,
+            )
+            if row
+            else None
+        )
+
+
+async def list_api_keys(
+    app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+) -> list[ApiKey]:
+    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
+        stmt = sa.select(api_keys.c.id, api_keys.c.display_name).where(
+            (api_keys.c.user_id == user_id) & (api_keys.c.product_name == product_name)
+        )
+
+        result = await conn.stream(stmt)
+        rows = [row async for row in result]
+
+        return [
+            ApiKey(
+                id=f"{row.id}",  # NOTE See: https://github.com/ITISFoundation/osparc-simcore/issues/6919
+                display_name=row.display_name,
+            )
+            for row in rows
+        ]
