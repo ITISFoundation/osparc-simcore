@@ -60,9 +60,24 @@ qx.Class.define("osparc.FlashMessenger", {
       return this.getInstance().logAs(message, level, duration);
     },
 
-    logError: function(error, defaultMessage, duration) {
-      console.error(error);
-      return this.getInstance().logAs(error, "ERROR", duration);
+    __getMessage: function(input, defaultMessage) {
+      if (input) {
+        if (typeof input === "string") {
+          return input;
+        }
+        if (typeof input === "object" && "message" in input) {
+          return input["message"];
+        }
+      }
+      return defaultMessage;
+    },
+
+    logError: function(error, defaultMessage = qx.locale.Manager.tr("Something went wrong"), duration = null) {
+      if (error) {
+        console.error(error);
+      }
+      const msg = this.__getMessage(error, defaultMessage);
+      return this.getInstance().logAs(msg, "ERROR", duration);
     },
   },
 

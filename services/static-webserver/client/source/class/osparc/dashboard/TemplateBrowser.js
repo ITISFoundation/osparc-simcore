@@ -339,7 +339,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
         Promise.all(templatePromises)
           .then(() => this._updateTemplateData(uniqueTemplateData))
           .catch(err => {
-            osparc.FlashMessenger.logError(err, this.tr("Something went wrong"));
+            osparc.FlashMessenger.logError(err);
           });
       }
     },

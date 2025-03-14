@@ -240,7 +240,7 @@ qx.Class.define("osparc.pricing.PlanEditor", {
           osparc.FlashMessenger.logAs(this.tr("Successfully updated"));
           this.fireEvent("done");
         })
-        .catch(err => osparc.FlashMessenger.logError(err, this.tr("Something went wrong")))
+        .catch(err => osparc.FlashMessenger.logError(err))
         .finally(() => this.getChildControl("save").setFetching(false));
     }
   }
