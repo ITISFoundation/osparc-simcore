@@ -12,7 +12,6 @@ describe('Calls after logging in', () => {
     studies: null,
     templates: null,
     services: null,
-    locations: null,
   };
 
   beforeAll(async () => {
@@ -26,8 +25,6 @@ describe('Calls after logging in', () => {
         responses.templates = response.json();
       } else if (url.includes('catalog/services/-/latest')) {
         responses.services = response.json();
-      } else if (url.includes('storage/locations')) {
-        responses.locations = response.json();
       }
     });
 
@@ -64,11 +61,5 @@ describe('Calls after logging in', () => {
     expect(responseEnv.data._meta.total).toBeGreaterThan(0);
     expect(Array.isArray(responseEnv.data.data)).toBeTruthy();
     expect(responseEnv.data.data.length).toBeGreaterThan(0);
-  }, ourTimeout);
-
-  test('Locations', async () => {
-    const responseEnv = await responses.locations;
-    expect(Array.isArray(responseEnv.data)).toBeTruthy();
-    expect(responseEnv.data.length).toBeGreaterThan(0);
   }, ourTimeout);
 });
