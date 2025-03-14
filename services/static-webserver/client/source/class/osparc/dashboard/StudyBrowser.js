@@ -269,28 +269,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           }
         });
 
-      // Show "Contact Us" message if services.length === 0
-      // Most probably is a product-stranger user (it can also be that the catalog is down)
-      osparc.store.Services.getServicesLatest()
-        .then(services => {
-          if (Object.keys(services).length === 0) {
-            const noAccessText = new qx.ui.basic.Label().set({
-              selectable: true,
-              rich: true,
-              font: "text-18",
-              paddingTop: 20
-            });
-            let msg = this.tr("It seems you don't have access to this product.");
-            msg += "</br>";
-            msg += "</br>";
-            msg += this.tr("Please contact us:");
-            msg += "</br>";
-            const supportEmail = osparc.store.VendorInfo.getInstance().getSupportEmail();
-            noAccessText.setValue(msg + supportEmail);
-            this._addToLayout(noAccessText);
-          }
-        });
-
       this._loadingResourcesBtn.setFetching(true);
       this._loadingResourcesBtn.setVisibility("visible");
       this.__getNextStudiesRequest()
@@ -383,7 +361,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
                 studyId
               }
             };
-            osparc.data.Resources.getOne("studies", params)
+            osparc.data.Resources.fetch("studies", "getOne", params)
               .then(studyData => {
                 this.__studyStateReceived(study["uuid"], studyData["state"]);
               });
@@ -975,30 +953,20 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __addNewStudyFromServiceButton: function(newStudyData) {
       if ("expectedKey" in newStudyData) {
         const key = newStudyData["expectedKey"];
-        // Include deprecated versions, they should all be updatable to a non deprecated version
-        const versions = osparc.service.Utils.getVersions(key, false);
-        if (versions.length && newStudyData) {
-          // scale to latest compatible
-          const latestVersion = versions[0];
-          const latestCompatible = osparc.service.Utils.getLatestCompatible(key, latestVersion);
-          osparc.store.Services.getService(latestCompatible["key"], latestCompatible["version"])
-            .then(latestMetadata => {
-              // make sure this one is not deprecated
-              if (osparc.service.Utils.isDeprecated(latestMetadata)) {
-                return;
-              }
-              const title = newStudyData.title + " " + osparc.service.Utils.extractVersionDisplay(latestMetadata);
-              const desc = newStudyData.description;
-              const mode = this._resourcesContainer.getMode();
-              const newStudyFromServiceButton = (mode === "grid") ? new osparc.dashboard.GridButtonNew(title, desc) : new osparc.dashboard.ListButtonNew(title, desc);
-              newStudyFromServiceButton.setCardKey("new-"+key);
-              if (newStudyData["idToWidget"]) {
-                osparc.utils.Utils.setIdToWidget(newStudyFromServiceButton, newStudyData["idToWidget"]);
-              }
-              newStudyFromServiceButton.addListener("tap", () => this.__newStudyFromServiceBtnClicked(latestMetadata["key"], latestMetadata["version"], newStudyData.newStudyLabel));
-              this._resourcesContainer.addNonResourceCard(newStudyFromServiceButton);
-            })
+        const latestMetadata = osparc.store.Services.getLatest(key);
+        if (!latestMetadata) {
+          return;
         }
+        const title = newStudyData.title + " " + osparc.service.Utils.extractVersionDisplay(latestMetadata);
+        const desc = newStudyData.description;
+        const mode = this._resourcesContainer.getMode();
+        const newStudyFromServiceButton = (mode === "grid") ? new osparc.dashboard.GridButtonNew(title, desc) : new osparc.dashboard.ListButtonNew(title, desc);
+        newStudyFromServiceButton.setCardKey("new-"+key);
+        if (newStudyData["idToWidget"]) {
+          osparc.utils.Utils.setIdToWidget(newStudyFromServiceButton, newStudyData["idToWidget"]);
+        }
+        newStudyFromServiceButton.addListener("tap", () => this.__newStudyFromServiceBtnClicked(latestMetadata["key"], latestMetadata["version"], newStudyData.newStudyLabel));
+        this._resourcesContainer.addNonResourceCard(newStudyFromServiceButton);
       } else if ("myMostUsed" in newStudyData) {
         const excludeFrontend = true;
         const excludeDeprecated = true
@@ -2075,7 +2043,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
               "studyId": data["data"]["uuid"]
             }
           };
-          osparc.data.Resources.getOne("studies", params)
+          osparc.data.Resources.fetch("studies", "getOne", params)
             .then(studyData => this._updateStudyData(studyData))
             .catch(err => {
               console.error(err);

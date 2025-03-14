@@ -24,8 +24,7 @@ qx.Class.define("osparc.service.ServiceListItem", {
     this.set({
       width: this.self().ITEM_WIDTH,
       height: this.self().ITEM_HEIGHT,
-      paddingTop: 0,
-      paddingBottom: 0,
+      padding: this.self().PADDING,
       allowGrowX: true,
       focusable: true,
     });
@@ -53,7 +52,8 @@ qx.Class.define("osparc.service.ServiceListItem", {
   statics: {
     LATEST: "latest",
     ITEM_WIDTH: 550,
-    ITEM_HEIGHT: 35,
+    ITEM_HEIGHT: 32 + 2*4, // thumbnail + 2*PADDING
+    PADDING: 4,
     SERVICE_THUMBNAIL: osparc.product.Utils.getThumbnailUrl()
   },
 

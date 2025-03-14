@@ -91,11 +91,20 @@ qx.Class.define("osparc.utils.Utils", {
 
     FLOATING_Z_INDEX: 1000001 + 1,
 
+    checkImageExists: function(url) {
+      return new Promise(resolve => {
+        const img = new Image();
+        img.onload = () => resolve(true);
+        img.onerror = () => resolve(false);
+        img.src = url;
+      });
+    },
+
     setUrlSourceToImage: function(image, imgSrc) {
       let source = osparc.product.Utils.getThumbnailUrl();
-      fetch(imgSrc, { method: "HEAD" })
-        .then(response => {
-          if (response.ok) {
+      this.checkImageExists(imgSrc)
+        .then(exists => {
+          if (exists) {
             source = imgSrc;
           }
         })

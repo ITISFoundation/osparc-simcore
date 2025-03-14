@@ -202,13 +202,48 @@ class _BaseServiceGetV2(CatalogOutputSchema):
 
     access_rights: dict[GroupID, ServiceGroupAccessRightsV2] | None
 
-    classifiers: list[str] | None = []
-    quality: dict[str, Any] = {}
+    classifiers: Annotated[
+        list[str] | None,
+        Field(default_factory=list),
+    ] = DEFAULT_FACTORY
+
+    quality: Annotated[
+        dict[str, Any],
+        Field(default_factory=dict),
+    ] = DEFAULT_FACTORY
 
     model_config = ConfigDict(
         extra="forbid",
         populate_by_name=True,
         alias_generator=snake_to_camel,
+    )
+
+
+class LatestServiceGet(_BaseServiceGetV2):
+    release: Annotated[
+        ServiceRelease,
+        Field(description="release information of current (latest) service"),
+    ]
+
+    @staticmethod
+    def _update_json_schema_extra(schema: JsonDict) -> None:
+        schema.update(
+            {
+                "examples": [
+                    {
+                        **_EXAMPLE_SLEEPER,  # v2.2.1  (latest)
+                        "release": {
+                            "version": _EXAMPLE_SLEEPER["version"],
+                            "version_display": "Summer Release",
+                            "released": "2025-07-20T15:00:00",
+                        },
+                    }
+                ]
+            }
+        )
+
+    model_config = ConfigDict(
+        json_schema_extra=_update_json_schema_extra,
     )
 
 
@@ -235,7 +270,7 @@ class ServiceGetV2(_BaseServiceGetV2):
                             {
                                 "version": _EXAMPLE_SLEEPER["version"],
                                 "version_display": "Summer Release",
-                                "released": "2024-07-20T15:00:00",
+                                "released": "2024-07-21T15:00:00",
                             },
                             {
                                 "version": "2.0.0",
@@ -263,7 +298,7 @@ class ServiceGetV2(_BaseServiceGetV2):
                             },
                             {
                                 "version": "0.9.0",
-                                "retired": "2024-07-20T15:00:00",
+                                "retired": "2024-07-20T16:00:00",
                             },
                             {"version": "0.8.0"},
                             {"version": "0.1.0"},
@@ -288,21 +323,9 @@ class ServiceGetV2(_BaseServiceGetV2):
     )
 
 
-class ServiceListItem(_BaseServiceGetV2):
-    history: Annotated[
-        list[ServiceRelease],
-        Field(
-            default_factory=list,
-            deprecated=True,
-            description="History will be replaced by current 'release' instead",
-            json_schema_extra={"default": []},
-        ),
-    ] = DEFAULT_FACTORY
-
-
 PageRpcServicesGetV2: TypeAlias = PageRpc[
     # WARNING: keep this definition in models_library and not in the RPC interface
-    ServiceListItem
+    LatestServiceGet
 ]
 
 ServiceResourcesGet: TypeAlias = ServiceResourcesDict

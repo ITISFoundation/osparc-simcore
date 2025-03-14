@@ -243,7 +243,7 @@ qx.Class.define("osparc.study.StudyOptions", {
         }
       };
       Promise.all([
-        osparc.data.Resources.getOne("studies", params),
+        osparc.data.Resources.fetch("studies", "getOne", params),
         osparc.data.Resources.fetch("studies", "getWallet", params)
       ])
         .then(values => {

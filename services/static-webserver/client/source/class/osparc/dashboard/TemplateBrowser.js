@@ -326,7 +326,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
         const templatePromises = [];
         for (const nodeId in studyData["workbench"]) {
           const node = studyData["workbench"][nodeId];
-          const latestCompatible = osparc.service.Utils.getLatestCompatible(node["key"], node["version"]);
+          const latestCompatible = osparc.store.Services.getLatestCompatible(node["key"], node["version"]);
           if (latestCompatible && (node["key"] !== latestCompatible["key"] || node["version"] !== latestCompatible["version"])) {
             const patchData = {};
             if (node["key"] !== latestCompatible["key"]) {
@@ -386,7 +386,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
         return null;
       }
 
-      const editButton = new qx.ui.menu.Button(this.tr("Edit"));
+      const editButton = new qx.ui.menu.Button(this.tr("Open"));
       editButton.addListener("execute", () => this.__editTemplate(templateData), this);
       return editButton;
     },
