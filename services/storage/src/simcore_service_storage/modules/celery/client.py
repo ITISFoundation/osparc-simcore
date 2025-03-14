@@ -4,8 +4,8 @@ from typing import Any, Final
 from uuid import uuid4
 
 from celery import Celery  # type: ignore[import-untyped]
-from celery.contrib.abortable import (
-    AbortableAsyncResult,  # type: ignore[import-untyped]
+from celery.contrib.abortable import (  # type: ignore[import-untyped]
+    AbortableAsyncResult,
 )
 from common_library.async_tools import make_async
 from models_library.progress_bar import ProgressReport

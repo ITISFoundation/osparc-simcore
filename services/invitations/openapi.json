@@ -286,6 +286,9 @@
           },
           "invitation_url": {
             "type": "string",
+            "maxLength": 2083,
+            "minLength": 1,
+            "format": "uri",
             "title": "Invitation Url",
             "description": "Invitation link"
           }
@@ -434,6 +437,9 @@
           },
           "docs_url": {
             "type": "string",
+            "maxLength": 2083,
+            "minLength": 1,
+            "format": "uri",
             "title": "Docs Url"
           }
         },

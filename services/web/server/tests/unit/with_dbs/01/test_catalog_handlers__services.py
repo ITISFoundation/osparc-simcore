@@ -11,7 +11,7 @@ from aiohttp import web
 from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses as AioResponsesMock
 from faker import Faker
-from models_library.api_schemas_catalog.services import ServiceGetV2
+from models_library.api_schemas_catalog.services import LatestServiceGet, ServiceGetV2
 from models_library.api_schemas_webserver.catalog import (
     CatalogServiceGet,
     CatalogServiceUpdate,
@@ -63,12 +63,12 @@ def mocked_rpc_catalog_service_api(mocker: MockerFixture) -> dict[str, MagicMock
         assert product_name
         assert user_id
 
-        items = TypeAdapter(list[ServiceGetV2]).validate_python(
-            ServiceGetV2.model_json_schema()["examples"],
+        items = TypeAdapter(list[LatestServiceGet]).validate_python(
+            LatestServiceGet.model_json_schema()["examples"],
         )
         total_count = len(items)
 
-        return PageRpc[ServiceGetV2].create(
+        return PageRpc[LatestServiceGet].create(
             items[offset : offset + limit],
             total=total_count,
             limit=limit,

@@ -110,7 +110,7 @@ qx.Class.define("osparc.node.LifeCycleView", {
       });
       updateButton.addListener("execute", () => {
         updateButton.setFetching(true);
-        const latestCompatible = osparc.service.Utils.getLatestCompatible(node.getKey(), node.getVersion());
+        const latestCompatible = osparc.store.Services.getLatestCompatible(node.getKey(), node.getVersion());
         if (node.getKey() !== latestCompatible["key"]) {
           node.setKey(latestCompatible["key"]);
         }
