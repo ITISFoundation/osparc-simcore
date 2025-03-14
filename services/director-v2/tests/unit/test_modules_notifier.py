@@ -179,4 +179,4 @@ async def test_notifier_publish_message(
                 )
             )
 
-    await _assert_call_count(server_disconnect, call_count=number_of_clients)
+    await _assert_call_count(server_disconnect, call_count=number_of_clients * 2)

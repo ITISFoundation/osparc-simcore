@@ -2027,7 +2027,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Page_CatalogServiceListItem_'
+                $ref: '#/components/schemas/Page_CatalogLatestServiceGet_'
   /v0/catalog/services/{service_key}/{service_version}:
     get:
       tags:
@@ -6427,12 +6427,6 @@ paths:
           type: string
           format: uuid
           title: Job Id
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/StorageAsyncJobGet'
       responses:
         '200':
           description: Successful Response
@@ -6455,12 +6449,6 @@ paths:
           type: string
           format: uuid
           title: Job Id
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/StorageAsyncJobGet'
       responses:
         '200':
           description: Successful Response
@@ -6482,12 +6470,6 @@ paths:
           type: string
           format: uuid
           title: Job Id
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/StorageAsyncJobGet'
       responses:
         '200':
           description: Successful Response
@@ -7873,6 +7855,225 @@ components:
       - default
       - items
       title: BootOption
+    CatalogLatestServiceGet:
+      properties:
+        key:
+          type: string
+          pattern: ^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$
+          title: Key
+        version:
+          type: string
+          pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
+          title: Version
+        name:
+          type: string
+          title: Name
+        thumbnail:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Thumbnail
+        icon:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Icon
+        description:
+          type: string
+          title: Description
+        descriptionUi:
+          type: boolean
+          title: Descriptionui
+          default: false
+        versionDisplay:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Versiondisplay
+        type:
+          $ref: '#/components/schemas/ServiceType'
+        contact:
+          anyOf:
+          - type: string
+            format: email
+          - type: 'null'
+          title: Contact
+        authors:
+          items:
+            $ref: '#/components/schemas/Author'
+          type: array
+          minItems: 1
+          title: Authors
+        owner:
+          anyOf:
+          - type: string
+            format: email
+          - type: 'null'
+          title: Owner
+          description: None when the owner email cannot be found in the database
+        inputs:
+          type: object
+          title: Inputs
+        outputs:
+          type: object
+          title: Outputs
+        bootOptions:
+          anyOf:
+          - type: object
+          - type: 'null'
+          title: Bootoptions
+        minVisibleInputs:
+          anyOf:
+          - type: integer
+            minimum: 0
+          - type: 'null'
+          title: Minvisibleinputs
+        accessRights:
+          anyOf:
+          - additionalProperties:
+              $ref: '#/components/schemas/ServiceGroupAccessRightsV2'
+            type: object
+          - type: 'null'
+          title: Accessrights
+        classifiers:
+          anyOf:
+          - items:
+              type: string
+            type: array
+          - type: 'null'
+          title: Classifiers
+        quality:
+          type: object
+          title: Quality
+        release:
+          $ref: '#/components/schemas/ServiceRelease'
+          description: release information of current (latest) service
+      type: object
+      required:
+      - key
+      - version
+      - name
+      - description
+      - type
+      - contact
+      - authors
+      - owner
+      - inputs
+      - outputs
+      - accessRights
+      - release
+      title: CatalogLatestServiceGet
+      example:
+        accessRights:
+          '1':
+            execute: true
+            write: false
+        authors:
+        - affiliation: ACME
+          email: author@acme.com
+          name: Author Bar
+        classifiers: []
+        contact: contact@acme.com
+        description: A service which awaits for time to pass, two times.
+        description_ui: true
+        icon: https://cdn-icons-png.flaticon.com/512/25/25231.png
+        inputs:
+          input_1:
+            description: Pick a file containing only one integer
+            displayOrder: 1
+            fileToKeyMap:
+              single_number.txt: input_1
+            keyId: input_1
+            label: File with int number
+            type: data:text/plain
+          input_2:
+            contentSchema:
+              minimum: 0
+              title: Sleep interval
+              type: integer
+              x_unit: second
+            defaultValue: 2
+            description: Choose an amount of time to sleep in range [0:]
+            displayOrder: 2
+            keyId: input_2
+            label: Sleep interval
+            type: ref_contentSchema
+            unitLong: second
+            unitShort: s
+          input_3:
+            defaultValue: false
+            description: If set to true will cause service to fail after it sleeps
+            displayOrder: 3
+            keyId: input_3
+            label: Fail after sleep
+            type: boolean
+          input_4:
+            contentSchema:
+              title: Distance to bed
+              type: integer
+              x_unit: meter
+            defaultValue: 0
+            description: It will first walk the distance to bed
+            displayOrder: 4
+            keyId: input_4
+            label: Distance to bed
+            type: ref_contentSchema
+            unitLong: meter
+            unitShort: m
+          input_5:
+            contentSchema:
+              minimum: 0
+              title: Dream of the night
+              type: integer
+              x_unit: byte
+            defaultValue: 0
+            description: Defines the size of the dream that will be generated [0:]
+            displayOrder: 5
+            keyId: input_5
+            label: Dream (or nightmare) of the night
+            type: ref_contentSchema
+            unitLong: byte
+            unitShort: B
+        key: simcore/services/comp/itis/sleeper
+        name: sleeper
+        outputs:
+          output_1:
+            description: Integer is generated in range [1-9]
+            displayOrder: 1
+            fileToKeyMap:
+              single_number.txt: output_1
+            keyId: output_1
+            label: File containing one random integer
+            type: data:text/plain
+          output_2:
+            contentSchema:
+              title: Random sleep interval
+              type: integer
+              x_unit: second
+            description: Interval is generated in range [1-9]
+            displayOrder: 2
+            keyId: output_2
+            label: Random sleep interval
+            type: ref_contentSchema
+            unitLong: second
+            unitShort: s
+          output_3:
+            description: Contains some random data representing a dream
+            displayOrder: 3
+            fileToKeyMap:
+              dream.txt: output_3
+            keyId: output_3
+            label: Dream output
+            type: data:text/plain
+        owner: owner@acme.com
+        quality: {}
+        release:
+          released: '2025-07-20T15:00:00'
+          version: 2.2.1
+          version_display: Summer Release
+        type: computational
+        version: 2.2.1
+        version_display: 2 Xtreme
     CatalogServiceGet:
       properties:
         key:
@@ -7962,11 +8163,9 @@ components:
             type: array
           - type: 'null'
           title: Classifiers
-          default: []
         quality:
           type: object
           title: Quality
-          default: {}
         history:
           items:
             $ref: '#/components/schemas/ServiceRelease'
@@ -8003,7 +8202,7 @@ components:
         description: A service which awaits for time to pass, two times.
         description_ui: true
         history:
-        - released: '2024-07-20T15:00:00'
+        - released: '2024-07-21T15:00:00'
           version: 2.2.1
           version_display: Summer Release
         - compatibility:
@@ -8022,7 +8221,7 @@ components:
           released: '2024-01-20T18:49:17'
           version: 0.9.1
           versionDisplay: Matterhorn
-        - retired: '2024-07-20T15:00:00'
+        - retired: '2024-07-20T16:00:00'
           version: 0.9.0
         - version: 0.8.0
         - version: 0.1.0
@@ -8056,121 +8255,6 @@ components:
         type: computational
         version: 2.2.1
         version_display: 2 Xtreme
-    CatalogServiceListItem:
-      properties:
-        key:
-          type: string
-          pattern: ^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$
-          title: Key
-        version:
-          type: string
-          pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
-          title: Version
-        name:
-          type: string
-          title: Name
-        thumbnail:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Thumbnail
-        icon:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Icon
-        description:
-          type: string
-          title: Description
-        descriptionUi:
-          type: boolean
-          title: Descriptionui
-          default: false
-        versionDisplay:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Versiondisplay
-        type:
-          $ref: '#/components/schemas/ServiceType'
-        contact:
-          anyOf:
-          - type: string
-            format: email
-          - type: 'null'
-          title: Contact
-        authors:
-          items:
-            $ref: '#/components/schemas/Author'
-          type: array
-          minItems: 1
-          title: Authors
-        owner:
-          anyOf:
-          - type: string
-            format: email
-          - type: 'null'
-          title: Owner
-          description: None when the owner email cannot be found in the database
-        inputs:
-          type: object
-          title: Inputs
-        outputs:
-          type: object
-          title: Outputs
-        bootOptions:
-          anyOf:
-          - type: object
-          - type: 'null'
-          title: Bootoptions
-        minVisibleInputs:
-          anyOf:
-          - type: integer
-            minimum: 0
-          - type: 'null'
-          title: Minvisibleinputs
-        accessRights:
-          anyOf:
-          - additionalProperties:
-              $ref: '#/components/schemas/ServiceGroupAccessRightsV2'
-            type: object
-          - type: 'null'
-          title: Accessrights
-        classifiers:
-          anyOf:
-          - items:
-              type: string
-            type: array
-          - type: 'null'
-          title: Classifiers
-          default: []
-        quality:
-          type: object
-          title: Quality
-          default: {}
-        history:
-          items:
-            $ref: '#/components/schemas/ServiceRelease'
-          type: array
-          title: History
-          description: History will be replaced by current 'release' instead
-          default: []
-          deprecated: true
-      additionalProperties: false
-      type: object
-      required:
-      - key
-      - version
-      - name
-      - description
-      - type
-      - contact
-      - authors
-      - owner
-      - inputs
-      - outputs
-      - accessRights
-      title: CatalogServiceListItem
     CatalogServiceUpdate:
       properties:
         name:
@@ -8541,6 +8625,15 @@ components:
       - usdPerCredit
       - minPaymentAmountUsd
       title: CreditPriceGet
+    CreditTransactionStatus:
+      type: string
+      enum:
+      - PENDING
+      - BILLED
+      - IN_DEBT
+      - NOT_BILLED
+      - REQUIRES_MANUAL_REVIEW
+      title: CreditTransactionStatus
     CursorPage___T_Customized_PathMetaDataGet_:
       properties:
         items:
@@ -12400,7 +12493,7 @@ components:
       - total
       - count
       title: PageMetaInfoLimitOffset
-    Page_CatalogServiceListItem_:
+    Page_CatalogLatestServiceGet_:
       properties:
         _meta:
           $ref: '#/components/schemas/PageMetaInfoLimitOffset'
@@ -12408,7 +12501,7 @@ components:
           $ref: '#/components/schemas/PageLinks'
         data:
           items:
-            $ref: '#/components/schemas/CatalogServiceListItem'
+            $ref: '#/components/schemas/CatalogLatestServiceGet'
           type: array
           title: Data
       additionalProperties: false
@@ -12417,7 +12510,7 @@ components:
       - _meta
       - _links
       - data
-      title: Page[CatalogServiceListItem]
+      title: Page[CatalogLatestServiceGet]
     Page_LicensedItemPurchaseGet_:
       properties:
         _meta:
@@ -14644,6 +14737,9 @@ components:
           exclusiveMinimum: true
           title: User Id
           minimum: 0
+        user_email:
+          type: string
+          title: User Email
         project_id:
           type: string
           format: uuid
@@ -14651,6 +14747,11 @@ components:
         project_name:
           type: string
           title: Project Name
+        project_tags:
+          items:
+            type: string
+          type: array
+          title: Project Tags
         node_id:
           type: string
           format: uuid
@@ -14688,14 +14789,25 @@ components:
           title: Stopped At
         service_run_status:
           $ref: '#/components/schemas/ServiceRunStatus'
+        credit_cost:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Credit Cost
+        transaction_status:
+          anyOf:
+          - $ref: '#/components/schemas/CreditTransactionStatus'
+          - type: 'null'
       type: object
       required:
       - service_run_id
       - wallet_id
       - wallet_name
       - user_id
+      - user_email
       - project_id
       - project_name
+      - project_tags
       - node_id
       - node_name
       - root_parent_project_id
@@ -14706,6 +14818,8 @@ components:
       - started_at
       - stopped_at
       - service_run_status
+      - credit_cost
+      - transaction_status
       title: ServiceRunGet
     ServiceRunStatus:
       type: string
@@ -14923,23 +15037,11 @@ components:
         done:
           type: boolean
           title: Done
-        started:
-          type: string
-          format: date-time
-          title: Started
-        stopped:
-          anyOf:
-          - type: string
-            format: date-time
-          - type: 'null'
-          title: Stopped
       type: object
       required:
       - jobId
       - progress
       - done
-      - started
-      - stopped
       title: StorageAsyncJobStatus
     Structure:
       properties:

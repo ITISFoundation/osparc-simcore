@@ -26,6 +26,7 @@ from .._meta import (
     APP_FINISHED_BANNER_MSG,
     APP_NAME,
     APP_STARTED_BANNER_MSG,
+    APP_WORKER_STARTED_BANNER_MSG,
 )
 from ..api.rest.routes import setup_rest_api_routes
 from ..api.rpc.routes import setup_rpc_api_routes
@@ -83,14 +84,16 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
     setup_client_session(app)
 
     setup_rabbitmq(app)
-    setup_rpc_api_routes(app)
+    if not settings.STORAGE_WORKER_MODE:
+        setup_rpc_api_routes(app)
     setup_rest_api_long_running_tasks_for_uploads(app)
     setup_rest_api_routes(app, API_VTAG)
     set_exception_handlers(app)
 
+    setup_redis(app)
+
     setup_dsm(app)
-    if settings.STORAGE_CLEANER_INTERVAL_S:
-        setup_redis(app)
+    if settings.STORAGE_CLEANER_INTERVAL_S and not settings.STORAGE_WORKER_MODE:
         setup_dsm_cleaner(app)
 
     if settings.STORAGE_PROFILING:
@@ -112,7 +115,10 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
         setup_prometheus_instrumentation(app)
 
     async def _on_startup() -> None:
-        print(APP_STARTED_BANNER_MSG, flush=True)  # noqa: T201
+        if settings.STORAGE_WORKER_MODE:
+            print(APP_WORKER_STARTED_BANNER_MSG, flush=True)  # noqa: T201
+        else:
+            print(APP_STARTED_BANNER_MSG, flush=True)  # noqa: T201
 
     async def _on_shutdown() -> None:
         print(APP_FINISHED_BANNER_MSG, flush=True)  # noqa: T201

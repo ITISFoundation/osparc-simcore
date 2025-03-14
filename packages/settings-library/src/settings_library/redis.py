@@ -1,6 +1,5 @@
 from enum import IntEnum
 
-from pydantic import TypeAdapter
 from pydantic.networks import RedisDsn
 from pydantic.types import SecretStr
 
@@ -18,13 +17,14 @@ class RedisDatabase(IntEnum):
     DISTRIBUTED_IDENTIFIERS = 6
     DEFERRED_TASKS = 7
     DYNAMIC_SERVICES = 8
+    CELERY_TASKS = 9
 
 
 class RedisSettings(BaseCustomSettings):
     # host
     REDIS_SECURE: bool = False
     REDIS_HOST: str = "redis"
-    REDIS_PORT: PortInt = TypeAdapter(PortInt).validate_python(6789)
+    REDIS_PORT: PortInt = 6789
 
     # auth
     REDIS_USER: str | None = None
