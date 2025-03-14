@@ -1,10 +1,6 @@
 from pathlib import Path
 from typing import Annotated, Any
 
-from models_library.api_schemas_storage.storage_schemas import (
-    DEFAULT_NUMBER_OF_PATHS_PER_PAGE,
-    MAX_NUMBER_OF_PATHS_PER_PAGE,
-)
 from pydantic import BaseModel, Field
 
 from ..api_schemas_rpc_async_jobs.async_jobs import (
@@ -14,6 +10,10 @@ from ..api_schemas_rpc_async_jobs.async_jobs import (
     AsyncJobStatus,
 )
 from ..api_schemas_storage.data_export_async_jobs import DataExportTaskStartInput
+from ..api_schemas_storage.storage_schemas import (
+    DEFAULT_NUMBER_OF_PATHS_PER_PAGE,
+    MAX_NUMBER_OF_PATHS_PER_PAGE,
+)
 from ..progress_bar import ProgressReport
 from ..projects_nodes_io import LocationID, StorageFileID
 from ..rest_pagination import (
@@ -24,6 +24,10 @@ from ._base import InputSchema, OutputSchema
 
 class StorageLocationPathParams(BaseModel):
     location_id: LocationID
+
+
+class StoragePathComputeSizeParams(StorageLocationPathParams):
+    path: Path
 
 
 class ListPathsQueryParams(InputSchema, CursorQueryParameters):

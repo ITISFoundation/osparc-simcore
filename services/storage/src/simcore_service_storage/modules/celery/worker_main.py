@@ -5,9 +5,11 @@ import logging
 from celery.signals import worker_init, worker_shutdown  # type: ignore[import-untyped]
 from servicelib.logging_utils import config_all_loggers
 
+from ...api._worker_celery._paths import compute_path_size
 from ...core.settings import ApplicationSettings
+from ._celery_types import register_celery_types
 from ._common import create_app as create_celery_app
-from ._common import define_task
+from ._task import define_task
 from .signals import (
     on_worker_init,
     on_worker_shutdown,
@@ -31,4 +33,7 @@ app = create_celery_app(_settings.STORAGE_CELERY)
 worker_init.connect(on_worker_init)
 worker_shutdown.connect(on_worker_shutdown)
 
+
+register_celery_types()
 define_task(app, export_data)
+define_task(app, compute_path_size)

@@ -23,7 +23,7 @@ async def abort(
     *,
     rpc_namespace: RPCNamespace,
     job_id: AsyncJobId,
-    job_id_data: AsyncJobNameData
+    job_id_data: AsyncJobNameData,
 ) -> AsyncJobAbort:
     result = await rabbitmq_rpc_client.request(
         rpc_namespace,
@@ -41,7 +41,7 @@ async def get_status(
     *,
     rpc_namespace: RPCNamespace,
     job_id: AsyncJobId,
-    job_id_data: AsyncJobNameData
+    job_id_data: AsyncJobNameData,
 ) -> AsyncJobStatus:
     result = await rabbitmq_rpc_client.request(
         rpc_namespace,
@@ -59,7 +59,7 @@ async def get_result(
     *,
     rpc_namespace: RPCNamespace,
     job_id: AsyncJobId,
-    job_id_data: AsyncJobNameData
+    job_id_data: AsyncJobNameData,
 ) -> AsyncJobResult:
     result = await rabbitmq_rpc_client.request(
         rpc_namespace,
@@ -77,7 +77,7 @@ async def list_jobs(
     *,
     rpc_namespace: RPCNamespace,
     filter_: str,
-    job_id_data: AsyncJobNameData
+    job_id_data: AsyncJobNameData,
 ) -> list[AsyncJobGet]:
     result: list[AsyncJobGet] = await rabbitmq_rpc_client.request(
         rpc_namespace,
@@ -95,7 +95,7 @@ async def submit_job(
     rpc_namespace: RPCNamespace,
     method_name: str,
     job_id_data: AsyncJobNameData,
-    **kwargs
+    **kwargs,
 ) -> AsyncJobGet:
     result = await rabbitmq_rpc_client.request(
         rpc_namespace,
@@ -104,5 +104,5 @@ async def submit_job(
         **kwargs,
         timeout_s=_DEFAULT_TIMEOUT_S,
     )
-    assert isinstance(result, AsyncJobGet)
+    assert isinstance(result, AsyncJobGet)  # nosec
     return result
