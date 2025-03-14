@@ -103,7 +103,7 @@ qx.Class.define("osparc.study.StudyOptions", {
         }
       };
       return osparc.data.Resources.fetch("studies", "selectWallet", params)
-        .catch(err => osparc.FlashMessenger.logError(err, qx.locale.Manager.tr("Error selecting Credit Account")));
+        .catch(err => osparc.FlashMessenger.logError(err, qx.locale.Manager.tr("An issue occurred while selecting Credit Account")));
     },
   },
 
