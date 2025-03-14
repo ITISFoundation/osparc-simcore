@@ -375,7 +375,7 @@ async def test_get_service_key_version_from_docker_service(
 @pytest.mark.parametrize(
     "fake_service_str",
     [
-        "postgres:14.8-alpine@sha256:150dd39ccb7ae6c7ba6130c3582c39a30bb5d3d22cb08ad0ba37001e3f829abc",
+        "postgres:17.2-alpine3.21@sha256:17143ad87797f511036cf8f50ada164aeb371f0d8068a172510549fb5d2cd65f",
         "/simcore/postgres:14.8-alpine@sha256:150dd39ccb7ae6c7ba6130c3582c39a30bb5d3d22cb08ad0ba37001e3f829abc",
         "itisfoundation/postgres:14.8-alpine@sha256:150dd39ccb7ae6c7ba6130c3582c39a30bb5d3d22cb08ad0ba37001e3f829abc",
         "/simcore/services/stuff/postgres:10.11",
