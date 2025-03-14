@@ -4,6 +4,7 @@ from asyncio import AbstractEventLoop
 from fastapi import FastAPI
 
 from ...core.settings import get_application_settings
+from ._celery_types import register_celery_types
 from ._common import create_app
 from .client import CeleryTaskQueueClient
 
@@ -16,6 +17,8 @@ def setup_celery_client(app: FastAPI) -> None:
         assert celery_settings  # nosec
         celery_app = create_app(celery_settings)
         app.state.celery_client = CeleryTaskQueueClient(celery_app)
+
+        register_celery_types()
 
     app.add_event_handler("startup", on_startup)
 

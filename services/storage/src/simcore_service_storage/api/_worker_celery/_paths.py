@@ -14,7 +14,7 @@ _logger = logging.getLogger(__name__)
 
 
 async def compute_path_size(
-    task: Task, user_id: UserID, location_id: LocationID, path: str
+    task: Task, user_id: UserID, location_id: LocationID, path: Path
 ) -> ByteSize:
     with log_context(
         _logger,
