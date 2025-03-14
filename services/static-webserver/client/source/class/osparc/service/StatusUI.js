@@ -124,6 +124,8 @@ qx.Class.define("osparc.service.StatusUI", {
           return qx.locale.Manager.tr("Idle");
         case "WAITING_FOR_RESOURCES":
           return qx.locale.Manager.tr("Waiting for resources");
+        case "FAILED":
+          return qx.locale.Manager.tr("Unsuccessful");
 
         // dynamics
         case "idle":
