@@ -12,6 +12,7 @@ from typing import Final
 from aiohttp import web
 from aiohttp.web import Request, RouteTableDef
 from models_library.api_schemas_webserver.catalog import (
+    CatalogLatestServiceGet,
     CatalogServiceGet,
     CatalogServiceUpdate,
 )
@@ -83,7 +84,7 @@ async def list_services_latest(request: Request):
     assert page_meta.limit == query_params.limit  # nosec
     assert page_meta.offset == query_params.offset  # nosec
 
-    page = Page[CatalogServiceGet].model_validate(
+    page = Page[CatalogLatestServiceGet].model_validate(
         paginate_data(
             chunk=page_items,
             request_url=request.url,

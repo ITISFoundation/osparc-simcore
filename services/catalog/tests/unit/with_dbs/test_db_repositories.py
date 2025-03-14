@@ -1,7 +1,9 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
+# pylint: disable=too-many-arguments
 
+from collections import Counter
 from collections.abc import Callable
 from dataclasses import dataclass, field
 
@@ -9,7 +11,6 @@ import pytest
 from models_library.products import ProductName
 from models_library.users import UserID
 from packaging import version
-from packaging.version import Version
 from pydantic import EmailStr, HttpUrl, TypeAdapter
 from simcore_service_catalog.db.repositories.services import ServicesRepository
 from simcore_service_catalog.models.services_db import (
@@ -309,16 +310,13 @@ async def test_list_all_services_and_history(
     assert len(services_items) == 1
     assert total_count == 1
 
+    # latest
     assert services_items[0].key == "simcore/services/dynamic/jupyterlab"
-    history = services_items[0].history
-    assert len(history) == fake_catalog_with_jupyterlab.expected_services_count
+    assert services_items[0].version == fake_catalog_with_jupyterlab.expected_latest
 
-    # latest, ..., first version
-    assert history[0].version == fake_catalog_with_jupyterlab.expected_latest
-
-    # check sorted
-    got_versions = [Version(h.version) for h in history]
-    assert got_versions == sorted(got_versions, reverse=True)
+    assert (
+        len(services_items[0].history) == 0
+    ), "list_latest_service does NOT show history"
 
 
 async def test_listing_with_no_services(
@@ -365,7 +363,7 @@ async def test_list_all_services_and_history_with_pagination(
     assert total_count == num_services
 
     for service in services_items:
-        assert len(service.history) == num_versions_per_service
+        assert len(service.history) == 0, "Do not show history in listing"
         assert service.version == expected_latest_version
 
     _, services_items = await services_repo.list_latest_services(
@@ -374,14 +372,22 @@ async def test_list_all_services_and_history_with_pagination(
     assert len(services_items) == 2
 
     for service in services_items:
-        assert len(service.history) == num_versions_per_service
+        assert len(service.history) == 0, "Do not show history in listing"
 
         assert TypeAdapter(EmailStr).validate_python(
             service.owner_email
         ), "resolved own'es email"
 
-        expected_latest_version = service.history[0].version  # latest service is first
-        assert service.version == expected_latest_version
+    duplicates = [
+        service_key
+        for service_key, count in Counter(
+            service.key for service in services_items
+        ).items()
+        if count > 1
+    ]
+    assert (
+        not duplicates
+    ), f"list of latest versions of services cannot have duplicates, found: {duplicates}"
 
 
 async def test_get_and_update_service_meta_data(

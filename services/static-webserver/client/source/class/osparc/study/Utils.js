@@ -45,76 +45,44 @@ qx.Class.define("osparc.study.Utils", {
       return services;
     },
 
-    getInaccessibleServices: function(workbench) {
-      const allServices = osparc.store.Services.servicesCached;
-      const unaccessibleServices = [];
-      const wbServices = new Set(this.extractUniqueServices(workbench));
-      wbServices.forEach(srv => {
-        if (srv.key in allServices && srv.version in allServices[srv.key]) {
-          return;
-        }
-        const idx = unaccessibleServices.findIndex(unSrv => unSrv.key === srv.key && unSrv.version === srv.version);
-        if (idx === -1) {
-          unaccessibleServices.push(srv);
-        }
-      });
-      return unaccessibleServices;
+    getCantExecuteServices: function(studyServices = []) {
+      return studyServices.filter(studyService => studyService["myAccessRights"]["execute"] === false);
     },
 
-    getInaccessibleServicesMsg: function(inaccessibleServices, workbench) {
-      let msg = qx.locale.Manager.tr("Service(s) not accessible:<br>");
-      Object.values(workbench).forEach(node => {
-        const inaccessibleService = inaccessibleServices.find(srv => srv.key === node.key && srv.version === node.version);
-        if (inaccessibleService) {
-          const n = inaccessibleService.key.lastIndexOf("/");
-          const friendlyKey = inaccessibleService.key.substring(n + 1);
-          msg += `- ${node.label} (${friendlyKey}:${inaccessibleService.version})<br>`;
+    anyServiceRetired: function(studyServices) {
+      const isRetired = studyServices.some(studyService => {
+        if (studyService["release"] && studyService["release"]["retired"]) {
+          const retirementDate = new Date(studyService["release"]["retired"]);
+          const currentDate = new Date();
+          return retirementDate < currentDate;
         }
+        return false;
       });
-      return msg;
+      return isRetired;
     },
 
-    isWorkbenchUpdatable: function(workbench) {
-      const services = new Set(this.extractUniqueServices(workbench));
-      const isUpdatable = Array.from(services).some(srv => osparc.service.Utils.isUpdatable(srv));
+    anyServiceDeprecated: function(studyServices) {
+      const isDeprecated = studyServices.some(studyService => {
+        if (studyService["release"] && studyService["release"]["retired"]) {
+          const retirementDate = new Date(studyService["release"]["retired"]);
+          const currentDate = new Date();
+          return retirementDate > currentDate;
+        }
+        return false;
+      });
+      return isDeprecated;
+    },
+
+    anyServiceUpdatable: function(studyServices) {
+      const isUpdatable = studyServices.some(studyService => {
+        if (studyService["release"] && studyService["release"]["compatibility"]) {
+          return Boolean(studyService["release"]["compatibility"]);
+        }
+        return false;
+      });
       return isUpdatable;
     },
 
-    isWorkbenchRetired: function(workbench) {
-      const allServices = osparc.store.Services.servicesCached;
-      const services = new Set(this.extractUniqueServices(workbench));
-      const isRetired = Array.from(services).some(srv => {
-        if (srv.key in allServices && srv.version in allServices[srv.key]) {
-          const serviceMD = allServices[srv.key][srv.version];
-          if (serviceMD["retired"]) {
-            const retirementDate = new Date(serviceMD["retired"]);
-            const currentDate = new Date();
-            return retirementDate < currentDate;
-          }
-          return false;
-        }
-        return false;
-      });
-      return isRetired;
-    },
-
-    isWorkbenchDeprecated: function(workbench) {
-      const allServices = osparc.store.Services.servicesCached;
-      const services = new Set(this.extractUniqueServices(workbench));
-      const isRetired = Array.from(services).some(srv => {
-        if (srv.key in allServices && srv.version in allServices[srv.key]) {
-          const serviceMD = allServices[srv.key][srv.version];
-          if ("retired" in serviceMD && serviceMD["retired"]) {
-            const retirementDate = new Date(serviceMD["retired"]);
-            const currentDate = new Date();
-            return retirementDate > currentDate;
-          }
-          return false;
-        }
-        return false;
-      });
-      return isRetired;
-    },
 
     createStudyFromService: function(key, version, existingStudies, newStudyLabel, contextProps = {}) {
       return new Promise((resolve, reject) => {
@@ -157,9 +125,9 @@ qx.Class.define("osparc.study.Utils", {
             if (!("mode" in minStudyData["ui"])) {
               minStudyData["ui"]["mode"] = "standalone";
             }
-            const inaccessibleServices = this.getInaccessibleServices(minStudyData["workbench"])
+            const inaccessibleServices = osparc.store.Services.getInaccessibleServices(minStudyData["workbench"])
             if (inaccessibleServices.length) {
-              const msg = this.getInaccessibleServicesMsg(inaccessibleServices, minStudyData["workbench"]);
+              const msg = osparc.store.Services.getInaccessibleServicesMsg(inaccessibleServices, minStudyData["workbench"]);
               reject({
                 message: msg
               });
@@ -204,9 +172,9 @@ qx.Class.define("osparc.study.Utils", {
 
     createStudyFromTemplate: function(templateData, loadingPage, contextProps = {}) {
       return new Promise((resolve, reject) => {
-        const inaccessibleServices = this.getInaccessibleServices(templateData["workbench"]);
+        const inaccessibleServices = osparc.store.Services.getInaccessibleServices(templateData["workbench"]);
         if (inaccessibleServices.length) {
-          const msg = this.getInaccessibleServicesMsg(inaccessibleServices, templateData["workbench"]);
+          const msg = osparc.store.Services.getInaccessibleServicesMsg(inaccessibleServices, templateData["workbench"]);
           reject({
             message: msg
           });
@@ -293,8 +261,8 @@ qx.Class.define("osparc.study.Utils", {
     },
 
     __getBlockedState: function(studyData) {
-      if (studyData["workbench"]) {
-        const unaccessibleServices = osparc.study.Utils.getInaccessibleServices(studyData["workbench"])
+      if (studyData["services"]) {
+        const unaccessibleServices = osparc.study.Utils.getCantExecuteServices(studyData["services"])
         if (unaccessibleServices.length) {
           return "UNKNOWN_SERVICES";
         }
@@ -362,30 +330,34 @@ qx.Class.define("osparc.study.Utils", {
       return Object.values(studyData["workbench"]).filter(nodeData => !osparc.data.model.Node.isFrontend(nodeData));
     },
 
-    guessIcon: function(studyData) {
+    guessIcon: async function(studyData) {
       if (osparc.product.Utils.isProduct("tis") || osparc.product.Utils.isProduct("tiplite")) {
         return this.__guessTIPIcon(studyData);
       }
-      return this.__guessIcon(studyData);
+      const icon = await this.__guessIcon(studyData);
+      return icon;
     },
 
     __guessIcon: function(studyData) {
-      // the was to guess the TI type is to check the boot mode of the ti-postpro in the pipeline
-      const wbServices = this.self().getNonFrontendNodes(studyData);
-      if (wbServices.length === 1) {
-        const wbService = wbServices[0];
-        const allServices = osparc.store.Services.servicesCached;
-        if (wbService.key in allServices && wbService.version in allServices[wbService.key]) {
-          const serviceMetadata = allServices[wbService.key][wbService.version];
-          if (serviceMetadata["icon"]) {
-            return serviceMetadata["icon"];
-          }
+      const defaultIcon = osparc.dashboard.CardBase.PRODUCT_ICON;
+      return new Promise(resolve => {
+        // the was to guess the TI type is to check the boot mode of the ti-postpro in the pipeline
+        const wbServices = this.self().getNonFrontendNodes(studyData);
+        if (wbServices.length === 1) {
+          const wbService = wbServices[0];
+          osparc.store.Services.getService(wbService.key, wbService.version)
+            .then(serviceMetadata => {
+              if (serviceMetadata["icon"]) {
+                resolve(serviceMetadata["icon"]);
+              }
+              resolve(defaultIcon);
+            });
+        } else if (wbServices.length > 1) {
+          resolve("osparc/icons/diagram.png");
+        } else {
+          resolve(defaultIcon);
         }
-      }
-      if (wbServices.length > 1) {
-        return "osparc/icons/diagram.png";
-      }
-      return osparc.dashboard.CardBase.PRODUCT_ICON;
+      });
     },
 
     __guessTIPIcon: function(studyData) {
