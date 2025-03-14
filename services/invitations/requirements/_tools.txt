@@ -1,4 +1,4 @@
-astroid==3.3.8
+astroid==3.3.9
     # via pylint
 black==25.1.0
     # via -r requirements/../../../requirements/devenv.txt
@@ -8,7 +8,7 @@ bump2version==1.0.1
     # via -r requirements/../../../requirements/devenv.txt
 cfgv==3.4.0
     # via pre-commit
-click==8.1.7
+click==8.1.8
     # via
     #   -c requirements/_base.txt
     #   black
@@ -19,7 +19,7 @@ distlib==0.3.9
     # via virtualenv
 filelock==3.17.0
     # via virtualenv
-identify==2.6.8
+identify==2.6.9
     # via pre-commit
 isort==6.0.1
     # via
@@ -54,7 +54,7 @@ platformdirs==4.3.6
     #   virtualenv
 pre-commit==4.1.0
     # via -r requirements/../../../requirements/devenv.txt
-pylint==3.3.4
+pylint==3.3.5
     # via -r requirements/../../../requirements/devenv.txt
 pyproject-hooks==1.2.0
     # via
@@ -66,17 +66,18 @@ pyyaml==6.0.2
     #   -c requirements/_base.txt
     #   pre-commit
     #   watchdog
-ruff==0.9.9
+ruff==0.9.10
     # via -r requirements/../../../requirements/devenv.txt
-setuptools==75.8.2
+setuptools==76.0.0
     # via pip-tools
 tomlkit==0.13.2
     # via pylint
 typing-extensions==4.12.2
     # via
     #   -c requirements/_base.txt
+    #   -c requirements/_test.txt
     #   mypy
-virtualenv==20.29.2
+virtualenv==20.29.3
     # via pre-commit
 watchdog==6.0.0
     # via -r requirements/_tools.in
