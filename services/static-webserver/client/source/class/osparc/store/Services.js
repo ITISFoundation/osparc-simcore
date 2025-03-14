@@ -71,13 +71,13 @@ qx.Class.define("osparc.store.Services", {
           return {
             key: "key" in canUpdateTo ? canUpdateTo["key"] : key, // key is optional
             version: canUpdateTo["version"]
-          }
+          };
         }
         // the provided key/version itself is the latest compatible
         return {
           key,
           version
-        }
+        };
       }
       return null;
     },
@@ -168,20 +168,22 @@ qx.Class.define("osparc.store.Services", {
                 // do not add frontend services
                 continue;
               }
-              if (excludeDeprecated && serviceLatest["release"]["retired"]) {
-                // first check if a previous version of this service isn't retired
-                // getService to get its history
-                await this.getService(serviceLatest["key"], serviceLatest["version"]);
-                const serviceMetadata = this.__servicesCached[key][serviceLatest["version"]];
-                for (let j=0; j<serviceMetadata["history"].length; j++) {
-                  const historyEntry = serviceMetadata["history"][j];
-                  if (!historyEntry["retired"]) {
-                    // one older non retired version found
-                    const olderNonRetired = await this.getService(key, historyEntry["version"]);
-                    serviceLatest = osparc.utils.Utils.deepCloneObject(olderNonRetired);
-                    // make service metadata latest model like
-                    serviceLatest["release"] = osparc.service.Utils.extractVersionFromHistory(olderNonRetired);
-                    break;
+              if (excludeDeprecated) {
+                if (osparc.service.Utils.isRetired(serviceLatest)) {
+                  // first check if a previous version of this service isn't retired
+                  // getService to get its history
+                  await this.getService(serviceLatest["key"], serviceLatest["version"]);
+                  const serviceMetadata = this.__servicesCached[key][serviceLatest["version"]];
+                  for (let j=0; j<serviceMetadata["history"].length; j++) {
+                    const historyEntry = serviceMetadata["history"][j];
+                    if (!historyEntry["retired"]) {
+                      // one older non retired version found
+                      const olderNonRetired = await this.getService(key, historyEntry["version"]);
+                      serviceLatest = osparc.utils.Utils.deepCloneObject(olderNonRetired);
+                      // make service metadata latest model like
+                      serviceLatest["release"] = osparc.service.Utils.extractVersionFromHistory(olderNonRetired);
+                      break;
+                    }
                   }
                 }
                 if (serviceLatest["release"]["retired"]) {

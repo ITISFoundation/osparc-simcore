@@ -170,10 +170,21 @@ qx.Class.define("osparc.service.Utils", {
       return false;
     },
 
-    isDeprecated: function(metadata) {
+    __extractRetiredDate: function(metadata) {
+      if ("retired" in metadata && metadata["release"]["retired"]) {
+        // this works for service latest
+        return new Date(metadata["release"]["retired"]);
+      }
       const historyEntry = this.extractVersionFromHistory(metadata);
-      if (historyEntry && "retired" in historyEntry && ![null, undefined].includes(historyEntry["retired"])) {
-        const deprecationTime = new Date(historyEntry["retired"]);
+      if (historyEntry && "retired" in historyEntry && historyEntry["retired"]) {
+        return new Date(historyEntry["retired"]);
+      }
+      return null;
+    },
+
+    isDeprecated: function(metadata) {
+      const deprecationTime = this.__extractRetiredDate(metadata);
+      if (deprecationTime) {
         const now = new Date();
         return deprecationTime.getTime() > now.getTime();
       }
@@ -181,9 +192,8 @@ qx.Class.define("osparc.service.Utils", {
     },
 
     isRetired: function(metadata) {
-      const historyEntry = this.extractVersionFromHistory(metadata);
-      if (historyEntry && "retired" in historyEntry && ![null, undefined].includes(historyEntry["retired"])) {
-        const deprecationTime = new Date(historyEntry["retired"]);
+      const deprecationTime = this.__extractRetiredDate(metadata);
+      if (deprecationTime) {
         const now = new Date();
         return deprecationTime.getTime() < now.getTime();
       }
@@ -191,9 +201,8 @@ qx.Class.define("osparc.service.Utils", {
     },
 
     getDeprecationDateText: function(metadata) {
-      const historyEntry = this.extractVersionFromHistory(metadata);
-      if (historyEntry && "retired" in historyEntry && ![null, undefined].includes(historyEntry["retired"])) {
-        const deprecationTime = new Date(historyEntry["retired"]);
+      if (this.isDeprecated(metadata) || this.isRetired(metadata)) {
+        const deprecationTime = this.__extractRetiredDate(metadata);
         return qx.locale.Manager.tr("It will be Retired: ") + osparc.utils.Utils.formatDate(deprecationTime);
       }
       return "";
