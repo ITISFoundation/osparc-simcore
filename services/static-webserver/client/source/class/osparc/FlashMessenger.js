@@ -56,27 +56,30 @@ qx.Class.define("osparc.FlashMessenger", {
   statics: {
     MAX_DISPLAYED: 3,
 
-    logAs: function(message, level, duration) {
-      return this.getInstance().logAs(message, level, duration);
-    },
-
-    __getMessage: function(input, defaultMessage) {
+    extractMessage: function(input, defaultMessage = "") {
       if (input) {
         if (typeof input === "string") {
           return input;
-        }
-        if (typeof input === "object" && "message" in input) {
-          return input["message"];
+        } else if (osparc.utils.Utils.isObject(input) && "message" in input) {
+          if (typeof input["message"] === "string") {
+            return input["message"];
+          } else if (osparc.utils.Utils.isObject(input["message"]) && "message" in input["message"] && typeof input["message"]["message"] === "string") {
+            return input["message"]["message"];
+          }
         }
       }
       return defaultMessage;
+    },
+
+    logAs: function(message, level, duration) {
+      return this.getInstance().logAs(message, level, duration);
     },
 
     logError: function(error, defaultMessage = qx.locale.Manager.tr("Oops, something went wrong"), duration = null) {
       if (error) {
         console.error(error);
       }
-      const msg = this.__getMessage(error, defaultMessage);
+      const msg = this.extractMessage(error, defaultMessage);
       return this.getInstance().logAs(msg, "ERROR", duration);
     },
   },
@@ -102,9 +105,7 @@ qx.Class.define("osparc.FlashMessenger", {
     },
 
     log: function(logMessage) {
-      const message = osparc.utils.Utils.isObject(logMessage.message) && "message" in logMessage.message ?
-        logMessage.message.message :
-        logMessage.message;
+      const message = this.self().extractMessage(logMessage);
 
       const level = logMessage.level.toUpperCase(); // "DEBUG", "INFO", "WARNING", "ERROR"
 

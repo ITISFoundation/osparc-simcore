@@ -1162,7 +1162,7 @@ qx.Class.define("osparc.utils.Utils", {
     },
 
     isObject: function(v) {
-      return typeof v === "object" && v !== null;
+      return typeof v === "object" && v !== null && !Array.isArray(v);
     },
 
     centerTabIcon: function(tabpage) {
