@@ -316,7 +316,6 @@ qx.Class.define("osparc.info.StudyLarge", {
           }
         })
         .catch(err => {
-          console.error(err);
           const msg = this.tr("There was an error while updating the information.");
           osparc.FlashMessenger.logError(err, msg);
         });

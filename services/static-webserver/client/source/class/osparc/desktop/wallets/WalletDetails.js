@@ -125,7 +125,6 @@ qx.Class.define("osparc.desktop.wallets.WalletDetails", {
           wallet.set(params.data);
         })
         .catch(err => {
-          console.error(err);
           const msg = this.tr("Something went wrong editing ") + name;
           osparc.FlashMessenger.logError(err, msg);
         })

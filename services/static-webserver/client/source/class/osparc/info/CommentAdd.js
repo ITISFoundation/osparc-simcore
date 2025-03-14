@@ -125,10 +125,7 @@ qx.Class.define("osparc.info.CommentAdd", {
               this.fireEvent("commentAdded");
               commentField.getChildControl("text-area").setValue("");
             })
-            .catch(err => {
-              console.error(err);
-              osparc.FlashMessenger.logError(err);
-            });
+            .catch(err => osparc.FlashMessenger.logError(err));
         }
       });
     }

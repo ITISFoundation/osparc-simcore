@@ -55,9 +55,7 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
           this.__setDataToProfile(profile);
           this.__setDataToPrivacy(profile["privacy"]);
         })
-        .catch(err => {
-          console.error(err);
-        });
+        .catch(err => console.error(err));
     },
 
     __setDataToProfile: function(data) {
@@ -208,7 +206,6 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
               .catch(err => {
                 this.__resetUserData();
                 osparc.FlashMessenger.logError(err, this.tr("Unsuccessful profile update"));
-                console.error(err);
               });
           }
         }
@@ -297,7 +294,6 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
             .catch(err => {
               this.__resetPrivacyData();
               osparc.FlashMessenger.logError(err, this.tr("Unsuccessful privacy update"));
-              console.error(err);
             });
         }
       });
@@ -441,7 +437,6 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
               });
             })
             .catch(err => {
-              console.error(err);
               const msg = this.tr("Unsuccessful password reset");
               osparc.FlashMessenger.logError(err, msg);
               [currentPassword, newPassword, confirm].forEach(item => {

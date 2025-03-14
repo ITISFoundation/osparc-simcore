@@ -415,7 +415,6 @@ qx.Class.define("osparc.info.MergedLarge", {
           qx.event.message.Bus.getInstance().dispatchByName("updateStudy", studyData);
         })
         .catch(err => {
-          console.error(err);
           const msg = this.tr("There was an error while updating the information.");
           osparc.FlashMessenger.logError(err, msg);
         });

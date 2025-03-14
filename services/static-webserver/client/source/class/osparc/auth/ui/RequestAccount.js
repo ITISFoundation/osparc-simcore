@@ -413,7 +413,6 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
           this.fireDataEvent("done");
         })
         .catch(err => {
-          console.error(err);
           osparc.FlashMessenger.logError(err);
           this.__restartCaptcha();
         });

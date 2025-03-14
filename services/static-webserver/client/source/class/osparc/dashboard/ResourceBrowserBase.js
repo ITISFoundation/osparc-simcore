@@ -153,10 +153,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
               openStudy();
             }
           })
-          .catch(err => {
-            console.error(err);
-            osparc.FlashMessenger.logError(err);
-          });
+          .catch(err => osparc.FlashMessenger.logError(err));
       } else {
         openStudy();
       }

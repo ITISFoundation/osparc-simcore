@@ -79,10 +79,7 @@ qx.Class.define("osparc.share.CollaboratorsService", {
           osparc.FlashMessenger.logAs(text);
           this._reloadCollaboratorsList();
         })
-        .catch(err => {
-          console.error(err);
-          osparc.FlashMessenger.logError(err, this.tr("Something went wrong sharing the Service"));
-        });
+        .catch(err => osparc.FlashMessenger.logError(err, this.tr("Something went wrong sharing the Service")));
     },
 
     _deleteMember: function(collaborator, item) {
@@ -105,10 +102,7 @@ qx.Class.define("osparc.share.CollaboratorsService", {
           osparc.FlashMessenger.logAs(collaborator["name"] + this.tr(" successfully removed"));
           this._reloadCollaboratorsList();
         })
-        .catch(err => {
-          console.error(err);
-          osparc.FlashMessenger.logError(err, this.tr("Something went wrong removing ") + collaborator["name"]);
-        })
+        .catch(err => osparc.FlashMessenger.logError(err, this.tr("Something went wrong removing ") + collaborator["name"]))
         .finally(() => {
           if (item) {
             item.setEnabled(true);
@@ -125,10 +119,7 @@ qx.Class.define("osparc.share.CollaboratorsService", {
           osparc.FlashMessenger.logAs(successMsg);
           this._reloadCollaboratorsList();
         })
-        .catch(err => {
-          console.error(err);
-          osparc.FlashMessenger.logError(err, failureMsg);
-        })
+        .catch(err => osparc.FlashMessenger.logError(err, failureMsg))
         .finally(() => item.setEnabled(true));
     },
 

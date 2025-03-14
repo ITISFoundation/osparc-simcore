@@ -156,10 +156,7 @@ qx.Class.define("osparc.node.UpdateResourceLimitsView", {
         .then(() => {
           osparc.FlashMessenger.logAs(this.tr("Limits successfully updated"));
         })
-        .catch(err => {
-          console.error(err);
-          osparc.FlashMessenger.logError(err, this.tr("Something went wrong updating the limits"));
-        })
+        .catch(err => osparc.FlashMessenger.logError(err, this.tr("Something went wrong updating the limits")))
         .finally(() => {
           this.__saveBtn.setFetching(false);
           this.__populateLayout();

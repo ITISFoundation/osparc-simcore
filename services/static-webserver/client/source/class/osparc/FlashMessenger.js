@@ -60,7 +60,8 @@ qx.Class.define("osparc.FlashMessenger", {
       return this.getInstance().logAs(message, level, duration);
     },
 
-    logError: function(error, ownMessage, duration) {
+    logError: function(error, defaultMessage, duration) {
+      console.error(error);
       return this.getInstance().logAs(error, "ERROR", duration);
     },
   },

@@ -575,7 +575,6 @@ qx.Class.define("osparc.info.ServiceLarge", {
           this.fireDataEvent("updateService", this.getService());
         })
         .catch(err => {
-          console.error(err);
           const msg = this.tr("There was an error while updating the information.");
           osparc.FlashMessenger.logError(err, msg);
         })

@@ -179,7 +179,6 @@ qx.Class.define("osparc.store.Data", {
             resolve(presignedLinkData);
           })
           .catch(err => {
-            console.log("remove the FP");
             console.error(err);
             reject(err);
           });
@@ -213,7 +212,6 @@ qx.Class.define("osparc.store.Data", {
           this.fireDataEvent("fileCopied", data);
         })
         .catch(err => {
-          console.error(err);
           osparc.FlashMessenger.logError(err, this.tr("Unsuccessful file copy"));
           this.fireDataEvent("fileCopied", null);
         });
@@ -243,10 +241,7 @@ qx.Class.define("osparc.store.Data", {
           };
           return data;
         })
-        .catch(err => {
-          console.error(err);
-          osparc.FlashMessenger.logError(err, this.tr("Unsuccessful file deletion"));
-        });
+        .catch(err => osparc.FlashMessenger.logError(err, this.tr("Unsuccessful file deletion")));
     }
   }
 });

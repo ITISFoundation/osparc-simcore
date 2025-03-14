@@ -895,8 +895,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           if ("status" in error && error.status === 409) {
             console.log("Flash message blocked"); // Workaround for osparc-issues #1189
           } else {
-            console.error(error);
-            osparc.FlashMessenger.logAs(this.tr("Error saving the study"), "ERROR");
+            osparc.FlashMessenger.logError(this.tr("Error saving the study"));
           }
           this.getStudyLogger().error(null, "Error updating pipeline");
           // Need to throw the error to be able to handle it later

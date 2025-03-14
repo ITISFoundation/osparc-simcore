@@ -215,7 +215,6 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
             .catch(err => {
               this._hideLoadingPage();
               osparc.FlashMessenger.logError(err);
-              console.error(err);
             });
         });
       } else {
@@ -238,7 +237,6 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
           .catch(err => {
             this._hideLoadingPage();
             osparc.FlashMessenger.logError(err);
-            console.error(err);
           });
       }
     },
@@ -453,10 +451,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       }
       operationPromise
         .then(() => this.__removeFromTemplateList(studyData.uuid))
-        .catch(err => {
-          console.error(err);
-          osparc.FlashMessenger.logError(err);
-        });
+        .catch(err => osparc.FlashMessenger.logError(err));
     },
 
     __removeFromTemplateList: function(templateId) {

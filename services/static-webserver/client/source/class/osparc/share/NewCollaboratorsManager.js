@@ -124,10 +124,7 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
           users.forEach(user => user["collabType"] = 2);
           this.__addPotentialCollaborators(users);
         })
-        .catch(err => {
-          console.error(err);
-          osparc.FlashMessenger.logError(err);
-        })
+        .catch(err => osparc.FlashMessenger.logError(err))
         .finally(() => this.__searchingCollaborators.exclude());
     },
 

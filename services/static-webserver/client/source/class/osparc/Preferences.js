@@ -173,7 +173,6 @@ qx.Class.define("osparc.Preferences", {
       osparc.Preferences.patchPreference(preferenceId, newValue)
         .then(() => preferencesSettings.set(preferenceId, newValue))
         .catch(err => {
-          console.error(err);
           osparc.FlashMessenger.logError(err);
           preferenceField.setValue(oldValue);
         })
@@ -208,10 +207,7 @@ qx.Class.define("osparc.Preferences", {
           wallets.forEach(wallet => wallet.setPreferredWallet(wallet.getWalletId() === walletId));
           this.setPreferredWalletId(walletId);
         })
-        .catch(err => {
-          console.error(err);
-          osparc.FlashMessenger.logError(err);
-        });
+        .catch(err => osparc.FlashMessenger.logError(err));
     },
 
     __patchPreference: function(value, _, propName) {

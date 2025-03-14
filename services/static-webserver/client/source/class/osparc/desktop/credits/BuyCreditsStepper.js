@@ -59,7 +59,6 @@ qx.Class.define("osparc.desktop.credits.BuyCreditsStepper", {
               });
             })
             .catch(err => {
-              console.error(err);
               osparc.FlashMessenger.logError(err);
               this.__form.setFetching(false);
             })
@@ -79,10 +78,7 @@ qx.Class.define("osparc.desktop.credits.BuyCreditsStepper", {
                 }
               });
             })
-            .catch(err => {
-              console.error(err);
-              osparc.FlashMessenger.logError(err);
-            })
+            .catch(err => osparc.FlashMessenger.logError(err))
             .finally(() => this.__form.setFetching(false));
         }
       });

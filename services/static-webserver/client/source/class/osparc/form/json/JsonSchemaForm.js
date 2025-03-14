@@ -114,7 +114,7 @@ qx.Class.define("osparc.form.json.JsonSchemaForm", {
       if (errors) {
         console.error(errors);
         if (showMessage) {
-          let message = `${errors[0].dataPath} ${errors[0].message}`;
+          const message = `${errors[0].dataPath} ${errors[0].message}`;
           osparc.FlashMessenger.logError(message);
         }
         return false;

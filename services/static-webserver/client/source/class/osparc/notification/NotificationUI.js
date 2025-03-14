@@ -299,7 +299,7 @@ qx.Class.define("osparc.notification.NotificationUI", {
           }
         })
         .catch(err => {
-          console.error(err);
+          console.warn(err);
           const msg = this.tr("You don't have access anymore");
           osparc.FlashMessenger.logAs(msg, "WARNING");
         });
