@@ -342,17 +342,13 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
       request
         .then(newMember => {
           const text = newMemberIdentifier + this.tr(" successfully added");
-          osparc.FlashMessenger.getInstance().logAs(text);
+          osparc.FlashMessenger.logAs(text);
           this.__reloadOrgMembers();
 
           // push 'NEW_ORGANIZATION' notification
           osparc.notification.Notifications.postNewOrganization(newMember.getUserId(), orgId);
         })
-        .catch(err => {
-          const errorMessage = err["message"] || this.tr("Something went wrong adding the user");
-          osparc.FlashMessenger.getInstance().logAs(errorMessage, "ERROR");
-          console.error(err);
-        });
+        .catch(err => osparc.FlashMessenger.logError(err, this.tr("Something went wrong while adding the user")));
     },
 
     __promoteToUser: function(listedMember) {
@@ -364,12 +360,12 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
       const groupsStore = osparc.store.Groups.getInstance();
       groupsStore.patchMember(this.__currentOrg.getGroupId(), listedMember["id"], newAccessRights)
         .then(() => {
-          osparc.FlashMessenger.getInstance().logAs(this.tr(`Successfully promoted to ${osparc.data.Roles.ORG[1].label}`));
+          osparc.FlashMessenger.logAs(this.tr(`Successfully promoted to ${osparc.data.Roles.ORG[1].label}`));
           this.__reloadOrgMembers();
         })
         .catch(err => {
-          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong promoting to ") + osparc.data.Roles.ORG[1].label, "ERROR");
-          console.error(err);
+          const msg = this.tr("Something went wrong while promoting to ") + osparc.data.Roles.ORG[1].label;
+          osparc.FlashMessenger.logError(err, msg);
         });
     },
 
@@ -387,12 +383,12 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
           if (msg === undefined) {
             msg = this.tr(`Successfully demoted to ${osparc.data.Roles.ORG[0].label}`);
           }
-          osparc.FlashMessenger.getInstance().logAs(msg);
+          osparc.FlashMessenger.logAs(msg);
           this.__reloadOrgMembers();
         })
         .catch(err => {
-          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong demoting to ") + osparc.data.Roles.ORG[0].label, "ERROR");
-          console.error(err);
+          const errorMsg = this.tr("Something went wrong while demoting to ") + osparc.data.Roles.ORG[0].label;
+          osparc.FlashMessenger.logError(err, errorMsg);
         });
     },
 
@@ -407,12 +403,12 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
       const groupsStore = osparc.store.Groups.getInstance();
       groupsStore.patchAccessRights(orgId, userId, newAccessRights)
         .then(() => {
-          osparc.FlashMessenger.getInstance().logAs(this.tr(`Successfully promoted to ${osparc.data.Roles.ORG[2].label}`));
+          osparc.FlashMessenger.logAs(this.tr(`Successfully promoted to ${osparc.data.Roles.ORG[2].label}`));
           this.__reloadOrgMembers();
         })
         .catch(err => {
-          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong promoting to ") + osparc.data.Roles.ORG[2].label, "ERROR");
-          console.error(err);
+          const msg = this.tr("Something went wrong while promoting to ") + osparc.data.Roles.ORG[2].label;
+          osparc.FlashMessenger.logError(err, msg);
         });
     },
 
@@ -427,12 +423,12 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
       const groupsStore = osparc.store.Groups.getInstance();
       groupsStore.patchAccessRights(orgId, userId, newAccessRights)
         .then(() => {
-          osparc.FlashMessenger.getInstance().logAs(this.tr(`Successfully promoted to ${osparc.data.Roles.ORG[3].label}`));
+          osparc.FlashMessenger.logAs(this.tr(`Successfully promoted to ${osparc.data.Roles.ORG[3].label}`));
           this.__reloadOrgMembers();
         })
         .catch(err => {
-          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong promoting to ") + osparc.data.Roles.ORG[3].label, "ERROR");
-          console.error(err);
+          const msg = this.tr("Something went wrong while promoting to ") + osparc.data.Roles.ORG[3].label;
+          osparc.FlashMessenger.logError(err, msg);
         });
     },
 
@@ -447,12 +443,12 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
       const groupsStore = osparc.store.Groups.getInstance();
       groupsStore.patchAccessRights(orgId, userId, newAccessRights)
         .then(() => {
-          osparc.FlashMessenger.getInstance().logAs(this.tr(`Successfully demoted to ${osparc.data.Roles.ORG[1].label}`));
+          osparc.FlashMessenger.logAs(this.tr(`Successfully demoted to ${osparc.data.Roles.ORG[1].label}`));
           this.__reloadOrgMembers();
         })
         .catch(err => {
-          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong demoting to ") + osparc.data.Roles.ORG[1].label, "ERROR");
-          console.error(err);
+          const msg = this.tr("Something went wrong while demoting to ") + osparc.data.Roles.ORG[1].label;
+          osparc.FlashMessenger.logError(err, msg);
         });
     },
 
@@ -467,12 +463,12 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
       const groupsStore = osparc.store.Groups.getInstance();
       groupsStore.patchAccessRights(orgId, userId, newAccessRights)
         .then(() => {
-          osparc.FlashMessenger.getInstance().logAs(this.tr(`Successfully demoted to ${osparc.data.Roles.ORG[3].label}`));
+          osparc.FlashMessenger.logAs(this.tr(`Successfully demoted to ${osparc.data.Roles.ORG[3].label}`));
           this.__reloadOrgMembers();
         })
         .catch(err => {
-          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong demoting to ") + osparc.data.Roles.ORG[3].label, "ERROR");
-          console.error(err);
+          const msg =this.tr("Something went wrong while demoting to ") + osparc.data.Roles.ORG[3].label;
+          osparc.FlashMessenger.logError(err, msg);
         });
     },
 
@@ -480,12 +476,12 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
       const groupsStore = osparc.store.Groups.getInstance();
       return groupsStore.removeMember(this.__currentOrg.getGroupId(), listedMember["id"])
         .then(() => {
-          osparc.FlashMessenger.getInstance().logAs(listedMember["name"] + this.tr(" successfully removed"));
+          osparc.FlashMessenger.logAs(listedMember["name"] + this.tr(" successfully removed"));
           this.__reloadOrgMembers();
         })
         .catch(err => {
-          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong removing ") + listedMember["name"], "ERROR");
-          console.error(err);
+          const msg = this.tr("Something went wrong while removing ") + listedMember["name"];
+          osparc.FlashMessenger.logError(err, msg);
         });
     },
 

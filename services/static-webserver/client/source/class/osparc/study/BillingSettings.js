@@ -258,10 +258,7 @@ qx.Class.define("osparc.study.BillingSettings", {
           // also switch the study's wallet to this one
           this.__switchWallet(wallet.getWalletId());
         })
-        .catch(err => {
-          console.error(err);
-          osparc.FlashMessenger.logAs(err.message, "ERROR");
-        });
+        .catch(err => osparc.FlashMessenger.logError(err));
     },
 
     __debtPayed: function() {
@@ -287,12 +284,9 @@ qx.Class.define("osparc.study.BillingSettings", {
         .then(() => {
           this.__studyWalletId = walletId;
           const msg = this.tr("Credit Account saved");
-          osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
+          osparc.FlashMessenger.logAs(msg, "INFO");
         })
-        .catch(err => {
-          console.error(err);
-          osparc.FlashMessenger.logAs(err.message, "ERROR");
-        })
+        .catch(err => osparc.FlashMessenger.logError(err))
         .finally(() => {
           creditAccountBox.setEnabled(true);
         });

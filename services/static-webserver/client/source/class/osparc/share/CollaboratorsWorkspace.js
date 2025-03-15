@@ -73,14 +73,11 @@ qx.Class.define("osparc.share.CollaboratorsWorkspace", {
       osparc.store.Workspaces.getInstance().addCollaborators(this.__workspace.getWorkspaceId(), newCollaborators)
         .then(() => {
           const text = this.tr("Workspace successfully shared");
-          osparc.FlashMessenger.getInstance().logAs(text);
+          osparc.FlashMessenger.logAs(text);
           this.fireDataEvent("updateAccessRights", this.__workspace.serialize());
           this._reloadCollaboratorsList();
         })
-        .catch(err => {
-          console.error(err);
-          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong sharing the Workspace"), "ERROR");
-        });
+        .catch(err => osparc.FlashMessenger.logError(err, this.tr("Something went wrong while sharing the workspace")));
     },
 
     _deleteMember: function(collaborator, item) {
@@ -91,13 +88,10 @@ qx.Class.define("osparc.share.CollaboratorsWorkspace", {
       osparc.store.Workspaces.getInstance().removeCollaborator(this.__workspace.getWorkspaceId(), collaborator["gid"])
         .then(() => {
           this.fireDataEvent("updateAccessRights", this.__workspace.serialize());
-          osparc.FlashMessenger.getInstance().logAs(collaborator["name"] + this.tr(" successfully removed"));
+          osparc.FlashMessenger.logAs(collaborator["name"] + this.tr(" successfully removed"));
           this._reloadCollaboratorsList();
         })
-        .catch(err => {
-          console.error(err);
-          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong removing ") + collaborator["name"], "ERROR");
-        })
+        .catch(err => osparc.FlashMessenger.logError(err, this.tr("Something went wrong while removing ") + collaborator["name"]))
         .finally(() => {
           if (item) {
             item.setEnabled(true);
@@ -111,13 +105,10 @@ qx.Class.define("osparc.share.CollaboratorsWorkspace", {
       osparc.store.Workspaces.getInstance().updateCollaborator(this.__workspace.getWorkspaceId(), collaboratorGId, newAccessRights)
         .then(() => {
           this.fireDataEvent("updateAccessRights", this.__workspace.serialize());
-          osparc.FlashMessenger.getInstance().logAs(successMsg);
+          osparc.FlashMessenger.logAs(successMsg);
           this._reloadCollaboratorsList();
         })
-        .catch(err => {
-          console.error(err);
-          osparc.FlashMessenger.getInstance().logAs(failureMsg, "ERROR");
-        })
+        .catch(err => osparc.FlashMessenger.logError(err, failureMsg))
         .finally(() => {
           if (item) {
             item.setEnabled(true);
@@ -130,7 +121,7 @@ qx.Class.define("osparc.share.CollaboratorsWorkspace", {
         collaborator["gid"],
         this.self().getCollaboratorAccessRight(),
         this.tr(`Successfully promoted to ${osparc.data.Roles.WORKSPACE[2].label}`),
-        this.tr(`Something went wrong promoting to ${osparc.data.Roles.WORKSPACE[2].label}`),
+        this.tr(`Something went wrong while promoting to ${osparc.data.Roles.WORKSPACE[2].label}`),
         item
       );
     },
@@ -140,7 +131,7 @@ qx.Class.define("osparc.share.CollaboratorsWorkspace", {
         collaborator["gid"],
         this.self().getOwnerAccessRight(),
         this.tr(`Successfully promoted to ${osparc.data.Roles.WORKSPACE[3].label}`),
-        this.tr(`Something went wrong promoting to ${osparc.data.Roles.WORKSPACE[3].label}`),
+        this.tr(`Something went wrong while promoting to ${osparc.data.Roles.WORKSPACE[3].label}`),
         item
       );
     },
@@ -152,7 +143,7 @@ qx.Class.define("osparc.share.CollaboratorsWorkspace", {
           gid,
           this.self().getViewerAccessRight(),
           this.tr(`Successfully demoted to ${osparc.data.Roles.WORKSPACE[1].label}`),
-          this.tr(`Something went wrong demoting to ${osparc.data.Roles.WORKSPACE[1].label}`),
+          this.tr(`Something went wrong while demoting to ${osparc.data.Roles.WORKSPACE[1].label}`),
           itm
         );
       };
@@ -182,7 +173,7 @@ qx.Class.define("osparc.share.CollaboratorsWorkspace", {
         collaborator["gid"],
         this.self().getCollaboratorAccessRight(),
         this.tr(`Successfully demoted to ${osparc.data.Roles.WORKSPACE[2].label}`),
-        this.tr(`Something went wrong demoting to ${osparc.data.Roles.WORKSPACE[2].label}`),
+        this.tr(`Something went wrong while demoting to ${osparc.data.Roles.WORKSPACE[2].label}`),
         item
       );
     }

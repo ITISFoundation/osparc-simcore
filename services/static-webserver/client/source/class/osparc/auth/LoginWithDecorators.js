@@ -225,7 +225,7 @@ qx.Class.define("osparc.auth.LoginWithDecorators", {
           pages.setSelection([resetPassword]);
         }
       } else if (urlFragment.params && urlFragment.params.registered) {
-        osparc.FlashMessenger.getInstance().logAs(this.tr("Your account has been created.<br>You can now use your credentials to login."));
+        osparc.FlashMessenger.logAs(this.tr("Your account has been created.<br>You can now use your credentials to login."));
       }
 
       login.addListener("toRegister", () => {

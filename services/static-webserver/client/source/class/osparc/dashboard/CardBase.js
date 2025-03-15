@@ -767,7 +767,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
           break;
         case "FAILED":
           iconSource = "@FontAwesome5Solid/exclamation/10";
-          toolTipText = this.tr("Ran with error");
+          toolTipText = this.tr("Unsuccessful Run");
           borderColor = "error";
           break;
         case "UNKNOWN":

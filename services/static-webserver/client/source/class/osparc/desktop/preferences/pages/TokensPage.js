@@ -97,11 +97,7 @@ qx.Class.define("osparc.desktop.preferences.pages.TokensPage", {
             showAPIKeyWindow.center();
             showAPIKeyWindow.open();
           })
-          .catch(err => {
-            const errorMsg = err.message || this.tr("Cannot create API Key");
-            osparc.FlashMessenger.getInstance().logAs(errorMsg, "ERROR");
-            console.error(err);
-          })
+          .catch(err => osparc.FlashMessenger.logError(err, this.tr("Cannot create API Key")))
           .finally(() => this.__requestAPIKeyBtn.setFetching(false));
       }, this);
       createAPIKeyWindow.open();
@@ -160,11 +156,7 @@ qx.Class.define("osparc.desktop.preferences.pages.TokensPage", {
           };
           osparc.data.Resources.fetch("apiKeys", "delete", params)
             .then(() => this.__rebuildAPIKeysList())
-            .catch(err => {
-              const errorMsg = err.message || this.tr("Cannot delete API Key");
-              osparc.FlashMessenger.getInstance().logAs(errorMsg, "ERROR");
-              console.error(err)
-            });
+            .catch(err => osparc.FlashMessenger.logError(err, this.tr("Cannot delete API Key")));
         }
       }, this);
     },

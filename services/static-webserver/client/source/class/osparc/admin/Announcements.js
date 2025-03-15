@@ -115,7 +115,7 @@ qx.Class.define("osparc.admin.Announcements", {
         }
         if (widgets.length === 0) {
           const msg = "Select at least one widget";
-          osparc.FlashMessenger.getInstance().logAs(msg, "WARNING");
+          osparc.FlashMessenger.logAs(msg, "WARNING");
         }
         const announcementData = {
           "id": osparc.utils.Utils.uuidV4(),

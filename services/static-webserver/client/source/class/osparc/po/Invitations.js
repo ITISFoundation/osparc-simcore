@@ -116,10 +116,7 @@ qx.Class.define("osparc.po.Invitations", {
             .then(data => {
               this.__populateInvitationLayout(data);
             })
-            .catch(err => {
-              console.error(err);
-              osparc.FlashMessenger.logAs(err.message, "ERROR");
-            })
+            .catch(err => osparc.FlashMessenger.logError(err))
             .finally(() => generateInvitationBtn.setFetching(false));
         }
       }, this);

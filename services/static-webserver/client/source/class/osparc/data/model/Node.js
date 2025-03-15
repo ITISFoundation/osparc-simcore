@@ -932,7 +932,7 @@ qx.Class.define("osparc.data.model.Node", {
         .then(() => this.checkState())
         .catch(err => {
           if ("status" in err && (err.status === 409 || err.status === 402)) {
-            osparc.FlashMessenger.getInstance().logAs(err.message, "WARNING");
+            osparc.FlashMessenger.logAs(err.message, "WARNING");
           } else {
             console.error(err);
           }
@@ -1065,7 +1065,7 @@ qx.Class.define("osparc.data.model.Node", {
               console.error(failure, error);
               const errorMsgData = {
                 nodeId: this.getNodeId(),
-                msg: "Failed retrieving inputs",
+                msg: "Unsuccessful input retrieval",
                 level: "ERROR"
               };
               this.fireDataEvent("showInLogger", errorMsgData);

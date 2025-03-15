@@ -225,14 +225,14 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
         .then(datas => {
           if (datas.length) {
             this.fireDataEvent("fileDeleted", datas[0]);
-            osparc.FlashMessenger.getInstance().logAs(this.tr("Items successfully deleted"), "INFO");
+            osparc.FlashMessenger.logAs(this.tr("Items successfully deleted"), "INFO");
           }
         });
     },
 
     __deleteItem: function(itemId, locationId) {
       if (locationId !== 0 && locationId !== "0") {
-        osparc.FlashMessenger.getInstance().logAs(this.tr("Only items in simcore.s3 can be deleted"));
+        osparc.FlashMessenger.logAs(this.tr("Externally managed items cannot be deleted"));
         return null;
       }
       const dataStore = osparc.store.Data.getInstance();

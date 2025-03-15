@@ -116,13 +116,10 @@ qx.Class.define("osparc.desktop.account.DeleteAccount", {
       osparc.data.Resources.fetch("auth", "unregister", params)
         .then(() => {
           const msg = this.tr(`You account will be deleted in ${retentionDays} days`);
-          osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
+          osparc.FlashMessenger.logAs(msg, "INFO");
           this.fireEvent("deleted");
         })
-        .catch(err => {
-          console.error(err);
-          osparc.FlashMessenger.logAs(err.message, "ERROR");
-        })
+        .catch(err => osparc.FlashMessenger.logError(err))
         .finally(() => deleteBtn.setFetching(false));
     }
   }

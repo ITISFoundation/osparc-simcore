@@ -217,13 +217,12 @@ qx.Class.define("osparc.pricing.PlanEditor", {
       };
       osparc.store.Pricing.getInstance().postPricingPlan(newPricingPlanData)
         .then(() => {
-          osparc.FlashMessenger.getInstance().logAs(name + this.tr(" successfully created"));
+          osparc.FlashMessenger.logAs(name + this.tr(" successfully created"));
           this.fireEvent("done");
         })
         .catch(err => {
-          const errorMsg = err.message || this.tr("Something went wrong creating ") + name;
-          osparc.FlashMessenger.getInstance().logAs(errorMsg, "ERROR");
-          console.error(err);
+          const errorMsg = this.tr("Something went wrong while creating ") + name;
+          osparc.FlashMessenger.logError(err, errorMsg);
         })
         .finally(() => this.getChildControl("create").setFetching(false));
     },
@@ -238,14 +237,10 @@ qx.Class.define("osparc.pricing.PlanEditor", {
       };
       osparc.store.Pricing.getInstance().putPricingPlan(this.__pricingPlan["pricingPlanId"], updateData)
         .then(() => {
-          osparc.FlashMessenger.getInstance().logAs(this.tr("Successfully updated"));
+          osparc.FlashMessenger.logAs(this.tr("Successfully updated"));
           this.fireEvent("done");
         })
-        .catch(err => {
-          const errorMsg = err.message || this.tr("Something went wrong");
-          osparc.FlashMessenger.getInstance().logAs(errorMsg, "ERROR");
-          console.error(err);
-        })
+        .catch(err => osparc.FlashMessenger.logError(err))
         .finally(() => this.getChildControl("save").setFetching(false));
     }
   }

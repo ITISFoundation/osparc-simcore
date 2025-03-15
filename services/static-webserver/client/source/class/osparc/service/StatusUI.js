@@ -124,6 +124,8 @@ qx.Class.define("osparc.service.StatusUI", {
           return qx.locale.Manager.tr("Idle");
         case "WAITING_FOR_RESOURCES":
           return qx.locale.Manager.tr("Waiting for resources");
+        case "FAILED":
+          return qx.locale.Manager.tr("Unsuccessful");
 
         // dynamics
         case "idle":
@@ -131,7 +133,7 @@ qx.Class.define("osparc.service.StatusUI", {
         case "ready":
           return qx.locale.Manager.tr("Ready");
         case "failed":
-          return qx.locale.Manager.tr("Failed");
+          return qx.locale.Manager.tr("Unsuccessful");
         case "deprecated":
           return qx.locale.Manager.tr("Deprecated");
         case "retired":

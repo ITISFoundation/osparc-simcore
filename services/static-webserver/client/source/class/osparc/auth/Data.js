@@ -26,7 +26,7 @@ qx.Class.define("osparc.auth.Data", {
 
   properties: {
     /**
-     *  Basic authentification with a token
+     *  Basic authentication with a token
     */
     auth: {
       init: null,

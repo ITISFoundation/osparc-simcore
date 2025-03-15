@@ -460,7 +460,7 @@ qx.Class.define("osparc.Application", {
 
             if (osparc.auth.Data.getInstance().isGuest()) {
               const msg = osparc.utils.Utils.createAccountMessage();
-              osparc.FlashMessenger.getInstance().logAs(msg, "WARNING");
+              osparc.FlashMessenger.logAs(msg, "WARNING");
             } else if (profile["expirationDate"]) {
               const now = new Date();
               const today = new Date(now.toISOString().slice(0, 10));
@@ -468,7 +468,7 @@ qx.Class.define("osparc.Application", {
               const daysToExpiration = osparc.utils.Utils.daysBetween(today, expirationDay);
               if (daysToExpiration < 7) {
                 const msg = osparc.utils.Utils.expirationMessage(daysToExpiration);
-                osparc.FlashMessenger.getInstance().logAs(msg, "WARNING");
+                osparc.FlashMessenger.logAs(msg, "WARNING");
               }
             }
 
@@ -561,9 +561,9 @@ qx.Class.define("osparc.Application", {
 
     __loggedOut: function(forcedReason) {
       if (forcedReason) {
-        osparc.FlashMessenger.getInstance().logAs(forcedReason, "WARNING", 0);
+        osparc.FlashMessenger.logAs(forcedReason, "WARNING", 0);
       } else {
-        osparc.FlashMessenger.getInstance().logAs(this.tr("You are logged out"), "INFO");
+        osparc.FlashMessenger.logAs(this.tr("You are logged out"), "INFO");
       }
       this.__closeAllAndToLoginPage();
     },

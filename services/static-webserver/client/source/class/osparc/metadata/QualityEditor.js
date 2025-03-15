@@ -73,7 +73,7 @@ qx.Class.define("osparc.metadata.QualityEditor", {
 
     __initResourceData: function(resourceData) {
       if (!("quality" in resourceData)) {
-        osparc.FlashMessenger.logAs(this.tr("Quality Assessment data not found"), "ERROR");
+        osparc.FlashMessenger.logError(this.tr("Quality Assessment data not found"));
         return;
       }
 
@@ -127,8 +127,8 @@ qx.Class.define("osparc.metadata.QualityEditor", {
       if (errors) {
         console.error(errors);
         if (showMessage) {
-          let message = `${errors[0].dataPath} ${errors[0].message}`;
-          osparc.FlashMessenger.logAs(message, "ERROR");
+          const message = `${errors[0].dataPath} ${errors[0].message}`;
+          osparc.FlashMessenger.logError(message);
         }
         return false;
       }
@@ -154,7 +154,7 @@ qx.Class.define("osparc.metadata.QualityEditor", {
 
         this.__populateForms();
       } else {
-        osparc.FlashMessenger.logAs(this.tr("There was an error validating the metadata."), "ERROR");
+        osparc.FlashMessenger.logError(this.tr("There was an issue validating the metadata."));
       }
     },
 
@@ -466,10 +466,7 @@ qx.Class.define("osparc.metadata.QualityEditor", {
               this.__initResourceData(serviceDataCopy);
               this.fireDataEvent("updateQuality", serviceDataCopy);
             })
-            .catch(err => {
-              console.error(err);
-              osparc.FlashMessenger.getInstance().logAs(this.tr("There was an error while updating the Quality Assessment."), "ERROR");
-            })
+            .catch(err => osparc.FlashMessenger.logError(err, this.tr("There was an issue while updating the Quality Assessment.")))
             .finally(() => btn.setFetching(false));
         } else {
           osparc.store.Study.patchStudyData(this.__resourceData, "quality", newQuality)
@@ -477,10 +474,7 @@ qx.Class.define("osparc.metadata.QualityEditor", {
               this.__initResourceData(this.__resourceData);
               this.fireDataEvent("updateQuality", this.__resourceData);
             })
-            .catch(err => {
-              console.error(err);
-              osparc.FlashMessenger.getInstance().logAs(this.tr("There was an error while updating the Quality Assessment."), "ERROR");
-            })
+            .catch(err => osparc.FlashMessenger.logError(err, this.tr("There was an issue while updating the Quality Assessment.")))
             .finally(() => btn.setFetching(false));
         }
       }

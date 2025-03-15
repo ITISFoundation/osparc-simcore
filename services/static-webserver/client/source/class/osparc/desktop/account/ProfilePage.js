@@ -55,9 +55,7 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
           this.__setDataToProfile(profile);
           this.__setDataToPrivacy(profile["privacy"]);
         })
-        .catch(err => {
-          console.error(err);
-        });
+        .catch(err => console.error(err));
     },
 
     __setDataToProfile: function(data) {
@@ -203,13 +201,11 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
                 this.__setDataToProfile(Object.assign(this.__userProfileData, params.data));
                 osparc.auth.Manager.getInstance().updateProfile(this.__userProfileData);
                 const msg = this.tr("Profile updated");
-                osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
+                osparc.FlashMessenger.logAs(msg, "INFO");
               })
               .catch(err => {
                 this.__resetUserData();
-                const msg = err.message || this.tr("Failed to update profile");
-                osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
-                console.error(err);
+                osparc.FlashMessenger.logError(err, this.tr("Unsuccessful profile update"));
               });
           }
         }
@@ -281,7 +277,7 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
             invalidMessage: qx.locale.Manager.tr("Name is required"),
             valid: false
           });
-          osparc.FlashMessenger.getInstance().logAs(this.tr("Set the Name first"), "WARNING");
+          osparc.FlashMessenger.logAs(this.tr("Set the Name first"), "WARNING");
           return;
         }
 
@@ -293,13 +289,11 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
             .then(() => {
               this.__setDataToPrivacy(Object.assign(this.__userPrivacyData, params.data["privacy"]));
               const msg = this.tr("Privacy updated");
-              osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
+              osparc.FlashMessenger.logAs(msg, "INFO");
             })
             .catch(err => {
               this.__resetPrivacyData();
-              const msg = err.message || this.tr("Failed to update privacy");
-              osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
-              console.error(err);
+              osparc.FlashMessenger.logError(err, this.tr("Unsuccessful privacy update"));
             });
         }
       });
@@ -443,8 +437,8 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
               });
             })
             .catch(err => {
-              console.error(err);
-              osparc.FlashMessenger.getInstance().logAs(this.tr("Failed to reset password"), "ERROR");
+              const msg = this.tr("Unsuccessful password reset");
+              osparc.FlashMessenger.logError(err, msg);
               [currentPassword, newPassword, confirm].forEach(item => {
                 item.resetValue();
               });

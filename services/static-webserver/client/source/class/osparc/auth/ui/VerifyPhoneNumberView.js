@@ -138,7 +138,7 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
             this.__enableEnterCommand(this.__validateCodeBtn);
           })
           .catch(err => {
-            osparc.FlashMessenger.logAs(err.message, "ERROR");
+            osparc.FlashMessenger.logError(err);
             this.__verifyPhoneNumberBtn.setFetching(false);
             this.__itiInput.setEnabled(true);
           });
@@ -157,13 +157,13 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
         this.fireDataEvent("done", log.message);
       };
 
-      const failFun = msg => {
-        osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
+      const failFun = err => {
+        osparc.FlashMessenger.logError(err);
         this.__validateCodeBtn.setFetching(false);
         // TODO: can get field info from response here
-        msg = String(msg) || this.tr("Invalid code");
+        err = String(err) || this.tr("Invalid code");
         this.__validateCodeField.set({
-          invalidMessage: msg,
+          invalidMessage: err,
           valid: false
         });
       };
@@ -185,7 +185,7 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
             retryAfter
           });
         })
-        .catch(err => osparc.FlashMessenger.logAs(err.message, "ERROR"))
+        .catch(err => osparc.FlashMessenger.logError(err))
         .finally(() => this.__sendViaEmail.setFetching(false));
     },
 

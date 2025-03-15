@@ -42,7 +42,7 @@ qx.Class.define("osparc.desktop.StudyEditorIdlingTracker", {
 
     __updateFlashMessage: function(timeoutSec) {
       if (this.__idleFlashMessage === null) {
-        this.__idleFlashMessage = osparc.FlashMessenger.getInstance().logAs(qx.locale.Manager.tr("Are you still there?"), "WARNING", timeoutSec*1000);
+        this.__idleFlashMessage = osparc.FlashMessenger.logAs(qx.locale.Manager.tr("Are you still there?"), "WARNING", timeoutSec*1000);
       }
 
       let msg = qx.locale.Manager.tr("Are you still there?") + "<br>";

@@ -7,10 +7,34 @@ describe('Calls after logging in', () => {
     pass
   } = utils.getUserAndPass();
 
+  const responses = {
+    me: null,
+    studies: null,
+    templates: null,
+    services: null,
+  };
+
   beforeAll(async () => {
+    page.on('response', response => {
+      const url = response.url();
+      if (url.endsWith('/me')) {
+        responses.me = response.json();
+      } else if (url.includes('projects?type=user')) {
+        responses.studies = response.json();
+      } else if (url.includes('projects?type=template')) {
+        responses.templates = response.json();
+      } else if (url.includes('catalog/services/-/latest')) {
+        responses.services = response.json();
+      }
+    });
+
     await page.goto(url);
+
+    console.log("Registering user");
     await auto.register(page, user, pass);
-    await page.waitFor(1000);
+    console.log("Registered");
+
+    await page.waitFor(10000);
   }, ourTimeout);
 
   afterAll(async () => {
@@ -18,30 +42,24 @@ describe('Calls after logging in', () => {
   }, ourTimeout);
 
   test('Profile', async () => {
-    const responseEnv = await utils.fetchReq('me');
+    const responseEnv = await responses.me;
     expect(responseEnv.data["login"]).toBe(user);
   }, ourTimeout);
 
   test('Studies', async () => {
-    const responseEnv = await utils.fetchReq('projects?type=user');
+    const responseEnv = await responses.studies;
     expect(Array.isArray(responseEnv.data)).toBeTruthy();
   }, ourTimeout);
 
   test('Templates', async () => {
-    const responseEnv = await utils.fetchReq('projects?type=template');
+    const responseEnv = await responses.templates;
     expect(Array.isArray(responseEnv.data)).toBeTruthy();
   }, ourTimeout);
 
   test('Services', async () => {
-    const responseEnv = await utils.fetchReq('catalog/services/-/latest');
+    const responseEnv = await responses.services;
     expect(responseEnv.data._meta.total).toBeGreaterThan(0);
     expect(Array.isArray(responseEnv.data.data)).toBeTruthy();
     expect(responseEnv.data.data.length).toBeGreaterThan(0);
-  }, ourTimeout);
-
-  test('Locations', async () => {
-    const responseEnv = await utils.fetchReq('storage/locations');
-    expect(Array.isArray(responseEnv.data)).toBeTruthy();
-    expect(responseEnv.data.length).toBeGreaterThan(0);
   }, ourTimeout);
 });

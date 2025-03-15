@@ -59,8 +59,7 @@ qx.Class.define("osparc.desktop.credits.BuyCreditsStepper", {
               });
             })
             .catch(err => {
-              console.error(err);
-              osparc.FlashMessenger.logAs(err.message, "ERROR");
+              osparc.FlashMessenger.logError(err);
               this.__form.setFetching(false);
             })
         } else {
@@ -79,10 +78,7 @@ qx.Class.define("osparc.desktop.credits.BuyCreditsStepper", {
                 }
               });
             })
-            .catch(err => {
-              console.error(err);
-              osparc.FlashMessenger.logAs(err.message, "ERROR");
-            })
+            .catch(err => osparc.FlashMessenger.logError(err))
             .finally(() => this.__form.setFetching(false));
         }
       });
@@ -95,14 +91,14 @@ qx.Class.define("osparc.desktop.credits.BuyCreditsStepper", {
         const msg = this.tr("Payment ") + osparc.utils.Utils.onlyFirstsUp(paymentData.completedStatus);
         switch (paymentData.completedStatus) {
           case "SUCCESS":
-            osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
+            osparc.FlashMessenger.logAs(msg, "INFO");
             break;
           case "PENDING":
-            osparc.FlashMessenger.getInstance().logAs(msg, "WARNING");
+            osparc.FlashMessenger.logAs(msg, "WARNING");
             break;
           case "CANCELED":
           case "FAILED":
-            osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
+            osparc.FlashMessenger.logError(msg);
             break;
           default:
             console.error("completedStatus unknown");

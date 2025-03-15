@@ -90,7 +90,7 @@ qx.Class.define("osparc.form.json.JsonSchemaForm", {
       } else {
         // Validation failed
         this._add(new qx.ui.basic.Label().set({
-          value: this.tr("There was an error generating the form or one or more schemas failed to validate. Check your Javascript console for more details."),
+          value: this.tr("There was an issue generating the form or one or more schemas failed to validate. Check your Javascript console for more details."),
           font: "title-16",
           textColor: "service-window-hint",
           rich: true,
@@ -114,8 +114,8 @@ qx.Class.define("osparc.form.json.JsonSchemaForm", {
       if (errors) {
         console.error(errors);
         if (showMessage) {
-          let message = `${errors[0].dataPath} ${errors[0].message}`;
-          osparc.FlashMessenger.logAs(message, "ERROR");
+          const message = `${errors[0].dataPath} ${errors[0].message}`;
+          osparc.FlashMessenger.logError(message);
         }
         return false;
       }
