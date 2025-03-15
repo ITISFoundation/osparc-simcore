@@ -19,9 +19,6 @@
     "demo": "node demo/puppeteerDemo.js",
     "tutorials": "node tutorials/sleepers.js"
   },
-  "jest": {
-    "maxWorkers": 1
-  },
   "author": "odeimaiz",
   "license": "MIT"
 }
