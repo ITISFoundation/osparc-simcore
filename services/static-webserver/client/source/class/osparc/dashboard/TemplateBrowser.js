@@ -214,8 +214,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
             })
             .catch(err => {
               this._hideLoadingPage();
-              osparc.FlashMessenger.getInstance().logAs(err.message, "ERROR");
-              console.error(err);
+              osparc.FlashMessenger.logError(err);
             });
         });
       } else {
@@ -237,8 +236,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
           })
           .catch(err => {
             this._hideLoadingPage();
-            osparc.FlashMessenger.getInstance().logAs(err.message, "ERROR");
-            console.error(err);
+            osparc.FlashMessenger.logError(err);
           });
       }
     },
@@ -341,11 +339,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
         Promise.all(templatePromises)
           .then(() => this._updateTemplateData(uniqueTemplateData))
           .catch(err => {
-            if ("message" in err) {
-              osparc.FlashMessenger.getInstance().logAs(err.message, "ERROR");
-            } else {
-              osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong"), "ERROR");
-            }
+            osparc.FlashMessenger.logError(err);
           });
       }
     },
@@ -457,10 +451,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       }
       operationPromise
         .then(() => this.__removeFromTemplateList(studyData.uuid))
-        .catch(err => {
-          console.error(err);
-          osparc.FlashMessenger.getInstance().logAs(err, "ERROR");
-        });
+        .catch(err => osparc.FlashMessenger.logError(err));
     },
 
     __removeFromTemplateList: function(templateId) {
@@ -504,7 +495,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       });
       task.addListener("pollingError", e => {
         const err = e.getData();
-        const msg = this.tr("Something went wrong Publishing the study<br>") + err.message;
+        const msg = this.tr("Something went wrong while publishing the study<br>") + err.message;
         finished(msg, "ERROR");
       });
     },

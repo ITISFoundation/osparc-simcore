@@ -79,7 +79,7 @@ qx.Class.define("osparc.po.PreRegistration", {
         if (form.validate()) {
           submitBtn.setFetching(true);
 
-          const flashErrorMsg = this.tr("Pre-Registration Failed. See details below");
+          const flashErrorMsg = this.tr("Unsuccessful Pre-Registration. See details below");
           const findingStatus = this.getChildControl("finding-status");
           findingStatus.setValue(this.tr("Searching Pre-Registered users..."));
 
@@ -89,12 +89,9 @@ qx.Class.define("osparc.po.PreRegistration", {
               data: JSON.parse(requestAccountData.getValue())
             };
           } catch (err) {
-            console.error(err);
-
             const detailErrorMsg = `Error parsing Request Form JSON. ${err}`;
             findingStatus.setValue(detailErrorMsg);
-
-            osparc.FlashMessenger.logAs(flashErrorMsg, "ERROR");
+            osparc.FlashMessenger.logError(err, flashErrorMsg);
             submitBtn.setFetching(false);
             return
           }
@@ -109,10 +106,9 @@ qx.Class.define("osparc.po.PreRegistration", {
               this.__populatePreRegistrationLayout(data);
             })
             .catch(err => {
-              const detailErrorMsg = this.tr(`Error during Pre-Registeristration: ${err.message}`)
+              const detailErrorMsg = this.tr(`Error during Pre-Registration: ${err.message}`)
               findingStatus.setValue(detailErrorMsg);
-              console.error(err);
-              osparc.FlashMessenger.logAs(flashErrorMsg, "ERROR");
+              osparc.FlashMessenger.logError(err, flashErrorMsg);
             })
             .finally(() => submitBtn.setFetching(false));
         }

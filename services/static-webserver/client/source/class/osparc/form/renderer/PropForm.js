@@ -771,9 +771,7 @@ qx.Class.define("osparc.form.renderer.PropForm", {
               });
               this.__highlightCompatibles(compatiblePorts);
             })
-            .catch(err => {
-              console.error(err);
-            });
+            .catch(err => console.error(err));
 
           e.preventDefault();
         }

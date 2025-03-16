@@ -293,7 +293,7 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
           let msg = nSeats;
           msg += " seat" + (nSeats > 1 ? "s" : "");
           msg += " rented until " + osparc.utils.Utils.formatDate(new Date(purchaseData["expireAt"]));
-          osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
+          osparc.FlashMessenger.logAs(msg, "INFO");
 
           const found = this.__anatomicalBundles.find(model => model.getLicensedItemId() === licensedItemId);
           if (found) {
@@ -309,10 +309,7 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
           }
           this.fireEvent("modelPurchased");
         })
-        .catch(err => {
-          const msg = err.message || this.tr("Cannot purchase model");
-          osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
-        });
+        .catch(err => osparc.FlashMessenger.logError(err, this.tr("Cannot purchase model")));
     },
 
     __sendImportModelMessage: function(modelId, categoryId) {

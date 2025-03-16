@@ -92,11 +92,7 @@ qx.Class.define("osparc.study.StudyOptions", {
 
     updateName: function(studyData, name) {
       return osparc.store.Study.patchStudyData(studyData, "name", name)
-        .catch(err => {
-          console.error(err);
-          const msg = err.message || qx.locale.Manager.tr("Something went wrong Renaming");
-          osparc.FlashMessenger.logAs(msg, "ERROR");
-        });
+        .catch(err => osparc.FlashMessenger.logError(err, qx.locale.Manager.tr("Something went wrong while renaming")));
     },
 
     updateWallet: function(studyId, walletId) {
@@ -107,11 +103,7 @@ qx.Class.define("osparc.study.StudyOptions", {
         }
       };
       return osparc.data.Resources.fetch("studies", "selectWallet", params)
-        .catch(err => {
-          console.error(err);
-          const msg = err.message || qx.locale.Manager.tr("Error selecting Credit Account");
-          osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
-        });
+        .catch(err => osparc.FlashMessenger.logError(err, qx.locale.Manager.tr("An issue occurred while selecting Credit Account")));
     },
   },
 

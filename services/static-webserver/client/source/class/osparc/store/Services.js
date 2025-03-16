@@ -43,11 +43,7 @@ qx.Class.define("osparc.store.Services", {
 
             resolve(servicesObj);
           })
-          .catch(err => {
-            const msg = err.message || qx.locale.Manager.tr("Unable to fetch Services");
-            osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
-            console.error(err);
-          });
+          .catch(err => osparc.FlashMessenger.logError(err, qx.locale.Manager.tr("Unable to fetch Services")));
       });
     },
 
@@ -194,9 +190,7 @@ qx.Class.define("osparc.store.Services", {
               servicesList.push(serviceLatest);
             }
           })
-          .catch(err => {
-            console.error(err);
-          })
+          .catch(err => console.error(err))
           .finally(() => resolve(servicesList));
       });
     },

@@ -299,7 +299,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
         return null;
       }
       if (this.getStudy().isPipelineRunning()) {
-        osparc.FlashMessenger.getInstance().logAs(osparc.data.model.Workbench.CANT_ADD_NODE, "ERROR");
+        osparc.FlashMessenger.logError(osparc.data.model.Workbench.CANT_ADD_NODE);
         return null;
       }
       const srvCat = new osparc.workbench.ServiceCatalog();
@@ -1919,7 +1919,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       };
       if (type === "rect") {
         if ([null, undefined].includes(annotation)) {
-          osparc.FlashMessenger.getInstance().logAs(this.tr("Draw a rectangle first"), "WARNING");
+          osparc.FlashMessenger.logAs(this.tr("Draw a rectangle first"), "WARNING");
           return false;
         }
         serializeData.attributes = osparc.wrapper.Svg.getRectAttributes(annotation);
@@ -2013,10 +2013,10 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
               filePicker.addListener("fileUploaded", () => this.fireDataEvent("nodeSelected", nodeUI.getNodeId()), this);
             }
           } else {
-            osparc.FlashMessenger.getInstance().logAs(osparc.file.FileDrop.ONE_FILE_ONLY, "ERROR");
+            osparc.FlashMessenger.logError(osparc.file.FileDrop.ONE_FILE_ONLY);
           }
         } else {
-          osparc.FlashMessenger.getInstance().logAs(this.tr("Folders are not accepted. You might want to upload a zip file."), "ERROR");
+          osparc.FlashMessenger.logError(this.tr("Folders are not accepted. You might want to upload a zip file."));
         }
       }
     },
