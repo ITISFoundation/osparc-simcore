@@ -9,7 +9,7 @@ from models_library.projects_nodes_io import LocationID
 from servicelib.rabbitmq import RPCRouter
 
 from ...modules.celery import get_celery_client
-from .._worker_celery._paths import compute_path_size as remote_compute_path_size
+from .._worker_tasks._paths import compute_path_size as remote_compute_path_size
 
 router = RPCRouter()
 
