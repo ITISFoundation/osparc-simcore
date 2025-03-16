@@ -8,5 +8,6 @@ module.exports = {
     apiVersion: 'v0/',
     ourTimeout: 40000,
   },
-  maxWorkers: 1
+  maxWorkers: 1,
+  maxConcurrency: 1
 }
