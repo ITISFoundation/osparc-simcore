@@ -54,7 +54,6 @@ if [ "${STORAGE_WORKER_MODE}" = "true" ]; then
       --app=simcore_service_storage.modules.celery.worker_main:app \
       worker --pool=threads \
       --loglevel="${SERVER_LOG_LEVEL}" \
-      --hostname="${HOSTNAME}" \
       --concurrency="${CELERY_CONCURRENCY}"
   else
     exec celery \
