@@ -18,7 +18,6 @@ from servicelib.fastapi.prometheus_instrumentation import (
     setup_prometheus_instrumentation,
 )
 from servicelib.fastapi.tracing import initialize_tracing
-from simcore_service_storage.modules.celery import setup_celery_client
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from .._meta import (
@@ -34,6 +33,7 @@ from ..api.rpc.routes import setup_rpc_api_routes
 from ..dsm import setup_dsm
 from ..dsm_cleaner import setup_dsm_cleaner
 from ..exceptions.handlers import set_exception_handlers
+from ..modules.celery import setup_celery_client
 from ..modules.db import setup_db
 from ..modules.long_running_tasks import setup_rest_api_long_running_tasks_for_uploads
 from ..modules.rabbitmq import setup as setup_rabbitmq
@@ -54,7 +54,7 @@ _NOISY_LOGGERS = (
 _logger = logging.getLogger(__name__)
 
 
-def create_app(settings: ApplicationSettings) -> FastAPI:
+def create_app(settings: ApplicationSettings) -> FastAPI:  # noqa: C901
     # keep mostly quiet noisy loggers
     quiet_level: int = max(
         min(logging.root.level + _LOG_LEVEL_STEP, logging.CRITICAL), logging.WARNING

@@ -1,6 +1,6 @@
 import logging
 
-from celery import Celery
+from celery import Celery  # type: ignore[import-untyped]
 from servicelib.logging_utils import log_context
 
 from ...modules.celery._celery_types import register_celery_types
