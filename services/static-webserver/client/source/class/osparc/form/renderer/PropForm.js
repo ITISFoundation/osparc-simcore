@@ -84,7 +84,7 @@ qx.Class.define("osparc.form.renderer.PropForm", {
 
     isFieldParametrizable: function(field) {
       const supportedTypes = [];
-      const paramsMD = osparc.service.Utils.getParametersMetadata();
+      const paramsMD = osparc.store.Services.getParametersMetadata();
       paramsMD.forEach(paramMD => {
         supportedTypes.push(osparc.node.ParameterEditor.getParameterOutputTypeFromMD(paramMD));
       });
@@ -771,9 +771,7 @@ qx.Class.define("osparc.form.renderer.PropForm", {
               });
               this.__highlightCompatibles(compatiblePorts);
             })
-            .catch(err => {
-              console.error(err);
-            });
+            .catch(err => console.error(err));
 
           e.preventDefault();
         }

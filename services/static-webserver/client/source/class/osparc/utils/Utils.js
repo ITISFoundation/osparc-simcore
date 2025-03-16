@@ -91,6 +91,26 @@ qx.Class.define("osparc.utils.Utils", {
 
     FLOATING_Z_INDEX: 1000001 + 1,
 
+    checkImageExists: function(url) {
+      return new Promise(resolve => {
+        const img = new Image();
+        img.onload = () => resolve(true);
+        img.onerror = () => resolve(false);
+        img.src = url;
+      });
+    },
+
+    setUrlSourceToImage: function(image, imgSrc) {
+      let source = osparc.product.Utils.getThumbnailUrl();
+      this.checkImageExists(imgSrc)
+        .then(exists => {
+          if (exists) {
+            source = imgSrc;
+          }
+        })
+        .finally(() => image.setSource(source));
+    },
+
     addWhiteSpaces: function(integer) {
       return new Intl.NumberFormat("fr-FR").format(integer); // french will add white spaces every 3 digits
     },
@@ -960,7 +980,7 @@ qx.Class.define("osparc.utils.Utils", {
       document.body.removeChild(textArea);
 
       if (copied) {
-        osparc.FlashMessenger.getInstance().logAs(qx.locale.Manager.tr("Copied to clipboard"));
+        osparc.FlashMessenger.logAs(qx.locale.Manager.tr("Copied to clipboard"));
       }
 
       return copied;
@@ -1142,7 +1162,7 @@ qx.Class.define("osparc.utils.Utils", {
     },
 
     isObject: function(v) {
-      return typeof v === "object" && v !== null;
+      return typeof v === "object" && v !== null && !Array.isArray(v);
     },
 
     centerTabIcon: function(tabpage) {

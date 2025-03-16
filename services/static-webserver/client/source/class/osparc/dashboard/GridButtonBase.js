@@ -285,8 +285,7 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
     _applyThumbnail: function(value, old) {
       if (value.includes("@FontAwesome5Solid/")) {
         value += this.self().THUMBNAIL_SIZE;
-        const image = this.getChildControl("thumbnail").getChildControl("image");
-        image.set({
+        const image = this.getChildControl("thumbnail").set({
           source: value,
         });
 
@@ -297,13 +296,22 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
           image.addListener(eventName, () => this.__fitThumbnailHeight(), this);
         });
       } else {
-        this.getContentElement().setStyles({
-          "background-image": `url(${value})`,
-          "background-repeat": "no-repeat",
-          "background-size": "cover", // auto width, 85% height
-          "background-position": "center center",
-          "background-origin": "border-box"
-        });
+        let source = osparc.product.Utils.getThumbnailUrl();
+        osparc.utils.Utils.checkImageExists(value)
+          .then(exists => {
+            if (exists) {
+              source = value;
+            }
+          })
+          .finally(() => {
+            this.getContentElement().setStyles({
+              "background-image": `url(${source})`,
+              "background-repeat": "no-repeat",
+              "background-size": "cover", // auto width, 85% height
+              "background-position": "center center",
+              "background-origin": "border-box"
+            });
+          });
       }
     },
 

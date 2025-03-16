@@ -13,15 +13,12 @@ from models_library.projects_nodes_io import (
 from models_library.users import UserID
 from pydantic import ByteSize, NonNegativeInt, TypeAdapter
 from servicelib.utils import ensure_ends_with
-from sqlalchemy.ext.asyncio import AsyncConnection
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ..exceptions.errors import FileMetaDataNotFoundError, ProjectAccessRightError
 from ..models import FileMetaData, FileMetaDataAtDB, GenericCursor, PathMetaData
-from ..modules.db import file_meta_data
-from ..modules.db.access_layer import (
-    get_project_access_rights,
-    get_readable_project_ids,
-)
+from ..modules.db.access_layer import AccessLayerRepository
+from ..modules.db.file_meta_data import FileMetaDataRepository, TotalChildren
 from .utils import convert_db_to_model
 
 
@@ -93,24 +90,25 @@ def get_simcore_directory(file_id: SimcoreS3FileID) -> str:
     return f"{Path(directory_id)}"
 
 
+async def _try_get_fmd(
+    db_engine: AsyncEngine, s3_file_id: StorageFileID
+) -> FileMetaDataAtDB | None:
+    with suppress(FileMetaDataNotFoundError):
+        return await FileMetaDataRepository.instance(db_engine).get(
+            file_id=TypeAdapter(SimcoreS3FileID).validate_python(s3_file_id)
+        )
+    return None
+
+
 async def get_directory_file_id(
-    conn: AsyncConnection, file_id: SimcoreS3FileID
+    db_engine: AsyncEngine, file_id: SimcoreS3FileID
 ) -> SimcoreS3FileID | None:
     """
     returns the containing file's `directory_file_id` if the entry exists
     in the `file_meta_data` table
     """
 
-    async def _get_fmd(
-        conn: AsyncConnection, s3_file_id: StorageFileID
-    ) -> FileMetaDataAtDB | None:
-        with suppress(FileMetaDataNotFoundError):
-            return await file_meta_data.get(
-                conn, TypeAdapter(SimcoreS3FileID).validate_python(s3_file_id)
-            )
-        return None
-
-    provided_file_id_fmd = await _get_fmd(conn, file_id)
+    provided_file_id_fmd = await _try_get_fmd(db_engine, file_id)
     if provided_file_id_fmd:
         # file_meta_data exists it is not a directory
         return None
@@ -123,7 +121,7 @@ async def get_directory_file_id(
     directory_file_id = TypeAdapter(SimcoreS3FileID).validate_python(
         directory_file_id_str
     )
-    directory_file_id_fmd = await _get_fmd(conn, directory_file_id)
+    directory_file_id_fmd = await _try_get_fmd(db_engine, directory_file_id)
 
     return directory_file_id if directory_file_id_fmd else None
 
@@ -186,15 +184,15 @@ async def list_child_paths_from_s3(
 
 
 async def list_child_paths_from_repository(
-    conn: AsyncConnection,
+    db_engine: AsyncEngine,
     *,
     filter_by_project_ids: list[ProjectID] | None,
     filter_by_file_prefix: Path | None,
     cursor: GenericCursor | None,
     limit: int,
-) -> tuple[list[PathMetaData], GenericCursor | None, file_meta_data.TotalChildren]:
-    paths_metadata, next_cursor, total = await file_meta_data.list_child_paths(
-        conn,
+) -> tuple[list[PathMetaData], GenericCursor | None, TotalChildren]:
+    file_meta_data_repo = FileMetaDataRepository.instance(db_engine)
+    paths_metadata, next_cursor, total = await file_meta_data_repo.list_child_paths(
         filter_by_project_ids=filter_by_project_ids,
         filter_by_file_prefix=filter_by_file_prefix,
         limit=limit,
@@ -202,8 +200,7 @@ async def list_child_paths_from_repository(
         is_partial_prefix=False,
     )
     if not paths_metadata:
-        paths_metadata, next_cursor, total = await file_meta_data.list_child_paths(
-            conn,
+        paths_metadata, next_cursor, total = await file_meta_data_repo.list_child_paths(
             filter_by_project_ids=filter_by_project_ids,
             filter_by_file_prefix=filter_by_file_prefix,
             limit=limit,
@@ -215,13 +212,14 @@ async def list_child_paths_from_repository(
 
 
 async def get_accessible_project_ids(
-    conn: AsyncConnection, *, user_id: UserID, project_id: ProjectID | None
+    db_engine: AsyncEngine, *, user_id: UserID, project_id: ProjectID | None
 ) -> list[ProjectID]:
+    access_layer_repo = AccessLayerRepository.instance(db_engine)
     if project_id:
-        project_access_rights = await get_project_access_rights(
-            conn=conn, user_id=user_id, project_id=project_id
+        project_access_rights = await access_layer_repo.get_project_access_rights(
+            user_id=user_id, project_id=project_id
         )
         if not project_access_rights.read:
             raise ProjectAccessRightError(access_right="read", project_id=project_id)
         return [project_id]
-    return await get_readable_project_ids(conn, user_id)
+    return await access_layer_repo.get_readable_project_ids(user_id=user_id)
