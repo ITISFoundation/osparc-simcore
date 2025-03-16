@@ -90,8 +90,6 @@ def fake_celery_task(celery_app: Celery, initialized_app: FastAPI) -> Task:
 )
 async def test_path_compute_size(
     fake_celery_task: Task,
-    initialized_app: FastAPI,
-    client: httpx.AsyncClient,
     location_id: LocationID,
     user_id: UserID,
     with_random_project_with_files: tuple[
