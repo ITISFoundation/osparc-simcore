@@ -191,7 +191,7 @@ async def compute_path_size(request: web.Request) -> web.Response:
     )
 
     rabbitmq_rpc_client = get_rabbitmq_rpc_client(request.app)
-    async_job = await remote_compute_path_size(
+    async_job, _ = await remote_compute_path_size(
         rabbitmq_rpc_client,
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
@@ -503,7 +503,6 @@ async def get_async_jobs(request: web.Request) -> web.Response:
 @permission_required("storage.files.*")
 @handle_data_export_exceptions
 async def get_async_job_status(request: web.Request) -> web.Response:
-
     class _PathParams(BaseModel):
         job_id: UUID
 
