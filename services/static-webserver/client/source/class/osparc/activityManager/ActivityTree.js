@@ -241,9 +241,7 @@ qx.Class.define("osparc.activityManager.ActivityTree", {
           }
           this.fireEvent("treeUpdated");
         })
-        .catch(e => {
-          console.error(e);
-        })
+        .catch(err => console.error(err))
         .then(() => {
           // Give a 2 seconds delay
           setTimeout(() => {

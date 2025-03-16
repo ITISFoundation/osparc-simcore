@@ -83,11 +83,7 @@ qx.Class.define("osparc.metadata.ServicesInStudy", {
           this._populateLayout();
         })
         .catch(err => {
-          if ("message" in err) {
-            osparc.FlashMessenger.getInstance().logAs(err.message, "ERROR");
-          } else {
-            osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong updating the Service"), "ERROR");
-          }
+          osparc.FlashMessenger.logError(err, this.tr("Something went wrong while updating the service"));
         })
         .finally(() => {
           if (fetchButton) {

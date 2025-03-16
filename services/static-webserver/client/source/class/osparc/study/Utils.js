@@ -140,10 +140,7 @@ qx.Class.define("osparc.study.Utils", {
               .then(studyData => resolve(studyData["uuid"]))
               .catch(err => reject(err));
           })
-          .catch(err => {
-            osparc.FlashMessenger.getInstance().logAs(err.message, "ERROR");
-            console.error(err);
-          });
+          .catch(err => osparc.FlashMessenger.logError(err));
       });
     },
 
