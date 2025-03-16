@@ -102,6 +102,11 @@ _faker = Faker()
     "backend_result_or_exception",
     [
         AsyncJobGet(job_id=AsyncJobId(f"{_faker.uuid4()}")),
+        # RPCServerError(
+        #     method_name="some_method",
+        #     exc_message="some pytest error",
+        #     traceback="some pytest traceback",
+        # ),
     ],
     ids=lambda x: type(x).__name__,
 )
