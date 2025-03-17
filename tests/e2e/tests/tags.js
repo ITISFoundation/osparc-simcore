@@ -1,10 +1,8 @@
-// OM rename this file and fix the test
-
 const utils = require('../utils/utils');
 const auto = require('../utils/auto');
 const waitAndClick = require('../utils/utils').waitAndClick;
 
-describe('tags testing', () => {
+export const testTags = () => describe('tags testing', () => {
   const {
     user,
     pass,
