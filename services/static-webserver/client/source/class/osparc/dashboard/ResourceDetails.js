@@ -199,7 +199,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
           const updatedStudyData = values[0];
           const studyServices = values[1];
           openButton.setFetching(false);
-          const updatableServices = osparc.metadata.ServicesInStudyUpdate.updatableNodeIds(updatedStudyData.workbench, studyServices["services"]);
+          const updatableServices = osparc.study.Utils.updatableNodeIds(updatedStudyData.workbench, studyServices["services"]);
           if (updatableServices.length && osparc.data.model.Study.canIWrite(updatedStudyData["accessRights"])) {
             this.__confirmUpdate();
           } else {

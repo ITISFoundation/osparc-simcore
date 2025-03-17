@@ -83,6 +83,18 @@ qx.Class.define("osparc.study.Utils", {
       return isUpdatable;
     },
 
+    updatableNodeIds: function(workbench, studyServices) {
+      const nodeIds = [];
+      for (const nodeId in workbench) {
+        const node = workbench[nodeId];
+        const studyServiceFound = studyServices.find(studyService => studyService["key"] === node["key"] && studyService["release"]["version"] === node["version"]);
+        if (studyServiceFound && studyServiceFound["release"] && studyServiceFound["release"]["compatibility"]) {
+          nodeIds.push(nodeId);
+        }
+      }
+      return nodeIds;
+    },
+
 
     createStudyFromService: function(key, version, existingStudies, newStudyLabel, contextProps = {}) {
       return new Promise((resolve, reject) => {
