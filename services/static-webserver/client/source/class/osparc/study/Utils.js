@@ -35,14 +35,14 @@ qx.Class.define("osparc.study.Utils", {
     },
 
     extractUniqueServices: function(workbench) {
-      const services = [];
+      const services = new Set([]);
       Object.values(workbench).forEach(srv => {
-        services.push({
+        services.add({
           key: srv.key,
           version: srv.version
         });
       });
-      return services;
+      return Array.from(services);
     },
 
     getCantExecuteServices: function(studyServices = []) {
