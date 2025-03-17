@@ -6058,6 +6058,34 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CursorPage___T_Customized_PathMetaDataGet_'
+  /v0/storage/locations/{location_id}/paths/{path}:size:
+    post:
+      tags:
+      - storage
+      summary: Compute Path Size
+      description: Compute the size of a path
+      operationId: compute_path_size
+      parameters:
+      - name: location_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Location Id
+      - name: path
+        in: path
+        required: true
+        schema:
+          type: string
+          format: path
+          title: Path
+      responses:
+        '202':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_StorageAsyncJobGet_'
   /v0/storage/locations/{location_id}/datasets:
     get:
       tags:

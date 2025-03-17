@@ -458,13 +458,11 @@ def _select_service_version(page: Page, *, version: str) -> None:
         # since https://github.com/ITISFoundation/osparc-simcore/pull/7060
         with log_context(logging.INFO, msg=f"selecting version {version}"):
             page.get_by_test_id("serviceSelectBox").click(timeout=5 * SECOND)
-            with page.expect_response(
-                re.compile(r"/catalog/services/[^/]+/(?P<version>.+)"),
-                timeout=1.5 * 5 * SECOND,
-            ):
-                page.get_by_test_id(f"serviceVersionItem_{version}").click(
-                    timeout=5 * SECOND
-                )
+            page.get_by_test_id(f"serviceVersionItem_{version}").click(
+                timeout=5 * SECOND
+            )
+            # the call is cached so the best is to wait here a bit (sic)
+            page.wait_for_timeout(2 * SECOND)
 
     except TimeoutError:
         # we try the non robust way

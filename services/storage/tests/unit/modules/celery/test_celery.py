@@ -12,7 +12,7 @@ from models_library.progress_bar import ProgressReport
 from pydantic import TypeAdapter, ValidationError
 from servicelib.logging_utils import log_context
 from simcore_service_storage.modules.celery import get_event_loop
-from simcore_service_storage.modules.celery._common import define_task
+from simcore_service_storage.modules.celery._task import define_task
 from simcore_service_storage.modules.celery.client import CeleryTaskQueueClient
 from simcore_service_storage.modules.celery.models import (
     TaskContext,
@@ -72,7 +72,7 @@ def dreamer_task(task: AbortableTask) -> list[int]:
         if task.is_aborted():
             _logger.warning("Alarm clock")
             return numbers
-        numbers.append(randint(1, 90))
+        numbers.append(randint(1, 90))  # noqa: S311
         time.sleep(1)
     return numbers
 
@@ -88,7 +88,7 @@ def register_celery_tasks() -> Callable[[Celery], None]:
 
 
 @pytest.mark.usefixtures("celery_worker")
-async def test_sumitting_task_calling_async_function_results_with_success_state(
+async def test_submitting_task_calling_async_function_results_with_success_state(
     celery_client: CeleryTaskQueueClient,
 ):
     task_context = TaskContext(user_id=42)
