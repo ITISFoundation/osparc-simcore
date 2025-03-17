@@ -66,7 +66,7 @@ async def list_services_paginated(
 ) -> PageRpcServicesGetV2:
     assert app.state.engine  # nosec
 
-    total_count, items = await services_api.list_services_paginated(
+    total_count, items = await services_api.list_latest_services(
         repo=ServicesRepository(app.state.engine),
         director_api=get_director_api(app),
         product_name=product_name,

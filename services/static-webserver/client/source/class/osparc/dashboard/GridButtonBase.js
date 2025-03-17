@@ -297,9 +297,9 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
         });
       } else {
         let source = osparc.product.Utils.getThumbnailUrl();
-        fetch(value, { method: "HEAD" })
-          .then(response => {
-            if (response.ok) {
+        osparc.utils.Utils.checkImageExists(value)
+          .then(exists => {
+            if (exists) {
               source = value;
             }
           })

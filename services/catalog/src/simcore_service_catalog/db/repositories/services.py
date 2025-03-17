@@ -38,7 +38,7 @@ from ._services_sql import (
     can_get_service_stmt,
     get_service_history_stmt,
     get_service_stmt,
-    list_latest_services_with_history_stmt,
+    list_latest_services_stmt,
     list_services_stmt,
     total_count_stmt,
 )
@@ -126,7 +126,7 @@ class ServicesRepository(BaseRepository):
                 search_condition &= services_meta_data.c.version.like(f"{major}.%")
 
         query = (
-            sa.select(SERVICES_META_DATA_COLS)
+            sa.select(*SERVICES_META_DATA_COLS)
             .where(search_condition)
             .order_by(sa.desc(services_meta_data.c.version))
         )
@@ -386,7 +386,7 @@ class ServicesRepository(BaseRepository):
             user_id=user_id,
             access_rights=AccessRightsClauses.can_read,
         )
-        stmt_page = list_latest_services_with_history_stmt(
+        stmt_page = list_latest_services_stmt(
             product_name=product_name,
             user_id=user_id,
             access_rights=AccessRightsClauses.can_read,
@@ -394,7 +394,7 @@ class ServicesRepository(BaseRepository):
             offset=offset,
         )
 
-        async with self.db_engine.begin() as conn:
+        async with self.db_engine.connect() as conn:
             result = await conn.execute(stmt_total)
             total_count = result.scalar() or 0
 
@@ -424,7 +424,7 @@ class ServicesRepository(BaseRepository):
                 modified=r.modified,
                 deprecated=r.deprecated,
                 # releases
-                history=r.history,
+                history=[],  # NOTE: for listing we will not add history. Only get service will produce history
             )
             for r in rows
         ]
@@ -446,7 +446,7 @@ class ServicesRepository(BaseRepository):
             access_rights=AccessRightsClauses.can_read,
             service_key=key,
         )
-        async with self.db_engine.begin() as conn:
+        async with self.db_engine.connect() as conn:
             result = await conn.execute(stmt_history)
             row = result.one_or_none()
 

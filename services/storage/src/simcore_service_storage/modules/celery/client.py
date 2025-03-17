@@ -18,7 +18,6 @@ _logger = logging.getLogger(__name__)
 
 _CELERY_INSPECT_TASK_STATUSES: Final[tuple[str, ...]] = (
     "active",
-    "registered",
     "scheduled",
     "revoked",
 )
@@ -131,21 +130,22 @@ class CeleryTaskQueueClient:
 
     @make_async()
     def get_task_uuids(self, task_context: TaskContext) -> set[TaskUUID]:
-        all_task_ids = self._get_completed_task_uuids(task_context)
+        task_uuids = self._get_completed_task_uuids(task_context)
 
-        search_key = _CELERY_TASK_META_PREFIX + _build_task_id_prefix(task_context)
+        task_id_prefix = _build_task_id_prefix(task_context)
+        inspect = self._celery_app.control.inspect()
         for task_inspect_status in _CELERY_INSPECT_TASK_STATUSES:
-            if task_ids := getattr(
-                self._celery_app.control.inspect(), task_inspect_status
-            )():
-                for values in task_ids.values():
-                    for value in values:
-                        all_task_ids.add(
-                            TaskUUID(
-                                value.removeprefix(
-                                    search_key + _CELERY_TASK_ID_KEY_SEPARATOR
-                                )
-                            )
-                        )
+            tasks = getattr(inspect, task_inspect_status)() or {}
 
-        return all_task_ids
+            task_uuids.update(
+                TaskUUID(
+                    task_info["id"].removeprefix(
+                        task_id_prefix + _CELERY_TASK_ID_KEY_SEPARATOR
+                    )
+                )
+                for tasks_per_worker in tasks.values()
+                for task_info in tasks_per_worker
+                if "id" in task_info
+            )
+
+        return task_uuids

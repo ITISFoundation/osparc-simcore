@@ -76,7 +76,7 @@ qx.Class.define("osparc.snapshots.IterationsView", {
                   "studyId": iteration["workcopy_project_id"]
                 }
               };
-              iterationPromises.push(osparc.data.Resources.getOne("studies", params));
+              iterationPromises.push(osparc.data.Resources.fetch("studies", "getOne", params));
             });
             Promise.all(iterationPromises)
               .then(values => {
@@ -204,7 +204,7 @@ qx.Class.define("osparc.snapshots.IterationsView", {
           "studyId": iterationId
         }
       };
-      osparc.data.Resources.getOne("studies", params)
+      osparc.data.Resources.fetch("studies", "getOne", params)
         .then(data => {
           const studyData = this.__study.serialize();
           studyData["workbench"] = data["workbench"];
@@ -275,7 +275,7 @@ qx.Class.define("osparc.snapshots.IterationsView", {
             .then(() => {
               this.__rebuildSnapshots();
             })
-            .catch(err => osparc.FlashMessenger.getInstance().logAs(err.message, "ERROR"));
+            .catch(err => osparc.FlashMessenger.logError(err));
           win.close();
         }, this);
         editSnapshotView.addListener("cancel", () => {

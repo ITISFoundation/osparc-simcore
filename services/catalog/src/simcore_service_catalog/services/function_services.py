@@ -20,9 +20,9 @@ def _as_dict(model_instance: ServiceMetaDataPublished) -> dict[str, Any]:
 def get_function_service(key, version) -> ServiceMetaDataPublished:
     try:
         return next(
-            s
-            for s in iter_service_docker_data()
-            if s.key == key and s.version == version
+            sc
+            for sc in iter_service_docker_data()
+            if sc.key == key and sc.version == version
         )
     except StopIteration as err:
         raise HTTPException(
