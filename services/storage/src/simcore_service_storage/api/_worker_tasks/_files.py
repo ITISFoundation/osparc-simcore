@@ -1,0 +1,36 @@
+import logging
+
+from celery import Task  # type: ignore[import-untyped]
+from models_library.api_schemas_storage.storage_schemas import (
+    ETag,
+    FileUploadCompletionBody,
+)
+from models_library.projects_nodes_io import LocationID, StorageFileID
+from models_library.users import UserID
+from servicelib.logging_utils import log_context
+
+from ...dsm import get_dsm_provider
+from ...modules.celery.utils import get_fastapi_app
+
+_logger = logging.getLogger(__name__)
+
+
+async def complete_upload_file(
+    task: Task,
+    user_id: UserID,
+    location_id: LocationID,
+    file_id: StorageFileID,
+    body: FileUploadCompletionBody,
+) -> ETag | None:
+    with log_context(
+        _logger,
+        logging.INFO,
+        msg=f"completing upload of file {user_id=}, {location_id=}, {file_id=}",
+    ):
+        dsm = get_dsm_provider(get_fastapi_app(task.app)).get(location_id)
+        # NOTE: completing a multipart upload on AWS can take up to several minutes
+        # if it returns slow we return a 202 - Accepted, the client will have to check later
+        # for completeness
+        file_meta_data = await dsm.complete_file_upload(file_id, user_id, body.parts)
+
+        return file_meta_data.entity_tag
