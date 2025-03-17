@@ -76,9 +76,8 @@ qx.Class.define("osparc.file.StorageAsyncJob", {
     __fetchResults: function() {
       const jobId = this.getJobId();
       osparc.data.Resources.fetch("storageAsyncJobs", "jobResult", { url: { jobId } })
-        .then(result => {
-          console.log(result);
-          this.fireDataEvent("resultReceived", result);
+        .then(resp => {
+          this.fireDataEvent("resultReceived", resp["result"]);
         })
         .catch(err => {
           console.error(err);
