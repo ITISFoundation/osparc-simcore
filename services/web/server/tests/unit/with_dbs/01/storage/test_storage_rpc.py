@@ -8,6 +8,11 @@ from typing import Any, Final
 import pytest
 from aiohttp.test_utils import TestClient
 from faker import Faker
+from models_library.api_schemas_long_running_tasks.tasks import (
+    TaskGet,
+    TaskResult,
+    TaskStatus,
+)
 from models_library.api_schemas_rpc_async_jobs.async_jobs import (
     AsyncJobAbort,
     AsyncJobGet,
@@ -30,7 +35,6 @@ from models_library.api_schemas_webserver.storage import (
     AsyncJobLinks,
     DataExportPost,
     StorageAsyncJobGet,
-    StorageAsyncJobResult,
 )
 from models_library.generics import Envelope
 from models_library.progress_bar import ProgressReport
@@ -45,7 +49,7 @@ from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import (
 )
 from servicelib.rabbitmq.rpc_interfaces.storage.data_export import start_data_export
 from simcore_postgres_database.models.users import UserRole
-from simcore_service_webserver.storage._rest import StorageAsyncJobStatus
+from yarl import URL
 
 _faker = Faker()
 _user_roles: Final[list[UserRole]] = [
@@ -113,7 +117,7 @@ async def test_data_export(
     )
     assert response.status == expected_status
     if response.status == status.HTTP_202_ACCEPTED:
-        Envelope[StorageAsyncJobGet].model_validate(await response.json())
+        Envelope[TaskGet].model_validate(await response.json())
 
 
 @pytest.mark.parametrize("user_role", _user_roles)
@@ -147,7 +151,7 @@ async def test_get_async_jobs_status(
     assert response.status == expected_status
     if response.status == status.HTTP_200_OK:
         response_body_data = (
-            Envelope[StorageAsyncJobGet].model_validate(await response.json()).data
+            Envelope[TaskStatus].model_validate(await response.json()).data
         )
         assert response_body_data is not None
 
@@ -158,7 +162,7 @@ async def test_get_async_jobs_status(
     [
         (
             AsyncJobAbort(result=True, job_id=AsyncJobId(_faker.uuid4())),
-            status.HTTP_200_OK,
+            status.HTTP_204_NO_CONTENT,
         ),
         (JobSchedulerError(exc=_faker.text()), status.HTTP_500_INTERNAL_SERVER_ERROR),
     ],
@@ -242,12 +246,12 @@ async def test_get_user_async_jobs(
     response = await client.get("/v0/storage/async-jobs")
     assert response.status == expected_status
     if response.status == status.HTTP_200_OK:
-        Envelope[list[StorageAsyncJobGet]].model_validate(await response.json())
+        Envelope[list[TaskGet]].model_validate(await response.json())
 
 
 @pytest.mark.parametrize("user_role", _user_roles)
 @pytest.mark.parametrize(
-    "http_method, href, backend_method, backend_object, return_schema",
+    "http_method, href, backend_method, backend_object, return_status, return_schema",
     [
         (
             "GET",
@@ -258,13 +262,15 @@ async def test_get_user_async_jobs(
                 progress=ProgressReport(actual_value=0.5, total=1.0),
                 done=False,
             ),
-            StorageAsyncJobStatus,
+            status.HTTP_200_OK,
+            TaskStatus,
         ),
         (
             "POST",
             "abort_href",
             abort.__name__,
             AsyncJobAbort(result=True, job_id=AsyncJobId(_faker.uuid4())),
+            status.HTTP_204_NO_CONTENT,
             None,
         ),
         (
@@ -272,7 +278,8 @@ async def test_get_user_async_jobs(
             "result_href",
             get_result.__name__,
             AsyncJobResult(result=None),
-            StorageAsyncJobResult,
+            status.HTTP_200_OK,
+            TaskResult,
         ),
     ],
 )
@@ -286,6 +293,7 @@ async def test_get_async_job_links(
     href: str,
     backend_method: str,
     backend_object: Any,
+    return_status: int,
     return_schema: OutputSchema | None,
 ):
     create_storage_rpc_client_mock(
@@ -300,16 +308,14 @@ async def test_get_async_job_links(
         "/v0/storage/locations/0/export-data", data=_body.model_dump_json()
     )
     assert response.status == status.HTTP_202_ACCEPTED
-    response_body_data = (
-        Envelope[StorageAsyncJobGet].model_validate(await response.json()).data
-    )
+    response_body_data = Envelope[TaskGet].model_validate(await response.json()).data
     assert response_body_data is not None
 
     # Call the different links and check the correct model and return status
     create_storage_rpc_client_mock(backend_method, backend_object)
     response = await client.request(
-        http_method, getattr(response_body_data.links, href)
+        http_method, URL(getattr(response_body_data, href)).path
     )
-    assert response.status == status.HTTP_200_OK
+    assert response.status == return_status
     if return_schema:
         Envelope[return_schema].model_validate(await response.json())
