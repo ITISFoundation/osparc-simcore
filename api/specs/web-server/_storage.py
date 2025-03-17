@@ -37,10 +37,10 @@ from models_library.rest_error import EnvelopedError
 from pydantic import AnyUrl, ByteSize
 from servicelib.fastapi.rest_pagination import CustomizedPathsCursorPage
 from simcore_service_webserver._meta import API_VTAG
-from simcore_service_webserver.storage._exception_handlers import (
+from simcore_service_webserver.storage.schemas import DatasetMetaData, FileMetaData
+from simcore_service_webserver.tasks._exception_handlers import (
     _TO_HTTP_ERROR_MAP as data_export_http_error_map,
 )
-from simcore_service_webserver.storage.schemas import DatasetMetaData, FileMetaData
 
 router = APIRouter(
     prefix=f"/{API_VTAG}",
