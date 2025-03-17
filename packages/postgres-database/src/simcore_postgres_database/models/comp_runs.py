@@ -1,6 +1,4 @@
-""" Computational Runs Table
-
-"""
+"""Computational Runs Table"""
 
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import JSONB
@@ -44,18 +42,6 @@ comp_runs = sa.Table(
         ),
         nullable=False,
         doc="The user id with which the run entry is associated",
-    ),
-    sa.Column(
-        "cluster_id",
-        sa.BigInteger(),
-        sa.ForeignKey(
-            "clusters.id",
-            name="fk_comp_runs_cluster_id_clusters",
-            onupdate=RefActions.CASCADE,
-            ondelete=RefActions.SET_NULL,
-        ),
-        nullable=True,
-        doc="The cluster id on which the run entry is associated, if NULL or 0 uses the default",
     ),
     sa.Column(
         "iteration",

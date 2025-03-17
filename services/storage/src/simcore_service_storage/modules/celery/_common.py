@@ -22,5 +22,6 @@ def create_app(celery_settings: CelerySettings) -> Celery:
     app.conf.task_send_sent_event = True
     app.conf.task_track_started = True
     app.conf.worker_send_task_events = True  # enable tasks monitoring
+    app.conf.broker_connection_retry_on_startup = True
 
     return app
