@@ -6,10 +6,8 @@ import { startupCalls } from './startupCalls';
 
 
 describe('Sequentially run tests', () => {
-  test('test all', () => {
-    checkUrl();
-    checkMetadata();
-    registerAndLogOut();
-    startupCalls();
-  });
+  checkUrl();
+  checkMetadata();
+  registerAndLogOut();
+  startupCalls();
 });
