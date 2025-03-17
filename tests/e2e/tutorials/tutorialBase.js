@@ -445,7 +445,8 @@ class TutorialBase {
   }
 
   async openNodeFiles(nodeId) {
-    const path = "storage/locations/0/files/paths?file_filter=" + this.__studyId;
+    const pathFilter = `${this.__studyId}/${nodeId}`;
+    const path = "storage/locations/0/paths?file_filter=" + pathFilter;
     this.__responsesQueue.addResponseListener(path);
     await auto.openNodeFiles(this.__page);
     try {
@@ -457,7 +458,8 @@ class TutorialBase {
   }
 
   async openNodeFilesAppMode(nodeId) {
-    const path = "storage/locations/0/files/paths?file_filter=" + this.__studyId;
+    const pathFilter = `${this.__studyId}/${nodeId}`;
+    const path = "storage/locations/0/paths?file_filter=" + pathFilter;
     this.__responsesQueue.addResponseListener(path);
     await auto.openNodeFilesAppMode(this.__page);
     try {
