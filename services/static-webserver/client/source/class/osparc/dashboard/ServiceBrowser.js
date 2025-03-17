@@ -48,7 +48,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
     // overridden
     initResources: function() {
       this._resourcesList = [];
-      osparc.store.Services.getServicesLatest(false)
+      osparc.store.Services.getServicesLatest()
         .then(services => {
           // Show "Contact Us" message if services.length === 0
           // Most probably is a product-stranger user (it can also be that the catalog is down)
