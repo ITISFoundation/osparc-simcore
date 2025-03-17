@@ -41,8 +41,10 @@ qx.Class.define("osparc.file.TreeFolderView", {
       let control;
       switch (id) {
         case "header-layout":
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox());
-          this._add(control);
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox()).set({
+            marginLeft: 8
+          });
+          this._addAt(control, 0);
           break;
         case "reload-button":
           control = new qx.ui.form.Button().set({
@@ -52,9 +54,6 @@ qx.Class.define("osparc.file.TreeFolderView", {
             allowGrowX: false
           });
           this.getChildControl("header-layout").add(control);
-          this.getChildControl("header-layout").add(new qx.ui.core.Spacer(), {
-            flex: 1
-          });
           break;
         case "total-size-label":
           control = new qx.ui.basic.Atom().set({
@@ -96,7 +95,6 @@ qx.Class.define("osparc.file.TreeFolderView", {
     },
 
     __buildLayout: function() {
-      this.getChildControl("reload-button");
       const folderTree = this.getChildControl("folder-tree");
       const folderViewer = this.getChildControl("folder-viewer");
 
