@@ -7,10 +7,8 @@ from collections.abc import AsyncIterable, Awaitable, Callable
 import pytest
 import sqlalchemy as sa
 from aiopg.sa.engine import Engine
-from aiopg.sa.result import ResultProxy
 from pytest_simcore.helpers.faker_factories import random_user
 from simcore_postgres_database.aiopg_errors import ForeignKeyViolation, NotNullViolation
-from simcore_postgres_database.models.cluster_to_groups import cluster_to_groups
 from simcore_postgres_database.models.clusters import ClusterType, clusters
 from simcore_postgres_database.models.users import users
 
@@ -82,26 +80,3 @@ async def test_cannot_remove_owner_that_owns_cluster(
     # removing the user should work now
     async with aiopg_engine.acquire() as conn:
         await conn.execute(users.delete().where(users.c.id == user_id))
-
-
-async def test_cluster_owner_has_all_rights(
-    aiopg_engine: Engine,
-    user_group_id: int,
-    create_fake_cluster: Callable[..., Awaitable[int]],
-):
-    cluster_id = await create_fake_cluster(owner=user_group_id)
-
-    async with aiopg_engine.acquire() as conn:
-        result: ResultProxy = await conn.execute(
-            cluster_to_groups.select().where(
-                cluster_to_groups.c.cluster_id == cluster_id
-            )
-        )
-
-        assert result.rowcount == 1
-        row = await result.fetchone()
-        assert row is not None
-
-        assert row.read is True
-        assert row.write is True
-        assert row.delete is True

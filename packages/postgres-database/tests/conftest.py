@@ -25,7 +25,6 @@ from pytest_simcore.helpers.faker_factories import (
     random_project,
     random_user,
 )
-from simcore_postgres_database.models.cluster_to_groups import cluster_to_groups
 from simcore_postgres_database.models.clusters import ClusterType, clusters
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.projects import projects
@@ -201,7 +200,6 @@ async def asyncpg_engine(  # <-- WE SHOULD USE THIS ONE
     pg_sa_engine: sqlalchemy.engine.Engine,
     _make_asyncpg_engine: Callable[[bool], AsyncEngine],
 ) -> AsyncIterator[AsyncEngine]:
-
     assert (
         pg_sa_engine
     ), "Ensures pg db up, responsive, init (w/ tables) and/or migrated"
@@ -285,7 +283,6 @@ async def create_fake_cluster(
     aiopg_engine: Engine, faker: Faker
 ) -> AsyncIterator[Callable[..., Awaitable[int]]]:
     cluster_ids = []
-    assert cluster_to_groups is not None
 
     async def _creator(**overrides) -> int:
         insert_values = {
