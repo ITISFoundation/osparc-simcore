@@ -16,7 +16,6 @@ from sqlalchemy.sql.elements import literal_column
 from sqlalchemy.sql.expression import desc
 
 from ....core.errors import (
-    ClusterNotFoundError,
     ComputationalRunNotFoundError,
     DirectorError,
     ProjectNotFoundError,
@@ -36,10 +35,6 @@ _POSTGRES_FK_COLUMN_TO_ERROR_MAP: Final[
     comp_runs.c.project_uuid: (
         ProjectNotFoundError,
         ("projects", "project_id"),
-    ),
-    comp_runs.c.cluster_id: (
-        ClusterNotFoundError,
-        ("clusters", "cluster_id"),
     ),
 }
 
@@ -172,7 +167,6 @@ class CompRunsRepository(BaseRepository):
                     .values(
                         user_id=user_id,
                         project_uuid=f"{project_id}",
-                        cluster_id=None,
                         iteration=iteration,
                         result=RUNNING_STATE_TO_DB[RunningState.PUBLISHED],
                         started=datetime.datetime.now(tz=datetime.UTC),
