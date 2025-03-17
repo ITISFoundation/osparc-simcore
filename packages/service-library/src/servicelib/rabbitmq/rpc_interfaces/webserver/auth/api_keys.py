@@ -4,6 +4,7 @@ from models_library.api_schemas_webserver import WEBSERVER_RPC_NAMESPACE
 from models_library.basic_types import IDStr
 from models_library.rabbitmq_basic_types import RPCMethodName
 from models_library.rpc.webserver.auth.api_keys import ApiKeyCreate, ApiKeyGet
+from models_library.users import UserID
 from pydantic import TypeAdapter
 from servicelib.logging_utils import log_decorator
 from servicelib.rabbitmq import RabbitMQRPCClient
@@ -15,7 +16,7 @@ _logger = logging.getLogger(__name__)
 async def create_api_key(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
-    user_id: str,
+    user_id: UserID,
     product_name: str,
     api_key: ApiKeyCreate,
 ) -> ApiKeyGet:
@@ -34,7 +35,7 @@ async def create_api_key(
 async def get_api_key(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
-    user_id: str,
+    user_id: UserID,
     product_name: str,
     api_key_id: IDStr,
 ) -> ApiKeyGet:
@@ -49,10 +50,11 @@ async def get_api_key(
     return result
 
 
+@log_decorator(_logger, level=logging.DEBUG)
 async def delete_api_key(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
-    user_id: str,
+    user_id: UserID,
     product_name: str,
     api_key_id: IDStr,
 ) -> None:
