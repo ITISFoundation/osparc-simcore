@@ -22,6 +22,7 @@ from models_library.api_schemas_storage.storage_schemas import (
 from models_library.api_schemas_webserver.storage import StorageAsyncJobGet
 from models_library.projects_nodes_io import LocationID, StorageFileID
 from pydantic import TypeAdapter
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from servicelib.aiohttp import status
 from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import (
@@ -89,6 +90,23 @@ async def test_list_storage_paths(
 _faker = Faker()
 
 
+@pytest.fixture
+def create_storage_paths_rpc_client_mock(
+    mocker: MockerFixture,
+) -> Callable[[str, Any], None]:
+    def _(method: str, result_or_exception: Any):
+        def side_effect(*args, **kwargs):
+            if isinstance(result_or_exception, Exception):
+                raise result_or_exception
+
+            return result_or_exception
+
+        for fct in (f"servicelib.rabbitmq.rpc_interfaces.storage.paths.{method}",):
+            mocker.patch(fct, side_effect=side_effect)
+
+    return _
+
+
 @pytest.mark.parametrize(
     "user_role,expected",
     [
@@ -111,10 +129,10 @@ async def test_compute_path_size(
     expected: int,
     location_id: LocationID,
     faker: Faker,
-    create_storage_rpc_client_mock: Callable[[str, Any], None],
+    create_storage_paths_rpc_client_mock: Callable[[str, Any], None],
     backend_result_or_exception: Any,
 ):
-    create_storage_rpc_client_mock(
+    create_storage_paths_rpc_client_mock(
         submit_job.__name__,
         backend_result_or_exception,
     )

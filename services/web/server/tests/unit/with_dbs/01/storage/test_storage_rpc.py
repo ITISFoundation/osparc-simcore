@@ -30,6 +30,7 @@ from models_library.api_schemas_webserver.storage import (
 )
 from models_library.generics import Envelope
 from models_library.progress_bar import ProgressReport
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.webserver_login import UserInfoDict
 from servicelib.aiohttp import status
 from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import (
@@ -42,6 +43,21 @@ from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import (
 from simcore_postgres_database.models.users import UserRole
 
 _faker = Faker()
+
+
+@pytest.fixture
+def create_storage_rpc_client_mock(mocker: MockerFixture) -> Callable[[str, Any], None]:
+    def _(method: str, result_or_exception: Any):
+        def side_effect(*args, **kwargs):
+            if isinstance(result_or_exception, Exception):
+                raise result_or_exception
+
+            return result_or_exception
+
+        for fct in (f"simcore_service_webserver.storage._rest.{method}",):
+            mocker.patch(fct, side_effect=side_effect)
+
+    return _
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
