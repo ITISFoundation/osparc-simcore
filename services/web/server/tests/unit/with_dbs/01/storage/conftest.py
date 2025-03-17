@@ -9,6 +9,7 @@ from collections.abc import Iterator
 from pathlib import Path
 from threading import Thread
 from typing import Annotated
+from urllib.parse import quote
 
 import pytest
 import uvicorn
@@ -189,11 +190,15 @@ def fake_storage_app(storage_vtag: str) -> FastAPI:  # noqa: C901
         abort_url = (
             URL(f"{request.url}")
             .with_path(
-                request.app.url_path_for(
-                    "abort_upload_file",
-                    location_id=f"{location_id}",
-                    file_id=file_id,
-                )
+                quote(
+                    request.app.url_path_for(
+                        "abort_upload_file",
+                        location_id=f"{location_id}",
+                        file_id=file_id,
+                    ),
+                    safe=":/",
+                ),
+                encoded=True,
             )
             .with_query(user_id=user_id)
         )
@@ -201,11 +206,15 @@ def fake_storage_app(storage_vtag: str) -> FastAPI:  # noqa: C901
         complete_url = (
             URL(f"{request.url}")
             .with_path(
-                request.app.url_path_for(
-                    "complete_upload_file",
-                    location_id=f"{location_id}",
-                    file_id=file_id,
-                )
+                quote(
+                    request.app.url_path_for(
+                        "complete_upload_file",
+                        location_id=f"{location_id}",
+                        file_id=file_id,
+                    ),
+                    safe=":/",
+                ),
+                encoded=True,
             )
             .with_query(user_id=user_id)
         )
@@ -234,8 +243,7 @@ def fake_storage_app(storage_vtag: str) -> FastAPI:  # noqa: C901
         file_id: StorageFileID,
         body: FileUploadCompletionBody,
         request: Request,
-    ):
-        ...
+    ): ...
 
     @router.post(
         "/locations/{location_id}/files/{file_id:path}:abort",
@@ -246,8 +254,7 @@ def fake_storage_app(storage_vtag: str) -> FastAPI:  # noqa: C901
         location_id: LocationID,
         file_id: StorageFileID,
         request: Request,
-    ):
-        ...
+    ): ...
 
     app.include_router(router)
 

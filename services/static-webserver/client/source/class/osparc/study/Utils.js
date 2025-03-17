@@ -169,80 +169,83 @@ qx.Class.define("osparc.study.Utils", {
 
     createStudyFromTemplate: function(templateData, loadingPage, contextProps = {}) {
       return new Promise((resolve, reject) => {
-        const inaccessibleServices = osparc.store.Services.getInaccessibleServices(templateData["workbench"]);
-        if (inaccessibleServices.length) {
-          const msg = osparc.store.Services.getInaccessibleServicesMsg(inaccessibleServices, templateData["workbench"]);
-          reject({
-            message: msg
+        osparc.store.Services.getStudyServicesMetadata(templateData)
+          .finally(() => {
+            const inaccessibleServices = osparc.store.Services.getInaccessibleServices(templateData["workbench"]);
+            if (inaccessibleServices.length) {
+              const msg = osparc.store.Services.getInaccessibleServicesMsg(inaccessibleServices, templateData["workbench"]);
+              reject({
+                message: msg
+              });
+              return;
+            }
+            // context props, otherwise Study will be created in the root folder of my personal workspace
+            const minStudyData = Object.assign(osparc.data.model.Study.createMinStudyObject(), contextProps);
+            minStudyData["name"] = templateData["name"];
+            minStudyData["description"] = templateData["description"];
+            minStudyData["thumbnail"] = templateData["thumbnail"];
+            const params = {
+              url: {
+                templateId: templateData["uuid"]
+              },
+              data: minStudyData
+            };
+            const options = {
+              pollTask: true
+            };
+            const fetchPromise = osparc.data.Resources.fetch("studies", "postNewStudyFromTemplate", params, options);
+            const pollTasks = osparc.data.PollTasks.getInstance();
+            const interval = 1000;
+            pollTasks.createPollingTask(fetchPromise, interval)
+              .then(task => {
+                const title = qx.locale.Manager.tr("CREATING ") + osparc.product.Utils.getStudyAlias({allUpperCase: true}) + " ...";
+                const progressSequence = new osparc.widget.ProgressSequence(title).set({
+                  minHeight: 180 // four tasks
+                });
+                progressSequence.addOverallProgressBar();
+                loadingPage.clearMessages();
+                loadingPage.addWidgetToMessages(progressSequence);
+                task.addListener("updateReceived", e => {
+                  const updateData = e.getData();
+                  if ("task_progress" in updateData && loadingPage) {
+                    const progress = updateData["task_progress"];
+                    const message = progress["message"];
+                    const percent = progress["percent"] ? parseFloat(progress["percent"].toFixed(3)) : progress["percent"];
+                    progressSequence.setOverallProgress(percent);
+                    const existingTask = progressSequence.getTask(message);
+                    if (existingTask) {
+                      // update task
+                      osparc.widget.ProgressSequence.updateTaskProgress(existingTask, {
+                        value: percent,
+                        progressLabel: parseFloat((percent*100).toFixed(2)) + "%"
+                      });
+                    } else {
+                      // new task
+                      // all the previous steps to 100%
+                      progressSequence.getTasks().forEach(tsk => osparc.widget.ProgressSequence.updateTaskProgress(tsk, {
+                        value: 1,
+                        progressLabel: "100%"
+                      }));
+                      // and move to the next new task
+                      const subTask = progressSequence.addNewTask(message);
+                      osparc.widget.ProgressSequence.updateTaskProgress(subTask, {
+                        value: percent,
+                        progressLabel: "0%"
+                      });
+                    }
+                  }
+                }, this);
+                task.addListener("resultReceived", e => {
+                  const studyData = e.getData();
+                  resolve(studyData);
+                }, this);
+                task.addListener("pollingError", e => {
+                  const err = e.getData();
+                  reject(err);
+                }, this);
+              })
+              .catch(err => reject(err));
           });
-          return;
-        }
-        // context props, otherwise Study will be created in the root folder of my personal workspace
-        const minStudyData = Object.assign(osparc.data.model.Study.createMinStudyObject(), contextProps);
-        minStudyData["name"] = templateData["name"];
-        minStudyData["description"] = templateData["description"];
-        minStudyData["thumbnail"] = templateData["thumbnail"];
-        const params = {
-          url: {
-            templateId: templateData["uuid"]
-          },
-          data: minStudyData
-        };
-        const options = {
-          pollTask: true
-        };
-        const fetchPromise = osparc.data.Resources.fetch("studies", "postNewStudyFromTemplate", params, options);
-        const pollTasks = osparc.data.PollTasks.getInstance();
-        const interval = 1000;
-        pollTasks.createPollingTask(fetchPromise, interval)
-          .then(task => {
-            const title = qx.locale.Manager.tr("CREATING ") + osparc.product.Utils.getStudyAlias({allUpperCase: true}) + " ...";
-            const progressSequence = new osparc.widget.ProgressSequence(title).set({
-              minHeight: 180 // four tasks
-            });
-            progressSequence.addOverallProgressBar();
-            loadingPage.clearMessages();
-            loadingPage.addWidgetToMessages(progressSequence);
-            task.addListener("updateReceived", e => {
-              const updateData = e.getData();
-              if ("task_progress" in updateData && loadingPage) {
-                const progress = updateData["task_progress"];
-                const message = progress["message"];
-                const percent = progress["percent"] ? parseFloat(progress["percent"].toFixed(3)) : progress["percent"];
-                progressSequence.setOverallProgress(percent);
-                const existingTask = progressSequence.getTask(message);
-                if (existingTask) {
-                  // update task
-                  osparc.widget.ProgressSequence.updateTaskProgress(existingTask, {
-                    value: percent,
-                    progressLabel: parseFloat((percent*100).toFixed(2)) + "%"
-                  });
-                } else {
-                  // new task
-                  // all the previous steps to 100%
-                  progressSequence.getTasks().forEach(tsk => osparc.widget.ProgressSequence.updateTaskProgress(tsk, {
-                    value: 1,
-                    progressLabel: "100%"
-                  }));
-                  // and move to the next new task
-                  const subTask = progressSequence.addNewTask(message);
-                  osparc.widget.ProgressSequence.updateTaskProgress(subTask, {
-                    value: percent,
-                    progressLabel: "0%"
-                  });
-                }
-              }
-            }, this);
-            task.addListener("resultReceived", e => {
-              const studyData = e.getData();
-              resolve(studyData);
-            }, this);
-            task.addListener("pollingError", e => {
-              const err = e.getData();
-              reject(err);
-            }, this);
-          })
-          .catch(err => reject(err));
       });
     },
 

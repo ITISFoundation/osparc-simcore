@@ -984,6 +984,8 @@ vine==5.1.0
     #   amqp
     #   celery
     #   kombu
+watchdog==6.0.0
+    # via -r requirements/_base.in
 watchfiles==1.0.4
     # via uvicorn
 wcwidth==0.2.13
