@@ -23,8 +23,8 @@ _logger = logging.getLogger(__name__)
 _LIFESPAN_TIMEOUT: Final[int] = 10
 
 
-def on_worker_init(sender, **_kwargs):
-    def _init_fastapi():
+def on_worker_init(sender, **_kwargs) -> None:
+    def _init_fastapi() -> None:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         shutdown_event = asyncio.Event()
