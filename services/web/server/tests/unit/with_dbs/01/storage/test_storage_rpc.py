@@ -66,10 +66,8 @@ def create_storage_rpc_client_mock(mocker: MockerFixture) -> Callable[[str, Any]
 
             return result_or_exception
 
-        mocker.patch(
-            f"simcore_service_webserver.storage._rest.{method}",
-            side_effect=side_effect,
-        )
+        for fct in (f"simcore_service_webserver.storage._rest.{method}",):
+            mocker.patch(fct, side_effect=side_effect)
 
     return _
 

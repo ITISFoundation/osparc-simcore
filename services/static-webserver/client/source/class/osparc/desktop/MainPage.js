@@ -219,7 +219,7 @@ qx.Class.define("osparc.desktop.MainPage", {
 
     __publishTemplate: function(data) {
       const text = this.tr("Started template creation and added to the background tasks");
-      osparc.FlashMessenger.getInstance().logAs(text, "INFO");
+      osparc.FlashMessenger.logAs(text, "INFO");
 
       const params = {
         url: {
@@ -246,8 +246,8 @@ qx.Class.define("osparc.desktop.MainPage", {
           });
         })
         .catch(errMsg => {
-          const msg = this.tr("Something went wrong Duplicating the study<br>") + errMsg;
-          osparc.FlashMessenger.logAs(msg, "ERROR");
+          const msg = this.tr("Something went wrong while duplicating the study<br>") + errMsg;
+          osparc.FlashMessenger.logError(msg);
         });
     },
 
@@ -308,7 +308,7 @@ qx.Class.define("osparc.desktop.MainPage", {
               "studyId": studyId
             }
           };
-          osparc.data.Resources.getOne("studies", params2)
+          osparc.data.Resources.fetch("studies", "getOne", params2)
             .then(studyData => {
               if (!studyData) {
                 const msg = this.tr("Study not found");
@@ -318,7 +318,7 @@ qx.Class.define("osparc.desktop.MainPage", {
             });
         })
         .catch(err => {
-          osparc.FlashMessenger.getInstance().logAs(err.message, "ERROR");
+          osparc.FlashMessenger.logError(err);
           this.__showDashboard();
           return;
         });
@@ -348,7 +348,7 @@ qx.Class.define("osparc.desktop.MainPage", {
         }
       };
       // OM TODO. DO NOT ADD ITERATIONS TO STUDIES CACHE
-      osparc.data.Resources.getOne("studies", params)
+      osparc.data.Resources.fetch("studies", "getOne", params)
         .then(studyData => {
           if (!studyData) {
             const msg = this.tr("Iteration not found");
@@ -357,7 +357,7 @@ qx.Class.define("osparc.desktop.MainPage", {
           osparc.desktop.MainPageHandler.getInstance().loadStudy(studyData);
         })
         .catch(err => {
-          osparc.FlashMessenger.getInstance().logAs(err.message, "ERROR");
+          osparc.FlashMessenger.logError(err);
           this.__showDashboard();
           return;
         });

@@ -4,17 +4,21 @@ import time
 from collections.abc import Callable
 from random import randint
 
-from pydantic import TypeAdapter, ValidationError
 import pytest
 from celery import Celery, Task
 from celery.contrib.abortable import AbortableTask
 from common_library.errors_classes import OsparcErrorMixin
 from models_library.progress_bar import ProgressReport
+from pydantic import TypeAdapter, ValidationError
 from servicelib.logging_utils import log_context
 from simcore_service_storage.modules.celery import get_event_loop
-from simcore_service_storage.modules.celery._common import define_task
+from simcore_service_storage.modules.celery._task import define_task
 from simcore_service_storage.modules.celery.client import CeleryTaskQueueClient
-from simcore_service_storage.modules.celery.models import TaskContext, TaskError, TaskState
+from simcore_service_storage.modules.celery.models import (
+    TaskContext,
+    TaskError,
+    TaskState,
+)
 from simcore_service_storage.modules.celery.utils import (
     get_celery_worker,
     get_fastapi_app,
@@ -54,7 +58,7 @@ def sync_archive(task: Task, files: list[str]) -> str:
 
 
 class MyError(OsparcErrorMixin, Exception):
-   msg_template = "Something strange happened: {msg}"
+    msg_template = "Something strange happened: {msg}"
 
 
 def failure_task(task: Task):
@@ -68,7 +72,7 @@ def dreamer_task(task: AbortableTask) -> list[int]:
         if task.is_aborted():
             _logger.warning("Alarm clock")
             return numbers
-        numbers.append(randint(1, 90))
+        numbers.append(randint(1, 90))  # noqa: S311
         time.sleep(1)
     return numbers
 
@@ -84,7 +88,7 @@ def register_celery_tasks() -> Callable[[Celery], None]:
 
 
 @pytest.mark.usefixtures("celery_worker")
-async def test_sumitting_task_calling_async_function_results_with_success_state(
+async def test_submitting_task_calling_async_function_results_with_success_state(
     celery_client: CeleryTaskQueueClient,
 ):
     task_context = TaskContext(user_id=42)
@@ -163,3 +167,25 @@ async def test_aborting_task_results_with_aborted_state(
     assert (
         await celery_client.get_task_status(task_context, task_uuid)
     ).task_state == TaskState.ABORTED
+
+
+@pytest.mark.usefixtures("celery_worker")
+async def test_listing_task_uuids_contains_submitted_task(
+    celery_client: CeleryTaskQueueClient,
+):
+    task_context = TaskContext(user_id=42)
+
+    task_uuid = await celery_client.send_task(
+        "dreamer_task",
+        task_context=task_context,
+    )
+
+    for attempt in Retrying(
+        retry=retry_if_exception_type(AssertionError),
+        wait=wait_fixed(1),
+        stop=stop_after_delay(10),
+    ):
+        with attempt:
+            assert task_uuid in await celery_client.get_task_uuids(task_context)
+
+    assert task_uuid in await celery_client.get_task_uuids(task_context)

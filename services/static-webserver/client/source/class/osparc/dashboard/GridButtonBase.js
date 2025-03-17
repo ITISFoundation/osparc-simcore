@@ -140,6 +140,7 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
           const hGrid = new qx.ui.layout.Grid().set({
             spacing: 6,
           });
+          hGrid.setRowFlex(0, 1);
           hGrid.setColumnFlex(1, 1);
           hGrid.setColumnAlign(0, "right", "middle");
           hGrid.setColumnAlign(1, "left", "middle");
@@ -149,6 +150,7 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
             paddingBottom: 6,
             paddingRight: 4,
             maxWidth: this.self().ITEM_WIDTH,
+            minHeight: 32 + 6,
             maxHeight: this.self().ITEM_HEIGHT
           });
           control.setLayout(hGrid);
@@ -283,23 +285,16 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
 
     // overridden
     _applyThumbnail: function(value, old) {
-      if (value.includes("@FontAwesome5Solid/")) {
+      if (qx.util.ResourceManager.getInstance().isFontUri(value)) {
         value += this.self().THUMBNAIL_SIZE;
-        const image = this.getChildControl("thumbnail").set({
+        this.getChildControl("thumbnail").set({
           source: value,
-        });
-
-        [
-          "appear",
-          "loaded"
-        ].forEach(eventName => {
-          image.addListener(eventName, () => this.__fitThumbnailHeight(), this);
         });
       } else {
         let source = osparc.product.Utils.getThumbnailUrl();
-        fetch(value, { method: "HEAD" })
-          .then(response => {
-            if (response.ok) {
+        osparc.utils.Utils.checkImageExists(value)
+          .then(exists => {
+            if (exists) {
               source = value;
             }
           })

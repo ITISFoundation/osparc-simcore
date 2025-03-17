@@ -378,13 +378,10 @@ qx.Class.define("osparc.pricing.UnitEditor", {
 
       osparc.store.Pricing.getInstance().createPricingUnit(this.getPricingPlanId(), data)
         .then(() => {
-          osparc.FlashMessenger.getInstance().logAs(this.tr("Successfully created"));
+          osparc.FlashMessenger.logAs(this.tr("Successfully created"));
           this.fireEvent("done");
         })
-        .catch(err => {
-          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong"), "ERROR");
-          console.error(err);
-        })
+        .catch(err => osparc.FlashMessenger.logError(err))
         .finally(() => this.getChildControl("create").setFetching(false));
     },
 
@@ -425,13 +422,10 @@ qx.Class.define("osparc.pricing.UnitEditor", {
 
       osparc.store.Pricing.getInstance().updatePricingUnit(this.getPricingPlanId(), this.getPricingUnitId(), data)
         .then(() => {
-          osparc.FlashMessenger.getInstance().logAs(this.tr("Successfully updated"));
+          osparc.FlashMessenger.logAs(this.tr("Successfully updated"));
           this.fireEvent("done");
         })
-        .catch(err => {
-          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong"), "ERROR");
-          console.error(err);
-        })
+        .catch(err => osparc.FlashMessenger.logError(err))
         .finally(() => this.getChildControl("save").setFetching(false));
     }
   }
