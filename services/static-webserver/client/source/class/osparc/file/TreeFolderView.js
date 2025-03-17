@@ -36,42 +36,6 @@ qx.Class.define("osparc.file.TreeFolderView", {
     this.__buildLayout();
   },
 
-  statics: {
-    requestPathSize: function(pathId) {
-      return new Promise((resolve, reject) => {
-        const fetchResult = jobId => {
-          osparc.data.Resources.fetch("storagePaths", "asyncJobResult", { url: { jobId } })
-            .then(result => {
-              console.log(result);
-              resolve(42);
-            })
-            .catch(reject);
-        };
-
-        const fetchStatus = jobId => {
-          osparc.data.Resources.fetch("storagePaths", "asyncJobStatus", { url: { jobId } })
-            .then(status => {
-              if (status["done"]) {
-                fetchResult(jobId);
-              } else {
-                setTimeout(() => fetchStatus(jobId), 1000);
-              }
-            })
-            .catch(reject);
-        };
-
-        osparc.data.Resources.fetch("storagePaths", "requestSize", { url: { pathId } })
-          .then(resp => {
-            const jobId = resp["job_id"];
-            if (jobId) {
-              fetchStatus(jobId);
-            }
-          })
-          .catch(reject);
-      });
-    }
-  },
-
   members: {
     _createChildControlImpl: function(id) {
       let control;
@@ -203,12 +167,23 @@ qx.Class.define("osparc.file.TreeFolderView", {
     requestSize: function(pathId) {
       const totalSize = this.getChildControl("total-size-label");
       totalSize.getChildControl("icon").getContentElement().addClass("rotate");
-      this.self().requestPathSize(pathId)
-        .then(size => {
-          totalSize.set({
-            icon: null,
-            label: osparc.utils.Utils.bytesToSize(size),
-          });
+
+      osparc.data.Resources.fetch("storagePaths", "requestSize", { url: { pathId } })
+        .then(resp => {
+          const jobId = resp["job_id"];
+          if (jobId) {
+            const asyncJob = new osparc.file.StorageAsyncJob(jobId);
+            asyncJob.addListener("resultReceived", e => {
+              const size = e.getData();
+              totalSize.set({
+                icon: null,
+                label: osparc.utils.Utils.bytesToSize(size),
+              });
+            });
+            asyncJob.addListener("pollingError", e => {
+              totalSize.hide();
+            });
+          }
         })
         .catch(err => {
           console.error(err);
