@@ -7,6 +7,11 @@
 from typing import Annotated, Any, TypeAlias
 
 from fastapi import APIRouter, Depends, Query, status
+from models_library.api_schemas_long_running_tasks.tasks import (
+    TaskGet,
+    TaskResult,
+    TaskStatus,
+)
 from models_library.api_schemas_rpc_async_jobs.async_jobs import AsyncJobId
 from models_library.api_schemas_storage.storage_schemas import (
     FileLocation,
@@ -23,8 +28,6 @@ from models_library.api_schemas_webserver.storage import (
     DataExportPost,
     ListPathsQueryParams,
     StorageAsyncJobGet,
-    StorageAsyncJobResult,
-    StorageAsyncJobStatus,
     StorageLocationPathParams,
     StoragePathComputeSizeParams,
 )
@@ -216,7 +219,7 @@ _data_export_responses: dict[int | str, dict[str, Any]] = {
 
 @router.post(
     "/storage/locations/{location_id}/export-data",
-    response_model=Envelope[StorageAsyncJobGet],
+    response_model=Envelope[TaskGet],
     name="export_data",
     description="Export data",
     responses=_data_export_responses,
@@ -227,7 +230,7 @@ async def export_data(data_export: DataExportPost, location_id: LocationID):
 
 @router.get(
     "/storage/async-jobs/{job_id}/status",
-    response_model=Envelope[StorageAsyncJobStatus],
+    response_model=Envelope[TaskStatus],
     name="get_async_job_status",
     responses=_data_export_responses,
 )
@@ -239,6 +242,7 @@ async def get_async_job_status(job_id: AsyncJobId):
     "/storage/async-jobs/{job_id}:abort",
     name="abort_async_job",
     responses=_data_export_responses,
+    status_code=status.HTTP_204_NO_CONTENT,
 )
 async def abort_async_job(job_id: AsyncJobId):
     """aborts execution of an async job"""
@@ -246,7 +250,7 @@ async def abort_async_job(job_id: AsyncJobId):
 
 @router.get(
     "/storage/async-jobs/{job_id}/result",
-    response_model=Envelope[StorageAsyncJobResult],
+    response_model=Envelope[TaskResult],
     name="get_async_job_result",
     responses=_data_export_responses,
 )
@@ -256,7 +260,7 @@ async def get_async_job_result(job_id: AsyncJobId):
 
 @router.get(
     "/storage/async-jobs",
-    response_model=Envelope[list[StorageAsyncJobGet]],
+    response_model=Envelope[list[TaskResult]],
     name="get_async_jobs",
     responses=_data_export_responses,
 )

@@ -6439,7 +6439,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_StorageAsyncJobGet_'
+                $ref: '#/components/schemas/Envelope_TaskGet_'
         '404':
           content:
             application/json:
@@ -6485,7 +6485,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_StorageAsyncJobStatus_'
+                $ref: '#/components/schemas/Envelope_TaskStatus_'
         '404':
           content:
             application/json:
@@ -6526,11 +6526,8 @@ paths:
           format: uuid
           title: Job Id
       responses:
-        '200':
+        '204':
           description: Successful Response
-          content:
-            application/json:
-              schema: {}
         '404':
           content:
             application/json:
@@ -6576,7 +6573,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_StorageAsyncJobResult_'
+                $ref: '#/components/schemas/Envelope_TaskResult_'
         '404':
           content:
             application/json:
@@ -6614,7 +6611,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_list_StorageAsyncJobGet__'
+                $ref: '#/components/schemas/Envelope_list_TaskResult__'
         '404':
           description: Not Found
           content:
@@ -9610,32 +9607,6 @@ components:
           title: Error
       type: object
       title: Envelope[StorageAsyncJobGet]
-    Envelope_StorageAsyncJobResult_:
-      properties:
-        data:
-          anyOf:
-          - $ref: '#/components/schemas/StorageAsyncJobResult'
-          - type: 'null'
-        error:
-          anyOf:
-          - {}
-          - type: 'null'
-          title: Error
-      type: object
-      title: Envelope[StorageAsyncJobResult]
-    Envelope_StorageAsyncJobStatus_:
-      properties:
-        data:
-          anyOf:
-          - $ref: '#/components/schemas/StorageAsyncJobStatus'
-          - type: 'null'
-        error:
-          anyOf:
-          - {}
-          - type: 'null'
-          title: Error
-      type: object
-      title: Envelope[StorageAsyncJobStatus]
     Envelope_TagGet_:
       properties:
         data:
@@ -9662,6 +9633,19 @@ components:
           title: Error
       type: object
       title: Envelope[TaskGet]
+    Envelope_TaskResult_:
+      properties:
+        data:
+          anyOf:
+          - $ref: '#/components/schemas/TaskResult'
+          - type: 'null'
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[TaskResult]
     Envelope_TaskStatus_:
       properties:
         data:
@@ -10255,22 +10239,6 @@ components:
           title: Error
       type: object
       title: Envelope[list[ServiceOutputGet]]
-    Envelope_list_StorageAsyncJobGet__:
-      properties:
-        data:
-          anyOf:
-          - items:
-              $ref: '#/components/schemas/StorageAsyncJobGet'
-            type: array
-          - type: 'null'
-          title: Data
-        error:
-          anyOf:
-          - {}
-          - type: 'null'
-          title: Error
-      type: object
-      title: Envelope[list[StorageAsyncJobGet]]
     Envelope_list_TagGet__:
       properties:
         data:
@@ -10319,6 +10287,22 @@ components:
           title: Error
       type: object
       title: Envelope[list[TaskGet]]
+    Envelope_list_TaskResult__:
+      properties:
+        data:
+          anyOf:
+          - items:
+              $ref: '#/components/schemas/TaskResult'
+            type: array
+          - type: 'null'
+          title: Data
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[list[TaskResult]]
     Envelope_list_UserForAdminGet__:
       properties:
         data:
@@ -13451,59 +13435,6 @@ components:
       - productName
       - ui
       title: ProductUIGet
-    ProgressReport:
-      properties:
-        actual_value:
-          type: number
-          title: Actual Value
-        total:
-          type: number
-          title: Total
-          default: 1.0
-        attempt:
-          type: integer
-          title: Attempt
-          default: 0
-        unit:
-          anyOf:
-          - type: string
-            const: Byte
-          - type: 'null'
-          title: Unit
-        message:
-          anyOf:
-          - $ref: '#/components/schemas/ProgressStructuredMessage'
-          - type: 'null'
-      type: object
-      required:
-      - actual_value
-      title: ProgressReport
-    ProgressStructuredMessage:
-      properties:
-        description:
-          type: string
-          title: Description
-        current:
-          type: number
-          title: Current
-        total:
-          type: integer
-          title: Total
-        unit:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Unit
-        sub:
-          anyOf:
-          - $ref: '#/components/schemas/ProgressStructuredMessage'
-          - type: 'null'
-      type: object
-      required:
-      - description
-      - current
-      - total
-      title: ProgressStructuredMessage
     ProjectCopyOverride:
       properties:
         name:
@@ -15168,37 +15099,6 @@ components:
       - jobId
       - links
       title: StorageAsyncJobGet
-    StorageAsyncJobResult:
-      properties:
-        result:
-          anyOf:
-          - {}
-          - type: 'null'
-          title: Result
-      type: object
-      required:
-      - result
-      title: StorageAsyncJobResult
-    StorageAsyncJobStatus:
-      properties:
-        jobId:
-          type: string
-          format: uuid
-          title: Jobid
-        progress:
-          $ref: '#/components/schemas/ProgressReport'
-        done:
-          type: boolean
-          title: Done
-        links:
-          $ref: '#/components/schemas/AsyncJobLinks'
-      type: object
-      required:
-      - jobId
-      - progress
-      - done
-      - links
-      title: StorageAsyncJobStatus
     Structure:
       properties:
         key:
@@ -15495,6 +15395,23 @@ components:
         to be
 
         defined as a float bound between 0.0 and 1.0'
+    TaskResult:
+      properties:
+        result:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Result
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      required:
+      - result
+      - error
+      title: TaskResult
     TaskStatus:
       properties:
         task_progress:
@@ -15503,8 +15420,10 @@ components:
           type: boolean
           title: Done
         started:
-          type: string
-          format: date-time
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
           title: Started
       type: object
       required:
