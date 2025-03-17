@@ -13,7 +13,7 @@ _EXPIRATION_AUTO_KEYS = timedelta(weeks=4)
 
 
 # NOTE: Uses caching to prevent multiple calls to the external service
-# when 'get_or_create_user_api_key' or 'get_or_create_user_api_secret' are invoked.
+# when 'create_user_api_key' or 'create_user_api_secret' are invoked.
 def _cache_key(fct, *_, **kwargs):
     return f"{fct.__name__}_{kwargs['product_name']}_{kwargs['user_id']}"
 
