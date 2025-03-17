@@ -36,10 +36,47 @@ qx.Class.define("osparc.file.TreeFolderView", {
     this.__buildLayout();
   },
 
+  statics: {
+    requestPathSize: function(pathId) {
+      return new Promise(resolve => {
+        const fetchResult = jobId => {
+          osparc.data.Resources.fetch("storagePaths", "asyncJobResult", { url: { jobId } })
+            .then(result => {
+              console.log(result);
+              resolve(42);
+            });
+        };
+
+        const fetchStatus = jobId => {
+          osparc.data.Resources.fetch("storagePaths", "asyncJobStatus", { url: { jobId } })
+            .then(status => {
+              if (status["done"]) {
+                fetchResult(jobId);
+              } else {
+                setTimeout(() => fetchStatus(jobId), 1000);
+              }
+            });
+        };
+
+        osparc.data.Resources.fetch("storagePaths", "requestSize", { url: { pathId } })
+          .then(resp => {
+            const jobId = resp["job_id"];
+            if (jobId) {
+              fetchStatus(jobId);
+            }
+          });
+      });
+    }
+  },
+
   members: {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
+        case "header-layout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox());
+          this._add(control);
+          break;
         case "reload-button":
           control = new qx.ui.form.Button().set({
             label: this.tr("Reload"),
@@ -47,7 +84,19 @@ qx.Class.define("osparc.file.TreeFolderView", {
             icon: "@FontAwesome5Solid/sync-alt/14",
             allowGrowX: false
           });
-          this._add(control);
+          this.getChildControl("header-layout").add(control);
+          this.getChildControl("header-layout").add(new qx.ui.core.Spacer(), {
+            flex: 1
+          });
+          break;
+        case "total-size-label":
+          control = new qx.ui.basic.Atom().set({
+            label: this.tr("Calculating Size"),
+            font: "text-14",
+            icon: "@FontAwesome5Solid/spinner/14",
+            allowGrowX: false
+          });
+          this.getChildControl("header-layout").add(control);
           break;
         case "tree-folder-layout":
           control = new qx.ui.splitpane.Pane("horizontal");
@@ -149,14 +198,14 @@ qx.Class.define("osparc.file.TreeFolderView", {
     },
 
     requestSize: function(pathId) {
-      const params = {
-        url: {
-          pathId
-        }
-      };
-      osparc.data.Resources.fetch("storagePaths", "getPaths", params)
-        .then(pagResp => {
-          console.log(pagResp);
+      const totalSize = this.getChildControl("total-size-label");
+      totalSize.getChildControl("icon").getContentElement().addClass("rotate");
+      this.self().requestPathSize(pathId)
+        .then(size => {
+          totalSize.set({
+            icon: null,
+            label: osparc.utils.Utils.bytesToSize(size),
+          });
         });
     }
   }

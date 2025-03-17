@@ -1213,8 +1213,16 @@ qx.Class.define("osparc.data.Resources", {
             url: statics.API + "/storage/locations/{locationId}/paths?file_filter={path}&size=1000"
           },
           requestSize: {
-            method: "GET",
+            method: "POST",
             url: statics.API + "/storage/locations/0/paths/{pathId}:size"
+          },
+          asyncJobStatus: {
+            method: "GET",
+            url: statics.API + "/storage/async-jobs/{jobId}/status"
+          },
+          asyncJobResult: {
+            method: "GET",
+            url: statics.API + "/storage/async-jobs/{jobId}/result"
           },
         }
       },
