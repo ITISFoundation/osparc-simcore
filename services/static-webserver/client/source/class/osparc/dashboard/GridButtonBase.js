@@ -283,35 +283,38 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
 
     // overridden
     _applyThumbnail: function(value, old) {
-      if (value.includes("@FontAwesome5Solid/")) {
-        value += this.self().THUMBNAIL_SIZE;
-        const image = this.getChildControl("thumbnail").set({
-          source: value,
-        });
-
-        [
-          "appear",
-          "loaded"
-        ].forEach(eventName => {
-          image.addListener(eventName, () => this.__fitThumbnailHeight(), this);
-        });
-      } else {
-        let source = osparc.product.Utils.getThumbnailUrl();
-        osparc.utils.Utils.checkImageExists(value)
-          .then(exists => {
-            if (exists) {
-              source = value;
-            }
-          })
-          .finally(() => {
-            this.getContentElement().setStyles({
-              "background-image": `url(${source})`,
-              "background-repeat": "no-repeat",
-              "background-size": "cover", // auto width, 85% height
-              "background-position": "center center",
-              "background-origin": "border-box"
-            });
+      if (value) {
+        if (value.startsWith("@")) {
+          // font image
+          value += this.self().THUMBNAIL_SIZE;
+          const image = this.getChildControl("thumbnail").set({
+            source: value,
           });
+
+          [
+            "appear",
+            "loaded"
+          ].forEach(eventName => {
+            image.addListener(eventName, () => this.__fitThumbnailHeight(), this);
+          });
+        } else {
+          let source = osparc.product.Utils.getThumbnailUrl();
+          osparc.utils.Utils.checkImageExists(value)
+            .then(exists => {
+              if (exists) {
+                source = value;
+              }
+            })
+            .finally(() => {
+              this.getContentElement().setStyles({
+                "background-image": `url(${source})`,
+                "background-repeat": "no-repeat",
+                "background-size": "cover", // auto width, 85% height
+                "background-position": "center center",
+                "background-origin": "border-box"
+              });
+            });
+        }
       }
     },
 
