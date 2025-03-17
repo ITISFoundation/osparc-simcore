@@ -92,7 +92,7 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
     },
 
     // checks that if the user to remove is an owner, there will still be another owner
-    checkRemoveCollaborator: function(studyData, gid) {
+    canCollaboratorBeRemoved: function(studyData, gid) {
       const ownerGids = this.__getDeleters(studyData);
       if (ownerGids.includes(gid.toString())) {
         return ownerGids.length > 1;
