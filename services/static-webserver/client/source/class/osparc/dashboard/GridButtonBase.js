@@ -284,7 +284,6 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
     // overridden
     _applyThumbnail: function(value, old) {
       if (qx.util.ResourceManager.getInstance().isFontUri(value)) {
-        // font image
         value += this.self().THUMBNAIL_SIZE;
         this.getChildControl("thumbnail").set({
           source: value,
