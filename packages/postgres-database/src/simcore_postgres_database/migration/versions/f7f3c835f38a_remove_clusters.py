@@ -26,6 +26,7 @@ def upgrade():
     op.drop_table("clusters")
     op.execute("DROP TRIGGER IF EXISTS cluster_modification on clusters;")
     op.execute("DROP FUNCTION set_cluster_to_owner_group() CASCADE")
+    op.execute("DROP TYPE IF EXISTS clustertype")
     # ### end Alembic commands ###
 
 
