@@ -1,12 +1,13 @@
 from datetime import timedelta
 from uuid import uuid4
 
-import _api_auth_rpc
 from aiocache import cached  # type: ignore[import-untyped]
 from fastapi import FastAPI
 from models_library.products import ProductName
 from models_library.rpc.webserver.auth.api_keys import ApiKeyGet
 from models_library.users import UserID
+
+from ._api_auth_rpc import create_api_key as rpc_create_api_key
 
 _EXPIRATION_AUTO_KEYS = timedelta(weeks=4)
 
@@ -24,7 +25,7 @@ async def _create_for(
     product_name: ProductName,
     user_id: UserID,
 ) -> ApiKeyGet:
-    return await _api_auth_rpc.create_api_key(
+    return await rpc_create_api_key(
         app,
         user_id=user_id,
         product_name=product_name,
