@@ -225,35 +225,33 @@ qx.Class.define("osparc.workbench.ServiceCatalog", {
       });
 
       osparc.service.Utils.sortObjectsBasedOn(filteredServices, this.__sortBy);
-      const filteredServicesObj = this.__filteredServicesObj = osparc.service.Utils.convertArrayToObject(filteredServices);
+      this.__filteredServicesObj = osparc.service.Utils.convertArrayToObject(filteredServices);
 
-      const groupedServicesList = [];
-      for (const key in filteredServicesObj) {
-        const serviceMetadata = osparc.service.Utils.getLatest(key);
-        if (serviceMetadata) {
-          const service = new osparc.data.model.Service(serviceMetadata);
-          groupedServicesList.push(service);
-        }
-      }
+      const servicesModels = [];
+      filteredServices.forEach(filteredService => {
+        const service = new osparc.data.model.Service(filteredService);
+        servicesModels.push(service);
+      });
 
-      this.__serviceList.setModel(new qx.data.Array(groupedServicesList));
+      this.__serviceList.setModel(new qx.data.Array(servicesModels));
     },
 
     __changedSelection: function(key) {
       if (this.__versionsBox) {
-        let selectBox = this.__versionsBox;
+        const selectBox = this.__versionsBox;
         selectBox.removeAll();
         if (key in this.__filteredServicesObj) {
           const latest = new qx.ui.form.ListItem(this.self().LATEST);
           latest.version = this.self().LATEST;
           selectBox.add(latest);
-          const versions = osparc.service.Utils.getVersions(key);
-          versions.forEach(version => {
-            const listItem = osparc.service.Utils.versionToListItem(key, version);
-            selectBox.add(listItem);
-          });
-          osparc.utils.Utils.growSelectBox(selectBox, 200);
-          selectBox.setSelection([latest]);
+          osparc.store.Services.populateVersionsSelectBox(key, selectBox)
+            .then(() => {
+              osparc.utils.Utils.growSelectBox(selectBox, 200);
+              const idx = selectBox.getSelectables().indexOf(latest);
+              if (idx > -1) {
+                selectBox.setSelection([latest]);
+              }
+            });
         }
       }
       if (this.__addBtn) {

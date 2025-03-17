@@ -290,7 +290,7 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
         .then(arData => {
           this.__populateForm(arData);
           wallet.setAutoRecharge(arData);
-          osparc.FlashMessenger.getInstance().logAs(successfulMsg, "INFO");
+          osparc.FlashMessenger.logAs(successfulMsg, "INFO");
           this.fireEvent("close");
         })
         .finally(() => fetchButton.setFetching(false));

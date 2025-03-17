@@ -78,7 +78,7 @@ qx.Class.define("osparc.store.Study", {
           });
           studyData["lastChangeDate"] = new Date().toISOString();
         })
-        .catch(err => osparc.FlashMessenger.logAs(err.message, "ERROR"));
+        .catch(err => osparc.FlashMessenger.logError(err));
     },
 
     removeCollaborator: function(studyData, gid) {
@@ -93,7 +93,7 @@ qx.Class.define("osparc.store.Study", {
           delete studyData["accessRights"][gid];
           studyData["lastChangeDate"] = new Date().toISOString();
         })
-        .catch(err => osparc.FlashMessenger.logAs(err.message, "ERROR"));
+        .catch(err => osparc.FlashMessenger.logError(err));
     },
 
     updateCollaborator: function(studyData, gid, newPermissions) {
@@ -109,7 +109,7 @@ qx.Class.define("osparc.store.Study", {
           studyData["accessRights"][gid] = newPermissions;
           studyData["lastChangeDate"] = new Date().toISOString();
         })
-        .catch(err => osparc.FlashMessenger.logAs(err.message, "ERROR"));
+        .catch(err => osparc.FlashMessenger.logError(err));
     },
   }
 });

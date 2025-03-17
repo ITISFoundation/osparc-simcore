@@ -480,12 +480,14 @@ qx.Class.define("osparc.data.model.Node", {
         }
       }
 
-      this.__initLogger();
-
-      this.initIframeHandler();
-
       if (this.isParameter()) {
         this.__initParameter();
+      }
+
+      if (osparc.store.Store.getInstance().getCurrentStudy()) {
+        // do not initialize the logger and iframe if the study isn't open
+        this.__initLogger();
+        this.initIframeHandler();
       }
     },
 
@@ -930,7 +932,7 @@ qx.Class.define("osparc.data.model.Node", {
         .then(() => this.checkState())
         .catch(err => {
           if ("status" in err && (err.status === 409 || err.status === 402)) {
-            osparc.FlashMessenger.getInstance().logAs(err.message, "WARNING");
+            osparc.FlashMessenger.logAs(err.message, "WARNING");
           } else {
             console.error(err);
           }
@@ -1063,7 +1065,7 @@ qx.Class.define("osparc.data.model.Node", {
               console.error(failure, error);
               const errorMsgData = {
                 nodeId: this.getNodeId(),
-                msg: "Failed retrieving inputs",
+                msg: "Unsuccessful input retrieval",
                 level: "ERROR"
               };
               this.fireDataEvent("showInLogger", errorMsgData);
@@ -1205,7 +1207,7 @@ qx.Class.define("osparc.data.model.Node", {
       if (!["int"].includes(type)) {
         return;
       }
-      const newMetadata = osparc.service.Utils.getParameterMetadata("integer");
+      const newMetadata = osparc.store.Services.getParameterMetadata("integer");
       if (newMetadata) {
         const value = this.__getInputData()["linspace_start"];
         const label = this.getLabel();
@@ -1222,7 +1224,7 @@ qx.Class.define("osparc.data.model.Node", {
       if (!["int"].includes(type)) {
         return;
       }
-      const metadata = osparc.service.Utils.getLatest("simcore/services/frontend/data-iterator/int-range")
+      const metadata = osparc.store.Services.getLatest("simcore/services/frontend/data-iterator/int-range")
       if (metadata) {
         const value = this.__getOutputData("out_1");
         const label = this.getLabel();

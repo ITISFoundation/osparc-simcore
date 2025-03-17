@@ -87,6 +87,8 @@ typing-extensions==4.12.2
 virtualenv==20.29.2
     # via pre-commit
 watchdog==6.0.0
-    # via -r requirements/_tools.in
+    # via
+    #   -c requirements/_base.txt
+    #   -r requirements/_tools.in
 wheel==0.45.1
     # via pip-tools

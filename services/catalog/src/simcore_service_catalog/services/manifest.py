@@ -1,4 +1,4 @@
-""" Services Manifest API Documentation
+"""Services Manifest API Documentation
 
 The `services.manifest` module provides a read-only API to access the services catalog. The term "Manifest" refers to a detailed, finalized list,
 traditionally used to denote items that are recorded as part of an official inventory or log, emphasizing the immutable nature of the data.
@@ -60,7 +60,7 @@ async def get_services_map(
 
     # NOTE: functional-services are services w/o associated image
     services: ServiceMetaDataPublishedDict = {
-        (s.key, s.version): s for s in iter_service_docker_data()
+        (sc.key, sc.version): sc for sc in iter_service_docker_data()
     }
     for service in services_in_registry:
         try:

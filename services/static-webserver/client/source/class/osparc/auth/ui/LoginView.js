@@ -235,7 +235,7 @@ qx.Class.define("osparc.auth.ui.LoginView", {
 
       const twoFactorAuthCbk = (nextStep, message, retryAfter) => {
         this.__loginBtn.setFetching(false);
-        osparc.FlashMessenger.getInstance().logAs(message, "INFO");
+        osparc.FlashMessenger.logAs(message, "INFO");
         this.fireDataEvent("to2FAValidationCode", {
           userEmail: email.getValue(),
           nextStep,
@@ -251,7 +251,7 @@ qx.Class.define("osparc.auth.ui.LoginView", {
       const failFun = msg => {
         this.__loginBtn.setFetching(false);
         // TODO: can get field info from response here
-        msg = String(msg) || this.tr("Typed an invalid email or password");
+        msg = String(msg) || this.tr("email or password don't look correct");
         [email, pass].forEach(item => {
           item.set({
             invalidMessage: msg,
@@ -259,7 +259,7 @@ qx.Class.define("osparc.auth.ui.LoginView", {
           });
         });
 
-        osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
+        osparc.FlashMessenger.logError(msg);
       };
 
       const manager = osparc.auth.Manager.getInstance();

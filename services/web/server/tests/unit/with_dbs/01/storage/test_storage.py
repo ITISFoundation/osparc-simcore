@@ -3,6 +3,7 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
+from collections.abc import Callable
 from typing import Any
 from urllib.parse import quote
 
@@ -10,6 +11,7 @@ import pytest
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from fastapi_pagination.cursor import CursorPage
+from models_library.api_schemas_rpc_async_jobs.async_jobs import AsyncJobGet, AsyncJobId
 from models_library.api_schemas_storage.storage_schemas import (
     DatasetMetaDataGet,
     FileLocation,
@@ -17,10 +19,15 @@ from models_library.api_schemas_storage.storage_schemas import (
     FileUploadSchema,
     PathMetaDataGet,
 )
+from models_library.api_schemas_webserver.storage import StorageAsyncJobGet
 from models_library.projects_nodes_io import LocationID, StorageFileID
 from pydantic import TypeAdapter
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from servicelib.aiohttp import status
+from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import (
+    submit_job,
+)
 from simcore_postgres_database.models.users import UserRole
 
 API_VERSION = "v0"
@@ -46,7 +53,7 @@ async def test_list_storage_locations(
     url = "/v0/storage/locations"
     assert url.startswith(PREFIX)
 
-    resp = await client.get(url, params={"user_id": logged_user["id"]})
+    resp = await client.get(url)
     data, error = await assert_status(resp, expected)
 
     if not error:
@@ -74,10 +81,72 @@ async def test_list_storage_paths(
     assert client.app
     url = client.app.router["list_storage_paths"].url_for(location_id=f"{location_id}")
 
-    resp = await client.get(f"{url}", params={"user_id": logged_user["id"]})
+    resp = await client.get(f"{url}")
     data, error = await assert_status(resp, expected)
     if not error:
         TypeAdapter(CursorPage[PathMetaDataGet]).validate_python(data)
+
+
+_faker = Faker()
+
+
+@pytest.fixture
+def create_storage_paths_rpc_client_mock(
+    mocker: MockerFixture,
+) -> Callable[[str, Any], None]:
+    def _(method: str, result_or_exception: Any):
+        def side_effect(*args, **kwargs):
+            if isinstance(result_or_exception, Exception):
+                raise result_or_exception
+
+            return result_or_exception
+
+        for fct in (f"servicelib.rabbitmq.rpc_interfaces.storage.paths.{method}",):
+            mocker.patch(fct, side_effect=side_effect)
+
+    return _
+
+
+@pytest.mark.parametrize(
+    "user_role,expected",
+    [
+        (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
+        (UserRole.GUEST, status.HTTP_202_ACCEPTED),
+        (UserRole.USER, status.HTTP_202_ACCEPTED),
+        (UserRole.TESTER, status.HTTP_202_ACCEPTED),
+    ],
+)
+@pytest.mark.parametrize(
+    "backend_result_or_exception",
+    [
+        AsyncJobGet(job_id=AsyncJobId(f"{_faker.uuid4()}")),
+    ],
+    ids=lambda x: type(x).__name__,
+)
+async def test_compute_path_size(
+    client: TestClient,
+    logged_user: dict[str, Any],
+    expected: int,
+    location_id: LocationID,
+    faker: Faker,
+    create_storage_paths_rpc_client_mock: Callable[[str, Any], None],
+    backend_result_or_exception: Any,
+):
+    create_storage_paths_rpc_client_mock(
+        submit_job.__name__,
+        backend_result_or_exception,
+    )
+
+    assert client.app
+    url = client.app.router["compute_path_size"].url_for(
+        location_id=f"{location_id}",
+        path=quote(faker.file_path(absolute=False), safe=""),
+    )
+
+    resp = await client.post(f"{url}")
+    data, error = await assert_status(resp, expected)
+    if not error:
+        TypeAdapter(StorageAsyncJobGet).validate_python(data)
 
 
 @pytest.mark.parametrize(
@@ -101,7 +170,7 @@ async def test_list_datasets_metadata(
 
     assert url == str(_url)
 
-    resp = await client.get(url, params={"user_id": logged_user["id"]})
+    resp = await client.get(url)
     data, error = await assert_status(resp, expected)
 
     if not error:
@@ -134,7 +203,7 @@ async def test_list_dataset_files_metadata(
 
     assert url == str(_url)
 
-    resp = await client.get(url, params={"user_id": logged_user["id"]})
+    resp = await client.get(url)
     data, error = await assert_status(resp, expected)
 
     if not error:
@@ -169,7 +238,7 @@ async def test_storage_file_meta(
 
     assert url.startswith(PREFIX)
 
-    resp = await client.get(url, params={"user_id": logged_user["id"]})
+    resp = await client.get(url)
     data, error = await assert_status(resp, expected)
 
     if not error:
@@ -200,7 +269,7 @@ async def test_storage_list_filter(
 
     assert url.startswith(PREFIX)
 
-    resp = await client.get(url, params={"user_id": logged_user["id"]})
+    resp = await client.get(url)
     data, error = await assert_status(resp, expected)
 
     if not error:
@@ -213,7 +282,7 @@ async def test_storage_list_filter(
 @pytest.fixture
 def file_id(faker: Faker) -> StorageFileID:
     return TypeAdapter(StorageFileID).validate_python(
-        f"{faker.uuid4()}/{faker.uuid4()}/{faker.file_name()} with spaces.dat"
+        f"{faker.uuid4()}/{faker.uuid4()}/{faker.file_name()} with spaces().dat"
     )
 
 
@@ -236,7 +305,7 @@ async def test_upload_file(
 
     assert url.startswith(PREFIX)
 
-    resp = await client.put(url, params={"user_id": logged_user["id"]})
+    resp = await client.put(url)
     data, error = await assert_status(resp, expected)
     if not error:
         assert not error
@@ -244,10 +313,7 @@ async def test_upload_file(
         file_upload_schema = FileUploadSchema.model_validate(data)
 
         # let's abort
-        resp = await client.post(
-            f"{file_upload_schema.links.abort_upload.path}",
-            params={"user_id": logged_user["id"]},
-        )
+        resp = await client.post(f"{file_upload_schema.links.abort_upload.path}")
         data, error = await assert_status(resp, status.HTTP_204_NO_CONTENT)
         assert not error
         assert not data

@@ -1,0 +1,73 @@
+const auto = require('../utils/auto');
+const utils = require('../utils/utils');
+
+module.exports = {
+  startupCalls: () => {
+    describe('Calls after logging in', () => {
+      const {
+        user,
+        pass
+      } = utils.getUserAndPass();
+
+      const responses = {
+        me: null,
+        studies: null,
+        templates: null,
+        services: null,
+      };
+
+      beforeAll(async () => {
+        console.log("Start:", new Date().toUTCString());
+
+        page.on('response', response => {
+          const url = response.url();
+          if (url.endsWith('/me')) {
+            responses.me = response.json();
+          } else if (url.includes('projects?type=user')) {
+            responses.studies = response.json();
+          } else if (url.includes('projects?type=template')) {
+            responses.templates = response.json();
+          } else if (url.includes('catalog/services/-/latest')) {
+            responses.services = response.json();
+          }
+        });
+
+        await page.goto(url);
+
+        console.log("Registering user");
+        await auto.register(page, user, pass);
+        console.log("Registered");
+
+        await page.waitFor(10000);
+      }, ourTimeout);
+
+      afterAll(async () => {
+        await auto.logOut(page);
+
+        console.log("End:", new Date().toUTCString());
+      }, ourTimeout);
+
+      test('Profile', async () => {
+        const responseEnv = await responses.me;
+        expect(responseEnv.data["login"]).toBe(user);
+      }, ourTimeout);
+
+      test('Studies', async () => {
+        const responseEnv = await responses.studies;
+        expect(Array.isArray(responseEnv.data)).toBeTruthy();
+      }, ourTimeout);
+
+      test('Templates', async () => {
+        const responseEnv = await responses.templates;
+        expect(Array.isArray(responseEnv.data)).toBeTruthy();
+      }, ourTimeout);
+
+      test('Services', async () => {
+        const responseEnv = await responses.services;
+        expect(responseEnv.data._meta.total).toBeGreaterThan(0);
+        expect(Array.isArray(responseEnv.data.data)).toBeTruthy();
+        expect(responseEnv.data.data.length).toBeGreaterThan(0);
+      }, ourTimeout);
+    });
+  }
+}
