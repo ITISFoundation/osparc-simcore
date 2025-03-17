@@ -1219,6 +1219,22 @@ qx.Class.define("osparc.data.Resources", {
         }
       },
       /*
+       * STORAGE LINK
+       */
+      "storageLink": {
+        useCache: false,
+        endpoints: {
+          getOne: {
+            method: "GET",
+            url: statics.API + "/storage/locations/{locationId}/files/{fileUuid}"
+          },
+          put: {
+            method: "PUT",
+            url: statics.API + "/storage/locations/{locationId}/files/{fileUuid}?file_size={fileSize}"
+          }
+        }
+      },
+      /*
        * STORAGE ASYNC
        */
       "storageAsyncJobs": {
@@ -1236,22 +1252,6 @@ qx.Class.define("osparc.data.Resources", {
             method: "POST",
             url: statics.API + "/storage/async-jobs/{jobId}/abort"
           },
-        }
-      },
-      /*
-       * STORAGE LINK
-       */
-      "storageLink": {
-        useCache: false,
-        endpoints: {
-          getOne: {
-            method: "GET",
-            url: statics.API + "/storage/locations/{locationId}/files/{fileUuid}"
-          },
-          put: {
-            method: "PUT",
-            url: statics.API + "/storage/locations/{locationId}/files/{fileUuid}?file_size={fileSize}"
-          }
         }
       },
       /*
