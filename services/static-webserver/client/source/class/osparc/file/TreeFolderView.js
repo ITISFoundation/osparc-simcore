@@ -38,13 +38,14 @@ qx.Class.define("osparc.file.TreeFolderView", {
 
   statics: {
     requestPathSize: function(pathId) {
-      return new Promise(resolve => {
+      return new Promise((resolve, reject) => {
         const fetchResult = jobId => {
           osparc.data.Resources.fetch("storagePaths", "asyncJobResult", { url: { jobId } })
             .then(result => {
               console.log(result);
               resolve(42);
-            });
+            })
+            .catch(reject);
         };
 
         const fetchStatus = jobId => {
@@ -55,7 +56,8 @@ qx.Class.define("osparc.file.TreeFolderView", {
               } else {
                 setTimeout(() => fetchStatus(jobId), 1000);
               }
-            });
+            })
+            .catch(reject);
         };
 
         osparc.data.Resources.fetch("storagePaths", "requestSize", { url: { pathId } })
@@ -64,7 +66,8 @@ qx.Class.define("osparc.file.TreeFolderView", {
             if (jobId) {
               fetchStatus(jobId);
             }
-          });
+          })
+          .catch(reject);
       });
     }
   },
@@ -206,6 +209,10 @@ qx.Class.define("osparc.file.TreeFolderView", {
             icon: null,
             label: osparc.utils.Utils.bytesToSize(size),
           });
+        })
+        .catch(err => {
+          console.error(err);
+          totalSize.hide();
         });
     }
   }
