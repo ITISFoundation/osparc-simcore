@@ -91,11 +91,20 @@ qx.Class.define("osparc.utils.Utils", {
 
     FLOATING_Z_INDEX: 1000001 + 1,
 
+    checkImageExists: function(url) {
+      return new Promise(resolve => {
+        const img = new Image();
+        img.onload = () => resolve(true);
+        img.onerror = () => resolve(false);
+        img.src = url;
+      });
+    },
+
     setUrlSourceToImage: function(image, imgSrc) {
       let source = osparc.product.Utils.getThumbnailUrl();
-      fetch(imgSrc, { method: "HEAD" })
-        .then(response => {
-          if (response.ok) {
+      this.checkImageExists(imgSrc)
+        .then(exists => {
+          if (exists) {
             source = imgSrc;
           }
         })
@@ -971,7 +980,7 @@ qx.Class.define("osparc.utils.Utils", {
       document.body.removeChild(textArea);
 
       if (copied) {
-        osparc.FlashMessenger.getInstance().logAs(qx.locale.Manager.tr("Copied to clipboard"));
+        osparc.FlashMessenger.logAs(qx.locale.Manager.tr("Copied to clipboard"));
       }
 
       return copied;
@@ -1153,7 +1162,7 @@ qx.Class.define("osparc.utils.Utils", {
     },
 
     isObject: function(v) {
-      return typeof v === "object" && v !== null;
+      return typeof v === "object" && v !== null && !Array.isArray(v);
     },
 
     centerTabIcon: function(tabpage) {

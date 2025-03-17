@@ -176,13 +176,13 @@ qx.Class.define("osparc.auth.Manager", {
           } else {
             const resp = JSON.parse(xhr.responseText);
             if (resp.error == null) {
-              reject(this.tr("Login failed"));
+              reject(this.tr("Unsuccessful Login"));
             } else {
               reject(resp.error.message);
             }
           }
         };
-        xhr.onerror = () => reject(this.tr("Login failed"));
+        xhr.onerror = () => reject(this.tr("Unsuccessful Login"));
         xhr.open("POST", url, true);
         xhr.setRequestHeader("Content-Type", "application/json");
         xhr.send(JSON.stringify(params));

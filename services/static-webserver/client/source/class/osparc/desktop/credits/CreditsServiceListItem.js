@@ -31,7 +31,7 @@ qx.Class.define("osparc.desktop.credits.CreditsServiceListItem", {
 
     const icon = this.getChildControl("icon");
     const name = this.getChildControl("title");
-    const serviceMetadata = osparc.service.Utils.getLatest(serviceKey);
+    const serviceMetadata = osparc.store.Services.getLatest(serviceKey);
     if (serviceMetadata) {
       const source = osparc.utils.Utils.getIconFromResource(serviceMetadata);
       icon.setSource(source);
