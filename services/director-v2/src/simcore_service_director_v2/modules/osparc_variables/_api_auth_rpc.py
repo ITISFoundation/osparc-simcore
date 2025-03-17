@@ -27,10 +27,10 @@ async def create_api_key(
     result = await rpc_client.request(
         WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("create_api_key"),
+        product_name=product_name,
         user_id=user_id,
         display_name=display_name,
         expiration=expiration,
-        product_name=product_name,
         raise_on_conflict=False,
     )
     return ApiKeyGet.model_validate(result)
