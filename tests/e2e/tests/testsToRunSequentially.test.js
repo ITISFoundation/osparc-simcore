@@ -1,8 +1,7 @@
-
-import { checkUrl } from './url.js';
-import { checkMetadata } from './title';
-import { registerAndLogOut } from './register';
-import { startupCalls } from './startupCalls';
+const { checkUrl } = require('./url.js');
+const { checkMetadata } = require('./title');
+const { registerAndLogOut } = require('./register');
+const { startupCalls } = require('./startupCalls');
 
 
 describe('Sequentially run tests', () => {
