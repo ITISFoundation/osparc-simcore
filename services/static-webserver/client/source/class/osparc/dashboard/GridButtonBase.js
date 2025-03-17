@@ -140,6 +140,7 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
           const hGrid = new qx.ui.layout.Grid().set({
             spacing: 6,
           });
+          hGrid.setRowFlex(0, 1);
           hGrid.setColumnFlex(1, 1);
           hGrid.setColumnAlign(0, "right", "middle");
           hGrid.setColumnAlign(1, "left", "middle");
@@ -149,6 +150,7 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
             paddingBottom: 6,
             paddingRight: 4,
             maxWidth: this.self().ITEM_WIDTH,
+            minHeight: 32 + 6,
             maxHeight: this.self().ITEM_HEIGHT
           });
           control.setLayout(hGrid);
