@@ -341,6 +341,12 @@ qx.Class.define("osparc.share.Collaborators", {
             ) {
               let msg = this.tr("Collaborator can't be removed:");
               msg += this._serializedDataCopy["name"] + this.tr(" needs at least one owner.");
+              if (
+                Object.keys(this._serializedDataCopy["accessRights"]).length === 1 &&
+                Object.values(this._serializedDataCopy["accessRights"])[0]["delete"]
+              ) {
+                msg += "<br>" + this.tr("You might want to delete it instead.");
+              }
               osparc.FlashMessenger.logError(msg);
               return;
             }
