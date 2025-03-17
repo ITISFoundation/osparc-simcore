@@ -177,7 +177,7 @@ qx.Class.define("osparc.file.TreeFolderView", {
               const size = e.getData();
               totalSize.set({
                 icon: null,
-                label: osparc.utils.Utils.bytesToSize(size),
+                label: this.tr("Total size: ") + osparc.utils.Utils.bytesToSize(size),
               });
             });
             asyncJob.addListener("pollingError", e => {
