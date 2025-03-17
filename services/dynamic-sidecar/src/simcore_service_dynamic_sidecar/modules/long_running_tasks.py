@@ -315,8 +315,9 @@ async def task_runs_docker_compose_down(
         # NOTE: https://github.com/ITISFoundation/osparc-simcore/issues/4952
         await _send_resource_tracking_stop(SimcorePlatformStatus.OK)
         raise
-
-    await ensure_read_permissions_on_user_service_data(mounted_volumes)
+    finally:
+        with log_context(_logger, logging.INFO, "ensure read permissions"):
+            await ensure_read_permissions_on_user_service_data(mounted_volumes)
 
     await _send_resource_tracking_stop(SimcorePlatformStatus.OK)
 
