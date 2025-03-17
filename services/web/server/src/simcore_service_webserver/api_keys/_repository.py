@@ -35,7 +35,6 @@ async def create_api_key(
     expiration: timedelta | None,
     api_key: str,
     api_secret: str,
-    raise_on_conflict: bool = True,
 ) -> ApiKey:
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         stmt = pg_insert(api_keys).values(
@@ -46,16 +45,6 @@ async def create_api_key(
             api_secret=_hash_secret(api_secret),
             expires_at=(sa.func.now() + expiration) if expiration else None,
         )
-
-        if not raise_on_conflict:
-            stmt = stmt.on_conflict_do_update(
-                index_elements=["user_id", "display_name"],
-                set_={
-                    "api_key": api_key,
-                    "api_secret": _hash_secret(api_secret),
-                    "expires_at": (sa.func.now() + expiration) if expiration else None,
-                },
-            )
 
         try:
             result = await conn.stream(stmt.returning(api_keys))
