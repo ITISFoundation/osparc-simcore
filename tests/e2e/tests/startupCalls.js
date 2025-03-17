@@ -1,7 +1,7 @@
 const auto = require('../utils/auto');
 const utils = require('../utils/utils');
 
-describe('Calls after logging in', () => {
+export const startupCalls = () => describe('Calls after logging in', () => {
   const {
     user,
     pass
@@ -15,6 +15,8 @@ describe('Calls after logging in', () => {
   };
 
   beforeAll(async () => {
+    console.log("Start:", new Date().toUTCString());
+
     page.on('response', response => {
       const url = response.url();
       if (url.endsWith('/me')) {
@@ -39,6 +41,8 @@ describe('Calls after logging in', () => {
 
   afterAll(async () => {
     await auto.logOut(page);
+
+    console.log("End:", new Date().toUTCString());
   }, ourTimeout);
 
   test('Profile', async () => {
