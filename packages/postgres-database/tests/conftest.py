@@ -25,7 +25,6 @@ from pytest_simcore.helpers.faker_factories import (
     random_project,
     random_user,
 )
-from simcore_postgres_database.models.clusters import ClusterType, clusters
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.utils_projects_nodes import (
@@ -276,36 +275,6 @@ def create_fake_user(sync_engine: sqlalchemy.engine.Engine) -> Iterator[Callable
     assert isinstance(sync_engine, sqlalchemy.engine.Engine)
     with sync_engine.begin() as conn:
         conn.execute(users.delete().where(users.c.id.in_(created_ids)))
-
-
-@pytest.fixture
-async def create_fake_cluster(
-    aiopg_engine: Engine, faker: Faker
-) -> AsyncIterator[Callable[..., Awaitable[int]]]:
-    cluster_ids = []
-
-    async def _creator(**overrides) -> int:
-        insert_values = {
-            "name": "default cluster name",
-            "type": ClusterType.ON_PREMISE,
-            "description": None,
-            "endpoint": faker.domain_name(),
-            "authentication": faker.pydict(value_types=[str]),
-        }
-        insert_values.update(overrides)
-        async with aiopg_engine.acquire() as conn:
-            cluster_id = await conn.scalar(
-                clusters.insert().values(**insert_values).returning(clusters.c.id)
-            )
-        cluster_ids.append(cluster_id)
-        assert cluster_id
-        return cluster_id
-
-    yield _creator
-
-    # cleanup
-    async with aiopg_engine.acquire() as conn:
-        await conn.execute(clusters.delete().where(clusters.c.id.in_(cluster_ids)))
 
 
 @pytest.fixture
