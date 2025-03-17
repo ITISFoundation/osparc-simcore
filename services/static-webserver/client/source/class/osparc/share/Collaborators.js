@@ -335,6 +335,21 @@ qx.Class.define("osparc.share.Collaborators", {
           });
           item.addListener("removeMember", e => {
             const orgMember = e.getData();
+            if (
+              ["study", "template"].includes(this._resourceType) &&
+              !osparc.share.CollaboratorsStudy.canCollaboratorBeRemoved(this._serializedDataCopy, orgMember["gid"])
+            ) {
+              let msg = this.tr("Collaborator can't be removed:");
+              msg += this._serializedDataCopy["name"] + this.tr(" needs at least one owner.");
+              if (
+                Object.keys(this._serializedDataCopy["accessRights"]).length === 1 &&
+                Object.values(this._serializedDataCopy["accessRights"])[0]["delete"]
+              ) {
+                msg += "<br>" + this.tr("You might want to delete it instead.");
+              }
+              osparc.FlashMessenger.logError(msg);
+              return;
+            }
             this._deleteMember(orgMember, item);
           });
         }
@@ -349,11 +364,8 @@ qx.Class.define("osparc.share.Collaborators", {
     __getLeaveStudyButton: function() {
       const myGid = osparc.auth.Data.getInstance().getGroupId();
       if (
-        (this._resourceType === "study") &&
-        // check if I'm part of the access rights (not through an organization)
-        Object.keys(this._serializedDataCopy["accessRights"]).includes(myGid.toString()) &&
-        // check also user is not "prjOwner". Backend will silently not let the frontend remove that user.
-        (this._serializedDataCopy["prjOwner"] !== osparc.auth.Data.getInstance().getEmail())
+        ["study", "template"].includes(this._resourceType) &&
+        osparc.share.CollaboratorsStudy.canCollaboratorBeRemoved(this._serializedDataCopy, myGid)
       ) {
         const leaveText = this.tr("Leave") + " " + osparc.product.Utils.getStudyAlias({
           firstUpperCase: true
@@ -363,29 +375,14 @@ qx.Class.define("osparc.share.Collaborators", {
           visibility: Object.keys(this._serializedDataCopy["accessRights"]).includes(myGid.toString()) ? "visible" : "excluded"
         });
         leaveButton.addListener("execute", () => {
-          let msg = `"${this._serializedDataCopy["name"]}" ` + this.tr("will no longer be listed.");
-          if (!osparc.share.CollaboratorsStudy.checkRemoveCollaborator(this._serializedDataCopy, myGid)) {
-            msg += "<br>";
-            msg += this.tr("If you remove yourself, there won't be any other Owners.");
+          const collaborator = {
+            gid: myGid,
+            name: osparc.store.Groups.getInstance().getGroupMe().getLabel(),
           }
-          const win = new osparc.ui.window.Confirmation(msg).set({
-            caption: leaveText,
-            confirmText: this.tr("Leave"),
-            confirmAction: "delete"
-          });
-          win.open();
-          win.addListener("close", () => {
-            if (win.getConfirmed()) {
-              const collaborator = {
-                gid: myGid,
-                name: osparc.store.Groups.getInstance().getGroupMe().getLabel(),
-              }
-              this._deleteMember(collaborator)
-                .then(() => {
-                  qx.event.message.Bus.dispatchByName("reloadStudies");
-                });
-            }
-          }, this);
+          this._deleteMember(collaborator)
+            .then(() => {
+              qx.event.message.Bus.dispatchByName("reloadStudies");
+            });
         }, this);
         return leaveButton;
       }
