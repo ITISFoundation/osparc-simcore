@@ -109,8 +109,10 @@ qx.Class.define("osparc.widget.StudyDataManager", {
       foldersTree.resetCache();
       if (this.getNodeId()) {
         foldersTree.populateNodeTree(this.getStudyId(), this.getNodeId());
+        treeFolderView.requestSize(this.getStudyId(), this.getNodeId());
       } else if (this.getStudyId()) {
         foldersTree.populateStudyTree(this.getStudyId());
+        treeFolderView.requestSize(this.getStudyId());
       }
 
       const folderViewer = treeFolderView.getChildControl("folder-viewer");

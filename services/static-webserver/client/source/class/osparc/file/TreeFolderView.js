@@ -146,6 +146,18 @@ qx.Class.define("osparc.file.TreeFolderView", {
       } else {
         folderViewer.resetFolder();
       }
+    },
+
+    requestSize: function(pathId) {
+      const params = {
+        url: {
+          pathId
+        }
+      };
+      osparc.data.Resources.fetch("storagePaths", "getPaths", params)
+        .then(pagResp => {
+          console.log(pagResp);
+        });
     }
   }
 });
