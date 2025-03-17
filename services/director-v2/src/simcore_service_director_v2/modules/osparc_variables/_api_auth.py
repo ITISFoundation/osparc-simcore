@@ -8,7 +8,7 @@ from models_library.products import ProductName
 from models_library.rpc.webserver.auth.api_keys import ApiKeyGet
 from models_library.users import UserID
 
-_EXPIRATION_ORPHAN_KEYS = timedelta(weeks=4)
+_EXPIRATION_AUTO_KEYS = timedelta(weeks=4)
 
 
 # NOTE: Uses caching to prevent multiple calls to the external service
@@ -29,7 +29,7 @@ async def _create_for(
         user_id=user_id,
         product_name=product_name,
         display_name=f"__auto_{uuid4()}",
-        expiration=_EXPIRATION_ORPHAN_KEYS,
+        expiration=_EXPIRATION_AUTO_KEYS,
     )
 
 
