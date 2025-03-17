@@ -9,11 +9,11 @@ module.exports = {
         await page.goto(url);
       }, ourTimeout);
 
-      afterAll(async () => {
+      afterAll(() => {
         console.log("End:", new Date().toUTCString());
       }, ourTimeout);
 
-      test('Check site title', async () => {
+      test('Check site metadata', async () => {
         const title = await page.title();
         expect(title).toContain("PARC");
 
