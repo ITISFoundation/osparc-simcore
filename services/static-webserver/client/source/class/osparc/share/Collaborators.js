@@ -339,8 +339,10 @@ qx.Class.define("osparc.share.Collaborators", {
               ["study", "template"].includes(this._resourceType) &&
               !osparc.share.CollaboratorsStudy.canCollaboratorBeRemoved(this._serializedDataCopy, orgMember["gid"])
             ) {
-              const msg = "Nope";
+              let msg = this.tr("Collaborator can't be removed:");
+              msg += this._serializedDataCopy["name"] + this.tr(" needs at least one owner.");
               osparc.FlashMessenger.logError(msg);
+              return;
             }
             this._deleteMember(orgMember, item);
           });
