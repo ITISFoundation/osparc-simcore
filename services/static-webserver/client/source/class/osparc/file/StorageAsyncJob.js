@@ -21,7 +21,7 @@ qx.Class.define("osparc.file.StorageAsyncJob", {
   construct: function(jobId, interval = 1000) {
     this.base(arguments);
 
-    interval ? this.setPollInterval(interval) : this.initPollInterval();
+    this.setPollInterval(interval);
 
     this.setJobId(jobId);
   },
