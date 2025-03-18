@@ -2,7 +2,7 @@
 
 import logging
 
-from celery.exceptions import CeleryError
+from celery.exceptions import CeleryError  # type: ignore[import-untyped]
 from fastapi import FastAPI
 from models_library.api_schemas_rpc_async_jobs.async_jobs import (
     AsyncJobGet,

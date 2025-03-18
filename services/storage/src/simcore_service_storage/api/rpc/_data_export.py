@@ -1,16 +1,16 @@
-from celery.exceptions import CeleryError
+from celery.exceptions import CeleryError  # type: ignore[import-untyped]
 from fastapi import FastAPI
 from models_library.api_schemas_rpc_async_jobs.async_jobs import (
     AsyncJobGet,
     AsyncJobNameData,
 )
+from models_library.api_schemas_rpc_async_jobs.exceptions import JobSchedulerError
 from models_library.api_schemas_storage.data_export_async_jobs import (
     AccessRightError,
     DataExportTaskStartInput,
     InvalidFileIdentifierError,
 )
 from servicelib.rabbitmq import RPCRouter
-from simcore_service_storage.api.rpc._async_jobs import JobSchedulerError
 
 from ...datcore_dsm import DatCoreDataManager
 from ...dsm import get_dsm_provider
