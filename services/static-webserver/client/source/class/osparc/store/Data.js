@@ -84,40 +84,29 @@ qx.Class.define("osparc.store.Data", {
       return null;
     },
 
-    getDatasetsByLocation: function(locationId) {
+    getDatasetsByLocation: async function(locationId) {
       const data = {
         location: locationId,
         items: []
       };
-      return new Promise((resolve, reject) => {
-        if (locationId === 1 && !osparc.data.Permissions.getInstance().canDo("storage.datcore.read")) {
-          reject(data);
-        }
+      if (locationId === 1 && !osparc.data.Permissions.getInstance().canDo("storage.datcore.read")) {
+        return data;
+      }
 
-        const cachedData = this.getDatasetsByLocationCached(locationId);
-        if (cachedData) {
-          resolve(cachedData);
-        } else {
-          const params = {
-            url: {
-              locationId
-            }
-          };
-          osparc.data.Resources.fetch("storagePaths", "getDatasets", params)
-            .then(pagResp => {
-              if (pagResp["items"] && pagResp["items"].length>0) {
-                data.items = pagResp["items"];
-              }
-              // Add it to cache
-              this.__datasetsByLocationCached[locationId] = data.items;
-              resolve(data);
-            })
-            .catch(err => {
-              console.error(err);
-              reject(data);
-            });
-        }
-      });
+      const cachedData = this.getDatasetsByLocationCached(locationId);
+      if (cachedData) {
+        return cachedData;
+      }
+
+      try {
+        const allItems = await this.__getAllItems(locationId);
+        this.__datasetsByLocationCached[locationId] = allItems;
+        data["items"] = allItems;
+        return data;
+      } catch (err) {
+        console.error(err);
+        return data;
+      }
     },
 
     getItemsByLocationAndPath: async function(locationId, path) {
@@ -141,23 +130,35 @@ qx.Class.define("osparc.store.Data", {
         osparc.FlashMessenger.logAs(msg, "WARNING");
         return allItems;
       }
+
       const params = {
         url: {
           locationId,
-          path,
         }
       };
+      if (path) {
+        params["url"]["path"] = path;
+      }
       if (cursor) {
         params["url"]["cursor"] = cursor;
       }
-      const pagResp = await osparc.data.Resources.fetch("storagePaths", cursor ? "getPathsPage" : "getPaths", params);
-      if (pagResp["items"]) {
-        allItems.push(...pagResp["items"]);
+      let pagResp = null;
+      if (path) {
+        pagResp = await osparc.data.Resources.fetch("storagePaths", cursor ? "getPathsPage" : "getPaths", params);
+      } else {
+        pagResp = await osparc.data.Resources.fetch("storagePaths", cursor ? "getDatasetsPage" : "getDatasets", params);
       }
+
       let nextCursor = null;
-      if (pagResp["next_page"]) {
-        nextCursor = pagResp["next_page"];
+      if (pagResp) {
+        if (pagResp["items"]) {
+          allItems.push(...pagResp["items"]);
+        }
+        if (pagResp["next_page"]) {
+          nextCursor = pagResp["next_page"];
+        }
       }
+
       if (nextCursor) {
         return this.__getAllItems(locationId, path, nextCursor, allItems);
       }
