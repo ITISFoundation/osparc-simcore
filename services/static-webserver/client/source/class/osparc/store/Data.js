@@ -46,14 +46,10 @@ qx.Class.define("osparc.store.Data", {
       const params = {
         url: {
           locationId,
+          path: path || null,
+          cursor: cursor || null,
         }
       };
-      if (path) {
-        params["url"]["path"] = path;
-      }
-      if (cursor) {
-        params["url"]["cursor"] = cursor;
-      }
       let pagResp = null;
       if (path) {
         pagResp = await osparc.data.Resources.fetch("storagePaths", cursor ? "getPathsPage" : "getPaths", params);
