@@ -136,6 +136,11 @@ qx.Class.define("osparc.store.Data", {
     },
 
     __getAllItems: async function(locationId, path, cursor, allItems = []) {
+      if (allItems.length >= 10000) {
+        const msg = this.tr("Oops... more than 10.000 files to be listed here. Maybe it's time to make a folder :).");
+        osparc.FlashMessenger.logAs(msg, "WARNING");
+        return allItems;
+      }
       const params = {
         url: {
           locationId,
@@ -143,7 +148,7 @@ qx.Class.define("osparc.store.Data", {
         }
       };
       if (cursor) {
-        params["url"]["cursor"] = cursor
+        params["url"]["cursor"] = cursor;
       }
       const pagResp = await osparc.data.Resources.fetch("storagePaths", cursor ? "getPathsPage" : "getPaths", params);
       if (pagResp["items"]) {
