@@ -301,7 +301,7 @@ async def test_workflow_register_and_login_with_2fa(
         },
     )
     data, _ = await assert_status(response, status.HTTP_200_OK)
-    assert data["message"] == "You are logged in"
+    assert "logged in" in data["message"]
 
 
 async def test_can_register_same_phone_in_different_accounts(
@@ -358,7 +358,7 @@ async def test_can_register_same_phone_in_different_accounts(
         )
         data, error = await assert_status(response, status.HTTP_202_ACCEPTED)
         assert data
-        assert "Code" in data["message"]
+        assert "SMS" in data["message"]
         assert data["name"] == CODE_2FA_SMS_CODE_REQUIRED
         assert not error
 

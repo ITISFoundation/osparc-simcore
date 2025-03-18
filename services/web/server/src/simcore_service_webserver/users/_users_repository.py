@@ -5,6 +5,7 @@ import sqlalchemy as sa
 from aiohttp import web
 from common_library.users_enums import UserRole
 from models_library.groups import GroupID
+from models_library.products import ProductName
 from models_library.users import (
     MyProfile,
     UserBillingDetails,
@@ -459,6 +460,32 @@ async def delete_user_by_id(
 
         # If no row was deleted, the user did not exist
         return bool(deleted_user)
+
+
+async def is_user_in_product_name(
+    engine: AsyncEngine,
+    connection: AsyncConnection | None = None,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+) -> bool:
+    query = (
+        sa.select(users.c.id)
+        .select_from(
+            users.join(
+                user_to_groups,
+                user_to_groups.c.uid == users.c.id,
+            ).join(
+                products,
+                products.c.group_id == user_to_groups.c.gid,
+            )
+        )
+        .where((users.c.id == user_id) & (products.c.name == product_name))
+    )
+    async with pass_or_acquire_connection(engine, connection) as conn:
+        value = await conn.scalar(query)
+        assert value is None or value == user_id  # nosec
+        return value is not None
 
 
 #

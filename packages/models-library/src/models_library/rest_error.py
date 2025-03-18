@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import Annotated
 
+from common_library.basic_types import DEFAULT_FACTORY
 from models_library.generics import Envelope
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -81,11 +82,11 @@ class ErrorGet(BaseModel):
     errors: Annotated[
         list[ErrorItemType],
         Field(deprecated=True, default_factory=list, json_schema_extra={"default": []}),
-    ]
+    ] = DEFAULT_FACTORY
     logs: Annotated[
         list[LogMessageType],
         Field(deprecated=True, default_factory=list, json_schema_extra={"default": []}),
-    ]
+    ] = DEFAULT_FACTORY
 
     model_config = ConfigDict(
         populate_by_name=True,
