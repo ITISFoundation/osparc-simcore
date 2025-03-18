@@ -60,7 +60,7 @@ async def get_async_jobs(request: web.Request) -> web.Response:
     session = get_client_session(request.app)
     async with session.request(
         "GET",
-        request.url.with_path(str(request.app.router["list_tasks"])),
+        request.url.with_path(str(request.app.router["list_tasks"].url_for())),
         ssl=False,
         cookies=request.cookies,
     ) as resp:
@@ -71,7 +71,7 @@ async def get_async_jobs(request: web.Request) -> web.Response:
                 content_type=resp.content_type,
             )
         inprocess_tasks = (
-            Envelope[list[TaskGet]].model_validate_json(await resp.json()).data
+            Envelope[list[TaskGet]].model_validate_json(await resp.text()).data
         )
         assert inprocess_tasks is not None  # nosec
 
@@ -92,9 +92,9 @@ async def get_async_jobs(request: web.Request) -> web.Response:
             TaskGet(
                 task_id=f"{job.job_id}",
                 task_name=f"{job.job_id}",
-                status_href=f"{request.url.with_path(str(request.app.router['get_async_job_status'].url_for(job_id=str(job.job_id))))}",
-                abort_href=f"{request.url.with_path(str(request.app.router['abort_async_job'].url_for(job_id=str(job.job_id))))}",
-                result_href=f"{request.url.with_path(str(request.app.router['get_async_job_result'].url_for(job_id=str(job.job_id))))}",
+                status_href=f"{request.url.with_path(str(request.app.router['get_async_job_status'].url_for(task_id=str(job.job_id))))}",
+                abort_href=f"{request.url.with_path(str(request.app.router['abort_async_job'].url_for(task_id=str(job.job_id))))}",
+                result_href=f"{request.url.with_path(str(request.app.router['get_async_job_result'].url_for(task_id=str(job.job_id))))}",
             )
             for job in user_async_jobs
         ]
