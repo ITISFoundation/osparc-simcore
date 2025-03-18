@@ -1,4 +1,3 @@
-import asyncio
 import logging
 
 from aiohttp import web
@@ -50,10 +49,7 @@ async def empty_trash(request: web.Request):
     user_id = get_user_id(request)
     product_name = products_web.get_product_name(request)
 
-    is_fired = asyncio.Event()
-
     async def _empty_trash():
-        is_fired.set()
         await _service.safe_empty_trash(
             request.app, product_name=product_name, user_id=user_id
         )
@@ -64,10 +60,7 @@ async def empty_trash(request: web.Request):
         fire_and_forget_tasks_collection=request.app[APP_FIRE_AND_FORGET_TASKS_KEY],
     )
 
-    # NOTE: Ensures `fire_and_forget_task` is triggered; otherwise,
-    # when the front-end requests the trash item list,
-    # it may still display items, misleading the user into
-    # thinking the `empty trash` operation failed.
-    await is_fired.wait()
+    # ensure trashed entities are hidden before returning response
+    await _service.hide_trashed(request.app, product_name=product_name, user_id=user_id)
 
     return web.json_response(status=status.HTTP_204_NO_CONTENT)

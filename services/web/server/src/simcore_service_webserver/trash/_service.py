@@ -11,7 +11,7 @@ from servicelib.logging_utils import log_context
 
 from ..folders import folders_trash_service
 from ..products import products_service
-from ..projects import projects_trash_service
+from ..projects import projects_service, projects_trash_service
 from .settings import get_plugin_settings
 
 _logger = logging.getLogger(__name__)
@@ -35,8 +35,9 @@ async def _empty_explicitly_trashed_projects(
     with log_context(
         _logger,
         logging.DEBUG,
-        "Deleting %s explicitly trashed projects",
+        "Deleting %s explicitly trashed projects: %s",
         len(trashed_projects_ids),
+        trashed_projects_ids,
     ):
         for project_id in trashed_projects_ids:
             try:
@@ -57,7 +58,6 @@ async def _empty_explicitly_trashed_projects(
                             "product_name": product_name,
                             "user_id": user_id,
                         },
-                        tip=_TIP,
                     )
                 )
 
@@ -72,8 +72,9 @@ async def _empty_explicitly_trashed_folders_and_content(
     with log_context(
         _logger,
         logging.DEBUG,
-        "Deleting %s trashed folders (and all its content)",
+        "Deleting %s trashed folders (and all its content): %s",
         len(trashed_folders_ids),
+        trashed_folders_ids,
     ):
         for folder_id in trashed_folders_ids:
             try:
@@ -97,6 +98,50 @@ async def _empty_explicitly_trashed_folders_and_content(
                         tip=_TIP,
                     )
                 )
+
+
+async def _hide_trashed_projects(
+    app: web.Application, product_name: ProductName, user_id: UserID
+):
+    trashed_projects_ids = (
+        await projects_trash_service.list_explicitly_trashed_projects(
+            app=app, product_name=product_name, user_id=user_id
+        )
+    )
+    with log_context(
+        _logger,
+        logging.DEBUG,
+        "Hiding %s explicitly trashed projects",
+        len(trashed_projects_ids),
+    ):
+        for project_id in trashed_projects_ids:
+            try:
+                await projects_service.set_project_hidden_flag(
+                    app,
+                    product_name=product_name,
+                    user_id=user_id,
+                    project_id=project_id,
+                    hidden=True,
+                )
+            except Exception as exc:  # pylint: disable=broad-exception-caught
+                _logger.warning(
+                    **create_troubleshotting_log_kwargs(
+                        "Error hiding a trashed project while emptying trash.",
+                        error=exc,
+                        error_context={
+                            "project_id": project_id,
+                            "product_name": product_name,
+                            "user_id": user_id,
+                        },
+                        tip=_TIP,
+                    )
+                )
+
+
+async def hide_trashed(
+    app: web.Application, *, product_name: ProductName, user_id: UserID
+):
+    await _hide_trashed_projects(app, product_name, user_id)
 
 
 async def safe_empty_trash(

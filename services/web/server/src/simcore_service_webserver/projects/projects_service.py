@@ -1036,6 +1036,26 @@ async def is_project_hidden(app: web.Application, project_id: ProjectID) -> bool
     return await db.is_hidden(project_id)
 
 
+async def set_project_hidden_flag(
+    app: web.Application,
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    project_id: ProjectID,
+    hidden: bool,
+) -> None:
+    await check_user_project_permission(
+        app,
+        project_id=project_id,
+        user_id=user_id,
+        product_name=product_name,
+        permission="write",
+    )
+
+    projects_repo: ProjectDBAPI = app[APP_PROJECT_DBAPI]
+    await projects_repo.set_hidden_flag(project_id, hidden=hidden)
+
+
 async def patch_project_node(
     app: web.Application,
     *,
