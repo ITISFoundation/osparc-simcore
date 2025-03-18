@@ -137,7 +137,7 @@ qx.Class.define("osparc.store.Data", {
 
     __getAllItems: async function(locationId, path, cursor, allItems = []) {
       if (allItems.length >= 10000) {
-        const msg = this.tr("Oops... more than 10.000 files to be listed here. Maybe it's time to make a folder :).");
+        const msg = qx.locale.Manager.tr("Oops... more than 10.000 items to be listed here. Maybe it's time to make a folder :).");
         osparc.FlashMessenger.logAs(msg, "WARNING");
         return allItems;
       }
