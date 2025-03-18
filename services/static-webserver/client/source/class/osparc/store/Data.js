@@ -35,6 +35,49 @@ qx.Class.define("osparc.store.Data", {
     "fileCopied": "qx.event.type.Data",
   },
 
+  statics: {
+    getAllItems: async function(locationId, path, cursor, allItems = []) {
+      if (allItems.length >= 10000) {
+        const msg = qx.locale.Manager.tr("Oops... more than 10.000 items to be listed here. Maybe it's time to make a folder :).");
+        osparc.FlashMessenger.logAs(msg, "WARNING");
+        return allItems;
+      }
+
+      const params = {
+        url: {
+          locationId,
+        }
+      };
+      if (path) {
+        params["url"]["path"] = path;
+      }
+      if (cursor) {
+        params["url"]["cursor"] = cursor;
+      }
+      let pagResp = null;
+      if (path) {
+        pagResp = await osparc.data.Resources.fetch("storagePaths", cursor ? "getPathsPage" : "getPaths", params);
+      } else {
+        pagResp = await osparc.data.Resources.fetch("storagePaths", cursor ? "getDatasetsPage" : "getDatasets", params);
+      }
+
+      let nextCursor = null;
+      if (pagResp) {
+        if (pagResp["items"]) {
+          allItems.push(...pagResp["items"]);
+        }
+        if (pagResp["next_page"]) {
+          nextCursor = pagResp["next_page"];
+        }
+      }
+
+      if (nextCursor) {
+        return this.getAllItems(locationId, path, nextCursor, allItems);
+      }
+      return allItems;
+    },
+  },
+
   members: {
     __locationsCached: null,
     __datasetsByLocationCached: null,
@@ -99,7 +142,7 @@ qx.Class.define("osparc.store.Data", {
       }
 
       try {
-        const allItems = await this.__getAllItems(locationId);
+        const allItems = await this.self().getAllItems(locationId);
         this.__datasetsByLocationCached[locationId] = allItems;
         data["items"] = allItems;
         return data;
@@ -116,53 +159,12 @@ qx.Class.define("osparc.store.Data", {
       }
 
       try {
-        const allItems = await this.__getAllItems(locationId, path);
+        const allItems = await this.self().getAllItems(locationId, path);
         return allItems;
       } catch (err) {
         console.error(err);
         return [];
       }
-    },
-
-    __getAllItems: async function(locationId, path, cursor, allItems = []) {
-      if (allItems.length >= 10000) {
-        const msg = qx.locale.Manager.tr("Oops... more than 10.000 items to be listed here. Maybe it's time to make a folder :).");
-        osparc.FlashMessenger.logAs(msg, "WARNING");
-        return allItems;
-      }
-
-      const params = {
-        url: {
-          locationId,
-        }
-      };
-      if (path) {
-        params["url"]["path"] = path;
-      }
-      if (cursor) {
-        params["url"]["cursor"] = cursor;
-      }
-      let pagResp = null;
-      if (path) {
-        pagResp = await osparc.data.Resources.fetch("storagePaths", cursor ? "getPathsPage" : "getPaths", params);
-      } else {
-        pagResp = await osparc.data.Resources.fetch("storagePaths", cursor ? "getDatasetsPage" : "getDatasets", params);
-      }
-
-      let nextCursor = null;
-      if (pagResp) {
-        if (pagResp["items"]) {
-          allItems.push(...pagResp["items"]);
-        }
-        if (pagResp["next_page"]) {
-          nextCursor = pagResp["next_page"];
-        }
-      }
-
-      if (nextCursor) {
-        return this.__getAllItems(locationId, path, nextCursor, allItems);
-      }
-      return allItems;
     },
 
     getPresignedLink: function(download = true, locationId, fileUuid, fileSize) {
