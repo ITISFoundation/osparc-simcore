@@ -139,8 +139,8 @@ async def get_async_job_status(request: web.Request) -> web.Response:
     )
 
 
-@routes.post(
-    _task_prefix + "/{task_id}:abort",
+@routes.delete(
+    _task_prefix + "/{task_id}",
     name="abort_async_job",
 )
 @login_required

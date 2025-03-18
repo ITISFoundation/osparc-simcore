@@ -182,15 +182,19 @@ async def test_abort_async_jobs(
     user_role: UserRole,
     logged_user: UserInfoDict,
     client: TestClient,
-    create_storage_rpc_client_mock: Callable[[str, Any], None],
+    create_storage_rpc_client_mock: Callable[[str, str, Any], None],
     faker: Faker,
     backend_result_or_exception: Any,
     expected_status: int,
 ):
     _job_id = AsyncJobId(faker.uuid4())
-    create_storage_rpc_client_mock(abort.__name__, backend_result_or_exception)
+    create_storage_rpc_client_mock(
+        "simcore_service_webserver.tasks._rest",
+        abort.__name__,
+        backend_result_or_exception,
+    )
 
-    response = await client.post(f"/{API_VERSION}/storage/async-jobs/{_job_id}:abort")
+    response = await client.delete(f"/{API_VERSION}/tasks/{_job_id}")
     assert response.status == expected_status
 
 
@@ -284,7 +288,7 @@ async def test_get_user_async_jobs(
             TaskStatus,
         ),
         (
-            "POST",
+            "DELETE",
             "abort_href",
             abort.__name__,
             AsyncJobAbort(result=True, job_id=AsyncJobId(_faker.uuid4())),
