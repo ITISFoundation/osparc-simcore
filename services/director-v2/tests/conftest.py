@@ -360,7 +360,7 @@ def mock_osparc_variables_api_auth_rpc(mocker: MockerFixture) -> None:
 
     # mocks RPC interface
     mocker.patch(
-        "simcore_service_director_v2.modules.osparc_variables._api_auth.create_api_key",
+        "simcore_service_director_v2.modules.osparc_variables._api_auth.rpc_create_api_key",
         side_effect=_create,
         autospec=True,
     )
