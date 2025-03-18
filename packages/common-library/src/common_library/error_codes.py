@@ -10,26 +10,30 @@ SEE test_error_codes for some use cases
 import hashlib
 import re
 import traceback
-from typing import TYPE_CHECKING, Annotated
+from datetime import datetime
+from typing import Annotated, Final, TypeAlias
 
+import arrow
 from pydantic import StringConstraints, TypeAdapter
 
-_LABEL = "OEC:{}"
-_PATTERN = r"OEC:[a-zA-Z0-9]+"
-
-if TYPE_CHECKING:
-    ErrorCodeStr = str
-else:
-    ErrorCodeStr = Annotated[
-        str, StringConstraints(strip_whitespace=True, pattern=_PATTERN)
-    ]
+_LABEL = "OEC:{fingerprint}-{timestamp}"
 
 _LEN = 12  # chars (~48 bits)
+_NAMED_PATTERN = re.compile(
+    r"OEC:(?P<fingerprint>[a-fA-F0-9]{12})-(?P<timestamp>\d{13,14})"
+    # NOTE: timestamp limits: 13 digits (from 2001), 14 digits (good for ~500+ years)
+)
+_PATTERN = re.compile(r"OEC:[a-fA-F0-9]{12}-\d{13,14}")
 
 
-def _generate_error_fingerprint(exc: BaseException) -> str:
+ErrorCodeStr: TypeAlias = Annotated[
+    str, StringConstraints(strip_whitespace=True, pattern=_NAMED_PATTERN)
+]
+
+
+def _create_fingerprint(exc: BaseException) -> str:
     """
-    Unique error fingerprint for deduplication purposes
+    Unique error fingerprint of the **traceback** for deduplication purposes
     """
     tb = traceback.extract_tb(exc.__traceback__)
     frame_sigs = [f"{frame.name}:{frame.lineno}" for frame in tb]
@@ -38,11 +42,43 @@ def _generate_error_fingerprint(exc: BaseException) -> str:
     return hashlib.sha256(fingerprint.encode()).hexdigest()[:_LEN]
 
 
+_MILISECONDS: Final[int] = 1000
+
+
+def _create_timestamp() -> int:
+    """Timestamp as milliseconds since epoch
+    NOTE: this reduces the precission to milliseconds but it is good enough for our purpose
+    """
+    ts = arrow.utcnow().float_timestamp * _MILISECONDS
+    return int(ts)
+
+
 def create_error_code(exception: BaseException) -> ErrorCodeStr:
+    """
+    Generates a unique error code for the given exception.
+
+    The error code follows the format: `OEC:{traceback}-{timestamp}`.
+    This code is intended to be shared with the front-end as a `SupportID`
+    for debugging and support purposes.
+    """
     return TypeAdapter(ErrorCodeStr).validate_python(
-        _LABEL.format(_generate_error_fingerprint(exception))
+        _LABEL.format(
+            fingerprint=_create_fingerprint(exception),
+            timestamp=_create_timestamp(),
+        )
     )
 
 
-def parse_error_code(obj) -> set[ErrorCodeStr]:
-    return set(re.findall(_PATTERN, f"{obj}"))
+def parse_error_codes(obj) -> list[ErrorCodeStr]:
+    return TypeAdapter(list[ErrorCodeStr]).validate_python(_PATTERN.findall(f"{obj}"))
+
+
+def parse_error_code_parts(oec: ErrorCodeStr) -> tuple[str, datetime]:
+    """Returns traceback-fingerprint and timestamp from `OEC:{traceback}-{timestamp}`"""
+    match = _NAMED_PATTERN.match(oec)
+    if not match:
+        msg = f"Invalid error code format: {oec}"
+        raise ValueError(msg)
+    fingerprint = match.group("fingerprint")
+    timestamp = arrow.get(int(match.group("timestamp")) / _MILISECONDS).datetime
+    return fingerprint, timestamp
