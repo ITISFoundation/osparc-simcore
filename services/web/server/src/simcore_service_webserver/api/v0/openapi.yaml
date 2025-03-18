@@ -2981,6 +2981,7 @@ paths:
       tags:
       - long-running-tasks
       summary: List Tasks
+      description: Lists all long running tasks
       operationId: list_tasks
       responses:
         '200':
@@ -2989,11 +2990,36 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_list_TaskGet__'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+        '410':
+          description: Gone
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
   /v0/tasks/{task_id}:
     get:
       tags:
       - long-running-tasks
       summary: Get Task Status
+      description: Retrieves the status of a task
       operationId: get_task_status
       parameters:
       - name: task_id
@@ -3009,10 +3035,35 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_TaskStatus_'
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
+        '410':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Gone
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Internal Server Error
     delete:
       tags:
       - long-running-tasks
       summary: Cancel And Delete Task
+      description: Cancels and deletes a task
       operationId: cancel_and_delete_task
       parameters:
       - name: task_id
@@ -3024,11 +3075,36 @@ paths:
       responses:
         '204':
           description: Successful Response
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
+        '410':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Gone
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Internal Server Error
   /v0/tasks/{task_id}/result:
     get:
       tags:
       - long-running-tasks
       summary: Get Task Result
+      description: Retrieves the result of a task
       operationId: get_task_result
       parameters:
       - name: task_id
@@ -3043,6 +3119,30 @@ paths:
           content:
             application/json:
               schema: {}
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
+        '410':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Gone
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Internal Server Error
   /v0/catalog/licensed-items:
     get:
       tags:
@@ -6464,178 +6564,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Internal Server Error
-  /v0/storage/async-jobs/{job_id}/status:
-    get:
-      tags:
-      - storage
-      summary: Get Async Job Status
-      description: Get async job status
-      operationId: get_async_job_status
-      parameters:
-      - name: job_id
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
-          title: Job Id
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_TaskStatus_'
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
-          description: Not Found
-        '403':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
-          description: Forbidden
-        '410':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
-          description: Gone
-        '500':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
-          description: Internal Server Error
-  /v0/storage/async-jobs/{job_id}:abort:
-    post:
-      tags:
-      - storage
-      summary: Abort Async Job
-      description: aborts execution of an async job
-      operationId: abort_async_job
-      parameters:
-      - name: job_id
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
-          title: Job Id
-      responses:
-        '204':
-          description: Successful Response
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
-          description: Not Found
-        '403':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
-          description: Forbidden
-        '410':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
-          description: Gone
-        '500':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
-          description: Internal Server Error
-  /v0/storage/async-jobs/{job_id}/result:
-    get:
-      tags:
-      - storage
-      summary: Get Async Job Result
-      description: Get the result of the async job
-      operationId: get_async_job_result
-      parameters:
-      - name: job_id
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
-          title: Job Id
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_TaskResult_'
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
-          description: Not Found
-        '403':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
-          description: Forbidden
-        '410':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
-          description: Gone
-        '500':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
-          description: Internal Server Error
-  /v0/storage/async-jobs:
-    get:
-      tags:
-      - storage
-      summary: Get Async Jobs
-      description: Returns the user's async jobs
-      operationId: get_async_jobs
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_list_TaskResult__'
-        '404':
-          description: Not Found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
-        '403':
-          description: Forbidden
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
-        '410':
-          description: Gone
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
-        '500':
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
   /v0/trash:empty:
     post:
       tags:
@@ -9633,19 +9561,6 @@ components:
           title: Error
       type: object
       title: Envelope[TaskGet]
-    Envelope_TaskResult_:
-      properties:
-        data:
-          anyOf:
-          - $ref: '#/components/schemas/TaskResult'
-          - type: 'null'
-        error:
-          anyOf:
-          - {}
-          - type: 'null'
-          title: Error
-      type: object
-      title: Envelope[TaskResult]
     Envelope_TaskStatus_:
       properties:
         data:
@@ -10287,22 +10202,6 @@ components:
           title: Error
       type: object
       title: Envelope[list[TaskGet]]
-    Envelope_list_TaskResult__:
-      properties:
-        data:
-          anyOf:
-          - items:
-              $ref: '#/components/schemas/TaskResult'
-            type: array
-          - type: 'null'
-          title: Data
-        error:
-          anyOf:
-          - {}
-          - type: 'null'
-          title: Error
-      type: object
-      title: Envelope[list[TaskResult]]
     Envelope_list_UserForAdminGet__:
       properties:
         data:
@@ -15395,23 +15294,6 @@ components:
         to be
 
         defined as a float bound between 0.0 and 1.0'
-    TaskResult:
-      properties:
-        result:
-          anyOf:
-          - {}
-          - type: 'null'
-          title: Result
-        error:
-          anyOf:
-          - {}
-          - type: 'null'
-          title: Error
-      type: object
-      required:
-      - result
-      - error
-      title: TaskResult
     TaskStatus:
       properties:
         task_progress:
