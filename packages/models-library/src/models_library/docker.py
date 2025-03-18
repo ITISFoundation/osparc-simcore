@@ -143,7 +143,7 @@ class StandardSimcoreDockerLabels(BaseModel):
         """returns a dictionary of strings as required by docker"""
         return {
             to_simcore_runtime_docker_label_key(k): f"{v}"
-            for k, v in sorted(self.model_copy().model_dump().items())
+            for k, v in sorted(self.model_dump().items())
         }
 
     @classmethod
