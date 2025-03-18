@@ -10,10 +10,9 @@ SEE test_error_codes for some use cases
 import hashlib
 import re
 import traceback
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Annotated, Final, TypeAlias
 
-import arrow
 from pydantic import StringConstraints, TypeAdapter
 
 _LABEL = "OEC:{fingerprint}-{timestamp}"
@@ -49,7 +48,7 @@ def _create_timestamp() -> int:
     """Timestamp as milliseconds since epoch
     NOTE: this reduces the precission to milliseconds but it is good enough for our purpose
     """
-    ts = arrow.utcnow().float_timestamp * _MILISECONDS
+    ts = datetime.now(UTC).timestamp() * _MILISECONDS
     return int(ts)
 
 
