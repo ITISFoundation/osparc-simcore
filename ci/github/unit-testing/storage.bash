@@ -19,7 +19,7 @@ test() {
   # shellcheck source=/dev/null
   source .venv/bin/activate
   pushd services/storage
-  make test-ci-unit
+  make test-ci-unit pytest-parameters="--disk-usage"
   popd
 }
 
