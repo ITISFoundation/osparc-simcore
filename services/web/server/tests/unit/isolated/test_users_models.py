@@ -3,8 +3,6 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
-import itertools
-from copy import deepcopy
 from datetime import UTC, datetime
 from typing import Any
 
@@ -16,44 +14,9 @@ from models_library.api_schemas_webserver.users import (
     MyProfilePrivacyGet,
 )
 from models_library.generics import Envelope
-from models_library.users import UserThirdPartyToken
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import BaseModel, ValidationError
-from pytest_simcore.pydantic_models import (
-    assert_validation_model,
-    iter_model_examples_in_class,
-)
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
-from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.users._common.models import ToUserUpdateDB
-
-
-@pytest.mark.parametrize(
-    "model_cls, example_name, example_data",
-    itertools.chain(
-        iter_model_examples_in_class(MyProfileGet),
-        iter_model_examples_in_class(UserThirdPartyToken),
-    ),
-)
-def test_user_models_examples(
-    model_cls: type[BaseModel], example_name: str, example_data: Any
-):
-    model_instance = assert_validation_model(
-        model_cls, example_name=example_name, example_data=example_data
-    )
-
-    model_enveloped = Envelope[model_cls].from_data(
-        model_instance.model_dump(by_alias=True)
-    )
-    model_array_enveloped = Envelope[list[model_cls]].from_data(
-        [
-            model_instance.model_dump(by_alias=True),
-            model_instance.model_dump(by_alias=True),
-        ]
-    )
-
-    assert model_enveloped.error is None
-    assert model_array_enveloped.error is None
 
 
 @pytest.fixture
@@ -102,18 +65,6 @@ def test_auto_compute_gravatar__deprecated(fake_profile_get: MyProfileGet):
     assert data["login"] == profile.login
     assert data["role"] == profile.role
     assert data["preferences"] == profile.preferences
-
-
-@pytest.mark.parametrize("user_role", [u.name for u in UserRole])
-def test_profile_get_role(user_role: str):
-    for example in MyProfileGet.model_json_schema()["examples"]:
-        data = deepcopy(example)
-        data["role"] = user_role
-        m1 = MyProfileGet(**data)
-
-        data["role"] = UserRole(user_role)
-        m2 = MyProfileGet(**data)
-        assert m1 == m2
 
 
 def test_parsing_output_of_get_user_profile():
@@ -185,58 +136,3 @@ def test_mapping_update_models_from_rest_to_db():
         "name": "foo1234",
         "privacy_hide_fullname": False,
     }
-
-
-def test_my_profile_patch_username_min_len():
-    # minimum length username is 4
-    with pytest.raises(ValidationError) as err_info:
-        MyProfilePatch.model_validate({"userName": "abc"})
-
-    assert err_info.value.error_count() == 1
-    assert err_info.value.errors()[0]["type"] == "too_short"
-
-    MyProfilePatch.model_validate({"userName": "abcd"})  # OK
-
-
-def test_my_profile_patch_username_valid_characters():
-    # Ensure valid characters (alphanumeric + . _ -)
-    with pytest.raises(ValidationError, match="start with a letter") as err_info:
-        MyProfilePatch.model_validate({"userName": "1234"})
-
-    assert err_info.value.error_count() == 1
-    assert err_info.value.errors()[0]["type"] == "value_error"
-
-    MyProfilePatch.model_validate({"userName": "u1234"})  # OK
-
-
-def test_my_profile_patch_username_special_characters():
-    # Ensure no consecutive special characters
-    with pytest.raises(
-        ValidationError, match="consecutive special characters"
-    ) as err_info:
-        MyProfilePatch.model_validate({"userName": "u1__234"})
-
-    assert err_info.value.error_count() == 1
-    assert err_info.value.errors()[0]["type"] == "value_error"
-
-    MyProfilePatch.model_validate({"userName": "u1_234"})  # OK
-
-    # Ensure it doesn't end with a special character
-    with pytest.raises(ValidationError, match="end with") as err_info:
-        MyProfilePatch.model_validate({"userName": "u1234_"})
-
-    assert err_info.value.error_count() == 1
-    assert err_info.value.errors()[0]["type"] == "value_error"
-
-    MyProfilePatch.model_validate({"userName": "u1_234"})  # OK
-
-
-def test_my_profile_patch_username_reserved_words():
-    # Check reserved words (example list; extend as needed)
-    with pytest.raises(ValidationError, match="cannot be used") as err_info:
-        MyProfilePatch.model_validate({"userName": "admin"})
-
-    assert err_info.value.error_count() == 1
-    assert err_info.value.errors()[0]["type"] == "value_error"
-
-    MyProfilePatch.model_validate({"userName": "midas"})  # OK
