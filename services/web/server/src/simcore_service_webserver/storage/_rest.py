@@ -23,6 +23,7 @@ from models_library.api_schemas_webserver.storage import (
     StorageAsyncJobGet,
     StorageAsyncJobResult,
     StorageAsyncJobStatus,
+    StoragePathComputeSizeParams,
 )
 from models_library.projects_nodes_io import LocationID
 from models_library.utils.change_case import camel_to_snake
@@ -43,6 +44,9 @@ from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import (
     get_status,
     list_jobs,
     submit_job,
+)
+from servicelib.rabbitmq.rpc_interfaces.storage.paths import (
+    compute_path_size as remote_compute_path_size,
 )
 from servicelib.request_keys import RQT_USERID_KEY
 from servicelib.rest_responses import unwrap_envelope
@@ -172,6 +176,33 @@ async def list_storage_locations(request: web.Request) -> web.Response:
 async def list_paths(request: web.Request) -> web.Response:
     payload, resp_status = await _forward_request_to_storage(request, "GET", body=None)
     return create_data_response(payload, status=resp_status)
+
+
+@routes.post(
+    f"{_storage_locations_prefix}/{{location_id}}/paths/{{path}}:size",
+    name="compute_path_size",
+)
+@login_required
+@permission_required("storage.files.*")
+async def compute_path_size(request: web.Request) -> web.Response:
+    req_ctx = RequestContext.model_validate(request)
+    path_params = parse_request_path_parameters_as(
+        StoragePathComputeSizeParams, request
+    )
+
+    rabbitmq_rpc_client = get_rabbitmq_rpc_client(request.app)
+    async_job, _ = await remote_compute_path_size(
+        rabbitmq_rpc_client,
+        user_id=req_ctx.user_id,
+        product_name=req_ctx.product_name,
+        location_id=path_params.location_id,
+        path=path_params.path,
+    )
+
+    return create_data_response(
+        async_job,
+        status=status.HTTP_202_ACCEPTED,
+    )
 
 
 @routes.get(
@@ -472,7 +503,6 @@ async def get_async_jobs(request: web.Request) -> web.Response:
 @permission_required("storage.files.*")
 @handle_data_export_exceptions
 async def get_async_job_status(request: web.Request) -> web.Response:
-
     class _PathParams(BaseModel):
         job_id: UUID
 

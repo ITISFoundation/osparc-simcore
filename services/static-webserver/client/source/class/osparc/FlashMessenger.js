@@ -57,13 +57,19 @@ qx.Class.define("osparc.FlashMessenger", {
     MAX_DISPLAYED: 3,
 
     extractMessage: function(input, defaultMessage = "") {
+      const isValidString = val => {
+        return (
+          typeof val === "string" ||
+          (osparc.utils.Utils.isObject(val) && ("basename" in val) && (val.basename === "LocalizedString"))
+        );
+      }
       if (input) {
-        if (typeof input === "string") {
+        if (isValidString(input)) {
           return input;
         } else if (osparc.utils.Utils.isObject(input) && "message" in input) {
-          if (typeof input["message"] === "string") {
+          if (isValidString(input["message"])) {
             return input["message"];
-          } else if (osparc.utils.Utils.isObject(input["message"]) && "message" in input["message"] && typeof input["message"]["message"] === "string") {
+          } else if (osparc.utils.Utils.isObject(input["message"]) && "message" in input["message"] && isValidString(input["message"]["message"])) {
             return input["message"]["message"];
           }
         }

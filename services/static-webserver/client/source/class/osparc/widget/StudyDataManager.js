@@ -95,9 +95,6 @@ qx.Class.define("osparc.widget.StudyDataManager", {
       const treeFolderView = this.getChildControl("tree-folder-view");
       treeFolderView.getChildControl("folder-tree").setBackgroundColor("window-popup-background");
 
-      const reloadButton = treeFolderView.getChildControl("reload-button");
-      reloadButton.addListener("execute", () => this.__reloadTree(), this);
-
       const selectedFileLayout = treeFolderView.getChildControl("folder-viewer").getChildControl("selected-file-layout");
       selectedFileLayout.addListener("fileDeleted", e => this.__fileDeleted(e.getData()), this);
     },
@@ -109,8 +106,10 @@ qx.Class.define("osparc.widget.StudyDataManager", {
       foldersTree.resetCache();
       if (this.getNodeId()) {
         foldersTree.populateNodeTree(this.getStudyId(), this.getNodeId());
+        treeFolderView.requestSize(this.getStudyId(), this.getNodeId());
       } else if (this.getStudyId()) {
         foldersTree.populateStudyTree(this.getStudyId());
+        treeFolderView.requestSize(this.getStudyId());
       }
 
       const folderViewer = treeFolderView.getChildControl("folder-viewer");

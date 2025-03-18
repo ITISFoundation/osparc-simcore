@@ -32,23 +32,13 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
     this.__sortBy = osparc.service.SortServicesButtons.DefaultSorting;
   },
 
-  properties: {
-    multiSelection: {
-      check: "Boolean",
-      init: false,
-      nullable: false,
-      event: "changeMultiSelection",
-      apply: "__applyMultiSelection"
-    }
-  },
-
   members: {
     __sortBy: null,
 
     // overridden
     initResources: function() {
       this._resourcesList = [];
-      osparc.store.Services.getServicesLatest(false)
+      osparc.store.Services.getServicesLatest()
         .then(services => {
           // Show "Contact Us" message if services.length === 0
           // Most probably is a product-stranger user (it can also be that the catalog is down)
@@ -111,35 +101,6 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
       const serviceData = card.getResourceData();
       this._openResourceDetails(serviceData);
       this.resetSelection();
-    },
-
-    _createStudyFromService: function(key, version) {
-      if (!this._checkLoggedIn()) {
-        return;
-      }
-
-      const studyAlias = osparc.product.Utils.getStudyAlias({firstUpperCase: true});
-      this._showLoadingPage(this.tr("Creating ") + studyAlias);
-
-      osparc.study.Utils.createStudyFromService(key, version)
-        .then(studyId => {
-          const openCB = () => this._hideLoadingPage();
-          const cancelCB = () => {
-            this._hideLoadingPage();
-            const params = {
-              url: {
-                studyId
-              }
-            };
-            osparc.data.Resources.fetch("studies", "delete", params);
-          };
-          const isStudyCreation = true;
-          this._startStudyById(studyId, openCB, cancelCB, isStudyCreation);
-        })
-        .catch(err => {
-          this._hideLoadingPage();
-          osparc.FlashMessenger.logError(err);
-        });
     },
 
     // LAYOUT //

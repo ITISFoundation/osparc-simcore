@@ -247,7 +247,10 @@ qx.Class.define("osparc.workbench.ServiceCatalog", {
           osparc.store.Services.populateVersionsSelectBox(key, selectBox)
             .then(() => {
               osparc.utils.Utils.growSelectBox(selectBox, 200);
-              selectBox.setSelection([latest]);
+              const idx = selectBox.getSelectables().indexOf(latest);
+              if (idx > -1) {
+                selectBox.setSelection([latest]);
+              }
             });
         }
       }

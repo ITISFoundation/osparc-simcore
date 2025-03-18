@@ -40,6 +40,12 @@ qx.Class.define("osparc.file.TreeFolderView", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
+        case "header-layout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox()).set({
+            marginLeft: 8
+          });
+          this._addAt(control, 0);
+          break;
         case "reload-button":
           control = new qx.ui.form.Button().set({
             label: this.tr("Reload"),
@@ -47,7 +53,16 @@ qx.Class.define("osparc.file.TreeFolderView", {
             icon: "@FontAwesome5Solid/sync-alt/14",
             allowGrowX: false
           });
-          this._add(control);
+          this.getChildControl("header-layout").add(control);
+          break;
+        case "total-size-label":
+          control = new qx.ui.basic.Atom().set({
+            label: this.tr("Calculating Size"),
+            font: "text-14",
+            icon: "@FontAwesome5Solid/spinner/14",
+            allowGrowX: false
+          });
+          this.getChildControl("header-layout").add(control);
           break;
         case "tree-folder-layout":
           control = new qx.ui.splitpane.Pane("horizontal");
@@ -80,7 +95,6 @@ qx.Class.define("osparc.file.TreeFolderView", {
     },
 
     __buildLayout: function() {
-      this.getChildControl("reload-button");
       const folderTree = this.getChildControl("folder-tree");
       const folderViewer = this.getChildControl("folder-viewer");
 
@@ -146,6 +160,33 @@ qx.Class.define("osparc.file.TreeFolderView", {
       } else {
         folderViewer.resetFolder();
       }
+    },
+
+    requestSize: function(pathId) {
+      const totalSize = this.getChildControl("total-size-label");
+      totalSize.getChildControl("icon").getContentElement().addClass("rotate");
+
+      osparc.data.Resources.fetch("storagePaths", "requestSize", { url: { pathId } })
+        .then(resp => {
+          const jobId = resp["job_id"];
+          if (jobId) {
+            const asyncJob = new osparc.file.StorageAsyncJob(jobId);
+            asyncJob.addListener("resultReceived", e => {
+              const size = e.getData();
+              totalSize.set({
+                icon: null,
+                label: this.tr("Total size: ") + osparc.utils.Utils.bytesToSize(size),
+              });
+            });
+            asyncJob.addListener("pollingError", e => {
+              totalSize.hide();
+            });
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          totalSize.hide();
+        });
     }
   }
 });

@@ -27,18 +27,6 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
       UPDATE_BUTTON: Object.keys(osparc.metadata.ServicesInStudy.GRID_POS).length+2
     },
 
-    updatableNodeIds: function(workbench, studyServices) {
-      const nodeIds = [];
-      for (const nodeId in workbench) {
-        const node = workbench[nodeId];
-        const studyServiceFound = studyServices.find(studyService => studyService["key"] === node["key"] && studyService["release"]["version"] === node["version"]);
-        if (studyServiceFound && studyServiceFound["release"] && studyServiceFound["release"]["compatibility"]) {
-          nodeIds.push(nodeId);
-        }
-      }
-      return nodeIds;
-    },
-
     colorVersionLabel: function(versionLabel, metadata) {
       const isDeprecated = osparc.service.Utils.isDeprecated(metadata);
       const isRetired = osparc.service.Utils.isRetired(metadata);
