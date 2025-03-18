@@ -15,8 +15,15 @@ from models_library.api_schemas_long_running_tasks.tasks import TaskResult
 from models_library.api_schemas_rpc_async_jobs.async_jobs import (
     AsyncJobGet,
     AsyncJobId,
+    AsyncJobNameData,
     AsyncJobResult,
     AsyncJobStatus,
+)
+from models_library.api_schemas_rpc_async_jobs.exceptions import (
+    JobAbortedError,
+    JobError,
+    JobNotDoneError,
+    JobSchedulerError,
 )
 from models_library.api_schemas_storage import STORAGE_RPC_NAMESPACE
 from models_library.api_schemas_storage.data_export_async_jobs import (
@@ -34,18 +41,10 @@ from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.async_jobs import async_jobs
 from servicelib.rabbitmq.rpc_interfaces.storage.data_export import start_data_export
 from settings_library.rabbit import RabbitSettings
-from simcore_service_storage.api.rpc._async_jobs import (
-    AsyncJobNameData,
-    JobAbortedError,
-    JobError,
-    JobNotDoneError,
-    JobSchedulerError,
-    TaskStatus,
-)
 from simcore_service_storage.api.rpc._data_export import AccessRightError
 from simcore_service_storage.core.settings import ApplicationSettings
 from simcore_service_storage.modules.celery.client import TaskUUID
-from simcore_service_storage.modules.celery.models import TaskState
+from simcore_service_storage.modules.celery.models import TaskState, TaskStatus
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 
 pytest_plugins = [
@@ -59,12 +58,6 @@ pytest_simcore_core_services_selection = [
 ]
 
 _faker = Faker()
-
-
-@pytest.fixture
-async def mock_rabbit_setup(mocker: MockerFixture):
-    # fixture to avoid mocking the rabbit
-    pass
 
 
 @dataclass
