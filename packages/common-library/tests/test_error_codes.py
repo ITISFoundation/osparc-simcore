@@ -36,8 +36,8 @@ def test_exception_fingerprint_consistency():
         # emulates different runs of the same function (e.g. different sessions)
         try:
             _level_one(v)  # same even if different value!
-            time.sleep(0.1)
         except Exception as err:
+            time.sleep(1)
             error_code = create_error_code(err)
             error_codes.append(error_code)
 
@@ -51,11 +51,11 @@ def test_exception_fingerprint_consistency():
     assert fingerprints[0] == fingerprints[1]
     assert timestamps[0] < timestamps[1]
 
-    time.sleep(0.1)
     try:
         # Same function but different location
         _level_one(0)
     except Exception as e2:
+        time.sleep(1)
         error_code_2 = create_error_code(e2)
         fingerprint_2, timestamp_2 = parse_error_code_parts(error_code_2)
 

@@ -41,14 +41,14 @@ def _create_fingerprint(exc: BaseException) -> str:
     return hashlib.sha256(fingerprint.encode()).hexdigest()[:_LEN]
 
 
-_MILISECONDS: Final[int] = 1000
+_SECS_TO_MILISECS: Final[int] = 1000  # ms
 
 
 def _create_timestamp() -> int:
     """Timestamp as milliseconds since epoch
     NOTE: this reduces the precission to milliseconds but it is good enough for our purpose
     """
-    ts = datetime.now(UTC).timestamp() * _MILISECONDS
+    ts = datetime.now(UTC).timestamp() * _SECS_TO_MILISECS
     return int(ts)
 
 
@@ -79,5 +79,7 @@ def parse_error_code_parts(oec: ErrorCodeStr) -> tuple[str, datetime]:
         msg = f"Invalid error code format: {oec}"
         raise ValueError(msg)
     fingerprint = match.group("fingerprint")
-    timestamp = arrow.get(int(match.group("timestamp")) / _MILISECONDS).datetime
+    timestamp = datetime.fromtimestamp(
+        float(match.group("timestamp")) / _SECS_TO_MILISECS, tz=UTC
+    )
     return fingerprint, timestamp
