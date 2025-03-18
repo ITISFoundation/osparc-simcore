@@ -102,6 +102,7 @@ qx.Class.define("osparc.file.TreeFolderView", {
         const selectedModel = folderTree.getSelectedItem();
         if (selectedModel) {
           if (selectedModel.getPath() && !selectedModel.getLoaded()) {
+            selectedModel.setLoaded(true);
             folderTree.requestPathItems(selectedModel.getLocation(), selectedModel.getPath())
               .then(pathModel => {
                 if (osparc.file.FilesTree.isDir(pathModel)) {
@@ -118,6 +119,7 @@ qx.Class.define("osparc.file.TreeFolderView", {
         const selectedModel = e.getData();
         if (selectedModel) {
           if (selectedModel.getPath() && !selectedModel.getLoaded()) {
+            selectedModel.setLoaded(true);
             folderTree.requestPathItems(selectedModel.getLocation(), selectedModel.getPath())
               .then(pathModel => {
                 folderTree.openNodeAndParents(pathModel);
