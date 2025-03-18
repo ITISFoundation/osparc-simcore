@@ -38,7 +38,9 @@ from models_library.docker import (
     DockerLabelKey,
     StandardSimcoreDockerLabels,
 )
-from models_library.generated_models.docker_rest_api import Availability
+from models_library.generated_models.docker_rest_api import (
+    Availability,
+)
 from models_library.generated_models.docker_rest_api import Node as DockerNode
 from models_library.generated_models.docker_rest_api import (
     NodeDescription,
@@ -757,7 +759,7 @@ async def _assert_wait_for_service_state(
             ), f"service {found_service['Spec']['Name']}'s task is {service_task['Status']['State']}"
             ctx.logger.info(
                 "%s",
-                f"service {found_service['Spec']['Name']} is now {service_task['Status']['State']} {'.'*number_of_success['count']}",
+                f"service {found_service['Spec']['Name']} is now {service_task['Status']['State']} {'.' * number_of_success['count']}",
             )
             number_of_success["count"] += 1
             assert (number_of_success["count"] * WAIT_TIME) >= SUCCESS_STABLE_TIME_S
@@ -774,7 +776,7 @@ def aws_allowed_ec2_instance_type_names() -> list[InstanceTypeType]:
     return [
         "t2.xlarge",
         "t2.2xlarge",
-        "g3.4xlarge",
+        "g5.4xlarge",
         "g4dn.2xlarge",
         "g4dn.8xlarge",
         "r5n.4xlarge",
