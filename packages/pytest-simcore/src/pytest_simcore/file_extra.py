@@ -1,7 +1,6 @@
 import logging
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from pathlib import Path
-from typing import Iterable
 
 import pytest
 from faker import Faker
