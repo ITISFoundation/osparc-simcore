@@ -24,7 +24,6 @@ from models_library.api_schemas_storage.storage_schemas import (
 from models_library.api_schemas_webserver.storage import (
     DataExportPost,
     ListPathsQueryParams,
-    StorageAsyncJobGet,
     StorageLocationPathParams,
     StoragePathComputeSizeParams,
 )
@@ -74,7 +73,7 @@ async def list_storage_paths(
 
 @router.post(
     "/storage/locations/{location_id}/paths/{path}:size",
-    response_model=Envelope[StorageAsyncJobGet],
+    response_model=Envelope[TaskGet],
     status_code=status.HTTP_202_ACCEPTED,
 )
 async def compute_path_size(_path: Annotated[StoragePathComputeSizeParams, Depends()]):

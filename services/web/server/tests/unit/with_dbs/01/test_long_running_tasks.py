@@ -63,3 +63,19 @@ async def test_listing_tasks_empty(
         assert not data
         return
     assert data == []
+
+
+@pytest.mark.parametrize(*_tasks_role_responses())
+async def test_propagation_of_legacy_tasks_failure(
+    client: TestClient,
+    logged_user,
+    expected,
+):
+    assert client.app
+    list_task_url = client.app.router["list_tasks"].url_for()
+    resp = await client.get(f"{list_task_url}")
+    data, error = await assert_status(resp, expected.ok)
+    if error:
+        assert not data
+        return
+    assert data == []

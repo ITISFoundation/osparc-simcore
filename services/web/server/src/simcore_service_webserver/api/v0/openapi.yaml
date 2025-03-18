@@ -6185,7 +6185,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_StorageAsyncJobGet_'
+                $ref: '#/components/schemas/Envelope_TaskGet_'
   /v0/storage/locations/{location_id}/datasets:
     get:
       tags:
@@ -7844,23 +7844,6 @@ components:
       - app_name
       - version
       title: AppStatusCheck
-    AsyncJobLinks:
-      properties:
-        statusHref:
-          type: string
-          title: Statushref
-        abortHref:
-          type: string
-          title: Aborthref
-        resultHref:
-          type: string
-          title: Resulthref
-      type: object
-      required:
-      - statusHref
-      - abortHref
-      - resultHref
-      title: AsyncJobLinks
     Author:
       properties:
         name:
@@ -9522,19 +9505,6 @@ components:
           title: Error
       type: object
       title: Envelope[StatusDiagnosticsGet]
-    Envelope_StorageAsyncJobGet_:
-      properties:
-        data:
-          anyOf:
-          - $ref: '#/components/schemas/StorageAsyncJobGet'
-          - type: 'null'
-        error:
-          anyOf:
-          - {}
-          - type: 'null'
-          title: Error
-      type: object
-      title: Envelope[StorageAsyncJobGet]
     Envelope_TagGet_:
       properties:
         data:
@@ -14985,19 +14955,6 @@ components:
       - loop_tasks
       - top_tracemalloc
       title: StatusDiagnosticsGet
-    StorageAsyncJobGet:
-      properties:
-        jobId:
-          type: string
-          format: uuid
-          title: Jobid
-        links:
-          $ref: '#/components/schemas/AsyncJobLinks'
-      type: object
-      required:
-      - jobId
-      - links
-      title: StorageAsyncJobGet
     Structure:
       properties:
         key:
