@@ -1,7 +1,8 @@
+# pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
-# pylint: disable=too-many-arguments
 
 from datetime import UTC, datetime
 from typing import Any
@@ -16,6 +17,7 @@ from models_library.api_schemas_webserver.users import (
 from models_library.generics import Envelope
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
+from simcore_postgres_database import utils_users
 from simcore_service_webserver.users._common.models import ToUserUpdateDB
 
 
@@ -136,3 +138,12 @@ def test_mapping_update_models_from_rest_to_db():
         "name": "foo1234",
         "privacy_hide_fullname": False,
     }
+
+
+def test_utils_user_generates_valid_myprofile_patch():
+    username = utils_users._generate_username_from_email("xi@email.com")  # noqa: SLF001
+
+    MyProfilePatch.model_validate({"userName": username})
+    MyProfilePatch.model_validate(
+        {"userName": utils_users.generate_alternative_username(username)}
+    )
