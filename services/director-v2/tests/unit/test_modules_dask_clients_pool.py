@@ -22,7 +22,6 @@ from models_library.clusters import (
 )
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from simcore_postgres_database.models.clusters import ClusterType
 from simcore_service_director_v2.core.application import init_app
 from simcore_service_director_v2.core.errors import (
     ConfigurationError,
@@ -86,7 +85,7 @@ def fake_clusters(faker: Faker) -> Callable[[int], list[BaseCluster]]:
                 {
                     "id": faker.pyint(),
                     "name": faker.name(),
-                    "type": ClusterType.ON_PREMISE,
+                    "type": ClusterTypeInModel.ON_PREMISE,
                     "owner": faker.pyint(),
                     "endpoint": faker.uri(),
                     "authentication": choice(  # noqa: S311
