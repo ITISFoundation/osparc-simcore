@@ -1355,7 +1355,7 @@ async def try_open_project_for_user(
                             for uuid in await user_session.find_all_resources_of_user(
                                 PROJECT_ID_KEY
                             )
-                            if uuid != project_uuid
+                            if uuid != f"{project_uuid}"
                         }
                     )
                     >= max_number_of_studies_per_user
