@@ -234,6 +234,12 @@ async def test_start_data_export_success(
 
 
 @pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
+@pytest.mark.parametrize(
     "project_params",
     [
         ProjectWithFilesParams(
