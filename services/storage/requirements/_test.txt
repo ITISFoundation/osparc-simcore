@@ -121,6 +121,8 @@ faker==36.1.1
     # via -r requirements/_test.in
 fakeredis==2.27.0
     # via -r requirements/_test.in
+flaky==3.8.1
+    # via -r requirements/_test.in
 flask==3.1.0
     # via
     #   flask-cors
