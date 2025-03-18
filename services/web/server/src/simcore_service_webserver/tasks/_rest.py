@@ -61,7 +61,6 @@ async def get_async_jobs(request: web.Request) -> web.Response:
     async with session.request(
         "GET",
         request.url.with_path(str(request.app.router["list_tasks"].url_for())),
-        ssl=False,
         cookies=request.cookies,
     ) as resp:
         if resp.status != status.HTTP_200_OK:
