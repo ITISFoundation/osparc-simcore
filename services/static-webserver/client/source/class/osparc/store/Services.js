@@ -61,9 +61,9 @@ qx.Class.define("osparc.store.Services", {
     getLatestCompatible: function(key, version) {
       const services = this.__servicesCached;
       if (key in services && version in services[key]) {
-        const serviceMD = services[key][version];
-        if (serviceMD["compatibility"] && serviceMD["compatibility"]["canUpdateTo"]) {
-          const canUpdateTo = serviceMD["compatibility"]["canUpdateTo"];
+        const historyEntry = osparc.service.Utils.extractVersionFromHistory(services[key][version]);
+        if (historyEntry["compatibility"] && historyEntry["compatibility"]["canUpdateTo"]) {
+          const canUpdateTo = historyEntry["compatibility"]["canUpdateTo"];
           return {
             key: "key" in canUpdateTo ? canUpdateTo["key"] : key, // key is optional
             version: canUpdateTo["version"]
@@ -240,7 +240,7 @@ qx.Class.define("osparc.store.Services", {
     },
 
     getStudyServicesMetadata: function(studyData) {
-      const wbServices = new Set(osparc.study.Utils.extractUniqueServices(studyData["workbench"]));
+      const wbServices = osparc.study.Utils.extractUniqueServices(studyData["workbench"]);
       const promises = [];
       wbServices.forEach(srv => {
         promises.push(this.getService(srv["key"], srv["version"]));
@@ -251,7 +251,7 @@ qx.Class.define("osparc.store.Services", {
     getInaccessibleServices: function(workbench) {
       const allServices = this.__servicesCached;
       const unaccessibleServices = [];
-      const wbServices = new Set(osparc.study.Utils.extractUniqueServices(workbench));
+      const wbServices = osparc.study.Utils.extractUniqueServices(workbench);
       wbServices.forEach(srv => {
         if (srv.key in allServices && srv.version in allServices[srv.key]) {
           return;
