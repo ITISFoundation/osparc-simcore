@@ -353,7 +353,7 @@ def mock_osparc_variables_api_auth_rpc(mocker: MockerFixture) -> None:
         assert app
         assert product_name
         assert user_id
-        assert expiration is None
+        assert expiration
 
         fake_data.display_name = display_name
         return fake_data
