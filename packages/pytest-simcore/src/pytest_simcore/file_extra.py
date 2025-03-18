@@ -1,11 +1,12 @@
 import logging
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterable, Iterator
 from pathlib import Path
 
 import pytest
 from faker import Faker
 from pydantic import ByteSize, NonNegativeInt
-from pytest_simcore.helpers.logging_tools import log_context
+
+from .helpers.logging_tools import log_context
 
 
 @pytest.fixture
@@ -20,8 +21,11 @@ def fake_file_name(tmp_path: Path, faker: Faker) -> Iterable[Path]:
 
 
 @pytest.fixture
-def create_file_of_size(tmp_path: Path, faker: Faker) -> Callable[[ByteSize], Path]:
-    # NOTE: cleanup is done by tmp_path fixture
+def create_file_of_size(
+    tmp_path: Path, faker: Faker
+) -> Iterator[Callable[[ByteSize], Path]]:
+    created_files = []
+
     def _creator(size: ByteSize, name: str | None = None) -> Path:
         file: Path = tmp_path / (name or faker.file_name())
         if not file.parent.exists():
@@ -32,9 +36,15 @@ def create_file_of_size(tmp_path: Path, faker: Faker) -> Callable[[ByteSize], Pa
 
         assert file.exists()
         assert file.stat().st_size == size
+        created_files.append(file)
         return file
 
-    return _creator
+    yield _creator
+
+    for file in created_files:
+        if file.exists():
+            file.unlink()
+        assert not file.exists()
 
 
 def _create_random_content(
