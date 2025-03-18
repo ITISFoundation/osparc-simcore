@@ -169,7 +169,7 @@ class MyProfilePatch(InputSchemaWithoutCamelCase):
 
         # Ensure it doesn't end with a special character
         if {value[0], value[-1]}.intersection({"_", "-", "."}):
-            msg = f"Username '{value}' cannot end or start with a special character."
+            msg = f"Username '{value}' cannot end with a special character."
             raise ValueError(msg)
 
         # Check reserved words (example list; extend as needed)
