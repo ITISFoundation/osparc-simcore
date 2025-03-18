@@ -69,14 +69,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       event: "changeCurrentFolderId"
     },
 
-    multiSelection: {
-      check: "Boolean",
-      init: false,
-      nullable: false,
-      event: "changeMultiSelection",
-      apply: "__applyMultiSelection"
-    },
-
     // Ordering by Possibilities:
     // field: type | uuid | name | description | prj_owner | creation_date | last_change_date
     // direction: asc | desc
@@ -1411,7 +1403,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       return selectButton;
     },
 
-    __applyMultiSelection: function(value) {
+    // override
+    _applyMultiSelection: function(value) {
       this._resourcesContainer.getCards().forEach(studyItem => {
         if (osparc.dashboard.ResourceBrowserBase.isCardButtonItem(studyItem)) {
           studyItem.setMultiSelectionMode(value);
