@@ -1,3 +1,0 @@
-﻿file_id,location_id,location,bucket_name,object_name,project_id,node_id,user_id
-161b8782-b13e-5840-9ae2-e2250c231001/ad9bda7f-1dc5-5480-ab22-5fef4fc53eac/outputController.dat,0,simcore.s3,pytestbucket,161b8782-b13e-5840-9ae2-e2250c231001/ad9bda7f-1dc5-5480-ab22-5fef4fc53eac/outputController.dat,161b8782-b13e-5840-9ae2-e2250c231001,ad9bda7f-1dc5-5480-ab22-5fef4fc53eac,21
-161b8782-b13e-5840-9ae2-e2250c231001/a3941ea0-37c4-5c1d-a7b3-01b5fd8a80c8/notebooks.zip,0,simcore.s3,pytestbucket,161b8782-b13e-5840-9ae2-e2250c231001/a3941ea0-37c4-5c1d-a7b3-01b5fd8a80c8/notebooks.zip,161b8782-b13e-5840-9ae2-e2250c231001,a3941ea0-37c4-5c1d-a7b3-01b5fd8a80c8,21
