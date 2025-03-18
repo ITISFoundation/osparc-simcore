@@ -35,14 +35,14 @@ qx.Class.define("osparc.study.Utils", {
     },
 
     extractUniqueServices: function(workbench) {
-      const services = [];
+      const services = new Set([]);
       Object.values(workbench).forEach(srv => {
-        services.push({
+        services.add({
           key: srv.key,
           version: srv.version
         });
       });
-      return services;
+      return Array.from(services);
     },
 
     getCantExecuteServices: function(studyServices = []) {
@@ -81,6 +81,18 @@ qx.Class.define("osparc.study.Utils", {
         return false;
       });
       return isUpdatable;
+    },
+
+    updatableNodeIds: function(workbench, studyServices) {
+      const nodeIds = [];
+      for (const nodeId in workbench) {
+        const node = workbench[nodeId];
+        const studyServiceFound = studyServices.find(studyService => studyService["key"] === node["key"] && studyService["release"]["version"] === node["version"]);
+        if (studyServiceFound && studyServiceFound["release"] && studyServiceFound["release"]["compatibility"]) {
+          nodeIds.push(nodeId);
+        }
+      }
+      return nodeIds;
     },
 
 
