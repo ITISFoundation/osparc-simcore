@@ -530,7 +530,7 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     initIframeHandler: function() {
-      if (this.isDynamic()) {
+      if (this.isDynamic() && this.__iframeHandler === null) {
         this.__iframeHandler = new osparc.data.model.IframeHandler(this.getStudy(), this);
       }
     },
