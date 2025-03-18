@@ -303,7 +303,10 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
           resourceDetails.addListener("openService", ev => {
             win.close();
             const openServiceData = ev.getData();
-            this._createStudyFromService(openServiceData["key"], openServiceData["version"]);
+            this.fireDataEvent("newStudyFromServiceClicked", {
+              serviceMetadata: openServiceData,
+              newStudyLabel: buttonConfig["newStudyLabel"],
+            });
           });
         }
         const infoButton = new osparc.ui.basic.IconButton(osparc.ui.hint.InfoHint.INFO_ICON + "/16", cb);
