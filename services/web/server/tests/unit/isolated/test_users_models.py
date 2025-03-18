@@ -18,7 +18,7 @@ from models_library.api_schemas_webserver.users import (
 from models_library.generics import Envelope
 from models_library.users import UserThirdPartyToken
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 from pytest_simcore.pydantic_models import (
     assert_validation_model,
     iter_model_examples_in_class,
@@ -185,3 +185,23 @@ def test_mapping_update_models_from_rest_to_db():
         "name": "foo1234",
         "privacy_hide_fullname": False,
     }
+
+
+def test_my_profile_patch_username_validation():
+    # minimum length username is 4
+    with pytest.raises(ValidationError) as err_info:
+        MyProfilePatch.model_validate({"userName": "abc"})
+
+    assert err_info.value.error_count() == 1
+    assert err_info.value.errors()[0]["type"] == "too_short"
+
+    MyProfilePatch.model_validate({"userName": "abcd"})
+
+    # Ensure valid characters (alphanumeric + . _ -)
+    with pytest.raises(ValidationError, match="start with a letter") as err_info:
+        MyProfilePatch.model_validate({"userName": "1234"})
+
+    assert err_info.value.error_count() == 1
+    assert err_info.value.errors()[0]["type"] == "value_error"
+
+    MyProfilePatch.model_validate({"userName": "u1234"})

@@ -141,7 +141,7 @@ class MyProfileGet(OutputSchemaWithoutCamelCase):
 class MyProfilePatch(InputSchemaWithoutCamelCase):
     first_name: FirstNameStr | None = None
     last_name: LastNameStr | None = None
-    user_name: Annotated[IDStr | None, Field(alias="userName")] = None
+    user_name: Annotated[IDStr | None, Field(alias="userName", min_length=4)] = None
 
     privacy: MyProfilePrivacyPatch | None = None
 
