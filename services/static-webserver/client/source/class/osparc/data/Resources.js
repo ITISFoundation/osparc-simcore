@@ -1208,9 +1208,17 @@ qx.Class.define("osparc.data.Resources", {
             method: "GET",
             url: statics.API + "/storage/locations/{locationId}/paths?size=1000"
           },
+          getDatasetsPage: {
+            method: "GET",
+            url: statics.API + "/storage/locations/{locationId}/paths?size=1000&cursor={cursor}"
+          },
           getPaths: {
             method: "GET",
-            url: statics.API + "/storage/locations/{locationId}/paths?file_filter={path}&size=1000"
+            url: statics.API + "/storage/locations/{locationId}/paths&size=1000?file_filter={path}"
+          },
+          getPathsPage: {
+            method: "GET",
+            url: statics.API + "/storage/locations/{locationId}/paths&size=1000?file_filter={path}&cursor={cursor}"
           },
           requestSize: {
             method: "POST",
