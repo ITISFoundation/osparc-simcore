@@ -61,16 +61,21 @@ _user_roles: Final[list[UserRole]] = [
 ]
 
 
+API_VERSION: Final[str] = "v0"
+
+
 @pytest.fixture
-def create_storage_rpc_client_mock(mocker: MockerFixture) -> Callable[[str, Any], None]:
-    def _(method: str, result_or_exception: Any):
+def create_storage_rpc_client_mock(
+    mocker: MockerFixture,
+) -> Callable[[str, str, Any], None]:
+    def _(module: str, method: str, result_or_exception: Any):
         def side_effect(*args, **kwargs):
             if isinstance(result_or_exception, Exception):
                 raise result_or_exception
 
             return result_or_exception
 
-        for fct in (f"simcore_service_webserver.storage._rest.{method}",):
+        for fct in (f"{module}.{method}",):
             mocker.patch(fct, side_effect=side_effect)
 
     return _
@@ -99,12 +104,13 @@ async def test_data_export(
     user_role: UserRole,
     logged_user: UserInfoDict,
     client: TestClient,
-    create_storage_rpc_client_mock: Callable[[str, Any], None],
+    create_storage_rpc_client_mock: Callable[[str, str, Any], None],
     faker: Faker,
     backend_result_or_exception: Any,
     expected_status: int,
 ):
     create_storage_rpc_client_mock(
+        "simcore_service_webserver.storage._rest",
         start_data_export.__name__,
         backend_result_or_exception,
     )
@@ -113,7 +119,7 @@ async def test_data_export(
         paths=[f"{faker.uuid4()}/{faker.uuid4()}/{faker.file_name()}"]
     )
     response = await client.post(
-        "/v0/storage/locations/0/export-data", data=_body.model_dump_json()
+        f"/{API_VERSION}/storage/locations/0/export-data", data=_body.model_dump_json()
     )
     assert response.status == expected_status
     if response.status == status.HTTP_202_ACCEPTED:
@@ -140,14 +146,18 @@ async def test_get_async_jobs_status(
     user_role: UserRole,
     logged_user: UserInfoDict,
     client: TestClient,
-    create_storage_rpc_client_mock: Callable[[str, Any], None],
+    create_storage_rpc_client_mock: Callable[[str, str, Any], None],
     backend_result_or_exception: Any,
     expected_status: int,
 ):
     _job_id = AsyncJobId(_faker.uuid4())
-    create_storage_rpc_client_mock(get_status.__name__, backend_result_or_exception)
+    create_storage_rpc_client_mock(
+        "simcore_service_webserver.tasks._rest",
+        get_status.__name__,
+        backend_result_or_exception,
+    )
 
-    response = await client.get(f"/v0/storage/async-jobs/{_job_id}/status")
+    response = await client.get(f"/{API_VERSION}/tasks/{_job_id}/status")
     assert response.status == expected_status
     if response.status == status.HTTP_200_OK:
         response_body_data = (
@@ -180,7 +190,7 @@ async def test_abort_async_jobs(
     _job_id = AsyncJobId(faker.uuid4())
     create_storage_rpc_client_mock(abort.__name__, backend_result_or_exception)
 
-    response = await client.post(f"/v0/storage/async-jobs/{_job_id}:abort")
+    response = await client.post(f"/{API_VERSION}/storage/async-jobs/{_job_id}:abort")
     assert response.status == expected_status
 
 
@@ -200,15 +210,19 @@ async def test_get_async_job_result(
     user_role: UserRole,
     logged_user: UserInfoDict,
     client: TestClient,
-    create_storage_rpc_client_mock: Callable[[str, Any], None],
+    create_storage_rpc_client_mock: Callable[[str, str, Any], None],
     faker: Faker,
     result_or_exception: Any,
     expected_status: int,
 ):
     _job_id = AsyncJobId(faker.uuid4())
-    create_storage_rpc_client_mock(get_result.__name__, result_or_exception)
+    create_storage_rpc_client_mock(
+        "simcore_service_webserver.tasks._rest",
+        get_result.__name__,
+        result_or_exception,
+    )
 
-    response = await client.get(f"/v0/storage/async-jobs/{_job_id}/result")
+    response = await client.get(f"/{API_VERSION}/tasks/{_job_id}/result")
     assert response.status == expected_status
 
 
@@ -237,13 +251,17 @@ async def test_get_user_async_jobs(
     user_role: UserRole,
     logged_user: UserInfoDict,
     client: TestClient,
-    create_storage_rpc_client_mock: Callable[[str, Any], None],
+    create_storage_rpc_client_mock: Callable[[str, str, Any], None],
     backend_result_or_exception: Any,
     expected_status: int,
 ):
-    create_storage_rpc_client_mock(list_jobs.__name__, backend_result_or_exception)
+    create_storage_rpc_client_mock(
+        "simcore_service_webserver.tasks._rest",
+        list_jobs.__name__,
+        backend_result_or_exception,
+    )
 
-    response = await client.get("/v0/storage/async-jobs")
+    response = await client.get(f"/{API_VERSION}/tasks")
     assert response.status == expected_status
     if response.status == status.HTTP_200_OK:
         Envelope[list[TaskGet]].model_validate(await response.json())
@@ -287,7 +305,7 @@ async def test_get_async_job_links(
     user_role: UserRole,
     logged_user: UserInfoDict,
     client: TestClient,
-    create_storage_rpc_client_mock: Callable[[str, Any], None],
+    create_storage_rpc_client_mock: Callable[[str, str, Any], None],
     faker: Faker,
     http_method: str,
     href: str,
@@ -297,6 +315,7 @@ async def test_get_async_job_links(
     return_schema: OutputSchema | None,
 ):
     create_storage_rpc_client_mock(
+        "simcore_service_webserver.storage._rest",
         start_data_export.__name__,
         AsyncJobGet(job_id=AsyncJobId(f"{_faker.uuid4()}")),
     )
@@ -305,14 +324,16 @@ async def test_get_async_job_links(
         paths=[f"{faker.uuid4()}/{faker.uuid4()}/{faker.file_name()}"]
     )
     response = await client.post(
-        "/v0/storage/locations/0/export-data", data=_body.model_dump_json()
+        f"/{API_VERSION}/storage/locations/0/export-data", data=_body.model_dump_json()
     )
     assert response.status == status.HTTP_202_ACCEPTED
     response_body_data = Envelope[TaskGet].model_validate(await response.json()).data
     assert response_body_data is not None
 
     # Call the different links and check the correct model and return status
-    create_storage_rpc_client_mock(backend_method, backend_object)
+    create_storage_rpc_client_mock(
+        "simcore_service_webserver.tasks._rest", backend_method, backend_object
+    )
     response = await client.request(
         http_method, URL(getattr(response_body_data, href)).path
     )

@@ -4,6 +4,7 @@ Mostly resolves and redirect to storage API
 """
 
 import logging
+from typing import Final
 from uuid import UUID
 
 from aiohttp import web
@@ -33,6 +34,7 @@ from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import (
     list_jobs,
 )
 
+from .._meta import API_VTAG
 from ..login.decorators import login_required
 from ..models import RequestContext
 from ..rabbitmq import get_rabbitmq_rpc_client
@@ -44,9 +46,11 @@ log = logging.getLogger(__name__)
 
 routes = web.RouteTableDef()
 
+_task_prefix: Final[str] = f"/{API_VTAG}/tasks"
+
 
 @routes.get(
-    "",
+    _task_prefix,
     name="get_async_jobs",
 )
 @login_required
@@ -104,7 +108,7 @@ class _StorageAsyncJobId(BaseModel):
 
 
 @routes.get(
-    "/status",
+    _task_prefix + "/{task_id}/status",
     name="get_async_job_status",
 )
 @login_required
@@ -137,7 +141,7 @@ async def get_async_job_status(request: web.Request) -> web.Response:
 
 
 @routes.post(
-    "/{task_id}:abort",
+    _task_prefix + "/{task_id}:abort",
     name="abort_async_job",
 )
 @login_required
@@ -161,7 +165,7 @@ async def abort_async_job(request: web.Request) -> web.Response:
 
 
 @routes.get(
-    "/{task_id}/result",
+    _task_prefix + "/{task_id}/result",
     name="get_async_job_result",
 )
 @login_required
@@ -169,7 +173,7 @@ async def abort_async_job(request: web.Request) -> web.Response:
 @handle_data_export_exceptions
 async def get_async_job_result(request: web.Request) -> web.Response:
     class _PathParams(BaseModel):
-        job_id: UUID
+        task_id: UUID
 
     _req_ctx = RequestContext.model_validate(request)
 
@@ -178,7 +182,7 @@ async def get_async_job_result(request: web.Request) -> web.Response:
     async_job_rpc_result = await get_result(
         rabbitmq_rpc_client=rabbitmq_rpc_client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
-        job_id=async_job_get.job_id,
+        job_id=async_job_get.task_id,
         job_id_data=AsyncJobNameData(
             user_id=_req_ctx.user_id, product_name=_req_ctx.product_name
         ),
