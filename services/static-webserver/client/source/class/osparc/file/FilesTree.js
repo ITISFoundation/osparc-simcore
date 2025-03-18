@@ -43,7 +43,7 @@ qx.Class.define("osparc.file.FilesTree", {
     this.base(arguments, null, "label", "children");
 
     this.set({
-      openMode: "none",
+      openMode: "dbltap",
       decorator: "no-border",
       font: "text-14",
     });
