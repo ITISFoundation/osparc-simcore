@@ -2,7 +2,6 @@ import datetime
 from contextlib import suppress
 from typing import TypeAlias
 
-from models_library.clusters import ClusterID
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
@@ -45,7 +44,6 @@ class CompRunsAtDB(BaseModel):
     run_id: PositiveInt
     project_uuid: ProjectID
     user_id: UserID
-    cluster_id: ClusterID | None
     iteration: Iteration
     result: RunningState
     created: datetime.datetime
@@ -93,7 +91,6 @@ class CompRunsAtDB(BaseModel):
                     "run_id": 432,
                     "project_uuid": "65fee9d2-e030-452c-a29c-45d288577ca5",
                     "user_id": 132,
-                    "cluster_id": None,
                     "iteration": 42,
                     "result": "UNKNOWN",
                     "started": None,
@@ -109,7 +106,6 @@ class CompRunsAtDB(BaseModel):
                     "run_id": 432,
                     "project_uuid": "65fee9d2-e030-452c-a29c-45d288577ca5",
                     "user_id": 132,
-                    "cluster_id": None,
                     "iteration": 42,
                     "result": "NOT_STARTED",
                     "started": None,
@@ -125,7 +121,6 @@ class CompRunsAtDB(BaseModel):
                     "run_id": 43243,
                     "project_uuid": "65fee9d2-e030-452c-a29c-45d288577ca5",
                     "user_id": 132,
-                    "cluster_id": None,
                     "iteration": 12,
                     "result": "SUCCESS",
                     "created": "2021-03-01T13:07:34.191610",
@@ -148,7 +143,6 @@ class CompRunsAtDB(BaseModel):
                     "run_id": 43243,
                     "project_uuid": "65fee9d2-e030-452c-a29c-45d288577ca5",
                     "user_id": 132,
-                    "cluster_id": None,
                     "iteration": 12,
                     "result": "SUCCESS",
                     "created": "2021-03-01T13:07:34.191610",
