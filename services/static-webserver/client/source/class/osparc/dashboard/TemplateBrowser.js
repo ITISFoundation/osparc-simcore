@@ -23,16 +23,6 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
     this.base(arguments);
   },
 
-  properties: {
-    multiSelection: {
-      check: "Boolean",
-      init: false,
-      nullable: false,
-      event: "changeMultiSelection",
-      apply: "__applyMultiSelection"
-    }
-  },
-
   members: {
     __updateAllButton: null,
 

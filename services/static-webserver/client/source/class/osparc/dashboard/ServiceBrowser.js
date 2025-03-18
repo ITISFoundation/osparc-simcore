@@ -32,16 +32,6 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
     this.__sortBy = osparc.service.SortServicesButtons.DefaultSorting;
   },
 
-  properties: {
-    multiSelection: {
-      check: "Boolean",
-      init: false,
-      nullable: false,
-      event: "changeMultiSelection",
-      apply: "__applyMultiSelection"
-    }
-  },
-
   members: {
     __sortBy: null,
 

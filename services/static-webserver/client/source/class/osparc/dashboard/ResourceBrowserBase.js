@@ -76,6 +76,16 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     this.addListener("appear", () => this._moreResourcesRequired());
   },
 
+  properties: {
+    multiSelection: {
+      check: "Boolean",
+      init: false,
+      nullable: false,
+      event: "changeMultiSelection",
+      apply: "_applyMultiSelection"
+    },
+  },
+
   events: {
     "changeTab": "qx.event.type.Data",
     "publishTemplate": "qx.event.type.Data"
@@ -628,6 +638,10 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
           this._hideLoadingPage();
           osparc.FlashMessenger.logError(err);
         });
+    },
+
+    _applyMultiSelection: function(value) {
+      return;
     },
 
     _deleteResourceRequested: function(resourceId) {
