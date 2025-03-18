@@ -664,7 +664,7 @@ local-registry: .env ## creates a local docker registry and configure simcore to
 					sudo echo 127.0.0.1 $(LOCAL_REGISTRY_HOSTNAME) | sudo tee -a /etc/hosts;\
 					echo done)
 	@$(if $(shell test -f /etc/docker/daemon.json),, \
-			touch /etc/docker/daemon.json)
+			sudo touch /etc/docker/daemon.json)
 	@$(if $(shell jq -e '.["insecure-registries"]? | index("http://$(LOCAL_REGISTRY_HOSTNAME):5000")? // empty' /etc/docker/daemon.json),,\
 					echo configuring docker engine to use insecure local registry...; \
 					jq 'if .["insecure-registries"] | index("http://$(LOCAL_REGISTRY_HOSTNAME):5000") then . else .["insecure-registries"] += ["http://$(LOCAL_REGISTRY_HOSTNAME):5000"] end' /etc/docker/daemon.json > /tmp/daemon.json &&\
