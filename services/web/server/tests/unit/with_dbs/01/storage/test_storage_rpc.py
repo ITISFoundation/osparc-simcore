@@ -1,7 +1,7 @@
-from collections.abc import Callable
-
+# pylint: disable=too-many-arguments
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any, Final
 
