@@ -6,7 +6,7 @@ import re
 import secrets
 import string
 from datetime import datetime
-from typing import Final
+from typing import Any, Final
 
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
@@ -61,7 +61,7 @@ class UsersRepo:
         status: UserStatus,
         expires_at: datetime | None,
     ) -> RowProxy:
-        data = {
+        data: dict[str, Any] = {
             "name": _generate_username_from_email(email),
             "email": email,
             "password_hash": password_hash,
