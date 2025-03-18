@@ -47,8 +47,7 @@ router = APIRouter(prefix=f"/{API_VTAG}", tags=["auth"])
     operation_id="request_product_account",
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def request_product_account(_body: AccountRequestInfo):
-    ...
+async def request_product_account(_body: AccountRequestInfo): ...
 
 
 @router.post(
@@ -75,8 +74,7 @@ async def register(_body: RegisterBody):
     status_code=status.HTTP_200_OK,
     responses={status.HTTP_409_CONFLICT: {"model": EnvelopedError}},
 )
-async def unregister_account(_body: UnregisterCheck):
-    ...
+async def unregister_account(_body: UnregisterCheck): ...
 
 
 @router.post(
@@ -171,26 +169,24 @@ async def check_auth():
 @router.post(
     "/auth/reset-password",
     response_model=Envelope[Log],
-    operation_id="auth_reset_password",
+    operation_id="initiate_reset_password",
     responses={status.HTTP_503_SERVICE_UNAVAILABLE: {"model": EnvelopedError}},
 )
-async def reset_password(_body: ResetPasswordBody):
-    """a non logged-in user requests a password reset"""
+async def initiate_reset_password(_body: ResetPasswordBody): ...
 
 
 @router.post(
     "/auth/reset-password/{code}",
     response_model=Envelope[Log],
-    operation_id="auth_reset_password_allowed",
+    operation_id="complete_reset_password",
     responses={
         status.HTTP_401_UNAUTHORIZED: {
             "model": EnvelopedError,
-            "description": "unauthorized reset due to invalid token code",
+            "description": "Invalid token code",
         }
     },
 )
-async def reset_password_allowed(code: str, _body: ResetPasswordConfirmation):
-    """changes password using a token code without being logged in"""
+async def complete_reset_password(code: str, _body: ResetPasswordConfirmation): ...
 
 
 @router.post(
@@ -268,5 +264,4 @@ async def email_confirmation(code: str):
     status_code=status.HTTP_200_OK,
     responses={status.HTTP_200_OK: {"content": {"image/png": {}}}},
 )
-async def request_captcha():
-    ...
+async def request_captcha(): ...
