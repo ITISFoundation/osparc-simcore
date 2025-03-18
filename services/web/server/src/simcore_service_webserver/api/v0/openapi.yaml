@@ -11738,7 +11738,7 @@ components:
           anyOf:
           - type: string
             maxLength: 100
-            minLength: 1
+            minLength: 4
           - type: 'null'
           title: Username
         privacy:
