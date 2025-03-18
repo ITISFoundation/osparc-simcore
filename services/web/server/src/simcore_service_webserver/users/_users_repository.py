@@ -475,13 +475,17 @@ async def is_user_in_product_name(
             users.join(
                 user_to_groups,
                 user_to_groups.c.uid == users.c.id,
-            ).join(products, products.c.group_id == user_to_groups.c.gid)
+            ).join(
+                products,
+                products.c.group_id == user_to_groups.c.gid,
+            )
         )
         .where((users.c.id == user_id) & (products.c.name == product_name))
     )
     async with pass_or_acquire_connection(engine, connection) as conn:
-        got_user_id: UserID | None = await conn.scalar(query)
-        return got_user_id == user_id
+        value = await conn.scalar(query)
+        assert value is None or value == user_id  # nosec
+        return value is not None
 
 
 #
