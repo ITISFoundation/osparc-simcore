@@ -58,7 +58,9 @@ qx.Class.define("osparc.widget.StudyDataManager", {
       if (!title) {
         title = osparc.product.Utils.getStudyAlias({firstUpperCase: true}) + qx.locale.Manager.tr(" Files");
       }
-      return osparc.ui.window.Window.popUpInWindow(studyDataManager, title, osparc.dashboard.ResourceDetails.WIDTH, osparc.dashboard.ResourceDetails.HEIGHT);
+      return osparc.ui.window.Window.popUpInWindow(studyDataManager, title, osparc.dashboard.ResourceDetails.WIDTH, osparc.dashboard.ResourceDetails.HEIGHT).set({
+        maxHeight: document.documentElement.clientHeight,
+      });
     },
   },
 
