@@ -38,7 +38,7 @@ qx.Class.define("osparc.store.Jobs", {
         .then(jobsData => {
           const jobs = [];
           if ("jobs" in jobsData) {
-            jobsData.forEach(jobData => {
+            jobsData["jobs"].forEach(jobData => {
               const job = this.addJob(jobData);
               if (job) {
                 jobs.push(job);

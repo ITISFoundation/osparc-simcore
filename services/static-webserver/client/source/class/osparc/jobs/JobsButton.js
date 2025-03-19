@@ -32,7 +32,7 @@ qx.Class.define("osparc.jobs.JobsButton", {
     });
 
     const jobsStore = osparc.store.Jobs.getInstance();
-    jobsStore.getJobs().addListener("change", e => this.__updateJobsButton(), this);
+    jobsStore.addListener("changeJobs", e => this.__updateJobsButton(), this);
     this.addListener("tap", () => console.log("Pop up jobs table"), this);
   },
 
