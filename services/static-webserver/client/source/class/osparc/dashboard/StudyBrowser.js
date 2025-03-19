@@ -1919,7 +1919,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __exportStudy: function(studyData) {
       const exportTaskUI = new osparc.task.Export(studyData);
       exportTaskUI.setSubtitle(this.tr("Preparing files"));
+
       osparc.task.TasksContainer.getInstance().addTaskUI(exportTaskUI);
+
       const text = this.tr("Exporting process started and added to the background tasks");
       osparc.FlashMessenger.logAs(text, "INFO");
 
@@ -1940,6 +1942,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const uploadingLabel = this.tr("Uploading file");
       const importTaskUI = new osparc.task.Import();
       importTaskUI.setSubtitle(uploadingLabel);
+
       osparc.task.TasksContainer.getInstance().addTaskUI(importTaskUI);
 
       const text = this.tr("Importing process started and added to the background tasks");
@@ -2137,7 +2140,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __taskDuplicateReceived: function(task, studyName) {
       const duplicateTaskUI = new osparc.task.Duplicate(studyName);
       duplicateTaskUI.setTask(task);
+
       osparc.task.TasksContainer.getInstance().addTaskUI(duplicateTaskUI);
+
       const duplicatingStudyCard = this.__createDuplicateCard(studyName);
       duplicatingStudyCard.setTask(task);
       duplicatingStudyCard.subscribeToFilterGroup("searchBarFilter");

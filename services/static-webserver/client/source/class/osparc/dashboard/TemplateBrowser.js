@@ -393,7 +393,9 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
     taskToTemplateReceived: function(task, studyName) {
       const toTemplateTaskUI = new osparc.task.ToTemplate(studyName);
       toTemplateTaskUI.setTask(task);
+
       osparc.task.TasksContainer.getInstance().addTaskUI(toTemplateTaskUI);
+
       const toTemplateCard = this.__createToTemplateCard(studyName);
       toTemplateCard.setTask(task);
       this.__attachToTemplateEventHandler(task, toTemplateTaskUI, toTemplateCard);
