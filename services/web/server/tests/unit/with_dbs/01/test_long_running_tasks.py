@@ -77,7 +77,7 @@ async def test_listing_tasks_with_list_inprocess_tasks_error(
 
     class _DummyTaskManager:
         def list_tasks(self, *args, **kwargs):
-            raise Exception()
+            raise Exception()  # pylint: disable=broad-exception-raised
 
     mocker.patch(
         "servicelib.aiohttp.long_running_tasks._routes.get_tasks_manager",
