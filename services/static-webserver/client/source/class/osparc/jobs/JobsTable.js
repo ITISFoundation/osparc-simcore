@@ -32,7 +32,7 @@ qx.Class.define("osparc.jobs.JobsTable", {
     });
 
     const columnModel = this.getTableColumnModel();
-    columnModel.setColumnVisible(this.self().COLS.JOB_ID.column, false);
+    columnModel.setColumnVisible(this.self().COLS.JOB_ID.column, true);
 
     Object.values(this.self().COLS).forEach(col => columnModel.setColumnWidth(col.column, col.width));
   },

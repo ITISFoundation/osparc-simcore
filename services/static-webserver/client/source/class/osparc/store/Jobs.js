@@ -36,16 +36,12 @@ qx.Class.define("osparc.store.Jobs", {
     fetchJobs: function() {
       return osparc.utils.Utils.fetchJSON("/resource/osparc/mock_jobs.json")
         .then(jobsData => {
-          const jobs = [];
           if ("jobs" in jobsData) {
             jobsData["jobs"].forEach(jobData => {
-              const job = this.addJob(jobData);
-              if (job) {
-                jobs.push(job);
-              }
+              this.addJob(jobData);
             });
           }
-          return jobs;
+          return this.getJobs();
         })
         .catch(err => console.error(err));
     },

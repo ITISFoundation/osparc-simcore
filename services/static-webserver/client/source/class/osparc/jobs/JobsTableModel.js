@@ -91,7 +91,9 @@ qx.Class.define("osparc.jobs.JobsTableModel", {
       };
       const jobsStore = osparc.store.Jobs.getInstance();
       jobsStore.fetchJobs(urlParams, options)
-        .then(jobs => this._onRowCountLoaded(jobs.length))
+        .then(jobs => {
+          this._onRowCountLoaded(jobs.length);
+        })
         .catch(() => this._onRowCountLoaded(null));
     },
 
