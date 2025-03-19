@@ -4,7 +4,6 @@
 # pylint:disable=too-many-arguments
 # pylint:disable=no-name-in-module
 
-
 from collections.abc import Awaitable, Callable
 from pathlib import Path
 
@@ -12,9 +11,12 @@ import pytest
 from faker import Faker
 from fastapi import FastAPI
 from httpx import AsyncClient
+from models_library.api_schemas_storage.storage_schemas import (
+    DatasetMetaDataGet,
+    FileMetaDataGet,
+)
 from models_library.projects import ProjectID
-from models_library.projects_nodes_io import SimcoreS3FileID
-from models_library.storage_schemas import DatasetMetaDataGet, FileMetaDataGet
+from models_library.projects_nodes_io import LocationID, SimcoreS3FileID
 from models_library.users import UserID
 from pydantic import ByteSize
 from pytest_mock import MockerFixture
@@ -25,6 +27,7 @@ from pytest_simcore.helpers.parametrizations import (
     parametrized_file_size,
 )
 from servicelib.aiohttp import status
+from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 
 pytest_simcore_core_services_selection = ["postgres"]
 pytest_simcore_ops_services_selection = ["adminer"]
@@ -35,7 +38,8 @@ async def test_list_dataset_files_metadata_with_no_files_returns_empty_array(
     client: AsyncClient,
     user_id: UserID,
     project_id: ProjectID,
-    location_id: int,
+    location_id: LocationID,
+    fake_datcore_tokens: tuple[str, str],
 ):
     url = url_from_operation_id(
         client,
@@ -52,6 +56,12 @@ async def test_list_dataset_files_metadata_with_no_files_returns_empty_array(
 
 
 @pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
+@pytest.mark.parametrize(
     "file_size",
     [parametrized_file_size("100Mib")],
     ids=byte_size_ids,
@@ -62,7 +72,7 @@ async def test_list_dataset_files_metadata(
     client: AsyncClient,
     user_id: UserID,
     project_id: ProjectID,
-    location_id: int,
+    location_id: LocationID,
     file_size: ByteSize,
     faker: Faker,
 ):
@@ -91,11 +101,17 @@ async def test_list_dataset_files_metadata(
         assert fmd.file_size == file.stat().st_size
 
 
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
 async def test_list_datasets_metadata(
     initialized_app: FastAPI,
     client: AsyncClient,
     user_id: UserID,
-    location_id: int,
+    location_id: LocationID,
     project_id: ProjectID,
 ):
     url = url_from_operation_id(
@@ -116,13 +132,19 @@ async def test_list_datasets_metadata(
     assert dataset.dataset_id == project_id
 
 
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
 async def test_ensure_expand_dirs_defaults_true(
     mocker: MockerFixture,
     initialized_app: FastAPI,
     client: AsyncClient,
     user_id: UserID,
     project_id: ProjectID,
-    location_id: int,
+    location_id: LocationID,
 ):
     mocked_object = mocker.patch(
         "simcore_service_storage.simcore_s3_dsm.SimcoreS3DataManager.list_files_in_dataset",

@@ -1,10 +1,11 @@
-from datetime import datetime
-from typing import Any, NamedTuple, Self, cast
+from datetime import date, datetime
+from typing import Literal, NamedTuple, NotRequired, Self, cast
 
 from models_library.basic_types import IDStr
 from models_library.resource_tracker import PricingPlanId
 from pydantic import BaseModel, ConfigDict, HttpUrl, PositiveInt
 from pydantic.config import JsonDict
+from typing_extensions import TypedDict
 
 from ..licenses import (
     VIP_DETAILS_EXAMPLE,
@@ -20,13 +21,45 @@ from ._base import OutputSchema
 # RPC
 
 
+class LicensedResourceSourceFeaturesDict(TypedDict):
+    age: NotRequired[str]
+    date: date
+    ethnicity: NotRequired[str]
+    functionality: NotRequired[str]
+    height: NotRequired[str]
+    name: NotRequired[str]
+    sex: NotRequired[str]
+    species: NotRequired[str]
+    version: NotRequired[str]
+    weight: NotRequired[str]
+
+
+class LicensedResourceSource(BaseModel):
+    id: int
+    description: str
+    thumbnail: str
+    features: LicensedResourceSourceFeaturesDict
+    doi: str | None
+    license_key: str
+    license_version: str
+    protection: Literal["Code", "PayPal"]
+    available_from_url: HttpUrl | None
+
+
+class LicensedResource(BaseModel):
+    source: LicensedResourceSource
+    category_id: IDStr
+    category_display: str
+    terms_of_use_url: HttpUrl | None = None
+
+
 class LicensedItemRpcGet(BaseModel):
     licensed_item_id: LicensedItemID
     key: LicensedItemKey
     version: LicensedItemVersion
     display_name: str
     licensed_resource_type: LicensedResourceType
-    licensed_resources: list[dict[str, Any]]
+    licensed_resources: list[LicensedResource]
     pricing_plan_id: PricingPlanId
     is_hidden_on_market: bool
     created_at: datetime
@@ -41,7 +74,14 @@ class LicensedItemRpcGet(BaseModel):
                     "version": "1.0.0",
                     "display_name": "best-model",
                     "licensed_resource_type": f"{LicensedResourceType.VIP_MODEL}",
-                    "licensed_resources": [cast(JsonDict, VIP_DETAILS_EXAMPLE)],
+                    "licensed_resources": [
+                        {
+                            "source": cast(JsonDict, VIP_DETAILS_EXAMPLE),
+                            "category_id": "HumanWholeBody",
+                            "category_display": "Humans",
+                            "terms_of_use_url": None,
+                        }
+                    ],
                     "pricing_plan_id": "15",
                     "is_hidden_on_market": False,
                     "created_at": "2024-12-12 09:59:26.422140",

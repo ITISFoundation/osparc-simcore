@@ -19,17 +19,24 @@ import sqlalchemy as sa
 from aws_library.s3 import SimcoreS3API
 from faker import Faker
 from fastapi import FastAPI
+from models_library.api_schemas_storage.storage_schemas import (
+    FileMetaDataGet,
+    FoldersBody,
+)
 from models_library.basic_types import SHA256Str
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, NodeIDStr, SimcoreS3FileID
-from models_library.storage_schemas import FileMetaDataGet, FoldersBody
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import ByteSize, TypeAdapter
 from pytest_simcore.helpers.fastapi import url_from_operation_id
 from pytest_simcore.helpers.httpx_assert_checks import assert_status
 from pytest_simcore.helpers.logging_tools import log_context
-from pytest_simcore.helpers.storage_utils import FileIDDict, get_updated_project
+from pytest_simcore.helpers.storage_utils import (
+    FileIDDict,
+    ProjectWithFilesParams,
+    get_updated_project,
+)
 from pytest_simcore.helpers.storage_utils_file_meta_data import (
     assert_file_meta_data_in_db,
 )
@@ -202,6 +209,28 @@ def short_dsm_cleaner_interval(monkeypatch: pytest.MonkeyPatch) -> int:
     return 1
 
 
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
+@pytest.mark.parametrize(
+    "project_params",
+    [
+        ProjectWithFilesParams(
+            num_nodes=1,
+            allowed_file_sizes=(TypeAdapter(ByteSize).validate_python("210Mib"),),
+            allowed_file_checksums=(
+                TypeAdapter(SHA256Str).validate_python(
+                    "0b3216d95ec5a36c120ba16c88911dcf5ff655925d0fbdbc74cf95baf86de6fc"
+                ),
+            ),
+            workspace_files_count=0,
+        ),
+    ],
+    ids=str,
+)
 async def test_copy_folders_from_valid_project_with_one_large_file(
     initialized_app: FastAPI,
     short_dsm_cleaner_interval: int,
@@ -210,24 +239,15 @@ async def test_copy_folders_from_valid_project_with_one_large_file(
     create_project: Callable[[], Awaitable[dict[str, Any]]],
     sqlalchemy_async_engine: AsyncEngine,
     random_project_with_files: Callable[
-        [int, tuple[ByteSize], tuple[SHA256Str]],
+        [ProjectWithFilesParams],
         Awaitable[
-            tuple[
-                dict[str, Any],
-                dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],
-            ]
+            tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]
         ],
     ],
+    project_params: ProjectWithFilesParams,
 ):
     # 1. create a src project with 1 large file
-    sha256_checksum: SHA256Str = TypeAdapter(SHA256Str).validate_python(
-        "0b3216d95ec5a36c120ba16c88911dcf5ff655925d0fbdbc74cf95baf86de6fc"
-    )
-    src_project, src_projects_list = await random_project_with_files(
-        1,
-        (TypeAdapter(ByteSize).validate_python("210Mib"),),
-        (sha256_checksum,),
-    )
+    src_project, src_projects_list = await random_project_with_files(project_params)
     # 2. create a dst project without files
     dst_project, nodes_map = clone_project_data(src_project)
     dst_project = await create_project(**dst_project)
@@ -271,6 +291,38 @@ async def test_copy_folders_from_valid_project_with_one_large_file(
             )
 
 
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
+@pytest.mark.parametrize(
+    "project_params",
+    [
+        ProjectWithFilesParams(
+            num_nodes=12,
+            allowed_file_sizes=(
+                TypeAdapter(ByteSize).validate_python("7Mib"),
+                TypeAdapter(ByteSize).validate_python("110Mib"),
+                TypeAdapter(ByteSize).validate_python("1Mib"),
+            ),
+            allowed_file_checksums=(
+                TypeAdapter(SHA256Str).validate_python(
+                    "311e2e130d83cfea9c3b7560699c221b0b7f9e5d58b02870bd52b695d8b4aabd"
+                ),
+                TypeAdapter(SHA256Str).validate_python(
+                    "08e297db979d3c84f6b072c2a1e269e8aa04e82714ca7b295933a0c9c0f62b2e"
+                ),
+                TypeAdapter(SHA256Str).validate_python(
+                    "488f3b57932803bbf644593bd46d95599b1d4da1d63bc020d7ebe6f1c255f7f3"
+                ),
+            ),
+            workspace_files_count=0,
+        ),
+    ],
+    ids=str,
+)
 async def test_copy_folders_from_valid_project(
     short_dsm_cleaner_interval: int,
     initialized_app: FastAPI,
@@ -280,17 +332,15 @@ async def test_copy_folders_from_valid_project(
     create_simcore_file_id: Callable[[ProjectID, NodeID, str], SimcoreS3FileID],
     sqlalchemy_async_engine: AsyncEngine,
     random_project_with_files: Callable[
-        ...,
+        [ProjectWithFilesParams],
         Awaitable[
-            tuple[
-                dict[str, Any],
-                dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],
-            ]
+            tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]
         ],
     ],
+    project_params: ProjectWithFilesParams,
 ):
     # 1. create a src project with some files
-    src_project, src_projects_list = await random_project_with_files()
+    src_project, src_projects_list = await random_project_with_files(project_params)
     # 2. create a dst project without files
     dst_project, nodes_map = clone_project_data(src_project)
     dst_project = await create_project(**dst_project)
@@ -423,6 +473,26 @@ async def test_connect_to_external(
     print(data)
 
 
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
+@pytest.mark.parametrize(
+    "project_params",
+    [
+        ProjectWithFilesParams(
+            num_nodes=3,
+            allowed_file_sizes=(
+                TypeAdapter(ByteSize).validate_python("7Mib"),
+                TypeAdapter(ByteSize).validate_python("110Mib"),
+                TypeAdapter(ByteSize).validate_python("1Mib"),
+            ),
+            workspace_files_count=0,
+        )
+    ],
+)
 async def test_create_and_delete_folders_from_project(
     set_log_levels_for_noisy_libraries: None,
     initialized_app: FastAPI,
@@ -446,6 +516,26 @@ async def test_create_and_delete_folders_from_project(
     )
 
 
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
+@pytest.mark.parametrize(
+    "project_params",
+    [
+        ProjectWithFilesParams(
+            num_nodes=3,
+            allowed_file_sizes=(
+                TypeAdapter(ByteSize).validate_python("7Mib"),
+                TypeAdapter(ByteSize).validate_python("110Mib"),
+                TypeAdapter(ByteSize).validate_python("1Mib"),
+            ),
+            workspace_files_count=0,
+        )
+    ],
+)
 @pytest.mark.parametrize("num_concurrent_calls", [50])
 async def test_create_and_delete_folders_from_project_burst(
     set_log_levels_for_noisy_libraries: None,
@@ -515,6 +605,12 @@ async def search_files_query_params(
     return q
 
 
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
 @pytest.mark.parametrize("expected_number_of_user_files", [0, 1, 3])
 @pytest.mark.parametrize("query_params_choice", ["default", "limited", "with_offset"])
 async def test_search_files_request(
@@ -546,6 +642,12 @@ async def test_search_files_request(
     assert [_.file_uuid for _ in found] == expected
 
 
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
 @pytest.mark.parametrize("search_startswith", [True, False])
 @pytest.mark.parametrize("search_sha256_checksum", [True, False])
 @pytest.mark.parametrize("kind", ["owned", "read", None])

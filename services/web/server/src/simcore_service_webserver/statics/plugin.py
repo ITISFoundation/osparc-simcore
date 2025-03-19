@@ -11,7 +11,7 @@ import logging
 from aiohttp import web
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
-from .._constants import INDEX_RESOURCE_NAME
+from ..constants import INDEX_RESOURCE_NAME
 from ..products.plugin import setup_products
 from ._events import create_and_cache_statics_json, create_cached_indexes
 from ._handlers import get_cached_frontend_index, get_statics_json

@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import Annotated
 
+from common_library.basic_types import DEFAULT_FACTORY
 from models_library.generics import Envelope
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -75,17 +76,17 @@ class ErrorGet(BaseModel):
         IDStr | None,
         Field(description="ID to track the incident during support", alias="supportId"),
     ] = None
+    status: int
 
     # NOTE: The fields blow are DEPRECATED. Still here to keep compatibilty with front-end until updated
-    status: Annotated[int, Field(deprecated=True)] = 400
     errors: Annotated[
         list[ErrorItemType],
         Field(deprecated=True, default_factory=list, json_schema_extra={"default": []}),
-    ]
+    ] = DEFAULT_FACTORY
     logs: Annotated[
         list[LogMessageType],
         Field(deprecated=True, default_factory=list, json_schema_extra={"default": []}),
-    ]
+    ] = DEFAULT_FACTORY
 
     model_config = ConfigDict(
         populate_by_name=True,
@@ -94,11 +95,13 @@ class ErrorGet(BaseModel):
         json_schema_extra={
             "examples": [
                 {
-                    "message": "Sorry you do not have sufficient access rights for product"
+                    "message": "Sorry you do not have sufficient access rights for product",
+                    "status": 401,
                 },
                 {
                     "message": "Opps this error was unexpected. We are working on that!",
                     "supportId": "OEC:12346789",
+                    "status": 500,
                 },
             ]
         },
@@ -111,9 +114,13 @@ class EnvelopedError(Envelope[None]):
     model_config = ConfigDict(
         json_schema_extra={
             "examples": [
-                {"error": {"message": "display error message here"}},
+                {"error": {"message": "display error message here", "status": 401}},
                 {
-                    "error": {"message": "failure", "supportId": "OEC:123455"},
+                    "error": {
+                        "message": "failure",
+                        "supportId": "OEC:123455",
+                        "status": 500,
+                    },
                     "data": None,
                 },
             ]

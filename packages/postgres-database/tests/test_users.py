@@ -11,12 +11,15 @@ from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import ResultProxy, RowProxy
 from faker import Faker
 from pytest_simcore.helpers.faker_factories import random_user
-from simcore_postgres_database.errors import InvalidTextRepresentation, UniqueViolation
+from simcore_postgres_database.aiopg_errors import (
+    InvalidTextRepresentation,
+    UniqueViolation,
+)
 from simcore_postgres_database.models.users import UserRole, UserStatus, users
 from simcore_postgres_database.utils_users import (
     UsersRepo,
-    _generate_random_chars,
     _generate_username_from_email,
+    generate_alternative_username,
 )
 from sqlalchemy.sql import func
 
@@ -89,7 +92,7 @@ async def test_unique_username(
         faker,
         status=UserStatus.ACTIVE,
         name="pcrespov",
-        email="some-fanky-name@email.com",
+        email="p@email.com",
         first_name="Pedro",
         last_name="Crespo Valero",
     )
@@ -113,7 +116,7 @@ async def test_unique_username(
     await connection.scalar(users.insert().values(data).returning(users.c.id))
 
     # and another one
-    data["name"] += _generate_random_chars()
+    data["name"] = generate_alternative_username(data["name"])
     data["email"] = faker.email()
     await connection.scalar(users.insert().values(data).returning(users.c.id))
 

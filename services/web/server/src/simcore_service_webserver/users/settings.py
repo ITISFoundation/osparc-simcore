@@ -3,7 +3,7 @@ from pydantic import Field, StrictBool, StrictFloat, StrictInt, StrictStr
 from settings_library.base import BaseCustomSettings
 from settings_library.utils_service import MixinServiceSettings
 
-from .._constants import APP_SETTINGS_KEY
+from ..constants import APP_SETTINGS_KEY
 
 
 class UsersSettings(BaseCustomSettings, MixinServiceSettings):

@@ -22,7 +22,7 @@ qx.Class.define("osparc.navigation.UserMenu", {
     this.base(arguments);
 
     this.set({
-      font: "text-14"
+      appearance: "menu-wider",
     });
   },
 
@@ -86,7 +86,7 @@ qx.Class.define("osparc.navigation.UserMenu", {
           this.add(control);
           break;
         case "market":
-          control = new qx.ui.menu.Button(this.tr("Market"));
+          control = new qx.ui.menu.Button(this.tr("The Shop"));
           control.addListener("execute", () => osparc.vipMarket.MarketWindow.openWindow());
           this.add(control);
           break;
@@ -180,8 +180,6 @@ qx.Class.define("osparc.navigation.UserMenu", {
       this.addSeparator();
 
       this.getChildControl("log-out");
-
-      osparc.utils.Utils.prettifyMenu(this);
     },
 
     __addAnnouncements: function() {
@@ -244,8 +242,6 @@ qx.Class.define("osparc.navigation.UserMenu", {
       }
       this.addSeparator();
       this.getChildControl("log-out");
-
-      osparc.utils.Utils.prettifyMenu(this);
     }
   }
 });

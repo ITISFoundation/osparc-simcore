@@ -3,13 +3,21 @@ from typing import Annotated, Any
 
 from common_library.basic_types import DEFAULT_FACTORY
 from models_library.basic_types import IdInt
+from models_library.groups import GroupID
 from models_library.products import ProductName
 from models_library.services_access import ServiceGroupAccessRights
 from models_library.services_base import ServiceKeyVersion
 from models_library.services_types import ServiceKey, ServiceVersion
-from pydantic import BaseModel, ConfigDict, Field
+from models_library.utils.common_validators import empty_str_to_none_pre_validator
+from pydantic import (
+    BaseModel,
+    BeforeValidator,
+    ConfigDict,
+    Field,
+    HttpUrl,
+    field_validator,
+)
 from pydantic.config import JsonDict
-from pydantic.types import PositiveInt
 from simcore_postgres_database.models.services_compatibility import CompatiblePolicyDict
 
 
@@ -19,7 +27,7 @@ class ServiceMetaDataDBGet(BaseModel):
     version: ServiceVersion
 
     # ownership
-    owner: IdInt | None
+    owner: GroupID | None
 
     # display
     name: str
@@ -82,6 +90,12 @@ class ServiceMetaDataDBGet(BaseModel):
     )
 
 
+def _httpurl_to_str(value: HttpUrl | str | None) -> str | None:
+    if isinstance(value, HttpUrl):
+        return f"{value}"
+    return value
+
+
 class ServiceMetaDataDBCreate(BaseModel):
     # primary-keys
     key: ServiceKey
@@ -95,7 +109,7 @@ class ServiceMetaDataDBCreate(BaseModel):
     description: str
     description_ui: bool = False
     thumbnail: str | None = None
-    icon: str | None = None
+    icon: Annotated[str | None, BeforeValidator(_httpurl_to_str)] = None
     version_display: str | None = None
 
     # tagging
@@ -122,6 +136,10 @@ class ServiceMetaDataDBCreate(BaseModel):
         )
 
     model_config = ConfigDict(json_schema_extra=_update_json_schema_extra)
+
+    _prevent_empty_strings_in_nullable_string_cols = field_validator(
+        "icon", "thumbnail", "version_display", mode="before"
+    )(empty_str_to_none_pre_validator)
 
 
 class ServiceMetaDataDBPatch(BaseModel):
@@ -158,6 +176,10 @@ class ServiceMetaDataDBPatch(BaseModel):
         )
 
     model_config = ConfigDict(json_schema_extra=_update_json_schema_extra)
+
+    _prevent_empty_strings_in_nullable_string_cols = field_validator(
+        "icon", "thumbnail", "version_display", mode="before"
+    )(empty_str_to_none_pre_validator)
 
 
 class ReleaseDBGet(BaseModel):
@@ -199,7 +221,7 @@ assert (  # nosec
 
 
 class ServiceAccessRightsAtDB(ServiceKeyVersion, ServiceGroupAccessRights):
-    gid: PositiveInt
+    gid: GroupID
     product_name: ProductName
 
     @staticmethod

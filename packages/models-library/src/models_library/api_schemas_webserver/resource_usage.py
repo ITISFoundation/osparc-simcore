@@ -6,6 +6,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from ..projects import ProjectID
 from ..projects_nodes_io import NodeID
 from ..resource_tracker import (
+    CreditTransactionStatus,
     HardwareInfo,
     PricingPlanClassification,
     PricingPlanId,
@@ -13,7 +14,8 @@ from ..resource_tracker import (
     PricingUnitId,
     ServiceRunStatus,
     SpecificInfo,
-    UnitExtraInfo,
+    UnitExtraInfoLicense,
+    UnitExtraInfoTier,
 )
 from ..services import ServiceKey, ServiceVersion
 from ..services_types import ServiceRunID
@@ -26,13 +28,15 @@ from ._base import InputSchema, OutputSchema
 
 class ServiceRunGet(
     BaseModel
-):  # NOTE: this is already in use so I didnt modidy inheritance from OutputSchema
+):  # NOTE: this is already in use so I didnt modify inheritance from OutputSchema
     service_run_id: ServiceRunID
     wallet_id: WalletID | None
     wallet_name: str | None
     user_id: UserID
+    user_email: str
     project_id: ProjectID
     project_name: str
+    project_tags: list[str]
     node_id: NodeID
     node_name: str
     root_parent_project_id: ProjectID
@@ -43,12 +47,15 @@ class ServiceRunGet(
     started_at: datetime
     stopped_at: datetime | None
     service_run_status: ServiceRunStatus
+    # Cost in credits
+    credit_cost: Decimal | None
+    transaction_status: CreditTransactionStatus | None
 
 
 class PricingUnitGet(OutputSchema):
     pricing_unit_id: PricingUnitId
     unit_name: str
-    unit_extra_info: UnitExtraInfo
+    unit_extra_info: UnitExtraInfoTier | UnitExtraInfoLicense
     current_cost_per_unit: Decimal
     default: bool
 
@@ -114,7 +121,7 @@ class UpdatePricingPlanBodyParams(InputSchema):
 
 class CreatePricingUnitBodyParams(InputSchema):
     unit_name: str
-    unit_extra_info: UnitExtraInfo
+    unit_extra_info: UnitExtraInfoTier | UnitExtraInfoLicense
     default: bool
     specific_info: SpecificInfo
     cost_per_unit: Decimal
@@ -128,7 +135,7 @@ class CreatePricingUnitBodyParams(InputSchema):
 
 class UpdatePricingUnitBodyParams(InputSchema):
     unit_name: str
-    unit_extra_info: UnitExtraInfo
+    unit_extra_info: UnitExtraInfoTier | UnitExtraInfoLicense
     default: bool
     specific_info: SpecificInfo
     pricing_unit_cost_update: PricingUnitCostUpdate | None = Field(default=None)

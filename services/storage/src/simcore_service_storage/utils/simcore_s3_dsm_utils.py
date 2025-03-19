@@ -2,25 +2,28 @@ from contextlib import suppress
 from pathlib import Path
 from uuid import uuid4
 
+import orjson
 from aws_library.s3 import S3MetaData, SimcoreS3API
 from aws_library.s3._constants import MULTIPART_COPY_THRESHOLD
+from models_library.api_schemas_storage.storage_schemas import S3BucketName
+from models_library.projects import ProjectID
 from models_library.projects_nodes_io import (
     SimcoreS3DirectoryID,
     SimcoreS3FileID,
     StorageFileID,
 )
-from models_library.storage_schemas import S3BucketName
 from models_library.users import UserID
 from pydantic import ByteSize, NonNegativeInt, TypeAdapter
 from servicelib.bytes_iters import ArchiveEntries, get_zip_bytes_iter
 from servicelib.progress_bar import AsyncReportCB, ProgressBarData
 from servicelib.s3_utils import FileLikeBytesIterReader
 from servicelib.utils import ensure_ends_with
-from sqlalchemy.ext.asyncio import AsyncConnection
+from sqlalchemy.ext.asyncio import AsyncEngine
 
-from ..exceptions.errors import FileMetaDataNotFoundError
-from ..models import FileMetaData, FileMetaDataAtDB
-from ..modules.db import file_meta_data
+from ..exceptions.errors import FileMetaDataNotFoundError, ProjectAccessRightError
+from ..models import FileMetaData, FileMetaDataAtDB, GenericCursor, PathMetaData
+from ..modules.db.access_layer import AccessLayerRepository
+from ..modules.db.file_meta_data import FileMetaDataRepository, TotalChildren
 from .utils import convert_db_to_model
 
 
@@ -92,24 +95,25 @@ def get_simcore_directory(file_id: SimcoreS3FileID) -> str:
     return f"{Path(directory_id)}"
 
 
+async def _try_get_fmd(
+    db_engine: AsyncEngine, s3_file_id: StorageFileID
+) -> FileMetaDataAtDB | None:
+    with suppress(FileMetaDataNotFoundError):
+        return await FileMetaDataRepository.instance(db_engine).get(
+            file_id=TypeAdapter(SimcoreS3FileID).validate_python(s3_file_id)
+        )
+    return None
+
+
 async def get_directory_file_id(
-    conn: AsyncConnection, file_id: SimcoreS3FileID
+    db_engine: AsyncEngine, file_id: SimcoreS3FileID
 ) -> SimcoreS3FileID | None:
     """
     returns the containing file's `directory_file_id` if the entry exists
     in the `file_meta_data` table
     """
 
-    async def _get_fmd(
-        conn: AsyncConnection, s3_file_id: StorageFileID
-    ) -> FileMetaDataAtDB | None:
-        with suppress(FileMetaDataNotFoundError):
-            return await file_meta_data.get(
-                conn, TypeAdapter(SimcoreS3FileID).validate_python(s3_file_id)
-            )
-        return None
-
-    provided_file_id_fmd = await _get_fmd(conn, file_id)
+    provided_file_id_fmd = await _try_get_fmd(db_engine, file_id)
     if provided_file_id_fmd:
         # file_meta_data exists it is not a directory
         return None
@@ -122,7 +126,7 @@ async def get_directory_file_id(
     directory_file_id = TypeAdapter(SimcoreS3FileID).validate_python(
         directory_file_id_str
     )
-    directory_file_id_fmd = await _get_fmd(conn, directory_file_id)
+    directory_file_id_fmd = await _try_get_fmd(db_engine, directory_file_id)
 
     return directory_file_id if directory_file_id_fmd else None
 
@@ -174,3 +178,97 @@ async def create_and_upload_export(
                 )
             ),
         )
+
+
+async def list_child_paths_from_s3(
+    s3_client: SimcoreS3API,
+    *,
+    dir_fmd: FileMetaData,
+    bucket: S3BucketName,
+    file_filter: Path,
+    limit: int,
+    cursor: GenericCursor | None,
+) -> tuple[list[PathMetaData], GenericCursor | None]:
+    """list direct children given by `file_filter` of a directory.
+    Tries first using file_filter as a full path, if not results are found will
+    try using file_filter as a partial prefix.
+    """
+    objects_cursor = None
+    if cursor is not None:
+        cursor_params = orjson.loads(cursor)
+        assert cursor_params["file_filter"] == f"{file_filter}"  # nosec
+        objects_cursor = cursor_params["objects_next_cursor"]
+    list_s3_objects, objects_next_cursor = await s3_client.list_objects(
+        bucket=bucket,
+        prefix=file_filter,
+        start_after=None,
+        limit=limit,
+        next_cursor=objects_cursor,
+        is_partial_prefix=False,
+    )
+    if not list_s3_objects:
+        list_s3_objects, objects_next_cursor = await s3_client.list_objects(
+            bucket=bucket,
+            prefix=file_filter,
+            start_after=None,
+            limit=limit,
+            next_cursor=objects_cursor,
+            is_partial_prefix=True,
+        )
+
+    paths_metadata = [
+        PathMetaData.from_s3_object_in_dir(s3_object, dir_fmd)
+        for s3_object in list_s3_objects
+    ]
+    next_cursor = None
+    if objects_next_cursor:
+        next_cursor = orjson.dumps(
+            {
+                "file_filter": f"{file_filter}",
+                "objects_next_cursor": objects_next_cursor,
+            }
+        )
+
+    return paths_metadata, next_cursor
+
+
+async def list_child_paths_from_repository(
+    db_engine: AsyncEngine,
+    *,
+    filter_by_project_ids: list[ProjectID] | None,
+    filter_by_file_prefix: Path | None,
+    cursor: GenericCursor | None,
+    limit: int,
+) -> tuple[list[PathMetaData], GenericCursor | None, TotalChildren]:
+    file_meta_data_repo = FileMetaDataRepository.instance(db_engine)
+    paths_metadata, next_cursor, total = await file_meta_data_repo.list_child_paths(
+        filter_by_project_ids=filter_by_project_ids,
+        filter_by_file_prefix=filter_by_file_prefix,
+        limit=limit,
+        cursor=cursor,
+        is_partial_prefix=False,
+    )
+    if not paths_metadata:
+        paths_metadata, next_cursor, total = await file_meta_data_repo.list_child_paths(
+            filter_by_project_ids=filter_by_project_ids,
+            filter_by_file_prefix=filter_by_file_prefix,
+            limit=limit,
+            cursor=cursor,
+            is_partial_prefix=True,
+        )
+
+    return paths_metadata, next_cursor, total
+
+
+async def get_accessible_project_ids(
+    db_engine: AsyncEngine, *, user_id: UserID, project_id: ProjectID | None
+) -> list[ProjectID]:
+    access_layer_repo = AccessLayerRepository.instance(db_engine)
+    if project_id:
+        project_access_rights = await access_layer_repo.get_project_access_rights(
+            user_id=user_id, project_id=project_id
+        )
+        if not project_access_rights.read:
+            raise ProjectAccessRightError(access_right="read", project_id=project_id)
+        return [project_id]
+    return await access_layer_repo.get_readable_project_ids(user_id=user_id)

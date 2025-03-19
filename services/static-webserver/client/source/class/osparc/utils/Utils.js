@@ -91,6 +91,30 @@ qx.Class.define("osparc.utils.Utils", {
 
     FLOATING_Z_INDEX: 1000001 + 1,
 
+    checkImageExists: function(url) {
+      return new Promise(resolve => {
+        const img = new Image();
+        img.onload = () => resolve(true);
+        img.onerror = () => resolve(false);
+        img.src = url;
+      });
+    },
+
+    setUrlSourceToImage: function(image, imgSrc) {
+      let source = osparc.product.Utils.getThumbnailUrl();
+      this.checkImageExists(imgSrc)
+        .then(exists => {
+          if (exists) {
+            source = imgSrc;
+          }
+        })
+        .finally(() => image.setSource(source));
+    },
+
+    addWhiteSpaces: function(integer) {
+      return new Intl.NumberFormat("fr-FR").format(integer); // french will add white spaces every 3 digits
+    },
+
     updateTabName: function(name) {
       document.title = name;
     },
@@ -105,6 +129,18 @@ qx.Class.define("osparc.utils.Utils", {
         newName += ` (${platformName})`;
       }
       return newName;
+    },
+
+    getIconFromResource: function(resourceMetadata) {
+      if (resourceMetadata) {
+        if (resourceMetadata["icon"]) {
+          return resourceMetadata["icon"];
+        }
+        if (resourceMetadata["thumbnail"]) {
+          return resourceMetadata["thumbnail"];
+        }
+      }
+      return osparc.dashboard.CardBase.PRODUCT_ICON;
     },
 
     isEmail: function(value) {
@@ -250,15 +286,6 @@ qx.Class.define("osparc.utils.Utils", {
       const intervalId = setInterval(() => {
         (count < nTimes) ? blinkIt(button) : clearInterval(intervalId);
       }, 2*onTime);
-    },
-
-    prettifyMenu: function(menu) {
-      menu.setAppearance("menu-wider");
-      menu.getChildren().forEach(menuItem => {
-        if (menuItem.classname !== "qx.ui.menu.Separator") {
-          menuItem.setPadding(4);
-        }
-      });
     },
 
     hardRefresh: function() {
@@ -953,7 +980,7 @@ qx.Class.define("osparc.utils.Utils", {
       document.body.removeChild(textArea);
 
       if (copied) {
-        osparc.FlashMessenger.getInstance().logAs(qx.locale.Manager.tr("Copied to clipboard"));
+        osparc.FlashMessenger.logAs(qx.locale.Manager.tr("Copied to clipboard"));
       }
 
       return copied;
@@ -1070,6 +1097,13 @@ qx.Class.define("osparc.utils.Utils", {
       }
     },
 
+    setAltToImage: (qWidget, altText) => {
+      if (qWidget.getContentElement && qWidget.getContentElement()) {
+        qWidget.getContentElement().removeAttribute("alt");
+        qWidget.getContentElement().setAttribute("alt", altText);
+      }
+    },
+
     // Function that creates a unique tabId even for duplicated tabs
     getClientSessionID: function() {
       const getUniqueSessionId = () => {
@@ -1128,7 +1162,7 @@ qx.Class.define("osparc.utils.Utils", {
     },
 
     isObject: function(v) {
-      return typeof v === "object" && v !== null;
+      return typeof v === "object" && v !== null && !Array.isArray(v);
     },
 
     centerTabIcon: function(tabpage) {

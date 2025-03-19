@@ -1,7 +1,7 @@
 from aiohttp.web import Application
 from settings_library.postgres import PostgresSettings
 
-from .._constants import APP_SETTINGS_KEY
+from ..constants import APP_SETTINGS_KEY
 
 
 def get_plugin_settings(app: Application) -> PostgresSettings:

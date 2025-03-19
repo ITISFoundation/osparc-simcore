@@ -28,7 +28,7 @@
  * Here is a little example of how to use the class.
  *
  * <pre class='javascript'>
- *   osparc.FlashMessenger.getInstance().logAs(log);
+ *   osparc.FlashMessenger.logAs(log);
  * </pre>
  */
 
@@ -55,9 +55,39 @@ qx.Class.define("osparc.FlashMessenger", {
 
   statics: {
     MAX_DISPLAYED: 3,
+
+    extractMessage: function(input, defaultMessage = "") {
+      const isValidString = val => {
+        return (
+          typeof val === "string" ||
+          (osparc.utils.Utils.isObject(val) && ("basename" in val) && (val.basename === "LocalizedString"))
+        );
+      }
+      if (input) {
+        if (isValidString(input)) {
+          return input;
+        } else if (osparc.utils.Utils.isObject(input) && "message" in input) {
+          if (isValidString(input["message"])) {
+            return input["message"];
+          } else if (osparc.utils.Utils.isObject(input["message"]) && "message" in input["message"] && isValidString(input["message"]["message"])) {
+            return input["message"]["message"];
+          }
+        }
+      }
+      return defaultMessage;
+    },
+
     logAs: function(message, level, duration) {
       return this.getInstance().logAs(message, level, duration);
-    }
+    },
+
+    logError: function(error, defaultMessage = qx.locale.Manager.tr("Oops... something went wrong"), duration = null) {
+      if (error) {
+        console.error(error);
+      }
+      const msg = this.extractMessage(error, defaultMessage);
+      return this.getInstance().logAs(msg, "ERROR", duration);
+    },
   },
 
   members: {
@@ -68,7 +98,7 @@ qx.Class.define("osparc.FlashMessenger", {
     /**
      * Public function to log a FlashMessage to the user.
      *
-     * @param {String} message Message that the message will show.
+     * @param {String || Object} message Message (or Object containing the message) that the message will show.
      * @param {String="INFO","DEBUG","WARNING","ERROR"} level Level of the warning. The color of the badge will change accordingly.
      * @param {Number} duration
      */
@@ -81,9 +111,7 @@ qx.Class.define("osparc.FlashMessenger", {
     },
 
     log: function(logMessage) {
-      const message = osparc.utils.Utils.isObject(logMessage.message) && "message" in logMessage.message ?
-        logMessage.message.message :
-        logMessage.message;
+      const message = this.self().extractMessage(logMessage);
 
       const level = logMessage.level.toUpperCase(); // "DEBUG", "INFO", "WARNING", "ERROR"
 

@@ -33,3 +33,22 @@ class DatcoreAdapterMultipleFilesError(DatcoreAdapterError):
 
     def __init__(self, msg: str) -> None:
         super().__init__(msg=msg)
+
+
+class DatcoreAdapterResponseError(DatcoreAdapterError):
+    """Basic exception for response errors"""
+
+    def __init__(self, status: int, reason: str) -> None:
+        self.status = status
+        self.reason = reason
+        super().__init__(
+            msg=f"forwarded call failed with status {status}, reason {reason}"
+        )
+
+
+class DatcoreAdapterFileNotFoundError(DatcoreAdapterError):
+    """special error to check the assumption that /packages/{package_id}/files returns only one file"""
+
+    def __init__(self, file_id: str) -> None:
+        self.file_id = file_id
+        super().__init__(msg=f"file {file_id} not found!")

@@ -55,7 +55,7 @@ from typing_extensions import (  # https://docs.pydantic.dev/latest/api/standard
     TypedDict,
 )
 
-from .._constants import APP_SETTINGS_KEY
+from ..constants import APP_SETTINGS_KEY
 
 _HealthCheckSlot = Callable[[web.Application], Awaitable[None]]
 

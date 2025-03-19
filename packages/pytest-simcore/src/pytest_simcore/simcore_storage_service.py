@@ -4,6 +4,7 @@
 import os
 from collections.abc import Callable, Iterable
 from copy import deepcopy
+from pathlib import Path
 
 import aiohttp
 import pytest
@@ -12,7 +13,6 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
 from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
-from servicelib.minio_utils import ServiceRetryPolicyUponInitialization
 from yarl import URL
 
 from .helpers.docker import get_service_published_port
@@ -60,24 +60,34 @@ async def storage_service(
     return storage_endpoint
 
 
-# TODO: this can be used by ANY of the simcore services!
-@tenacity.retry(**ServiceRetryPolicyUponInitialization().kwargs)
+@tenacity.retry(
+    wait=tenacity.wait_fixed(1),
+    stop=tenacity.stop_after_delay(30),
+    reraise=True,
+)
 async def wait_till_storage_responsive(storage_endpoint: URL):
-    async with aiohttp.ClientSession() as session:
-        async with session.get(storage_endpoint.with_path("/v0/")) as resp:
-            assert resp.status == 200
-            data = await resp.json()
-            assert "data" in data
-            assert data["data"] is not None
+    async with (
+        aiohttp.ClientSession() as session,
+        session.get(storage_endpoint.with_path("/v0/")) as resp,
+    ):
+        assert resp.status == 200
+        data = await resp.json()
+        assert "data" in data
+        assert data["data"] is not None
 
 
 @pytest.fixture
 def create_simcore_file_id() -> Callable[[ProjectID, NodeID, str], SimcoreS3FileID]:
     def _creator(
-        project_id: ProjectID, node_id: NodeID, file_name: str
+        project_id: ProjectID,
+        node_id: NodeID,
+        file_name: str,
+        file_base_path: Path | None = None,
     ) -> SimcoreS3FileID:
-        return TypeAdapter(SimcoreS3FileID).validate_python(
-            f"{project_id}/{node_id}/{file_name}"
-        )
+        s3_file_name = file_name
+        if file_base_path:
+            s3_file_name = f"{file_base_path / file_name}"
+        clean_path = Path(f"{project_id}/{node_id}/{s3_file_name}")
+        return TypeAdapter(SimcoreS3FileID).validate_python(f"{clean_path}")
 
     return _creator

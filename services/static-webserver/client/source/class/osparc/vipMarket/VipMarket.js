@@ -16,12 +16,22 @@
 ************************************************************************ */
 
 qx.Class.define("osparc.vipMarket.VipMarket", {
-  extend: qx.ui.core.Widget,
+  extend: qx.ui.splitpane.Pane,
 
   construct: function(licensedItems) {
-    this.base(arguments);
+    this.base(arguments, "horizontal");
 
-    this._setLayout(new qx.ui.layout.HBox(10));
+    this.setOffset(5);
+    this.getChildControl("splitter").set({
+      width: 1,
+      backgroundColor: "text",
+      opacity: 0.3,
+    });
+    this.getChildControl("slider").set({
+      width: 2,
+      backgroundColor: "text",
+      opacity: 1,
+    });
 
     this.__buildLayout();
 
@@ -60,16 +70,16 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
         case "left-side":
           control = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
             alignY: "middle",
+            paddingRight: 5,
           });
-          this._add(control);
+          this.add(control, 0); // flex: 0
           break;
         case "right-side":
           control = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
             alignY: "middle",
+            paddingLeft: 5,
           });
-          this._add(control, {
-            flex: 1
-          });
+          this.add(control, 1); // flex: 1
           break;
         case "toolbar-layout":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(10)).set({
@@ -88,10 +98,12 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
           control = new osparc.filter.TextFilter("text", "vipModels").set({
             alignY: "middle",
             allowGrowY: false,
-            minWidth: 160,
+            allowGrowX: true,
+            marginRight: 5,
           });
           control.getChildControl("textfield").set({
             backgroundColor: "transparent",
+            allowGrowX: true,
           });
           this.addListener("appear", () => control.getChildControl("textfield").focus());
           this.getChildControl("toolbar-layout").add(control, {
@@ -102,8 +114,7 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
           control = new qx.ui.form.List().set({
             decorator: "no-border",
             spacing: 5,
-            minWidth: 250,
-            maxWidth: 250,
+            width: 250,
             backgroundColor: "transparent",
           });
           this.getChildControl("left-side").add(control, {
@@ -111,7 +122,7 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
           });
           break;
         case "models-details": {
-          control = new osparc.vipMarket.AnatomicalModelDetails().set({
+          control = new osparc.vipMarket.LicensedItemDetails().set({
             padding: 5,
           });
           const scrollView = new qx.ui.container.Scroll();
@@ -134,7 +145,7 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
       const anatomicalModelsModel = this.__anatomicalBundlesModel = new qx.data.Array();
       const membersCtrl = new qx.data.controller.List(anatomicalModelsModel, modelsUIList, "displayName");
       membersCtrl.setDelegate({
-        createItem: () => new osparc.vipMarket.AnatomicalModelListItem(),
+        createItem: () => new osparc.vipMarket.LicensedItemListItem(),
         bindItem: (ctrl, item, id) => {
           ctrl.bindProperty("key", "key", null, item, id);
           ctrl.bindProperty("version", "version", null, item, id);
@@ -163,9 +174,9 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
         const selection = e.getData();
         if (selection.length) {
           const licensedItemId = selection[0].getLicensedItemId();
-          const bundleFound = this.__anatomicalBundles.find(anatomicalBundle => anatomicalBundle["licensedItemId"] === licensedItemId);
-          if (bundleFound) {
-            anatomicModelDetails.setAnatomicalModelsData(bundleFound);
+          const licensedItemBundle = this.__anatomicalBundles.find(anatomicalBundle => anatomicalBundle.getLicensedItemId() === licensedItemId);
+          if (licensedItemBundle) {
+            anatomicModelDetails.setAnatomicalModelsData(licensedItemBundle);
             return;
           }
         }
@@ -180,21 +191,7 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
         return;
       }
 
-      this.__anatomicalBundles = [];
-      licensedBundles.forEach(licensedBundle => {
-        licensedBundle["thumbnail"] = "";
-        licensedBundle["date"] = null;
-        if (licensedBundle["licensedResources"] && licensedBundle["licensedResources"].length) {
-          const firstItem = licensedBundle["licensedResources"][0]["source"];
-          if (firstItem["thumbnail"]) {
-            licensedBundle["thumbnail"] = firstItem["thumbnail"];
-          }
-          if (firstItem["features"] && firstItem["features"]["date"]) {
-            licensedBundle["date"] = new Date(firstItem["features"]["date"]);
-          }
-        }
-        this.__anatomicalBundles.push(licensedBundle);
-      });
+      this.__anatomicalBundles = licensedBundles;
 
       this.__populateModels();
 
@@ -212,9 +209,10 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
       if (!anatomicModelDetails.hasListener("modelImportRequested")) {
         anatomicModelDetails.addListener("modelImportRequested", e => {
           const {
-            modelId
+            modelId,
+            categoryId,
           } = e.getData();
-          this.__sendImportModelMessage(modelId);
+          this.__sendImportModelMessage(modelId, categoryId);
         }, this);
       }
     },
@@ -226,8 +224,8 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
       const sortModel = sortBy => {
         models.sort((a, b) => {
           // first criteria
-          const nASeats = osparc.store.LicensedItems.seatsToNSeats(a["seats"]);
-          const nBSeats = osparc.store.LicensedItems.seatsToNSeats(b["seats"]);
+          const nASeats = osparc.store.LicensedItems.seatsToNSeats(a.getSeats());
+          const nBSeats = osparc.store.LicensedItems.seatsToNSeats(b.getSeats());
           if (nBSeats !== nASeats) {
             // nSeats first
             return nBSeats - nASeats;
@@ -237,20 +235,20 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
             if (sortBy["sort"] === "name") {
               if (sortBy["order"] === "down") {
                 // A -> Z
-                return a["displayName"].localeCompare(b["displayName"]);
+                return a.getDisplayName().localeCompare(b.getDisplayName());
               }
-              return b["displayName"].localeCompare(a["displayName"]);
+              return b.getDisplayName().localeCompare(a.getDisplayName());
             } else if (sortBy["sort"] === "date") {
               if (sortBy["order"] === "down") {
                 // Now -> Yesterday
-                return b["date"] - a["date"];
+                return b.getDate() - a.getDate();
               }
-              return a["date"] - b["date"];
+              return a.getDate() - b.getDate();
             }
           }
           // default criteria
           // A -> Z
-          return a["displayName"].localeCompare(b["displayName"]);
+          return a.getDisplayName().localeCompare(b.getDisplayName());
         });
       };
       sortModel();
@@ -286,20 +284,20 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
       let numOfSeats = null;
       const pricingUnit = osparc.store.Pricing.getInstance().getPricingUnit(pricingPlanId, pricingUnitId);
       if (pricingUnit) {
-        const split = pricingUnit.getName().split(" ");
-        numOfSeats = parseInt(split[0]);
+        numOfSeats = parseInt(pricingUnit.getExtraInfo()["num_of_seats"]);
       }
       const licensedItemsStore = osparc.store.LicensedItems.getInstance();
       licensedItemsStore.purchaseLicensedItem(licensedItemId, walletId, pricingPlanId, pricingUnitId, numOfSeats)
         .then(purchaseData => {
-          let msg = numOfSeats;
-          msg += " seat" + (purchaseData["numOfSeats"] > 1 ? "s" : "");
+          const nSeats = purchaseData["numOfSeats"];
+          let msg = nSeats;
+          msg += " seat" + (nSeats > 1 ? "s" : "");
           msg += " rented until " + osparc.utils.Utils.formatDate(new Date(purchaseData["expireAt"]));
-          osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
+          osparc.FlashMessenger.logAs(msg, "INFO");
 
-          const found = this.__anatomicalBundles.find(model => model["licensedItemId"] === licensedItemId);
+          const found = this.__anatomicalBundles.find(model => model.getLicensedItemId() === licensedItemId);
           if (found) {
-            found["seats"].push({
+            found.getSeats().push({
               licensedItemId: purchaseData["licensedItemId"],
               licensedItemPurchaseId: purchaseData["licensedItemPurchaseId"],
               numOfSeats: purchaseData["numOfSeats"],
@@ -311,13 +309,10 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
           }
           this.fireEvent("modelPurchased");
         })
-        .catch(err => {
-          const msg = err.message || this.tr("Cannot purchase model");
-          osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
-        });
+        .catch(err => osparc.FlashMessenger.logError(err, this.tr("Cannot purchase model")));
     },
 
-    __sendImportModelMessage: function(modelId) {
+    __sendImportModelMessage: function(modelId, categoryId) {
       const store = osparc.store.Store.getInstance();
       const currentStudy = store.getCurrentStudy();
       const nodeId = this.getOpenBy();
@@ -326,6 +321,7 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
           "type": "importModel",
           "message": {
             "modelId": modelId,
+            "categoryId": categoryId,
           },
         };
         if (currentStudy.sendMessageToIframe(nodeId, msg)) {

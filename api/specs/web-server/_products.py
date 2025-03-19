@@ -7,20 +7,18 @@
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, status
-from models_library.api_schemas_webserver.product import (
-    GenerateInvitation,
-    GetCreditPrice,
+from fastapi import APIRouter, Depends
+from models_library.api_schemas_webserver.products import (
+    CreditPriceGet,
+    InvitationGenerate,
     InvitationGenerated,
     ProductGet,
     ProductUIGet,
-    UpdateProductTemplate,
 )
 from models_library.generics import Envelope
 from simcore_service_webserver._meta import API_VTAG
-from simcore_service_webserver.products._handlers import (
-    _ProductsRequestParams,
-    _ProductTemplateParams,
+from simcore_service_webserver.products._controller.rest_schemas import (
+    ProductsRequestParams,
 )
 
 router = APIRouter(
@@ -33,10 +31,9 @@ router = APIRouter(
 
 @router.get(
     "/credits-price",
-    response_model=Envelope[GetCreditPrice],
+    response_model=Envelope[CreditPriceGet],
 )
-async def get_current_product_price():
-    ...
+async def get_current_product_price(): ...
 
 
 @router.get(
@@ -47,29 +44,14 @@ async def get_current_product_price():
         "po",
     ],
 )
-async def get_product(_params: Annotated[_ProductsRequestParams, Depends()]):
-    ...
+async def get_product(_params: Annotated[ProductsRequestParams, Depends()]): ...
 
 
 @router.get(
     "/products/current/ui",
     response_model=Envelope[ProductUIGet],
 )
-async def get_current_product_ui():
-    ...
-
-
-@router.put(
-    "/products/{product_name}/templates/{template_id}",
-    status_code=status.HTTP_204_NO_CONTENT,
-    tags=[
-        "po",
-    ],
-)
-async def update_product_template(
-    _params: Annotated[_ProductTemplateParams, Depends()], _body: UpdateProductTemplate
-):
-    ...
+async def get_current_product_ui(): ...
 
 
 @router.post(
@@ -79,5 +61,4 @@ async def update_product_template(
         "po",
     ],
 )
-async def generate_invitation(_body: GenerateInvitation):
-    ...
+async def generate_invitation(_body: InvitationGenerate): ...

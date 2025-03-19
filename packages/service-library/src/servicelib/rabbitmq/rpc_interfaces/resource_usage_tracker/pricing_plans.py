@@ -5,9 +5,9 @@ from models_library.api_schemas_resource_usage_tracker import (
     RESOURCE_USAGE_TRACKER_RPC_NAMESPACE,
 )
 from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
-    PricingPlanGet,
-    PricingPlanPage,
     PricingPlanToServiceGet,
+    RutPricingPlanGet,
+    RutPricingPlanPage,
 )
 from models_library.products import ProductName
 from models_library.rabbitmq_basic_types import RPCMethodName
@@ -36,20 +36,20 @@ async def get_pricing_plan(
     *,
     product_name: ProductName,
     pricing_plan_id: PricingPlanId,
-) -> PricingPlanGet:
-    result: PricingPlanGet = await rabbitmq_rpc_client.request(
+) -> RutPricingPlanGet:
+    result: RutPricingPlanGet = await rabbitmq_rpc_client.request(
         RESOURCE_USAGE_TRACKER_RPC_NAMESPACE,
         _RPC_METHOD_NAME_ADAPTER.validate_python("get_pricing_plan"),
         product_name=product_name,
         pricing_plan_id=pricing_plan_id,
         timeout_s=_DEFAULT_TIMEOUT_S,
     )
-    assert isinstance(result, PricingPlanGet)  # nosec
+    assert isinstance(result, RutPricingPlanGet)  # nosec
     return result
 
 
 @log_decorator(_logger, level=logging.DEBUG)
-async def list_pricing_plans(
+async def list_pricing_plans_without_pricing_units(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
     product_name: ProductName,
@@ -57,17 +57,19 @@ async def list_pricing_plans(
     # pagination
     offset: int = 0,
     limit: int = 20,
-) -> PricingPlanPage:
+) -> RutPricingPlanPage:
     result = await rabbitmq_rpc_client.request(
         RESOURCE_USAGE_TRACKER_RPC_NAMESPACE,
-        _RPC_METHOD_NAME_ADAPTER.validate_python("list_pricing_plans"),
+        _RPC_METHOD_NAME_ADAPTER.validate_python(
+            "list_pricing_plans_without_pricing_units"
+        ),
         product_name=product_name,
         exclude_inactive=exclude_inactive,
         offset=offset,
         limit=limit,
         timeout_s=_DEFAULT_TIMEOUT_S,
     )
-    assert isinstance(result, PricingPlanPage)  # nosec
+    assert isinstance(result, RutPricingPlanPage)  # nosec
     return result
 
 
@@ -76,14 +78,14 @@ async def create_pricing_plan(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
     data: PricingPlanCreate,
-) -> PricingPlanGet:
-    result: PricingPlanGet = await rabbitmq_rpc_client.request(
+) -> RutPricingPlanGet:
+    result: RutPricingPlanGet = await rabbitmq_rpc_client.request(
         RESOURCE_USAGE_TRACKER_RPC_NAMESPACE,
         _RPC_METHOD_NAME_ADAPTER.validate_python("create_pricing_plan"),
         data=data,
         timeout_s=_DEFAULT_TIMEOUT_S,
     )
-    assert isinstance(result, PricingPlanGet)  # nosec
+    assert isinstance(result, RutPricingPlanGet)  # nosec
     return result
 
 
@@ -93,15 +95,15 @@ async def update_pricing_plan(
     *,
     product_name: ProductName,
     data: PricingPlanUpdate,
-) -> PricingPlanGet:
-    result: PricingPlanGet = await rabbitmq_rpc_client.request(
+) -> RutPricingPlanGet:
+    result: RutPricingPlanGet = await rabbitmq_rpc_client.request(
         RESOURCE_USAGE_TRACKER_RPC_NAMESPACE,
         _RPC_METHOD_NAME_ADAPTER.validate_python("update_pricing_plan"),
         product_name=product_name,
         data=data,
         timeout_s=_DEFAULT_TIMEOUT_S,
     )
-    assert isinstance(result, PricingPlanGet)  # nosec
+    assert isinstance(result, RutPricingPlanGet)  # nosec
     return result
 
 
@@ -112,7 +114,7 @@ async def list_connected_services_to_pricing_plan_by_pricing_plan(
     product_name: ProductName,
     pricing_plan_id: PricingPlanId,
 ) -> list[PricingPlanToServiceGet]:
-    result: PricingPlanGet = await rabbitmq_rpc_client.request(
+    result: RutPricingPlanGet = await rabbitmq_rpc_client.request(
         RESOURCE_USAGE_TRACKER_RPC_NAMESPACE,
         _RPC_METHOD_NAME_ADAPTER.validate_python(
             "list_connected_services_to_pricing_plan_by_pricing_plan"
@@ -134,7 +136,7 @@ async def connect_service_to_pricing_plan(
     service_key: ServiceKey,
     service_version: ServiceVersion,
 ) -> PricingPlanToServiceGet:
-    result: PricingPlanGet = await rabbitmq_rpc_client.request(
+    result: RutPricingPlanGet = await rabbitmq_rpc_client.request(
         RESOURCE_USAGE_TRACKER_RPC_NAMESPACE,
         _RPC_METHOD_NAME_ADAPTER.validate_python("connect_service_to_pricing_plan"),
         product_name=product_name,

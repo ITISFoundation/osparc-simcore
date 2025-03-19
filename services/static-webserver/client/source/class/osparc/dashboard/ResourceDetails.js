@@ -23,29 +23,57 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
 
     this.__resourceData = resourceData;
 
-    this.__resourceModel = null;
+    let latestPromise = null;
     switch (resourceData["resourceType"]) {
       case "study":
-      case "template":
-        this.__resourceModel = new osparc.data.model.Study(resourceData);
+      case "template": {
+        const params = {
+          url: {
+            "studyId": resourceData["uuid"]
+          }
+        };
+        latestPromise = osparc.data.Resources.fetch("studies", "getOne", params);
         break;
-      case "service":
-        this.__resourceModel = new osparc.data.model.Service(resourceData);
+      }
+      case "service": {
+        latestPromise = osparc.store.Services.getService(resourceData["key"], resourceData["version"]);
         break;
+      }
     }
-    this.__resourceModel["resourceType"] = resourceData["resourceType"];
 
-    this.__addPages();
+    latestPromise
+      .then(latestResourceData => {
+        this.__resourceData = latestResourceData;
+        this.__resourceData["resourceType"] = resourceData["resourceType"];
+        switch (resourceData["resourceType"]) {
+          case "study":
+          case "template": {
+            osparc.store.Services.getStudyServicesMetadata(latestResourceData)
+              .then(() => {
+                this.__resourceModel = new osparc.data.model.Study(latestResourceData);
+                this.__resourceModel["resourceType"] = resourceData["resourceType"];
+                this.__addPages();
+              })
+            break;
+          }
+          case "service": {
+            this.__resourceModel = new osparc.data.model.Service(latestResourceData);
+            this.__resourceModel["resourceType"] = resourceData["resourceType"];
+            this.__addPages();
+            break;
+          }
+        }
+      });
   },
 
   events: {
-    "openStudy": "qx.event.type.Data",
+    "pagesAdded": "qx.event.type.Event",
     "openTemplate": "qx.event.type.Data",
     "openService": "qx.event.type.Data",
     "updateStudy": "qx.event.type.Data",
     "updateTemplate": "qx.event.type.Data",
     "updateService": "qx.event.type.Data",
-    "publishTemplate": "qx.event.type.Data"
+    "publishTemplate": "qx.event.type.Data",
   },
 
 
@@ -163,10 +191,15 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
           "studyId": this.__resourceData["uuid"]
         }
       };
-      osparc.data.Resources.getOne("studies", params)
-        .then(updatedStudyData => {
+      Promise.all([
+        osparc.data.Resources.fetch("studies", "getOne", params),
+        osparc.data.Resources.fetch("studies", "getServices", params)
+      ])
+        .then(values => {
+          const updatedStudyData = values[0];
+          const studyServices = values[1];
           openButton.setFetching(false);
-          const updatableServices = osparc.metadata.ServicesInStudyUpdate.updatableNodeIds(updatedStudyData.workbench);
+          const updatableServices = osparc.study.Utils.updatableNodeIds(updatedStudyData.workbench, studyServices["services"]);
           if (updatableServices.length && osparc.data.model.Study.canIWrite(updatedStudyData["accessRights"])) {
             this.__confirmUpdate();
           } else {
@@ -174,8 +207,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
           }
         })
         .catch(err => {
-          console.error(err);
-          osparc.FlashMessenger.logAs(err.message, "ERROR");
+          osparc.FlashMessenger.logError(err);
           openButton.setFetching(false);
         });
     },
@@ -188,12 +220,13 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       });
       win.center();
       win.open();
-      win.addListenerOnce("close", () => {
+      win.addListener("changeConfirmed", e => {
         if (win.getConfirmed()) {
           this.openUpdateServices();
         } else {
           this.__openResource();
         }
+        win.close();
       });
     },
 
@@ -253,34 +286,31 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       hBox.add(versionsBox);
 
 
-      const versions = osparc.service.Utils.getVersions(this.__resourceData["key"]);
-      let selectedItem = null;
-
-      // first setSelection
-      versions.forEach(version => {
-        selectedItem = osparc.service.Utils.versionToListItem(this.__resourceData["key"], version);
-        versionsBox.add(selectedItem);
-        if (this.__resourceData["version"] === version) {
-          versionsBox.setSelection([selectedItem]);
-        }
-      });
-      osparc.utils.Utils.growSelectBox(versionsBox, 200);
-
-      // then listen to changes
-      versionsBox.addListener("changeSelection", e => {
-        const selection = e.getData();
-        if (selection.length) {
-          const serviceVersion = selection[0].version;
-          if (serviceVersion !== this.__resourceData["version"]) {
-            osparc.store.Services.getService(this.__resourceData["key"], serviceVersion)
-              .then(serviceData => {
-                serviceData["resourceType"] = "service";
-                this.__resourceData = serviceData;
-                this.__addPages();
-              });
+      osparc.store.Services.populateVersionsSelectBox(this.__resourceData["key"], versionsBox)
+        .then(() => {
+          // first setSelection
+          const versionFound = versionsBox.getSelectables().find(selectable => selectable.version === this.__resourceData["version"]);
+          if (versionFound) {
+            versionsBox.setSelection([versionFound]);
           }
-        }
-      }, this);
+          osparc.utils.Utils.growSelectBox(versionsBox, 200);
+
+          // then listen to changes
+          versionsBox.addListener("changeSelection", e => {
+            const selection = e.getData();
+            if (selection.length) {
+              const serviceVersion = selection[0].version;
+              if (serviceVersion !== this.__resourceData["version"]) {
+                osparc.store.Services.getService(this.__resourceData["key"], serviceVersion)
+                  .then(serviceData => {
+                    serviceData["resourceType"] = "service";
+                    this.__resourceData = serviceData;
+                    this.__addPages();
+                  });
+              }
+            }
+          }, this);
+        });
 
       return hBox;
     },
@@ -345,6 +375,8 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
           tabsView.setSelection([pageFound]);
         }
       }
+
+      this.fireEvent("pagesAdded");
     },
 
     __getInfoPage: function() {
@@ -447,7 +479,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       if (
         osparc.utils.Resources.isService(resourceData) ||
         !osparc.product.Utils.showStudyPreview() ||
-        !osparc.study.Utils.getUiMode(resourceData) === "workbench"
+        !(osparc.study.Utils.getUiMode(resourceData) === "workbench")
       ) {
         // there is no pipelining or don't show it
         return null;

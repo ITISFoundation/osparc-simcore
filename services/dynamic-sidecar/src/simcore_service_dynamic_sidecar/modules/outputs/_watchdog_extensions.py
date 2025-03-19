@@ -27,7 +27,7 @@ _EVENTS_TO_WATCH = reduce(
     ],
 )
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 class _ExtendedInotifyBuffer(InotifyBuffer):
@@ -89,5 +89,5 @@ class SafeFileSystemEventHandler(ABC, FileSystemEventHandler):
         # which is running in the context of the
         # ExtendedInotifyObserver will cause the
         # observer to stop working.
-        with log_catch(logger, reraise=False):
+        with log_catch(_logger, reraise=False):
             self.event_handler(event)

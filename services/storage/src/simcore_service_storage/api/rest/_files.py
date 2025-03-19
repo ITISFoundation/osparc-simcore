@@ -1,11 +1,10 @@
 import asyncio
 import logging
 from typing import Annotated, cast
+from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
-from models_library.generics import Envelope
-from models_library.projects_nodes_io import LocationID, StorageFileID
-from models_library.storage_schemas import (
+from models_library.api_schemas_storage.storage_schemas import (
     FileMetaDataGet,
     FileMetaDataGetv010,
     FileUploadCompleteFutureResponse,
@@ -17,6 +16,8 @@ from models_library.storage_schemas import (
     FileUploadSchema,
     SoftCopyBody,
 )
+from models_library.generics import Envelope
+from models_library.projects_nodes_io import LocationID, StorageFileID
 from pydantic import AnyUrl, ByteSize, TypeAdapter
 from servicelib.aiohttp import status
 from yarl import URL
@@ -81,6 +82,7 @@ async def get_file_metadata(
     user_agent: Annotated[str | None, Header()],
     request: Request,
 ):
+    # NOTE: Used by legacy dynamic services -> MUST BE BACKWARDS COMPATIBLE
     dsm = get_dsm_provider(request.app).get(location_id)
     try:
         data = await dsm.get_file(
@@ -133,6 +135,7 @@ async def download_file(
     query_params: Annotated[FileDownloadQueryParams, Depends()],
     request: Request,
 ) -> Envelope[FileDownloadResponse]:
+    # NOTE: Used by legacy dynamic services -> MUST BE BACKWARDS COMPATIBLE
     dsm = get_dsm_provider(request.app).get(location_id)
     link = await dsm.create_file_download_link(
         query_params.user_id, file_id, query_params.link_type
@@ -178,6 +181,7 @@ async def upload_file(
     Use-case v2.2: if query.file_size > 0 and query.link_type=presigned or None, returns 1 or more presigned links depending on the file size (limited to a single 5TB file)
     Use-case v2.3: if query.link_type=s3 and query.file_size>=0, returns a single s3 direct link (limited to a single 5TB file)
     """
+    # NOTE: Used by legacy dynamic services with single presigned link -> MUST BE BACKWARDS COMPATIBLE
     dsm = get_dsm_provider(request.app).get(location_id)
     links: UploadLinks = await dsm.create_file_upload_links(
         user_id=query_params.user_id,
@@ -199,11 +203,15 @@ async def upload_file(
     abort_url = (
         URL(f"{request.url}")
         .with_path(
-            request.app.url_path_for(
-                "abort_upload_file",
-                location_id=f"{location_id}",
-                file_id=file_id,
-            )
+            quote(
+                request.app.url_path_for(
+                    "abort_upload_file",
+                    location_id=f"{location_id}",
+                    file_id=file_id,
+                ),
+                safe=":/",
+            ),
+            encoded=True,
         )
         .with_query(user_id=query_params.user_id)
     )
@@ -211,11 +219,15 @@ async def upload_file(
     complete_url = (
         URL(f"{request.url}")
         .with_path(
-            request.app.url_path_for(
-                "complete_upload_file",
-                location_id=f"{location_id}",
-                file_id=file_id,
-            )
+            quote(
+                request.app.url_path_for(
+                    "complete_upload_file",
+                    location_id=f"{location_id}",
+                    file_id=file_id,
+                ),
+                safe=":/",
+            ),
+            encoded=True,
         )
         .with_query(user_id=query_params.user_id)
     )
@@ -270,12 +282,16 @@ async def complete_upload_file(
     route = (
         URL(f"{request.url}")
         .with_path(
-            request.app.url_path_for(
-                "is_completed_upload_file",
-                location_id=f"{location_id}",
-                file_id=file_id,
-                future_id=task.get_name(),
-            )
+            quote(
+                request.app.url_path_for(
+                    "is_completed_upload_file",
+                    location_id=f"{location_id}",
+                    file_id=file_id,
+                    future_id=task.get_name(),
+                ),
+                safe=":/",
+            ),
+            encoded=True,
         )
         .with_query(user_id=query_params.user_id)
     )

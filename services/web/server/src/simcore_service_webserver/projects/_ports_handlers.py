@@ -24,12 +24,12 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
 )
-from simcore_service_webserver.utils_aiohttp import envelope_json_response
 
 from .._meta import API_VTAG as VTAG
 from ..login.decorators import login_required
 from ..projects._access_rights_api import check_user_project_permission
 from ..security.decorators import permission_required
+from ..utils_aiohttp import envelope_json_response
 from . import _ports_api, projects_service
 from ._common.exceptions_handlers import handle_plugin_requests_exceptions
 from ._common.models import ProjectPathParams, RequestContext

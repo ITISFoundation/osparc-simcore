@@ -32,7 +32,7 @@ def assert_status(
         response.status_code == expected_status_code
     ), f"received {response.status_code}: {response.text}, expected {get_code_display_name(expected_status_code)}"
 
-    # reponse
+    # response
     if expected_status_code == status.HTTP_204_NO_CONTENT:
         assert response.text == ""
         return None, None

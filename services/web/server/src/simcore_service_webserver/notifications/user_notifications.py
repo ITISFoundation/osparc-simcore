@@ -38,5 +38,5 @@ async def unsubscribe(app: web.Application, user_id: UserID) -> None:
             await rabbit_client.remove_topics(exchange_name, topics=[f"{user_id}"])
 
 
-# TODO: subscribe when logging in
-# TODO: unsubscribe when logging out
+# TODO: subscribe when "logging in"
+# TODO: unsubscribe when "logging out"

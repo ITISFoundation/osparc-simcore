@@ -2,7 +2,7 @@ from aiohttp import web
 from pydantic import Field, HttpUrl, SecretStr, TypeAdapter
 from settings_library.base import BaseCustomSettings
 
-from .._constants import APP_SETTINGS_KEY
+from ..constants import APP_SETTINGS_KEY
 
 # TODO: read https://www.force11.org/group/resource-identification-initiative
 SCICRUNCH_DEFAULT_URL = "https://scicrunch.org"

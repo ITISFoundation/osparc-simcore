@@ -7,7 +7,7 @@
 from aiohttp import web
 from settings_library.resource_usage_tracker import ResourceUsageTrackerSettings
 
-from .._constants import APP_SETTINGS_KEY
+from ..constants import APP_SETTINGS_KEY
 
 
 def get_plugin_settings(app: web.Application) -> ResourceUsageTrackerSettings:

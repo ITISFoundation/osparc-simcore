@@ -29,3 +29,7 @@ class FolderNotTrashedError(FoldersRuntimeError):
     msg_template = (
         "Cannot delete folder {folder_id} since it was not trashed first: {reason}"
     )
+
+
+class FolderBatchDeleteError(FoldersRuntimeError):
+    msg_template = "One or more folders could not be deleted: {errors}"

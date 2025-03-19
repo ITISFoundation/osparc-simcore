@@ -92,10 +92,7 @@ qx.Class.define("osparc.po.MessageTemplates", {
       };
       osparc.data.Resources.fetch("productMetadata", "updateEmailTemplate", params)
         .then(() => osparc.FlashMessenger.logAs(this.tr("Template updated"), "INFO"))
-        .catch(err => {
-          console.error(err);
-          osparc.FlashMessenger.logAs(err.message, "ERROR");
-        })
+        .catch(err => osparc.FlashMessenger.logError(err))
         .finally(() => this._buildLayout());
     }
   }

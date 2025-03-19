@@ -12,13 +12,13 @@ import aiohttp
 import pytest
 from aioresponses import aioresponses as AioResponsesMock
 from faker import Faker
-from models_library.projects_nodes_io import SimcoreS3FileID
-from models_library.storage_schemas import (
+from models_library.api_schemas_storage.storage_schemas import (
     FileLocationArray,
     FileMetaDataGet,
     FileUploadSchema,
     LocationID,
 )
+from models_library.projects_nodes_io import SimcoreS3FileID
 from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize, TypeAdapter
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
@@ -179,7 +179,7 @@ async def test_get_file_metada(
     )
     assert file_metadata
     assert file_metadata == FileMetaDataGet.model_validate(
-        FileMetaDataGet.model_config["json_schema_extra"]["examples"][0]
+        FileMetaDataGet.model_json_schema()["examples"][0]
     )
 
 

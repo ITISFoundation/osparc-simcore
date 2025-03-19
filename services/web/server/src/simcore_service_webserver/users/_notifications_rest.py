@@ -15,7 +15,7 @@ from servicelib.redis import handle_redis_returns_union_types
 
 from .._meta import API_VTAG
 from ..login.decorators import login_required
-from ..products.api import get_product_name
+from ..products import products_web
 from ..redis import get_redis_user_notifications_client
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
@@ -62,7 +62,7 @@ async def _get_user_notifications(
 async def list_user_notifications(request: web.Request) -> web.Response:
     redis_client = get_redis_user_notifications_client(request.app)
     req_ctx = UsersRequestContext.model_validate(request)
-    product_name = get_product_name(request)
+    product_name = products_web.get_product_name(request)
     notifications = await _get_user_notifications(
         redis_client, req_ctx.user_id, product_name
     )

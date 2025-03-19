@@ -7,7 +7,7 @@ from models_library.users import UserID
 from pydantic import PositiveInt
 from servicelib.aiohttp.observer import register_observer, setup_observer_registry
 
-from ..products.api import get_product
+from ..products import products_service
 from ..resource_usage.service import add_credits_to_wallet
 from ..users import preferences_api
 from ..users.api import get_user_display_and_id_names
@@ -27,7 +27,7 @@ async def _auto_add_default_wallet(
         app, user_id=user_id, product_name=product_name
     ):
         user = await get_user_display_and_id_names(app, user_id=user_id)
-        product = get_product(app, product_name)
+        product = products_service.get_product(app, product_name)
 
         wallet = await create_wallet(
             app,

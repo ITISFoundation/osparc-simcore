@@ -1,3 +1,5 @@
+# pylint:disable=redefined-outer-name
+
 from asyncio import AbstractEventLoop
 from unittest.mock import AsyncMock
 

@@ -43,16 +43,26 @@ qx.Class.define("osparc.desktop.credits.BillingCenter", {
 
   statics: {
     createMiniWalletView: function() {
-      const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(8)).set({
+      const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(6)).set({
         alignX: "center",
         minWidth: 120,
         maxWidth: 150
       });
 
-      const store = osparc.store.Store.getInstance();
+      const walletName = new qx.ui.basic.Label().set({
+        alignX: "center"
+      });
+      layout.add(walletName);
       const creditsIndicator = new osparc.desktop.credits.CreditsIndicator();
-      store.bind("contextWallet", creditsIndicator, "wallet");
       layout.add(creditsIndicator);
+      const store = osparc.store.Store.getInstance();
+      store.bind("contextWallet", walletName, "value", {
+        converter: wallet => wallet.getName()
+      });
+      store.bind("contextWallet", walletName, "toolTipText", {
+        converter: wallet => wallet.getName()
+      });
+      store.bind("contextWallet", creditsIndicator, "wallet");
 
       layout.add(new qx.ui.core.Spacer(15, 15));
 

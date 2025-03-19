@@ -76,6 +76,16 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     this.addListener("appear", () => this._moreResourcesRequired());
   },
 
+  properties: {
+    multiSelection: {
+      check: "Boolean",
+      init: false,
+      nullable: false,
+      event: "changeMultiSelection",
+      apply: "_applyMultiSelection"
+    },
+  },
+
   events: {
     "changeTab": "qx.event.type.Data",
     "publishTemplate": "qx.event.type.Data"
@@ -90,7 +100,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       const isLogged = osparc.auth.Manager.getInstance().isLoggedIn();
       if (!isLogged) {
         const msg = qx.locale.Manager.tr("You need to be logged in to create a study");
-        osparc.FlashMessenger.getInstance().logAs(msg);
+        osparc.FlashMessenger.logAs(msg);
       }
       return isLogged;
     },
@@ -153,10 +163,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
               openStudy();
             }
           })
-          .catch(err => {
-            console.error(err);
-            osparc.FlashMessenger.logAs(err.message, "ERROR");
-          });
+          .catch(err => osparc.FlashMessenger.logError(err));
       } else {
         openStudy();
       }
@@ -446,7 +453,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       let isLogged = osparc.auth.Manager.getInstance().isLoggedIn();
       if (!isLogged) {
         const msg = this.tr("You need to be logged in to create a study");
-        osparc.FlashMessenger.getInstance().logAs(msg);
+        osparc.FlashMessenger.logAs(msg);
       }
       return isLogged;
     },
@@ -494,12 +501,147 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       this.self().startStudyById(studyId, openCB, cancelCB, isStudyCreation);
     },
 
-    _createStudyFromTemplate: function() {
-      throw new Error("Abstract method called!");
+    _createStudyFromTemplate: function(templateData) {
+      if (!this._checkLoggedIn()) {
+        return;
+      }
+
+      const studyAlias = osparc.product.Utils.getStudyAlias({firstUpperCase: true});
+      this._showLoadingPage(this.tr("Creating ") + (templateData.name || studyAlias));
+
+      if (osparc.desktop.credits.Utils.areWalletsEnabled()) {
+        const studyOptions = new osparc.study.StudyOptions();
+        // they will be patched once the study is created
+        studyOptions.setPatchStudy(false);
+        studyOptions.setStudyData(templateData);
+        studyOptions.getChildControl("open-button").setLabel(this.tr("New"));
+        const win = osparc.study.StudyOptions.popUpInWindow(studyOptions);
+        win.moveItUp();
+        const cancelStudyOptions = () => {
+          this._hideLoadingPage();
+          win.close();
+        }
+        win.addListener("cancel", () => cancelStudyOptions());
+        studyOptions.addListener("cancel", () => cancelStudyOptions());
+        studyOptions.addListener("startStudy", () => {
+          const newName = studyOptions.getChildControl("title-field").getValue();
+          const walletSelection = studyOptions.getChildControl("wallet-selector").getSelection();
+          const nodesPricingUnits = studyOptions.getChildControl("study-pricing-units").getNodePricingUnits();
+          win.close();
+
+          this._showLoadingPage(this.tr("Creating ") + (newName || studyAlias));
+          osparc.study.Utils.createStudyFromTemplate(templateData, this._loadingPage)
+            .then(newStudyData => {
+              const studyId = newStudyData["uuid"];
+              const openCB = () => {
+                this._hideLoadingPage();
+              };
+              const cancelCB = () => {
+                this._hideLoadingPage();
+                const params = {
+                  url: {
+                    studyId
+                  }
+                };
+                osparc.data.Resources.fetch("studies", "delete", params);
+              };
+
+              const promises = [];
+              // patch the name
+              if (newStudyData["name"] !== newName) {
+                promises.push(osparc.study.StudyOptions.updateName(newStudyData, newName));
+              }
+              // patch the wallet
+              if (walletSelection.length && walletSelection[0]["walletId"]) {
+                const walletId = walletSelection[0]["walletId"];
+                promises.push(osparc.study.StudyOptions.updateWallet(newStudyData["uuid"], walletId));
+              }
+              // patch the pricing units
+              // the nodeIds are coming from the original template, they need to be mapped to the newStudy
+              const workbench = newStudyData["workbench"];
+              const nodesIdsListed = [];
+              Object.keys(workbench).forEach(nodeId => {
+                const nodeData = workbench[nodeId];
+                if (osparc.study.StudyPricingUnits.includeInList(nodeData)) {
+                  nodesIdsListed.push(nodeId);
+                }
+              });
+              nodesPricingUnits.forEach((nodePricingUnits, idx) => {
+                const selectedPricingUnitId = nodePricingUnits.getPricingUnits().getSelectedUnitId();
+                if (selectedPricingUnitId) {
+                  const nodeId = nodesIdsListed[idx];
+                  const pricingPlanId = nodePricingUnits.getPricingPlanId();
+                  promises.push(osparc.study.NodePricingUnits.patchPricingUnitSelection(studyId, nodeId, pricingPlanId, selectedPricingUnitId));
+                }
+              });
+
+              Promise.all(promises)
+                .then(() => {
+                  win.close();
+                  const showStudyOptions = false;
+                  this._startStudyById(studyId, openCB, cancelCB, showStudyOptions);
+                });
+            })
+            .catch(err => {
+              this._hideLoadingPage();
+              osparc.FlashMessenger.logError(err);
+            });
+        });
+      } else {
+        osparc.study.Utils.createStudyFromTemplate(templateData, this._loadingPage)
+          .then(newStudyData => {
+            const studyId = newStudyData["uuid"];
+            const openCB = () => this._hideLoadingPage();
+            const cancelCB = () => {
+              this._hideLoadingPage();
+              const params = {
+                url: {
+                  studyId
+                }
+              };
+              osparc.data.Resources.fetch("studies", "delete", params);
+            };
+            const isStudyCreation = true;
+            this._startStudyById(studyId, openCB, cancelCB, isStudyCreation);
+          })
+          .catch(err => {
+            this._hideLoadingPage();
+            osparc.FlashMessenger.logError(err);
+          });
+      }
     },
 
-    _createStudyFromService: function() {
-      throw new Error("Abstract method called!");
+    _createStudyFromService: function(key, version) {
+      if (!this._checkLoggedIn()) {
+        return;
+      }
+
+      const studyAlias = osparc.product.Utils.getStudyAlias({firstUpperCase: true});
+      this._showLoadingPage(this.tr("Creating ") + studyAlias);
+
+      osparc.study.Utils.createStudyFromService(key, version)
+        .then(studyId => {
+          const openCB = () => this._hideLoadingPage();
+          const cancelCB = () => {
+            this._hideLoadingPage();
+            const params = {
+              url: {
+                studyId
+              }
+            };
+            osparc.data.Resources.fetch("studies", "delete", params);
+          };
+          const isStudyCreation = true;
+          this._startStudyById(studyId, openCB, cancelCB, isStudyCreation);
+        })
+        .catch(err => {
+          this._hideLoadingPage();
+          osparc.FlashMessenger.logError(err);
+        });
+    },
+
+    _applyMultiSelection: function(value) {
+      return;
     },
 
     _deleteResourceRequested: function(resourceId) {
@@ -555,7 +697,9 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     },
 
     _getOpenMenuButton: function(resourceData) {
-      const openButton = new qx.ui.menu.Button(this.tr("Open"));
+      const studyAlias = osparc.product.Utils.getStudyAlias({firstUpperCase: true});
+      const openText = (resourceData["resourceType"] === "study") ? this.tr("Open") : this.tr("New") + " " + studyAlias;
+      const openButton = new qx.ui.menu.Button(openText);
       openButton["openResourceButton"] = true;
       openButton.addListener("execute", () => {
         switch (resourceData["resourceType"]) {

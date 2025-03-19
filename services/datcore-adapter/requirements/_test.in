@@ -6,6 +6,8 @@
 
 
 asgi_lifespan
+botocore-stubs
+boto3-stubs
 coverage
 faker
 pytest
@@ -19,5 +21,3 @@ pytest-sugar
 pytest-xdist
 requests
 respx
-types-boto3
-types-botocore

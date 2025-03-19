@@ -3,7 +3,7 @@ import logging
 from aiohttp import web
 from servicelib.mimetype_constants import MIMETYPE_TEXT_HTML
 
-from ..products.api import get_product_name
+from ..products import products_web
 from ._constants import (
     APP_FRONTEND_CACHED_INDEXES_KEY,
     APP_FRONTEND_CACHED_STATICS_JSON_KEY,
@@ -14,7 +14,7 @@ _logger = logging.getLogger(__name__)
 
 
 async def get_cached_frontend_index(request: web.Request):
-    product_name = get_product_name(request)
+    product_name = products_web.get_product_name(request)
 
     assert (  # nosec
         product_name in FRONTEND_APPS_AVAILABLE
@@ -38,7 +38,7 @@ async def get_cached_frontend_index(request: web.Request):
 
 
 async def get_statics_json(request: web.Request):
-    product_name = get_product_name(request)
+    product_name = products_web.get_product_name(request)
 
     return web.Response(
         body=request.app[APP_FRONTEND_CACHED_STATICS_JSON_KEY].get(product_name, None),

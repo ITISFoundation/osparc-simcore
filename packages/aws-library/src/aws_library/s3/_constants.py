@@ -12,3 +12,4 @@ MULTIPART_COPY_THRESHOLD: Final[ByteSize] = TypeAdapter(ByteSize).validate_pytho
 
 PRESIGNED_LINK_MAX_SIZE: Final[ByteSize] = TypeAdapter(ByteSize).validate_python("5GiB")
 S3_MAX_FILE_SIZE: Final[ByteSize] = TypeAdapter(ByteSize).validate_python("5TiB")
+S3_OBJECT_DELIMITER: Final[str] = "/"

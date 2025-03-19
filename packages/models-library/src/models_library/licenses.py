@@ -26,16 +26,18 @@ class LicensedResourceType(StrAutoEnum):
     VIP_MODEL = auto()
 
 
-VIP_FEATURES_EXAMPLE = {
-    "name": "Duke",
-    "version": "V2.0",
-    "sex": "Mas bien poco",
+_VIP_FEATURES_EXAMPLE = {
+    # NOTE: this view is how it would be after parsed and validated
     "age": "34 years",
-    "weight": "70.2 Kg",
-    "height": "1.77 m",
     "date": "2015-03-01",
     "ethnicity": "Caucasian",
     "functionality": "Static",
+    "height": "1.77 m",
+    "name": "Duke",
+    "sex": "Male",
+    "version": "V2.0",
+    "weight": "70.2 Kg",
+    # other
     "additional_field": "allowed",
 }
 
@@ -58,7 +60,7 @@ VIP_DETAILS_EXAMPLE = {
     "id": 1,
     "description": "A detailed description of the VIP model",
     "thumbnail": "https://example.com/thumbnail.jpg",
-    "features": VIP_FEATURES_EXAMPLE,
+    "features": _VIP_FEATURES_EXAMPLE,
     "doi": "10.1000/xyz123",
     "license_key": "ABC123XYZ",
     "license_version": "1.0",

@@ -1,11 +1,10 @@
+# pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
-# pylint: disable=too-many-arguments
 
-from copy import deepcopy
 from datetime import UTC, datetime
-from pprint import pformat
 from typing import Any
 
 import pytest
@@ -16,38 +15,10 @@ from models_library.api_schemas_webserver.users import (
     MyProfilePrivacyGet,
 )
 from models_library.generics import Envelope
-from models_library.users import UserThirdPartyToken
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import BaseModel
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
-from simcore_postgres_database.models.users import UserRole
+from simcore_postgres_database import utils_users
 from simcore_service_webserver.users._common.models import ToUserUpdateDB
-
-
-@pytest.mark.parametrize(
-    "model_cls",
-    [MyProfileGet, UserThirdPartyToken],
-)
-def test_user_models_examples(
-    model_cls: type[BaseModel], model_cls_examples: dict[str, Any]
-):
-    for name, example in model_cls_examples.items():
-        print(name, ":", pformat(example))
-        model_instance = model_cls(**example)
-        assert model_instance, f"Failed with {name}"
-
-        model_enveloped = Envelope[model_cls].from_data(
-            model_instance.model_dump(by_alias=True)
-        )
-        model_array_enveloped = Envelope[list[model_cls]].from_data(
-            [
-                model_instance.model_dump(by_alias=True),
-                model_instance.model_dump(by_alias=True),
-            ]
-        )
-
-        assert model_enveloped.error is None
-        assert model_array_enveloped.error is None
 
 
 @pytest.fixture
@@ -96,18 +67,6 @@ def test_auto_compute_gravatar__deprecated(fake_profile_get: MyProfileGet):
     assert data["login"] == profile.login
     assert data["role"] == profile.role
     assert data["preferences"] == profile.preferences
-
-
-@pytest.mark.parametrize("user_role", [u.name for u in UserRole])
-def test_profile_get_role(user_role: str):
-    for example in MyProfileGet.model_json_schema()["examples"]:
-        data = deepcopy(example)
-        data["role"] = user_role
-        m1 = MyProfileGet(**data)
-
-        data["role"] = UserRole(user_role)
-        m2 = MyProfileGet(**data)
-        assert m1 == m2
 
 
 def test_parsing_output_of_get_user_profile():
@@ -179,3 +138,12 @@ def test_mapping_update_models_from_rest_to_db():
         "name": "foo1234",
         "privacy_hide_fullname": False,
     }
+
+
+def test_utils_user_generates_valid_myprofile_patch():
+    username = utils_users._generate_username_from_email("xi@email.com")  # noqa: SLF001
+
+    MyProfilePatch.model_validate({"userName": username})
+    MyProfilePatch.model_validate(
+        {"userName": utils_users.generate_alternative_username(username)}
+    )

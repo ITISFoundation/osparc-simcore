@@ -125,6 +125,10 @@ qx.Class.define("osparc.data.Resources", {
             method: "GET",
             url: statics.API + "/projects/{studyId}"
           },
+          getServices: {
+            method: "GET",
+            url: statics.API + "/projects/{studyId}/nodes/-/services"
+          },
           getActive: {
             useCache: false,
             method: "GET",
@@ -574,23 +578,19 @@ qx.Class.define("osparc.data.Resources", {
       },
 
       /*
-       * SERVICES V2 (web-api >=0.42.0)
+       * SERVICES V2
        */
       "servicesV2": {
         useCache: false, // handled in osparc.store.Services
         idField: ["key", "version"],
         endpoints: {
-          get: {
+          getOne: {
             method: "GET",
-            url: statics.API + "/catalog/services/-/latest"
+            url: statics.API + "/catalog/services/{key}/{version}"
           },
           getPage: {
             method: "GET",
             url: statics.API + "/catalog/services/-/latest?offset={offset}&limit={limit}"
-          },
-          getOne: {
-            method: "GET",
-            url: statics.API + "/catalog/services/{key}/{version}"
           },
           patch: {
             method: "PATCH",
@@ -1176,21 +1176,9 @@ qx.Class.define("osparc.data.Resources", {
       "storageLocations": {
         useCache: true,
         endpoints: {
-          get: {
+          getLocations: {
             method: "GET",
             url: statics.API + "/storage/locations"
-          }
-        }
-      },
-      /*
-       * STORAGE DATASETS
-       */
-      "storageDatasets": {
-        useCache: false,
-        endpoints: {
-          getByLocation: {
-            method: "GET",
-            url: statics.API + "/storage/locations/{locationId}/datasets"
           }
         }
       },
@@ -1200,15 +1188,7 @@ qx.Class.define("osparc.data.Resources", {
       "storageFiles": {
         useCache: false,
         endpoints: {
-          getByLocationAndDataset: {
-            method: "GET",
-            url: statics.API + "/storage/locations/{locationId}/datasets/{datasetId}/metadata"
-          },
-          getByNode: {
-            method: "GET",
-            url: statics.API + "/storage/locations/0/files/metadata?uuid_filter={nodeId}"
-          },
-          put: {
+          copy: {
             method: "PUT",
             url: statics.API + "/storage/locations/{toLoc}/files/{fileName}?extra_location={fromLoc}&extra_source={fileUuid}"
           },
@@ -1216,6 +1196,26 @@ qx.Class.define("osparc.data.Resources", {
             method: "DELETE",
             url: statics.API + "/storage/locations/{locationId}/files/{fileUuid}"
           }
+        }
+      },
+      /*
+       * STORAGE PATHS
+       */
+      "storagePaths": {
+        useCache: false,
+        endpoints: {
+          getDatasets: {
+            method: "GET",
+            url: statics.API + "/storage/locations/{locationId}/paths?size=1000"
+          },
+          getPaths: {
+            method: "GET",
+            url: statics.API + "/storage/locations/{locationId}/paths?file_filter={path}&size=1000"
+          },
+          requestSize: {
+            method: "POST",
+            url: statics.API + "/storage/locations/0/paths/{pathId}:size"
+          },
         }
       },
       /*
@@ -1232,6 +1232,26 @@ qx.Class.define("osparc.data.Resources", {
             method: "PUT",
             url: statics.API + "/storage/locations/{locationId}/files/{fileUuid}?file_size={fileSize}"
           }
+        }
+      },
+      /*
+       * STORAGE ASYNC
+       */
+      "storageAsyncJobs": {
+        useCache: false,
+        endpoints: {
+          jobStatus: {
+            method: "GET",
+            url: statics.API + "/storage/async-jobs/{jobId}/status"
+          },
+          jobResult: {
+            method: "GET",
+            url: statics.API + "/storage/async-jobs/{jobId}/result"
+          },
+          abortJob: {
+            method: "POST",
+            url: statics.API + "/storage/async-jobs/{jobId}/abort"
+          },
         }
       },
       /*
@@ -1470,7 +1490,10 @@ qx.Class.define("osparc.data.Resources", {
           }
 
           if ([404, 503].includes(status)) {
-            message += "<br>Please try again later and/or contact support";
+            // NOTE: a temporary solution to avoid duplicate information
+            if (!message.includes("contact") && !message.includes("try")) {
+              message += "<br>Please try again later and/or contact support";
+            }
           }
           const err = Error(message ? message : `Error while trying to fetch ${endpoint} ${resource}`);
           if (status) {

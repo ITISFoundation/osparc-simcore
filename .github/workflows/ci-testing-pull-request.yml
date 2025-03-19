@@ -10,6 +10,20 @@ on:
     branches:
       - "master"
 
+  workflow_dispatch:
+    inputs:
+      target_repo:
+        description: full repository name (e.g. 'ITISFoundation/osparc-simcore')
+        required: true
+        default: "ITISFoundation/osparc-simcore"
+        type: environment
+      target_branch:
+        description: Check backwards compatibility against target_branch in target_repo
+        required: true
+        default: "master"
+        type: environment
+
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -39,7 +53,7 @@ jobs:
       - name: Check openapi specs are up to date
         run: |
           if ! ./ci/github/helpers/openapi-specs-diff.bash diff \
-            https://raw.githubusercontent.com/${{ github.event.pull_request.head.repo.full_name }}/${{ github.event.pull_request.head.sha }} \
+            "https://raw.githubusercontent.com/$GITHUB_REPOSITORY/$GITHUB_SHA" \
             .; then \
             echo "::error:: OAS are not up to date. Run 'make openapi-specs' to update them"; exit 1; \
           fi
@@ -56,10 +70,19 @@ jobs:
           python-version: "3.11"
       - name: checkout
         uses: actions/checkout@v4
+      - name: Set environment variables based on event type
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "REPO=${{ inputs.target_repo }}" >> $GITHUB_ENV
+            echo "BRANCH=${{ inputs.target_branch }}" >> $GITHUB_ENV
+          else
+            echo "REPO=${{ github.event.pull_request.base.repo.full_name }}" >> $GITHUB_ENV
+            echo "BRANCH=${{ github.base_ref }}" >> $GITHUB_ENV
+          fi
       - name: check api-server backwards compatibility
         run: |
           ./scripts/openapi-diff.bash breaking --fail-on ERR\
-            https://raw.githubusercontent.com/${{ github.event.pull_request.base.repo.full_name }}/${{ github.event.after }}/services/api-server/openapi.json \
+            "https://raw.githubusercontent.com/$REPO/refs/heads/$BRANCH/services/api-server/openapi.json" \
             /specs/services/api-server/openapi.json
 
   all-oas-breaking:
@@ -75,8 +98,17 @@ jobs:
           python-version: "3.11"
       - name: checkout
         uses: actions/checkout@v4
+      - name: Set environment variables based on event type
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "REPO=${{ inputs.target_repo }}" >> $GITHUB_ENV
+            echo "BRANCH=${{ inputs.target_branch }}" >> $GITHUB_ENV
+          else
+            echo "REPO=${{ github.event.pull_request.base.repo.full_name }}" >> $GITHUB_ENV
+            echo "BRANCH=${{ github.base_ref }}" >> $GITHUB_ENV
+          fi
       - name: Check openapi-specs backwards compatibility
         run: |
           ./ci/github/helpers/openapi-specs-diff.bash breaking \
-            https://raw.githubusercontent.com/${{ github.event.pull_request.base.repo.full_name }}/${{ github.event.after }} \
+            "https://raw.githubusercontent.com/$REPO/refs/heads/$BRANCH" \
             .

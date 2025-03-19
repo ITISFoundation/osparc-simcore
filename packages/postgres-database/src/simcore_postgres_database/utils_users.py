@@ -1,18 +1,19 @@
-""" Free functions, repository pattern, errors and data structures for the users resource
-    i.e. models.users main table and all its relations
+"""Free functions, repository pattern, errors and data structures for the users resource
+i.e. models.users main table and all its relations
 """
 
 import re
 import secrets
 import string
 from datetime import datetime
+from typing import Any, Final
 
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
 from sqlalchemy import Column
 
-from .errors import UniqueViolation
+from .aiopg_errors import UniqueViolation
 from .models.users import UserRole, UserStatus, users
 from .models.users_details import users_pre_registration_details
 
@@ -25,19 +26,29 @@ class UserNotFoundInRepoError(BaseUserRepoError):
     pass
 
 
+# NOTE: see MyProfilePatch.user_name
+_MIN_USERNAME_LEN: Final[int] = 4
+
+
+def _generate_random_chars(length: int = _MIN_USERNAME_LEN) -> str:
+    """returns `length` random digit character"""
+    return "".join(secrets.choice(string.digits) for _ in range(length))
+
+
 def _generate_username_from_email(email: str) -> str:
     username = email.split("@")[0]
 
     # Remove any non-alphanumeric characters and convert to lowercase
-    return re.sub(r"[^a-zA-Z0-9]", "", username).lower()
+    username = re.sub(r"[^a-zA-Z0-9]", "", username).lower()
+
+    # Ensure the username is at least 4 characters long
+    if len(username) < _MIN_USERNAME_LEN:
+        username += _generate_random_chars(length=_MIN_USERNAME_LEN - len(username))
+
+    return username
 
 
-def _generate_random_chars(length=5) -> str:
-    """returns `length` random digit character"""
-    return "".join(secrets.choice(string.digits) for _ in range(length - 1))
-
-
-def generate_alternative_username(username) -> str:
+def generate_alternative_username(username: str) -> str:
     return f"{username}_{_generate_random_chars()}"
 
 
@@ -50,7 +61,7 @@ class UsersRepo:
         status: UserStatus,
         expires_at: datetime | None,
     ) -> RowProxy:
-        data = {
+        data: dict[str, Any] = {
             "name": _generate_username_from_email(email),
             "email": email,
             "password_hash": password_hash,
@@ -65,7 +76,7 @@ class UsersRepo:
                 user_id = await conn.scalar(
                     users.insert().values(**data).returning(users.c.id)
                 )
-            except UniqueViolation:  # noqa: PERF203
+            except UniqueViolation:
                 data["name"] = generate_alternative_username(data["name"])
 
         result = await conn.execute(
@@ -78,7 +89,7 @@ class UsersRepo:
             ).where(users.c.id == user_id)
         )
         row = await result.first()
-        assert row  # nosec
+        assert isinstance(row, RowProxy)  # nosec
         return row
 
     @staticmethod

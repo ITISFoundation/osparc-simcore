@@ -7,8 +7,8 @@ from models_library.api_schemas_resource_usage_tracker.credit_transactions impor
     WalletTotalCredits,
 )
 from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
-    PricingPlanGet,
-    PricingUnitGet,
+    RutPricingPlanGet,
+    RutPricingUnitGet,
 )
 from models_library.resource_tracker import CreditTransactionId
 
@@ -63,14 +63,14 @@ async def create_credit_transaction(
 
 @router.get(
     "/services/{service_key:path}/{service_version}/pricing-plan",
-    response_model=PricingPlanGet,
+    response_model=RutPricingPlanGet,
     operation_id="get_service_default_pricing_plan",
     description="Returns a default pricing plan with pricing details for a specified service",
     tags=["pricing-plans"],
 )
 async def get_service_default_pricing_plan(
     service_pricing_plans: Annotated[
-        PricingPlanGet,
+        RutPricingPlanGet,
         Depends(pricing_plans.get_service_default_pricing_plan),
     ],
 ):
@@ -79,14 +79,14 @@ async def get_service_default_pricing_plan(
 
 @router.get(
     "/pricing-plans/{pricing_plan_id}/pricing-units/{pricing_unit_id}",
-    response_model=PricingUnitGet,
+    response_model=RutPricingUnitGet,
     operation_id="list_service_pricing_plans",
     description="Returns a list of service pricing plans with pricing details for a specified service",
     tags=["pricing-plans"],
 )
 async def get_pricing_plan_unit(
     pricing_unit: Annotated[
-        PricingUnitGet,
+        RutPricingUnitGet,
         Depends(pricing_units.get_pricing_unit),
     ]
 ):

@@ -82,7 +82,7 @@ qx.Class.define("osparc.store.Pricing", {
     },
 
     fetchPricingUnits: function(pricingPlanId) {
-      if (this.getPricingPlan(pricingPlanId)) {
+      if (this.getPricingPlan(pricingPlanId) && this.getPricingPlan(pricingPlanId).getPricingUnits().length !== 0) {
         return new Promise(resolve => resolve(this.getPricingPlan(pricingPlanId).getPricingUnits()));
       }
       const params = {
@@ -101,6 +101,38 @@ qx.Class.define("osparc.store.Pricing", {
           });
           return pricingUnits;
         });
+    },
+
+    createPricingUnit: function(pricingPlanId, pricingUnitData) {
+      const params = {
+        url: {
+          "pricingPlanId": pricingPlanId
+        },
+        data: pricingUnitData
+      };
+      return osparc.data.Resources.fetch("pricingUnits", "post", params)
+        .then(newPricingUnitData => {
+          const pricingPlan = this.getPricingPlan(pricingPlanId);
+          this.__addPricingUnitToCache(pricingPlan, newPricingUnitData);
+          return pricingPlan;
+        })
+    },
+
+    updatePricingUnit: function(pricingPlanId, pricingUnitId, pricingUnitData) {
+      const params = {
+        url: {
+          "pricingPlanId": pricingPlanId,
+          "pricingUnitId": pricingUnitId,
+        },
+        data: pricingUnitData
+      };
+      return osparc.data.Resources.fetch("pricingUnits", "post", params)
+        .then(() => {
+          const pricingPlan = this.getPricingPlan(pricingPlanId);
+          // OM do not add but replace
+          this.__addPricingUnitToCache(pricingPlan, pricingUnitData);
+          return pricingPlan;
+        })
     },
 
     getPricingPlans: function() {

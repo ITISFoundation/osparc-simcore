@@ -7,7 +7,7 @@
 from aiohttp import web
 from settings_library.catalog import CatalogSettings
 
-from .._constants import APP_SETTINGS_KEY
+from ..constants import APP_SETTINGS_KEY
 
 
 def get_plugin_settings(app: web.Application) -> CatalogSettings:

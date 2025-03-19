@@ -81,6 +81,7 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
           control = new qx.ui.basic.Label().set({
             font: "text-14"
           });
+          control.bind("value", control, "toolTipText");
           this._add(control, {
             row: 0,
             column: 0,
@@ -140,9 +141,8 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
               osparc.data.Resources.fetch("wallets", "put", params)
                 .then(() => found.setStatus(newStatus))
                 .catch(err => {
-                  console.error(err);
-                  const msg = err.message || (this.tr("Something went wrong updating the state"));
-                  osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
+                  const msg = this.tr("Something went wrong while updating the state");
+                  osparc.FlashMessenger.logError(err, msg);
                 });
             }
           }, this);

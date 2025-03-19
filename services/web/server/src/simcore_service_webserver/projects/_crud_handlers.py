@@ -32,17 +32,16 @@ from servicelib.common_headers import (
     X_SIMCORE_USER_AGENT,
 )
 from servicelib.redis import get_project_locked_state
-from simcore_service_webserver.projects.models import ProjectDict
-from simcore_service_webserver.utils_aiohttp import envelope_json_response
 
 from .._meta import API_VTAG as VTAG
-from ..catalog.client import get_services_for_user_in_product
+from ..catalog import catalog_service
 from ..login.decorators import login_required
 from ..redis import get_redis_lock_manager_client_sdk
 from ..resource_manager.user_sessions import PROJECT_ID_KEY, managed_resource
 from ..security.api import check_user_permission
 from ..security.decorators import permission_required
 from ..users.api import get_user_fullname
+from ..utils_aiohttp import envelope_json_response
 from . import _crud_api_create, _crud_api_read, _crud_handlers_utils, projects_service
 from ._common.exceptions_handlers import handle_plugin_requests_exceptions
 from ._common.models import ProjectPathParams, RequestContext
@@ -55,6 +54,7 @@ from ._crud_handlers_models import (
     ProjectsSearchQueryParams,
 )
 from ._permalink_service import update_or_pop_permalink_in_project
+from .models import ProjectDict
 from .utils import get_project_unavailable_services, project_uses_available_services
 
 # When the user requests a project with a repo, the working copy might differ from
@@ -97,11 +97,11 @@ async def create_project(request: web.Request):
         predefined_project = None
     else:
         # request w/ body (I found cases in which body = {})
-        project_create: (
-            ProjectCreateNew | ProjectCopyOverride | EmptyModel
-        ) = await parse_request_body_as(
-            ProjectCreateNew | ProjectCopyOverride | EmptyModel,  # type: ignore[arg-type] # from pydantic v2 --> https://github.com/pydantic/pydantic/discussions/4950
-            request,
+        project_create: ProjectCreateNew | ProjectCopyOverride | EmptyModel = (
+            await parse_request_body_as(
+                ProjectCreateNew | ProjectCopyOverride | EmptyModel,  # type: ignore[arg-type] # from pydantic v2 --> https://github.com/pydantic/pydantic/discussions/4950
+                request,
+            )
         )
         predefined_project = project_create.to_domain_model() or None
 
@@ -280,8 +280,10 @@ async def get_project(request: web.Request):
     req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
-    user_available_services: list[dict] = await get_services_for_user_in_product(
-        request.app, req_ctx.user_id, req_ctx.product_name, only_key_versions=True
+    user_available_services: list[dict] = (
+        await catalog_service.get_services_for_user_in_product(
+            request.app, req_ctx.user_id, req_ctx.product_name, only_key_versions=True
+        )
     )
 
     project = await projects_service.get_project_for_user(

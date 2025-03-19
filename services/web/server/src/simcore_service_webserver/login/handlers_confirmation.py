@@ -23,13 +23,14 @@ from servicelib.aiohttp.requests_validation import (
 )
 from servicelib.logging_errors import create_troubleshotting_log_kwargs
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
-from simcore_postgres_database.errors import UniqueViolation
+from simcore_postgres_database.aiopg_errors import UniqueViolation
 from yarl import URL
 
-from ..products.api import Product, get_current_product
+from ..products import products_web
+from ..products.models import Product
 from ..security.api import encrypt_password
 from ..session.access_policies import session_access_required
-from ..utils import MINUTE
+from ..utils import HOUR, MINUTE
 from ..utils_aiohttp import create_redirect_to_page_response
 from ..utils_rate_limiting import global_rate_limit_route
 from ._2fa_api import delete_2fa_code, get_2fa_code
@@ -138,7 +139,7 @@ async def validate_confirmation_and_redirect(request: web.Request):
     """
     db: AsyncpgStorage = get_plugin_storage(request.app)
     cfg: LoginOptions = get_plugin_options(request.app)
-    product: Product = get_current_product(request)
+    product: Product = products_web.get_current_product(request)
 
     path_params = parse_request_path_parameters_as(_PathParam, request)
 
@@ -224,7 +225,7 @@ class PhoneConfirmationBody(InputSchema):
     unauthorized_reason=MSG_UNAUTHORIZED_PHONE_CONFIRMATION,
 )
 async def phone_confirmation(request: web.Request):
-    product: Product = get_current_product(request)
+    product: Product = products_web.get_current_product(request)
     settings: LoginSettingsForProduct = get_plugin_settings(
         request.app, product_name=product.name
     )
@@ -272,15 +273,17 @@ class ResetPasswordConfirmation(InputSchema):
     _password_confirm_match = field_validator("confirm")(check_confirm_password_match)
 
 
-@routes.post("/v0/auth/reset-password/{code}", name="auth_reset_password_allowed")
-async def reset_password(request: web.Request):
-    """Changes password using a token code without being logged in
+@routes.post("/v0/auth/reset-password/{code}", name="complete_reset_password")
+@global_rate_limit_route(number_of_requests=10, interval_seconds=HOUR)
+async def complete_reset_password(request: web.Request):
+    """Last of the "Two-Step Action Confirmation pattern": initiate_reset_password + complete_reset_password(code)
 
-    Code is provided via email by calling first submit_request_to_reset_password
+    - Changes password using a token code without login
+    - Code is provided via email by calling first initiate_reset_password
     """
     db: AsyncpgStorage = get_plugin_storage(request.app)
     cfg: LoginOptions = get_plugin_options(request.app)
-    product: Product = get_current_product(request)
+    product: Product = products_web.get_current_product(request)
 
     path_params = parse_request_path_parameters_as(_PathParam, request)
     request_body = await parse_request_body_as(ResetPasswordConfirmation, request)
@@ -294,8 +297,8 @@ async def reset_password(request: web.Request):
         assert user  # nosec
 
         await db.update_user(
-            dict(user),
-            {
+            user={"id": user["id"]},
+            updates={
                 "password_hash": encrypt_password(
                     request_body.password.get_secret_value()
                 )

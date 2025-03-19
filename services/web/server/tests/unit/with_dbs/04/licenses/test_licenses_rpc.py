@@ -172,6 +172,7 @@ async def test_license_checkout_workflow(
             licensed_item_to_resource.insert().values(
                 licensed_item_id=_licensed_item_id,
                 licensed_resource_id=got_licensed_resource_duke.licensed_resource_id,
+                product_name=osparc_product_name,
             )
         )
 

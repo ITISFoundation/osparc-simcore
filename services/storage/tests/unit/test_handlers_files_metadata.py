@@ -2,7 +2,6 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 
-
 from collections.abc import Awaitable, Callable
 from copy import deepcopy
 from pathlib import Path
@@ -13,13 +12,18 @@ import httpx
 import pytest
 from faker import Faker
 from fastapi import FastAPI
+from models_library.api_schemas_storage.storage_schemas import (
+    FileMetaDataGet,
+    SimcoreS3FileID,
+)
 from models_library.projects import ProjectID
-from models_library.storage_schemas import FileMetaDataGet, SimcoreS3FileID
+from models_library.projects_nodes_io import LocationID
 from models_library.users import UserID
 from pydantic import ByteSize, TypeAdapter
 from pytest_simcore.helpers.fastapi import url_from_operation_id
 from pytest_simcore.helpers.httpx_assert_checks import assert_status
 from servicelib.aiohttp import status
+from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 from yarl import URL
 
 pytest_simcore_core_services_selection = ["postgres"]
@@ -34,10 +38,15 @@ class CreateProjectAccessRightsCallable(Protocol):
         read: bool,
         write: bool,
         delete: bool,
-    ) -> None:
-        ...
+    ) -> None: ...
 
 
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
 async def test_list_files_metadata(
     upload_file: Callable[[ByteSize, str], Awaitable[tuple[Path, SimcoreS3FileID]]],
     create_project_access_rights: CreateProjectAccessRightsCallable,
@@ -45,7 +54,7 @@ async def test_list_files_metadata(
     client: httpx.AsyncClient,
     user_id: UserID,
     other_user_id: UserID,
-    location_id: int,
+    location_id: LocationID,
     project_id: ProjectID,
     faker: Faker,
 ):
@@ -139,7 +148,7 @@ async def test_get_file_metadata_is_legacy_services_compatible(
     initialized_app: FastAPI,
     client: httpx.AsyncClient,
     user_id: UserID,
-    location_id: int,
+    location_id: LocationID,
     simcore_file_id: SimcoreS3FileID,
 ):
     url = (
@@ -159,12 +168,18 @@ async def test_get_file_metadata_is_legacy_services_compatible(
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
 async def test_get_file_metadata(
     upload_file: Callable[[ByteSize, str], Awaitable[tuple[Path, SimcoreS3FileID]]],
     initialized_app: FastAPI,
     client: httpx.AsyncClient,
     user_id: UserID,
-    location_id: int,
+    location_id: LocationID,
     project_id: ProjectID,
     simcore_file_id: SimcoreS3FileID,
     faker: Faker,

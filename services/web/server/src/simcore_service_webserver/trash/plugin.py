@@ -8,7 +8,7 @@ import logging
 from aiohttp import web
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
-from .._constants import APP_SETTINGS_KEY
+from ..constants import APP_SETTINGS_KEY
 from ..folders.plugin import setup_folders
 from ..projects.plugin import setup_projects
 from ..workspaces.plugin import setup_workspaces

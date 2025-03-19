@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: simcore-service-webserver
   description: Main service with an interface (http-API & websockets) to the web front-end
-  version: 0.58.1
+  version: 0.61.2
 servers:
 - url: ''
   description: webserver
@@ -253,9 +253,8 @@ paths:
     post:
       tags:
       - auth
-      summary: Reset Password
-      description: a non logged-in user requests a password reset
-      operationId: auth_reset_password
+      summary: Initiate Reset Password
+      operationId: initiate_reset_password
       requestBody:
         content:
           application/json:
@@ -279,9 +278,8 @@ paths:
     post:
       tags:
       - auth
-      summary: Reset Password Allowed
-      description: changes password using a token code without being logged in
-      operationId: auth_reset_password_allowed
+      summary: Complete Reset Password
+      operationId: complete_reset_password
       parameters:
       - name: code
         in: path
@@ -303,7 +301,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Envelope_Log_'
         '401':
-          description: unauthorized reset due to invalid token code
+          description: Invalid token code
           content:
             application/json:
               schema:
@@ -1107,7 +1105,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_GetCreditPrice_'
+                $ref: '#/components/schemas/Envelope_CreditPriceGet_'
   /v0/products/{product_name}:
     get:
       tags:
@@ -1149,42 +1147,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_ProductUIGet_'
-  /v0/products/{product_name}/templates/{template_id}:
-    put:
-      tags:
-      - products
-      - po
-      summary: Update Product Template
-      operationId: update_product_template
-      parameters:
-      - name: product_name
-        in: path
-        required: true
-        schema:
-          anyOf:
-          - type: string
-            minLength: 1
-            maxLength: 100
-          - const: current
-            type: string
-          title: Product Name
-      - name: template_id
-        in: path
-        required: true
-        schema:
-          type: string
-          minLength: 1
-          maxLength: 100
-          title: Template Id
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpdateProductTemplate'
-      responses:
-        '204':
-          description: Successful Response
   /v0/invitation:generate:
     post:
       tags:
@@ -1196,7 +1158,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/GenerateInvitation'
+              $ref: '#/components/schemas/InvitationGenerate'
         required: true
       responses:
         '200':
@@ -2063,7 +2025,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Page_CatalogServiceGet_'
+                $ref: '#/components/schemas/Page_CatalogLatestServiceGet_'
   /v0/catalog/services/{service_key}/{service_version}:
     get:
       tags:
@@ -4963,6 +4925,28 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_dict_Annotated_str__StringConstraints___ImageResources__'
+  /v0/projects/{project_id}/nodes/-/services:
+    get:
+      tags:
+      - projects
+      - nodes
+      summary: Get Project Services
+      operationId: get_project_services
+      parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Project Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_ProjectNodeServicesGet_'
   /v0/projects/{project_id}/nodes/-/services:access:
     get:
       tags:
@@ -6024,6 +6008,82 @@ paths:
                   $ref: '#/components/schemas/FileLocation'
                 type: array
                 title: Response List Storage Locations
+  /v0/storage/locations/{location_id}/paths:
+    get:
+      tags:
+      - storage
+      summary: List Storage Paths
+      description: Lists the files/directories in WorkingDirectory
+      operationId: list_storage_paths
+      parameters:
+      - name: location_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Location Id
+      - name: size
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          exclusiveMaximum: true
+          default: 50
+          title: Size
+          maximum: 1000
+      - name: cursor
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Cursor
+      - name: fileFilter
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            format: path
+          - type: 'null'
+          title: Filefilter
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CursorPage___T_Customized_PathMetaDataGet_'
+  /v0/storage/locations/{location_id}/paths/{path}:size:
+    post:
+      tags:
+      - storage
+      summary: Compute Path Size
+      description: Compute the size of a path
+      operationId: compute_path_size
+      parameters:
+      - name: location_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Location Id
+      - name: path
+        in: path
+        required: true
+        schema:
+          type: string
+          format: path
+          title: Path
+      responses:
+        '202':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_StorageAsyncJobGet_'
   /v0/storage/locations/{location_id}/datasets:
     get:
       tags:
@@ -6351,6 +6411,121 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_FileUploadCompleteFutureResponse_'
+  /v0/storage/locations/{location_id}/export-data:
+    post:
+      tags:
+      - storage
+      summary: Export Data
+      description: Export data
+      operationId: export_data
+      parameters:
+      - name: location_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Location Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DataExportPost'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_StorageAsyncJobGet_'
+  /v0/storage/async-jobs/{job_id}/status:
+    get:
+      tags:
+      - storage
+      summary: Get Async Job Status
+      description: Get async job status
+      operationId: get_async_job_status
+      parameters:
+      - name: job_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Job Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_StorageAsyncJobStatus_'
+  /v0/storage/async-jobs/{job_id}:abort:
+    post:
+      tags:
+      - storage
+      summary: Abort Async Job
+      description: aborts execution of an async job
+      operationId: abort_async_job
+      parameters:
+      - name: job_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Job Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+  /v0/storage/async-jobs/{job_id}/result:
+    get:
+      tags:
+      - storage
+      summary: Get Async Job Result
+      description: Get the result of the async job
+      operationId: get_async_job_result
+      parameters:
+      - name: job_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Job Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_StorageAsyncJobResult_'
+  /v0/storage/async-jobs:
+    get:
+      tags:
+      - storage
+      summary: Get Async Jobs
+      description: Retrunsa list of async jobs for the user
+      operationId: get_async_jobs
+      parameters:
+      - name: user_id
+        in: query
+        required: true
+        schema:
+          type: integer
+          exclusiveMinimum: true
+          title: User Id
+          minimum: 0
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list_StorageAsyncJobGet__'
   /v0/trash:empty:
     post:
       tags:
@@ -7706,6 +7881,225 @@ components:
       - default
       - items
       title: BootOption
+    CatalogLatestServiceGet:
+      properties:
+        key:
+          type: string
+          pattern: ^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$
+          title: Key
+        version:
+          type: string
+          pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
+          title: Version
+        name:
+          type: string
+          title: Name
+        thumbnail:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Thumbnail
+        icon:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Icon
+        description:
+          type: string
+          title: Description
+        descriptionUi:
+          type: boolean
+          title: Descriptionui
+          default: false
+        versionDisplay:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Versiondisplay
+        type:
+          $ref: '#/components/schemas/ServiceType'
+        contact:
+          anyOf:
+          - type: string
+            format: email
+          - type: 'null'
+          title: Contact
+        authors:
+          items:
+            $ref: '#/components/schemas/Author'
+          type: array
+          minItems: 1
+          title: Authors
+        owner:
+          anyOf:
+          - type: string
+            format: email
+          - type: 'null'
+          title: Owner
+          description: None when the owner email cannot be found in the database
+        inputs:
+          type: object
+          title: Inputs
+        outputs:
+          type: object
+          title: Outputs
+        bootOptions:
+          anyOf:
+          - type: object
+          - type: 'null'
+          title: Bootoptions
+        minVisibleInputs:
+          anyOf:
+          - type: integer
+            minimum: 0
+          - type: 'null'
+          title: Minvisibleinputs
+        accessRights:
+          anyOf:
+          - additionalProperties:
+              $ref: '#/components/schemas/ServiceGroupAccessRightsV2'
+            type: object
+          - type: 'null'
+          title: Accessrights
+        classifiers:
+          anyOf:
+          - items:
+              type: string
+            type: array
+          - type: 'null'
+          title: Classifiers
+        quality:
+          type: object
+          title: Quality
+        release:
+          $ref: '#/components/schemas/ServiceRelease'
+          description: release information of current (latest) service
+      type: object
+      required:
+      - key
+      - version
+      - name
+      - description
+      - type
+      - contact
+      - authors
+      - owner
+      - inputs
+      - outputs
+      - accessRights
+      - release
+      title: CatalogLatestServiceGet
+      example:
+        accessRights:
+          '1':
+            execute: true
+            write: false
+        authors:
+        - affiliation: ACME
+          email: author@acme.com
+          name: Author Bar
+        classifiers: []
+        contact: contact@acme.com
+        description: A service which awaits for time to pass, two times.
+        description_ui: true
+        icon: https://cdn-icons-png.flaticon.com/512/25/25231.png
+        inputs:
+          input_1:
+            description: Pick a file containing only one integer
+            displayOrder: 1
+            fileToKeyMap:
+              single_number.txt: input_1
+            keyId: input_1
+            label: File with int number
+            type: data:text/plain
+          input_2:
+            contentSchema:
+              minimum: 0
+              title: Sleep interval
+              type: integer
+              x_unit: second
+            defaultValue: 2
+            description: Choose an amount of time to sleep in range [0:]
+            displayOrder: 2
+            keyId: input_2
+            label: Sleep interval
+            type: ref_contentSchema
+            unitLong: second
+            unitShort: s
+          input_3:
+            defaultValue: false
+            description: If set to true will cause service to fail after it sleeps
+            displayOrder: 3
+            keyId: input_3
+            label: Fail after sleep
+            type: boolean
+          input_4:
+            contentSchema:
+              title: Distance to bed
+              type: integer
+              x_unit: meter
+            defaultValue: 0
+            description: It will first walk the distance to bed
+            displayOrder: 4
+            keyId: input_4
+            label: Distance to bed
+            type: ref_contentSchema
+            unitLong: meter
+            unitShort: m
+          input_5:
+            contentSchema:
+              minimum: 0
+              title: Dream of the night
+              type: integer
+              x_unit: byte
+            defaultValue: 0
+            description: Defines the size of the dream that will be generated [0:]
+            displayOrder: 5
+            keyId: input_5
+            label: Dream (or nightmare) of the night
+            type: ref_contentSchema
+            unitLong: byte
+            unitShort: B
+        key: simcore/services/comp/itis/sleeper
+        name: sleeper
+        outputs:
+          output_1:
+            description: Integer is generated in range [1-9]
+            displayOrder: 1
+            fileToKeyMap:
+              single_number.txt: output_1
+            keyId: output_1
+            label: File containing one random integer
+            type: data:text/plain
+          output_2:
+            contentSchema:
+              title: Random sleep interval
+              type: integer
+              x_unit: second
+            description: Interval is generated in range [1-9]
+            displayOrder: 2
+            keyId: output_2
+            label: Random sleep interval
+            type: ref_contentSchema
+            unitLong: second
+            unitShort: s
+          output_3:
+            description: Contains some random data representing a dream
+            displayOrder: 3
+            fileToKeyMap:
+              dream.txt: output_3
+            keyId: output_3
+            label: Dream output
+            type: data:text/plain
+        owner: owner@acme.com
+        quality: {}
+        release:
+          released: '2025-07-20T15:00:00'
+          version: 2.2.1
+          version_display: Summer Release
+        type: computational
+        version: 2.2.1
+        version_display: 2 Xtreme
     CatalogServiceGet:
       properties:
         key:
@@ -7795,11 +8189,9 @@ components:
             type: array
           - type: 'null'
           title: Classifiers
-          default: []
         quality:
           type: object
           title: Quality
-          default: {}
         history:
           items:
             $ref: '#/components/schemas/ServiceRelease'
@@ -7836,7 +8228,7 @@ components:
         description: A service which awaits for time to pass, two times.
         description_ui: true
         history:
-        - released: '2024-07-20T15:00:00'
+        - released: '2024-07-21T15:00:00'
           version: 2.2.1
           version_display: Summer Release
         - compatibility:
@@ -7855,7 +8247,7 @@ components:
           released: '2024-01-20T18:49:17'
           version: 0.9.1
           versionDisplay: Matterhorn
-        - retired: '2024-07-20T15:00:00'
+        - retired: '2024-07-20T16:00:00'
           version: 0.9.0
         - version: 0.8.0
         - version: 0.1.0
@@ -8166,7 +8558,10 @@ components:
           type: string
           title: Unitname
         unitExtraInfo:
-          $ref: '#/components/schemas/UnitExtraInfo-Input'
+          anyOf:
+          - $ref: '#/components/schemas/UnitExtraInfoTier-Input'
+          - $ref: '#/components/schemas/UnitExtraInfoLicense'
+          title: Unitextrainfo
         default:
           type: boolean
           title: Default
@@ -8229,6 +8624,83 @@ components:
       required:
       - priceDollars
       title: CreateWalletPayment
+    CreditPriceGet:
+      properties:
+        productName:
+          type: string
+          title: Productname
+        usdPerCredit:
+          anyOf:
+          - type: number
+            minimum: 0.0
+          - type: 'null'
+          title: Usdpercredit
+          description: Price of a credit in USD. If None, then this product's price
+            is UNDEFINED
+        minPaymentAmountUsd:
+          anyOf:
+          - type: integer
+            minimum: 0
+          - type: 'null'
+          title: Minpaymentamountusd
+          description: Minimum amount (included) in USD that can be paid for this
+            productCan be None if this product's price is UNDEFINED
+      type: object
+      required:
+      - productName
+      - usdPerCredit
+      - minPaymentAmountUsd
+      title: CreditPriceGet
+    CreditTransactionStatus:
+      type: string
+      enum:
+      - PENDING
+      - BILLED
+      - IN_DEBT
+      - NOT_BILLED
+      - REQUIRES_MANUAL_REVIEW
+      title: CreditTransactionStatus
+    CursorPage___T_Customized_PathMetaDataGet_:
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/PathMetaDataGet'
+          type: array
+          title: Items
+        total:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Total
+          description: Total items
+        current_page:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Current Page
+          description: Cursor to refetch the current page
+        current_page_backwards:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Current Page Backwards
+          description: Cursor to refetch the current page starting from the last item
+        previous_page:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Previous Page
+          description: Cursor for the previous page
+        next_page:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Next Page
+          description: Cursor for the next page
+      type: object
+      required:
+      - items
+      title: CursorPage[~_T]Customized[PathMetaDataGet]
     DatCoreFileLink:
       properties:
         store:
@@ -8268,6 +8740,21 @@ components:
       - dataset
       title: DatCoreFileLink
       description: I/O port type to hold a link to a file in DATCORE storage
+    DataExportPost:
+      properties:
+        paths:
+          items:
+            anyOf:
+            - type: string
+              pattern: ^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\/(.+)$
+            - type: string
+              pattern: ^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$
+          type: array
+          title: Paths
+      type: object
+      required:
+      - paths
+      title: DataExportPost
     DatasetMetaData:
       properties:
         dataset_id:
@@ -8421,6 +8908,19 @@ components:
           title: Error
       type: object
       title: Envelope[ComputationGet]
+    Envelope_CreditPriceGet_:
+      properties:
+        data:
+          anyOf:
+          - $ref: '#/components/schemas/CreditPriceGet'
+          - type: 'null'
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[CreditPriceGet]
     Envelope_FileMetaDataGet_:
       properties:
         data:
@@ -8499,19 +8999,6 @@ components:
           title: Error
       type: object
       title: Envelope[FolderGet]
-    Envelope_GetCreditPrice_:
-      properties:
-        data:
-          anyOf:
-          - $ref: '#/components/schemas/GetCreditPrice'
-          - type: 'null'
-        error:
-          anyOf:
-          - {}
-          - type: 'null'
-          title: Error
-      type: object
-      title: Envelope[GetCreditPrice]
     Envelope_GetProjectInactivityResponse_:
       properties:
         data:
@@ -8876,6 +9363,19 @@ components:
           title: Error
       type: object
       title: Envelope[ProjectMetadataGet]
+    Envelope_ProjectNodeServicesGet_:
+      properties:
+        data:
+          anyOf:
+          - $ref: '#/components/schemas/ProjectNodeServicesGet'
+          - type: 'null'
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[ProjectNodeServicesGet]
     Envelope_ProjectState_:
       properties:
         data:
@@ -8967,6 +9467,45 @@ components:
           title: Error
       type: object
       title: Envelope[StatusDiagnosticsGet]
+    Envelope_StorageAsyncJobGet_:
+      properties:
+        data:
+          anyOf:
+          - $ref: '#/components/schemas/StorageAsyncJobGet'
+          - type: 'null'
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[StorageAsyncJobGet]
+    Envelope_StorageAsyncJobResult_:
+      properties:
+        data:
+          anyOf:
+          - $ref: '#/components/schemas/StorageAsyncJobResult'
+          - type: 'null'
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[StorageAsyncJobResult]
+    Envelope_StorageAsyncJobStatus_:
+      properties:
+        data:
+          anyOf:
+          - $ref: '#/components/schemas/StorageAsyncJobStatus'
+          - type: 'null'
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[StorageAsyncJobStatus]
     Envelope_TagGet_:
       properties:
         data:
@@ -9586,6 +10125,22 @@ components:
           title: Error
       type: object
       title: Envelope[list[ServiceOutputGet]]
+    Envelope_list_StorageAsyncJobGet__:
+      properties:
+        data:
+          anyOf:
+          - items:
+              $ref: '#/components/schemas/StorageAsyncJobGet'
+            type: array
+          - type: 'null'
+          title: Data
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[list[StorageAsyncJobGet]]
     Envelope_list_TagGet__:
       properties:
         data:
@@ -9821,8 +10376,6 @@ components:
         status:
           type: integer
           title: Status
-          default: 400
-          deprecated: true
         errors:
           items:
             $ref: '#/components/schemas/ErrorItemType'
@@ -9840,6 +10393,7 @@ components:
       type: object
       required:
       - message
+      - status
       title: ErrorGet
     ErrorItemType:
       properties:
@@ -9866,6 +10420,22 @@ components:
       - resource
       - field
       title: ErrorItemType
+    ExecutableAccessRights:
+      properties:
+        write:
+          type: boolean
+          title: Write
+          description: can change executable settings
+        execute:
+          type: boolean
+          title: Execute
+          description: can run executable
+      additionalProperties: false
+      type: object
+      required:
+      - write
+      - execute
+      title: ExecutableAccessRights
     FeaturesDict:
       properties:
         age:
@@ -10266,73 +10836,6 @@ components:
       required:
       - name
       title: FolderReplaceBodyParams
-    GenerateInvitation:
-      properties:
-        guest:
-          type: string
-          format: email
-          title: Guest
-        trialAccountDays:
-          anyOf:
-          - type: integer
-            exclusiveMinimum: true
-            minimum: 0
-          - type: 'null'
-          title: Trialaccountdays
-        extraCreditsInUsd:
-          anyOf:
-          - type: integer
-            exclusiveMaximum: true
-            minimum: 0
-            maximum: 500
-          - type: 'null'
-          title: Extracreditsinusd
-      type: object
-      required:
-      - guest
-      title: GenerateInvitation
-    GetCreditPrice:
-      properties:
-        productName:
-          type: string
-          title: Productname
-        usdPerCredit:
-          anyOf:
-          - type: number
-            minimum: 0.0
-          - type: 'null'
-          title: Usdpercredit
-          description: Price of a credit in USD. If None, then this product's price
-            is UNDEFINED
-        minPaymentAmountUsd:
-          anyOf:
-          - type: integer
-            minimum: 0
-          - type: 'null'
-          title: Minpaymentamountusd
-          description: Minimum amount (included) in USD that can be paid for this
-            productCan be None if this product's price is UNDEFINED
-      type: object
-      required:
-      - productName
-      - usdPerCredit
-      - minPaymentAmountUsd
-      title: GetCreditPrice
-    GetProductTemplate:
-      properties:
-        id:
-          type: string
-          maxLength: 100
-          minLength: 1
-          title: Id
-        content:
-          type: string
-          title: Content
-      type: object
-      required:
-      - id
-      - content
-      title: GetProductTemplate
     GetProjectInactivityResponse:
       properties:
         is_inactive:
@@ -10675,6 +11178,31 @@ components:
       required:
       - invitation
       title: InvitationCheck
+    InvitationGenerate:
+      properties:
+        guest:
+          type: string
+          format: email
+          title: Guest
+        trialAccountDays:
+          anyOf:
+          - type: integer
+            exclusiveMinimum: true
+            minimum: 0
+          - type: 'null'
+          title: Trialaccountdays
+        extraCreditsInUsd:
+          anyOf:
+          - type: integer
+            exclusiveMaximum: true
+            minimum: 0
+            maximum: 500
+          - type: 'null'
+          title: Extracreditsinusd
+      type: object
+      required:
+      - guest
+      title: InvitationGenerate
     InvitationGenerated:
       properties:
         productName:
@@ -11210,7 +11738,7 @@ components:
           anyOf:
           - type: string
             maxLength: 100
-            minLength: 1
+            minLength: 4
           - type: 'null'
           title: Username
         privacy:
@@ -11819,6 +12347,32 @@ components:
       - thumbnail_url
       - file_url
       title: NodeScreenshot
+    NodeServiceGet:
+      properties:
+        key:
+          type: string
+          pattern: ^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$
+          title: Key
+        release:
+          $ref: '#/components/schemas/ServiceRelease'
+        owner:
+          anyOf:
+          - type: integer
+            exclusiveMinimum: true
+            minimum: 0
+          - type: 'null'
+          title: Owner
+          description: Service owner primary group id or None if ownership still not
+            defined
+        myAccessRights:
+          $ref: '#/components/schemas/ExecutableAccessRights'
+      type: object
+      required:
+      - key
+      - release
+      - owner
+      - myAccessRights
+      title: NodeServiceGet
     NodeState:
       properties:
         modified:
@@ -11965,7 +12519,7 @@ components:
       - total
       - count
       title: PageMetaInfoLimitOffset
-    Page_CatalogServiceGet_:
+    Page_CatalogLatestServiceGet_:
       properties:
         _meta:
           $ref: '#/components/schemas/PageMetaInfoLimitOffset'
@@ -11973,7 +12527,7 @@ components:
           $ref: '#/components/schemas/PageLinks'
         data:
           items:
-            $ref: '#/components/schemas/CatalogServiceGet'
+            $ref: '#/components/schemas/CatalogLatestServiceGet'
           type: array
           title: Data
       additionalProperties: false
@@ -11982,7 +12536,7 @@ components:
       - _meta
       - _links
       - data
-      title: Page[CatalogServiceGet]
+      title: Page[CatalogLatestServiceGet]
     Page_LicensedItemPurchaseGet_:
       properties:
         _meta:
@@ -12135,6 +12689,30 @@ components:
       required:
       - value
       title: PatchRequestBody
+    PathMetaDataGet:
+      properties:
+        path:
+          type: string
+          format: path
+          title: Path
+          description: the path to the current path
+        display_path:
+          type: string
+          format: path
+          title: Display Path
+          description: the path to display with UUID replaced (URL Encoded by parts
+            as names may contain '/')
+        file_meta_data:
+          anyOf:
+          - $ref: '#/components/schemas/FileMetaDataGet'
+          - type: 'null'
+          description: if filled, this is the file meta data of the s3 object
+      additionalProperties: false
+      type: object
+      required:
+      - path
+      - display_path
+      title: PathMetaDataGet
     PaymentMethodGet:
       properties:
         idr:
@@ -12571,7 +13149,10 @@ components:
           type: string
           title: Unitname
         unitExtraInfo:
-          $ref: '#/components/schemas/UnitExtraInfo-Output'
+          anyOf:
+          - $ref: '#/components/schemas/UnitExtraInfoTier-Output'
+          - $ref: '#/components/schemas/UnitExtraInfoLicense'
+          title: Unitextrainfo
         currentCostPerUnit:
           type: string
           title: Currentcostperunit
@@ -12615,7 +13196,10 @@ components:
           type: string
           title: Unitname
         unitExtraInfo:
-          $ref: '#/components/schemas/UnitExtraInfo-Output'
+          anyOf:
+          - $ref: '#/components/schemas/UnitExtraInfoTier-Output'
+          - $ref: '#/components/schemas/UnitExtraInfoLicense'
+          title: Unitextrainfo
         currentCostPerUnit:
           type: string
           title: Currentcostperunit
@@ -12694,7 +13278,7 @@ components:
           title: Creditsperusd
         templates:
           items:
-            $ref: '#/components/schemas/GetProductTemplate'
+            $ref: '#/components/schemas/ProductTemplateGet'
           type: array
           title: Templates
           description: List of templates available to this product for communications
@@ -12708,6 +13292,21 @@ components:
       - isPaymentEnabled
       - creditsPerUsd
       title: ProductGet
+    ProductTemplateGet:
+      properties:
+        id:
+          type: string
+          maxLength: 100
+          minLength: 1
+          title: Id
+        content:
+          type: string
+          title: Content
+      type: object
+      required:
+      - id
+      - content
+      title: ProductTemplateGet
     ProductUIGet:
       properties:
         productName:
@@ -12722,6 +13321,59 @@ components:
       - productName
       - ui
       title: ProductUIGet
+    ProgressReport:
+      properties:
+        actual_value:
+          type: number
+          title: Actual Value
+        total:
+          type: number
+          title: Total
+          default: 1.0
+        attempt:
+          type: integer
+          title: Attempt
+          default: 0
+        unit:
+          anyOf:
+          - type: string
+            const: Byte
+          - type: 'null'
+          title: Unit
+        message:
+          anyOf:
+          - $ref: '#/components/schemas/ProgressStructuredMessage'
+          - type: 'null'
+      type: object
+      required:
+      - actual_value
+      title: ProgressReport
+    ProgressStructuredMessage:
+      properties:
+        description:
+          type: string
+          title: Description
+        current:
+          type: number
+          title: Current
+        total:
+          type: integer
+          title: Total
+        unit:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Unit
+        sub:
+          anyOf:
+          - $ref: '#/components/schemas/ProgressStructuredMessage'
+          - type: 'null'
+      type: object
+      required:
+      - description
+      - current
+      - total
+      title: ProgressStructuredMessage
     ProjectCopyOverride:
       properties:
         name:
@@ -13209,6 +13861,22 @@ components:
       required:
       - custom
       title: ProjectMetadataUpdate
+    ProjectNodeServicesGet:
+      properties:
+        projectUuid:
+          type: string
+          format: uuid
+          title: Projectuuid
+        services:
+          items:
+            $ref: '#/components/schemas/NodeServiceGet'
+          type: array
+          title: Services
+      type: object
+      required:
+      - projectUuid
+      - services
+      title: ProjectNodeServicesGet
     ProjectOutputGet:
       properties:
         key:
@@ -13555,6 +14223,7 @@ components:
       properties:
         email:
           type: string
+          format: email
           title: Email
       additionalProperties: false
       type: object
@@ -14061,9 +14730,9 @@ components:
             format: date-time
           - type: 'null'
           title: Retired
-          description: 'whether this service is planned to be retired. If None, the
+          description: whether this service is planned to be retired. If None, the
             service is still active. If now<retired then the service is deprecated.
-            If retired<now then the service is retired and should not be used. '
+            If retired<now then the service is retired and should not be used.
         compatibility:
           anyOf:
           - $ref: '#/components/schemas/Compatibility'
@@ -14095,6 +14764,9 @@ components:
           exclusiveMinimum: true
           title: User Id
           minimum: 0
+        user_email:
+          type: string
+          title: User Email
         project_id:
           type: string
           format: uuid
@@ -14102,6 +14774,11 @@ components:
         project_name:
           type: string
           title: Project Name
+        project_tags:
+          items:
+            type: string
+          type: array
+          title: Project Tags
         node_id:
           type: string
           format: uuid
@@ -14139,14 +14816,25 @@ components:
           title: Stopped At
         service_run_status:
           $ref: '#/components/schemas/ServiceRunStatus'
+        credit_cost:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Credit Cost
+        transaction_status:
+          anyOf:
+          - $ref: '#/components/schemas/CreditTransactionStatus'
+          - type: 'null'
       type: object
       required:
       - service_run_id
       - wallet_id
       - wallet_name
       - user_id
+      - user_email
       - project_id
       - project_name
+      - project_tags
       - node_id
       - node_name
       - root_parent_project_id
@@ -14157,6 +14845,8 @@ components:
       - started_at
       - stopped_at
       - service_run_status
+      - credit_cost
+      - transaction_status
       title: ServiceRunGet
     ServiceRunStatus:
       type: string
@@ -14336,6 +15026,50 @@ components:
       - loop_tasks
       - top_tracemalloc
       title: StatusDiagnosticsGet
+    StorageAsyncJobGet:
+      properties:
+        jobId:
+          type: string
+          format: uuid
+          title: Jobid
+      type: object
+      required:
+      - jobId
+      title: StorageAsyncJobGet
+    StorageAsyncJobResult:
+      properties:
+        result:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Result
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      required:
+      - result
+      - error
+      title: StorageAsyncJobResult
+    StorageAsyncJobStatus:
+      properties:
+        jobId:
+          type: string
+          format: uuid
+          title: Jobid
+        progress:
+          $ref: '#/components/schemas/ProgressReport'
+        done:
+          type: boolean
+          title: Done
+      type: object
+      required:
+      - jobId
+      - progress
+      - done
+      title: StorageAsyncJobStatus
     Structure:
       properties:
         key:
@@ -14669,7 +15403,6 @@ components:
           - change_email_email.jinja2
           - new_2fa_code.jinja2
           - registration_email.jinja2
-          - reset_password_email_failed.jinja2
           - reset_password_email.jinja2
           - service_submission.jinja2
           title: Template Name
@@ -14716,36 +15449,49 @@ components:
       - url
       - thumbnail
       title: ThirdPartyInfoDict
-    UnitExtraInfo-Input:
+    UnitExtraInfoLicense:
       properties:
-        CPU:
+        num_of_seats:
           type: integer
           minimum: 0
-          title: Cpu
-        RAM:
-          anyOf:
-          - type: string
-            pattern: ^\s*(\d*\.?\d+)\s*(\w+)?
-          - type: integer
-            minimum: 0
-          title: Ram
-        VRAM:
-          anyOf:
-          - type: string
-            pattern: ^\s*(\d*\.?\d+)\s*(\w+)?
-          - type: integer
-            minimum: 0
-          title: Vram
+          title: Num Of Seats
       additionalProperties: true
       type: object
       required:
-      - CPU
-      - RAM
-      - VRAM
-      title: UnitExtraInfo
+      - num_of_seats
+      title: UnitExtraInfoLicense
       description: Custom information that is propagated to the frontend. Defined
         fields are mandatory.
-    UnitExtraInfo-Output:
+    UnitExtraInfoTier-Input:
+      properties:
+        CPU:
+          type: integer
+          minimum: 0
+          title: Cpu
+        RAM:
+          anyOf:
+          - type: string
+            pattern: ^\s*(\d*\.?\d+)\s*(\w+)?
+          - type: integer
+            minimum: 0
+          title: Ram
+        VRAM:
+          anyOf:
+          - type: string
+            pattern: ^\s*(\d*\.?\d+)\s*(\w+)?
+          - type: integer
+            minimum: 0
+          title: Vram
+      additionalProperties: true
+      type: object
+      required:
+      - CPU
+      - RAM
+      - VRAM
+      title: UnitExtraInfoTier
+      description: Custom information that is propagated to the frontend. Defined
+        fields are mandatory.
+    UnitExtraInfoTier-Output:
       properties:
         CPU:
           type: integer
@@ -14765,7 +15511,7 @@ components:
       - CPU
       - RAM
       - VRAM
-      title: UnitExtraInfo
+      title: UnitExtraInfoTier
       description: Custom information that is propagated to the frontend. Defined
         fields are mandatory.
     UnregisterCheck:
@@ -14807,7 +15553,10 @@ components:
           type: string
           title: Unitname
         unitExtraInfo:
-          $ref: '#/components/schemas/UnitExtraInfo-Input'
+          anyOf:
+          - $ref: '#/components/schemas/UnitExtraInfoTier-Input'
+          - $ref: '#/components/schemas/UnitExtraInfoLicense'
+          title: Unitextrainfo
         default:
           type: boolean
           title: Default
@@ -14824,15 +15573,6 @@ components:
       - default
       - specificInfo
       title: UpdatePricingUnitBodyParams
-    UpdateProductTemplate:
-      properties:
-        content:
-          type: string
-          title: Content
-      type: object
-      required:
-      - content
-      title: UpdateProductTemplate
     UploadedPart:
       properties:
         number:

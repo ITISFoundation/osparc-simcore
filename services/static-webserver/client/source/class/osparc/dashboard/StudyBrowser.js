@@ -69,14 +69,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       event: "changeCurrentFolderId"
     },
 
-    multiSelection: {
-      check: "Boolean",
-      init: false,
-      nullable: false,
-      event: "changeMultiSelection",
-      apply: "__applyMultiSelection"
-    },
-
     // Ordering by Possibilities:
     // field: type | uuid | name | description | prj_owner | creation_date | last_change_date
     // direction: asc | desc
@@ -123,10 +115,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
               osparc.notification.Notifications.getInstance().addNotifications(notifications);
             });
         })
-        .catch(err => {
-          console.error(err);
-          osparc.FlashMessenger.logAs(err.message, "ERROR");
-        });
+        .catch(err => osparc.FlashMessenger.logError(err));
     },
 
     __getActiveStudy: function() {
@@ -193,8 +182,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           this.__setWorkspacesToList(workspaces);
           if (this.getCurrentContext() === "trash") {
             if (workspaces.length) {
-              // Not yet implemented
-              // this.__header.getChildControl("empty-trash-button").show();
+              this.__header.getChildControl("empty-trash-button").show();
             }
           }
         })
@@ -240,8 +228,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           this.__setFoldersToList(folders);
           if (this.getCurrentContext() === "trash") {
             if (folders.length) {
-              // Not yet implemented
-              // this.__header.getChildControl("empty-trash-button").show();
+              this.__header.getChildControl("empty-trash-button").show();
             }
           }
         })
@@ -271,28 +258,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           }
         });
 
-      // Show "Contact Us" message if services.length === 0
-      // Most probably is a product-stranger user (it can also be that the catalog is down)
-      osparc.store.Services.getServicesLatest()
-        .then(services => {
-          if (Object.keys(services).length === 0) {
-            const noAccessText = new qx.ui.basic.Label().set({
-              selectable: true,
-              rich: true,
-              font: "text-18",
-              paddingTop: 20
-            });
-            let msg = this.tr("It seems you don't have access to this product.");
-            msg += "</br>";
-            msg += "</br>";
-            msg += this.tr("Please contact us:");
-            msg += "</br>";
-            const supportEmail = osparc.store.VendorInfo.getInstance().getSupportEmail();
-            noAccessText.setValue(msg + supportEmail);
-            this._addToLayout(noAccessText);
-          }
-        });
-
       this._loadingResourcesBtn.setFetching(true);
       this._loadingResourcesBtn.setVisibility("visible");
       this.__getNextStudiesRequest()
@@ -312,8 +277,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
           if (this.getCurrentContext() === "trash") {
             if (this._resourcesList.length) {
-              // Not yet implemented
-              // this.__header.getChildControl("empty-trash-button").show();
+              this.__header.getChildControl("empty-trash-button").show();
             }
           }
 
@@ -341,8 +305,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           }
         })
         .catch(err => {
-          console.error(err);
-          osparc.FlashMessenger.logAs(err.message, "ERROR");
+          osparc.FlashMessenger.logError(err);
           // stop fetching
           if (this._resourcesContainer.getFlatList()) {
             this._resourcesContainer.getFlatList().nextRequest = null;
@@ -386,7 +349,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
                 studyId
               }
             };
-            osparc.data.Resources.getOne("studies", params)
+            osparc.data.Resources.fetch("studies", "getOne", params)
               .then(studyData => {
                 this.__studyStateReceived(study["uuid"], studyData["state"]);
               });
@@ -473,13 +436,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .then(() => {
           this.__reloadWorkspaces();
           const msg = this.tr("Successfully deleted");
-          osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
+          osparc.FlashMessenger.logAs(msg, "INFO");
           this._resourceFilter.setTrashEmpty(false);
         })
-        .catch(err => {
-          console.error(err);
-          osparc.FlashMessenger.getInstance().logAs(err, "ERROR");
-        });
+        .catch(err => osparc.FlashMessenger.logError(err));
     },
 
     _untrashWorkspaceRequested: function(workspace) {
@@ -487,13 +447,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .then(() => {
           this.__reloadWorkspaces();
           const msg = this.tr("Successfully restored");
-          osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
+          osparc.FlashMessenger.logAs(msg, "INFO");
           this._resourceFilter.evaluateTrashEmpty();
         })
-        .catch(err => {
-          console.error(err);
-          osparc.FlashMessenger.getInstance().logAs(err, "ERROR");
-        });
+        .catch(err => osparc.FlashMessenger.logError(err));
     },
 
     _deleteWorkspaceRequested: function(workspaceId) {
@@ -501,13 +458,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .then(() => {
           this.__reloadWorkspaces();
           const msg = this.tr("Successfully deleted");
-          osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
+          osparc.FlashMessenger.logAs(msg, "INFO");
           this._resourceFilter.evaluateTrashEmpty();
         })
-        .catch(err => {
-          console.error(err);
-          osparc.FlashMessenger.logAs(err.message, "ERROR");
-        })
+        .catch(err => osparc.FlashMessenger.logError(err))
     },
     // /WORKSPACES
 
@@ -587,10 +541,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       osparc.store.Folders.getInstance().moveFolderToWorkspace(folderId, destWorkspaceId) // first move to workspace
         .then(() => osparc.store.Folders.getInstance().moveFolderToFolder(folderId, destFolderId)) // then move to folder
         .then(() => this.__reloadFolders())
-        .catch(err => {
-          console.error(err);
-          osparc.FlashMessenger.getInstance().logAs(err, "ERROR");
-        });
+        .catch(err => osparc.FlashMessenger.logError(err));
     },
 
     __folderToFolderRequested: function(folderId, workspaceId, destWorkspaceId, destFolderId) {
@@ -611,13 +562,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .then(() => {
           this.__reloadFolders();
           const msg = this.tr("Successfully deleted");
-          osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
+          osparc.FlashMessenger.logAs(msg, "INFO");
           this._resourceFilter.setTrashEmpty(false);
         })
-        .catch(err => {
-          console.error(err);
-          osparc.FlashMessenger.getInstance().logAs(err, "ERROR");
-        });
+        .catch(err => osparc.FlashMessenger.logError(err));
     },
 
     _trashFolderRequested: function(folderId) {
@@ -643,13 +591,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .then(() => {
           this.__reloadFolders();
           const msg = this.tr("Successfully restored");
-          osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
+          osparc.FlashMessenger.logAs(msg, "INFO");
           this._resourceFilter.evaluateTrashEmpty();
         })
-        .catch(err => {
-          console.error(err);
-          osparc.FlashMessenger.getInstance().logAs(err, "ERROR");
-        })
+        .catch(err => osparc.FlashMessenger.logError(err))
     },
 
     _deleteFolderRequested: function(folderId) {
@@ -657,7 +602,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .then(() => {
           this.__reloadFolders();
           const msg = this.tr("Successfully deleted");
-          osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
+          osparc.FlashMessenger.logAs(msg, "INFO");
           this._resourceFilter.evaluateTrashEmpty();
         })
         .catch(err => console.error(err));
@@ -978,30 +923,20 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __addNewStudyFromServiceButton: function(newStudyData) {
       if ("expectedKey" in newStudyData) {
         const key = newStudyData["expectedKey"];
-        // Include deprecated versions, they should all be updatable to a non deprecated version
-        const versions = osparc.service.Utils.getVersions(key, false);
-        if (versions.length && newStudyData) {
-          // scale to latest compatible
-          const latestVersion = versions[0];
-          const latestCompatible = osparc.service.Utils.getLatestCompatible(key, latestVersion);
-          osparc.store.Services.getService(latestCompatible["key"], latestCompatible["version"])
-            .then(latestMetadata => {
-              // make sure this one is not deprecated
-              if (osparc.service.Utils.isDeprecated(latestMetadata)) {
-                return;
-              }
-              const title = newStudyData.title + " " + osparc.service.Utils.extractVersionDisplay(latestMetadata);
-              const desc = newStudyData.description;
-              const mode = this._resourcesContainer.getMode();
-              const newStudyFromServiceButton = (mode === "grid") ? new osparc.dashboard.GridButtonNew(title, desc) : new osparc.dashboard.ListButtonNew(title, desc);
-              newStudyFromServiceButton.setCardKey("new-"+key);
-              if (newStudyData["idToWidget"]) {
-                osparc.utils.Utils.setIdToWidget(newStudyFromServiceButton, newStudyData["idToWidget"]);
-              }
-              newStudyFromServiceButton.addListener("tap", () => this.__newStudyFromServiceBtnClicked(latestMetadata["key"], latestMetadata["version"], newStudyData.newStudyLabel));
-              this._resourcesContainer.addNonResourceCard(newStudyFromServiceButton);
-            })
+        const latestMetadata = osparc.store.Services.getLatest(key);
+        if (!latestMetadata) {
+          return;
         }
+        const title = newStudyData.title + " " + osparc.service.Utils.extractVersionDisplay(latestMetadata);
+        const desc = newStudyData.description;
+        const mode = this._resourcesContainer.getMode();
+        const newStudyFromServiceButton = (mode === "grid") ? new osparc.dashboard.GridButtonNew(title, desc) : new osparc.dashboard.ListButtonNew(title, desc);
+        newStudyFromServiceButton.setCardKey("new-"+key);
+        if (newStudyData["idToWidget"]) {
+          osparc.utils.Utils.setIdToWidget(newStudyFromServiceButton, newStudyData["idToWidget"]);
+        }
+        newStudyFromServiceButton.addListener("tap", () => this.__newStudyFromServiceBtnClicked(latestMetadata["key"], latestMetadata["version"], newStudyData.newStudyLabel));
+        this._resourcesContainer.addNonResourceCard(newStudyFromServiceButton);
       } else if ("myMostUsed" in newStudyData) {
         const excludeFrontend = true;
         const excludeDeprecated = true
@@ -1069,7 +1004,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this._createSearchBar();
 
       const header = this.__header = new osparc.dashboard.StudyBrowserHeader();
-      this.__header.addListener("emptyTrashRequested", () => this.__emptyTrash(), this);
+      this.__header.addListener("trashEmptied", () => this.reloadResources(), this);
       this._addToLayout(header);
 
       this._createResourcesLayout("studiesList");
@@ -1447,19 +1382,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       return deleteButton;
     },
 
-    __emptyTrash: function() {
-      const win = this.__createConfirmEmptyTrashWindow();
-      win.center();
-      win.open();
-      win.addListener("close", () => {
-        if (win.getConfirmed()) {
-          osparc.data.Resources.fetch("trash", "delete")
-            .then(() => {
-              this.__resetStudiesList();
-            });
-        }
-      }, this);
-    },
+
 
     __createSelectButton: function() {
       const selectButton = new qx.ui.form.ToggleButton().set({
@@ -1480,7 +1403,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       return selectButton;
     },
 
-    __applyMultiSelection: function(value) {
+    // override
+    _applyMultiSelection: function(value) {
       this._resourcesContainer.getCards().forEach(studyItem => {
         if (osparc.dashboard.ResourceBrowserBase.isCardButtonItem(studyItem)) {
           studyItem.setMultiSelectionMode(value);
@@ -1536,8 +1460,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .then(studyData => this.__startStudyAfterCreating(studyData["uuid"]))
         .catch(err => {
           this._hideLoadingPage();
-          osparc.FlashMessenger.getInstance().logAs(err.message, "ERROR");
-          console.error(err);
+          osparc.FlashMessenger.logError(err);
         });
     },
 
@@ -1556,8 +1479,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .then(studyData => this.__startStudyAfterCreating(studyData["uuid"]))
         .catch(err => {
           this._hideLoadingPage();
-          osparc.FlashMessenger.getInstance().logAs(err.message, "ERROR");
-          console.error(err);
+          osparc.FlashMessenger.logError(err);
         });
     },
 
@@ -1571,8 +1493,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .then(studyId => this.__startStudyAfterCreating(studyId))
         .catch(err => {
           this._hideLoadingPage();
-          osparc.FlashMessenger.getInstance().logAs(err.message, "ERROR");
-          console.error(err);
+          osparc.FlashMessenger.logError(err);
         });
     },
 
@@ -1761,21 +1682,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __updateName: function(studyData, name) {
       osparc.store.Study.patchStudyData(studyData, "name", name)
         .then(() => this._updateStudyData(studyData))
-        .catch(err => {
-          console.error(err);
-          const msg = err.message || this.tr("Something went wrong Renaming");
-          osparc.FlashMessenger.logAs(msg, "ERROR");
-        });
+        .catch(err => osparc.FlashMessenger.logError(err, this.tr("Something went wrong while renaming")));
     },
 
     __updateThumbnail: function(studyData, url) {
       osparc.store.Study.patchStudyData(studyData, "thumbnail", url)
         .then(() => this._updateStudyData(studyData))
-        .catch(err => {
-          console.error(err);
-          const msg = err.message || this.tr("Something went wrong updating the Thumbnail");
-          osparc.FlashMessenger.logAs(msg, "ERROR");
-        });
+        .catch(err => osparc.FlashMessenger.logError(err, this.tr("Something went wrong while updating the thumbnail")));
     },
 
     __getStudyDataMenuButton: function(card) {
@@ -1798,10 +1711,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this.__moveStudyToWorkspace(studyData, destWorkspaceId) // first move to workspace
         .then(() => this.__moveStudyToFolder(studyData, destFolderId)) // then move to folder
         .then(() => this.__removeFromStudyList(studyData["uuid"]))
-        .catch(err => {
-          console.error(err);
-          osparc.FlashMessenger.logAs(err.message, "ERROR");
-        });
+        .catch(err => osparc.FlashMessenger.logError(err));
     },
 
     __studyToFolderRequested: function(studyData, destWorkspaceId, destFolderId) {
@@ -1882,11 +1792,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       convertToPipelineButton.setVisibility(uiMode === "standalone" ? "visible" : "excluded");
       convertToPipelineButton.addListener("execute", () => {
         this.__updateUIMode(studyData, "workbench")
-          .catch(err => {
-            console.error(err);
-            const msg = err.message || this.tr("Something went wrong Converting to Pipeline");
-            osparc.FlashMessenger.logAs(msg, "ERROR");
-          });
+          .catch(err => osparc.FlashMessenger.logError(err, this.tr("Something went wrong while converting to pipeline")));
       }, this);
       return convertToPipelineButton;
     },
@@ -1997,7 +1903,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __duplicateStudy: function(studyData) {
       const text = this.tr("Duplicate process started and added to the background tasks");
-      osparc.FlashMessenger.getInstance().logAs(text, "INFO");
+      osparc.FlashMessenger.logAs(text, "INFO");
 
       const params = {
         url: {
@@ -2012,11 +1918,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const pollTasks = osparc.data.PollTasks.getInstance();
       pollTasks.createPollingTask(fetchPromise, interval)
         .then(task => this.__taskDuplicateReceived(task, studyData["name"]))
-        .catch(err => {
-          console.error(err);
-          const msg = err.message || this.tr("Something went wrong Duplicating");
-          osparc.FlashMessenger.logAs(msg, "ERROR");
-        });
+        .catch(err => osparc.FlashMessenger.logError(err, this.tr("Something went wrong while duplicating")));
     },
 
     __exportStudy: function(studyData) {
@@ -2024,7 +1926,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       exportTask.start();
       exportTask.setSubtitle(this.tr("Preparing files"));
       const text = this.tr("Exporting process started and added to the background tasks");
-      osparc.FlashMessenger.getInstance().logAs(text, "INFO");
+      osparc.FlashMessenger.logAs(text, "INFO");
 
       const url = window.location.href + "v0/projects/" + studyData["uuid"] + ":xport";
       const progressCB = () => {
@@ -2033,9 +1935,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       };
       osparc.utils.Utils.downloadLink(url, "POST", null, progressCB)
         .catch(err => {
-          console.error(err);
-          const msg = osparc.data.Resources.getErrorMsg(JSON.parse(err.response)) || this.tr("Something went wrong Exporting the study");
-          osparc.FlashMessenger.logAs(msg, "ERROR");
+          const msg = osparc.data.Resources.getErrorMsg(JSON.parse(err.response)) || this.tr("Something went wrong while exporting the study");
+          osparc.FlashMessenger.logError(err, msg);
         })
         .finally(() => {
           exportTask.stop();
@@ -2049,7 +1950,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       importTask.setSubtitle(uploadingLabel);
 
       const text = this.tr("Importing process started and added to the background tasks");
-      osparc.FlashMessenger.getInstance().logAs(text, "INFO");
+      osparc.FlashMessenger.logAs(text, "INFO");
 
       const isGrid = this._resourcesContainer.getMode() === "grid";
       const importingStudyCard = isGrid ? new osparc.dashboard.GridButtonPlaceholder() : new osparc.dashboard.ListButtonPlaceholder();
@@ -2094,13 +1995,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
               "studyId": data["data"]["uuid"]
             }
           };
-          osparc.data.Resources.getOne("studies", params)
+          osparc.data.Resources.fetch("studies", "getOne", params)
             .then(studyData => this._updateStudyData(studyData))
-            .catch(err => {
-              console.error(err);
-              const msg = this.tr("Something went wrong Fetching the study");
-              osparc.FlashMessenger.logAs(msg, "ERROR");
-            })
+            .catch(err => osparc.FlashMessenger.logError(err, this.tr("Something went wrong while fetching the study")))
             .finally(() => {
               importTask.stop();
               this._resourcesContainer.removeNonResourceCard(importingStudyCard);
@@ -2108,23 +2005,23 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         } else if (req.status == 400) {
           importTask.stop();
           this._resourcesContainer.removeNonResourceCard(importingStudyCard);
-          const msg = osparc.data.Resources.getErrorMsg(JSON.parse(req.response)) || this.tr("Something went wrong Importing the study");
-          osparc.FlashMessenger.logAs(msg, "ERROR");
+          const msg = osparc.data.Resources.getErrorMsg(JSON.parse(req.response)) || this.tr("Something went wrong while importing the study");
+          osparc.FlashMessenger.logError(msg);
         }
       });
       req.addEventListener("error", e => {
         // transferFailed
         importTask.stop();
         this._resourcesContainer.removeNonResourceCard(importingStudyCard);
-        const msg = osparc.data.Resources.getErrorMsg(e) || this.tr("Something went wrong Importing the study");
-        osparc.FlashMessenger.logAs(msg, "ERROR");
+        const msg = osparc.data.Resources.getErrorMsg(e) || this.tr("Something went wrong while importing the study");
+        osparc.FlashMessenger.logError(msg);
       });
       req.addEventListener("abort", e => {
         // transferAborted
         importTask.stop();
         this._resourcesContainer.removeNonResourceCard(importingStudyCard);
-        const msg = osparc.data.Resources.getErrorMsg(e) || this.tr("Something went wrong Importing the study");
-        osparc.FlashMessenger.logAs(msg, "ERROR");
+        const msg = osparc.data.Resources.getErrorMsg(e) || this.tr("Something went wrong while importing the study");
+        osparc.FlashMessenger.logError(msg);
       });
       req.open("POST", "/v0/projects:import", true);
       req.send(body);
@@ -2135,13 +2032,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .then(() => {
           this.__removeFromStudyList(studyData.uuid);
           const msg = this.tr("Successfully restored");
-          osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
+          osparc.FlashMessenger.logAs(msg, "INFO");
           this._resourceFilter.evaluateTrashEmpty();
         })
-        .catch(err => {
-          console.error(err);
-          osparc.FlashMessenger.getInstance().logAs(err, "ERROR");
-        })
+        .catch(err => osparc.FlashMessenger.logError(err))
         .finally(() => this.resetSelection());
     },
 
@@ -2150,13 +2044,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .then(() => {
           this.__removeFromStudyList(studyData.uuid);
           const msg = this.tr("Successfully deleted");
-          osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
+          osparc.FlashMessenger.logAs(msg, "INFO");
           this._resourceFilter.setTrashEmpty(false);
         })
-        .catch(err => {
-          console.error(err);
-          osparc.FlashMessenger.getInstance().logAs(err, "ERROR");
-        })
+        .catch(err => osparc.FlashMessenger.logError(err))
         .finally(() => this.resetSelection());
     },
 
@@ -2190,10 +2081,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
       operationPromise
         .then(() => this.__removeFromStudyList(studyData.uuid))
-        .catch(err => {
-          console.error(err);
-          osparc.FlashMessenger.getInstance().logAs(err, "ERROR");
-        })
+        .catch(err => osparc.FlashMessenger.logError(err))
         .finally(() => this.resetSelection());
     },
 
@@ -2241,16 +2129,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         confirmAction: "delete"
       });
       osparc.utils.Utils.setIdToWidget(confirmationWin.getConfirmButton(), "confirmDeleteStudyBtn");
-      return confirmationWin;
-    },
-
-    __createConfirmEmptyTrashWindow: function() {
-      const msg = this.tr("All items will be permanently deleted");
-      const confirmationWin = new osparc.ui.window.Confirmation(msg).set({
-        caption: this.tr("Delete"),
-        confirmText: this.tr("Delete permanently"),
-        confirmAction: "delete"
-      });
       return confirmationWin;
     },
 
@@ -2305,7 +2183,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       });
       task.addListener("pollingError", e => {
         const err = e.getData();
-        const msg = this.tr("Something went wrong Duplicating the study<br>") + err.message;
+        const msg = this.tr("Something went wrong while duplicating the study<br>") + err.message;
         finished(msg, "ERROR");
       });
     }

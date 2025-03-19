@@ -487,7 +487,7 @@ qx.Class.define("osparc.data.model.Study", {
       // Do not listen to output related backend updates if the node is a frontend node.
       // The frontend controls its output values, progress and states.
       // If a File Picker is uploading a file, the backend could override the current state with some older state.
-      if (node && nodeData && !osparc.data.model.Node.isFrontend(node)) {
+      if (node && nodeData && !osparc.data.model.Node.isFrontend(node.getMetaData())) {
         node.setOutputData(nodeData.outputs);
         if ("progress" in nodeData) {
           const progress = Number.parseInt(nodeData["progress"]);

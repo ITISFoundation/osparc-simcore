@@ -64,14 +64,14 @@ qx.Class.define("osparc.info.ServiceUtils", {
     },
 
     createVersionDisplay: function(key, version) {
-      const versionDisplay = osparc.service.Utils.getVersionDisplay(key, version);
+      const versionDisplay = osparc.store.Services.getVersionDisplay(key, version);
       const label = new qx.ui.basic.Label(versionDisplay);
       osparc.utils.Utils.setIdToWidget(label, "serviceVersion");
       return label;
     },
 
     createReleasedDate: function(key, version) {
-      const releasedDate = osparc.service.Utils.getReleasedDate(key, version);
+      const releasedDate = osparc.store.Services.getReleasedDate(key, version);
       if (releasedDate) {
         const label = new qx.ui.basic.Label();
         label.set({
@@ -181,7 +181,7 @@ qx.Class.define("osparc.info.ServiceUtils", {
       // display markdown link content if that's the case
       if (
         osparc.utils.Utils.isValidHttpUrl(serviceData["description"]) &&
-        serviceData["description"].slice(-3) === ".md"
+        serviceData["description"].endsWith(".md")
       ) {
         // if it's a link, fetch the content
         fetch(serviceData["description"])

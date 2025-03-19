@@ -13,8 +13,8 @@ from aiohttp import ClientResponse, web
 from aiohttp.test_utils import TestClient
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.aiohttp import status
-from simcore_service_webserver._constants import APP_SETTINGS_KEY
 from simcore_service_webserver.application_settings import ApplicationSettings
+from simcore_service_webserver.constants import APP_SETTINGS_KEY
 from simcore_service_webserver.login._constants import (
     MAX_2FA_CODE_RESEND,
     MAX_2FA_CODE_TRIALS,

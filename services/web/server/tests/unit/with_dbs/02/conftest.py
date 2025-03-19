@@ -92,12 +92,12 @@ def mock_catalog_api(
 ) -> dict[str, mock.Mock]:
     return {
         "get_service_resources": mocker.patch(
-            "simcore_service_webserver.projects.projects_service.catalog_client.get_service_resources",
+            "simcore_service_webserver.projects.projects_service.catalog_service.get_service_resources",
             return_value=mock_service_resources,
             autospec=True,
         ),
         "get_service": mocker.patch(
-            "simcore_service_webserver.projects.projects_service.catalog_client.get_service",
+            "simcore_service_webserver.projects.projects_service.catalog_service.get_service",
             return_value=mock_service,
             autospec=True,
         ),
@@ -107,8 +107,8 @@ def mock_catalog_api(
 @pytest.fixture
 async def user_project(
     client: TestClient,
-    fake_project,
-    logged_user,
+    fake_project: ProjectDict,
+    logged_user: UserInfoDict,
     tests_data_dir: Path,
     osparc_product_name: str,
 ) -> AsyncIterator[ProjectDict]:
@@ -223,7 +223,7 @@ async def create_template_project(
 
 @pytest.fixture
 def fake_services(
-    create_dynamic_service_mock: Callable[..., Awaitable[DynamicServiceGet]]
+    create_dynamic_service_mock: Callable[..., Awaitable[DynamicServiceGet]],
 ) -> Callable[..., Awaitable[list[DynamicServiceGet]]]:
     async def create_fakes(number_services: int) -> list[DynamicServiceGet]:
         return [await create_dynamic_service_mock() for _ in range(number_services)]

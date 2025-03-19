@@ -7,7 +7,7 @@ from aiohttp.test_utils import TestClient
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import LoggedUser, NewUser, parse_link
 from servicelib.aiohttp import status
-from simcore_service_webserver._constants import INDEX_RESOURCE_NAME
+from simcore_service_webserver.constants import INDEX_RESOURCE_NAME
 from simcore_service_webserver.login._constants import (
     MSG_CHANGE_EMAIL_REQUESTED,
     MSG_LOGGED_IN,
