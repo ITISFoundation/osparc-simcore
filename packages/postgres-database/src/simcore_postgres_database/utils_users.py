@@ -6,6 +6,7 @@ import re
 import secrets
 import string
 from datetime import datetime
+from typing import Any, Final
 
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
@@ -25,19 +26,29 @@ class UserNotFoundInRepoError(BaseUserRepoError):
     pass
 
 
+# NOTE: see MyProfilePatch.user_name
+_MIN_USERNAME_LEN: Final[int] = 4
+
+
+def _generate_random_chars(length: int = _MIN_USERNAME_LEN) -> str:
+    """returns `length` random digit character"""
+    return "".join(secrets.choice(string.digits) for _ in range(length))
+
+
 def _generate_username_from_email(email: str) -> str:
     username = email.split("@")[0]
 
     # Remove any non-alphanumeric characters and convert to lowercase
-    return re.sub(r"[^a-zA-Z0-9]", "", username).lower()
+    username = re.sub(r"[^a-zA-Z0-9]", "", username).lower()
+
+    # Ensure the username is at least 4 characters long
+    if len(username) < _MIN_USERNAME_LEN:
+        username += _generate_random_chars(length=_MIN_USERNAME_LEN - len(username))
+
+    return username
 
 
-def _generate_random_chars(length=5) -> str:
-    """returns `length` random digit character"""
-    return "".join(secrets.choice(string.digits) for _ in range(length - 1))
-
-
-def generate_alternative_username(username) -> str:
+def generate_alternative_username(username: str) -> str:
     return f"{username}_{_generate_random_chars()}"
 
 
@@ -50,7 +61,7 @@ class UsersRepo:
         status: UserStatus,
         expires_at: datetime | None,
     ) -> RowProxy:
-        data = {
+        data: dict[str, Any] = {
             "name": _generate_username_from_email(email),
             "email": email,
             "password_hash": password_hash,
