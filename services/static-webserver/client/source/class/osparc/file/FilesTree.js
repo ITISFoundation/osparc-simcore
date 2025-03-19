@@ -43,7 +43,7 @@ qx.Class.define("osparc.file.FilesTree", {
     this.base(arguments, null, "label", "children");
 
     this.set({
-      openMode: "none",
+      openMode: "dbltap",
       decorator: "no-border",
       font: "text-14",
     });
@@ -244,6 +244,7 @@ qx.Class.define("osparc.file.FilesTree", {
         configureItem: item => {
           item.addListener("changeOpen", e => {
             if (e.getData() && !item.getLoaded()) {
+              item.setLoaded(true);
               const locationId = item.getLocation();
               const path = item.getPath();
               this.requestPathItems(locationId, path);
