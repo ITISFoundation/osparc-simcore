@@ -474,10 +474,6 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       }
     },
 
-    _taskDataReceived: function(taskData) {
-      throw new Error("Abstract method called!");
-    },
-
     _populateCardMenu: function(card) {
       throw new Error("Abstract method called!");
     },
