@@ -1,14 +1,12 @@
 from abc import abstractmethod
 from typing import Literal, Self
 
-from models_library.osparc_jobs import OsparcJobId
 from models_library.progress_bar import ProgressReport
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.rabbitmq_messages import (
     ProgressRabbitMessageNode,
     ProgressRabbitMessageProject,
-    ProgressRabbitMessageWorkerJob,
     ProgressType,
 )
 from models_library.socketio import SocketMessageDict
@@ -26,8 +24,7 @@ class WebSocketMessageBase(BaseModel):
         return _event_type
 
     @abstractmethod
-    def to_socket_dict(self) -> SocketMessageDict:
-        ...
+    def to_socket_dict(self) -> SocketMessageDict: ...
 
     model_config = ConfigDict(frozen=True)
 
@@ -47,10 +44,6 @@ class _WebSocketUserMixin(BaseModel):
 class _WebSocketProgressMixin(BaseModel):
     progress_type: ProgressType
     progress_report: ProgressReport
-
-
-class _WebSocketOsparcJobIdMixin(BaseModel):
-    osparc_job_id: OsparcJobId
 
 
 class WebSocketProjectProgress(
@@ -92,30 +85,6 @@ class WebSocketNodeProgress(
             user_id=message.user_id,
             project_id=message.project_id,
             node_id=message.node_id,
-            progress_type=message.progress_type,
-            progress_report=message.report,
-        )
-
-    def to_socket_dict(self) -> SocketMessageDict:
-        return SocketMessageDict(
-            event_type=self.event_type,
-            data=jsonable_encoder(self, exclude={"event_type"}),
-        )
-
-
-class WebSocketWorkerJobProgress(
-    _WebSocketUserMixin,
-    _WebSocketProgressMixin,
-    _WebSocketOsparcJobIdMixin,
-    WebSocketMessageBase,
-):
-    event_type: Literal["workerJobProgress"] = "workerJobProgress"
-
-    @classmethod
-    def from_rabbit_message(cls, message: ProgressRabbitMessageWorkerJob) -> Self:
-        return cls.model_construct(
-            user_id=message.user_id,
-            osparc_job_id=message.osparc_job_id,
             progress_type=message.progress_type,
             progress_report=message.report,
         )

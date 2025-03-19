@@ -20,7 +20,7 @@ from simcore_service_storage.modules.celery.models import (
     TaskState,
 )
 from simcore_service_storage.modules.celery.utils import (
-    get_celery_worker,
+    get_celery_worker_client,
     get_fastapi_app,
 )
 from tenacity import Retrying, retry_if_exception_type, stop_after_delay, wait_fixed
@@ -28,20 +28,16 @@ from tenacity import Retrying, retry_if_exception_type, stop_after_delay, wait_f
 _logger = logging.getLogger(__name__)
 
 
-async def _async_archive(
-    celery_app: Celery, task_name: str, task_id: str, files: list[str]
-) -> str:
-    worker = get_celery_worker(celery_app)
+async def _async_archive(celery_app: Celery, task: Task, files: list[str]) -> str:
+    worker_client = get_celery_worker_client(celery_app)
 
     def sleep_for(seconds: float) -> None:
         time.sleep(seconds)
 
     for n, file in enumerate(files, start=1):
         with log_context(_logger, logging.INFO, msg=f"Processing file {file}"):
-            worker.set_task_progress(
-                task_name=task_name,
-                task_id=task_id,
-                report=ProgressReport(actual_value=n / len(files) * 10),
+            await worker_client.set_task_progress(
+                task, ProgressReport(actual_value=n / len(files) * 10)
             )
             await asyncio.get_event_loop().run_in_executor(None, sleep_for, 1)
 
@@ -52,7 +48,7 @@ def sync_archive(task: Task, files: list[str]) -> str:
     assert task.name
     _logger.info("Calling async_archive")
     return asyncio.run_coroutine_threadsafe(
-        _async_archive(task.app, task.name, task.request.id, files),
+        _async_archive(task, task.request.id, files),
         get_event_loop(get_fastapi_app(task.app)),
     ).result()
 

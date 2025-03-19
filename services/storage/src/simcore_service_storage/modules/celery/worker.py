@@ -8,7 +8,7 @@ from servicelib.logging_utils import log_context
 _logger = logging.getLogger(__name__)
 
 
-class CeleryTaskQueueWorker:
+class CeleryWorkerClient:
     def __init__(self, celery_app: Celery) -> None:
         self.celery_app = celery_app
 

@@ -4,7 +4,6 @@ from models_library.progress_bar import ProgressReport
 from models_library.rabbitmq_messages import (
     ProgressRabbitMessageNode,
     ProgressRabbitMessageProject,
-    ProgressRabbitMessageWorkerJob,
     ProgressType,
 )
 from pydantic import TypeAdapter
@@ -36,22 +35,10 @@ faker = Faker()
             ProgressRabbitMessageProject,
             id="project_progress",
         ),
-        pytest.param(
-            ProgressRabbitMessageWorkerJob(
-                user_id=faker.pyint(min_value=1),
-                progress_type=ProgressType.PROJECT_CLOSING,
-                report=ProgressReport(actual_value=0.4, total=1),
-                osparc_job_id=faker.pystr(),
-            ).model_dump_json(),
-            ProgressRabbitMessageWorkerJob,
-            id="worker_job_progress",
-        ),
     ],
 )
 async def test_raw_message_parsing(raw_data: str, class_type: type):
     result = TypeAdapter(
-        ProgressRabbitMessageNode
-        | ProgressRabbitMessageProject
-        | ProgressRabbitMessageWorkerJob
+        ProgressRabbitMessageNode | ProgressRabbitMessageProject
     ).validate_json(raw_data)
     assert type(result) is class_type

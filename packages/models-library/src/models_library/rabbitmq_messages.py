@@ -6,7 +6,6 @@ from enum import Enum, IntEnum, auto
 from typing import Any, Literal, TypeAlias
 
 import arrow
-from models_library.osparc_jobs import OsparcJobId
 from pydantic import BaseModel, Field
 
 from .products import ProductName
@@ -51,11 +50,8 @@ class RabbitMessageBase(BaseModel):
         return self.model_dump_json().encode()
 
 
-class WorkerJobMessageBase(BaseModel):
+class ProjectMessageBase(BaseModel):
     user_id: UserID
-
-
-class ProjectMessageBase(WorkerJobMessageBase):
     project_id: ProjectID
 
 
@@ -97,13 +93,11 @@ class ProgressType(StrAutoEnum):
 
     PROJECT_CLOSING = auto()
 
-    WORKER_JOB_EXPORTING = auto()
-
 
 class ProgressMessageMixin(RabbitMessageBase):
-    channel_name: Literal[
+    channel_name: Literal["simcore.services.progress.v2"] = (
         "simcore.services.progress.v2"
-    ] = "simcore.services.progress.v2"
+    )
     progress_type: ProgressType = (
         ProgressType.COMPUTATION_RUNNING
     )  # NOTE: backwards compatible
@@ -123,17 +117,10 @@ class ProgressRabbitMessageProject(ProgressMessageMixin, ProjectMessageBase):
         return f"{self.project_id}.all_nodes"
 
 
-class ProgressRabbitMessageWorkerJob(ProgressMessageMixin, WorkerJobMessageBase):
-    osparc_job_id: OsparcJobId
-
-    def routing_key(self) -> str | None:
-        return f"{self.user_id}.worker_job"
-
-
 class InstrumentationRabbitMessage(RabbitMessageBase, NodeMessageBase):
-    channel_name: Literal[
+    channel_name: Literal["simcore.services.instrumentation"] = (
         "simcore.services.instrumentation"
-    ] = "simcore.services.instrumentation"
+    )
     metrics: str
     service_uuid: NodeID
     service_type: str
@@ -223,9 +210,9 @@ class DynamicServiceRunningMessage(RabbitMessageBase):
 
 
 class RabbitResourceTrackingStartedMessage(RabbitResourceTrackingBaseMessage):
-    message_type: Literal[
+    message_type: Literal[RabbitResourceTrackingMessageType.TRACKING_STARTED] = (
         RabbitResourceTrackingMessageType.TRACKING_STARTED
-    ] = RabbitResourceTrackingMessageType.TRACKING_STARTED
+    )
 
     wallet_id: WalletID | None
     wallet_name: str | None
@@ -263,9 +250,9 @@ class RabbitResourceTrackingStartedMessage(RabbitResourceTrackingBaseMessage):
 
 
 class RabbitResourceTrackingHeartbeatMessage(RabbitResourceTrackingBaseMessage):
-    message_type: Literal[
+    message_type: Literal[RabbitResourceTrackingMessageType.TRACKING_HEARTBEAT] = (
         RabbitResourceTrackingMessageType.TRACKING_HEARTBEAT
-    ] = RabbitResourceTrackingMessageType.TRACKING_HEARTBEAT
+    )
 
 
 class SimcorePlatformStatus(StrAutoEnum):
@@ -274,9 +261,9 @@ class SimcorePlatformStatus(StrAutoEnum):
 
 
 class RabbitResourceTrackingStoppedMessage(RabbitResourceTrackingBaseMessage):
-    message_type: Literal[
+    message_type: Literal[RabbitResourceTrackingMessageType.TRACKING_STOPPED] = (
         RabbitResourceTrackingMessageType.TRACKING_STOPPED
-    ] = RabbitResourceTrackingMessageType.TRACKING_STOPPED
+    )
 
     simcore_platform_status: SimcorePlatformStatus = Field(
         ...,
@@ -310,9 +297,9 @@ class CreditsLimit(IntEnum):
 
 
 class WalletCreditsLimitReachedMessage(RabbitMessageBase):
-    channel_name: Literal[
+    channel_name: Literal["io.simcore.service.wallets-credit-limit-reached"] = (
         "io.simcore.service.wallets-credit-limit-reached"
-    ] = "io.simcore.service.wallets-credit-limit-reached"
+    )
     created_at: datetime.datetime = Field(
         default_factory=lambda: arrow.utcnow().datetime,
         description="message creation datetime",

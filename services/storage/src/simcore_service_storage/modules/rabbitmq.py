@@ -3,14 +3,7 @@ from contextlib import suppress
 from typing import cast
 
 from fastapi import FastAPI
-from models_library.osparc_jobs import OsparcJobId
-from models_library.progress_bar import ProgressReport
-from models_library.rabbitmq_messages import (
-    ProgressRabbitMessageWorkerJob,
-    ProgressType,
-    RabbitMessageBase,
-)
-from models_library.users import UserID
+from models_library.rabbitmq_messages import RabbitMessageBase
 from servicelib.logging_utils import log_catch, log_context
 from servicelib.rabbitmq import (
     RabbitMQClient,
@@ -77,16 +70,3 @@ async def post_message(app: FastAPI, message: RabbitMessageBase) -> None:
     with log_catch(_logger, reraise=False), suppress(ConfigurationError):
         # NOTE: if rabbitmq was not initialized the error does not need to flood the logs
         await get_rabbitmq_client(app).publish(message.channel_name, message)
-
-
-async def post_task_progress_message(
-    app: FastAPI, user_id: UserID, osparc_job_id: OsparcJobId, report: ProgressReport
-) -> None:
-    with log_catch(_logger, reraise=False):
-        message = ProgressRabbitMessageWorkerJob.model_construct(
-            user_id=user_id,
-            osparc_job_id=osparc_job_id,
-            progress_type=ProgressType.WORKER_JOB_EXPORTING,
-            report=report,
-        )
-        await post_message(app, message)
