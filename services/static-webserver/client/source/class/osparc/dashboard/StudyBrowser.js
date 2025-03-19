@@ -1918,8 +1918,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __exportStudy: function(studyData) {
       const exportTaskUI = new osparc.task.Export(studyData);
-      osparc.task.TasksContainer.getInstance().addTaskUI(exportTaskUI);
       exportTaskUI.setSubtitle(this.tr("Preparing files"));
+      osparc.task.TasksContainer.getInstance().addTaskUI(exportTaskUI);
       const text = this.tr("Exporting process started and added to the background tasks");
       osparc.FlashMessenger.logAs(text, "INFO");
 
@@ -1939,8 +1939,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __importStudy: function(file) {
       const uploadingLabel = this.tr("Uploading file");
       const importTaskUI = new osparc.task.Import();
-      osparc.task.TasksContainer.getInstance().addTaskUI(importTaskUI);
       importTaskUI.setSubtitle(uploadingLabel);
+      osparc.task.TasksContainer.getInstance().addTaskUI(importTaskUI);
 
       const text = this.tr("Importing process started and added to the background tasks");
       osparc.FlashMessenger.logAs(text, "INFO");
