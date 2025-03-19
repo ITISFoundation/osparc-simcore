@@ -162,7 +162,7 @@ qx.Class.define("osparc.study.Utils", {
           pollTask: true
         };
         const fetchPromise = osparc.data.Resources.fetch("studies", "postNewStudy", params, options);
-        const pollTasks = osparc.data.PollTasks.getInstance();
+        const pollTasks = osparc.store.PollTasks.getInstance();
         const interval = 1000;
         pollTasks.createPollingTask(fetchPromise, interval)
           .then(task => {
@@ -206,7 +206,7 @@ qx.Class.define("osparc.study.Utils", {
               pollTask: true
             };
             const fetchPromise = osparc.data.Resources.fetch("studies", "postNewStudyFromTemplate", params, options);
-            const pollTasks = osparc.data.PollTasks.getInstance();
+            const pollTasks = osparc.store.PollTasks.getInstance();
             const interval = 1000;
             pollTasks.createPollingTask(fetchPromise, interval)
               .then(task => {

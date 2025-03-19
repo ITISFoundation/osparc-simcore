@@ -251,12 +251,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         return;
       }
 
-      osparc.data.Resources.get("tasks")
-        .then(tasks => {
-          if (tasks && tasks.length) {
-            this.__tasksReceived(tasks);
-          }
-        });
+      const tasks = osparc.store.PollTasks.getInstance().getTasks();
+      this.__tasksToCards(tasks);
 
       this._loadingResourcesBtn.setFetching(true);
       this._loadingResourcesBtn.setVisibility("visible");
@@ -1915,7 +1911,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       };
       const fetchPromise = osparc.data.Resources.fetch("studies", "duplicate", params, options);
       const interval = 1000;
-      const pollTasks = osparc.data.PollTasks.getInstance();
+      const pollTasks = osparc.store.PollTasks.getInstance();
       pollTasks.createPollingTask(fetchPromise, interval)
         .then(task => this.__taskDuplicateReceived(task, studyData["name"]))
         .catch(err => osparc.FlashMessenger.logError(err, this.tr("Something went wrong while duplicating")));
@@ -2133,23 +2129,14 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     // TASKS //
-    __tasksReceived: function(tasks) {
-      tasks.forEach(taskData => this._taskDataReceived(taskData));
-    },
-
-    _taskDataReceived: function(taskData) {
-      // a bit hacky
-      if (taskData["task_id"].includes("from_study") && !taskData["task_id"].includes("as_template")) {
-        const interval = 1000;
-        const pollTasks = osparc.data.PollTasks.getInstance();
-        const task = pollTasks.addTask(taskData, interval);
-        if (task === null) {
-          return;
+    __tasksToCards: function(tasks) {
+      tasks.forEach(task => {
+        if (task.getTaskId().includes("from_study") && !task.getTaskId().includes("as_template")) {
+          // duplicating
+          const studyName = "";
+          this.__taskDuplicateReceived(task, studyName);
         }
-        // ask backend for studyData?
-        const studyName = "";
-        this.__taskDuplicateReceived(task, studyName);
-      }
+      });
     },
 
     __taskDuplicateReceived: function(task, studyName) {

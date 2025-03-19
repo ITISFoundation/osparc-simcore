@@ -569,7 +569,7 @@ qx.Class.define("osparc.Application", {
     },
 
     __closeAllAndToLoginPage: function() {
-      osparc.data.PollTasks.getInstance().removeTasks();
+      osparc.store.PollTasks.getInstance().removeTasks();
       osparc.MaintenanceTracker.getInstance().stopTracker();
       osparc.CookieExpirationTracker.getInstance().stopTracker();
       osparc.NewUITracker.getInstance().stopTracker();

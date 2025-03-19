@@ -68,6 +68,7 @@ qx.Class.define("osparc.desktop.MainPage", {
     preloadPromises.push(store.getAllClassifiers(true));
     preloadPromises.push(osparc.store.Tags.getInstance().fetchTags());
     preloadPromises.push(osparc.store.Products.getInstance().fetchUiConfig());
+    preloadPromises.push(osparc.store.PollTasks.getInstance().fetchTasks());
     Promise.all(preloadPromises)
       .then(() => {
         const mainStack = this.__createMainStack();
@@ -232,7 +233,7 @@ qx.Class.define("osparc.desktop.MainPage", {
         pollTask: true
       };
       const fetchPromise = osparc.data.Resources.fetch("studies", "postToTemplate", params, options);
-      const pollTasks = osparc.data.PollTasks.getInstance();
+      const pollTasks = osparc.store.PollTasks.getInstance();
       const interval = 1000;
       pollTasks.createPollingTask(fetchPromise, interval)
         .then(task => {

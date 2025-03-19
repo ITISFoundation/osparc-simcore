@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.data.PollTasks", {
+qx.Class.define("osparc.store.PollTasks", {
   extend: qx.core.Object,
   type: "singleton",
 
@@ -33,7 +33,18 @@ qx.Class.define("osparc.data.PollTasks", {
   },
 
   members: {
-    addTask: function(taskData, interval) {
+    fetchTasks: function() {
+      return osparc.data.Resources.get("tasks")
+        .then(tasksData => {
+          tasksData.forEach(taskData => {
+            const interval = 1000;
+            this.addTask(taskData, interval);
+          });
+        })
+        .catch(err => console.error(err));
+    },
+
+    addTask: function(taskData, interval = 1000) {
       const tasks = this.getTasks();
       const index = tasks.findIndex(t => t.getTaskId() === taskData["task_id"]);
       if (index === -1) {

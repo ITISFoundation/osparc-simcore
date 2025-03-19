@@ -75,6 +75,9 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
     },
 
     __reloadTemplates: function() {
+      const tasks = osparc.store.PollTasks.getInstance().getTasks();
+      this.__tasksToCards(tasks);
+
       osparc.data.Resources.getInstance().getAllPages("templates")
         .then(templates => this.__setResourcesToList(templates))
         .catch(err => {
@@ -380,19 +383,14 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       });
     },
 
-    _taskDataReceived: function(taskData) {
-      // a bit hacky
-      if (taskData["task_id"].includes("from_study") && taskData["task_id"].includes("as_template")) {
-        const interval = 1000;
-        const pollTasks = osparc.data.PollTasks.getInstance();
-        const task = pollTasks.addTask(taskData, interval);
-        if (task === null) {
-          return;
+    __tasksToCards: function(tasks) {
+      tasks.forEach(task => {
+        if (task.getTaskId().includes("from_study") && task.getTaskId().includes("as_template")) {
+          // creating template
+          const studyName = "";
+          this.taskToTemplateReceived(task, studyName);
         }
-        // ask backend for studyData?
-        const studyName = "";
-        this.taskToTemplateReceived(task, studyName);
-      }
+      });
     },
 
     taskToTemplateReceived: function(task, studyName) {
