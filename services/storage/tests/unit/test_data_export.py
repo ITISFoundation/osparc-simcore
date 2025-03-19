@@ -221,7 +221,7 @@ async def test_start_data_export_success(
         assert folder.name == "workspace"
         file_or_folder_id = f"{folder}"
     else:
-        pytest.fail("invalid parameter: to_check")
+        pytest.fail(f"invalid parameter: {selection_type=}")
 
     result = await start_data_export(
         rpc_client,
