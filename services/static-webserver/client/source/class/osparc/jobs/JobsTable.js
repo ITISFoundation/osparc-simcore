@@ -19,10 +19,10 @@
 qx.Class.define("osparc.jobs.JobsTable", {
   extend: qx.ui.table.Table,
 
-  construct: function(walletId, filters) {
+  construct: function(filters) {
     this.base(arguments);
 
-    const model = new osparc.desktop.credits.JobsTableModel(walletId, filters);
+    const model = new osparc.jobs.JobsTableModel(filters);
     this.setTableModel(model);
 
     this.set({

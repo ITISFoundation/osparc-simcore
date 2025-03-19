@@ -116,7 +116,7 @@ qx.Class.define("osparc.jobs.JobsTableModel", {
         jobsStore.fetchJobs(urlParams)
           .then(jobs => {
             const data = [];
-            const jobsCols = osparc.desktop.credits.JobsTable.COLS;
+            const jobsCols = osparc.jobs.JobsTable.COLS;
             jobs.forEach(job => {
               data.push({
                 [jobsCols.JOB_ID.id]: job.getJobId(),
