@@ -485,6 +485,7 @@ async def test_get_data_export_result_success(
                     progress_report=ProgressReport(actual_value=50),
                 ),
                 "get_task_result_object": _faker.text(),
+                "get_task_uuids_object": [AsyncJobId(_faker.uuid4())],
             },
             JobNotDoneError,
         ),
@@ -496,6 +497,7 @@ async def test_get_data_export_result_success(
                     progress_report=ProgressReport(actual_value=100),
                 ),
                 "get_task_result_object": _faker.text(),
+                "get_task_uuids_object": [AsyncJobId(_faker.uuid4())],
             },
             JobAbortedError,
         ),
@@ -507,6 +509,7 @@ async def test_get_data_export_result_success(
                     progress_report=ProgressReport(actual_value=100),
                 ),
                 "get_task_result_object": _faker.text(),
+                "get_task_uuids_object": [AsyncJobId(_faker.uuid4())],
             },
             JobError,
         ),
@@ -514,8 +517,15 @@ async def test_get_data_export_result_success(
             {
                 "get_task_status_object": CeleryError("error"),
                 "get_task_result_object": _faker.text(),
+                "get_task_uuids_object": [AsyncJobId(_faker.uuid4())],
             },
             JobSchedulerError,
+        ),
+        (
+            {
+                "get_task_uuids_object": [],
+            },
+            JobMissingError,
         ),
     ],
     indirect=["mock_celery_client"],
@@ -526,8 +536,10 @@ async def test_get_data_export_result_error(
     mocker: MockerFixture,
     expected_exception: type[Exception],
 ):
-    mocker.patch("simcore_service_storage.api.rpc._async_jobs")
-    _job_id = AsyncJobId(_faker.uuid4())
+    job_ids = mock_celery_client.get_task_uuids_object
+    assert job_ids is not None
+    assert not isinstance(job_ids, Exception)
+    _job_id = next(iter(job_ids)) if len(job_ids) > 0 else AsyncJobId(_faker.uuid4())
 
     with pytest.raises(expected_exception):
         _ = await async_jobs.get_result(

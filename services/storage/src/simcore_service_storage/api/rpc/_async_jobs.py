@@ -89,6 +89,7 @@ async def get_status(
         JobNotDoneError,
         JobAbortedError,
         JobSchedulerError,
+        JobMissingError,
     )
 )
 async def get_result(
@@ -99,6 +100,9 @@ async def get_result(
     assert job_id_data  # nosec
 
     try:
+        await _assert_job_exists(
+            job_id=job_id, job_id_data=job_id_data, celery_client=get_celery_client(app)
+        )
         status = await get_celery_client(app).get_task_status(
             task_context=job_id_data.model_dump(),
             task_uuid=job_id,
