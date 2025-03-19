@@ -32,9 +32,7 @@ from models_library.api_schemas_storage.data_export_async_jobs import (
 )
 from models_library.api_schemas_webserver._base import OutputSchema
 from models_library.api_schemas_webserver.storage import (
-    AsyncJobLinks,
     DataExportPost,
-    StorageAsyncJobGet,
 )
 from models_library.generics import Envelope
 from models_library.progress_bar import ProgressReport
@@ -236,13 +234,8 @@ async def test_get_async_job_result(
     [
         (
             [
-                StorageAsyncJobGet(
+                AsyncJobGet(
                     job_id=AsyncJobId(_faker.uuid4()),
-                    links=AsyncJobLinks(
-                        status_href=_faker.uri(),
-                        abort_href=_faker.uri(),
-                        result_href=_faker.uri(),
-                    ),
                 )
             ],
             status.HTTP_200_OK,

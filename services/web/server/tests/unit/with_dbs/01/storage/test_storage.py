@@ -11,6 +11,7 @@ import pytest
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from fastapi_pagination.cursor import CursorPage
+from models_library.api_schemas_long_running_tasks.tasks import TaskGet
 from models_library.api_schemas_rpc_async_jobs.async_jobs import AsyncJobGet, AsyncJobId
 from models_library.api_schemas_storage.storage_schemas import (
     DatasetMetaDataGet,
@@ -19,7 +20,6 @@ from models_library.api_schemas_storage.storage_schemas import (
     FileUploadSchema,
     PathMetaDataGet,
 )
-from models_library.api_schemas_webserver.storage import StorageAsyncJobGet
 from models_library.projects_nodes_io import LocationID, StorageFileID
 from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
@@ -146,7 +146,7 @@ async def test_compute_path_size(
     resp = await client.post(f"{url}")
     data, error = await assert_status(resp, expected)
     if not error:
-        TypeAdapter(StorageAsyncJobGet).validate_python(data)
+        TypeAdapter(TaskGet).validate_python(data)
 
 
 @pytest.mark.parametrize(

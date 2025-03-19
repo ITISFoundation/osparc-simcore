@@ -1,25 +1,18 @@
 from pathlib import Path
-from typing import Annotated, Any
+from typing import Annotated
 
 from pydantic import BaseModel, Field
 
-from ..api_schemas_rpc_async_jobs.async_jobs import (
-    AsyncJobGet,
-    AsyncJobId,
-    AsyncJobResult,
-    AsyncJobStatus,
-)
 from ..api_schemas_storage.data_export_async_jobs import DataExportTaskStartInput
 from ..api_schemas_storage.storage_schemas import (
     DEFAULT_NUMBER_OF_PATHS_PER_PAGE,
     MAX_NUMBER_OF_PATHS_PER_PAGE,
 )
-from ..progress_bar import ProgressReport
 from ..projects_nodes_io import LocationID, StorageFileID
 from ..rest_pagination import (
     CursorQueryParameters,
 )
-from ._base import InputSchema, OutputSchema
+from ._base import InputSchema
 
 
 class StorageLocationPathParams(BaseModel):
@@ -51,48 +44,3 @@ class DataExportPost(InputSchema):
             file_and_folder_ids=self.paths,
             location_id=location_id,
         )
-
-
-class AsyncJobLinks(OutputSchema):
-    status_href: str
-    abort_href: str
-    result_href: str
-
-
-class StorageAsyncJobGet(OutputSchema):
-    job_id: AsyncJobId
-    links: AsyncJobLinks
-
-    @classmethod
-    def from_rpc_schema(
-        cls, *, async_job_rpc_get: AsyncJobGet, links: AsyncJobLinks
-    ) -> "StorageAsyncJobGet":
-        return StorageAsyncJobGet(job_id=async_job_rpc_get.job_id, links=links)
-
-
-class StorageAsyncJobStatus(OutputSchema):
-    job_id: AsyncJobId
-    progress: ProgressReport
-    done: bool
-    links: AsyncJobLinks
-
-    @classmethod
-    def from_rpc_schema(
-        cls, *, async_job_rpc_status: AsyncJobStatus, links: AsyncJobLinks
-    ) -> "StorageAsyncJobStatus":
-        return StorageAsyncJobStatus(
-            job_id=async_job_rpc_status.job_id,
-            progress=async_job_rpc_status.progress,
-            done=async_job_rpc_status.done,
-            links=links,
-        )
-
-
-class StorageAsyncJobResult(OutputSchema):
-    result: Any | None
-
-    @classmethod
-    def from_rpc_schema(
-        cls, async_job_rpc_result: AsyncJobResult
-    ) -> "StorageAsyncJobResult":
-        return StorageAsyncJobResult(result=async_job_rpc_result.result)
