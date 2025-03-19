@@ -98,14 +98,14 @@ qx.Class.define("osparc.FlashMessenger", {
         paddingLeft: 8
       });
       const showErrorLabel = new qx.ui.basic.Atom().set({
-        label: qx.locale.Manager.tr("Show error code"),
+        label: qx.locale.Manager.tr("Show Support ID"),
         icon: "@FontAwesome5Solid/chevron-right/10",
         cursor: "pointer",
         visibility: "visible",
       });
       widget.add(showErrorLabel);
       const hideErrorLabel = new qx.ui.basic.Atom().set({
-        label: qx.locale.Manager.tr("Hide error code"),
+        label: qx.locale.Manager.tr("Hide Support ID"),
         icon: "@FontAwesome5Solid/chevron-down/10",
         cursor: "pointer",
         visibility: "excluded",
