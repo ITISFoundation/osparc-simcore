@@ -74,5 +74,11 @@ qx.Class.define("osparc.data.Job", {
       nullable: false,
       init: null,
     },
+
+    info: {
+      check: "Object",
+      nullable: false,
+      init: null,
+    },
   },
 });
