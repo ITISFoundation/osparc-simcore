@@ -39,17 +39,21 @@ qx.Class.define("osparc.task.TasksContainer", {
     __tasks: null,
     __tasksContainer: null,
 
-    addTaskUI: function(task) {
-      this.__tasks.push(task);
-      this.__tasksContainer.addAt(task, 0);
+    addTaskUI: function(taskUI) {
+      const alreadyExists = this.__tasks.filter(task => task.getTask().getTaskId() === taskUI.getTask().getTaskId()).length;
+      if (alreadyExists) {
+        return;
+      }
+      this.__tasks.push(taskUI);
+      this.__tasksContainer.addAt(taskUI, 0);
     },
 
-    removeTaskUI: function(task) {
-      if (this.__tasks.indexOf(task) > -1) {
-        this.__tasks.remove(task);
+    removeTaskUI: function(taskUI) {
+      if (this.__tasks.indexOf(taskUI) > -1) {
+        this.__tasks.remove(taskUI);
       }
-      if (this.__tasksContainer.indexOf(task) > -1) {
-        this.__tasksContainer.remove(task);
+      if (this.__tasksContainer.indexOf(taskUI) > -1) {
+        this.__tasksContainer.remove(taskUI);
       }
     },
 
