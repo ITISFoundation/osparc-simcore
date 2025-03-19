@@ -28,7 +28,7 @@ qx.Class.define("osparc.task.TasksButton", {
       alignX: "center",
       cursor: "pointer",
       visibility: "excluded",
-      tooltipText: this.tr("Tasks"),
+      toolTipText: this.tr("Tasks"),
     });
 
     const tasks = osparc.task.TasksContainer.getInstance();
