@@ -31,7 +31,6 @@ class TestEmail(BaseModel):
         "change_email_email.jinja2",
         "new_2fa_code.jinja2",
         "registration_email.jinja2",
-        "reset_password_email_failed.jinja2",
         "reset_password_email.jinja2",
         "service_submission.jinja2",
     ] = "registration_email.jinja2"
