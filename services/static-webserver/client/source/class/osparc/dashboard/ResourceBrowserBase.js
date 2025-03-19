@@ -476,7 +476,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
 
     _addTaskCard: function(task, cardTitle, cardIcon) {
       const isGrid = this._resourcesContainer.getMode() === "grid";
-      const taskCard = isGrid ? new osparc.dashboard.GridButtonPlaceholder() : new osparc.dashboard.ListButtonPlaceholder();
+      const taskCard = isGrid ? new osparc.dashboard.GridButtonTaskPlaceholder() : new osparc.dashboard.ListButtonTaskPlaceholder();
       taskCard.setTask(task);
       taskCard.buildLayout(
         cardTitle,

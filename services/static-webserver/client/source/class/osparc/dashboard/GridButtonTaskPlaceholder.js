@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.dashboard.GridButtonPlaceholder", {
+qx.Class.define("osparc.dashboard.GridButtonTaskPlaceholder", {
   extend: osparc.dashboard.GridButtonBase,
 
   construct: function() {

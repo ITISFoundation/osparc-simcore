@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.dashboard.ListButtonPlaceholder", {
+qx.Class.define("osparc.dashboard.ListButtonTaskPlaceholder", {
   extend: osparc.dashboard.ListButtonBase,
 
   construct: function() {

@@ -1936,16 +1936,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const text = this.tr("Importing process started and added to the background tasks");
       osparc.FlashMessenger.logAs(text, "INFO");
 
-      const isGrid = this._resourcesContainer.getMode() === "grid";
-      const importingStudyCard = isGrid ? new osparc.dashboard.GridButtonPlaceholder() : new osparc.dashboard.ListButtonPlaceholder();
-      importingStudyCard.buildLayout(
-        this.tr("Importing Study..."),
-        "@FontAwesome5Solid/cloud-upload-alt/" + (isGrid ? "60" : "24"),
-        uploadingLabel,
-        true
-      );
-      importingStudyCard.subscribeToFilterGroup("searchBarFilter");
-      this._resourcesContainer.addNonResourceCard(importingStudyCard);
+      const cardTitle = this.tr("Importing Study...");
+      const cardIcon = "@FontAwesome5Solid/cloud-upload-alt";
+      const importingStudyCard = this._addTaskCard(null, cardTitle, cardIcon);
 
       const body = new FormData();
       body.append("fileName", file);
