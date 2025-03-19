@@ -7,6 +7,8 @@ from typing import Any
 
 import pytest
 from aiohttp.test_utils import TestClient
+from faker import Faker
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_parametrizations import (
     ExpectedResponse,
@@ -63,3 +65,23 @@ async def test_listing_tasks_empty(
         assert not data
         return
     assert data == []
+
+
+@pytest.mark.parametrize("user_role", [UserRole.GUEST, UserRole.TESTER, UserRole.USER])
+async def test_listing_tasks_with_list_inprocess_tasks_error(
+    client: TestClient, logged_user, faker: Faker, mocker: MockerFixture
+):
+    assert client.app
+
+    class _DummyTaskManager:
+        def list_tasks(self, *args, **kwargs):
+            raise Exception()
+
+    mocker.patch(
+        "servicelib.aiohttp.long_running_tasks._routes.get_tasks_manager",
+        return_value=_DummyTaskManager(),
+    )
+
+    _async_jobs_listing_path = client.app.router["get_async_jobs"].url_for()
+    resp = await client.request("GET", f"{_async_jobs_listing_path}")
+    assert resp.status == status.HTTP_500_INTERNAL_SERVER_ERROR
