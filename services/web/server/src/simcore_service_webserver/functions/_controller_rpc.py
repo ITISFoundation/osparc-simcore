@@ -10,7 +10,7 @@ router = RPCRouter()
 
 
 @router.expose()
-async def ping(app) -> str:
+async def ping(app) -> str:  # pylint: disable=unused-argument
     return "pong from webserver"
 
 
