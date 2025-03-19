@@ -167,7 +167,7 @@ class UserWithFile(NamedTuple):
     indirect=True,
 )
 @pytest.mark.parametrize(
-    "project_params,_type",
+    "project_params,selection_type",
     [
         (
             ProjectWithFilesParams(
@@ -203,7 +203,7 @@ async def test_start_data_export_success(
         dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],
     ],
     user_id: UserID,
-    _type: Literal["file", "folder"],
+    selection_type: Literal["file", "folder"],
 ):
     _, list_of_files = with_random_project_with_files
     workspace_files = [
@@ -211,9 +211,9 @@ async def test_start_data_export_success(
     ]
     assert len(workspace_files) > 0
     file_or_folder_id: SimcoreS3FileID
-    if _type == "file":
+    if selection_type == "file":
         file_or_folder_id = workspace_files[0]
-    elif _type == "folder":
+    elif selection_type == "folder":
         parts = Path(workspace_files[0]).parts
         parts = parts[0 : parts.index("workspace") + 1]
         assert len(parts) > 0
