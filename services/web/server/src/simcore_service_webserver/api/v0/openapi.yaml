@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: simcore-service-webserver
   description: Main service with an interface (http-API & websockets) to the web front-end
-  version: 0.61.0
+  version: 0.61.1
 servers:
 - url: ''
   description: webserver
@@ -253,9 +253,8 @@ paths:
     post:
       tags:
       - auth
-      summary: Reset Password
-      description: a non logged-in user requests a password reset
-      operationId: auth_reset_password
+      summary: Initiate Reset Password
+      operationId: initiate_reset_password
       requestBody:
         content:
           application/json:
@@ -279,9 +278,8 @@ paths:
     post:
       tags:
       - auth
-      summary: Reset Password Allowed
-      description: changes password using a token code without being logged in
-      operationId: auth_reset_password_allowed
+      summary: Complete Reset Password
+      operationId: complete_reset_password
       parameters:
       - name: code
         in: path
@@ -303,7 +301,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Envelope_Log_'
         '401':
-          description: unauthorized reset due to invalid token code
+          description: Invalid token code
           content:
             application/json:
               schema:
@@ -14153,6 +14151,7 @@ components:
       properties:
         email:
           type: string
+          format: email
           title: Email
       additionalProperties: false
       type: object
@@ -15290,7 +15289,6 @@ components:
           - change_email_email.jinja2
           - new_2fa_code.jinja2
           - registration_email.jinja2
-          - reset_password_email_failed.jinja2
           - reset_password_email.jinja2
           - service_submission.jinja2
           title: Template Name
