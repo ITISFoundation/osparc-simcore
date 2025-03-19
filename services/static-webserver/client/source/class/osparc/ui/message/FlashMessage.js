@@ -31,7 +31,7 @@ qx.Class.define("osparc.ui.message.FlashMessage", {
    */
   construct: function(message, level, duration) {
     this.base(arguments);
-    this._setLayout(new qx.ui.layout.VBox(15));
+    this._setLayout(new qx.ui.layout.VBox(10));
 
     this.set({
       padding: 18,

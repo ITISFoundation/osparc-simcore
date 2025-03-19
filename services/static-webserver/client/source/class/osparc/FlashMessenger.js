@@ -95,27 +95,30 @@ qx.Class.define("osparc.FlashMessenger", {
     },
 
     createCopyEOCWidget: function(supportId) {
-      const widget = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+      const widget = new qx.ui.container.Composite(new qx.ui.layout.VBox()).set({
+        paddingLeft: 10
+      });
       const showErrorLabel = new qx.ui.basic.Atom().set({
-        label: this.tr("Show error code"),
+        label: qx.locale.Manager.tr("Show error code"),
         icon: "@FontAwesome5Solid/chevron-right/10",
         cursor: "pointer",
         visibility: "visible",
       });
       widget.add(showErrorLabel);
       const hideErrorLabel = new qx.ui.basic.Atom().set({
-        label: this.tr("Hide error code"),
+        label: qx.locale.Manager.tr("Hide error code"),
         icon: "@FontAwesome5Solid/chevron-down/10",
         cursor: "pointer",
-        visibility: "exclude",
+        visibility: "excluded",
       });
       widget.add(hideErrorLabel);
       const errorLabel = new qx.ui.basic.Atom().set({
-        label: this.tr("Show error code"),
-        icon: "@FontAwesome5Solid/chevron-down/10",
+        label: supportId,
+        icon: "@FontAwesome5Solid/copy/10",
         cursor: "pointer",
-        visibility: "exclude",
+        visibility: "excluded",
       });
+      widget.add(errorLabel);
       showErrorLabel.addListener("tap", () => {
         showErrorLabel.exclude();
         hideErrorLabel.show();
@@ -127,7 +130,6 @@ qx.Class.define("osparc.FlashMessenger", {
         showErrorLabel.show();
       });
       errorLabel.addListener("tap", () => osparc.utils.Utils.copyTextToClipboard(supportId));
-      widget.add(errorLabel);
       return widget;
     },
   },
@@ -191,6 +193,7 @@ qx.Class.define("osparc.FlashMessenger", {
         const wordCount = message.split(" ").length;
         duration = Math.max(5500, wordCount*500); // An average reader takes 300ms to read a word
       }
+      duration = 10000;
       if (duration !== 0) {
         qx.event.Timer.once(() => this.removeMessage(flashMessage), this, duration);
       }
