@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.task.Tasks", {
+qx.Class.define("osparc.task.TasksContainer", {
   extend: qx.core.Object,
   type: "singleton",
 

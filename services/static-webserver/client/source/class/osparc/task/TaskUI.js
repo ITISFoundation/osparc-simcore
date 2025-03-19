@@ -134,12 +134,12 @@ qx.Class.define("osparc.task.TaskUI", {
     },
 
     start: function() {
-      const tasks = osparc.task.Tasks.getInstance();
+      const tasks = osparc.task.TasksContainer.getInstance();
       tasks.addTask(this);
     },
 
     stop: function() {
-      const tasks = osparc.task.Tasks.getInstance();
+      const tasks = osparc.task.TasksContainer.getInstance();
       tasks.removeTask(this);
     },
 

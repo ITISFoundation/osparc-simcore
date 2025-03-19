@@ -30,7 +30,7 @@ qx.Class.define("osparc.task.TasksButton", {
       visibility: "excluded"
     });
 
-    const tasks = osparc.task.Tasks.getInstance();
+    const tasks = osparc.task.TasksContainer.getInstance();
     tasks.getTasks().addListener("change", e => this.__updateTasksButton(), this);
     this.addListener("tap", () => this.__showTasks(), this);
   },
@@ -74,7 +74,7 @@ qx.Class.define("osparc.task.TasksButton", {
       this._createChildControlImpl("icon");
       const number = this.getChildControl("number");
 
-      const tasks = osparc.task.Tasks.getInstance();
+      const tasks = osparc.task.TasksContainer.getInstance();
       const nTasks = tasks.getTasks().length;
       number.setValue(nTasks.toString());
       nTasks ? this.show() : this.exclude();
@@ -83,7 +83,7 @@ qx.Class.define("osparc.task.TasksButton", {
     __showTasks: function() {
       const that = this;
       const tapListener = event => {
-        const tasks = osparc.task.Tasks.getInstance();
+        const tasks = osparc.task.TasksContainer.getInstance();
         const tasksContainer = tasks.getTasksContainer();
         if (osparc.utils.Utils.isMouseOnElement(tasksContainer, event)) {
           return;
@@ -103,14 +103,14 @@ qx.Class.define("osparc.task.TasksButton", {
           bounds.top = parseInt(rect.y);
         }
       }
-      const tasks = osparc.task.Tasks.getInstance();
+      const tasks = osparc.task.TasksContainer.getInstance();
       tasks.setTasksContainerPosition(bounds.left+bounds.width, osparc.navigation.NavigationBar.HEIGHT+3);
       tasks.getTasksContainer().show();
       document.addEventListener("mousedown", tapListener);
     },
 
     __hideTasks: function() {
-      const tasks = osparc.task.Tasks.getInstance();
+      const tasks = osparc.task.TasksContainer.getInstance();
       tasks.getTasksContainer().exclude();
     }
   }
