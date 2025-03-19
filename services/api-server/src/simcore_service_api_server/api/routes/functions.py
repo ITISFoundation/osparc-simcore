@@ -13,4 +13,4 @@ router = APIRouter()
 async def ping(
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
 ):
-    return wb_api_rpc.ping()
+    return await wb_api_rpc.ping()

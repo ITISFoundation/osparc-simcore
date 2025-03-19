@@ -11,7 +11,7 @@ router = RPCRouter()
 
 @router.expose()
 async def ping(app) -> str:
-    return "pong"
+    return "pong from webserver"
 
 
 async def register_rpc_routes_on_startup(app: web.Application):
