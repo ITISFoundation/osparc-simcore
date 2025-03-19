@@ -2,6 +2,8 @@
 # pylint: disable=too-many-arguments
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
+# pylint: disable=no-self-use
+# pylint: disable=no-self-argument
 
 from typing import Any
 
