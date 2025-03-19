@@ -396,24 +396,10 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
 
       osparc.task.TasksContainer.getInstance().addTaskUI(toTemplateTaskUI);
 
-      const toTemplateCard = this.__createToTemplateCard(studyName);
-      toTemplateCard.setTask(task);
+      const cardTitle = this.tr("Publishing ") + studyName;
+      const toTemplateCard = this._addTaskCard(task, cardTitle, osparc.task.ToTemplate.ICON);
       this.__attachToTemplateEventHandler(task, toTemplateTaskUI, toTemplateCard);
     },
-
-    __createToTemplateCard: function(studyName) {
-      const isGrid = this._resourcesContainer.getMode() === "grid";
-      const toTemplateCard = isGrid ? new osparc.dashboard.GridButtonPlaceholder() : new osparc.dashboard.ListButtonPlaceholder();
-      toTemplateCard.buildLayout(
-        this.tr("Publishing ") + studyName,
-        osparc.task.ToTemplate.ICON + (isGrid ? "60" : "24"),
-        null,
-        true
-      );
-      toTemplateCard.subscribeToFilterGroup("searchBarFilter");
-      this._resourcesContainer.addNonResourceCard(toTemplateCard);
-      return toTemplateCard;
-    }
     // TASKS //
   }
 });

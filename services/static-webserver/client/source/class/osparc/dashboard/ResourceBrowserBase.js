@@ -474,6 +474,21 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       }
     },
 
+    _addTaskCard: function(task, cardTitle, cardIcon) {
+      const isGrid = this._resourcesContainer.getMode() === "grid";
+      const taskCard = isGrid ? new osparc.dashboard.GridButtonPlaceholder() : new osparc.dashboard.ListButtonPlaceholder();
+      taskCard.setTask(task);
+      taskCard.buildLayout(
+        cardTitle,
+        cardIcon + (isGrid ? "/60" : "/24"),
+        null,
+        true
+      );
+      taskCard.subscribeToFilterGroup("searchBarFilter");
+      this._resourcesContainer.addNonResourceCard(taskCard);
+      return taskCard;
+    },
+
     _populateCardMenu: function(card) {
       throw new Error("Abstract method called!");
     },

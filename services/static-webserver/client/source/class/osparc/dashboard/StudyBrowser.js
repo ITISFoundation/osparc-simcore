@@ -1884,18 +1884,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       return this._resourcesList.find(study => study.uuid === id);
     },
 
-    __createDuplicateCard: function(studyName) {
-      const isGrid = this._resourcesContainer.getMode() === "grid";
-      const duplicatingStudyCard = isGrid ? new osparc.dashboard.GridButtonPlaceholder() : new osparc.dashboard.ListButtonPlaceholder();
-      duplicatingStudyCard.buildLayout(
-        this.tr("Duplicating ") + studyName,
-        osparc.task.Duplicate.ICON + (isGrid ? "60" : "24"),
-        null,
-        true
-      );
-      return duplicatingStudyCard;
-    },
-
     __duplicateStudy: function(studyData) {
       const text = this.tr("Duplicate process started and added to the background tasks");
       osparc.FlashMessenger.logAs(text, "INFO");
@@ -2143,10 +2131,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       osparc.task.TasksContainer.getInstance().addTaskUI(duplicateTaskUI);
 
-      const duplicatingStudyCard = this.__createDuplicateCard(studyName);
-      duplicatingStudyCard.setTask(task);
-      duplicatingStudyCard.subscribeToFilterGroup("searchBarFilter");
-      this._resourcesContainer.addNonResourceCard(duplicatingStudyCard);
+      const cardTitle = this.tr("Duplicating ") + studyName;
+      const duplicatingStudyCard = this._addTaskCard(task, cardTitle, osparc.task.Duplicate.ICON);
       this.__attachDuplicateEventHandler(task, duplicateTaskUI, duplicatingStudyCard);
     },
 
