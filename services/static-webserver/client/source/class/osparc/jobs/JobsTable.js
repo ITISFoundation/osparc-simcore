@@ -63,14 +63,14 @@ qx.Class.define("osparc.jobs.JobsTable", {
         label: qx.locale.Manager.tr("Progress"),
         width: 100
       },
-      SUBMITTED: {
-        id: "submitted",
+      SUBMIT: {
+        id: "submit",
         column: 4,
         label: qx.locale.Manager.tr("Submitted"),
         width: 150
       },
-      STARTED: {
-        id: "started",
+      START: {
+        id: "start",
         column: 5,
         label: qx.locale.Manager.tr("Started"),
         width: 150

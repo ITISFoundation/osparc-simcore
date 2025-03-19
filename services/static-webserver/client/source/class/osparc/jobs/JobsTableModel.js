@@ -19,29 +19,24 @@
 qx.Class.define("osparc.jobs.JobsTableModel", {
   extend: qx.ui.table.model.Remote,
 
-  construct(walletId, filters) {
+  construct(filters) {
     this.base(arguments);
 
-    const checkoutsCols = osparc.jobs.JobsTable.COLS;
-    const colLabels = Object.values(checkoutsCols).map(col => col.label);
-    const colIDs = Object.values(checkoutsCols).map(col => col.id);
-
+    const jobsCols = osparc.jobs.JobsTable.COLS;
+    const colLabels = Object.values(jobsCols).map(col => col.label);
+    const colIDs = Object.values(jobsCols).map(col => col.id);
     this.setColumns(colLabels, colIDs);
-    this.setWalletId(walletId);
+
     if (filters) {
       this.setFilters(filters);
     }
-    this.setSortColumnIndexWithoutSortingData(checkoutsCols.START.column);
+
+    this.setSortColumnIndexWithoutSortingData(jobsCols.SUBMIT.column);
     this.setSortAscendingWithoutSortingData(false);
-    this.setColumnSortable(checkoutsCols.DURATION.column, false);
+    this.setColumnSortable(jobsCols.INSTANCE.column, false);
   },
 
   properties: {
-    walletId: {
-      check: "Number",
-      nullable: true
-    },
-
     filters: {
       check: "Object",
       init: null
@@ -56,7 +51,7 @@ qx.Class.define("osparc.jobs.JobsTableModel", {
     orderBy: {
       check: "Object",
       init: {
-        field: "startAt",
+        field: "started_at",
         direction: "desc"
       }
     },
@@ -65,7 +60,7 @@ qx.Class.define("osparc.jobs.JobsTableModel", {
   statics: {
     SERVER_MAX_LIMIT: 49,
     COLUMN_ID_TO_DB_COLUMN_MAP: {
-      0: "startAt",
+      0: "started_at",
     },
   },
 
@@ -81,13 +76,12 @@ qx.Class.define("osparc.jobs.JobsTableModel", {
 
     // overridden
     _loadRowCount() {
-      const walletId = this.getWalletId();
       const urlParams = {
         offset: 0,
         limit: 1,
         filters: this.getFilters() ?
           JSON.stringify({
-            "startAt": this.getFilters()
+            "started_at": this.getFilters()
           }) :
           null,
         orderBy: JSON.stringify(this.getOrderBy()),
@@ -95,8 +89,9 @@ qx.Class.define("osparc.jobs.JobsTableModel", {
       const options = {
         resolveWResponse: true
       };
-      osparc.store.LicensedItems.getInstance().getCheckedOutLicensedItems(walletId, urlParams, options)
-        .then(resp => this._onRowCountLoaded(resp["_meta"].total))
+      const jobsStore = osparc.store.Jobs.getInstance();
+      jobsStore.fetchJobs(urlParams, options)
+        .then(jobs => this._onRowCountLoaded(jobs.length))
         .catch(() => this._onRowCountLoaded(null));
     },
 
@@ -107,7 +102,6 @@ qx.Class.define("osparc.jobs.JobsTableModel", {
       const lastRow = Math.min(qxLastRow, this._rowCount - 1);
       // Returns a request promise with given offset and limit
       const getFetchPromise = (offset, limit=this.self().SERVER_MAX_LIMIT) => {
-        const walletId = this.getWalletId();
         const urlParams = {
           limit,
           offset,
@@ -118,36 +112,20 @@ qx.Class.define("osparc.jobs.JobsTableModel", {
             null,
           orderBy: JSON.stringify(this.getOrderBy())
         };
-        const licensedItemsStore = osparc.store.LicensedItems.getInstance();
-        return Promise.all([
-          licensedItemsStore.getLicensedItems(),
-          licensedItemsStore.getCheckedOutLicensedItems(walletId, urlParams),
-        ])
-          .then(values => {
-            const licensedItems = values[0];
-            const checkoutsItems = values[1];
-
+        const jobsStore = osparc.store.Jobs.getInstance();
+        jobsStore.fetchJobs(urlParams)
+          .then(jobs => {
             const data = [];
-            const checkoutsCols = osparc.desktop.credits.JobsTable.COLS;
-            checkoutsItems.forEach(checkoutsItem => {
-              const licensedItemId = checkoutsItem["licensedItemId"];
-              const licensedItem = licensedItems[licensedItemId];
-              let start = "";
-              let duration = "";
-              if (checkoutsItem["startedAt"]) {
-                start = osparc.utils.Utils.formatDateAndTime(new Date(checkoutsItem["startedAt"]));
-                if (checkoutsItem["stoppedAt"]) {
-                  duration = osparc.utils.Utils.formatMsToHHMMSS(new Date(checkoutsItem["stoppedAt"]) - new Date(checkoutsItem["startedAt"]));
-                }
-              }
+            const jobsCols = osparc.desktop.credits.JobsTable.COLS;
+            jobs.forEach(job => {
               data.push({
-                [checkoutsCols.CHECKOUT_ID.id]: checkoutsItem["licensedItemCheckoutId"],
-                [checkoutsCols.ITEM_ID.id]: licensedItemId,
-                [checkoutsCols.ITEM_LABEL.id]: licensedItem ? licensedItem.getDisplayName() : "unknown model",
-                [checkoutsCols.START.id]: start,
-                [checkoutsCols.DURATION.id]: duration,
-                [checkoutsCols.SEATS.id]: checkoutsItem["numOfSeats"],
-                [checkoutsCols.USER.id]: checkoutsItem["userEmail"],
+                [jobsCols.JOB_ID.id]: job.getJobId(),
+                [jobsCols.SOLVER.id]: job.getSolver(),
+                [jobsCols.STATUS.id]: job.getStatus(),
+                [jobsCols.PROGRESS.id]: job.getProgress(),
+                [jobsCols.SUBMIT.id]: job.getSubmittedAt(),
+                [jobsCols.START.id]: job.getStartedAt(),
+                [jobsCols.INSTANCE.id]: job.getInstance(),
               });
             });
             return data;
