@@ -58,7 +58,7 @@ async def abort(app: FastAPI, job_id: AsyncJobId, job_id_data: AsyncJobNameData)
         raise JobSchedulerError(exc=f"{exc}") from exc
 
 
-@router.expose(reraise_if_error_type=(JobSchedulerError,))
+@router.expose(reraise_if_error_type=(JobSchedulerError, JobMissingError))
 async def get_status(
     app: FastAPI, job_id: AsyncJobId, job_id_data: AsyncJobNameData
 ) -> AsyncJobStatus:
@@ -66,6 +66,9 @@ async def get_status(
     assert job_id_data  # nosec
 
     try:
+        await _assert_job_exists(
+            job_id=job_id, job_id_data=job_id_data, celery_client=get_celery_client(app)
+        )
         task_status = await get_celery_client(app).get_task_status(
             task_context=job_id_data.model_dump(),
             task_uuid=job_id,

@@ -405,18 +405,32 @@ async def test_get_data_export_status(
 
 
 @pytest.mark.parametrize(
-    "mock_celery_client",
+    "mock_celery_client, expected_exception_type",
     [
-        {"get_task_status_object": CeleryError("error")},
+        (
+            {"get_task_status_object": None, "get_task_uuids_object": []},
+            JobMissingError,
+        ),
+        (
+            {
+                "get_task_status_object": CeleryError("error"),
+                "get_task_uuids_object": [AsyncJobId(_faker.uuid4())],
+            },
+            JobSchedulerError,
+        ),
     ],
-    indirect=True,
+    indirect=["mock_celery_client"],
 )
-async def test_get_data_export_status_scheduler_error(
+async def test_get_data_export_status_error(
     rpc_client: RabbitMQRPCClient,
     mock_celery_client: _MockCeleryClient,
+    expected_exception_type: type[Exception],
 ):
-    _job_id = AsyncJobId(_faker.uuid4())
-    with pytest.raises(JobSchedulerError):
+    job_ids = mock_celery_client.get_task_uuids_object
+    assert job_ids is not None
+    assert not isinstance(job_ids, Exception)
+    _job_id = next(iter(job_ids)) if len(job_ids) > 0 else AsyncJobId(_faker.uuid4())
+    with pytest.raises(expected_exception_type):
         _ = await async_jobs.get_status(
             rpc_client,
             rpc_namespace=STORAGE_RPC_NAMESPACE,
