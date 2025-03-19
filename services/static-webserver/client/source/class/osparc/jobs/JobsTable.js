@@ -32,54 +32,53 @@ qx.Class.define("osparc.jobs.JobsTable", {
     });
 
     const columnModel = this.getTableColumnModel();
-    columnModel.setColumnVisible(this.self().COLS.CHECKOUT_ID.column, false);
-    columnModel.setColumnVisible(this.self().COLS.ITEM_ID.column, false);
+    columnModel.setColumnVisible(this.self().COLS.JOB_ID.column, false);
 
     Object.values(this.self().COLS).forEach(col => columnModel.setColumnWidth(col.column, col.width));
   },
 
   statics: {
     COLS: {
-      CHECKOUT_ID: {
-        id: "checkoutId",
+      JOB_ID: {
+        id: "jobId",
         column: 0,
-        label: qx.locale.Manager.tr("CheckoutId"),
+        label: qx.locale.Manager.tr("JobId"),
         width: 150
       },
-      ITEM_ID: {
-        id: "itemId",
+      SOLVER: {
+        id: "solver",
         column: 1,
-        label: qx.locale.Manager.tr("ItemId"),
+        label: qx.locale.Manager.tr("Solver"),
         width: 150
       },
-      ITEM_LABEL: {
-        id: "itemLabel",
+      STATUS: {
+        id: "status",
         column: 2,
-        label: qx.locale.Manager.tr("Name"),
+        label: qx.locale.Manager.tr("Status"),
         width: 150
       },
-      START: {
-        id: "start",
+      PROGRESS: {
+        id: "progress",
         column: 3,
-        label: qx.locale.Manager.tr("Start"),
-        width: 150
+        label: qx.locale.Manager.tr("Progress"),
+        width: 100
       },
-      DURATION: {
-        id: "duration",
+      SUBMITTED: {
+        id: "submitted",
         column: 4,
-        label: qx.locale.Manager.tr("Duration"),
+        label: qx.locale.Manager.tr("Submitted"),
         width: 150
       },
-      SEATS: {
-        id: "seats",
+      STARTED: {
+        id: "started",
         column: 5,
-        label: qx.locale.Manager.tr("Seats"),
-        width: 50
+        label: qx.locale.Manager.tr("Started"),
+        width: 150
       },
-      USER: {
-        id: "user",
+      INSTANCE: {
+        id: "instance",
         column: 6,
-        label: qx.locale.Manager.tr("User"),
+        label: qx.locale.Manager.tr("Instance"),
         width: 150
       },
     }
