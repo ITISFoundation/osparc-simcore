@@ -9,6 +9,10 @@ class JobSchedulerError(BaseAsyncjobRpcError):
     msg_template: str = "Celery exception: {exc}"
 
 
+class JobMissingError(BaseAsyncjobRpcError):
+    msg_template: str = "Job {job_id} does not exist"
+
+
 class JobStatusError(BaseAsyncjobRpcError):
     msg_template: str = "Could not get status of job {job_id}"
 

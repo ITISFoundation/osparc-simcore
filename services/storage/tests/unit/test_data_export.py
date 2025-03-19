@@ -22,6 +22,7 @@ from models_library.api_schemas_rpc_async_jobs.async_jobs import (
 from models_library.api_schemas_rpc_async_jobs.exceptions import (
     JobAbortedError,
     JobError,
+    JobMissingError,
     JobNotDoneError,
     JobSchedulerError,
 )
@@ -316,39 +317,54 @@ async def test_start_data_export_access_error(
 @pytest.mark.parametrize(
     "mock_celery_client",
     [
-        {"abort_task_object": None},
+        {
+            "abort_task_object": None,
+            "get_task_uuids_object": [AsyncJobId(_faker.uuid4())],
+        },
     ],
     indirect=True,
 )
-async def test_abort_data_export(
+async def test_abort_data_export_success(
     rpc_client: RabbitMQRPCClient,
     mock_celery_client: _MockCeleryClient,
 ):
-    _job_id = AsyncJobId(_faker.uuid4())
+    assert mock_celery_client.get_task_uuids_object is not None
+    assert not isinstance(mock_celery_client.get_task_uuids_object, Exception)
     await async_jobs.abort(
         rpc_client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
         job_id_data=AsyncJobNameData(
             user_id=_faker.pyint(min_value=1, max_value=100), product_name="osparc"
         ),
-        job_id=_job_id,
+        job_id=next(iter(mock_celery_client.get_task_uuids_object)),
     )
 
 
 @pytest.mark.parametrize(
-    "mock_celery_client",
+    "mock_celery_client, expected_exception_type",
     [
-        {"abort_task_object": CeleryError("error")},
+        ({"abort_task_object": None, "get_task_uuids_object": []}, JobMissingError),
+        (
+            {
+                "abort_task_object": CeleryError("error"),
+                "get_task_uuids_object": [AsyncJobId(_faker.uuid4())],
+            },
+            JobSchedulerError,
+        ),
     ],
-    indirect=True,
+    indirect=["mock_celery_client"],
 )
-async def test_abort_data_export_scheduler_error(
+async def test_abort_data_export_error(
     rpc_client: RabbitMQRPCClient,
     mock_celery_client: _MockCeleryClient,
+    expected_exception_type: type[Exception],
 ):
-    _job_id = AsyncJobId(_faker.uuid4())
-    with pytest.raises(JobSchedulerError):
-        _ = await async_jobs.abort(
+    job_ids = mock_celery_client.get_task_uuids_object
+    assert job_ids is not None
+    assert not isinstance(job_ids, Exception)
+    _job_id = next(iter(job_ids)) if len(job_ids) > 0 else AsyncJobId(_faker.uuid4())
+    with pytest.raises(expected_exception_type):
+        await async_jobs.abort(
             rpc_client,
             rpc_namespace=STORAGE_RPC_NAMESPACE,
             job_id_data=AsyncJobNameData(

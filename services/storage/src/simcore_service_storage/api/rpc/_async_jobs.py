@@ -14,24 +14,42 @@ from models_library.api_schemas_rpc_async_jobs.async_jobs import (
 from models_library.api_schemas_rpc_async_jobs.exceptions import (
     JobAbortedError,
     JobError,
+    JobMissingError,
     JobNotDoneError,
     JobSchedulerError,
 )
 from servicelib.logging_utils import log_catch
 from servicelib.rabbitmq import RPCRouter
 
-from ...modules.celery import get_celery_client
+from ...modules.celery import CeleryTaskQueueClient, get_celery_client
 from ...modules.celery.models import TaskError, TaskState
 
 _logger = logging.getLogger(__name__)
 router = RPCRouter()
 
 
-@router.expose(reraise_if_error_type=(JobSchedulerError,))
+async def _assert_job_exists(
+    *,
+    job_id: AsyncJobId,
+    job_id_data: AsyncJobNameData,
+    celery_client: CeleryTaskQueueClient,
+) -> None:
+    """Raises JobMissingError if job doesn't exist"""
+    job_ids = await celery_client.get_task_uuids(
+        task_context=job_id_data.model_dump(),
+    )
+    if not job_id in job_ids:
+        raise JobMissingError(job_id=f"{job_id}")
+
+
+@router.expose(reraise_if_error_type=(JobSchedulerError, JobMissingError))
 async def abort(app: FastAPI, job_id: AsyncJobId, job_id_data: AsyncJobNameData):
     assert app  # nosec
     assert job_id_data  # nosec
     try:
+        await _assert_job_exists(
+            job_id=job_id, job_id_data=job_id_data, celery_client=get_celery_client(app)
+        )
         await get_celery_client(app).abort_task(
             task_context=job_id_data.model_dump(),
             task_uuid=job_id,
