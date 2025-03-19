@@ -89,8 +89,7 @@ qx.Class.define("osparc.jobs.JobsTableModel", {
       const options = {
         resolveWResponse: true
       };
-      const jobsStore = osparc.store.Jobs.getInstance();
-      jobsStore.fetchJobs(urlParams, options)
+      osparc.store.Jobs.getInstance().fetchJobs(urlParams, options)
         .then(jobs => {
           this._onRowCountLoaded(jobs.length);
         })
@@ -114,8 +113,7 @@ qx.Class.define("osparc.jobs.JobsTableModel", {
             null,
           orderBy: JSON.stringify(this.getOrderBy())
         };
-        const jobsStore = osparc.store.Jobs.getInstance();
-        jobsStore.fetchJobs(urlParams)
+        return osparc.store.Jobs.getInstance().fetchJobs(urlParams)
           .then(jobs => {
             const data = [];
             const jobsCols = osparc.jobs.JobsTable.COLS;
@@ -124,10 +122,11 @@ qx.Class.define("osparc.jobs.JobsTableModel", {
                 [jobsCols.JOB_ID.id]: job.getJobId(),
                 [jobsCols.SOLVER.id]: job.getSolver(),
                 [jobsCols.STATUS.id]: job.getStatus(),
-                [jobsCols.PROGRESS.id]: job.getProgress(),
-                [jobsCols.SUBMIT.id]: job.getSubmittedAt(),
-                [jobsCols.START.id]: job.getStartedAt(),
+                [jobsCols.PROGRESS.id]: job.getProgress() ? (job.getProgress() + "%") : "-",
+                [jobsCols.SUBMIT.id]: job.getSubmittedAt() ? osparc.utils.Utils.formatDateAndTime(job.getSubmittedAt()) : "-",
+                [jobsCols.START.id]: job.getStartedAt() ? osparc.utils.Utils.formatDateAndTime(job.getStartedAt()) : "-",
                 [jobsCols.INSTANCE.id]: job.getInstance(),
+                [jobsCols.INFO.id]: "@FontAwesome5Solid/copy/14",
               });
             });
             return data;
@@ -151,7 +150,9 @@ qx.Class.define("osparc.jobs.JobsTableModel", {
           .finally(() => this.setIsFetching(false));
       } else {
         getFetchPromise(firstRow, reqLimit)
-          .then(data => this._onRowDataLoaded(data))
+          .then(data => {
+            this._onRowDataLoaded(data);
+          })
           .catch(err => {
             console.error(err)
             this._onRowDataLoaded(null);

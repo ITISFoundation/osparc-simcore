@@ -35,6 +35,9 @@ qx.Class.define("osparc.jobs.JobsTable", {
     columnModel.setColumnVisible(this.self().COLS.JOB_ID.column, true);
 
     Object.values(this.self().COLS).forEach(col => columnModel.setColumnWidth(col.column, col.width));
+
+    const imageRenderer = new qx.ui.table.cellrenderer.Image();
+    columnModel.setDataCellRenderer(this.self().COLS.INFO.column, imageRenderer);
   },
 
   statics: {
@@ -42,7 +45,7 @@ qx.Class.define("osparc.jobs.JobsTable", {
       JOB_ID: {
         id: "jobId",
         column: 0,
-        label: qx.locale.Manager.tr("JobId"),
+        label: qx.locale.Manager.tr("Job Id"),
         width: 150
       },
       SOLVER: {
@@ -55,31 +58,37 @@ qx.Class.define("osparc.jobs.JobsTable", {
         id: "status",
         column: 2,
         label: qx.locale.Manager.tr("Status"),
-        width: 150
+        width: 160
       },
       PROGRESS: {
         id: "progress",
         column: 3,
         label: qx.locale.Manager.tr("Progress"),
-        width: 100
+        width: 80
       },
       SUBMIT: {
         id: "submit",
         column: 4,
         label: qx.locale.Manager.tr("Submitted"),
-        width: 150
+        width: 130
       },
       START: {
         id: "start",
         column: 5,
         label: qx.locale.Manager.tr("Started"),
-        width: 150
+        width: 130
       },
       INSTANCE: {
         id: "instance",
         column: 6,
         label: qx.locale.Manager.tr("Instance"),
-        width: 150
+        width: 100
+      },
+      INFO: {
+        id: "info",
+        column: 7,
+        label: qx.locale.Manager.tr("Info"),
+        width: 40
       },
     }
   }
