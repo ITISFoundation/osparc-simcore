@@ -39,12 +39,12 @@ qx.Class.define("osparc.task.TasksContainer", {
     __tasks: null,
     __tasksContainer: null,
 
-    addTask: function(task) {
+    addTaskUI: function(task) {
       this.__tasks.push(task);
       this.__tasksContainer.addAt(task, 0);
     },
 
-    removeTask: function(task) {
+    removeTaskUI: function(task) {
       if (this.__tasks.indexOf(task) > -1) {
         this.__tasks.remove(task);
       }

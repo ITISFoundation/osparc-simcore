@@ -351,7 +351,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
         if (msg) {
           osparc.FlashMessenger.logAs(msg, msgLevel);
         }
-        taskUI.stop();
+        osparc.task.TasksContainer.getInstance().removeTaskUI(taskUI);
         this._resourcesContainer.removeNonResourceCard(toTemplateCard);
       };
 
@@ -393,7 +393,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
     taskToTemplateReceived: function(task, studyName) {
       const toTemplateTaskUI = new osparc.task.ToTemplate(studyName);
       toTemplateTaskUI.setTask(task);
-      toTemplateTaskUI.start();
+      osparc.task.TasksContainer.getInstance().addTaskUI(toTemplateTaskUI);
       const toTemplateCard = this.__createToTemplateCard(studyName);
       toTemplateCard.setTask(task);
       this.__attachToTemplateEventHandler(task, toTemplateTaskUI, toTemplateCard);
