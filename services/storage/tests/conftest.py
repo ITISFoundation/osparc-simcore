@@ -609,7 +609,6 @@ async def populate_directory(
                     for selected_subdir in selected_subdirs
                 )
             )
-            object_keys.add(object_key)
 
         assert len(results) == file_count
 
@@ -624,8 +623,6 @@ async def populate_directory(
         assert counted_uploaded_objects == file_count
 
         return node_id, {k: v for r in results for k, v in r.items()}
-
-        return object_keys
 
     return _create_content
 
