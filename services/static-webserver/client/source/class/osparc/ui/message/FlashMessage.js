@@ -48,14 +48,13 @@ qx.Class.define("osparc.ui.message.FlashMessage", {
       textColor: this.self().LOG_LEVEL_COLOR_MAP[level].color
     });
 
-    if (message) {
-      this.setMessage(message);
-    }
+    this.setMessage(message);
 
-    // also support duration 0: the message won't be automatically removed
-    if (duration != null) {
-      this.setDuration(duration);
+    if ([null, undefined].includes(duration)) {
+      const wordCount = message.split(" ").length;
+      duration = Math.max(5500, wordCount*500); // An average reader takes 300ms to read a word
     }
+    this.setDuration(duration);
 
     this.getChildControl("closebutton");
   },
@@ -68,13 +67,15 @@ qx.Class.define("osparc.ui.message.FlashMessage", {
 
     message: {
       check: "String",
-      nullable: true,
-      apply: "__applyMessage"
+      nullable: false,
+      apply: "__applyMessage",
     },
 
     duration: {
       check: "Number",
-      nullable: true
+      init: null,
+      nullable: true,
+      event: "changeDuration",
     }
   },
 
@@ -142,10 +143,7 @@ qx.Class.define("osparc.ui.message.FlashMessage", {
     },
 
     __applyMessage: function(value) {
-      const label = this.getChildControl("message");
-      if (label) {
-        label.setValue(value);
-      }
+      this.getChildControl("message").setValue(value);
     },
 
     addWidget: function(widget) {
