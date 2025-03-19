@@ -251,8 +251,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         return;
       }
 
-      const tasks = osparc.store.PollTasks.getInstance().getTasks();
-      this.__tasksToCards(tasks);
+      this.__tasksToCards();
 
       this._loadingResourcesBtn.setFetching(true);
       this._loadingResourcesBtn.setVisibility("visible");
@@ -2129,13 +2128,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     // TASKS //
-    __tasksToCards: function(tasks) {
+    __tasksToCards: function() {
+      const tasks = osparc.store.PollTasks.getInstance().getDuplicateStudyTasks();
       tasks.forEach(task => {
-        if (task.getTaskId().includes("from_study") && !task.getTaskId().includes("as_template")) {
-          // duplicating
-          const studyName = "";
-          this.__taskDuplicateReceived(task, studyName);
-        }
+        const studyName = "";
+        this.__taskDuplicateReceived(task, studyName);
       });
     },
 

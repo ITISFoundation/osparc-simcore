@@ -75,8 +75,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
     },
 
     __reloadTemplates: function() {
-      const tasks = osparc.store.PollTasks.getInstance().getTasks();
-      this.__tasksToCards(tasks);
+      this.__tasksToCards();
 
       osparc.data.Resources.getInstance().getAllPages("templates")
         .then(templates => this.__setResourcesToList(templates))
@@ -383,13 +382,11 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       });
     },
 
-    __tasksToCards: function(tasks) {
+    __tasksToCards: function() {
+      const tasks = osparc.store.PollTasks.getInstance().getPublishTemplateTasks();
       tasks.forEach(task => {
-        if (task.getTaskId().includes("from_study") && task.getTaskId().includes("as_template")) {
-          // creating template
-          const studyName = "";
-          this.taskToTemplateReceived(task, studyName);
-        }
+        const studyName = "";
+        this.taskToTemplateReceived(task, studyName);
       });
     },
 

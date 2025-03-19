@@ -19,10 +19,6 @@ qx.Class.define("osparc.store.PollTasks", {
   extend: qx.core.Object,
   type: "singleton",
 
-  construct: function() {
-    this.initTasks();
-  },
-
   properties: {
     tasks: {
       check: "Array",
@@ -73,6 +69,14 @@ qx.Class.define("osparc.store.PollTasks", {
     removeTasks: function() {
       const tasks = this.getTasks();
       tasks.forEach(task => task.dispose());
-    }
+    },
+
+    getDuplicateStudyTasks: function() {
+      return this.getTasks().filter(task => task.getTaskId().includes("from_study") && !task.getTaskId().includes("as_template"));
+    },
+
+    getPublishTemplateTasks: function() {
+      return this.getTasks().filter(task => task.getTaskId().includes("from_study") && task.getTaskId().includes("as_template"));
+    },
   }
 });
