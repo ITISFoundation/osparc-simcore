@@ -557,11 +557,12 @@ async def update_user_profile(
                 )
 
         except IntegrityError as err:
-            user_name = updated_values.get("name")
+            if user_name := updated_values.get("name"):
+                raise UserNameDuplicateError(
+                    user_name=user_name,
+                    alternative_user_name=generate_alternative_username(user_name),
+                    user_id=user_id,
+                    updated_values=updated_values,
+                ) from err
 
-            raise UserNameDuplicateError(
-                user_name=user_name,
-                alternative_user_name=generate_alternative_username(user_name),
-                user_id=user_id,
-                updated_values=updated_values,
-            ) from err
+            raise  # not due to name duplication
