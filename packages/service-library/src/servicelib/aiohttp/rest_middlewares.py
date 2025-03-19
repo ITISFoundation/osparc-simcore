@@ -25,8 +25,8 @@ from .typing_extension import Handler, Middleware
 
 DEFAULT_API_VERSION = "v0"
 _FMSG_INTERNAL_ERROR_USER_FRIENDLY_WITH_OEC = (
-      "We apologize for the inconvenience. "
-      "The issue has been recorded, but please report it if it persists."
+    "We apologize for the inconvenience. "
+    "The issue has been recorded, but please report it if it persists."
 )
 
 
