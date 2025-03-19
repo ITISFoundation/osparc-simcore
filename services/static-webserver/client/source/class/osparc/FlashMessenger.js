@@ -95,7 +95,8 @@ qx.Class.define("osparc.FlashMessenger", {
 
     __createCopyEOCWidget: function(flashMessage, supportId) {
       const widget = new qx.ui.container.Composite(new qx.ui.layout.VBox()).set({
-        paddingLeft: 8
+        paddingLeft: 8,
+        paddingRight: 8,
       });
       const showErrorLabel = new qx.ui.basic.Atom().set({
         label: qx.locale.Manager.tr("Show Support ID"),
@@ -111,6 +112,13 @@ qx.Class.define("osparc.FlashMessenger", {
         visibility: "excluded",
       });
       widget.add(hideErrorLabel);
+      const minorDoc = new qx.ui.basic.Label().set({
+        value: qx.locale.Manager.tr("If you contact support, please include this Support ID so we can quickly locate the issue."),
+        rich: true,
+        wrap: true,
+        visibility: "excluded",
+      });
+      widget.add(minorDoc);
       const errorLabel = new qx.ui.basic.Atom().set({
         label: supportId,
         icon: "@FontAwesome5Solid/copy/10",
@@ -121,6 +129,7 @@ qx.Class.define("osparc.FlashMessenger", {
       showErrorLabel.addListener("tap", () => {
         showErrorLabel.exclude();
         hideErrorLabel.show();
+        minorDoc.show();
         errorLabel.show();
 
         if (flashMessage.timer) {
@@ -130,9 +139,10 @@ qx.Class.define("osparc.FlashMessenger", {
         }
       });
       hideErrorLabel.addListener("tap", () => {
-        hideErrorLabel.exclude();
-        errorLabel.exclude();
         showErrorLabel.show();
+        hideErrorLabel.exclude();
+        minorDoc.exclude();
+        errorLabel.exclude();
       });
       errorLabel.addListener("tap", () => osparc.utils.Utils.copyTextToClipboard(supportId));
       return widget;
