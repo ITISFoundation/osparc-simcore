@@ -21,7 +21,8 @@ from models_library.api_schemas_rpc_async_jobs.exceptions import (
 from servicelib.logging_utils import log_catch
 from servicelib.rabbitmq import RPCRouter
 
-from ...modules.celery import CeleryTaskQueueClient, get_celery_client
+from ...modules.celery import get_celery_client
+from ...modules.celery.client import CeleryTaskQueueClient
 from ...modules.celery.models import TaskError, TaskState
 
 _logger = logging.getLogger(__name__)
