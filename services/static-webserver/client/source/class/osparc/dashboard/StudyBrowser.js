@@ -1939,7 +1939,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const cardTitle = this.tr("Importing Study...");
       const cardIcon = "@FontAwesome5Solid/cloud-upload-alt";
       const importingStudyCard = this._addTaskCard(null, cardTitle, cardIcon);
+      this.__attachImportEventHandler(file, importTaskUI, importingStudyCard);
+    },
 
+    __attachImportEventHandler: function(file, importTaskUI, importingStudyCard) {
       const body = new FormData();
       body.append("fileName", file);
 
