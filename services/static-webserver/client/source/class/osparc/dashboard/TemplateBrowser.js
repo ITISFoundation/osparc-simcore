@@ -398,7 +398,9 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
 
       const cardTitle = this.tr("Publishing ") + studyName;
       const toTemplateCard = this._addTaskCard(task, cardTitle, osparc.task.ToTemplate.ICON);
-      this.__attachToTemplateEventHandler(task, toTemplateTaskUI, toTemplateCard);
+      if (toTemplateCard) {
+        this.__attachToTemplateEventHandler(task, toTemplateTaskUI, toTemplateCard);
+      }
     },
     // TASKS //
   }

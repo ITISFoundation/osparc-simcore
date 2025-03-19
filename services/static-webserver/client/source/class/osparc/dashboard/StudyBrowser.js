@@ -1939,7 +1939,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const cardTitle = this.tr("Importing Study...");
       const cardIcon = "@FontAwesome5Solid/cloud-upload-alt";
       const importingStudyCard = this._addTaskCard(null, cardTitle, cardIcon);
-      this.__attachImportEventHandler(file, importTaskUI, importingStudyCard);
+      if (importingStudyCard) {
+        this.__attachImportEventHandler(file, importTaskUI, importingStudyCard);
+      }
     },
 
     __attachImportEventHandler: function(file, importTaskUI, importingStudyCard) {
@@ -2129,7 +2131,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       const cardTitle = this.tr("Duplicating ") + studyName;
       const duplicatingStudyCard = this._addTaskCard(task, cardTitle, osparc.task.Duplicate.ICON);
-      this.__attachDuplicateEventHandler(task, duplicateTaskUI, duplicatingStudyCard);
+      if (duplicatingStudyCard) {
+        this.__attachDuplicateEventHandler(task, duplicateTaskUI, duplicatingStudyCard);
+      }
     },
 
     __attachDuplicateEventHandler: function(task, taskUI, duplicatingStudyCard) {
