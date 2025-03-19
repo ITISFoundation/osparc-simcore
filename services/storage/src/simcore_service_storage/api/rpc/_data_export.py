@@ -55,7 +55,8 @@ async def start_data_export(
     task_uuid = await get_celery_client(app).send_task(
         data_export.__name__,
         task_context=job_id_data.model_dump(),
-        files=data_export_start.file_and_folder_ids,
+        user_id=job_id_data.user_id,
+        paths_to_export=data_export_start.file_and_folder_ids,
     )
 
     return AsyncJobGet(
