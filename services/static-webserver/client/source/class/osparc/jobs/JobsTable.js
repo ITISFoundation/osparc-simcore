@@ -58,7 +58,7 @@ qx.Class.define("osparc.jobs.JobsTable", {
         id: "status",
         column: 2,
         label: qx.locale.Manager.tr("Status"),
-        width: 160
+        width: 170
       },
       PROGRESS: {
         id: "progress",
@@ -82,7 +82,7 @@ qx.Class.define("osparc.jobs.JobsTable", {
         id: "instance",
         column: 6,
         label: qx.locale.Manager.tr("Instance"),
-        width: 100
+        width: 90
       },
       INFO: {
         id: "info",
