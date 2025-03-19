@@ -26,7 +26,7 @@ qx.Class.define("osparc.announcement.Tracker", {
   members: {
     __checkInterval: null,
 
-    checkAnnouncements: async function() {
+    checkAnnouncements: function() {
       osparc.data.Resources.get("announcements")
         .then(announcements => {
           osparc.announcement.AnnouncementUIFactory.getInstance().setAnnouncementsData((announcements && announcements.length) ? announcements : []);
