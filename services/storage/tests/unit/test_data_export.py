@@ -538,7 +538,6 @@ async def test_get_data_export_result_success(
 async def test_get_data_export_result_error(
     rpc_client: RabbitMQRPCClient,
     mock_celery_client: _MockCeleryClient,
-    mocker: MockerFixture,
     expected_exception: type[Exception],
 ):
     job_ids = mock_celery_client.get_task_uuids_object
