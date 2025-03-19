@@ -1,2 +1,0 @@
-﻿id,name,email,password_hash,status,role,created_at
-21,devops,devops@itis.swiss,$5$rounds=1000$jjUWjHSG5F2dMKw.$9VRlE4YLl4bPfIrWkDz/8GtEx1XkzTpuZzyc/uiBFE4,ACTIVE,USER,2019-06-27 11:35:44.828696

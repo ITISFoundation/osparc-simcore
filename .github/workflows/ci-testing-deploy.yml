@@ -274,7 +274,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     name: "[build] docker images (excluding frontend)"
     steps:
@@ -309,7 +309,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     name: "[build] docker images (frontend-only)"
     steps:
@@ -343,7 +343,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -391,7 +391,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -433,7 +433,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -475,7 +475,7 @@ jobs:
       strategy:
         matrix:
           python: ["3.11"]
-          os: [ubuntu-22.04]
+          os: [ubuntu-24.04]
         fail-fast: false
       steps:
         - uses: actions/checkout@v4
@@ -520,7 +520,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -565,7 +565,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -612,7 +612,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -654,7 +654,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -702,7 +702,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -747,7 +747,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -798,7 +798,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -854,7 +854,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -905,7 +905,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -956,7 +956,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -1007,7 +1007,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -1052,7 +1052,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -1097,7 +1097,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -1142,7 +1142,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -1187,7 +1187,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -1232,7 +1232,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -1287,7 +1287,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -1332,7 +1332,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -1388,7 +1388,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11", "3.12"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -1423,7 +1423,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -1468,7 +1468,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -1513,7 +1513,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -1558,7 +1558,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -1603,7 +1603,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -1648,7 +1648,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -1692,7 +1692,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -1733,7 +1733,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -1778,7 +1778,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -1874,7 +1874,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -1936,7 +1936,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -2000,7 +2000,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -2064,7 +2064,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     env:
       # NOTE: DIRECTOR_DEFAULT_MAX_* used for integration-tests that include `director` service
@@ -2137,7 +2137,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -2204,7 +2204,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -2268,7 +2268,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -2356,7 +2356,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -2416,7 +2416,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -2482,7 +2482,7 @@ jobs:
       matrix:
         python: ["3.11"]
         node: [14]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -2564,7 +2564,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -2626,7 +2626,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -2685,7 +2685,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     env:
       # secrets can be set in settings/secrets on github
