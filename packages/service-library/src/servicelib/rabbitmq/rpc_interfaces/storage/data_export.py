@@ -9,8 +9,6 @@ from pydantic import TypeAdapter
 from ... import RabbitMQRPCClient
 from ..async_jobs.async_jobs import submit_job
 
-_RPC_METHOD_NAME_ADAPTER = TypeAdapter(RPCMethodName)
-
 
 async def start_data_export(
     rabbitmq_rpc_client: RabbitMQRPCClient, *, job_id_data: AsyncJobNameData, **kwargs
@@ -18,7 +16,7 @@ async def start_data_export(
     return await submit_job(
         rabbitmq_rpc_client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
-        method_name=_RPC_METHOD_NAME_ADAPTER.validate_python("start_data_export"),
+        method_name=TypeAdapter(RPCMethodName).validate_python("start_data_export"),
         job_id_data=job_id_data,
         **kwargs,
     )
