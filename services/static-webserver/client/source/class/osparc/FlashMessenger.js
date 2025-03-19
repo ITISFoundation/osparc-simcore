@@ -86,7 +86,49 @@ qx.Class.define("osparc.FlashMessenger", {
         console.error(error);
       }
       const msg = this.extractMessage(error, defaultMessage);
-      return this.getInstance().logAs(msg, "ERROR", duration);
+      const flashMessage = this.getInstance().logAs(msg, "ERROR", duration);
+      error["supportId"] = "1234";
+      if (error && error["supportId"]) {
+        flashMessage.addWidget(this.self().createCopyEOCWidget(error["supportId"]));
+      }
+      return flashMessage;
+    },
+
+    createCopyEOCWidget: function(supportId) {
+      const widget = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+      const showErrorLabel = new qx.ui.basic.Atom().set({
+        label: this.tr("Show error code"),
+        icon: "@FontAwesome5Solid/chevron-right/10",
+        cursor: "pointer",
+        visibility: "visible",
+      });
+      widget.add(showErrorLabel);
+      const hideErrorLabel = new qx.ui.basic.Atom().set({
+        label: this.tr("Hide error code"),
+        icon: "@FontAwesome5Solid/chevron-down/10",
+        cursor: "pointer",
+        visibility: "exclude",
+      });
+      widget.add(hideErrorLabel);
+      const errorLabel = new qx.ui.basic.Atom().set({
+        label: this.tr("Show error code"),
+        icon: "@FontAwesome5Solid/chevron-down/10",
+        cursor: "pointer",
+        visibility: "exclude",
+      });
+      showErrorLabel.addListener("tap", () => {
+        showErrorLabel.exclude();
+        hideErrorLabel.show();
+        errorLabel.show();
+      });
+      hideErrorLabel.addListener("tap", () => {
+        hideErrorLabel.exclude();
+        errorLabel.exclude();
+        showErrorLabel.show();
+      });
+      errorLabel.addListener("tap", () => osparc.utils.Utils.copyTextToClipboard(supportId));
+      widget.add(errorLabel);
+      return widget;
     },
   },
 
