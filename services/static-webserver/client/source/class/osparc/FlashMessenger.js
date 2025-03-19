@@ -87,7 +87,7 @@ qx.Class.define("osparc.FlashMessenger", {
       }
       const msg = this.extractMessage(error, defaultMessage);
       const flashMessage = this.getInstance().logAs(msg, "ERROR", duration);
-      error["supportId"] = "1234";
+      error["supportId"] = "OEC:12346789";
       if (error && error["supportId"]) {
         flashMessage.addWidget(this.__createCopyEOCWidget(flashMessage, error["supportId"]));
       }
@@ -96,7 +96,7 @@ qx.Class.define("osparc.FlashMessenger", {
 
     __createCopyEOCWidget: function(flashMessage, supportId) {
       const widget = new qx.ui.container.Composite(new qx.ui.layout.VBox()).set({
-        paddingLeft: 10
+        paddingLeft: 8
       });
       const showErrorLabel = new qx.ui.basic.Atom().set({
         label: qx.locale.Manager.tr("Show error code"),
