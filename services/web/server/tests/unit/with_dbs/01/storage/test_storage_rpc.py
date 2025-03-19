@@ -157,7 +157,7 @@ async def test_get_async_jobs_status(
         backend_result_or_exception,
     )
 
-    response = await client.get(f"/{API_VERSION}/tasks/{_job_id}/status")
+    response = await client.get(f"/{API_VERSION}/tasks/{_job_id}")
     assert response.status == expected_status
     if response.status == status.HTTP_200_OK:
         response_body_data = (

@@ -13,6 +13,7 @@ from faker import Faker
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.openapi_specs import Entrypoint
+from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.application import create_application
 from simcore_service_webserver.application_settings import get_application_settings
 from simcore_service_webserver.rest._utils import get_openapi_specs_path
@@ -75,7 +76,13 @@ def test_app_named_resources_against_openapi_specs(
     openapi_specs_entrypoints: set[Entrypoint],
     app_rest_entrypoints: set[Entrypoint],
 ):
-    assert app_rest_entrypoints == openapi_specs_entrypoints
+    # remove task-legacy routes. These should not be exposed.
+    required_entry_points = {
+        e
+        for e in app_rest_entrypoints
+        if not e.path.startswith(f"/{API_VTAG}/tasks-legacy")
+    }
+    assert required_entry_points == openapi_specs_entrypoints
 
     # NOTE: missing here is:
     # - input schemas (path, query and body)

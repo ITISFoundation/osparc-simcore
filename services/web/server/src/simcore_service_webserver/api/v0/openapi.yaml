@@ -2980,7 +2980,7 @@ paths:
       - long-running-tasks
       summary: List Tasks
       description: Lists all long running tasks
-      operationId: list_tasks
+      operationId: get_async_jobs
       responses:
         '200':
           description: Successful Response
@@ -3018,7 +3018,7 @@ paths:
       - long-running-tasks
       summary: Get Task Status
       description: Retrieves the status of a task
-      operationId: get_task_status
+      operationId: get_async_job_status
       parameters:
       - name: task_id
         in: path
@@ -3062,7 +3062,7 @@ paths:
       - long-running-tasks
       summary: Cancel And Delete Task
       description: Cancels and deletes a task
-      operationId: cancel_and_delete_task
+      operationId: abort_async_job
       parameters:
       - name: task_id
         in: path
@@ -3103,7 +3103,7 @@ paths:
       - long-running-tasks
       summary: Get Task Result
       description: Retrieves the result of a task
-      operationId: get_task_result
+      operationId: get_async_job_result
       parameters:
       - name: task_id
         in: path

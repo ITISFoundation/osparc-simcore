@@ -36,7 +36,7 @@ _data_export_responses: dict[int | str, dict[str, Any]] = {
     description="Lists all long running tasks",
     responses=_data_export_responses,
 )
-def list_tasks(): ...
+def get_async_jobs(): ...
 
 
 @router.get(
@@ -46,7 +46,7 @@ def list_tasks(): ...
     description="Retrieves the status of a task",
     responses=_data_export_responses,
 )
-def get_task_status(
+def get_async_job_status(
     _path_params: Annotated[_PathParam, Depends()],
 ): ...
 
@@ -58,7 +58,7 @@ def get_task_status(
     responses=_data_export_responses,
     status_code=status.HTTP_204_NO_CONTENT,
 )
-def cancel_and_delete_task(
+def abort_async_job(
     _path_params: Annotated[_PathParam, Depends()],
 ): ...
 
@@ -69,6 +69,6 @@ def cancel_and_delete_task(
     description="Retrieves the result of a task",
     responses=_data_export_responses,
 )
-def get_task_result(
+def get_async_job_result(
     _path_params: Annotated[_PathParam, Depends()],
 ): ...

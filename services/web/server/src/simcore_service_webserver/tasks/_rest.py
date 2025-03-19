@@ -107,7 +107,7 @@ class _StorageAsyncJobId(BaseModel):
 
 
 @routes.get(
-    _task_prefix + "/{task_id}/status",
+    _task_prefix + "/{task_id}",
     name="get_async_job_status",
 )
 @login_required
