@@ -15,6 +15,10 @@
 
 ************************************************************************ */
 
+/**
+ * @asset(osparc/mock_jobs.json")
+ */
+
 qx.Class.define("osparc.store.Jobs", {
   extend: qx.core.Object,
   type: "singleton",
@@ -30,40 +34,42 @@ qx.Class.define("osparc.store.Jobs", {
 
   members: {
     fetchJobs: function() {
-      return osparc.data.Resources.get("jobs")
+      return osparc.utils.Utils.fetchJSON("/resource/osparc/mock_jobs.json")
         .then(jobsData => {
-          jobsData.forEach(jobData => {
-            const interval = 1000;
-            this.addJob(jobData, interval);
-          });
+          const jobs = [];
+          if ("jobs" in jobsData) {
+            jobsData.forEach(jobData => {
+              const job = this.addJob(jobData);
+              if (job) {
+                jobs.push(job);
+              }
+            });
+          }
+          return jobs;
         })
         .catch(err => console.error(err));
     },
 
-    addJob: function(jobData, interval = 1000) {
+    fetchJobInfo: function(jobId) {
+      return osparc.utils.Utils.fetchJSON("/resource/osparc/mock_jobs.json")
+        .then(jobsData => {
+          if ("jobs_info" in jobsData && jobId in jobsData["jobs_info"]) {
+            return jobsData["jobs_info"][jobId];
+          }
+          return null;
+        })
+        .catch(err => console.error(err));
+    },
+
+    addJob: function(jobData) {
       const jobs = this.getJobs();
       const index = jobs.findIndex(t => t.getJobId() === jobData["job_id"]);
       if (index === -1) {
-        const job = new osparc.data.Job(jobData, interval);
+        const job = new osparc.data.Job(jobData);
         jobs.push(job);
         return job;
       }
       return null;
-    },
-
-    createJob: function(fetchPromise, interval) {
-      return new Promise((resolve, reject) => {
-        fetchPromise
-          .then(jobData => {
-            if ("status_href" in jobData) {
-              const job = this.addJob(jobData, interval);
-              resolve(job);
-            } else {
-              throw Error("Status missing");
-            }
-          })
-          .catch(err => reject(err));
-      });
     },
 
     removeJobs: function() {

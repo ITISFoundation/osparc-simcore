@@ -1,0 +1,49 @@
+{
+  "jobs": [{
+    "job_id": "0cde4607-07de-4bb5-b3e6-487f22387a70",
+    "solver": "isolve:2.4.12",
+    "status": "PUBLISHED",
+    "progress": 0,
+    "submitted_at": "2024-11-27 14:03:17.357523",
+    "started_at": null,
+    "instance": "p5.8xlarge"
+  }, {
+    "job_id": "5685a699-4927-479e-9b34-e5ab1616303a",
+    "solver": "fenics:1.0.4",
+    "status": "WAITING FOR RESOURCES",
+    "progress": 2,
+    "submitted_at": "2024-11-27 14:03:17.413844",
+    "started_at": "2024-11-27 16:03:17.413844",
+    "instance": "p5.8xlarge"
+  }, {
+    "job_id": "a8ca6a02-8816-48a6-8c6b-b94b3e431c8c",
+    "solver": "isolve:2.4.12",
+    "status": "WAITING FOR CLUSTER",
+    "progress": 0,
+    "submitted_at": "2024-11-27 14:03:17.357523",
+    "started_at": null,
+    "instance": "p5.8xlarge"
+  }, {
+    "job_id": "a8ca6a02-8816-48a6-8c6b-b94b3e431c8d",
+    "solver": "sleeper:2.1.2",
+    "status": "STARTED",
+    "progress": 50,
+    "submitted_at": "2024-11-27 14:03:17.357523",
+    "started_at": "2024-11-27 14:03:17.357523",
+    "instance": "p5.8xlarge"
+  }],
+  "jobs_info": {
+    "a8ca6a02-8816-48a6-8c6b-b94b3e431c8d": {
+      "parent_project_id" : "522f544a-1e05-461e-82ed-e26806e4640d",
+      "parent_project": "My Project",
+      "job_id": "a8ca6a02-8816-48a6-8c6b-b94b3e431c8d",
+      "job_name": "EM",
+      "log_state": 3,
+      "solver_key": "simcore/services/comp/sleeper",
+      "solver_version": "2.1.2",
+      "version_display" : "The latest",
+      "input_file_path": "/home/user/balh_blah_a8ca6a02-8816-48a6-8c6b-b94b3e431c8d_Input.h5",
+      "internal_job_id": "19b883a4-8407-4b81-9c5b-abe5a7f42bc8"
+    }
+  }
+}
