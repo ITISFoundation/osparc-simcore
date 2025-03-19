@@ -101,16 +101,12 @@ qx.Class.define("osparc.file.TreeFolderView", {
       folderTree.addListener("selectionChanged", () => {
         const selectedModel = folderTree.getSelectedItem();
         if (selectedModel) {
+          if (osparc.file.FilesTree.isDir(selectedModel)) {
+            folderViewer.setFolder(selectedModel);
+          }
           if (selectedModel.getPath() && !selectedModel.getLoaded()) {
             selectedModel.setLoaded(true);
-            folderTree.requestPathItems(selectedModel.getLocation(), selectedModel.getPath())
-              .then(pathModel => {
-                if (osparc.file.FilesTree.isDir(pathModel)) {
-                  folderViewer.setFolder(pathModel);
-                }
-              });
-          } else if (osparc.file.FilesTree.isDir(selectedModel)) {
-            folderViewer.setFolder(selectedModel);
+            folderTree.requestPathItems(selectedModel.getLocation(), selectedModel.getPath());
           }
         }
       }, this);
@@ -118,18 +114,14 @@ qx.Class.define("osparc.file.TreeFolderView", {
       folderViewer.addListener("openItemSelected", e => {
         const selectedModel = e.getData();
         if (selectedModel) {
+          if (osparc.file.FilesTree.isDir(selectedModel)) {
+            folderViewer.setFolder(selectedModel);
+          }
+          folderTree.openNodeAndParents(selectedModel);
+          folderTree.setSelection(new qx.data.Array([selectedModel]));
           if (selectedModel.getPath() && !selectedModel.getLoaded()) {
             selectedModel.setLoaded(true);
-            folderTree.requestPathItems(selectedModel.getLocation(), selectedModel.getPath())
-              .then(pathModel => {
-                folderTree.openNodeAndParents(pathModel);
-                folderTree.setSelection(new qx.data.Array([pathModel]));
-                if (osparc.file.FilesTree.isDir(pathModel)) {
-                  folderViewer.setFolder(pathModel);
-                }
-              });
-          } else if (osparc.file.FilesTree.isDir(selectedModel)) {
-            folderViewer.setFolder(selectedModel);
+            folderTree.requestPathItems(selectedModel.getLocation(), selectedModel.getPath());
           }
         }
       }, this);
