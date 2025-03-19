@@ -75,7 +75,6 @@ qx.Class.define("osparc.ui.message.FlashMessage", {
       check: "Number",
       init: null,
       nullable: true,
-      event: "changeDuration",
     }
   },
 

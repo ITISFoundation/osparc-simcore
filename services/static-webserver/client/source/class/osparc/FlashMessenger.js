@@ -89,12 +89,12 @@ qx.Class.define("osparc.FlashMessenger", {
       const flashMessage = this.getInstance().logAs(msg, "ERROR", duration);
       error["supportId"] = "1234";
       if (error && error["supportId"]) {
-        flashMessage.addWidget(this.self().createCopyEOCWidget(error["supportId"]));
+        flashMessage.addWidget(this.__createCopyEOCWidget(flashMessage, error["supportId"]));
       }
       return flashMessage;
     },
 
-    createCopyEOCWidget: function(supportId) {
+    __createCopyEOCWidget: function(flashMessage, supportId) {
       const widget = new qx.ui.container.Composite(new qx.ui.layout.VBox()).set({
         paddingLeft: 10
       });
@@ -123,6 +123,12 @@ qx.Class.define("osparc.FlashMessenger", {
         showErrorLabel.exclude();
         hideErrorLabel.show();
         errorLabel.show();
+
+        if (flashMessage.timer) {
+          // let the user close it
+          clearTimeout(flashMessage.timer);
+          delete flashMessage.timer;
+        }
       });
       hideErrorLabel.addListener("tap", () => {
         hideErrorLabel.exclude();
@@ -189,7 +195,7 @@ qx.Class.define("osparc.FlashMessenger", {
 
       const duration = flashMessage.getDuration();
       if (duration !== 0) {
-        qx.event.Timer.once(() => this.removeMessage(flashMessage), this, duration);
+        flashMessage.timer = setTimeout(() => this.removeMessage(flashMessage), duration);
       }
     },
 
