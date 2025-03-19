@@ -1,6 +1,7 @@
 from models_library.api_schemas_rpc_async_jobs.exceptions import (
     JobAbortedError,
     JobError,
+    JobMissingError,
     JobNotDoneError,
     JobSchedulerError,
     JobStatusError,
@@ -29,23 +30,27 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
     ),
     JobAbortedError: HttpErrorInfo(
         status.HTTP_410_GONE,
-        "Job {job_id} is aborted",
+        "Task {job_id} is aborted",
     ),
     JobError: HttpErrorInfo(
         status.HTTP_500_INTERNAL_SERVER_ERROR,
-        "Job {job_id} failed with exception type {exc_type} and message {exc_msg}",
+        "Task {job_id} failed with exception type {exc_type} and message {exc_msg}",
     ),
     JobNotDoneError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
-        "Job {job_id} is not done yet",
+        "task {job_id} is not done yet",
+    ),
+    JobMissingError: HttpErrorInfo(
+        status.HTTP_404_NOT_FOUND,
+        "No task with id: {job_id}",
     ),
     JobSchedulerError: HttpErrorInfo(
         status.HTTP_500_INTERNAL_SERVER_ERROR,
-        "Encountered a an error with the job scheduling system",
+        "Encountered an error with the task scheduling system",
     ),
     JobStatusError: HttpErrorInfo(
         status.HTTP_500_INTERNAL_SERVER_ERROR,
-        "Encountered an error while getting the status of job {job_id}",
+        "Encountered an error while getting the status of task {job_id}",
     ),
 }
 

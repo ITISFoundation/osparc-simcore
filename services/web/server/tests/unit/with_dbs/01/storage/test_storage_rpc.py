@@ -23,6 +23,7 @@ from models_library.api_schemas_rpc_async_jobs.async_jobs import (
 from models_library.api_schemas_rpc_async_jobs.exceptions import (
     JobAbortedError,
     JobError,
+    JobMissingError,
     JobNotDoneError,
     JobSchedulerError,
 )
@@ -137,6 +138,7 @@ async def test_data_export(
             status.HTTP_200_OK,
         ),
         (JobSchedulerError(exc=_faker.text()), status.HTTP_500_INTERNAL_SERVER_ERROR),
+        (JobMissingError(job_id=_faker.uuid4()), status.HTTP_404_NOT_FOUND),
     ],
     ids=lambda x: type(x).__name__,
 )
@@ -173,6 +175,7 @@ async def test_get_async_jobs_status(
             status.HTTP_204_NO_CONTENT,
         ),
         (JobSchedulerError(exc=_faker.text()), status.HTTP_500_INTERNAL_SERVER_ERROR),
+        (JobMissingError(job_id=_faker.uuid4()), status.HTTP_404_NOT_FOUND),
     ],
     ids=lambda x: type(x).__name__,
 )
@@ -198,13 +201,14 @@ async def test_abort_async_jobs(
 
 @pytest.mark.parametrize("user_role", _user_roles)
 @pytest.mark.parametrize(
-    "result_or_exception, expected_status",
+    "backend_result_or_exception, expected_status",
     [
         (JobNotDoneError(job_id=_faker.uuid4()), status.HTTP_404_NOT_FOUND),
         (AsyncJobResult(result=None), status.HTTP_200_OK),
         (JobError(job_id=_faker.uuid4()), status.HTTP_500_INTERNAL_SERVER_ERROR),
         (JobAbortedError(job_id=_faker.uuid4()), status.HTTP_410_GONE),
         (JobSchedulerError(exc=_faker.text()), status.HTTP_500_INTERNAL_SERVER_ERROR),
+        (JobMissingError(job_id=_faker.uuid4()), status.HTTP_404_NOT_FOUND),
     ],
     ids=lambda x: type(x).__name__,
 )
@@ -214,14 +218,14 @@ async def test_get_async_job_result(
     client: TestClient,
     create_storage_rpc_client_mock: Callable[[str, str, Any], None],
     faker: Faker,
-    result_or_exception: Any,
+    backend_result_or_exception: Any,
     expected_status: int,
 ):
     _job_id = AsyncJobId(faker.uuid4())
     create_storage_rpc_client_mock(
         "simcore_service_webserver.tasks._rest",
         get_result.__name__,
-        result_or_exception,
+        backend_result_or_exception,
     )
 
     response = await client.get(f"/{API_VERSION}/tasks/{_job_id}/result")

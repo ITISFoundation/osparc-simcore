@@ -382,7 +382,8 @@ async def test_abort_data_export_error(
                 task_uuid=TaskUUID(_faker.uuid4()),
                 task_state=TaskState.RUNNING,
                 progress_report=ProgressReport(actual_value=0),
-            )
+            ),
+            "get_task_uuids_object": [AsyncJobId(_faker.uuid4())],
         },
     ],
     indirect=True,
@@ -391,7 +392,10 @@ async def test_get_data_export_status(
     rpc_client: RabbitMQRPCClient,
     mock_celery_client: _MockCeleryClient,
 ):
-    _job_id = AsyncJobId(_faker.uuid4())
+    job_ids = mock_celery_client.get_task_uuids_object
+    assert job_ids is not None
+    assert not isinstance(job_ids, Exception)
+    _job_id = next(iter(job_ids)) if len(job_ids) > 0 else AsyncJobId(_faker.uuid4())
     result = await async_jobs.get_status(
         rpc_client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
@@ -451,6 +455,7 @@ async def test_get_data_export_status_error(
                 progress_report=ProgressReport(actual_value=100),
             ),
             "get_task_result_object": "result",
+            "get_task_uuids_object": [AsyncJobId(_faker.uuid4())],
         },
     ],
     indirect=True,
@@ -458,11 +463,11 @@ async def test_get_data_export_status_error(
 async def test_get_data_export_result_success(
     rpc_client: RabbitMQRPCClient,
     mock_celery_client: _MockCeleryClient,
-    mocker: MockerFixture,
 ):
-    mocker.patch("simcore_service_storage.api.rpc._async_jobs")
-
-    _job_id = AsyncJobId(_faker.uuid4())
+    job_ids = mock_celery_client.get_task_uuids_object
+    assert job_ids is not None
+    assert not isinstance(job_ids, Exception)
+    _job_id = next(iter(job_ids)) if len(job_ids) > 0 else AsyncJobId(_faker.uuid4())
     result = await async_jobs.get_result(
         rpc_client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
