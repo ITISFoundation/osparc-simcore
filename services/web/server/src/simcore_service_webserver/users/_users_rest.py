@@ -180,7 +180,10 @@ async def search_users_for_admin(request: web.Request) -> web.Response:
     )
 
     return envelope_json_response(
-        [_.model_dump(**_RESPONSE_MODEL_MINIMAL_POLICY) for _ in found]
+        [
+            user_for_admin.model_dump(**_RESPONSE_MODEL_MINIMAL_POLICY)
+            for user_for_admin in found
+        ]
     )
 
 

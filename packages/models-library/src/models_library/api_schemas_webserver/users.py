@@ -215,7 +215,7 @@ class UserGet(OutputSchema):
     # Public profile of a user subject to its privacy settings
     user_id: UserID
     group_id: GroupID
-    user_name: UserNameID
+    user_name: UserNameID | None = None
     first_name: str | None = None
     last_name: str | None = None
     email: EmailStr | None = None
