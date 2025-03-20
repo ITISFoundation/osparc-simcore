@@ -63,7 +63,7 @@ def app_environment(
 
 @pytest.fixture
 def partial_first_name() -> str:
-    return "James"
+    return "Jaimito"
 
 
 @pytest.fixture
@@ -145,9 +145,9 @@ async def test_search_users_by_partial_fullname(
     logged_user: UserInfoDict,
     client: TestClient,
     partial_first_name: str,
-    public_user: UserInfoDict,
-    semi_private_user: UserInfoDict,
     private_user: UserInfoDict,
+    semi_private_user: UserInfoDict,
+    public_user: UserInfoDict,
 ):
     assert client.app
     assert user_role.value == logged_user["role"]
@@ -177,9 +177,9 @@ async def test_search_users_by_partial_fullname(
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_search_users_by_partial_email(
+    user_role: UserRole,
     logged_user: UserInfoDict,
     client: TestClient,
-    user_role: UserRole,
     partial_email: str,
     public_user: UserInfoDict,
     semi_private_user: UserInfoDict,
@@ -216,11 +216,12 @@ async def test_search_users_by_partial_email(
     await assert_status(resp, status.HTTP_403_FORBIDDEN)
 
 
+@pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_search_users_by_partial_username(
+    user_role: UserRole,
     logged_user: UserInfoDict,
     client: TestClient,
     partial_username: str,
-    user_role: UserRole,
     public_user: UserInfoDict,
     semi_private_user: UserInfoDict,
     private_user: UserInfoDict,
@@ -249,8 +250,8 @@ async def test_search_users_by_partial_username(
     index = (index + 1) % 2
     assert found[index].user_name == semi_private_user["name"]
     assert found[index].email is None
-    assert found[index].first_name is None
-    assert found[index].last_name is None
+    assert found[index].first_name == semi_private_user.get("first_name")
+    assert found[index].last_name == semi_private_user.get("last_name")
 
 
 @pytest.mark.acceptance_test(
@@ -258,9 +259,9 @@ async def test_search_users_by_partial_username(
 )
 @pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_get_user_by_group_id(
+    user_role: UserRole,
     logged_user: UserInfoDict,
     client: TestClient,
-    user_role: UserRole,
     public_user: UserInfoDict,
     private_user: UserInfoDict,
 ):
@@ -329,9 +330,9 @@ async def test_access_rights_on_get_profile(
     ],
 )
 async def test_access_update_profile(
+    user_role: UserRole,
     logged_user: UserInfoDict,
     client: TestClient,
-    user_role: UserRole,
     expected: HTTPStatus,
 ):
     assert client.app
@@ -345,9 +346,9 @@ async def test_access_update_profile(
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_get_profile(
+    user_role: UserRole,
     logged_user: UserInfoDict,
     client: TestClient,
-    user_role: UserRole,
     primary_group: dict[str, Any],
     standard_groups: list[dict[str, Any]],
     all_group: dict[str, str],
@@ -393,9 +394,9 @@ async def test_get_profile(
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_update_profile(
+    user_role: UserRole,
     logged_user: UserInfoDict,
     client: TestClient,
-    user_role: UserRole,
 ):
     assert client.app
 
@@ -434,9 +435,9 @@ async def test_update_profile(
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_profile_workflow(
+    user_role: UserRole,
     logged_user: UserInfoDict,
     client: TestClient,
-    user_role: UserRole,
 ):
     assert client.app
 
@@ -476,9 +477,9 @@ async def test_profile_workflow(
 @pytest.mark.parametrize("user_role", [UserRole.USER])
 @pytest.mark.parametrize("invalid_username", ["", "_foo", "superadmin", "foo..-123"])
 async def test_update_wrong_user_name(
+    user_role: UserRole,
     logged_user: UserInfoDict,
     client: TestClient,
-    user_role: UserRole,
     invalid_username: str,
 ):
     assert client.app
@@ -495,10 +496,10 @@ async def test_update_wrong_user_name(
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_update_existing_user_name(
+    user_role: UserRole,
     user: UserInfoDict,
     logged_user: UserInfoDict,
     client: TestClient,
-    user_role: UserRole,
 ):
     assert client.app
 
