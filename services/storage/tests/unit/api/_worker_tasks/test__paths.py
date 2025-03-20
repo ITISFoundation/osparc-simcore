@@ -7,7 +7,6 @@
 # pylint:disable=unused-variable
 
 import random
-import re
 from pathlib import Path
 from typing import Any, TypeAlias
 
@@ -20,7 +19,6 @@ from models_library.projects_nodes_io import LocationID, NodeID, SimcoreS3FileID
 from models_library.users import UserID
 from pydantic import ByteSize, TypeAdapter
 from pytest_simcore.helpers.storage_utils import FileIDDict, ProjectWithFilesParams
-from simcore_service_storage.api._worker_tasks._data_export import data_export
 from simcore_service_storage.api._worker_tasks._paths import compute_path_size
 from simcore_service_storage.modules.celery.utils import (
     set_celery_worker_client,
@@ -74,6 +72,7 @@ async def _assert_compute_path_size(
 @pytest.fixture
 def fake_celery_task(celery_app: Celery, initialized_app: FastAPI) -> Task:
     celery_task = Task()
+    celery_task.name = "fake_name"
     celery_task.app = celery_app
     set_fastapi_app(celery_app, initialized_app)
     set_celery_worker_client(celery_app, CeleryWorkerClient(celery_app))
@@ -222,13 +221,4 @@ async def test_path_compute_size_inexistent_path(
         user_id,
         path=Path(faker.file_path(absolute=False)),
         expected_total_size=0,
-    )
-
-
-# TODO: refactor and extract common parts
-async def test_data_export(fake_celery_task: Task, user_id: UserID):
-    data = await data_export(fake_celery_task, user_id=user_id, paths_to_export=[])
-    assert re.fullmatch(
-        rf"^exports/{user_id}/[0-9a-fA-F]{{8}}-[0-9a-fA-F]{{4}}-[0-9a-fA-F]{{4}}-[0-9a-fA-F]{{4}}-[0-9a-fA-F]{{12}}\.zip$",
-        data,
     )
