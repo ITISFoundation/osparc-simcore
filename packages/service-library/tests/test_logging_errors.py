@@ -47,7 +47,7 @@ def test_create_troubleshotting_log_message(caplog: pytest.LogCaptureFixture):
     assert log_kwargs["extra"] is not None
     assert (
         # pylint: disable=unsubscriptable-object
-        log_kwargs["extra"]["log_uid"]
+        log_kwargs["extra"].get("log_uid")
         == "123"
     ), "user_id is injected as extra from context"
 
