@@ -2979,7 +2979,8 @@ paths:
       tags:
       - long-running-tasks
       summary: List Tasks
-      operationId: list_tasks
+      description: Lists all long running tasks
+      operationId: get_async_jobs
       responses:
         '200':
           description: Successful Response
@@ -2987,12 +2988,37 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_list_TaskGet__'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+        '410':
+          description: Gone
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
   /v0/tasks/{task_id}:
     get:
       tags:
       - long-running-tasks
       summary: Get Task Status
-      operationId: get_task_status
+      description: Retrieves the status of a task
+      operationId: get_async_job_status
       parameters:
       - name: task_id
         in: path
@@ -3007,11 +3033,36 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_TaskStatus_'
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
+        '410':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Gone
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Internal Server Error
     delete:
       tags:
       - long-running-tasks
       summary: Cancel And Delete Task
-      operationId: cancel_and_delete_task
+      description: Cancels and deletes a task
+      operationId: abort_async_job
       parameters:
       - name: task_id
         in: path
@@ -3022,12 +3073,37 @@ paths:
       responses:
         '204':
           description: Successful Response
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
+        '410':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Gone
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Internal Server Error
   /v0/tasks/{task_id}/result:
     get:
       tags:
       - long-running-tasks
       summary: Get Task Result
-      operationId: get_task_result
+      description: Retrieves the result of a task
+      operationId: get_async_job_result
       parameters:
       - name: task_id
         in: path
@@ -3041,6 +3117,30 @@ paths:
           content:
             application/json:
               schema: {}
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
+        '410':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Gone
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Internal Server Error
   /v0/catalog/licensed-items:
     get:
       tags:
@@ -6083,7 +6183,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_StorageAsyncJobGet_'
+                $ref: '#/components/schemas/Envelope_TaskGet_'
   /v0/storage/locations/{location_id}/datasets:
     get:
       tags:
@@ -6437,95 +6537,31 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_StorageAsyncJobGet_'
-  /v0/storage/async-jobs/{job_id}/status:
-    get:
-      tags:
-      - storage
-      summary: Get Async Job Status
-      description: Get async job status
-      operationId: get_async_job_status
-      parameters:
-      - name: job_id
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
-          title: Job Id
-      responses:
-        '200':
-          description: Successful Response
+                $ref: '#/components/schemas/Envelope_TaskGet_'
+        '404':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_StorageAsyncJobStatus_'
-  /v0/storage/async-jobs/{job_id}:abort:
-    post:
-      tags:
-      - storage
-      summary: Abort Async Job
-      description: aborts execution of an async job
-      operationId: abort_async_job
-      parameters:
-      - name: job_id
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
-          title: Job Id
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema: {}
-  /v0/storage/async-jobs/{job_id}/result:
-    get:
-      tags:
-      - storage
-      summary: Get Async Job Result
-      description: Get the result of the async job
-      operationId: get_async_job_result
-      parameters:
-      - name: job_id
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
-          title: Job Id
-      responses:
-        '200':
-          description: Successful Response
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+        '403':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_StorageAsyncJobResult_'
-  /v0/storage/async-jobs:
-    get:
-      tags:
-      - storage
-      summary: Get Async Jobs
-      description: Retrunsa list of async jobs for the user
-      operationId: get_async_jobs
-      parameters:
-      - name: user_id
-        in: query
-        required: true
-        schema:
-          type: integer
-          exclusiveMinimum: true
-          title: User Id
-          minimum: 0
-      responses:
-        '200':
-          description: Successful Response
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
+        '410':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_list_StorageAsyncJobGet__'
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Gone
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Internal Server Error
   /v0/trash:empty:
     post:
       tags:
@@ -9467,45 +9503,6 @@ components:
           title: Error
       type: object
       title: Envelope[StatusDiagnosticsGet]
-    Envelope_StorageAsyncJobGet_:
-      properties:
-        data:
-          anyOf:
-          - $ref: '#/components/schemas/StorageAsyncJobGet'
-          - type: 'null'
-        error:
-          anyOf:
-          - {}
-          - type: 'null'
-          title: Error
-      type: object
-      title: Envelope[StorageAsyncJobGet]
-    Envelope_StorageAsyncJobResult_:
-      properties:
-        data:
-          anyOf:
-          - $ref: '#/components/schemas/StorageAsyncJobResult'
-          - type: 'null'
-        error:
-          anyOf:
-          - {}
-          - type: 'null'
-          title: Error
-      type: object
-      title: Envelope[StorageAsyncJobResult]
-    Envelope_StorageAsyncJobStatus_:
-      properties:
-        data:
-          anyOf:
-          - $ref: '#/components/schemas/StorageAsyncJobStatus'
-          - type: 'null'
-        error:
-          anyOf:
-          - {}
-          - type: 'null'
-          title: Error
-      type: object
-      title: Envelope[StorageAsyncJobStatus]
     Envelope_TagGet_:
       properties:
         data:
@@ -10125,22 +10122,6 @@ components:
           title: Error
       type: object
       title: Envelope[list[ServiceOutputGet]]
-    Envelope_list_StorageAsyncJobGet__:
-      properties:
-        data:
-          anyOf:
-          - items:
-              $ref: '#/components/schemas/StorageAsyncJobGet'
-            type: array
-          - type: 'null'
-          title: Data
-        error:
-          anyOf:
-          - {}
-          - type: 'null'
-          title: Error
-      type: object
-      title: Envelope[list[StorageAsyncJobGet]]
     Envelope_list_TagGet__:
       properties:
         data:
@@ -13321,59 +13302,6 @@ components:
       - productName
       - ui
       title: ProductUIGet
-    ProgressReport:
-      properties:
-        actual_value:
-          type: number
-          title: Actual Value
-        total:
-          type: number
-          title: Total
-          default: 1.0
-        attempt:
-          type: integer
-          title: Attempt
-          default: 0
-        unit:
-          anyOf:
-          - type: string
-            const: Byte
-          - type: 'null'
-          title: Unit
-        message:
-          anyOf:
-          - $ref: '#/components/schemas/ProgressStructuredMessage'
-          - type: 'null'
-      type: object
-      required:
-      - actual_value
-      title: ProgressReport
-    ProgressStructuredMessage:
-      properties:
-        description:
-          type: string
-          title: Description
-        current:
-          type: number
-          title: Current
-        total:
-          type: integer
-          title: Total
-        unit:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Unit
-        sub:
-          anyOf:
-          - $ref: '#/components/schemas/ProgressStructuredMessage'
-          - type: 'null'
-      type: object
-      required:
-      - description
-      - current
-      - total
-      title: ProgressStructuredMessage
     ProjectCopyOverride:
       properties:
         name:
@@ -15026,50 +14954,6 @@ components:
       - loop_tasks
       - top_tracemalloc
       title: StatusDiagnosticsGet
-    StorageAsyncJobGet:
-      properties:
-        jobId:
-          type: string
-          format: uuid
-          title: Jobid
-      type: object
-      required:
-      - jobId
-      title: StorageAsyncJobGet
-    StorageAsyncJobResult:
-      properties:
-        result:
-          anyOf:
-          - {}
-          - type: 'null'
-          title: Result
-        error:
-          anyOf:
-          - {}
-          - type: 'null'
-          title: Error
-      type: object
-      required:
-      - result
-      - error
-      title: StorageAsyncJobResult
-    StorageAsyncJobStatus:
-      properties:
-        jobId:
-          type: string
-          format: uuid
-          title: Jobid
-        progress:
-          $ref: '#/components/schemas/ProgressReport'
-        done:
-          type: boolean
-          title: Done
-      type: object
-      required:
-      - jobId
-      - progress
-      - done
-      title: StorageAsyncJobStatus
     Structure:
       properties:
         key:
@@ -15374,8 +15258,10 @@ components:
           type: boolean
           title: Done
         started:
-          type: string
-          format: date-time
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
           title: Started
       type: object
       required:
