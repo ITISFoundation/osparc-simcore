@@ -138,7 +138,7 @@ async def _add_frontend_needed_data(
 
 
 @dataclass
-class SimcoreS3DataManager(BaseDataManager):
+class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-methods
     simcore_bucket_name: S3BucketName
     app: FastAPI
 
