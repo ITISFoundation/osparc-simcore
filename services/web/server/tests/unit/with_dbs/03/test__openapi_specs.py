@@ -77,6 +77,9 @@ def test_app_named_resources_against_openapi_specs(
     app_rest_entrypoints: set[Entrypoint],
 ):
     # remove task-legacy routes. These should not be exposed.
+    # this test compares directly against the openapi specs. In future it would be
+    # cleaner to compare against the fastapi app entry points in specs and
+    # avoid including the endpoints there
     required_entry_points = {
         e
         for e in app_rest_entrypoints
