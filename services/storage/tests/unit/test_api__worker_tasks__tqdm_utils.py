@@ -7,7 +7,7 @@ from simcore_service_storage.api._worker_tasks._progress_utils import (
 )
 
 
-def test_get_export_progess():
+def test_tqdm_progress_utils():
     items = 10
     with get_tqdm_progress(total=1, description="test") as pbar:
         # Run tasks and call the callback each time
