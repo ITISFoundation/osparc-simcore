@@ -96,6 +96,13 @@ users = sa.Table(
     # User Privacy Rules ------------------
     #
     sa.Column(
+        "privacy_hide_username",
+        sa.Boolean,
+        nullable=False,
+        server_default=expression.false(),
+        doc="If true, it hides users.name to others",
+    ),
+    sa.Column(
         "privacy_hide_fullname",
         sa.Boolean,
         nullable=False,

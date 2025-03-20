@@ -59,8 +59,7 @@ def _public_user_cols(caller_id: int):
     return (
         # Fits PublicUser model
         users.c.id.label("user_id"),
-        users.c.name.label("user_name"),
-        *visible_user_profile_cols(caller_id),
+        *visible_user_profile_cols(caller_id, username_label="user_name"),
         users.c.primary_gid.label("group_id"),
     )
 
@@ -103,7 +102,10 @@ async def search_public_user(
     query = (
         sa.select(*_public_user_cols(caller_id=caller_id))
         .where(
-            users.c.name.ilike(_pattern)
+            (
+                is_public(users.c.privacy_hide_username, caller_id)
+                & users.c.name.ilike(_pattern)
+            )
             | (
                 is_public(users.c.privacy_hide_email, caller_id)
                 & users.c.email.ilike(_pattern)
