@@ -633,7 +633,7 @@ async def delete_directory(
     client: httpx.AsyncClient,
     user_id: UserID,
     location_id: LocationID,
-) -> Callable[..., Awaitable[None]]:
+) -> Callable[[StorageFileID], Awaitable[None]]:
     async def _dir_remover(directory_s3: StorageFileID) -> None:
         delete_url = url_from_operation_id(
             client,

@@ -9,11 +9,10 @@ from pathlib import Path
 
 import pytest
 from faker import Faker
-from models_library.api_schemas_storage.storage_schemas import FileUploadSchema
 from models_library.basic_types import SHA256Str
 from models_library.progress_bar import ProgressReport
 from models_library.projects import ProjectID
-from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
+from models_library.projects_nodes_io import NodeID, SimcoreS3FileID, StorageFileID
 from models_library.users import UserID
 from pydantic import ByteSize, TypeAdapter
 from pytest_mock import MockerFixture
@@ -25,7 +24,10 @@ from simcore_service_storage.modules.s3 import get_s3_client
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-pytest_simcore_core_services_selection = ["postgres"]
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "rabbit",
+]
 pytest_simcore_ops_services_selection = ["adminer"]
 
 
@@ -169,14 +171,14 @@ async def paths_for_export(
         [ByteSize, str, ProjectID, NodeID, int, int],
         Awaitable[tuple[NodeID, dict[SimcoreS3FileID, FileIDDict]]],
     ],
-    delete_directory: Callable[..., Awaitable[None]],
+    delete_directory: Callable[[StorageFileID], Awaitable[None]],
     project_id: ProjectID,
     node_id: NodeID,
 ) -> AsyncIterable[set[SimcoreS3FileID]]:
     dir_name = "data_to_export"
 
-    directory_file_upload: FileUploadSchema = await create_empty_directory(
-        dir_name=dir_name
+    directory_file_upload: SimcoreS3FileID = await create_empty_directory(
+        dir_name, project_id, node_id
     )
 
     upload_result: tuple[NodeID, dict[SimcoreS3FileID, FileIDDict]] = (
@@ -194,7 +196,7 @@ async def paths_for_export(
 
     yield set(uploaded_files_data.keys())
 
-    await delete_directory(directory_file_upload=directory_file_upload)
+    await delete_directory(directory_file_upload)
 
 
 def _get_folder_and_files_selection(
@@ -227,6 +229,12 @@ async def _assert_meta_data_entries_count(
     assert len(result) == count
 
 
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
 async def test_create_s3_export(
     simcore_s3_dsm: SimcoreS3DataManager,
     user_id: UserID,
