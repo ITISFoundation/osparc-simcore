@@ -274,7 +274,7 @@ async def register(request: web.Request):
             )
         except Exception as err:  # pylint: disable=broad-except
             error_code = create_error_code(err)
-            user_error_msg = f"{MSG_CANT_SEND_MAIL} [{error_code}]"
+            user_error_msg = MSG_CANT_SEND_MAIL
 
             _logger.exception(
                 **create_troubleshotting_log_kwargs(
@@ -416,7 +416,7 @@ async def register_phone(request: web.Request):
     except Exception as err:  # pylint: disable=broad-except
         # Unhandled errors -> 503
         error_code = create_error_code(err)
-        user_error_msg = f"Currently we cannot register phone numbers [{error_code}]"
+        user_error_msg = "Currently we cannot register phone numbers"
 
         _logger.exception(
             **create_troubleshotting_log_kwargs(

@@ -32,7 +32,7 @@ from simcore_service_webserver.login._2fa_api import (
 )
 from simcore_service_webserver.login._constants import (
     CODE_2FA_SMS_CODE_REQUIRED,
-    MSG_2FA_UNAVAILABLE_OEC,
+    MSG_2FA_UNAVAILABLE,
 )
 from simcore_service_webserver.login.storage import AsyncpgStorage
 from simcore_service_webserver.products import products_web
@@ -456,9 +456,7 @@ async def test_2fa_sms_failure_during_login(
                 response, status.HTTP_503_SERVICE_UNAVAILABLE
             )
             assert not data
-            assert error["errors"][0]["message"].startswith(
-                MSG_2FA_UNAVAILABLE_OEC[:10]
-            )
+            assert error["errors"][0]["message"].startswith(MSG_2FA_UNAVAILABLE[:10])
 
             # Expects logs like 'Failed while setting up 2FA code and sending SMS to 157XXXXXXXX3 [OEC:140392495277888]'
             assert f"{fake_user_phone_number[:3]}" in caplog.text
