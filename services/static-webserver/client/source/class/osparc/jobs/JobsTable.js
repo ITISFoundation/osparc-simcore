@@ -143,9 +143,11 @@ qx.Class.define("osparc.jobs.JobsTable", {
     __handleButtonClick: function(action, row) {
       const rowData = this.getTableModel().getRowData(row);
       switch (action) {
-        case "info":
-          console.log(`Info row ${row}`);
+        case "info": {
+          const jobInfo = new osparc.jobs.JobInfo(rowData["jobId"]);
+          osparc.jobs.JobInfo.popUpInWindow(jobInfo);
           break;
+        }
         case "stop":
         case "delete":
         case "logs": {
