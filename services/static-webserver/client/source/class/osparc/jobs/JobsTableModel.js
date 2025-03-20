@@ -33,7 +33,10 @@ qx.Class.define("osparc.jobs.JobsTableModel", {
 
     this.setSortColumnIndexWithoutSortingData(jobsCols.SUBMIT.column);
     this.setSortAscendingWithoutSortingData(false);
-    this.setColumnSortable(jobsCols.INSTANCE.column, false);
+    this.setColumnSortable(jobsCols.INFO.column, false);
+    this.setColumnSortable(jobsCols.ACTION_STOP.column, false);
+    this.setColumnSortable(jobsCols.ACTION_DELETE.column, false);
+    this.setColumnSortable(jobsCols.ACTION_LOGS.column, false);
   },
 
   properties: {

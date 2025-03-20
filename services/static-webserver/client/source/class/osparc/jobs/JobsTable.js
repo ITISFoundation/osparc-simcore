@@ -36,9 +36,21 @@ qx.Class.define("osparc.jobs.JobsTable", {
 
     Object.values(this.self().COLS).forEach(col => columnModel.setColumnWidth(col.column, col.width));
 
-    const fontButtonRenderer = new osparc.ui.table.cellrenderer.ImageButtonRenderer();
-    fontButtonRenderer.setIconPath("osparc/circle-info-solid_text.svg");
-    columnModel.setDataCellRenderer(this.self().COLS.INFO.column, fontButtonRenderer);
+    const fontButtonRendererInfo = new osparc.ui.table.cellrenderer.ImageButtonRenderer();
+    fontButtonRendererInfo.setIconPath("osparc/circle-info-solid_text.svg");
+    columnModel.setDataCellRenderer(this.self().COLS.INFO.column, fontButtonRendererInfo);
+
+    const fontButtonRendererStop = new osparc.ui.table.cellrenderer.ImageButtonRenderer();
+    fontButtonRendererStop.setIconPath("osparc/circle-info-solid_text.svg");
+    columnModel.setDataCellRenderer(this.self().COLS.ACTION_STOP.column, fontButtonRendererStop);
+
+    const fontButtonRendererDelete = new osparc.ui.table.cellrenderer.ImageButtonRenderer();
+    fontButtonRendererDelete.setIconPath("osparc/circle-info-solid_text.svg");
+    columnModel.setDataCellRenderer(this.self().COLS.ACTION_DELETE.column, fontButtonRendererDelete);
+
+    const fontButtonRendererLogs = new osparc.ui.table.cellrenderer.ImageButtonRenderer();
+    fontButtonRendererLogs.setIconPath("osparc/circle-info-solid_text.svg");
+    columnModel.setDataCellRenderer(this.self().COLS.ACTION_LOGS.column, fontButtonRendererLogs);
   },
 
   statics: {
@@ -79,16 +91,34 @@ qx.Class.define("osparc.jobs.JobsTable", {
         label: qx.locale.Manager.tr("Started"),
         width: 130
       },
+      INFO: {
+        id: "info",
+        column: 6,
+        label: qx.locale.Manager.tr("Info"),
+        width: 40
+      },
       INSTANCE: {
         id: "instance",
-        column: 6,
+        column: 7,
         label: qx.locale.Manager.tr("Instance"),
         width: 90
       },
-      INFO: {
+      ACTION_STOP: {
         id: "info",
-        column: 7,
-        label: qx.locale.Manager.tr("Info"),
+        column: 8,
+        label: "",
+        width: 40
+      },
+      ACTION_DELETE: {
+        id: "info",
+        column: 9,
+        label: "",
+        width: 40
+      },
+      ACTION_LOGS: {
+        id: "info",
+        column: 10,
+        label: "",
         width: 40
       },
     }
