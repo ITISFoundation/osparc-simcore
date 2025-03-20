@@ -76,9 +76,6 @@ from simcore_service_storage.modules.celery.signals import (
     on_worker_shutdown,
 )
 from simcore_service_storage.modules.celery.worker import CeleryTaskQueueWorker
-from simcore_service_storage.modules.long_running_tasks import (
-    get_completed_upload_tasks,
-)
 from simcore_service_storage.modules.s3 import get_s3_client
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 from sqlalchemy import literal_column
@@ -328,9 +325,9 @@ async def create_upload_file_link_v2(
             location_id=f"{location_id}",
             file_id=file_id,
         ).with_query(**query_kwargs, user_id=user_id)
-        assert (
-            "file_size" in url.query
-        ), "V2 call to upload file must contain file_size field!"
+        assert "file_size" in url.query, (
+            "V2 call to upload file must contain file_size field!"
+        )
         response = await client.put(f"{url}")
         received_file_upload, error = assert_status(
             response, status.HTTP_200_OK, FileUploadSchema
@@ -515,8 +512,8 @@ async def create_empty_directory(
         assert file_upload_complete_response
         state_url = URL(f"{file_upload_complete_response.links.state}").relative()
 
-        # check that it finished updating
-        get_completed_upload_tasks(initialized_app).clear()
+        # check that it finished updating TODO: this works via celery now
+        # get_completed_upload_tasks(initialized_app).clear()
         # now check for the completion
         async for attempt in AsyncRetrying(
             reraise=True,
