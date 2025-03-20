@@ -3,8 +3,9 @@ import logging
 from models_library.api_schemas_webserver import WEBSERVER_RPC_NAMESPACE
 from models_library.rabbitmq_basic_types import RPCMethodName
 from pydantic import TypeAdapter
-from servicelib.logging_utils import log_decorator
-from servicelib.rabbitmq import RabbitMQRPCClient
+
+from .....logging_utils import log_decorator
+from .....rabbitmq import RabbitMQRPCClient
 
 _logger = logging.getLogger(__name__)
 

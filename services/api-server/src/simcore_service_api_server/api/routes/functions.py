@@ -1,10 +1,11 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends
-from simcore_service_api_server.api.dependencies.webserver_rpc import (
+
+from ...services_rpc.wb_api_server import WbApiRpcClient
+from ..dependencies.webserver_rpc import (
     get_wb_api_rpc_client,
 )
-from simcore_service_api_server.services_rpc.wb_api_server import WbApiRpcClient
 
 router = APIRouter()
 

@@ -4,9 +4,9 @@
 
 from aiohttp import web
 from models_library.users import UserID
-from simcore_service_webserver.projects.models import ProjectDict
 
 from ..projects import projects_service
+from ..projects.models import ProjectDict
 
 
 # example function
@@ -16,7 +16,6 @@ async def get_project_from_function(
     user_id: UserID,
 ) -> ProjectDict:
 
-    project = await projects_service.get_project_for_user(
+    return await projects_service.get_project_for_user(
         app=app, project_uuid=function_uuid, user_id=user_id
     )
-    return project

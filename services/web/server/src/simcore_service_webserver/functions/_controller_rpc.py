@@ -2,7 +2,8 @@ from aiohttp import web
 from fastapi import FastAPI
 from models_library.api_schemas_webserver import WEBSERVER_RPC_NAMESPACE
 from servicelib.rabbitmq import RPCRouter
-from simcore_service_webserver.rabbitmq import get_rabbitmq_rpc_server
+
+from ..rabbitmq import get_rabbitmq_rpc_server
 
 # this is the rpc interface exposed to the api-server
 # this interface should call the service layer
