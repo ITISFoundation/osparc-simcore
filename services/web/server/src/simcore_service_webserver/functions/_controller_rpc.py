@@ -1,4 +1,5 @@
 from aiohttp import web
+from fastapi import FastAPI
 from models_library.api_schemas_webserver import WEBSERVER_RPC_NAMESPACE
 from servicelib.rabbitmq import RPCRouter
 from simcore_service_webserver.rabbitmq import get_rabbitmq_rpc_server
@@ -10,7 +11,8 @@ router = RPCRouter()
 
 
 @router.expose()
-async def ping(app) -> str:  # pylint: disable=unused-argument
+async def ping(app: FastAPI) -> str:
+    assert app
     return "pong from webserver"
 
 
