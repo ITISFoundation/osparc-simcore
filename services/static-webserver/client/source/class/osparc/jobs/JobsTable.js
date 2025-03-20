@@ -37,7 +37,7 @@ qx.Class.define("osparc.jobs.JobsTable", {
     Object.values(this.self().COLS).forEach(col => columnModel.setColumnWidth(col.column, col.width));
 
     const fontButtonRenderer = new osparc.ui.table.cellrenderer.ImageButtonRenderer();
-    fontButtonRenderer.setIconPath("osparc/offline.svg");
+    fontButtonRenderer.setIconPath("osparc/circle-info-solid_text.svg");
     columnModel.setDataCellRenderer(this.self().COLS.INFO.column, fontButtonRenderer);
   },
 

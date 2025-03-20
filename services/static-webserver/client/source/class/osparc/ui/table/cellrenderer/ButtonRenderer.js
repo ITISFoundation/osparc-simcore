@@ -46,7 +46,7 @@ qx.Class.define("osparc.ui.table.cellrenderer.ButtonRenderer", {
       return `
         <div class="qx-material-button"
           data-action="${clickAction}" data-row="${cellInfo.row}"
-          style="cursor:pointer; padding:2px 2px; width:29px; height:20px; display:flex; align-items:center; justify-content:center;"
+          style="cursor:pointer; padding:2px 2px; width:26px; height:18px; display:flex; align-items:center; justify-content:center;"
         >
           ${buttonContent}
         </div>

@@ -36,7 +36,7 @@ qx.Class.define("osparc.ui.table.cellrenderer.ImageButtonRenderer", {
       const resMgr = qx.util.ResourceManager.getInstance();
       const iconUrl = resMgr.toUri(iconPath); // Resolves to the correct URL of the asset
 
-      this.setButtonContent(`<img src="${iconUrl}" style="width:16px; height:16px;" alt="icon"/>`);
+      this.setButtonContent(`<img src="${iconUrl}" style="width:14x; height:14px;" alt="icon"/>`);
     },
   }
 });
