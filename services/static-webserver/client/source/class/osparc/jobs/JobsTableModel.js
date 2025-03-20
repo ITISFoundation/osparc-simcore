@@ -126,7 +126,6 @@ qx.Class.define("osparc.jobs.JobsTableModel", {
                 [jobsCols.SUBMIT.id]: job.getSubmittedAt() ? osparc.utils.Utils.formatDateAndTime(job.getSubmittedAt()) : "-",
                 [jobsCols.START.id]: job.getStartedAt() ? osparc.utils.Utils.formatDateAndTime(job.getStartedAt()) : "-",
                 [jobsCols.INSTANCE.id]: job.getInstance(),
-                [jobsCols.INFO.id]: "@FontAwesome5Solid/copy/14",
               });
             });
             return data;

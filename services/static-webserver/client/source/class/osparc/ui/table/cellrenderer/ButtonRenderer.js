@@ -15,10 +15,10 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.ui.table.cellrenderer.SVGButtonRenderer", {
+qx.Class.define("osparc.ui.table.cellrenderer.ButtonRenderer", {
   extend: osparc.ui.table.cellrenderer.Html,
 
-  construct: function(id, icon) {
+  construct: function(clickAction, icon) {
     this.base(arguments);
   },
 
@@ -29,20 +29,18 @@ qx.Class.define("osparc.ui.table.cellrenderer.SVGButtonRenderer", {
       init: "clickAction",
     },
 
-    svgIcon: {
+    buttonContent: {
       check: "String",
       nullable: false,
-      init: "osparc/offline.svg", // Default icon
-    },
+      init: "",
+    }
   },
 
   members: {
     // Override
     _getContentHtml: function(cellInfo) {
       const clickAction = this.getClickAction();
-      const iconPath = this.getSvgIcon();
-      const resMgr = qx.util.ResourceManager.getInstance();
-      const iconUrl = resMgr.toUri(iconPath); // Resolves to the correct URL of the asset
+      const buttonContent = this.getButtonContent();
 
       // Return the button with the image
       return `
@@ -50,7 +48,7 @@ qx.Class.define("osparc.ui.table.cellrenderer.SVGButtonRenderer", {
           data-action="${clickAction}" data-row="${cellInfo.row}"
           style="cursor:pointer; padding:2px 2px; width:29px; height:20px; display:flex; align-items:center; justify-content:center;"
         >
-          <img src="${iconUrl}" style="width:16px; height:16px;" alt="icon"/>
+          ${buttonContent}
         </div>
       `;
     },
