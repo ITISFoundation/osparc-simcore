@@ -23,27 +23,34 @@ qx.Class.define("osparc.ui.table.cellrenderer.FontButtonRenderer", {
   },
 
   properties: {
-    id: {
+    clickAction: {
       check: "String",
       nullable: false,
-      init: "id",
+      init: "clickAction",
     },
 
     fontIcon: {
       check: "String",
       nullable: false,
-      init: "fas fa-info",
+      // init: "@FontAwesome5Solid/eye/14",
+      init: "fa-solid fa-eye",
     },
   },
 
   members: {
     // Override
     _getContentHtml: function(cellInfo) {
-      const id = this.getId();
+      const clickAction = this.getClickAction();
       const icon = this.getFontIcon();
+
+      // const resMgr = qx.util.ResourceManager.getInstance();
+      // const iconUri = resMgr.toUri(icon);
+      // <img src="${iconUri}" style="${iconStyle}" />
+
+      const iconStyle = "font-size:14px;";
       return `
-        <button class="action-btn" data-action="${id}" data-row="${cellInfo.row}" title="View">
-          <i class="${icon}" style="font-size:12px; line-height:1;">></i>
+        <button data-action="${clickAction}" data-row="${cellInfo.row}" title="View">
+          <span class="${icon}" style="${iconStyle}"></span>
         </button>
       `;
     }
