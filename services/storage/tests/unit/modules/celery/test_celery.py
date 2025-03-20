@@ -90,7 +90,7 @@ async def test_submitting_task_calling_async_function_results_with_success_state
     task_context = TaskContext(user_id=42)
 
     task_uuid = await celery_client.send_task(
-        "sync_archive",
+        sync_archive.__name__,
         task_context=task_context,
         files=[f"file{n}" for n in range(5)],
     )
@@ -118,7 +118,9 @@ async def test_submitting_task_with_failure_results_with_error(
 ):
     task_context = TaskContext(user_id=42)
 
-    task_uuid = await celery_client.send_task("failure_task", task_context=task_context)
+    task_uuid = await celery_client.send_task(
+        failure_task.__name__, task_context=task_context
+    )
 
     for attempt in Retrying(
         retry=retry_if_exception_type((AssertionError, ValidationError)),
@@ -145,7 +147,7 @@ async def test_aborting_task_results_with_aborted_state(
     task_context = TaskContext(user_id=42)
 
     task_uuid = await celery_client.send_task(
-        "dreamer_task",
+        dreamer_task.__name__,
         task_context=task_context,
     )
 

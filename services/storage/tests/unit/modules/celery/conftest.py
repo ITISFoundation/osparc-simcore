@@ -1,3 +1,6 @@
+# pylint:disable=redefined-outer-name
+# pylint:disable=unused-argument
+
 from collections.abc import Callable, Iterable
 from datetime import timedelta
 from typing import Any
