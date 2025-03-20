@@ -9,7 +9,7 @@ from simcore_service_api_server.services_rpc.wb_api_server import WbApiRpcClient
 router = APIRouter()
 
 
-@router.post("/ping")
+@router.post("/ping", include_in_schema=False)
 async def ping(
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
 ):
