@@ -1,10 +1,8 @@
 import logging
-from contextlib import suppress
 from typing import cast
 
 from fastapi import FastAPI
-from models_library.rabbitmq_messages import RabbitMessageBase
-from servicelib.logging_utils import log_catch, log_context
+from servicelib.logging_utils import log_context
 from servicelib.rabbitmq import (
     RabbitMQClient,
     RabbitMQRPCClient,
@@ -64,9 +62,3 @@ def get_rabbitmq_client(app: FastAPI) -> RabbitMQClient:
 def get_rabbitmq_rpc_server(app: FastAPI) -> RabbitMQRPCClient:
     assert app.state.rabbitmq_rpc_server  # nosec
     return cast(RabbitMQRPCClient, app.state.rabbitmq_rpc_server)
-
-
-async def post_message(app: FastAPI, message: RabbitMessageBase) -> None:
-    with log_catch(_logger, reraise=False), suppress(ConfigurationError):
-        # NOTE: if rabbitmq was not initialized the error does not need to flood the logs
-        await get_rabbitmq_client(app).publish(message.channel_name, message)
