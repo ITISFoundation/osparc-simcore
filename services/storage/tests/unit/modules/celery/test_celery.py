@@ -48,7 +48,7 @@ def sync_archive(task: Task, files: list[str]) -> str:
     assert task.name
     _logger.info("Calling async_archive")
     return asyncio.run_coroutine_threadsafe(
-        _async_archive(task, task.request.id, files),
+        _async_archive(task.app, task, files),
         get_event_loop(get_fastapi_app(task.app)),
     ).result()
 
