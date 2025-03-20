@@ -18,8 +18,10 @@
 qx.Class.define("osparc.ui.table.cellrenderer.ButtonRenderer", {
   extend: osparc.ui.table.cellrenderer.Html,
 
-  construct: function(clickAction, icon) {
+  construct: function(clickAction) {
     this.base(arguments);
+
+    this.setClickAction(clickAction);
   },
 
   properties: {

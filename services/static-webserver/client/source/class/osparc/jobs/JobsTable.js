@@ -36,21 +36,23 @@ qx.Class.define("osparc.jobs.JobsTable", {
 
     Object.values(this.self().COLS).forEach(col => columnModel.setColumnWidth(col.column, col.width));
 
-    const fontButtonRendererInfo = new osparc.ui.table.cellrenderer.ImageButtonRenderer();
-    fontButtonRendererInfo.setIconPath("osparc/circle-info-solid_text.svg");
+    const iconPathInfo = "osparc/circle-info-solid_text.svg";
+    const fontButtonRendererInfo = new osparc.ui.table.cellrenderer.ImageButtonRenderer("info", iconPathInfo);
     columnModel.setDataCellRenderer(this.self().COLS.INFO.column, fontButtonRendererInfo);
 
-    const fontButtonRendererStop = new osparc.ui.table.cellrenderer.ImageButtonRenderer();
-    fontButtonRendererStop.setIconPath("osparc/circle-info-solid_text.svg");
+    const iconPathStop = "osparc/circle-info-solid_text.svg";
+    const fontButtonRendererStop = new osparc.ui.table.cellrenderer.ImageButtonRenderer("stop", iconPathStop);
     columnModel.setDataCellRenderer(this.self().COLS.ACTION_STOP.column, fontButtonRendererStop);
 
-    const fontButtonRendererDelete = new osparc.ui.table.cellrenderer.ImageButtonRenderer();
-    fontButtonRendererDelete.setIconPath("osparc/circle-info-solid_text.svg");
+    const iconPathDelete = "osparc/circle-info-solid_text.svg";
+    const fontButtonRendererDelete = new osparc.ui.table.cellrenderer.ImageButtonRenderer("delete", iconPathDelete);
     columnModel.setDataCellRenderer(this.self().COLS.ACTION_DELETE.column, fontButtonRendererDelete);
 
-    const fontButtonRendererLogs = new osparc.ui.table.cellrenderer.ImageButtonRenderer();
-    fontButtonRendererLogs.setIconPath("osparc/circle-info-solid_text.svg");
+    const iconPathLogs = "osparc/circle-info-solid_text.svg";
+    const fontButtonRendererLogs = new osparc.ui.table.cellrenderer.ImageButtonRenderer("logs", iconPathLogs);
     columnModel.setDataCellRenderer(this.self().COLS.ACTION_LOGS.column, fontButtonRendererLogs);
+
+    this.__attachHandlers();
   },
 
   statics: {
@@ -122,5 +124,38 @@ qx.Class.define("osparc.jobs.JobsTable", {
         width: 40
       },
     }
+  },
+
+  members: {
+    __attachHandlers: function() {
+      this.addListener("cellTap", e => {
+        const row = e.getRow();
+        const target = e.getOriginalTarget();
+        if (target.closest(".qx-material-button") && (target.tagName === "IMG" || target.tagName === "DIV")) {
+          const action = target.closest(".qx-material-button").getAttribute("data-action");
+          if (action) {
+            this.__handleButtonClick(action, row);
+          }
+        }
+      });
+    },
+
+    __handleButtonClick: function(action, row) {
+      const rowData = this.getTableModel().getRowData(row);
+      switch (action) {
+        case "info":
+          console.log(`Info row ${row}`);
+          break;
+        case "stop":
+        case "delete":
+        case "logs": {
+          const msg = `I wish I could ${action} the job ${rowData["jobId"]}`;
+          osparc.FlashMessenger.logAs(msg, "WARNING");
+          break;
+        }
+        default:
+          console.warn(`Unknown action: ${action}`);
+      }
+    },
   }
 });
