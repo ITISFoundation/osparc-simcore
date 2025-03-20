@@ -36,8 +36,8 @@ qx.Class.define("osparc.jobs.JobsTable", {
 
     Object.values(this.self().COLS).forEach(col => columnModel.setColumnWidth(col.column, col.width));
 
-    const imageRenderer = new qx.ui.table.cellrenderer.Image();
-    columnModel.setDataCellRenderer(this.self().COLS.INFO.column, imageRenderer);
+    const fontButtonRenderer = new osparc.ui.table.cellrenderer.FontButtonRenderer();
+    columnModel.setDataCellRenderer(this.self().COLS.INFO.column, fontButtonRenderer);
   },
 
   statics: {
