@@ -14,3 +14,4 @@ def test_get_export_progess():
         for k in [i / (items - 1) for i in range(items)]:
             sleep(0.01)
             set_tqdm_absolute_progress(pbar, ProgressReport(actual_value=k))
+            assert pbar.n == k
