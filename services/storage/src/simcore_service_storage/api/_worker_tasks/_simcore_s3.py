@@ -10,6 +10,7 @@ from servicelib.logging_utils import log_context
 from servicelib.progress_bar import ProgressBarData
 
 from ...dsm import get_dsm_provider
+from ...modules.celery.models import TaskId
 from ...modules.celery.utils import get_celery_worker, get_fastapi_app
 from ...simcore_s3_dsm import SimcoreS3DataManager
 
@@ -28,9 +29,8 @@ def _task_progress_cb(task: Task, task_id: str, report: ProgressReport) -> None:
 
 
 async def deep_copy_files_from_project(
-    task: Task, task_id: str, user_id: UserID, body: FoldersBody
+    task: Task, task_id: TaskId, user_id: UserID, body: FoldersBody
 ) -> dict[str, Any]:
-    # _logger.error("%s", f"{task=}, {task.request.id=}, {task_id=}")
     with log_context(
         _logger,
         logging.INFO,
