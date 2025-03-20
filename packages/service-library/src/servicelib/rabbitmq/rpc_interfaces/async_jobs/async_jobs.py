@@ -36,6 +36,8 @@ _RPC_METHOD_NAME_ADAPTER = TypeAdapter(RPCMethodName)
 _DEFAULT_POLL_INTERVAL_S: Final[float] = 0.1
 _logger = logging.getLogger(__name__)
 
+_logger = logging.getLogger(__name__)
+
 
 async def cancel(
     rabbitmq_rpc_client: RabbitMQRPCClient,
