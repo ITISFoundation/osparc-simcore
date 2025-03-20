@@ -5848,25 +5848,6 @@
           }
         }
       }
-    },
-    "/v0/functions/ping": {
-      "post": {
-        "tags": [
-          "functions"
-        ],
-        "summary": "Ping",
-        "operationId": "ping",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        }
-      }
     }
   },
   "components": {
