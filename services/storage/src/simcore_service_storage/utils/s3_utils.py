@@ -1,50 +1,60 @@
+import asyncio
+import datetime
 import logging
 from collections import defaultdict
 from dataclasses import dataclass, field
 
 from pydantic import ByteSize, TypeAdapter
-from servicelib.aiohttp.long_running_tasks.server import (
-    ProgressMessage,
-    ProgressPercent,
-    TaskProgress,
-)
+from servicelib.async_utils import cancel_wait_task
+from servicelib.background_task import create_periodic_task
+from servicelib.progress_bar import ProgressBarData
 
 _logger = logging.getLogger(__name__)
 
 
-def update_task_progress(
-    task_progress: TaskProgress | None,
-    message: ProgressMessage | None = None,
-    progress: ProgressPercent | None = None,
-) -> None:
-    _logger.debug("%s [%s]", message or "", progress or "n/a")
-    if task_progress:
-        task_progress.update(message=message, percent=progress)
-
-
 @dataclass
 class S3TransferDataCB:
-    task_progress: TaskProgress | None
+    task_progress: ProgressBarData
     total_bytes_to_transfer: ByteSize
     task_progress_message_prefix: str = ""
     _total_bytes_copied: int = 0
     _file_total_bytes_copied: dict[str, int] = field(
         default_factory=lambda: defaultdict(int)
     )
+    _update_task_event: asyncio.Event = field(default_factory=asyncio.Event)
+    _async_update_periodic_task: asyncio.Task | None = None
 
     def __post_init__(self) -> None:
+        self._async_update_periodic_task = create_periodic_task(
+            self._async_update,
+            interval=datetime.timedelta(seconds=1),
+            task_name="s3_transfer_cb_update",
+        )
         self._update()
 
-    def _update(self) -> None:
-        update_task_progress(
-            self.task_progress,
+    async def __aenter__(self) -> "S3TransferDataCB":
+        return self
+
+    async def __aexit__(self, exc_type, exc_value, traceback) -> None:
+        self.finalize_transfer()
+        await asyncio.sleep(0)
+        assert self._async_update_periodic_task  # nosec
+        await cancel_wait_task(self._async_update_periodic_task)
+
+    async def _async_update(self) -> None:
+        await self._update_task_event.wait()
+        self._update_task_event.clear()
+        self.task_progress.description = (
             f"{self.task_progress_message_prefix} - "
-            f"{self.total_bytes_to_transfer.human_readable()}",
-            ProgressPercent(
-                min(self._total_bytes_copied, self.total_bytes_to_transfer)
-                / (self.total_bytes_to_transfer or 1)
-            ),
+            f"{self.total_bytes_to_transfer.human_readable()}"
         )
+        await self.task_progress.update(
+            min(self._total_bytes_copied, self.total_bytes_to_transfer)
+            / (self.total_bytes_to_transfer or 1)
+        )
+
+    def _update(self) -> None:
+        self._update_task_event.set()
 
     def finalize_transfer(self) -> None:
         self._total_bytes_copied = (
