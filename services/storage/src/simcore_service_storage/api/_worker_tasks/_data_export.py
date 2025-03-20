@@ -9,7 +9,7 @@ from models_library.users import UserID
 from ...dsm import get_dsm_provider
 from ...modules.celery.utils import get_celery_worker_client, get_fastapi_app
 from ...simcore_s3_dsm import SimcoreS3DataManager
-from ._tqdm_utils import get_export_progress, set_absolute_progress
+from ._progress_utils import get_tqdm_progress, set_tqdm_absolute_progress
 
 _logger = logging.getLogger(__name__)
 
@@ -29,10 +29,10 @@ async def data_export(
         ),
     )
 
-    with get_export_progress(total=1, description=f"{task.name}") as pbar:
+    with get_tqdm_progress(total=1, description=f"{task.name}") as pbar:
 
         async def _progress_cb(report: ProgressReport) -> None:
-            set_absolute_progress(pbar, current_progress=report.actual_value)
+            set_tqdm_absolute_progress(pbar, report)
             await get_celery_worker_client(task.app).set_task_progress(task, report)
 
         return await dsm.create_s3_export(
