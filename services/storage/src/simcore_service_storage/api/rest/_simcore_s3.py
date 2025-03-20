@@ -2,17 +2,13 @@ import logging
 from typing import Annotated, cast
 
 from fastapi import APIRouter, Depends, Request
-from models_library.api_schemas_long_running_tasks.tasks import TaskGet
-from models_library.api_schemas_rpc_async_jobs.async_jobs import AsyncJobNameData
 from models_library.api_schemas_storage.storage_schemas import (
     FileMetaDataGet,
-    FoldersBody,
 )
 from models_library.generics import Envelope
 from models_library.projects import ProjectID
 from servicelib.aiohttp import status
 from settings_library.s3 import S3Settings
-from yarl import URL
 
 from ...dsm import get_dsm_provider
 from ...models import (
@@ -22,12 +18,7 @@ from ...models import (
     StorageQueryParamsBase,
 )
 from ...modules import sts
-from ...modules.celery.client import CeleryTaskQueueClient
 from ...simcore_s3_dsm import SimcoreS3DataManager
-from .._worker_tasks._simcore_s3 import (
-    deep_copy_files_from_project,
-)
-from .dependencies.celery import get_celery_client
 
 _logger = logging.getLogger(__name__)
 
@@ -49,41 +40,6 @@ async def get_or_create_temporary_s3_access(
         request.app, query_params.user_id
     )
     return Envelope[S3Settings](data=s3_settings)
-
-
-@router.post(
-    "/simcore-s3/folders",
-    response_model=Envelope[TaskGet],
-    status_code=status.HTTP_202_ACCEPTED,
-)
-async def copy_folders_from_project(
-    celery_client: Annotated[CeleryTaskQueueClient, Depends(get_celery_client)],
-    query_params: Annotated[StorageQueryParamsBase, Depends()],
-    body: FoldersBody,
-    request: Request,
-):
-    async_job_name_data = AsyncJobNameData(
-        user_id=query_params.user_id,
-        product_name="osparc",  # TODO: fix this
-    )
-    task_uuid = await celery_client.send_task(
-        deep_copy_files_from_project.__name__,
-        task_context=async_job_name_data.model_dump(),
-        user_id=async_job_name_data.user_id,
-        body=body,
-    )
-
-    relative_url = URL(f"{request.url}").relative()
-
-    return Envelope[TaskGet](
-        data=TaskGet(
-            task_id=f"{task_uuid}",
-            task_name=f"{request.method} {relative_url}",
-            status_href=f"{request.url_for('get_task_status', task_id=f'{task_uuid}')}",
-            result_href=f"{request.url_for('get_task_result', task_id=f'{task_uuid}')}",
-            abort_href=f"{request.url_for('cancel_and_delete_task', task_id=f'{task_uuid}')}",
-        )
-    )
 
 
 @router.delete(
