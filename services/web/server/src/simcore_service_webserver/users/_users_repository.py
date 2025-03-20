@@ -512,8 +512,6 @@ async def get_my_profile(app: web.Application, *, user_id: UserID) -> MyProfile:
                 users.c.email,
                 users.c.role,
                 sa.func.json_build_object(
-                    "hide_username",
-                    users.c.privacy_hide_username,
                     "hide_fullname",
                     users.c.privacy_hide_fullname,
                     "hide_email",

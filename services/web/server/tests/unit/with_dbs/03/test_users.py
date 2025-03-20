@@ -35,7 +35,11 @@ from pytest_simcore.helpers.faker_factories import (
     random_pre_registration_details,
 )
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
-from pytest_simcore.helpers.webserver_login import NewUser, UserInfoDict
+from pytest_simcore.helpers.webserver_login import (
+    NewUser,
+    UserInfoDict,
+    switch_client_session_to,
+)
 from servicelib.aiohttp import status
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 from simcore_service_webserver.users._common.schemas import (
@@ -226,6 +230,8 @@ async def test_search_users_by_partial_username(
     semi_private_user: UserInfoDict,
     private_user: UserInfoDict,
 ):
+    assert client.app
+
     # SEARCH by partial username
     assert partial_username in private_user["name"]
     assert partial_username in semi_private_user["name"]
@@ -252,6 +258,32 @@ async def test_search_users_by_partial_username(
     assert found[index].email is None
     assert found[index].first_name == semi_private_user.get("first_name")
     assert found[index].last_name == semi_private_user.get("last_name")
+
+
+async def test_search_myself(
+    client: TestClient,
+    public_user: UserInfoDict,
+    semi_private_user: UserInfoDict,
+    private_user: UserInfoDict,
+):
+    assert client.app
+    for user in [public_user, semi_private_user, private_user]:
+        async with switch_client_session_to(client, user):
+
+            # search me
+            url = client.app.router["search_users"].url_for()
+            resp = await client.post(f"{url}", json={"match": user["name"]})
+            data, _ = await assert_status(resp, status.HTTP_200_OK)
+
+            found = TypeAdapter(list[UserGet]).validate_python(data)
+            assert found
+            assert len(found) == 1
+
+            # I can see my own data
+            assert found[0].user_name == user["name"]
+            assert found[0].email == user["email"]
+            assert found[0].first_name == user.get("first_name")
+            assert found[0].last_name == user.get("last_name")
 
 
 @pytest.mark.acceptance_test(
