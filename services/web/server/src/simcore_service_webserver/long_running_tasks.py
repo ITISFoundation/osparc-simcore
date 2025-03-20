@@ -29,7 +29,7 @@ def _webserver_request_context_decorator(handler: Handler):
 def setup_long_running_tasks(app: web.Application) -> None:
     setup(
         app,
-        router_prefix=f"/{API_VTAG}/tasks",
+        router_prefix=f"/{API_VTAG}/tasks-legacy",
         handler_check_decorator=login_required,
         task_request_context_decorator=_webserver_request_context_decorator,
     )

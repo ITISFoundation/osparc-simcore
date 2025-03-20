@@ -1,6 +1,4 @@
-""" Main application
-
-"""
+"""Main application"""
 
 import logging
 from pprint import pformat
@@ -8,6 +6,7 @@ from typing import Any
 
 from aiohttp import web
 from servicelib.aiohttp.application import create_safe_application
+from simcore_service_webserver.tasks.plugin import setup_tasks
 
 from ._meta import WELCOME_DB_LISTENER_MSG, WELCOME_GC_MSG, WELCOME_MSG, info
 from .activity.plugin import setup_activity
@@ -121,6 +120,7 @@ def create_application() -> web.Application:
     setup_director_v2(app)
     setup_dynamic_scheduler(app)
     setup_storage(app)
+    setup_tasks(app)
     setup_catalog(app)
 
     # resource management
