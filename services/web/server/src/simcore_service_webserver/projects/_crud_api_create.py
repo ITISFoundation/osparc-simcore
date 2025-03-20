@@ -168,20 +168,21 @@ async def _copy_files_from_source_project(
 
     async def _copy() -> None:
         starting_value = task_progress.percent
-        async for long_running_task in copy_data_folders_from_project(
+        async for async_job_composed_result in copy_data_folders_from_project(
             app, source_project, new_project, nodes_map, user_id
         ):
             task_progress.update(
-                message=long_running_task.progress.message,
+                message=async_job_composed_result.status.progress.composed_message,
                 percent=TypeAdapter(ProgressPercent).validate_python(
                     (
                         starting_value
-                        + long_running_task.progress.percent * (1.0 - starting_value)
+                        + async_job_composed_result.status.progress.percent_value
+                        * (1.0 - starting_value)
                     ),
                 ),
             )
-            if long_running_task.done():
-                await long_running_task.result()
+            if async_job_composed_result.done:
+                await async_job_composed_result.result()
 
     if needs_lock_source_project:
         await with_project_locked(
