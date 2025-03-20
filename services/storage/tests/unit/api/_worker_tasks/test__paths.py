@@ -12,7 +12,7 @@ from typing import Any, TypeAlias
 
 import httpx
 import pytest
-from celery import Celery, Task
+from celery import Task
 from faker import Faker
 from fastapi import FastAPI
 from models_library.projects_nodes_io import LocationID, NodeID, SimcoreS3FileID
@@ -20,11 +20,6 @@ from models_library.users import UserID
 from pydantic import ByteSize, TypeAdapter
 from pytest_simcore.helpers.storage_utils import FileIDDict, ProjectWithFilesParams
 from simcore_service_storage.api._worker_tasks._paths import compute_path_size
-from simcore_service_storage.modules.celery.utils import (
-    set_celery_worker_client,
-    set_fastapi_app,
-)
-from simcore_service_storage.modules.celery.worker import CeleryWorkerClient
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 
 pytest_simcore_core_services_selection = [
@@ -67,16 +62,6 @@ async def _assert_compute_path_size(
     assert isinstance(response, ByteSize)
     assert response == expected_total_size
     return response
-
-
-@pytest.fixture
-def fake_celery_task(celery_app: Celery, initialized_app: FastAPI) -> Task:
-    celery_task = Task()
-    celery_task.name = "fake_name"
-    celery_task.app = celery_app
-    set_fastapi_app(celery_app, initialized_app)
-    set_celery_worker_client(celery_app, CeleryWorkerClient(celery_app))
-    return celery_task
 
 
 @pytest.mark.parametrize(
