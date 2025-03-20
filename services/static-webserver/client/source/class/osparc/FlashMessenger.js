@@ -88,12 +88,13 @@ qx.Class.define("osparc.FlashMessenger", {
       const msg = this.extractMessage(error, defaultMessage);
       const flashMessage = this.getInstance().logAs(msg, "ERROR", duration);
       if (error && error["supportId"]) {
-        flashMessage.addWidget(this.__createCopyEOCWidget(msg, error["supportId"]));
+        flashMessage.addWidget(this.__createCopyOECWidget(msg, error["supportId"]));
+        flashMessage.setDuration(flashMessage.getDuration()*2);
       }
       return flashMessage;
     },
 
-    __createCopyEOCWidget: function(message, supportId) {
+    __createCopyOECWidget: function(message, supportId) {
       const errorLabel = new qx.ui.basic.Atom().set({
         label: supportId,
         icon: "@FontAwesome5Solid/copy/10",
@@ -101,7 +102,7 @@ qx.Class.define("osparc.FlashMessenger", {
         gap: 8,
         cursor: "pointer",
         alignX: "center",
-        allowGrowX: true,
+        allowGrowX: false,
       });
       errorLabel.addListener("tap", () => {
         const dataToClipboard = {
@@ -109,7 +110,7 @@ qx.Class.define("osparc.FlashMessenger", {
           supportId,
           timestamp: new Date().toString(),
           url: window.location.href,
-          studyId: osparc.store.Store.getInstance().getCurrentStudy() ? osparc.store.Store.getInstance().getCurrentStudy().getUuid() : "",
+          studyId: osparc.store.Store.getInstance().getCurrentStudy() || "",
         }
         osparc.utils.Utils.copyTextToClipboard(JSON.stringify(dataToClipboard));
       });
