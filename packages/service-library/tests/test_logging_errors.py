@@ -21,10 +21,11 @@ def test_create_troubleshotting_log_message(caplog: pytest.LogCaptureFixture):
     exc = exc_info.value
     error_code = create_error_code(exc)
 
-    fp1, ts1 = parse_error_code_parts(error_code)
-    fp2, ts2 = parse_error_code_parts(exc.error_code())
-    assert fp1 == fp2
-    assert ts1 <= ts2
+    eoc1_fingerprint, eoc1_snapshot = parse_error_code_parts(error_code)
+    eoc2_fingerprint, eoc2_snapshot = parse_error_code_parts(exc.error_code())
+
+    assert eoc1_fingerprint == eoc2_fingerprint
+    assert eoc1_snapshot <= eoc2_snapshot
 
     msg = f"Nice message to user [{error_code}]"
 
