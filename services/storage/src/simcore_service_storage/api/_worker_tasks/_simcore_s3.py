@@ -2,7 +2,7 @@ import functools
 import logging
 from typing import Any
 
-from celery import Task
+from celery import Task  # type: ignore[import-untyped]
 from models_library.api_schemas_storage.storage_schemas import FoldersBody
 from models_library.progress_bar import ProgressReport
 from models_library.users import UserID
