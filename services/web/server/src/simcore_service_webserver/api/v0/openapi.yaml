@@ -15579,9 +15579,11 @@ components:
           title: Groupid
           minimum: 0
         userName:
-          type: string
-          maxLength: 100
-          minLength: 1
+          anyOf:
+          - type: string
+            maxLength: 100
+            minLength: 1
+          - type: 'null'
           title: Username
         firstName:
           anyOf:
@@ -15603,7 +15605,6 @@ components:
       required:
       - userId
       - groupId
-      - userName
       title: UserGet
     UserNotification:
       properties:
