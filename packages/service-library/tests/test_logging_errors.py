@@ -3,8 +3,7 @@
 import logging
 
 import pytest
-
-from common_library.error_codes import create_error_code
+from common_library.error_codes import create_error_code, parse_error_code_parts
 from common_library.errors_classes import OsparcErrorMixin
 from servicelib.logging_errors import (
     create_troubleshotting_log_kwargs,
@@ -22,7 +21,10 @@ def test_create_troubleshotting_log_message(caplog: pytest.LogCaptureFixture):
     exc = exc_info.value
     error_code = create_error_code(exc)
 
-    assert exc.error_code() == error_code
+    fp1, ts1 = parse_error_code_parts(error_code)
+    fp2, ts2 = parse_error_code_parts(exc.error_code())
+    assert fp1 == fp2
+    assert ts1 <= ts2
 
     msg = f"Nice message to user [{error_code}]"
 
