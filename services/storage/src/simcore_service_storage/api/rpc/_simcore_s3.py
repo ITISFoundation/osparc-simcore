@@ -16,7 +16,6 @@ router = RPCRouter()
 async def copy_folders_from_project(
     app: FastAPI,
     job_id_data: AsyncJobNameData,
-    # user_id: UserID,
     body: FoldersBody,
 ) -> AsyncJobGet:
     task_uuid = await get_celery_client(app).send_task(
