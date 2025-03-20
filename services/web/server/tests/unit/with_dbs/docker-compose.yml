@@ -29,7 +29,7 @@ services:
       - "tcp_keepalives_count=5"
       - "-c"
       - "log_lock_waits=on"
-      # -c fsync=off is not recommended for production as this disable writing to disk
+      # -c fsync=off is not recommended for production as this disable writing to disk https://pythonspeed.com/articles/faster-db-tests/
       - "-c"
       - "fsync=off"
   redis:
