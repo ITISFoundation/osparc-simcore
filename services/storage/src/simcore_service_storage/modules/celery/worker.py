@@ -14,10 +14,7 @@ class CeleryWorkerClient:
 
     @make_async()
     def set_task_progress(self, task: Task, report: ProgressReport) -> None:
-        if task.name is None:
-            _logger.debug("skipping task progress for task.name='%s'", task.name)
-            return
-
+        assert task.name  # nosec
         task_name = task.name
         task_id = task.request.id
 
