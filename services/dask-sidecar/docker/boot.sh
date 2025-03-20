@@ -25,7 +25,7 @@ if [ "${SC_BUILD_TARGET}" = "development" ]; then
   python --version | sed 's/^/    /'
   command -v python | sed 's/^/    /'
   cd services/dask-sidecar
-  uv pip sync --quiet --no-cache-dir requirements/dev.txt
+  uv pip --quiet sync requirements/dev.txt
   cd -
   print_info "PIP :"
   uv pip list
@@ -33,7 +33,7 @@ fi
 
 if [ "${SC_BOOT_MODE}" = "debug" ]; then
   # NOTE: production does NOT pre-installs debugpy
-  uv pip install --no-cache-dir debugpy
+  uv pip install debugpy
 fi
 
 # RUNNING application ----------------------------------------
