@@ -392,13 +392,9 @@ async def get_user_products(
             .where(products.c.group_id == groups.c.gid)
             .label("product_name")
         )
-        products_gis_subq = (
-            sa.select(
-                products.c.group_id,
-            )
-            .distinct()
-            .subquery()
-        )
+        products_group_ids_subq = sa.select(
+            products.c.group_id,
+        ).distinct()
         query = (
             sa.select(
                 groups.c.gid,
@@ -408,7 +404,7 @@ async def get_user_products(
                 users.join(user_to_groups, user_to_groups.c.uid == users.c.id).join(
                     groups,
                     (groups.c.gid == user_to_groups.c.gid)
-                    & groups.c.gid.in_(products_gis_subq),
+                    & groups.c.gid.in_(products_group_ids_subq),
                 )
             )
             .where(users.c.id == user_id)
@@ -512,6 +508,8 @@ async def get_my_profile(app: web.Application, *, user_id: UserID) -> MyProfile:
                 users.c.email,
                 users.c.role,
                 sa.func.json_build_object(
+                    "hide_username",
+                    users.c.privacy_hide_username,
                     "hide_fullname",
                     users.c.privacy_hide_fullname,
                     "hide_email",
