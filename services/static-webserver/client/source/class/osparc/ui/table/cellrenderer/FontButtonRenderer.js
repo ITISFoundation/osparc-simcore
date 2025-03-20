@@ -32,8 +32,7 @@ qx.Class.define("osparc.ui.table.cellrenderer.FontButtonRenderer", {
     fontIcon: {
       check: "String",
       nullable: false,
-      // init: "@FontAwesome5Solid/eye/14",
-      init: "fa-solid fa-eye",
+      init: "fa-cog",
     },
   },
 
@@ -41,16 +40,13 @@ qx.Class.define("osparc.ui.table.cellrenderer.FontButtonRenderer", {
     // Override
     _getContentHtml: function(cellInfo) {
       const clickAction = this.getClickAction();
-      const icon = this.getFontIcon();
+      const iconClass = this.getFontIcon();
 
-      // const resMgr = qx.util.ResourceManager.getInstance();
-      // const iconUri = resMgr.toUri(icon);
-      // <img src="${iconUri}" style="${iconStyle}" />
-
-      const iconStyle = "font-size:14px;";
+      const buttonStyle = "background:none; border:none; padding:0; cursor:pointer; height:32px; width:32px; display:flex; align-items:center; justify-content:center;";
+      const iconStyle = "font-size:20px; width:24px; height:24px; display:flex; align-items:center; justify-content:center;";
       return `
-        <button data-action="${clickAction}" data-row="${cellInfo.row}" title="View">
-          <span class="${icon}" style="${iconStyle}"></span>
+        <button style="${buttonStyle}" data-action="${clickAction}" data-row="${cellInfo.row}" title="View">
+          <span class="fa ${iconClass}" style="${iconStyle}"></span>
         </button>
       `;
     }
