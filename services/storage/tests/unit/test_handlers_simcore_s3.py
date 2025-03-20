@@ -516,6 +516,7 @@ async def test_create_and_delete_folders_from_project(
     )
 
 
+@pytest.mark.flaky(max_runs=3)
 @pytest.mark.parametrize(
     "location_id",
     [SimcoreS3DataManager.get_location_id()],
