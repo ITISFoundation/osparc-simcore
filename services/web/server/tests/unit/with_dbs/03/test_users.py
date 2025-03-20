@@ -271,7 +271,7 @@ async def test_get_user_by_group_id(
     assert private_user["id"] != logged_user["id"]
     assert public_user["id"] != logged_user["id"]
 
-    # GET user by primary GID
+    # GET public_user by its primary gid
     url = client.app.router["get_all_group_users"].url_for(
         gid=f"{public_user['primary_gid']}"
     )
@@ -285,6 +285,7 @@ async def test_get_user_by_group_id(
     assert users[0].first_name == public_user.get("first_name")
     assert users[0].last_name == public_user.get("last_name")
 
+    # GET private_user by its primary gid
     url = client.app.router["get_all_group_users"].url_for(
         gid=f"{private_user['primary_gid']}"
     )
@@ -294,9 +295,9 @@ async def test_get_user_by_group_id(
     users = TypeAdapter(list[GroupUserGet]).validate_python(data)
     assert len(users) == 1
     assert users[0].id == private_user["id"]
-    assert users[0].user_name == private_user["name"]
-    assert users[0].first_name is None
-    assert users[0].last_name is None
+    assert users[0].user_name is None, "It's private"
+    assert users[0].first_name is None, "It's private"
+    assert users[0].last_name is None, "It's private"
 
 
 @pytest.mark.parametrize(
