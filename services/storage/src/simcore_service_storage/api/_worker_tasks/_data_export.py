@@ -20,7 +20,7 @@ async def data_export(
     user_id: UserID,
     paths_to_export: list[StorageFileID],
 ) -> StorageFileID:
-    _logger.info("Exporting for user '%s' files: %s", user_id, paths_to_export)
+    _logger.info("Exporting (for user='%s') selection: %s", user_id, paths_to_export)
 
     dsm = cast(
         SimcoreS3DataManager,
