@@ -1,9 +1,9 @@
-import asyncio
 import logging
 from typing import Annotated, cast
 from urllib.parse import quote
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Request
+from fastapi import APIRouter, Depends, Header, Request
+from models_library.api_schemas_rpc_async_jobs.async_jobs import AsyncJobNameData
 from models_library.api_schemas_storage.storage_schemas import (
     FileMetaDataGet,
     FileMetaDataGetv010,
@@ -34,9 +34,11 @@ from ...models import (
     StorageQueryParamsBase,
     UploadLinks,
 )
-from ...modules.long_running_tasks import get_completed_upload_tasks
+from ...modules.celery.client import CeleryTaskQueueClient
+from ...modules.celery.models import TaskUUID
 from ...simcore_s3_dsm import SimcoreS3DataManager
-from ...utils.utils import create_upload_completion_task_name
+from .._worker_tasks._files import complete_upload_file as remote_complete_upload_file
+from .dependencies.celery import get_celery_client
 
 _logger = logging.getLogger(__name__)
 
@@ -263,21 +265,27 @@ async def abort_upload_file(
     status_code=status.HTTP_202_ACCEPTED,
 )
 async def complete_upload_file(
+    celery_client: Annotated[CeleryTaskQueueClient, Depends(get_celery_client)],
     query_params: Annotated[StorageQueryParamsBase, Depends()],
     location_id: LocationID,
     file_id: StorageFileID,
     body: FileUploadCompletionBody,
     request: Request,
 ):
-    dsm = get_dsm_provider(request.app).get(location_id)
     # NOTE: completing a multipart upload on AWS can take up to several minutes
     # if it returns slow we return a 202 - Accepted, the client will have to check later
     # for completeness
-    task = asyncio.create_task(
-        dsm.complete_file_upload(file_id, query_params.user_id, body.parts),
-        name=create_upload_completion_task_name(query_params.user_id, file_id),
+    async_job_name_data = AsyncJobNameData(
+        user_id=query_params.user_id, product_name="osparc"
     )
-    get_completed_upload_tasks(request.app)[task.get_name()] = task
+    task_uuid = await celery_client.send_task(
+        remote_complete_upload_file.__name__,
+        task_context=async_job_name_data.model_dump(),
+        user_id=async_job_name_data.user_id,
+        location_id=location_id,
+        file_id=file_id,
+        body=body,
+    )
 
     route = (
         URL(f"{request.url}")
@@ -287,7 +295,7 @@ async def complete_upload_file(
                     "is_completed_upload_file",
                     location_id=f"{location_id}",
                     file_id=file_id,
-                    future_id=task.get_name(),
+                    future_id=f"{task_uuid}",
                 ),
                 safe=":/",
             ),
@@ -310,48 +318,38 @@ async def complete_upload_file(
     response_model=Envelope[FileUploadCompleteFutureResponse],
 )
 async def is_completed_upload_file(
+    celery_client: Annotated[CeleryTaskQueueClient, Depends(get_celery_client)],
     query_params: Annotated[StorageQueryParamsBase, Depends()],
     location_id: LocationID,
     file_id: StorageFileID,
     future_id: str,
-    request: Request,
 ):
     # NOTE: completing a multipart upload on AWS can take up to several minutes
     # therefore we wait a bit to see if it completes fast and return a 204
     # if it returns slow we return a 202 - Accepted, the client will have to check later
     # for completeness
-    task_name = create_upload_completion_task_name(query_params.user_id, file_id)
-    assert task_name == future_id  # nosec # NOTE: fastapi auto-decode path parameters
-    # first check if the task is in the app
-    if task := get_completed_upload_tasks(request.app).get(task_name):
-        if task.done():
-            new_fmd: FileMetaData = task.result()
-            get_completed_upload_tasks(request.app).pop(task_name)
-            response = FileUploadCompleteFutureResponse(
-                state=FileUploadCompleteState.OK, e_tag=new_fmd.entity_tag
-            )
-        else:
-            # the task is still running
-            response = FileUploadCompleteFutureResponse(
-                state=FileUploadCompleteState.NOK
-            )
-        return Envelope[FileUploadCompleteFutureResponse](data=response)
-    # there is no task, either wrong call or storage was restarted
-    # we try to get the file to see if it exists in S3
-    dsm = get_dsm_provider(request.app).get(location_id)
-    if fmd := await dsm.get_file(
-        user_id=query_params.user_id,
-        file_id=file_id,
-    ):
-        return Envelope[FileUploadCompleteFutureResponse](
-            data=FileUploadCompleteFutureResponse(
-                state=FileUploadCompleteState.OK, e_tag=fmd.entity_tag
-            )
-        )
-    raise HTTPException(
-        status.HTTP_404_NOT_FOUND,
-        detail="Not found. Upload could not be completed. Please try again and contact support if it fails again.",
+    async_job_name_data = AsyncJobNameData(
+        user_id=query_params.user_id, product_name="osparc"
     )
+    task_status = await celery_client.get_task_status(
+        task_context=async_job_name_data.model_dump(), task_uuid=TaskUUID(future_id)
+    )
+    # first check if the task is in the app
+    if task_status.is_done:
+        task_result = await celery_client.get_task_result(
+            task_context=async_job_name_data.model_dump(), task_uuid=TaskUUID(future_id)
+        )
+        assert isinstance(task_result, FileMetaData), f"{task_result=}"  # nosec
+        new_fmd = task_result
+        assert new_fmd.location_id == location_id  # nosec
+        assert new_fmd.file_id == file_id  # nosec
+        response = FileUploadCompleteFutureResponse(
+            state=FileUploadCompleteState.OK, e_tag=new_fmd.entity_tag
+        )
+    else:
+        # the task is still running
+        response = FileUploadCompleteFutureResponse(state=FileUploadCompleteState.NOK)
+    return Envelope[FileUploadCompleteFutureResponse](data=response)
 
 
 @router.delete(
