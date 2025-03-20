@@ -61,13 +61,13 @@ qx.Class.define("osparc.jobs.JobsTable", {
         id: "jobId",
         column: 0,
         label: qx.locale.Manager.tr("Job Id"),
-        width: 150
+        width: 170
       },
       SOLVER: {
         id: "solver",
         column: 1,
         label: qx.locale.Manager.tr("Solver"),
-        width: 150
+        width: 100
       },
       STATUS: {
         id: "status",

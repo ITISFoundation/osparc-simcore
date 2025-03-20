@@ -33,7 +33,7 @@ qx.Class.define("osparc.jobs.JobsBrowser", {
         jobsBrowser = new osparc.jobs.JobsBrowser();
       }
       const title = qx.locale.Manager.tr("Jobs");
-      const win = osparc.ui.window.Window.popUpInWindow(jobsBrowser, title, 1200, 500);
+      const win = osparc.ui.window.Window.popUpInWindow(jobsBrowser, title, 1100, 500);
       win.open();
       return win;
     }
