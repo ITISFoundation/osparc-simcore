@@ -85,7 +85,7 @@ services:
       - "18081:8081"
 
   rabbit:
-    image: itisfoundation/rabbitmq:3.11.2-management
+    image: itisfoundation/rabbitmq:3.13.7-management
     init: true
     environment:
       - RABBITMQ_DEFAULT_USER=admin
