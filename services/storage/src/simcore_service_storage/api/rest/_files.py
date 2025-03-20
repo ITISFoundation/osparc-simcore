@@ -276,7 +276,8 @@ async def complete_upload_file(
     # if it returns slow we return a 202 - Accepted, the client will have to check later
     # for completeness
     async_job_name_data = AsyncJobNameData(
-        user_id=query_params.user_id, product_name="osparc"
+        user_id=query_params.user_id,
+        product_name="osparc",  # TODO: fix this
     )
     task_uuid = await celery_client.send_task(
         remote_complete_upload_file.__name__,
@@ -329,7 +330,8 @@ async def is_completed_upload_file(
     # if it returns slow we return a 202 - Accepted, the client will have to check later
     # for completeness
     async_job_name_data = AsyncJobNameData(
-        user_id=query_params.user_id, product_name="osparc"
+        user_id=query_params.user_id,
+        product_name="osparc",  # TODO: fix this
     )
     task_status = await celery_client.get_task_status(
         task_context=async_job_name_data.model_dump(), task_uuid=TaskUUID(future_id)
