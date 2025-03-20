@@ -1,10 +1,9 @@
-import asyncio
 import logging
-from typing import Annotated, Any, cast
+from typing import Annotated, cast
 
-from fastapi import APIRouter, Depends, FastAPI, Request
-from models_library.api_schemas_long_running_tasks.base import TaskProgress
+from fastapi import APIRouter, Depends, Request
 from models_library.api_schemas_long_running_tasks.tasks import TaskGet
+from models_library.api_schemas_rpc_async_jobs.async_jobs import AsyncJobNameData
 from models_library.api_schemas_storage.storage_schemas import (
     FileMetaDataGet,
     FoldersBody,
@@ -12,9 +11,6 @@ from models_library.api_schemas_storage.storage_schemas import (
 from models_library.generics import Envelope
 from models_library.projects import ProjectID
 from servicelib.aiohttp import status
-from servicelib.fastapi.long_running_tasks._dependencies import get_tasks_manager
-from servicelib.logging_utils import log_context
-from servicelib.long_running_tasks._task import start_task
 from settings_library.s3 import S3Settings
 from yarl import URL
 
@@ -26,7 +22,12 @@ from ...models import (
     StorageQueryParamsBase,
 )
 from ...modules import sts
+from ...modules.celery.client import CeleryTaskQueueClient
 from ...simcore_s3_dsm import SimcoreS3DataManager
+from .._worker_tasks._simcore_s3 import (
+    deep_copy_files_from_project,
+)
+from .dependencies.celery import get_celery_client
 
 _logger = logging.getLogger(__name__)
 
@@ -50,68 +51,39 @@ async def get_or_create_temporary_s3_access(
     return Envelope[S3Settings](data=s3_settings)
 
 
-async def _copy_folders_from_project(
-    progress: TaskProgress,
-    app: FastAPI,
-    query_params: StorageQueryParamsBase,
-    body: FoldersBody,
-) -> Envelope[dict[str, Any]]:
-    dsm = cast(
-        SimcoreS3DataManager,
-        get_dsm_provider(app).get(SimcoreS3DataManager.get_location_id()),
-    )
-    with log_context(
-        _logger,
-        logging.INFO,
-        msg=f"copying {body.source['uuid']} -> {body.destination['uuid']}",
-    ):
-        await dsm.deep_copy_project_simcore_s3(
-            query_params.user_id,
-            body.source,
-            body.destination,
-            body.nodes_map,
-            task_progress=progress,
-        )
-
-    return Envelope[dict[str, Any]](data=body.destination)
-
-
 @router.post(
     "/simcore-s3/folders",
     response_model=Envelope[TaskGet],
     status_code=status.HTTP_202_ACCEPTED,
 )
 async def copy_folders_from_project(
+    celery_client: Annotated[CeleryTaskQueueClient, Depends(get_celery_client)],
     query_params: Annotated[StorageQueryParamsBase, Depends()],
     body: FoldersBody,
     request: Request,
 ):
-    task_id = None
-    try:
-        task_id = start_task(
-            get_tasks_manager(request),
-            _copy_folders_from_project,
-            app=request.app,
-            query_params=query_params,
-            body=body,
-        )
-        relative_url = URL(f"{request.url}").relative()
+    async_job_name_data = AsyncJobNameData(
+        user_id=query_params.user_id,
+        product_name="osparc",  # TODO: fix this
+    )
+    task_uuid = await celery_client.send_task(
+        deep_copy_files_from_project.__name__,
+        task_context=async_job_name_data.model_dump(),
+        user_id=async_job_name_data.user_id,
+        body=body,
+    )
 
-        return Envelope[TaskGet](
-            data=TaskGet(
-                task_id=task_id,
-                task_name=f"{request.method} {relative_url}",
-                status_href=f"{request.url_for('get_task_status', task_id=task_id)}",
-                result_href=f"{request.url_for('get_task_result', task_id=task_id)}",
-                abort_href=f"{request.url_for('cancel_and_delete_task', task_id=task_id)}",
-            )
+    relative_url = URL(f"{request.url}").relative()
+
+    return Envelope[TaskGet](
+        data=TaskGet(
+            task_id=f"{task_uuid}",
+            task_name=f"{request.method} {relative_url}",
+            status_href=f"{request.url_for('get_task_status', task_id=f'{task_uuid}')}",
+            result_href=f"{request.url_for('get_task_result', task_id=f'{task_uuid}')}",
+            abort_href=f"{request.url_for('cancel_and_delete_task', task_id=f'{task_uuid}')}",
         )
-    except asyncio.CancelledError:
-        if task_id:
-            await get_tasks_manager(request).cancel_task(
-                task_id, with_task_context=None
-            )
-        raise
+    )
 
 
 @router.delete(
