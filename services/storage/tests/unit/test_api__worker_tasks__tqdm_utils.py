@@ -1,6 +1,6 @@
 from time import sleep
 
-from simcore_service_storage.api.celery._tqdm_utils import (
+from simcore_service_storage.api._worker_tasks._tqdm_utils import (
     get_export_progress,
     set_absolute_progress,
 )

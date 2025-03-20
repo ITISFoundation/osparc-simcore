@@ -20,11 +20,15 @@ from models_library.projects_nodes_io import LocationID, NodeID, SimcoreS3FileID
 from models_library.users import UserID
 from pydantic import ByteSize, TypeAdapter
 from pytest_simcore.helpers.storage_utils import FileIDDict, ProjectWithFilesParams
+from simcore_service_storage.api._worker_tasks._data_export import data_export
 from simcore_service_storage.api._worker_tasks._paths import compute_path_size
 from simcore_service_storage.modules.celery.utils import set_fastapi_app
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 
-pytest_simcore_core_services_selection = ["postgres"]
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "rabbit",
+]
 pytest_simcore_ops_services_selection = ["adminer"]
 
 _IsFile: TypeAlias = bool
@@ -214,3 +218,15 @@ async def test_path_compute_size_inexistent_path(
         path=Path(faker.file_path(absolute=False)),
         expected_total_size=0,
     )
+
+
+# TODO: refactor and extract common parts
+async def test_data_export(
+    fake_celery_task: Task,
+    initialized_app: FastAPI,
+    client: httpx.AsyncClient,
+    user_id: UserID,
+):
+    # TODO: fake celery_worker_client as well
+    data = await data_export(fake_celery_task, user_id=user_id, paths_to_export=[])
+    assert data == "alskdjalsdjasjkd"
