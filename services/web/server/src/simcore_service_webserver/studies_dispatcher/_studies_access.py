@@ -205,9 +205,9 @@ async def copy_study_to_account(
                 f"{template_project['uuid']=}",
                 f"{project['uuid']}",
                 f"{user['id']}",
-                f"{lr_task.progress=}",
+                f"{lr_task.status.progress=}",
             )
-            if lr_task.done():
+            if lr_task.done:
                 await lr_task.result()
         await create_or_update_pipeline(
             request.app, user["id"], project["uuid"], product_name
