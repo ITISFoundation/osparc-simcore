@@ -88,64 +88,32 @@ qx.Class.define("osparc.FlashMessenger", {
       const msg = this.extractMessage(error, defaultMessage);
       const flashMessage = this.getInstance().logAs(msg, "ERROR", duration);
       if (error && error["supportId"]) {
-        flashMessage.addWidget(this.__createCopyEOCWidget(flashMessage, error["supportId"]));
+        flashMessage.addWidget(this.__createCopyEOCWidget(msg, error["supportId"]));
       }
       return flashMessage;
     },
 
-    __createCopyEOCWidget: function(flashMessage, supportId) {
-      const widget = new qx.ui.container.Composite(new qx.ui.layout.VBox()).set({
-        paddingLeft: 8,
-        paddingRight: 8,
-      });
-      const showErrorLabel = new qx.ui.basic.Atom().set({
-        label: qx.locale.Manager.tr("Show Support ID"),
-        icon: "@FontAwesome5Solid/chevron-right/10",
-        cursor: "pointer",
-        visibility: "visible",
-      });
-      widget.add(showErrorLabel);
-      const hideErrorLabel = new qx.ui.basic.Atom().set({
-        label: qx.locale.Manager.tr("Hide Support ID"),
-        icon: "@FontAwesome5Solid/chevron-down/10",
-        cursor: "pointer",
-        visibility: "excluded",
-      });
-      widget.add(hideErrorLabel);
-      const minorDoc = new qx.ui.basic.Label().set({
-        value: qx.locale.Manager.tr("If you contact support, please include this Support ID so we can quickly locate the issue."),
-        rich: true,
-        wrap: true,
-        visibility: "excluded",
-      });
-      widget.add(minorDoc);
+    __createCopyEOCWidget: function(message, supportId) {
       const errorLabel = new qx.ui.basic.Atom().set({
         label: supportId,
         icon: "@FontAwesome5Solid/copy/10",
+        iconPosition: "right",
+        gap: 8,
         cursor: "pointer",
-        visibility: "excluded",
+        alignX: "center",
+        allowGrowX: true,
       });
-      widget.add(errorLabel);
-      showErrorLabel.addListener("tap", () => {
-        showErrorLabel.exclude();
-        hideErrorLabel.show();
-        minorDoc.show();
-        errorLabel.show();
-
-        if (flashMessage.timer) {
-          // let the user close it
-          clearTimeout(flashMessage.timer);
-          delete flashMessage.timer;
+      errorLabel.addListener("tap", () => {
+        const dataToClipboard = {
+          message,
+          supportId,
+          timestamp: new Date().toString(),
+          url: window.location.href,
+          studyId: osparc.store.Store.getInstance().getCurrentStudy() ? osparc.store.Store.getInstance().getCurrentStudy().getUuid() : "",
         }
+        osparc.utils.Utils.copyTextToClipboard(JSON.stringify(dataToClipboard));
       });
-      hideErrorLabel.addListener("tap", () => {
-        showErrorLabel.show();
-        hideErrorLabel.exclude();
-        minorDoc.exclude();
-        errorLabel.exclude();
-      });
-      errorLabel.addListener("tap", () => osparc.utils.Utils.copyTextToClipboard(supportId));
-      return widget;
+      return errorLabel;
     },
   },
 
