@@ -10,6 +10,7 @@ from servicelib.logging_utils import log_context
 
 from ...dsm import get_dsm_provider
 from ...models import FileMetaData
+from ...modules.celery.models import TaskId
 from ...modules.celery.utils import get_fastapi_app
 
 _logger = logging.getLogger(__name__)
@@ -17,11 +18,13 @@ _logger = logging.getLogger(__name__)
 
 async def complete_upload_file(
     task: Task,
+    task_id: TaskId,
     user_id: UserID,
     location_id: LocationID,
     file_id: StorageFileID,
     body: FileUploadCompletionBody,
 ) -> FileMetaData:
+    assert task_id  # nosec
     with log_context(
         _logger,
         logging.INFO,

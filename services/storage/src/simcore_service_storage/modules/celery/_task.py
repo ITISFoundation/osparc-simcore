@@ -51,8 +51,6 @@ T = TypeVar("T")
 P = ParamSpec("P")
 R = TypeVar("R")
 
-TaskId: TypeAlias = str
-
 
 def _async_task_wrapper(
     app: Celery,
