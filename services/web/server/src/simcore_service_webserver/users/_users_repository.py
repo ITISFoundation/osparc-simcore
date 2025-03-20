@@ -154,7 +154,10 @@ async def get_user_or_raise(
 
 
 async def get_user_primary_group_id(
-    engine: AsyncEngine, connection: AsyncConnection | None = None, *, user_id: UserID
+    engine: AsyncEngine,
+    connection: AsyncConnection | None = None,
+    *,
+    user_id: UserID,
 ) -> GroupID:
     async with pass_or_acquire_connection(engine, connection) as conn:
         primary_gid: GroupID | None = await conn.scalar(
@@ -182,7 +185,7 @@ async def get_users_ids_in_group(
         return {row.uid async for row in result}
 
 
-async def get_user_id_from_pgid(app: web.Application, primary_gid: int) -> UserID:
+async def get_user_id_from_pgid(app: web.Application, *, primary_gid: int) -> UserID:
     async with pass_or_acquire_connection(engine=get_asyncpg_engine(app)) as conn:
         user_id: UserID = await conn.scalar(
             sa.select(
