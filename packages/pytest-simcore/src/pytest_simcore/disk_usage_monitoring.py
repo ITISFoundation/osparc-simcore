@@ -7,7 +7,7 @@ _logger = logging.getLogger(__name__)
 _DEFAULT_THREADHOLD_MB = 512
 
 
-def pytest_addoption(parser):
+def pytest_addoption(parser: pytest.Parser):
     simcore_group = parser.getgroup("simcore")
     simcore_group.addoption(
         "--disk-usage", action="store_true", help="Enable disk usage monitoring"

@@ -196,7 +196,6 @@ markupsafe==3.0.2
     #   moto
 moto==4.0.1
     # via
-    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/./constraints.txt
     #   -r requirements/_test.in
 multidict==6.1.0
@@ -236,7 +235,7 @@ psutil==6.1.0
     # via
     #   -c requirements/_base.txt
     #   pact-python
-pyasn1==0.6.1
+pyasn1==0.4.8
     # via
     #   python-jose
     #   rsa
@@ -368,7 +367,6 @@ typing-extensions==4.12.2
     #   -c requirements/_base.txt
     #   alembic
     #   anyio
-    #   faker
     #   fastapi
     #   mypy
     #   pydantic
