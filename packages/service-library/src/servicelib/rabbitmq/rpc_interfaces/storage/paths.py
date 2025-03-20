@@ -10,7 +10,7 @@ from models_library.rabbitmq_basic_types import RPCMethodName
 from models_library.users import UserID
 
 from ..._client_rpc import RabbitMQRPCClient
-from ..async_jobs.async_jobs import submit_job
+from ..async_jobs.async_jobs import submit
 
 
 async def compute_path_size(
@@ -22,7 +22,7 @@ async def compute_path_size(
     path: Path,
 ) -> tuple[AsyncJobGet, AsyncJobNameData]:
     job_id_data = AsyncJobNameData(user_id=user_id, product_name=product_name)
-    async_job_rpc_get = await submit_job(
+    async_job_rpc_get = await submit(
         rabbitmq_rpc_client=client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
         method_name=RPCMethodName("compute_path_size"),

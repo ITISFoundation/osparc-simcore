@@ -27,12 +27,7 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_path_parameters_as,
 )
 from servicelib.aiohttp.rest_responses import create_data_response
-from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import (
-    abort,
-    get_result,
-    get_status,
-    list_jobs,
-)
+from servicelib.rabbitmq.rpc_interfaces.async_jobs import async_jobs
 
 from .._meta import API_VTAG
 from ..login.decorators import login_required
@@ -78,7 +73,7 @@ async def get_async_jobs(request: web.Request) -> web.Response:
 
     rabbitmq_rpc_client = get_rabbitmq_rpc_client(request.app)
 
-    user_async_jobs = await list_jobs(
+    user_async_jobs = await async_jobs.list_jobs(
         rabbitmq_rpc_client=rabbitmq_rpc_client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
         job_id_data=AsyncJobNameData(
@@ -118,7 +113,7 @@ async def get_async_job_status(request: web.Request) -> web.Response:
     rabbitmq_rpc_client = get_rabbitmq_rpc_client(request.app)
 
     async_job_get = parse_request_path_parameters_as(_StorageAsyncJobId, request)
-    async_job_rpc_status = await get_status(
+    async_job_rpc_status = await async_jobs.status(
         rabbitmq_rpc_client=rabbitmq_rpc_client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
         job_id=async_job_get.task_id,
@@ -152,7 +147,7 @@ async def abort_async_job(request: web.Request) -> web.Response:
 
     rabbitmq_rpc_client = get_rabbitmq_rpc_client(request.app)
     async_job_get = parse_request_path_parameters_as(_StorageAsyncJobId, request)
-    await abort(
+    await async_jobs.cancel(
         rabbitmq_rpc_client=rabbitmq_rpc_client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
         job_id=async_job_get.task_id,
@@ -178,7 +173,7 @@ async def get_async_job_result(request: web.Request) -> web.Response:
 
     rabbitmq_rpc_client = get_rabbitmq_rpc_client(request.app)
     async_job_get = parse_request_path_parameters_as(_PathParams, request)
-    async_job_rpc_result = await get_result(
+    async_job_rpc_result = await async_jobs.result(
         rabbitmq_rpc_client=rabbitmq_rpc_client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
         job_id=async_job_get.task_id,

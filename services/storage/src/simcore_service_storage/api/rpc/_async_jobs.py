@@ -39,12 +39,12 @@ async def _assert_job_exists(
     job_ids = await celery_client.get_task_uuids(
         task_context=job_id_data.model_dump(),
     )
-    if not job_id in job_ids:
+    if job_id not in job_ids:
         raise JobMissingError(job_id=f"{job_id}")
 
 
 @router.expose(reraise_if_error_type=(JobSchedulerError, JobMissingError))
-async def abort(app: FastAPI, job_id: AsyncJobId, job_id_data: AsyncJobNameData):
+async def cancel(app: FastAPI, job_id: AsyncJobId, job_id_data: AsyncJobNameData):
     assert app  # nosec
     assert job_id_data  # nosec
     try:
@@ -60,7 +60,7 @@ async def abort(app: FastAPI, job_id: AsyncJobId, job_id_data: AsyncJobNameData)
 
 
 @router.expose(reraise_if_error_type=(JobSchedulerError, JobMissingError))
-async def get_status(
+async def status(
     app: FastAPI, job_id: AsyncJobId, job_id_data: AsyncJobNameData
 ) -> AsyncJobStatus:
     assert app  # nosec
@@ -93,7 +93,7 @@ async def get_status(
         JobMissingError,
     )
 )
-async def get_result(
+async def result(
     app: FastAPI, job_id: AsyncJobId, job_id_data: AsyncJobNameData
 ) -> AsyncJobResult:
     assert app  # nosec
@@ -104,31 +104,31 @@ async def get_result(
         await _assert_job_exists(
             job_id=job_id, job_id_data=job_id_data, celery_client=get_celery_client(app)
         )
-        status = await get_celery_client(app).get_task_status(
+        _status = await get_celery_client(app).get_task_status(
             task_context=job_id_data.model_dump(),
             task_uuid=job_id,
         )
-        if not status.is_done:
+        if not _status.is_done:
             raise JobNotDoneError(job_id=job_id)
-        result = await get_celery_client(app).get_task_result(
+        _result = await get_celery_client(app).get_task_result(
             task_context=job_id_data.model_dump(),
             task_uuid=job_id,
         )
     except CeleryError as exc:
         raise JobSchedulerError(exc=f"{exc}") from exc
 
-    if status.task_state == TaskState.ABORTED:
+    if _status.task_state == TaskState.ABORTED:
         raise JobAbortedError(job_id=job_id)
-    if status.task_state == TaskState.ERROR:
+    if _status.task_state == TaskState.ERROR:
         exc_type = ""
         exc_msg = ""
         with log_catch(logger=_logger, reraise=False):
-            task_error = TaskError.model_validate_json(result)
+            task_error = TaskError.model_validate_json(_result)
             exc_type = task_error.exc_type
             exc_msg = task_error.exc_msg
         raise JobError(job_id=job_id, exc_type=exc_type, exc_msg=exc_msg)
 
-    return AsyncJobResult(result=result)
+    return AsyncJobResult(result=_result)
 
 
 @router.expose(reraise_if_error_type=(JobSchedulerError,))

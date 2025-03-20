@@ -300,7 +300,7 @@ async def test_start_data_export_access_error(
     faker: Faker,
 ):
     with pytest.raises(AccessRightError):
-        _ = await async_jobs.submit_job(
+        _ = await async_jobs.submit(
             rpc_client,
             rpc_namespace=STORAGE_RPC_NAMESPACE,
             method_name="start_data_export",
@@ -330,7 +330,7 @@ async def test_abort_data_export_success(
 ):
     assert mock_celery_client.get_task_uuids_object is not None
     assert not isinstance(mock_celery_client.get_task_uuids_object, Exception)
-    await async_jobs.abort(
+    await async_jobs.cancel(
         rpc_client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
         job_id_data=AsyncJobNameData(
@@ -364,7 +364,7 @@ async def test_abort_data_export_error(
     assert not isinstance(job_ids, Exception)
     _job_id = next(iter(job_ids)) if len(job_ids) > 0 else AsyncJobId(_faker.uuid4())
     with pytest.raises(expected_exception_type):
-        await async_jobs.abort(
+        await async_jobs.cancel(
             rpc_client,
             rpc_namespace=STORAGE_RPC_NAMESPACE,
             job_id_data=AsyncJobNameData(
@@ -396,7 +396,7 @@ async def test_get_data_export_status(
     assert job_ids is not None
     assert not isinstance(job_ids, Exception)
     _job_id = next(iter(job_ids)) if len(job_ids) > 0 else AsyncJobId(_faker.uuid4())
-    result = await async_jobs.get_status(
+    result = await async_jobs.status(
         rpc_client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
         job_id=_job_id,
@@ -435,7 +435,7 @@ async def test_get_data_export_status_error(
     assert not isinstance(job_ids, Exception)
     _job_id = next(iter(job_ids)) if len(job_ids) > 0 else AsyncJobId(_faker.uuid4())
     with pytest.raises(expected_exception_type):
-        _ = await async_jobs.get_status(
+        _ = await async_jobs.status(
             rpc_client,
             rpc_namespace=STORAGE_RPC_NAMESPACE,
             job_id=_job_id,
@@ -468,7 +468,7 @@ async def test_get_data_export_result_success(
     assert job_ids is not None
     assert not isinstance(job_ids, Exception)
     _job_id = next(iter(job_ids)) if len(job_ids) > 0 else AsyncJobId(_faker.uuid4())
-    result = await async_jobs.get_result(
+    result = await async_jobs.result(
         rpc_client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
         job_id=_job_id,
@@ -546,7 +546,7 @@ async def test_get_data_export_result_error(
     _job_id = next(iter(job_ids)) if len(job_ids) > 0 else AsyncJobId(_faker.uuid4())
 
     with pytest.raises(expected_exception):
-        _ = await async_jobs.get_result(
+        _ = await async_jobs.result(
             rpc_client,
             rpc_namespace=STORAGE_RPC_NAMESPACE,
             job_id=_job_id,

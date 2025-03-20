@@ -26,7 +26,7 @@ from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from servicelib.aiohttp import status
 from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import (
-    submit_job,
+    submit,
 )
 from simcore_postgres_database.models.users import UserRole
 
@@ -133,7 +133,7 @@ async def test_compute_path_size(
     backend_result_or_exception: Any,
 ):
     create_storage_paths_rpc_client_mock(
-        submit_job.__name__,
+        submit.__name__,
         backend_result_or_exception,
     )
 
