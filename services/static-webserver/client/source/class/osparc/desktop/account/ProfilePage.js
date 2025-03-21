@@ -322,7 +322,7 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
       });
 
       const optOutMessage = new qx.ui.basic.Atom().set({
-        label: "If all searchable fields are hidden, you will not be findable.",
+        label: this.tr("If all searchable fields are hidden, you will not be findable."),
         icon: "@FontAwesome5Solid/exclamation-triangle/14",
         gap: 8,
         allowGrowX: false,
