@@ -6,7 +6,6 @@ from typing import Any, Final, NoReturn, ParamSpec, TypeVar, cast
 from uuid import uuid4
 
 import distributed
-from aiopg.sa.engine import Engine
 from common_library.json_serialization import json_dumps
 from dask_task_models_library.container_tasks.io import (
     FileUrl,
@@ -139,7 +138,7 @@ async def create_node_ports(
 
 
 async def parse_output_data(
-    db_engine: Engine,
+    db_engine: AsyncEngine,
     job_id: str,
     data: TaskOutputData,
     ports: node_ports_v2.Nodeports | None = None,
@@ -406,7 +405,7 @@ async def get_service_log_file_download_link(
 
 
 async def clean_task_output_and_log_files_if_invalid(
-    db_engine: Engine,
+    db_engine: AsyncEngine,
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
