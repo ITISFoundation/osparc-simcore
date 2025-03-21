@@ -258,7 +258,7 @@ def mock_storage_delete_data_folders(mocker: MockerFixture) -> mock.Mock:
         autospec=True,
     )
     mocker.patch(
-        "simcore_service_webserver.projects._crud_api_delete.api.delete_pipeline",
+        "simcore_service_webserver.projects._crud_api_delete.director_v2_service.delete_pipeline",
         autospec=True,
     )
     return mocker.patch(
