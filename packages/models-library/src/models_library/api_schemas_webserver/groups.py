@@ -244,33 +244,31 @@ class MyGroupsGet(OutputSchema):
                 GroupGet.from_domain_model(*gi) for gi in groups_by_type.standard
             ],
             all=GroupGet.from_domain_model(*groups_by_type.everyone),
-            product=GroupGet.from_domain_model(*my_product_group)
-            if my_product_group
-            else None,
+            product=(
+                GroupGet.from_domain_model(*my_product_group)
+                if my_product_group
+                else None
+            ),
         )
 
 
 class GroupUserGet(OutputSchemaWithoutCamelCase):
 
-    # Identifiers
     id: Annotated[UserID | None, Field(description="the user's id")] = None
-    user_name: Annotated[UserNameID, Field(alias="userName")]
+    user_name: Annotated[
+        UserNameID | None, Field(alias="userName", description="None if private")
+    ] = None
     gid: Annotated[
         GroupID | None,
         Field(description="the user primary gid"),
     ] = None
 
-    # Private Profile
     login: Annotated[
         LowerCaseEmailStr | None,
-        Field(description="the user's email, if privacy settings allows"),
+        Field(description="the user's email or None if private"),
     ] = None
-    first_name: Annotated[
-        str | None, Field(description="If privacy settings allows")
-    ] = None
-    last_name: Annotated[
-        str | None, Field(description="If privacy settings allows")
-    ] = None
+    first_name: Annotated[str | None, Field(description="None if private")] = None
+    last_name: Annotated[str | None, Field(description="None if private")] = None
     gravatar_id: Annotated[
         str | None, Field(description="the user gravatar id hash", deprecated=True)
     ] = None
@@ -307,6 +305,11 @@ class GroupUserGet(OutputSchemaWithoutCamelCase):
                 {
                     "id": "16",
                     "userName": "mrprivate",
+                    "gid": "55",
+                },
+                # very private user
+                {
+                    "id": "6",
                     "gid": "55",
                 },
                 {
