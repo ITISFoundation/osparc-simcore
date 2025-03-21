@@ -417,7 +417,7 @@ async def mocked_dynamic_services_interface(
         )
 
     mock["director_v2.api.create_or_update_pipeline"] = mocker.patch(
-        "simcore_service_webserver.director_v2.api.create_or_update_pipeline",
+        "simcore_service_webserver.director_v2.director_v2_service.create_or_update_pipeline",
         autospec=True,
         return_value=None,
     )
