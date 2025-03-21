@@ -4,6 +4,7 @@
 
 
 from typing import Any
+from uuid import UUID
 
 import pytest
 from faker import Faker
@@ -13,7 +14,7 @@ from models_library.docker import (
     DockerLabelKey,
     StandardSimcoreDockerLabels,
 )
-from pydantic import TypeAdapter, ValidationError
+from pydantic import ByteSize, TypeAdapter, ValidationError
 
 _faker = Faker()
 
@@ -83,11 +84,11 @@ def test_docker_label_key(label_key: str, valid: bool):
             True,
         ),
         (
-            f"registry:5000/si.m--c_ore/services/1234/jupyter-smash:{'A'*128}",
+            f"registry:5000/si.m--c_ore/services/1234/jupyter-smash:{'A' * 128}",
             True,
         ),
         (
-            f"registry:5000/si.m--c_ore/services/1234/jupyter-smash:{'A'*129}",
+            f"registry:5000/si.m--c_ore/services/1234/jupyter-smash:{'A' * 129}",
             False,
         ),
     ),
@@ -122,3 +123,17 @@ def test_simcore_service_docker_label_keys(obj_data: dict[str, Any]):
     ).validate_python(exported_dict)
     assert re_imported_docker_label_keys
     assert simcore_service_docker_label_keys == re_imported_docker_label_keys
+
+
+def test_simcore_service_docker_label_keys_construction():
+    simcore_service_docker_label_keys = StandardSimcoreDockerLabels(
+        user_id=8268,
+        project_id=UUID("5ea24ce0-0e4d-4ee6-a3f1-e4799752a684"),
+        node_id=UUID("c17c6279-23c6-412f-8826-867323a7711a"),
+        product_name="osparc",
+        simcore_user_agent="oePqmjQbZndJghceKRJR",
+        swarm_stack_name="UNDEFINED_DOCKER_LABEL",  # NOTE: there is currently no need for this label in the comp backend
+        memory_limit=ByteSize(23424324),
+        cpu_limit=1.0,
+    )
+    assert simcore_service_docker_label_keys.cpu_limit == 1.0
