@@ -18,7 +18,7 @@ from simcore_service_webserver.folders._common.models import (
 from simcore_service_webserver.projects._controller._rest_exceptions import (
     _TO_HTTP_ERROR_MAP,
 )
-from simcore_service_webserver.projects._trash_rest import ProjectPathParams
+from simcore_service_webserver.projects._controller.trash_rest import ProjectPathParams
 from simcore_service_webserver.workspaces._common.models import (
     WorkspacesPathParams,
     WorkspaceTrashQueryParams,
