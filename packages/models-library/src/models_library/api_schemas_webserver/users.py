@@ -16,6 +16,7 @@ from pydantic import (
     ValidationInfo,
     field_validator,
 )
+from pydantic.config import JsonDict
 from simcore_postgres_database.utils_users import MIN_USERNAME_LEN
 
 from ..basic_types import IDStr
@@ -82,27 +83,33 @@ class MyProfileGet(OutputSchemaWithoutCamelCase):
     privacy: MyProfilePrivacyGet
     preferences: AggregatedPreferences
 
+    @staticmethod
+    def _update_json_schema_extra(schema: JsonDict) -> None:
+        schema.update(
+            {
+                "examples": [
+                    {
+                        "id": 42,
+                        "login": "bla@foo.com",
+                        "userName": "bla42",
+                        "role": "admin",  # pre
+                        "expirationDate": "2022-09-14",  # optional
+                        "preferences": {},
+                        "privacy": {
+                            "hide_username": 0,
+                            "hide_fullname": 0,
+                            "hide_email": 1,
+                        },
+                    },
+                ]
+            }
+        )
+
     model_config = ConfigDict(
         # NOTE: old models have an hybrid between snake and camel cases!
         # Should be unified at some point
         populate_by_name=True,
-        json_schema_extra={
-            "examples": [
-                {
-                    "id": 42,
-                    "login": "bla@foo.com",
-                    "userName": "bla42",
-                    "role": "admin",  # pre
-                    "expirationDate": "2022-09-14",  # optional
-                    "preferences": {},
-                    "privacy": {
-                        "hide_username": 0,
-                        "hide_fullname": 0,
-                        "hide_email": 1,
-                    },
-                },
-            ]
-        },
+        json_schema_extra=_update_json_schema_extra,
     )
 
     @field_validator("role", mode="before")
