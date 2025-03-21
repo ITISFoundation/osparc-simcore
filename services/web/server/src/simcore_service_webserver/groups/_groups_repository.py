@@ -440,8 +440,7 @@ async def get_user_from_email(
 def _group_user_cols(caller_id: UserID):
     return (
         users.c.id,
-        users.c.name,
-        *visible_user_profile_cols(caller_id),
+        *visible_user_profile_cols(caller_id, username_label="name"),
         users.c.primary_gid,
     )
 

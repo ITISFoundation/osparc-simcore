@@ -9,8 +9,7 @@ from typing_extensions import (  # https://docs.pydantic.dev/latest/api/standard
     TypedDict,
 )
 
-from .basic_types import IDStr
-from .users import UserID
+from .users import UserID, UserNameID
 from .utils.common_validators import create_enums_pre_validator
 
 EVERYONE_GROUP_ID: Final[int] = 1
@@ -99,10 +98,10 @@ class GroupsByTypeTuple(NamedTuple):
 class GroupMember(BaseModel):
     # identifiers
     id: UserID
-    name: IDStr
     primary_gid: GroupID
 
     # private profile
+    name: UserNameID | None
     email: EmailStr | None
     first_name: str | None
     last_name: str | None
