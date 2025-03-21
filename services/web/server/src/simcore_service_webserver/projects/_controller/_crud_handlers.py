@@ -33,19 +33,19 @@ from servicelib.common_headers import (
 )
 from servicelib.redis import get_project_locked_state
 
-from .._meta import API_VTAG as VTAG
-from ..catalog import catalog_service
-from ..login.decorators import login_required
-from ..redis import get_redis_lock_manager_client_sdk
-from ..resource_manager.user_sessions import PROJECT_ID_KEY, managed_resource
-from ..security.api import check_user_permission
-from ..security.decorators import permission_required
-from ..users.api import get_user_fullname
-from ..utils_aiohttp import envelope_json_response
-from . import _crud_api_create, _crud_api_read, _crud_handlers_utils, projects_service
-from ._common.exceptions_handlers import handle_plugin_requests_exceptions
-from ._common.models import ProjectPathParams, RequestContext
-from ._crud_handlers_models import (
+from ..._meta import API_VTAG as VTAG
+from ...catalog import catalog_service
+from ...login.decorators import login_required
+from ...redis import get_redis_lock_manager_client_sdk
+from ...resource_manager.user_sessions import PROJECT_ID_KEY, managed_resource
+from ...security.api import check_user_permission
+from ...security.decorators import permission_required
+from ...users.api import get_user_fullname
+from ...utils_aiohttp import envelope_json_response
+from .. import _crud_api_create, _crud_api_read, projects_service
+from .._common.exceptions_handlers import handle_plugin_requests_exceptions
+from .._common.models import ProjectPathParams, RequestContext
+from .._crud_handlers_models import (
     ProjectActiveQueryParams,
     ProjectCreateHeaders,
     ProjectCreateQueryParams,
@@ -53,9 +53,10 @@ from ._crud_handlers_models import (
     ProjectsListQueryParams,
     ProjectsSearchQueryParams,
 )
-from ._permalink_service import update_or_pop_permalink_in_project
-from .models import ProjectDict
-from .utils import get_project_unavailable_services, project_uses_available_services
+from .._permalink_service import update_or_pop_permalink_in_project
+from ..models import ProjectDict
+from ..utils import get_project_unavailable_services, project_uses_available_services
+from . import _crud_handlers_utils
 
 # When the user requests a project with a repo, the working copy might differ from
 # the repo project. A middleware in the meta module (if active) will resolve

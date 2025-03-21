@@ -17,8 +17,8 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.resource_tracker import PricingPlanId, PricingUnitId
 from simcore_service_webserver._meta import API_VTAG
-from simcore_service_webserver.projects._nodes_rest import NodePathParams
-from simcore_service_webserver.projects._projects_nodes_pricing_unit_rest import (
+from simcore_service_webserver.projects._controller._nodes_rest import NodePathParams
+from simcore_service_webserver.projects._controller._projects_nodes_pricing_unit_rest import (
     _ProjectNodePricingUnitPathParams,
 )
 

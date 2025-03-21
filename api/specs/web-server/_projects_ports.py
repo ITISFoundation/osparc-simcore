@@ -9,7 +9,7 @@ from models_library.generics import Envelope
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from simcore_service_webserver._meta import API_VTAG
-from simcore_service_webserver.projects._ports_rest import (
+from simcore_service_webserver.projects._controller._ports_rest import (
     ProjectInputGet,
     ProjectInputUpdate,
     ProjectMetadataPortGet,
