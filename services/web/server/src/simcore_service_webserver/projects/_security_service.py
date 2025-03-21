@@ -2,9 +2,9 @@ import jsondiff  # type: ignore[import-untyped]
 from aiohttp import web
 from simcore_postgres_database.models.users import UserRole
 
-from ..projects.api import check_user_project_permission
 from ..security.api import get_access_model
 from ._projects_repository_legacy import ProjectDBAPI
+from .api import check_user_project_permission
 
 
 async def _can_update_node_inputs(context):
