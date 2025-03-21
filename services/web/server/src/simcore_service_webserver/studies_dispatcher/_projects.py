@@ -188,7 +188,7 @@ async def _add_new_project(
     # TODO: move this to projects_api
     # TODO: this piece was taken from the end of projects.projects_handlers.create_projects
 
-    from ..director_v2.api import create_or_update_pipeline
+    from ..director_v2.director_v2_service import create_or_update_pipeline
     from ..projects._projects_repository_legacy import APP_PROJECT_DBAPI
 
     db: ProjectDBAPI = app[APP_PROJECT_DBAPI]

@@ -10,7 +10,7 @@ from models_library.users import UserID
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from servicelib.redis._errors import ProjectLockError
 
-from ..director_v2 import api as director_v2_service
+from ..director_v2 import director_v2_service
 from . import _projects_repository as projects_repository
 from . import _projects_service
 from .exceptions import ProjectDeleteError, ProjectNotFoundError

@@ -13,7 +13,7 @@ from models_library.users import UserID
 from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
 from servicelib.utils import fire_and_forget_task
 
-from ..director_v2 import api as director_v2_service
+from ..director_v2 import director_v2_service
 from ..dynamic_scheduler import api as dynamic_scheduler_service
 from . import _crud_api_read
 from . import _projects_repository as projects_repository
