@@ -231,27 +231,8 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
         maxWidth: 500
       });
 
-      const label = osparc.ui.window.TabbedView.createHelpLabel(this.tr("For Privacy reasons, you might want to hide some personal fields."));
+      const label = osparc.ui.window.TabbedView.createHelpLabel(this.tr("For Privacy reasons, you might want to hide some personal data."));
       box.add(label);
-
-      const optOutMessage = new qx.ui.basic.Atom().set({
-        label: "If all searchable fields are showHidden, you will not be ",
-        icon: "@FontAwesome5Solid/copy/10",
-        iconPosition: "right",
-        gap: 8,
-        cursor: "pointer",
-        alignX: "center",
-        allowGrowX: false,
-        visibility: "excluded",
-      });
-      box.add(optOutMessage);
-      if (
-        this.__userPrivacyModel.getHideUsername() &&
-        this.__userPrivacyModel.getHideFullname() &&
-        this.__userPrivacyModel.getHideEmail()
-      ) {
-        optOutMessage.show();
-      }
 
       const hideUsername = new qx.ui.form.CheckBox().set({
         value: false
@@ -327,6 +308,29 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
             });
         }
       });
+
+      const optOutMessage = new qx.ui.basic.Atom().set({
+        label: "If all searchable fields are hidden, you will not be findable.",
+        icon: "@FontAwesome5Solid/exclamation-triangle/14",
+        gap: 8,
+        allowGrowX: false,
+      });
+      optOutMessage.getChildControl("icon").setTextColor("warning-yellow")
+      box.add(optOutMessage);
+      const privacyFields = [
+        hideUsername,
+        hideFullname,
+        hideEmail,
+      ]
+      const evaluateWarningMessage = () => {
+        if (privacyFields.every(privacyField => privacyField.getValue())) {
+          optOutMessage.show();
+        } else {
+          optOutMessage.exclude();
+        }
+      };
+      evaluateWarningMessage();
+      privacyFields.forEach(privacyField => privacyField.addListener("changeValue", () => evaluateWarningMessage()));
 
       return box;
     },
