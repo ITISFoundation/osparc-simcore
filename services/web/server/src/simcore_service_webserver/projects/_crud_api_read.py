@@ -23,8 +23,8 @@ from ..catalog import catalog_service
 from ..folders import _folders_repository
 from ..workspaces._workspaces_service import check_user_workspace_access
 from . import projects_service
-from ._projects_db import batch_get_trashed_by_primary_gid
-from .db import ProjectDBAPI
+from ._projects_repository import batch_get_trashed_by_primary_gid
+from ._projects_repository_legacy import ProjectDBAPI
 from .models import ProjectDict, ProjectTypeAPI
 
 

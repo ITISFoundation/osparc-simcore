@@ -10,7 +10,7 @@ from simcore_postgres_database.utils_repos import transaction_context
 from ..db.plugin import get_asyncpg_engine
 from ..projects import _folders_repository as project_to_folders_db
 from ..projects import _groups_respository as project_groups_db
-from ..projects import _projects_db as projects_db
+from ..projects import _projects_repository as projects_db
 from ..projects._access_rights_service import check_user_project_permission
 from ..users.api import get_user
 from ..workspaces.api import check_user_workspace_access

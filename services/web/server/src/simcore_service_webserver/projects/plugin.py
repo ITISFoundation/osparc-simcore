@@ -10,10 +10,6 @@ from aiohttp import web
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
 from ..constants import APP_SETTINGS_KEY
-from . import (
-    _trash_rest,
-    _wallets_rest,
-)
 from ._controller import (
     comments_rest,
     folders_rest,
@@ -25,11 +21,13 @@ from ._controller import (
     projects_rest,
     projects_states_rest,
     tags_rest,
+    trash_rest,
+    wallets_rest,
     workspaces_rest,
 )
 from ._controller.projects_slot import setup_project_observer_events
 from ._projects_access import setup_projects_access
-from .db import setup_projects_db
+from ._projects_repository_legacy import setup_projects_db
 
 logger = logging.getLogger(__name__)
 
@@ -61,10 +59,10 @@ def setup_projects(app: web.Application) -> bool:
     app.router.add_routes(ports_rest.routes)
     app.router.add_routes(nodes_rest.routes)
     app.router.add_routes(tags_rest.routes)
-    app.router.add_routes(_wallets_rest.routes)
+    app.router.add_routes(wallets_rest.routes)
     app.router.add_routes(folders_rest.routes)
     app.router.add_routes(nodes_pricing_unit_rest.routes)
     app.router.add_routes(workspaces_rest.routes)
-    app.router.add_routes(_trash_rest.routes)
+    app.router.add_routes(trash_rest.routes)
 
     return True

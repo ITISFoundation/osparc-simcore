@@ -1,8 +1,8 @@
-""" Projects management
+"""Projects management
 
- Keeps functionality that couples with the following app modules
-    - projects
-    - TMP: add_new_project includes to projects and director_v2 app modules!
+Keeps functionality that couples with the following app modules
+   - projects
+   - TMP: add_new_project includes to projects and director_v2 app modules!
 
 """
 
@@ -21,7 +21,7 @@ from models_library.services import ServiceKey, ServiceVersion
 from pydantic import AnyUrl, HttpUrl, TypeAdapter
 from servicelib.logging_utils import log_decorator
 
-from ..projects.db import ProjectDBAPI
+from ..projects._projects_repository_legacy import ProjectDBAPI
 from ..projects.exceptions import ProjectInvalidRightsError, ProjectNotFoundError
 from ..projects.projects_service import get_project_for_user
 from ..utils import now_str
@@ -189,7 +189,7 @@ async def _add_new_project(
     # TODO: this piece was taken from the end of projects.projects_handlers.create_projects
 
     from ..director_v2.api import create_or_update_pipeline
-    from ..projects.db import APP_PROJECT_DBAPI
+    from ..projects._projects_repository_legacy import APP_PROJECT_DBAPI
 
     db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
 

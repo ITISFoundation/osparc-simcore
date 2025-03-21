@@ -29,12 +29,17 @@ from simcore_postgres_database.models.projects import ProjectType, projects
 from simcore_postgres_database.models.projects_to_products import projects_to_products
 from simcore_postgres_database.models.users import UserRole
 from simcore_postgres_database.utils_projects_nodes import ProjectNodesRepo
-from simcore_service_webserver.projects._db_utils import PermissionStr
 from simcore_service_webserver.projects._groups_respository import (
     update_or_insert_project_group,
 )
+from simcore_service_webserver.projects._projects_repository_legacy import (
+    ProjectAccessRights,
+    ProjectDBAPI,
+)
+from simcore_service_webserver.projects._projects_repository_legacy_utils import (
+    PermissionStr,
+)
 from simcore_service_webserver.projects.api import has_user_project_access_rights
-from simcore_service_webserver.projects.db import ProjectAccessRights, ProjectDBAPI
 from simcore_service_webserver.projects.exceptions import (
     NodeNotFoundError,
     ProjectNodeRequiredInputsNotSetError,
