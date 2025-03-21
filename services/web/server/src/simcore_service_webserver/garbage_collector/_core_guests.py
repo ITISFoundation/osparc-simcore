@@ -12,8 +12,11 @@ from simcore_postgres_database.aiopg_errors import DatabaseError
 from simcore_postgres_database.models.users import UserRole
 
 from ..projects._projects_repository_legacy import ProjectDBAPI
+from ..projects._projects_service import (
+    get_project_for_user,
+    submit_delete_project_task,
+)
 from ..projects.exceptions import ProjectDeleteError, ProjectNotFoundError
-from ..projects.projects_service import get_project_for_user, submit_delete_project_task
 from ..redis import get_redis_lock_manager_client
 from ..resource_manager.registry import RedisResourceRegistry
 from ..users import exceptions
