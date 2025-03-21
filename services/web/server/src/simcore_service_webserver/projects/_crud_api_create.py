@@ -28,7 +28,7 @@ from simcore_postgres_database.webserver_models import ProjectType as ProjectTyp
 
 from ..application_settings import get_application_settings
 from ..catalog import catalog_service
-from ..director_v2 import api as director_v2_api
+from ..director_v2 import api as director_v2_service
 from ..dynamic_scheduler import api as dynamic_scheduler_api
 from ..folders import _folders_repository as folders_folders_repository
 from ..redis import get_redis_lock_manager_client_sdk
@@ -395,7 +395,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
         task_progress.update()
 
         # This is a new project and every new graph needs to be reflected in the pipeline tables
-        await director_v2_api.create_or_update_pipeline(
+        await director_v2_service.create_or_update_pipeline(
             request.app, user_id, new_project["uuid"], product_name
         )
         # get the latest state of the project (lastChangeDate for instance)
