@@ -40,15 +40,16 @@ qx.Class.define("osparc.jobs.JobsTableModel", {
   },
 
   properties: {
-    filters: {
-      check: "Object",
-      init: null
-    },
-
     isFetching: {
       check: "Boolean",
       init: false,
       event: "changeFetching"
+    },
+
+    filters: {
+      check: "Object",
+      init: null,
+      apply: "reloadData", // force reload
     },
 
     orderBy: {
@@ -68,6 +69,31 @@ qx.Class.define("osparc.jobs.JobsTableModel", {
   },
 
   members: {
+    // this should be done by the backend
+    __filterJobs: function(jobs) {
+      const filters = this.getFilters();
+      return jobs.filter(job => {
+        if (filters) {
+          let match = false;
+          [
+            "jobId",
+            "solver",
+            "status",
+            "instance",
+          ].forEach(filterableField => {
+            const getter = "get" + qx.lang.String.firstUp(filterableField);
+            const value = job[getter]();
+            // lowercase both
+            if (!match && value && value.toLowerCase().includes(filters.text.toLowerCase())) {
+              match = true;
+            }
+          });
+          return match;
+        }
+        return true;
+      });
+    },
+
     // overridden
     sortByColumn(columnIndex, ascending) {
       this.setOrderBy({
@@ -94,7 +120,8 @@ qx.Class.define("osparc.jobs.JobsTableModel", {
       };
       osparc.store.Jobs.getInstance().fetchJobs(urlParams, options)
         .then(jobs => {
-          this._onRowCountLoaded(jobs.length);
+          const filteredJobs = this.__filterJobs(jobs);
+          this._onRowCountLoaded(filteredJobs.length);
         })
         .catch(() => this._onRowCountLoaded(null));
     },
@@ -118,9 +145,10 @@ qx.Class.define("osparc.jobs.JobsTableModel", {
         };
         return osparc.store.Jobs.getInstance().fetchJobs(urlParams)
           .then(jobs => {
+            const filteredJobs = this.__filterJobs(jobs);
             const data = [];
             const jobsCols = osparc.jobs.JobsTable.COLS;
-            jobs.forEach(job => {
+            filteredJobs.forEach(job => {
               data.push({
                 [jobsCols.JOB_ID.id]: job.getJobId(),
                 [jobsCols.SOLVER.id]: job.getSolver(),

@@ -24,9 +24,16 @@ qx.Class.define("osparc.jobs.JobsBrowser", {
 
     this._setLayout(new qx.ui.layout.VBox(10));
 
-    this.getChildControl("jobs-filter");
+    const jobsFilter = this.getChildControl("jobs-filter");
     this.getChildControl("jobs-ongoing");
-    this.getChildControl("jobs-table");
+    const jobsTable = this.getChildControl("jobs-table");
+
+    jobsFilter.getChildControl("textfield").addListener("input", e => {
+      const filterText = e.getData();
+      jobsTable.getTableModel().setFilters({
+        text: filterText,
+      });
+    });
   },
 
   statics: {
