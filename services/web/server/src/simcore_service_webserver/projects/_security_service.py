@@ -7,7 +7,7 @@ from ..security.api import get_access_model
 from ._projects_repository_legacy import ProjectDBAPI
 
 
-async def can_update_node_inputs(context):
+async def _can_update_node_inputs(context):
     """Check function associated to "project.workbench.node.inputs.update" permission label
 
     Returns True if user has permission to update inputs
@@ -61,4 +61,4 @@ def setup_projects_access(app: web.Application):
     # TODO: add here also named permissions, i.e. all project.* operations
     hrba.roles[UserRole.GUEST].check[
         "project.workbench.node.inputs.update"
-    ] = can_update_node_inputs
+    ] = _can_update_node_inputs
