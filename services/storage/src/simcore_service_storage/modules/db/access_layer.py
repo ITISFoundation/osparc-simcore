@@ -53,6 +53,7 @@ from simcore_postgres_database.utils_repos import pass_or_acquire_connection
 from simcore_postgres_database.utils_sql import assemble_array_groups
 from sqlalchemy.ext.asyncio import AsyncConnection
 
+from ...constants import EXPORTS_S3_PREFIX
 from ...exceptions.errors import InvalidFileIdentifierError
 from ...models import AccessRights
 from ._base import BaseRepository
@@ -335,7 +336,7 @@ class AccessLayerRepository(BaseRepository):
                     # ownership still not defined, so we assume it is user_id
                     return AccessRights.all()
 
-                if parent == "exports":
+                if parent == EXPORTS_S3_PREFIX:
                     # ownership still not defined, so we assume it is user_id
                     return AccessRights.all()
 

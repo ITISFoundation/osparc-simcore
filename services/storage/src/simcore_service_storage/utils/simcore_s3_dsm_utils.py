@@ -20,6 +20,7 @@ from servicelib.s3_utils import FileLikeBytesIterReader
 from servicelib.utils import ensure_ends_with
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+from ..constants import EXPORTS_S3_PREFIX
 from ..exceptions.errors import FileMetaDataNotFoundError, ProjectAccessRightError
 from ..models import FileMetaData, FileMetaDataAtDB, GenericCursor, PathMetaData
 from ..modules.db.access_layer import AccessLayerRepository
@@ -138,7 +139,7 @@ def compute_file_id_prefix(file_id: str, levels: int):
 
 def get_random_export_name(user_id: UserID) -> StorageFileID:
     return TypeAdapter(StorageFileID).validate_python(
-        f"exports/{user_id}/{uuid4()}.zip"
+        f"{EXPORTS_S3_PREFIX}/{user_id}/{uuid4()}.zip"
     )
 
 
