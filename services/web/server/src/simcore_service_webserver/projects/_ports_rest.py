@@ -1,6 +1,6 @@
-""" Handlers for some CRUD operations for
-    - /projects/{*}/inputs
-    - /projects/{*}/outputs
+"""Handlers for some CRUD operations for
+- /projects/{*}/inputs
+- /projects/{*}/outputs
 """
 
 import logging
@@ -27,10 +27,10 @@ from servicelib.aiohttp.requests_validation import (
 
 from .._meta import API_VTAG as VTAG
 from ..login.decorators import login_required
-from ..projects._access_rights_api import check_user_project_permission
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
 from . import _ports_api, projects_service
+from ._access_rights_api import check_user_project_permission
 from ._common.exceptions_handlers import handle_plugin_requests_exceptions
 from ._common.models import ProjectPathParams, RequestContext
 from .db import ProjectDBAPI

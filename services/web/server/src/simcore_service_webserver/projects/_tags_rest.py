@@ -1,6 +1,4 @@
-""" Handlers for CRUD operations on /projects/{*}/tags/{*}
-
-"""
+"""Handlers for CRUD operations on /projects/{*}/tags/{*}"""
 
 import logging
 
