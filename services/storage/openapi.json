@@ -1185,60 +1185,6 @@
         }
       }
     },
-    "/v0/simcore-s3/folders": {
-      "post": {
-        "tags": [
-          "simcore-s3"
-        ],
-        "summary": "Copy Folders From Project",
-        "operationId": "copy_folders_from_project_v0_simcore_s3_folders_post",
-        "parameters": [
-          {
-            "name": "user_id",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "exclusiveMinimum": true,
-              "title": "User Id",
-              "minimum": 0
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/FoldersBody"
-              }
-            }
-          }
-        },
-        "responses": {
-          "202": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Envelope_TaskGet_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/v0/simcore-s3/folders/{folder_id}": {
       "delete": {
         "tags": [
@@ -1861,31 +1807,6 @@
         "type": "object",
         "title": "Envelope[S3Settings]"
       },
-      "Envelope_TaskGet_": {
-        "properties": {
-          "data": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/TaskGet"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "error": {
-            "anyOf": [
-              {},
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Error"
-          }
-        },
-        "type": "object",
-        "title": "Envelope[TaskGet]"
-      },
       "Envelope_dict_": {
         "properties": {
           "data": {
@@ -2417,31 +2338,6 @@
         ],
         "title": "FileUploadSchema"
       },
-      "FoldersBody": {
-        "properties": {
-          "source": {
-            "type": "object",
-            "title": "Source"
-          },
-          "destination": {
-            "type": "object",
-            "title": "Destination"
-          },
-          "nodes_map": {
-            "additionalProperties": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "propertyNames": {
-              "format": "uuid"
-            },
-            "type": "object",
-            "title": "Nodes Map"
-          }
-        },
-        "type": "object",
-        "title": "FoldersBody"
-      },
       "HTTPValidationError": {
         "properties": {
           "errors": {
@@ -2638,39 +2534,6 @@
           "link_id"
         ],
         "title": "SoftCopyBody"
-      },
-      "TaskGet": {
-        "properties": {
-          "task_id": {
-            "type": "string",
-            "title": "Task Id"
-          },
-          "task_name": {
-            "type": "string",
-            "title": "Task Name"
-          },
-          "status_href": {
-            "type": "string",
-            "title": "Status Href"
-          },
-          "result_href": {
-            "type": "string",
-            "title": "Result Href"
-          },
-          "abort_href": {
-            "type": "string",
-            "title": "Abort Href"
-          }
-        },
-        "type": "object",
-        "required": [
-          "task_id",
-          "task_name",
-          "status_href",
-          "result_href",
-          "abort_href"
-        ],
-        "title": "TaskGet"
       },
       "UploadedPart": {
         "properties": {
