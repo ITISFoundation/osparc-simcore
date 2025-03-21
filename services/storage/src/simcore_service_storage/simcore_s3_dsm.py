@@ -1255,7 +1255,11 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
                 for entry in meta_data_files:
                     source_object_keys.add(entry.object_key)
 
-        _logger.debug("will archive '%s' files", len(source_object_keys))
+        _logger.debug(
+            "User selection '%s' includes '%s' files",
+            object_keys,
+            len(source_object_keys),
+        )
 
         try:
             destination_object_key = get_random_export_name(user_id)
@@ -1286,7 +1290,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
             file_id=destination_object_key, user_id=user_id, uploaded_parts=[]
         )
 
-        _logger.info("Export available in path '%s'", destination_object_key)
+        _logger.debug("export available at '%s'", destination_object_key)
 
         return destination_object_key
 
