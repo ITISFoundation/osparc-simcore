@@ -1,5 +1,4 @@
 from aiohttp import web
-from fastapi import FastAPI
 from models_library.api_schemas_webserver import WEBSERVER_RPC_NAMESPACE
 from servicelib.rabbitmq import RPCRouter
 
@@ -12,7 +11,7 @@ router = RPCRouter()
 
 
 @router.expose()
-async def ping(app: FastAPI) -> str:
+async def ping(app: web.Application) -> str:
     assert app
     return "pong from webserver"
 
