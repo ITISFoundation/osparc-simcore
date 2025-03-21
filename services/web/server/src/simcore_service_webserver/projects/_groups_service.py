@@ -9,9 +9,9 @@ from models_library.users import UserID
 from pydantic import BaseModel
 
 from ..users import api as users_service
-from . import _groups_respository as projects_groups_db
+from . import _groups_repository
 from ._access_rights_service import check_user_project_permission
-from ._groups_respository import ProjectGroupGetDB
+from ._groups_models import ProjectGroupGetDB
 from ._projects_repository_legacy import APP_PROJECT_DBAPI, ProjectDBAPI
 from .exceptions import ProjectInvalidRightsError
 
@@ -46,7 +46,7 @@ async def create_project_group(
         permission="write",
     )
 
-    project_group_db: ProjectGroupGetDB = await projects_groups_db.create_project_group(
+    project_group_db: ProjectGroupGetDB = await _groups_repository.create_project_group(
         app=app,
         project_id=project_id,
         group_id=group_id,
@@ -77,7 +77,7 @@ async def list_project_groups_by_user_and_project(
     )
 
     project_groups_db: list[ProjectGroupGetDB] = (
-        await projects_groups_db.list_project_groups(app=app, project_id=project_id)
+        await _groups_repository.list_project_groups(app=app, project_id=project_id)
     )
 
     project_groups_api: list[ProjectGroupGet] = [
@@ -121,7 +121,7 @@ async def replace_project_group(
             )
 
     project_group_db: ProjectGroupGetDB = (
-        await projects_groups_db.replace_project_group(
+        await _groups_repository.replace_project_group(
             app=app,
             project_id=project_id,
             group_id=group_id,
@@ -165,7 +165,7 @@ async def delete_project_group(
                 reason=f"User does not have access to modify owner project group in project {project_id}",
             )
 
-    await projects_groups_db.delete_project_group(
+    await _groups_repository.delete_project_group(
         app=app, project_id=project_id, group_id=group_id
     )
 
@@ -179,7 +179,7 @@ async def delete_project_group_without_checking_permissions(
     project_id: ProjectID,
     group_id: GroupID,
 ) -> None:
-    await projects_groups_db.delete_project_group(
+    await _groups_repository.delete_project_group(
         app=app, project_id=project_id, group_id=group_id
     )
 
@@ -193,7 +193,7 @@ async def create_project_group_without_checking_permissions(
     write: bool,
     delete: bool,
 ) -> None:
-    await projects_groups_db.update_or_insert_project_group(
+    await _groups_repository.update_or_insert_project_group(
         app=app,
         project_id=project_id,
         group_id=group_id,

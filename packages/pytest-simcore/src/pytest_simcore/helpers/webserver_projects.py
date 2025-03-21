@@ -14,7 +14,7 @@ from common_library.dict_tools import remap_keys
 from models_library.projects_nodes_io import NodeID
 from models_library.services_resources import ServiceResourcesDictHelpers
 from simcore_postgres_database.utils_projects_nodes import ProjectNodeCreate
-from simcore_service_webserver.projects._groups_respository import (
+from simcore_service_webserver.projects._groups_repository import (
     update_or_insert_project_group,
 )
 from simcore_service_webserver.projects._projects_repository_legacy import (

@@ -23,7 +23,7 @@ from pytest_simcore.helpers.webserver_parametrizations import (
 from servicelib.aiohttp import status
 from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
 from simcore_service_webserver.db.models import UserRole
-from simcore_service_webserver.projects._groups_respository import (
+from simcore_service_webserver.projects._groups_repository import (
     GroupID,
     update_or_insert_project_group,
 )

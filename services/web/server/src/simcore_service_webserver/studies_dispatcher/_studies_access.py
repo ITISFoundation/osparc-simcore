@@ -30,7 +30,7 @@ from ..constants import INDEX_RESOURCE_NAME
 from ..director_v2._core_computations import create_or_update_pipeline
 from ..dynamic_scheduler import api as dynamic_scheduler_service
 from ..products import products_web
-from ..projects._groups_respository import get_project_group
+from ..projects._groups_repository import get_project_group
 from ..projects._projects_repository_legacy import ProjectDBAPI
 from ..projects.api import check_user_project_permission
 from ..projects.exceptions import (
