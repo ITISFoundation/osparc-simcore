@@ -117,6 +117,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
 
       // right-items
       this.getChildControl("tasks-button");
+      this.getChildControl("jobs-button");
       this.getChildControl("notifications-button");
       this.getChildControl("expiration-icon");
       this.getChildControl("help");
@@ -218,12 +219,12 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           this.getChildControl("center-items").add(control);
           break;
         }
-        case "credits-button":
-          control = new osparc.desktop.credits.CreditsIndicatorButton();
-          this.getChildControl("right-items").add(control);
-          break;
         case "tasks-button":
           control = new osparc.task.TasksButton();
+          this.getChildControl("right-items").add(control);
+          break;
+        case "jobs-button":
+          control = new osparc.jobs.JobsButton();
           this.getChildControl("right-items").add(control);
           break;
         case "notifications-button":
@@ -260,6 +261,10 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           control = this.__createHelpMenuBtn();
           control.set(this.self().BUTTON_OPTIONS);
           osparc.utils.Utils.setIdToWidget(control, "helpNavigationBtn");
+          this.getChildControl("right-items").add(control);
+          break;
+        case "credits-button":
+          control = new osparc.desktop.credits.CreditsIndicatorButton();
           this.getChildControl("right-items").add(control);
           break;
         case "log-in-button": {
