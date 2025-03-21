@@ -39,9 +39,9 @@ async def list_project_comments(
 ) -> list[ProjectsCommentsAPI]:
     db: ProjectDBAPI = request.app[APP_PROJECT_DBAPI]
 
-    projects_comments_db_model: list[
-        ProjectsCommentsDB
-    ] = await db.list_project_comments(project_uuid, offset, limit)
+    projects_comments_db_model: list[ProjectsCommentsDB] = (
+        await db.list_project_comments(project_uuid, offset, limit)
+    )
     projects_comments_api_model = [
         ProjectsCommentsAPI(**comment.model_dump())
         for comment in projects_comments_db_model

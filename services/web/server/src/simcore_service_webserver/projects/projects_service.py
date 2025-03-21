@@ -125,12 +125,12 @@ from ..wallets.errors import WalletNotEnoughCreditsError
 from ..workspaces import _workspaces_repository as workspaces_db
 from . import (
     _crud_api_delete,
-    _nodes_api,
+    _nodes_service,
     _projects_db,
     _projects_nodes_repository,
-    _wallets_api,
+    _wallets_service,
 )
-from ._access_rights_api import (
+from ._access_rights_service import (
     check_user_project_permission,
     has_user_project_access_rights,
 )
@@ -629,10 +629,10 @@ async def _start_dynamic_service(  # noqa: C901
 
     @exclusive(
         get_redis_lock_manager_client_sdk(request.app),
-        lock_key=_nodes_api.get_service_start_lock_key(user_id, project_uuid),
+        lock_key=_nodes_service.get_service_start_lock_key(user_id, project_uuid),
         blocking=True,
         blocking_timeout=datetime.timedelta(
-            seconds=_nodes_api.get_total_project_dynamic_nodes_creation_interval(
+            seconds=_nodes_service.get_total_project_dynamic_nodes_creation_interval(
                 get_plugin_settings(request.app).PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES
             )
         ),
@@ -641,7 +641,7 @@ async def _start_dynamic_service(  # noqa: C901
         project_running_nodes = await dynamic_scheduler_api.list_dynamic_services(
             request.app, user_id=user_id, project_id=project_uuid
         )
-        _nodes_api.check_num_service_per_projects_limit(
+        _nodes_service.check_num_service_per_projects_limit(
             app=request.app,
             number_of_services=len(project_running_nodes),
             user_id=user_id,
@@ -657,7 +657,7 @@ async def _start_dynamic_service(  # noqa: C901
             and app_settings.WEBSERVER_CREDIT_COMPUTATION_ENABLED
         ):
             # Deal with Wallet
-            project_wallet = await _wallets_api.get_project_wallet(
+            project_wallet = await _wallets_service.get_project_wallet(
                 request.app, project_id=project_uuid
             )
             if project_wallet is None:
@@ -672,7 +672,7 @@ async def _start_dynamic_service(  # noqa: C901
                 project_wallet_id = TypeAdapter(WalletID).validate_python(
                     user_default_wallet_preference.value
                 )
-                await _wallets_api.connect_wallet_to_project(
+                await _wallets_service.connect_wallet_to_project(
                     request.app,
                     product_name=product_name,
                     project_id=project_uuid,

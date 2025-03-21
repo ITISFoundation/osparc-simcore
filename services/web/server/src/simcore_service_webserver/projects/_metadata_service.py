@@ -10,7 +10,7 @@ from pydantic import TypeAdapter
 
 from ..db.plugin import get_database_engine
 from . import _metadata_db
-from ._access_rights_api import validate_project_ownership
+from ._access_rights_service import validate_project_ownership
 
 _logger = logging.getLogger(__name__)
 
