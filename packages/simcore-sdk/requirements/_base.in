@@ -13,10 +13,10 @@
 aiocache
 aiofiles
 aiohttp
-aiopg[sa]
 opentelemetry-instrumentation-aiopg
 packaging
 pint
+sqlalchemy[asyncio]
 pydantic[email]
 tenacity
 tqdm
