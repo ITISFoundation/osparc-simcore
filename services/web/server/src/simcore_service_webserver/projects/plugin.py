@@ -26,8 +26,8 @@ from ._controller import (
     workspaces_rest,
 )
 from ._controller.projects_slot import setup_project_observer_events
-from ._projects_access import setup_projects_access
 from ._projects_repository_legacy import setup_projects_db
+from ._security_service import setup_projects_access
 
 logger = logging.getLogger(__name__)
 
