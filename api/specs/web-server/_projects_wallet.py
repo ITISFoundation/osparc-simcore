@@ -20,7 +20,7 @@ from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.projects._controller._rest_schemas import (
     ProjectPathParams,
 )
-from simcore_service_webserver.projects._wallets_rest import (
+from simcore_service_webserver.projects._controller.wallets_rest import (
     _PayProjectDebtBody,
     _ProjectWalletPathParams,
 )
