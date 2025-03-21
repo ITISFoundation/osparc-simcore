@@ -1180,22 +1180,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_MyProfileGet_'
-    put:
-      tags:
-      - users
-      summary: Replace My Profile
-      description: Use PATCH instead
-      operationId: replace_my_profile
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/MyProfilePatch'
-        required: true
-      responses:
-        '204':
-          description: Successful Response
-      deprecated: true
     patch:
       tags:
       - users
@@ -11734,6 +11718,9 @@ components:
         last_name: Crespo
     MyProfilePrivacyGet:
       properties:
+        hideUsername:
+          type: boolean
+          title: Hideusername
         hideFullname:
           type: boolean
           title: Hidefullname
@@ -11742,11 +11729,17 @@ components:
           title: Hideemail
       type: object
       required:
+      - hideUsername
       - hideFullname
       - hideEmail
       title: MyProfilePrivacyGet
     MyProfilePrivacyPatch:
       properties:
+        hideUsername:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Hideusername
         hideFullname:
           anyOf:
           - type: boolean
