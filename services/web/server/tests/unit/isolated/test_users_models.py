@@ -33,7 +33,9 @@ def fake_profile_get(faker: Faker) -> MyProfileGet:
         user_name=fake_profile["username"],
         login=fake_profile["mail"],
         role="USER",
-        privacy=MyProfilePrivacyGet(hide_fullname=True, hide_email=True),
+        privacy=MyProfilePrivacyGet(
+            hide_fullname=True, hide_email=True, hide_username=False
+        ),
         preferences={},
     )
 
