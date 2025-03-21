@@ -105,6 +105,14 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         bool, Field(description="Enables credit computation features.")
     ] = False
 
+    WEBSERVER_FUNCTIONS: Annotated[
+        bool,
+        Field(
+            validation_alias=AliasChoices("WEBSERVER_FUNCTIONS"),
+            json_schema_extra={_X_DEV_FEATURE_FLAG: True},
+        ),
+    ] = False
+
     WEBSERVER_LOGLEVEL: Annotated[
         LogLevel,
         Field(

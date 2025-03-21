@@ -26,6 +26,9 @@ from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
 from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
     NotEnoughAvailableSeatsError,
 )
+from servicelib.rabbitmq.rpc_interfaces.webserver.functions.functions import (
+    ping as _ping,
+)
 from servicelib.rabbitmq.rpc_interfaces.webserver.licenses.licensed_items import (
     checkout_licensed_item_for_wallet as _checkout_licensed_item_for_wallet,
 )
@@ -193,6 +196,9 @@ class WbApiRpcClient(SingletonInAppStateMixin):
             stopped_at=licensed_item_checkout_get.stopped_at,
             num_of_seats=licensed_item_checkout_get.num_of_seats,
         )
+
+    async def ping(self) -> str:
+        return await _ping(self._client)
 
 
 def setup(app: FastAPI, rabbitmq_rmp_client: RabbitMQRPCClient):
