@@ -1,3 +1,6 @@
+# pylint:disable=redefined-outer-name
+# pylint:disable=unused-argument
+
 from collections.abc import Callable, Iterable
 from datetime import timedelta
 from typing import Any
@@ -13,7 +16,7 @@ from simcore_service_storage.modules.celery.signals import (
     on_worker_init,
     on_worker_shutdown,
 )
-from simcore_service_storage.modules.celery.worker import CeleryTaskQueueWorker
+from simcore_service_storage.modules.celery.worker import CeleryWorkerClient
 
 
 @pytest.fixture
@@ -97,6 +100,6 @@ def celery_worker_controller(
 @pytest.fixture
 def celery_worker(
     celery_worker_controller: TestWorkController,
-) -> CeleryTaskQueueWorker:
+) -> CeleryWorkerClient:
     assert isinstance(celery_worker_controller.app, Celery)
-    return CeleryTaskQueueWorker(celery_worker_controller.app)
+    return CeleryWorkerClient(celery_worker_controller.app)

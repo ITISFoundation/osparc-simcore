@@ -20,7 +20,7 @@ from simcore_service_storage.modules.celery.models import (
     TaskState,
 )
 from simcore_service_storage.modules.celery.utils import (
-    get_celery_worker,
+    get_celery_worker_client,
     get_fastapi_app,
 )
 from tenacity import Retrying, retry_if_exception_type, stop_after_delay, wait_fixed
@@ -28,20 +28,16 @@ from tenacity import Retrying, retry_if_exception_type, stop_after_delay, wait_f
 _logger = logging.getLogger(__name__)
 
 
-async def _async_archive(
-    celery_app: Celery, task_name: str, task_id: str, files: list[str]
-) -> str:
-    worker = get_celery_worker(celery_app)
+async def _async_archive(celery_app: Celery, task: Task, files: list[str]) -> str:
+    worker_client = get_celery_worker_client(celery_app)
 
     def sleep_for(seconds: float) -> None:
         time.sleep(seconds)
 
     for n, file in enumerate(files, start=1):
         with log_context(_logger, logging.INFO, msg=f"Processing file {file}"):
-            worker.set_task_progress(
-                task_name=task_name,
-                task_id=task_id,
-                report=ProgressReport(actual_value=n / len(files) * 10),
+            await worker_client.set_task_progress(
+                task, ProgressReport(actual_value=n / len(files) * 10)
             )
             await asyncio.get_event_loop().run_in_executor(None, sleep_for, 1)
 
@@ -52,7 +48,7 @@ def sync_archive(task: Task, files: list[str]) -> str:
     assert task.name
     _logger.info("Calling async_archive")
     return asyncio.run_coroutine_threadsafe(
-        _async_archive(task.app, task.name, task.request.id, files),
+        _async_archive(task.app, task, files),
         get_event_loop(get_fastapi_app(task.app)),
     ).result()
 
@@ -94,7 +90,7 @@ async def test_submitting_task_calling_async_function_results_with_success_state
     task_context = TaskContext(user_id=42)
 
     task_uuid = await celery_client.send_task(
-        "sync_archive",
+        sync_archive.__name__,
         task_context=task_context,
         files=[f"file{n}" for n in range(5)],
     )
@@ -122,7 +118,9 @@ async def test_submitting_task_with_failure_results_with_error(
 ):
     task_context = TaskContext(user_id=42)
 
-    task_uuid = await celery_client.send_task("failure_task", task_context=task_context)
+    task_uuid = await celery_client.send_task(
+        failure_task.__name__, task_context=task_context
+    )
 
     for attempt in Retrying(
         retry=retry_if_exception_type((AssertionError, ValidationError)),
@@ -149,7 +147,7 @@ async def test_aborting_task_results_with_aborted_state(
     task_context = TaskContext(user_id=42)
 
     task_uuid = await celery_client.send_task(
-        "dreamer_task",
+        dreamer_task.__name__,
         task_context=task_context,
     )
 

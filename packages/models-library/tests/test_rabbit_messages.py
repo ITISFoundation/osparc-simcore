@@ -1,5 +1,3 @@
-from typing import Union
-
 import pytest
 from faker import Faker
 from models_library.progress_bar import ProgressReport
@@ -41,6 +39,6 @@ faker = Faker()
 )
 async def test_raw_message_parsing(raw_data: str, class_type: type):
     result = TypeAdapter(
-        Union[ProgressRabbitMessageNode, ProgressRabbitMessageProject]
+        ProgressRabbitMessageNode | ProgressRabbitMessageProject
     ).validate_json(raw_data)
-    assert type(result) == class_type
+    assert type(result) is class_type

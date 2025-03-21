@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import Literal
+from typing import Literal, Self
 
 from models_library.progress_bar import ProgressReport
 from models_library.projects import ProjectID
@@ -24,8 +24,7 @@ class WebSocketMessageBase(BaseModel):
         return _event_type
 
     @abstractmethod
-    def to_socket_dict(self) -> SocketMessageDict:
-        ...
+    def to_socket_dict(self) -> SocketMessageDict: ...
 
     model_config = ConfigDict(frozen=True)
 
@@ -56,9 +55,7 @@ class WebSocketProjectProgress(
     event_type: Literal["projectProgress"] = "projectProgress"
 
     @classmethod
-    def from_rabbit_message(
-        cls, message: ProgressRabbitMessageProject
-    ) -> "WebSocketProjectProgress":
+    def from_rabbit_message(cls, message: ProgressRabbitMessageProject) -> Self:
         return cls.model_construct(
             user_id=message.user_id,
             project_id=message.project_id,
@@ -83,9 +80,7 @@ class WebSocketNodeProgress(
     event_type: Literal["nodeProgress"] = "nodeProgress"
 
     @classmethod
-    def from_rabbit_message(
-        cls, message: ProgressRabbitMessageNode
-    ) -> "WebSocketNodeProgress":
+    def from_rabbit_message(cls, message: ProgressRabbitMessageNode) -> Self:
         return cls.model_construct(
             user_id=message.user_id,
             project_id=message.project_id,

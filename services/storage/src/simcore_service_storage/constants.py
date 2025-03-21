@@ -41,3 +41,6 @@ MAX_CONCURRENT_DB_TASKS: Final[int] = 2
 
 
 EXPAND_DIR_MAX_ITEM_COUNT: Final[int] = 1000
+
+
+EXPORTS_S3_PREFIX: Final[str] = "exports"

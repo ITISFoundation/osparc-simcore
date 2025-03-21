@@ -18,6 +18,7 @@ from ...exceptions.errors import FileAccessRightError
 from ...modules.celery import get_celery_client
 from ...modules.datcore_adapter.datcore_adapter_exceptions import DatcoreAdapterError
 from ...simcore_s3_dsm import SimcoreS3DataManager
+from .._worker_tasks._data_export import data_export
 
 router = RPCRouter()
 
@@ -54,9 +55,10 @@ async def start_data_export(
 
     try:
         task_uuid = await get_celery_client(app).send_task(
-            "export_data",
+            data_export.__name__,
             task_context=job_id_data.model_dump(),
-            files=data_export_start.file_and_folder_ids,  # ANE: adapt here your signature
+            user_id=job_id_data.user_id,
+            paths_to_export=data_export_start.file_and_folder_ids,
         )
     except CeleryError as exc:
         raise JobSchedulerError(exc=f"{exc}") from exc

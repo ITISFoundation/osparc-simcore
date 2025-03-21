@@ -38,6 +38,7 @@ from pydantic import AnyUrl, ByteSize, NonNegativeInt, TypeAdapter, ValidationEr
 from servicelib.aiohttp.long_running_tasks.server import TaskProgress
 from servicelib.fastapi.client_session import get_client_session
 from servicelib.logging_utils import log_context
+from servicelib.progress_bar import AsyncReportCB
 from servicelib.utils import ensure_ends_with, limited_gather
 from simcore_postgres_database.utils_repos import transaction_context
 from sqlalchemy.ext.asyncio import AsyncEngine
@@ -80,9 +81,11 @@ from .modules.s3 import get_s3_client
 from .utils.s3_utils import S3TransferDataCB, update_task_progress
 from .utils.simcore_s3_dsm_utils import (
     compute_file_id_prefix,
+    create_and_upload_export,
     expand_directory,
     get_accessible_project_ids,
     get_directory_file_id,
+    get_random_export_name,
     list_child_paths_from_repository,
     list_child_paths_from_s3,
 )
@@ -135,7 +138,7 @@ async def _add_frontend_needed_data(
 
 
 @dataclass
-class SimcoreS3DataManager(BaseDataManager):
+class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-methods
     simcore_bucket_name: S3BucketName
     app: FastAPI
 
@@ -1235,6 +1238,61 @@ class SimcoreS3DataManager(BaseDataManager):
         return await FileMetaDataRepository.instance(get_db_engine(self.app)).upsert(
             fmd=fmd
         )
+
+    async def create_s3_export(
+        self,
+        user_id: UserID,
+        object_keys: list[StorageFileID],
+        *,
+        progress_cb: AsyncReportCB | None,
+    ) -> StorageFileID:
+        source_object_keys: set[StorageFileID] = set()
+
+        for object_key in object_keys:
+            async for meta_data_files in get_s3_client(self.app).list_objects_paginated(
+                self.simcore_bucket_name, object_key
+            ):
+                for entry in meta_data_files:
+                    source_object_keys.add(entry.object_key)
+
+        _logger.debug(
+            "User selection '%s' includes '%s' files",
+            object_keys,
+            len(source_object_keys),
+        )
+
+        try:
+            destination_object_key = get_random_export_name(user_id)
+
+            await self.create_file_upload_links(
+                user_id=user_id,
+                file_id=destination_object_key,
+                link_type=LinkType.S3,
+                file_size_bytes=ByteSize(0),
+                sha256_checksum=None,
+                is_directory=False,
+            )
+
+            await create_and_upload_export(
+                get_s3_client(self.app),
+                self.simcore_bucket_name,
+                source_object_keys=source_object_keys,
+                destination_object_keys=destination_object_key,
+                progress_cb=progress_cb,
+            )
+        except Exception:  # pylint:disable=broad-exception-caught
+            await self.abort_file_upload(
+                user_id=user_id, file_id=destination_object_key
+            )
+            raise
+
+        await self.complete_file_upload(
+            file_id=destination_object_key, user_id=user_id, uploaded_parts=[]
+        )
+
+        _logger.debug("export available at '%s'", destination_object_key)
+
+        return destination_object_key
 
 
 def create_simcore_s3_data_manager(app: FastAPI) -> SimcoreS3DataManager:

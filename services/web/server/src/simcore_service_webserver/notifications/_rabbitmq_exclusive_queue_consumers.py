@@ -70,6 +70,7 @@ async def _progress_message_parser(app: web.Application, data: bytes) -> bool:
             ProgressRabbitMessageNode | ProgressRabbitMessageProject
         ).validate_json(data)
     )
+
     message: SocketMessageDict | None = None
     if isinstance(rabbit_message, ProgressRabbitMessageProject):
         message = WebSocketProjectProgress.from_rabbit_message(
