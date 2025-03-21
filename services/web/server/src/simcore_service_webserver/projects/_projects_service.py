@@ -210,7 +210,10 @@ async def get_project_for_user(
     # adds state if it is not a template
     if include_state:
         project = await add_project_states_for_user(
-            user_id, project, project_type is ProjectType.TEMPLATE, app
+            user_id=user_id,
+            project=project,
+            is_template=project_type is ProjectType.TEMPLATE,
+            app=app,
         )
 
     # adds `trashed_by_primary_gid`
@@ -1550,7 +1553,6 @@ async def get_project_states_for_user(
     user_id: int, project_uuid: str, app: web.Application
 ) -> ProjectState:
     # for templates: the project is never locked and never opened. also the running state is always unknown
-    lock_state = ProjectLocked(value=False, status=ProjectStatus.CLOSED)
     running_state = RunningState.UNKNOWN
     lock_state, computation_task = await logged_gather(
         _get_project_lock_state(user_id, project_uuid, app),
@@ -1566,6 +1568,7 @@ async def get_project_states_for_user(
 
 
 async def add_project_states_for_user(
+    *,
     user_id: int,
     project: ProjectDict,
     is_template: bool,

@@ -43,13 +43,17 @@ async def move_project_into_folder(
             )
         workspace_is_private = False
 
+    private_workspace_user_id_or_none: UserID | None = (
+        user_id if workspace_is_private else None
+    )
+
     if folder_id:
         # Check user has access to folder
         await folders_folders_repository.get_for_user_or_workspace(
             app,
             folder_id=folder_id,
             product_name=product_name,
-            user_id=user_id if workspace_is_private else None,
+            user_id=private_workspace_user_id_or_none,
             workspace_id=project_db.workspace_id,
         )
 
@@ -57,7 +61,7 @@ async def move_project_into_folder(
     prj_to_folder_db = await _folders_repository.get_project_to_folder(
         app,
         project_id=project_id,
-        private_workspace_user_id_or_none=user_id if workspace_is_private else None,
+        private_workspace_user_id_or_none=private_workspace_user_id_or_none,
     )
     if prj_to_folder_db is None:
         if folder_id is None:
@@ -66,7 +70,7 @@ async def move_project_into_folder(
             app,
             project_id=project_id,
             folder_id=folder_id,
-            private_workspace_user_id_or_none=user_id if workspace_is_private else None,
+            private_workspace_user_id_or_none=private_workspace_user_id_or_none,
         )
     else:
         # Delete old
@@ -74,7 +78,7 @@ async def move_project_into_folder(
             app,
             project_id=project_id,
             folder_id=prj_to_folder_db.folder_id,
-            private_workspace_user_id_or_none=user_id if workspace_is_private else None,
+            private_workspace_user_id_or_none=private_workspace_user_id_or_none,
         )
         # Create new
         if folder_id is not None:
@@ -82,7 +86,5 @@ async def move_project_into_folder(
                 app,
                 project_id=project_id,
                 folder_id=folder_id,
-                private_workspace_user_id_or_none=(
-                    user_id if workspace_is_private else None
-                ),
+                private_workspace_user_id_or_none=private_workspace_user_id_or_none,
             )
