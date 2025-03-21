@@ -35,7 +35,7 @@ from simcore_service_webserver.projects._common.exceptions_handlers import (
     _TO_HTTP_ERROR_MAP,
 )
 from simcore_service_webserver.projects._common.models import ProjectPathParams
-from simcore_service_webserver.projects._controller._crud_handlers import (
+from simcore_service_webserver.projects._controller._projects_rest import (
     ProjectCreateQueryParams,
 )
 from simcore_service_webserver.projects._crud_handlers_models import (
