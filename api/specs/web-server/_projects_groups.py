@@ -14,7 +14,7 @@ from simcore_service_webserver.projects._controller._groups_rest import (
     _ProjectsGroupsBodyParams,
     _ProjectsGroupsPathParams,
 )
-from simcore_service_webserver.projects._groups_api import ProjectGroupGet
+from simcore_service_webserver.projects._groups_service import ProjectGroupGet
 
 router = APIRouter(
     prefix=f"/{API_VTAG}",

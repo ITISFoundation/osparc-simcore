@@ -16,10 +16,10 @@ from ..._meta import api_version_prefix as VTAG
 from ...login.decorators import login_required
 from ...security.decorators import permission_required
 from ...utils_aiohttp import envelope_json_response
-from .. import _groups_api
+from .. import _groups_service
 from .._common.exceptions_handlers import handle_plugin_requests_exceptions
 from .._common.models import ProjectPathParams, RequestContext
-from .._groups_api import ProjectGroupGet
+from .._groups_service import ProjectGroupGet
 
 _logger = logging.getLogger(__name__)
 
@@ -55,7 +55,7 @@ async def create_project_group(request: web.Request):
     path_params = parse_request_path_parameters_as(_ProjectsGroupsPathParams, request)
     body_params = await parse_request_body_as(_ProjectsGroupsBodyParams, request)
 
-    project_groups: ProjectGroupGet = await _groups_api.create_project_group(
+    project_groups: ProjectGroupGet = await _groups_service.create_project_group(
         request.app,
         user_id=req_ctx.user_id,
         project_id=path_params.project_id,
@@ -78,7 +78,7 @@ async def list_project_groups(request: web.Request):
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
     project_groups: list[ProjectGroupGet] = (
-        await _groups_api.list_project_groups_by_user_and_project(
+        await _groups_service.list_project_groups_by_user_and_project(
             request.app,
             user_id=req_ctx.user_id,
             project_id=path_params.project_id,
@@ -101,7 +101,7 @@ async def replace_project_group(request: web.Request):
     path_params = parse_request_path_parameters_as(_ProjectsGroupsPathParams, request)
     body_params = await parse_request_body_as(_ProjectsGroupsBodyParams, request)
 
-    return await _groups_api.replace_project_group(
+    return await _groups_service.replace_project_group(
         app=request.app,
         user_id=req_ctx.user_id,
         project_id=path_params.project_id,
@@ -124,7 +124,7 @@ async def delete_project_group(request: web.Request):
     req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(_ProjectsGroupsPathParams, request)
 
-    await _groups_api.delete_project_group(
+    await _groups_service.delete_project_group(
         app=request.app,
         user_id=req_ctx.user_id,
         project_id=path_params.project_id,

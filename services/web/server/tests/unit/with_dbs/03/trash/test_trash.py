@@ -23,7 +23,7 @@ from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import UserInfoDict
 from servicelib.aiohttp import status
 from simcore_service_webserver.db.models import UserRole
-from simcore_service_webserver.projects._groups_api import ProjectGroupGet
+from simcore_service_webserver.projects._groups_service import ProjectGroupGet
 from simcore_service_webserver.projects.models import ProjectDict
 from tenacity import AsyncRetrying, stop_after_attempt, wait_fixed
 from yarl import URL

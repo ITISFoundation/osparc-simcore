@@ -1,6 +1,4 @@
-""" Handlers for CRUD operations on /projects/{*}/tags/{*}
-
-"""
+"""Handlers for CRUD operations on /projects/{*}/tags/{*}"""
 
 import logging
 
@@ -10,7 +8,7 @@ from models_library.users import UserID
 from models_library.workspaces import UserWorkspaceWithAccessRights
 
 from ..workspaces import _workspaces_repository as workspaces_db
-from ._access_rights_api import check_user_project_permission
+from ._access_rights_service import check_user_project_permission
 from .db import ProjectDBAPI
 from .models import ProjectDict
 

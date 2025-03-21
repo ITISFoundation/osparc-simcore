@@ -10,7 +10,7 @@ from pydantic import BaseModel
 
 from ..users import api as users_api
 from . import _groups_db as projects_groups_db
-from ._access_rights_api import check_user_project_permission
+from ._access_rights_service import check_user_project_permission
 from ._groups_db import ProjectGroupGetDB
 from .db import APP_PROJECT_DBAPI, ProjectDBAPI
 from .exceptions import ProjectInvalidRightsError
@@ -76,9 +76,9 @@ async def list_project_groups_by_user_and_project(
         permission="read",
     )
 
-    project_groups_db: list[
-        ProjectGroupGetDB
-    ] = await projects_groups_db.list_project_groups(app=app, project_id=project_id)
+    project_groups_db: list[ProjectGroupGetDB] = (
+        await projects_groups_db.list_project_groups(app=app, project_id=project_id)
+    )
 
     project_groups_api: list[ProjectGroupGet] = [
         ProjectGroupGet.model_validate(group.model_dump())

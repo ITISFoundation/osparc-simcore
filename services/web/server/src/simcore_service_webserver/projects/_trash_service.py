@@ -18,7 +18,7 @@ from ..dynamic_scheduler import api as dynamic_scheduler_api
 from . import _crud_api_read
 from . import _projects_db as _projects_repository
 from . import _projects_service_delete, projects_service
-from ._access_rights_api import check_user_project_permission
+from ._access_rights_service import check_user_project_permission
 from ._projects_db import _OLDEST_TRASHED_FIRST
 from .exceptions import (
     ProjectNotFoundError,
