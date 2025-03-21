@@ -210,6 +210,7 @@ async def submit_and_wait(
         ):
             yield AsyncJobComposedResult(job_status)
 
+        assert job_status  # nosec
         yield AsyncJobComposedResult(
             job_status,
             result(
