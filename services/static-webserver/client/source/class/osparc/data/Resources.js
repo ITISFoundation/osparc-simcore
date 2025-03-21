@@ -553,7 +553,6 @@ qx.Class.define("osparc.data.Resources", {
        */
       "tasks": {
         useCache: false,
-        idField: "id",
         endpoints: {
           get: {
             method: "GET",
@@ -1208,9 +1207,17 @@ qx.Class.define("osparc.data.Resources", {
             method: "GET",
             url: statics.API + "/storage/locations/{locationId}/paths?size=1000"
           },
+          getDatasetsPage: {
+            method: "GET",
+            url: statics.API + "/storage/locations/{locationId}/paths?cursor={cursor}&size=1000"
+          },
           getPaths: {
             method: "GET",
             url: statics.API + "/storage/locations/{locationId}/paths?file_filter={path}&size=1000"
+          },
+          getPathsPage: {
+            method: "GET",
+            url: statics.API + "/storage/locations/{locationId}/paths?file_filter={path}&cursor={cursor}&size=1000"
           },
           requestSize: {
             method: "POST",
@@ -1490,7 +1497,10 @@ qx.Class.define("osparc.data.Resources", {
           }
 
           if ([404, 503].includes(status)) {
-            message += "<br>Please try again later and/or contact support";
+            // NOTE: a temporary solution to avoid duplicate information
+            if (!message.includes("contact") && !message.includes("try")) {
+              message += "<br>Please try again later and/or contact support";
+            }
           }
           const err = Error(message ? message : `Error while trying to fetch ${endpoint} ${resource}`);
           if (status) {

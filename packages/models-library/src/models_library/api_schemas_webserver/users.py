@@ -141,7 +141,7 @@ class MyProfileGet(OutputSchemaWithoutCamelCase):
 class MyProfilePatch(InputSchemaWithoutCamelCase):
     first_name: FirstNameStr | None = None
     last_name: LastNameStr | None = None
-    user_name: Annotated[IDStr | None, Field(alias="userName")] = None
+    user_name: Annotated[IDStr | None, Field(alias="userName", min_length=4)] = None
 
     privacy: MyProfilePrivacyPatch | None = None
 
@@ -169,7 +169,7 @@ class MyProfilePatch(InputSchemaWithoutCamelCase):
 
         # Ensure it doesn't end with a special character
         if {value[0], value[-1]}.intersection({"_", "-", "."}):
-            msg = f"Username '{value}' cannot end or start with a special character."
+            msg = f"Username '{value}' cannot end with a special character."
             raise ValueError(msg)
 
         # Check reserved words (example list; extend as needed)
@@ -215,7 +215,7 @@ class UserGet(OutputSchema):
     # Public profile of a user subject to its privacy settings
     user_id: UserID
     group_id: GroupID
-    user_name: UserNameID
+    user_name: UserNameID | None = None
     first_name: str | None = None
     last_name: str | None = None
     email: EmailStr | None = None

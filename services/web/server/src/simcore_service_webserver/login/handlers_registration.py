@@ -59,7 +59,6 @@ from .settings import (
 )
 from .storage import AsyncpgStorage, ConfirmationTokenDict, get_plugin_storage
 from .utils import (
-    REGISTRATION,
     envelope_response,
     flash_response,
     get_user_name_from_email,
@@ -250,8 +249,8 @@ async def register(request: web.Request):
     if settings.LOGIN_REGISTRATION_CONFIRMATION_REQUIRED:
         # Confirmation required: send confirmation email
         _confirmation: ConfirmationTokenDict = await db.create_confirmation(
-            user["id"],
-            REGISTRATION,
+            user_id=user["id"],
+            action="REGISTRATION",
             data=invitation.model_dump_json() if invitation else None,
         )
 
@@ -275,7 +274,7 @@ async def register(request: web.Request):
             )
         except Exception as err:  # pylint: disable=broad-except
             error_code = create_error_code(err)
-            user_error_msg = f"{MSG_CANT_SEND_MAIL} [{error_code}]"
+            user_error_msg = MSG_CANT_SEND_MAIL
 
             _logger.exception(
                 **create_troubleshotting_log_kwargs(
@@ -417,7 +416,7 @@ async def register_phone(request: web.Request):
     except Exception as err:  # pylint: disable=broad-except
         # Unhandled errors -> 503
         error_code = create_error_code(err)
-        user_error_msg = f"Currently we cannot register phone numbers [{error_code}]"
+        user_error_msg = "Currently we cannot register phone numbers"
 
         _logger.exception(
             **create_troubleshotting_log_kwargs(
