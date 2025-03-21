@@ -2,6 +2,10 @@ import datetime as dt
 
 from aiohttp import web
 from models_library.products import ProductName
+from models_library.rpc.webserver.auth.api_keys import (
+    generate_api_key_and_secret,
+    generate_unique_api_key,
+)
 from models_library.users import UserID
 
 from . import _repository
@@ -17,7 +21,7 @@ async def create_api_key(
     display_name: str,
     expiration: dt.timedelta | None,
 ) -> ApiKey:
-    api_key, api_secret = _generate_api_key_and_secret(display_name)
+    api_key, api_secret = generate_api_key_and_secret(display_name)
 
     return await _repository.create_api_key(
         app,
@@ -52,7 +56,7 @@ async def delete_api_key_by_display_name(
     user_id: UserID,
     display_name: str,
 ) -> None:
-    api_key = _generate_deterministic_key(display_name)
+    api_key = generate_unique_api_key(display_name)
     await _repository.delete_api_key_by_key(
         app,
         product_name=product_name,
