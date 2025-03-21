@@ -16,14 +16,14 @@ from . import (
     _wallets_rest,
 )
 from ._controller import (
-    _crud_handlers,
     _folders_rest,
     _groups_rest,
     _metadata_rest,
     _nodes_rest,
     _ports_rest,
     _projects_nodes_pricing_unit_rest,
-    _states_handlers,
+    _projects_rest,
+    _projects_states_rest,
     _tags_rest,
     _workspaces_rest,
 )
@@ -53,8 +53,8 @@ def setup_projects(app: web.Application) -> bool:
     # registers event handlers (e.g. on_user_disconnect)
     setup_project_observer_events(app)
 
-    app.router.add_routes(_states_handlers.routes)
-    app.router.add_routes(_crud_handlers.routes)
+    app.router.add_routes(_projects_states_rest.routes)
+    app.router.add_routes(_projects_rest.routes)
     app.router.add_routes(_comments_rest.routes)
     app.router.add_routes(_groups_rest.routes)
     app.router.add_routes(_metadata_rest.routes)
