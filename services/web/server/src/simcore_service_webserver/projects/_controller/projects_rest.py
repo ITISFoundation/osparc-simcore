@@ -55,7 +55,7 @@ from .._crud_handlers_models import (
 from .._permalink_service import update_or_pop_permalink_in_project
 from ..models import ProjectDict
 from ..utils import get_project_unavailable_services, project_uses_available_services
-from . import _projects_rest_utils
+from . import _rest_utils
 from ._rest_exceptions import handle_plugin_requests_exceptions
 
 # When the user requests a project with a repo, the working copy might differ from
@@ -166,11 +166,11 @@ async def list_projects(request: web.Request):
         order_by=OrderBy.model_construct(**query_params.order_by.model_dump()),
     )
 
-    projects = await _projects_rest_utils.aggregate_data_to_projects_from_request(
+    projects = await _rest_utils.aggregate_data_to_projects_from_request(
         request, projects
     )
 
-    return _projects_rest_utils.create_page_response(
+    return _rest_utils.create_page_response(
         projects=projects,
         request_url=request.url,
         total=total_number_of_projects,
@@ -206,11 +206,11 @@ async def list_projects_full_search(request: web.Request):
         order_by=OrderBy.model_construct(**query_params.order_by.model_dump()),
     )
 
-    projects = await _projects_rest_utils.aggregate_data_to_projects_from_request(
+    projects = await _rest_utils.aggregate_data_to_projects_from_request(
         request, projects
     )
 
-    return _projects_rest_utils.create_page_response(
+    return _rest_utils.create_page_response(
         projects=projects,
         request_url=request.url,
         total=total_number_of_projects,

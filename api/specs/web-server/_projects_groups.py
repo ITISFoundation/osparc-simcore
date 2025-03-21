@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends, status
 from models_library.generics import Envelope
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.projects._common.models import ProjectPathParams
-from simcore_service_webserver.projects._controller._groups_rest import (
+from simcore_service_webserver.projects._controller.groups_rest import (
     _ProjectsGroupsBodyParams,
     _ProjectsGroupsPathParams,
 )

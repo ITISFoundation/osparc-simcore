@@ -16,18 +16,18 @@ from . import (
     _wallets_rest,
 )
 from ._controller import (
-    _folders_rest,
-    _groups_rest,
-    _metadata_rest,
-    _nodes_rest,
-    _ports_rest,
-    _projects_nodes_pricing_unit_rest,
-    _projects_rest,
-    _projects_states_rest,
-    _tags_rest,
-    _workspaces_rest,
+    folders_rest,
+    groups_rest,
+    metadata_rest,
+    nodes_pricing_unit_rest,
+    nodes_rest,
+    ports_rest,
+    projects_rest,
+    projects_states_rest,
+    tags_rest,
+    workspaces_rest,
 )
-from ._observer import setup_project_observer_events
+from ._controller.projects_slot import setup_project_observer_events
 from ._projects_access import setup_projects_access
 from .db import setup_projects_db
 
@@ -53,18 +53,18 @@ def setup_projects(app: web.Application) -> bool:
     # registers event handlers (e.g. on_user_disconnect)
     setup_project_observer_events(app)
 
-    app.router.add_routes(_projects_states_rest.routes)
-    app.router.add_routes(_projects_rest.routes)
+    app.router.add_routes(projects_states_rest.routes)
+    app.router.add_routes(projects_rest.routes)
     app.router.add_routes(_comments_rest.routes)
-    app.router.add_routes(_groups_rest.routes)
-    app.router.add_routes(_metadata_rest.routes)
-    app.router.add_routes(_ports_rest.routes)
-    app.router.add_routes(_nodes_rest.routes)
-    app.router.add_routes(_tags_rest.routes)
+    app.router.add_routes(groups_rest.routes)
+    app.router.add_routes(metadata_rest.routes)
+    app.router.add_routes(ports_rest.routes)
+    app.router.add_routes(nodes_rest.routes)
+    app.router.add_routes(tags_rest.routes)
     app.router.add_routes(_wallets_rest.routes)
-    app.router.add_routes(_folders_rest.routes)
-    app.router.add_routes(_projects_nodes_pricing_unit_rest.routes)
-    app.router.add_routes(_workspaces_rest.routes)
+    app.router.add_routes(folders_rest.routes)
+    app.router.add_routes(nodes_pricing_unit_rest.routes)
+    app.router.add_routes(workspaces_rest.routes)
     app.router.add_routes(_trash_rest.routes)
 
     return True

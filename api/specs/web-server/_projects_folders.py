@@ -13,7 +13,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, status
 from simcore_service_webserver._meta import API_VTAG
-from simcore_service_webserver.projects._controller._folders_rest import (
+from simcore_service_webserver.projects._controller.folders_rest import (
     _ProjectsFoldersPathParams,
 )
 
