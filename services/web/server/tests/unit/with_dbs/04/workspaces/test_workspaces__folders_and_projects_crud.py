@@ -32,7 +32,7 @@ def mock_catalog_api_get_services_for_user_in_product(mocker: MockerFixture):
         return_value=[],
     )
     mocker.patch(
-        "simcore_service_webserver.projects._crud_handlers.project_uses_available_services",
+        "simcore_service_webserver.projects._controllers.projects_rest.project_uses_available_services",
         spec=True,
         return_value=True,
     )
@@ -254,7 +254,7 @@ def mock_storage_delete_data_folders(mocker: MockerFixture) -> mock.Mock:
         autospec=True,
     )
     mocker.patch(
-        "simcore_service_webserver.projects.projects_service.remove_project_dynamic_services",
+        "simcore_service_webserver.projects._projects_service.remove_project_dynamic_services",
         autospec=True,
     )
     mocker.patch(
