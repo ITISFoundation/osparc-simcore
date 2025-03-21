@@ -45,6 +45,7 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
   members: {
     __userProfileData: null,
     __userProfileModel: null,
+    __userProfileRenderer: null,
     __userPrivacyData: null,
     __userPrivacyModel: null,
     __userProfileForm: null,
@@ -79,6 +80,16 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
           "hideFullname": "hideFullname" in privacyData ? privacyData["hideFullname"] : true,
           "hideEmail": "hideEmail" in privacyData ? privacyData["hideEmail"] : true,
         });
+
+        const visibleIcon = "@FontAwesome5Solid/eye/12";
+        const hiddenIcon = "@FontAwesome5Solid/eye-slash/12";
+        const icons = {
+          0: this.__userPrivacyModel.getHideUsername() ? hiddenIcon : visibleIcon,
+          1: this.__userPrivacyModel.getHideFullname() ? hiddenIcon : visibleIcon,
+          2: this.__userPrivacyModel.getHideFullname() ? hiddenIcon : visibleIcon,
+          3: this.__userPrivacyModel.getHideEmail() ? hiddenIcon : visibleIcon,
+        };
+        this.__userProfileRenderer.setIcons(icons);
       }
     },
 
@@ -111,13 +122,7 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
       form.add(firstName, "First Name", null, "firstName");
       form.add(lastName, "Last Name", null, "lastName");
       form.add(email, "Email", null, "email");
-      const icons = {
-        0: "@FontAwesome5Solid/eye/12",
-        1: "@FontAwesome5Solid/eye-slash/12",
-        2: "@FontAwesome5Solid/eye-slash/12",
-        3: "@FontAwesome5Solid/eye-slash/12",
-      };
-      const singleWithIcon = new osparc.ui.form.renderer.SingleWithIcon(form, icons);
+      const singleWithIcon = this.__userProfileRenderer = new osparc.ui.form.renderer.SingleWithIcon(form);
       box.add(singleWithIcon);
 
       const expirationLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5)).set({

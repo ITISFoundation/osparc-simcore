@@ -31,10 +31,10 @@ qx.Class.define("osparc.ui.form.renderer.SingleWithIcon", {
   members: {
     __icons: null,
 
-    setIcons(icons) {
+    setIcons: function(icons) {
       this.__icons = icons;
 
-      this._render();
+      this._onFormChange();
     },
 
     // overridden
