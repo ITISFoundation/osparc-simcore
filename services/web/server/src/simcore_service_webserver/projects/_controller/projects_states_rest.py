@@ -32,9 +32,9 @@ from ...users import api
 from ...utils_aiohttp import envelope_json_response
 from .. import api as projects_api
 from .. import projects_service
-from .._common.models import ProjectPathParams, RequestContext
 from ..exceptions import ProjectStartsTooManyDynamicNodesError
 from ._rest_exceptions import handle_plugin_requests_exceptions
+from ._rest_schemas import ProjectPathParams, RequestContext
 
 _logger = logging.getLogger(__name__)
 

@@ -1,4 +1,4 @@
-""" Handlers for STANDARD methods on /projects colletions
+"""Handlers for STANDARD methods on /projects colletions
 
 Standard methods or CRUD that states for Create+Read(Get&List)+Update+Delete
 
