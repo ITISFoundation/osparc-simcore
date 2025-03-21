@@ -122,18 +122,24 @@ class StandardSimcoreDockerLabels(BaseModel):
 
             mapped_values.setdefault(
                 f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}memory-limit",
-                _UNDEFINED_LABEL_VALUE_INT,
+                values.get("memory_limit", _UNDEFINED_LABEL_VALUE_INT),
             )
 
             def _convert_nano_cpus_to_cpus(nano_cpu: str) -> str:
                 with contextlib.suppress(ValidationError):
-                    return f"{TypeAdapter(float).validate_python(nano_cpu) / (1.0*10**9):.2f}"
+                    return f"{TypeAdapter(float).validate_python(nano_cpu) / (1.0 * 10**9):.2f}"
                 return _UNDEFINED_LABEL_VALUE_INT
 
             mapped_values.setdefault(
                 f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}cpu-limit",
-                _convert_nano_cpus_to_cpus(
-                    values.get("nano_cpus_limit", _UNDEFINED_LABEL_VALUE_INT)
+                values.get(
+                    "cpu_limit",
+                    _convert_nano_cpus_to_cpus(
+                        values.get(
+                            "nano_cpus_limit",
+                            _UNDEFINED_LABEL_VALUE_INT,
+                        )
+                    ),
                 ),
             )
             return mapped_values
