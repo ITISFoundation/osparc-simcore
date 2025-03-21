@@ -29,7 +29,7 @@ from simcore_postgres_database.webserver_models import ProjectType as ProjectTyp
 from ..application_settings import get_application_settings
 from ..catalog import catalog_service
 from ..director_v2 import api as director_v2_service
-from ..dynamic_scheduler import api as dynamic_scheduler_api
+from ..dynamic_scheduler import api as dynamic_scheduler_service
 from ..folders import _folders_repository as folders_folders_repository
 from ..redis import get_redis_lock_manager_client_sdk
 from ..storage.api import (
@@ -389,7 +389,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
             )
 
         # update the network information in director-v2
-        await dynamic_scheduler_api.update_projects_networks(
+        await dynamic_scheduler_service.update_projects_networks(
             request.app, project_id=ProjectID(new_project["uuid"])
         )
         task_progress.update()
