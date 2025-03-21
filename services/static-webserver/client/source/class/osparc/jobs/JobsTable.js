@@ -36,19 +36,19 @@ qx.Class.define("osparc.jobs.JobsTable", {
 
     Object.values(this.self().COLS).forEach(col => columnModel.setColumnWidth(col.column, col.width));
 
-    const iconPathInfo = "osparc/circle-info-solid_text.svg";
+    const iconPathInfo = "osparc/circle-info-text.svg";
     const fontButtonRendererInfo = new osparc.ui.table.cellrenderer.ImageButtonRenderer("info", iconPathInfo);
     columnModel.setDataCellRenderer(this.self().COLS.INFO.column, fontButtonRendererInfo);
 
-    const iconPathStop = "osparc/circle-info-solid_text.svg";
+    const iconPathStop = "osparc/circle-stop-text.svg";
     const fontButtonRendererStop = new osparc.ui.table.cellrenderer.ImageButtonRenderer("stop", iconPathStop);
     columnModel.setDataCellRenderer(this.self().COLS.ACTION_STOP.column, fontButtonRendererStop);
 
-    const iconPathDelete = "osparc/circle-info-solid_text.svg";
+    const iconPathDelete = "osparc/trash-text.svg";
     const fontButtonRendererDelete = new osparc.ui.table.cellrenderer.ImageButtonRenderer("delete", iconPathDelete);
     columnModel.setDataCellRenderer(this.self().COLS.ACTION_DELETE.column, fontButtonRendererDelete);
 
-    const iconPathLogs = "osparc/circle-info-solid_text.svg";
+    const iconPathLogs = "osparc/logs-text.svg";
     const fontButtonRendererLogs = new osparc.ui.table.cellrenderer.ImageButtonRenderer("logs", iconPathLogs);
     columnModel.setDataCellRenderer(this.self().COLS.ACTION_LOGS.column, fontButtonRendererLogs);
 
