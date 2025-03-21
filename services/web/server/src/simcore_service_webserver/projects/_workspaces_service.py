@@ -10,7 +10,7 @@ from simcore_postgres_database.utils_repos import transaction_context
 from ..db.plugin import get_asyncpg_engine
 from ..users.api import get_user
 from ..workspaces.api import check_user_workspace_access
-from . import _folders_repository as project_to_folders_db
+from . import _folders_repository as _folders_repository
 from . import _groups_respository as project_groups_db
 from . import _projects_repository
 from ._access_rights_service import get_user_project_access_rights
@@ -46,7 +46,7 @@ async def move_project_into_workspace(
 
     async with transaction_context(get_asyncpg_engine(app)) as conn:
         # 3. Delete project to folders (for everybody)
-        await project_to_folders_db.delete_all_project_to_folder_by_project_id(
+        await _folders_repository.delete_all_project_to_folder_by_project_id(
             app,
             connection=conn,
             project_id=project_id,
