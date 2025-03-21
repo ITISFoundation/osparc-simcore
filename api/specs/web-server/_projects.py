@@ -31,12 +31,12 @@ from models_library.rest_error import EnvelopedError
 from models_library.rest_pagination import Page
 from pydantic import BaseModel
 from simcore_service_webserver._meta import API_VTAG
-from simcore_service_webserver.projects._common.exceptions_handlers import (
-    _TO_HTTP_ERROR_MAP,
-)
 from simcore_service_webserver.projects._common.models import ProjectPathParams
 from simcore_service_webserver.projects._controller._projects_rest import (
     ProjectCreateQueryParams,
+)
+from simcore_service_webserver.projects._controller._rest_exceptions import (
+    _TO_HTTP_ERROR_MAP,
 )
 from simcore_service_webserver.projects._crud_handlers_models import (
     ProjectActiveQueryParams,
