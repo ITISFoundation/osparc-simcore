@@ -111,7 +111,14 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
       form.add(firstName, "First Name", null, "firstName");
       form.add(lastName, "Last Name", null, "lastName");
       form.add(email, "Email", null, "email");
-      box.add(new qx.ui.form.renderer.Single(form));
+      const icons = {
+        0: "@FontAwesome5Solid/eye/12",
+        1: "@FontAwesome5Solid/eye-slash/12",
+        2: "@FontAwesome5Solid/eye-slash/12",
+        3: "@FontAwesome5Solid/eye-slash/12",
+      };
+      const singleWithIcon = new osparc.ui.form.renderer.SingleWithIcon(form, icons);
+      box.add(singleWithIcon);
 
       const expirationLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5)).set({
         paddingLeft: 16,
