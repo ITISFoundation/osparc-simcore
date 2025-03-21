@@ -63,6 +63,7 @@ from simcore_service_director_v2.utils.dask import (
     parse_dask_job_id,
     parse_output_data,
 )
+from sqlalchemy.ext.asyncio import AsyncEngine
 from yarl import URL
 
 pytest_simcore_core_services_selection = [
@@ -299,6 +300,7 @@ def _app_config_with_db(
 async def test_compute_input_data(
     _app_config_with_db: None,
     aiopg_engine: aiopg.sa.engine.Engine,
+    sqlalchemy_async_engine: AsyncEngine,
     initialized_app: FastAPI,
     user_id: UserID,
     published_project: PublishedProject,
@@ -347,7 +349,7 @@ async def test_compute_input_data(
         side_effect=return_fake_input_value(),
     )
     node_ports = await create_node_ports(
-        db_engine=initialized_app.state.engine,
+        db_engine=sqlalchemy_async_engine,
         user_id=user_id,
         project_id=published_project.project.uuid,
         node_id=sleeper_task.node_id,
@@ -377,6 +379,7 @@ def tasks_file_link_scheme(tasks_file_link_type: FileLinkType) -> tuple:
 async def test_compute_output_data_schema(
     _app_config_with_db: None,
     aiopg_engine: aiopg.sa.engine.Engine,
+    sqlalchemy_async_engine: AsyncEngine,
     initialized_app: FastAPI,
     user_id: UserID,
     published_project: PublishedProject,
@@ -393,7 +396,7 @@ async def test_compute_output_data_schema(
     )
 
     node_ports = await create_node_ports(
-        db_engine=initialized_app.state.engine,
+        db_engine=sqlalchemy_async_engine,
         user_id=user_id,
         project_id=published_project.project.uuid,
         node_id=sleeper_task.node_id,
@@ -438,9 +441,9 @@ async def test_clean_task_output_and_log_files_if_invalid(
     # BEFORE the task is actually run. In case there is a failure at running
     # the task, these entries shall be cleaned up. The way to check this is
     # by asking storage if these file really exist. If not they get deleted.
-    mocked_node_ports_filemanager_fcts[
-        "entry_exists"
-    ].return_value = entry_exists_returns
+    mocked_node_ports_filemanager_fcts["entry_exists"].return_value = (
+        entry_exists_returns
+    )
 
     sleeper_task = published_project.tasks[1]
 
@@ -500,7 +503,7 @@ async def test_clean_task_output_and_log_files_if_invalid(
     "req_example", NodeRequirements.model_config["json_schema_extra"]["examples"]
 )
 def test_node_requirements_correctly_convert_to_dask_resources(
-    req_example: dict[str, Any]
+    req_example: dict[str, Any],
 ):
     node_reqs = NodeRequirements(**req_example)
     assert node_reqs
