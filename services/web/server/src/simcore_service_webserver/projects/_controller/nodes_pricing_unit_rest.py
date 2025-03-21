@@ -19,8 +19,8 @@ from ...utils_aiohttp import envelope_json_response
 from .. import projects_service
 from .._common.models import RequestContext
 from ..db import ProjectDBAPI
-from ._nodes_rest import NodePathParams
 from ._rest_exceptions import handle_plugin_requests_exceptions
+from .nodes_rest import NodePathParams
 
 _logger = logging.getLogger(__name__)
 

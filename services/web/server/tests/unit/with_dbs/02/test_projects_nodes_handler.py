@@ -48,7 +48,7 @@ from servicelib.aiohttp import status
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from simcore_postgres_database.models.projects import projects as projects_db_model
 from simcore_service_webserver.db.models import UserRole
-from simcore_service_webserver.projects._controller._nodes_rest import (
+from simcore_service_webserver.projects._controller.nodes_rest import (
     _ProjectNodePreview,
 )
 from simcore_service_webserver.projects.models import ProjectDict
