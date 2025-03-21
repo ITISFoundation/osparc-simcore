@@ -11,6 +11,7 @@ from models_library.products import ProductName
 from models_library.projects_networks import ProjectsNetworks
 from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.rabbitmq_messages import InstrumentationRabbitMessage
+from models_library.rpc.webserver.auth.api_keys import generate_unique_api_key
 from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.shared_user_preferences import (
     AllowMetricsCollectionFrontendUserPreference,
@@ -59,6 +60,7 @@ from .....modules.instrumentation import (
     get_rate,
     track_duration,
 )
+from .....modules.osparc_variables._api_auth import create_unique_api_name_for
 from .....utils.db import get_repository
 from ....db.repositories.projects import ProjectsRepository
 from ....db.repositories.projects_networks import ProjectsNetworksRepository
@@ -66,6 +68,7 @@ from ....db.repositories.user_preferences_frontend import (
     UserPreferencesFrontendRepository,
 )
 from ....director_v0 import DirectorV0Client
+from ....osparc_variables._api_auth_rpc import delete_api_key_by_key
 from ...api_client import (
     SidecarsClient,
     get_dynamic_sidecar_service_health,
@@ -93,7 +96,7 @@ def get_director_v0_client(app: FastAPI) -> DirectorV0Client:
 
 
 def parse_containers_inspect(
-    containers_inspect: dict[str, Any] | None
+    containers_inspect: dict[str, Any] | None,
 ) -> list[DockerContainerInspect]:
     if containers_inspect is None:
         return []
@@ -305,6 +308,23 @@ async def attempt_pod_removal_and_data_saving(
     )
 
     await service_remove_containers(app, scheduler_data.node_uuid, sidecars_client)
+
+    try:
+        display_name = create_unique_api_name_for(
+            scheduler_data.product_name,
+            scheduler_data.user_id,
+            scheduler_data.project_id,
+            scheduler_data.node_uuid,
+        )
+        api_key = generate_unique_api_key(display_name)
+        await delete_api_key_by_key(
+            app,
+            product_name=scheduler_data.product_name,
+            user_id=scheduler_data.user_id,
+            api_key=api_key,
+        )
+    except Exception:  # pylint: disable=broad-except
+        _logger.warning("failed to delete api key %s", display_name)
 
     # used for debuug, normally sleeps 0
     await asyncio.sleep(
