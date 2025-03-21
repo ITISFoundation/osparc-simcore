@@ -30,7 +30,7 @@ from ..application_settings import get_application_settings
 from ..catalog import catalog_service
 from ..director_v2 import api as director_v2_api
 from ..dynamic_scheduler import api as dynamic_scheduler_api
-from ..folders import _folders_repository as _folders_repository
+from ..folders import _folders_repository as folders_folders_repository
 from ..redis import get_redis_lock_manager_client_sdk
 from ..storage.api import (
     copy_data_folders_from_project,
@@ -39,8 +39,7 @@ from ..storage.api import (
 from ..users.api import get_user_fullname
 from ..workspaces.api import check_user_workspace_access, get_user_workspace
 from ..workspaces.errors import WorkspaceAccessForbiddenError
-from . import _folders_repository as project_to_folders_db
-from . import _projects_service
+from . import _folders_repository, _projects_service
 from ._metadata_service import set_project_ancestors
 from ._permalink_service import update_or_pop_permalink_in_project
 from ._projects_repository_legacy import ProjectDBAPI
@@ -293,7 +292,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
                 )
             if folder_id := predefined_project.get("folderId", None):
                 # Check user has access to folder
-                await _folders_repository.get_for_user_or_workspace(
+                await folders_folders_repository.get_for_user_or_workspace(
                     request.app,
                     folder_id=folder_id,
                     product_name=product_name,
@@ -322,7 +321,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
 
             # 1.2 does project belong to some folder?
             workspace_id = new_project["workspaceId"]
-            prj_to_folder_db = await project_to_folders_db.get_project_to_folder(
+            prj_to_folder_db = await _folders_repository.get_project_to_folder(
                 request.app,
                 project_id=from_study,
                 private_workspace_user_id_or_none=(
@@ -369,7 +368,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
 
         # 3.2 move project to proper folder
         if folder_id:
-            await project_to_folders_db.insert_project_to_folder(
+            await _folders_repository.insert_project_to_folder(
                 request.app,
                 project_id=new_project["uuid"],
                 folder_id=folder_id,

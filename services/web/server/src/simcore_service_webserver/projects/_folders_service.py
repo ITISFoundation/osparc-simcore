@@ -6,8 +6,8 @@ from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.users import UserID
 
-from ..folders import _folders_repository as _folders_repository
-from . import _folders_repository as project_to_folders_db
+from ..folders import _folders_repository as folders_folders_repository
+from . import _folders_repository as _folders_repository
 from ._access_rights_service import get_user_project_access_rights
 from ._projects_repository_legacy import APP_PROJECT_DBAPI, ProjectDBAPI
 from .exceptions import ProjectInvalidRightsError
@@ -45,7 +45,7 @@ async def move_project_into_folder(
 
     if folder_id:
         # Check user has access to folder
-        await _folders_repository.get_for_user_or_workspace(
+        await folders_folders_repository.get_for_user_or_workspace(
             app,
             folder_id=folder_id,
             product_name=product_name,
@@ -54,7 +54,7 @@ async def move_project_into_folder(
         )
 
     # Move project to folder
-    prj_to_folder_db = await project_to_folders_db.get_project_to_folder(
+    prj_to_folder_db = await _folders_repository.get_project_to_folder(
         app,
         project_id=project_id,
         private_workspace_user_id_or_none=user_id if workspace_is_private else None,
@@ -62,7 +62,7 @@ async def move_project_into_folder(
     if prj_to_folder_db is None:
         if folder_id is None:
             return
-        await project_to_folders_db.insert_project_to_folder(
+        await _folders_repository.insert_project_to_folder(
             app,
             project_id=project_id,
             folder_id=folder_id,
@@ -70,7 +70,7 @@ async def move_project_into_folder(
         )
     else:
         # Delete old
-        await project_to_folders_db.delete_project_to_folder(
+        await _folders_repository.delete_project_to_folder(
             app,
             project_id=project_id,
             folder_id=prj_to_folder_db.folder_id,
@@ -78,7 +78,7 @@ async def move_project_into_folder(
         )
         # Create new
         if folder_id is not None:
-            await project_to_folders_db.insert_project_to_folder(
+            await _folders_repository.insert_project_to_folder(
                 app,
                 project_id=project_id,
                 folder_id=folder_id,

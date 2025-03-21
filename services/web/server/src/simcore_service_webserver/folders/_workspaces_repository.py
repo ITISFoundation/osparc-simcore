@@ -8,7 +8,7 @@ from models_library.workspaces import WorkspaceID
 from simcore_postgres_database.utils_repos import transaction_context
 
 from ..db.plugin import get_asyncpg_engine
-from ..projects import _folders_repository as project_to_folders_db
+from ..projects import _folders_repository as _folders_repository
 from ..projects import _groups_respository as project_groups_db
 from ..projects import _projects_repository as projects_db
 from ..projects._access_rights_service import check_user_project_permission
@@ -106,7 +106,7 @@ async def move_folder_into_workspace(
 
         # 7. Remove all records of project to folders that are not in the folders that we are moving
         # (ex. If we are moving from private workspace, the same project can be in different folders for different users)
-        await project_to_folders_db.delete_all_project_to_folder_by_project_ids_not_in_folder_ids(
+        await _folders_repository.delete_all_project_to_folder_by_project_ids_not_in_folder_ids(
             app,
             connection=conn,
             project_id_or_ids=set(project_ids),
@@ -114,7 +114,7 @@ async def move_folder_into_workspace(
         )
 
         # 8. Update the user id field for the remaining folders
-        await project_to_folders_db.update_project_to_folder(
+        await _folders_repository.update_project_to_folder(
             app,
             connection=conn,
             folders_id_or_ids=set(folder_ids),
