@@ -4,7 +4,7 @@ from simcore_postgres_database.models.users import UserRole
 
 from ..projects.api import check_user_project_permission
 from ..security.api import get_access_model
-from .db import ProjectDBAPI
+from ._projects_repository_legacy import ProjectDBAPI
 
 
 async def can_update_node_inputs(context):

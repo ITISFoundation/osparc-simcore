@@ -10,7 +10,7 @@ from models_library.projects_comments import (
 from models_library.users import UserID
 from pydantic import PositiveInt
 
-from .db import APP_PROJECT_DBAPI, ProjectDBAPI
+from ._projects_repository_legacy import APP_PROJECT_DBAPI, ProjectDBAPI
 
 log = logging.getLogger(__name__)
 

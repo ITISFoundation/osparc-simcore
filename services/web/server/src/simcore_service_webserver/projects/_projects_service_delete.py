@@ -11,7 +11,7 @@ from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from servicelib.redis._errors import ProjectLockError
 
 from ..director_v2 import api as director_v2_service
-from . import _projects_db as _projects_repository
+from . import _projects_repository as _projects_repository
 from . import projects_service
 from .exceptions import ProjectDeleteError, ProjectNotFoundError
 
@@ -37,8 +37,7 @@ def _monitor_step(steps: dict[str, Any], *, name: str, elapsed: bool = False):
 
 
 class StopServicesCallback(Protocol):
-    async def __call__(self, app: web.Application, project_uuid: ProjectID) -> None:
-        ...
+    async def __call__(self, app: web.Application, project_uuid: ProjectID) -> None: ...
 
 
 async def batch_stop_services_in_project(

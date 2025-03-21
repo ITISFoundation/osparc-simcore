@@ -17,7 +17,7 @@ from ...resource_usage import service as rut_api
 from ...security.decorators import permission_required
 from ...utils_aiohttp import envelope_json_response
 from .. import projects_service
-from ..db import ProjectDBAPI
+from .._projects_repository_legacy import ProjectDBAPI
 from ._rest_exceptions import handle_plugin_requests_exceptions
 from ._rest_schemas import RequestContext
 from .nodes_rest import NodePathParams

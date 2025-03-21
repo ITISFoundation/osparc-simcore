@@ -16,10 +16,10 @@ from servicelib.utils import fire_and_forget_task
 from ..director_v2 import api as director_v2_api
 from ..dynamic_scheduler import api as dynamic_scheduler_api
 from . import _crud_api_read
-from . import _projects_db as _projects_repository
+from . import _projects_repository as _projects_repository
 from . import _projects_service_delete, projects_service
 from ._access_rights_service import check_user_project_permission
-from ._projects_db import _OLDEST_TRASHED_FIRST
+from ._projects_repository import _OLDEST_TRASHED_FIRST
 from .exceptions import (
     ProjectNotFoundError,
     ProjectNotTrashedError,
