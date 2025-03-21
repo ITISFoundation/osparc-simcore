@@ -22,13 +22,13 @@ from servicelib.aiohttp.requests_validation import (
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
-from .._meta import API_VTAG as VTAG
-from ..login.decorators import login_required
-from ..security.decorators import permission_required
-from ..utils_aiohttp import envelope_json_response
-from . import _comments_service, projects_service
-from ._common.models import RequestContext
-from ._controller._rest_exceptions import handle_plugin_requests_exceptions
+from ..._meta import API_VTAG as VTAG
+from ...login.decorators import login_required
+from ...security.decorators import permission_required
+from ...utils_aiohttp import envelope_json_response
+from .. import _comments_service, projects_service
+from .._common.models import RequestContext
+from ._rest_exceptions import handle_plugin_requests_exceptions
 
 _logger = logging.getLogger(__name__)
 

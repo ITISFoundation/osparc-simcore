@@ -11,11 +11,11 @@ from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setu
 
 from ..constants import APP_SETTINGS_KEY
 from . import (
-    _comments_rest,
     _trash_rest,
     _wallets_rest,
 )
 from ._controller import (
+    comments_rest,
     folders_rest,
     groups_rest,
     metadata_rest,
@@ -55,7 +55,7 @@ def setup_projects(app: web.Application) -> bool:
 
     app.router.add_routes(projects_states_rest.routes)
     app.router.add_routes(projects_rest.routes)
-    app.router.add_routes(_comments_rest.routes)
+    app.router.add_routes(comments_rest.routes)
     app.router.add_routes(groups_rest.routes)
     app.router.add_routes(metadata_rest.routes)
     app.router.add_routes(ports_rest.routes)
