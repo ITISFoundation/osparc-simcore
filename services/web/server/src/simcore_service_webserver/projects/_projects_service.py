@@ -96,7 +96,7 @@ from simcore_postgres_database.webserver_models import ProjectType
 from ..application_settings import get_application_settings
 from ..catalog import catalog_service
 from ..director_v2 import api as director_v2_service
-from ..dynamic_scheduler import api as dynamic_scheduler_api
+from ..dynamic_scheduler import api as dynamic_scheduler_service
 from ..products import products_web
 from ..rabbitmq import get_rabbitmq_rpc_client
 from ..redis import get_redis_lock_manager_client_sdk
@@ -638,7 +638,7 @@ async def _start_dynamic_service(  # noqa: C901
         ),
     )
     async def _() -> None:
-        project_running_nodes = await dynamic_scheduler_api.list_dynamic_services(
+        project_running_nodes = await dynamic_scheduler_service.list_dynamic_services(
             request.app, user_id=user_id, project_id=project_uuid
         )
         _nodes_service.check_num_service_per_projects_limit(
@@ -761,7 +761,7 @@ async def _start_dynamic_service(  # noqa: C901
             service_key=service_key,
             service_version=service_version,
         )
-        await dynamic_scheduler_api.run_dynamic_service(
+        await dynamic_scheduler_service.run_dynamic_service(
             app=request.app,
             dynamic_service_start=DynamicServiceStart(
                 product_name=product_name,
@@ -845,7 +845,7 @@ async def add_project_node(
     await director_v2_service.create_or_update_pipeline(
         request.app, user_id, project["uuid"], product_name
     )
-    await dynamic_scheduler_api.update_projects_networks(
+    await dynamic_scheduler_service.update_projects_networks(
         request.app, project_id=ProjectID(project["uuid"])
     )
 
@@ -900,7 +900,7 @@ async def _remove_service_and_its_data_folders(
 ) -> None:
     if stop_service:
         # no need to save the state of the node when deleting it
-        await dynamic_scheduler_api.stop_dynamic_service(
+        await dynamic_scheduler_service.stop_dynamic_service(
             app,
             dynamic_service_stop=DynamicServiceStop(
                 user_id=user_id,
@@ -936,10 +936,12 @@ async def delete_project_node(
         permission="write",
     )
 
-    list_running_dynamic_services = await dynamic_scheduler_api.list_dynamic_services(
-        request.app,
-        user_id=user_id,
-        project_id=project_uuid,
+    list_running_dynamic_services = (
+        await dynamic_scheduler_service.list_dynamic_services(
+            request.app,
+            user_id=user_id,
+            project_id=project_uuid,
+        )
     )
 
     fire_and_forget_task(
@@ -968,7 +970,7 @@ async def delete_project_node(
     await director_v2_service.create_or_update_pipeline(
         request.app, user_id, project_uuid, product_name
     )
-    await dynamic_scheduler_api.update_projects_networks(
+    await dynamic_scheduler_service.update_projects_networks(
         request.app, project_id=project_uuid
     )
 
@@ -1099,7 +1101,9 @@ async def patch_project_node(
         app, user_id, project_id, product_name=product_name
     )
     if _node_patch_exclude_unset.get("label"):
-        await dynamic_scheduler_api.update_projects_networks(app, project_id=project_id)
+        await dynamic_scheduler_service.update_projects_networks(
+            app, project_id=project_id
+        )
 
     # 5. Updates project states for user, if inputs/outputs have been changed
     if {"inputs", "outputs"} & _node_patch_exclude_unset.keys():
@@ -1203,7 +1207,7 @@ async def _safe_retrieve(
     app: web.Application, node_id: NodeID, port_keys: list[str]
 ) -> None:
     try:
-        await dynamic_scheduler_api.retrieve_inputs(app, node_id, port_keys)
+        await dynamic_scheduler_service.retrieve_inputs(app, node_id, port_keys)
     except RPCServerError as exc:
         log.warning(
             "Unable to call :retrieve endpoint on service %s, keys: [%s]: error: [%s]",
@@ -1733,7 +1737,7 @@ async def run_project_dynamic_services(
     project_settings: ProjectsSettings = get_plugin_settings(request.app)
     running_services_uuids: list[NodeIDStr] = [
         f"{d.node_uuid}"
-        for d in await dynamic_scheduler_api.list_dynamic_services(
+        for d in await dynamic_scheduler_service.list_dynamic_services(
             request.app, user_id=user_id, project_id=ProjectID(project["uuid"])
         )
     ]
@@ -1849,7 +1853,7 @@ async def remove_project_dynamic_services(
             ServiceWasNotFoundError,
         ):
             # here RPC exceptions are suppressed. in case the service is not found to preserve old behavior
-            await dynamic_scheduler_api.stop_dynamic_services_in_project(
+            await dynamic_scheduler_service.stop_dynamic_services_in_project(
                 app=app,
                 user_id=user_id,
                 project_id=project_uuid,
@@ -1940,7 +1944,7 @@ async def get_project_inactivity(
     app: web.Application, project_id: ProjectID
 ) -> GetProjectInactivityResponse:
     project_settings: ProjectsSettings = get_plugin_settings(app)
-    return await dynamic_scheduler_api.get_project_inactivity(
+    return await dynamic_scheduler_service.get_project_inactivity(
         app,
         project_id=project_id,
         # NOTE: project is considered inactive if all services exposing an /inactivity
