@@ -34,17 +34,13 @@ async def _can_update_node_inputs(context):
 
     diffs = jsondiff.diff(current_project, updated_project)
 
-    # TODO: depends on schema. Shall change if schema changes!?
     if "workbench" in diffs:
         try:
             for node in diffs["workbench"]:
                 # can ONLY modify `inputs` fields set as ReadAndWrite
                 access = current_project["workbench"][node]["inputAccess"]
                 inputs = diffs["workbench"][node]["inputs"]
-                for key in inputs:
-                    if access.get(key) != "ReadAndWrite":
-                        return False
-                return True
+                return all(access.get(key) == "ReadAndWrite" for key in inputs)
         except KeyError:
             pass
         return False
@@ -58,7 +54,6 @@ def setup_projects_access(app: web.Application):
     """
     hrba = get_access_model(app)
 
-    # TODO: add here also named permissions, i.e. all project.* operations
     hrba.roles[UserRole.GUEST].check[
         "project.workbench.node.inputs.update"
     ] = _can_update_node_inputs
