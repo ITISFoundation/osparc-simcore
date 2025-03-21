@@ -10,7 +10,7 @@ from simcore_postgres_database.utils_repos import transaction_context
 from ..db.plugin import get_asyncpg_engine
 from ..projects import _folders_repository as projects_folders_repository
 from ..projects import _groups_repository as projects_groups_repository
-from ..projects import _projects_repository as projects_repository
+from ..projects import _projects_repository as _projects_repository
 from ..projects._access_rights_service import check_user_project_permission
 from ..users.api import get_user
 from ..workspaces.api import check_user_workspace_access
@@ -78,7 +78,7 @@ async def move_folder_into_workspace(
     async with transaction_context(get_asyncpg_engine(app)) as conn:
         # 4. Update workspace ID on the project resource
         for project_id in project_ids:
-            await projects_repository.patch_project(
+            await _projects_repository.patch_project(
                 app=app,
                 connection=conn,
                 project_uuid=project_id,

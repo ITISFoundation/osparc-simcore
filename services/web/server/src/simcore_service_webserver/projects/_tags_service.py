@@ -7,7 +7,7 @@ from models_library.projects import ProjectID
 from models_library.users import UserID
 from models_library.workspaces import UserWorkspaceWithAccessRights
 
-from ..workspaces import _workspaces_repository as workspaces_db
+from ..workspaces import _workspaces_repository as workspaces_workspaces_repository
 from ._access_rights_service import check_user_project_permission
 from ._projects_repository_legacy import ProjectDBAPI
 from .models import ProjectDict
@@ -35,7 +35,7 @@ async def add_tag(
 
     if project["workspaceId"] is not None:
         workspace: UserWorkspaceWithAccessRights = (
-            await workspaces_db.get_workspace_for_user(
+            await workspaces_workspaces_repository.get_workspace_for_user(
                 app=app,
                 user_id=user_id,
                 workspace_id=project["workspaceId"],
@@ -69,7 +69,7 @@ async def remove_tag(
 
     if project["workspaceId"] is not None:
         workspace: UserWorkspaceWithAccessRights = (
-            await workspaces_db.get_workspace_for_user(
+            await workspaces_workspaces_repository.get_workspace_for_user(
                 app=app,
                 user_id=user_id,
                 workspace_id=project["workspaceId"],
