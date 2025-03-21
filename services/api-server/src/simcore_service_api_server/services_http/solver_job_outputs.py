@@ -1,12 +1,12 @@
 import logging
 from typing import Any, TypeAlias
 
-import aiopg
 from models_library.projects import ProjectID, ProjectIDStr
 from models_library.projects_nodes_io import BaseFileLink, NodeID, NodeIDStr
 from pydantic import StrictBool, StrictFloat, StrictInt, TypeAdapter
 from simcore_sdk import node_ports_v2
 from simcore_sdk.node_ports_v2 import DBManager, Nodeports
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ..exceptions.backend_errors import SolverOutputNotFoundError
 
@@ -19,7 +19,7 @@ ResultsTypes: TypeAlias = (
 
 
 async def get_solver_output_results(
-    user_id: int, project_uuid: ProjectID, node_uuid: NodeID, db_engine: aiopg.sa.Engine
+    user_id: int, project_uuid: ProjectID, node_uuid: NodeID, db_engine: AsyncEngine
 ) -> dict[str, ResultsTypes]:
     """
     Wraps calls via node_ports to retrieve project's output
