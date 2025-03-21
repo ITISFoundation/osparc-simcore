@@ -17,7 +17,6 @@ from pydantic import (
     field_validator,
 )
 from pydantic.config import JsonDict
-from simcore_postgres_database.utils_users import MIN_USERNAME_LEN
 
 from ..basic_types import IDStr
 from ..emails import LowerCaseEmailStr
@@ -155,9 +154,7 @@ class MyProfileGet(OutputSchemaWithoutCamelCase):
 class MyProfilePatch(InputSchemaWithoutCamelCase):
     first_name: FirstNameStr | None = None
     last_name: LastNameStr | None = None
-    user_name: Annotated[
-        IDStr | None, Field(alias="userName", min_length=MIN_USERNAME_LEN)
-    ] = None
+    user_name: Annotated[IDStr | None, Field(alias="userName", min_length=4)] = None
 
     privacy: MyProfilePrivacyPatch | None = None
 
