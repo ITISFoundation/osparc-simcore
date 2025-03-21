@@ -44,11 +44,11 @@ from simcore_service_webserver.garbage_collector import _core as gc_core
 from simcore_service_webserver.login.plugin import setup_login
 from simcore_service_webserver.notifications.plugin import setup_notifications
 from simcore_service_webserver.products.plugin import setup_products
-from simcore_service_webserver.projects.plugin import setup_projects
-from simcore_service_webserver.projects.projects_service import (
+from simcore_service_webserver.projects._projects_service import (
     remove_project_dynamic_services,
     submit_delete_project_task,
 )
+from simcore_service_webserver.projects.plugin import setup_projects
 from simcore_service_webserver.rabbitmq import setup_rabbitmq
 from simcore_service_webserver.resource_manager.plugin import setup_resource_manager
 from simcore_service_webserver.resource_manager.registry import (

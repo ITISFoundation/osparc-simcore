@@ -12,7 +12,7 @@ from servicelib.redis._errors import ProjectLockError
 
 from ..director_v2 import api as director_v2_service
 from . import _projects_repository as _projects_repository
-from . import projects_service
+from . import _projects_service
 from .exceptions import ProjectDeleteError, ProjectNotFoundError
 
 _logger = logging.getLogger(__name__)
@@ -47,7 +47,7 @@ async def batch_stop_services_in_project(
         director_v2_service.stop_pipeline(
             app, user_id=user_id, project_id=project_uuid
         ),
-        projects_service.remove_project_dynamic_services(
+        _projects_service.remove_project_dynamic_services(
             user_id=user_id,
             project_uuid=f"{project_uuid}",
             app=app,

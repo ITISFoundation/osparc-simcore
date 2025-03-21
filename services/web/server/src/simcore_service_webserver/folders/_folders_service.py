@@ -15,7 +15,7 @@ from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from servicelib.utils import fire_and_forget_task
 
-from ..projects.projects_service import submit_delete_project_task
+from ..projects._projects_service import submit_delete_project_task
 from ..users.api import get_user
 from ..workspaces.api import check_user_workspace_access
 from ..workspaces.errors import (
@@ -352,14 +352,14 @@ async def delete_folder(
 
     # 1. Delete folder content
     # 1.1 Delete all child projects that I am an owner
-    project_id_list: list[
-        ProjectID
-    ] = await _folders_repository.get_projects_recursively_only_if_user_is_owner(
-        app,
-        folder_id=folder_id,
-        private_workspace_user_id_or_none=user_id if workspace_is_private else None,
-        user_id=user_id,
-        product_name=product_name,
+    project_id_list: list[ProjectID] = (
+        await _folders_repository.get_projects_recursively_only_if_user_is_owner(
+            app,
+            folder_id=folder_id,
+            private_workspace_user_id_or_none=user_id if workspace_is_private else None,
+            user_id=user_id,
+            product_name=product_name,
+        )
     )
 
     # fire and forget task for project deletion

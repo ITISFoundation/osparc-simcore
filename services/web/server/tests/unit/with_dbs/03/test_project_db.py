@@ -39,6 +39,9 @@ from simcore_service_webserver.projects._projects_repository_legacy import (
 from simcore_service_webserver.projects._projects_repository_legacy_utils import (
     PermissionStr,
 )
+from simcore_service_webserver.projects._projects_service import (
+    _check_project_node_has_all_required_inputs,
+)
 from simcore_service_webserver.projects.api import has_user_project_access_rights
 from simcore_service_webserver.projects.exceptions import (
     NodeNotFoundError,
@@ -46,9 +49,6 @@ from simcore_service_webserver.projects.exceptions import (
     ProjectNotFoundError,
 )
 from simcore_service_webserver.projects.models import ProjectDict
-from simcore_service_webserver.projects.projects_service import (
-    _check_project_node_has_all_required_inputs,
-)
 from simcore_service_webserver.users.exceptions import UserNotFoundError
 from simcore_service_webserver.utils import to_datetime
 from sqlalchemy.engine.result import Row

@@ -67,7 +67,7 @@ from ...users.api import get_user_id_from_gid, get_user_role
 from ...utils_aiohttp import envelope_json_response
 from .. import _access_rights_service as access_rights_service
 from .. import _nodes_service as _nodes_service
-from .. import nodes_utils, projects_service
+from .. import _projects_service, nodes_utils
 from .._nodes_service import NodeScreenshot, get_node_screenshots
 from ..api import has_user_project_access_rights
 from ..exceptions import (
@@ -101,7 +101,7 @@ async def create_node(request: web.Request) -> web.Response:
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
     body = await parse_request_body_as(NodeCreate, request)
 
-    if await projects_service.is_service_deprecated(
+    if await _projects_service.is_service_deprecated(
         request.app,
         req_ctx.user_id,
         body.service_key,
@@ -113,13 +113,13 @@ async def create_node(request: web.Request) -> web.Response:
         )
 
     # ensure the project exists
-    project_data = await projects_service.get_project_for_user(
+    project_data = await _projects_service.get_project_for_user(
         request.app,
         project_uuid=f"{path_params.project_id}",
         user_id=req_ctx.user_id,
     )
     data = {
-        "node_id": await projects_service.add_project_node(
+        "node_id": await _projects_service.add_project_node(
             request,
             project_data,
             req_ctx.user_id,
@@ -144,13 +144,13 @@ async def get_node(request: web.Request) -> web.Response:
     path_params = parse_request_path_parameters_as(NodePathParams, request)
 
     # ensure the project exists
-    project = await projects_service.get_project_for_user(
+    project = await _projects_service.get_project_for_user(
         request.app,
         project_uuid=f"{path_params.project_id}",
         user_id=req_ctx.user_id,
     )
 
-    if await projects_service.is_project_node_deprecated(
+    if await _projects_service.is_project_node_deprecated(
         request.app,
         req_ctx.user_id,
         project,
@@ -182,7 +182,7 @@ async def patch_project_node(request: web.Request) -> web.Response:
     path_params = parse_request_path_parameters_as(NodePathParams, request)
     node_patch = await parse_request_body_as(NodePatch, request)
 
-    await projects_service.patch_project_node(
+    await _projects_service.patch_project_node(
         request.app,
         product_name=req_ctx.product_name,
         user_id=req_ctx.user_id,
@@ -203,12 +203,12 @@ async def delete_node(request: web.Request) -> web.Response:
     path_params = parse_request_path_parameters_as(NodePathParams, request)
 
     # ensure the project exists
-    await projects_service.get_project_for_user(
+    await _projects_service.get_project_for_user(
         request.app,
         project_uuid=f"{path_params.project_id}",
         user_id=req_ctx.user_id,
     )
-    await projects_service.delete_project_node(
+    await _projects_service.delete_project_node(
         request,
         path_params.project_id,
         req_ctx.user_id,
@@ -278,7 +278,7 @@ async def start_node(request: web.Request) -> web.Response:
     req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(NodePathParams, request)
 
-    await projects_service.start_project_node(
+    await _projects_service.start_project_node(
         request,
         product_name=req_ctx.product_name,
         user_id=req_ctx.user_id,
@@ -388,7 +388,7 @@ async def get_node_resources(request: web.Request) -> web.Response:
     path_params = parse_request_path_parameters_as(NodePathParams, request)
 
     # ensure the project exists
-    project = await projects_service.get_project_for_user(
+    project = await _projects_service.get_project_for_user(
         request.app,
         project_uuid=f"{path_params.project_id}",
         user_id=req_ctx.user_id,
@@ -398,13 +398,15 @@ async def get_node_resources(request: web.Request) -> web.Response:
         node_id = f"{path_params.node_id}"
         raise NodeNotFoundError(project_uuid=project_uuid, node_uuid=node_id)
 
-    resources: ServiceResourcesDict = await projects_service.get_project_node_resources(
-        request.app,
-        user_id=req_ctx.user_id,
-        project_id=path_params.project_id,
-        node_id=path_params.node_id,
-        service_key=project["workbench"][f"{path_params.node_id}"]["key"],
-        service_version=project["workbench"][f"{path_params.node_id}"]["version"],
+    resources: ServiceResourcesDict = (
+        await _projects_service.get_project_node_resources(
+            request.app,
+            user_id=req_ctx.user_id,
+            project_id=path_params.project_id,
+            node_id=path_params.node_id,
+            service_key=project["workbench"][f"{path_params.node_id}"]["key"],
+            service_version=project["workbench"][f"{path_params.node_id}"]["version"],
+        )
     )
     return envelope_json_response(resources)
 
@@ -422,7 +424,7 @@ async def replace_node_resources(request: web.Request) -> web.Response:
     body = await parse_request_body_as(ServiceResourcesDict, request)
 
     # ensure the project exists
-    project = await projects_service.get_project_for_user(
+    project = await _projects_service.get_project_for_user(
         request.app,
         project_uuid=f"{path_params.project_id}",
         user_id=req_ctx.user_id,
@@ -432,7 +434,7 @@ async def replace_node_resources(request: web.Request) -> web.Response:
             project_uuid=f"{path_params.project_id}", node_uuid=f"{path_params.node_id}"
         )
     try:
-        new_node_resources = await projects_service.update_project_node_resources(
+        new_node_resources = await _projects_service.update_project_node_resources(
             request.app,
             user_id=req_ctx.user_id,
             project_id=path_params.project_id,
@@ -525,7 +527,7 @@ async def get_project_services_access_for_gid(request: web.Request) -> web.Respo
         _ServicesAccessQuery, request
     )
 
-    project = await projects_service.get_project_for_user(
+    project = await _projects_service.get_project_for_user(
         request.app,
         project_uuid=f"{path_params.project_id}",
         user_id=req_ctx.user_id,
@@ -642,7 +644,7 @@ async def list_project_nodes_previews(request: web.Request) -> web.Response:
     assert req_ctx  # nosec
 
     nodes_previews: list[_ProjectNodePreview] = []
-    project_data = await projects_service.get_project_for_user(
+    project_data = await _projects_service.get_project_for_user(
         request.app,
         project_uuid=f"{path_params.project_id}",
         user_id=req_ctx.user_id,
@@ -681,7 +683,7 @@ async def get_project_node_preview(request: web.Request) -> web.Response:
     path_params = parse_request_path_parameters_as(NodePathParams, request)
     assert req_ctx  # nosec
 
-    project_data = await projects_service.get_project_for_user(
+    project_data = await _projects_service.get_project_for_user(
         request.app,
         project_uuid=f"{path_params.project_id}",
         user_id=req_ctx.user_id,

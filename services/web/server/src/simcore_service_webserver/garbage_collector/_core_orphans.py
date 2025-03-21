@@ -15,11 +15,11 @@ from servicelib.logging_utils import log_catch, log_context
 from servicelib.utils import limited_as_completed, logged_gather
 
 from ..dynamic_scheduler import api as dynamic_scheduler_api
-from ..projects.api import has_user_project_access_rights
-from ..projects.projects_service import (
+from ..projects._projects_service import (
     is_node_id_present_in_any_project_workbench,
     list_node_ids_in_project,
 )
+from ..projects.api import has_user_project_access_rights
 from ..resource_manager.registry import RedisResourceRegistry
 from ..users.api import get_user_role
 from ..users.exceptions import UserNotFoundError

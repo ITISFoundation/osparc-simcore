@@ -15,7 +15,7 @@ from servicelib.request_keys import RQT_USERID_KEY
 from .._meta import API_VTAG
 from ..constants import RQ_PRODUCT_KEY
 from ..login.decorators import login_required
-from ..projects.projects_service import create_user_notification_cb
+from ..projects._projects_service import create_user_notification_cb
 from ..redis import get_redis_lock_manager_client_sdk
 from ..security.decorators import permission_required
 from ..users.api import get_user_fullname
