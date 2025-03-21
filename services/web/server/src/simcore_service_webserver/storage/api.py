@@ -1,34 +1,37 @@
 """Storage subsystem's API: responsible of communication with storage service"""
 
-import asyncio
+import datetime
 import logging
 import urllib.parse
 from collections.abc import AsyncGenerator
 from typing import Any, Final
 
 from aiohttp import ClientError, ClientSession, ClientTimeout, web
+from models_library.api_schemas_rpc_async_jobs.async_jobs import AsyncJobNameData
+from models_library.api_schemas_storage import STORAGE_RPC_NAMESPACE
 from models_library.api_schemas_storage.storage_schemas import (
     FileLocation,
     FileLocationArray,
     FileMetaDataGet,
+    FoldersBody,
     PresignedLink,
 )
 from models_library.generics import Envelope
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import LocationID, NodeID, SimCoreFileLink
 from models_library.users import UserID
-from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import ByteSize, HttpUrl, TypeAdapter
 from servicelib.aiohttp.client_session import get_client_session
-from servicelib.aiohttp.long_running_tasks.client import (
-    LRTask,
-    long_running_task_request,
-)
 from servicelib.logging_utils import get_log_record_extra, log_context
+from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import (
+    AsyncJobComposedResult,
+    submit_and_wait,
+)
 from yarl import URL
 
 from ..projects.models import ProjectDict
 from ..projects.utils import NodesMap
+from ..rabbitmq import get_rabbitmq_rpc_client
 from .settings import StorageSettings, get_plugin_settings
 
 _logger = logging.getLogger(__name__)
@@ -104,23 +107,25 @@ async def copy_data_folders_from_project(
     destination_project: ProjectDict,
     nodes_map: NodesMap,
     user_id: UserID,
-) -> AsyncGenerator[LRTask, None]:
-    session, api_endpoint = _get_storage_client(app)
-    _logger.debug("Copying %d nodes", len(nodes_map))
-    # /simcore-s3/folders:
-    async for lr_task in long_running_task_request(
-        session,
-        (api_endpoint / "simcore-s3/folders").with_query(user_id=user_id),
-        json=jsonable_encoder(
-            {
-                "source": source_project,
-                "destination": destination_project,
-                "nodes_map": nodes_map,
-            }
-        ),
-        client_timeout=_TOTAL_TIMEOUT_TO_COPY_DATA_SECS,
-    ):
-        yield lr_task
+) -> AsyncGenerator[AsyncJobComposedResult, None]:
+    product_name = "osparc"  # TODO fix it
+    with log_context(_logger, logging.DEBUG, msg=f"copy {nodes_map=}"):
+        rabbitmq_client = get_rabbitmq_rpc_client(app)
+        async for job_composed_result in submit_and_wait(
+            rabbitmq_client,
+            method_name="copy_folders_from_project",
+            rpc_namespace=STORAGE_RPC_NAMESPACE,
+            job_id_data=AsyncJobNameData(user_id=user_id, product_name=product_name),
+            body=TypeAdapter(FoldersBody).validate_python(
+                {
+                    "source": source_project,
+                    "destination": destination_project,
+                    "nodes_map": nodes_map,
+                },
+            ),
+            client_timeout=datetime.timedelta(seconds=_TOTAL_TIMEOUT_TO_COPY_DATA_SECS),
+        ):
+            yield job_composed_result
 
 
 async def _delete(session, target_url):
@@ -164,7 +169,7 @@ async def is_healthy(app: web.Application) -> bool:
             timeout=ClientTimeout(total=2, connect=1),
         )
         return True
-    except (ClientError, asyncio.TimeoutError) as err:
+    except (TimeoutError, ClientError) as err:
         # ClientResponseError, ClientConnectionError, ClientPayloadError, InValidURL
         _logger.debug("Storage is NOT healthy: %s", err)
         return False

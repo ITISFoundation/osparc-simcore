@@ -65,9 +65,6 @@ from simcore_service_storage.core.settings import ApplicationSettings
 from simcore_service_storage.datcore_dsm import DatCoreDataManager
 from simcore_service_storage.dsm import get_dsm_provider
 from simcore_service_storage.models import FileMetaData, FileMetaDataAtDB, S3BucketName
-from simcore_service_storage.modules.long_running_tasks import (
-    get_completed_upload_tasks,
-)
 from simcore_service_storage.modules.s3 import get_s3_client
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 from sqlalchemy import literal_column
@@ -503,8 +500,8 @@ async def create_empty_directory(
         assert file_upload_complete_response
         state_url = URL(f"{file_upload_complete_response.links.state}").relative()
 
-        # check that it finished updating
-        get_completed_upload_tasks(initialized_app).clear()
+        # check that it finished updating TODO: this works via celery now
+        # get_completed_upload_tasks(initialized_app).clear()
         # now check for the completion
         async for attempt in AsyncRetrying(
             reraise=True,
