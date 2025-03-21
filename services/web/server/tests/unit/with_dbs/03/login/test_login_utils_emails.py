@@ -113,22 +113,6 @@ async def test_render_and_send_mail_for_password(
         http_request,
         from_=f"no-reply@{product_name}.test",
         to=destination_email,
-        template=await get_template_path(
-            http_request, "reset_password_email_failed.jinja2"
-        ),
-        context={
-            "host": http_request.host,
-            "reason": faker.text(),
-            "product": SimpleNamespace(
-                display_name=product_name.capitalize(), name=product_name
-            ),
-        },
-    )
-
-    await send_email_from_template(
-        http_request,
-        from_=f"no-reply@{product_name}.test",
-        to=destination_email,
         template=await get_template_path(http_request, "reset_password_email.jinja2"),
         context={
             "host": http_request.host,

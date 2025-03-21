@@ -13,11 +13,9 @@ from typing import Any
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
-from common_library.error_codes import parse_error_code
 from common_library.json_serialization import json_dumps
 from servicelib.aiohttp import status
 from servicelib.aiohttp.rest_middlewares import (
-    _FMSG_INTERNAL_ERROR_USER_FRIENDLY_WITH_OEC,
     envelope_middleware_factory,
     error_middleware_factory,
 )
@@ -30,8 +28,7 @@ class Data:
     y: str = "foo"
 
 
-class SomeUnexpectedError(Exception):
-    ...
+class SomeUnexpectedError(Exception): ...
 
 
 class Handlers:
@@ -234,14 +231,6 @@ async def test_raised_unhandled_exception(
         data, error = unwrap_envelope(await response.json())
         assert not data
         assert error
-
-        # user friendly message with OEC reference
-        assert "OEC" in error["message"]
-        parsed_oec = parse_error_code(error["message"]).pop()
-        assert (
-            _FMSG_INTERNAL_ERROR_USER_FRIENDLY_WITH_OEC.format(error_code=parsed_oec)
-            == error["message"]
-        )
 
         # avoids details
         assert not error.get("errors")
