@@ -95,7 +95,7 @@ from simcore_postgres_database.webserver_models import ProjectType
 
 from ..application_settings import get_application_settings
 from ..catalog import catalog_service
-from ..director_v2 import api as director_v2_service
+from ..director_v2 import director_v2_service
 from ..dynamic_scheduler import api as dynamic_scheduler_service
 from ..products import products_web
 from ..rabbitmq import get_rabbitmq_rpc_client

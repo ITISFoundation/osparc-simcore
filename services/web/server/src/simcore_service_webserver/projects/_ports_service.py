@@ -26,7 +26,7 @@ from models_library.utils.json_schema import (
 from models_library.utils.services_io import JsonSchemaDict, get_service_io_json_schema
 from pydantic import ConfigDict, ValidationError
 
-from ..director_v2.api import get_batch_tasks_outputs
+from ..director_v2.director_v2_service import get_batch_tasks_outputs
 from .exceptions import InvalidInputValue
 
 

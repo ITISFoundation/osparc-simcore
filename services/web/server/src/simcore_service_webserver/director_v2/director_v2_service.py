@@ -1,4 +1,4 @@
-""" plugin API
+"""plugin API
 
 PLEASE avoid importing from any other module to access this plugin's functionality
 """
