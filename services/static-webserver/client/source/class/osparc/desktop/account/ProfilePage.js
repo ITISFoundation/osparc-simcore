@@ -216,14 +216,42 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
     },
 
     __createPrivacySection: function() {
+      // binding to a model
+      const raw = {
+        "hideUsername": false,
+        "hideFullname": true,
+        "hideEmail": true,
+      };
+
+      const privacyModel = this.__userPrivacyModel = qx.data.marshal.Json.createModel(raw);
+
       const box = osparc.ui.window.TabbedView.createSectionBox(this.tr("Privacy"));
       box.set({
         alignX: "left",
         maxWidth: 500
       });
 
-      const label = osparc.ui.window.TabbedView.createHelpLabel(this.tr("For Privacy reasons, you might want to hide your First and Last Names and/or the Email to other users"));
+      const label = osparc.ui.window.TabbedView.createHelpLabel(this.tr("For Privacy reasons, you might want to hide some personal fields."));
       box.add(label);
+
+      const optOutMessage = new qx.ui.basic.Atom().set({
+        label: "If all searchable fields are showHidden, you will not be ",
+        icon: "@FontAwesome5Solid/copy/10",
+        iconPosition: "right",
+        gap: 8,
+        cursor: "pointer",
+        alignX: "center",
+        allowGrowX: false,
+        visibility: "excluded",
+      });
+      box.add(optOutMessage);
+      if (
+        this.__userPrivacyModel.getHideUsername() &&
+        this.__userPrivacyModel.getHideFullname() &&
+        this.__userPrivacyModel.getHideEmail()
+      ) {
+        optOutMessage.show();
+      }
 
       const hideUsername = new qx.ui.form.CheckBox().set({
         value: false
@@ -241,15 +269,7 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
       form.add(hideEmail, "Hide Email", null, "hideEmail");
       box.add(new qx.ui.form.renderer.Single(form));
 
-      // binding to a model
-      const raw = {
-        "hideUsername": false,
-        "hideFullname": true,
-        "hideEmail": true,
-      };
-
-      const model = this.__userPrivacyModel = qx.data.marshal.Json.createModel(raw);
-      const controller = new qx.data.controller.Object(model);
+      const controller = new qx.data.controller.Object(privacyModel);
       controller.addTarget(hideUsername, "value", "hideUsername", true);
       controller.addTarget(hideFullname, "value", "hideFullname", true);
       controller.addTarget(hideEmail, "value", "hideEmail", true);
@@ -268,14 +288,14 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
         const patchData = {
           "privacy": {}
         };
-        if (this.__userPrivacyData["hideUsername"] !== model.getHideUsername()) {
-          patchData["privacy"]["hideUsername"] = model.getHideUsername();
+        if (this.__userPrivacyData["hideUsername"] !== privacyModel.getHideUsername()) {
+          patchData["privacy"]["hideUsername"] = privacyModel.getHideUsername();
         }
-        if (this.__userPrivacyData["hideFullname"] !== model.getHideFullname()) {
-          patchData["privacy"]["hideFullname"] = model.getHideFullname();
+        if (this.__userPrivacyData["hideFullname"] !== privacyModel.getHideFullname()) {
+          patchData["privacy"]["hideFullname"] = privacyModel.getHideFullname();
         }
-        if (this.__userPrivacyData["hideEmail"] !== model.getHideEmail()) {
-          patchData["privacy"]["hideEmail"] = model.getHideEmail();
+        if (this.__userPrivacyData["hideEmail"] !== privacyModel.getHideEmail()) {
+          patchData["privacy"]["hideEmail"] = privacyModel.getHideEmail();
         }
 
         if (
@@ -305,25 +325,6 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
               this.__resetPrivacyData();
               osparc.FlashMessenger.logError(err, this.tr("Unsuccessful privacy update"));
             });
-        }
-
-        const optOutMessage = new qx.ui.basic.Atom().set({
-          label: "If all searchable fields are showHidden, you will not be ",
-          icon: "@FontAwesome5Solid/copy/10",
-          iconPosition: "right",
-          gap: 8,
-          cursor: "pointer",
-          alignX: "center",
-          allowGrowX: false,
-          visibility: "excluded",
-        });
-        box.add(optOutMessage);
-        if (
-          this.__userPrivacyModel.getHideUsername() &&
-          this.__userPrivacyModel.getHideFullname() &&
-          this.__userPrivacyModel.getHideEmail()
-        ) {
-          optOutMessage.show();
         }
       });
 
