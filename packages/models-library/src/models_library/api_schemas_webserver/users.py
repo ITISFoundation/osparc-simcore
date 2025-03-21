@@ -16,6 +16,7 @@ from pydantic import (
     ValidationInfo,
     field_validator,
 )
+from simcore_postgres_database.utils_users import MIN_USERNAME_LEN
 
 from ..basic_types import IDStr
 from ..emails import LowerCaseEmailStr
@@ -46,11 +47,13 @@ from .users_preferences import AggregatedPreferences
 
 
 class MyProfilePrivacyGet(OutputSchema):
+    hide_username: bool
     hide_fullname: bool
     hide_email: bool
 
 
 class MyProfilePrivacyPatch(InputSchema):
+    hide_username: bool | None = None
     hide_fullname: bool | None = None
     hide_email: bool | None = None
 
@@ -92,7 +95,11 @@ class MyProfileGet(OutputSchemaWithoutCamelCase):
                     "role": "admin",  # pre
                     "expirationDate": "2022-09-14",  # optional
                     "preferences": {},
-                    "privacy": {"hide_fullname": 0, "hide_email": 1},
+                    "privacy": {
+                        "hide_username": 0,
+                        "hide_fullname": 0,
+                        "hide_email": 1,
+                    },
                 },
             ]
         },
@@ -141,7 +148,9 @@ class MyProfileGet(OutputSchemaWithoutCamelCase):
 class MyProfilePatch(InputSchemaWithoutCamelCase):
     first_name: FirstNameStr | None = None
     last_name: LastNameStr | None = None
-    user_name: Annotated[IDStr | None, Field(alias="userName", min_length=4)] = None
+    user_name: Annotated[
+        IDStr | None, Field(alias="userName", min_length=MIN_USERNAME_LEN)
+    ] = None
 
     privacy: MyProfilePrivacyPatch | None = None
 
