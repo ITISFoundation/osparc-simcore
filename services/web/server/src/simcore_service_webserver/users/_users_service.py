@@ -122,7 +122,7 @@ async def get_user_primary_group_id(app: web.Application, user_id: UserID) -> Gr
 
 
 async def get_user_id_from_gid(app: web.Application, primary_gid: GroupID) -> UserID:
-    return await _users_repository.get_user_id_from_pgid(app, primary_gid)
+    return await _users_repository.get_user_id_from_pgid(app, primary_gid=primary_gid)
 
 
 async def search_users(
