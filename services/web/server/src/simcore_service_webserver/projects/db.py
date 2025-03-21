@@ -66,7 +66,7 @@ from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 
 from ..utils import now_str
-from ._comments_db import (
+from ._comments_repository import (
     create_project_comment,
     delete_project_comment,
     get_project_comment,
