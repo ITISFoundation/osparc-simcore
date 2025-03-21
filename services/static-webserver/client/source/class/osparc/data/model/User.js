@@ -30,7 +30,7 @@ qx.Class.define("osparc.data.model.User", {
 
     const userId = ("id" in userData) ? parseInt(userData["id"]) : parseInt(userData["userId"]);
     const groupId = ("gid" in userData) ? parseInt(userData["gid"]) : parseInt(userData["groupId"]);
-    const username = userData["userName"];
+    const username = userData["userName"] || "-";
     const email = ("login" in userData) ? userData["login"] : userData["email"];
     let firstName = "";
     if (userData["first_name"]) {
