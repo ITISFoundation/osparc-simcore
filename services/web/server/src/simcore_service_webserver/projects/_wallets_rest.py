@@ -1,6 +1,4 @@
-""" Handlers for CRUD operations on /projects/{*}/wallet
-
-"""
+"""Handlers for CRUD operations on /projects/{*}/wallet"""
 
 import logging
 from decimal import Decimal
