@@ -9,7 +9,7 @@ from models_library.users import UserID
 from pydantic import TypeAdapter
 
 from ..db.plugin import get_database_engine
-from . import _metadata_db
+from . import _metadata_repository
 from ._access_rights_service import validate_project_ownership
 
 _logger = logging.getLogger(__name__)
@@ -20,7 +20,7 @@ async def get_project_custom_metadata(
 ) -> MetadataDict:
     await validate_project_ownership(app, user_id=user_id, project_uuid=project_uuid)
 
-    return await _metadata_db.get_project_custom_metadata(
+    return await _metadata_repository.get_project_custom_metadata(
         engine=get_database_engine(app), project_uuid=project_uuid
     )
 
@@ -33,7 +33,7 @@ async def set_project_custom_metadata(
 ) -> MetadataDict:
     await validate_project_ownership(app, user_id=user_id, project_uuid=project_uuid)
 
-    return await _metadata_db.set_project_custom_metadata(
+    return await _metadata_repository.set_project_custom_metadata(
         engine=get_database_engine(app),
         project_uuid=project_uuid,
         custom_metadata=value,
@@ -48,7 +48,7 @@ async def _project_has_ancestors(
 ) -> bool:
     await validate_project_ownership(app, user_id=user_id, project_uuid=project_uuid)
 
-    return await _metadata_db.project_has_ancestors(
+    return await _metadata_repository.project_has_ancestors(
         engine=get_database_engine(app), project_uuid=project_uuid
     )
 
@@ -73,11 +73,11 @@ async def set_project_ancestors_from_custom_metadata(
             return
 
         # let's try to get the parent project UUID
-        parent_project_uuid = await _metadata_db.get_project_id_from_node_id(
+        parent_project_uuid = await _metadata_repository.get_project_id_from_node_id(
             get_database_engine(app), node_id=parent_node_id
         )
 
-        await _metadata_db.set_project_ancestors(
+        await _metadata_repository.set_project_ancestors(
             get_database_engine(app),
             project_uuid=project_uuid,
             parent_project_uuid=parent_project_uuid,
@@ -94,7 +94,7 @@ async def set_project_ancestors(
 ) -> None:
     await validate_project_ownership(app, user_id=user_id, project_uuid=project_uuid)
 
-    await _metadata_db.set_project_ancestors(
+    await _metadata_repository.set_project_ancestors(
         get_database_engine(app),
         project_uuid=project_uuid,
         parent_project_uuid=parent_project_uuid,

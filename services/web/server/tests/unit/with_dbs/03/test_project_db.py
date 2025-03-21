@@ -30,7 +30,9 @@ from simcore_postgres_database.models.projects_to_products import projects_to_pr
 from simcore_postgres_database.models.users import UserRole
 from simcore_postgres_database.utils_projects_nodes import ProjectNodesRepo
 from simcore_service_webserver.projects._db_utils import PermissionStr
-from simcore_service_webserver.projects._groups_db import update_or_insert_project_group
+from simcore_service_webserver.projects._groups_respository import (
+    update_or_insert_project_group,
+)
 from simcore_service_webserver.projects.api import has_user_project_access_rights
 from simcore_service_webserver.projects.db import ProjectAccessRights, ProjectDBAPI
 from simcore_service_webserver.projects.exceptions import (
@@ -350,7 +352,7 @@ async def test_insert_project_to_db(
 
 @pytest.mark.parametrize(
     "user_role",
-    [(UserRole.USER)],
+    [UserRole.USER],
 )
 async def test_patch_user_project_workbench_raises_if_project_does_not_exist(
     fake_project: dict[str, Any],
@@ -376,7 +378,7 @@ async def test_patch_user_project_workbench_raises_if_project_does_not_exist(
 
 @pytest.mark.parametrize(
     "user_role",
-    [(UserRole.USER)],
+    [UserRole.USER],
 )
 async def test_patch_user_project_workbench_creates_nodes(
     fake_project: dict[str, Any],
@@ -420,7 +422,7 @@ async def test_patch_user_project_workbench_creates_nodes(
 
 @pytest.mark.parametrize(
     "user_role",
-    [(UserRole.USER)],
+    [UserRole.USER],
 )
 async def test_patch_user_project_workbench_creates_nodes_raises_if_invalid_node_is_passed(
     fake_project: dict[str, Any],
@@ -457,7 +459,7 @@ async def test_patch_user_project_workbench_creates_nodes_raises_if_invalid_node
 
 @pytest.mark.parametrize(
     "user_role",
-    [(UserRole.USER)],
+    [UserRole.USER],
 )
 @pytest.mark.parametrize("number_of_nodes", [1, randint(250, 300)])  # noqa: S311
 async def test_patch_user_project_workbench_concurrently(
@@ -514,18 +516,18 @@ async def test_patch_user_project_workbench_concurrently(
     for n in range(_NUMBER_OF_NODES):
         expected_project["workbench"][node_uuids[n]].update(randomly_created_outputs[n])
 
-    patched_projects: list[
-        tuple[dict[str, Any], dict[str, Any]]
-    ] = await asyncio.gather(
-        *[
-            db_api._update_project_workbench(  # noqa: SLF001
-                {NodeIDStr(node_uuids[n]): randomly_created_outputs[n]},
-                user_id=logged_user["id"],
-                project_uuid=new_project["uuid"],
-                allow_workbench_changes=False,
-            )
-            for n in range(_NUMBER_OF_NODES)
-        ]
+    patched_projects: list[tuple[dict[str, Any], dict[str, Any]]] = (
+        await asyncio.gather(
+            *[
+                db_api._update_project_workbench(  # noqa: SLF001
+                    {NodeIDStr(node_uuids[n]): randomly_created_outputs[n]},
+                    user_id=logged_user["id"],
+                    project_uuid=new_project["uuid"],
+                    allow_workbench_changes=False,
+                )
+                for n in range(_NUMBER_OF_NODES)
+            ]
+        )
     )
     # NOTE: each returned project contains the project with some updated workbenches
     # the ordering is uncontrolled.
@@ -743,9 +745,9 @@ async def test_replace_user_project(
         },
         "output_2": 5,
     }
-    node_data[
-        "runHash"
-    ] = "5b0583fa546ac82f0e41cef9705175b7187ce3928ba42892e842add912c16676"
+    node_data["runHash"] = (
+        "5b0583fa546ac82f0e41cef9705175b7187ce3928ba42892e842add912c16676"
+    )
     # replacing with the new entries shall return the very same data
     replaced_project = await db_api.replace_project(
         working_project,
@@ -917,7 +919,7 @@ async def inserted_project(
         ),
     ],
 )
-@pytest.mark.parametrize("user_role", [(UserRole.USER)])
+@pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_check_project_node_has_all_required_inputs_raises(
     client: TestClient,
     logged_user: dict[str, Any],
@@ -948,7 +950,7 @@ async def test_check_project_node_has_all_required_inputs_raises(
         ),
     ],
 )
-@pytest.mark.parametrize("user_role", [(UserRole.USER)])
+@pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_check_project_node_has_all_required_inputs_ok(
     client: TestClient,
     logged_user: dict[str, Any],
