@@ -29,7 +29,8 @@ Makefile                                           @pcrespov @sanderegg
 /services/clusters-keeper/                         @sanderegg
 /services/datcore-adapter/                         @sanderegg
 /services/director*/                               @sanderegg @pcrespov @GitHK
-/services/docker-compose*.yml                      @sanderegg @mrnicegyu11 @YuryHrytsuk
+/services/docker-compose.yml                       @sanderegg @mrnicegyu11 @YuryHrytsuk
+/services/docker-compose.*.yml                     @sanderegg
 /services/dynamic-sidecar/                         @GitHK
 /services/efs-guardian/                            @matusdrobuliak66
 /services/invitations/                             @pcrespov
