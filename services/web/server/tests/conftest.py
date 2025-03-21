@@ -41,7 +41,7 @@ from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects._crud_api_create import (
     OVERRIDABLE_DOCUMENT_KEYS,
 )
-from simcore_service_webserver.projects._groups_respository import (
+from simcore_service_webserver.projects._groups_repository import (
     update_or_insert_project_group,
 )
 from simcore_service_webserver.projects.models import ProjectDict

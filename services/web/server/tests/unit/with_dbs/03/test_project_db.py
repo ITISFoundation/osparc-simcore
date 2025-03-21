@@ -29,7 +29,7 @@ from simcore_postgres_database.models.projects import ProjectType, projects
 from simcore_postgres_database.models.projects_to_products import projects_to_products
 from simcore_postgres_database.models.users import UserRole
 from simcore_postgres_database.utils_projects_nodes import ProjectNodesRepo
-from simcore_service_webserver.projects._groups_respository import (
+from simcore_service_webserver.projects._groups_repository import (
     update_or_insert_project_group,
 )
 from simcore_service_webserver.projects._projects_repository_legacy import (

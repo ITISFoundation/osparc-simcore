@@ -1,10 +1,9 @@
 import logging
-from datetime import datetime
 
 from aiohttp import web
 from models_library.groups import GroupID
 from models_library.projects import ProjectID
-from pydantic import BaseModel, ConfigDict, TypeAdapter
+from pydantic import TypeAdapter
 from simcore_postgres_database.models.project_to_groups import project_to_groups
 from simcore_postgres_database.utils_repos import transaction_context
 from sqlalchemy import func, literal_column
@@ -13,25 +12,10 @@ from sqlalchemy.ext.asyncio import AsyncConnection
 from sqlalchemy.sql import select
 
 from ..db.plugin import get_asyncpg_engine
+from ._groups_models import ProjectGroupGetDB
 from .exceptions import ProjectGroupNotFoundError
 
 _logger = logging.getLogger(__name__)
-
-### Models
-
-
-class ProjectGroupGetDB(BaseModel):
-    gid: GroupID
-    read: bool
-    write: bool
-    delete: bool
-    created: datetime
-    modified: datetime
-
-    model_config = ConfigDict(from_attributes=True)
-
-
-## DB API
 
 
 async def create_project_group(

@@ -10,7 +10,7 @@ from simcore_postgres_database.utils_repos import transaction_context
 from ..db.plugin import get_asyncpg_engine
 from ..users.api import get_user
 from ..workspaces.api import check_user_workspace_access
-from . import _folders_repository, _groups_respository, _projects_repository
+from . import _folders_repository, _groups_repository, _projects_repository
 from ._access_rights_service import get_user_project_access_rights
 from .exceptions import ProjectInvalidRightsError
 
@@ -60,10 +60,10 @@ async def move_project_into_workspace(
 
         # 5. Remove all project permissions, leave only the user who moved the project
         user = await get_user(app, user_id=user_id)
-        await _groups_respository.delete_all_project_groups(
+        await _groups_repository.delete_all_project_groups(
             app, connection=conn, project_id=project_id
         )
-        await _groups_respository.update_or_insert_project_group(
+        await _groups_repository.update_or_insert_project_group(
             app,
             connection=conn,
             project_id=project_id,
