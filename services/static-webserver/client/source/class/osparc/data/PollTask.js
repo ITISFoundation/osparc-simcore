@@ -92,9 +92,13 @@ qx.Class.define("osparc.data.PollTask", {
 
   statics: {
     extractPathname: function(href) {
-      // For the long running tasks, only the pathname is relevant to the frontend
-      const url = new URL(href);
-      return url.pathname;
+      try {
+        // For the long running tasks, only the pathname is relevant to the frontend
+        const url = new URL(href);
+        return url.pathname;
+      } catch (_) {
+        return href;
+      }
     }
   },
 

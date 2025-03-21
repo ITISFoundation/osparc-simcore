@@ -133,16 +133,6 @@ qx.Class.define("osparc.task.TaskUI", {
       }, this);
     },
 
-    start: function() {
-      const tasks = osparc.task.Tasks.getInstance();
-      tasks.addTask(this);
-    },
-
-    stop: function() {
-      const tasks = osparc.task.Tasks.getInstance();
-      tasks.removeTask(this);
-    },
-
     setIcon: function(source) {
       this.getChildControl("icon").getContentElement().removeClass("rotate");
       this.getChildControl("icon").setSource(source);
