@@ -13,7 +13,6 @@
 aiocache
 aiofiles
 aiohttp
-opentelemetry-instrumentation-aiopg
 packaging
 pint
 sqlalchemy[asyncio]
