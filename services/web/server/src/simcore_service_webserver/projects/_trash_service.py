@@ -16,10 +16,9 @@ from servicelib.utils import fire_and_forget_task
 from ..director_v2 import director_v2_service
 from ..dynamic_scheduler import api as dynamic_scheduler_service
 from . import _crud_api_read
-from . import _projects_repository as projects_repository
+from . import _projects_repository as _projects_repository
 from . import _projects_service, _projects_service_delete
 from ._access_rights_service import check_user_project_permission
-from ._projects_repository import _OLDEST_TRASHED_FIRST
 from .exceptions import (
     ProjectNotFoundError,
     ProjectNotTrashedError,
@@ -243,13 +242,13 @@ async def batch_delete_trashed_projects_as_admin(
         (
             page_params.total_number_of_items,
             expired_trashed_projects,
-        ) = await projects_repository.list_trashed_projects(
+        ) = await _projects_repository.list_trashed_projects(
             app,
             # both implicit and explicitly trashed
             trashed_before=trashed_before,
             offset=page_params.offset,
             limit=page_params.limit,
-            order_by=_OLDEST_TRASHED_FIRST,
+            order_by=_projects_repository._OLDEST_TRASHED_FIRST,
         )
         # BATCH delete
         for project in expired_trashed_projects:

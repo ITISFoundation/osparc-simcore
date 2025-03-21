@@ -10,7 +10,7 @@ from pydantic import BaseModel, ConfigDict
 
 from ..users import api as users_service
 from . import _groups_repository as workspaces_groups_db
-from . import _workspaces_repository as workspaces_db
+from . import _workspaces_repository as workspaces_workspaces_repository
 from ._groups_repository import WorkspaceGroupGetDB
 from ._workspaces_service import check_user_workspace_access
 from .errors import WorkspaceAccessForbiddenError
@@ -125,7 +125,7 @@ async def update_workspace_group(
     product_name: ProductName,
 ) -> WorkspaceGroupGet:
     workspace: UserWorkspaceWithAccessRights = (
-        await workspaces_db.get_workspace_for_user(
+        await workspaces_workspaces_repository.get_workspace_for_user(
             app=app,
             user_id=user_id,
             workspace_id=workspace_id,
@@ -171,7 +171,7 @@ async def delete_workspace_group(
 ) -> None:
     user: dict = await users_service.get_user(app, user_id=user_id)
     workspace: UserWorkspaceWithAccessRights = (
-        await workspaces_db.get_workspace_for_user(
+        await workspaces_workspaces_repository.get_workspace_for_user(
             app=app,
             user_id=user_id,
             workspace_id=workspace_id,
