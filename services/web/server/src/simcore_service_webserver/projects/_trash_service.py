@@ -13,7 +13,7 @@ from models_library.users import UserID
 from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
 from servicelib.utils import fire_and_forget_task
 
-from ..director_v2 import api as director_v2_api
+from ..director_v2 import api as director_v2_service
 from ..dynamic_scheduler import api as dynamic_scheduler_api
 from . import _crud_api_read
 from . import _projects_repository as projects_repository
@@ -38,7 +38,7 @@ async def _is_project_running(
     project_id: ProjectID,
 ) -> bool:
     return bool(
-        await director_v2_api.is_pipeline_running(
+        await director_v2_service.is_pipeline_running(
             app, user_id=user_id, project_id=project_id
         )
     ) or bool(
