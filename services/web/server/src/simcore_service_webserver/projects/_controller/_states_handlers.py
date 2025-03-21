@@ -21,20 +21,20 @@ from servicelib.common_headers import (
 from simcore_postgres_database.models.users import UserRole
 from simcore_postgres_database.webserver_models import ProjectType
 
-from .._meta import API_VTAG as VTAG
-from ..director_v2.exceptions import DirectorServiceError
-from ..login.decorators import login_required
-from ..notifications import project_logs
-from ..products import products_web
-from ..products.models import Product
-from ..security.decorators import permission_required
-from ..users import api
-from ..utils_aiohttp import envelope_json_response
-from . import api as projects_api
-from . import projects_service
-from ._common.exceptions_handlers import handle_plugin_requests_exceptions
-from ._common.models import ProjectPathParams, RequestContext
-from .exceptions import ProjectStartsTooManyDynamicNodesError
+from ..._meta import API_VTAG as VTAG
+from ...director_v2.exceptions import DirectorServiceError
+from ...login.decorators import login_required
+from ...notifications import project_logs
+from ...products import products_web
+from ...products.models import Product
+from ...security.decorators import permission_required
+from ...users import api
+from ...utils_aiohttp import envelope_json_response
+from .. import api as projects_api
+from .. import projects_service
+from .._common.exceptions_handlers import handle_plugin_requests_exceptions
+from .._common.models import ProjectPathParams, RequestContext
+from ..exceptions import ProjectStartsTooManyDynamicNodesError
 
 _logger = logging.getLogger(__name__)
 

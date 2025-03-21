@@ -5,9 +5,9 @@ from models_library.rest_pagination_utils import paginate_data
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
-from . import _permalink_service
-from ._crud_api_read import _paralell_update
-from .models import ProjectDict
+from .. import _permalink_service
+from .._crud_api_read import _paralell_update
+from ..models import ProjectDict
 
 
 async def aggregate_data_to_projects_from_request(

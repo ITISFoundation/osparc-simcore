@@ -12,6 +12,10 @@ from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setu
 from ..constants import APP_SETTINGS_KEY
 from . import (
     _comments_rest,
+    _trash_rest,
+    _wallets_rest,
+)
+from ._controller import (
     _crud_handlers,
     _folders_rest,
     _groups_rest,
@@ -21,8 +25,6 @@ from . import (
     _projects_nodes_pricing_unit_rest,
     _states_handlers,
     _tags_rest,
-    _trash_rest,
-    _wallets_rest,
     _workspaces_rest,
 )
 from ._observer import setup_project_observer_events

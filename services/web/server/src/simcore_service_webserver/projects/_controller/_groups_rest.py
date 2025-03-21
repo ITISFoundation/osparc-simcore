@@ -12,14 +12,14 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_path_parameters_as,
 )
 
-from .._meta import api_version_prefix as VTAG
-from ..login.decorators import login_required
-from ..security.decorators import permission_required
-from ..utils_aiohttp import envelope_json_response
-from . import _groups_api
-from ._common.exceptions_handlers import handle_plugin_requests_exceptions
-from ._common.models import ProjectPathParams, RequestContext
-from ._groups_api import ProjectGroupGet
+from ..._meta import api_version_prefix as VTAG
+from ...login.decorators import login_required
+from ...security.decorators import permission_required
+from ...utils_aiohttp import envelope_json_response
+from .. import _groups_api
+from .._common.exceptions_handlers import handle_plugin_requests_exceptions
+from .._common.models import ProjectPathParams, RequestContext
+from .._groups_api import ProjectGroupGet
 
 _logger = logging.getLogger(__name__)
 
