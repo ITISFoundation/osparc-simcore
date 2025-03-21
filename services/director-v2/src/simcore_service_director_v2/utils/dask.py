@@ -38,6 +38,7 @@ from simcore_sdk.node_ports_common.exceptions import (
 )
 from simcore_sdk.node_ports_v2 import FileLinkType, Port, links, port_utils
 from simcore_sdk.node_ports_v2.links import ItemValue as _NPItemValue
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ..constants import UNDEFINED_DOCKER_LABEL
 from ..core.errors import (
@@ -106,7 +107,10 @@ def parse_dask_job_id(
 
 
 async def create_node_ports(
-    db_engine: Engine, user_id: UserID, project_id: ProjectID, node_id: NodeID
+    db_engine: AsyncEngine,
+    user_id: UserID,
+    project_id: ProjectID,
+    node_id: NodeID,
 ) -> node_ports_v2.Nodeports:
     """
     This function create a nodeports object by fetching the node state from the database
