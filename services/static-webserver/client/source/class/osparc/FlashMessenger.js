@@ -86,7 +86,35 @@ qx.Class.define("osparc.FlashMessenger", {
         console.error(error);
       }
       const msg = this.extractMessage(error, defaultMessage);
-      return this.getInstance().logAs(msg, "ERROR", duration);
+      const flashMessage = this.getInstance().logAs(msg, "ERROR", duration);
+      if (error && error["supportId"]) {
+        flashMessage.addWidget(this.__createCopyOECWidget(msg, error["supportId"]));
+        flashMessage.setDuration(flashMessage.getDuration()*2);
+      }
+      return flashMessage;
+    },
+
+    __createCopyOECWidget: function(message, supportId) {
+      const errorLabel = new qx.ui.basic.Atom().set({
+        label: supportId,
+        icon: "@FontAwesome5Solid/copy/10",
+        iconPosition: "right",
+        gap: 8,
+        cursor: "pointer",
+        alignX: "center",
+        allowGrowX: false,
+      });
+      errorLabel.addListener("tap", () => {
+        const dataToClipboard = {
+          message,
+          supportId,
+          timestamp: new Date().toString(),
+          url: window.location.href,
+          studyId: osparc.store.Store.getInstance().getCurrentStudy() || "",
+        }
+        osparc.utils.Utils.copyTextToClipboard(JSON.stringify(dataToClipboard));
+      });
+      return errorLabel;
     },
   },
 
@@ -143,14 +171,9 @@ qx.Class.define("osparc.FlashMessenger", {
       }
       this.__displayedMessagesCount++;
 
-      let duration = flashMessage.getDuration();
-      if (duration === null) {
-        const message = flashMessage.getMessage();
-        const wordCount = message.split(" ").length;
-        duration = Math.max(5500, wordCount*500); // An average reader takes 300ms to read a word
-      }
+      const duration = flashMessage.getDuration();
       if (duration !== 0) {
-        qx.event.Timer.once(() => this.removeMessage(flashMessage), this, duration);
+        flashMessage.timer = setTimeout(() => this.removeMessage(flashMessage), duration);
       }
     },
 
