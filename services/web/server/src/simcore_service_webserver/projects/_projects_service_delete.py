@@ -11,7 +11,7 @@ from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from servicelib.redis._errors import ProjectLockError
 
 from ..director_v2 import api as director_v2_service
-from . import _projects_repository as _projects_repository
+from . import _projects_repository as projects_repository
 from . import _projects_service
 from .exceptions import ProjectDeleteError, ProjectNotFoundError
 
@@ -68,7 +68,7 @@ async def delete_project_as_admin(
     try:
         # 1. hide
         with _monitor_step(state, name="hide"):
-            project = await _projects_repository.patch_project(
+            project = await projects_repository.patch_project(
                 app,
                 project_uuid=project_uuid,
                 new_partial_project_data={"hidden": True},
@@ -83,7 +83,7 @@ async def delete_project_as_admin(
 
         # 3. delete
         with _monitor_step(state, name="delete"):
-            await _projects_repository.delete_project(app, project_uuid=project_uuid)
+            await projects_repository.delete_project(app, project_uuid=project_uuid)
 
     except ProjectNotFoundError as err:
         _logger.debug(

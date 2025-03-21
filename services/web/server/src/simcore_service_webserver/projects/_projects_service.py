@@ -120,7 +120,7 @@ from ..users.preferences_api import (
     UserDefaultWalletNotFoundError,
     get_frontend_user_preference,
 )
-from ..wallets import api as wallets_api
+from ..wallets import api as wallets_service
 from ..wallets.errors import WalletNotEnoughCreditsError
 from ..workspaces import _workspaces_repository as workspaces_db
 from . import (
@@ -682,13 +682,11 @@ async def _start_dynamic_service(  # noqa: C901
             else:
                 project_wallet_id = project_wallet.wallet_id
             # Check whether user has access to the wallet
-            wallet = (
-                await wallets_api.get_wallet_with_available_credits_by_user_and_wallet(
-                    request.app,
-                    user_id=user_id,
-                    wallet_id=project_wallet_id,
-                    product_name=product_name,
-                )
+            wallet = await wallets_service.get_wallet_with_available_credits_by_user_and_wallet(
+                request.app,
+                user_id=user_id,
+                wallet_id=project_wallet_id,
+                product_name=product_name,
             )
             wallet_info = WalletInfo(
                 wallet_id=project_wallet_id,

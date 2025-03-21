@@ -16,8 +16,8 @@ from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker import (
 )
 
 from ..rabbitmq import get_rabbitmq_rpc_client
-from ..users import api as users_api
-from ..wallets import _api as wallets_api
+from ..users import api as users_service
+from ..wallets import _api as wallets_service
 from ._projects_repository_legacy import ProjectDBAPI
 from .exceptions import (
     ProjectInDebtCanNotChangeWalletError,
@@ -73,7 +73,7 @@ async def connect_wallet_to_project(
     db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(app)
 
     # ensure the wallet can be used by the user
-    wallet: WalletGet = await wallets_api.get_wallet_by_user(
+    wallet: WalletGet = await wallets_service.get_wallet_by_user(
         app,
         user_id=user_id,
         wallet_id=wallet_id,
@@ -153,20 +153,20 @@ async def pay_debt_with_different_wallet(
     assert current_wallet_id != new_wallet_id  # nosec
 
     # ensure the wallets can be used by the user
-    new_wallet: WalletGet = await wallets_api.get_wallet_by_user(
+    new_wallet: WalletGet = await wallets_service.get_wallet_by_user(
         app,
         user_id=user_id,
         wallet_id=new_wallet_id,
         product_name=product_name,
     )
-    current_wallet: WalletGet = await wallets_api.get_wallet_by_user(
+    current_wallet: WalletGet = await wallets_service.get_wallet_by_user(
         app,
         user_id=user_id,
         wallet_id=current_wallet_id,
         product_name=product_name,
     )
 
-    user = await users_api.get_user(app, user_id=user_id)
+    user = await users_service.get_user(app, user_id=user_id)
 
     # Transfer credits from the source wallet to the connected wallet
     rpc_client = get_rabbitmq_rpc_client(app)
