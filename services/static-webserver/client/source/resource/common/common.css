@@ -15,7 +15,11 @@
 }
 
 .rotate {
-  animation: rotation 1.5s infinite linear;
+  animation: rotation 2s infinite linear;
+}
+
+.rotateSlow {
+  animation: rotation 4s infinite linear;
 }
 
 .verticalText {

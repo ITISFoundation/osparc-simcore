@@ -15,19 +15,20 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.dashboard.GridButtonPlaceholder", {
-  extend: osparc.dashboard.GridButtonBase,
+qx.Class.define("osparc.dashboard.ListButtonTaskPlaceholder", {
+  extend: osparc.dashboard.ListButtonBase,
 
   construct: function() {
     this.base(arguments);
 
     this.setPriority(osparc.dashboard.CardBase.CARD_PRIORITY.PLACEHOLDER);
 
+    this.__layout = this.getChildControl("progress-layout")
     this.set({
-      cursor: "not-allowed"
+      appearance: "pb-new",
+      cursor: "not-allowed",
+      allowGrowX: true
     });
-
-    this.getChildControl("footer").exclude();
   },
 
   properties: {
@@ -39,62 +40,44 @@ qx.Class.define("osparc.dashboard.GridButtonPlaceholder", {
     }
   },
 
-  statics: {
-    POS: {
-      STATE: {
-        row: 5,
-        column: 0,
-        rowSpan: 1,
-        colSpan: 4
-      },
-      PROGRESS: {
-        row: 6,
-        column: 0,
-        rowSpan: 1,
-        colSpan: 4
-      }
-    }
-  },
-
   members: {
+    __layout: null,
     _createChildControlImpl: function(id) {
       let control;
-      let layout;
       switch (id) {
-        case "state-label": {
-          control = new qx.ui.basic.Label().set({
-            textColor: "contrasted-text-dark",
-            allowGrowX: true,
-            allowShrinkX: true,
-            rich: true,
-            anonymous: true,
-            font: "text-12",
-            allowGrowY: true,
-            wrap: true
+        case "progress-layout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox().set({
+            alignX: "center",
+            alignY: "middle"
+          }));
+          this._add(control, {
+            row: 0,
+            column: osparc.dashboard.ListButtonBase.POS.PROGRESS
           });
-          layout = this.getChildControl("body");
-          layout.addAt(control, 0);
+          break
+        case "state-label":
+          control = new qx.ui.basic.Label().set({
+            alignX: "left",
+            alignY: "middle",
+            marginBottom: 5
+          });
+          this.__layout.addAt(control, 0);
           break;
-        }
-        case "progress-bar": {
+        case "progress-bar":
           control = new qx.ui.indicator.ProgressBar().set({
             maxHeight: 6,
+            minWidth: 420,
             alignX: "center",
             alignY: "middle",
             allowGrowY: false,
             allowGrowX: true,
-            margin: 0,
+            margin: 0
           });
           control.getChildControl("progress").set({
             backgroundColor: "strong-main"
           });
-          layout = this.getChildControl("header");
-          layout.add(control, {
-            column: 1,
-            row: 2,
-          });
+          this.__layout.addAt(control, 1);
           break;
-        }
       }
       return control || this.base(arguments, id);
     },
@@ -105,7 +88,7 @@ qx.Class.define("osparc.dashboard.GridButtonPlaceholder", {
         title.setValue(titleText);
       }
       if (icon) {
-        this.setThumbnail(icon);
+        this.setIcon(icon);
       }
 
       const stateLabel = this.getChildControl("state-label");
@@ -127,7 +110,7 @@ qx.Class.define("osparc.dashboard.GridButtonPlaceholder", {
         const checks = [
           this.getChildControl("title").getValue().toString()
         ];
-        if (checks.filter(label => label.toLowerCase().trim().includes(data.text)).length === 0) {
+        if (checks.filter(label => label.toLowerCase().trim().includes(data.text)).length == 0) {
           return true;
         }
       }
