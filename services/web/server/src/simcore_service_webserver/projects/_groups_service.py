@@ -8,7 +8,7 @@ from models_library.projects import ProjectID
 from models_library.users import UserID
 from pydantic import BaseModel
 
-from ..users import api as users_api
+from ..users import api as users_service
 from . import _groups_respository as projects_groups_db
 from ._access_rights_service import check_user_project_permission
 from ._groups_respository import ProjectGroupGetDB
@@ -109,9 +109,9 @@ async def replace_project_group(
 
     project_db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
     project = await project_db.get_project_db(project_id)
-    project_owner_user: dict = await users_api.get_user(app, project.prj_owner)
+    project_owner_user: dict = await users_service.get_user(app, project.prj_owner)
     if project_owner_user["primary_gid"] == group_id:
-        user: dict = await users_api.get_user(app, user_id)
+        user: dict = await users_service.get_user(app, user_id)
         if user["primary_gid"] != project_owner_user["primary_gid"]:
             # Only the owner of the project can modify the owner group
             raise ProjectInvalidRightsError(
@@ -143,7 +143,7 @@ async def delete_project_group(
     group_id: GroupID,
     product_name: ProductName,
 ) -> None:
-    user: dict = await users_api.get_user(app, user_id=user_id)
+    user: dict = await users_service.get_user(app, user_id=user_id)
     if user["primary_gid"] != group_id:
         await check_user_project_permission(
             app,
@@ -155,7 +155,7 @@ async def delete_project_group(
 
     project_db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
     project = await project_db.get_project_db(project_id)
-    project_owner_user: dict = await users_api.get_user(app, project.prj_owner)
+    project_owner_user: dict = await users_service.get_user(app, project.prj_owner)
     if project_owner_user["primary_gid"] == group_id:
         if user["primary_gid"] != project_owner_user["primary_gid"]:
             # Only the owner of the project can delete the owner group

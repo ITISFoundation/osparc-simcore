@@ -16,7 +16,7 @@ from models_library.wallets import UserWalletDB, WalletDB, WalletID, WalletStatu
 from pydantic import TypeAdapter
 
 from ..resource_usage.service import get_wallet_total_available_credits
-from ..users import api as users_api
+from ..users import api as users_service
 from ..users import preferences_api as user_preferences_api
 from ..users.exceptions import UserDefaultWalletNotFoundError
 from . import _db as db
@@ -33,7 +33,7 @@ async def create_wallet(
     thumbnail: str | None,
     product_name: ProductName,
 ) -> WalletGet:
-    user: dict = await users_api.get_user(app, user_id)
+    user: dict = await users_service.get_user(app, user_id)
     wallet_db: WalletDB = await db.create_wallet(
         app=app,
         owner=user["primary_gid"],

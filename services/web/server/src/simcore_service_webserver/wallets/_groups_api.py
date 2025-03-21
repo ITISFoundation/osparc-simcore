@@ -8,7 +8,7 @@ from models_library.users import UserID
 from models_library.wallets import UserWalletDB, WalletID
 from pydantic import BaseModel, ConfigDict
 
-from ..users import api as users_api
+from ..users import api as users_service
 from . import _db as wallets_db
 from . import _groups_db as wallets_groups_db
 from ._groups_db import WalletGroupGetDB
@@ -87,9 +87,9 @@ async def list_wallet_groups_by_user_and_wallet(
             ),
         )
 
-    wallet_groups_db: list[
-        WalletGroupGetDB
-    ] = await wallets_groups_db.list_wallet_groups(app=app, wallet_id=wallet_id)
+    wallet_groups_db: list[WalletGroupGetDB] = (
+        await wallets_groups_db.list_wallet_groups(app=app, wallet_id=wallet_id)
+    )
 
     wallet_groups_api: list[WalletGroupGet] = [
         WalletGroupGet.model_validate(group) for group in wallet_groups_db
@@ -103,9 +103,9 @@ async def list_wallet_groups_with_read_access_by_wallet(
     *,
     wallet_id: WalletID,
 ) -> list[WalletGroupGet]:
-    wallet_groups_db: list[
-        WalletGroupGetDB
-    ] = await wallets_groups_db.list_wallet_groups(app=app, wallet_id=wallet_id)
+    wallet_groups_db: list[WalletGroupGetDB] = (
+        await wallets_groups_db.list_wallet_groups(app=app, wallet_id=wallet_id)
+    )
 
     wallet_groups_api: list[WalletGroupGet] = [
         WalletGroupGet.model_validate(group)
@@ -135,7 +135,7 @@ async def update_wallet_group(
             reason=f"User does not have write access to wallet {wallet_id}"
         )
     if wallet.owner == group_id:
-        user: dict = await users_api.get_user(app, user_id)
+        user: dict = await users_service.get_user(app, user_id)
         if user["primary_gid"] != wallet.owner:
             # Only the owner of the wallet can modify the owner group
             raise WalletAccessForbiddenError(
@@ -177,7 +177,7 @@ async def delete_wallet_group(
             reason=f"User does not have delete access to wallet {wallet_id}"
         )
     if wallet.owner == group_id:
-        user: dict = await users_api.get_user(app, user_id)
+        user: dict = await users_service.get_user(app, user_id)
         if user["primary_gid"] != wallet.owner:
             # Only the owner of the wallet can delete the owner group
             raise WalletAccessForbiddenError(
