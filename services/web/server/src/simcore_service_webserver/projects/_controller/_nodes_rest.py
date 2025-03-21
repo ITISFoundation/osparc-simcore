@@ -68,7 +68,6 @@ from ...utils_aiohttp import envelope_json_response
 from .. import _access_rights_service as access_rights_service
 from .. import _nodes_service as _nodes_service
 from .. import nodes_utils, projects_service
-from .._common.exceptions_handlers import handle_plugin_requests_exceptions
 from .._common.models import ProjectPathParams, RequestContext
 from .._nodes_service import NodeScreenshot, get_node_screenshots
 from ..api import has_user_project_access_rights
@@ -77,6 +76,7 @@ from ..exceptions import (
     ProjectNodeResourcesInsufficientRightsError,
     ProjectNodeResourcesInvalidError,
 )
+from ._rest_exceptions import handle_plugin_requests_exceptions
 
 _logger = logging.getLogger(__name__)
 

@@ -13,8 +13,8 @@ from ..._meta import api_version_prefix as VTAG
 from ...login.decorators import login_required
 from ...security.decorators import permission_required
 from .. import _workspaces_service
-from .._common.exceptions_handlers import handle_plugin_requests_exceptions
 from .._common.models import RequestContext
+from ._rest_exceptions import handle_plugin_requests_exceptions
 
 _logger = logging.getLogger(__name__)
 
