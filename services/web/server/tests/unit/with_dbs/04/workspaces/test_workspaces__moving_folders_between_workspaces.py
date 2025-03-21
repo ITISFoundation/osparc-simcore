@@ -33,7 +33,7 @@ def mock_catalog_api_get_services_for_user_in_product(mocker: MockerFixture):
         return_value=[],
     )
     mocker.patch(
-        "simcore_service_webserver.projects._controllers.projects_rest.project_uses_available_services",
+        "simcore_service_webserver.projects._controller.projects_rest.project_uses_available_services",
         spec=True,
         return_value=True,
     )
