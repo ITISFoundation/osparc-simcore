@@ -113,6 +113,23 @@ async def delete_api_key(
         await conn.execute(stmt)
 
 
+async def delete_api_key_by_key(
+    app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    api_key: str,
+) -> None:
+    async with transaction_context(get_asyncpg_engine(app), connection) as conn:
+        stmt = api_keys.delete().where(
+            (api_keys.c.api_key == api_key)
+            & (api_keys.c.user_id == user_id)
+            & (api_keys.c.product_name == product_name)
+        )
+        await conn.execute(stmt)
+
+
 async def delete_expired_api_keys(
     app: web.Application, connection: AsyncConnection | None = None
 ) -> list[str]:

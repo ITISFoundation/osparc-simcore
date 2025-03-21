@@ -1,30 +1,12 @@
 import datetime as dt
-import re
-import string
-from typing import Final
 
 from aiohttp import web
 from models_library.products import ProductName
 from models_library.users import UserID
-from servicelib.utils_secrets import generate_token_secret_key
 
 from . import _repository
 from .errors import ApiKeyNotFoundError
 from .models import ApiKey
-
-_PUNCTUATION_REGEX = re.compile(
-    pattern="[" + re.escape(string.punctuation.replace("_", "")) + "]"
-)
-
-_KEY_LEN: Final = 10
-_SECRET_LEN: Final = 20
-
-
-def _generate_api_key_and_secret(name: str):
-    prefix = _PUNCTUATION_REGEX.sub("_", name[:5])
-    api_key = f"{prefix}_{generate_token_secret_key(_KEY_LEN)}"
-    api_secret = generate_token_secret_key(_SECRET_LEN)
-    return api_key, api_secret
 
 
 async def create_api_key(
@@ -51,9 +33,9 @@ async def create_api_key(
 async def delete_api_key(
     app: web.Application,
     *,
-    api_key_id: str,
-    user_id: UserID,
     product_name: ProductName,
+    user_id: UserID,
+    api_key_id: str,
 ) -> None:
     await _repository.delete_api_key(
         app,
@@ -63,12 +45,28 @@ async def delete_api_key(
     )
 
 
+async def delete_api_key_by_display_name(
+    app: web.Application,
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    display_name: str,
+) -> None:
+    api_key = _generate_deterministic_key(display_name)
+    await _repository.delete_api_key_by_key(
+        app,
+        product_name=product_name,
+        user_id=user_id,
+        api_key=api_key,
+    )
+
+
 async def get_api_key(
     app: web.Application,
     *,
-    api_key_id: str,
-    user_id: UserID,
     product_name: ProductName,
+    user_id: UserID,
+    api_key_id: str,
 ) -> ApiKey:
     api_key: ApiKey | None = await _repository.get_api_key(
         app,
@@ -85,8 +83,8 @@ async def get_api_key(
 async def list_api_keys(
     app: web.Application,
     *,
-    user_id: UserID,
     product_name: ProductName,
+    user_id: UserID,
 ) -> list[ApiKey]:
     api_keys: list[ApiKey] = await _repository.list_api_keys(
         app, user_id=user_id, product_name=product_name

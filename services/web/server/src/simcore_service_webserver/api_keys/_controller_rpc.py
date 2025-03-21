@@ -53,18 +53,18 @@ async def get_api_key(
 
 
 @router.expose()
-async def delete_api_key(
+async def delete_api_key_by_key(
     app: web.Application,
     *,
     user_id: UserID,
     product_name: ProductName,
-    api_key_id: str,
+    api_key: str,
 ) -> None:
-    await _service.delete_api_key(
+    await _service.delete_api_key_by_key(
         app,
         user_id=user_id,
         product_name=product_name,
-        api_key_id=api_key_id,
+        api_key=api_key,
     )
 
 
