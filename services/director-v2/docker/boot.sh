@@ -24,7 +24,7 @@ if [ "${SC_BUILD_TARGET}" = "development" ]; then
   command -v python | sed 's/^/    /'
 
   cd services/director-v2
-  uv pip --quiet --no-cache-dir sync requirements/dev.txt
+  uv pip --quiet sync requirements/dev.txt
   cd -
   echo "$INFO" "PIP :"
   uv pip list
@@ -32,7 +32,7 @@ fi
 
 if [ "${SC_BOOT_MODE}" = "debug" ]; then
   # NOTE: production does NOT pre-installs debugpy
-  uv pip install --no-cache-dir debugpy
+  uv pip install debugpy
 fi
 
 #

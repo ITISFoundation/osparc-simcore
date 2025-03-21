@@ -357,6 +357,8 @@ endef
 show-endpoints:
 	@$(_show_endpoints)
 
+export HOST_UV_CACHE_DIR := $(shell uv cache dir)
+
 up-devel: .stack-simcore-development.yml .init-swarm $(CLIENT_WEB_OUTPUT) ## Deploys local development stack, qx-compile+watch and ops stack (pass 'make ops_disabled=1 up-...' to disable)
 	# Start compile+watch front-end container [front-end]
 	@$(MAKE_C) services/static-webserver/client down compile-dev flags=--watch

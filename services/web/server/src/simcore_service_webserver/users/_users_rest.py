@@ -59,8 +59,7 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
     MissingGroupExtraPropertiesForProductError: HttpErrorInfo(
         status.HTTP_503_SERVICE_UNAVAILABLE,
         "The product is not ready for use until the configuration is fully completed. "
-        "Please wait and try again. "
-        "If this issue persists, contact support indicating this support code: {error_code}.",
+        "Please wait and try again. ",
     ),
 }
 
