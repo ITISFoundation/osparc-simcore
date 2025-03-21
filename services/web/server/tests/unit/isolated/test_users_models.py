@@ -78,7 +78,7 @@ def test_parsing_output_of_get_user_profile():
         "last_name": "",
         "role": "Guest",
         "gravatar_id": "9d5e02c75fcd4bce1c8861f219f7f8a5",
-        "privacy": {"hide_email": True, "hide_fullname": False},
+        "privacy": {"hide_email": True, "hide_fullname": False, "hide_username": False},
         "groups": {
             "me": {
                 "gid": 2,
