@@ -60,7 +60,7 @@ qx.Class.define("osparc.data.model.User", {
       lastName,
       email,
       thumbnail,
-      label: username,
+      label: userData["userName"] || description,
       description,
     });
   },
