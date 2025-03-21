@@ -75,6 +75,7 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
       if (privacyData) {
         this.__userPrivacyData = privacyData;
         this.__userPrivacyModel.set({
+          "hideUsername": "hideUsername" in privacyData ? privacyData["hideUsername"] : false,
           "hideFullname": "hideFullname" in privacyData ? privacyData["hideFullname"] : true,
           "hideEmail": "hideEmail" in privacyData ? privacyData["hideEmail"] : true,
         });
@@ -224,6 +225,9 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
       const label = osparc.ui.window.TabbedView.createHelpLabel(this.tr("For Privacy reasons, you might want to hide your First and Last Names and/or the Email to other users"));
       box.add(label);
 
+      const hideUsername = new qx.ui.form.CheckBox().set({
+        value: false
+      });
       const hideFullname = new qx.ui.form.CheckBox().set({
         value: true
       });
@@ -232,18 +236,21 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
       });
 
       const form = new qx.ui.form.Form();
+      form.add(hideUsername, "Hide Username", null, "hideUsername");
       form.add(hideFullname, "Hide Full Name", null, "hideFullname");
       form.add(hideEmail, "Hide Email", null, "hideEmail");
       box.add(new qx.ui.form.renderer.Single(form));
 
       // binding to a model
       const raw = {
+        "hideUsername": false,
         "hideFullname": true,
         "hideEmail": true,
       };
 
       const model = this.__userPrivacyModel = qx.data.marshal.Json.createModel(raw);
       const controller = new qx.data.controller.Object(model);
+      controller.addTarget(hideUsername, "value", "hideUsername", true);
       controller.addTarget(hideFullname, "value", "hideFullname", true);
       controller.addTarget(hideEmail, "value", "hideEmail", true);
 
@@ -261,6 +268,9 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
         const patchData = {
           "privacy": {}
         };
+        if (this.__userPrivacyData["hideUsername"] !== model.getHideUsername()) {
+          patchData["privacy"]["hideUsername"] = model.getHideUsername();
+        }
         if (this.__userPrivacyData["hideFullname"] !== model.getHideFullname()) {
           patchData["privacy"]["hideFullname"] = model.getHideFullname();
         }
@@ -295,6 +305,25 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
               this.__resetPrivacyData();
               osparc.FlashMessenger.logError(err, this.tr("Unsuccessful privacy update"));
             });
+        }
+
+        const optOutMessage = new qx.ui.basic.Atom().set({
+          label: "If all searchable fields are showHidden, you will not be ",
+          icon: "@FontAwesome5Solid/copy/10",
+          iconPosition: "right",
+          gap: 8,
+          cursor: "pointer",
+          alignX: "center",
+          allowGrowX: false,
+          visibility: "excluded",
+        });
+        box.add(optOutMessage);
+        if (
+          this.__userPrivacyModel.getHideUsername() &&
+          this.__userPrivacyModel.getHideFullname() &&
+          this.__userPrivacyModel.getHideEmail()
+        ) {
+          optOutMessage.show();
         }
       });
 
