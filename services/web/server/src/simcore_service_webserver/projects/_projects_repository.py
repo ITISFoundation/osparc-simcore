@@ -37,7 +37,7 @@ PROJECT_DB_COLS = get_columns_from_db_model(
     ProjectDBGet,
 )
 
-_OLDEST_TRASHED_FIRST = OrderBy(field=IDStr("trashed"), direction=OrderDirection.ASC)
+OLDEST_TRASHED_FIRST = OrderBy(field=IDStr("trashed"), direction=OrderDirection.ASC)
 
 
 def _to_sql_expression(table: sa.Table, order_by: OrderBy):
@@ -59,7 +59,7 @@ async def list_trashed_projects(
     offset: NonNegativeInt = 0,
     limit: PositiveInt = MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
     # order
-    order_by: OrderBy = _OLDEST_TRASHED_FIRST,
+    order_by: OrderBy = OLDEST_TRASHED_FIRST,
 ) -> tuple[int, list[ProjectDBGet]]:
 
     base_query = sql.select(*PROJECT_DB_COLS).where(projects.c.trashed.is_not(None))

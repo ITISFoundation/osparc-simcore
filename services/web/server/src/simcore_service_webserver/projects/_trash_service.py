@@ -248,7 +248,7 @@ async def batch_delete_trashed_projects_as_admin(
             trashed_before=trashed_before,
             offset=page_params.offset,
             limit=page_params.limit,
-            order_by=_projects_repository._OLDEST_TRASHED_FIRST,
+            order_by=_projects_repository.OLDEST_TRASHED_FIRST,
         )
         # BATCH delete
         for project in expired_trashed_projects:
