@@ -12,7 +12,7 @@ from aiohttp.test_utils import TestClient
 from common_library.users_enums import UserRole
 from pytest_simcore.helpers.webserver_login import UserInfoDict
 from simcore_service_webserver.projects import (
-    _projects_db as projects_service_repository,
+    _projects_repository as projects_service_repository,
 )
 from simcore_service_webserver.projects.exceptions import ProjectNotFoundError
 from simcore_service_webserver.projects.models import ProjectDBGet, ProjectDict

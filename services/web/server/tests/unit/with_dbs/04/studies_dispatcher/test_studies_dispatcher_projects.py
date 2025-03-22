@@ -18,7 +18,7 @@ from pytest_simcore.helpers.webserver_fake_services_data import list_fake_file_c
 from pytest_simcore.helpers.webserver_login import NewUser
 from pytest_simcore.helpers.webserver_projects import delete_all_projects
 from simcore_service_webserver.groups.api import auto_add_user_to_groups
-from simcore_service_webserver.projects.projects_service import get_project_for_user
+from simcore_service_webserver.projects._projects_service import get_project_for_user
 from simcore_service_webserver.studies_dispatcher._models import ServiceInfo
 from simcore_service_webserver.studies_dispatcher._projects import (
     UserInfo,
@@ -94,7 +94,7 @@ async def test_add_new_project_from_model_instance(
     assert client.app
 
     mock_directorv2_api = mocker.patch(
-        "simcore_service_webserver.director_v2.api.create_or_update_pipeline",
+        "simcore_service_webserver.director_v2.director_v2_service.create_or_update_pipeline",
         return_value=None,
     )
 

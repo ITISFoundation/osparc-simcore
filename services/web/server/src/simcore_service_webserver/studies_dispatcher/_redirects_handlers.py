@@ -1,6 +1,4 @@
-""" Handles request to the viewers redirection entrypoints
-
-"""
+"""Handles request to the viewers redirection entrypoints"""
 
 import functools
 import logging
@@ -18,7 +16,7 @@ from servicelib.aiohttp.requests_validation import parse_request_query_parameter
 from servicelib.aiohttp.typing_extension import Handler
 from servicelib.logging_errors import create_troubleshotting_log_kwargs
 
-from ..dynamic_scheduler import api as dynamic_scheduler_api
+from ..dynamic_scheduler import api as dynamic_scheduler_service
 from ..products import products_web
 from ..utils import compose_support_error_msg
 from ..utils_aiohttp import create_redirect_to_page_response
@@ -169,8 +167,7 @@ class FileQueryParams(FileParams):
         return v
 
 
-class ServiceAndFileParams(FileQueryParams, ServiceParams):
-    ...
+class ServiceAndFileParams(FileQueryParams, ServiceParams): ...
 
 
 class ViewerQueryParams(BaseModel):
@@ -253,7 +250,7 @@ async def get_redirection_to_viewer(request: web.Request):
             file_params.download_link,
             product_name=products_web.get_product_name(request),
         )
-        await dynamic_scheduler_api.update_projects_networks(
+        await dynamic_scheduler_service.update_projects_networks(
             request.app, project_id=project_id
         )
 
@@ -284,7 +281,7 @@ async def get_redirection_to_viewer(request: web.Request):
             service_info=_create_service_info_from(valid_service),
             product_name=products_web.get_product_name(request),
         )
-        await dynamic_scheduler_api.update_projects_networks(
+        await dynamic_scheduler_service.update_projects_networks(
             request.app, project_id=project_id
         )
 
@@ -322,7 +319,7 @@ async def get_redirection_to_viewer(request: web.Request):
             ).STUDIES_DEFAULT_FILE_THUMBNAIL,
             product_name=products_web.get_product_name(request),
         )
-        await dynamic_scheduler_api.update_projects_networks(
+        await dynamic_scheduler_service.update_projects_networks(
             request.app, project_id=project_id
         )
 

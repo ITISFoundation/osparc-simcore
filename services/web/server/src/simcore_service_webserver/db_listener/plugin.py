@@ -1,14 +1,15 @@
 """
-    computation module is the main entry-point for computational backend
+computation module is the main entry-point for computational backend
 
 """
+
 import logging
 
 from aiohttp import web
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
 from ..db.plugin import setup_db
-from ..projects.db import setup_projects_db
+from ..projects._projects_repository_legacy import setup_projects_db
 from ..rabbitmq import setup_rabbitmq
 from ..socketio.plugin import setup_socketio
 from ._db_comp_tasks_listening_task import create_comp_tasks_listening_task

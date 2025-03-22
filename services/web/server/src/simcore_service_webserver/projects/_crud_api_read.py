@@ -22,9 +22,9 @@ from simcore_postgres_database.webserver_models import ProjectType as ProjectTyp
 from ..catalog import catalog_service
 from ..folders import _folders_repository
 from ..workspaces._workspaces_service import check_user_workspace_access
-from . import projects_service
-from ._projects_db import batch_get_trashed_by_primary_gid
-from .db import ProjectDBAPI
+from . import _projects_service
+from ._projects_repository import batch_get_trashed_by_primary_gid
+from ._projects_repository_legacy import ProjectDBAPI
 from .models import ProjectDict, ProjectTypeAPI
 
 
@@ -65,7 +65,7 @@ async def _aggregate_data_to_projects_from_other_sources(
 
     # udpating `project.state`
     update_state_per_project = [
-        projects_service.add_project_states_for_user(
+        _projects_service.add_project_states_for_user(
             user_id=user_id,
             project=prj,
             is_template=prj_type == ProjectTypeDB.TEMPLATE,

@@ -8,9 +8,9 @@ from models_library.users import UserID
 from models_library.workspaces import UserWorkspaceWithAccessRights, WorkspaceID
 from pydantic import BaseModel, ConfigDict
 
-from ..users import api as users_api
+from ..users import api as users_service
 from . import _groups_repository as workspaces_groups_db
-from . import _workspaces_repository as workspaces_db
+from . import _workspaces_repository as workspaces_workspaces_repository
 from ._groups_repository import WorkspaceGroupGetDB
 from ._workspaces_service import check_user_workspace_access
 from .errors import WorkspaceAccessForbiddenError
@@ -80,10 +80,10 @@ async def list_workspace_groups_by_user_and_workspace(
         permission="read",
     )
 
-    workspace_groups_db: list[
-        WorkspaceGroupGetDB
-    ] = await workspaces_groups_db.list_workspace_groups(
-        app=app, workspace_id=workspace_id
+    workspace_groups_db: list[WorkspaceGroupGetDB] = (
+        await workspaces_groups_db.list_workspace_groups(
+            app=app, workspace_id=workspace_id
+        )
     )
 
     workspace_groups_api: list[WorkspaceGroupGet] = [
@@ -98,10 +98,10 @@ async def list_workspace_groups_with_read_access_by_workspace(
     *,
     workspace_id: WorkspaceID,
 ) -> list[WorkspaceGroupGet]:
-    workspace_groups_db: list[
-        WorkspaceGroupGetDB
-    ] = await workspaces_groups_db.list_workspace_groups(
-        app=app, workspace_id=workspace_id
+    workspace_groups_db: list[WorkspaceGroupGetDB] = (
+        await workspaces_groups_db.list_workspace_groups(
+            app=app, workspace_id=workspace_id
+        )
     )
 
     workspace_groups_api: list[WorkspaceGroupGet] = [
@@ -125,7 +125,7 @@ async def update_workspace_group(
     product_name: ProductName,
 ) -> WorkspaceGroupGet:
     workspace: UserWorkspaceWithAccessRights = (
-        await workspaces_db.get_workspace_for_user(
+        await workspaces_workspaces_repository.get_workspace_for_user(
             app=app,
             user_id=user_id,
             workspace_id=workspace_id,
@@ -137,7 +137,7 @@ async def update_workspace_group(
             reason=f"User does not have write access to workspace {workspace_id}"
         )
     if workspace.owner_primary_gid == group_id:
-        user: dict = await users_api.get_user(app, user_id)
+        user: dict = await users_service.get_user(app, user_id)
         if user["primary_gid"] != workspace.owner_primary_gid:
             # Only the owner of the workspace can modify the owner group
             raise WorkspaceAccessForbiddenError(
@@ -169,9 +169,9 @@ async def delete_workspace_group(
     group_id: GroupID,
     product_name: ProductName,
 ) -> None:
-    user: dict = await users_api.get_user(app, user_id=user_id)
+    user: dict = await users_service.get_user(app, user_id=user_id)
     workspace: UserWorkspaceWithAccessRights = (
-        await workspaces_db.get_workspace_for_user(
+        await workspaces_workspaces_repository.get_workspace_for_user(
             app=app,
             user_id=user_id,
             workspace_id=workspace_id,

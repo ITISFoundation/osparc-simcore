@@ -1,32 +1,33 @@
-""" projects management subsystem
+"""projects management subsystem
 
-    A project is a document defining a osparc study
-    It contains metadata about the study (e.g. name, description, owner, etc) and a workbench section that describes the study pipeline
+A project is a document defining a osparc study
+It contains metadata about the study (e.g. name, description, owner, etc) and a workbench section that describes the study pipeline
 """
+
 import logging
 
 from aiohttp import web
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
 from ..constants import APP_SETTINGS_KEY
-from . import (
-    _comments_handlers,
-    _crud_handlers,
-    _folders_handlers,
-    _groups_handlers,
-    _metadata_handlers,
-    _nodes_handlers,
-    _ports_handlers,
-    _projects_nodes_pricing_unit_handlers,
-    _states_handlers,
-    _tags_handlers,
-    _trash_rest,
-    _wallets_handlers,
-    _workspaces_handlers,
+from ._controller import (
+    comments_rest,
+    folders_rest,
+    groups_rest,
+    metadata_rest,
+    nodes_pricing_unit_rest,
+    nodes_rest,
+    ports_rest,
+    projects_rest,
+    projects_states_rest,
+    tags_rest,
+    trash_rest,
+    wallets_rest,
+    workspaces_rest,
 )
-from ._observer import setup_project_observer_events
-from ._projects_access import setup_projects_access
-from .db import setup_projects_db
+from ._controller.projects_slot import setup_project_observer_events
+from ._projects_repository_legacy import setup_projects_db
+from ._security_service import setup_projects_access
 
 logger = logging.getLogger(__name__)
 
@@ -50,18 +51,18 @@ def setup_projects(app: web.Application) -> bool:
     # registers event handlers (e.g. on_user_disconnect)
     setup_project_observer_events(app)
 
-    app.router.add_routes(_states_handlers.routes)
-    app.router.add_routes(_crud_handlers.routes)
-    app.router.add_routes(_comments_handlers.routes)
-    app.router.add_routes(_groups_handlers.routes)
-    app.router.add_routes(_metadata_handlers.routes)
-    app.router.add_routes(_ports_handlers.routes)
-    app.router.add_routes(_nodes_handlers.routes)
-    app.router.add_routes(_tags_handlers.routes)
-    app.router.add_routes(_wallets_handlers.routes)
-    app.router.add_routes(_folders_handlers.routes)
-    app.router.add_routes(_projects_nodes_pricing_unit_handlers.routes)
-    app.router.add_routes(_workspaces_handlers.routes)
-    app.router.add_routes(_trash_rest.routes)
+    app.router.add_routes(projects_states_rest.routes)
+    app.router.add_routes(projects_rest.routes)
+    app.router.add_routes(comments_rest.routes)
+    app.router.add_routes(groups_rest.routes)
+    app.router.add_routes(metadata_rest.routes)
+    app.router.add_routes(ports_rest.routes)
+    app.router.add_routes(nodes_rest.routes)
+    app.router.add_routes(tags_rest.routes)
+    app.router.add_routes(wallets_rest.routes)
+    app.router.add_routes(folders_rest.routes)
+    app.router.add_routes(nodes_pricing_unit_rest.routes)
+    app.router.add_routes(workspaces_rest.routes)
+    app.router.add_routes(trash_rest.routes)
 
     return True

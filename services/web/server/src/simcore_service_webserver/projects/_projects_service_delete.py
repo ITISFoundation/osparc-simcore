@@ -10,9 +10,8 @@ from models_library.users import UserID
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from servicelib.redis._errors import ProjectLockError
 
-from ..director_v2 import api as director_v2_service
-from . import _projects_db as _projects_repository
-from . import projects_service
+from ..director_v2 import director_v2_service
+from . import _projects_repository, _projects_service
 from .exceptions import ProjectDeleteError, ProjectNotFoundError
 
 _logger = logging.getLogger(__name__)
@@ -37,8 +36,7 @@ def _monitor_step(steps: dict[str, Any], *, name: str, elapsed: bool = False):
 
 
 class StopServicesCallback(Protocol):
-    async def __call__(self, app: web.Application, project_uuid: ProjectID) -> None:
-        ...
+    async def __call__(self, app: web.Application, project_uuid: ProjectID) -> None: ...
 
 
 async def batch_stop_services_in_project(
@@ -48,7 +46,7 @@ async def batch_stop_services_in_project(
         director_v2_service.stop_pipeline(
             app, user_id=user_id, project_id=project_uuid
         ),
-        projects_service.remove_project_dynamic_services(
+        _projects_service.remove_project_dynamic_services(
             user_id=user_id,
             project_uuid=f"{project_uuid}",
             app=app,
