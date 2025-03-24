@@ -2,7 +2,8 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-from typing import Any
+from typing import Any, Final
+from uuid import UUID
 
 import pytest
 from faker import Faker
@@ -15,6 +16,9 @@ from models_library.projects_nodes_io import (
 )
 from models_library.users import UserID
 from pydantic import TypeAdapter, ValidationError
+
+UUID_0: Final[str] = f"{UUID(int=0)}"
+USER_ID_0: Final[UserID] = 0
 
 
 @pytest.fixture()
@@ -117,9 +121,6 @@ def test_store_discriminator():
     assert isinstance(rawgraph_node.inputs["input_1"], PortLink)
 
 
-UUID_0: str = "00000000-0000-0000-0000-000000000000"
-
-
 def test_simcore_s3_directory_id():
     # the only allowed path is the following
     result = TypeAdapter(SimcoreS3DirectoryID).validate_python(
@@ -184,19 +185,16 @@ def test_simcore_s3_directory_get_parent():
         )
 
 
-USER_ID_0: UserID = 0
-
-
 @pytest.mark.parametrize(
     "object_key",
     [
         f"api/{UUID_0}/some-random-file.png",
-        f"exports/{USER_ID_0}/some-random-file.png",
+        f"exports/{USER_ID_0}/{UUID_0}.zip",
         f"{UUID_0}/{UUID_0}/some-random-file.png",
         f"api/{UUID_0}/some-path/some-random-file.png",
-        f"exports/{USER_ID_0}/some-path/some-random-file.png",
         f"{UUID_0}/{UUID_0}/some-path/some-random-file.png",
     ],
 )
 def test_simcore_s3_file_id_accepted_patterns(object_key: str):
-    assert str(TypeAdapter(SimcoreS3FileID).validate_python(object_key)) == object_key
+    file_id = TypeAdapter(SimcoreS3FileID).validate_python(object_key)
+    assert f"{file_id}" == object_key
