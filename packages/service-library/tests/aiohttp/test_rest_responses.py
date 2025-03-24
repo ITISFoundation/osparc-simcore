@@ -3,6 +3,7 @@
 # pylint: disable=unused-variable
 
 import itertools
+import json
 
 import pytest
 from aiohttp import web
@@ -15,6 +16,7 @@ from aiohttp.web_exceptions import (
     HTTPNotModified,
     HTTPOk,
 )
+from common_library.error_codes import ErrorCodeStr, create_error_code
 from servicelib.aiohttp import status
 from servicelib.aiohttp.rest_responses import create_http_error, exception_to_response
 from servicelib.aiohttp.web_exceptions_extension import (
@@ -58,26 +60,40 @@ def test_collected_http_errors_map(status_code: int, http_error_cls: type[HTTPEr
 
 
 @pytest.mark.parametrize("skip_details", [True, False])
-def tests_exception_to_response(skip_details: bool):
-    exception = create_http_error(
-        errors=[RuntimeError("foo")],
-        reason="Something whent wrong",
+@pytest.mark.parametrize("error_code", [None, create_error_code(Exception("fake"))])
+def tests_exception_to_response(skip_details: bool, error_code: ErrorCodeStr | None):
+
+    expected_reason = "Something whent wrong !"
+    expected_exceptions: list[Exception] = [RuntimeError("foo")]
+
+    http_error = create_http_error(
+        errors=expected_exceptions,
+        reason=expected_reason,
         http_error_cls=web.HTTPInternalServerError,
         skip_internal_error_details=skip_details,
+        error_code=error_code,
     )
 
     # For now until deprecated SEE https://github.com/aio-libs/aiohttp/issues/2415
-    assert isinstance(exception, Exception)
-    assert isinstance(exception, web.Response)
-    assert hasattr(exception, "__http_exception__")
+    assert isinstance(http_error, Exception)
+    assert isinstance(http_error, web.Response)
+    assert hasattr(http_error, "__http_exception__")
 
     # until they have exception.make_response(), we user
-    response = exception_to_response(exception)
+    response = exception_to_response(http_error)
     assert isinstance(response, web.Response)
     assert not isinstance(response, Exception)
     assert not hasattr(response, "__http_exception__")
 
+    # checks response components
     assert response.content_type == MIMETYPE_APPLICATION_JSON
     assert response.status == status.HTTP_500_INTERNAL_SERVER_ERROR
     assert response.text
     assert response.body
+
+    # checks response model
+    response_json = json.loads(response.text)
+    assert response_json["data"] is None
+    assert response_json["error"]["message"] == expected_reason
+    assert response_json["error"]["supportId"] == error_code
+    assert response_json["error"]["status"] == response.status
