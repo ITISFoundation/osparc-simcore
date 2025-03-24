@@ -25,7 +25,6 @@ from ..redis import setup_redis
 from ..rest.plugin import setup_rest
 from . import (
     _change_service,
-    _registration_rest,
 )
 from ._constants import APP_LOGIN_SETTINGS_PER_PRODUCT_KEY
 from ._controller import (
@@ -33,6 +32,7 @@ from ._controller import (
     auth_rest,
     confirmation_rest,
     preregistration_rest,
+    registration_rest,
 )
 from ._login_repository_legacy import APP_LOGIN_STORAGE_KEY, AsyncpgStorage
 from .settings import (
@@ -142,7 +142,7 @@ def setup_login(app: web.Application):
 
     app.router.add_routes(auth_rest.routes)
     app.router.add_routes(confirmation_rest.routes)
-    app.router.add_routes(_registration_rest.routes)
+    app.router.add_routes(registration_rest.routes)
     app.router.add_routes(preregistration_rest.routes)
     app.router.add_routes(_change_service.routes)
     app.router.add_routes(_2fa_rest.routes)
