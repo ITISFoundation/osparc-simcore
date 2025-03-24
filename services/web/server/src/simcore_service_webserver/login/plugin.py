@@ -28,8 +28,8 @@ from . import (
     _auth_rest,
     _change_service,
     _confirmation_rest,
+    _preregistration_rest,
     _registration_rest,
-    _registration_rest_2,
 )
 from ._constants import APP_LOGIN_SETTINGS_PER_PRODUCT_KEY
 from ._login_repository_legacy import APP_LOGIN_STORAGE_KEY, AsyncpgStorage
@@ -140,8 +140,8 @@ def setup_login(app: web.Application):
 
     app.router.add_routes(_auth_rest.routes)
     app.router.add_routes(_confirmation_rest.routes)
-    app.router.add_routes(_registration_rest_2.routes)
     app.router.add_routes(_registration_rest.routes)
+    app.router.add_routes(_preregistration_rest.routes)
     app.router.add_routes(_change_service.routes)
     app.router.add_routes(_2fa_rest.routes)
 

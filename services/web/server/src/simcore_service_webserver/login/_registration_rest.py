@@ -1,160 +1,437 @@
 import logging
-from typing import Any
+from datetime import UTC, datetime, timedelta
+from typing import Literal
 
 from aiohttp import web
-from models_library.api_schemas_webserver.auth import (
-    AccountRequestInfo,
-    UnregisterCheck,
+from aiohttp.web import RouteTableDef
+from common_library.error_codes import create_error_code
+from models_library.emails import LowerCaseEmailStr
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    PositiveInt,
+    SecretStr,
+    field_validator,
 )
-from models_library.users import UserID
-from pydantic import BaseModel, Field
 from servicelib.aiohttp import status
-from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
 from servicelib.aiohttp.requests_validation import parse_request_body_as
-from servicelib.logging_utils import get_log_record_extra, log_context
+from servicelib.logging_errors import create_troubleshotting_log_kwargs
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
-from servicelib.request_keys import RQT_USERID_KEY
-from servicelib.utils import fire_and_forget_task
+from simcore_postgres_database.models.users import UserStatus
 
 from .._meta import API_VTAG
-from ..constants import RQ_PRODUCT_KEY
+from ..groups.api import auto_add_user_to_groups, auto_add_user_to_product_group
+from ..invitations.api import is_service_invitation_code
 from ..products import products_web
 from ..products.models import Product
-from ..security import api as security_service
-from ..security.decorators import permission_required
-from ..session.api import get_session
-from ..users.api import get_user_credentials, set_user_as_deleted
+from ..session.access_policies import (
+    on_success_grant_session_access_to,
+    session_access_required,
+)
 from ..utils import MINUTE
+from ..utils_aiohttp import NextPage, envelope_json_response
 from ..utils_rate_limiting import global_rate_limit_route
-from . import _preregistration_service
-from ._constants import CAPTCHA_SESSION_KEY, MSG_LOGGED_OUT, MSG_WRONG_CAPTCHA__INVALID
-from .decorators import login_required
-from .settings import LoginSettingsForProduct, get_plugin_settings
-from .utils import flash_response, notify_user_logout
+from . import _2fa_service, _auth_service, _confirmation_service, _security_service
+from ._constants import (
+    CODE_2FA_SMS_CODE_REQUIRED,
+    MAX_2FA_CODE_RESEND,
+    MAX_2FA_CODE_TRIALS,
+    MSG_2FA_CODE_SENT,
+    MSG_CANT_SEND_MAIL,
+    MSG_UNAUTHORIZED_REGISTER_PHONE,
+    MSG_WEAK_PASSWORD,
+)
+from ._invitations_service import (
+    check_and_consume_invitation,
+    check_other_registrations,
+    extract_email_from_invitation,
+)
+from ._login_repository_legacy import (
+    AsyncpgStorage,
+    ConfirmationTokenDict,
+    get_plugin_storage,
+)
+from ._models import InputSchema, check_confirm_password_match
+from .settings import (
+    LoginOptions,
+    LoginSettingsForProduct,
+    get_plugin_options,
+    get_plugin_settings,
+)
+from .utils import (
+    envelope_response,
+    flash_response,
+    get_user_name_from_email,
+    notify_user_confirmation,
+)
+from .utils_email import get_template_path, send_email_from_template
 
 _logger = logging.getLogger(__name__)
 
 
-routes = web.RouteTableDef()
+routes = RouteTableDef()
 
 
-def _get_ipinfo(request: web.Request) -> dict[str, Any]:
-    # NOTE:  Traefik is also configured to transmit the original IP.
-    x_real_ip = request.headers.get("X-Real-IP", None)
-    # SEE https://docs.aiohttp.org/en/stable/web_reference.html#aiohttp.web.BaseRequest.transport
-    peername: tuple | None = (
-        request.transport.get_extra_info("peername") if request.transport else None
+class InvitationCheck(InputSchema):
+    invitation: str = Field(..., description="Invitation code")
+
+
+class InvitationInfo(InputSchema):
+    email: LowerCaseEmailStr | None = Field(
+        None, description="Email associated to invitation or None"
     )
-    return {
-        "x-real-ip": x_real_ip,
-        "x-forwarded-for": request.headers.get("X-Forwarded-For", None),
-        "peername": peername,
-        "test_url": f"https://ipinfo.io/{x_real_ip}/json",
-    }
 
 
 @routes.post(
-    f"/{API_VTAG}/auth/request-account",
-    name="request_product_account",
+    f"/{API_VTAG}/auth/register/invitations:check",
+    name="auth_check_registration_invitation",
 )
 @global_rate_limit_route(number_of_requests=30, interval_seconds=MINUTE)
-async def request_product_account(request: web.Request):
-    product = products_web.get_current_product(request)
-    session = await get_session(request)
+async def check_registration_invitation(request: web.Request):
+    """
+    Decrypts invitation and extracts associated email or
+    returns None if is not an encrypted invitation (might be a database invitation).
 
-    body = await parse_request_body_as(AccountRequestInfo, request)
-    assert body.form  # nosec
-    assert body.captcha  # nosec
-
-    if body.captcha != session.get(CAPTCHA_SESSION_KEY):
-        raise web.HTTPUnprocessableEntity(
-            reason=MSG_WRONG_CAPTCHA__INVALID, content_type=MIMETYPE_APPLICATION_JSON
-        )
-    session.pop(CAPTCHA_SESSION_KEY, None)
-
-    # send email to fogbugz or user itself
-    fire_and_forget_task(
-        _preregistration_service.send_account_request_email_to_support(
-            request,
-            product=product,
-            request_form=body.form,
-            ipinfo=_get_ipinfo(request),
-        ),
-        task_suffix_name=f"{__name__}.request_product_account.send_account_request_email_to_support",
-        fire_and_forget_tasks_collection=request.app[APP_FIRE_AND_FORGET_TASKS_KEY],
-    )
-    return web.json_response(status=status.HTTP_204_NO_CONTENT)
-
-
-class _AuthenticatedContext(BaseModel):
-    user_id: UserID = Field(..., alias=RQT_USERID_KEY)  # type: ignore[literal-required]
-    product_name: str = Field(..., alias=RQ_PRODUCT_KEY)  # type: ignore[literal-required]
-
-
-@routes.post(f"/{API_VTAG}/auth/unregister", name="unregister_account")
-@login_required
-@permission_required("user.profile.delete")
-async def unregister_account(request: web.Request):
-    req_ctx = _AuthenticatedContext.model_validate(request)
-    body = await parse_request_body_as(UnregisterCheck, request)
-
+    raises HTTPForbidden, HTTPServiceUnavailable
+    """
     product: Product = products_web.get_current_product(request)
     settings: LoginSettingsForProduct = get_plugin_settings(
         request.app, product_name=product.name
     )
 
-    # checks before deleting
-    credentials = await get_user_credentials(request.app, user_id=req_ctx.user_id)
-    if body.email != credentials.email.lower() or not security_service.check_password(
-        body.password.get_secret_value(), credentials.password_hash
+    # disabled -> None
+    if not settings.LOGIN_REGISTRATION_INVITATION_REQUIRED:
+        return envelope_json_response(InvitationInfo(email=None))
+
+    # non-encrypted -> None
+    # NOTE: that None is given if the code is the old type (and does not fail)
+    check = await parse_request_body_as(InvitationCheck, request)
+    if not is_service_invitation_code(code=check.invitation):
+        return envelope_json_response(InvitationInfo(email=None))
+
+    # extracted -> email
+    email = await extract_email_from_invitation(
+        request.app, invitation_code=check.invitation
+    )
+    return envelope_json_response(InvitationInfo(email=email))
+
+
+class RegisterBody(InputSchema):
+    email: LowerCaseEmailStr
+    password: SecretStr
+    confirm: SecretStr | None = Field(None, description="Password confirmation")
+    invitation: str | None = Field(None, description="Invitation code")
+
+    _password_confirm_match = field_validator("confirm")(check_confirm_password_match)
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "email": "foo@mymail.com",
+                    "password": "my secret",  # NOSONAR
+                    "confirm": "my secret",  # optional
+                    "invitation": "33c451d4-17b7-4e65-9880-694559b8ffc2",  # optional only active
+                }
+            ]
+        }
+    )
+
+
+@routes.post(f"/{API_VTAG}/auth/register", name="auth_register")
+async def register(request: web.Request):
+    """
+    Starts user's registration by providing an email, password and
+    invitation code (required by configuration).
+
+    An email with a link to 'email_confirmation' is sent to complete registration
+    """
+    product: Product = products_web.get_current_product(request)
+    settings: LoginSettingsForProduct = get_plugin_settings(
+        request.app, product_name=product.name
+    )
+    db: AsyncpgStorage = get_plugin_storage(request.app)
+    cfg: LoginOptions = get_plugin_options(request.app)
+
+    registration = await parse_request_body_as(RegisterBody, request)
+
+    await check_other_registrations(
+        request.app, email=registration.email, current_product=product, db=db, cfg=cfg
+    )
+
+    # Check for weak passwords
+    # This should strictly happen before invitation links are checked and consumed
+    # So the invitation can be re-used with a stronger password.
+    if (
+        len(registration.password.get_secret_value())
+        < settings.LOGIN_PASSWORD_MIN_LENGTH
     ):
-        raise web.HTTPConflict(
-            reason="Wrong email or password. Please try again to delete this account"
-        )
-
-    with log_context(
-        _logger,
-        logging.INFO,
-        "Mark account for deletion to %s",
-        credentials.email,
-        extra=get_log_record_extra(user_id=req_ctx.user_id),
-    ):
-        # update user table
-        await set_user_as_deleted(request.app, user_id=req_ctx.user_id)
-
-        # logout
-        await notify_user_logout(
-            request.app, user_id=req_ctx.user_id, client_session_id=None
-        )
-        response = flash_response(MSG_LOGGED_OUT, "INFO")
-        await security_service.forget_identity(request, response)
-
-        # send email in the background
-        fire_and_forget_task(
-            _preregistration_service.send_close_account_email(
-                request,
-                user_email=credentials.email,
-                user_first_name=credentials.display_name,
-                retention_days=settings.LOGIN_ACCOUNT_DELETION_RETENTION_DAYS,
+        raise web.HTTPUnauthorized(
+            reason=MSG_WEAK_PASSWORD.format(
+                LOGIN_PASSWORD_MIN_LENGTH=settings.LOGIN_PASSWORD_MIN_LENGTH
             ),
-            task_suffix_name=f"{__name__}.unregister_account.send_close_account_email",
-            fire_and_forget_tasks_collection=request.app[APP_FIRE_AND_FORGET_TASKS_KEY],
+            content_type=MIMETYPE_APPLICATION_JSON,
         )
 
-        return response
+    # INVITATIONS
+    expires_at: datetime | None = None  # = does not expire
+    invitation = None
+    # There are 3 possible states for an invitation:
+    # 1. Invitation is not required (i.e. the app has disabled invitations)
+    # 2. Invitation is invalid
+    # 3. Invitation is valid
+    #
+    # For those states the `invitation` variable get the following values
+    # 1. `None
+    # 2. no value, it raises and exception
+    # 3. gets `InvitationData`
+    # `
+    # In addition, for 3. there are two types of invitations:
+    # 1. the invitation generated by the `invitation` service (new).
+    # 2. the invitation created by hand in the db confirmation table (deprecated). This
+    #    one does not understand products.
+    #
+    if settings.LOGIN_REGISTRATION_INVITATION_REQUIRED:
+        # Only requests with INVITATION can register user
+        # to either a permanent or to a trial account
+        invitation_code = registration.invitation
+        if invitation_code is None:
+            raise web.HTTPBadRequest(
+                reason="invitation field is required",
+                content_type=MIMETYPE_APPLICATION_JSON,
+            )
+
+        invitation = await check_and_consume_invitation(
+            invitation_code,
+            product=product,
+            guest_email=registration.email,
+            db=db,
+            cfg=cfg,
+            app=request.app,
+        )
+        if invitation.trial_account_days:
+            expires_at = datetime.now(UTC) + timedelta(invitation.trial_account_days)
+
+    #  get authorized user or create new
+    user = await _auth_service.get_user_by_email(request.app, email=registration.email)
+    if user:
+        await _auth_service.check_authorized_user_credentials_or_raise(
+            user,
+            password=registration.password.get_secret_value(),
+            product=product,
+        )
+    else:
+        user = await _auth_service.create_user(
+            request.app,
+            email=registration.email,
+            password=registration.password.get_secret_value(),
+            status_upon_creation=(
+                UserStatus.CONFIRMATION_PENDING
+                if settings.LOGIN_REGISTRATION_CONFIRMATION_REQUIRED
+                else UserStatus.ACTIVE
+            ),
+            expires_at=expires_at,
+        )
+
+    # setup user groups
+    assert (  # nosec
+        product.name == invitation.product
+        if invitation and invitation.product
+        else True
+    )
+
+    await auto_add_user_to_groups(app=request.app, user_id=user["id"])
+    await auto_add_user_to_product_group(
+        app=request.app,
+        user_id=user["id"],
+        product_name=product.name,
+    )
+
+    if settings.LOGIN_REGISTRATION_CONFIRMATION_REQUIRED:
+        # Confirmation required: send confirmation email
+        _confirmation: ConfirmationTokenDict = await db.create_confirmation(
+            user_id=user["id"],
+            action="REGISTRATION",
+            data=invitation.model_dump_json() if invitation else None,
+        )
+
+        try:
+            email_confirmation_url = _confirmation_service.make_confirmation_link(
+                request, _confirmation
+            )
+            email_template_path = await get_template_path(
+                request, "registration_email.jinja2"
+            )
+            await send_email_from_template(
+                request,
+                from_=product.support_email,
+                to=registration.email,
+                template=email_template_path,
+                context={
+                    "host": request.host,
+                    "link": email_confirmation_url,  # SEE email_confirmation handler (action=REGISTRATION)
+                    "name": user.get("first_name") or user["name"],
+                    "support_email": product.support_email,
+                    "product": product,
+                },
+            )
+        except Exception as err:  # pylint: disable=broad-except
+            error_code = create_error_code(err)
+            user_error_msg = MSG_CANT_SEND_MAIL
+
+            _logger.exception(
+                **create_troubleshotting_log_kwargs(
+                    user_error_msg,
+                    error=err,
+                    error_code=error_code,
+                    error_context={
+                        "request": request,
+                        "registration": registration,
+                        "user_id": user.get("id"),
+                        "user": user,
+                        "confirmation": _confirmation,
+                    },
+                    tip="Failed while sending confirmation email",
+                )
+            )
+
+            await db.delete_confirmation_and_user(user, _confirmation)
+
+            raise web.HTTPServiceUnavailable(reason=user_error_msg) from err
+
+        return flash_response(
+            "You are registered successfully! To activate your account, please, "
+            f"click on the verification link in the email we sent you to {registration.email}.",
+            "INFO",
+        )
+
+    # NOTE: Here confirmation is disabled
+    assert settings.LOGIN_REGISTRATION_CONFIRMATION_REQUIRED is False  # nosec
+    assert (  # nosec
+        product.name == invitation.product
+        if invitation and invitation.product
+        else True
+    )
+
+    await notify_user_confirmation(
+        request.app,
+        user_id=user["id"],
+        product_name=product.name,
+        extra_credits_in_usd=invitation.extra_credits_in_usd if invitation else None,
+    )
+
+    # No confirmation required: authorize login
+    assert not settings.LOGIN_REGISTRATION_CONFIRMATION_REQUIRED  # nosec
+    assert not settings.LOGIN_2FA_REQUIRED  # nosec
+
+    return await _security_service.login_granted_response(request=request, user=user)
 
 
-@routes.get(
-    f"/{API_VTAG}/auth/captcha",
-    name="request_captcha",
+class RegisterPhoneBody(InputSchema):
+    email: LowerCaseEmailStr
+    phone: str = Field(
+        ..., description="Phone number E.164, needed on the deployments with 2FA"
+    )
+
+
+class _PageParams(BaseModel):
+    expiration_2fa: PositiveInt | None = None
+
+
+class RegisterPhoneNextPage(NextPage[_PageParams]):
+    logger: str = Field("user", deprecated=True)
+    level: Literal["INFO", "WARNING", "ERROR"] = "INFO"
+    message: str
+
+
+@routes.post(f"/{API_VTAG}/auth/verify-phone-number", name="auth_register_phone")
+@session_access_required(
+    name="auth_register_phone",
+    unauthorized_reason=MSG_UNAUTHORIZED_REGISTER_PHONE,
 )
-@global_rate_limit_route(number_of_requests=30, interval_seconds=MINUTE)
-async def request_captcha(request: web.Request):
-    session = await get_session(request)
+@on_success_grant_session_access_to(
+    name="auth_phone_confirmation",
+    max_access_count=MAX_2FA_CODE_TRIALS,
+)
+@on_success_grant_session_access_to(
+    name="auth_resend_2fa_code",
+    max_access_count=MAX_2FA_CODE_RESEND,
+)
+async def register_phone(request: web.Request):
+    """
+    Submits phone registration
+    - sends a code
+    - registration is completed requesting to 'phone_confirmation' route with the code received
+    """
+    product: Product = products_web.get_current_product(request)
+    settings: LoginSettingsForProduct = get_plugin_settings(
+        request.app, product_name=product.name
+    )
 
-    captcha_text, image_data = await _preregistration_service.generate_captcha()
+    if not settings.LOGIN_2FA_REQUIRED:
+        raise web.HTTPServiceUnavailable(
+            reason="Phone registration is not available",
+            content_type=MIMETYPE_APPLICATION_JSON,
+        )
 
-    # Store captcha text in session
-    session[CAPTCHA_SESSION_KEY] = captcha_text
+    registration = await parse_request_body_as(RegisterPhoneBody, request)
 
-    return web.Response(body=image_data, content_type="image/png")
+    try:
+        assert settings.LOGIN_2FA_REQUIRED
+        assert settings.LOGIN_TWILIO
+        if not product.twilio_messaging_sid:
+            msg = f"Messaging SID is not configured in {product}. Update product's twilio_messaging_sid in database."
+            raise ValueError(msg)
+
+        code = await _2fa_service.create_2fa_code(
+            app=request.app,
+            user_email=registration.email,
+            expiration_in_seconds=settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
+        )
+        await _2fa_service.send_sms_code(
+            phone_number=registration.phone,
+            code=code,
+            twilio_auth=settings.LOGIN_TWILIO,
+            twilio_messaging_sid=product.twilio_messaging_sid,
+            twilio_alpha_numeric_sender=product.twilio_alpha_numeric_sender_id,
+            first_name=get_user_name_from_email(registration.email),
+        )
+
+        return envelope_response(
+            # RegisterPhoneNextPage
+            data={
+                "name": CODE_2FA_SMS_CODE_REQUIRED,
+                "parameters": {
+                    "expiration_2fa": settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
+                },
+                "message": MSG_2FA_CODE_SENT.format(
+                    phone_number=mask_phone_number(registration.phone)
+                ),
+                "level": "INFO",
+                "logger": "user",
+            },
+            status=status.HTTP_202_ACCEPTED,
+        )
+
+    except web.HTTPException:
+        raise
+
+    except Exception as err:  # pylint: disable=broad-except
+        # Unhandled errors -> 503
+        error_code = create_error_code(err)
+        user_error_msg = "Currently we cannot register phone numbers"
+
+        _logger.exception(
+            **create_troubleshotting_log_kwargs(
+                user_error_msg,
+                error=err,
+                error_code=error_code,
+                error_context={"request": request, "registration": registration},
+                tip="Phone registration failed",
+            )
+        )
+
+        raise web.HTTPServiceUnavailable(
+            reason=user_error_msg,
+            content_type=MIMETYPE_APPLICATION_JSON,
+        ) from err

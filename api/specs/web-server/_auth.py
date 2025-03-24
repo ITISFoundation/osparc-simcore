@@ -31,7 +31,7 @@ from simcore_service_webserver.login._confirmation_rest import (
     PhoneConfirmationBody,
     ResetPasswordConfirmation,
 )
-from simcore_service_webserver.login._registration_rest_2 import (
+from simcore_service_webserver.login._registration_rest import (
     InvitationCheck,
     InvitationInfo,
     RegisterBody,
