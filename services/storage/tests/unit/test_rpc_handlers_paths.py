@@ -14,6 +14,9 @@ from pathlib import Path
 from typing import Any, TypeAlias
 
 import pytest
+from celery import Celery
+from celery.contrib.testing.worker import TestWorkController, start_worker
+from celery.signals import worker_init, worker_shutdown
 from faker import Faker
 from fastapi import FastAPI
 from models_library.api_schemas_rpc_async_jobs.async_jobs import (
@@ -122,9 +125,9 @@ async def test_path_compute_size(
     project_params: ProjectWithFilesParams,
     product_name: ProductName,
 ):
-    assert (
-        len(project_params.allowed_file_sizes) == 1
-    ), "test preconditions are not filled! allowed file sizes should have only 1 option for this test"
+    assert len(project_params.allowed_file_sizes) == 1, (
+        "test preconditions are not filled! allowed file sizes should have only 1 option for this test"
+    )
     project, list_of_files = with_random_project_with_files
 
     total_num_files = sum(
