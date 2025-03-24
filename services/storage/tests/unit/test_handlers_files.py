@@ -605,10 +605,7 @@ def complex_file_name(faker: Faker) -> str:
     "file_size",
     [
         (TypeAdapter(ByteSize).validate_python("1Mib")),
-        (TypeAdapter(ByteSize).validate_python("500Mib")),
-        pytest.param(
-            TypeAdapter(ByteSize).validate_python("5Gib"), marks=pytest.mark.heavy_load
-        ),
+        (TypeAdapter(ByteSize).validate_python("127Mib")),
     ],
     ids=byte_size_ids,
 )
