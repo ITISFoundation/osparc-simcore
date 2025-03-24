@@ -27,8 +27,8 @@ from servicelib.utils_secrets import generate_password
 
 from ..garbage_collector.settings import GUEST_USER_RC_LOCK_FORMAT
 from ..groups.api import auto_add_user_to_product_group
+from ..login._login_service import ACTIVE, GUEST
 from ..login.login_repository_legacy import AsyncpgStorage, get_plugin_storage
-from ..login.utils import ACTIVE, GUEST
 from ..products import products_web
 from ..redis import get_redis_lock_manager_client
 from ..security.api import (

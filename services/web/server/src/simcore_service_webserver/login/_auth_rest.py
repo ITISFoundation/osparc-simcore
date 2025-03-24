@@ -38,11 +38,11 @@ from ._constants import (
     MSG_WRONG_2FA_CODE__INVALID,
 )
 from ._login_repository_legacy import AsyncpgStorage, get_plugin_storage
+from ._login_service import envelope_response, flash_response, notify_user_logout
 from ._models import InputSchema
 from .decorators import login_required
 from .errors import handle_login_exceptions
 from .settings import LoginSettingsForProduct, get_plugin_settings
-from .utils import envelope_response, flash_response, notify_user_logout
 
 log = logging.getLogger(__name__)
 

@@ -45,20 +45,20 @@ from ._login_repository_legacy import (
     ConfirmationTokenDict,
     get_plugin_storage,
 )
-from ._models import InputSchema, check_confirm_password_match
-from .settings import (
-    LoginOptions,
-    LoginSettingsForProduct,
-    get_plugin_options,
-    get_plugin_settings,
-)
-from .utils import (
+from ._login_service import (
     ACTIVE,
     CHANGE_EMAIL,
     REGISTRATION,
     RESET_PASSWORD,
     flash_response,
     notify_user_confirmation,
+)
+from ._models import InputSchema, check_confirm_password_match
+from .settings import (
+    LoginOptions,
+    LoginSettingsForProduct,
+    get_plugin_options,
+    get_plugin_settings,
 )
 
 _logger = logging.getLogger(__name__)

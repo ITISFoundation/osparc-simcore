@@ -28,9 +28,9 @@ from ..utils import MINUTE
 from ..utils_rate_limiting import global_rate_limit_route
 from . import _preregistration_service
 from ._constants import CAPTCHA_SESSION_KEY, MSG_LOGGED_OUT, MSG_WRONG_CAPTCHA__INVALID
+from ._login_service import flash_response, notify_user_logout
 from .decorators import login_required
 from .settings import LoginSettingsForProduct, get_plugin_settings
-from .utils import flash_response, notify_user_logout
 
 _logger = logging.getLogger(__name__)
 

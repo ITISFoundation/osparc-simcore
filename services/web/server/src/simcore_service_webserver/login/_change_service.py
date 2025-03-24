@@ -29,15 +29,15 @@ from ._constants import (
 )
 from ._emails_service import get_template_path, send_email_from_template
 from ._login_repository_legacy import AsyncpgStorage, get_plugin_storage
-from ._models import InputSchema, create_password_match_validator
-from .decorators import login_required
-from .settings import LoginOptions, get_plugin_options
-from .utils import (
+from ._login_service import (
     ACTIVE,
     CHANGE_EMAIL,
     flash_response,
     validate_user_status,
 )
+from ._models import InputSchema, create_password_match_validator
+from .decorators import login_required
+from .settings import LoginOptions, get_plugin_options
 
 _logger = logging.getLogger(__name__)
 

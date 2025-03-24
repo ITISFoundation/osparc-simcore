@@ -12,7 +12,7 @@ from ..products.models import Product
 from ..security.api import check_password, encrypt_password
 from ._constants import MSG_UNKNOWN_EMAIL, MSG_WRONG_PASSWORD
 from ._login_repository_legacy import AsyncpgStorage, get_plugin_storage
-from .utils import validate_user_status
+from ._login_service import validate_user_status
 
 
 async def get_user_by_email(app: web.Application, *, email: str) -> dict[str, Any]:

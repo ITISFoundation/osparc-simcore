@@ -53,18 +53,18 @@ from ._login_repository_legacy import (
     ConfirmationTokenDict,
     get_plugin_storage,
 )
+from ._login_service import (
+    envelope_response,
+    flash_response,
+    get_user_name_from_email,
+    notify_user_confirmation,
+)
 from ._models import InputSchema, check_confirm_password_match
 from .settings import (
     LoginOptions,
     LoginSettingsForProduct,
     get_plugin_options,
     get_plugin_settings,
-)
-from .utils import (
-    envelope_response,
-    flash_response,
-    get_user_name_from_email,
-    notify_user_confirmation,
 )
 
 _logger = logging.getLogger(__name__)
