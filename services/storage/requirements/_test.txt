@@ -74,7 +74,7 @@ certifi==2025.1.31
     #   simcore-service-storage-sdk
 cffi==1.17.1
     # via cryptography
-cfn-lint==1.32.0
+cfn-lint==1.27.0
     # via moto
 charset-normalizer==3.4.1
     # via
@@ -277,7 +277,7 @@ pydantic-core==2.27.2
     # via
     #   -c requirements/_base.txt
     #   pydantic
-pyparsing==3.2.2
+pyparsing==3.2.1
     # via moto
 pytest==8.3.5
     # via
@@ -352,7 +352,7 @@ requests==2.32.3
     #   jsonschema-path
     #   moto
     #   responses
-responses==0.25.7
+responses==0.25.6
     # via moto
 respx==0.22.0
     # via -r requirements/_test.in
