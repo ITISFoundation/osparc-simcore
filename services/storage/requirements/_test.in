@@ -13,6 +13,7 @@ faker
 fakeredis[lua]
 flaky
 jsonref
+moto[server]
 pandas
 pytest
 pytest-asyncio

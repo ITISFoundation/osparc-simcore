@@ -68,6 +68,7 @@ pyyaml==6.0.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
+    #   -c requirements/_test.txt
     #   pre-commit
     #   watchdog
 ruff==0.9.9
