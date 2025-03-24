@@ -55,6 +55,7 @@ class ToUserUpdateDB(BaseModel):
     first_name: str | None = None
     last_name: str | None = None
 
+    privacy_hide_username: bool | None = None
     privacy_hide_fullname: bool | None = None
     privacy_hide_email: bool | None = None
 
