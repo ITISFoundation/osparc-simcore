@@ -55,7 +55,7 @@ async def list_solvers(
     SEE get_solvers_page for paginated version of this function
     """
     solvers: list[Solver] = await catalog_client.list_latest_releases(
-        user_id=user_id, product_name=product_name, service_type="COMPUTATIONAL"
+        user_id=user_id, product_name=product_name
     )
 
     for solver in solvers:
@@ -97,8 +97,8 @@ async def list_solvers_releases(
     """
     assert await catalog_client.is_responsive()  # nosec
 
-    solvers: list[Solver] = await catalog_client.list_services(
-        user_id=user_id, product_name=product_name, service_type="COMPUTATIONAL"
+    solvers: list[Solver] = await catalog_client.list_solvers(
+        user_id=user_id, product_name=product_name
     )
 
     for solver in solvers:
@@ -143,7 +143,6 @@ async def get_solver(
             user_id=user_id,
             solver_key=solver_key,
             product_name=product_name,
-            service_type="COMPUTATIONAL",
         )
         solver.url = url_for(
             "get_solver_release", solver_key=solver.id, version=solver.version
@@ -178,7 +177,6 @@ async def list_solver_releases(
         user_id=user_id,
         solver_key=solver_key,
         product_name=product_name,
-        service_type="COMPUTATIONAL",
     )
 
     for solver in releases:
