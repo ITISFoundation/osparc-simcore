@@ -33,8 +33,7 @@ from ..session.access_policies import session_access_required
 from ..utils import HOUR, MINUTE
 from ..utils_aiohttp import create_redirect_to_page_response
 from ..utils_rate_limiting import global_rate_limit_route
-from . import _confirmation_service
-from ._2fa_api import delete_2fa_code, get_2fa_code
+from . import _2fa_service, _confirmation_service
 from ._constants import (
     MSG_PASSWORD_CHANGE_NOT_ALLOWED,
     MSG_PASSWORD_CHANGED,
@@ -242,10 +241,10 @@ async def phone_confirmation(request: web.Request):
     request_body = await parse_request_body_as(PhoneConfirmationBody, request)
 
     if (
-        expected := await get_2fa_code(request.app, request_body.email)
+        expected := await _2fa_service.get_2fa_code(request.app, request_body.email)
     ) and request_body.code.get_secret_value() == expected:
         # consumes code
-        await delete_2fa_code(request.app, request_body.email)
+        await _2fa_service.delete_2fa_code(request.app, request_body.email)
 
         # updates confirmed phone number
         try:

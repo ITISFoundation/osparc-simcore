@@ -32,8 +32,7 @@ from ..session.access_policies import (
 from ..utils import MINUTE
 from ..utils_aiohttp import NextPage, envelope_json_response
 from ..utils_rate_limiting import global_rate_limit_route
-from . import _auth_api, _confirmation_service
-from ._2fa_api import create_2fa_code, mask_phone_number, send_sms_code
+from . import _2fa_service, _auth_api, _confirmation_service
 from ._constants import (
     CODE_2FA_SMS_CODE_REQUIRED,
     MAX_2FA_CODE_RESEND,
@@ -381,12 +380,12 @@ async def register_phone(request: web.Request):
             msg = f"Messaging SID is not configured in {product}. Update product's twilio_messaging_sid in database."
             raise ValueError(msg)
 
-        code = await create_2fa_code(
+        code = await _2fa_service.create_2fa_code(
             app=request.app,
             user_email=registration.email,
             expiration_in_seconds=settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
         )
-        await send_sms_code(
+        await _2fa_service.send_sms_code(
             phone_number=registration.phone,
             code=code,
             twilio_auth=settings.LOGIN_TWILIO,

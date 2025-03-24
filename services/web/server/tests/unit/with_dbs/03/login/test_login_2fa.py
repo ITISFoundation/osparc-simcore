@@ -22,7 +22,7 @@ from servicelib.utils_secrets import generate_passcode
 from simcore_postgres_database.models.products import ProductLoginSettingsDict, products
 from simcore_service_webserver.application_settings import ApplicationSettings
 from simcore_service_webserver.db.models import UserStatus
-from simcore_service_webserver.login._2fa_api import (
+from simcore_service_webserver.login._2fa_service import (
     _do_create_2fa_code,
     create_2fa_code,
     delete_2fa_code,
