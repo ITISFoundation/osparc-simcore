@@ -1,4 +1,4 @@
-""" Implements logic to delete a project (and all associated services, data, etc)
+"""Implements logic to delete a project (and all associated services, data, etc)
 
 
 NOTE: this entire module is protected within the `projects` package
@@ -13,12 +13,12 @@ from aiohttp import web
 from models_library.projects import ProjectID
 from models_library.users import UserID
 
-from ..director_v2 import api
+from ..director_v2 import director_v2_service
 from ..storage.api import delete_data_folders_of_project
 from ..users.api import FullNameDict
 from ..users.exceptions import UserNotFoundError
-from ._access_rights_api import check_user_project_permission
-from .db import ProjectDBAPI
+from ._access_rights_service import check_user_project_permission
+from ._projects_repository_legacy import ProjectDBAPI
 from .exceptions import (
     ProjectDeleteError,
     ProjectInvalidRightsError,
@@ -44,8 +44,7 @@ class RemoveProjectServicesCallable(Protocol):
         *,
         notify_users: bool = True,
         user_name: FullNameDict | None = None,
-    ) -> None:
-        ...
+    ) -> None: ...
 
 
 async def mark_project_as_deleted(
@@ -111,7 +110,7 @@ async def delete_project(
 
         # stops computational services
         # - raises DirectorServiceError
-        await api.delete_pipeline(app, user_id, project_uuid)
+        await director_v2_service.delete_pipeline(app, user_id, project_uuid)
 
         # rm data from storage
         await delete_data_folders_of_project(app, project_uuid, user_id)
