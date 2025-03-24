@@ -113,9 +113,6 @@ async def get_my_profile(request: web.Request) -> web.Response:
 
 
 @routes.patch(f"/{API_VTAG}/me", name="update_my_profile")
-@routes.put(
-    f"/{API_VTAG}/me", name="replace_my_profile"  # deprecated. Use patch instead
-)
 @login_required
 @permission_required("user.profile.update")
 @_handle_users_exceptions
