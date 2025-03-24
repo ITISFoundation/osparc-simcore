@@ -22,7 +22,7 @@ from ..session.access_policies import (
 )
 from ..users import preferences_api as user_preferences_api
 from ..utils_aiohttp import NextPage
-from . import _2fa_service, _auth_service
+from . import _2fa_service, _auth_service, _security_service
 from ._constants import (
     CODE_2FA_EMAIL_CODE_REQUIRED,
     CODE_2FA_SMS_CODE_REQUIRED,
@@ -38,7 +38,6 @@ from ._constants import (
     MSG_WRONG_2FA_CODE__INVALID,
 )
 from ._models import InputSchema
-from ._security import login_granted_response
 from .decorators import login_required
 from .errors import handle_login_exceptions
 from .settings import LoginSettingsForProduct, get_plugin_settings
@@ -103,7 +102,7 @@ async def login(request: web.Request):
     # Check if user role allows skipping 2FA or if 2FA is not required
     skip_2fa = UserRole(user["role"]) == UserRole.TESTER
     if skip_2fa or not settings.LOGIN_2FA_REQUIRED:
-        return await login_granted_response(request, user=user)
+        return await _security_service.login_granted_response(request, user=user)
 
     # 2FA login process continuation
     user_2fa_preference = await user_preferences_api.get_frontend_user_preference(
@@ -130,7 +129,7 @@ async def login(request: web.Request):
         ).validate_python(user_2fa_preference.value)
 
     if user_2fa_authentification_method == TwoFactorAuthentificationMethod.DISABLED:
-        return await login_granted_response(request, user=user)
+        return await _security_service.login_granted_response(request, user=user)
 
     # Check phone for SMS authentication
     if (
@@ -258,7 +257,7 @@ async def login_2fa(request: web.Request):
     # dispose since code was used
     await _2fa_service.delete_2fa_code(request.app, login_2fa_.email)
 
-    return await login_granted_response(request, user=dict(user))
+    return await _security_service.login_granted_response(request, user=dict(user))
 
 
 class LogoutBody(InputSchema):

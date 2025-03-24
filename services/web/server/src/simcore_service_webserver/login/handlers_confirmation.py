@@ -33,7 +33,7 @@ from ..session.access_policies import session_access_required
 from ..utils import HOUR, MINUTE
 from ..utils_aiohttp import create_redirect_to_page_response
 from ..utils_rate_limiting import global_rate_limit_route
-from . import _2fa_service, _confirmation_service
+from . import _2fa_service, _confirmation_service, _security_service
 from ._constants import (
     MSG_PASSWORD_CHANGE_NOT_ALLOWED,
     MSG_PASSWORD_CHANGED,
@@ -41,7 +41,6 @@ from ._constants import (
 )
 from ._models import InputSchema, check_confirm_password_match
 from ._registration import InvitationData
-from ._security import login_granted_response
 from .settings import (
     LoginOptions,
     LoginSettingsForProduct,
@@ -258,7 +257,7 @@ async def phone_confirmation(request: web.Request):
                 content_type=MIMETYPE_APPLICATION_JSON,
             ) from err
 
-        return await login_granted_response(request, user=dict(user))
+        return await _security_service.login_granted_response(request, user=dict(user))
 
     # fails because of invalid or no code
     raise web.HTTPUnauthorized(

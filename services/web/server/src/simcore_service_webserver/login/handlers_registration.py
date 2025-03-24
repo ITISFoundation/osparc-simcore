@@ -32,7 +32,7 @@ from ..session.access_policies import (
 from ..utils import MINUTE
 from ..utils_aiohttp import NextPage, envelope_json_response
 from ..utils_rate_limiting import global_rate_limit_route
-from . import _2fa_service, _auth_service, _confirmation_service
+from . import _2fa_service, _auth_service, _confirmation_service, _security_service
 from ._constants import (
     CODE_2FA_SMS_CODE_REQUIRED,
     MAX_2FA_CODE_RESEND,
@@ -48,7 +48,6 @@ from ._registration import (
     check_other_registrations,
     extract_email_from_invitation,
 )
-from ._security import login_granted_response
 from .settings import (
     LoginOptions,
     LoginSettingsForProduct,
@@ -321,7 +320,7 @@ async def register(request: web.Request):
     assert not settings.LOGIN_REGISTRATION_CONFIRMATION_REQUIRED  # nosec
     assert not settings.LOGIN_2FA_REQUIRED  # nosec
 
-    return await login_granted_response(request=request, user=user)
+    return await _security_service.login_granted_response(request=request, user=user)
 
 
 class RegisterPhoneBody(InputSchema):
