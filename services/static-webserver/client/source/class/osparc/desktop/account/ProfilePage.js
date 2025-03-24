@@ -49,8 +49,10 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
     __userProfileData: null,
     __userProfileModel: null,
     __userProfileRenderer: null,
+    __updateProfileBtn: null,
     __userPrivacyData: null,
     __userPrivacyModel: null,
+    __updatePrivacyBtn: null,
     __userProfileForm: null,
 
     __fetchProfile: function() {
@@ -73,6 +75,7 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
           "expirationDate": data["expirationDate"] || null,
         });
       }
+      this.__updateProfileBtn.setEnabled(false);
     },
 
     __setDataToPrivacy: function(privacyData) {
@@ -184,7 +187,7 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
       namesValidator.add(firstName, qx.util.Validate.regExp(/[^\.\d]+/), this.tr("Avoid dots or numbers in text"));
       namesValidator.add(lastName, qx.util.Validate.regExp(/^$|[^\.\d]+/), this.tr("Avoid dots or numbers in text")); // allow also empty last name
 
-      const updateProfileBtn = new qx.ui.form.Button().set({
+      const updateProfileBtn = this.__updateProfileBtn = new qx.ui.form.Button().set({
         label: this.tr("Update Profile"),
         appearance: "form-button",
         alignX: "right",
@@ -200,7 +203,7 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
         }
 
         const patchData = {};
-        if (this.__userProfileData["username"] !== model.getUsername()) {
+        if (this.__userProfileData["userName"] !== model.getUsername()) {
           patchData["userName"] = model.getUsername();
         }
         if (this.__userProfileData["first_name"] !== model.getFirstName()) {
@@ -229,6 +232,21 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
           }
         }
       });
+
+      const profileFields = [
+        username,
+        firstName,
+        lastName,
+      ]
+      const valueChanged = () => {
+        const anyChanged =
+          username.getValue() !== this.__userProfileData["userName"] ||
+          firstName.getValue() !== this.__userProfileData["first_name"] ||
+          lastName.getValue() !== this.__userProfileData["last_name"];
+        updateProfileBtn.setEnabled(anyChanged);
+      };
+      valueChanged();
+      profileFields.forEach(privacyField => privacyField.addListener("changeValue", () => valueChanged()));
 
       return box;
     },
@@ -337,6 +355,7 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
       });
       optOutMessage.getChildControl("icon").setTextColor("warning-yellow")
       box.add(optOutMessage);
+
       const privacyFields = [
         hideUsername,
         hideFullname,
