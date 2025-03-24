@@ -37,11 +37,9 @@ from simcore_service_webserver.projects._controller._rest_exceptions import (
 from simcore_service_webserver.projects._controller._rest_schemas import (
     ProjectPathParams,
 )
-from simcore_service_webserver.projects._controller.projects_rest import (
-    ProjectCreateQueryParams,
-)
-from simcore_service_webserver.projects._crud_handlers_models import (
+from simcore_service_webserver.projects._controller.projects_rest_schemas import (
     ProjectActiveQueryParams,
+    ProjectCreateQueryParams,
     ProjectsListQueryParams,
     ProjectsSearchQueryParams,
 )

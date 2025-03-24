@@ -1,5 +1,9 @@
 from models_library.projects import ProjectID
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+)
 
 from ...models import RequestContext
 

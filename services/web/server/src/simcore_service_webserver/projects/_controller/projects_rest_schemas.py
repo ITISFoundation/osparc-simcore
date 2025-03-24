@@ -1,9 +1,3 @@
-""" Handlers for STANDARD methods on /projects colletions
-
-Standard methods or CRUD that states for Create+Read(Get&List)+Update+Delete
-
-"""
-
 from typing import Annotated, Self
 
 from models_library.basic_types import IDStr
@@ -38,8 +32,8 @@ from servicelib.common_headers import (
     X_SIMCORE_USER_AGENT,
 )
 
-from .exceptions import WrongTagIdsInQueryError
-from .models import ProjectTypeAPI
+from ..exceptions import WrongTagIdsInQueryError
+from ..models import ProjectTypeAPI
 
 
 class ProjectCreateHeaders(BaseModel):
@@ -159,8 +153,7 @@ class ProjectsListQueryParams(
     ProjectsListOrderParams,  # type: ignore[misc, valid-type]
     FiltersQueryParameters[ProjectFilters],
     ProjectsListExtraQueryParams,
-):
-    ...
+): ...
 
 
 class ProjectActiveQueryParams(BaseModel):

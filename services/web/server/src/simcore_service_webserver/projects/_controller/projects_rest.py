@@ -37,7 +37,16 @@ from ...security.decorators import permission_required
 from ...users.api import get_user_fullname
 from ...utils_aiohttp import envelope_json_response
 from .. import _crud_api_create, _crud_api_read, _projects_service
-from .._crud_handlers_models import (
+from .._permalink_service import update_or_pop_permalink_in_project
+from ..models import ProjectDict
+from ..utils import get_project_unavailable_services, project_uses_available_services
+from . import _rest_utils
+from ._rest_exceptions import handle_plugin_requests_exceptions
+from ._rest_schemas import (
+    ProjectPathParams,
+    RequestContext,
+)
+from .projects_rest_schemas import (
     ProjectActiveQueryParams,
     ProjectCreateHeaders,
     ProjectCreateQueryParams,
@@ -45,12 +54,6 @@ from .._crud_handlers_models import (
     ProjectsListQueryParams,
     ProjectsSearchQueryParams,
 )
-from .._permalink_service import update_or_pop_permalink_in_project
-from ..models import ProjectDict
-from ..utils import get_project_unavailable_services, project_uses_available_services
-from . import _rest_utils
-from ._rest_exceptions import handle_plugin_requests_exceptions
-from ._rest_schemas import ProjectPathParams, RequestContext
 
 # When the user requests a project with a repo, the working copy might differ from
 # the repo project. A middleware in the meta module (if active) will resolve
