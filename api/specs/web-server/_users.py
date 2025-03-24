@@ -39,26 +39,14 @@ router = APIRouter(prefix=f"/{API_VTAG}", tags=["users"])
     "/me",
     response_model=Envelope[MyProfileGet],
 )
-async def get_my_profile():
-    ...
+async def get_my_profile(): ...
 
 
 @router.patch(
     "/me",
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def update_my_profile(_body: MyProfilePatch):
-    ...
-
-
-@router.put(
-    "/me",
-    status_code=status.HTTP_204_NO_CONTENT,
-    deprecated=True,
-    description="Use PATCH instead",
-)
-async def replace_my_profile(_body: MyProfilePatch):
-    ...
+async def update_my_profile(_body: MyProfilePatch): ...
 
 
 @router.patch(
@@ -68,16 +56,14 @@ async def replace_my_profile(_body: MyProfilePatch):
 async def set_frontend_preference(
     preference_id: PreferenceIdentifier,
     _body: PatchRequestBody,
-):
-    ...
+): ...
 
 
 @router.get(
     "/me/tokens",
     response_model=Envelope[list[MyTokenGet]],
 )
-async def list_tokens():
-    ...
+async def list_tokens(): ...
 
 
 @router.post(
@@ -85,8 +71,7 @@ async def list_tokens():
     response_model=Envelope[MyTokenGet],
     status_code=status.HTTP_201_CREATED,
 )
-async def create_token(_body: MyTokenCreate):
-    ...
+async def create_token(_body: MyTokenCreate): ...
 
 
 @router.get(
@@ -95,24 +80,21 @@ async def create_token(_body: MyTokenCreate):
 )
 async def get_token(
     _path: Annotated[_TokenPathParams, Depends()],
-):
-    ...
+): ...
 
 
 @router.delete(
     "/me/tokens/{service}",
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def delete_token(_path: Annotated[_TokenPathParams, Depends()]):
-    ...
+async def delete_token(_path: Annotated[_TokenPathParams, Depends()]): ...
 
 
 @router.get(
     "/me/notifications",
     response_model=Envelope[list[UserNotification]],
 )
-async def list_user_notifications():
-    ...
+async def list_user_notifications(): ...
 
 
 @router.post(
@@ -121,8 +103,7 @@ async def list_user_notifications():
 )
 async def create_user_notification(
     _body: UserNotificationCreate,
-):
-    ...
+): ...
 
 
 @router.patch(
@@ -132,16 +113,14 @@ async def create_user_notification(
 async def mark_notification_as_read(
     _path: Annotated[_NotificationPathParams, Depends()],
     _body: UserNotificationPatch,
-):
-    ...
+): ...
 
 
 @router.get(
     "/me/permissions",
     response_model=Envelope[list[MyPermissionGet]],
 )
-async def list_user_permissions():
-    ...
+async def list_user_permissions(): ...
 
 
 #
@@ -154,8 +133,7 @@ async def list_user_permissions():
     response_model=Envelope[list[UserGet]],
     description="Search among users who are publicly visible to the caller (i.e., me) based on their privacy settings.",
 )
-async def search_users(_body: UsersSearch):
-    ...
+async def search_users(_body: UsersSearch): ...
 
 
 #
@@ -171,7 +149,7 @@ _extra_tags: list[str | Enum] = ["admin"]
     tags=_extra_tags,
 )
 async def search_users_for_admin(
-    _query: Annotated[UsersForAdminSearchQueryParams, Depends()]
+    _query: Annotated[UsersForAdminSearchQueryParams, Depends()],
 ):
     # NOTE: see `Search` in `Common Custom Methods` in https://cloud.google.com/apis/design/custom_methods
     ...
@@ -182,5 +160,4 @@ async def search_users_for_admin(
     response_model=Envelope[UserForAdminGet],
     tags=_extra_tags,
 )
-async def pre_register_user_for_admin(_body: PreRegisteredUserGet):
-    ...
+async def pre_register_user_for_admin(_body: PreRegisteredUserGet): ...

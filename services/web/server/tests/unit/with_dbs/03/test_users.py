@@ -503,6 +503,7 @@ async def test_profile_workflow(
     assert updated_profile.user_name == "odei123"
 
     assert updated_profile.privacy != my_profile.privacy
+    assert updated_profile.privacy.hide_username == my_profile.privacy.hide_username
     assert updated_profile.privacy.hide_email == my_profile.privacy.hide_email
     assert updated_profile.privacy.hide_fullname != my_profile.privacy.hide_fullname
 
