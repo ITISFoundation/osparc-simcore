@@ -137,7 +137,7 @@ def compute_file_id_prefix(file_id: str, levels: int):
     return "/".join(components[:levels])
 
 
-def get_random_export_name(user_id: UserID) -> StorageFileID:
+def create_random_export_name(user_id: UserID) -> StorageFileID:
     return TypeAdapter(StorageFileID).validate_python(
         f"{EXPORTS_S3_PREFIX}/{user_id}/{uuid4()}.zip"
     )

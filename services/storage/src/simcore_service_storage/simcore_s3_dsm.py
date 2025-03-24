@@ -82,10 +82,10 @@ from .utils.s3_utils import S3TransferDataCB, update_task_progress
 from .utils.simcore_s3_dsm_utils import (
     compute_file_id_prefix,
     create_and_upload_export,
+    create_random_export_name,
     expand_directory,
     get_accessible_project_ids,
     get_directory_file_id,
-    get_random_export_name,
     list_child_paths_from_repository,
     list_child_paths_from_s3,
 )
@@ -1262,7 +1262,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
         )
 
         try:
-            destination_object_key = get_random_export_name(user_id)
+            destination_object_key = create_random_export_name(user_id)
 
             await self.create_file_upload_links(
                 user_id=user_id,
