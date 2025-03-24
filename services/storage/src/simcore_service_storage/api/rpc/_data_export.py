@@ -8,7 +8,6 @@ from models_library.api_schemas_rpc_async_jobs.exceptions import JobSchedulerErr
 from models_library.api_schemas_storage.data_export_async_jobs import (
     AccessRightError,
     DataExportTaskStartInput,
-    InvalidFileIdentifierError,
 )
 from servicelib.rabbitmq import RPCRouter
 
@@ -25,7 +24,6 @@ router = RPCRouter()
 
 @router.expose(
     reraise_if_error_type=(
-        InvalidFileIdentifierError,
         AccessRightError,
         JobSchedulerError,
     )
