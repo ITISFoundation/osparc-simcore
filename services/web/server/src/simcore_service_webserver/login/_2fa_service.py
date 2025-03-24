@@ -21,8 +21,8 @@ from twilio.base.exceptions import TwilioException  # type: ignore[import-untype
 
 from ..products.models import Product
 from ..redis import get_redis_validation_code_client
+from ._emails_service import get_template_path, send_email_from_template
 from .errors import SendingVerificationEmailError, SendingVerificationSmsError
-from .utils_email import get_template_path, send_email_from_template
 
 log = logging.getLogger(__name__)
 

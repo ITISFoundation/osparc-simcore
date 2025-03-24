@@ -42,6 +42,7 @@ from ._constants import (
     MSG_UNAUTHORIZED_REGISTER_PHONE,
     MSG_WEAK_PASSWORD,
 )
+from ._emails_service import get_template_path, send_email_from_template
 from ._invitations_service import (
     check_and_consume_invitation,
     check_other_registrations,
@@ -65,7 +66,6 @@ from .utils import (
     get_user_name_from_email,
     notify_user_confirmation,
 )
-from .utils_email import get_template_path, send_email_from_template
 
 _logger = logging.getLogger(__name__)
 
