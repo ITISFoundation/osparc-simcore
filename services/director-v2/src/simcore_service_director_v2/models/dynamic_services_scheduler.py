@@ -540,10 +540,8 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
     def as_label_data(self) -> str:
         # compose_spec needs to be json encoded before encoding it to json
         # and storing it in the label
-        return self.model_validate(
-            self.model_copy(
-                update={"compose_spec": json.dumps(self.compose_spec)}, deep=True
-            )
+        return self.model_copy(
+            update={"compose_spec": self.compose_spec}, deep=True
         ).model_dump_json()
 
     model_config = ConfigDict(extra="allow", populate_by_name=True)
