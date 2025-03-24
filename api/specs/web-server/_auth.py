@@ -22,6 +22,10 @@ from simcore_service_webserver.login._auth_rest import (
     LoginTwoFactorAuthBody,
     LogoutBody,
 )
+from simcore_service_webserver.login._confirmation_rest import (
+    PhoneConfirmationBody,
+    ResetPasswordConfirmation,
+)
 from simcore_service_webserver.login._registration_rest_2 import (
     InvitationCheck,
     InvitationInfo,
@@ -33,10 +37,6 @@ from simcore_service_webserver.login.handlers_change import (
     ChangeEmailBody,
     ChangePasswordBody,
     ResetPasswordBody,
-)
-from simcore_service_webserver.login.handlers_confirmation import (
-    PhoneConfirmationBody,
-    ResetPasswordConfirmation,
 )
 
 router = APIRouter(prefix=f"/{API_VTAG}", tags=["auth"])
