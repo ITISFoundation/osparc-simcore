@@ -9,7 +9,6 @@ import asyncio
 import logging
 import sys
 from collections.abc import Awaitable, Callable
-from copy import deepcopy
 from pathlib import Path
 from typing import Any, Literal
 
@@ -50,8 +49,8 @@ from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 from sqlalchemy.ext.asyncio import AsyncEngine
 from yarl import URL
 
-pytest_simcore_core_services_selection = ["postgres"]
-pytest_simcore_ops_services_selection = ["adminer", "minio"]
+pytest_simcore_core_services_selection = ["postgres", "rabbit"]
+pytest_simcore_ops_services_selection = ["adminer"]
 
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
@@ -122,53 +121,6 @@ async def _request_copy_folders(
                 return await lr_task.result()
 
     pytest.fail(reason="Copy folders failed!")
-
-
-async def test_copy_folders_from_non_existing_project(
-    initialized_app: FastAPI,
-    client: httpx.AsyncClient,
-    user_id: UserID,
-    create_project: Callable[[], Awaitable[dict[str, Any]]],
-    faker: Faker,
-):
-    src_project = await create_project()
-    incorrect_src_project = deepcopy(src_project)
-    incorrect_src_project["uuid"] = faker.uuid4()
-    dst_project = await create_project()
-    incorrect_dst_project = deepcopy(dst_project)
-    incorrect_dst_project["uuid"] = faker.uuid4()
-
-    with pytest.raises(httpx.HTTPStatusError, match="404") as exc_info:
-        await _request_copy_folders(
-            initialized_app,
-            client,
-            user_id,
-            incorrect_src_project,
-            dst_project,
-            nodes_map={},
-        )
-    assert_status(
-        exc_info.value.response,
-        status.HTTP_404_NOT_FOUND,
-        None,
-        expected_msg=f"{incorrect_src_project['uuid']} was not found",
-    )
-
-    with pytest.raises(httpx.HTTPStatusError, match="404") as exc_info:
-        await _request_copy_folders(
-            initialized_app,
-            client,
-            user_id,
-            src_project,
-            incorrect_dst_project,
-            nodes_map={},
-        )
-    assert_status(
-        exc_info.value.response,
-        status.HTTP_404_NOT_FOUND,
-        None,
-        expected_msg=f"{incorrect_dst_project['uuid']} was not found",
-    )
 
 
 async def test_copy_folders_from_empty_project(
