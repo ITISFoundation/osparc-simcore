@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from datetime import timedelta
 from typing import Final
@@ -100,9 +101,17 @@ async def _empty_explicitly_trashed_folders_and_content(
 
 
 async def safe_empty_trash(
-    app: web.Application, *, product_name: ProductName, user_id: UserID
+    app: web.Application,
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    notify_explicit_projects_deleted: asyncio.Event | None = None
 ):
     await _empty_explicitly_trashed_projects(app, product_name, user_id)
+
+    # Notify the caller if an event is provided
+    if notify_explicit_projects_deleted:
+        notify_explicit_projects_deleted.set()
 
     await _empty_explicitly_trashed_folders_and_content(app, product_name, user_id)
 
