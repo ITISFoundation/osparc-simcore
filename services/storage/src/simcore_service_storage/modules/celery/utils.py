@@ -3,15 +3,15 @@ from fastapi import FastAPI
 
 from .worker import CeleryTaskQueueWorker
 
-_WORKER_KEY = "celery_worker_client"
+_WORKER_KEY = "celery_worker"
 _FASTAPI_APP_KEY = "fastapi_app"
 
 
-def set_celery_worker_client(celery_app: Celery, worker: CeleryTaskQueueWorker) -> None:
+def set_celery_worker(celery_app: Celery, worker: CeleryTaskQueueWorker) -> None:
     celery_app.conf[_WORKER_KEY] = worker
 
 
-def get_celery_worker_client(celery_app: Celery) -> CeleryTaskQueueWorker:
+def get_celery_worker(celery_app: Celery) -> CeleryTaskQueueWorker:
     worker = celery_app.conf[_WORKER_KEY]
     assert isinstance(worker, CeleryTaskQueueWorker)
     return worker

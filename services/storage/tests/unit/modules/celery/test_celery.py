@@ -20,7 +20,7 @@ from simcore_service_storage.modules.celery.models import (
     TaskState,
 )
 from simcore_service_storage.modules.celery.utils import (
-    get_celery_worker_client,
+    get_celery_worker,
     get_fastapi_app,
 )
 from tenacity import Retrying, retry_if_exception_type, stop_after_delay, wait_fixed
@@ -29,7 +29,7 @@ _logger = logging.getLogger(__name__)
 
 
 async def _async_archive(celery_app: Celery, task: Task, files: list[str]) -> str:
-    worker_client = get_celery_worker_client(celery_app)
+    worker_client = get_celery_worker(celery_app)
 
     def sleep_for(seconds: float) -> None:
         time.sleep(seconds)
