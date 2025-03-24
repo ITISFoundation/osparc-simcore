@@ -158,14 +158,13 @@ async def create_and_upload_export(
         progress_report_cb=progress_cb,
     )
 
-    archive_entries: ArchiveEntries = []
-    for s3_object in source_object_keys:
-        archive_entries.append(
-            (
-                s3_object,
-                await s3_client.get_bytes_streamer_from_object(bucket, s3_object),
-            )
+    archive_entries: ArchiveEntries = [
+        (
+            s3_object,
+            await s3_client.get_bytes_streamer_from_object(bucket, s3_object),
         )
+        for s3_object in source_object_keys
+    ]
 
     async with progress_bar:
         await s3_client.upload_object_from_file_like(

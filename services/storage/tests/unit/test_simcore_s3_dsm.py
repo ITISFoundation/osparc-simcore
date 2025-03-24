@@ -183,7 +183,7 @@ async def paths_for_export(
 
     upload_result: tuple[NodeID, dict[SimcoreS3FileID, FileIDDict]] = (
         await populate_directory(
-            TypeAdapter(ByteSize).validate_python("10MiB"),
+            TypeAdapter(ByteSize).validate_python("1KiB"),
             dir_name,
             project_id,
             node_id,
