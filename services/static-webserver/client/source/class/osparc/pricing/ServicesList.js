@@ -77,29 +77,42 @@ qx.Class.define("osparc.pricing.ServicesList", {
         .then(data => this.__populateList(data));
     },
 
-    __populateList: function(services) {
-      // before accessing the metadata in a sync way, we need to bring them to the cache
-      const metadataPromises = [];
-      services.forEach(service => {
+    __populateList: async function(services) {
+      const failedServices = [];
+      const servicePromises = services.map(async service => {
         const key = service["serviceKey"];
         const version = service["serviceVersion"];
-        metadataPromises.push(osparc.store.Services.getService(key, version));
-      });
-      Promise.all(metadataPromises)
-        .catch(err => console.error(err))
-        .finally(() => {
-          const sList = [];
-          services.forEach(service => {
-            const key = service["serviceKey"];
-            const version = service["serviceVersion"];
-            const serviceMetadata = osparc.store.Services.getMetadata(key, version);
-            if (serviceMetadata) {
-              sList.push(new osparc.data.model.Service(serviceMetadata));
-            }
+        try {
+          return await osparc.store.Services.getService(key, version);
+        } catch (err) {
+          console.error(err);
+          failedServices.push({
+            key: service["serviceKey"],
+            version: service["serviceVersion"],
           });
-          const servicesList = this.getChildControl("services-list");
-          servicesList.setModel(new qx.data.Array(sList));
-        })
+          return null; // Return null to maintain array structure
+        }
+      });
+
+      const serviceModels = new qx.data.Array();
+      // ensure that even if one request fails, the rest continue executing
+      const results = await Promise.allSettled(servicePromises);
+      results.forEach(result => {
+        if (result.status === "fulfilled" && result.value) {
+          const serviceMetadata = result.value;
+          serviceModels.push(new osparc.data.model.Service(serviceMetadata));
+        }
+      });
+      const servicesList = this.getChildControl("services-list");
+      servicesList.setModel(serviceModels);
+
+      if (failedServices.length) {
+        let msg = "Could not retrieve data from some services:<br>";
+        failedServices.forEach(failedService => {
+          msg+= `- ${failedService.key}:${failedService.version}<br>`;
+        });
+        osparc.FlashMessenger.logAs(msg, "WARNING");
+      }
     },
 
     __openAddServiceToPlan: function() {
