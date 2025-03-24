@@ -7,7 +7,7 @@ from simcore_service_storage.modules.celery.utils import (
     set_celery_worker_client,
     set_fastapi_app,
 )
-from simcore_service_storage.modules.celery.worker import CeleryWorkerClient
+from simcore_service_storage.modules.celery.worker import CeleryTaskQueueWorker
 
 
 @pytest.fixture
@@ -15,7 +15,7 @@ def fake_celery_task(celery_app: Celery, initialized_app: FastAPI) -> Task:
     celery_task = Task()
     celery_task.app = celery_app
     set_fastapi_app(celery_app, initialized_app)
-    set_celery_worker_client(celery_app, CeleryWorkerClient(celery_app))
+    set_celery_worker_client(celery_app, CeleryTaskQueueWorker(celery_app))
     return celery_task
 
 

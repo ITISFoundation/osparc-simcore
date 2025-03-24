@@ -10,7 +10,7 @@ from ..celery.models import TaskID
 _logger = logging.getLogger(__name__)
 
 
-class CeleryWorkerClient:
+class CeleryTaskQueueWorker:
     def __init__(self, celery_app: Celery) -> None:
         self.celery_app = celery_app
 

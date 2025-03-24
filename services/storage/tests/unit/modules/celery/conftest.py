@@ -16,7 +16,7 @@ from simcore_service_storage.modules.celery.signals import (
     on_worker_init,
     on_worker_shutdown,
 )
-from simcore_service_storage.modules.celery.worker import CeleryWorkerClient
+from simcore_service_storage.modules.celery.worker import CeleryTaskQueueWorker
 
 
 @pytest.fixture
@@ -100,6 +100,6 @@ def celery_worker_controller(
 @pytest.fixture
 def celery_worker(
     celery_worker_controller: TestWorkController,
-) -> CeleryWorkerClient:
+) -> CeleryTaskQueueWorker:
     assert isinstance(celery_worker_controller.app, Celery)
-    return CeleryWorkerClient(celery_worker_controller.app)
+    return CeleryTaskQueueWorker(celery_worker_controller.app)
