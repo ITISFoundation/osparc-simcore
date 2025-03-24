@@ -18,7 +18,7 @@ from ..security.api import check_password, encrypt_password
 from ..users import api as users_service
 from ..utils import HOUR
 from ..utils_rate_limiting import global_rate_limit_route
-from ._confirmation_service import get_or_create_confirmation, make_confirmation_link
+from . import _confirmation_service
 from ._constants import (
     MSG_CANT_SEND_MAIL,
     MSG_CHANGE_EMAIL_REQUESTED,
@@ -180,12 +180,12 @@ async def initiate_reset_password(request: web.Request):
         try:
             # Confirmation token that includes code to `complete_reset_password`.
             # Recreated if non-existent or expired  (Guideline #2)
-            confirmation = await get_or_create_confirmation(
+            confirmation = await _confirmation_service.get_or_create_confirmation(
                 cfg, db, user_id=user["id"], action="RESET_PASSWORD"
             )
 
             # Produce a link so that the front-end can hit `complete_reset_password`
-            link = make_confirmation_link(request, confirmation)
+            link = _confirmation_service.make_confirmation_link(request, confirmation)
 
             # primary reset email with a URL and the normal instructions.
             await send_email_from_template(
@@ -247,7 +247,7 @@ async def submit_request_to_change_email(request: web.Request):
     confirmation = await db.create_confirmation(
         user_id=user["id"], action="CHANGE_EMAIL", data=request_body.email
     )
-    link = make_confirmation_link(request, confirmation)
+    link = _confirmation_service.make_confirmation_link(request, confirmation)
     try:
         await send_email_from_template(
             request,
