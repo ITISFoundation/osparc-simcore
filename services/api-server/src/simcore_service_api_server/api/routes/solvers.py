@@ -55,7 +55,7 @@ async def list_solvers(
     SEE get_solvers_page for paginated version of this function
     """
     solvers: list[Solver] = await catalog_client.list_latest_releases(
-        user_id=user_id, product_name=product_name
+        user_id=user_id, product_name=product_name, service_type="COMPUTATIONAL"
     )
 
     for solver in solvers:
@@ -97,8 +97,8 @@ async def list_solvers_releases(
     """
     assert await catalog_client.is_responsive()  # nosec
 
-    solvers: list[Solver] = await catalog_client.list_solvers(
-        user_id=user_id, product_name=product_name
+    solvers: list[Solver] = await catalog_client.list_services(
+        user_id=user_id, product_name=product_name, service_type="COMPUTATIONAL"
     )
 
     for solver in solvers:
@@ -140,7 +140,10 @@ async def get_solver(
     # otherwise, {solver_key:path} will override and consume any of the paths that follow.
     try:
         solver = await catalog_client.get_latest_release(
-            user_id=user_id, solver_key=solver_key, product_name=product_name
+            user_id=user_id,
+            solver_key=solver_key,
+            product_name=product_name,
+            service_type="COMPUTATIONAL",
         )
         solver.url = url_for(
             "get_solver_release", solver_key=solver.id, version=solver.version
@@ -171,8 +174,11 @@ async def list_solver_releases(
 
     SEE get_solver_releases_page for a paginated version of this function
     """
-    releases: list[Solver] = await catalog_client.list_solver_releases(
-        user_id=user_id, solver_key=solver_key, product_name=product_name
+    releases: list[Solver] = await catalog_client.list_service_releases(
+        user_id=user_id,
+        solver_key=solver_key,
+        product_name=product_name,
+        service_type="COMPUTATIONAL",
     )
 
     for solver in releases:

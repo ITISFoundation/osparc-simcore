@@ -5,7 +5,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from functools import partial
 from operator import attrgetter
-from typing import Final
+from typing import Final, Literal
 
 from fastapi import FastAPI, status
 from models_library.emails import LowerCaseEmailStr
@@ -63,6 +63,8 @@ class TruncatedCatalogServiceOut(ServiceMetaDataPublished):
         )
 
 
+ServiceTypes = Literal["COMPUTATIONAL", "DYNAMIC"]
+
 # API CLASS ---------------------------------------------
 #
 # - Error handling: What do we reraise, suppress, transform???
@@ -70,9 +72,9 @@ class TruncatedCatalogServiceOut(ServiceMetaDataPublished):
 
 _exception_mapper = partial(service_exception_mapper, service_name="Catalog")
 
-TruncatedCatalogServiceOutAdapter: Final[
-    TypeAdapter[TruncatedCatalogServiceOut]
-] = TypeAdapter(TruncatedCatalogServiceOut)
+TruncatedCatalogServiceOutAdapter: Final[TypeAdapter[TruncatedCatalogServiceOut]] = (
+    TypeAdapter(TruncatedCatalogServiceOut)
+)
 TruncatedCatalogServiceOutListAdapter: Final[
     TypeAdapter[list[TruncatedCatalogServiceOut]]
 ] = TypeAdapter(list[TruncatedCatalogServiceOut])
@@ -94,12 +96,13 @@ class CatalogApi(BaseServiceClientApi):
     @_exception_mapper(
         http_status_map={status.HTTP_404_NOT_FOUND: ListSolversOrStudiesError}
     )
-    async def list_solvers(
+    async def list_services(
         self,
         *,
         user_id: int,
         product_name: str,
         predicate: Callable[[Solver], bool] | None = None,
+        service_type: ServiceTypes,
     ) -> list[Solver]:
 
         response = await self.client.get(
@@ -120,7 +123,7 @@ class CatalogApi(BaseServiceClientApi):
         solvers = []
         for service in services:
             try:
-                if service.service_type == ServiceType.COMPUTATIONAL:
+                if service.service_type == ServiceType[service_type]:
                     solver = service.to_solver()
                     if predicate is None or predicate(solver):
                         solvers.append(solver)
@@ -190,10 +193,10 @@ class CatalogApi(BaseServiceClientApi):
         return TypeAdapter(list[SolverPort]).validate_python(response.json())
 
     async def list_latest_releases(
-        self, *, user_id: int, product_name: str
+        self, *, user_id: int, product_name: str, service_type: ServiceTypes
     ) -> list[Solver]:
-        solvers: list[Solver] = await self.list_solvers(
-            user_id=user_id, product_name=product_name
+        solvers: list[Solver] = await self.list_services(
+            user_id=user_id, product_name=product_name, service_type=service_type
         )
 
         latest_releases: dict[SolverKeyId, Solver] = {}
@@ -204,22 +207,38 @@ class CatalogApi(BaseServiceClientApi):
 
         return list(latest_releases.values())
 
-    async def list_solver_releases(
-        self, *, user_id: int, solver_key: SolverKeyId, product_name: str
+    async def list_service_releases(
+        self,
+        *,
+        user_id: int,
+        solver_key: SolverKeyId,
+        product_name: str,
+        service_type: ServiceTypes,
     ) -> list[Solver]:
         def _this_solver(solver: Solver) -> bool:
             return solver.id == solver_key
 
-        releases: list[Solver] = await self.list_solvers(
-            user_id=user_id, predicate=_this_solver, product_name=product_name
+        releases: list[Solver] = await self.list_services(
+            user_id=user_id,
+            predicate=_this_solver,
+            product_name=product_name,
+            service_type=service_type,
         )
         return releases
 
     async def get_latest_release(
-        self, *, user_id: int, solver_key: SolverKeyId, product_name: str
+        self,
+        *,
+        user_id: int,
+        solver_key: SolverKeyId,
+        product_name: str,
+        service_type: ServiceTypes,
     ) -> Solver:
-        releases = await self.list_solver_releases(
-            user_id=user_id, solver_key=solver_key, product_name=product_name
+        releases = await self.list_service_releases(
+            user_id=user_id,
+            solver_key=solver_key,
+            product_name=product_name,
+            service_type=service_type,
         )
 
         # raises IndexError if None
