@@ -375,7 +375,7 @@ async def storage_subsystem_mock(mocker: MockerFixture) -> MockedStorageSubsyste
     )
 
     mock2 = mocker.patch(
-        "simcore_service_webserver.projects.projects_service.storage_api.delete_data_folders_of_project_node",
+        "simcore_service_webserver.projects._projects_service.storage_service.delete_data_folders_of_project_node",
         autospec=True,
         return_value=None,
     )
@@ -417,7 +417,7 @@ async def mocked_dynamic_services_interface(
         )
 
     mock["director_v2.api.create_or_update_pipeline"] = mocker.patch(
-        "simcore_service_webserver.director_v2.api.create_or_update_pipeline",
+        "simcore_service_webserver.director_v2.director_v2_service.create_or_update_pipeline",
         autospec=True,
         return_value=None,
     )

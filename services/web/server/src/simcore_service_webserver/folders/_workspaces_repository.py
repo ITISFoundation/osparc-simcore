@@ -8,10 +8,10 @@ from models_library.workspaces import WorkspaceID
 from simcore_postgres_database.utils_repos import transaction_context
 
 from ..db.plugin import get_asyncpg_engine
-from ..projects import _folders_db as project_to_folders_db
-from ..projects import _groups_db as project_groups_db
-from ..projects import _projects_db as projects_db
-from ..projects._access_rights_api import check_user_project_permission
+from ..projects import _folders_repository as projects_folders_repository
+from ..projects import _groups_repository as projects_groups_repository
+from ..projects import _projects_repository as _projects_repository
+from ..projects._access_rights_service import check_user_project_permission
 from ..users.api import get_user
 from ..workspaces.api import check_user_workspace_access
 from . import _folders_repository
@@ -78,7 +78,7 @@ async def move_folder_into_workspace(
     async with transaction_context(get_asyncpg_engine(app)) as conn:
         # 4. Update workspace ID on the project resource
         for project_id in project_ids:
-            await projects_db.patch_project(
+            await _projects_repository.patch_project(
                 app=app,
                 connection=conn,
                 project_uuid=project_id,
@@ -106,7 +106,7 @@ async def move_folder_into_workspace(
 
         # 7. Remove all records of project to folders that are not in the folders that we are moving
         # (ex. If we are moving from private workspace, the same project can be in different folders for different users)
-        await project_to_folders_db.delete_all_project_to_folder_by_project_ids_not_in_folder_ids(
+        await projects_folders_repository.delete_all_project_to_folder_by_project_ids_not_in_folder_ids(
             app,
             connection=conn,
             project_id_or_ids=set(project_ids),
@@ -114,7 +114,7 @@ async def move_folder_into_workspace(
         )
 
         # 8. Update the user id field for the remaining folders
-        await project_to_folders_db.update_project_to_folder(
+        await projects_folders_repository.update_project_to_folder(
             app,
             connection=conn,
             folders_id_or_ids=set(folder_ids),
@@ -124,10 +124,10 @@ async def move_folder_into_workspace(
         # 9. Remove all project permissions, leave only the user who moved the project
         user = await get_user(app, user_id=user_id)
         for project_id in project_ids:
-            await project_groups_db.delete_all_project_groups(
+            await projects_groups_repository.delete_all_project_groups(
                 app, connection=conn, project_id=project_id
             )
-            await project_groups_db.update_or_insert_project_group(
+            await projects_groups_repository.update_or_insert_project_group(
                 app,
                 connection=conn,
                 project_id=project_id,
