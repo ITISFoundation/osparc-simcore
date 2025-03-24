@@ -33,7 +33,9 @@ def fake_profile_get(faker: Faker) -> MyProfileGet:
         user_name=fake_profile["username"],
         login=fake_profile["mail"],
         role="USER",
-        privacy=MyProfilePrivacyGet(hide_fullname=True, hide_email=True),
+        privacy=MyProfilePrivacyGet(
+            hide_fullname=True, hide_email=True, hide_username=False
+        ),
         preferences={},
     )
 
@@ -78,7 +80,7 @@ def test_parsing_output_of_get_user_profile():
         "last_name": "",
         "role": "Guest",
         "gravatar_id": "9d5e02c75fcd4bce1c8861f219f7f8a5",
-        "privacy": {"hide_email": True, "hide_fullname": False},
+        "privacy": {"hide_email": True, "hide_fullname": False, "hide_username": False},
         "groups": {
             "me": {
                 "gid": 2,
@@ -125,7 +127,7 @@ def test_mapping_update_models_from_rest_to_db():
         {
             "first_name": "foo",
             "userName": "foo1234",
-            "privacy": {"hideFullname": False},
+            "privacy": {"hideFullname": False, "hideUsername": True},
         }
     )
 
@@ -137,6 +139,7 @@ def test_mapping_update_models_from_rest_to_db():
         "first_name": "foo",
         "name": "foo1234",
         "privacy_hide_fullname": False,
+        "privacy_hide_username": True,
     }
 
 
