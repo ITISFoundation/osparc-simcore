@@ -27,9 +27,9 @@ from . import (
     _2fa_rest,
     _auth_rest,
     _registration_rest,
+    _registration_rest_2,
     handlers_change,
     handlers_confirmation,
-    handlers_registration,
 )
 from ._constants import APP_LOGIN_SETTINGS_PER_PRODUCT_KEY
 from .settings import (
@@ -140,7 +140,7 @@ def setup_login(app: web.Application):
 
     app.router.add_routes(_auth_rest.routes)
     app.router.add_routes(handlers_confirmation.routes)
-    app.router.add_routes(handlers_registration.routes)
+    app.router.add_routes(_registration_rest_2.routes)
     app.router.add_routes(_registration_rest.routes)
     app.router.add_routes(handlers_change.routes)
     app.router.add_routes(_2fa_rest.routes)

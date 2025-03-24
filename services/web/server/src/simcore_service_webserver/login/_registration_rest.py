@@ -26,7 +26,7 @@ from ..session.api import get_session
 from ..users.api import get_user_credentials, set_user_as_deleted
 from ..utils import MINUTE
 from ..utils_rate_limiting import global_rate_limit_route
-from . import _registration_service
+from . import _preregistration_service
 from ._constants import CAPTCHA_SESSION_KEY, MSG_LOGGED_OUT, MSG_WRONG_CAPTCHA__INVALID
 from .decorators import login_required
 from .settings import LoginSettingsForProduct, get_plugin_settings
@@ -74,7 +74,7 @@ async def request_product_account(request: web.Request):
 
     # send email to fogbugz or user itself
     fire_and_forget_task(
-        _registration_service.send_account_request_email_to_support(
+        _preregistration_service.send_account_request_email_to_support(
             request,
             product=product,
             request_form=body.form,
@@ -131,7 +131,7 @@ async def unregister_account(request: web.Request):
 
         # send email in the background
         fire_and_forget_task(
-            _registration_service.send_close_account_email(
+            _preregistration_service.send_close_account_email(
                 request,
                 user_email=credentials.email,
                 user_first_name=credentials.display_name,
@@ -152,7 +152,7 @@ async def unregister_account(request: web.Request):
 async def request_captcha(request: web.Request):
     session = await get_session(request)
 
-    captcha_text, image_data = await _registration_service.generate_captcha()
+    captcha_text, image_data = await _preregistration_service.generate_captcha()
 
     # Store captcha text in session
     session[CAPTCHA_SESSION_KEY] = captcha_text
