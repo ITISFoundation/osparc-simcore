@@ -2,7 +2,7 @@
 # pylint:disable=unused-argument
 
 import asyncio
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable
 from typing import Any, Final
 
 import pytest
@@ -21,11 +21,6 @@ pytest_simcore_core_services_selection = [
 ]
 
 MULTIPLE_REQUESTS_COUNT: Final[NonNegativeInt] = 100
-
-
-@pytest.fixture
-def namespace() -> RPCNamespace:
-    return RPCNamespace.from_entries({f"test{i}": f"test{i}" for i in range(8)})
 
 
 async def add_me(*, x: Any, y: Any) -> Any:
@@ -47,20 +42,6 @@ class CustomClass:
 
     def __add__(self, other: "CustomClass") -> "CustomClass":
         return CustomClass(x=self.x + other.x, y=self.y + other.y)
-
-
-@pytest.fixture
-async def rpc_client(
-    rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
-) -> RabbitMQRPCClient:
-    return await rabbitmq_rpc_client("pytest_rpc_client")
-
-
-@pytest.fixture
-async def rpc_server(
-    rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
-) -> RabbitMQRPCClient:
-    return await rabbitmq_rpc_client("pytest_rpc_server")
 
 
 @pytest.mark.parametrize(
