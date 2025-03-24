@@ -107,7 +107,6 @@ qx.Class.define("osparc.pricing.ServicesList", {
       const servicesList = this.getChildControl("services-list");
       servicesList.setModel(serviceModels);
 
-
       if (failedServices.length) {
         let msg = "Could not retrieve data from some services:<br>";
         failedServices.forEach(failedService => {
