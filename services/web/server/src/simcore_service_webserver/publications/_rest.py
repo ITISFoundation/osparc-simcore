@@ -11,7 +11,7 @@ from servicelib.request_keys import RQT_USERID_KEY
 
 from .._meta import API_VTAG as VTAG
 from ..login.decorators import login_required
-from ..login.storage import AsyncpgStorage, get_plugin_storage
+from ..login.login_repository_legacy import AsyncpgStorage, get_plugin_storage
 from ..login.utils_email import AttachmentTuple, send_email_from_template, themed
 from ..products import products_web
 from ._utils import json2html

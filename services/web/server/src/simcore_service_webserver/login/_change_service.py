@@ -27,10 +27,10 @@ from ._constants import (
     MSG_PASSWORD_CHANGED,
     MSG_WRONG_PASSWORD,
 )
+from ._login_repository_legacy import AsyncpgStorage, get_plugin_storage
 from ._models import InputSchema, create_password_match_validator
 from .decorators import login_required
 from .settings import LoginOptions, get_plugin_options
-from .storage import AsyncpgStorage, get_plugin_storage
 from .utils import (
     ACTIVE,
     CHANGE_EMAIL,

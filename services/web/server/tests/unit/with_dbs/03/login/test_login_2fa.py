@@ -34,7 +34,7 @@ from simcore_service_webserver.login._constants import (
     CODE_2FA_SMS_CODE_REQUIRED,
     MSG_2FA_UNAVAILABLE,
 )
-from simcore_service_webserver.login.storage import AsyncpgStorage
+from simcore_service_webserver.login._login_repository_legacy import AsyncpgStorage
 from simcore_service_webserver.products import products_web
 from simcore_service_webserver.products.errors import UnknownProductError
 from simcore_service_webserver.products.models import Product

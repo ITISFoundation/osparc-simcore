@@ -32,13 +32,13 @@ from . import (
     _registration_rest_2,
 )
 from ._constants import APP_LOGIN_SETTINGS_PER_PRODUCT_KEY
+from ._login_repository_legacy import APP_LOGIN_STORAGE_KEY, AsyncpgStorage
 from .settings import (
     APP_LOGIN_OPTIONS_KEY,
     LoginOptions,
     LoginSettings,
     LoginSettingsForProduct,
 )
-from .storage import APP_LOGIN_STORAGE_KEY, AsyncpgStorage
 
 log = logging.getLogger(__name__)
 

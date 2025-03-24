@@ -11,7 +11,7 @@ from ..groups.api import is_user_by_email_in_group
 from ..products.models import Product
 from ..security.api import check_password, encrypt_password
 from ._constants import MSG_UNKNOWN_EMAIL, MSG_WRONG_PASSWORD
-from .storage import AsyncpgStorage, get_plugin_storage
+from ._login_repository_legacy import AsyncpgStorage, get_plugin_storage
 from .utils import validate_user_status
 
 

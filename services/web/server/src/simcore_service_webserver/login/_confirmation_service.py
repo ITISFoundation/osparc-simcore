@@ -14,8 +14,12 @@ from aiohttp import web
 from models_library.users import UserID
 from yarl import URL
 
+from ._login_repository_legacy import (
+    ActionLiteralStr,
+    AsyncpgStorage,
+    ConfirmationTokenDict,
+)
 from .settings import LoginOptions
-from .storage import ActionLiteralStr, AsyncpgStorage, ConfirmationTokenDict
 
 log = logging.getLogger(__name__)
 

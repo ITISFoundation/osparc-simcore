@@ -26,12 +26,12 @@ from simcore_service_webserver.login._constants import (
     MSG_PASSWORD_MISMATCH,
     MSG_WEAK_PASSWORD,
 )
+from simcore_service_webserver.login._login_repository_legacy import AsyncpgStorage
 from simcore_service_webserver.login.settings import (
     LoginOptions,
     LoginSettingsForProduct,
     get_plugin_settings,
 )
-from simcore_service_webserver.login.storage import AsyncpgStorage
 
 
 @pytest.fixture

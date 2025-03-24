@@ -15,8 +15,11 @@ from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_di
 from pytest_simcore.helpers.webserver_login import NewUser, UserInfoDict
 from simcore_postgres_database.models.users import users
 from simcore_postgres_database.models.wallets import wallets
+from simcore_service_webserver.login._login_repository_legacy import (
+    AsyncpgStorage,
+    get_plugin_storage,
+)
 from simcore_service_webserver.login.settings import LoginOptions, get_plugin_options
-from simcore_service_webserver.login.storage import AsyncpgStorage, get_plugin_storage
 
 
 @pytest.fixture

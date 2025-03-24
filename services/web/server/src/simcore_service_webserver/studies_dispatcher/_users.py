@@ -1,10 +1,10 @@
-""" Users management
+"""Users management
 
- Keeps functionality that couples with the following app modules
-    - users,
-    - login
-    - security
-    - resource_manager
+Keeps functionality that couples with the following app modules
+   - users,
+   - login
+   - security
+   - resource_manager
 
 """
 
@@ -27,7 +27,7 @@ from servicelib.utils_secrets import generate_password
 
 from ..garbage_collector.settings import GUEST_USER_RC_LOCK_FORMAT
 from ..groups.api import auto_add_user_to_product_group
-from ..login.storage import AsyncpgStorage, get_plugin_storage
+from ..login.login_repository_legacy import AsyncpgStorage, get_plugin_storage
 from ..login.utils import ACTIVE, GUEST
 from ..products import products_web
 from ..redis import get_redis_lock_manager_client

@@ -20,10 +20,10 @@ from ._constants import (
     MSG_EMAIL_SENT,
     MSG_UNKNOWN_EMAIL,
 )
+from ._login_repository_legacy import AsyncpgStorage, get_plugin_storage
 from ._models import InputSchema
 from .errors import handle_login_exceptions
 from .settings import LoginSettingsForProduct, get_plugin_settings
-from .storage import AsyncpgStorage, get_plugin_storage
 from .utils import envelope_response
 
 _logger = logging.getLogger(__name__)

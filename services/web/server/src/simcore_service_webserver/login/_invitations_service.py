@@ -46,8 +46,12 @@ from ._constants import (
     MSG_INVITATIONS_CONTACT_SUFFIX,
     MSG_USER_DISABLED,
 )
+from ._login_repository_legacy import (
+    AsyncpgStorage,
+    BaseConfirmationTokenDict,
+    ConfirmationTokenDict,
+)
 from .settings import LoginOptions
-from .storage import AsyncpgStorage, BaseConfirmationTokenDict, ConfirmationTokenDict
 
 _logger = logging.getLogger(__name__)
 
