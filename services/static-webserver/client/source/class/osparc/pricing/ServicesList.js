@@ -77,30 +77,30 @@ qx.Class.define("osparc.pricing.ServicesList", {
         .then(data => this.__populateList(data));
     },
 
-    __populateList: function(services) {
-      // before accessing the metadata in a sync way, we need to bring them to the cache
-      const metadataPromises = [];
-      services.forEach(service => {
+    __populateList: async function(services) {
+      const servicePromises = services.map(async service => {
         const key = service["serviceKey"];
         const version = service["serviceVersion"];
-        metadataPromises.push(osparc.store.Services.getService(key, version));
+        try {
+          return await osparc.store.Services.getService(key, version);
+        } catch (err) {
+          console.error(err);
+          return null; // Return null to maintain array structure
+        }
       });
-      Promise.all(metadataPromises)
-        .catch(err => console.error(err))
-        .finally(() => {
-          const sList = [];
-          console.log("services", services);
-          services.forEach(service => {
-            const key = service["serviceKey"];
-            const version = service["serviceVersion"];
-            const serviceMetadata = osparc.store.Services.getMetadata(key, version);
-            if (serviceMetadata) {
-              sList.push(new osparc.data.model.Service(serviceMetadata));
-            }
-          });
-          const servicesList = this.getChildControl("services-list");
-          servicesList.setModel(new qx.data.Array(sList));
-        })
+
+      // ensure that even if one request fails, the rest continue executing
+      const results = await Promise.allSettled(servicePromises);
+      const serviceModels = new qx.data.Array();
+      results.forEach(result => {
+        if (result.status === "fulfilled" && result.value) {
+          const serviceMetadata = result.value;
+          serviceModels.push(new osparc.data.model.Service(serviceMetadata));
+        }
+      });
+
+      const servicesList = this.getChildControl("services-list");
+      servicesList.setModel(serviceModels);
     },
 
     __openAddServiceToPlan: function() {
