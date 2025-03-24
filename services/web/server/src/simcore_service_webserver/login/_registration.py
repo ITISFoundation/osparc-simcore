@@ -40,7 +40,7 @@ from ..invitations.errors import (
     InvitationsServiceUnavailableError,
 )
 from ..products.models import Product
-from ._confirmation import is_confirmation_expired, validate_confirmation_code
+from . import _confirmation_service
 from ._constants import (
     MSG_EMAIL_ALREADY_REGISTERED,
     MSG_INVITATIONS_CONTACT_SUFFIX,
@@ -134,7 +134,8 @@ async def check_other_registrations(
                     }
                 )
                 drop_previous_registration = (
-                    not _confirmation or is_confirmation_expired(cfg, _confirmation)
+                    not _confirmation
+                    or _confirmation_service.is_confirmation_expired(cfg, _confirmation)
                 )
                 if drop_previous_registration:
                     if not _confirmation:
@@ -296,7 +297,9 @@ async def check_and_consume_invitation(
             )
 
     # database-type invitations
-    if confirmation_token := await validate_confirmation_code(invitation_code, db, cfg):
+    if confirmation_token := await _confirmation_service.validate_confirmation_code(
+        invitation_code, db, cfg
+    ):
         try:
             invitation_data: InvitationData = _InvitationValidator.model_validate(
                 confirmation_token

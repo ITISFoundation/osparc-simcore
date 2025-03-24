@@ -33,8 +33,8 @@ from ..session.access_policies import session_access_required
 from ..utils import HOUR, MINUTE
 from ..utils_aiohttp import create_redirect_to_page_response
 from ..utils_rate_limiting import global_rate_limit_route
+from . import _confirmation_service
 from ._2fa_api import delete_2fa_code, get_2fa_code
-from ._confirmation import validate_confirmation_code
 from ._constants import (
     MSG_PASSWORD_CHANGE_NOT_ALLOWED,
     MSG_PASSWORD_CHANGED,
@@ -143,10 +143,12 @@ async def validate_confirmation_and_redirect(request: web.Request):
 
     path_params = parse_request_path_parameters_as(_PathParam, request)
 
-    confirmation: ConfirmationTokenDict | None = await validate_confirmation_code(
-        path_params.code.get_secret_value(),
-        db=db,
-        cfg=cfg,
+    confirmation: ConfirmationTokenDict | None = (
+        await _confirmation_service.validate_confirmation_code(
+            path_params.code.get_secret_value(),
+            db=db,
+            cfg=cfg,
+        )
     )
 
     redirect_to_login_url = URL(cfg.LOGIN_REDIRECT)
@@ -287,7 +289,7 @@ async def complete_reset_password(request: web.Request):
     path_params = parse_request_path_parameters_as(_PathParam, request)
     request_body = await parse_request_body_as(ResetPasswordConfirmation, request)
 
-    confirmation = await validate_confirmation_code(
+    confirmation = await _confirmation_service.validate_confirmation_code(
         code=path_params.code.get_secret_value(), db=db, cfg=cfg
     )
 

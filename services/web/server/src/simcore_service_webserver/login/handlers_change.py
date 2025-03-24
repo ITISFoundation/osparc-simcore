@@ -18,7 +18,7 @@ from ..security.api import check_password, encrypt_password
 from ..users import api as users_service
 from ..utils import HOUR
 from ..utils_rate_limiting import global_rate_limit_route
-from ._confirmation import get_or_create_confirmation, make_confirmation_link
+from ._confirmation_service import get_or_create_confirmation, make_confirmation_link
 from ._constants import (
     MSG_CANT_SEND_MAIL,
     MSG_CHANGE_EMAIL_REQUESTED,

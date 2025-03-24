@@ -19,7 +19,7 @@ from servicelib.aiohttp import status
 from servicelib.rest_responses import unwrap_envelope
 from simcore_service_webserver.db.models import UserStatus
 from simcore_service_webserver.groups.api import auto_add_user_to_product_group
-from simcore_service_webserver.login._confirmation import _url_for_confirmation
+from simcore_service_webserver.login._confirmation_service import _url_for_confirmation
 from simcore_service_webserver.login._constants import (
     MSG_EMAIL_ALREADY_REGISTERED,
     MSG_LOGGED_IN,
@@ -403,9 +403,9 @@ async def test_registration_with_invitation(
                 "email": fake_user_email,
                 "password": fake_user_password,
                 "confirm": fake_user_password,
-                "invitation": confirmation["code"]
-                if has_valid_invitation
-                else "WRONG_CODE",
+                "invitation": (
+                    confirmation["code"] if has_valid_invitation else "WRONG_CODE"
+                ),
             },
         )
         await assert_status(response, expected_response)

@@ -32,9 +32,8 @@ from ..session.access_policies import (
 from ..utils import MINUTE
 from ..utils_aiohttp import NextPage, envelope_json_response
 from ..utils_rate_limiting import global_rate_limit_route
-from . import _auth_api
+from . import _auth_api, _confirmation_service
 from ._2fa_api import create_2fa_code, mask_phone_number, send_sms_code
-from ._confirmation import make_confirmation_link
 from ._constants import (
     CODE_2FA_SMS_CODE_REQUIRED,
     MAX_2FA_CODE_RESEND,
@@ -255,7 +254,9 @@ async def register(request: web.Request):
         )
 
         try:
-            email_confirmation_url = make_confirmation_link(request, _confirmation)
+            email_confirmation_url = _confirmation_service.make_confirmation_link(
+                request, _confirmation
+            )
             email_template_path = await get_template_path(
                 request, "registration_email.jinja2"
             )
