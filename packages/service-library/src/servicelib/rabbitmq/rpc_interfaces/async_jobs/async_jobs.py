@@ -137,13 +137,14 @@ async def _wait_for_completion(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
     rpc_namespace: RPCNamespace,
+    method_name: RPCMethodName,
     job_id: AsyncJobId,
     job_id_data: AsyncJobNameData,
-    client_timeout: int,
+    client_timeout: datetime.timedelta,
 ) -> AsyncGenerator[AsyncJobStatus, None]:
     try:
         async for attempt in AsyncRetrying(
-            stop=stop_after_delay(client_timeout),
+            stop=stop_after_delay(client_timeout.total_seconds()),
             reraise=True,
             retry=retry_if_exception_type(TryAgain),
             before_sleep=before_sleep_log(_logger, logging.DEBUG),
@@ -163,7 +164,7 @@ async def _wait_for_completion(
 
     except TryAgain as exc:
         # this is a timeout
-        msg = f"Long running task {job_id=}, calling to  timed-out after {client_timeout} seconds"
+        msg = f"Async job {job_id=}, calling to '{method_name}' timed-out after {client_timeout}"
         raise TimeoutError(msg) from exc
 
 
@@ -201,31 +202,36 @@ async def submit_and_wait(
             job_id_data=job_id_data,
             **kwargs,
         )
+        job_status: AsyncJobStatus | None = None
         async for job_status in _wait_for_completion(
             rabbitmq_rpc_client,
             rpc_namespace=rpc_namespace,
+            method_name=method_name,
             job_id=async_job_rpc_get.job_id,
             job_id_data=job_id_data,
             client_timeout=client_timeout,
         ):
+            assert job_status is not None  # nosec
             yield AsyncJobComposedResult(job_status)
-
-        assert job_status  # nosec
-        yield AsyncJobComposedResult(
-            job_status,
-            result(
-                rabbitmq_rpc_client,
-                rpc_namespace=rpc_namespace,
-                job_id=async_job_rpc_get.job_id,
-                job_id_data=job_id_data,
-            ),
-        )
-    except (TimeoutError, CancelledError):
-        if async_job_rpc_get is not None:
-            await cancel(
-                rabbitmq_rpc_client,
-                rpc_namespace=rpc_namespace,
-                job_id=async_job_rpc_get.job_id,
-                job_id_data=job_id_data,
+        if job_status:
+            yield AsyncJobComposedResult(
+                job_status,
+                result(
+                    rabbitmq_rpc_client,
+                    rpc_namespace=rpc_namespace,
+                    job_id=async_job_rpc_get.job_id,
+                    job_id_data=job_id_data,
+                ),
             )
+    except (TimeoutError, CancelledError) as error:
+        if async_job_rpc_get is not None:
+            try:
+                await cancel(
+                    rabbitmq_rpc_client,
+                    rpc_namespace=rpc_namespace,
+                    job_id=async_job_rpc_get.job_id,
+                    job_id_data=job_id_data,
+                )
+            except Exception as exc:
+                raise exc from error
         raise
