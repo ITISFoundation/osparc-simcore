@@ -1,5 +1,5 @@
 import logging
-from typing import Annotated, cast
+from typing import Annotated, Final, cast
 from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, Header, Request
@@ -259,6 +259,9 @@ async def abort_upload_file(
     await dsm.abort_file_upload(query_params.user_id, file_id)
 
 
+_UNDEFINED_PRODUCT_NAME_FOR_WORKER_TASKS: Final[str] = "undefinedproduct"
+
+
 @router.post(
     "/locations/{location_id}/files/{file_id:path}:complete",
     response_model=Envelope[FileUploadCompleteResponse],
@@ -277,7 +280,7 @@ async def complete_upload_file(
     # for completeness
     async_job_name_data = AsyncJobNameData(
         user_id=query_params.user_id,
-        product_name="osparc",  # TODO: fix this
+        product_name=_UNDEFINED_PRODUCT_NAME_FOR_WORKER_TASKS,  # NOTE: I would need to change the API here
     )
     task_uuid = await celery_client.send_task(
         remote_complete_upload_file.__name__,
@@ -331,7 +334,7 @@ async def is_completed_upload_file(
     # for completeness
     async_job_name_data = AsyncJobNameData(
         user_id=query_params.user_id,
-        product_name="osparc",  # TODO: fix this
+        product_name=_UNDEFINED_PRODUCT_NAME_FOR_WORKER_TASKS,  # NOTE: I would need to change the API here
     )
     task_status = await celery_client.get_task_status(
         task_context=async_job_name_data.model_dump(), task_uuid=TaskUUID(future_id)
