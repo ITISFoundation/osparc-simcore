@@ -22,10 +22,6 @@ from ._rest_schemas import ProjectPathParams, RequestContext
 _logger = logging.getLogger(__name__)
 
 
-#
-# projects groups COLLECTION -------------------------
-#
-
 routes = web.RouteTableDef()
 
 

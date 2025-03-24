@@ -36,11 +36,6 @@ routes = web.RouteTableDef()
 _logger = logging.getLogger(__name__)
 
 
-#
-# projects/*/custom-metadata
-#
-
-
 @routes.get(
     f"/{api_version_prefix}/projects/{{project_id}}/metadata",
     name="get_project_metadata",

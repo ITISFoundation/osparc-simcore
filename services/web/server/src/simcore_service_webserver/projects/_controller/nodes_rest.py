@@ -64,8 +64,7 @@ from ...security.decorators import permission_required
 from ...users.api import get_user_id_from_gid, get_user_role
 from ...utils_aiohttp import envelope_json_response
 from .. import _access_rights_service as access_rights_service
-from .. import _nodes_service as _nodes_service
-from .. import _projects_service, nodes_utils
+from .. import _nodes_service, _projects_service, nodes_utils
 from .._nodes_service import NodeScreenshot, get_node_screenshots
 from ..api import has_user_project_access_rights
 from ..exceptions import (
