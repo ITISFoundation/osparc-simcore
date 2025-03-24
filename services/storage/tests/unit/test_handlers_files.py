@@ -745,7 +745,7 @@ async def test_upload_of_single_presigned_link_lazily_update_database_on_get(
     get_file_meta_data: Callable[..., Awaitable[FileMetaDataGet]],
     s3_client: S3Client,
 ):
-    file_size = TypeAdapter(ByteSize).validate_python("500Mib")
+    file_size = TypeAdapter(ByteSize).validate_python("127Mib")
     file_name = faker.file_name()
     # create a file
     file = create_file_of_size(file_size, file_name)
