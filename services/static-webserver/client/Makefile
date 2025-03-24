@@ -88,15 +88,15 @@ serve: compile ## serves site compiled in image in 127.0.0.1:8080
 	docker run --rm -p 8080:8080  $(docker_image) $(qx_serve) --target=build
 
 
-# qx translate -------------------------- https://qooxdoo.org/documentation/v7.8/#/development/howto/internationalization?id=translation
+# qx translate --------------------------
 
 define qx_translate_extract =
 			qx compile --update-po-files
 endef
 
 .PHONY: translate-extract
-translate-extract: translate-extract # the .po files goes to source/translation
-	# qx compile -i18n
+translate-extract: translate-extract ## the .po files goes to source/translation https://qooxdoo.org/documentation/v7.8/#/development/howto/internationalization?id=translation
+	# qx compile --update-po-files
 	$(docker_compose) run $(if $(detached),--detach --name=$(detached),--rm) qooxdoo-kit $(qx_translate_extract)
 
 
