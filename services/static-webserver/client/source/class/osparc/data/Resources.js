@@ -553,7 +553,6 @@ qx.Class.define("osparc.data.Resources", {
        */
       "tasks": {
         useCache: false,
-        idField: "id",
         endpoints: {
           get: {
             method: "GET",

@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: simcore-service-webserver
   description: Main service with an interface (http-API & websockets) to the web front-end
-  version: 0.61.2
+  version: 0.61.4
 servers:
 - url: ''
   description: webserver
@@ -1180,22 +1180,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_MyProfileGet_'
-    put:
-      tags:
-      - users
-      summary: Replace My Profile
-      description: Use PATCH instead
-      operationId: replace_my_profile
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/MyProfilePatch'
-        required: true
-      responses:
-        '204':
-          description: Successful Response
-      deprecated: true
     patch:
       tags:
       - users
@@ -11001,10 +10985,13 @@ components:
           title: Id
           description: the user's id
         userName:
-          type: string
-          maxLength: 100
-          minLength: 1
+          anyOf:
+          - type: string
+            maxLength: 100
+            minLength: 1
+          - type: 'null'
           title: Username
+          description: None if private
         gid:
           anyOf:
           - type: integer
@@ -11019,19 +11006,19 @@ components:
             format: email
           - type: 'null'
           title: Login
-          description: the user's email, if privacy settings allows
+          description: the user's email or None if private
         first_name:
           anyOf:
           - type: string
           - type: 'null'
           title: First Name
-          description: If privacy settings allows
+          description: None if private
         last_name:
           anyOf:
           - type: string
           - type: 'null'
           title: Last Name
-          description: If privacy settings allows
+          description: None if private
         gravatar_id:
           anyOf:
           - type: string
@@ -11046,8 +11033,6 @@ components:
           description: If group is standard, these are these are the access rights
             of the user to it.None if primary group.
       type: object
-      required:
-      - userName
       title: GroupUserGet
       example:
         accessRights:
@@ -11733,6 +11718,9 @@ components:
         last_name: Crespo
     MyProfilePrivacyGet:
       properties:
+        hideUsername:
+          type: boolean
+          title: Hideusername
         hideFullname:
           type: boolean
           title: Hidefullname
@@ -11741,11 +11729,17 @@ components:
           title: Hideemail
       type: object
       required:
+      - hideUsername
       - hideFullname
       - hideEmail
       title: MyProfilePrivacyGet
     MyProfilePrivacyPatch:
       properties:
+        hideUsername:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Hideusername
         hideFullname:
           anyOf:
           - type: boolean
@@ -15579,9 +15573,11 @@ components:
           title: Groupid
           minimum: 0
         userName:
-          type: string
-          maxLength: 100
-          minLength: 1
+          anyOf:
+          - type: string
+            maxLength: 100
+            minLength: 1
+          - type: 'null'
           title: Username
         firstName:
           anyOf:
@@ -15603,7 +15599,6 @@ components:
       required:
       - userId
       - groupId
-      - userName
       title: UserGet
     UserNotification:
       properties:
