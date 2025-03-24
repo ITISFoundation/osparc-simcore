@@ -1,5 +1,3 @@
-"""Handlers for CRUD operations on /projects/{*}/tags/{*}"""
-
 import logging
 
 from aiohttp import web

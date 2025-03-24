@@ -1,5 +1,3 @@
-"""Handlers for CRUD operations on /projects/{*}/wallet"""
-
 import logging
 from decimal import Decimal
 from typing import Annotated

@@ -1,8 +1,3 @@
-"""Handlers for some CRUD operations for
-- /projects/{*}/inputs
-- /projects/{*}/outputs
-"""
-
 import logging
 from typing import Any, Literal
 

@@ -1,5 +1,3 @@
-"""handlers for project states"""
-
 import contextlib
 import json
 import logging

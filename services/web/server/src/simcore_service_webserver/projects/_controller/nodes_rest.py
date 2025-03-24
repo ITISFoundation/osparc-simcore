@@ -1,5 +1,3 @@
-"""Handlers for CRUD operations on /projects/{*}/nodes/{*}"""
-
 import asyncio
 import logging
 

@@ -1,5 +1,3 @@
-"""Handlers for CRUD operations on /projects/{*}/nodes/{*}/pricing-unit"""
-
 import logging
 
 from aiohttp import web

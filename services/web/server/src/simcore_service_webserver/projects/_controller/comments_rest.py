@@ -1,5 +1,3 @@
-"""Handlers for project comments operations"""
-
 import logging
 from typing import Any
 
