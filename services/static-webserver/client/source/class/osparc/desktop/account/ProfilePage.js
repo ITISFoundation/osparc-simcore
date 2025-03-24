@@ -94,6 +94,7 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
         };
         this.__userProfileRenderer.setIcons(icons);
       }
+      this.__updatePrivacyBtn.setEnabled(false);
     },
 
     __createProfileUser: function() {
@@ -272,19 +273,15 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
       privacyModelCtrl.addTarget(hideFullname, "value", "hideFullname", true);
       privacyModelCtrl.addTarget(hideEmail, "value", "hideEmail", true);
 
-      privacyModelCtrl.addListener("changeTarget", () => {
-        console.log("form changeModel");
-      });
-
-      const privacyBtn = new qx.ui.form.Button().set({
+      const updatePrivacyBtn = this.__updatePrivacyBtn = new qx.ui.form.Button().set({
         label: this.tr("Update Privacy"),
         appearance: "form-button",
         alignX: "right",
         allowGrowX: false,
         enabled: false,
       });
-      box.add(privacyBtn);
-      privacyBtn.addListener("execute", () => {
+      box.add(updatePrivacyBtn);
+      updatePrivacyBtn.addListener("execute", () => {
         if (!osparc.data.Permissions.getInstance().canDo("user.user.update", true)) {
           this.__resetPrivacyData();
           return;
@@ -345,15 +342,21 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
         hideFullname,
         hideEmail,
       ]
-      const valuesChanged = () => {
+      const valueChanged = () => {
+        const anyChanged =
+          hideUsername.getValue() !== this.__userPrivacyData["hideUsername"] ||
+          hideFullname.getValue() !== this.__userPrivacyData["hideFullname"] ||
+          hideEmail.getValue() !== this.__userPrivacyData["hideEmail"];
+        updatePrivacyBtn.setEnabled(anyChanged);
+
         if (privacyFields.every(privacyField => privacyField.getValue())) {
           optOutMessage.show();
         } else {
           optOutMessage.exclude();
         }
       };
-      valuesChanged();
-      privacyFields.forEach(privacyField => privacyField.addListener("changeValue", () => valuesChanged()));
+      valueChanged();
+      privacyFields.forEach(privacyField => privacyField.addListener("changeValue", () => valueChanged()));
 
       return box;
     },
