@@ -79,11 +79,11 @@ def postgres_db(postgres_db: sa.engine.Engine):
 def mocked_twilio_service(mocker: MockerFixture) -> dict[str, Mock]:
     return {
         "send_sms_code_for_registration": mocker.patch(
-            "simcore_service_webserver.login._registration_rest._2fa_service.send_sms_code",
+            "simcore_service_webserver.login._controller.registration_rest._2fa_service.send_sms_code",
             autospec=True,
         ),
         "send_sms_code_for_login": mocker.patch(
-            "simcore_service_webserver.login._auth_rest._2fa_service.send_sms_code",
+            "simcore_service_webserver.login._controller.auth_rest._2fa_service.send_sms_code",
             autospec=True,
         ),
     }

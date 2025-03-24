@@ -16,21 +16,21 @@ from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.request_keys import RQT_USERID_KEY
 from servicelib.utils import fire_and_forget_task
 
-from .._meta import API_VTAG
-from ..constants import RQ_PRODUCT_KEY
-from ..products import products_web
-from ..products.models import Product
-from ..security import api as security_service
-from ..security.decorators import permission_required
-from ..session.api import get_session
-from ..users.api import get_user_credentials, set_user_as_deleted
-from ..utils import MINUTE
-from ..utils_rate_limiting import global_rate_limit_route
-from . import _preregistration_service
-from ._constants import CAPTCHA_SESSION_KEY, MSG_LOGGED_OUT, MSG_WRONG_CAPTCHA__INVALID
-from ._login_service import flash_response, notify_user_logout
-from .decorators import login_required
-from .settings import LoginSettingsForProduct, get_plugin_settings
+from ..._meta import API_VTAG
+from ...constants import RQ_PRODUCT_KEY
+from ...products import products_web
+from ...products.models import Product
+from ...security import api as security_service
+from ...security.decorators import permission_required
+from ...session.api import get_session
+from ...users.api import get_user_credentials, set_user_as_deleted
+from ...utils import MINUTE
+from ...utils_rate_limiting import global_rate_limit_route
+from .. import _preregistration_service
+from .._constants import CAPTCHA_SESSION_KEY, MSG_LOGGED_OUT, MSG_WRONG_CAPTCHA__INVALID
+from .._login_service import flash_response, notify_user_logout
+from ..decorators import login_required
+from ..settings import LoginSettingsForProduct, get_plugin_settings
 
 _logger = logging.getLogger(__name__)
 

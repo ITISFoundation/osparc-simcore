@@ -31,7 +31,7 @@ async def test_check_registration_invitation_when_not_required(
     mocker: MockerFixture,
 ):
     mocker.patch(
-        "simcore_service_webserver.login._registration_rest.get_plugin_settings",
+        "simcore_service_webserver.login._controller.registration_rest.get_plugin_settings",
         autospec=True,
         return_value=LoginSettingsForProduct(
             LOGIN_REGISTRATION_CONFIRMATION_REQUIRED=False,
@@ -61,7 +61,7 @@ async def test_check_registration_invitations_with_old_code(
     mocker: MockerFixture,
 ):
     mocker.patch(
-        "simcore_service_webserver.login._registration_rest.get_plugin_settings",
+        "simcore_service_webserver.login._controller.registration_rest.get_plugin_settings",
         autospec=True,
         return_value=LoginSettingsForProduct.create_from_envs(
             LOGIN_REGISTRATION_INVITATION_REQUIRED=True,  # <--
@@ -87,7 +87,7 @@ async def test_check_registration_invitation_and_get_email(
 ):
 
     mocker.patch(
-        "simcore_service_webserver.login._registration_rest.get_plugin_settings",
+        "simcore_service_webserver.login._controller.registration_rest.get_plugin_settings",
         autospec=True,
         return_value=LoginSettingsForProduct.create_from_envs(
             LOGIN_REGISTRATION_INVITATION_REQUIRED=True,  # <--
@@ -122,7 +122,7 @@ async def test_registration_to_different_product(
     assert client.app
 
     mocker.patch(
-        "simcore_service_webserver.login._registration_rest.get_plugin_settings",
+        "simcore_service_webserver.login._controller.registration_rest.get_plugin_settings",
         autospec=True,
         return_value=LoginSettingsForProduct(
             LOGIN_REGISTRATION_CONFIRMATION_REQUIRED=False,
