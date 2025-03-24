@@ -94,16 +94,15 @@ qx.Class.define("osparc.pricing.ServicesList", {
         }
       });
 
+      const serviceModels = new qx.data.Array();
       // ensure that even if one request fails, the rest continue executing
       const results = await Promise.allSettled(servicePromises);
-      const serviceModels = new qx.data.Array();
       results.forEach(result => {
         if (result.status === "fulfilled" && result.value) {
           const serviceMetadata = result.value;
           serviceModels.push(new osparc.data.model.Service(serviceMetadata));
         }
       });
-
       const servicesList = this.getChildControl("services-list");
       servicesList.setModel(serviceModels);
 
