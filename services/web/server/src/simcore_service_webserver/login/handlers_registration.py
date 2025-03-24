@@ -42,12 +42,12 @@ from ._constants import (
     MSG_UNAUTHORIZED_REGISTER_PHONE,
     MSG_WEAK_PASSWORD,
 )
-from ._models import InputSchema, check_confirm_password_match
-from ._registration import (
+from ._invitations_service import (
     check_and_consume_invitation,
     check_other_registrations,
     extract_email_from_invitation,
 )
+from ._models import InputSchema, check_confirm_password_match
 from .settings import (
     LoginOptions,
     LoginSettingsForProduct,

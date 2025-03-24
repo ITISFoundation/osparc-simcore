@@ -6,7 +6,7 @@ from servicelib.utils_secrets import generate_password
 from simcore_postgres_database.models.confirmations import ConfirmationAction
 from yarl import URL
 
-from ._registration import InvitationData, get_invitation_url
+from ._invitations_service import InvitationData, get_invitation_url
 
 
 def invitations(

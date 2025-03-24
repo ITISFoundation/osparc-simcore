@@ -39,8 +39,8 @@ from ._constants import (
     MSG_PASSWORD_CHANGED,
     MSG_UNAUTHORIZED_PHONE_CONFIRMATION,
 )
+from ._invitations_service import InvitationData
 from ._models import InputSchema, check_confirm_password_match
-from ._registration import InvitationData
 from .settings import (
     LoginOptions,
     LoginSettingsForProduct,
