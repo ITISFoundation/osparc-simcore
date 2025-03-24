@@ -29,8 +29,10 @@ from simcore_service_webserver._resources import webserver_resources
 from simcore_service_webserver.email._core import _remove_comments, _render_template
 from simcore_service_webserver.email._handlers import EmailTestFailed, EmailTestPassed
 from simcore_service_webserver.email.plugin import setup_email
-from simcore_service_webserver.login._registration_api import _json_encoder_and_dumps
-from simcore_service_webserver.login._registration_handlers import _get_ipinfo
+from simcore_service_webserver.login._registration_rest import _get_ipinfo
+from simcore_service_webserver.login._registration_service import (
+    _json_encoder_and_dumps,
+)
 
 
 @pytest.fixture
