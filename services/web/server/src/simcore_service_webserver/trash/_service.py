@@ -105,14 +105,13 @@ async def safe_empty_trash(
     *,
     product_name: ProductName,
     user_id: UserID,
-    notify_explicit_projects_deleted: asyncio.Event | None = None
+    on_explicitly_trashed_projects_deleted: asyncio.Event | None = None
 ):
     await _empty_explicitly_trashed_projects(app, product_name, user_id)
+    if on_explicitly_trashed_projects_deleted:
+        on_explicitly_trashed_projects_deleted.set()
 
-    # Notify the caller if an event is provided
-    if notify_explicit_projects_deleted:
-        notify_explicit_projects_deleted.set()
-
+    # This can be heavy!
     await _empty_explicitly_trashed_folders_and_content(app, product_name, user_id)
 
 
