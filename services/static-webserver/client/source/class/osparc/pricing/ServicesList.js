@@ -89,6 +89,7 @@ qx.Class.define("osparc.pricing.ServicesList", {
         .catch(err => console.error(err))
         .finally(() => {
           const sList = [];
+          console.log("services", services);
           services.forEach(service => {
             const key = service["serviceKey"];
             const version = service["serviceVersion"];
