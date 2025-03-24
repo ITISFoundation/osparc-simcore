@@ -78,6 +78,7 @@ qx.Class.define("osparc.pricing.ServicesList", {
     },
 
     __populateList: async function(services) {
+      const failedServices = [];
       const servicePromises = services.map(async service => {
         const key = service["serviceKey"];
         const version = service["serviceVersion"];
@@ -85,6 +86,10 @@ qx.Class.define("osparc.pricing.ServicesList", {
           return await osparc.store.Services.getService(key, version);
         } catch (err) {
           console.error(err);
+          failedServices.push({
+            key: service["serviceKey"],
+            version: service["serviceVersion"],
+          });
           return null; // Return null to maintain array structure
         }
       });
@@ -101,6 +106,15 @@ qx.Class.define("osparc.pricing.ServicesList", {
 
       const servicesList = this.getChildControl("services-list");
       servicesList.setModel(serviceModels);
+
+
+      if (failedServices.length) {
+        let msg = "Could not retrieve data from some services:<br>";
+        failedServices.forEach(failedService => {
+          msg+= `- ${failedService.key}:${failedService.version}<br>`;
+        });
+        osparc.FlashMessenger.logAs(msg, "WARNING");
+      }
     },
 
     __openAddServiceToPlan: function() {
