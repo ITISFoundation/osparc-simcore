@@ -127,7 +127,7 @@ def test_mapping_update_models_from_rest_to_db():
         {
             "first_name": "foo",
             "userName": "foo1234",
-            "privacy": {"hideFullname": False},
+            "privacy": {"hideFullname": False, "hideUsername": True},
         }
     )
 
@@ -139,6 +139,7 @@ def test_mapping_update_models_from_rest_to_db():
         "first_name": "foo",
         "name": "foo1234",
         "privacy_hide_fullname": False,
+        "privacy_hide_username": False,
     }
 
 
