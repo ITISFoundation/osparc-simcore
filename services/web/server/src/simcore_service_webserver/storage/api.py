@@ -103,12 +103,13 @@ async def get_project_total_size_simcore_s3(
 
 async def copy_data_folders_from_project(
     app: web.Application,
+    *,
     source_project: ProjectDict,
     destination_project: ProjectDict,
     nodes_map: NodesMap,
     user_id: UserID,
+    product_name: str,
 ) -> AsyncGenerator[AsyncJobComposedResult, None]:
-    product_name = "osparc"  # TODO fix it
     with log_context(_logger, logging.DEBUG, msg=f"copy {nodes_map=}"):
         rabbitmq_client = get_rabbitmq_rpc_client(app)
         async for job_composed_result in submit_and_wait(
