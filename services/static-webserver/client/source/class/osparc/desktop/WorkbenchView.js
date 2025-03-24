@@ -442,7 +442,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         appearance: "form-button-outlined",
         label: this.tr("App Mode"),
         toolTipText: this.tr("Start App Mode"),
-        icon: "@FontAwesome5Solid/play/14",
+        icon: osparc.dashboard.CardBase.MODE_APP,
         marginRight: 10,
         marginTop: 7,
         ...osparc.navigation.NavigationBar.BUTTON_OPTIONS
@@ -837,7 +837,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
       const startAppBtn = this.__startAppButton = new qx.ui.form.Button().set({
         label: this.tr("Start"),
-        icon: "@FontAwesome5Solid/play/14",
+        icon: osparc.dashboard.CardBase.MODE_APP,
         toolTipText: this.tr("Start App Mode"),
         height: buttonsHeight
       });
