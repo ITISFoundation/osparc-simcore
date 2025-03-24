@@ -1,4 +1,36 @@
 """
+This module provides functionality to convert JSON data into an HTML table format.
+It is a snapshot of the `json2html` library to avoid compatibility issues with
+specific versions of `setuptools`.
+
+Classes:
+- Json2Html: A class that provides methods to convert JSON data into HTML tables
+    or lists, with options for customization.
+
+Functions:
+----------
+- Json2Html.convert: Converts JSON data into an HTML table or list format.
+- Json2Html.column_headers_from_list_of_dicts: Determines column headers for a list of dictionaries.
+- Json2Html.convert_json_node: Dispatches JSON input based on its type and processes it into HTML.
+- Json2Html.convert_list: Converts a JSON list into an HTML table or list.
+- Json2Html.convert_object: Converts a JSON object into an HTML table.
+
+Attributes:
+-----------
+- json2html: An instance of the Json2Html class for direct use.
+
+Notes:
+------
+- This module supports Python 2.7+ and Python 3.x.
+- It uses `OrderedDict` to preserve the order of keys in JSON objects.
+- The `html_escape` function is used to escape HTML characters in text.
+
+License:
+MIT License
+
+Source:
+-------
+Snapshot of https://github.com/softvar/json2html/blob/0a223c7b3e5dce286811fb12bbab681e7212ebfe/json2html/jsonconv.py
 JSON 2 HTML Converter
 =====================
 
@@ -15,12 +47,13 @@ LICENSE: MIT
 --------
 """
 
-# NOTE:
+# pylint: skip-file
 #
-# Snapshot of  https://github.com/softvar/json2html/blob/0a223c7b3e5dce286811fb12bbab681e7212ebfe/json2html/jsonconv.py
+# NOTE: Snapshot of https://github.com/softvar/json2html/blob/0a223c7b3e5dce286811fb12bbab681e7212ebfe/json2html/jsonconv.py
 # to avoid failure to install this module with `setuptools 78.0.1` due to
 # deprecated feature that this library still uses
 #
+
 
 import sys
 
