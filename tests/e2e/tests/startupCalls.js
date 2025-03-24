@@ -26,11 +26,11 @@ module.exports = {
           const url = response.url();
           if (url.endsWith('/me')) {
             responses.me = response.json();
-          } else if (url.includes('/tags')) {
+          } else if (url.endsWith('/tags')) {
             responses.tags = response.json();
-          } else if (url.includes('/tasks')) {
+          } else if (url.endsWith('/tasks')) {
             responses.tasks = response.json();
-          } else if (url.includes('/ui')) {
+          } else if (url.endsWith('/ui')) {
             responses.uiConfig = response.json();
           } else if (url.includes('projects?type=user')) {
             responses.studies = response.json();
