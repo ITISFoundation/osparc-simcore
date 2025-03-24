@@ -15,8 +15,8 @@ from models_library.generics import Envelope
 from models_library.rest_error import EnvelopedError, Log
 from pydantic import BaseModel, Field, confloat
 from simcore_service_webserver._meta import API_VTAG
-from simcore_service_webserver.login._2fa_handlers import Resend2faBody
-from simcore_service_webserver.login._auth_handlers import (
+from simcore_service_webserver.login._2fa_rest import Resend2faBody
+from simcore_service_webserver.login._auth_rest import (
     LoginBody,
     LoginNextPage,
     LoginTwoFactorAuthBody,
