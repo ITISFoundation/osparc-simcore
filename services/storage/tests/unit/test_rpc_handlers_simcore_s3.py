@@ -421,12 +421,6 @@ async def _create_and_delete_folders_from_project(
 
 
 @pytest.fixture
-def set_log_levels_for_noisy_libraries() -> None:
-    # Reduce the log level for 'werkzeug'
-    logging.getLogger("werkzeug").setLevel(logging.WARNING)
-
-
-@pytest.fixture
 def mock_datcore_download(mocker, client):
     # Use to mock downloading from DATCore
     async def _fake_download_to_file_or_raise(session, url, dest_path):
