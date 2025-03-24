@@ -17,7 +17,7 @@ from ...simcore_s3_dsm import SimcoreS3DataManager
 _logger = logging.getLogger(__name__)
 
 
-def _task_progress_cb(task: Task, task_id: str, report: ProgressReport) -> None:
+def _task_progress_cb(task: Task, task_id: TaskId, report: ProgressReport) -> None:
     _logger.error("task_progress_cb %s %s", task.name, task_id)
     worker = get_celery_worker(task.app)
     assert task.name  # nosec
