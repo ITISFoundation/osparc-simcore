@@ -2,7 +2,6 @@ import logging
 
 from aiohttp import MultipartReader, hdrs, web
 from common_library.json_serialization import json_dumps
-from json2html import json2html  # type: ignore[import-untyped]
 from servicelib.aiohttp import status
 from servicelib.mimetype_constants import (
     MIMETYPE_APPLICATION_JSON,
@@ -15,6 +14,7 @@ from ..login.decorators import login_required
 from ..login.storage import AsyncpgStorage, get_plugin_storage
 from ..login.utils_email import AttachmentTuple, send_email_from_template, themed
 from ..products import products_web
+from ._utils import json2html
 
 _logger = logging.getLogger(__name__)
 
