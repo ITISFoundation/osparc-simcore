@@ -31,6 +31,9 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
 
     this._setLayout(new qx.ui.layout.VBox(15));
 
+    this.__userProfileData = {};
+    this.__userPrivacyData = {};
+
     this.__fetchProfile();
 
     this._add(this.__createProfileUser());
