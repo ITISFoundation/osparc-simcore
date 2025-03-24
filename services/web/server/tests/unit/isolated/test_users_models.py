@@ -140,6 +140,7 @@ def test_mapping_update_models_from_rest_to_db():
         "name": "foo1234",
         "privacy_hide_fullname": False,
         "privacy_hide_username": False,
+        "privacy_hide_username": True,
     }
 
 
