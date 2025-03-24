@@ -32,7 +32,7 @@ from ..session.access_policies import (
 from ..utils import MINUTE
 from ..utils_aiohttp import NextPage, envelope_json_response
 from ..utils_rate_limiting import global_rate_limit_route
-from . import _2fa_service, _auth_api, _confirmation_service
+from . import _2fa_service, _auth_service, _confirmation_service
 from ._constants import (
     CODE_2FA_SMS_CODE_REQUIRED,
     MAX_2FA_CODE_RESEND,
@@ -210,15 +210,15 @@ async def register(request: web.Request):
             expires_at = datetime.now(UTC) + timedelta(invitation.trial_account_days)
 
     #  get authorized user or create new
-    user = await _auth_api.get_user_by_email(request.app, email=registration.email)
+    user = await _auth_service.get_user_by_email(request.app, email=registration.email)
     if user:
-        await _auth_api.check_authorized_user_credentials_or_raise(
+        await _auth_service.check_authorized_user_credentials_or_raise(
             user,
             password=registration.password.get_secret_value(),
             product=product,
         )
     else:
-        user = await _auth_api.create_user(
+        user = await _auth_service.create_user(
             request.app,
             email=registration.email,
             password=registration.password.get_secret_value(),

@@ -22,12 +22,7 @@ from ..session.access_policies import (
 )
 from ..users import preferences_api as user_preferences_api
 from ..utils_aiohttp import NextPage
-from . import _2fa_service
-from ._auth_api import (
-    check_authorized_user_credentials_or_raise,
-    check_authorized_user_in_product_or_raise,
-    get_user_by_email,
-)
+from . import _2fa_service, _auth_service
 from ._constants import (
     CODE_2FA_EMAIL_CODE_REQUIRED,
     CODE_2FA_SMS_CODE_REQUIRED,
@@ -96,12 +91,12 @@ async def login(request: web.Request):
     login_data = await parse_request_body_as(LoginBody, request)
 
     # Authenticate user and verify access to the product
-    user = await check_authorized_user_credentials_or_raise(
-        user=await get_user_by_email(request.app, email=login_data.email),
+    user = await _auth_service.check_authorized_user_credentials_or_raise(
+        user=await _auth_service.get_user_by_email(request.app, email=login_data.email),
         password=login_data.password.get_secret_value(),
         product=product,
     )
-    await check_authorized_user_in_product_or_raise(
+    await _auth_service.check_authorized_user_in_product_or_raise(
         request.app, user=user, product=product
     )
 
@@ -254,7 +249,7 @@ async def login_2fa(request: web.Request):
             reason=MSG_WRONG_2FA_CODE__INVALID, content_type=MIMETYPE_APPLICATION_JSON
         )
 
-    user = await db.get_user({"email": login_2fa_.email})
+    user = await _auth_service.get_user_by_email(request.app, email=login_2fa_.email)
     assert user is not None  # nosec
 
     # NOTE: a priviledge user should not have called this entrypoint
