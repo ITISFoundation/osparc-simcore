@@ -9,6 +9,7 @@ from common_library.error_codes import ErrorCodeStr
 from common_library.json_serialization import json_dumps
 from models_library.basic_types import IDStr
 from models_library.rest_error import ErrorGet, ErrorItemType
+from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
 from ..aiohttp.status import HTTP_200_OK
 from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
@@ -85,11 +86,15 @@ def create_http_error(
         )
 
     assert not http_error_cls.empty_body  # nosec
-    payload = wrap_as_envelope(error=error)
+    payload = wrap_as_envelope(
+        error=error.model_dump(mode="json", **RESPONSE_MODEL_POLICY)
+    )
 
     return http_error_cls(
         reason=reason,
-        text=json_dumps(payload),
+        text=json_dumps(
+            payload,
+        ),
         content_type=MIMETYPE_APPLICATION_JSON,
     )
 
