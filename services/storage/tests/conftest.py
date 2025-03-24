@@ -44,7 +44,7 @@ from models_library.projects_nodes_io import LocationID, SimcoreS3FileID, Storag
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import ByteSize, TypeAdapter
-from pytest_mock import MockerFixture
+from pytest_mock import MockerFixture, MockFixture
 from pytest_simcore.helpers.fastapi import url_from_operation_id
 from pytest_simcore.helpers.httpx_assert_checks import assert_status
 from pytest_simcore.helpers.logging_tools import log_context

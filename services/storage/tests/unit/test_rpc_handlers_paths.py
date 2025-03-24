@@ -14,9 +14,6 @@ from pathlib import Path
 from typing import Any, TypeAlias
 
 import pytest
-from celery import Celery
-from celery.contrib.testing.worker import TestWorkController, start_worker
-from celery.signals import worker_init, worker_shutdown
 from faker import Faker
 from fastapi import FastAPI
 from models_library.api_schemas_rpc_async_jobs.async_jobs import (
