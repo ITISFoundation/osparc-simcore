@@ -20,7 +20,7 @@ from .._meta import API_VTAG
 from ..constants import RQ_PRODUCT_KEY
 from ..products import products_web
 from ..products.models import Product
-from ..security.api import check_password, forget_identity
+from ..security import api as security_service
 from ..security.decorators import permission_required
 from ..session.api import get_session
 from ..users.api import get_user_credentials, set_user_as_deleted
@@ -105,7 +105,7 @@ async def unregister_account(request: web.Request):
 
     # checks before deleting
     credentials = await get_user_credentials(request.app, user_id=req_ctx.user_id)
-    if body.email != credentials.email.lower() or not check_password(
+    if body.email != credentials.email.lower() or not security_service.check_password(
         body.password.get_secret_value(), credentials.password_hash
     ):
         raise web.HTTPConflict(
@@ -127,7 +127,7 @@ async def unregister_account(request: web.Request):
             request.app, user_id=req_ctx.user_id, client_session_id=None
         )
         response = flash_response(MSG_LOGGED_OUT, "INFO")
-        await forget_identity(request, response)
+        await security_service.forget_identity(request, response)
 
         # send email in the background
         fire_and_forget_task(
