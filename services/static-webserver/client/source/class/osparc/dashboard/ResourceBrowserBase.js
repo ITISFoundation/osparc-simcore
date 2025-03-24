@@ -177,6 +177,10 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       return (card instanceof osparc.dashboard.GridButtonItem || card instanceof osparc.dashboard.ListButtonItem);
     },
 
+    isCardTaskPlaceholder: function(card) {
+      return (card instanceof osparc.dashboard.GridButtonTaskPlaceholder || card instanceof osparc.dashboard.ListButtonTaskPlaceholder);
+    },
+
     createToolbarRadioButton: function(label, icon, toolTipText, pos) {
       const rButton = new qx.ui.toolbar.RadioButton().set({
         label,
@@ -474,8 +478,26 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       }
     },
 
-    _taskDataReceived: function(taskData) {
-      throw new Error("Abstract method called!");
+    _addTaskCard: function(task, cardTitle, cardIcon) {
+      if (task) {
+        const taskPlaceholders = this._resourcesContainer.getCards().filter(card => osparc.dashboard.ResourceBrowserBase.isCardTaskPlaceholder(card));
+        if (taskPlaceholders.find(taskPlaceholder => taskPlaceholder.getTask() === task)) {
+          return null;
+        }
+      }
+
+      const isGrid = this._resourcesContainer.getMode() === "grid";
+      const taskCard = isGrid ? new osparc.dashboard.GridButtonTaskPlaceholder() : new osparc.dashboard.ListButtonTaskPlaceholder();
+      taskCard.setTask(task);
+      taskCard.buildLayout(
+        cardTitle,
+        cardIcon + (isGrid ? "/60" : "/24"),
+        null,
+        true
+      );
+      taskCard.subscribeToFilterGroup("searchBarFilter");
+      this._resourcesContainer.addNonResourceCard(taskCard);
+      return taskCard;
     },
 
     _populateCardMenu: function(card) {
