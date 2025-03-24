@@ -9,6 +9,7 @@ x-common-environment: &common-environment
   # Enforces app to boot debug mode (see docker/boot.sh). ONLY allowed in devel-mode!
   SC_BOOT_MODE : debug
 
+
 services:
   api-server:
     environment:
@@ -18,6 +19,7 @@ services:
     volumes:
       - ./api-server:/devel/services/api-server
       - ../packages:/devel/packages
+      - ${HOST_UV_CACHE_DIR}:/home/scu/.cache/uv
 
   autoscaling:
     environment:
@@ -27,6 +29,7 @@ services:
     volumes:
       - ./autoscaling:/devel/services/autoscaling
       - ../packages:/devel/packages
+      - ${HOST_UV_CACHE_DIR}:/home/scu/.cache/uv
 
   invitations:
     environment:
@@ -35,6 +38,7 @@ services:
     volumes:
       - ./invitations:/devel/services/invitations
       - ../packages:/devel/packages
+      - ${HOST_UV_CACHE_DIR}:/home/scu/.cache/uv
 
   payments:
     environment:
@@ -43,6 +47,7 @@ services:
     volumes:
       - ./payments:/devel/services/payments
       - ../packages:/devel/packages
+      - ${HOST_UV_CACHE_DIR}:/home/scu/.cache/uv
 
   dynamic-schdlr:
     environment:
@@ -52,6 +57,7 @@ services:
     volumes:
       - ./dynamic-scheduler:/devel/services/dynamic-scheduler
       - ../packages:/devel/packages
+      - ${HOST_UV_CACHE_DIR}:/home/scu/.cache/uv
     deploy:
       replicas: 1
 
@@ -64,6 +70,7 @@ services:
     volumes:
       - ./catalog:/devel/services/catalog
       - ../packages:/devel/packages
+      - ${HOST_UV_CACHE_DIR}:/home/scu/.cache/uv
 
   clusters-keeper:
     environment:
@@ -72,6 +79,7 @@ services:
     volumes:
       - ./clusters-keeper:/devel/services/clusters-keeper
       - ../packages:/devel/packages
+      - ${HOST_UV_CACHE_DIR}:/home/scu/.cache/uv
 
   datcore-adapter:
     environment:
@@ -80,6 +88,7 @@ services:
     volumes:
       - ./datcore-adapter:/devel/services/datcore-adapter
       - ../packages:/devel/packages
+      - ${HOST_UV_CACHE_DIR}:/home/scu/.cache/uv
 
   director:
     environment:
@@ -88,7 +97,7 @@ services:
     volumes:
       - ./director:/devel/services/director
       - ../packages:/devel/packages
-      - ../api:/devel/services/api
+      - ${HOST_UV_CACHE_DIR}:/home/scu/.cache/uv
 
   director-v2:
     environment:
@@ -100,6 +109,7 @@ services:
     volumes:
       - ./director-v2:/devel/services/director-v2
       - ../packages:/devel/packages
+      - ${HOST_UV_CACHE_DIR}:/home/scu/.cache/uv
 
   efs-guardian:
     environment:
@@ -108,6 +118,7 @@ services:
     volumes:
       - ./efs-guardian:/devel/services/efs-guardian
       - ../packages:/devel/packages
+      - ${HOST_UV_CACHE_DIR}:/home/scu/.cache/uv
     deploy:
       replicas: 0
 
@@ -122,6 +133,7 @@ services:
     volumes: &webserver_volumes_devel
       - ./web/server:/devel/services/web/server
       - ../packages:/devel/packages
+      - ${HOST_UV_CACHE_DIR}:/home/scu/.cache/uv
     environment: &webserver_environment_devel
       <<: *common-environment
       DEBUG: 1 # NOTE: gunicorn expects an int not a boolean
@@ -152,6 +164,7 @@ services:
       &dask-sidecar_volumes_devel
       - ./dask-sidecar:/devel/services/dask-sidecar
       - ../packages:/devel/packages
+      - ${HOST_UV_CACHE_DIR}:/home/scu/.cache/uv
       - ${ETC_HOSTNAME:-/etc/hostname}:/home/scu/hostname:ro
 
     environment:
@@ -180,11 +193,13 @@ services:
     volumes:
       - ./resource-usage-tracker:/devel/services/resource-usage-tracker
       - ../packages:/devel/packages
+      - ${HOST_UV_CACHE_DIR}:/home/scu/.cache/uv
 
   storage:
     volumes:
       - ./storage:/devel/services/storage
       - ../packages:/devel/packages
+      - ${HOST_UV_CACHE_DIR}:/home/scu/.cache/uv
     environment:
       <<: *common-environment
       STORAGE_PROFILING : ${STORAGE_PROFILING}
@@ -194,6 +209,7 @@ services:
     volumes:
       - ./storage:/devel/services/storage
       - ../packages:/devel/packages
+      - ${HOST_UV_CACHE_DIR}:/home/scu/.cache/uv
     environment:
       <<: *common-environment
       STORAGE_PROFILING : ${STORAGE_PROFILING}
@@ -206,3 +222,4 @@ services:
     volumes:
       - ./agent:/devel/services/agent
       - ../packages:/devel/packages
+      - ${HOST_UV_CACHE_DIR}:/home/scu/.cache/uv

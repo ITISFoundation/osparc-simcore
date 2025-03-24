@@ -2,9 +2,12 @@ import httpx
 from fastapi import FastAPI
 
 
-def setup_client_session(app: FastAPI) -> None:
+def setup_client_session(app: FastAPI, *, max_keepalive_connections: int = 20) -> None:
     async def on_startup() -> None:
-        session = httpx.AsyncClient(transport=httpx.AsyncHTTPTransport(http2=True))
+        session = httpx.AsyncClient(
+            transport=httpx.AsyncHTTPTransport(http2=True),
+            limits=httpx.Limits(max_keepalive_connections=max_keepalive_connections),
+        )
         app.state.aiohttp_client_session = session
 
     async def on_shutdown() -> None:

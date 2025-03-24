@@ -1,7 +1,7 @@
-""" Core functionality and tools for user's registration
+"""Core functionality and tools for user's registration
 
-    - registration code
-    - invitation code
+- registration code
+- invitation code
 """
 
 import logging
@@ -214,9 +214,7 @@ def _invitations_request_context(invitation_code: str) -> Iterator[URL]:
 
     except (ValidationError, InvalidInvitationError) as err:
         error_code = create_error_code(err)
-        user_error_msg = (
-            f"Invalid invitation. {MSG_INVITATIONS_CONTACT_SUFFIX} [{error_code}]"
-        )
+        user_error_msg = f"Invalid invitation. {MSG_INVITATIONS_CONTACT_SUFFIX}"
 
         _logger.exception(
             **create_troubleshotting_log_kwargs(
@@ -233,7 +231,7 @@ def _invitations_request_context(invitation_code: str) -> Iterator[URL]:
 
     except InvitationsServiceUnavailableError as err:
         error_code = create_error_code(err)
-        user_error_msg = f"Unable to process your invitation since the invitations service is currently unavailable [{error_code}]"
+        user_error_msg = "Unable to process your invitation since the invitations service is currently unavailable"
 
         _logger.exception(
             **create_troubleshotting_log_kwargs(

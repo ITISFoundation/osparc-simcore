@@ -75,6 +75,8 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
     },
 
     __reloadTemplates: function() {
+      this.__tasksToCards();
+
       osparc.data.Resources.getInstance().getAllPages("templates")
         .then(templates => this.__setResourcesToList(templates))
         .catch(err => {
@@ -349,7 +351,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
         if (msg) {
           osparc.FlashMessenger.logAs(msg, msgLevel);
         }
-        taskUI.stop();
+        osparc.task.TasksContainer.getInstance().removeTaskUI(taskUI);
         this._resourcesContainer.removeNonResourceCard(toTemplateCard);
       };
 
@@ -380,43 +382,26 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       });
     },
 
-    _taskDataReceived: function(taskData) {
-      // a bit hacky
-      if (taskData["task_id"].includes("from_study") && taskData["task_id"].includes("as_template")) {
-        const interval = 1000;
-        const pollTasks = osparc.data.PollTasks.getInstance();
-        const task = pollTasks.addTask(taskData, interval);
-        if (task === null) {
-          return;
-        }
-        // ask backend for studyData?
+    __tasksToCards: function() {
+      const tasks = osparc.store.PollTasks.getInstance().getPublishTemplateTasks();
+      tasks.forEach(task => {
         const studyName = "";
         this.taskToTemplateReceived(task, studyName);
-      }
+      });
     },
 
     taskToTemplateReceived: function(task, studyName) {
       const toTemplateTaskUI = new osparc.task.ToTemplate(studyName);
       toTemplateTaskUI.setTask(task);
-      toTemplateTaskUI.start();
-      const toTemplateCard = this.__createToTemplateCard(studyName);
-      toTemplateCard.setTask(task);
-      this.__attachToTemplateEventHandler(task, toTemplateTaskUI, toTemplateCard);
-    },
 
-    __createToTemplateCard: function(studyName) {
-      const isGrid = this._resourcesContainer.getMode() === "grid";
-      const toTemplateCard = isGrid ? new osparc.dashboard.GridButtonPlaceholder() : new osparc.dashboard.ListButtonPlaceholder();
-      toTemplateCard.buildLayout(
-        this.tr("Publishing ") + studyName,
-        osparc.task.ToTemplate.ICON + (isGrid ? "60" : "24"),
-        null,
-        true
-      );
-      toTemplateCard.subscribeToFilterGroup("searchBarFilter");
-      this._resourcesContainer.addNonResourceCard(toTemplateCard);
-      return toTemplateCard;
-    }
+      osparc.task.TasksContainer.getInstance().addTaskUI(toTemplateTaskUI);
+
+      const cardTitle = this.tr("Publishing ") + studyName;
+      const toTemplateCard = this._addTaskCard(task, cardTitle, osparc.task.ToTemplate.ICON);
+      if (toTemplateCard) {
+        this.__attachToTemplateEventHandler(task, toTemplateTaskUI, toTemplateCard);
+      }
+    },
     // TASKS //
   }
 });

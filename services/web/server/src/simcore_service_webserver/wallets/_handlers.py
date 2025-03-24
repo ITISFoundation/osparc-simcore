@@ -97,7 +97,7 @@ def handle_wallets_exceptions(handler: Handler):
         except BillingDetailsNotFoundError as exc:
 
             error_code = create_error_code(exc)
-            user_error_msg = f"{MSG_BILLING_DETAILS_NOT_DEFINED_ERROR} [{error_code}]"
+            user_error_msg = MSG_BILLING_DETAILS_NOT_DEFINED_ERROR
 
             _logger.exception(
                 **create_troubleshotting_log_kwargs(
@@ -155,10 +155,10 @@ async def create_wallet(request: web.Request):
 async def list_wallets(request: web.Request):
     req_ctx = WalletsRequestContext.model_validate(request)
 
-    wallets: list[
-        WalletGetWithAvailableCredits
-    ] = await _api.list_wallets_with_available_credits_for_user(
-        app=request.app, user_id=req_ctx.user_id, product_name=req_ctx.product_name
+    wallets: list[WalletGetWithAvailableCredits] = (
+        await _api.list_wallets_with_available_credits_for_user(
+            app=request.app, user_id=req_ctx.user_id, product_name=req_ctx.product_name
+        )
     )
 
     return envelope_json_response(wallets)

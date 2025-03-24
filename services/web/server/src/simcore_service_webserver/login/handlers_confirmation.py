@@ -187,8 +187,7 @@ async def validate_confirmation_and_redirect(request: web.Request):
             error_code = create_error_code(err)
             user_error_msg = (
                 f"Sorry, we cannot confirm your {action}."
-                "Please try again in a few moments. "
-                f"If the problem persist please contact support attaching this code ({error_code})"
+                "Please try again in a few moments."
             )
 
             _logger.exception(

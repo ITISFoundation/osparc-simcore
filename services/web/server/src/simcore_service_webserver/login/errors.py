@@ -7,13 +7,12 @@ from servicelib.logging_errors import create_troubleshotting_log_kwargs
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 
 from ..errors import WebServerBaseError
-from ._constants import MSG_2FA_UNAVAILABLE_OEC
+from ._constants import MSG_2FA_UNAVAILABLE
 
 _logger = logging.getLogger(__name__)
 
 
-class LoginError(WebServerBaseError, ValueError):
-    ...
+class LoginError(WebServerBaseError, ValueError): ...
 
 
 class SendingVerificationSmsError(LoginError):
@@ -32,7 +31,7 @@ def handle_login_exceptions(handler: Handler):
 
         except (SendingVerificationSmsError, SendingVerificationEmailError) as exc:
             error_code = exc.error_code()
-            front_end_msg = MSG_2FA_UNAVAILABLE_OEC.format(error_code=error_code)
+            front_end_msg = MSG_2FA_UNAVAILABLE
             # in these cases I want to log the cause
             _logger.exception(
                 **create_troubleshotting_log_kwargs(

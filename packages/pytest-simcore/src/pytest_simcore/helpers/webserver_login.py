@@ -1,4 +1,6 @@
+import contextlib
 import re
+from collections.abc import AsyncIterator
 from datetime import datetime
 from typing import Any, TypedDict
 
@@ -184,6 +186,30 @@ class LoggedUser(NewUser):
         # reused during the test, then it creates quite some noise
         await clean_auth_policy_cache(self.client.app)
         return await super().__aexit__(*args)
+
+
+@contextlib.asynccontextmanager
+async def switch_client_session_to(
+    client: TestClient, user: UserInfoDict
+) -> AsyncIterator[TestClient]:
+    assert client.app
+
+    await client.post(f'{client.app.router["auth_logout"].url_for()}')
+    # sometimes 4xx if user already logged out. Ignore
+
+    resp = await client.post(
+        f'{client.app.router["auth_login"].url_for()}',
+        json={
+            "email": user["email"],
+            "password": user["raw_password"],
+        },
+    )
+    await assert_status(resp, status.HTTP_200_OK)
+
+    yield client
+
+    resp = await client.post(f'{client.app.router["auth_logout"].url_for()}')
+    await assert_status(resp, status.HTTP_200_OK)
 
 
 class NewInvitation(NewUser):

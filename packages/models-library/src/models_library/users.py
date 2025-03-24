@@ -25,13 +25,14 @@ LastNameStr: TypeAlias = Annotated[
 
 
 class PrivacyDict(TypedDict):
+    hide_username: bool
     hide_fullname: bool
     hide_email: bool
 
 
 class MyProfile(BaseModel):
     id: UserID
-    user_name: IDStr
+    user_name: UserNameID
     first_name: str | None
     last_name: str | None
     email: LowerCaseEmailStr
@@ -50,7 +51,11 @@ class MyProfile(BaseModel):
                     "first_name": "PtN5Ab0uv",
                     "last_name": "",
                     "role": "GUEST",
-                    "privacy": {"hide_email": True, "hide_fullname": False},
+                    "privacy": {
+                        "hide_email": True,
+                        "hide_fullname": False,
+                        "hide_username": False,
+                    },
                 }
             }
         )
