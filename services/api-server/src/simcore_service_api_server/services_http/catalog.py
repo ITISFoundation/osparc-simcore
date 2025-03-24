@@ -192,7 +192,7 @@ class CatalogApi(BaseServiceClientApi):
         assert all(isinstance(s, Solver) for s in solvers)  # nosec
         return solvers
 
-    async def list_program(
+    async def list_programs(
         self,
         *,
         user_id: int,
