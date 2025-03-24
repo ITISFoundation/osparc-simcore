@@ -1,3 +1,4 @@
+import asyncio
 import datetime
 import logging
 from collections.abc import Awaitable, Callable
@@ -5,6 +6,7 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
+import httpx
 import pytest
 import sqlalchemy as sa
 from aws_library.s3 import SimcoreS3API
@@ -13,11 +15,16 @@ from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
 from models_library.api_schemas_rpc_async_jobs.async_jobs import AsyncJobResult
 from models_library.api_schemas_storage import STORAGE_RPC_NAMESPACE
-from models_library.api_schemas_storage.storage_schemas import FoldersBody
+from models_library.api_schemas_storage.storage_schemas import (
+    FileMetaDataGet,
+    FoldersBody,
+)
 from models_library.basic_types import SHA256Str
 from models_library.projects_nodes_io import NodeID, NodeIDStr, SimcoreS3FileID
 from models_library.users import UserID
 from pydantic import ByteSize, TypeAdapter
+from pytest_simcore.helpers.fastapi import url_from_operation_id
+from pytest_simcore.helpers.httpx_assert_checks import assert_status
 from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.storage_utils import (
     FileIDDict,
@@ -28,6 +35,7 @@ from pytest_simcore.helpers.storage_utils_file_meta_data import (
     assert_file_meta_data_in_db,
 )
 from pytest_simcore.helpers.storage_utils_project import clone_project_data
+from servicelib.aiohttp import status
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import wait_and_get_result
 from servicelib.rabbitmq.rpc_interfaces.storage.simcore_s3 import (
@@ -36,6 +44,7 @@ from servicelib.rabbitmq.rpc_interfaces.storage.simcore_s3 import (
 from simcore_postgres_database.storage_models import file_meta_data
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 from sqlalchemy.ext.asyncio import AsyncEngine
+from yarl import URL
 
 pytest_simcore_core_services_selection = ["postgres", "rabbit"]
 pytest_simcore_ops_services_selection = ["adminer"]
@@ -48,6 +57,8 @@ async def _request_copy_folders(
     source_project: dict[str, Any],
     dst_project: dict[str, Any],
     nodes_map: dict[NodeID, NodeID],
+    *,
+    client_timeout: datetime.timedelta = datetime.timedelta(seconds=60),
 ) -> dict[str, Any]:
     with log_context(
         logging.INFO,
@@ -68,7 +79,7 @@ async def _request_copy_folders(
             method_name=copy_folders_from_project.__name__,
             job_id=async_job_get.job_id,
             job_id_data=async_job_name,
-            client_timeout=datetime.timedelta(seconds=60),
+            client_timeout=client_timeout,
         ):
             ctx.logger.info("%s", f"<-- current state is {async_job_result=}")
             if async_job_result.done:
@@ -247,3 +258,295 @@ async def test_copy_folders_from_valid_project_with_one_large_file(
                     checksum
                 ),
             )
+
+
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
+@pytest.mark.parametrize(
+    "project_params",
+    [
+        ProjectWithFilesParams(
+            num_nodes=12,
+            allowed_file_sizes=(
+                TypeAdapter(ByteSize).validate_python("7Mib"),
+                TypeAdapter(ByteSize).validate_python("110Mib"),
+                TypeAdapter(ByteSize).validate_python("1Mib"),
+            ),
+            allowed_file_checksums=(
+                TypeAdapter(SHA256Str).validate_python(
+                    "311e2e130d83cfea9c3b7560699c221b0b7f9e5d58b02870bd52b695d8b4aabd"
+                ),
+                TypeAdapter(SHA256Str).validate_python(
+                    "08e297db979d3c84f6b072c2a1e269e8aa04e82714ca7b295933a0c9c0f62b2e"
+                ),
+                TypeAdapter(SHA256Str).validate_python(
+                    "488f3b57932803bbf644593bd46d95599b1d4da1d63bc020d7ebe6f1c255f7f3"
+                ),
+            ),
+            workspace_files_count=0,
+        ),
+    ],
+    ids=str,
+)
+async def test_copy_folders_from_valid_project(
+    short_dsm_cleaner_interval: int,
+    initialized_app: FastAPI,
+    storage_rabbitmq_rpc_client: RabbitMQRPCClient,
+    user_id: UserID,
+    product_name: str,
+    create_project: Callable[[], Awaitable[dict[str, Any]]],
+    sqlalchemy_async_engine: AsyncEngine,
+    random_project_with_files: Callable[
+        [ProjectWithFilesParams],
+        Awaitable[
+            tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]
+        ],
+    ],
+    project_params: ProjectWithFilesParams,
+):
+    # 1. create a src project with some files
+    src_project, src_projects_list = await random_project_with_files(project_params)
+    # 2. create a dst project without files
+    dst_project, nodes_map = clone_project_data(src_project)
+    dst_project = await create_project(**dst_project)
+    # copy the project files
+    data = await _request_copy_folders(
+        storage_rabbitmq_rpc_client,
+        user_id,
+        product_name,
+        src_project,
+        dst_project,
+        nodes_map={NodeID(i): NodeID(j) for i, j in nodes_map.items()},
+    )
+    assert data == jsonable_encoder(
+        await get_updated_project(sqlalchemy_async_engine, dst_project["uuid"])
+    )
+
+    # check that file meta data was effectively copied
+    for src_node_id in src_projects_list:
+        dst_node_id = nodes_map.get(
+            TypeAdapter(NodeIDStr).validate_python(f"{src_node_id}")
+        )
+        assert dst_node_id
+        for src_file_id, src_file in src_projects_list[src_node_id].items():
+            path: Any = src_file["path"]
+            assert isinstance(path, Path)
+            checksum: Any = src_file["sha256_checksum"]
+            assert isinstance(checksum, str)
+            await assert_file_meta_data_in_db(
+                sqlalchemy_async_engine,
+                file_id=TypeAdapter(SimcoreS3FileID).validate_python(
+                    f"{src_file_id}".replace(
+                        f"{src_project['uuid']}", dst_project["uuid"]
+                    ).replace(f"{src_node_id}", f"{dst_node_id}")
+                ),
+                expected_entry_exists=True,
+                expected_file_size=path.stat().st_size,
+                expected_upload_id=None,
+                expected_upload_expiration_date=None,
+                expected_sha256_checksum=TypeAdapter(SHA256Str).validate_python(
+                    checksum
+                ),
+            )
+
+
+async def _create_and_delete_folders_from_project(
+    rpc_client: RabbitMQRPCClient,
+    client: httpx.AsyncClient,
+    user_id: UserID,
+    product_name: str,
+    project: dict[str, Any],
+    initialized_app: FastAPI,
+    project_db_creator: Callable,
+    check_list_files: bool,
+) -> None:
+    destination_project, nodes_map = clone_project_data(project)
+    await project_db_creator(**destination_project)
+
+    # creating a copy
+    data = await _request_copy_folders(
+        rpc_client,
+        user_id,
+        product_name,
+        project,
+        destination_project,
+        nodes_map={NodeID(i): NodeID(j) for i, j in nodes_map.items()},
+    )
+
+    # data should be equal to the destination project, and all store entries should point to simcore.s3
+    # NOTE: data is jsonized where destination project is not!
+    assert jsonable_encoder(destination_project) == data
+
+    project_id = data["uuid"]
+
+    # list data to check all is here
+
+    if check_list_files:
+        url = url_from_operation_id(
+            client,
+            initialized_app,
+            "list_files_metadata",
+            location_id=f"{SimcoreS3DataManager.get_location_id()}",
+        ).with_query(user_id=f"{user_id}", uuid_filter=f"{project_id}")
+
+        resp = await client.get(f"{url}")
+        data, error = assert_status(resp, status.HTTP_200_OK, list[FileMetaDataGet])
+        assert not error
+    # DELETING
+    url = url_from_operation_id(
+        client,
+        initialized_app,
+        "delete_folders_of_project",
+        folder_id=project_id,
+    ).with_query(user_id=f"{user_id}")
+    resp = await client.delete(f"{url}")
+    assert_status(resp, status.HTTP_204_NO_CONTENT, None)
+
+    # list data is gone
+    if check_list_files:
+        url = url_from_operation_id(
+            client,
+            initialized_app,
+            "list_files_metadata",
+            location_id=f"{SimcoreS3DataManager.get_location_id()}",
+        ).with_query(user_id=f"{user_id}", uuid_filter=f"{project_id}")
+        resp = await client.get(f"{url}")
+        data, error = assert_status(resp, status.HTTP_200_OK, list[FileMetaDataGet])
+        assert not error
+        assert not data
+
+
+@pytest.fixture
+def set_log_levels_for_noisy_libraries() -> None:
+    # Reduce the log level for 'werkzeug'
+    logging.getLogger("werkzeug").setLevel(logging.WARNING)
+
+
+@pytest.fixture
+def mock_datcore_download(mocker, client):
+    # Use to mock downloading from DATCore
+    async def _fake_download_to_file_or_raise(session, url, dest_path):
+        with log_context(logging.INFO, f"Faking download:  {url} -> {dest_path}"):
+            Path(dest_path).write_text(
+                "FAKE: test_create_and_delete_folders_from_project"
+            )
+
+    mocker.patch(
+        "simcore_service_storage.simcore_s3_dsm.download_to_file_or_raise",
+        side_effect=_fake_download_to_file_or_raise,
+        autospec=True,
+    )
+
+    mocker.patch(
+        "simcore_service_storage.simcore_s3_dsm.datcore_adapter.get_file_download_presigned_link",
+        autospec=True,
+        return_value=URL("https://httpbin.org/image"),
+    )
+
+
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
+@pytest.mark.parametrize(
+    "project_params",
+    [
+        ProjectWithFilesParams(
+            num_nodes=3,
+            allowed_file_sizes=(
+                TypeAdapter(ByteSize).validate_python("7Mib"),
+                TypeAdapter(ByteSize).validate_python("110Mib"),
+                TypeAdapter(ByteSize).validate_python("1Mib"),
+            ),
+            workspace_files_count=0,
+        )
+    ],
+)
+async def test_create_and_delete_folders_from_project(
+    set_log_levels_for_noisy_libraries: None,
+    initialized_app: FastAPI,
+    storage_rabbitmq_rpc_client: RabbitMQRPCClient,
+    client: httpx.AsyncClient,
+    user_id: UserID,
+    product_name: str,
+    create_project: Callable[..., Awaitable[dict[str, Any]]],
+    with_random_project_with_files: tuple[
+        dict[str, Any],
+        dict[NodeID, dict[SimcoreS3FileID, dict[str, Path | str]]],
+    ],
+    mock_datcore_download,
+):
+    project_in_db, _ = with_random_project_with_files
+    await _create_and_delete_folders_from_project(
+        storage_rabbitmq_rpc_client,
+        client,
+        user_id,
+        product_name,
+        project_in_db,
+        initialized_app,
+        create_project,
+        check_list_files=True,
+    )
+
+
+@pytest.mark.flaky(max_runs=3)
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
+@pytest.mark.parametrize(
+    "project_params",
+    [
+        ProjectWithFilesParams(
+            num_nodes=3,
+            allowed_file_sizes=(
+                TypeAdapter(ByteSize).validate_python("7Mib"),
+                TypeAdapter(ByteSize).validate_python("110Mib"),
+                TypeAdapter(ByteSize).validate_python("1Mib"),
+            ),
+            workspace_files_count=0,
+        )
+    ],
+)
+@pytest.mark.parametrize("num_concurrent_calls", [20])
+async def test_create_and_delete_folders_from_project_burst(
+    set_log_levels_for_noisy_libraries: None,
+    initialized_app: FastAPI,
+    storage_rabbitmq_rpc_client: RabbitMQRPCClient,
+    client: httpx.AsyncClient,
+    user_id: UserID,
+    product_name: str,
+    with_random_project_with_files: tuple[
+        dict[str, Any],
+        dict[NodeID, dict[SimcoreS3FileID, dict[str, Path | str]]],
+    ],
+    create_project: Callable[..., Awaitable[dict[str, Any]]],
+    mock_datcore_download,
+    num_concurrent_calls: int,
+):
+    project_in_db, _ = with_random_project_with_files
+    # NOTE: here the point is to NOT have a limit on the number of calls!!
+    await asyncio.gather(
+        *[
+            _create_and_delete_folders_from_project(
+                storage_rabbitmq_rpc_client,
+                client,
+                user_id,
+                product_name,
+                project_in_db,
+                initialized_app,
+                create_project,
+                check_list_files=False,
+                client_timeout=datetime.timedelta(seconds=300),
+            )
+            for _ in range(num_concurrent_calls)
+        ]
+    )
