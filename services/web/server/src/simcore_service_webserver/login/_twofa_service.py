@@ -92,6 +92,7 @@ class SMSError(RuntimeError):
 
 @log_decorator(log, level=logging.DEBUG)
 async def send_sms_code(
+    *,
     phone_number: str,
     code: str,
     twilio_auth: TwilioSettings,

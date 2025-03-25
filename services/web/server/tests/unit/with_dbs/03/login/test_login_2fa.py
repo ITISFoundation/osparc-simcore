@@ -6,14 +6,13 @@
 import asyncio
 import logging
 from contextlib import AsyncExitStack
-from unittest.mock import Mock
 
 import pytest
 import sqlalchemy as sa
 from aiohttp.test_utils import TestClient, make_mocked_request
 from faker import Faker
 from models_library.authentification import TwoFactorAuthentificationMethod
-from pytest_mock import MockerFixture
+from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.webserver_login import NewUser, parse_link, parse_test_marks
@@ -76,16 +75,20 @@ def postgres_db(postgres_db: sa.engine.Engine):
 
 
 @pytest.fixture
-def mocked_twilio_service(mocker: MockerFixture) -> dict[str, Mock]:
+def mocked_twilio_service(mocker: MockerFixture) -> dict[str, MockType]:
+    mock = mocker.patch(
+        "simcore_service_webserver.login._controller.registration_rest._twofa_service.send_sms_code",
+        autospec=True,
+    )
+
+    mock2 = mocker.patch(
+        "simcore_service_webserver.login._controller.auth_rest._twofa_service.send_sms_code",
+        autospec=False,
+    )
+
     return {
-        "send_sms_code_for_registration": mocker.patch(
-            "simcore_service_webserver.login._controller.registration_rest.twofa_service.send_sms_code",
-            autospec=True,
-        ),
-        "send_sms_code_for_login": mocker.patch(
-            "simcore_service_webserver.login._controller.auth_rest.twofa_service.send_sms_code",
-            autospec=True,
-        ),
+        "send_sms_code_for_registration": mock,
+        "send_sms_code_for_login": mock,
     }
 
 
@@ -120,7 +123,7 @@ async def test_workflow_register_and_login_with_2fa(
     fake_user_email: str,
     fake_user_password: str,
     fake_user_phone_number: str,
-    mocked_twilio_service: dict[str, Mock],
+    mocked_twilio_service: dict[str, MockType],
     mocked_email_core_remove_comments: None,
     cleanup_db_tables: None,
 ):
@@ -309,7 +312,7 @@ async def test_can_register_same_phone_in_different_accounts(
     fake_user_email: str,
     fake_user_password: str,
     fake_user_phone_number: str,
-    mocked_twilio_service: dict[str, Mock],
+    mocked_twilio_service: dict[str, MockType],
     cleanup_db_tables: None,
 ):
     """
@@ -421,7 +424,7 @@ async def test_2fa_sms_failure_during_login(
 
     mocker.patch(
         # MD: Emulates error in graylog https://monitoring.osparc.io/graylog/search/649e7619ce6e0838a96e9bf1?q=%222FA%22&rangetype=relative&from=172800
-        "simcore_service_webserver.login.twofa_service.twilio.rest.Client",
+        "simcore_service_webserver.login._twofa_service.twilio.rest.Client",
         autospec=True,
         side_effect=TwilioRestException(
             status=400,
