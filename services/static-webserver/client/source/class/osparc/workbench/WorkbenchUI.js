@@ -2016,7 +2016,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
             osparc.FlashMessenger.logError(osparc.file.FileDrop.ONE_FILE_ONLY);
           }
         } else {
-          osparc.FlashMessenger.logError(this.tr("Folders are not accepted. You might want to upload a zip file."));
+          osparc.FlashMessenger.logError(this.tr("Folders are not accepted. Please upload a zip file instead."));
         }
       }
     },

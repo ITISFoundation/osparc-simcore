@@ -2363,7 +2363,7 @@ msgid "Select boot type"
 msgstr ""
 
 #: osparc/metadata/ServicesInStudy.js
-msgid "Some service information could not be retrieved"
+msgid "Could not retrieve some service information"
 msgstr ""
 
 #: osparc/info/StudyUtils.js
@@ -3003,7 +3003,7 @@ msgid "Upload file"
 msgstr ""
 
 #: osparc/file/FileDrop.js
-msgid "Drop file from explorer"
+msgid "Drop file from File Explorer"
 msgstr ""
 
 #: osparc/file/FileDrop.js
@@ -3015,11 +3015,11 @@ msgid "or"
 msgstr ""
 
 #: osparc/file/FileDrop.js
-msgid "Only one file at a time is accepted."
+msgid "Only one file can be uploaded at a time."
 msgstr ""
 
 #: osparc/file/FileDrop.js
-msgid "Please zip all files together."
+msgid "Please compress all files into a single zip file."
 msgstr ""
 
 #: osparc/file/FileDrop.js
@@ -3027,7 +3027,7 @@ msgid "Drop me"
 msgstr ""
 
 #: osparc/workbench/WorkbenchUI.js
-msgid "Folders are not accepted. You might want to upload a zip file."
+msgid "Folders are not accepted. Please upload a zip file instead."
 msgstr ""
 
 #: osparc/file/FolderViewer.js
@@ -3071,7 +3071,7 @@ msgid "Share with Collaborators and Organizations"
 msgstr ""
 
 #: osparc/editor/MarkdownEditor.js
-msgid "Supports Markdown"
+msgid "Markdown supported"
 msgstr ""
 
 #: osparc/editor/HtmlEditor.js
@@ -3095,7 +3095,7 @@ msgid "The Study is empty"
 msgstr ""
 
 #: osparc/metadata/ServicesInStudy.js
-msgid "Service information could not be retrieved"
+msgid "Could not retrieve service information"
 msgstr ""
 
 #: osparc/share/PublishTemplate.js
