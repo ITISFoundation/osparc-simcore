@@ -122,7 +122,7 @@ async def get_user_primary_group_id(app: web.Application, user_id: UserID) -> Gr
 
 
 async def get_user_id_from_gid(app: web.Application, primary_gid: GroupID) -> UserID:
-    return await _users_repository.get_user_id_from_pgid(app, primary_gid)
+    return await _users_repository.get_user_id_from_pgid(app, primary_gid=primary_gid)
 
 
 async def search_users(
@@ -178,6 +178,14 @@ async def get_users_in_group(app: web.Application, *, gid: GroupID) -> set[UserI
 
 
 get_guest_user_ids_and_names = _users_repository.get_guest_user_ids_and_names
+
+
+async def is_user_in_product(
+    app: web.Application, *, user_id: UserID, product_name: ProductName
+) -> bool:
+    return await _users_repository.is_user_in_product_name(
+        get_asyncpg_engine(app), user_id=user_id, product_name=product_name
+    )
 
 
 #

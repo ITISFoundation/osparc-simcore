@@ -24,10 +24,9 @@ from .rest_utils import EnvelopeFactory
 from .typing_extension import Handler, Middleware
 
 DEFAULT_API_VERSION = "v0"
-_FMSG_INTERNAL_ERROR_USER_FRIENDLY_WITH_OEC = (
+_FMSG_INTERNAL_ERROR_USER_FRIENDLY = (
     "We apologize for the inconvenience. "
-    "Our team has recorded the issue [SupportID={error_code}]. "
-    "If the issue persists please report it."
+    "The issue has been recorded, please report it if it persists."
 )
 
 
@@ -52,14 +51,13 @@ def error_middleware_factory(
             "request.path": f"{request.path}",
         }
 
-        user_error_msg = _FMSG_INTERNAL_ERROR_USER_FRIENDLY_WITH_OEC.format(
-            error_code=error_code
-        )
+        user_error_msg = _FMSG_INTERNAL_ERROR_USER_FRIENDLY
         http_error = create_http_error(
             err,
             user_error_msg,
             web.HTTPInternalServerError,
             skip_internal_error_details=_is_prod,
+            error_code=error_code,
         )
         _logger.exception(
             **create_troubleshotting_log_kwargs(

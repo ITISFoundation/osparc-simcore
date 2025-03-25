@@ -11,6 +11,9 @@ module.exports = {
 
       const responses = {
         me: null,
+        tags: null,
+        tasks: null,
+        uiConfig: null,
         studies: null,
         templates: null,
         services: null,
@@ -23,6 +26,12 @@ module.exports = {
           const url = response.url();
           if (url.endsWith('/me')) {
             responses.me = response.json();
+          } else if (url.endsWith('/tags')) {
+            responses.tags = response.json();
+          } else if (url.endsWith('/tasks')) {
+            responses.tasks = response.json();
+          } else if (url.endsWith('/ui')) {
+            responses.uiConfig = response.json();
           } else if (url.includes('projects?type=user')) {
             responses.studies = response.json();
           } else if (url.includes('projects?type=template')) {
@@ -50,6 +59,26 @@ module.exports = {
       test('Profile', async () => {
         const responseEnv = await responses.me;
         expect(responseEnv.data["login"]).toBe(user);
+      }, ourTimeout);
+
+      test('Tags', async () => {
+        const responseEnv = await responses.tags;
+        expect(Array.isArray(responseEnv.data)).toBeTruthy();
+      }, ourTimeout);
+
+      /*
+      test('Tasks', async () => {
+        const responseEnv = await responses.tasks;
+        expect(Array.isArray(responseEnv.data)).toBeTruthy();
+      }, ourTimeout);
+      */
+
+      test('UI Config', async () => {
+        const responseEnv = await responses.uiConfig;
+        expect(responseEnv.data["productName"]).toBe("osparc");
+        const uiConfig = responseEnv.data["ui"];
+        const isObject = typeof uiConfig === 'object' && !Array.isArray(uiConfig) && uiConfig !== null;
+        expect(isObject).toBeTruthy();
       }, ourTimeout);
 
       test('Studies', async () => {

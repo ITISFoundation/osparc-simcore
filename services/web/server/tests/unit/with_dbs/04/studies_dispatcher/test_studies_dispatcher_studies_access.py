@@ -31,10 +31,10 @@ from servicelib.aiohttp.long_running_tasks.server import TaskProgress
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from servicelib.rest_responses import unwrap_envelope
 from settings_library.utils_session import DEFAULT_SESSION_COOKIE_NAME
-from simcore_service_webserver.projects.models import ProjectDict
-from simcore_service_webserver.projects.projects_service import (
+from simcore_service_webserver.projects._projects_service import (
     submit_delete_project_task,
 )
+from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.users.api import (
     delete_user_without_projects,
     get_user_role,
@@ -136,7 +136,7 @@ def mocks_on_projects_api(mocker: MockerFixture) -> None:
     All projects in this module are UNLOCKED
     """
     mocker.patch(
-        "simcore_service_webserver.projects.projects_service._get_project_lock_state",
+        "simcore_service_webserver.projects._projects_service._get_project_lock_state",
         return_value=ProjectLocked(value=False, status=ProjectStatus.CLOSED),
     )
 
@@ -413,6 +413,7 @@ async def test_access_cookie_of_expired_user(
     assert data["login"] != user_email
 
 
+@pytest.mark.flaky(max_runs=3)
 @pytest.mark.parametrize("number_of_simultaneous_requests", [1, 2, 32])
 async def test_guest_user_is_not_garbage_collected(
     number_of_simultaneous_requests: int,

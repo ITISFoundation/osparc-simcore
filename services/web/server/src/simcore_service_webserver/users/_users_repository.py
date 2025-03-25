@@ -5,6 +5,7 @@ import sqlalchemy as sa
 from aiohttp import web
 from common_library.users_enums import UserRole
 from models_library.groups import GroupID
+from models_library.products import ProductName
 from models_library.users import (
     MyProfile,
     UserBillingDetails,
@@ -58,8 +59,7 @@ def _public_user_cols(caller_id: int):
     return (
         # Fits PublicUser model
         users.c.id.label("user_id"),
-        users.c.name.label("user_name"),
-        *visible_user_profile_cols(caller_id),
+        *visible_user_profile_cols(caller_id, username_label="user_name"),
         users.c.primary_gid.label("group_id"),
     )
 
@@ -102,7 +102,10 @@ async def search_public_user(
     query = (
         sa.select(*_public_user_cols(caller_id=caller_id))
         .where(
-            users.c.name.ilike(_pattern)
+            (
+                is_public(users.c.privacy_hide_username, caller_id)
+                & users.c.name.ilike(_pattern)
+            )
             | (
                 is_public(users.c.privacy_hide_email, caller_id)
                 & users.c.email.ilike(_pattern)
@@ -151,7 +154,10 @@ async def get_user_or_raise(
 
 
 async def get_user_primary_group_id(
-    engine: AsyncEngine, connection: AsyncConnection | None = None, *, user_id: UserID
+    engine: AsyncEngine,
+    connection: AsyncConnection | None = None,
+    *,
+    user_id: UserID,
 ) -> GroupID:
     async with pass_or_acquire_connection(engine, connection) as conn:
         primary_gid: GroupID | None = await conn.scalar(
@@ -179,7 +185,7 @@ async def get_users_ids_in_group(
         return {row.uid async for row in result}
 
 
-async def get_user_id_from_pgid(app: web.Application, primary_gid: int) -> UserID:
+async def get_user_id_from_pgid(app: web.Application, *, primary_gid: int) -> UserID:
     async with pass_or_acquire_connection(engine=get_asyncpg_engine(app)) as conn:
         user_id: UserID = await conn.scalar(
             sa.select(
@@ -386,13 +392,9 @@ async def get_user_products(
             .where(products.c.group_id == groups.c.gid)
             .label("product_name")
         )
-        products_gis_subq = (
-            sa.select(
-                products.c.group_id,
-            )
-            .distinct()
-            .subquery()
-        )
+        products_group_ids_subq = sa.select(
+            products.c.group_id,
+        ).distinct()
         query = (
             sa.select(
                 groups.c.gid,
@@ -402,7 +404,7 @@ async def get_user_products(
                 users.join(user_to_groups, user_to_groups.c.uid == users.c.id).join(
                     groups,
                     (groups.c.gid == user_to_groups.c.gid)
-                    & groups.c.gid.in_(products_gis_subq),
+                    & groups.c.gid.in_(products_group_ids_subq),
                 )
             )
             .where(users.c.id == user_id)
@@ -461,6 +463,32 @@ async def delete_user_by_id(
         return bool(deleted_user)
 
 
+async def is_user_in_product_name(
+    engine: AsyncEngine,
+    connection: AsyncConnection | None = None,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+) -> bool:
+    query = (
+        sa.select(users.c.id)
+        .select_from(
+            users.join(
+                user_to_groups,
+                user_to_groups.c.uid == users.c.id,
+            ).join(
+                products,
+                products.c.group_id == user_to_groups.c.gid,
+            )
+        )
+        .where((users.c.id == user_id) & (products.c.name == product_name))
+    )
+    async with pass_or_acquire_connection(engine, connection) as conn:
+        value = await conn.scalar(query)
+        assert value is None or value == user_id  # nosec
+        return value is not None
+
+
 #
 # USER PROFILE
 #
@@ -480,6 +508,8 @@ async def get_my_profile(app: web.Application, *, user_id: UserID) -> MyProfile:
                 users.c.email,
                 users.c.role,
                 sa.func.json_build_object(
+                    "hide_username",
+                    users.c.privacy_hide_username,
                     "hide_fullname",
                     users.c.privacy_hide_fullname,
                     "hide_email",
@@ -530,11 +560,12 @@ async def update_user_profile(
                 )
 
         except IntegrityError as err:
-            user_name = updated_values.get("name")
+            if user_name := updated_values.get("name"):
+                raise UserNameDuplicateError(
+                    user_name=user_name,
+                    alternative_user_name=generate_alternative_username(user_name),
+                    user_id=user_id,
+                    updated_values=updated_values,
+                ) from err
 
-            raise UserNameDuplicateError(
-                user_name=user_name,
-                alternative_user_name=generate_alternative_username(user_name),
-                user_id=user_id,
-                updated_values=updated_values,
-            ) from err
+            raise  # not due to name duplication

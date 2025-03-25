@@ -1133,14 +1133,13 @@ async def test_create_multipart_presigned_upload_link(
     assert s3_metadata.last_modified
     assert s3_metadata.e_tag == f"{json.loads(received_e_tag)}"
 
-    # completing again raises
-    with pytest.raises(S3UploadNotFoundError):
-        await simcore_s3_api.complete_multipart_upload(
-            bucket=with_s3_bucket,
-            object_key=file_id,
-            upload_id=upload_links.upload_id,
-            uploaded_parts=uploaded_parts,
-        )
+    # completing again does not raise anymore (was raising until moto==5.0.21)
+    await simcore_s3_api.complete_multipart_upload(
+        bucket=with_s3_bucket,
+        object_key=file_id,
+        upload_id=upload_links.upload_id,
+        uploaded_parts=uploaded_parts,
+    )
 
 
 @pytest.mark.parametrize(

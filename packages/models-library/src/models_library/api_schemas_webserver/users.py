@@ -16,6 +16,7 @@ from pydantic import (
     ValidationInfo,
     field_validator,
 )
+from pydantic.config import JsonDict
 
 from ..basic_types import IDStr
 from ..emails import LowerCaseEmailStr
@@ -46,11 +47,13 @@ from .users_preferences import AggregatedPreferences
 
 
 class MyProfilePrivacyGet(OutputSchema):
+    hide_username: bool
     hide_fullname: bool
     hide_email: bool
 
 
 class MyProfilePrivacyPatch(InputSchema):
+    hide_username: bool | None = None
     hide_fullname: bool | None = None
     hide_email: bool | None = None
 
@@ -79,23 +82,33 @@ class MyProfileGet(OutputSchemaWithoutCamelCase):
     privacy: MyProfilePrivacyGet
     preferences: AggregatedPreferences
 
+    @staticmethod
+    def _update_json_schema_extra(schema: JsonDict) -> None:
+        schema.update(
+            {
+                "examples": [
+                    {
+                        "id": 42,
+                        "login": "bla@foo.com",
+                        "userName": "bla42",
+                        "role": "admin",  # pre
+                        "expirationDate": "2022-09-14",  # optional
+                        "preferences": {},
+                        "privacy": {
+                            "hide_username": 0,
+                            "hide_fullname": 0,
+                            "hide_email": 1,
+                        },
+                    },
+                ]
+            }
+        )
+
     model_config = ConfigDict(
         # NOTE: old models have an hybrid between snake and camel cases!
         # Should be unified at some point
         populate_by_name=True,
-        json_schema_extra={
-            "examples": [
-                {
-                    "id": 42,
-                    "login": "bla@foo.com",
-                    "userName": "bla42",
-                    "role": "admin",  # pre
-                    "expirationDate": "2022-09-14",  # optional
-                    "preferences": {},
-                    "privacy": {"hide_fullname": 0, "hide_email": 1},
-                },
-            ]
-        },
+        json_schema_extra=_update_json_schema_extra,
     )
 
     @field_validator("role", mode="before")
@@ -141,7 +154,7 @@ class MyProfileGet(OutputSchemaWithoutCamelCase):
 class MyProfilePatch(InputSchemaWithoutCamelCase):
     first_name: FirstNameStr | None = None
     last_name: LastNameStr | None = None
-    user_name: Annotated[IDStr | None, Field(alias="userName")] = None
+    user_name: Annotated[IDStr | None, Field(alias="userName", min_length=4)] = None
 
     privacy: MyProfilePrivacyPatch | None = None
 
@@ -169,7 +182,7 @@ class MyProfilePatch(InputSchemaWithoutCamelCase):
 
         # Ensure it doesn't end with a special character
         if {value[0], value[-1]}.intersection({"_", "-", "."}):
-            msg = f"Username '{value}' cannot end or start with a special character."
+            msg = f"Username '{value}' cannot end with a special character."
             raise ValueError(msg)
 
         # Check reserved words (example list; extend as needed)
@@ -215,7 +228,7 @@ class UserGet(OutputSchema):
     # Public profile of a user subject to its privacy settings
     user_id: UserID
     group_id: GroupID
-    user_name: UserNameID
+    user_name: UserNameID | None = None
     first_name: str | None = None
     last_name: str | None = None
     email: EmailStr | None = None

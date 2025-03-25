@@ -1,11 +1,12 @@
+from celery.exceptions import CeleryError  # type: ignore[import-untyped]
 from fastapi import FastAPI
 from models_library.api_schemas_rpc_async_jobs.async_jobs import (
     AsyncJobGet,
     AsyncJobNameData,
 )
+from models_library.api_schemas_rpc_async_jobs.exceptions import JobSchedulerError
 from models_library.api_schemas_storage.data_export_async_jobs import (
     AccessRightError,
-    DataExportError,
     DataExportTaskStartInput,
     InvalidFileIdentifierError,
 )
@@ -25,7 +26,7 @@ router = RPCRouter()
     reraise_if_error_type=(
         InvalidFileIdentifierError,
         AccessRightError,
-        DataExportError,
+        JobSchedulerError,
     )
 )
 async def start_data_export(
@@ -51,12 +52,14 @@ async def start_data_export(
             location_id=data_export_start.location_id,
         ) from err
 
-    task_uuid = await get_celery_client(app).send_task(
-        "export_data",
-        task_context=job_id_data.model_dump(),
-        files=data_export_start.file_and_folder_ids,  # ANE: adapt here your signature
-    )
-
+    try:
+        task_uuid = await get_celery_client(app).send_task(
+            "export_data",
+            task_context=job_id_data.model_dump(),
+            files=data_export_start.file_and_folder_ids,  # ANE: adapt here your signature
+        )
+    except CeleryError as exc:
+        raise JobSchedulerError(exc=f"{exc}") from exc
     return AsyncJobGet(
         job_id=task_uuid,
     )

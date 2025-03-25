@@ -2,6 +2,7 @@
 First a procedure is registered in postgres that gets triggered whenever the outputs
 of a record in comp_task table is changed.
 """
+
 import asyncio
 import json
 import logging
@@ -22,7 +23,7 @@ from simcore_postgres_database.webserver_models import DB_CHANNEL_NAME, projects
 from sqlalchemy.sql import select
 
 from ..db.plugin import get_database_engine
-from ..projects import exceptions, projects_service
+from ..projects import _projects_service, exceptions
 from ..projects.nodes_utils import update_node_outputs
 from ._utils import convert_state_from_db
 
@@ -47,12 +48,14 @@ async def _update_project_state(
     new_state: RunningState,
     node_errors: list[ErrorDict] | None,
 ) -> None:
-    project = await projects_service.update_project_node_state(
+    project = await _projects_service.update_project_node_state(
         app, user_id, project_uuid, node_uuid, new_state
     )
 
-    await projects_service.notify_project_node_update(app, project, node_uuid, node_errors)
-    await projects_service.notify_project_state_update(app, project)
+    await _projects_service.notify_project_node_update(
+        app, project, node_uuid, node_errors
+    )
+    await _projects_service.notify_project_state_update(app, project)
 
 
 @dataclass(frozen=True)

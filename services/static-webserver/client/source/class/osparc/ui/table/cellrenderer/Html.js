@@ -20,9 +20,7 @@
  */
 qx.Class.define("osparc.ui.table.cellrenderer.Html", {
   extend: qx.ui.table.cellrenderer.Html,
-  construct: function() {
-    this.base(arguments);
-  },
+
   members: {
     // Override
     _getCellStyle: function(cellInfo) {

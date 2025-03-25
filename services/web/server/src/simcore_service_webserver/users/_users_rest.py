@@ -59,8 +59,7 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
     MissingGroupExtraPropertiesForProductError: HttpErrorInfo(
         status.HTTP_503_SERVICE_UNAVAILABLE,
         "The product is not ready for use until the configuration is fully completed. "
-        "Please wait and try again. "
-        "If this issue persists, contact support indicating this support code: {error_code}.",
+        "Please wait and try again. ",
     ),
 }
 
@@ -114,9 +113,6 @@ async def get_my_profile(request: web.Request) -> web.Response:
 
 
 @routes.patch(f"/{API_VTAG}/me", name="update_my_profile")
-@routes.put(
-    f"/{API_VTAG}/me", name="replace_my_profile"  # deprecated. Use patch instead
-)
 @login_required
 @permission_required("user.profile.update")
 @_handle_users_exceptions
@@ -181,7 +177,10 @@ async def search_users_for_admin(request: web.Request) -> web.Response:
     )
 
     return envelope_json_response(
-        [_.model_dump(**_RESPONSE_MODEL_MINIMAL_POLICY) for _ in found]
+        [
+            user_for_admin.model_dump(**_RESPONSE_MODEL_MINIMAL_POLICY)
+            for user_for_admin in found
+        ]
     )
 
 

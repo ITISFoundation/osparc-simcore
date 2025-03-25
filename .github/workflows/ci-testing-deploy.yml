@@ -274,7 +274,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     name: "[build] docker images (excluding frontend)"
     steps:
@@ -309,7 +309,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     name: "[build] docker images (frontend-only)"
     steps:
@@ -343,7 +343,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -391,7 +391,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -433,7 +433,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -475,7 +475,7 @@ jobs:
       strategy:
         matrix:
           python: ["3.11"]
-          os: [ubuntu-22.04]
+          os: [ubuntu-24.04]
         fail-fast: false
       steps:
         - uses: actions/checkout@v4
@@ -520,7 +520,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -565,7 +565,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -612,7 +612,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -654,7 +654,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -702,7 +702,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -747,7 +747,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -798,7 +798,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -854,7 +854,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -905,7 +905,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -956,7 +956,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -1007,7 +1007,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -1052,7 +1052,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -1097,7 +1097,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -1142,7 +1142,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -1187,7 +1187,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -1232,7 +1232,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -1287,7 +1287,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -1332,7 +1332,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -1388,7 +1388,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11", "3.12"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -1423,7 +1423,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -1468,7 +1468,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -1513,7 +1513,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -1558,7 +1558,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -1603,7 +1603,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -1648,7 +1648,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -1692,7 +1692,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -1733,7 +1733,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -1778,7 +1778,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -1874,7 +1874,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -1897,14 +1897,14 @@ jobs:
             path: /${{ runner.temp }}/build
           attempt_limit: 5
           attempt_delay: 1000
-      - name: load docker images
-        run: make load-images local-src=/${{ runner.temp }}/build
       - name: install uv
         uses: astral-sh/setup-uv@v5
         with:
           version: "0.5.x"
           enable-cache: false
           cache-dependency-glob: "**/web/server/requirements/ci.txt"
+      - name: load docker images
+        run: make load-images local-src=/${{ runner.temp }}/build
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1936,7 +1936,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -1961,14 +1961,14 @@ jobs:
             path: /${{ runner.temp }}/build
           attempt_limit: 5
           attempt_delay: 1000
-      - name: load docker images
-        run: make load-images local-src=/${{ runner.temp }}/build
       - name: install uv
         uses: astral-sh/setup-uv@v5
         with:
           version: "0.5.x"
           enable-cache: false
           cache-dependency-glob: "**/web/server/requirements/ci.txt"
+      - name: load docker images
+        run: make load-images local-src=/${{ runner.temp }}/build
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -2000,7 +2000,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -2025,14 +2025,14 @@ jobs:
             path: /${{ runner.temp }}/build
           attempt_limit: 5
           attempt_delay: 1000
-      - name: load docker images
-        run: make load-images local-src=/${{ runner.temp }}/build
       - name: install uv
         uses: astral-sh/setup-uv@v5
         with:
           version: "0.5.x"
           enable-cache: false
           cache-dependency-glob: "**/director-v2/requirements/ci.txt"
+      - name: load docker images
+        run: make load-images local-src=/${{ runner.temp }}/build
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -2064,7 +2064,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     env:
       # NOTE: DIRECTOR_DEFAULT_MAX_* used for integration-tests that include `director` service
@@ -2096,8 +2096,6 @@ jobs:
             path: /${{ runner.temp }}/build
           attempt_limit: 5
           attempt_delay: 1000
-      - name: load docker images
-        run: make load-images local-src=/${{ runner.temp }}/build
       - name: install rclone
         run: sudo ./ci/github/helpers/install_rclone.bash
       - name: install uv
@@ -2106,6 +2104,8 @@ jobs:
           version: "0.5.x"
           enable-cache: false
           cache-dependency-glob: "**/director-v2/requirements/ci.txt"
+      - name: load docker images
+        run: make load-images local-src=/${{ runner.temp }}/build
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -2137,7 +2137,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -2162,8 +2162,6 @@ jobs:
             path: /${{ runner.temp }}/build
           attempt_limit: 5
           attempt_delay: 1000
-      - name: load docker images
-        run: make load-images local-src=/${{ runner.temp }}/build
       - name: install rclone
         run: sudo ./ci/github/helpers/install_rclone.bash
       - name: install uv
@@ -2172,6 +2170,8 @@ jobs:
           version: "0.5.x"
           enable-cache: false
           cache-dependency-glob: "**/dynamic-sidecar/requirements/ci.txt"
+      - name: load docker images
+        run: make load-images local-src=/${{ runner.temp }}/build
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -2204,7 +2204,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -2229,14 +2229,14 @@ jobs:
             path: /${{ runner.temp }}/build
           attempt_limit: 5
           attempt_delay: 1000
-      - name: load docker images
-        run: make load-images local-src=/${{ runner.temp }}/build
       - name: install uv
         uses: astral-sh/setup-uv@v5
         with:
           version: "0.5.x"
           enable-cache: false
           cache-dependency-glob: "**/docker-api-proxy/requirements/ci.txt"
+      - name: load docker images
+        run: make load-images local-src=/${{ runner.temp }}/build
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -2268,7 +2268,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -2293,14 +2293,14 @@ jobs:
             path: /${{ runner.temp }}/build
           attempt_limit: 5
           attempt_delay: 1000
-      - name: load docker images
-        run: make load-images local-src=/${{ runner.temp }}/build
       - name: install uv
         uses: astral-sh/setup-uv@v5
         with:
           version: "0.5.x"
           enable-cache: false
           cache-dependency-glob: "**/simcore-sdk/requirements/ci.txt"
+      - name: load docker images
+        run: make load-images local-src=/${{ runner.temp }}/build
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -2356,7 +2356,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -2381,14 +2381,14 @@ jobs:
             path: /${{ runner.temp }}/build
           attempt_limit: 5
           attempt_delay: 1000
-      - name: load docker images
-        run: make load-images local-src=/${{ runner.temp }}/build
       - name: install uv
         uses: astral-sh/setup-uv@v5
         with:
           version: "0.5.x"
           enable-cache: false
           cache-dependency-glob: "**/public-api/requirements/ci.txt"
+      - name: load docker images
+        run: make load-images local-src=/${{ runner.temp }}/build
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -2416,7 +2416,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -2441,14 +2441,14 @@ jobs:
             path: /${{ runner.temp }}/build
           attempt_limit: 5
           attempt_delay: 1000
-      - name: load docker images
-        run: make load-images local-src=/${{ runner.temp }}/build
       - name: install uv
         uses: astral-sh/setup-uv@v5
         with:
           version: "0.5.x"
           enable-cache: false
           cache-dependency-glob: "**/swarm-deploy/requirements/ci.txt"
+      - name: load docker images
+        run: make load-images local-src=/${{ runner.temp }}/build
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -2482,7 +2482,7 @@ jobs:
       matrix:
         python: ["3.11"]
         node: [14]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -2512,14 +2512,14 @@ jobs:
             path: /${{ runner.temp }}/build
           attempt_limit: 5
           attempt_delay: 1000
-      - name: load docker images
-        run: make load-images local-src=/${{ runner.temp }}/build
       - name: install uv
         uses: astral-sh/setup-uv@v5
         with:
           version: "0.5.x"
           enable-cache: false
           cache-dependency-glob: "**/e2e/requirements/requirements.txt"
+      - name: load docker images
+        run: make load-images local-src=/${{ runner.temp }}/build
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: setup
@@ -2564,7 +2564,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -2626,7 +2626,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -2685,7 +2685,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.11"]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
       fail-fast: false
     env:
       # secrets can be set in settings/secrets on github
@@ -2699,6 +2699,12 @@ jobs:
         uses: docker/setup-buildx-action@v3
         with:
           driver: docker-container
+      - name: install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "0.5.x"
+          enable-cache: false
+          cache-dependency-glob: "**/e2e-playwright/requirements/ci.txt"
       # FIXME: Workaround for https://github.com/actions/download-artifact/issues/249
       - name: download docker images with retry
         uses: Wandalen/wretry.action@master

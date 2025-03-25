@@ -53,8 +53,10 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
     if app.state.settings.DIRECTOR_TRACING:
         initialize_tracing(app, app.state.settings.DIRECTOR_TRACING, APP_NAME)
 
-    # replace by httpx client
-    setup_client_session(app)
+    setup_client_session(
+        app,
+        max_keepalive_connections=settings.DIRECTOR_REGISTRY_CLIENT_MAX_KEEPALIVE_CONNECTIONS,
+    )
     setup_registry(app)
 
     setup_instrumentation(app)

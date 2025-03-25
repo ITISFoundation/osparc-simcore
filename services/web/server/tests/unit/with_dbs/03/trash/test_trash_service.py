@@ -6,8 +6,6 @@
 # pylint: disable=unused-variable
 
 
-import contextlib
-from collections.abc import AsyncIterator
 from unittest.mock import MagicMock
 
 import pytest
@@ -16,7 +14,10 @@ from models_library.api_schemas_webserver.projects import ProjectGet
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.webserver_login import UserInfoDict
+from pytest_simcore.helpers.webserver_login import (
+    UserInfoDict,
+    switch_client_session_to,
+)
 from servicelib.aiohttp import status
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects import _trash_service
@@ -42,30 +43,6 @@ def app_environment(
 @pytest.fixture
 def user_role() -> UserRole:
     return UserRole.USER
-
-
-@contextlib.asynccontextmanager
-async def _switch_client_session_to(
-    client: TestClient, user: UserInfoDict
-) -> AsyncIterator[TestClient]:
-    assert client.app
-
-    await client.post(f'{client.app.router["auth_logout"].url_for()}')
-    # sometimes 4xx if user already logged out. Ignore
-
-    resp = await client.post(
-        f'{client.app.router["auth_login"].url_for()}',
-        json={
-            "email": user["email"],
-            "password": user["raw_password"],
-        },
-    )
-    await assert_status(resp, status.HTTP_200_OK)
-
-    yield client
-
-    resp = await client.post(f'{client.app.router["auth_logout"].url_for()}')
-    await assert_status(resp, status.HTTP_200_OK)
 
 
 async def test_trash_service__delete_expired_trash(
@@ -116,7 +93,7 @@ async def test_trash_service__delete_expired_trash(
     await assert_status(resp, status.HTTP_404_NOT_FOUND)
 
     # ASSERT: other_user tries to get the project and expects 404
-    async with _switch_client_session_to(client, other_user):
+    async with switch_client_session_to(client, other_user):
         resp = await client.get(f"/v0/projects/{other_user_project_id}")
         await assert_status(resp, status.HTTP_404_NOT_FOUND)
 
@@ -134,7 +111,7 @@ async def test_trash_nested_folders_and_projects(
     assert client.app
     assert logged_user["id"] != other_user["id"]
 
-    async with _switch_client_session_to(client, logged_user):
+    async with switch_client_session_to(client, logged_user):
         # CREATE folders hierarchy for logged_user
         resp = await client.post("/v0/folders", json={"name": "Root Folder"})
         data, _ = await assert_status(resp, status.HTTP_201_CREATED)
@@ -162,7 +139,7 @@ async def test_trash_nested_folders_and_projects(
         )
         await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
-    async with _switch_client_session_to(client, other_user):
+    async with switch_client_session_to(client, other_user):
         # CREATE folders hierarchy for other_user
         resp = await client.post("/v0/folders", json={"name": "Root Folder"})
         data, _ = await assert_status(resp, status.HTTP_201_CREATED)
@@ -193,7 +170,7 @@ async def test_trash_nested_folders_and_projects(
     # UNDER TEST
     await trash_service.safe_delete_expired_trash_as_admin(client.app)
 
-    async with _switch_client_session_to(client, logged_user):
+    async with switch_client_session_to(client, logged_user):
         # Verify logged_user's resources are gone
         resp = await client.get(f"/v0/folders/{logged_user_root_folder['folderId']}")
         await assert_status(resp, status.HTTP_403_FORBIDDEN)
@@ -205,7 +182,7 @@ async def test_trash_nested_folders_and_projects(
         await assert_status(resp, status.HTTP_404_NOT_FOUND)
 
     # Verify other_user's resources are gone
-    async with _switch_client_session_to(client, other_user):
+    async with switch_client_session_to(client, other_user):
         resp = await client.get(f"/v0/folders/{other_user_root_folder['folderId']}")
         await assert_status(resp, status.HTTP_403_FORBIDDEN)
 
