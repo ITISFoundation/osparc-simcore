@@ -1,9 +1,9 @@
 #: osparc/Application.js
-msgid "You were logged out"
+msgid "You have been logged out"
 msgstr ""
 
 #: osparc/Application.js
-msgid "New Release"
+msgid "New Version Released"
 msgstr ""
 
 #: osparc/Application.js
@@ -15,7 +15,7 @@ msgid "Privacy Policy and License Terms"
 msgstr ""
 
 #: osparc/Application.js
-msgid "You are logged out"
+msgid "You have been logged out"
 msgstr ""
 
 #: osparc/desktop/credits/ResourceInTableViewer.js
@@ -43,15 +43,15 @@ msgid "Tomorrow"
 msgstr ""
 
 #: osparc/utils/Utils.js
-msgid "This account will expire Today."
+msgid "Your account will expire today."
 msgstr ""
 
 #: osparc/utils/Utils.js
-msgid "This account will expire Tomorrow."
+msgid "Your account will expire tomorrow."
 msgstr ""
 
 #: osparc/utils/Utils.js
-msgid "This account will expire in "
+msgid "Your account will expire in "
 msgstr ""
 
 #: osparc/utils/Utils.js
@@ -59,7 +59,7 @@ msgid " days."
 msgstr ""
 
 #: osparc/utils/Utils.js
-msgid "Please contact us by email:"
+msgid "Please contact us via email:"
 msgstr ""
 
 #: osparc/utils/Utils.js
@@ -167,7 +167,7 @@ msgid "Accept"
 msgstr ""
 
 #: osparc/data/Resources.js
-msgid "You were logged out. Your cookie might have expired."
+msgid "You have been logged out. Your cookie might have expired."
 msgstr ""
 
 #: osparc/FlashMessenger.js
@@ -231,7 +231,7 @@ msgid "Closing previous snapshot..."
 msgstr ""
 
 #: osparc/desktop/MainPage.js
-msgid "Snapshot not found"
+msgid "No snapshot found"
 msgstr ""
 
 #: osparc/desktop/MainPageHandler.js
@@ -251,11 +251,11 @@ msgid "Iteration not found"
 msgstr ""
 
 #: osparc/MaintenanceTracker.js
-msgid "We are under maintenance. Please check back later"
+msgid "The service is under maintenance. Please check back later"
 msgstr ""
 
 #: osparc/CookieExpirationTracker.js
-msgid "Session expired"
+msgid "Your session has expired"
 msgstr ""
 
 #: osparc/NewUITracker.js
@@ -423,7 +423,7 @@ msgid "Don't show again"
 msgstr ""
 
 #: osparc/TooSmallDialog.js
-msgid "Window too small"
+msgid "Window size too small"
 msgstr ""
 
 #: osparc/TooSmallDialog.js
@@ -1335,7 +1335,7 @@ msgid "Expiration date:"
 msgstr ""
 
 #: osparc/desktop/account/ProfilePage.js
-msgid "Please contact us by email:<br>"
+msgid "Please contact us via email:<br>"
 msgstr ""
 
 #: osparc/desktop/account/ProfilePage.js
