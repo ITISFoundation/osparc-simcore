@@ -371,6 +371,8 @@ async def _create_and_delete_folders_from_project(
     initialized_app: FastAPI,
     project_db_creator: Callable,
     check_list_files: bool,
+    *,
+    client_timeout: datetime.timedelta = datetime.timedelta(seconds=60),
 ) -> None:
     destination_project, nodes_map = clone_project_data(project)
     await project_db_creator(**destination_project)
@@ -383,6 +385,7 @@ async def _create_and_delete_folders_from_project(
         project,
         destination_project,
         nodes_map={NodeID(i): NodeID(j) for i, j in nodes_map.items()},
+        client_timeout=client_timeout,
     )
 
     # data should be equal to the destination project, and all store entries should point to simcore.s3
