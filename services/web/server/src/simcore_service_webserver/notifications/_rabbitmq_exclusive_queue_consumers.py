@@ -18,7 +18,7 @@ from servicelib.logging_utils import log_catch, log_context
 from servicelib.rabbitmq import RabbitMQClient
 from servicelib.utils import logged_gather
 
-from ..projects import projects_service
+from ..projects import _projects_service
 from ..projects.exceptions import ProjectNotFoundError
 from ..rabbitmq import get_rabbitmq_client
 from ..socketio.messages import (
@@ -30,7 +30,7 @@ from ..socketio.messages import (
     send_message_to_user,
 )
 from ..socketio.models import WebSocketNodeProgress, WebSocketProjectProgress
-from ..wallets import api as wallets_api
+from ..wallets import api as wallets_service
 from ._rabbitmq_consumers_common import SubcribeArgumentsTuple, subscribe_to_rabbitmq
 
 _logger = logging.getLogger(__name__)
@@ -42,7 +42,7 @@ async def _convert_to_node_update_event(
     app: web.Application, message: ProgressRabbitMessageNode
 ) -> SocketMessageDict | None:
     try:
-        project = await projects_service.get_project_for_user(
+        project = await _projects_service.get_project_for_user(
             app, f"{message.project_id}", message.user_id
         )
         if f"{message.node_id}" in project["workbench"]:
@@ -128,7 +128,7 @@ async def _events_message_parser(app: web.Application, data: bytes) -> bool:
 
 async def _osparc_credits_message_parser(app: web.Application, data: bytes) -> bool:
     rabbit_message = TypeAdapter(WalletCreditsMessage).validate_json(data)
-    wallet_groups = await wallets_api.list_wallet_groups_with_read_access_by_wallet(
+    wallet_groups = await wallets_service.list_wallet_groups_with_read_access_by_wallet(
         app, wallet_id=rabbit_message.wallet_id
     )
     rooms_to_notify: Generator[GroupID, None, None] = (
