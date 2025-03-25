@@ -39,7 +39,7 @@ from .._constants import (
     MSG_PASSWORD_CHANGED,
     MSG_UNAUTHORIZED_PHONE_CONFIRMATION,
 )
-from .._invitations_service import InvitationData
+from .._invitations_service import ConfirmedInvitationData
 from .._login_repository_legacy import (
     AsyncpgStorage,
     ConfirmationTokenDict,
@@ -76,7 +76,7 @@ def _parse_extra_credits_in_usd_or_none(
 ) -> PositiveInt | None:
     with suppress(ValidationError, JSONDecodeError):
         confirmation_data = confirmation.get("data", "EMPTY") or "EMPTY"
-        invitation = InvitationData.model_validate_json(confirmation_data)
+        invitation = ConfirmedInvitationData.model_validate_json(confirmation_data)
         return invitation.extra_credits_in_usd
     return None
 

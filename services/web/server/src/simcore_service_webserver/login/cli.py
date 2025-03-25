@@ -6,7 +6,7 @@ from servicelib.utils_secrets import generate_password
 from simcore_postgres_database.models.confirmations import ConfirmationAction
 from yarl import URL
 
-from ._invitations_service import InvitationData, get_invitation_url
+from ._invitations_service import ConfirmedInvitationData, get_invitation_url
 
 
 def invitations(
@@ -19,7 +19,7 @@ def invitations(
 ):
     """Generates a list of invitation links for registration"""
 
-    invitation = InvitationData(issuer=issuer_email, trial_account_days=trial_days)  # type: ignore[call-arg] # guest field is deprecated
+    invitation = ConfirmedInvitationData(issuer=issuer_email, trial_account_days=trial_days)  # type: ignore[call-arg] # guest field is deprecated
 
     codes = [generate_password(code_length) for _ in range(num_codes)]
 
