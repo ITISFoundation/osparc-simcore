@@ -99,7 +99,6 @@ async def _request_copy_folders(
     pytest.fail(reason="Copy folders failed!")
 
 
-# @pytest.mark.xfail(reason="There is something fishy here MB, GC")
 async def test_copy_folders_from_non_existing_project(
     initialized_app: FastAPI,
     storage_rabbitmq_rpc_client: RabbitMQRPCClient,
