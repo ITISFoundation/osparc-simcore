@@ -5,8 +5,8 @@ from redis.asyncio import Redis
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from servicelib.utils import logged_gather
 
+from ..projects._projects_service import remove_project_dynamic_services
 from ..projects.exceptions import ProjectLockError, ProjectNotFoundError
-from ..projects.projects_service import remove_project_dynamic_services
 from ..redis import get_redis_lock_manager_client
 from ..resource_manager.registry import (
     RedisResourceRegistry,
