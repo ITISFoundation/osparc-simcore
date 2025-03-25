@@ -63,7 +63,8 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
             break;
           }
         }
-      });
+      })
+      .catch(err => osparc.FlashMessenger.logError(err));
   },
 
   events: {

@@ -9,7 +9,7 @@ from ..products.models import Product
 from ..projects import api as projects_api
 from ..users import preferences_api as user_preferences_api
 from ..users.exceptions import UserDefaultWalletNotFoundError
-from ..wallets import api as wallets_api
+from ..wallets import api as wallets_service
 
 
 async def get_wallet_info(
@@ -49,7 +49,7 @@ async def get_wallet_info(
         project_wallet_id = project_wallet.wallet_id
 
     # Check whether user has access to the wallet
-    wallet = await wallets_api.get_wallet_with_available_credits_by_user_and_wallet(
+    wallet = await wallets_service.get_wallet_with_available_credits_by_user_and_wallet(
         app,
         user_id=user_id,
         wallet_id=project_wallet_id,

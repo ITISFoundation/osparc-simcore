@@ -14,12 +14,12 @@ from servicelib.logging_errors import create_troubleshotting_log_kwargs
 from servicelib.logging_utils import log_catch, log_context
 from servicelib.utils import limited_as_completed, logged_gather
 
-from ..dynamic_scheduler import api as dynamic_scheduler_api
-from ..projects.api import has_user_project_access_rights
-from ..projects.projects_service import (
+from ..dynamic_scheduler import api as dynamic_scheduler_service
+from ..projects._projects_service import (
     is_node_id_present_in_any_project_workbench,
     list_node_ids_in_project,
 )
+from ..projects.api import has_user_project_access_rights
 from ..resource_manager.registry import RedisResourceRegistry
 from ..users.api import get_user_role
 from ..users.exceptions import UserNotFoundError
@@ -55,7 +55,7 @@ async def _remove_service(
         logging.INFO,
         msg=f"removing {(service.node_uuid, service.host)} with {save_service_state=}",
     ):
-        await dynamic_scheduler_api.stop_dynamic_service(
+        await dynamic_scheduler_service.stop_dynamic_service(
             app,
             dynamic_service_stop=DynamicServiceStop(
                 user_id=service.user_id,
@@ -90,7 +90,7 @@ async def remove_orphaned_services(
     # in between and the GC would remove services that actually should be running.
 
     with log_catch(_logger, reraise=False):
-        running_services = await dynamic_scheduler_api.list_dynamic_services(app)
+        running_services = await dynamic_scheduler_service.list_dynamic_services(app)
         if not running_services:
             # nothing to do
             return
