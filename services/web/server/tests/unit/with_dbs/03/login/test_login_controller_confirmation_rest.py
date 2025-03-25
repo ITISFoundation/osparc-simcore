@@ -45,10 +45,14 @@ async def test_confirm_registration(
     confirmation = await create_valid_confirmation_token(target_user_id, "REGISTRATION")
     code = confirmation["code"]
 
-    # consuming code
+    # clicks link to confirm registration
     response = await client.get(f"/v0/auth/confirmation/{code}")
-    assert response.status == status.HTTP_302_FOUND
-    assert response.headers["Location"].endswith("?registered=true")
+    assert response.status == status.HTTP_200_OK
+
+    # checks redirection
+    assert len(response.history) == 1
+    assert response.history[0].status == status.HTTP_302_FOUND
+    assert response.history[0].headers["Location"].endswith("/#?registered=true")
 
 
 async def test_confirm_change_email(
@@ -56,13 +60,20 @@ async def test_confirm_change_email(
     create_valid_confirmation_token: CreateTokenCallable,
     registered_user: UserInfoDict,
 ):
+    assert registered_user["status"] == UserStatus.ACTIVE
+
     user_id = registered_user["id"]
     confirmation = await create_valid_confirmation_token(user_id, "CHANGE_EMAIL")
     code = confirmation["code"]
 
+    # clicks link to confirm registration
     response = await client.get(f"/v0/auth/confirmation/{code}")
-    assert response.status == status.HTTP_302_FOUND
-    assert "Location" in response.headers
+    assert response.status == status.HTTP_200_OK
+
+    # checks redirection to front-end, which will prompt and then finalize change-email
+    assert len(response.history) == 1
+    assert response.history[0].status == status.HTTP_302_FOUND
+    assert response.history[0].headers["Location"].endswith("/#?registered=true")
 
 
 async def test_confirm_reset_password(
