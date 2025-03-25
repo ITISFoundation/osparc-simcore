@@ -473,56 +473,8 @@ def mock_datcore_download(mocker, client):
         )
     ],
 )
+@pytest.mark.parametrize("num_concurrent_calls", [1, 20])
 async def test_create_and_delete_folders_from_project(
-    set_log_levels_for_noisy_libraries: None,
-    initialized_app: FastAPI,
-    storage_rabbitmq_rpc_client: RabbitMQRPCClient,
-    client: httpx.AsyncClient,
-    user_id: UserID,
-    product_name: str,
-    create_project: Callable[..., Awaitable[dict[str, Any]]],
-    with_random_project_with_files: tuple[
-        dict[str, Any],
-        dict[NodeID, dict[SimcoreS3FileID, dict[str, Path | str]]],
-    ],
-    mock_datcore_download,
-):
-    project_in_db, _ = with_random_project_with_files
-    await _create_and_delete_folders_from_project(
-        storage_rabbitmq_rpc_client,
-        client,
-        user_id,
-        product_name,
-        project_in_db,
-        initialized_app,
-        create_project,
-        check_list_files=True,
-    )
-
-
-@pytest.mark.flaky(max_runs=3)
-@pytest.mark.parametrize(
-    "location_id",
-    [SimcoreS3DataManager.get_location_id()],
-    ids=[SimcoreS3DataManager.get_location_name()],
-    indirect=True,
-)
-@pytest.mark.parametrize(
-    "project_params",
-    [
-        ProjectWithFilesParams(
-            num_nodes=3,
-            allowed_file_sizes=(
-                TypeAdapter(ByteSize).validate_python("7Mib"),
-                TypeAdapter(ByteSize).validate_python("110Mib"),
-                TypeAdapter(ByteSize).validate_python("1Mib"),
-            ),
-            workspace_files_count=0,
-        )
-    ],
-)
-@pytest.mark.parametrize("num_concurrent_calls", [20])
-async def test_create_and_delete_folders_from_project_burst(
     set_log_levels_for_noisy_libraries: None,
     initialized_app: FastAPI,
     storage_rabbitmq_rpc_client: RabbitMQRPCClient,
