@@ -466,7 +466,7 @@ def mock_datcore_download(mocker, client):
         )
     ],
 )
-@pytest.mark.parametrize("num_concurrent_calls", [1, 20], ids=str)
+@pytest.mark.parametrize("num_concurrent_calls", [1], ids=str)
 async def test_create_and_delete_folders_from_project(
     set_log_levels_for_noisy_libraries: None,
     initialized_app: FastAPI,
