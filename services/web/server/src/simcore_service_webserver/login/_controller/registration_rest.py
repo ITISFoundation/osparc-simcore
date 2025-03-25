@@ -44,6 +44,7 @@ from .._constants import (
 )
 from .._emails_service import get_template_path, send_email_from_template
 from .._invitations_service import (
+    ConfirmedInvitationData,
     check_and_consume_invitation,
     check_other_registrations,
     extract_email_from_invitation,
@@ -175,7 +176,7 @@ async def register(request: web.Request):
 
     # INVITATIONS
     expires_at: datetime | None = None  # = does not expire
-    invitation = None
+    invitation: ConfirmedInvitationData | None = None
     # There are 3 possible states for an invitation:
     # 1. Invitation is not required (i.e. the app has disabled invitations)
     # 2. Invitation is invalid

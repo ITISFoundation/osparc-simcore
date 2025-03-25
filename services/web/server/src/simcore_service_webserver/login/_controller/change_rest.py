@@ -180,8 +180,10 @@ async def initiate_reset_password(request: web.Request):
         try:
             # Confirmation token that includes code to `complete_reset_password`.
             # Recreated if non-existent or expired  (Guideline #2)
-            confirmation = await _confirmation_service.get_or_create_confirmation(
-                cfg, db, user_id=user["id"], action="RESET_PASSWORD"
+            confirmation = (
+                await _confirmation_service.get_or_create_confirmation_without_data(
+                    cfg, db, user_id=user["id"], action="RESET_PASSWORD"
+                )
             )
 
             # Produce a link so that the front-end can hit `complete_reset_password`
@@ -221,7 +223,7 @@ class ChangeEmailBody(InputSchema):
     email: LowerCaseEmailStr
 
 
-async def submit_request_to_change_email(request: web.Request):
+async def initiate_change_email(request: web.Request):
     # NOTE: This code have been intentially disabled in https://github.com/ITISFoundation/osparc-simcore/pull/5472
     db: AsyncpgStorage = get_plugin_storage(request.app)
     product: Product = products_web.get_current_product(request)

@@ -65,7 +65,7 @@ def get_expiration_date(
     return confirmation["created_at"] + lifetime
 
 
-async def get_or_create_confirmation(
+async def get_or_create_confirmation_without_data(
     cfg: LoginOptions,
     db: AsyncpgStorage,
     user_id: UserID,
