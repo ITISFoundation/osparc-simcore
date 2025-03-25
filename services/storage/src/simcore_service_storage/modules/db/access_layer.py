@@ -338,8 +338,8 @@ class AccessLayerRepository(BaseRepository):
 
                 if parent == EXPORTS_S3_PREFIX:
                     # ownership still not defined, so we assume it is user_id
-                    # only read access is required
-                    return AccessRights(read=True, write=False, delete=False)
+                    # NOTE: all permissions are required for: downloading, uploading and aborting
+                    return AccessRights.all()
 
                 # otherwise assert 'parent' string corresponds to a valid UUID
                 access_rights = await self.get_project_access_rights(
