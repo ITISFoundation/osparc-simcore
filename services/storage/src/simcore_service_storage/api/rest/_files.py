@@ -259,7 +259,9 @@ async def abort_upload_file(
     await dsm.abort_file_upload(query_params.user_id, file_id)
 
 
-_UNDEFINED_PRODUCT_NAME_FOR_WORKER_TASKS: Final[str] = "undefinedproduct"
+_UNDEFINED_PRODUCT_NAME_FOR_WORKER_TASKS: Final[str] = (
+    "undefinedproduct"  # NOTE: this is used to keep backwards compatibility with user of these APIs
+)
 
 
 @router.post(
