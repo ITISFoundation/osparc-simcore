@@ -99,7 +99,7 @@ qx.Class.define("osparc.store.Services", {
     },
 
     getService: function(key, version, useCache = true) {
-      return new Promise(resolve => {
+      return new Promise((resolve, reject) => {
         if (
           useCache &&
           this.__isInCache(key, version) &&
@@ -120,7 +120,10 @@ qx.Class.define("osparc.store.Services", {
             this.__addToCache(service)
             resolve(service);
           })
-          .catch(console.error);
+          .catch(err => {
+            console.error(err);
+            reject();
+          });
       });
     },
 

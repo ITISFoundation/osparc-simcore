@@ -75,6 +75,7 @@ qx.Class.define("osparc.ui.window.Window", {
         resizable: true,
         width: width,
         minHeight: minHeight,
+        maxHeight: Math.max(minHeight, document.documentElement.clientHeight),
         modal: true,
         clickAwayClose: true
       });
