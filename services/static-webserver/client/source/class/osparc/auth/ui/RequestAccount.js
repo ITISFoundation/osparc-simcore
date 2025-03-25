@@ -408,7 +408,7 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
       };
       osparc.data.Resources.fetch("auth", "postRequestAccount", params)
         .then(() => {
-          const msg = this.tr("The request is being processed, you will hear from us in the coming hours");
+          const msg = this.tr("Your request is being processed. You will hear from us soon");
           osparc.FlashMessenger.logAs(msg, "INFO");
           this.fireDataEvent("done");
         })

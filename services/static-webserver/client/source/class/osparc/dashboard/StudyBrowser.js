@@ -2141,16 +2141,18 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         if (msg) {
           osparc.FlashMessenger.logAs(msg, msgLevel);
         }
+        osparc.store.PollTasks.getInstance().removeTask(task);
         osparc.task.TasksContainer.getInstance().removeTaskUI(taskUI);
         this._resourcesContainer.removeNonResourceCard(duplicatingStudyCard);
       };
 
       task.addListener("taskAborted", () => {
         const msg = this.tr("Duplication cancelled");
-        finished(msg, "INFO");
+        finished(msg, "WARNING");
       });
       task.addListener("resultReceived", e => {
-        finished();
+        const msg = this.tr("Duplication completed");
+        finished(msg, "INFO");
         const duplicatedStudyData = e.getData();
         this._updateStudyData(duplicatedStudyData);
       });

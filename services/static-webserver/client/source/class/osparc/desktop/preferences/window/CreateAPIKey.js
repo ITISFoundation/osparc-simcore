@@ -17,7 +17,7 @@ qx.Class.define("osparc.desktop.preferences.window.CreateAPIKey", {
   extend: osparc.desktop.preferences.window.APIKeyBase,
 
   construct: function() {
-    const caption = this.tr("Create API Key");
+    const caption = this.tr("Generate API Key");
     const infoText = this.tr("Key names must be unique.");
     this.base(arguments, caption, infoText);
 
@@ -48,7 +48,7 @@ qx.Class.define("osparc.desktop.preferences.window.CreateAPIKey", {
         if (date) {
           // allow only future dates
           if (new Date() > new Date(date)) {
-            const msg = this.tr("Choose a future date");
+            const msg = this.tr("Select a future date");
             osparc.FlashMessenger.logAs(msg, "WARNING");
             expirationDate.resetValue();
           } else {

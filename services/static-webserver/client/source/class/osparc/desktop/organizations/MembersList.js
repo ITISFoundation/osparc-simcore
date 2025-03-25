@@ -243,8 +243,8 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
       const canIDelete = organization.getAccessRights()["delete"];
 
       const introText = canIWrite ?
-        this.tr("You can add new members and change their roles.") :
-        this.tr("You can't add new members to this Organization. Please contact an Administrator or Manager.");
+        this.tr("You can add new members and assign roles.") :
+        this.tr("You cannot add new members to this Organization. Please contact an Administrator or Manager.");
       this.__introLabel.setValue(introText);
 
       this.__addMembersButton.set({
@@ -508,7 +508,7 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
       } else if (isThereAnyManager) {
         rUSure += `<br>There is no ${osparc.data.Roles.ORG[3].label} in this Organization.`;
       }
-      rUSure += "<br><br>" + this.tr("If you Leave, the page will be reloaded.");
+      rUSure += "<br><br>" + this.tr("If you leave, the page will reload.");
       const confirmationWin = new osparc.ui.window.Confirmation(rUSure).set({
         caption: this.tr("Leave Organization"),
         confirmText: this.tr("Leave"),
