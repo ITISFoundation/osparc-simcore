@@ -189,8 +189,8 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
         }
       }
 
-      let msg = this.tr("This operation cannot be undone.");
-      msg += isFolderSelected ? ("<br>"+this.tr("All the content of the folders will be deleted.")) : "";
+      let msg = this.tr("This action cannot be undone.");
+      msg += isFolderSelected ? ("<br>"+this.tr("All contents within the folders will be deleted.")) : "";
       msg += "<br>" + this.tr("Do you want to proceed?");
       const confirmationWin = new osparc.ui.window.Confirmation(msg).set({
         caption: this.tr("Delete"),

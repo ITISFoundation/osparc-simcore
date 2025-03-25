@@ -202,7 +202,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
     },
 
     __addStartHint: function() {
-      this.__startHint = new qx.ui.basic.Label(this.tr("Double click to start adding a node")).set({
+      this.__startHint = new qx.ui.basic.Label(this.tr("Double-click to add a node")).set({
         font: "workbench-start-hint",
         textColor: "workbench-start-hint",
         visibility: "excluded"
