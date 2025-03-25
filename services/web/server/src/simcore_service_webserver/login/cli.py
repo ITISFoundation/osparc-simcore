@@ -16,12 +16,12 @@ def invitations(
     user_id: int = 1,
     num_codes: int = 15,
     code_length: int = 30,
-):
+) -> None:
     """Generates a list of invitation links for registration"""
 
     invitation = ConfirmedInvitationData(issuer=issuer_email, trial_account_days=trial_days)  # type: ignore[call-arg] # guest field is deprecated
 
-    codes = [generate_password(code_length) for _ in range(num_codes)]
+    codes: list[str] = [generate_password(code_length) for _ in range(num_codes)]
 
     typer.secho(
         "{:-^100}".format("invitations.md"),
@@ -48,19 +48,19 @@ def invitations(
 
     utcnow = datetime.now(tz=UTC)
     today: datetime = utcnow.today()
-    print("code,user_id,action,data,created_at", file=sys.stdout)
+    print("code,user_id,action,data,created_at", file=sys.stdout)  # noqa: T201
     for n, code in enumerate(codes, start=1):
-        print(f'{code},{user_id},INVITATION,"{{', file=sys.stdout)
-        print(
+        print(f'{code},{user_id},INVITATION,"{{', file=sys.stdout)  # noqa: T201
+        print(  # noqa: T201
             f'""guest"": ""invitation-{today.year:04d}{today.month:02d}{today.day:02d}-{n}"" ,',
             file=sys.stdout,
         )
-        print(f'""issuer"" : ""{invitation.issuer}"" ,', file=sys.stdout)
-        print(
+        print(f'""issuer"" : ""{invitation.issuer}"" ,', file=sys.stdout)  # noqa: T201
+        print(  # noqa: T201
             f'""trial_account_days"" : ""{invitation.trial_account_days}""',
             file=sys.stdout,
         )
-        print('}",%s' % utcnow.isoformat(sep=" "), file=sys.stdout)
+        print('}}",{}'.format(utcnow.isoformat(sep=" ")), file=sys.stdout)  # noqa: T201
 
     typer.secho(
         "-" * 100,
