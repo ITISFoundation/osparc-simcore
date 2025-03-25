@@ -4,6 +4,7 @@ from celery import Task  # type: ignore[import-untyped]
 from models_library.progress_bar import ProgressReport
 from models_library.projects_nodes_io import StorageFileID
 from models_library.users import UserID
+from servicelib.progress_bar import ProgressBarData
 
 from ...dsm import get_dsm_provider
 from ...modules.celery.models import TaskID
@@ -34,6 +35,9 @@ async def data_export(
             set_tqdm_absolute_progress(pbar, report)
             await get_celery_worker(task.app).set_task_progress(task, task_id, report)
 
-        return await dsm.create_s3_export(
-            user_id, paths_to_export, progress_cb=_progress_cb
-        )
+        async with ProgressBarData(
+            num_steps=1, description="data export", progress_report_cb=_progress_cb
+        ) as progress_bar:
+            return await dsm.create_s3_export(
+                user_id, paths_to_export, progress_bar=progress_bar
+            )

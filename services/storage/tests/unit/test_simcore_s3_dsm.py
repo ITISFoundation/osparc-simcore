@@ -17,6 +17,7 @@ from models_library.users import UserID
 from pydantic import ByteSize, TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.storage_utils import FileIDDict
+from servicelib.progress_bar import ProgressBarData
 from simcore_service_storage.constants import LinkType
 from simcore_service_storage.models import FileMetaData
 from simcore_service_storage.modules.db.file_meta_data import FileMetaDataRepository
@@ -250,9 +251,13 @@ async def test_create_s3_export(
         reports.append(report)
 
     await _assert_meta_data_entries_count(sqlalchemy_async_engine, count=1)
-    file_id = await simcore_s3_dsm.create_s3_export(
-        user_id, selection_to_export, progress_cb=_progress_cb
-    )
+
+    async with ProgressBarData(
+        num_steps=1, description="data export", progress_report_cb=_progress_cb
+    ) as root_progress_bar:
+        file_id = await simcore_s3_dsm.create_s3_export(
+            user_id, selection_to_export, progress_bar=root_progress_bar
+        )
     cleanup_when_done(file_id)
     # count=2 -> the direcotory and the .zip export
     await _assert_meta_data_entries_count(sqlalchemy_async_engine, count=2)
