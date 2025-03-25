@@ -7,7 +7,7 @@ from common_library.pagination_tools import iter_pagination_params
 from models_library.basic_types import IDStr
 from models_library.folders import FolderID
 from models_library.products import ProductName
-from models_library.projects import ProjectID
+from models_library.projects import Project, ProjectID
 from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.rest_pagination import MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
 from models_library.users import UserID
@@ -21,6 +21,7 @@ from simcore_postgres_database.utils_repos import transaction_context
 from ..db.plugin import get_asyncpg_engine
 from ..folders._folders_service import list_folders
 from ..folders._trash_service import trash_folder, untrash_folder
+from ..projects._crud_api_read import ProjectTypeAPI, list_projects
 from ..projects._trash_service import trash_project, untrash_project
 from . import _workspaces_repository, _workspaces_service
 from .errors import WorkspaceNotTrashedError
@@ -87,21 +88,23 @@ async def _list_child_projects(
         (
             projects,
             page_params.total_number_of_items,
-        ) = await list_folders(
+        ) = await list_projects(
             app,
             user_id=user_id,
             product_name=product_name,
-            folder_id=None,
+            show_hidden=True,
             workspace_id=workspace_id,
+            project_type=ProjectTypeAPI.all,
+            folder_id=None,
             trashed=None,
             offset=page_params.offset,
             limit=page_params.limit,
             order_by=OrderBy(field=IDStr("trashed"), direction=OrderDirection.ASC),
         )
 
-        child_projects.extend([folder.folder_db.folder_id for folder in folders])
+        child_projects.extend([Project(**project).uuid for project in projects])
 
-    return child_folders
+    return child_projects
 
 
 async def trash_workspace(
@@ -145,9 +148,12 @@ async def trash_workspace(
                 force_stop_first=force_stop_first,
             )
 
-        child_projects: list[ProjectID] = [
-            # NOTE: follows up with https://github.com/ITISFoundation/osparc-simcore/issues/7034
-        ]
+        child_projects: list[ProjectID] = await _list_child_projects(
+            app,
+            product_name=product_name,
+            user_id=user_id,
+            workspace_id=workspace_id,
+        )
 
         for project_id in child_projects:
             await trash_project(
@@ -196,9 +202,12 @@ async def untrash_workspace(
                 folder_id=folder_id,
             )
 
-        child_projects: list[ProjectID] = [
-            # NOTE: follows up with https://github.com/ITISFoundation/osparc-simcore/issues/7034
-        ]
+        child_projects: list[ProjectID] = await _list_child_projects(
+            app,
+            product_name=product_name,
+            user_id=user_id,
+            workspace_id=workspace_id,
+        )
 
         for project_id in child_projects:
             await untrash_project(
