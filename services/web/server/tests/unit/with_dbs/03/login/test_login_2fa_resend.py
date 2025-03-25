@@ -81,13 +81,16 @@ async def test_resend_2fa_workflow(
     assert client.app
 
     # spy send functions
-    # mocker.patch(
-    #     "simcore_service_webserver.login._controller.twofa_rest._twofa_service.send_sms_code",
-    #     autospec=True,
-    # )
+    mock_send_sms_code = mocker.patch(
+        "simcore_service_webserver.login._controller.twofa_rest._twofa_service.send_sms_code",
+        autospec=True,
+    )
     mock_send_sms_code2 = mocker.patch(
         "simcore_service_webserver.login._controller.auth_rest._twofa_service.send_sms_code",
-        autospec=True,
+        # NOTE: When importing the full submodule, we are mocking _twofa_service
+        #  from .. import _twofa_service
+        #  _twofa_service.send_sms_code(...)
+        new=mock_send_sms_code,
     )
 
     mock_send_email_code = mocker.patch(
@@ -112,7 +115,11 @@ async def test_resend_2fa_workflow(
     )
     data, _ = await assert_status(response, status.HTTP_202_ACCEPTED)
     next_page = NextPage[CodePageParams].model_validate(data)
+
     assert next_page.name == CODE_2FA_SMS_CODE_REQUIRED
+
+    assert next_page.parameters is not None
+    assert next_page.parameters.expiration_2fa is not None
     assert next_page.parameters.expiration_2fa > 0
 
     # resend code via SMS

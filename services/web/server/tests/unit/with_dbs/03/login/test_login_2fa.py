@@ -81,14 +81,17 @@ def mocked_twilio_service(mocker: MockerFixture) -> dict[str, MockType]:
         autospec=True,
     )
 
-    mock2 = mocker.patch(
+    mock_same_submodule = mocker.patch(
         "simcore_service_webserver.login._controller.auth_rest._twofa_service.send_sms_code",
-        autospec=False,
+        # NOTE: When importing the full submodule, we are mocking _twofa_service
+        #  from .. import _twofa_service
+        #  _twofa_service.send_sms_code(...)
+        new=mock,
     )
 
     return {
         "send_sms_code_for_registration": mock,
-        "send_sms_code_for_login": mock,
+        "send_sms_code_for_login": mock_same_submodule,
     }
 
 
