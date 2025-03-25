@@ -24,47 +24,6 @@ from .settings import LoginOptions
 _logger = logging.getLogger(__name__)
 
 
-async def validate_confirmation_code(
-    code: str, db: AsyncpgStorage, cfg: LoginOptions
-) -> ConfirmationTokenDict | None:
-    """
-    Returns None if validation fails
-    """
-    assert not code.startswith("***"), "forgot .get_secret_value()??"  # nosec
-
-    confirmation: ConfirmationTokenDict | None = await db.get_confirmation(
-        {"code": code}
-    )
-    if confirmation and is_confirmation_expired(cfg, confirmation):
-        await db.delete_confirmation(confirmation)
-        _logger.warning(
-            "Used expired token [%s]. Deleted from confirmations table.",
-            confirmation,
-        )
-        return None
-    return confirmation
-
-
-def _url_for_confirmation(app: web.Application, code: str) -> URL:
-    # NOTE: this is in a query parameter, and can contain ? for example.
-    safe_code = quote(code, safe="")
-    return app.router["auth_confirmation"].url_for(code=safe_code)
-
-
-def make_confirmation_link(
-    request: web.Request, confirmation: ConfirmationTokenDict
-) -> str:
-    link = _url_for_confirmation(request.app, code=confirmation["code"])
-    return f"{request.scheme}://{request.host}{link}"
-
-
-def get_expiration_date(
-    cfg: LoginOptions, confirmation: ConfirmationTokenDict
-) -> datetime:
-    lifetime = cfg.get_confirmation_lifetime(confirmation["action"])
-    return confirmation["created_at"] + lifetime
-
-
 async def get_or_create_confirmation_without_data(
     cfg: LoginOptions,
     db: AsyncpgStorage,
@@ -90,7 +49,48 @@ async def get_or_create_confirmation_without_data(
     return confirmation
 
 
+def get_expiration_date(
+    cfg: LoginOptions, confirmation: ConfirmationTokenDict
+) -> datetime:
+    lifetime = cfg.get_confirmation_lifetime(confirmation["action"])
+    return confirmation["created_at"] + lifetime
+
+
+def _url_for_confirmation(app: web.Application, code: str) -> URL:
+    # NOTE: this is in a query parameter, and can contain ? for example.
+    safe_code = quote(code, safe="")
+    return app.router["auth_confirmation"].url_for(code=safe_code)
+
+
+def make_confirmation_link(
+    request: web.Request, confirmation: ConfirmationTokenDict
+) -> str:
+    link = _url_for_confirmation(request.app, code=confirmation["code"])
+    return f"{request.scheme}://{request.host}{link}"
+
+
 def is_confirmation_expired(cfg: LoginOptions, confirmation: ConfirmationTokenDict):
     age = datetime.utcnow() - confirmation["created_at"]
     lifetime = cfg.get_confirmation_lifetime(confirmation["action"])
     return age > lifetime
+
+
+async def validate_confirmation_code(
+    code: str, db: AsyncpgStorage, cfg: LoginOptions
+) -> ConfirmationTokenDict | None:
+    """
+    Returns None if validation fails
+    """
+    assert not code.startswith("***"), "forgot .get_secret_value()??"  # nosec
+
+    confirmation: ConfirmationTokenDict | None = await db.get_confirmation(
+        {"code": code}
+    )
+    if confirmation and is_confirmation_expired(cfg, confirmation):
+        await db.delete_confirmation(confirmation)
+        _logger.warning(
+            "Used expired token [%s]. Deleted from confirmations table.",
+            confirmation,
+        )
+        return None
+    return confirmation
