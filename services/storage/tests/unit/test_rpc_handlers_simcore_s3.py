@@ -1,3 +1,11 @@
+# pylint:disable=no-name-in-module
+# pylint:disable=protected-access
+# pylint:disable=redefined-outer-name
+# pylint:disable=too-many-arguments
+# pylint:disable=too-many-positional-arguments
+# pylint:disable=unused-argument
+# pylint:disable=unused-variable
+
 import asyncio
 import datetime
 import logging
