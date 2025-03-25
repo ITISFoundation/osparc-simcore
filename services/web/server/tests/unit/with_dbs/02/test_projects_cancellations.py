@@ -54,7 +54,7 @@ async def slow_storage_subsystem_mock(
     storage_subsystem_mock: MockedStorageSubsystem, faker: Faker
 ) -> MockedStorageSubsystem:
     # requests storage to copy data
-    async def _very_slow_copy_of_data(*args):
+    async def _very_slow_copy_of_data(*args, **kwargs):
         await asyncio.sleep(30)
 
         async def _mock_result(): ...
