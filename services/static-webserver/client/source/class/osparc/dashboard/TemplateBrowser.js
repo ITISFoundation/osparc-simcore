@@ -372,13 +372,14 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
         if (msg) {
           osparc.FlashMessenger.logAs(msg, msgLevel);
         }
+        osparc.store.PollTasks.getInstance().removeTask(task);
         osparc.task.TasksContainer.getInstance().removeTaskUI(taskUI);
         this._resourcesContainer.removeNonResourceCard(toTemplateCard);
       };
 
       task.addListener("taskAborted", () => {
         const msg = this.tr("Study to Template cancelled");
-        finished(msg, "INFO");
+        finished(msg, "WARNING");
       });
       task.addListener("updateReceived", e => {
         const updateData = e.getData();
