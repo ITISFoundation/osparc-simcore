@@ -12,6 +12,7 @@ from common_library.async_tools import make_async
 from models_library.progress_bar import ProgressReport
 from pydantic import ValidationError
 from servicelib.logging_utils import log_context
+from simcore_service_storage.exceptions.errors import ConfigurationError
 
 from .models import (
     TaskContext,
