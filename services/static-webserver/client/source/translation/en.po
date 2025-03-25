@@ -1199,7 +1199,7 @@ msgid "Two-Factor Authentication (2FA)"
 msgstr ""
 
 #: osparc/auth/ui/VerifyPhoneNumberView.js
-msgid "We will send you a text message to your mobile phone to authenticate you each time you log in."
+msgid "A text message will be sent to your mobile phone for authentication each time you log in."
 msgstr ""
 
 #: osparc/auth/ui/VerifyPhoneNumberView.js
@@ -1251,7 +1251,7 @@ msgid "Type code"
 msgstr ""
 
 #: osparc/auth/ui/Login2FAValidationCodeView.js
-msgid "Didn't receive the code? Resend code"
+msgid "Didn't receive the code? Click to resend"
 msgstr ""
 
 #: osparc/auth/ui/Login2FAValidationCodeView.js
@@ -1383,11 +1383,11 @@ msgid "Unsuccessful privacy update"
 msgstr ""
 
 #: osparc/desktop/account/ProfilePage.js
-msgid "If all searchable fields are hidden, you will not be findable."
+msgid "If all searchable fields are hidden, you will not be discoverable."
 msgstr ""
 
 #: osparc/desktop/account/ProfilePage.js
-msgid "2 Factor Authentication"
+msgid "Two-Factor Authentication"
 msgstr ""
 
 #: osparc/desktop/account/ProfilePage.js
@@ -1399,7 +1399,7 @@ msgid "You are about to disable the 2FA"
 msgstr ""
 
 #: osparc/desktop/account/ProfilePage.js
-msgid "            The 2 Factor Authentication is one more measure to prevent hackers from accessing your account with an additional layer of security.             When you sign in, 2FA helps make sure that your resources and personal information stays private, safe and secure.          "
+msgid "            The Two-Factor Authentication is one more measure to prevent hackers from accessing your account with an additional layer of security.             When you sign in, 2FA helps make sure that your resources and personal information stays private, safe and secure.          "
 msgstr ""
 
 #: osparc/desktop/account/ProfilePage.js
