@@ -52,8 +52,8 @@ def app_environment(
 
 async def test_register_entrypoint(
     client: TestClient,
-    fake_user_email: str,
-    fake_user_password: str,
+    user_email: str,
+    user_password: str,
     cleanup_db_tables: None,
 ):
     assert client.app
@@ -62,18 +62,18 @@ async def test_register_entrypoint(
     response = await client.post(
         url.path,
         json={
-            "email": fake_user_email,
-            "password": fake_user_password,
-            "confirm": fake_user_password,
+            "email": user_email,
+            "password": user_password,
+            "confirm": user_password,
         },
     )
 
     data, _ = await assert_status(response, status.HTTP_200_OK)
-    assert fake_user_email in data["message"]
+    assert user_email in data["message"]
 
 
 async def test_register_body_validation(
-    client: TestClient, fake_user_password: str, cleanup_db_tables: None
+    client: TestClient, user_password: str, cleanup_db_tables: None
 ):
     assert client.app
     url = client.app.router["auth_register"].url_for()
@@ -81,8 +81,8 @@ async def test_register_body_validation(
         url.path,
         json={
             "email": "not-an-email",
-            "password": fake_user_password,
-            "confirm": fake_user_password.upper(),
+            "password": user_password,
+            "confirm": user_password.upper(),
         },
     )
 
@@ -144,8 +144,8 @@ async def test_registration_invitation_stays_valid_if_once_tried_with_weak_passw
     login_options: LoginOptions,
     db: AsyncpgStorage,
     mocker: MockerFixture,
-    fake_user_email: str,
-    fake_user_password: str,
+    user_email: str,
+    user_password: str,
     default_product_name: ProductName,
     fake_weak_password: str,
     cleanup_db_tables: None,
@@ -177,7 +177,7 @@ async def test_registration_invitation_stays_valid_if_once_tried_with_weak_passw
         response = await client.post(
             url.path,
             json={
-                "email": fake_user_email,
+                "email": user_email,
                 "password": fake_weak_password,
                 "confirm": fake_weak_password,
                 "invitation": confirmation["code"],
@@ -193,9 +193,9 @@ async def test_registration_invitation_stays_valid_if_once_tried_with_weak_passw
         response = await client.post(
             url.path,
             json={
-                "email": fake_user_email,
-                "password": fake_user_password,
-                "confirm": fake_user_password,
+                "email": user_email,
+                "password": user_password,
+                "confirm": user_password,
                 "invitation": confirmation["code"],
             },
         )
@@ -207,7 +207,7 @@ async def test_registration_with_weak_password_fails(
     mocker: MockerFixture,
     cleanup_db_tables: None,
     default_product_name: ProductName,
-    fake_user_email: str,
+    user_email: str,
     fake_weak_password: str,
 ):
     assert client.app
@@ -216,7 +216,7 @@ async def test_registration_with_weak_password_fails(
     response = await client.post(
         url.path,
         json={
-            "email": fake_user_email,
+            "email": user_email,
             "password": fake_weak_password,
             "confirm": fake_weak_password,
         },
@@ -264,8 +264,8 @@ async def test_registration_without_confirmation(
     client: TestClient,
     db: AsyncpgStorage,
     mocker: MockerFixture,
-    fake_user_email: str,
-    fake_user_password: str,
+    user_email: str,
+    user_password: str,
     cleanup_db_tables: None,
 ):
     assert client.app
@@ -283,16 +283,16 @@ async def test_registration_without_confirmation(
     response = await client.post(
         url.path,
         json={
-            "email": fake_user_email,
-            "password": fake_user_password,
-            "confirm": fake_user_password,
+            "email": user_email,
+            "password": user_password,
+            "confirm": user_password,
         },
     )
 
     data, _ = await assert_status(response, status.HTTP_200_OK)
     assert MSG_LOGGED_IN in data["message"]
 
-    user = await db.get_user({"email": fake_user_email})
+    user = await db.get_user({"email": user_email})
     assert user
 
 
@@ -301,8 +301,8 @@ async def test_registration_with_confirmation(
     db: AsyncpgStorage,
     capsys: pytest.CaptureFixture,
     mocker: MockerFixture,
-    fake_user_email: str,
-    fake_user_password: str,
+    user_email: str,
+    user_password: str,
     mocked_email_core_remove_comments: None,
     cleanup_db_tables: None,
 ):
@@ -322,15 +322,15 @@ async def test_registration_with_confirmation(
     response = await client.post(
         url.path,
         json={
-            "email": fake_user_email,
-            "password": fake_user_password,
-            "confirm": fake_user_password,
+            "email": user_email,
+            "password": user_password,
+            "confirm": user_password,
         },
     )
     data, error = unwrap_envelope(await response.json())
     assert response.status == 200, (data, error)
 
-    user = await db.get_user({"email": fake_user_email})
+    user = await db.get_user({"email": user_email})
     assert user["status"] == UserStatus.CONFIRMATION_PENDING.name
 
     assert "verification link" in data["message"]
@@ -349,7 +349,7 @@ async def test_registration_with_confirmation(
     assert response.status == 200
 
     # user is active
-    user = await db.get_user({"email": fake_user_email})
+    user = await db.get_user({"email": user_email})
     assert user["status"] == UserStatus.ACTIVE.name
 
 
@@ -370,8 +370,8 @@ async def test_registration_with_invitation(
     has_valid_invitation: bool,
     expected_response: HTTPStatus,
     mocker: MockerFixture,
-    fake_user_email: str,
-    fake_user_password: str,
+    user_email: str,
+    user_password: str,
     cleanup_db_tables: None,
 ):
     assert client.app
@@ -400,9 +400,9 @@ async def test_registration_with_invitation(
         response = await client.post(
             url.path,
             json={
-                "email": fake_user_email,
-                "password": fake_user_password,
-                "confirm": fake_user_password,
+                "email": user_email,
+                "password": user_password,
+                "confirm": user_password,
                 "invitation": (
                     confirmation["code"] if has_valid_invitation else "WRONG_CODE"
                 ),
@@ -415,8 +415,8 @@ async def test_registration_with_invitation(
             response = await client.post(
                 url.path,
                 json={
-                    "email": "new-user" + fake_user_email,
-                    "password": fake_user_password,
+                    "email": "new-user" + user_email,
+                    "password": user_password,
                 },
             )
             await assert_status(response, expected_response)
@@ -430,8 +430,8 @@ async def test_registraton_with_invitation_for_trial_account(
     login_options: LoginOptions,
     faker: Faker,
     mocker: MockerFixture,
-    fake_user_email: str,
-    fake_user_password: str,
+    user_email: str,
+    user_password: str,
     cleanup_db_tables: None,
 ):
     assert client.app
@@ -471,9 +471,9 @@ async def test_registraton_with_invitation_for_trial_account(
         response = await client.post(
             url.path,
             json={
-                "email": fake_user_email,
-                "password": fake_user_password,
-                "confirm": fake_user_password,
+                "email": user_email,
+                "password": user_password,
+                "confirm": user_password,
                 "invitation": invitation.confirmation["code"],
             },
         )
@@ -484,8 +484,8 @@ async def test_registraton_with_invitation_for_trial_account(
         response = await client.post(
             url.path,
             json={
-                "email": fake_user_email,
-                "password": fake_user_password,
+                "email": user_email,
+                "password": user_password,
             },
         )
         await assert_status(response, status.HTTP_200_OK)

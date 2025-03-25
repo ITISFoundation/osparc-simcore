@@ -9,6 +9,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 from aiohttp.test_utils import TestClient
+from common_library.users_enums import UserStatus
 from pytest_simcore.helpers.webserver_login import UserInfoDict
 from servicelib.aiohttp import status
 from simcore_service_webserver.login._login_repository_legacy import (
@@ -37,12 +38,14 @@ async def create_valid_confirmation_token(db: AsyncpgStorage) -> CreateTokenCall
 async def test_confirm_registration(
     client: TestClient,
     create_valid_confirmation_token: CreateTokenCallable,
-    registered_user: UserInfoDict,
+    unconfirmed_user: UserInfoDict,
 ):
-    user_id = registered_user["id"]
-    confirmation = await create_valid_confirmation_token(user_id, "REGISTRATION")
+    assert unconfirmed_user["status"] == UserStatus.CONFIRMATION_PENDING
+    target_user_id = unconfirmed_user["id"]
+    confirmation = await create_valid_confirmation_token(target_user_id, "REGISTRATION")
     code = confirmation["code"]
 
+    # consuming code
     response = await client.get(f"/v0/auth/confirmation/{code}")
     assert response.status == status.HTTP_302_FOUND
     assert response.headers["Location"].endswith("?registered=true")

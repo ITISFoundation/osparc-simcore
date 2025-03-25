@@ -136,7 +136,7 @@ async def test_unknown_email(
     client: TestClient,
     capsys: pytest.CaptureFixture,
     caplog: pytest.LogCaptureFixture,
-    fake_user_email: str,
+    user_email: str,
 ):
     assert client.app
     reset_url = client.app.router["initiate_reset_password"].url_for()
@@ -144,12 +144,12 @@ async def test_unknown_email(
     response = await client.post(
         f"{reset_url}",
         json={
-            "email": fake_user_email,
+            "email": user_email,
         },
     )
     assert response.url.path == reset_url.path
     await assert_status(
-        response, status.HTTP_200_OK, MSG_EMAIL_SENT.format(email=fake_user_email)
+        response, status.HTTP_200_OK, MSG_EMAIL_SENT.format(email=user_email)
     )
 
     # email is not sent

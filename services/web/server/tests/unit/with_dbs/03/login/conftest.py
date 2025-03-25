@@ -9,7 +9,9 @@ from collections.abc import AsyncIterable, Iterator
 import pytest
 import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
+from common_library.users_enums import UserStatus
 from faker import Faker
+from models_library.basic_types import IDStr
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.webserver_login import NewUser, UserInfoDict
@@ -75,25 +77,8 @@ def app_environment(
 
 
 @pytest.fixture
-def fake_user_email(faker: Faker) -> str:
-    return faker.email()
-
-
-@pytest.fixture
-def fake_user_name(fake_user_email: str) -> str:
-    return fake_user_email.split("@")[0]
-
-
-@pytest.fixture
-def fake_user_phone_number(faker: Faker) -> str:
+def user_phone_number(faker: Faker) -> str:
     return faker.phone_number()
-
-
-@pytest.fixture
-def fake_user_password(faker: Faker) -> str:
-    return faker.password(
-        length=12, special_chars=True, digits=True, upper_case=True, lower_case=True
-    )
 
 
 @pytest.fixture
@@ -123,19 +108,40 @@ def login_options(client: TestClient) -> LoginOptions:
 
 @pytest.fixture
 async def registered_user(
-    fake_user_name: str,
-    fake_user_email: str,
-    fake_user_password: str,
-    fake_user_phone_number: str,
+    user_name: IDStr,
+    user_email: str,
+    user_password: str,
+    user_phone_number: str,
     client: TestClient,
 ) -> AsyncIterable[UserInfoDict]:
     async with NewUser(
         user_data={
-            "name": fake_user_name,
-            "email": fake_user_email,
-            "password": fake_user_password,
-            "phone": fake_user_phone_number,
-            # active user
+            "name": user_name,
+            "email": user_email,
+            "password": user_password,
+            "phone": user_phone_number,
+            "status": UserStatus.ACTIVE,
+        },
+        app=client.app,
+    ) as user:
+        yield user
+
+
+@pytest.fixture
+async def unconfirmed_user(
+    user_name: str,
+    user_email: str,
+    user_password: str,
+    user_phone_number: str,
+    client: TestClient,
+) -> AsyncIterable[UserInfoDict]:
+    async with NewUser(
+        user_data={
+            "name": user_name,
+            "email": user_email,
+            "password": user_password,
+            "phone": user_phone_number,
+            "status": UserStatus.CONFIRMATION_PENDING,
         },
         app=client.app,
     ) as user:

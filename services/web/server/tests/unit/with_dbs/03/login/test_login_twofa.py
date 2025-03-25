@@ -123,9 +123,9 @@ async def test_workflow_register_and_login_with_2fa(
     client: TestClient,
     db: AsyncpgStorage,
     capsys: pytest.CaptureFixture,
-    fake_user_email: str,
-    fake_user_password: str,
-    fake_user_phone_number: str,
+    user_email: str,
+    user_password: str,
+    user_phone_number: str,
     mocked_twilio_service: dict[str, MockType],
     mocked_email_core_remove_comments: None,
     cleanup_db_tables: None,
@@ -139,9 +139,9 @@ async def test_workflow_register_and_login_with_2fa(
     response = await client.post(
         f"{url}",
         json={
-            "email": fake_user_email,
-            "password": fake_user_password,
-            "confirm": fake_user_password,
+            "email": user_email,
+            "password": user_password,
+            "confirm": user_password,
         },
     )
     await assert_status(response, status.HTTP_200_OK)
@@ -160,7 +160,7 @@ async def test_workflow_register_and_login_with_2fa(
     assert response.status == status.HTTP_200_OK
 
     # check email+password registered
-    user = await db.get_user({"email": fake_user_email})
+    user = await db.get_user({"email": user_email})
     assert user["status"] == UserStatus.ACTIVE.name
     assert user["phone"] is None
 
@@ -169,8 +169,8 @@ async def test_workflow_register_and_login_with_2fa(
     response = await client.post(
         f"{url}",
         json={
-            "email": fake_user_email,
-            "password": fake_user_password,
+            "email": user_email,
+            "password": user_password,
         },
     )
     data, _ = await assert_status(response, status.HTTP_202_ACCEPTED)
@@ -181,8 +181,8 @@ async def test_workflow_register_and_login_with_2fa(
     response = await client.post(
         f"{url}",
         json={
-            "email": fake_user_email,
-            "phone": fake_user_phone_number,
+            "email": user_email,
+            "phone": user_phone_number,
         },
     )
     await assert_status(response, status.HTTP_202_ACCEPTED)
@@ -191,10 +191,10 @@ async def test_workflow_register_and_login_with_2fa(
     assert mocked_twilio_service["send_sms_code_for_registration"].called
     kwargs = mocked_twilio_service["send_sms_code_for_registration"].call_args.kwargs
     phone, received_code = kwargs["phone_number"], kwargs["code"]
-    assert phone == fake_user_phone_number
+    assert phone == user_phone_number
 
     # check phone still NOT in db (TODO: should be in database and unconfirmed)
-    user = await db.get_user({"email": fake_user_email})
+    user = await db.get_user({"email": user_email})
     assert user["status"] == UserStatus.ACTIVE.name
     assert user["phone"] is None
 
@@ -203,16 +203,16 @@ async def test_workflow_register_and_login_with_2fa(
     response = await client.post(
         f"{url}",
         json={
-            "email": fake_user_email,
-            "phone": fake_user_phone_number,
+            "email": user_email,
+            "phone": user_phone_number,
             "code": received_code,
         },
     )
     await assert_status(response, status.HTTP_200_OK)
     # check user has phone confirmed
-    user = await db.get_user({"email": fake_user_email})
+    user = await db.get_user({"email": user_email})
     assert user["status"] == UserStatus.ACTIVE.name
-    assert user["phone"] == fake_user_phone_number
+    assert user["phone"] == user_phone_number
 
     # login (via SMS) ---------------------------------------------------------
 
@@ -221,8 +221,8 @@ async def test_workflow_register_and_login_with_2fa(
     response = await client.post(
         f"{url}",
         json={
-            "email": fake_user_email,
-            "password": fake_user_password,
+            "email": user_email,
+            "password": user_password,
         },
     )
     data, _ = await assert_status(response, status.HTTP_202_ACCEPTED)
@@ -235,14 +235,14 @@ async def test_workflow_register_and_login_with_2fa(
     # assert SMS was sent
     kwargs = mocked_twilio_service["send_sms_code_for_login"].call_args.kwargs
     phone, received_code = kwargs["phone_number"], kwargs["code"]
-    assert phone == fake_user_phone_number
+    assert phone == user_phone_number
 
     # 2. check SMS code
     url = client.app.router["auth_login_2fa"].url_for()
     response = await client.post(
         f"{url}",
         json={
-            "email": fake_user_email,
+            "email": user_email,
             "code": received_code,
         },
     )
@@ -251,9 +251,9 @@ async def test_workflow_register_and_login_with_2fa(
     await assert_status(response, status.HTTP_200_OK)
 
     # assert users is successfully registered
-    user = await db.get_user({"email": fake_user_email})
-    assert user["email"] == fake_user_email
-    assert user["phone"] == fake_user_phone_number
+    user = await db.get_user({"email": user_email})
+    assert user["email"] == user_email
+    assert user["phone"] == user_phone_number
     assert user["status"] == UserStatus.ACTIVE.value
 
     # login (via EMAIL) ---------------------------------------------------------
@@ -273,8 +273,8 @@ async def test_workflow_register_and_login_with_2fa(
     response = await client.post(
         f"{url}",
         json={
-            "email": fake_user_email,
-            "password": fake_user_password,
+            "email": user_email,
+            "password": user_password,
         },
     )
     data, _ = await assert_status(response, status.HTTP_202_ACCEPTED)
@@ -302,8 +302,8 @@ async def test_workflow_register_and_login_with_2fa(
     response = await client.post(
         f"{url}",
         json={
-            "email": fake_user_email,
-            "password": fake_user_password,
+            "email": user_email,
+            "password": user_password,
         },
     )
     data, _ = await assert_status(response, status.HTTP_200_OK)
@@ -312,9 +312,9 @@ async def test_workflow_register_and_login_with_2fa(
 
 async def test_can_register_same_phone_in_different_accounts(
     client: TestClient,
-    fake_user_email: str,
-    fake_user_password: str,
-    fake_user_phone_number: str,
+    user_email: str,
+    user_password: str,
+    user_phone_number: str,
     mocked_twilio_service: dict[str, MockType],
     cleanup_db_tables: None,
 ):
@@ -327,15 +327,15 @@ async def test_can_register_same_phone_in_different_accounts(
     async with AsyncExitStack() as users_stack:
         # some user ALREADY registered with the same phone
         await users_stack.enter_async_context(
-            NewUser(user_data={"phone": fake_user_phone_number}, app=client.app)
+            NewUser(user_data={"phone": user_phone_number}, app=client.app)
         )
 
         # some registered user w/o phone
         await users_stack.enter_async_context(
             NewUser(
                 user_data={
-                    "email": fake_user_email,
-                    "password": fake_user_password,
+                    "email": user_email,
+                    "password": user_password,
                     "phone": None,
                 },
                 app=client.app,
@@ -347,8 +347,8 @@ async def test_can_register_same_phone_in_different_accounts(
         response = await client.post(
             f"{url}",
             json={
-                "email": fake_user_email,
-                "password": fake_user_password,
+                "email": user_email,
+                "password": user_password,
             },
         )
         await assert_status(response, status.HTTP_202_ACCEPTED)
@@ -358,8 +358,8 @@ async def test_can_register_same_phone_in_different_accounts(
         response = await client.post(
             f"{url}",
             json={
-                "email": fake_user_email,
-                "phone": fake_user_phone_number,
+                "email": user_email,
+                "phone": user_phone_number,
             },
         )
         data, error = await assert_status(response, status.HTTP_202_ACCEPTED)
@@ -416,9 +416,9 @@ async def test_send_email_code(
 
 async def test_2fa_sms_failure_during_login(
     client: TestClient,
-    fake_user_email: str,
-    fake_user_password: str,
-    fake_user_phone_number: str,
+    user_email: str,
+    user_password: str,
+    user_phone_number: str,
     caplog: pytest.LogCaptureFixture,
     mocker: MockerFixture,
     cleanup_db_tables: None,
@@ -439,9 +439,9 @@ async def test_2fa_sms_failure_during_login(
     # A registered user ...
     async with NewUser(
         user_data={
-            "email": fake_user_email,
-            "password": fake_user_password,
-            "phone": fake_user_phone_number,
+            "email": user_email,
+            "password": user_password,
+            "phone": user_phone_number,
         },
         app=client.app,
     ):
@@ -451,8 +451,8 @@ async def test_2fa_sms_failure_during_login(
             response = await client.post(
                 f"{url}",
                 json={
-                    "email": fake_user_email,
-                    "password": fake_user_password,
+                    "email": user_email,
+                    "password": user_password,
                 },
             )
 
@@ -465,4 +465,4 @@ async def test_2fa_sms_failure_during_login(
             assert error["errors"][0]["message"].startswith(MSG_2FA_UNAVAILABLE[:10])
 
             # Expects logs like 'Failed while setting up 2FA code and sending SMS to 157XXXXXXXX3 [OEC:140392495277888]'
-            assert f"{fake_user_phone_number[:3]}" in caplog.text
+            assert f"{user_phone_number[:3]}" in caplog.text

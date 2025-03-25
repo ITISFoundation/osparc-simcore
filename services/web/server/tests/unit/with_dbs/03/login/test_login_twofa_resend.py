@@ -56,7 +56,7 @@ def postgres_db(postgres_db: sa.engine.Engine):
 
 async def test_resend_2fa_entrypoint_is_protected(
     client: TestClient,
-    fake_user_email: str,
+    user_email: str,
 ):
     assert client.app
 
@@ -64,7 +64,7 @@ async def test_resend_2fa_entrypoint_is_protected(
     response = await client.post(
         f"{url}",
         json={
-            "email": fake_user_email,
+            "email": user_email,
             "send_as": "SMS",
         },
     )
