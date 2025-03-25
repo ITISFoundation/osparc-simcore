@@ -18,7 +18,6 @@ _logger = logging.getLogger(__name__)
 
 
 def _task_progress_cb(task: Task, task_id: TaskId, report: ProgressReport) -> None:
-    _logger.error("task_progress_cb %s %s", task.name, task_id)
     worker = get_celery_worker(task.app)
     assert task.name  # nosec
     worker.set_task_progress(
