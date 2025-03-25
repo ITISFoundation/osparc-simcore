@@ -676,8 +676,6 @@ async def test_upload_real_file_with_emulated_storage_restart_after_completion_w
     assert file_upload_complete_response
     state_url = URL(f"{file_upload_complete_response.links.state}").relative()
 
-    # # here we do not check now for the state completion. instead we simulate a restart where the tasks disappear TODO: fix
-    # get_completed_upload_tasks(initialized_app).clear()
     # now check for the completion
     completion_etag = None
     async for attempt in AsyncRetrying(

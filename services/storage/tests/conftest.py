@@ -512,8 +512,6 @@ async def create_empty_directory(
         assert file_upload_complete_response
         state_url = URL(f"{file_upload_complete_response.links.state}").relative()
 
-        # check that it finished updating TODO: this works via celery now
-        # get_completed_upload_tasks(initialized_app).clear()
         # now check for the completion
         async for attempt in AsyncRetrying(
             reraise=True,
