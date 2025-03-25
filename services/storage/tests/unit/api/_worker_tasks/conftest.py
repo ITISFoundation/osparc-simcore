@@ -24,10 +24,10 @@ def mock_task_progress(mocker: MockerFixture) -> list[ProgressReport]:
     progress_updates = []
 
     async def _progress(*args, **_) -> None:
-        progress_updates.append(args[1])
+        progress_updates.append(args[2])
 
     mocker.patch(
-        "simcore_service_storage.modules.celery.worker.CeleryWorkerClient.set_task_progress",
+        "simcore_service_storage.modules.celery.worker.CeleryTaskQueueWorker.set_task_progress",
         side_effect=_progress,
     )
     return progress_updates
