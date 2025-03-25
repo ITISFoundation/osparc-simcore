@@ -27,7 +27,7 @@ class S3TransferDataCB:
     def __post_init__(self) -> None:
         self._async_update_periodic_task = create_periodic_task(
             self._async_update,
-            interval=datetime.timedelta(seconds=1),
+            interval=datetime.timedelta(seconds=0.2),
             task_name="s3_transfer_cb_update",
         )
         self._update()
@@ -48,7 +48,7 @@ class S3TransferDataCB:
             f"{self.task_progress_message_prefix} - "
             f"{self.total_bytes_to_transfer.human_readable()}"
         )
-        await self.task_progress.update(
+        await self.task_progress.set_(
             min(self._total_bytes_copied, self.total_bytes_to_transfer)
             / (self.total_bytes_to_transfer or 1)
         )

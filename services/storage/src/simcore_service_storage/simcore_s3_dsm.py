@@ -811,9 +811,9 @@ class SimcoreS3DataManager(BaseDataManager):
                     limit=_MAX_PARALLEL_S3_CALLS,
                 )
             total_num_of_files = sum(n for _, n in sizes_and_num_files)
-            src_project_total_data_size: ByteSize = TypeAdapter(
-                ByteSize
-            ).validate_python(sum(n for n, _ in sizes_and_num_files))
+            src_project_total_data_size = TypeAdapter(ByteSize).validate_python(
+                sum(n for n, _ in sizes_and_num_files)
+            )
 
         async with S3TransferDataCB(
             task_progress,
