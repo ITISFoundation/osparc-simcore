@@ -8,6 +8,7 @@ from common_library.json_serialization import json_dumps
 from jsonschema import ValidationError as JsonSchemaValidationError
 from models_library.api_schemas_long_running_tasks.base import ProgressPercent
 from models_library.api_schemas_webserver.projects import ProjectGet
+from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_access import Owner
 from models_library.projects_nodes_io import NodeID
@@ -71,7 +72,7 @@ async def _prepare_project_copy(
     app: web.Application,
     *,
     user_id: UserID,
-    product_name: str,
+    product_name: ProductName,
     src_project_uuid: ProjectID,
     as_template: bool,
     deep_copy: bool,

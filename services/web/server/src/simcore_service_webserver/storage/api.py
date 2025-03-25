@@ -17,6 +17,7 @@ from models_library.api_schemas_storage.storage_schemas import (
     PresignedLink,
 )
 from models_library.generics import Envelope
+from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import LocationID, NodeID, SimCoreFileLink
 from models_library.users import UserID
@@ -108,7 +109,7 @@ async def copy_data_folders_from_project(
     destination_project: ProjectDict,
     nodes_map: NodesMap,
     user_id: UserID,
-    product_name: str,
+    product_name: ProductName,
 ) -> AsyncGenerator[AsyncJobComposedResult, None]:
     with log_context(_logger, logging.DEBUG, msg=f"copy {nodes_map=}"):
         rabbitmq_client = get_rabbitmq_rpc_client(app)

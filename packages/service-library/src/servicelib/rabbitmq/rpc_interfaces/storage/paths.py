@@ -5,6 +5,7 @@ from models_library.api_schemas_rpc_async_jobs.async_jobs import (
     AsyncJobNameData,
 )
 from models_library.api_schemas_storage import STORAGE_RPC_NAMESPACE
+from models_library.products import ProductName
 from models_library.projects_nodes_io import LocationID
 from models_library.rabbitmq_basic_types import RPCMethodName
 from models_library.users import UserID
@@ -17,7 +18,7 @@ async def compute_path_size(
     client: RabbitMQRPCClient,
     *,
     user_id: UserID,
-    product_name: str,
+    product_name: ProductName,
     location_id: LocationID,
     path: Path,
 ) -> tuple[AsyncJobGet, AsyncJobNameData]:

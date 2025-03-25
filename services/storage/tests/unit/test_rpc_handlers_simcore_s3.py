@@ -29,6 +29,7 @@ from models_library.api_schemas_storage.storage_schemas import (
     FoldersBody,
 )
 from models_library.basic_types import SHA256Str
+from models_library.products import ProductName
 from models_library.projects_nodes_io import NodeID, NodeIDStr, SimcoreS3FileID
 from models_library.users import UserID
 from pydantic import ByteSize, TypeAdapter
@@ -62,7 +63,7 @@ pytest_simcore_ops_services_selection = ["adminer"]
 async def _request_copy_folders(
     rpc_client: RabbitMQRPCClient,
     user_id: UserID,
-    product_name: str,
+    product_name: ProductName,
     source_project: dict[str, Any],
     dst_project: dict[str, Any],
     nodes_map: dict[NodeID, NodeID],
@@ -103,7 +104,7 @@ async def test_copy_folders_from_non_existing_project(
     initialized_app: FastAPI,
     storage_rabbitmq_rpc_client: RabbitMQRPCClient,
     user_id: UserID,
-    product_name: str,
+    product_name: ProductName,
     create_project: Callable[..., Awaitable[dict[str, Any]]],
     faker: Faker,
 ):
@@ -143,7 +144,7 @@ async def test_copy_folders_from_empty_project(
     initialized_app: FastAPI,
     storage_rabbitmq_rpc_client: RabbitMQRPCClient,
     user_id: UserID,
-    product_name: str,
+    product_name: ProductName,
     create_project: Callable[[], Awaitable[dict[str, Any]]],
     sqlalchemy_async_engine: AsyncEngine,
     storage_s3_client: SimcoreS3API,
@@ -204,7 +205,7 @@ async def test_copy_folders_from_valid_project_with_one_large_file(
     short_dsm_cleaner_interval: int,
     storage_rabbitmq_rpc_client: RabbitMQRPCClient,
     user_id: UserID,
-    product_name: str,
+    product_name: ProductName,
     create_project: Callable[[], Awaitable[dict[str, Any]]],
     sqlalchemy_async_engine: AsyncEngine,
     random_project_with_files: Callable[
@@ -297,7 +298,7 @@ async def test_copy_folders_from_valid_project(
     initialized_app: FastAPI,
     storage_rabbitmq_rpc_client: RabbitMQRPCClient,
     user_id: UserID,
-    product_name: str,
+    product_name: ProductName,
     create_project: Callable[[], Awaitable[dict[str, Any]]],
     sqlalchemy_async_engine: AsyncEngine,
     random_project_with_files: Callable[
@@ -358,7 +359,7 @@ async def _create_and_delete_folders_from_project(
     rpc_client: RabbitMQRPCClient,
     client: httpx.AsyncClient,
     user_id: UserID,
-    product_name: str,
+    product_name: ProductName,
     project: dict[str, Any],
     initialized_app: FastAPI,
     project_db_creator: Callable,
@@ -472,7 +473,7 @@ async def test_create_and_delete_folders_from_project(
     storage_rabbitmq_rpc_client: RabbitMQRPCClient,
     client: httpx.AsyncClient,
     user_id: UserID,
-    product_name: str,
+    product_name: ProductName,
     with_random_project_with_files: tuple[
         dict[str, Any],
         dict[NodeID, dict[SimcoreS3FileID, dict[str, Path | str]]],
