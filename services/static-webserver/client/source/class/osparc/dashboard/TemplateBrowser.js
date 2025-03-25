@@ -346,6 +346,27 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
     // MENU //
 
     // TASKS //
+    __tasksToCards: function() {
+      const tasks = osparc.store.PollTasks.getInstance().getPublishTemplateTasks();
+      tasks.forEach(task => {
+        const studyName = "";
+        this.taskToTemplateReceived(task, studyName);
+      });
+    },
+
+    taskToTemplateReceived: function(task, studyName) {
+      const toTemplateTaskUI = new osparc.task.ToTemplate(studyName);
+      toTemplateTaskUI.setTask(task);
+
+      osparc.task.TasksContainer.getInstance().addTaskUI(toTemplateTaskUI);
+
+      const cardTitle = this.tr("Publishing ") + studyName;
+      const toTemplateCard = this._addTaskCard(task, cardTitle, osparc.task.ToTemplate.ICON);
+      if (toTemplateCard) {
+        this.__attachToTemplateEventHandler(task, toTemplateTaskUI, toTemplateCard);
+      }
+    },
+
     __attachToTemplateEventHandler: function(task, taskUI, toTemplateCard) {
       const finished = (msg, msgLevel) => {
         if (msg) {
@@ -372,7 +393,8 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
         }
       }, this);
       task.addListener("resultReceived", e => {
-        finished();
+        const msg = this.tr("Template created");
+        finished(msg, "INFO");
         this.reloadResources();
       });
       task.addListener("pollingError", e => {
@@ -380,27 +402,6 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
         const msg = this.tr("Something went wrong while publishing the study<br>") + err.message;
         finished(msg, "ERROR");
       });
-    },
-
-    __tasksToCards: function() {
-      const tasks = osparc.store.PollTasks.getInstance().getPublishTemplateTasks();
-      tasks.forEach(task => {
-        const studyName = "";
-        this.taskToTemplateReceived(task, studyName);
-      });
-    },
-
-    taskToTemplateReceived: function(task, studyName) {
-      const toTemplateTaskUI = new osparc.task.ToTemplate(studyName);
-      toTemplateTaskUI.setTask(task);
-
-      osparc.task.TasksContainer.getInstance().addTaskUI(toTemplateTaskUI);
-
-      const cardTitle = this.tr("Publishing ") + studyName;
-      const toTemplateCard = this._addTaskCard(task, cardTitle, osparc.task.ToTemplate.ICON);
-      if (toTemplateCard) {
-        this.__attachToTemplateEventHandler(task, toTemplateTaskUI, toTemplateCard);
-      }
     },
     // TASKS //
   }
