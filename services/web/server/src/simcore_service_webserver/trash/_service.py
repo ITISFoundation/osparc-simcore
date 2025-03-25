@@ -12,6 +12,7 @@ from servicelib.logging_utils import log_context
 from ..folders import folders_trash_service
 from ..products import products_service
 from ..projects import projects_trash_service
+from ..workspaces import workspaces_trash_service
 from .settings import get_plugin_settings
 
 _logger = logging.getLogger(__name__)
@@ -99,12 +100,51 @@ async def _empty_explicitly_trashed_folders_and_content(
                 )
 
 
+async def _empty_trashed_workspaces_and_content(
+    app: web.Application, product_name: ProductName, user_id: UserID
+):
+    trashed_workspaces_ids = await workspaces_trash_service.list_trashed_workspaces(
+        app=app, product_name=product_name, user_id=user_id
+    )
+
+    with log_context(
+        _logger,
+        logging.DEBUG,
+        "Deleting %s trashed workspaces (and all its content)",
+        len(trashed_workspaces_ids),
+    ):
+        for workspace_id in trashed_workspaces_ids:
+            try:
+                await workspaces_trash_service.delete_trashed_workspace(
+                    app,
+                    product_name=product_name,
+                    user_id=user_id,
+                    workspace_id=workspace_id,
+                )
+
+            except Exception as exc:  # pylint: disable=broad-exception-caught
+                _logger.warning(
+                    **create_troubleshotting_log_kwargs(
+                        "Error deleting a trashed workspace (and content) while emptying trash.",
+                        error=exc,
+                        error_context={
+                            "workspace_id": workspace_id,
+                            "product_name": product_name,
+                            "user_id": user_id,
+                        },
+                        tip=_TIP,
+                    )
+                )
+
+
 async def safe_empty_trash(
     app: web.Application, *, product_name: ProductName, user_id: UserID
 ):
     await _empty_explicitly_trashed_projects(app, product_name, user_id)
 
     await _empty_explicitly_trashed_folders_and_content(app, product_name, user_id)
+
+    await _empty_trashed_workspaces_and_content(app, product_name, user_id)
 
 
 async def safe_delete_expired_trash_as_admin(app: web.Application) -> None:
