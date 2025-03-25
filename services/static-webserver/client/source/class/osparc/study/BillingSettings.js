@@ -192,7 +192,7 @@ qx.Class.define("osparc.study.BillingSettings", {
       if (myWallets.find(wllt => wllt === wallet)) {
         // It's my wallet
         this._createChildControlImpl("debt-explanation").set({
-          value: this.tr("Top up the Credit Account:<br>Purchase additional credits to bring the Credit Account balance back to a positive value.")
+          value: this.tr("Top up the Credit Account:<br>Purchase additional credits to restore a positive balance.")
         });
         const buyCreditsButton = this._createChildControlImpl("buy-credits-button");
         buyCreditsButton.addListener("execute", () => this.__openBuyCreditsWindow(), this);

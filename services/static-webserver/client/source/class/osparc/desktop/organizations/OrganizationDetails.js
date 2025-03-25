@@ -71,7 +71,7 @@ qx.Class.define("osparc.desktop.organizations.OrganizationDetails", {
       const titleLayout = this.__titleLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
 
       const prevBtn = new qx.ui.form.Button().set({
-        toolTipText: this.tr("Back to Organizations list"),
+        toolTipText: this.tr("Return to Organizations list"),
         icon: "@FontAwesome5Solid/arrow-left/20",
         backgroundColor: "transparent"
       });

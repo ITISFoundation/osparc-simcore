@@ -154,7 +154,7 @@ qx.Class.define("osparc.node.UpdateResourceLimitsView", {
       };
       osparc.data.Resources.fetch("nodesInStudyResources", "put", params)
         .then(() => {
-          osparc.FlashMessenger.logAs(this.tr("Limits successfully updated"));
+          osparc.FlashMessenger.logAs(this.tr("Limits have been successfully updated"));
         })
         .catch(err => osparc.FlashMessenger.logError(err, this.tr("Something went wrong while updating the limits")))
         .finally(() => {

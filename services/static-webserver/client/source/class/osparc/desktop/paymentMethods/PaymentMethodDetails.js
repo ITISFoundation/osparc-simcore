@@ -47,7 +47,7 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethodDetails", {
   members: {
     __buildLayout: function(paymentMethodData) {
       [
-        [this.tr("Holder name"), paymentMethodData["cardHolderName"]],
+        [this.tr("Card Holder name"), paymentMethodData["cardHolderName"]],
         [this.tr("Type"), paymentMethodData["cardType"]],
         [this.tr("Number"), paymentMethodData["cardNumberMasked"]],
         [this.tr("Expiration date"), paymentMethodData["expirationMonth"] + "/" + paymentMethodData["expirationYear"]]
