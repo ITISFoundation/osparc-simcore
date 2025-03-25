@@ -82,21 +82,21 @@ async def test_resend_2fa_workflow(
 
     # spy send functions
     mocker.patch(
-        "simcore_service_webserver.login._controller.2fa_rest._2fa_service.send_sms_code",
+        "simcore_service_webserver.login._controller.twofa_rest._twofa_service.send_sms_code",
         autospec=True,
     )
     mock_send_sms_code2 = mocker.patch(
-        "simcore_service_webserver.login._controller.auth_rest._2fa_service.send_sms_code",
+        "simcore_service_webserver.login._controller.auth_rest._twofa_service.send_sms_code",
         autospec=True,
     )
 
     mock_send_email_code = mocker.patch(
-        "simcore_service_webserver.login._controller.2fa_rest._2fa_service.send_email_code",
+        "simcore_service_webserver.login._controller.twofa_rest._twofa_service.send_email_code",
         autospec=True,
     )
 
     mock_get_2fa_code = mocker.patch(
-        "simcore_service_webserver.login._controller.2fa_rest._2fa_service.get_2fa_code",
+        "simcore_service_webserver.login._controller.twofa_rest._twofa_service.get_2fa_code",
         autospec=True,
         return_value=None,  # <-- Emulates code expired
     )

@@ -79,11 +79,11 @@ def postgres_db(postgres_db: sa.engine.Engine):
 def mocked_twilio_service(mocker: MockerFixture) -> dict[str, Mock]:
     return {
         "send_sms_code_for_registration": mocker.patch(
-            "simcore_service_webserver.login._controller.registration_rest._2fa_service.send_sms_code",
+            "simcore_service_webserver.login._controller.registration_rest.twofa_service.send_sms_code",
             autospec=True,
         ),
         "send_sms_code_for_login": mocker.patch(
-            "simcore_service_webserver.login._controller.auth_rest._2fa_service.send_sms_code",
+            "simcore_service_webserver.login._controller.auth_rest.twofa_service.send_sms_code",
             autospec=True,
         ),
     }
@@ -421,7 +421,7 @@ async def test_2fa_sms_failure_during_login(
 
     mocker.patch(
         # MD: Emulates error in graylog https://monitoring.osparc.io/graylog/search/649e7619ce6e0838a96e9bf1?q=%222FA%22&rangetype=relative&from=172800
-        "simcore_service_webserver.login._2fa_service.twilio.rest.Client",
+        "simcore_service_webserver.login.twofa_service.twilio.rest.Client",
         autospec=True,
         side_effect=TwilioRestException(
             status=400,
