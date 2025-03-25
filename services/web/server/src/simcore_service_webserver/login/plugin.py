@@ -23,12 +23,10 @@ from ..products.models import ProductName
 from ..products.plugin import setup_products
 from ..redis import setup_redis
 from ..rest.plugin import setup_rest
-from . import (
-    _change_service,
-)
 from ._constants import APP_LOGIN_SETTINGS_PER_PRODUCT_KEY
 from ._controller import (
     auth_rest,
+    change_rest,
     confirmation_rest,
     preregistration_rest,
     registration_rest,
@@ -144,7 +142,7 @@ def setup_login(app: web.Application):
     app.router.add_routes(confirmation_rest.routes)
     app.router.add_routes(registration_rest.routes)
     app.router.add_routes(preregistration_rest.routes)
-    app.router.add_routes(_change_service.routes)
+    app.router.add_routes(change_rest.routes)
     app.router.add_routes(twofa_rest.routes)
 
     _setup_login_options(app)
