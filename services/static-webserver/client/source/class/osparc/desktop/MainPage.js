@@ -304,7 +304,7 @@ qx.Class.define("osparc.desktop.MainPage", {
       osparc.data.Resources.fetch("snapshots", "checkout", params)
         .then(snapshotResp => {
           if (!snapshotResp) {
-            const msg = this.tr("Snapshot not found");
+            const msg = this.tr("No snapshot found");
             throw new Error(msg);
           }
           const params2 = {
