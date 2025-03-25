@@ -22,7 +22,7 @@ from ...session.access_policies import (
 )
 from ...users import preferences_api as user_preferences_api
 from ...utils_aiohttp import NextPage
-from .. import _auth_service, _security_service, _twofa_service
+from .. import _auth_service, _login_service, _security_service, _twofa_service
 from .._constants import (
     CODE_2FA_EMAIL_CODE_REQUIRED,
     CODE_2FA_SMS_CODE_REQUIRED,
@@ -37,8 +37,6 @@ from .._constants import (
     MSG_WRONG_2FA_CODE__EXPIRED,
     MSG_WRONG_2FA_CODE__INVALID,
 )
-from .._login_repository_legacy import AsyncpgStorage, get_plugin_storage
-from .._login_service import envelope_response, flash_response, notify_user_logout
 from .._models import InputSchema
 from ..decorators import login_required
 from ..errors import handle_login_exceptions
@@ -136,7 +134,7 @@ async def login(request: web.Request):
         user_2fa_authentification_method == TwoFactorAuthentificationMethod.SMS
         and not user["phone"]
     ):
-        return envelope_response(
+        return _login_service.envelope_response(
             # LoginNextPage
             {
                 "name": CODE_PHONE_NUMBER_REQUIRED,
@@ -171,7 +169,7 @@ async def login(request: web.Request):
             user_id=user["id"],
         )
 
-        return envelope_response(
+        return _login_service.envelope_response(
             # LoginNextPage
             {
                 "name": CODE_2FA_SMS_CODE_REQUIRED,
@@ -198,7 +196,7 @@ async def login(request: web.Request):
         product=product,
         user_id=user["id"],
     )
-    return envelope_response(
+    return _login_service.envelope_response(
         {
             "name": CODE_2FA_EMAIL_CODE_REQUIRED,
             "parameters": {
@@ -226,8 +224,6 @@ async def login_2fa(request: web.Request):
     settings: LoginSettingsForProduct = get_plugin_settings(
         request.app, product_name=product.name
     )
-    db: AsyncpgStorage = get_plugin_storage(request.app)
-
     if not settings.LOGIN_2FA_REQUIRED:
         raise web.HTTPServiceUnavailable(
             reason="2FA login is not available",
@@ -284,8 +280,10 @@ async def logout(request: web.Request) -> web.Response:
         f"{logout_.client_session_id=}",
         extra=get_log_record_extra(user_id=user_id),
     ):
-        response = flash_response(MSG_LOGGED_OUT, "INFO")
-        await notify_user_logout(request.app, user_id, logout_.client_session_id)
+        response = _login_service.flash_response(MSG_LOGGED_OUT, "INFO")
+        await _login_service.notify_user_logout(
+            request.app, user_id, logout_.client_session_id
+        )
         await security_service.forget_identity(request, response)
 
         return response

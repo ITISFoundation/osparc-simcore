@@ -405,7 +405,7 @@ async def register_phone(request: web.Request):
                     "expiration_2fa": settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
                 },
                 "message": MSG_2FA_CODE_SENT.format(
-                    phone_number=mask_phone_number(registration.phone)
+                    phone_number=_twofa_service.mask_phone_number(registration.phone)
                 ),
                 "level": "INFO",
                 "logger": "user",

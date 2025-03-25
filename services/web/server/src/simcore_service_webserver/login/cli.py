@@ -1,5 +1,5 @@
 import sys
-from datetime import datetime
+from datetime import UTC, datetime
 
 import typer
 from servicelib.utils_secrets import generate_password
@@ -46,7 +46,7 @@ def invitations(
         fg=typer.colors.BLUE,
     )
 
-    utcnow = datetime.utcnow()
+    utcnow = datetime.now(tz=UTC)
     today: datetime = utcnow.today()
     print("code,user_id,action,data,created_at", file=sys.stdout)
     for n, code in enumerate(codes, start=1):

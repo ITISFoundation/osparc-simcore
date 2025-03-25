@@ -21,7 +21,7 @@ from ._login_repository_legacy import (
 )
 from .settings import LoginOptions
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 async def validate_confirmation_code(
@@ -37,7 +37,7 @@ async def validate_confirmation_code(
     )
     if confirmation and is_confirmation_expired(cfg, confirmation):
         await db.delete_confirmation(confirmation)
-        log.warning(
+        _logger.warning(
             "Used expired token [%s]. Deleted from confirmations table.",
             confirmation,
         )
@@ -78,7 +78,7 @@ async def get_or_create_confirmation(
 
     if confirmation is not None and is_confirmation_expired(cfg, confirmation):
         await db.delete_confirmation(confirmation)
-        log.warning(
+        _logger.warning(
             "Used expired token [%s]. Deleted from confirmations table.",
             confirmation,
         )
