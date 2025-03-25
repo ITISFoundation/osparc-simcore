@@ -6,17 +6,21 @@ import math
 import random
 from collections.abc import AsyncIterable, Awaitable, Callable
 from pathlib import Path
+from typing import Any
 
 import pytest
 from faker import Faker
 from models_library.basic_types import SHA256Str
 from models_library.progress_bar import ProgressReport
 from models_library.projects import ProjectID
-from models_library.projects_nodes_io import NodeID, SimcoreS3FileID, StorageFileID
+from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
 from models_library.users import UserID
 from pydantic import ByteSize, TypeAdapter
 from pytest_mock import MockerFixture
-from pytest_simcore.helpers.storage_utils import FileIDDict
+from pytest_simcore.helpers.storage_utils import (
+    FileIDDict,
+    ProjectWithFilesParams,
+)
 from servicelib.progress_bar import ProgressBarData
 from simcore_service_storage.constants import LinkType
 from simcore_service_storage.models import FileMetaData
@@ -165,39 +169,27 @@ async def test_upload_and_search(
 
 @pytest.fixture
 async def paths_for_export(
-    create_empty_directory: Callable[
-        [str, ProjectID, NodeID], Awaitable[SimcoreS3FileID]
+    random_project_with_files: Callable[
+        [ProjectWithFilesParams],
+        Awaitable[
+            tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]
+        ],
     ],
-    populate_directory: Callable[
-        [ByteSize, str, ProjectID, NodeID, int, int],
-        Awaitable[tuple[NodeID, dict[SimcoreS3FileID, FileIDDict]]],
-    ],
-    delete_directory: Callable[[StorageFileID], Awaitable[None]],
-    project_id: ProjectID,
-    node_id: NodeID,
-) -> AsyncIterable[set[SimcoreS3FileID]]:
-    dir_name = "data_to_export"
-
-    directory_file_upload: SimcoreS3FileID = await create_empty_directory(
-        dir_name, project_id, node_id
-    )
-
-    upload_result: tuple[NodeID, dict[SimcoreS3FileID, FileIDDict]] = (
-        await populate_directory(
-            TypeAdapter(ByteSize).validate_python("1KiB"),
-            dir_name,
-            project_id,
-            node_id,
-            10,
-            4,
+) -> set[SimcoreS3FileID]:
+    _, file_mapping = await random_project_with_files(
+        ProjectWithFilesParams(
+            num_nodes=2,
+            allowed_file_sizes=(TypeAdapter(ByteSize).validate_python("1KiB"),),
+            workspace_files_count=4,
         )
     )
 
-    _, uploaded_files_data = upload_result
+    to_export: set[SimcoreS3FileID] = set()
 
-    yield set(uploaded_files_data.keys())
+    for file_id_dict in file_mapping.values():
+        to_export |= file_id_dict.keys()
 
-    await delete_directory(directory_file_upload)
+    return to_export
 
 
 def _get_folder_and_files_selection(
@@ -211,7 +203,7 @@ def _get_folder_and_files_selection(
     ]
 
     all_containing_folders: set[SimcoreS3FileID] = {
-        TypeAdapter(SimcoreS3FileID).validate_python(f"{Path(f).parent}")
+        TypeAdapter(SimcoreS3FileID).validate_python(f"{Path(f).parent}/")
         for f in random_files
     }
 
@@ -223,11 +215,17 @@ def _get_folder_and_files_selection(
     return duplicate_selection
 
 
+async def _get_fmds_count(
+    connection: AsyncEngine,
+) -> int:
+    result = await FileMetaDataRepository.instance(connection).list_fmds()
+    return len(result)
+
+
 async def _assert_meta_data_entries_count(
     connection: AsyncEngine, *, count: int
 ) -> None:
-    result = await FileMetaDataRepository.instance(connection).list_fmds()
-    assert len(result) == count
+    assert (await _get_fmds_count(connection)) == count
 
 
 @pytest.mark.parametrize(
@@ -243,6 +241,7 @@ async def test_create_s3_export(
     sqlalchemy_async_engine: AsyncEngine,
     cleanup_when_done: Callable[[SimcoreS3FileID], None],
 ):
+    initial_fmd_count = await _get_fmds_count(sqlalchemy_async_engine)
     selection_to_export = _get_folder_and_files_selection(paths_for_export)
 
     reports: list[ProgressReport] = []
@@ -250,7 +249,9 @@ async def test_create_s3_export(
     async def _progress_cb(report: ProgressReport) -> None:
         reports.append(report)
 
-    await _assert_meta_data_entries_count(sqlalchemy_async_engine, count=1)
+    await _assert_meta_data_entries_count(
+        sqlalchemy_async_engine, count=initial_fmd_count
+    )
 
     async with ProgressBarData(
         num_steps=1, description="data export", progress_report_cb=_progress_cb
@@ -260,7 +261,9 @@ async def test_create_s3_export(
         )
     cleanup_when_done(file_id)
     # count=2 -> the direcotory and the .zip export
-    await _assert_meta_data_entries_count(sqlalchemy_async_engine, count=2)
+    await _assert_meta_data_entries_count(
+        sqlalchemy_async_engine, count=initial_fmd_count + 1
+    )
 
     download_link = await simcore_s3_dsm.create_file_download_link(
         user_id, file_id, LinkType.PRESIGNED
@@ -291,5 +294,5 @@ async def test_create_s3_export_abort_upload_upon_error(
 ):
     await _assert_meta_data_entries_count(sqlalchemy_async_engine, count=0)
     with pytest.raises(RuntimeError, match="failing as expected"):
-        await simcore_s3_dsm.create_s3_export(user_id, [], progress_cb=None)
+        await simcore_s3_dsm.create_s3_export(user_id, [], progress_bar=None)
     await _assert_meta_data_entries_count(sqlalchemy_async_engine, count=0)
