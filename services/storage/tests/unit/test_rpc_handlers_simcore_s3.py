@@ -22,6 +22,7 @@ from faker import Faker
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
 from models_library.api_schemas_rpc_async_jobs.async_jobs import AsyncJobResult
+from models_library.api_schemas_rpc_async_jobs.exceptions import JobError
 from models_library.api_schemas_storage import STORAGE_RPC_NAMESPACE
 from models_library.api_schemas_storage.storage_schemas import (
     FileMetaDataGet,
@@ -98,7 +99,7 @@ async def _request_copy_folders(
     pytest.fail(reason="Copy folders failed!")
 
 
-@pytest.mark.xfail(reason="There is something fishy here MB, GC")
+# @pytest.mark.xfail(reason="There is something fishy here MB, GC")
 async def test_copy_folders_from_non_existing_project(
     initialized_app: FastAPI,
     storage_rabbitmq_rpc_client: RabbitMQRPCClient,
@@ -114,7 +115,9 @@ async def test_copy_folders_from_non_existing_project(
     incorrect_dst_project = deepcopy(dst_project)
     incorrect_dst_project["uuid"] = faker.uuid4()
 
-    with pytest.raises(RuntimeError, match="404") as exc_info:
+    with pytest.raises(
+        JobError, match=f"Project {incorrect_src_project['uuid']} was not found"
+    ):
         await _request_copy_folders(
             storage_rabbitmq_rpc_client,
             user_id,
@@ -123,14 +126,10 @@ async def test_copy_folders_from_non_existing_project(
             dst_project,
             nodes_map={},
         )
-    # assert_status(
-    #     exc_info.value.response,
-    #     status.HTTP_404_NOT_FOUND,
-    #     None,
-    #     expected_msg=f"{incorrect_src_project['uuid']} was not found",
-    # )
 
-    with pytest.raises(RuntimeError, match="404") as exc_info:
+    with pytest.raises(
+        JobError, match=f"Project {incorrect_dst_project['uuid']} was not found"
+    ):
         await _request_copy_folders(
             storage_rabbitmq_rpc_client,
             user_id,
@@ -139,12 +138,6 @@ async def test_copy_folders_from_non_existing_project(
             incorrect_dst_project,
             nodes_map={},
         )
-    # assert_status(
-    #     exc_info.value.response,
-    #     status.HTTP_404_NOT_FOUND,
-    #     None,
-    #     expected_msg=f"{incorrect_dst_project['uuid']} was not found",
-    # )
 
 
 async def test_copy_folders_from_empty_project(
