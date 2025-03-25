@@ -4,6 +4,7 @@ from aiohttp.test_utils import make_mocked_request
 from aiohttp.web import Application
 from pytest_simcore.helpers.webserver_login import UserInfoDict
 from simcore_service_webserver.login._confirmation_service import (
+    get_expiration_date,
     get_or_create_confirmation_without_data,
     is_confirmation_expired,
     make_confirmation_link,
@@ -76,6 +77,7 @@ async def test_expired_confirmation_token(
 
     # Check that the token is not expired
     assert not is_confirmation_expired(login_options, confirmation_1)
+    assert get_expiration_date(login_options, confirmation_1)
 
     confirmation_2 = await get_or_create_confirmation_without_data(
         login_options, db, user_id=user_id, action=action
