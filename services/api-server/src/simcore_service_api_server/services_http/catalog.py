@@ -108,7 +108,7 @@ class CatalogApi(BaseServiceClientApi):
     """
 
     @overload
-    async def list_services(
+    async def _list_services(
         self,
         *,
         user_id: int,
@@ -118,7 +118,7 @@ class CatalogApi(BaseServiceClientApi):
     ) -> list[Solver]: ...
 
     @overload
-    async def list_services(
+    async def _list_services(
         self,
         *,
         user_id: int,
@@ -130,7 +130,7 @@ class CatalogApi(BaseServiceClientApi):
     @_exception_mapper(
         http_status_map={status.HTTP_404_NOT_FOUND: ListSolversOrStudiesError}
     )
-    async def list_services(
+    async def _list_services(
         self,
         *,
         user_id: int,
@@ -183,7 +183,7 @@ class CatalogApi(BaseServiceClientApi):
         predicate: Callable[[Solver], bool] | None = None,
     ) -> list[Solver]:
 
-        solvers = await self.list_services(
+        solvers = await self._list_services(
             user_id=user_id,
             product_name=product_name,
             predicate=predicate,
@@ -200,7 +200,7 @@ class CatalogApi(BaseServiceClientApi):
         predicate: Callable[[Program], bool] | None = None,
     ) -> list[Program]:
 
-        programs = await self.list_services(
+        programs = await self._list_services(
             user_id=user_id,
             product_name=product_name,
             predicate=predicate,
