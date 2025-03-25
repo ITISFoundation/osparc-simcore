@@ -1435,7 +1435,7 @@ msgid "Unable to fetch Services"
 msgstr ""
 
 #: osparc/store/Services.js
-msgid "Some services are not accessible:<br>"
+msgid "Some services are inaccessible:<br>"
 msgstr ""
 
 #: osparc/dashboard/StudyBrowser.js
@@ -2063,7 +2063,7 @@ msgid "Edit Description"
 msgstr ""
 
 #: osparc/info/MergedLarge.js
-msgid "There was an issue while updating the information."
+msgid "An issue occurred while updating the information."
 msgstr ""
 
 #: osparc/info/StudyLarge.js
@@ -2139,7 +2139,7 @@ msgid "You don't have access to the last used Credit Account"
 msgstr ""
 
 #: osparc/study/BillingSettings.js
-msgid "Top up the Credit Account:<br>Purchase additional credits to bring the Credit Account balance back to a positive value."
+msgid "Top up the Credit Account:<br>Purchase additional credits to restore a positive balance."
 msgstr ""
 
 #: osparc/study/BillingSettings.js
@@ -2279,19 +2279,19 @@ msgid "New Tag"
 msgstr ""
 
 #: osparc/metadata/ServicesInStudyUpdate.js
-msgid "Service deprecated, please update"
+msgid "This service is deprecated. Please update."
 msgstr ""
 
 #: osparc/metadata/ServicesInStudyUpdate.js
-msgid "Service retired, please update"
+msgid "This service has been retired. Please update."
 msgstr ""
 
 #: osparc/metadata/ServicesInStudyUpdate.js
-msgid "Some services are not accessible. Please contact service owner:"
+msgid "Some services are inaccessible. Please contact the service owner:"
 msgstr ""
 
 #: osparc/metadata/ServicesInStudyUpdate.js
-msgid "Services marked in red are retired: you cannot use them anymore."
+msgid "Services marked in red are retired and can no longer be used."
 msgstr ""
 
 #: osparc/metadata/ServicesInStudyUpdate.js
@@ -2307,7 +2307,7 @@ msgid "Click on the retired service, download the data"
 msgstr ""
 
 #: osparc/metadata/ServicesInStudyUpdate.js
-msgid "Upload the data to an updated version"
+msgid "Upload the data to a newer version"
 msgstr ""
 
 #: osparc/metadata/ServicesInStudyUpdate.js
@@ -2323,7 +2323,7 @@ msgid "All services are up to date to their latest compatible version."
 msgstr ""
 
 #: osparc/metadata/ServicesInStudyUpdate.js
-msgid "Use the Update buttons to bring the services to their latest compatible version."
+msgid "Click Update to upgrade services to the latest compatible version."
 msgstr ""
 
 #: osparc/metadata/ServicesInStudyUpdate.js
