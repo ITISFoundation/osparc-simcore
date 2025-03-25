@@ -203,7 +203,7 @@ def _get_folder_and_files_selection(
     ]
 
     all_containing_folders: set[SimcoreS3FileID] = {
-        TypeAdapter(SimcoreS3FileID).validate_python(f"{Path(f).parent}/")
+        TypeAdapter(SimcoreS3FileID).validate_python(f"{Path(f).parent}")
         for f in random_files
     }
 

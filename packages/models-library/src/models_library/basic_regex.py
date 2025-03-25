@@ -46,15 +46,7 @@ MIME_TYPE_RE = (
 )
 
 # Storage basic file ID
-SIMCORE_S3_FILE_ID_RE = (
-    "^("
-    rf"api\/{UUID_RE_BASE}\/.+"
-    "|"
-    rf"exports\/\d+\/{UUID_RE_BASE}\.zip"
-    "|"
-    rf"{UUID_RE_BASE}\/{UUID_RE_BASE}\/.+"
-    ")$"
-)
+SIMCORE_S3_FILE_ID_RE = rf"^(exports\/\d+\/{UUID_RE_BASE}\.zip)|((api|({UUID_RE_BASE}))\/({UUID_RE_BASE})\/(.+)$)"
 
 
 SIMCORE_S3_DIRECTORY_ID_RE = rf"^({UUID_RE_BASE})\/({UUID_RE_BASE})\/(.+)\/$"
