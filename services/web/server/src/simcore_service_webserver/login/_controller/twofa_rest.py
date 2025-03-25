@@ -12,7 +12,7 @@ from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from ...products import products_web
 from ...products.models import Product
 from ...session.access_policies import session_access_required
-from .. import _2fa_service
+from .. import _twofa_service
 from .._constants import (
     CODE_2FA_EMAIL_CODE_REQUIRED,
     CODE_2FA_SMS_CODE_REQUIRED,
@@ -65,11 +65,11 @@ async def resend_2fa_code(request: web.Request):
         )
 
     # Already a code?
-    previous_code = await _2fa_service.get_2fa_code(
+    previous_code = await _twofa_service.get_2fa_code(
         request.app, user_email=resend_2fa_.email
     )
     if previous_code is not None:
-        await _2fa_service.delete_2fa_code(request.app, user_email=resend_2fa_.email)
+        await _twofa_service.delete_2fa_code(request.app, user_email=resend_2fa_.email)
 
     # guaranteed by LoginSettingsForProduct
     assert settings.LOGIN_2FA_REQUIRED  # nosec
@@ -77,7 +77,7 @@ async def resend_2fa_code(request: web.Request):
     assert product.twilio_messaging_sid  # nosec
 
     # creates and stores code
-    code = await _2fa_service.create_2fa_code(
+    code = await _twofa_service.create_2fa_code(
         request.app,
         user_email=user["email"],
         expiration_in_seconds=settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
@@ -85,7 +85,7 @@ async def resend_2fa_code(request: web.Request):
 
     # sends via SMS
     if resend_2fa_.via == "SMS":
-        await _2fa_service.send_sms_code(
+        await _twofa_service.send_sms_code(
             phone_number=user["phone"],
             code=code,
             twilio_auth=settings.LOGIN_TWILIO,
@@ -100,7 +100,7 @@ async def resend_2fa_code(request: web.Request):
                 "name": CODE_2FA_SMS_CODE_REQUIRED,
                 "parameters": {
                     "message": MSG_2FA_CODE_SENT.format(
-                        phone_number=_2fa_service.mask_phone_number(user["phone"])
+                        phone_number=_twofa_service.mask_phone_number(user["phone"])
                     ),
                     "expiration_2fa": settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
                 },
@@ -111,7 +111,7 @@ async def resend_2fa_code(request: web.Request):
     # sends via Email
     else:
         assert resend_2fa_.via == "Email"  # nosec
-        await _2fa_service.send_email_code(
+        await _twofa_service.send_email_code(
             request,
             user_email=user["email"],
             support_email=product.support_email,

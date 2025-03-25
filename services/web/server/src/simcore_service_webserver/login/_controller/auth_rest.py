@@ -22,7 +22,7 @@ from ...session.access_policies import (
 )
 from ...users import preferences_api as user_preferences_api
 from ...utils_aiohttp import NextPage
-from .. import _2fa_service, _auth_service, _security_service
+from .. import _auth_service, _security_service, _twofa_service
 from .._constants import (
     CODE_2FA_EMAIL_CODE_REQUIRED,
     CODE_2FA_SMS_CODE_REQUIRED,
@@ -148,7 +148,7 @@ async def login(request: web.Request):
             status=status.HTTP_202_ACCEPTED,
         )
 
-    code = await _2fa_service.create_2fa_code(
+    code = await _twofa_service.create_2fa_code(
         app=request.app,
         user_email=user["email"],
         expiration_in_seconds=settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
@@ -161,7 +161,7 @@ async def login(request: web.Request):
         assert settings.LOGIN_TWILIO  # nosec
         assert product.twilio_messaging_sid  # nosec
 
-        await _2fa_service.send_sms_code(
+        await _twofa_service.send_sms_code(
             phone_number=user["phone"],
             code=code,
             twilio_auth=settings.LOGIN_TWILIO,
@@ -177,7 +177,7 @@ async def login(request: web.Request):
                 "name": CODE_2FA_SMS_CODE_REQUIRED,
                 "parameters": {
                     "message": MSG_2FA_CODE_SENT.format(
-                        phone_number=_2fa_service.mask_phone_number(user["phone"])
+                        phone_number=_twofa_service.mask_phone_number(user["phone"])
                     ),
                     "expiration_2fa": settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
                 },
@@ -189,7 +189,7 @@ async def login(request: web.Request):
     assert (
         user_2fa_authentification_method == TwoFactorAuthentificationMethod.EMAIL
     )  # nosec
-    await _2fa_service.send_email_code(
+    await _twofa_service.send_email_code(
         request,
         user_email=user["email"],
         support_email=product.support_email,
@@ -238,7 +238,9 @@ async def login_2fa(request: web.Request):
     login_2fa_ = await parse_request_body_as(LoginTwoFactorAuthBody, request)
 
     # validates code
-    _expected_2fa_code = await _2fa_service.get_2fa_code(request.app, login_2fa_.email)
+    _expected_2fa_code = await _twofa_service.get_2fa_code(
+        request.app, login_2fa_.email
+    )
     if not _expected_2fa_code:
         raise web.HTTPUnauthorized(
             reason=MSG_WRONG_2FA_CODE__EXPIRED, content_type=MIMETYPE_APPLICATION_JSON
@@ -255,7 +257,7 @@ async def login_2fa(request: web.Request):
     assert UserRole(user["role"]) <= UserRole.USER  # nosec
 
     # dispose since code was used
-    await _2fa_service.delete_2fa_code(request.app, login_2fa_.email)
+    await _twofa_service.delete_2fa_code(request.app, login_2fa_.email)
 
     return await _security_service.login_granted_response(request, user=dict(user))
 
