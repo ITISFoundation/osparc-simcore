@@ -30,7 +30,6 @@ from pytest_simcore.helpers.playwright import (
     SocketIOEvent,
     retrieve_project_state_from_decoded_message,
     wait_for_pipeline_state,
-    # wait_for_label_text,
 )
 from tenacity import retry, retry_if_exception_type, stop_after_delay, wait_fixed
 
@@ -227,9 +226,5 @@ def test_sleepers(
             )
             ctx.logger.info(msg)
             assert output_file_names_found == sleeper_expected_output_files
-
-            # now check if the "Total size:"" widget shows something
-            # label = wait_for_label_text(page, "totalSizeLabel", "Total size:")
-            # print(f"1st node size: {label.inner_text()}")
 
             page.get_by_test_id("nodeDataManagerCloseBtn").click()
