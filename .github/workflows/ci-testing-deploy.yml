@@ -62,6 +62,7 @@ jobs:
       settings-library: ${{ steps.filter.outputs.settings-library }}
       simcore-sdk: ${{ steps.filter.outputs.simcore-sdk }}
       agent: ${{ steps.filter.outputs.agent }}
+      notifications: ${{ steps.filter.outputs.notifications }}
       api: ${{ steps.filter.outputs.api }}
       api-server: ${{ steps.filter.outputs.api-server }}
       autoscaling: ${{ steps.filter.outputs.autoscaling }}
