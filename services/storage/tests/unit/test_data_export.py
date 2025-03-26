@@ -1,7 +1,6 @@
 # pylint: disable=W0621
 # pylint: disable=W0613
 # pylint: disable=R6301
-from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Literal, NamedTuple
@@ -34,15 +33,11 @@ from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
 from models_library.users import UserID
 from pydantic import ByteSize, TypeAdapter
 from pytest_mock import MockerFixture
-from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.storage_utils import FileIDDict, ProjectWithFilesParams
-from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.async_jobs import async_jobs
 from servicelib.rabbitmq.rpc_interfaces.storage.data_export import start_data_export
-from settings_library.rabbit import RabbitSettings
 from simcore_service_storage.api.rpc._data_export import AccessRightError
-from simcore_service_storage.core.settings import ApplicationSettings
 from simcore_service_storage.modules.celery.client import TaskUUID
 from simcore_service_storage.modules.celery.models import TaskState, TaskStatus
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
@@ -122,38 +117,6 @@ async def mock_celery_client(
     return _celery_client
 
 
-@pytest.fixture
-async def app_environment(
-    app_environment: EnvVarsDict,
-    rabbit_service: RabbitSettings,
-    monkeypatch: pytest.MonkeyPatch,
-):
-    new_envs = setenvs_from_dict(
-        monkeypatch,
-        {
-            **app_environment,
-            "RABBIT_HOST": rabbit_service.RABBIT_HOST,
-            "RABBIT_PORT": f"{rabbit_service.RABBIT_PORT}",
-            "RABBIT_USER": rabbit_service.RABBIT_USER,
-            "RABBIT_SECURE": f"{rabbit_service.RABBIT_SECURE}",
-            "RABBIT_PASSWORD": rabbit_service.RABBIT_PASSWORD.get_secret_value(),
-        },
-    )
-
-    settings = ApplicationSettings.create_from_envs()
-    assert settings.STORAGE_RABBITMQ
-
-    return new_envs
-
-
-@pytest.fixture
-async def rpc_client(
-    initialized_app: FastAPI,
-    rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
-) -> RabbitMQRPCClient:
-    return await rabbitmq_rpc_client("client")
-
-
 class UserWithFile(NamedTuple):
     user: UserID
     file: Path
@@ -195,7 +158,8 @@ class UserWithFile(NamedTuple):
     indirect=True,
 )
 async def test_start_data_export_success(
-    rpc_client: RabbitMQRPCClient,
+    initialized_app: FastAPI,
+    storage_rabbitmq_rpc_client: RabbitMQRPCClient,
     mock_celery_client: _MockCeleryClient,
     with_random_project_with_files: tuple[
         dict[str, Any],
@@ -223,7 +187,7 @@ async def test_start_data_export_success(
         pytest.fail(f"invalid parameter: {selection_type=}")
 
     result = await start_data_export(
-        rpc_client,
+        storage_rabbitmq_rpc_client,
         job_id_data=AsyncJobNameData(user_id=user_id, product_name="osparc"),
         data_export_start=DataExportTaskStartInput(
             location_id=0,
@@ -258,7 +222,8 @@ async def test_start_data_export_success(
     indirect=True,
 )
 async def test_start_data_export_scheduler_error(
-    rpc_client: RabbitMQRPCClient,
+    initialized_app: FastAPI,
+    storage_rabbitmq_rpc_client: RabbitMQRPCClient,
     mock_celery_client: _MockCeleryClient,
     with_random_project_with_files: tuple[
         dict[str, Any],
@@ -266,7 +231,6 @@ async def test_start_data_export_scheduler_error(
     ],
     user_id: UserID,
 ):
-
     _, list_of_files = with_random_project_with_files
     workspace_files = [
         p for p in list(list_of_files.values())[0].keys() if "/workspace/" in p
@@ -276,7 +240,7 @@ async def test_start_data_export_scheduler_error(
 
     with pytest.raises(JobSchedulerError):
         _ = await start_data_export(
-            rpc_client,
+            storage_rabbitmq_rpc_client,
             job_id_data=AsyncJobNameData(user_id=user_id, product_name="osparc"),
             data_export_start=DataExportTaskStartInput(
                 location_id=0,
@@ -293,14 +257,15 @@ async def test_start_data_export_scheduler_error(
     indirect=True,
 )
 async def test_start_data_export_access_error(
-    rpc_client: RabbitMQRPCClient,
+    initialized_app: FastAPI,
+    storage_rabbitmq_rpc_client: RabbitMQRPCClient,
     mock_celery_client: _MockCeleryClient,
     user_id: UserID,
     faker: Faker,
 ):
     with pytest.raises(AccessRightError):
         _ = await async_jobs.submit(
-            rpc_client,
+            storage_rabbitmq_rpc_client,
             rpc_namespace=STORAGE_RPC_NAMESPACE,
             method_name="start_data_export",
             job_id_data=AsyncJobNameData(user_id=user_id, product_name="osparc"),
@@ -324,13 +289,14 @@ async def test_start_data_export_access_error(
     indirect=True,
 )
 async def test_abort_data_export_success(
-    rpc_client: RabbitMQRPCClient,
+    initialized_app: FastAPI,
+    storage_rabbitmq_rpc_client: RabbitMQRPCClient,
     mock_celery_client: _MockCeleryClient,
 ):
     assert mock_celery_client.get_task_uuids_object is not None
     assert not isinstance(mock_celery_client.get_task_uuids_object, Exception)
     await async_jobs.cancel(
-        rpc_client,
+        storage_rabbitmq_rpc_client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
         job_id_data=AsyncJobNameData(
             user_id=_faker.pyint(min_value=1, max_value=100), product_name="osparc"
@@ -353,7 +319,8 @@ async def test_abort_data_export_success(
     indirect=["mock_celery_client"],
 )
 async def test_abort_data_export_error(
-    rpc_client: RabbitMQRPCClient,
+    initialized_app: FastAPI,
+    storage_rabbitmq_rpc_client: RabbitMQRPCClient,
     mock_celery_client: _MockCeleryClient,
     expected_exception_type: type[Exception],
 ):
@@ -363,7 +330,7 @@ async def test_abort_data_export_error(
     _job_id = next(iter(job_ids)) if len(job_ids) > 0 else AsyncJobId(_faker.uuid4())
     with pytest.raises(expected_exception_type):
         await async_jobs.cancel(
-            rpc_client,
+            storage_rabbitmq_rpc_client,
             rpc_namespace=STORAGE_RPC_NAMESPACE,
             job_id_data=AsyncJobNameData(
                 user_id=_faker.pyint(min_value=1, max_value=100), product_name="osparc"
@@ -395,7 +362,8 @@ async def test_abort_data_export_error(
     indirect=True,
 )
 async def test_get_data_export_status(
-    rpc_client: RabbitMQRPCClient,
+    initialized_app: FastAPI,
+    storage_rabbitmq_rpc_client: RabbitMQRPCClient,
     mock_celery_client: _MockCeleryClient,
 ):
     job_ids = mock_celery_client.get_task_uuids_object
@@ -403,7 +371,7 @@ async def test_get_data_export_status(
     assert not isinstance(job_ids, Exception)
     _job_id = next(iter(job_ids)) if len(job_ids) > 0 else AsyncJobId(_faker.uuid4())
     result = await async_jobs.status(
-        rpc_client,
+        storage_rabbitmq_rpc_client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
         job_id=_job_id,
         job_id_data=AsyncJobNameData(
@@ -428,7 +396,8 @@ async def test_get_data_export_status(
     indirect=["mock_celery_client"],
 )
 async def test_get_data_export_status_error(
-    rpc_client: RabbitMQRPCClient,
+    initialized_app: FastAPI,
+    storage_rabbitmq_rpc_client: RabbitMQRPCClient,
     mock_celery_client: _MockCeleryClient,
     expected_exception_type: type[Exception],
 ):
@@ -438,7 +407,7 @@ async def test_get_data_export_status_error(
     _job_id = next(iter(job_ids)) if len(job_ids) > 0 else AsyncJobId(_faker.uuid4())
     with pytest.raises(expected_exception_type):
         _ = await async_jobs.status(
-            rpc_client,
+            storage_rabbitmq_rpc_client,
             rpc_namespace=STORAGE_RPC_NAMESPACE,
             job_id=_job_id,
             job_id_data=AsyncJobNameData(
@@ -463,7 +432,8 @@ async def test_get_data_export_status_error(
     indirect=True,
 )
 async def test_get_data_export_result_success(
-    rpc_client: RabbitMQRPCClient,
+    initialized_app: FastAPI,
+    storage_rabbitmq_rpc_client: RabbitMQRPCClient,
     mock_celery_client: _MockCeleryClient,
 ):
     job_ids = mock_celery_client.get_task_uuids_object
@@ -471,7 +441,7 @@ async def test_get_data_export_result_success(
     assert not isinstance(job_ids, Exception)
     _job_id = next(iter(job_ids)) if len(job_ids) > 0 else AsyncJobId(_faker.uuid4())
     result = await async_jobs.result(
-        rpc_client,
+        storage_rabbitmq_rpc_client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
         job_id=_job_id,
         job_id_data=AsyncJobNameData(
@@ -543,7 +513,8 @@ async def test_get_data_export_result_success(
     indirect=["mock_celery_client"],
 )
 async def test_get_data_export_result_error(
-    rpc_client: RabbitMQRPCClient,
+    initialized_app: FastAPI,
+    storage_rabbitmq_rpc_client: RabbitMQRPCClient,
     mock_celery_client: _MockCeleryClient,
     expected_exception: type[Exception],
 ):
@@ -554,7 +525,7 @@ async def test_get_data_export_result_error(
 
     with pytest.raises(expected_exception):
         _ = await async_jobs.result(
-            rpc_client,
+            storage_rabbitmq_rpc_client,
             rpc_namespace=STORAGE_RPC_NAMESPACE,
             job_id=_job_id,
             job_id_data=AsyncJobNameData(
@@ -571,11 +542,12 @@ async def test_get_data_export_result_error(
     indirect=True,
 )
 async def test_list_jobs_success(
-    rpc_client: RabbitMQRPCClient,
+    initialized_app: FastAPI,
+    storage_rabbitmq_rpc_client: RabbitMQRPCClient,
     mock_celery_client: MockerFixture,
 ):
     result = await async_jobs.list_jobs(
-        rpc_client,
+        storage_rabbitmq_rpc_client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
         job_id_data=AsyncJobNameData(
             user_id=_faker.pyint(min_value=1, max_value=100), product_name="osparc"
@@ -594,12 +566,13 @@ async def test_list_jobs_success(
     indirect=True,
 )
 async def test_list_jobs_error(
-    rpc_client: RabbitMQRPCClient,
+    initialized_app: FastAPI,
+    storage_rabbitmq_rpc_client: RabbitMQRPCClient,
     mock_celery_client: MockerFixture,
 ):
     with pytest.raises(JobSchedulerError):
         _ = await async_jobs.list_jobs(
-            rpc_client,
+            storage_rabbitmq_rpc_client,
             rpc_namespace=STORAGE_RPC_NAMESPACE,
             job_id_data=AsyncJobNameData(
                 user_id=_faker.pyint(min_value=1, max_value=100), product_name="osparc"
