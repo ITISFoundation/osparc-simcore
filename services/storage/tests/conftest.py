@@ -478,8 +478,8 @@ async def with_versioning_enabled(
 async def create_empty_directory(
     create_simcore_file_id: Callable[[ProjectID, NodeID, str], SimcoreS3FileID],
     create_upload_file_link_v2: Callable[..., Awaitable[FileUploadSchema]],
-    initialized_app: FastAPI,
     client: httpx.AsyncClient,
+    with_storage_celery_worker: CeleryTaskQueueWorker,
 ) -> Callable[[str, ProjectID, NodeID], Awaitable[SimcoreS3FileID]]:
     async def _directory_creator(
         dir_name: str, project_id: ProjectID, node_id: NodeID
