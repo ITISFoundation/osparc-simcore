@@ -12,7 +12,6 @@ from models_library.api_schemas_storage.data_export_async_jobs import (
     DataExportTaskStartInput,
     InvalidFileIdentifierError,
 )
-from servicelib.logging_utils import log_catch
 from servicelib.rabbitmq import RPCRouter
 
 from ...datcore_dsm import DatCoreDataManager
@@ -41,31 +40,30 @@ async def start_data_export(
 ) -> AsyncJobGet:
     assert app  # nosec
 
-    with log_catch(_logger):
-        dsm = get_dsm_provider(app).get(data_export_start.location_id)
+    dsm = get_dsm_provider(app).get(data_export_start.location_id)
 
-        try:
-            for _id in data_export_start.file_and_folder_ids:
-                if isinstance(dsm, DatCoreDataManager):
-                    _ = await dsm.get_file(user_id=job_id_data.user_id, file_id=_id)
-                elif isinstance(dsm, SimcoreS3DataManager):
-                    await dsm.can_read_file(user_id=job_id_data.user_id, file_id=_id)
+    try:
+        for _id in data_export_start.file_and_folder_ids:
+            if isinstance(dsm, DatCoreDataManager):
+                _ = await dsm.get_file(user_id=job_id_data.user_id, file_id=_id)
+            elif isinstance(dsm, SimcoreS3DataManager):
+                await dsm.can_read_file(user_id=job_id_data.user_id, file_id=_id)
 
-        except (FileAccessRightError, DatcoreAdapterError) as err:
-            raise AccessRightError(
-                user_id=job_id_data.user_id,
-                file_id=_id,
-                location_id=data_export_start.location_id,
-            ) from err
+    except (FileAccessRightError, DatcoreAdapterError) as err:
+        raise AccessRightError(
+            user_id=job_id_data.user_id,
+            file_id=_id,
+            location_id=data_export_start.location_id,
+        ) from err
 
-        try:
-            task_uuid = await get_celery_client(app).send_task(
-                "export_data",
-                task_context=job_id_data.model_dump(),
-                files=data_export_start.file_and_folder_ids,  # ANE: adapt here your signature
-            )
-        except CeleryError as exc:
-            raise JobSchedulerError(exc=f"{exc}") from exc
-        return AsyncJobGet(
-            job_id=task_uuid,
+    try:
+        task_uuid = await get_celery_client(app).send_task(
+            "export_data",
+            task_context=job_id_data.model_dump(),
+            files=data_export_start.file_and_folder_ids,  # ANE: adapt here your signature
         )
+    except CeleryError as exc:
+        raise JobSchedulerError(exc=f"{exc}") from exc
+    return AsyncJobGet(
+        job_id=task_uuid,
+    )

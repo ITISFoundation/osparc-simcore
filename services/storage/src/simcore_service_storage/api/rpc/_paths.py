@@ -7,7 +7,6 @@ from models_library.api_schemas_rpc_async_jobs.async_jobs import (
     AsyncJobNameData,
 )
 from models_library.projects_nodes_io import LocationID
-from servicelib.logging_utils import log_catch
 from servicelib.rabbitmq import RPCRouter
 
 from ...modules.celery import get_celery_client
@@ -26,13 +25,12 @@ async def compute_path_size(
     path: Path,
 ) -> AsyncJobGet:
     assert app  # nosec
-    with log_catch(logger=_logger):
-        task_uuid = await get_celery_client(app).send_task(
-            remote_compute_path_size.__name__,
-            task_context=job_id_data.model_dump(),
-            user_id=job_id_data.user_id,
-            location_id=location_id,
-            path=path,
-        )
+    task_uuid = await get_celery_client(app).send_task(
+        remote_compute_path_size.__name__,
+        task_context=job_id_data.model_dump(),
+        user_id=job_id_data.user_id,
+        location_id=location_id,
+        path=path,
+    )
 
-        return AsyncJobGet(job_id=task_uuid)
+    return AsyncJobGet(job_id=task_uuid)
