@@ -9,12 +9,13 @@ import pytest
 import simcore_postgres_database.cli
 import sqlalchemy as sa
 import sqlalchemy.engine
+import sqlalchemy.exc
 from faker import Faker
 from pytest_simcore.helpers import postgres_tools
-from pytest_simcore.helpers.faker_factories import random_project
+from pytest_simcore.helpers.faker_factories import random_project, random_user
 from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.models.projects_to_jobs import projects_to_jobs
-from sqlalchemy.dialects.postgresql import insert
+from simcore_postgres_database.models.users import users
 
 
 @pytest.fixture
@@ -55,7 +56,24 @@ def test_populate_projects_to_jobs_during_migration(
     simcore_postgres_database.cli.upgrade.callback("8403acca8759")
 
     with sync_engine.connect() as conn:
-        sample_projects = [
+
+        # Ensure the projects_to_jobs table does NOT exist yet
+        with pytest.raises(sqlalchemy.exc.ProgrammingError) as exc_info:
+            conn.execute(
+                sa.select(sa.func.count()).select_from(projects_to_jobs)
+            ).scalar()
+        assert "psycopg2.errors.UndefinedTable" in f"{exc_info.value}"
+
+        # INSERT data (emulates data in-place)
+        user_data = random_user(
+            faker, name="test_populate_projects_to_jobs_during_migration"
+        )
+        user_id = conn.execute(
+            sa.insert(users).values(user_data).returning(users.c.id)
+        ).scalar()
+
+        SPACES = " " * 3
+        projects_data = [
             random_project(
                 faker,
                 uuid="cd03450c-4c17-4c2c-85fd-0d951d7dcd5a",
@@ -70,36 +88,42 @@ def test_populate_projects_to_jobs_during_migration(
                     }
                     """
                 ),
+                prj_owner=user_id,
             ),
             random_project(
                 faker,
                 uuid="bf204942-007b-11ef-befd-0242ac114f07",
-                name="studies/4b7a704a-007a-11ef-befd-0242ac114f07/jobs/bf204942-007b-11ef-befd-0242ac114f07",
+                name=f"studies/4b7a704a-007a-11ef-befd-0242ac114f07/jobs/bf204942-007b-11ef-befd-0242ac114f07{SPACES}",
                 description="Valid project 2",
+                prj_owner=user_id,
             ),
             random_project(
                 faker,
                 uuid="33333333-3333-3333-3333-333333333333",
                 name="invalid/project/name",
                 description="Invalid project",
+                prj_owner=user_id,
             ),
         ]
-        conn.execute(insert(projects).values(sample_projects))
+        for prj in projects_data:
+            conn.execute(sa.insert(projects).values(prj))
 
-    # Run upgrade to head! to populate
+    # MIGRATE UPGRADE: this should populate
     simcore_postgres_database.cli.upgrade.callback("head")
 
     with sync_engine.connect() as conn:
         # Query the projects_to_jobs table
-        result = conn.execute(sa.select(projects_to_jobs)).fetchall()
+        result = conn.execute(
+            sa.select(projects_to_jobs.c.project_uuid, projects_to_jobs.c.job_name)
+        ).fetchall()
 
         # Assert only valid projects are added
         assert len(result) == 2
-        assert {
-            "project_uuid": "cd03450c-4c17-4c2c-85fd-0d951d7dcd5a",
-            "job_name": "solvers/simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/releases/2.2.1/jobs/cd03450c-4c17-4c2c-85fd-0d951d7dcd5a",
-        } in result
-        assert {
-            "project_uuid": "bf204942-007b-11ef-befd-0242ac114f07",
-            "job_name": "studies/4b7a704a-007a-11ef-befd-0242ac114f07/jobs/bf204942-007b-11ef-befd-0242ac114f07",
-        } in result
+        assert (
+            "cd03450c-4c17-4c2c-85fd-0d951d7dcd5a",
+            "solvers/simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/releases/2.2.1/jobs/cd03450c-4c17-4c2c-85fd-0d951d7dcd5a",
+        ) in result
+        assert (
+            "bf204942-007b-11ef-befd-0242ac114f07",
+            "studies/4b7a704a-007a-11ef-befd-0242ac114f07/jobs/bf204942-007b-11ef-befd-0242ac114f07",
+        ) in result
