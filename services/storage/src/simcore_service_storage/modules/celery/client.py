@@ -1,4 +1,5 @@
 import contextlib
+import json
 import logging
 from typing import Any, Final
 from uuid import uuid4
@@ -54,8 +55,7 @@ class CeleryTaskQueueClient:
         self._celery_app = celery_app
         self._redis_client_sdk = redis_client_sdk
 
-    @make_async()
-    def send_task(
+    async def send_task(
         self, task_name: str, *, task_context: TaskContext, **task_params
     ) -> TaskUUID:
         task_uuid = uuid4()
@@ -66,6 +66,14 @@ class CeleryTaskQueueClient:
             msg=f"Submitting task {task_name}: {task_id=} {task_params=}",
         ):
             self._celery_app.send_task(task_name, task_id=task_id, kwargs=task_params)
+            await self._redis_client_sdk.redis.set(
+                _CELERY_TASK_META_PREFIX + task_id,
+                json.dumps(
+                    {
+                        "status": "PENDING",
+                    }
+                ),
+            )
             return task_uuid
 
     @make_async()
