@@ -25,6 +25,17 @@ router = APIRouter(
 
 
 @router.post(
+    "/projects/{project_id}:share",
+    response_model=Envelope[ProjectGroupGet],
+    status_code=status.HTTP_201_CREATED,
+)
+async def share_project(
+    _path: Annotated[ProjectPathParams, Depends()],
+    _body: _ProjectsGroupsBodyParams,
+): ...
+
+
+@router.post(
     "/projects/{project_id}/groups/{group_id}",
     response_model=Envelope[ProjectGroupGet],
     status_code=status.HTTP_201_CREATED,
