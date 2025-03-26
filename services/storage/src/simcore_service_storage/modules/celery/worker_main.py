@@ -23,7 +23,6 @@ config_all_loggers(
     tracing_settings=_settings.STORAGE_TRACING,
 )
 
-_logger = logging.getLogger(__name__)
 
 assert _settings.STORAGE_CELERY
 app = create_celery_app(_settings.STORAGE_CELERY)
