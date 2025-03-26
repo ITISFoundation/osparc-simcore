@@ -1,5 +1,4 @@
 import contextlib
-import json
 import logging
 from typing import Any, Final
 from uuid import uuid4
@@ -12,13 +11,19 @@ from common_library.async_tools import make_async
 from models_library.progress_bar import ProgressReport
 from pydantic import ValidationError
 from servicelib.logging_utils import log_context
-from servicelib.redis._client import RedisClientSDK
 
-from .models import TaskContext, TaskID, TaskState, TaskStatus, TaskUUID
+from .models import (
+    TaskContext,
+    TaskData,
+    TaskState,
+    TaskStatus,
+    TaskStore,
+    TaskUUID,
+    build_task_id,
+)
 
 _logger = logging.getLogger(__name__)
 
-_CELERY_TASK_META_PREFIX: Final[str] = "celery-task-meta-"
 _CELERY_STATES_MAPPING: Final[dict[str, TaskState]] = {
     "PENDING": TaskState.PENDING,
     "STARTED": TaskState.PENDING,
@@ -29,50 +34,29 @@ _CELERY_STATES_MAPPING: Final[dict[str, TaskState]] = {
     "FAILURE": TaskState.ERROR,
     "ERROR": TaskState.ERROR,
 }
-_CELERY_TASK_ID_KEY_SEPARATOR: Final[str] = ":"
-_CELERY_TASK_SCAN_COUNT_PER_BATCH: Final[int] = 10000
 
 _MIN_PROGRESS_VALUE = 0.0
 _MAX_PROGRESS_VALUE = 100.0
 
 
-def _build_context_prefix(task_context: TaskContext) -> list[str]:
-    return [f"{task_context[key]}" for key in sorted(task_context)]
-
-
-def _build_task_id_prefix(task_context: TaskContext) -> str:
-    return _CELERY_TASK_ID_KEY_SEPARATOR.join(_build_context_prefix(task_context))
-
-
-def _build_task_id(task_context: TaskContext, task_uuid: TaskUUID) -> TaskID:
-    return _CELERY_TASK_ID_KEY_SEPARATOR.join(
-        [_build_task_id_prefix(task_context), f"{task_uuid}"]
-    )
-
-
 class CeleryTaskQueueClient:
-    def __init__(self, celery_app: Celery, redis_client_sdk: RedisClientSDK) -> None:
+    def __init__(self, celery_app: Celery, task_store: TaskStore) -> None:
         self._celery_app = celery_app
-        self._redis_client_sdk = redis_client_sdk
+        self._task_store = task_store
 
     async def send_task(
         self, task_name: str, *, task_context: TaskContext, **task_params
     ) -> TaskUUID:
         task_uuid = uuid4()
-        task_id = _build_task_id(task_context, task_uuid)
+        task_id = build_task_id(task_context, task_uuid)
         with log_context(
             _logger,
             logging.DEBUG,
             msg=f"Submitting task {task_name}: {task_id=} {task_params=}",
         ):
             self._celery_app.send_task(task_name, task_id=task_id, kwargs=task_params)
-            await self._redis_client_sdk.redis.set(
-                _CELERY_TASK_META_PREFIX + task_id,
-                json.dumps(
-                    {
-                        "status": "PENDING",
-                    }
-                ),
+            await self._task_store.set_task(
+                task_id, TaskData(status=TaskState.PENDING.name)
             )
             return task_uuid
 
@@ -80,19 +64,19 @@ class CeleryTaskQueueClient:
     def abort_task(  # pylint: disable=R6301
         self, task_context: TaskContext, task_uuid: TaskUUID
     ) -> None:
-        task_id = _build_task_id(task_context, task_uuid)
+        task_id = build_task_id(task_context, task_uuid)
         _logger.info("Aborting task %s", task_id)
         AbortableAsyncResult(task_id).abort()
 
     @make_async()
     def get_task_result(self, task_context: TaskContext, task_uuid: TaskUUID) -> Any:
-        task_id = _build_task_id(task_context, task_uuid)
+        task_id = build_task_id(task_context, task_uuid)
         return self._celery_app.AsyncResult(task_id).result
 
     def _get_progress_report(
         self, task_context: TaskContext, task_uuid: TaskUUID
     ) -> ProgressReport:
-        task_id = _build_task_id(task_context, task_uuid)
+        task_id = build_task_id(task_context, task_uuid)
         result = self._celery_app.AsyncResult(task_id).result
         state = self._get_state(task_context, task_uuid)
         if result and state == TaskState.RUNNING:
@@ -108,7 +92,7 @@ class CeleryTaskQueueClient:
         return ProgressReport(actual_value=_MIN_PROGRESS_VALUE)
 
     def _get_state(self, task_context: TaskContext, task_uuid: TaskUUID) -> TaskState:
-        task_id = _build_task_id(task_context, task_uuid)
+        task_id = build_task_id(task_context, task_uuid)
         return _CELERY_STATES_MAPPING[self._celery_app.AsyncResult(task_id).state]
 
     @make_async()
@@ -122,14 +106,4 @@ class CeleryTaskQueueClient:
         )
 
     async def get_task_uuids(self, task_context: TaskContext) -> set[TaskUUID]:
-        search_key = (
-            _CELERY_TASK_META_PREFIX
-            + _build_task_id_prefix(task_context)
-            + _CELERY_TASK_ID_KEY_SEPARATOR
-        )
-        keys = set()
-        async for key in self._redis_client_sdk.redis.scan_iter(
-            match=search_key + "*", count=_CELERY_TASK_SCAN_COUNT_PER_BATCH
-        ):
-            keys.add(TaskUUID(f"{key}".removeprefix(search_key)))
-        return keys
+        return await self._task_store.get_task_uuids(task_context)

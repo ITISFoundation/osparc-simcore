@@ -18,8 +18,8 @@ def create_app(celery_settings: CelerySettings) -> Celery:
         ),
     )
     app.conf.broker_connection_retry_on_startup = True
-    # NOTE: disable SSL cert validation (https://github.com/ITISFoundation/osparc-simcore/pull/7407)
     if celery_settings.CELERY_REDIS_RESULT_BACKEND.REDIS_SECURE:
+        # NOTE: disable SSL cert validation (https://github.com/ITISFoundation/osparc-simcore/pull/7407)
         app.conf.redis_backend_use_ssl = {"ssl_cert_reqs": ssl.CERT_NONE}
     app.conf.result_expires = celery_settings.CELERY_RESULT_EXPIRES
     app.conf.result_extended = True  # original args are included in the results

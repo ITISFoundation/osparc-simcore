@@ -4,6 +4,7 @@ from asyncio import AbstractEventLoop
 from fastapi import FastAPI
 from servicelib.redis._client import RedisClientSDK
 from settings_library.redis import RedisDatabase
+from simcore_service_storage.modules.celery.backends._redis import RedisTaskStore
 
 from ..._meta import APP_NAME
 from ...core.settings import get_application_settings
@@ -26,7 +27,10 @@ def setup_celery_client(app: FastAPI) -> None:
             ),
             client_name=f"{APP_NAME}.celery_tasks",
         )
-        app.state.celery_client = CeleryTaskQueueClient(celery_app, redis_client_sdk)
+
+        app.state.celery_client = CeleryTaskQueueClient(
+            celery_app, RedisTaskStore(redis_client_sdk)
+        )
 
         register_celery_types()
 
