@@ -2,7 +2,10 @@ import logging
 from asyncio import AbstractEventLoop
 
 from fastapi import FastAPI
+from servicelib.redis._client import RedisClientSDK
+from settings_library.redis import RedisDatabase
 
+from ..._meta import APP_NAME
 from ...core.settings import get_application_settings
 from ._celery_types import register_celery_types
 from ._common import create_app
@@ -14,10 +17,17 @@ _logger = logging.getLogger(__name__)
 
 def setup_celery_client(app: FastAPI) -> None:
     async def on_startup() -> None:
-        celery_settings = get_application_settings(app).STORAGE_CELERY
+        application_settings = get_application_settings(app)
+        celery_settings = application_settings.STORAGE_CELERY
         assert celery_settings  # nosec
         celery_app = create_app(celery_settings)
-        app.state.celery_client = CeleryTaskQueueClient(celery_app)
+        redis_client_sdk = RedisClientSDK(
+            celery_settings.CELERY_REDIS_RESULT_BACKEND.build_redis_dsn(
+                RedisDatabase.CELERY_TASKS
+            ),
+            client_name=f"{APP_NAME}.celery_tasks",
+        )
+        app.state.celery_client = CeleryTaskQueueClient(celery_app, redis_client_sdk)
         set_fastapi_app(celery_app, app)
 
         register_celery_types()

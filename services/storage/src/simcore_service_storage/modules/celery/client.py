@@ -13,9 +13,7 @@ from pydantic import ValidationError
 from servicelib.logging_utils import log_context
 from servicelib.redis._client import RedisClientSDK
 
-from ..redis import get_redis_client
 from .models import TaskContext, TaskID, TaskState, TaskStatus, TaskUUID
-from .utils import get_fastapi_app
 
 _logger = logging.getLogger(__name__)
 
@@ -36,7 +34,7 @@ _CELERY_STATES_MAPPING: Final[dict[str, TaskState]] = {
     "ERROR": TaskState.ERROR,
 }
 _CELERY_TASK_ID_KEY_SEPARATOR: Final[str] = ":"
-_CELERY_TASK_ID_KEY_ENCODING = "utf-8"
+_CELERY_TASK_SCAN_COUNT_PER_BATCH: Final[int] = 10000
 
 _MIN_PROGRESS_VALUE = 0.0
 _MAX_PROGRESS_VALUE = 100.0
@@ -57,8 +55,9 @@ def _build_task_id(task_context: TaskContext, task_uuid: TaskUUID) -> TaskID:
 
 
 class CeleryTaskQueueClient:
-    def __init__(self, celery_app: Celery):
+    def __init__(self, celery_app: Celery, redis_client_sdk: RedisClientSDK) -> None:
         self._celery_app = celery_app
+        self._redis_client_sdk = redis_client_sdk
 
     @make_async()
     def send_task(
@@ -122,21 +121,17 @@ class CeleryTaskQueueClient:
     async def _get_completed_task_uuids(
         self, task_context: TaskContext
     ) -> set[TaskUUID]:
-        search_key = _CELERY_TASK_META_PREFIX + _build_task_id_prefix(task_context)
-        redis_client_sdk = get_redis_client(get_fastapi_app(self._celery_app))
-        assert isinstance(redis_client_sdk, RedisClientSDK)  # nosec
-        redis = redis_client_sdk.redis
-        all_keys = set()
-        async for keys in redis.scan_iter(search_key + "*"):
-            all_keys.add(
-                {
-                    TaskUUID(
-                        f"{key.decode(_CELERY_TASK_ID_KEY_ENCODING).removeprefix(search_key + _CELERY_TASK_ID_KEY_SEPARATOR)}"
-                    )
-                    for key in keys
-                }
-            )
-        return all_keys
+        search_key = (
+            _CELERY_TASK_META_PREFIX
+            + _build_task_id_prefix(task_context)
+            + _CELERY_TASK_ID_KEY_SEPARATOR
+        )
+        keys = set()
+        async for key in self._redis_client_sdk.redis.scan_iter(
+            match=search_key + "*", count=_CELERY_TASK_SCAN_COUNT_PER_BATCH
+        ):
+            keys.add(TaskUUID(f"{key}".removeprefix(search_key)))
+        return keys
 
     async def get_task_uuids(self, task_context: TaskContext) -> set[TaskUUID]:
         task_uuids = await self._get_completed_task_uuids(task_context)
