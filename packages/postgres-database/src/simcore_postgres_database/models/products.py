@@ -41,6 +41,8 @@ class Vendor(TypedDict, total=False):
 
     url: str  # vendor website
     license_url: str  # Which are the license terms? (if applies)
+    logo: str  # vendor logo
+    strong_color: str  # vendor color
 
     invitation_url: str  # How to request a trial invitation? (if applies)
     invitation_form: bool  # If True, it takes precendence over invitation_url and asks the FE to show the form (if defined)
