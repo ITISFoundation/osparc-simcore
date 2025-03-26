@@ -10,7 +10,6 @@ from ...core.settings import get_application_settings
 from ._celery_types import register_celery_types
 from ._common import create_app
 from .client import CeleryTaskQueueClient
-from .utils import set_fastapi_app
 
 _logger = logging.getLogger(__name__)
 
