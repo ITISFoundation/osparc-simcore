@@ -35,6 +35,7 @@ _CELERY_STATES_MAPPING: Final[dict[str, TaskState]] = {
 }
 _CELERY_TASK_ID_KEY_SEPARATOR: Final[str] = ":"
 _CELERY_TASK_SCAN_COUNT_PER_BATCH: Final[int] = 10000
+_CELERY_TASK_INSPECT_TIMEOUT: Final[int] = 3
 
 _MIN_PROGRESS_VALUE = 0.0
 _MAX_PROGRESS_VALUE = 100.0
@@ -139,17 +140,29 @@ class CeleryTaskQueueClient:
         task_id_prefix = _build_task_id_prefix(task_context)
         inspect = self._celery_app.control.inspect()
         for task_inspect_status in _CELERY_INSPECT_TASK_STATUSES:
-            tasks = getattr(inspect, task_inspect_status)() or {}
-
-            task_uuids.update(
-                TaskUUID(
-                    task_info["id"].removeprefix(
-                        task_id_prefix + _CELERY_TASK_ID_KEY_SEPARATOR
+            try:
+                tasks = (
+                    getattr(inspect, task_inspect_status)(
+                        timeout=_CELERY_TASK_INSPECT_TIMEOUT
                     )
+                    or {}
                 )
-                for tasks_per_worker in tasks.values()
-                for task_info in tasks_per_worker
-                if "id" in task_info
-            )
+
+                task_uuids.update(
+                    TaskUUID(
+                        task_info["id"].removeprefix(
+                            task_id_prefix + _CELERY_TASK_ID_KEY_SEPARATOR
+                        )
+                    )
+                    for tasks_per_worker in tasks.values()
+                    for task_info in tasks_per_worker
+                    if "id" in task_info
+                )
+            except TimeoutError as exc:
+                _logger.warning(
+                    "Timeout while inspecting Celery tasks %s: %s",
+                    task_inspect_status,
+                    exc,
+                )
 
         return task_uuids

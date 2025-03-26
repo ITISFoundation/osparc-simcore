@@ -28,7 +28,6 @@ def setup_celery_client(app: FastAPI) -> None:
             client_name=f"{APP_NAME}.celery_tasks",
         )
         app.state.celery_client = CeleryTaskQueueClient(celery_app, redis_client_sdk)
-        set_fastapi_app(celery_app, app)
 
         register_celery_types()
 
