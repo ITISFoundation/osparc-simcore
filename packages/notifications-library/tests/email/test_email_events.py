@@ -126,7 +126,6 @@ def event_extra_data(  # noqa: PLR0911
                 "host": host_url,
                 "link": f"{host_url}?registration={code}",
             }
-
         case "on_reset_password":
             return {
                 "host": host_url,
