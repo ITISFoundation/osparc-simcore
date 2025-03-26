@@ -19,9 +19,9 @@ from .._meta import (
     SUMMARY,
     VERSION,
 )
-from ..api.rest.routes import initialize_rest_api
-from ..api.rpc.routes import lifespan_rpc_api_routes
-from ..services.rabbitmq import lifespan_rabbitmq
+from ..domains.rabbitmq.service import lifespan_rabbitmq
+from .routing_rest import initialize_rest_api
+from .routing_rpc import lifespan_rpc_api_routes
 from .settings import ApplicationSettings
 
 _logger = logging.getLogger(__name__)

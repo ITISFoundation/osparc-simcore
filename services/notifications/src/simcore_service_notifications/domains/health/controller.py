@@ -6,7 +6,7 @@ from models_library.api_schemas__common.health import HealthCheckGet
 from models_library.errors import RABBITMQ_CLIENT_UNHEALTHY_MSG
 from servicelib.rabbitmq import RabbitMQClient
 
-from ._dependencies import get_rabbitmq_client
+from ...core.dependencies import get_rabbitmq_client
 
 router = APIRouter()
 
