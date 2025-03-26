@@ -476,7 +476,7 @@ async def get_service_history(
     offset: NonNegativeInt | None = None,
     include_compatibility: bool = False,
 ) -> tuple[PageTotalCount, list[ServiceRelease]]:
-    total_count, history = await repo.get_service_history(
+    total_count, history = await repo.get_service_history_page(
         # NOTE: that the service history might be different for each user
         # since access-rights are defined on a k:v basis
         product_name=product_name,
@@ -484,7 +484,7 @@ async def get_service_history(
         key=service_key,
         limit=limit,
         offset=offset,
-    ) or (0, [])
+    )
 
     compatibility_map = {}
     if include_compatibility:

@@ -16,7 +16,9 @@ from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from psycopg2.errors import ForeignKeyViolation
 from pydantic import PositiveInt, TypeAdapter, ValidationError
+from simcore_postgres_database.utils_repos import pass_or_acquire_connection
 from simcore_postgres_database.utils_services import create_select_latest_services_query
+from sqlalchemy import sql
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.sql import and_, or_
 from sqlalchemy.sql.expression import tuple_
@@ -30,11 +32,18 @@ from ...models.services_db import (
     ServiceWithHistoryDBGet,
 )
 from ...models.services_specifications import ServiceSpecificationsAtDB
-from ..tables import services_access_rights, services_meta_data, services_specifications
+from ..tables import (
+    services_access_rights,
+    services_compatibility,
+    services_meta_data,
+    services_specifications,
+    user_to_groups,
+)
 from ._base import BaseRepository
 from ._services_sql import (
     SERVICES_META_DATA_COLS,
     AccessRightsClauses,
+    by_version,
     can_get_service_stmt,
     get_service_history_stmt,
     get_service_stmt,
@@ -340,8 +349,6 @@ class ServicesRepository(BaseRepository):
                 user_id=user_id,
                 access_rights=AccessRightsClauses.can_read,
                 service_key=key,
-                limit=None,
-                offset=None,
             )
             async with self.db_engine.begin() as conn:
                 result = await conn.execute(stmt_history)
@@ -440,29 +447,94 @@ class ServicesRepository(BaseRepository):
         user_id: UserID,
         # get args
         key: ServiceKey,
+    ) -> list[ReleaseDBGet]:
+        """
+        DEPRECATED: use get_service_history_page instead!
+        """
+        stmt_history = get_service_history_stmt(
+            product_name=product_name,
+            user_id=user_id,
+            access_rights=AccessRightsClauses.can_read,
+            service_key=key,
+        )
+        async with self.db_engine.connect() as conn:
+            result = await conn.execute(stmt_history)
+            row = result.one_or_none()
+
+        return (
+            TypeAdapter(list[ReleaseDBGet]).validate_python(row.history) if row else []
+        )
+
+    async def get_service_history_page(
+        self,
+        # access-rights
+        product_name: ProductName,
+        user_id: UserID,
+        # get args
+        key: ServiceKey,
         # list args: pagination
         limit: int | None = None,
         offset: int | None = None,
     ) -> tuple[PositiveInt, list[ReleaseDBGet]]:
 
-        stmt_total, stmt_history = get_service_history_stmt(
-            product_name=product_name,
-            user_id=user_id,
-            access_rights=AccessRightsClauses.can_read,
-            service_key=key,
-            offset=offset,
-            limit=limit,
+        base_query = (
+            sql.select(
+                services_meta_data.c.key,
+                services_meta_data.c.version,
+                services_meta_data.c.version_display,
+                services_meta_data.c.deprecated,
+                services_meta_data.c.created,
+                services_compatibility.c.custom_policy.label(
+                    "compatibility_policy"
+                ),  # CompatiblePolicyDict | None
+            )
+            .select_from(
+                # joins because access-rights might change per version
+                services_meta_data.join(
+                    services_access_rights,
+                    (services_meta_data.c.key == services_access_rights.c.key)
+                    & (
+                        services_meta_data.c.version == services_access_rights.c.version
+                    ),
+                )
+                .join(
+                    user_to_groups,
+                    (user_to_groups.c.gid == services_access_rights.c.gid),
+                )
+                .outerjoin(
+                    services_compatibility,
+                    (services_meta_data.c.key == services_compatibility.c.key)
+                    & (
+                        services_meta_data.c.version == services_compatibility.c.version
+                    ),
+                )
+            )
+            .where(
+                (services_meta_data.c.key == key)
+                & (services_access_rights.c.product_name == product_name)
+                & (user_to_groups.c.uid == user_id)
+                & AccessRightsClauses.can_read
+            )
+            .distinct()
         )
-        async with self.db_engine.connect() as conn:
-            result = await conn.execute(stmt_total)
-            total_count = result.scalar() or 0
 
-            result = await conn.execute(stmt_history)
-            row = result.one_or_none()
+        subquery = base_query.subquery()
+        count_query = sql.select(sql.func.count()).select_from(subquery)
 
-        items = (
-            TypeAdapter(list[ReleaseDBGet]).validate_python(row.history) if row else []
+        page_query = (
+            base_query.order_by(sql.desc(by_version(base_query.c.version)))
+            .offset(offset)
+            .limit(limit)
         )
+
+        async with pass_or_acquire_connection(self.db_engine) as conn:
+            total_count: PositiveInt = await conn.scalar(count_query) or 0
+
+            result = await conn.stream(page_query)
+            items: list[ReleaseDBGet] = [
+                ReleaseDBGet.model_validate(row, from_attributes=True)
+                async for row in result
+            ]
 
         return total_count, items
 

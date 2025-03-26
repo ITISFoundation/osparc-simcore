@@ -476,3 +476,69 @@ async def test_can_get_service(
         key=service_key,
         version=service_version,
     )
+
+
+async def test_get_service_history_page(
+    target_product: ProductName,
+    create_fake_service_data: Callable,
+    services_db_tables_injector: Callable,
+    services_repo: ServicesRepository,
+    user_id: UserID,
+):
+    # inject services with multiple versions
+    service_key = "simcore/services/dynamic/test-service"
+    num_versions = 10
+    await services_db_tables_injector(
+        [
+            create_fake_service_data(
+                service_key,
+                f"{v}.0.0",
+                team_access=None,
+                everyone_access=None,
+                product=target_product,
+            )
+            for v in range(num_versions)
+        ]
+    )
+
+    # fetch full history using get_service_history_page
+    total_count, history = await services_repo.get_service_history_page(
+        product_name=target_product,
+        user_id=user_id,
+        key=service_key,
+    )
+    assert total_count == num_versions
+    assert len(history) == num_versions
+    assert [release.version for release in history] == [
+        f"{v}.0.0" for v in reversed(range(num_versions))
+    ]
+
+    # fetch full history using deprecated get_service_history
+    deprecated_history = await services_repo.get_service_history(
+        product_name=target_product,
+        user_id=user_id,
+        key=service_key,
+    )
+    assert len(deprecated_history) == len(history)
+    assert [release.version for release in deprecated_history] == [
+        release.version for release in history
+    ]
+
+    # fetch paginated history
+    limit = 3
+    offset = 2
+    total_count, paginated_history = await services_repo.get_service_history_page(
+        product_name=target_product,
+        user_id=user_id,
+        key=service_key,
+        limit=limit,
+        offset=offset,
+    )
+    assert total_count == num_versions
+    assert len(paginated_history) == limit
+    assert [release.version for release in paginated_history] == [
+        f"{v}.0.0" for v in reversed(range(offset, offset + limit))
+    ]
+
+    # compare paginated results with the corresponding slice of the full history
+    assert paginated_history == history[offset : offset + limit]
