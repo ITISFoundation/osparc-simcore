@@ -223,7 +223,7 @@ async def batch_get_my_services(
     return services
 
 
-@router.expose(reraise_if_error_type=(CatalogForbiddenError, ValidationError))
+@router.expose(reraise_if_error_type=(ValidationError,))
 @log_decorator(_logger, level=logging.DEBUG)
 @validate_call(config={"arbitrary_types_allowed": True})
 async def get_my_service_history(

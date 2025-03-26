@@ -8,6 +8,7 @@ from models_library.api_schemas_catalog.services import (
     LatestServiceGet,
     MyServiceGet,
     ServiceGetV2,
+    ServiceRelease,
     ServiceUpdateV2,
 )
 from models_library.products import ProductName
@@ -236,3 +237,40 @@ async def batch_get_my_services(
     result = await _call(product_name=product_name, user_id=user_id, ids=ids)
     assert TypeAdapter(list[MyServiceGet]).validate_python(result) is not None  # nosec
     return cast(list[MyServiceGet], result)
+
+
+async def get_my_service_history(  # pylint: disable=too-many-arguments
+    rpc_client: RabbitMQRPCClient,
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    service_key: ServiceKey,
+) -> list[ServiceRelease]:
+    """
+    Raises:
+        ValidationError: on invalid arguments
+    """
+
+    @validate_call()
+    async def _call(
+        product_name: ProductName,
+        user_id: UserID,
+        service_key: ServiceKey,
+    ):
+        return await rpc_client.request(
+            CATALOG_RPC_NAMESPACE,
+            TypeAdapter(RPCMethodName).validate_python("get_my_service_history"),
+            product_name=product_name,
+            user_id=user_id,
+            service_key=service_key,
+        )
+
+    result = await _call(
+        product_name=product_name,
+        user_id=user_id,
+        service_key=service_key,
+    )
+    assert (  # nosec
+        TypeAdapter(list[ServiceRelease]).validate_python(result) is not None
+    )
+    return cast(list[ServiceRelease], result)

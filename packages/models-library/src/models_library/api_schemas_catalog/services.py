@@ -365,3 +365,6 @@ class MyServiceGet(CatalogOutputSchema):
 
     owner: GroupID | None
     my_access_rights: ServiceGroupAccessRightsV2
+
+
+__all__: tuple[str, ...] = ("ServiceRelease",)
