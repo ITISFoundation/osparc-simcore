@@ -17,10 +17,6 @@ from .models import TaskContext, TaskID, TaskState, TaskStatus, TaskUUID
 
 _logger = logging.getLogger(__name__)
 
-_CELERY_INSPECT_TASK_STATUSES: Final[tuple[str, ...]] = (
-    "active",
-    "scheduled",
-)
 _CELERY_TASK_META_PREFIX: Final[str] = "celery-task-meta-"
 _CELERY_STATES_MAPPING: Final[dict[str, TaskState]] = {
     "PENDING": TaskState.PENDING,
@@ -117,9 +113,7 @@ class CeleryTaskQueueClient:
             progress_report=self._get_progress_report(task_context, task_uuid),
         )
 
-    async def _get_completed_task_uuids(
-        self, task_context: TaskContext
-    ) -> set[TaskUUID]:
+    async def get_task_uuids(self, task_context: TaskContext) -> set[TaskUUID]:
         search_key = (
             _CELERY_TASK_META_PREFIX
             + _build_task_id_prefix(task_context)
@@ -131,24 +125,3 @@ class CeleryTaskQueueClient:
         ):
             keys.add(TaskUUID(f"{key}".removeprefix(search_key)))
         return keys
-
-    async def get_task_uuids(self, task_context: TaskContext) -> set[TaskUUID]:
-        task_uuids = await self._get_completed_task_uuids(task_context)
-
-        task_id_prefix = _build_task_id_prefix(task_context)
-        inspect = self._celery_app.control.inspect()
-        for task_inspect_status in _CELERY_INSPECT_TASK_STATUSES:
-            tasks = getattr(inspect, task_inspect_status)() or {}
-
-            task_uuids.update(
-                TaskUUID(
-                    task_info["id"].removeprefix(
-                        task_id_prefix + _CELERY_TASK_ID_KEY_SEPARATOR
-                    )
-                )
-                for tasks_per_worker in tasks.values()
-                for task_info in tasks_per_worker
-                if "id" in task_info
-            )
-
-        return task_uuids
