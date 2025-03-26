@@ -1,17 +1,27 @@
+import logging
 from collections.abc import Callable
 from operator import attrgetter
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, Header, HTTPException, status
 from httpx import HTTPStatusError
-from pydantic import ValidationError
+from models_library.projects import ProjectID
+from models_library.projects_nodes_io import NodeID
+from pydantic import PositiveInt, ValidationError
 from servicelib.fastapi.dependencies import get_reverse_url_mapper
+from simcore_service_api_server._service import create_solver_or_program_job
+from simcore_service_api_server.api.dependencies.webserver_http import (
+    get_webserver_session,
+)
+from simcore_service_api_server.services_http.webserver import AuthSession
 
+from ...models.schemas.jobs import Job, JobInputs
 from ...models.schemas.programs import Program, ProgramKeyId, VersionStr
 from ...services_http.catalog import CatalogApi
 from ..dependencies.authentication import get_current_user_id, get_product_name
 from ..dependencies.services import get_api_client
 
+_logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
@@ -74,3 +84,45 @@ async def get_program_release(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Program {program_key}:{version} not found",
         ) from err
+
+
+@router.post(
+    "/{program_key:path}/releases/{version}/jobs",
+    response_model=Job,
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_program_job(
+    program_key: ProgramKeyId,
+    version: VersionStr,
+    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+    catalog_client: Annotated[CatalogApi, Depends(get_api_client(CatalogApi))],
+    webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
+    url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
+    product_name: Annotated[str, Depends(get_product_name)],
+    x_simcore_parent_project_uuid: Annotated[ProjectID | None, Header()] = None,
+    x_simcore_parent_node_id: Annotated[NodeID | None, Header()] = None,
+):
+    """Creates a job in a specific release with given inputs.
+
+    NOTE: This operation does **not** start the job
+    """
+
+    # ensures user has access to solver
+    inputs = JobInputs(values={})
+    program = await catalog_client.get_program(
+        user_id=user_id,
+        name=program_key,
+        version=version,
+        product_name=product_name,
+    )
+
+    job = await create_solver_or_program_job(
+        webserver_api=webserver_api,
+        solver_or_program=program,
+        inputs=inputs,
+        parent_project_uuid=x_simcore_parent_project_uuid,
+        parent_node_id=x_simcore_parent_node_id,
+        url_for=url_for,
+        hidden=False,
+    )
+    return job

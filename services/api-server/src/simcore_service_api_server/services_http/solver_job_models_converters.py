@@ -1,11 +1,10 @@
 """
-    Helper functions to convert models used in
-    services/api-server/src/simcore_service_api_server/api/routes/solvers_jobs.py
+Helper functions to convert models used in
+services/api-server/src/simcore_service_api_server/api/routes/solvers_jobs.py
 """
 
 import urllib.parse
 import uuid
-from collections.abc import Callable
 from datetime import UTC, datetime
 from functools import lru_cache
 
@@ -14,7 +13,7 @@ from models_library.api_schemas_webserver.projects import ProjectCreateNew, Proj
 from models_library.api_schemas_webserver.projects_ui import StudyUI
 from models_library.basic_types import KeyIDStr
 from models_library.projects_nodes import InputID
-from pydantic import TypeAdapter
+from pydantic import HttpUrl, TypeAdapter
 
 from ..models.basic_types import VersionStr
 from ..models.domain.projects import InputTypes, Node, SimCoreFileLink
@@ -26,6 +25,7 @@ from ..models.schemas.jobs import (
     JobStatus,
     PercentageInt,
 )
+from ..models.schemas.programs import Program
 from ..models.schemas.solvers import Solver, SolverKeyId
 from .director_v2 import ComputationTaskGet
 
@@ -115,7 +115,7 @@ def get_node_id(project_id, solver_id) -> str:
 
 
 def create_new_project_for_job(
-    solver: Solver, job: Job, inputs: JobInputs
+    solver_or_program: Solver | Program, job: Job, inputs: JobInputs
 ) -> ProjectCreateNew:
     """
     Creates a project for a solver's job
@@ -131,7 +131,7 @@ def create_new_project_for_job(
     raises ValidationError
     """
     project_id = job.id
-    solver_id = get_node_id(project_id, solver.id)
+    solver_id = get_node_id(project_id, solver_or_program.id)
 
     # map Job inputs with solveri nputs
     # TODO: ArgumentType -> InputTypes dispatcher and reversed
@@ -140,9 +140,9 @@ def create_new_project_for_job(
     )
 
     solver_service = Node(
-        key=solver.id,
-        version=solver.version,
-        label=solver.title,
+        key=solver_or_program.id,
+        version=solver_or_program.version,
+        label=solver_or_program.title,
         inputs=solver_inputs,
         inputs_units={},
     )
@@ -179,7 +179,9 @@ def create_job_from_project(
     solver_key: SolverKeyId,
     solver_version: VersionStr,
     project: ProjectGet,
-    url_for: Callable,
+    url: HttpUrl | None,
+    runner_url: HttpUrl | None,
+    outputs_url: HttpUrl | None,
 ) -> Job:
     """
     Given a project, creates a job
@@ -211,28 +213,10 @@ def create_job_from_project(
         inputs_checksum=job_inputs.compute_checksum(),
         created_at=project.creation_date,  # type: ignore[arg-type]
         runner_name=solver_name,
-        url=url_for(
-            "get_job",
-            solver_key=solver_key,
-            version=solver_version,
-            job_id=job_id,
-        ),
-        runner_url=url_for(
-            "get_solver_release",
-            solver_key=solver_key,
-            version=solver_version,
-        ),
-        outputs_url=url_for(
-            "get_job_outputs",
-            solver_key=solver_key,
-            version=solver_version,
-            job_id=job_id,
-        ),
+        url=url,
+        runner_url=runner_url,
+        outputs_url=outputs_url,
     )
-
-    assert all(
-        getattr(job, f) for f in job.model_fields.keys() if f.endswith("url")
-    )  # nosec
 
     return job
 

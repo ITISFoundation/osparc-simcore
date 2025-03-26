@@ -48,7 +48,7 @@ def test_create_project_model_for_job(faker: Faker):
 
     print(inputs.model_dump_json(indent=2))
 
-    job = Job.create_solver_job(solver=solver, inputs=inputs)
+    job = Job.create_job_from_solver_or_program(solver_or_program=solver, inputs=inputs)
 
     # body of create project!
     createproject_body = create_new_project_for_job(solver, job, inputs)
