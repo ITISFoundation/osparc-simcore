@@ -133,7 +133,7 @@ async def list_jobs(
     - SEE `get_jobs_page` for paginated version of this function
     """
 
-    solver = await catalog_client.get_service(
+    solver = await catalog_client.get_solver(
         user_id=user_id,
         name=solver_key,
         version=version,
@@ -178,7 +178,7 @@ async def get_jobs_page(
     # NOTE: Different entry to keep backwards compatibility with list_jobs.
     # Eventually use a header with agent version to switch to new interface
 
-    solver = await catalog_client.get_service(
+    solver = await catalog_client.get_solver(
         user_id=user_id,
         name=solver_key,
         version=version,

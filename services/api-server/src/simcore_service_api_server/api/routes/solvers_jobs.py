@@ -107,7 +107,7 @@ async def create_job(
     """
 
     # ensures user has access to solver
-    solver = await catalog_client.get_service(
+    solver = await catalog_client.get_solver(
         user_id=user_id,
         name=solver_key,
         version=version,
