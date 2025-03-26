@@ -473,7 +473,9 @@
           "services"
         ],
         "summary": "List Services",
+        "description": "Use instead rpc._service.list_services_paginated -> PageRpcServicesGetV2",
         "operationId": "list_services_v0_services_get",
+        "deprecated": true,
         "parameters": [
           {
             "name": "user_id",
@@ -540,7 +542,9 @@
           "services"
         ],
         "summary": "Get Service",
+        "description": "Use instead rpc._service.get_service -> ServiceGetV2",
         "operationId": "get_service_v0_services__service_key___service_version__get",
+        "deprecated": true,
         "parameters": [
           {
             "name": "service_key",
