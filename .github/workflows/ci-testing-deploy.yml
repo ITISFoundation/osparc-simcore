@@ -150,6 +150,12 @@ jobs:
               - 'services/docker-compose*'
               - 'scripts/mypy/*'
               - 'mypy.ini'
+            notifications:
+              - 'packages/**'
+              - 'services/notifications/**'
+              - 'services/docker-compose*'
+              - 'scripts/mypy/*'
+              - 'mypy.ini'
             api:
               - 'api/**'
             api-server:
