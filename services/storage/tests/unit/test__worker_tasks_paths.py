@@ -56,7 +56,11 @@ async def _assert_compute_path_size(
     expected_total_size: int,
 ) -> ByteSize:
     response = await compute_path_size(
-        celery_task, user_id=user_id, location_id=location_id, path=path
+        celery_task,
+        task_id=celery_task.id,
+        user_id=user_id,
+        location_id=location_id,
+        path=path,
     )
     assert isinstance(response, ByteSize)
     assert response == expected_total_size
