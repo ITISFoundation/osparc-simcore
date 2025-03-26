@@ -30,7 +30,7 @@ from pytest_simcore.helpers.playwright import (
     SocketIOEvent,
     retrieve_project_state_from_decoded_message,
     wait_for_pipeline_state,
-    wait_for_label_text,
+    # wait_for_label_text,
 )
 from tenacity import retry, retry_if_exception_type, stop_after_delay, wait_fixed
 
