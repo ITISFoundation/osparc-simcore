@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from pydantic import HttpUrl
 
 from models_library.products import ProductName
 
@@ -19,5 +20,5 @@ class ProductData:
     display_name: str
     vendor_display_inline: str
     support_email: str
-    product_logo: str = "https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/refs/heads/master/services/static-webserver/client/source/resource/osparc/osparc-black.svg"
-    product_homepage: str = "https://osparc.io/"
+    product_logo: HttpUrl = "https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/refs/heads/master/services/static-webserver/client/source/resource/osparc/osparc-black.svg"
+    product_homepage: HttpUrl = "https://osparc.io/"
