@@ -7,7 +7,7 @@ from servicelib.fastapi.exceptions_utils import (
 from . import _health
 
 
-def setup_rest_api(app: FastAPI):
+def initialize_rest_api(app: FastAPI) -> None:
     app.include_router(_health.router)
 
     app.add_exception_handler(Exception, handle_errors_as_500)

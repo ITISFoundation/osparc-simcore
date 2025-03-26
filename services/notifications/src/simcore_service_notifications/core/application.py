@@ -1,6 +1,9 @@
 import logging
+from collections.abc import AsyncIterator
 
 from fastapi import FastAPI
+from fastapi_lifespan_manager import State
+from servicelib.fastapi.lifespan_utils import LifespanGenerator, combine_lifespans
 from servicelib.fastapi.openapi import (
     get_common_oas_options,
     override_fastapi_openapi_method,
@@ -16,15 +19,15 @@ from .._meta import (
     SUMMARY,
     VERSION,
 )
-from ..api.rest.routes import setup_rest_api
-from ..api.rpc.routes import setup_rpc_api_routes
-from ..services.rabbitmq import setup_rabbitmq
+from ..api.rest.routes import initialize_rest_api
+from ..api.rpc.routes import lifespan_rpc_api_routes
+from ..services.rabbitmq import lifespan_rabbitmq
 from .settings import ApplicationSettings
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
-def _setup_logger(settings: ApplicationSettings):
+def _initialise_logger(settings: ApplicationSettings):
     # SEE https://github.com/ITISFoundation/osparc-simcore/issues/3148
     logging.basicConfig(level=settings.LOG_LEVEL.value)  # NOSONAR
     logging.root.setLevel(settings.LOG_LEVEL.value)
@@ -35,10 +38,23 @@ def _setup_logger(settings: ApplicationSettings):
     )
 
 
+async def _lifespan_banner(app: FastAPI) -> AsyncIterator[State]:
+    _ = app
+    print(APP_STARTED_BANNER_MSG, flush=True)  # noqa: T201
+    yield {}
+    print(APP_FINISHED_BANNER_MSG, flush=True)  # noqa: T201
+
+
 def create_app() -> FastAPI:
     settings = ApplicationSettings.create_from_envs()
-    _setup_logger(settings)
-    logger.debug(settings.model_dump_json(indent=2))
+    _logger.debug(settings.model_dump_json(indent=2))
+
+    _initialise_logger(settings)
+
+    lifespans: list[LifespanGenerator] = [
+        lifespan_rabbitmq,
+        lifespan_rpc_api_routes,
+    ]
 
     assert settings.SC_BOOT_MODE  # nosec
     app = FastAPI(
@@ -47,25 +63,15 @@ def create_app() -> FastAPI:
         description=SUMMARY,
         version=f"{VERSION}",
         openapi_url=f"/api/{API_VTAG}/openapi.json",
+        lifespan=combine_lifespans(*lifespans, _lifespan_banner),
         **get_common_oas_options(is_devel_mode=settings.SC_BOOT_MODE.is_devel_mode()),
     )
     override_fastapi_openapi_method(app)
     app.state.settings = settings
 
-    setup_rabbitmq(app)
-    setup_rest_api(app)
-    setup_rpc_api_routes(app)
+    initialize_rest_api(app)
 
     if settings.NOTIFICATIONS_TRACING:
         initialize_tracing(app, settings.NOTIFICATIONS_TRACING, APP_NAME)
-
-    async def _on_startup() -> None:
-        print(APP_STARTED_BANNER_MSG, flush=True)  # noqa: T201
-
-    async def _on_shutdown() -> None:
-        print(APP_FINISHED_BANNER_MSG, flush=True)  # noqa: T201
-
-    app.add_event_handler("startup", _on_startup)
-    app.add_event_handler("shutdown", _on_shutdown)
 
     return app
