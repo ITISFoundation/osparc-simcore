@@ -237,9 +237,24 @@ async def get_my_service_history(
 ) -> PageRpcServiceRelease:
     assert app.state.engine  # nosec
 
-    history = await services_api.get_service_history(
+    total_count, items = await services_api.get_service_history(
         repo=ServicesRepository(app.state.engine),
         product_name=product_name,
         user_id=user_id,
         service_key=service_key,
+        limit=limit,
+        offset=offset,
+    )
+
+    assert len(items) <= total_count  # nosec
+    assert len(items) <= limit  # nosec
+
+    return cast(
+        PageRpcServiceRelease,
+        PageRpcServiceRelease.create(
+            items,
+            total=total_count,
+            limit=limit,
+            offset=offset,
+        ),
     )

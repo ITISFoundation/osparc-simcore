@@ -111,7 +111,7 @@ def _has_access_rights(
     )
 
 
-def total_count_stmt(
+def latest_services_total_count_stmt(
     *,
     product_name: ProductName,
     user_id: UserID,
@@ -312,7 +312,11 @@ def get_service_history_stmt(
     user_id: UserID,
     access_rights: sa.sql.ClauseElement,
     service_key: ServiceKey,
+    limit: int | None,
+    offset: int | None,
 ):
+    assert offset is None, "UNDER DEV"
+    assert limit is None, "UNDER DEV"
 
     _sq = (
         sa.select(

@@ -9,7 +9,7 @@ from models_library.api_schemas_catalog.services import (
 )
 from models_library.groups import GroupID
 from models_library.products import ProductName
-from models_library.rest_pagination import PageLimitInt
+from models_library.rest_pagination import PageLimitInt, PageTotalCount
 from models_library.services_access import ServiceGroupAccessRightsV2
 from models_library.services_history import Compatibility, ServiceRelease
 from models_library.services_metadata_published import ServiceMetaDataPublished
@@ -125,7 +125,7 @@ async def list_latest_services(
     user_id: UserID,
     limit: PageLimitInt | None,
     offset: NonNegativeInt = 0,
-) -> tuple[NonNegativeInt, list[LatestServiceGet]]:
+) -> tuple[PageTotalCount, list[LatestServiceGet]]:
 
     # defines the order
     total_count, services = await repo.list_latest_services(
@@ -472,26 +472,26 @@ async def get_service_history(
     product_name: ProductName,
     user_id: UserID,
     service_key: ServiceKey,
+    limit: PageLimitInt | None = None,
+    offset: NonNegativeInt | None = None,
     include_compatibility: bool = False,
-) -> list[ServiceRelease]:
-
-    history = (
-        await repo.get_service_history(
-            # NOTE: that the service history might be different for each user
-            # since access-rights are defined on a k:v basis
-            product_name=product_name,
-            user_id=user_id,
-            key=service_key,
-        )
-        or []
-    )
+) -> tuple[PageTotalCount, list[ServiceRelease]]:
+    total_count, history = await repo.get_service_history(
+        # NOTE: that the service history might be different for each user
+        # since access-rights are defined on a k:v basis
+        product_name=product_name,
+        user_id=user_id,
+        key=service_key,
+        limit=limit,
+        offset=offset,
+    ) or (0, [])
 
     compatibility_map = {}
     if include_compatibility:
         msg = "This operation is heavy and for the moment is not necessary"
         raise NotImplementedError(msg)
 
-    return [
+    items = [
         # domain -> domain
         ServiceRelease.model_construct(
             version=h.version,
@@ -502,3 +502,5 @@ async def get_service_history(
         )
         for h in history
     ]
+
+    return total_count, items

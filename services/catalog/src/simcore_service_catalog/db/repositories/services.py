@@ -38,9 +38,9 @@ from ._services_sql import (
     can_get_service_stmt,
     get_service_history_stmt,
     get_service_stmt,
+    latest_services_total_count_stmt,
     list_latest_services_stmt,
     list_services_stmt,
-    total_count_stmt,
 )
 
 _logger = logging.getLogger(__name__)
@@ -340,6 +340,8 @@ class ServicesRepository(BaseRepository):
                 user_id=user_id,
                 access_rights=AccessRightsClauses.can_read,
                 service_key=key,
+                limit=None,
+                offset=None,
             )
             async with self.db_engine.begin() as conn:
                 result = await conn.execute(stmt_history)
@@ -381,7 +383,7 @@ class ServicesRepository(BaseRepository):
     ) -> tuple[PositiveInt, list[ServiceWithHistoryDBGet]]:
 
         # get page
-        stmt_total = total_count_stmt(
+        stmt_total = latest_services_total_count_stmt(
             product_name=product_name,
             user_id=user_id,
             access_rights=AccessRightsClauses.can_read,
@@ -438,23 +440,31 @@ class ServicesRepository(BaseRepository):
         user_id: UserID,
         # get args
         key: ServiceKey,
-    ) -> list[ReleaseDBGet] | None:
+        # list args: pagination
+        limit: int | None = None,
+        offset: int | None = None,
+    ) -> tuple[PositiveInt, list[ReleaseDBGet]]:
 
-        stmt_history = get_service_history_stmt(
+        stmt_total, stmt_history = get_service_history_stmt(
             product_name=product_name,
             user_id=user_id,
             access_rights=AccessRightsClauses.can_read,
             service_key=key,
+            offset=offset,
+            limit=limit,
         )
         async with self.db_engine.connect() as conn:
+            result = await conn.execute(stmt_total)
+            total_count = result.scalar() or 0
+
             result = await conn.execute(stmt_history)
             row = result.one_or_none()
 
-        return (
-            TypeAdapter(list[ReleaseDBGet]).validate_python(row.history)
-            if row
-            else None
+        items = (
+            TypeAdapter(list[ReleaseDBGet]).validate_python(row.history) if row else []
         )
+
+        return total_count, items
 
     # Service Access Rights ----
 
