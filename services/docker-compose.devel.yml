@@ -72,6 +72,16 @@ services:
       - ../packages:/devel/packages
       - ${HOST_UV_CACHE_DIR}:/home/scu/.cache/uv
 
+  notifications:
+    environment:
+      <<: *common-environment
+      NOTIFICATIONS_PROFILING : ${NOTIFICATIONS_PROFILING}
+      NOTIFICATIONS_LOGLEVEL: DEBUG
+    volumes:
+      - ./notifications:/devel/services/notifications
+      - ../packages:/devel/packages
+      - ${HOST_UV_CACHE_DIR}:/home/scu/.cache/uv
+
   clusters-keeper:
     environment:
       <<: *common-environment
