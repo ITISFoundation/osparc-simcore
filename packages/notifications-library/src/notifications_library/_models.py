@@ -19,3 +19,5 @@ class ProductData:
     display_name: str
     vendor_display_inline: str
     support_email: str
+    product_logo: str = "https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/refs/heads/master/services/static-webserver/client/source/resource/osparc/osparc-black.svg"
+    product_homepage: str = "https://osparc.io/"
