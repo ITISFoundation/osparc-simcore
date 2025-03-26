@@ -8,20 +8,16 @@ from sqlalchemy.dialects.postgresql import insert
 
 
 def populate_projects_to_jobs(connection):
-    """
-    Populates the projects_to_jobs table by analyzing the projects table.
-
-
-    NOTE: tested here but will be used in migration script
-    """
+    # Populates the projects_to_jobs table by analyzing the projects table.
+    # NOTE: tested here but will be used in migration script
     query = sa.text(
-        """
-        INSERT INTO projects_to_jobs (project_uuid, job_name, job_info)
-        SELECT
-            uuid AS project_uuid,
-            regexp_replace(name, '^.*jobs/([^/]+)$', '\\1') AS job_name,
-        FROM projects
-        WHERE name ~* '^solvers/.+/jobs/.+$' OR name ~* '^studies/.+/jobs/.+$';
+        r"""
+INSERT INTO projects_to_jobs (project_uuid, job_name)
+SELECT
+    uuid AS project_uuid,
+    regexp_replace(name, '\s+', '', 'g') AS job_name -- no spaces
+FROM projects
+WHERE name ~* '^solvers/.+/jobs/.+$' OR name ~* '^studies/.+/jobs/.+$';
     """
     )
     connection.execute(query)
