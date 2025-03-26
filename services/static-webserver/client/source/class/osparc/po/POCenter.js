@@ -42,7 +42,7 @@ qx.Class.define("osparc.po.POCenter", {
     },
 
     __addPreRegistrationPage: function() {
-      const title = this.tr("PreRegistration");
+      const title = this.tr("Pre-Registration");
       const iconSrc = "@FontAwesome5Solid/address-card/22";
       const preRegistration = new osparc.po.PreRegistration();
       this.addTab(title, iconSrc, preRegistration);

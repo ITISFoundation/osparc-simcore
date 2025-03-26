@@ -136,7 +136,7 @@ qx.Class.define("osparc.metadata.ServicesInStudy", {
         infoButton.addListener("execute", () => {
           const metadata = osparc.store.Services.getMetadata(node["key"], node["version"]);
           if (metadata === null) {
-            osparc.FlashMessenger.logAs(this.tr("Service information could not be retrieved"), "WARNING");
+            osparc.FlashMessenger.logAs(this.tr("Could not retrieve service information"), "WARNING");
             return;
           }
           const serviceDetails = new osparc.info.ServiceLarge(metadata, {
@@ -163,7 +163,7 @@ qx.Class.define("osparc.metadata.ServicesInStudy", {
 
         const nodeMetadata = osparc.store.Services.getMetadata(node["key"], node["version"]);
         if (nodeMetadata === null) {
-          osparc.FlashMessenger.logAs(this.tr("Some service information could not be retrieved"), "WARNING");
+          osparc.FlashMessenger.logAs(this.tr("Could not retrieve some service information"), "WARNING");
           break;
         }
       }

@@ -8,14 +8,16 @@ from pydantic import ByteSize
 from servicelib.logging_utils import log_context
 
 from ...dsm import get_dsm_provider
+from ...modules.celery.models import TaskId
 from ...modules.celery.utils import get_fastapi_app
 
 _logger = logging.getLogger(__name__)
 
 
 async def compute_path_size(
-    task: Task, user_id: UserID, location_id: LocationID, path: Path
+    task: Task, task_id: TaskId, user_id: UserID, location_id: LocationID, path: Path
 ) -> ByteSize:
+    assert task_id  # nosec
     with log_context(
         _logger,
         logging.INFO,
