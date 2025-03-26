@@ -6,11 +6,14 @@
 
 import pytest
 from fastapi import FastAPI
+from models_library.api_schemas_catalog.services import LatestServiceGet, ServiceGetV2
 from models_library.products import ProductName
+from models_library.services_history import ServiceRelease
 from models_library.users import UserID
+from pydantic import HttpUrl
 from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.catalog_rpc_server import CatalogRpcSideEffects
-from simcore_service_api_server.models.schemas.solvers import Solver, SolverPort
+from simcore_service_api_server.models.schemas.solvers import Solver
 from simcore_service_api_server.services_rpc.catalog import CatalogService, catalog_rpc
 
 
@@ -46,48 +49,57 @@ def mocked_rpc_catalog_service_api(mocker: MockerFixture) -> dict[str, MockType]
     }
 
 
+def to_solver(
+    service: LatestServiceGet | ServiceGetV2, href_self: HttpUrl | None = None
+) -> Solver:
+    # NOTE: this is an adapter around models on CatalogService interface
+    return Solver(
+        id=service.key,
+        version=service.version,
+        title=service.name,
+        maintainer=service.owner or service.contact or "UNKNOWN",
+        url=href_self,
+        description=service.description,
+    )
+
+
 async def test_catalog_service_read_solvers(
     product_name: ProductName,
     user_id: UserID,
     mocker: MockerFixture,
     mocked_rpc_catalog_service_api: dict[str, MockType],
 ):
-
     catalog_service = CatalogService(_client=mocker.MagicMock())
     catalog_service.set_to_app_state(app=FastAPI())
 
     # Step 1: List latest releases in a page
-    solver_releases_page, meta = await catalog_service.list_latest_releases(
+    latest_releases, meta = await catalog_service.list_latest_releases(
         product_name=product_name, user_id=user_id
     )
+    solver_releases_page = [to_solver(srv) for srv in latest_releases]
+
     assert solver_releases_page, "Releases page should not be empty"
     assert meta.offset == 0
 
     # Step 2: Select one release and list solver releases
-    selected_release = solver_releases_page[0]
-    solver_releases, meta = await catalog_service.list_solver_releases(
+    selected_solver = solver_releases_page[0]
+    releases, meta = await catalog_service.list_release_history(
         product_name=product_name,
         user_id=user_id,
-        solver_id=selected_release.id,
+        service_key=selected_solver.id,
     )
-    assert solver_releases, "Solver releases should not be empty"
+    assert releases, "Solver releases should not be empty"
     assert meta.offset == 0
 
     # Step 3: Take the latest solver release and get solver details
-    latest_solver_release = solver_releases[0]
-    solver_details: Solver | None = await catalog_service.get_solver(
-        product_name=product_name,
-        user_id=user_id,
-        solver_id=latest_solver_release.id,
-        solver_version=latest_solver_release.version,
-    )
-    assert solver_details, "Solver details should not be empty"
+    oldest_release: ServiceRelease = releases[-1]
 
-    # Step 4: Get solver ports
-    solver_ports: list[SolverPort] = await catalog_service.get_solver_ports(
+    service: ServiceGetV2 = await catalog_service.get(
         product_name=product_name,
         user_id=user_id,
-        solver_id=latest_solver_release.id,
-        solver_version=latest_solver_release.version,
+        service_key=selected_solver.id,
+        service_version=oldest_release.version,
     )
-    assert solver_ports, "Solver ports should not be empty"
+    solver = to_solver(service)
+    assert solver.id == selected_solver.id
+    assert solver.version == oldest_release.version
