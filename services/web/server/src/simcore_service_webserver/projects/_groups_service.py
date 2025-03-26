@@ -6,7 +6,7 @@ from models_library.groups import GroupID
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.users import UserID
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 
 from ..users import api as users_service
 from . import _groups_repository
@@ -168,6 +168,21 @@ async def delete_project_group(
     await _groups_repository.delete_project_group(
         app=app, project_id=project_id, group_id=group_id
     )
+
+
+async def share_project_by_email(
+    app: web.Application,
+    *,
+    product_name: ProductName,
+    user_id: UserID,  # sharer
+    project_id: ProjectID,  # shared
+    sharee_email: EmailStr,  # sharee
+    # access-rights for sharing
+    read: bool,
+    write: bool,
+    delete: bool,
+):
+    raise NotImplementedError
 
 
 ### Operations without checking permissions
