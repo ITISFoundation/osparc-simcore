@@ -226,5 +226,4 @@ def test_sleepers(
             )
             ctx.logger.info(msg)
             assert output_file_names_found == sleeper_expected_output_files
-
             page.get_by_test_id("nodeDataManagerCloseBtn").click()
