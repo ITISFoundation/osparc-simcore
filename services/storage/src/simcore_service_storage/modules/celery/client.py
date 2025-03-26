@@ -20,7 +20,6 @@ _logger = logging.getLogger(__name__)
 _CELERY_INSPECT_TASK_STATUSES: Final[tuple[str, ...]] = (
     "active",
     "scheduled",
-    "revoked",
 )
 _CELERY_TASK_META_PREFIX: Final[str] = "celery-task-meta-"
 _CELERY_STATES_MAPPING: Final[dict[str, TaskState]] = {
