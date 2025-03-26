@@ -18,19 +18,21 @@ def product_name() -> ProductName:
 
 async def test_catalog_service_read_solvers(product_name: ProductName, user_id: UserID):
     # Step 1: List latest releases in a page
-    solver_releases_page: list[Solver] = await catalog_service.list_latest_releases(
+    solver_releases_page, meta = await catalog_service.list_latest_releases(
         product_name=product_name, user_id=user_id
     )
     assert solver_releases_page, "Releases page should not be empty"
+    assert meta.offset == 0
 
     # Step 2: Select one release and list solver releases
     selected_release = solver_releases_page[0]
-    solver_releases = await catalog_service.list_solver_releases(
+    solver_releases, meta = await catalog_service.list_solver_releases(
         product_name=product_name,
         user_id=user_id,
         solver_id=selected_release.id,
     )
     assert solver_releases, "Solver releases should not be empty"
+    assert meta.offset == 0
 
     # Step 3: Take the latest solver release and get solver details
     latest_solver_release = solver_releases[0]
