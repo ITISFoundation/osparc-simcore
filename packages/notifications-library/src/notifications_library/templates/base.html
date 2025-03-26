@@ -52,19 +52,15 @@
   }
   .github-logo {
     height: 20px;
-    vertical-align: middle;
+    vertical-align: bottom;
   }
 </style>
 </head>
 <body>
   <div class="email-container">
     <div class="header">
-      <a href="__product.homepage" target="_blank" rel="noopener noreferrer">
-        <img
-          src="https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/refs/heads/master/services/static-webserver/client/source/resource/osparc/osparc-black.svg"
-          alt="Logo"
-          class="logo"
-        >
+      <a href="{{ product.homepage }}" target="_blank" rel="noopener noreferrer">
+        <img src="{{ logo_src }}" alt="Logo" class="logo">
       </a>
     </div>
 
@@ -75,8 +71,8 @@
 
     <div class="footer">
       <p>
-        Visit the <a href="__product.homepage" target="_blank" rel="noopener noreferrer">Platform</a> |
-        Need help? <a href="__product.support_link" target="_blank" rel="noopener noreferrer">Support</a> |
+        Visit the <a href="{{ product.homepage }}" target="_blank" rel="noopener noreferrer">Platform</a> |
+        Need help? <a href="mailto:{{ product.support_email }}">Support</a> |
         Powered by oSPARC
         <a href="https://github.com/ITISFoundation/osparc-simcore" target="_blank" rel="noopener noreferrer">
           <img
