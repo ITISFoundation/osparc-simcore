@@ -268,7 +268,7 @@ qx.Class.define("osparc.store.Services", {
     },
 
     getInaccessibleServicesMsg: function(inaccessibleServices, workbench) {
-      let msg = qx.locale.Manager.tr("Some services are not accessible:<br>");
+      let msg = qx.locale.Manager.tr("Some services are inaccessible:<br>");
       Object.values(workbench).forEach(node => {
         const inaccessibleService = inaccessibleServices.find(srv => srv.key === node.key && srv.version === node.version);
         if (inaccessibleService) {

@@ -31,7 +31,7 @@ qx.Class.define("osparc.editor.MarkdownEditor", {
 
     this.getChildControl("preview-markdown");
     this.getChildControl("subtitle").set({
-      value: this.tr("Supports Markdown")
+      value: this.tr("Markdown supported")
     });
   },
 

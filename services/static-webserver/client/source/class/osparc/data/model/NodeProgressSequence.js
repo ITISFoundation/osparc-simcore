@@ -123,7 +123,7 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
 
     createDisclaimerText: function() {
       const disclaimerText = new qx.ui.basic.Atom().set({
-        label: qx.locale.Manager.tr("Please be patient, this process can take a few minutes ..."),
+        label: qx.locale.Manager.tr("Please wait, this process may take a few minutes ..."),
         padding: [20, 10],
         gap: 15,
         icon: "@FontAwesome5Solid/exclamation-triangle/16",
@@ -187,10 +187,10 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
     getProgress: function(report) {
       if (report.unit) {
         const attempt = ("attempt" in report && report["attempt"] > 1) ? `(attempt ${report["attempt"]}) ` : "";
-        const current_value = osparc.utils.Utils.bytesToSize(report["actual_value"], 1, false);
-        const total_value = osparc.utils.Utils.bytesToSize(report["total"], 1, false)
+        const currentValue = osparc.utils.Utils.bytesToSize(report["actual_value"], 1, false);
+        const totalValue = osparc.utils.Utils.bytesToSize(report["total"], 1, false)
         return {
-          progressLabel: `${attempt}${current_value} / ${total_value}`,
+          progressLabel: `${attempt}${currentValue} / ${totalValue}`,
           value: report["actual_value"] / report["total"]
         }
       }

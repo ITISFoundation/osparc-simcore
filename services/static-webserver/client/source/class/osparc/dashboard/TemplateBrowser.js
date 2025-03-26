@@ -346,42 +346,6 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
     // MENU //
 
     // TASKS //
-    __attachToTemplateEventHandler: function(task, taskUI, toTemplateCard) {
-      const finished = (msg, msgLevel) => {
-        if (msg) {
-          osparc.FlashMessenger.logAs(msg, msgLevel);
-        }
-        osparc.task.TasksContainer.getInstance().removeTaskUI(taskUI);
-        this._resourcesContainer.removeNonResourceCard(toTemplateCard);
-      };
-
-      task.addListener("taskAborted", () => {
-        const msg = this.tr("Study to Template cancelled");
-        finished(msg, "INFO");
-      });
-      task.addListener("updateReceived", e => {
-        const updateData = e.getData();
-        if ("task_progress" in updateData && toTemplateCard) {
-          const progress = updateData["task_progress"];
-          toTemplateCard.getChildControl("progress-bar").set({
-            value: progress["percent"]*100
-          });
-          toTemplateCard.getChildControl("state-label").set({
-            value: progress["message"]
-          });
-        }
-      }, this);
-      task.addListener("resultReceived", e => {
-        finished();
-        this.reloadResources();
-      });
-      task.addListener("pollingError", e => {
-        const err = e.getData();
-        const msg = this.tr("Something went wrong while publishing the study<br>") + err.message;
-        finished(msg, "ERROR");
-      });
-    },
-
     __tasksToCards: function() {
       const tasks = osparc.store.PollTasks.getInstance().getPublishTemplateTasks();
       tasks.forEach(task => {
@@ -401,6 +365,44 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       if (toTemplateCard) {
         this.__attachToTemplateEventHandler(task, toTemplateTaskUI, toTemplateCard);
       }
+    },
+
+    __attachToTemplateEventHandler: function(task, taskUI, toTemplateCard) {
+      const finished = (msg, msgLevel) => {
+        if (msg) {
+          osparc.FlashMessenger.logAs(msg, msgLevel);
+        }
+        osparc.store.PollTasks.getInstance().removeTask(task);
+        osparc.task.TasksContainer.getInstance().removeTaskUI(taskUI);
+        this._resourcesContainer.removeNonResourceCard(toTemplateCard);
+      };
+
+      task.addListener("taskAborted", () => {
+        const msg = this.tr("Study to Template cancelled");
+        finished(msg, "WARNING");
+      });
+      task.addListener("updateReceived", e => {
+        const updateData = e.getData();
+        if ("task_progress" in updateData && toTemplateCard) {
+          const progress = updateData["task_progress"];
+          toTemplateCard.getChildControl("progress-bar").set({
+            value: progress["percent"]*100
+          });
+          toTemplateCard.getChildControl("state-label").set({
+            value: progress["message"]
+          });
+        }
+      }, this);
+      task.addListener("resultReceived", e => {
+        const msg = this.tr("Template created");
+        finished(msg, "INFO");
+        this.reloadResources();
+      });
+      task.addListener("pollingError", e => {
+        const err = e.getData();
+        const msg = this.tr("Something went wrong while publishing the study<br>") + err.message;
+        finished(msg, "ERROR");
+      });
     },
     // TASKS //
   }

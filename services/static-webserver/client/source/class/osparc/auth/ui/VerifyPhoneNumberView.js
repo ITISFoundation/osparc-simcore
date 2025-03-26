@@ -61,7 +61,7 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
       this.add(verificationInfoTitle);
 
       const verificationInfoDesc = new qx.ui.basic.Label().set({
-        value: this.tr("We will send you a text message to your mobile phone to authenticate you each time you log in."),
+        value: this.tr("A text message will be sent to your mobile phone for authentication each time you log in."),
         rich: true,
         wrap: true
       });

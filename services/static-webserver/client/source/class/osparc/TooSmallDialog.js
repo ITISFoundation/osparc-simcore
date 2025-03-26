@@ -19,7 +19,7 @@ qx.Class.define("osparc.TooSmallDialog", {
   extend: osparc.ui.window.SingletonWindow,
 
   construct: function() {
-    this.base(arguments, "too-small-logout", this.tr("Window too small"));
+    this.base(arguments, "too-small-logout", this.tr("Window size too small"));
 
     this.set({
       layout: new qx.ui.layout.VBox(10),

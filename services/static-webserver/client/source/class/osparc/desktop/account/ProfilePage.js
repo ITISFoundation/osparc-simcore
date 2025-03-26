@@ -142,7 +142,7 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
       expirationLayout.add(expirationDateLabel);
       const expirationDate = new qx.ui.basic.Label();
       expirationLayout.add(expirationDate);
-      const infoLabel = this.tr("Please contact us by email:<br>");
+      const infoLabel = this.tr("Please contact us via email:<br>");
       const infoExtension = new osparc.ui.hint.InfoHint(infoLabel);
       const supportEmail = osparc.store.VendorInfo.getInstance().getSupportEmail();
       infoExtension.setHintText(infoLabel + supportEmail);
@@ -348,7 +348,7 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
       });
 
       const optOutMessage = new qx.ui.basic.Atom().set({
-        label: this.tr("If all searchable fields are hidden, you will not be findable."),
+        label: this.tr("If all searchable fields are hidden, you will not be discoverable."),
         icon: "@FontAwesome5Solid/exclamation-triangle/14",
         gap: 8,
         allowGrowX: false,
@@ -381,7 +381,7 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
     },
 
     __create2FASection: function() {
-      const box = osparc.ui.window.TabbedView.createSectionBox(this.tr("2 Factor Authentication"));
+      const box = osparc.ui.window.TabbedView.createSectionBox(this.tr("Two-Factor Authentication"));
 
       const label = osparc.ui.window.TabbedView.createHelpLabel(this.tr("Set your preferred method to use for two-factor authentication when signing in:"));
       box.add(label);
@@ -419,7 +419,7 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
         if (selectedId === "DISABLED") {
           const discourageTitle = this.tr("You are about to disable the 2FA");
           const discourageText = this.tr("\
-            The 2 Factor Authentication is one more measure to prevent hackers from accessing your account with an additional layer of security. \
+            The Two-Factor Authentication is one more measure to prevent hackers from accessing your account with an additional layer of security. \
             When you sign in, 2FA helps make sure that your resources and personal information stays private, safe and secure.\
           ");
           const win = new osparc.ui.window.Confirmation(discourageTitle).set({
