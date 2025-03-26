@@ -12,18 +12,18 @@ from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.request_keys import RQT_USERID_KEY
 from simcore_postgres_database.models.users import UserRole
 
-from ..._meta import API_VTAG
-from ...products import products_web
-from ...products.models import Product
-from ...security import api as security_service
-from ...session.access_policies import (
+from ...._meta import API_VTAG
+from ....products import products_web
+from ....products.models import Product
+from ....security import api as security_service
+from ....session.access_policies import (
     on_success_grant_session_access_to,
     session_access_required,
 )
-from ...users import preferences_api as user_preferences_api
-from ...utils_aiohttp import NextPage
-from .. import _auth_service, _login_service, _security_service, _twofa_service
-from .._constants import (
+from ....users import preferences_api as user_preferences_api
+from ....utils_aiohttp import NextPage
+from ... import _auth_service, _login_service, _security_service, _twofa_service
+from ..._constants import (
     CODE_2FA_EMAIL_CODE_REQUIRED,
     CODE_2FA_SMS_CODE_REQUIRED,
     CODE_PHONE_NUMBER_REQUIRED,
@@ -37,10 +37,10 @@ from .._constants import (
     MSG_WRONG_2FA_CODE__EXPIRED,
     MSG_WRONG_2FA_CODE__INVALID,
 )
-from .._models import InputSchema
-from ..decorators import login_required
-from ..errors import handle_login_exceptions
-from ..settings import LoginSettingsForProduct, get_plugin_settings
+from ..._models import InputSchema
+from ...decorators import login_required
+from ...errors import handle_login_exceptions
+from ...settings import LoginSettingsForProduct, get_plugin_settings
 
 log = logging.getLogger(__name__)
 

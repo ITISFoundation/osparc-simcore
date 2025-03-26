@@ -20,20 +20,20 @@ from servicelib.logging_errors import create_troubleshotting_log_kwargs
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.models.users import UserStatus
 
-from ..._meta import API_VTAG
-from ...groups.api import auto_add_user_to_groups, auto_add_user_to_product_group
-from ...invitations.api import is_service_invitation_code
-from ...products import products_web
-from ...products.models import Product
-from ...session.access_policies import (
+from ...._meta import API_VTAG
+from ....groups.api import auto_add_user_to_groups, auto_add_user_to_product_group
+from ....invitations.api import is_service_invitation_code
+from ....products import products_web
+from ....products.models import Product
+from ....session.access_policies import (
     on_success_grant_session_access_to,
     session_access_required,
 )
-from ...utils import MINUTE
-from ...utils_aiohttp import NextPage, envelope_json_response
-from ...utils_rate_limiting import global_rate_limit_route
-from .. import _auth_service, _confirmation_service, _security_service, _twofa_service
-from .._constants import (
+from ....utils import MINUTE
+from ....utils_aiohttp import NextPage, envelope_json_response
+from ....utils_rate_limiting import global_rate_limit_route
+from ... import _auth_service, _confirmation_service, _security_service, _twofa_service
+from ..._constants import (
     CODE_2FA_SMS_CODE_REQUIRED,
     MAX_2FA_CODE_RESEND,
     MAX_2FA_CODE_TRIALS,
@@ -42,26 +42,26 @@ from .._constants import (
     MSG_UNAUTHORIZED_REGISTER_PHONE,
     MSG_WEAK_PASSWORD,
 )
-from .._emails_service import get_template_path, send_email_from_template
-from .._invitations_service import (
+from ..._emails_service import get_template_path, send_email_from_template
+from ..._invitations_service import (
     ConfirmedInvitationData,
     check_and_consume_invitation,
     check_other_registrations,
     extract_email_from_invitation,
 )
-from .._login_repository_legacy import (
+from ..._login_repository_legacy import (
     AsyncpgStorage,
     ConfirmationTokenDict,
     get_plugin_storage,
 )
-from .._login_service import (
+from ..._login_service import (
     envelope_response,
     flash_response,
     get_user_name_from_email,
     notify_user_confirmation,
 )
-from .._models import InputSchema, check_confirm_password_match
-from ..settings import (
+from ..._models import InputSchema, check_confirm_password_match
+from ...settings import (
     LoginOptions,
     LoginSettingsForProduct,
     get_plugin_options,

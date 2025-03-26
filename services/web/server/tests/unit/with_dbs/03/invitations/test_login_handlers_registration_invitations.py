@@ -18,7 +18,7 @@ from pytest_simcore.helpers.assert_checks import assert_status
 from servicelib.aiohttp import status
 from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
 from simcore_service_webserver.invitations.api import generate_invitation
-from simcore_service_webserver.login._controller.registration_rest import (
+from simcore_service_webserver.login._controller.rest.registration import (
     InvitationCheck,
     InvitationInfo,
 )

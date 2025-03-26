@@ -26,26 +26,26 @@ from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.aiopg_errors import UniqueViolation
 from yarl import URL
 
-from ...products import products_web
-from ...products.models import Product
-from ...security.api import encrypt_password
-from ...session.access_policies import session_access_required
-from ...utils import HOUR, MINUTE
-from ...utils_aiohttp import create_redirect_to_page_response
-from ...utils_rate_limiting import global_rate_limit_route
-from .. import _confirmation_service, _security_service, _twofa_service
-from .._constants import (
+from ....products import products_web
+from ....products.models import Product
+from ....security.api import encrypt_password
+from ....session.access_policies import session_access_required
+from ....utils import HOUR, MINUTE
+from ....utils_aiohttp import create_redirect_to_page_response
+from ....utils_rate_limiting import global_rate_limit_route
+from ... import _confirmation_service, _security_service, _twofa_service
+from ..._constants import (
     MSG_PASSWORD_CHANGE_NOT_ALLOWED,
     MSG_PASSWORD_CHANGED,
     MSG_UNAUTHORIZED_PHONE_CONFIRMATION,
 )
-from .._invitations_service import ConfirmedInvitationData
-from .._login_repository_legacy import (
+from ..._invitations_service import ConfirmedInvitationData
+from ..._login_repository_legacy import (
     AsyncpgStorage,
     ConfirmationTokenDict,
     get_plugin_storage,
 )
-from .._login_service import (
+from ..._login_service import (
     ACTIVE,
     CHANGE_EMAIL,
     REGISTRATION,
@@ -53,8 +53,8 @@ from .._login_service import (
     flash_response,
     notify_user_confirmation,
 )
-from .._models import InputSchema, check_confirm_password_match
-from ..settings import (
+from ..._models import InputSchema, check_confirm_password_match
+from ...settings import (
     LoginOptions,
     LoginSettingsForProduct,
     get_plugin_options,
