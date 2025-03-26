@@ -137,9 +137,7 @@ class RestartableWebSocket:
                     ctx.logger.debug("⬆️ Frame received: %s", payload)
 
                 def on_close(_: WebSocket) -> None:
-                    ctx.logger.warning(
-                        "⚠️ WebSocket closed. Attempting to reconnect..."
-                    )
+                    ctx.logger.warning("⚠️ WebSocket closed. Attempting to reconnect...")
                     self._attempt_reconnect(ctx.logger)
 
                 def on_socketerror(error_msg: str) -> None:
@@ -320,9 +318,9 @@ class SocketIONodeProgressCompleteWaiter:
                         new_progress
                         != self._current_progress[node_progress_event.progress_type]
                     ):
-                        self._current_progress[
-                            node_progress_event.progress_type
-                        ] = new_progress
+                        self._current_progress[node_progress_event.progress_type] = (
+                            new_progress
+                        )
 
                         self.logger.info(
                             "Current startup progress [expected number of node-progress-types=%d]: %s",
@@ -343,29 +341,30 @@ class SocketIONodeProgressCompleteWaiter:
                 url = (
                     f"https://{self.node_id}.services.{self.get_partial_product_url()}"
                 )
-            response = self.api_request_context.get(url, timeout=1000)
-            level = logging.DEBUG
-            if (response.status >= 400) and (response.status not in (502, 503)):
-                level = logging.ERROR
-            self.logger.log(
-                level,
-                "Querying service endpoint in case we missed some websocket messages. Url: %s Response: '%s' TIP: %s",
-                url,
-                f"{response.status}: {response.text()}",
-                (
-                    "We are emulating the frontend; a 5XX response is acceptable if the service is not yet ready."
-                ),
-            )
+            with contextlib.suppress(PlaywrightTimeoutError):
+                response = self.api_request_context.get(url, timeout=1000)
+                level = logging.DEBUG
+                if (response.status >= 400) and (response.status not in (502, 503)):
+                    level = logging.ERROR
+                self.logger.log(
+                    level,
+                    "Querying service endpoint in case we missed some websocket messages. Url: %s Response: '%s' TIP: %s",
+                    url,
+                    f"{response.status}: {response.text()}",
+                    (
+                        "We are emulating the frontend; a 5XX response is acceptable if the service is not yet ready."
+                    ),
+                )
 
-            if response.status <= 400:
-                # NOTE: If the response status is less than 400, it means that the backend is ready (There are some services that respond with a 3XX)
-                if self.got_expected_node_progress_types():
-                    self.logger.warning(
-                        "⚠️ Progress bar didn't receive 100 percent but service is already running: %s. TIP: we missed some websocket messages! ⚠️",  # https://github.com/ITISFoundation/osparc-simcore/issues/6449
-                        self.get_current_progress(),
-                    )
-                return True
-            self._last_poll_timestamp = datetime.now(UTC)
+                if response.status <= 400:
+                    # NOTE: If the response status is less than 400, it means that the backend is ready (There are some services that respond with a 3XX)
+                    if self.got_expected_node_progress_types():
+                        self.logger.warning(
+                            "⚠️ Progress bar didn't receive 100 percent but service is already running: %s. TIP: we missed some websocket messages! ⚠️",  # https://github.com/ITISFoundation/osparc-simcore/issues/6449
+                            self.get_current_progress(),
+                        )
+                    return True
+                self._last_poll_timestamp = datetime.now(UTC)
 
         return False
 
@@ -511,19 +510,13 @@ def app_mode_trigger_next_app(page: Page) -> None:
 
 
 def wait_for_label_text(
-    page: Page,
-    locator: str,
-    substring: str,
-    timeout: int = 10000
+    page: Page, locator: str, substring: str, timeout: int = 10000
 ) -> Locator:
-    page.locator(locator).wait_for(
-        state="visible",
-        timeout=timeout
-    )
+    page.locator(locator).wait_for(state="visible", timeout=timeout)
 
     page.wait_for_function(
         f"() => document.querySelector('{locator}').innerText.includes('{substring}')",
-        timeout=timeout
+        timeout=timeout,
     )
 
     return page.locator(locator)

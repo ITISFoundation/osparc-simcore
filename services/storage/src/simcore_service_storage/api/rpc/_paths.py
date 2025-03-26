@@ -24,7 +24,6 @@ async def compute_path_size(
     location_id: LocationID,
     path: Path,
 ) -> AsyncJobGet:
-    assert app  # nosec
     task_uuid = await get_celery_client(app).send_task(
         remote_compute_path_size.__name__,
         task_context=job_id_data.model_dump(),
