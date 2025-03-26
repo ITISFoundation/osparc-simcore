@@ -12,6 +12,7 @@ from models_library.api_schemas_catalog.services import (
 )
 from models_library.products import ProductName
 from models_library.rabbitmq_basic_types import RPCMethodName
+from models_library.rest_pagination import PageOffsetInt
 from models_library.rpc_pagination import (
     DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
     PageLimitInt,
@@ -19,7 +20,7 @@ from models_library.rpc_pagination import (
 )
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
-from pydantic import NonNegativeInt, TypeAdapter, validate_call
+from pydantic import TypeAdapter, validate_call
 from servicelib.logging_utils import log_decorator
 from servicelib.rabbitmq._constants import RPC_REQUEST_DEFAULT_TIMEOUT_S
 
@@ -34,7 +35,7 @@ async def list_services_paginated(  # pylint: disable=too-many-arguments
     product_name: ProductName,
     user_id: UserID,
     limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
-    offset: NonNegativeInt = 0,
+    offset: PageOffsetInt = 0,
 ) -> PageRpc[LatestServiceGet]:
     """
     Raises:
@@ -47,7 +48,7 @@ async def list_services_paginated(  # pylint: disable=too-many-arguments
         product_name: ProductName,
         user_id: UserID,
         limit: PageLimitInt,
-        offset: NonNegativeInt,
+        offset: PageOffsetInt,
     ):
         return await rpc_client.request(
             CATALOG_RPC_NAMESPACE,

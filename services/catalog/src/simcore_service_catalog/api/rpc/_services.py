@@ -10,10 +10,11 @@ from models_library.api_schemas_catalog.services import (
     ServiceUpdateV2,
 )
 from models_library.products import ProductName
+from models_library.rest_pagination import PageOffsetInt
 from models_library.rpc_pagination import DEFAULT_NUMBER_OF_ITEMS_PER_PAGE, PageLimitInt
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
-from pydantic import NonNegativeInt, ValidationError, validate_call
+from pydantic import ValidationError, validate_call
 from pyinstrument import Profiler
 from servicelib.logging_utils import log_decorator
 from servicelib.rabbitmq import RPCRouter
@@ -62,7 +63,7 @@ async def list_services_paginated(
     product_name: ProductName,
     user_id: UserID,
     limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
-    offset: NonNegativeInt = 0,
+    offset: PageOffsetInt = 0,
 ) -> PageRpcServicesGetV2:
     assert app.state.engine  # nosec
 
