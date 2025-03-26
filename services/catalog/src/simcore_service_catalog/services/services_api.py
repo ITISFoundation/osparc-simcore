@@ -121,6 +121,7 @@ def _to_get_schema(
 async def list_latest_services(
     repo: ServicesRepository,
     director_api: DirectorApi,
+    *,
     product_name: ProductName,
     user_id: UserID,
     limit: PageLimitInt | None,
@@ -466,16 +467,21 @@ async def batch_get_my_services(
     return my_services
 
 
-async def get_service_history(
+async def list_my_service_release_history(
     repo: ServicesRepository,
     *,
+    # access-rights
     product_name: ProductName,
     user_id: UserID,
+    # target service
     service_key: ServiceKey,
+    # pagination
     limit: PageLimitInt | None = None,
     offset: NonNegativeInt | None = None,
+    # options
     include_compatibility: bool = False,
 ) -> tuple[PageTotalCount, list[ServiceRelease]]:
+
     total_count, history = await repo.get_service_history_page(
         # NOTE: that the service history might be different for each user
         # since access-rights are defined on a k:v basis
@@ -486,7 +492,7 @@ async def get_service_history(
         offset=offset,
     )
 
-    compatibility_map = {}
+    compatibility_map: dict[ServiceVersion, Compatibility | None] = {}
     if include_compatibility:
         msg = "This operation is heavy and for the moment is not necessary"
         raise NotImplementedError(msg)

@@ -467,6 +467,7 @@ class ServicesRepository(BaseRepository):
 
     async def get_service_history_page(
         self,
+        *,
         # access-rights
         product_name: ProductName,
         user_id: UserID,
