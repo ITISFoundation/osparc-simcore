@@ -68,9 +68,9 @@ def test_populate_projects_to_jobs_during_migration(
         user_data = random_user(
             faker, name="test_populate_projects_to_jobs_during_migration"
         )
-        user_id = conn.execute(
-            sa.insert(users).values(user_data).returning(users.c.id)
-        ).scalar()
+        stmt = sa.insert(users).values(**user_data).returning(users.c.id)
+        result = conn.execute(stmt)
+        user_id = result.scalar()
 
         SPACES = " " * 3
         projects_data = [
