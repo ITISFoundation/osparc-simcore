@@ -6,10 +6,7 @@ from collections.abc import Callable, Coroutine
 from functools import wraps
 from typing import Any, Concatenate, ParamSpec, TypeVar, overload
 
-from celery import (  # type: ignore[import-untyped]
-    Celery,
-    Task,
-)
+from celery import Celery  # type: ignore[import-untyped]
 from celery.contrib.abortable import AbortableTask  # type: ignore[import-untyped]
 from celery.exceptions import Ignore  # type: ignore[import-untyped]
 
@@ -22,7 +19,7 @@ _logger = logging.getLogger(__name__)
 
 def error_handling(func: Callable[..., Any]) -> Callable[..., Any]:
     @wraps(func)
-    def wrapper(task: Task, *args: Any, **kwargs: Any) -> Any:
+    def wrapper(task: AbortableTask, *args: Any, **kwargs: Any) -> Any:
         try:
             return func(task, *args, **kwargs)
         except Exception as exc:
@@ -31,8 +28,9 @@ def error_handling(func: Callable[..., Any]) -> Callable[..., Any]:
             exc_traceback = traceback.format_exc().split("\n")
 
             _logger.exception(
-                "Task %s failed with exception: %s",
+                "Task %s failed with exception: %s:%s",
                 task.request.id,
+                exc_type,
                 exc_message,
             )
 
@@ -57,14 +55,14 @@ R = TypeVar("R")
 def _async_task_wrapper(
     app: Celery,
 ) -> Callable[
-    [Callable[Concatenate[Task, TaskId, P], Coroutine[Any, Any, R]]],
-    Callable[Concatenate[Task, P], R],
+    [Callable[Concatenate[AbortableTask, TaskId, P], Coroutine[Any, Any, R]]],
+    Callable[Concatenate[AbortableTask, P], R],
 ]:
     def decorator(
-        coro: Callable[Concatenate[Task, TaskId, P], Coroutine[Any, Any, R]],
-    ) -> Callable[Concatenate[Task, P], R]:
+        coro: Callable[Concatenate[AbortableTask, TaskId, P], Coroutine[Any, Any, R]],
+    ) -> Callable[Concatenate[AbortableTask, P], R]:
         @wraps(coro)
-        def wrapper(task: Task, *args: P.args, **kwargs: P.kwargs) -> R:
+        def wrapper(task: AbortableTask, *args: P.args, **kwargs: P.kwargs) -> R:
             fastapi_app = get_fastapi_app(app)
             _logger.debug("task id: %s", task.request.id)
             # NOTE: task.request is a thread local object, so we need to pass the id explicitly
@@ -82,7 +80,7 @@ def _async_task_wrapper(
 @overload
 def define_task(
     app: Celery,
-    fn: Callable[Concatenate[Task, TaskId, P], Coroutine[Any, Any, R]],
+    fn: Callable[Concatenate[AbortableTask, TaskId, P], Coroutine[Any, Any, R]],
     task_name: str | None = None,
 ) -> None: ...
 
@@ -90,7 +88,7 @@ def define_task(
 @overload
 def define_task(
     app: Celery,
-    fn: Callable[Concatenate[Task, P], R],
+    fn: Callable[Concatenate[AbortableTask, P], R],
     task_name: str | None = None,
 ) -> None: ...
 
@@ -98,13 +96,13 @@ def define_task(
 def define_task(  # type: ignore[misc]
     app: Celery,
     fn: (
-        Callable[Concatenate[Task, TaskId, P], Coroutine[Any, Any, R]]
-        | Callable[Concatenate[Task, P], R]
+        Callable[Concatenate[AbortableTask, TaskId, P], Coroutine[Any, Any, R]]
+        | Callable[Concatenate[AbortableTask, P], R]
     ),
     task_name: str | None = None,
 ) -> None:
     """Decorator to define a celery task with error handling and abortable support"""
-    wrapped_fn: Callable[Concatenate[Task, P], R]
+    wrapped_fn: Callable[Concatenate[AbortableTask, P], R]
     if asyncio.iscoroutinefunction(fn):
         wrapped_fn = _async_task_wrapper(app)(fn)
     else:
