@@ -62,7 +62,7 @@ qx.Class.define("osparc.file.TreeFolderView", {
             icon: "@FontAwesome5Solid/spinner/14",
             allowGrowX: false
           });
-          osparc.utils.Utils.setIdToWidget(control, "totalSizeLabel");
+          osparc.utils.Utils.setIdToWidget(control.getChildControl("label"), "totalSizeLabel");
           this.getChildControl("header-layout").add(control);
           break;
         case "tree-folder-layout":
