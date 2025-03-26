@@ -11,7 +11,7 @@ from enum import Enum, unique
 from typing import Any, Final
 
 from playwright._impl._sync_base import EventContextManager
-from playwright.sync_api import APIRequestContext, FrameLocator, Page, Request
+from playwright.sync_api import APIRequestContext, FrameLocator, Locator, Page, Request
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 from playwright.sync_api import WebSocket
 from pydantic import AnyUrl
@@ -508,3 +508,22 @@ def app_mode_trigger_next_app(page: Page) -> None:
     ):
         # Move to next step (this auto starts the next service)
         page.get_by_test_id("AppMode_NextBtn").click()
+
+
+def wait_for_label_text(
+    page: Page,
+    locator: str,
+    substring: str,
+    timeout: int = 10000
+) -> Locator:
+    page.locator(locator).wait_for(
+        state="visible",
+        timeout=timeout
+    )
+
+    page.wait_for_function(
+        f"() => document.querySelector('{locator}').innerText.includes('{substring}')",
+        timeout=timeout
+    )
+
+    return page.locator(locator)
