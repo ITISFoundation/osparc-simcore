@@ -39,7 +39,7 @@ qx.Class.define("osparc.file.FileDrop", {
     let msg = "<center>";
     const options = [
       this.tr("Upload file"),
-      this.tr("Drop file from explorer"),
+      this.tr("Drop file from File Explorer"),
       this.tr("Drop file from tree"),
       this.tr("Provide Link")
     ];
@@ -104,7 +104,7 @@ qx.Class.define("osparc.file.FileDrop", {
       return files;
     },
 
-    ONE_FILE_ONLY: qx.locale.Manager.tr("Only one file at a time is accepted.") + "<br>" + qx.locale.Manager.tr("Please zip all files together."),
+    ONE_FILE_ONLY: qx.locale.Manager.tr("Only one file can be uploaded at a time.") + "<br>" + qx.locale.Manager.tr("Please compress all files into a single zip file."),
   },
 
   events: {
@@ -304,7 +304,7 @@ qx.Class.define("osparc.file.FileDrop", {
             osparc.FlashMessenger.logError(osparc.file.FileDrop.ONE_FILE_ONLY);
           }
         } else {
-          osparc.FlashMessenger.logError(this.tr("Folders are not accepted. You might want to upload a zip file."));
+          osparc.FlashMessenger.logError(this.tr("Folders are not accepted. Please upload a zip file instead."));
         }
       }
     },

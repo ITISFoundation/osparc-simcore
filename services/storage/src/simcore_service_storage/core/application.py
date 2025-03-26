@@ -84,8 +84,8 @@ def create_app(settings: ApplicationSettings) -> FastAPI:  # noqa: C901
     setup_s3(app)
     setup_client_session(app)
 
-    setup_rabbitmq(app)
     if not settings.STORAGE_WORKER_MODE:
+        setup_rabbitmq(app)
         setup_rpc_api_routes(app)
         setup_celery_client(app)
     setup_rest_api_long_running_tasks_for_uploads(app)

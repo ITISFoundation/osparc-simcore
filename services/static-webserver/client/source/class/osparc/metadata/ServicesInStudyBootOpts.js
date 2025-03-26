@@ -76,7 +76,7 @@ qx.Class.define("osparc.metadata.ServicesInStudyBootOpts", {
         const node = workbench[nodeId];
         const nodeMetadata = osparc.store.Services.getMetadata(node["key"], node["version"]);
         if (nodeMetadata === null) {
-          osparc.FlashMessenger.logAs(this.tr("Some service information could not be retrieved"), "WARNING");
+          osparc.FlashMessenger.logAs(this.tr("Could not retrieve some service information"), "WARNING");
           break;
         }
         const canIWrite = osparc.data.model.Study.canIWrite(this._studyData["accessRights"]);
