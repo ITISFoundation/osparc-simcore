@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -11,6 +12,7 @@ from servicelib.rabbitmq import RPCRouter
 from ...modules.celery import get_celery_client
 from .._worker_tasks._paths import compute_path_size as remote_compute_path_size
 
+_logger = logging.getLogger(__name__)
 router = RPCRouter()
 
 
@@ -23,7 +25,6 @@ async def compute_path_size(
     path: Path,
 ) -> AsyncJobGet:
     assert app  # nosec
-
     task_uuid = await get_celery_client(app).send_task(
         remote_compute_path_size.__name__,
         task_context=job_id_data.model_dump(),

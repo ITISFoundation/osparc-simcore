@@ -41,7 +41,7 @@ async def _async_archive(
             worker.set_task_progress(
                 task_name=task_name,
                 task_id=task_id,
-                report=ProgressReport(actual_value=n / len(files) * 10),
+                report=ProgressReport(actual_value=n / len(files), total=1.0),
             )
             await asyncio.get_event_loop().run_in_executor(None, sleep_for, 1)
 

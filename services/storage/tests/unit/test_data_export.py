@@ -454,7 +454,7 @@ async def test_get_data_export_status_error(
             "get_task_status_object": TaskStatus(
                 task_uuid=TaskUUID(_faker.uuid4()),
                 task_state=TaskState.SUCCESS,
-                progress_report=ProgressReport(actual_value=100),
+                progress_report=ProgressReport(actual_value=1, total=1),
             ),
             "get_task_result_object": "result",
             "get_task_uuids_object": [AsyncJobId(_faker.uuid4())],
@@ -489,7 +489,7 @@ async def test_get_data_export_result_success(
                 "get_task_status_object": TaskStatus(
                     task_uuid=TaskUUID(_faker.uuid4()),
                     task_state=TaskState.RUNNING,
-                    progress_report=ProgressReport(actual_value=50),
+                    progress_report=ProgressReport(actual_value=0.5, total=1.0),
                 ),
                 "get_task_result_object": _faker.text(),
                 "get_task_uuids_object": [AsyncJobId(_faker.uuid4())],
@@ -501,7 +501,7 @@ async def test_get_data_export_result_success(
                 "get_task_status_object": TaskStatus(
                     task_uuid=TaskUUID(_faker.uuid4()),
                     task_state=TaskState.ABORTED,
-                    progress_report=ProgressReport(actual_value=100),
+                    progress_report=ProgressReport(actual_value=1.0, total=1.0),
                 ),
                 "get_task_result_object": _faker.text(),
                 "get_task_uuids_object": [AsyncJobId(_faker.uuid4())],
@@ -513,7 +513,7 @@ async def test_get_data_export_result_success(
                 "get_task_status_object": TaskStatus(
                     task_uuid=TaskUUID(_faker.uuid4()),
                     task_state=TaskState.ERROR,
-                    progress_report=ProgressReport(actual_value=100),
+                    progress_report=ProgressReport(actual_value=1.0, total=1.0),
                 ),
                 "get_task_result_object": _faker.text(),
                 "get_task_uuids_object": [AsyncJobId(_faker.uuid4())],
