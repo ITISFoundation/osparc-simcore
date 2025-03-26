@@ -123,7 +123,7 @@ async def result(
         exc_type = ""
         exc_msg = ""
         with log_catch(logger=_logger, reraise=False):
-            task_error = TaskError.model_validate_json(_result)
+            task_error = TaskError.model_validate(_result)
             exc_type = task_error.exc_type
             exc_msg = task_error.exc_msg
         raise JobError(job_id=job_id, exc_type=exc_type, exc_msg=exc_msg)
