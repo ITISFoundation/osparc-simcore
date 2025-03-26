@@ -99,7 +99,7 @@ qx.Class.define("osparc.store.Services", {
     },
 
     getService: function(key, version, useCache = true) {
-      return new Promise(resolve => {
+      return new Promise((resolve, reject) => {
         if (
           useCache &&
           this.__isInCache(key, version) &&
@@ -120,7 +120,10 @@ qx.Class.define("osparc.store.Services", {
             this.__addToCache(service)
             resolve(service);
           })
-          .catch(console.error);
+          .catch(err => {
+            console.error(err);
+            reject();
+          });
       });
     },
 
@@ -265,7 +268,7 @@ qx.Class.define("osparc.store.Services", {
     },
 
     getInaccessibleServicesMsg: function(inaccessibleServices, workbench) {
-      let msg = qx.locale.Manager.tr("Some services are not accessible:<br>");
+      let msg = qx.locale.Manager.tr("Some services are inaccessible:<br>");
       Object.values(workbench).forEach(node => {
         const inaccessibleService = inaccessibleServices.find(srv => srv.key === node.key && srv.version === node.version);
         if (inaccessibleService) {

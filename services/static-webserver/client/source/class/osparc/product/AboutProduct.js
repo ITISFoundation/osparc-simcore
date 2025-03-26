@@ -60,7 +60,7 @@ qx.Class.define("osparc.product.AboutProduct", {
           this.__buildTIPLayout();
           break;
         default: {
-          const noInfoText = this.tr("Information not available");
+          const noInfoText = this.tr("Information is unavailable");
           const noInfoLabel = osparc.product.quickStart.Utils.createLabel(noInfoText);
           this.add(noInfoLabel);
           break;

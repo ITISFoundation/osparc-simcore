@@ -1,4 +1,5 @@
 import logging
+import ssl
 
 from celery import Celery  # type: ignore[import-untyped]
 from settings_library.celery import CelerySettings
@@ -16,12 +17,15 @@ def create_app(celery_settings: CelerySettings) -> Celery:
             RedisDatabase.CELERY_TASKS,
         ),
     )
+    app.conf.broker_connection_retry_on_startup = True
+    # NOTE: disable SSL cert validation (https://github.com/ITISFoundation/osparc-simcore/pull/7407)
+    if celery_settings.CELERY_REDIS_RESULT_BACKEND.REDIS_SECURE:
+        app.conf.redis_backend_use_ssl = {"ssl_cert_reqs": ssl.CERT_NONE}
     app.conf.result_expires = celery_settings.CELERY_RESULT_EXPIRES
     app.conf.result_extended = True  # original args are included in the results
     app.conf.result_serializer = "json"
     app.conf.task_send_sent_event = True
     app.conf.task_track_started = True
     app.conf.worker_send_task_events = True  # enable tasks monitoring
-    app.conf.broker_connection_retry_on_startup = True
 
     return app

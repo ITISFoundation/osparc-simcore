@@ -1,7 +1,4 @@
-""" Handlers to events registered in servicelib.observer.event_registry
-
-"""
-
+"""Handlers to events registered in servicelib.observer.event_registry"""
 
 import logging
 
@@ -15,7 +12,7 @@ from servicelib.aiohttp.observer import (
 from servicelib.utils import logged_gather
 
 from ..notifications import wallet_osparc_credits
-from ..wallets import api as wallets_api
+from ..wallets import api as wallets_service
 
 _logger = logging.getLogger(__name__)
 
@@ -30,7 +27,7 @@ async def _on_user_disconnected(
     assert client_session_id  # nosec
 
     # Get all user wallets and unsubscribe
-    user_wallet = await wallets_api.list_wallets_for_user(
+    user_wallet = await wallets_service.list_wallets_for_user(
         app, user_id=user_id, product_name=product_name
     )
     disconnect_tasks = [
@@ -44,7 +41,7 @@ async def _on_user_connected(
     user_id: int, app: web.Application, product_name: str
 ) -> None:
     # Get all user wallets and subscribe
-    user_wallet = await wallets_api.list_wallets_for_user(
+    user_wallet = await wallets_service.list_wallets_for_user(
         app, user_id=user_id, product_name=product_name
     )
     _logger.debug("Connecting user %s to wallets %s", f"{user_id}", f"{user_wallet}")

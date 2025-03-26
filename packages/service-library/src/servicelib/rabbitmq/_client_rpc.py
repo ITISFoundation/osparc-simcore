@@ -32,15 +32,18 @@ class RabbitMQRPCClient(RabbitMQClientBase):
         cls, *, client_name: str, settings: RabbitSettings, **kwargs
     ) -> "RabbitMQRPCClient":
         client = cls(client_name=client_name, settings=settings, **kwargs)
-        await client._rpc_initialize()  # noqa: SLF001
+        await client._rpc_initialize()
         return client
 
     async def _rpc_initialize(self) -> None:
+        # NOTE: to show the connection name in the rabbitMQ UI see there
+        # https://www.bountysource.com/issues/89342433-setting-custom-connection-name-via-client_properties-doesn-t-work-when-connecting-using-an-amqp-url
+        #
+        connection_name = f"{get_rabbitmq_client_unique_name(self.client_name)}.rpc"
+        url = f"{self.settings.dsn}?name={connection_name}"
         self._connection = await aio_pika.connect_robust(
-            self.settings.dsn,
-            client_properties={
-                "connection_name": f"{get_rabbitmq_client_unique_name(self.client_name)}.rpc"
-            },
+            url,
+            client_properties={"connection_name": connection_name},
         )
         self._channel = await self._connection.channel()
 

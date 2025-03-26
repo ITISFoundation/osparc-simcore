@@ -23,7 +23,7 @@ from pytest_simcore.helpers.webserver_parametrizations import (
 from servicelib.aiohttp import status
 from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
 from simcore_service_webserver.db.models import UserRole
-from simcore_service_webserver.projects._groups_db import (
+from simcore_service_webserver.projects._groups_repository import (
     GroupID,
     update_or_insert_project_group,
 )
@@ -387,11 +387,11 @@ def mock_storage_delete_data_folders(mocker: MockerFixture) -> mock.Mock:
         autospec=True,
     )
     mocker.patch(
-        "simcore_service_webserver.projects.projects_service.remove_project_dynamic_services",
+        "simcore_service_webserver.projects._projects_service.remove_project_dynamic_services",
         autospec=True,
     )
     mocker.patch(
-        "simcore_service_webserver.projects._crud_api_delete.api.delete_pipeline",
+        "simcore_service_webserver.projects._crud_api_delete.director_v2_service.delete_pipeline",
         autospec=True,
     )
     return mocker.patch(
