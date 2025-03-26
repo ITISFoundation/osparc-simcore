@@ -4541,6 +4541,34 @@ paths:
       responses:
         '204':
           description: Successful Response
+  /v0/projects/{project_id}:share:
+    post:
+      tags:
+      - projects
+      - groups
+      summary: Share Project
+      operationId: share_project
+      parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Project Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/_ProjectsGroupsBodyParams'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_ProjectGroupGet_'
   /v0/projects/{project_id}/groups/{group_id}:
     post:
       tags:

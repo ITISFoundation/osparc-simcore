@@ -30,7 +30,7 @@ routes = web.RouteTableDef()
 
 class _ProjectShare(InputSchema):
     # TODO: move to models_library.api_schemas_webserver.groups together with the rest
-    user_email: EmailStr
+    sharee_email: EmailStr
 
     # sharing access
     read: bool
@@ -57,12 +57,19 @@ async def share_project(request: web.Request):
         req_ctx.user_id,
         req_ctx.product_name,
         path_params.project_id,
-        body_params.user_email,
+        body_params.sharee_email,
     ):
 
-        # TODO: share project
-        if body_params.user_email:
-            raise NotImplementedError
+        await _groups_service.share_project_by_email(
+            app=request.app,
+            user_id=req_ctx.user_id,
+            project_id=path_params.project_id,
+            sharee_email=body_params.sharee_email,
+            read=body_params.read,
+            write=body_params.write,
+            delete=body_params.delete,
+            product_name=req_ctx.product_name,
+        )
 
         return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
