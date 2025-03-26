@@ -6,7 +6,6 @@ import os
 from typing import Any
 
 import pytest
-from models_library.errors import ErrorDict
 from pydantic import ValidationError
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from settings_library.email import SMTPSettings
@@ -67,7 +66,8 @@ def test_login_settings_fails_with_2fa_but_wo_twilio(
     with pytest.raises(ValidationError) as exc_info:
         LoginSettingsForProduct.create_from_envs(LOGIN_2FA_REQUIRED=1)
 
-    errors: list[ErrorDict] = exc_info.value.errors()
+    assert exc_info.value
+    errors = exc_info.value.errors()
     assert len(errors) == 1
     assert errors[0]["loc"] == ("LOGIN_2FA_REQUIRED",)
 
@@ -94,7 +94,7 @@ def test_login_settings_fails_with_2fa_but_wo_confirmed_email(
     with pytest.raises(ValidationError) as exc_info:
         LoginSettingsForProduct.create_from_envs(LOGIN_2FA_REQUIRED=1)
 
-    errors: list[ErrorDict] = exc_info.value.errors()
+    errors = exc_info.value.errors()
     assert len(errors) == 1
     assert errors[0]["loc"] == ("LOGIN_2FA_REQUIRED",)
 
@@ -112,7 +112,7 @@ def test_login_settings_fails_with_2fa_but_wo_confirmed_email_using_merge(
             product_login_settings=product_settings,
         )
 
-    errors: list[ErrorDict] = exc_info.value.errors()
+    errors = exc_info.value.errors()
     assert len(errors) == 1
     assert errors[0]["loc"] == ("LOGIN_2FA_REQUIRED",)
 

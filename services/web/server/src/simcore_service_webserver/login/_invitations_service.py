@@ -40,14 +40,18 @@ from ..invitations.errors import (
     InvitationsServiceUnavailableError,
 )
 from ..products.models import Product
-from ._confirmation import is_confirmation_expired, validate_confirmation_code
+from . import _confirmation_service
 from ._constants import (
     MSG_EMAIL_ALREADY_REGISTERED,
     MSG_INVITATIONS_CONTACT_SUFFIX,
     MSG_USER_DISABLED,
 )
+from ._login_repository_legacy import (
+    AsyncpgStorage,
+    BaseConfirmationTokenDict,
+    ConfirmationTokenDict,
+)
 from .settings import LoginOptions
-from .storage import AsyncpgStorage, BaseConfirmationTokenDict, ConfirmationTokenDict
 
 _logger = logging.getLogger(__name__)
 
@@ -57,7 +61,7 @@ class ConfirmationTokenInfoDict(ConfirmationTokenDict):
     url: str
 
 
-class InvitationData(BaseModel):
+class ConfirmedInvitationData(BaseModel):
     issuer: str | None = Field(
         None,
         description="Who has issued this invitation? (e.g. an email or a uid)",
@@ -76,7 +80,7 @@ class InvitationData(BaseModel):
 
 class _InvitationValidator(BaseModel):
     action: ConfirmationAction
-    data: Json[InvitationData]  # pylint: disable=unsubscriptable-object
+    data: Json[ConfirmedInvitationData]  # pylint: disable=unsubscriptable-object
 
     @field_validator("action", mode="before")
     @classmethod
@@ -87,7 +91,7 @@ class _InvitationValidator(BaseModel):
 
 
 ACTION_TO_DATA_TYPE: dict[ConfirmationAction, type | None] = {
-    ConfirmationAction.INVITATION: InvitationData,
+    ConfirmationAction.INVITATION: ConfirmedInvitationData,
     ConfirmationAction.REGISTRATION: None,
 }
 
@@ -134,7 +138,8 @@ async def check_other_registrations(
                     }
                 )
                 drop_previous_registration = (
-                    not _confirmation or is_confirmation_expired(cfg, _confirmation)
+                    not _confirmation
+                    or _confirmation_service.is_confirmation_expired(cfg, _confirmation)
                 )
                 if drop_previous_registration:
                     if not _confirmation:
@@ -183,7 +188,7 @@ async def create_invitation_token(
     :type host: Dict-like
     :param guest: some description of the guest, e.g. email, name or a json
     """
-    data_model = InvitationData(
+    data_model = ConfirmedInvitationData(
         issuer=user_email,
         guest=tag,
         trial_account_days=trial_days,
@@ -264,7 +269,7 @@ async def check_and_consume_invitation(
     db: AsyncpgStorage,
     cfg: LoginOptions,
     app: web.Application,
-) -> InvitationData:
+) -> ConfirmedInvitationData:
     """Consumes invitation: the code is validated, the invitation retrieives and then deleted
        since it only has one use
 
@@ -287,7 +292,7 @@ async def check_and_consume_invitation(
                 "Consuming invitation from service:\n%s",
                 content.model_dump_json(indent=1),
             )
-            return InvitationData(
+            return ConfirmedInvitationData(
                 issuer=content.issuer,
                 guest=content.guest,
                 trial_account_days=content.trial_account_days,
@@ -296,11 +301,13 @@ async def check_and_consume_invitation(
             )
 
     # database-type invitations
-    if confirmation_token := await validate_confirmation_code(invitation_code, db, cfg):
+    if confirmation_token := await _confirmation_service.validate_confirmation_code(
+        invitation_code, db, cfg
+    ):
         try:
-            invitation_data: InvitationData = _InvitationValidator.model_validate(
-                confirmation_token
-            ).data
+            invitation_data: ConfirmedInvitationData = (
+                _InvitationValidator.model_validate(confirmation_token).data
+            )
             return invitation_data
 
         except ValidationError as err:

@@ -13,14 +13,8 @@ from faker import Faker
 from models_library.products import ProductName
 from pytest_simcore.helpers.faker_factories import random_product
 from simcore_postgres_database.models.products import products as products_table
-from simcore_service_webserver.constants import FRONTEND_APP_DEFAULT
 from sqlalchemy import String
 from sqlalchemy.dialects import postgresql
-
-
-@pytest.fixture(scope="session")
-def product_name() -> ProductName:
-    return ProductName(FRONTEND_APP_DEFAULT)
 
 
 @pytest.fixture
