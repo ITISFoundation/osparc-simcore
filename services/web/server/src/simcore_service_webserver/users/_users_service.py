@@ -45,7 +45,9 @@ async def pre_register_user(
     creator_user_id: UserID,
 ) -> UserForAdminGet:
 
-    found = await search_users(app, email_glob=profile.email, include_products=False)
+    found = await search_users_as_admin(
+        app, email_glob=profile.email, include_products=False
+    )
     if found:
         raise AlreadyPreRegisteredError(num_found=len(found), email=profile.email)
 
@@ -76,7 +78,9 @@ async def pre_register_user(
         **details,
     )
 
-    found = await search_users(app, email_glob=profile.email, include_products=False)
+    found = await search_users_as_admin(
+        app, email_glob=profile.email, include_products=False
+    )
 
     assert len(found) == 1  # nosec
     return found[0]
@@ -125,7 +129,7 @@ async def get_user_id_from_gid(app: web.Application, primary_gid: GroupID) -> Us
     return await _users_repository.get_user_id_from_pgid(app, primary_gid=primary_gid)
 
 
-async def search_users(
+async def search_users_as_admin(
     app: web.Application, email_glob: str, *, include_products: bool = False
 ) -> list[UserForAdminGet]:
     # NOTE: this search is deploy-wide i.e. independent of the product!
