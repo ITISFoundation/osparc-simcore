@@ -1,6 +1,5 @@
 # pylint: disable=too-many-public-methods
 
-import json
 import logging
 import urllib.parse
 from collections.abc import Mapping
@@ -10,6 +9,7 @@ from typing import Any
 from uuid import UUID
 
 import httpx
+from common_library.json_serialization import json_dumps
 from cryptography import fernet
 from fastapi import FastAPI, status
 from models_library.api_schemas_api_server.pricing_plans import ServicePricingPlanGet
@@ -194,7 +194,7 @@ class AuthSession:
         optional: dict[str, Any] = {}
         if search_by_project_name is not None:
             filters_dict = {"search_by_project_name": search_by_project_name}
-            filters_json = json.dumps(filters_dict)
+            filters_json = json_dumps(filters_dict)
             optional["filters"] = filters_json
 
         with service_exception_handler(
