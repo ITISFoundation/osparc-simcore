@@ -44,7 +44,7 @@ from models_library.projects_nodes_io import LocationID, SimcoreS3FileID, Storag
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import ByteSize, TypeAdapter
-from pytest_mock import MockerFixture, MockFixture
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.fastapi import url_from_operation_id
 from pytest_simcore.helpers.httpx_assert_checks import assert_status
 from pytest_simcore.helpers.logging_tools import log_context
@@ -325,9 +325,9 @@ async def create_upload_file_link_v2(
             location_id=f"{location_id}",
             file_id=file_id,
         ).with_query(**query_kwargs, user_id=user_id)
-        assert "file_size" in url.query, (
-            "V2 call to upload file must contain file_size field!"
-        )
+        assert (
+            "file_size" in url.query
+        ), "V2 call to upload file must contain file_size field!"
         response = await client.put(f"{url}")
         received_file_upload, error = assert_status(
             response, status.HTTP_200_OK, FileUploadSchema
