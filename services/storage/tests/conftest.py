@@ -1018,8 +1018,6 @@ async def with_storage_celery_worker_controller(
     ) as worker:
         worker_init.send(sender=worker)
 
-        # NOTE: wait for worker to be ready (sic)
-        await asyncio.sleep(1)
         yield worker
 
         worker_shutdown.send(sender=worker)
