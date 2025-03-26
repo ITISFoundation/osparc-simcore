@@ -7,7 +7,7 @@ from jinja2 import Environment, FileSystemLoader, PackageLoader, select_autoesca
 _logger = logging.getLogger(__name__)
 
 
-def create_render_env_from_package(**kwargs):
+def create_render_environment_from_notifications_library(**kwargs) -> Environment:
     return Environment(
         loader=PackageLoader(notifications_library.__name__, "templates"),
         autoescape=select_autoescape(["html", "xml"]),
@@ -15,7 +15,7 @@ def create_render_env_from_package(**kwargs):
     )
 
 
-def create_render_env_from_folder(top_dir: Path):
+def create_render_environment_from_folder(top_dir: Path) -> Environment:
     assert top_dir.exists()  # nosec
     assert top_dir.is_dir()  # nosec
     return Environment(

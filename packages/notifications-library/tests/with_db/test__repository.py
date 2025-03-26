@@ -12,7 +12,7 @@ from models_library.products import ProductName
 from models_library.users import UserID
 from notifications_library._db import TemplatesRepo, UsersRepo
 from notifications_library._models import UserData
-from notifications_library._payments_db import PaymentsDataRepo
+from notifications_library._payments_repository import PaymentsDataRepo
 from sqlalchemy.ext.asyncio.engine import AsyncEngine
 
 pytest_simcore_core_services_selection = [
