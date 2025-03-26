@@ -250,9 +250,9 @@ def core_services_selection(request) -> list[str]:
     """Selection of services from the simcore stack"""
     core_services = getattr(request.module, FIXTURE_CONFIG_CORE_SERVICES_SELECTION, [])
 
-    assert core_services, (
-        f"Expected at least one service in '{FIXTURE_CONFIG_CORE_SERVICES_SELECTION}' within '{request.module.__name__}'"
-    )
+    assert (
+        core_services
+    ), f"Expected at least one service in '{FIXTURE_CONFIG_CORE_SERVICES_SELECTION}' within '{request.module.__name__}'"
     return core_services
 
 
