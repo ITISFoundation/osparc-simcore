@@ -82,11 +82,11 @@ async def test_resend_2fa_workflow(
 
     # patch send functions
     mock_send_sms_code_1 = mocker.patch(
-        "simcore_service_webserver.login._controller.twofa_rest._twofa_service.send_sms_code",
+        "simcore_service_webserver.login._controller.rest.twofa._twofa_service.send_sms_code",
         autospec=True,
     )
     mock_send_sms_code_2 = mocker.patch(
-        "simcore_service_webserver.login._controller.auth_rest._twofa_service.send_sms_code",
+        "simcore_service_webserver.login._controller.rest.auth._twofa_service.send_sms_code",
         # NOTE: When importing the full submodule, we are mocking _twofa_service
         #  from .. import _twofa_service
         #  _twofa_service.send_sms_code(...)
@@ -94,12 +94,12 @@ async def test_resend_2fa_workflow(
     )
 
     mock_send_email_code = mocker.patch(
-        "simcore_service_webserver.login._controller.twofa_rest._twofa_service.send_email_code",
+        "simcore_service_webserver.login._controller.rest.twofa._twofa_service.send_email_code",
         autospec=True,
     )
 
     mock_get_2fa_code = mocker.patch(
-        "simcore_service_webserver.login._controller.twofa_rest._twofa_service.get_2fa_code",
+        "simcore_service_webserver.login._controller.rest.twofa._twofa_service.get_2fa_code",
         autospec=True,
         return_value=None,  # <-- Emulates code expired
     )

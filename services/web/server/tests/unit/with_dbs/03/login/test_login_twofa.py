@@ -77,12 +77,12 @@ def postgres_db(postgres_db: sa.engine.Engine):
 @pytest.fixture
 def mocked_twilio_service(mocker: MockerFixture) -> dict[str, MockType]:
     mock = mocker.patch(
-        "simcore_service_webserver.login._controller.registration_rest._twofa_service.send_sms_code",
+        "simcore_service_webserver.login._controller.rest.registration._twofa_service.send_sms_code",
         autospec=True,
     )
 
     mock_same_submodule = mocker.patch(
-        "simcore_service_webserver.login._controller.auth_rest._twofa_service.send_sms_code",
+        "simcore_service_webserver.login._controller.rest.auth._twofa_service.send_sms_code",
         # NOTE: When importing the full submodule, we are mocking _twofa_service
         #  from .. import _twofa_service
         #  _twofa_service.send_sms_code(...)

@@ -152,7 +152,7 @@ async def test_registration_invitation_stays_valid_if_once_tried_with_weak_passw
 ):
     assert client.app
     mocker.patch(
-        "simcore_service_webserver.login._controller.registration_rest.get_plugin_settings",
+        "simcore_service_webserver.login._controller.rest.registration.get_plugin_settings",
         autospec=True,
         return_value=LoginSettingsForProduct(
             LOGIN_REGISTRATION_CONFIRMATION_REQUIRED=False,
@@ -270,7 +270,7 @@ async def test_registration_without_confirmation(
 ):
     assert client.app
     mocker.patch(
-        "simcore_service_webserver.login._controller.registration_rest.get_plugin_settings",
+        "simcore_service_webserver.login._controller.rest.registration.get_plugin_settings",
         autospec=True,
         return_value=LoginSettingsForProduct(
             LOGIN_REGISTRATION_CONFIRMATION_REQUIRED=False,
@@ -308,7 +308,7 @@ async def test_registration_with_confirmation(
 ):
     assert client.app
     mocker.patch(
-        "simcore_service_webserver.login._controller.registration_rest.get_plugin_settings",
+        "simcore_service_webserver.login._controller.rest.registration.get_plugin_settings",
         autospec=True,
         return_value=LoginSettingsForProduct(
             LOGIN_REGISTRATION_CONFIRMATION_REQUIRED=True,
@@ -376,7 +376,7 @@ async def test_registration_with_invitation(
 ):
     assert client.app
     mocker.patch(
-        "simcore_service_webserver.login._controller.registration_rest.get_plugin_settings",
+        "simcore_service_webserver.login._controller.rest.registration.get_plugin_settings",
         autospec=True,
         return_value=LoginSettingsForProduct(
             LOGIN_REGISTRATION_CONFIRMATION_REQUIRED=False,
@@ -436,7 +436,7 @@ async def test_registraton_with_invitation_for_trial_account(
 ):
     assert client.app
     mocker.patch(
-        "simcore_service_webserver.login._controller.registration_rest.get_plugin_settings",
+        "simcore_service_webserver.login._controller.rest.registration.get_plugin_settings",
         autospec=True,
         return_value=LoginSettingsForProduct(
             LOGIN_REGISTRATION_CONFIRMATION_REQUIRED=False,
