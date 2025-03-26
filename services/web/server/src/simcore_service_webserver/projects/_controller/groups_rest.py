@@ -3,7 +3,7 @@ import logging
 from aiohttp import web
 from models_library.groups import GroupID
 from models_library.projects import ProjectID
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, EmailStr
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
@@ -23,6 +23,32 @@ _logger = logging.getLogger(__name__)
 
 
 routes = web.RouteTableDef()
+
+
+class _ProjectShare(BaseModel):
+    email: EmailStr | None
+    primary_group_id: GroupID | None
+
+    # sharing access
+    read: bool
+    write: bool
+    delete: bool
+
+    model_config = ConfigDict(extra="forbid")
+
+
+@routes.post(f"/{VTAG}/projects/{{project_id}}:share", name="share_project")
+@login_required
+@permission_required("project.access_rights.update")
+@handle_plugin_requests_exceptions
+async def share_project(request: web.Request):
+    req_ctx = RequestContext.model_validate(request)
+    path_params = parse_request_path_parameters_as(ProjectPathParams, request)
+    body_params = await parse_request_body_as(_ProjectShare, request)
+
+    # TODO: share project
+
+    return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
 
 class _ProjectsGroupsPathParams(BaseModel):
