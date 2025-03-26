@@ -1,6 +1,7 @@
 import logging
 
 from aiohttp import web
+from models_library.api_schemas_webserver._base import InputSchema
 from models_library.groups import GroupID
 from models_library.projects import ProjectID
 from pydantic import BaseModel, ConfigDict, EmailStr
@@ -9,8 +10,10 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
 )
+from servicelib.logging_utils import log_context
 
 from ..._meta import api_version_prefix as VTAG
+from ...application_settings_utils import requires_dev_feature_enabled
 from ...login.decorators import login_required
 from ...security.decorators import permission_required
 from ...utils_aiohttp import envelope_json_response
@@ -25,9 +28,9 @@ _logger = logging.getLogger(__name__)
 routes = web.RouteTableDef()
 
 
-class _ProjectShare(BaseModel):
-    email: EmailStr | None
-    primary_group_id: GroupID | None
+class _ProjectShare(InputSchema):
+    # TODO: move to models_library.api_schemas_webserver.groups together with the rest
+    user_email: EmailStr
 
     # sharing access
     read: bool
@@ -38,6 +41,7 @@ class _ProjectShare(BaseModel):
 
 
 @routes.post(f"/{VTAG}/projects/{{project_id}}:share", name="share_project")
+@requires_dev_feature_enabled
 @login_required
 @permission_required("project.access_rights.update")
 @handle_plugin_requests_exceptions
@@ -46,9 +50,21 @@ async def share_project(request: web.Request):
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
     body_params = await parse_request_body_as(_ProjectShare, request)
 
-    # TODO: share project
+    with log_context(
+        _logger,
+        logging.DEBUG,
+        "User [%s] from product [%s] is sharing project [%s] with [%s]",
+        req_ctx.user_id,
+        req_ctx.product_name,
+        path_params.project_id,
+        body_params.user_email,
+    ):
 
-    return web.json_response(status=status.HTTP_204_NO_CONTENT)
+        # TODO: share project
+        if body_params.user_email:
+            raise NotImplementedError
+
+        return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
 
 class _ProjectsGroupsPathParams(BaseModel):
@@ -121,7 +137,7 @@ async def replace_project_group(request: web.Request):
     path_params = parse_request_path_parameters_as(_ProjectsGroupsPathParams, request)
     body_params = await parse_request_body_as(_ProjectsGroupsBodyParams, request)
 
-    return await _groups_service.replace_project_group(
+    new_project_group = await _groups_service.replace_project_group(
         app=request.app,
         user_id=req_ctx.user_id,
         project_id=path_params.project_id,
@@ -131,6 +147,7 @@ async def replace_project_group(request: web.Request):
         delete=body_params.delete,
         product_name=req_ctx.product_name,
     )
+    return envelope_json_response(new_project_group, web.HTTPOk)
 
 
 @routes.delete(
