@@ -13,6 +13,7 @@ from faker import Faker
 from fastapi import FastAPI
 from models_library.products import ProductName
 from models_library.rest_pagination import MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
+from models_library.services import ServiceRelease
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from pydantic import ValidationError
@@ -29,6 +30,7 @@ from servicelib.rabbitmq.rpc_interfaces.catalog.services import (
     batch_get_my_services,
     check_for_service,
     get_service,
+    get_service_release_history,
     list_services_paginated,
     update_service,
 )
@@ -477,3 +479,69 @@ async def test_rpc_batch_get_my_services(
         "write": True,
     }
     assert my_services[1].owner == user["primary_gid"]
+    assert my_services[1].key == other_service_key
+    assert my_services[1].release.version == other_service_version
+
+
+async def test_rpc_get_service_release_history(
+    background_sync_task_mocked: None,
+    mocked_director_service_api: MockRouter,
+    rpc_client: RabbitMQRPCClient,
+    product_name: ProductName,
+    user_id: UserID,
+    app: FastAPI,
+):
+    assert app
+
+    service_key = "simcore/services/comp/test-service-release-history"
+    service_version_1 = "1.0.0"
+    service_version_2 = "1.1.0"
+
+    # Inject fake service releases for the target service
+    fake_releases = [
+        ServiceRelease(key=service_key, version=service_version_1),
+        ServiceRelease(key=service_key, version=service_version_2),
+    ]
+
+    # Inject unrelated fake service releases
+    unrelated_service_key_1 = "simcore/services/comp/unrelated-service-1"
+    unrelated_service_key_2 = "simcore/services/comp/unrelated-service-2"
+    unrelated_releases = [
+        ServiceRelease(key=unrelated_service_key_1, version="1.0.0"),
+        ServiceRelease(key=unrelated_service_key_1, version="1.1.0"),
+        ServiceRelease(key=unrelated_service_key_2, version="2.0.0"),
+    ]
+
+    mocked_director_service_api.post(
+        f"/services/{service_key}/releases",
+        json=[release.model_dump() for release in fake_releases],
+    )
+    mocked_director_service_api.post(
+        f"/services/{unrelated_service_key_1}/releases",
+        json=[release.model_dump() for release in unrelated_releases[:2]],
+    )
+    mocked_director_service_api.post(
+        f"/services/{unrelated_service_key_2}/releases",
+        json=[release.model_dump() for release in unrelated_releases[2:]],
+    )
+
+    # Call the RPC function
+    release_history = await get_service_release_history(
+        rpc_client,
+        product_name=product_name,
+        user_id=user_id,
+        service_key=service_key,
+    )
+
+    # Validate the response
+    assert isinstance(release_history, list)
+    assert len(release_history) == 2
+    assert release_history[0].key == service_key
+    assert release_history[0].version == service_version_1
+    assert release_history[1].key == service_key
+    assert release_history[1].version == service_version_2
+
+    # Ensure unrelated services do not appear in the release history
+    unrelated_keys = {unrelated_service_key_1, unrelated_service_key_2}
+    for release in release_history:
+        assert release.key not in unrelated_keys
