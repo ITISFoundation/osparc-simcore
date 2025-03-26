@@ -7,6 +7,7 @@ from ...core.settings import get_application_settings
 from ._celery_types import register_celery_types
 from ._common import create_app
 from .client import CeleryTaskQueueClient
+from .utils import set_fastapi_app
 
 _logger = logging.getLogger(__name__)
 
@@ -17,6 +18,7 @@ def setup_celery_client(app: FastAPI) -> None:
         assert celery_settings  # nosec
         celery_app = create_app(celery_settings)
         app.state.celery_client = CeleryTaskQueueClient(celery_app)
+        set_fastapi_app(celery_app, app)
 
         register_celery_types()
 
