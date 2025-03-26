@@ -15,12 +15,9 @@ def make_async(
         @functools.wraps(func)
         async def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
             loop = asyncio.get_running_loop()
-            return await asyncio.wait_for(
-                loop.run_in_executor(
-                    executor, functools.partial(func, *args, **kwargs)
-                ),
-                timeout=2,
-            )  # wait_for is temporary for debugging async jobs
+            return await loop.run_in_executor(
+                executor, functools.partial(func, *args, **kwargs)
+            )
 
         return wrapper
 
