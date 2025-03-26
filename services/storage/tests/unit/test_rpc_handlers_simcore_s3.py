@@ -17,7 +17,6 @@ from typing import Any
 import httpx
 import pytest
 import sqlalchemy as sa
-from aws_library.s3 import SimcoreS3API
 from faker import Faker
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
@@ -52,6 +51,7 @@ from servicelib.rabbitmq.rpc_interfaces.storage.simcore_s3 import (
     copy_folders_from_project,
 )
 from simcore_postgres_database.storage_models import file_meta_data
+from simcore_service_storage.modules.celery.worker import CeleryTaskQueueWorker
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 from sqlalchemy.ext.asyncio import AsyncEngine
 from yarl import URL
@@ -107,6 +107,7 @@ async def test_copy_folders_from_non_existing_project(
     product_name: ProductName,
     create_project: Callable[..., Awaitable[dict[str, Any]]],
     faker: Faker,
+    celery_worker: CeleryTaskQueueWorker,
 ):
     src_project = await create_project()
     incorrect_src_project = deepcopy(src_project)
@@ -147,7 +148,7 @@ async def test_copy_folders_from_empty_project(
     product_name: ProductName,
     create_project: Callable[[], Awaitable[dict[str, Any]]],
     sqlalchemy_async_engine: AsyncEngine,
-    storage_s3_client: SimcoreS3API,
+    celery_worker: CeleryTaskQueueWorker,
 ):
     # we will copy from src to dst
     src_project = await create_project()
