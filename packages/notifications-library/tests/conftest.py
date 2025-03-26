@@ -60,6 +60,9 @@ def product_data(
         display_name=product["display_name"],
         vendor_display_inline=f"{vendor.get('name','')}, {vendor.get('address','')}",
         support_email=product["support_email"],
+        logo=vendor.get('logo','https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/refs/heads/master/services/static-webserver/client/source/resource/osparc/osparc-black.svg'),
+        homepage=vendor.get('url','https://osparc.io/'),
+        strong_color=vendor.get('strong_color','#8300bf'),
     )
 
 
