@@ -21,6 +21,7 @@ from models_library.users import UserID
 from pydantic import ByteSize, TypeAdapter
 from pytest_simcore.helpers.storage_utils import FileIDDict, ProjectWithFilesParams
 from simcore_service_storage.api._worker_tasks._paths import compute_path_size
+from simcore_service_storage.modules.celery.models import TaskId
 from simcore_service_storage.modules.celery.utils import set_fastapi_app
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 
@@ -48,16 +49,17 @@ def _filter_and_group_paths_one_level_deeper(
 
 
 async def _assert_compute_path_size(
+    *,
     celery_task: Task,
+    task_id: TaskId,
     location_id: LocationID,
     user_id: UserID,
-    *,
     path: Path,
     expected_total_size: int,
 ) -> ByteSize:
     response = await compute_path_size(
         celery_task,
-        task_id=celery_task.id,
+        task_id=task_id,
         user_id=user_id,
         location_id=location_id,
         path=path,
@@ -115,9 +117,10 @@ async def test_path_compute_size(
     expected_total_size = project_params.allowed_file_sizes[0] * total_num_files
     path = Path(project["uuid"])
     await _assert_compute_path_size(
-        fake_celery_task,
-        location_id,
-        user_id,
+        celery_task=fake_celery_task,
+        task_id=TaskId("fake_task"),
+        location_id=location_id,
+        user_id=user_id,
         path=path,
         expected_total_size=expected_total_size,
     )
@@ -132,9 +135,10 @@ async def test_path_compute_size(
         selected_node_s3_keys
     )
     await _assert_compute_path_size(
-        fake_celery_task,
-        location_id,
-        user_id,
+        celery_task=fake_celery_task,
+        task_id=TaskId("fake_task"),
+        location_id=location_id,
+        user_id=user_id,
         path=path,
         expected_total_size=expected_total_size,
     )
@@ -150,9 +154,10 @@ async def test_path_compute_size(
         selected_node_s3_keys
     )
     await _assert_compute_path_size(
-        fake_celery_task,
-        location_id,
-        user_id,
+        celery_task=fake_celery_task,
+        task_id=TaskId("fake_task"),
+        location_id=location_id,
+        user_id=user_id,
         path=path,
         expected_total_size=expected_total_size,
     )
@@ -168,9 +173,10 @@ async def test_path_compute_size(
         selected_node_s3_keys
     )
     workspace_total_size = await _assert_compute_path_size(
-        fake_celery_task,
-        location_id,
-        user_id,
+        celery_task=fake_celery_task,
+        task_id=TaskId("fake_task"),
+        location_id=location_id,
+        user_id=user_id,
         path=path,
         expected_total_size=expected_total_size,
     )
@@ -192,9 +198,10 @@ async def test_path_compute_size(
             selected_node_s3_keys
         )
         accumulated_subfolder_size += await _assert_compute_path_size(
-            fake_celery_task,
-            location_id,
-            user_id,
+            celery_task=fake_celery_task,
+            task_id=TaskId("fake_task"),
+            location_id=location_id,
+            user_id=user_id,
             path=workspace_subfolder,
             expected_total_size=expected_total_size,
         )
@@ -212,9 +219,10 @@ async def test_path_compute_size_inexistent_path(
     fake_datcore_tokens: tuple[str, str],
 ):
     await _assert_compute_path_size(
-        fake_celery_task,
-        location_id,
-        user_id,
+        celery_task=fake_celery_task,
+        task_id=TaskId("fake_task"),
+        location_id=location_id,
+        user_id=user_id,
         path=Path(faker.file_path(absolute=False)),
         expected_total_size=0,
     )

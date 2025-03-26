@@ -22,7 +22,6 @@ from models_library.api_schemas_rpc_async_jobs.async_jobs import (
 from models_library.api_schemas_rpc_async_jobs.exceptions import (
     JobAbortedError,
     JobError,
-    JobMissingError,
     JobNotDoneError,
     JobSchedulerError,
 )
@@ -343,7 +342,6 @@ async def test_abort_data_export_success(
 @pytest.mark.parametrize(
     "mock_celery_client, expected_exception_type",
     [
-        ({"abort_task_object": None, "get_task_uuids_object": []}, JobMissingError),
         (
             {
                 "abort_task_object": CeleryError("error"),
@@ -380,6 +378,14 @@ async def test_abort_data_export_error(
         {
             "get_task_status_object": TaskStatus(
                 task_uuid=TaskUUID(_faker.uuid4()),
+                task_state=TaskState.PENDING,
+                progress_report=ProgressReport(actual_value=0),
+            ),
+            "get_task_uuids_object": [],
+        },
+        {
+            "get_task_status_object": TaskStatus(
+                task_uuid=TaskUUID(_faker.uuid4()),
                 task_state=TaskState.RUNNING,
                 progress_report=ProgressReport(actual_value=0),
             ),
@@ -411,10 +417,6 @@ async def test_get_data_export_status(
 @pytest.mark.parametrize(
     "mock_celery_client, expected_exception_type",
     [
-        (
-            {"get_task_status_object": None, "get_task_uuids_object": []},
-            JobMissingError,
-        ),
         (
             {
                 "get_task_status_object": CeleryError("error"),
@@ -528,9 +530,14 @@ async def test_get_data_export_result_success(
         ),
         (
             {
+                "get_task_status_object": TaskStatus(
+                    task_uuid=TaskUUID(_faker.uuid4()),
+                    task_state=TaskState.PENDING,
+                    progress_report=ProgressReport(actual_value=0.0),
+                ),
                 "get_task_uuids_object": [],
             },
-            JobMissingError,
+            JobNotDoneError,
         ),
     ],
     indirect=["mock_celery_client"],
