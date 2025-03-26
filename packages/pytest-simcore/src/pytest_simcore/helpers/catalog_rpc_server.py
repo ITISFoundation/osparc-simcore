@@ -10,7 +10,9 @@ from models_library.api_schemas_webserver.catalog import (
     CatalogServiceUpdate,
 )
 from models_library.products import ProductName
+from models_library.rest_pagination import PageOffsetInt
 from models_library.rpc_pagination import PageLimitInt, PageRpc
+from models_library.services_history import ServiceRelease
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from pydantic import NonNegativeInt, TypeAdapter
@@ -84,3 +86,33 @@ class CatalogRpcSideEffects:
         got.version = service_version
         got.key = service_key
         return got.model_copy(update=update.model_dump(exclude_unset=True))
+
+    async def get_my_service_history(
+        self,
+        rpc_client: RabbitMQRPCClient,
+        *,
+        product_name: ProductName,
+        user_id: UserID,
+        service_key: ServiceKey,
+        limit: PageLimitInt,
+        offset: PageOffsetInt,
+    ) -> PageRpc[ServiceRelease]:
+
+        assert rpc_client
+        assert product_name
+        assert user_id
+        assert service_key
+
+        items = TypeAdapter(list[ServiceRelease]).validate_python(
+            [
+                ServiceRelease.model_json_schema()["example"],
+            ]
+        )
+        total_count = len(items)
+
+        return PageRpc[ServiceRelease].create(
+            items[offset : offset + limit],
+            total=total_count,
+            limit=limit,
+            offset=offset,
+        )

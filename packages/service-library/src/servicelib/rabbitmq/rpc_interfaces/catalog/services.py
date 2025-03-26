@@ -7,6 +7,8 @@ from models_library.api_schemas_catalog import CATALOG_RPC_NAMESPACE
 from models_library.api_schemas_catalog.services import (
     LatestServiceGet,
     MyServiceGet,
+    PageRpcLatestServiceGet,
+    PageRpcServiceRelease,
     ServiceGetV2,
     ServiceRelease,
     ServiceUpdateV2,
@@ -37,7 +39,7 @@ async def list_services_paginated(  # pylint: disable=too-many-arguments
     user_id: UserID,
     limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
     offset: PageOffsetInt = 0,
-) -> PageRpc[LatestServiceGet]:
+) -> PageRpcLatestServiceGet:
     """
     Raises:
         ValidationError: on invalid arguments
@@ -245,7 +247,9 @@ async def get_my_service_history(  # pylint: disable=too-many-arguments
     product_name: ProductName,
     user_id: UserID,
     service_key: ServiceKey,
-) -> list[ServiceRelease]:
+    limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
+    offset: PageOffsetInt = 0,
+) -> PageRpcServiceRelease:
     """
     Raises:
         ValidationError: on invalid arguments
@@ -256,6 +260,8 @@ async def get_my_service_history(  # pylint: disable=too-many-arguments
         product_name: ProductName,
         user_id: UserID,
         service_key: ServiceKey,
+        limit: PageLimitInt,
+        offset: PageOffsetInt,
     ):
         return await rpc_client.request(
             CATALOG_RPC_NAMESPACE,
@@ -263,14 +269,19 @@ async def get_my_service_history(  # pylint: disable=too-many-arguments
             product_name=product_name,
             user_id=user_id,
             service_key=service_key,
+            limit=limit,
+            offset=offset,
         )
 
     result = await _call(
         product_name=product_name,
         user_id=user_id,
         service_key=service_key,
+        limit=limit,
+        offset=offset,
     )
+
     assert (  # nosec
-        TypeAdapter(list[ServiceRelease]).validate_python(result) is not None
+        TypeAdapter(PageRpcServiceRelease).validate_python(result) is not None
     )
-    return cast(list[ServiceRelease], result)
+    return cast(PageRpc[ServiceRelease], result)

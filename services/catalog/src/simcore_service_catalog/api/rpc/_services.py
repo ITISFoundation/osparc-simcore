@@ -5,14 +5,14 @@ from typing import cast
 from fastapi import FastAPI
 from models_library.api_schemas_catalog.services import (
     MyServiceGet,
-    PageRpcServicesGetV2,
+    PageRpcLatestServiceGet,
+    PageRpcServiceRelease,
     ServiceGetV2,
     ServiceUpdateV2,
 )
 from models_library.products import ProductName
 from models_library.rest_pagination import PageOffsetInt
 from models_library.rpc_pagination import DEFAULT_NUMBER_OF_ITEMS_PER_PAGE, PageLimitInt
-from models_library.services_history import ServiceRelease
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from pydantic import ValidationError, validate_call
@@ -65,7 +65,7 @@ async def list_services_paginated(
     user_id: UserID,
     limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
     offset: PageOffsetInt = 0,
-) -> PageRpcServicesGetV2:
+) -> PageRpcLatestServiceGet:
     assert app.state.engine  # nosec
 
     total_count, items = await services_api.list_latest_services(
@@ -81,8 +81,8 @@ async def list_services_paginated(
     assert len(items) <= limit  # nosec
 
     return cast(
-        PageRpcServicesGetV2,
-        PageRpcServicesGetV2.create(
+        PageRpcLatestServiceGet,
+        PageRpcLatestServiceGet.create(
             items,
             total=total_count,
             limit=limit,
@@ -232,10 +232,12 @@ async def get_my_service_history(
     product_name: ProductName,
     user_id: UserID,
     service_key: ServiceKey,
-) -> list[ServiceRelease]:
+    limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
+    offset: PageOffsetInt = 0,
+) -> PageRpcServiceRelease:
     assert app.state.engine  # nosec
 
-    return await services_api.get_service_history(
+    history = await services_api.get_service_history(
         repo=ServicesRepository(app.state.engine),
         product_name=product_name,
         user_id=user_id,

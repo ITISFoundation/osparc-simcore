@@ -55,21 +55,21 @@ class CatalogService(SingletonInAppStateMixin):
         limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
     ) -> tuple[list[ServiceRelease], PageMetaInfoLimitOffset]:
 
-        data = await catalog_rpc.get_my_service_history(
+        page = await catalog_rpc.get_my_service_history(
             self._client,
             product_name=product_name,
             user_id=user_id,
             service_key=service_key,
-            # TODO: offset=offset,
-            # TODO: limit=limit,
+            offset=offset,
+            limit=limit,
         )
         meta = PageMetaInfoLimitOffset(
-            limit=limit,
-            offset=offset,
-            total=len(data),
-            count=len(data),
+            limit=page.meta.limit,
+            offset=page.meta.offset,
+            total=page.meta.total,
+            count=page.meta.count,
         )
-        return data, meta
+        return page.data, meta
 
     async def get(
         self,

@@ -323,9 +323,14 @@ class ServiceGetV2(_BaseServiceGetV2):
     )
 
 
-PageRpcServicesGetV2: TypeAlias = PageRpc[
+PageRpcLatestServiceGet: TypeAlias = PageRpc[
     # WARNING: keep this definition in models_library and not in the RPC interface
     LatestServiceGet
+]
+
+PageRpcServiceRelease: TypeAlias = PageRpc[
+    # WARNING: keep this definition in models_library and not in the RPC interface
+    ServiceRelease
 ]
 
 ServiceResourcesGet: TypeAlias = ServiceResourcesDict
