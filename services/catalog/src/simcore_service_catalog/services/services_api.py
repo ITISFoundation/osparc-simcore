@@ -464,3 +464,41 @@ async def batch_get_my_services(
         )
 
     return my_services
+
+
+async def get_service_history(
+    repo: ServicesRepository,
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    service_key: ServiceKey,
+    include_compatibility: bool = False,
+) -> list[ServiceRelease]:
+
+    history = (
+        await repo.get_service_history(
+            # NOTE: that the service history might be different for each user
+            # since access-rights are defined on a k:v basis
+            product_name=product_name,
+            user_id=user_id,
+            key=service_key,
+        )
+        or []
+    )
+
+    compatibility_map = {}
+    if include_compatibility:
+        msg = "This operation is heavy and for the moment is not necessary"
+        raise NotImplementedError(msg)
+
+    return [
+        # domain -> domain
+        ServiceRelease.model_construct(
+            version=h.version,
+            version_display=h.version_display,
+            released=h.created,
+            retired=h.deprecated,
+            compatibility=compatibility_map.get(h.version),
+        )
+        for h in history
+    ]

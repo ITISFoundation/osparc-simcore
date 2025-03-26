@@ -12,6 +12,7 @@ from models_library.api_schemas_catalog.services import (
 from models_library.products import ProductName
 from models_library.rest_pagination import PageOffsetInt
 from models_library.rpc_pagination import DEFAULT_NUMBER_OF_ITEMS_PER_PAGE, PageLimitInt
+from models_library.services_history import ServiceRelease
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from pydantic import ValidationError, validate_call
@@ -220,3 +221,23 @@ async def batch_get_my_services(
     assert [(sv.key, sv.release.version) for sv in services] == ids  # nosec
 
     return services
+
+
+@router.expose(reraise_if_error_type=(CatalogForbiddenError, ValidationError))
+@log_decorator(_logger, level=logging.DEBUG)
+@validate_call(config={"arbitrary_types_allowed": True})
+async def get_my_service_history(
+    app: FastAPI,
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    service_key: ServiceKey,
+) -> list[ServiceRelease]:
+    assert app.state.engine  # nosec
+
+    return await services_api.get_service_history(
+        repo=ServicesRepository(app.state.engine),
+        product_name=product_name,
+        user_id=user_id,
+        service_key=service_key,
+    )
