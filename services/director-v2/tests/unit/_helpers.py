@@ -1,8 +1,7 @@
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Callable
+from typing import Any
 
-import aiopg
-import aiopg.sa
 import sqlalchemy as sa
 from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -31,12 +30,12 @@ class RunningProject(PublishedProject):
 
 
 async def set_comp_task_outputs(
-    aiopg_engine: aiopg.sa.engine.Engine,
+    sqlalchemy_async_engine: AsyncEngine,
     node_id: NodeID,
     outputs_schema: dict[str, Any],
     outputs: dict[str, Any],
 ) -> None:
-    async with aiopg_engine.acquire() as conn:
+    async with sqlalchemy_async_engine.begin() as conn:
         await conn.execute(
             comp_tasks.update()
             .where(comp_tasks.c.node_id == f"{node_id}")
@@ -45,12 +44,12 @@ async def set_comp_task_outputs(
 
 
 async def set_comp_task_inputs(
-    aiopg_engine: aiopg.sa.engine.Engine,
+    sqlalchemy_async_engine: AsyncEngine,
     node_id: NodeID,
     inputs_schema: dict[str, Any],
     inputs: dict[str, Any],
 ) -> None:
-    async with aiopg_engine.acquire() as conn:
+    async with aiopg_engine.begin() as conn:
         await conn.execute(
             comp_tasks.update()
             .where(comp_tasks.c.node_id == f"{node_id}")
