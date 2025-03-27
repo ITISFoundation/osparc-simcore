@@ -22,7 +22,12 @@ def upgrade():
         "projects_to_jobs",
         sa.Column("id", sa.BigInteger(), autoincrement=True, nullable=False),
         sa.Column("project_uuid", sa.String(), nullable=False),
-        sa.Column("job_name", sa.String(), nullable=False),
+        sa.Column(
+            "job_parent_resource_name",
+            sa.String(),
+            nullable=False,
+            doc="Prefix for the job resource name. For example, if the relative resource name is shelves/shelf1/books/book2, the parent resource name is shelves/shelf1.",
+        ),
         sa.ForeignKeyConstraint(
             ["project_uuid"],
             ["projects.uuid"],
@@ -31,18 +36,21 @@ def upgrade():
             ondelete="CASCADE",
         ),
         sa.PrimaryKeyConstraint("id"),
-        sa.UniqueConstraint("job_name"),
-        sa.UniqueConstraint("project_uuid"),
+        sa.UniqueConstraint(
+            "project_uuid",
+            "job_parent_resource_name",
+            name="uq_projects_to_jobs_project_uuid_job_parent_resource_name",
+        ),
     )
 
     # Populate the new table
     op.execute(
         sa.text(
             r"""
-INSERT INTO projects_to_jobs (project_uuid, job_name)
+INSERT INTO projects_to_jobs (project_uuid, job_parent_resource_name)
 SELECT
     uuid AS project_uuid,
-    regexp_replace(name, '\s+', '', 'g') AS job_name -- no spaces
+    regexp_replace(name, '/jobs/.+$', '', 'g') AS job_parent_resource_name -- trim /jobs/.+$
 FROM projects
 WHERE name ~* '^solvers/.+/jobs/.+$' OR name ~* '^studies/.+/jobs/.+$';
     """

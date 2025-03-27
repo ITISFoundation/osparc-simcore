@@ -5,6 +5,7 @@ from .base import metadata
 from .projects import projects
 
 projects_to_jobs = sa.Table(
+    # Maps projects used as jobs in the public-api
     "projects_to_jobs",
     metadata,
     sa.Column(
@@ -24,14 +25,19 @@ projects_to_jobs = sa.Table(
             name="fk_projects_to_jobs_project_uuid",
         ),
         nullable=False,
-        unique=True,
         doc="Foreign key to projects.uuid",
     ),
     sa.Column(
-        "job_name",
+        "job_parent_resource_name",
         sa.String,
         nullable=False,
-        unique=True,
-        doc="Identifier for the job associated with the project",
+        doc="Prefix for the job resource name use in the public-api. For example, if "
+        "the relative resource name is shelves/shelf1/jobs/job2, "
+        "the parent resource name is shelves/shelf1.",
+    ),
+    sa.UniqueConstraint(
+        "project_uuid",
+        "job_parent_resource_name",
+        name="uq_projects_to_jobs_project_uuid_job_parent_resource_name",
     ),
 )

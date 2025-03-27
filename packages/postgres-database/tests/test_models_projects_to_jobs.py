@@ -121,9 +121,9 @@ def test_populate_projects_to_jobs_during_migration(
         assert len(result) == 2
         assert (
             "cd03450c-4c17-4c2c-85fd-0d951d7dcd5a",
-            "solvers/simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/releases/2.2.1/jobs/cd03450c-4c17-4c2c-85fd-0d951d7dcd5a",
+            "solvers/simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/releases/2.2.1",
         ) in result
         assert (
             "bf204942-007b-11ef-befd-0242ac114f07",
-            "studies/4b7a704a-007a-11ef-befd-0242ac114f07/jobs/bf204942-007b-11ef-befd-0242ac114f07",
+            "studies/4b7a704a-007a-11ef-befd-0242ac114f07",
         ) in result
