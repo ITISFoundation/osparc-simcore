@@ -94,11 +94,14 @@ async def create_study_job(
     """
     hidden -- if True (default) hides project from UI
     """
+    study_name = Study.compose_resource_name(f"{study_id}")
+
     project = await webserver_api.clone_project(
         project_id=study_id,
         hidden=hidden,
         parent_project_uuid=x_simcore_parent_project_uuid,
         parent_node_id=x_simcore_parent_node_id,
+        job_parent_resource_name=study_name,
     )
     job = create_job_from_study(
         study_key=study_id, project=project, job_inputs=job_inputs

@@ -46,6 +46,7 @@ def parse_last_resource_id(resource_name: RelativeResourceName) -> str:
 
 
 def compose_resource_name(*collection_or_resource_ids) -> RelativeResourceName:
+    # NOTE: collection_or_resource_ids expected de
     quoted_parts = [
         urllib.parse.quote_plus(f"{_id}".lstrip("/"))
         for _id in collection_or_resource_ids
@@ -56,3 +57,23 @@ def compose_resource_name(*collection_or_resource_ids) -> RelativeResourceName:
 def split_resource_name(resource_name: RelativeResourceName) -> list[str]:
     quoted_parts = resource_name.split("/")
     return [f"{urllib.parse.unquote_plus(p)}" for p in quoted_parts]
+
+
+def split_resource_name_as_dict(
+    resource_name: RelativeResourceName,
+) -> dict[str, str | None]:
+    """Returns a map with
+    resource_ids[Collection-ID] == Resource-ID
+    """
+    parts = split_resource_name(resource_name)
+    return dict(zip(parts[::2], parts[1::2], strict=False))
+
+
+def parse_collections_ids(resource_name: RelativeResourceName) -> list[str]:
+    parts = split_resource_name(resource_name)
+    return parts[::2]
+
+
+def parse_resources_ids(resource_name: RelativeResourceName) -> list[str]:
+    parts = split_resource_name(resource_name)
+    return parts[1::2]
