@@ -1,4 +1,5 @@
 import urllib.parse
+from collections.abc import Callable
 from typing import Annotated
 
 import packaging.version
@@ -8,6 +9,7 @@ from packaging.version import Version
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl, StringConstraints
 
 from ...models._utils_pydantic import UriSchema
+from ...models.schemas.jobs import JobID
 from ..api_resources import compose_resource_name
 from ..basic_types import VersionStr
 
@@ -106,10 +108,24 @@ class Program(BaseModel):
         """API standards notation (see api_resources.py)"""
         return self.resource_name
 
+    def get_url(self, url_for: Callable[..., HttpUrl], job_id: JobID) -> HttpUrl | None:
+        # missing endpoint
+        return None
+
+    def get_runner_url(self, url_for: Callable[..., HttpUrl]) -> HttpUrl | None:
+        # missing endpoint
+        return None
+
+    def get_outputs_url(
+        self, url_for: Callable[..., HttpUrl], job_id: JobID
+    ) -> HttpUrl | None:
+        # missing endpoint
+        return None
+
     @classmethod
     def compose_resource_name(
         cls, program_key: ProgramKeyId, program_version: VersionStr
     ) -> str:
         return compose_resource_name(
-            "solvers", program_key, "releases", program_version
+            "programs", program_key, "releases", program_version
         )

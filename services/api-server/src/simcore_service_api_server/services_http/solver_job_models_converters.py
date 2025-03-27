@@ -5,6 +5,7 @@ services/api-server/src/simcore_service_api_server/api/routes/solvers_jobs.py
 
 import urllib.parse
 import uuid
+from collections.abc import Callable
 from datetime import UTC, datetime
 from functools import lru_cache
 
@@ -12,10 +13,10 @@ import arrow
 from models_library.api_schemas_webserver.projects import ProjectCreateNew, ProjectGet
 from models_library.api_schemas_webserver.projects_ui import StudyUI
 from models_library.basic_types import KeyIDStr
+from models_library.projects import Project
 from models_library.projects_nodes import InputID
 from pydantic import HttpUrl, TypeAdapter
 
-from ..models.basic_types import VersionStr
 from ..models.domain.projects import InputTypes, Node, SimCoreFileLink
 from ..models.schemas.files import File
 from ..models.schemas.jobs import (
@@ -26,7 +27,7 @@ from ..models.schemas.jobs import (
     PercentageInt,
 )
 from ..models.schemas.programs import Program
-from ..models.schemas.solvers import Solver, SolverKeyId
+from ..models.schemas.solvers import Solver
 from .director_v2 import ComputationTaskGet
 
 # UTILS ------
@@ -176,12 +177,10 @@ def create_new_project_for_job(
 
 
 def create_job_from_project(
-    solver_key: SolverKeyId,
-    solver_version: VersionStr,
-    project: ProjectGet,
-    url: HttpUrl | None,
-    runner_url: HttpUrl | None,
-    outputs_url: HttpUrl | None,
+    *,
+    solver_or_program: Solver | Program,
+    project: ProjectGet | Project,
+    url_for: Callable[..., HttpUrl],
 ) -> Job:
     """
     Given a project, creates a job
@@ -192,8 +191,8 @@ def create_job_from_project(
     raise ValidationError
     """
     assert len(project.workbench) == 1  # nosec
-    assert solver_version in project.name  # nosec
-    assert urllib.parse.quote_plus(solver_key) in project.name  # nosec
+    assert solver_or_program.version in project.name  # nosec
+    assert urllib.parse.quote_plus(solver_or_program.id) in project.name  # nosec
 
     # get solver node
     node_id = next(iter(project.workbench.keys()))
@@ -203,7 +202,7 @@ def create_job_from_project(
     )
 
     # create solver's job
-    solver_name = Solver.compose_resource_name(solver_key, solver_version)
+    solver_or_program_name = solver_or_program.resource_name
 
     job_id = project.uuid
 
@@ -212,10 +211,10 @@ def create_job_from_project(
         name=project.name,
         inputs_checksum=job_inputs.compute_checksum(),
         created_at=project.creation_date,  # type: ignore[arg-type]
-        runner_name=solver_name,
-        url=url,
-        runner_url=runner_url,
-        outputs_url=outputs_url,
+        runner_name=solver_or_program_name,
+        url=solver_or_program.get_url(url_for=url_for, job_id=job_id),
+        runner_url=solver_or_program.get_runner_url(url_for=url_for),
+        outputs_url=solver_or_program.get_outputs_url(url_for=url_for, job_id=job_id),
     )
 
     return job

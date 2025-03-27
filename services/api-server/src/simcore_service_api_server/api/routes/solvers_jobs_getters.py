@@ -147,7 +147,9 @@ async def list_jobs(
 
     jobs: deque[Job] = deque()
     for prj in projects_page.data:
-        job = create_job_from_project(solver_key, version, prj, url_for)
+        job = create_job_from_project(
+            solver_or_program=solver, project=prj, url_for=url_for
+        )
         assert job.id == prj.uuid  # nosec
         assert job.name == prj.name  # nosec
 
@@ -191,7 +193,7 @@ async def get_jobs_page(
     )
 
     jobs: list[Job] = [
-        create_job_from_project(solver_key, version, prj, url_for)
+        create_job_from_project(solver_or_program=solver, project=prj, url_for=url_for)
         for prj in projects_page.data
     ]
 
@@ -211,7 +213,10 @@ async def get_job(
     solver_key: SolverKeyId,
     version: VersionStr,
     job_id: JobID,
+    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+    product_name: Annotated[str, Depends(get_product_name)],
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
+    catalog_client: Annotated[CatalogApi, Depends(get_api_client(CatalogApi))],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
 ):
     """Gets job of a given solver"""
@@ -219,9 +224,17 @@ async def get_job(
         "Getting Job '%s'", _compose_job_resource_name(solver_key, version, job_id)
     )
 
+    solver = await catalog_client.get_solver(
+        user_id=user_id,
+        name=solver_key,
+        version=version,
+        product_name=product_name,
+    )
     project: ProjectGet = await webserver_api.get_project(project_id=job_id)
 
-    job = create_job_from_project(solver_key, version, project, url_for)
+    job = create_job_from_project(
+        solver_or_program=solver, project=project, url_for=url_for
+    )
     assert job.id == job_id  # nosec
     return job  # nosec
 

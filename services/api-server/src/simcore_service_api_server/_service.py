@@ -29,7 +29,7 @@ async def create_solver_or_program_job(
 ) -> Job:
     # creates NEW job as prototype
     pre_job = Job.create_job_from_solver_or_program(
-        solver_or_program=solver_or_program, inputs=inputs
+        solver_or_program_name=solver_or_program.name, inputs=inputs
     )
     _logger.debug("Creating Job '%s'", pre_job.name)
 
@@ -46,54 +46,13 @@ async def create_solver_or_program_job(
     assert new_project.uuid == pre_job.id  # nosec
 
     # for consistency, it rebuild job
-
-    # create urls
-    url = None
-    runner_url = None
-    outputs_url = None
-    if isinstance(solver_or_program, Solver):
-        url = url_for(
-            "get_job",
-            solver_key=solver_or_program.id,
-            version=solver_or_program.version,
-            job_id=pre_job.id,
-        )
-        runner_url = url_for(
-            "get_solver_release",
-            solver_key=solver_or_program.id,
-            version=solver_or_program.version,
-        )
-        outputs_url = url_for(
-            "get_job_outputs",
-            solver_key=solver_or_program.id,
-            version=solver_or_program.version,
-            job_id=pre_job.id,
-        )
-
     job = create_job_from_project(
-        solver_key=solver_or_program.id,
-        solver_version=solver_or_program.version,
-        project=new_project,
-        url=url,
-        runner_url=runner_url,
-        outputs_url=outputs_url,
+        solver_or_program=solver_or_program, project=new_project, url_for=url_for
     )
     assert job.id == pre_job.id  # nosec
     assert job.name == pre_job.name  # nosec
-    resource_name = ""
-    if isinstance(solver_or_program, Program):
-        resource_name = Job.compose_resource_name(
-            parent_name=Program.compose_resource_name(
-                solver_or_program.id, solver_or_program.version
-            ),
-            job_id=job.id,
-        )
-    if isinstance(solver_or_program, Solver):
-        resource_name = Job.compose_resource_name(
-            parent_name=Solver.compose_resource_name(
-                solver_or_program.id, solver_or_program.version
-            ),
-            job_id=job.id,
-        )
-    assert job.name == resource_name
+    assert job.name == Job.compose_resource_name(
+        parent_name=solver_or_program.resource_name,
+        job_id=job.id,
+    )
     return job
