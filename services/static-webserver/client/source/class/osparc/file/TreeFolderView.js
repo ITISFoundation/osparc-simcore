@@ -166,10 +166,11 @@ qx.Class.define("osparc.file.TreeFolderView", {
       pollTasks.createPollingTask(fetchPromise)
         .then(task => {
           task.addListener("resultReceived", e => {
-            const size = e.getData();
+            const data = e.getData();
+            const size = data["result"] ? osparc.utils.Utils.bytesToSize(data["result"]) : "-";
             totalSize.set({
               icon: null,
-              label: this.tr("Total size: ") + osparc.utils.Utils.bytesToSize(size),
+              label: this.tr("Total size: ") + size,
             });
           });
           task.addListener("pollingError", e => totalSize.hide());
