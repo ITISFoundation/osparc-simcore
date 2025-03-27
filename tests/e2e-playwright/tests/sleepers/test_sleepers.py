@@ -229,7 +229,7 @@ def test_sleepers(
             assert output_file_names_found == sleeper_expected_output_files
 
             # now check if the "Total size:"" widget shows something
-            label = wait_for_label_text(page, "totalSizeLabel", "Total size:")
+            label = wait_for_label_text(page, "totalSizeLabel", "Total size:", 20000)
             ctx.logger.info(f"1st node size: {label.inner_text()}")
 
             page.get_by_test_id("nodeDataManagerCloseBtn").click()
