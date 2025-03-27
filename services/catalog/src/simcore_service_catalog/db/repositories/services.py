@@ -16,6 +16,7 @@ from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from psycopg2.errors import ForeignKeyViolation
 from pydantic import PositiveInt, TypeAdapter, ValidationError
+from simcore_postgres_database.utils import as_postgres_sql_query_str
 from simcore_postgres_database.utils_repos import pass_or_acquire_connection
 from simcore_postgres_database.utils_services import create_select_latest_services_query
 from sqlalchemy import sql
@@ -478,36 +479,22 @@ class ServicesRepository(BaseRepository):
         offset: int | None = None,
     ) -> tuple[PositiveInt, list[ReleaseDBGet]]:
 
-        base_query = (
+        base_subquery = (
+            # Search on service (key, *) for (product_name, user_id w/ access)
             sql.select(
                 services_meta_data.c.key,
                 services_meta_data.c.version,
-                services_meta_data.c.version_display,
-                services_meta_data.c.deprecated,
-                services_meta_data.c.created,
-                services_compatibility.c.custom_policy.label(
-                    "compatibility_policy"
-                ),  # CompatiblePolicyDict | None
             )
             .select_from(
-                # joins because access-rights might change per version
                 services_meta_data.join(
                     services_access_rights,
                     (services_meta_data.c.key == services_access_rights.c.key)
                     & (
                         services_meta_data.c.version == services_access_rights.c.version
                     ),
-                )
-                .join(
+                ).join(
                     user_to_groups,
                     (user_to_groups.c.gid == services_access_rights.c.gid),
-                )
-                .outerjoin(
-                    services_compatibility,
-                    (services_meta_data.c.key == services_compatibility.c.key)
-                    & (
-                        services_meta_data.c.version == services_compatibility.c.version
-                    ),
                 )
             )
             .where(
@@ -516,17 +503,42 @@ class ServicesRepository(BaseRepository):
                 & (user_to_groups.c.uid == user_id)
                 & AccessRightsClauses.can_read
             )
-            .distinct()
-        )
+        ).subquery()
 
-        subquery = base_query.subquery()
-        count_query = sql.select(sql.func.count()).select_from(subquery)
+        # Query to count the TOTAL number of rows
+        count_query = sql.select(sql.func.count()).select_from(base_subquery)
+        _logger.debug("count_query=\n%s", as_postgres_sql_query_str(count_query))
 
+        # Query to retrieve page with additional columns, ordering, offset, and limit
         page_query = (
-            base_query.order_by(sql.desc(by_version(base_query.c.version)))
+            sql.select(
+                services_meta_data.c.key,
+                services_meta_data.c.version,
+                services_meta_data.c.version_display,
+                services_meta_data.c.deprecated,
+                services_meta_data.c.created,
+                # CompatiblePolicyDict | None
+                services_compatibility.c.custom_policy.label("compatibility_policy"),
+            )
+            .select_from(
+                # NOTE: these joins are avoided in count_query
+                base_subquery.join(
+                    services_meta_data,
+                    (base_subquery.c.key == services_meta_data.c.key)
+                    & (base_subquery.c.version == services_meta_data.c.version),
+                ).outerjoin(
+                    services_compatibility,
+                    (services_meta_data.c.key == services_compatibility.c.key)
+                    & (
+                        services_meta_data.c.version == services_compatibility.c.version
+                    ),
+                )
+            )
+            .order_by(sql.desc(by_version(services_meta_data.c.version)))
             .offset(offset)
             .limit(limit)
         )
+        _logger.debug("page_query=\n%s", as_postgres_sql_query_str(page_query))
 
         async with pass_or_acquire_connection(self.db_engine) as conn:
             total_count: PositiveInt = await conn.scalar(count_query) or 0
