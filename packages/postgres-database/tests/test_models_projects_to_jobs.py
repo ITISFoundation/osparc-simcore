@@ -68,7 +68,7 @@ def test_populate_projects_to_jobs_during_migration(
         user_data = random_user(
             faker, name="test_populate_projects_to_jobs_during_migration"
         )
-        stmt = sa.insert(users).values(**user_data).returning(users.c.id)
+        stmt = users.insert().values(**user_data).returning(users.c.id)
         result = conn.execute(stmt)
         user_id = result.scalar()
 
@@ -114,7 +114,10 @@ def test_populate_projects_to_jobs_during_migration(
     with sync_engine.connect() as conn:
         # Query the projects_to_jobs table
         result = conn.execute(
-            sa.select(projects_to_jobs.c.project_uuid, projects_to_jobs.c.job_name)
+            sa.select(
+                projects_to_jobs.c.project_uuid,
+                projects_to_jobs.c.job_parent_resource_name,
+            )
         ).fetchall()
 
         # Assert only valid projects are added
@@ -127,3 +130,23 @@ def test_populate_projects_to_jobs_during_migration(
             "bf204942-007b-11ef-befd-0242ac114f07",
             "studies/4b7a704a-007a-11ef-befd-0242ac114f07",
         ) in result
+
+        # Query project name and description for projects also in projects_to_jobs
+        result = conn.execute(
+            sa.select(
+                projects.c.name,
+                projects.c.uuid,
+                projects_to_jobs.c.job_parent_resource_name,
+            ).select_from(
+                projects.join(
+                    projects_to_jobs, projects.c.uuid == projects_to_jobs.c.project_uuid
+                )
+            )
+        ).fetchall()
+
+        # Print or assert the result as needed
+        for project_name, project_uuid, job_parent_resource_name in result:
+            assert (
+                f"{job_parent_resource_name}/jobs/{project_uuid}"
+                == project_name.strip()
+            )
