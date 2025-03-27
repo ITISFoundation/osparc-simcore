@@ -20,11 +20,13 @@ class RedisTaskStore:
         async for key in self._redis_client_sdk.redis.scan_iter(
             match=search_key + "*", count=_CELERY_TASK_SCAN_COUNT_PER_BATCH
         ):
-            keys.add(
-                TaskUUID(
-                    key.decode(_CELERY_TASK_ID_KEY_ENCODING).removeprefix(search_key)
-                )
+            # fake redis (tests) returns bytes, real redis returns str
+            _key = (
+                key.decode(_CELERY_TASK_ID_KEY_ENCODING)
+                if isinstance(key, bytes)
+                else key
             )
+            keys.add(TaskUUID(_key.removeprefix(search_key)))
         return keys
 
     async def task_exists(self, task_id: TaskID) -> bool:
