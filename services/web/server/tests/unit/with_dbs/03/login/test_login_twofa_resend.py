@@ -13,8 +13,11 @@ from pytest_simcore.helpers.webserver_login import UserInfoDict
 from servicelib.aiohttp import status
 from simcore_postgres_database.models.products import ProductLoginSettingsDict, products
 from simcore_service_webserver.application_settings import ApplicationSettings
-from simcore_service_webserver.login._auth_handlers import CodePageParams, NextPage
 from simcore_service_webserver.login._constants import CODE_2FA_SMS_CODE_REQUIRED
+from simcore_service_webserver.login._controller.rest.auth import (
+    CodePageParams,
+    NextPage,
+)
 
 
 @pytest.fixture
@@ -53,7 +56,7 @@ def postgres_db(postgres_db: sa.engine.Engine):
 
 async def test_resend_2fa_entrypoint_is_protected(
     client: TestClient,
-    fake_user_email: str,
+    user_email: str,
 ):
     assert client.app
 
@@ -61,7 +64,7 @@ async def test_resend_2fa_entrypoint_is_protected(
     response = await client.post(
         f"{url}",
         json={
-            "email": fake_user_email,
+            "email": user_email,
             "send_as": "SMS",
         },
     )
@@ -77,20 +80,26 @@ async def test_resend_2fa_workflow(
 ):
     assert client.app
 
-    # spy send functions
-    mocker.patch(
-        "simcore_service_webserver.login._2fa_handlers.send_sms_code", autospec=True
+    # patch send functions
+    mock_send_sms_code_1 = mocker.patch(
+        "simcore_service_webserver.login._controller.rest.twofa._twofa_service.send_sms_code",
+        autospec=True,
     )
-    mock_send_sms_code2 = mocker.patch(
-        "simcore_service_webserver.login._auth_handlers.send_sms_code", autospec=True
+    mock_send_sms_code_2 = mocker.patch(
+        "simcore_service_webserver.login._controller.rest.auth._twofa_service.send_sms_code",
+        # NOTE: When importing the full submodule, we are mocking _twofa_service
+        #  from .. import _twofa_service
+        #  _twofa_service.send_sms_code(...)
+        new=mock_send_sms_code_1,
     )
 
     mock_send_email_code = mocker.patch(
-        "simcore_service_webserver.login._2fa_handlers.send_email_code", autospec=True
+        "simcore_service_webserver.login._controller.rest.twofa._twofa_service.send_email_code",
+        autospec=True,
     )
 
     mock_get_2fa_code = mocker.patch(
-        "simcore_service_webserver.login._2fa_handlers.get_2fa_code",
+        "simcore_service_webserver.login._controller.rest.twofa._twofa_service.get_2fa_code",
         autospec=True,
         return_value=None,  # <-- Emulates code expired
     )
@@ -106,7 +115,11 @@ async def test_resend_2fa_workflow(
     )
     data, _ = await assert_status(response, status.HTTP_202_ACCEPTED)
     next_page = NextPage[CodePageParams].model_validate(data)
+
     assert next_page.name == CODE_2FA_SMS_CODE_REQUIRED
+
+    assert next_page.parameters is not None
+    assert next_page.parameters.expiration_2fa is not None
     assert next_page.parameters.expiration_2fa > 0
 
     # resend code via SMS
@@ -127,7 +140,7 @@ async def test_resend_2fa_workflow(
     assert not error
 
     assert mock_get_2fa_code.call_count == 1, "Emulates code expired"
-    assert mock_send_sms_code2.call_count == 1, "SMS was not sent??"
+    assert mock_send_sms_code_2.call_count == 2, "SMS was not sent??"
 
     # resend code via email
     response = await client.post(

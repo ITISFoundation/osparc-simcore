@@ -41,7 +41,6 @@ from pytest_simcore.helpers.storage_utils_file_meta_data import (
     assert_file_meta_data_in_db,
 )
 from pytest_simcore.helpers.storage_utils_project import clone_project_data
-from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.aiohttp import status
 from servicelib.fastapi.long_running_tasks.client import long_running_task_request
 from settings_library.s3 import S3Settings
@@ -540,7 +539,6 @@ async def test_create_and_delete_folders_from_project(
 @pytest.mark.parametrize("num_concurrent_calls", [50])
 async def test_create_and_delete_folders_from_project_burst(
     set_log_levels_for_noisy_libraries: None,
-    minio_s3_settings_envs: EnvVarsDict,
     initialized_app: FastAPI,
     client: httpx.AsyncClient,
     user_id: UserID,

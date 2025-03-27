@@ -19,10 +19,10 @@ from servicelib.utils_secrets import generate_passcode
 from settings_library.twilio import TwilioSettings
 from twilio.base.exceptions import TwilioException  # type: ignore[import-untyped]
 
-from ..login.errors import SendingVerificationEmailError, SendingVerificationSmsError
 from ..products.models import Product
 from ..redis import get_redis_validation_code_client
-from .utils_email import get_template_path, send_email_from_template
+from ._emails_service import get_template_path, send_email_from_template
+from .errors import SendingVerificationEmailError, SendingVerificationSmsError
 
 log = logging.getLogger(__name__)
 
@@ -92,6 +92,7 @@ class SMSError(RuntimeError):
 
 @log_decorator(log, level=logging.DEBUG)
 async def send_sms_code(
+    *,
     phone_number: str,
     code: str,
     twilio_auth: TwilioSettings,
