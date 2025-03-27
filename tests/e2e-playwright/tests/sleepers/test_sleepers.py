@@ -230,6 +230,6 @@ def test_sleepers(
 
             # now check if the "Total size:"" widget shows something
             label = wait_for_label_text(page, "totalSizeLabel", "Total size:")
-            print(f"1st node size: {label.inner_text()}")
+            ctx.logger.info(f"1st node size: {label.inner_text()}")
 
             page.get_by_test_id("nodeDataManagerCloseBtn").click()
