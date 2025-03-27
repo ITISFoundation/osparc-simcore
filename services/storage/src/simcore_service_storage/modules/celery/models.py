@@ -9,9 +9,6 @@ TaskContext: TypeAlias = dict[str, Any]
 TaskID: TypeAlias = str
 TaskUUID: TypeAlias = UUID
 
-_MIN_PROGRESS: Final[float] = 0.0
-_MAX_PROGRESS: Final[float] = 100.0
-
 _CELERY_TASK_ID_KEY_SEPARATOR: Final[str] = ":"
 
 
