@@ -48,8 +48,6 @@ class CeleryTaskQueueClient:
     async def send_task(
         self, task_name: str, *, task_context: TaskContext, **task_params
     ) -> TaskUUID:
-        task_uuid = uuid4()
-        task_id = build_task_id(task_context, task_uuid)
         with log_context(
             _logger,
             logging.DEBUG,
