@@ -16,6 +16,7 @@ from models_library.rest_pagination import MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
 from models_library.services_history import ServiceRelease
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
+from packaging import version
 from pydantic import ValidationError
 from pytest_simcore.helpers.faker_factories import random_icon_url
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
@@ -499,6 +500,8 @@ async def test_rpc_get_my_service_history(
     service_version_1 = "1.0.0"
     service_version_2 = "1.1.0"
 
+    assert version.Version(service_version_1) < version.Version(service_version_2)
+
     # Inject fake service releases for the target service
     fake_releases = [
         create_fake_service_data(
@@ -548,5 +551,5 @@ async def test_rpc_get_my_service_history(
     # Validate the response
     assert isinstance(release_history, list)
     assert len(release_history) == 2
-    assert release_history[0].version == service_version_1
-    assert release_history[1].version == service_version_2
+    assert release_history[0].version == service_version_2, "expected newest first"
+    assert release_history[1].version == service_version_1
