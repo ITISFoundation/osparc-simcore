@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 
+from models_library.api_schemas_catalog.services import LatestServiceGet, ServiceGetV2
 from models_library.products import ProductName
 from models_library.rest_pagination import (
     DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
@@ -10,7 +11,6 @@ from models_library.rest_pagination import (
 from models_library.services_history import ServiceRelease
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
-from pytest_simcore.helpers.catalog_rpc_server import LatestServiceGet, ServiceGetV2
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.catalog import services as catalog_rpc
