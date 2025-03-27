@@ -64,14 +64,23 @@ class CeleryTaskQueueClient:
     @staticmethod
     @make_async()
     def abort_task(task_context: TaskContext, task_uuid: TaskUUID) -> None:
-        task_id = build_task_id(task_context, task_uuid)
-        _logger.info("Aborting task %s", task_id)
-        AbortableAsyncResult(task_id).abort()
+        with log_context(
+            _logger,
+            logging.DEBUG,
+            msg=f"Abort task: {task_context=} {task_uuid=}",
+        ):
+            task_id = build_task_id(task_context, task_uuid)
+            AbortableAsyncResult(task_id).abort()
 
     @make_async()
     def get_task_result(self, task_context: TaskContext, task_uuid: TaskUUID) -> Any:
-        task_id = build_task_id(task_context, task_uuid)
-        return self._celery_app.AsyncResult(task_id).result
+        with log_context(
+            _logger,
+            logging.DEBUG,
+            msg=f"Get task result: {task_context=} {task_uuid=}",
+        ):
+            task_id = build_task_id(task_context, task_uuid)
+            return self._celery_app.AsyncResult(task_id).result
 
     def _get_progress_report(
         self, task_context: TaskContext, task_uuid: TaskUUID
@@ -103,11 +112,21 @@ class CeleryTaskQueueClient:
     def get_task_status(
         self, task_context: TaskContext, task_uuid: TaskUUID
     ) -> TaskStatus:
-        return TaskStatus(
-            task_uuid=task_uuid,
-            task_state=self._get_state(task_context, task_uuid),
-            progress_report=self._get_progress_report(task_context, task_uuid),
-        )
+        with log_context(
+            _logger,
+            logging.DEBUG,
+            msg=f"Getting task status: {task_context=} {task_uuid=}",
+        ):
+            return TaskStatus(
+                task_uuid=task_uuid,
+                task_state=self._get_state(task_context, task_uuid),
+                progress_report=self._get_progress_report(task_context, task_uuid),
+            )
 
     async def get_task_uuids(self, task_context: TaskContext) -> set[TaskUUID]:
-        return await self._task_store.get_task_uuids(task_context)
+        with log_context(
+            _logger,
+            logging.DEBUG,
+            msg=f"Getting task uuids: {task_context=}",
+        ):
+            return await self._task_store.get_task_uuids(task_context)
