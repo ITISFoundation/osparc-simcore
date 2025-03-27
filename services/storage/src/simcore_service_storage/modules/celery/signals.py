@@ -62,6 +62,7 @@ def on_worker_init(sender, **_kwargs) -> None:
         target=_init_fastapi,
         name="fastapi_app",
         args=(startup_complete_event,),
+        daemon=True,
     )
     thread.start()
     # ensure the fastapi app is ready before going on
