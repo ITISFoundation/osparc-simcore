@@ -29,8 +29,8 @@ from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
 from servicelib.rabbitmq.rpc_interfaces.catalog.services import (
     batch_get_my_services,
     check_for_service,
-    get_my_service_history,
     get_service,
+    list_my_service_history_paginated,
     list_services_paginated,
     update_service,
 )
@@ -537,7 +537,7 @@ async def test_rpc_get_my_service_history(
     await services_db_tables_injector(fake_releases + unrelated_releases)
 
     # Call the RPC function
-    page = await get_my_service_history(
+    page = await list_my_service_history_paginated(
         rpc_client,
         product_name=product_name,
         user_id=user_id,

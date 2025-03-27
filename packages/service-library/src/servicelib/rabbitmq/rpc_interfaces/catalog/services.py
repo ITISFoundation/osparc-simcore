@@ -241,7 +241,7 @@ async def batch_get_my_services(
     return cast(list[MyServiceGet], result)
 
 
-async def get_my_service_history(  # pylint: disable=too-many-arguments
+async def list_my_service_history_paginated(  # pylint: disable=too-many-arguments
     rpc_client: RabbitMQRPCClient,
     *,
     product_name: ProductName,
@@ -265,7 +265,9 @@ async def get_my_service_history(  # pylint: disable=too-many-arguments
     ):
         return await rpc_client.request(
             CATALOG_RPC_NAMESPACE,
-            TypeAdapter(RPCMethodName).validate_python("get_my_service_history"),
+            TypeAdapter(RPCMethodName).validate_python(
+                "list_my_service_history_paginated"
+            ),
             product_name=product_name,
             user_id=user_id,
             service_key=service_key,
