@@ -26,37 +26,39 @@ from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.aiopg_errors import UniqueViolation
 from yarl import URL
 
-from ..products import products_web
-from ..products.models import Product
-from ..security.api import encrypt_password
-from ..session.access_policies import session_access_required
-from ..utils import HOUR, MINUTE
-from ..utils_aiohttp import create_redirect_to_page_response
-from ..utils_rate_limiting import global_rate_limit_route
-from ._2fa_api import delete_2fa_code, get_2fa_code
-from ._confirmation import validate_confirmation_code
-from ._constants import (
+from ....products import products_web
+from ....products.models import Product
+from ....security.api import encrypt_password
+from ....session.access_policies import session_access_required
+from ....utils import HOUR, MINUTE
+from ....utils_aiohttp import create_redirect_to_page_response
+from ....utils_rate_limiting import global_rate_limit_route
+from ... import _confirmation_service, _security_service, _twofa_service
+from ..._constants import (
     MSG_PASSWORD_CHANGE_NOT_ALLOWED,
     MSG_PASSWORD_CHANGED,
     MSG_UNAUTHORIZED_PHONE_CONFIRMATION,
 )
-from ._models import InputSchema, check_confirm_password_match
-from ._registration import InvitationData
-from ._security import login_granted_response
-from .settings import (
-    LoginOptions,
-    LoginSettingsForProduct,
-    get_plugin_options,
-    get_plugin_settings,
+from ..._invitations_service import ConfirmedInvitationData
+from ..._login_repository_legacy import (
+    AsyncpgStorage,
+    ConfirmationTokenDict,
+    get_plugin_storage,
 )
-from .storage import AsyncpgStorage, ConfirmationTokenDict, get_plugin_storage
-from .utils import (
+from ..._login_service import (
     ACTIVE,
     CHANGE_EMAIL,
     REGISTRATION,
     RESET_PASSWORD,
     flash_response,
     notify_user_confirmation,
+)
+from ..._models import InputSchema, check_confirm_password_match
+from ...settings import (
+    LoginOptions,
+    LoginSettingsForProduct,
+    get_plugin_options,
+    get_plugin_settings,
 )
 
 _logger = logging.getLogger(__name__)
@@ -74,7 +76,7 @@ def _parse_extra_credits_in_usd_or_none(
 ) -> PositiveInt | None:
     with suppress(ValidationError, JSONDecodeError):
         confirmation_data = confirmation.get("data", "EMPTY") or "EMPTY"
-        invitation = InvitationData.model_validate_json(confirmation_data)
+        invitation = ConfirmedInvitationData.model_validate_json(confirmation_data)
         return invitation.extra_credits_in_usd
     return None
 
@@ -143,10 +145,12 @@ async def validate_confirmation_and_redirect(request: web.Request):
 
     path_params = parse_request_path_parameters_as(_PathParam, request)
 
-    confirmation: ConfirmationTokenDict | None = await validate_confirmation_code(
-        path_params.code.get_secret_value(),
-        db=db,
-        cfg=cfg,
+    confirmation: ConfirmationTokenDict | None = (
+        await _confirmation_service.validate_confirmation_code(
+            path_params.code.get_secret_value(),
+            db=db,
+            cfg=cfg,
+        )
     )
 
     redirect_to_login_url = URL(cfg.LOGIN_REDIRECT)
@@ -240,10 +244,10 @@ async def phone_confirmation(request: web.Request):
     request_body = await parse_request_body_as(PhoneConfirmationBody, request)
 
     if (
-        expected := await get_2fa_code(request.app, request_body.email)
+        expected := await _twofa_service.get_2fa_code(request.app, request_body.email)
     ) and request_body.code.get_secret_value() == expected:
         # consumes code
-        await delete_2fa_code(request.app, request_body.email)
+        await _twofa_service.delete_2fa_code(request.app, request_body.email)
 
         # updates confirmed phone number
         try:
@@ -257,7 +261,7 @@ async def phone_confirmation(request: web.Request):
                 content_type=MIMETYPE_APPLICATION_JSON,
             ) from err
 
-        return await login_granted_response(request, user=dict(user))
+        return await _security_service.login_granted_response(request, user=dict(user))
 
     # fails because of invalid or no code
     raise web.HTTPUnauthorized(
@@ -287,7 +291,7 @@ async def complete_reset_password(request: web.Request):
     path_params = parse_request_path_parameters_as(_PathParam, request)
     request_body = await parse_request_body_as(ResetPasswordConfirmation, request)
 
-    confirmation = await validate_confirmation_code(
+    confirmation = await _confirmation_service.validate_confirmation_code(
         code=path_params.code.get_secret_value(), db=db, cfg=cfg
     )
 

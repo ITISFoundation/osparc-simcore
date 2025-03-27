@@ -38,7 +38,7 @@ _CELERY_TASK_ID_KEY_SEPARATOR: Final[str] = ":"
 _CELERY_TASK_ID_KEY_ENCODING = "utf-8"
 
 _MIN_PROGRESS_VALUE = 0.0
-_MAX_PROGRESS_VALUE = 100.0
+_MAX_PROGRESS_VALUE = 1.0
 
 
 def _build_context_prefix(task_context: TaskContext) -> list[str]:
@@ -109,8 +109,12 @@ class CeleryTaskQueueClient:
             TaskState.ERROR,
             TaskState.SUCCESS,
         ):
-            return ProgressReport(actual_value=_MAX_PROGRESS_VALUE)
-        return ProgressReport(actual_value=_MIN_PROGRESS_VALUE)
+            return ProgressReport(
+                actual_value=_MAX_PROGRESS_VALUE, total=_MAX_PROGRESS_VALUE
+            )
+        return ProgressReport(
+            actual_value=_MIN_PROGRESS_VALUE, total=_MAX_PROGRESS_VALUE
+        )
 
     def _get_state(self, task_context: TaskContext, task_uuid: TaskUUID) -> TaskState:
         task_id = _build_task_id(task_context, task_uuid)
@@ -129,15 +133,15 @@ class CeleryTaskQueueClient:
     def _get_completed_task_uuids(self, task_context: TaskContext) -> set[TaskUUID]:
         search_key = _CELERY_TASK_META_PREFIX + _build_task_id_prefix(task_context)
         backend_client = self._celery_app.backend.client
-        if hasattr(backend_client, "keys") and (
-            keys := backend_client.keys(f"{search_key}*")
-        ):
-            return {
-                TaskUUID(
-                    f"{key.decode(_CELERY_TASK_ID_KEY_ENCODING).removeprefix(search_key + _CELERY_TASK_ID_KEY_SEPARATOR)}"
-                )
-                for key in keys
-            }
+        if hasattr(backend_client, "keys"):
+            if keys := backend_client.keys(f"{search_key}*"):
+                return {
+                    TaskUUID(
+                        f"{key.decode(_CELERY_TASK_ID_KEY_ENCODING).removeprefix(search_key + _CELERY_TASK_ID_KEY_SEPARATOR)}"
+                    )
+                    for key in keys
+                }
+            return set()
         if hasattr(backend_client, "cache"):
             # NOTE: backend used in testing. It is a dict-like object
             found_keys = set()
