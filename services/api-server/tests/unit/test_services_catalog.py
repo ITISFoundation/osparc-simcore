@@ -46,6 +46,12 @@ def mocked_rpc_catalog_service_api(mocker: MockerFixture) -> dict[str, MockType]
             autospec=True,
             side_effect=side_effects.update_service,
         ),
+        "list_my_service_history_paginated": mocker.patch.object(
+            catalog_rpc,
+            "list_my_service_history_paginated",
+            autospec=True,
+            side_effect=side_effects.list_my_service_history_paginated,
+        ),
     }
 
 
@@ -103,3 +109,10 @@ async def test_catalog_service_read_solvers(
     solver = to_solver(service)
     assert solver.id == selected_solver.id
     assert solver.version == oldest_release.version
+
+    # checks calls to rpc
+    mocked_rpc_catalog_service_api["list_services_paginated"].assert_called_once()
+    mocked_rpc_catalog_service_api[
+        "list_my_service_history_paginated"
+    ].assert_called_once()
+    mocked_rpc_catalog_service_api["get_service"].assert_called_once()

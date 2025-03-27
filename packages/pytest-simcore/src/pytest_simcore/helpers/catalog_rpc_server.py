@@ -87,15 +87,15 @@ class CatalogRpcSideEffects:
         got.key = service_key
         return got.model_copy(update=update.model_dump(exclude_unset=True))
 
-    async def get_my_service_history(
+    async def list_my_service_history_paginated(
         self,
         rpc_client: RabbitMQRPCClient,
         *,
         product_name: ProductName,
         user_id: UserID,
         service_key: ServiceKey,
-        limit: PageLimitInt,
         offset: PageOffsetInt,
+        limit: PageLimitInt,
     ) -> PageRpc[ServiceRelease]:
 
         assert rpc_client
