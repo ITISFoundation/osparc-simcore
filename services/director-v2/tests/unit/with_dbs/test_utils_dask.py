@@ -13,8 +13,6 @@ from random import choice
 from typing import Any
 from unittest import mock
 
-import aiopg
-import aiopg.sa
 import pytest
 from _helpers import PublishedProject, set_comp_task_inputs, set_comp_task_outputs
 from dask_task_models_library.container_tasks.io import (
@@ -244,7 +242,7 @@ def fake_task_output_data(
 
 
 async def test_parse_output_data(
-    aiopg_engine: aiopg.sa.engine.Engine,
+    sqlalchemy_async_engine: AsyncEngine,
     published_project: PublishedProject,
     user_id: UserID,
     fake_io_schema: dict[str, dict[str, str]],
@@ -255,7 +253,7 @@ async def test_parse_output_data(
     sleeper_task: CompTaskAtDB = published_project.tasks[1]
     no_outputs = {}
     await set_comp_task_outputs(
-        aiopg_engine, sleeper_task.node_id, fake_io_schema, no_outputs
+        sqlalchemy_async_engine, sleeper_task.node_id, fake_io_schema, no_outputs
     )
     # mock the set_value function so we can test it is called correctly
     mocked_node_ports_set_value_fct = mocker.patch(
@@ -270,7 +268,7 @@ async def test_parse_output_data(
         published_project.project.uuid,
         sleeper_task.node_id,
     )
-    await parse_output_data(aiopg_engine, dask_job_id, fake_task_output_data)
+    await parse_output_data(sqlalchemy_async_engine, dask_job_id, fake_task_output_data)
 
     # the FileUrl types are converted to a pure url
     expected_values = {
@@ -299,7 +297,6 @@ def _app_config_with_db(
 
 async def test_compute_input_data(
     _app_config_with_db: None,
-    aiopg_engine: aiopg.sa.engine.Engine,
     sqlalchemy_async_engine: AsyncEngine,
     initialized_app: FastAPI,
     user_id: UserID,
@@ -330,7 +327,7 @@ async def test_compute_input_data(
         for key, value_type in fake_io_schema.items()
     }
     await set_comp_task_inputs(
-        aiopg_engine, sleeper_task.node_id, fake_io_schema, fake_inputs
+        sqlalchemy_async_engine, sleeper_task.node_id, fake_io_schema, fake_inputs
     )
 
     # mock the get_value function so we can test it is called correctly
@@ -378,7 +375,6 @@ def tasks_file_link_scheme(tasks_file_link_type: FileLinkType) -> tuple:
 
 async def test_compute_output_data_schema(
     _app_config_with_db: None,
-    aiopg_engine: aiopg.sa.engine.Engine,
     sqlalchemy_async_engine: AsyncEngine,
     initialized_app: FastAPI,
     user_id: UserID,
@@ -392,7 +388,7 @@ async def test_compute_output_data_schema(
     # simulate pre-created file links
     no_outputs = {}
     await set_comp_task_outputs(
-        aiopg_engine, sleeper_task.node_id, fake_io_schema, no_outputs
+        sqlalchemy_async_engine, sleeper_task.node_id, fake_io_schema, no_outputs
     )
 
     node_ports = await create_node_ports(
@@ -428,7 +424,7 @@ async def test_compute_output_data_schema(
 
 @pytest.mark.parametrize("entry_exists_returns", [True, False])
 async def test_clean_task_output_and_log_files_if_invalid(
-    aiopg_engine: aiopg.sa.engine.Engine,
+    sqlalchemy_async_engine: AsyncEngine,
     user_id: UserID,
     published_project: PublishedProject,
     mocked_node_ports_filemanager_fcts: dict[str, mock.MagicMock],
@@ -459,11 +455,11 @@ async def test_clean_task_output_and_log_files_if_invalid(
         if value_type["type"] == "data:*/*"
     }
     await set_comp_task_outputs(
-        aiopg_engine, sleeper_task.node_id, fake_io_schema, fake_outputs
+        sqlalchemy_async_engine, sleeper_task.node_id, fake_io_schema, fake_outputs
     )
     # this should ask for the 2 files + the log file
     await clean_task_output_and_log_files_if_invalid(
-        aiopg_engine,
+        sqlalchemy_async_engine,
         user_id,
         published_project.project.uuid,
         published_project.tasks[1].node_id,
