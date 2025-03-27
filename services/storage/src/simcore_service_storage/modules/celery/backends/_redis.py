@@ -7,6 +7,7 @@ from ..models import TaskContext, TaskData, TaskID, TaskUUID, build_task_id_pref
 _CELERY_TASK_META_PREFIX: Final[str] = "celery-task-meta-"
 _CELERY_TASK_ID_KEY_SEPARATOR: Final[str] = ":"
 _CELERY_TASK_SCAN_COUNT_PER_BATCH: Final[int] = 10000
+_CELERY_TASK_ID_KEY_ENCODING = "utf-8"
 
 
 class RedisTaskStore:
@@ -14,16 +15,16 @@ class RedisTaskStore:
         self._redis_client_sdk = redis_client_sdk
 
     async def get_task_uuids(self, task_context: TaskContext) -> set[TaskUUID]:
-        search_key = (
-            _CELERY_TASK_META_PREFIX
-            + build_task_id_prefix(task_context)
-            + _CELERY_TASK_ID_KEY_SEPARATOR
-        )
+        search_key = build_task_id_prefix(task_context) + _CELERY_TASK_ID_KEY_SEPARATOR
         keys = set()
         async for key in self._redis_client_sdk.redis.scan_iter(
             match=search_key + "*", count=_CELERY_TASK_SCAN_COUNT_PER_BATCH
         ):
-            keys.add(TaskUUID(f"{key}".removeprefix(search_key)))
+            keys.add(
+                TaskUUID(
+                    key.decode(_CELERY_TASK_ID_KEY_ENCODING).removeprefix(search_key)
+                )
+            )
         return keys
 
     async def task_exists(self, task_id: TaskID) -> bool:
