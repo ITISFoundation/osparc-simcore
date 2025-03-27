@@ -9,7 +9,9 @@ from typing import Final
 
 from fastapi import FastAPI, status
 from models_library.emails import LowerCaseEmailStr
+from models_library.products import ProductName
 from models_library.services import ServiceMetaDataPublished, ServiceType
+from models_library.users import UserID
 from pydantic import ConfigDict, TypeAdapter, ValidationError
 from settings_library.catalog import CatalogSettings
 from settings_library.tracing import TracingSettings
@@ -70,9 +72,9 @@ class TruncatedCatalogServiceOut(ServiceMetaDataPublished):
 
 _exception_mapper = partial(service_exception_mapper, service_name="Catalog")
 
-TruncatedCatalogServiceOutAdapter: Final[
-    TypeAdapter[TruncatedCatalogServiceOut]
-] = TypeAdapter(TruncatedCatalogServiceOut)
+TruncatedCatalogServiceOutAdapter: Final[TypeAdapter[TruncatedCatalogServiceOut]] = (
+    TypeAdapter(TruncatedCatalogServiceOut)
+)
 TruncatedCatalogServiceOutListAdapter: Final[
     TypeAdapter[list[TruncatedCatalogServiceOut]]
 ] = TypeAdapter(list[TruncatedCatalogServiceOut])
@@ -97,8 +99,8 @@ class CatalogApi(BaseServiceClientApi):
     async def list_solvers(
         self,
         *,
-        user_id: int,
-        product_name: str,
+        user_id: UserID,
+        product_name: ProductName,
         predicate: Callable[[Solver], bool] | None = None,
     ) -> list[Solver]:
 
@@ -140,7 +142,12 @@ class CatalogApi(BaseServiceClientApi):
         http_status_map={status.HTTP_404_NOT_FOUND: SolverOrStudyNotFoundError}
     )
     async def get_service(
-        self, *, user_id: int, name: SolverKeyId, version: VersionStr, product_name: str
+        self,
+        *,
+        user_id: UserID,
+        name: SolverKeyId,
+        version: VersionStr,
+        product_name: ProductName,
     ) -> Solver:
 
         assert version != LATEST_VERSION  # nosec
@@ -171,8 +178,13 @@ class CatalogApi(BaseServiceClientApi):
         http_status_map={status.HTTP_404_NOT_FOUND: SolverOrStudyNotFoundError}
     )
     async def get_service_ports(
-        self, *, user_id: int, name: SolverKeyId, version: VersionStr, product_name: str
-    ):
+        self,
+        *,
+        user_id: UserID,
+        name: SolverKeyId,
+        version: VersionStr,
+        product_name: ProductName,
+    ) -> list[SolverPort]:
 
         assert version != LATEST_VERSION  # nosec
 
@@ -190,7 +202,7 @@ class CatalogApi(BaseServiceClientApi):
         return TypeAdapter(list[SolverPort]).validate_python(response.json())
 
     async def list_latest_releases(
-        self, *, user_id: int, product_name: str
+        self, *, user_id: UserID, product_name: ProductName
     ) -> list[Solver]:
         solvers: list[Solver] = await self.list_solvers(
             user_id=user_id, product_name=product_name
@@ -205,7 +217,7 @@ class CatalogApi(BaseServiceClientApi):
         return list(latest_releases.values())
 
     async def list_solver_releases(
-        self, *, user_id: int, solver_key: SolverKeyId, product_name: str
+        self, *, user_id: UserID, solver_key: SolverKeyId, product_name: ProductName
     ) -> list[Solver]:
         def _this_solver(solver: Solver) -> bool:
             return solver.id == solver_key
@@ -216,7 +228,7 @@ class CatalogApi(BaseServiceClientApi):
         return releases
 
     async def get_latest_release(
-        self, *, user_id: int, solver_key: SolverKeyId, product_name: str
+        self, *, user_id: UserID, solver_key: SolverKeyId, product_name: ProductName
     ) -> Solver:
         releases = await self.list_solver_releases(
             user_id=user_id, solver_key=solver_key, product_name=product_name

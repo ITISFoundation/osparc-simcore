@@ -4,27 +4,22 @@
 
 import re
 import urllib.parse
-from unittest.mock import MagicMock
 
 import pytest
-from aiohttp import web
 from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses as AioResponsesMock
 from faker import Faker
-from models_library.api_schemas_catalog.services import LatestServiceGet, ServiceGetV2
+from models_library.api_schemas_catalog.services import ServiceGetV2
 from models_library.api_schemas_webserver.catalog import (
     CatalogServiceGet,
     CatalogServiceUpdate,
 )
-from models_library.products import ProductName
 from models_library.rest_pagination import Page
-from models_library.rpc_pagination import PageLimitInt, PageRpc
-from models_library.services_types import ServiceKey, ServiceVersion
-from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import NonNegativeInt, TypeAdapter
-from pytest_mock import MockerFixture
+from pydantic import TypeAdapter
+from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.assert_checks import assert_status
+from pytest_simcore.helpers.catalog_rpc_server import CatalogRpcSideEffects
 from pytest_simcore.helpers.faker_factories import random_icon_url
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -50,86 +45,25 @@ def app_environment(
 
 
 @pytest.fixture
-def mocked_rpc_catalog_service_api(mocker: MockerFixture) -> dict[str, MagicMock]:
-    async def _list(
-        app: web.Application,
-        *,
-        product_name: ProductName,
-        user_id: UserID,
-        limit: PageLimitInt,
-        offset: NonNegativeInt,
-    ):
-        assert app
-        assert product_name
-        assert user_id
+def mocked_rpc_catalog_service_api(mocker: MockerFixture) -> dict[str, MockType]:
 
-        items = TypeAdapter(list[LatestServiceGet]).validate_python(
-            LatestServiceGet.model_json_schema()["examples"],
-        )
-        total_count = len(items)
-
-        return PageRpc[LatestServiceGet].create(
-            items[offset : offset + limit],
-            total=total_count,
-            limit=limit,
-            offset=offset,
-        )
-
-    async def _get(
-        app: web.Application,
-        *,
-        product_name: ProductName,
-        user_id: UserID,
-        service_key: ServiceKey,
-        service_version: ServiceVersion,
-    ):
-        assert app
-        assert product_name
-        assert user_id
-
-        got = ServiceGetV2.model_validate(
-            ServiceGetV2.model_json_schema()["examples"][0]
-        )
-        got.version = service_version
-        got.key = service_key
-
-        return got
-
-    async def _update(
-        app: web.Application,
-        *,
-        product_name: ProductName,
-        user_id: UserID,
-        service_key: ServiceKey,
-        service_version: ServiceVersion,
-        update: CatalogServiceUpdate,
-    ):
-        assert app
-        assert product_name
-        assert user_id
-
-        got = ServiceGetV2.model_validate(
-            ServiceGetV2.model_json_schema()["examples"][0]
-        )
-        got.version = service_version
-        got.key = service_key
-        return got.model_copy(update=update.model_dump(exclude_unset=True))
+    side_effects = CatalogRpcSideEffects()
 
     return {
         "list_services_paginated": mocker.patch(
             "simcore_service_webserver.catalog._service.catalog_rpc.list_services_paginated",
             autospec=True,
-            side_effect=_list,
+            side_effect=side_effects.list_services_paginated,
         ),
         "get_service": mocker.patch(
             "simcore_service_webserver.catalog._service.catalog_rpc.get_service",
             autospec=True,
-            side_effect=_get,
+            side_effect=side_effects.get_service,
         ),
         "update_service": mocker.patch(
             "simcore_service_webserver.catalog._service.catalog_rpc.update_service",
             autospec=True,
-            side_effect=_update,
+            side_effect=side_effects.update_service,
         ),
     }
 
@@ -141,7 +75,7 @@ def mocked_rpc_catalog_service_api(mocker: MockerFixture) -> dict[str, MagicMock
 async def test_list_services_latest(
     client: TestClient,
     logged_user: UserInfoDict,
-    mocked_rpc_catalog_service_api: dict[str, MagicMock],
+    mocked_rpc_catalog_service_api: dict[str, MockType],
 ):
     assert client.app
     assert client.app.router
@@ -359,7 +293,7 @@ async def test_get_compatible_outputs_given_target_inptuts(
 async def test_get_and_patch_service(
     client: TestClient,
     logged_user: UserInfoDict,
-    mocked_rpc_catalog_service_api: dict[str, MagicMock],
+    mocked_rpc_catalog_service_api: dict[str, MockType],
     faker: Faker,
 ):
     assert client.app
@@ -426,7 +360,7 @@ async def test_get_and_patch_service(
 async def test_tags_in_services(
     client: TestClient,
     logged_user: UserInfoDict,
-    mocked_rpc_catalog_service_api: dict[str, MagicMock],
+    mocked_rpc_catalog_service_api: dict[str, MockType],
 ):
     assert client.app
     assert client.app.router
