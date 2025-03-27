@@ -167,7 +167,7 @@ qx.Class.define("osparc.file.TreeFolderView", {
         .then(task => {
           task.addListener("resultReceived", e => {
             const data = e.getData();
-            const size = data["result"] ? osparc.utils.Utils.bytesToSize(data["result"]) : "-";
+            const size = (data && "result" in data) ? osparc.utils.Utils.bytesToSize(data["result"]) : "-";
             totalSize.set({
               icon: null,
               label: this.tr("Total size: ") + size,
