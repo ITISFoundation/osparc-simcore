@@ -27,7 +27,9 @@ class RedisTaskStore:
         return keys
 
     async def task_exists(self, task_id: TaskID) -> bool:
-        return await self._redis_client_sdk.redis.exists(task_id) > 0
+        n = await self._redis_client_sdk.redis.exists(task_id)
+        assert isinstance(n, int)  # nosec
+        return n > 0
 
     async def set_task(self, task_id: TaskID, task_data: TaskData) -> None:
         await self._redis_client_sdk.redis.set(
