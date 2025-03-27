@@ -4,12 +4,12 @@ from asyncio import AbstractEventLoop
 from fastapi import FastAPI
 from servicelib.redis._client import RedisClientSDK
 from settings_library.redis import RedisDatabase
-from simcore_service_storage.modules.celery.backends._redis import RedisTaskStore
 
 from ..._meta import APP_NAME
 from ...core.settings import get_application_settings
 from ._celery_types import register_celery_types
 from ._common import create_app
+from .backends._redis import RedisTaskStore
 from .client import CeleryTaskQueueClient
 
 _logger = logging.getLogger(__name__)
