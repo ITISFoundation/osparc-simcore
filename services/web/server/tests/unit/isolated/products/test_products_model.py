@@ -60,8 +60,6 @@ def test_product_to_static():
             "url": "https://acme.com",
             "license_url": "https://acme.com/license",
             "invitation_form": True,
-            "logo": "https://acme.com/logo",
-            "strong_color": "#123456",
         },
         "issues": [
             {

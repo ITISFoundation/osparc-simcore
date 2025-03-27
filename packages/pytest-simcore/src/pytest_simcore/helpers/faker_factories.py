@@ -254,8 +254,6 @@ def random_product(
             copyright=fake.company_suffix(),
             url=fake.url(),
             license_url=fake.url(),
-            logo=fake.url(),
-            strong_color=fake.color(),
             invitation_url=fake.url(),
             invitation_form=fake.boolean(),
             address=fake.address().replace("\n", ". "),
