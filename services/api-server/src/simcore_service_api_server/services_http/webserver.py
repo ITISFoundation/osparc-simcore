@@ -43,6 +43,7 @@ from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import PositiveInt
 from servicelib.aiohttp.long_running_tasks.server import TaskStatus
 from servicelib.common_headers import (
+    X_SIMCORE_API_JOB_PARENT_RESOURCE_NAME,
     X_SIMCORE_PARENT_NODE_ID,
     X_SIMCORE_PARENT_PROJECT_UUID,
 )
@@ -294,18 +295,22 @@ class AuthSession:
         project: ProjectCreateNew,
         *,
         is_hidden: bool,
+        job_parent_resource_name: str,
         parent_project_uuid: ProjectID | None,
         parent_node_id: NodeID | None,
     ) -> ProjectGet:
         # POST /projects --> 202 Accepted
-        _headers = {
+        query_params = {"hidden": is_hidden}
+        headers = {
             X_SIMCORE_PARENT_PROJECT_UUID: parent_project_uuid,
             X_SIMCORE_PARENT_NODE_ID: parent_node_id,
+            X_SIMCORE_API_JOB_PARENT_RESOURCE_NAME: job_parent_resource_name,
         }
+
         response = await self.client.post(
             "/projects",
-            params={"hidden": is_hidden},
-            headers={k: f"{v}" for k, v in _headers.items() if v is not None},
+            params=query_params,
+            headers={k: f"{v}" for k, v in headers.items() if v is not None},
             json=jsonable_encoder(project, by_alias=True, exclude={"state"}),
             cookies=self.session_cookies,
         )
@@ -321,17 +326,20 @@ class AuthSession:
         hidden: bool,
         parent_project_uuid: ProjectID | None,
         parent_node_id: NodeID | None,
+        job_parent_resource_name: str | None = None,
     ) -> ProjectGet:
-        query = {"from_study": project_id, "hidden": hidden}
+        # POST /projects --> 202 Accepted
+        query_params = {"from_study": project_id, "hidden": hidden}
         _headers = {
             X_SIMCORE_PARENT_PROJECT_UUID: parent_project_uuid,
             X_SIMCORE_PARENT_NODE_ID: parent_node_id,
+            X_SIMCORE_API_JOB_PARENT_RESOURCE_NAME: job_parent_resource_name,
         }
 
         response = await self.client.post(
             "/projects",
             cookies=self.session_cookies,
-            params=query,
+            params=query_params,
             headers={k: f"{v}" for k, v in _headers.items() if v is not None},
         )
         response.raise_for_status()
