@@ -325,11 +325,15 @@ class ServiceGetV2(_BaseServiceGetV2):
 
 PageRpcLatestServiceGet: TypeAlias = PageRpc[
     # WARNING: keep this definition in models_library and not in the RPC interface
+    # otherwise the metaclass PageRpc[*] will create *different* classes in server/client side
+    # and will fail to serialize/deserialize these parameters when transmitted/received
     LatestServiceGet
 ]
 
 PageRpcServiceRelease: TypeAlias = PageRpc[
     # WARNING: keep this definition in models_library and not in the RPC interface
+    # otherwise the metaclass PageRpc[*] will create *different* classes in server/client side
+    # and will fail to serialize/deserialize these parameters when transmitted/received
     ServiceRelease
 ]
 
