@@ -392,7 +392,7 @@ async def storage_subsystem_mock(mocker: MockerFixture) -> MockedStorageSubsyste
 @pytest.fixture
 def asyncpg_storage_system_mock(mocker):
     return mocker.patch(
-        "simcore_service_webserver.login.storage.AsyncpgStorage.delete_user",
+        "simcore_service_webserver.login._login_repository_legacy.AsyncpgStorage.delete_user",
         return_value="",
     )
 

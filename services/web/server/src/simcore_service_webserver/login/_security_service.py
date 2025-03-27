@@ -1,15 +1,14 @@
-""" Utils that extends on security_api plugin
+"""Utils that extends on security_api plugin"""
 
-"""
 import logging
 from typing import Any
 
 from aiohttp import web
 from servicelib.logging_utils import get_log_record_extra, log_context
 
-from ..security.api import remember_identity
+from ..security import api as security_service
 from ._constants import MSG_LOGGED_IN
-from .utils import flash_response
+from ._login_service import flash_response
 
 _logger = logging.getLogger(__name__)
 
@@ -37,7 +36,7 @@ async def login_granted_response(
         extra=get_log_record_extra(user_id=user_id),
     ):
         response = flash_response(MSG_LOGGED_IN, "INFO")
-        return await remember_identity(
+        return await security_service.remember_identity(
             request=request,
             response=response,
             user_email=email,
