@@ -17,6 +17,4 @@ config_all_loggers(
     tracing_settings=_settings.STORAGE_TRACING,
 )
 
-_logger = logging.getLogger(__name__)
-
 app = create_app(_settings)

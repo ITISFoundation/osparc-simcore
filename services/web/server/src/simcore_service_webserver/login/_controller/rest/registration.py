@@ -20,22 +20,20 @@ from servicelib.logging_errors import create_troubleshotting_log_kwargs
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.models.users import UserStatus
 
-from .._meta import API_VTAG
-from ..groups.api import auto_add_user_to_groups, auto_add_user_to_product_group
-from ..invitations.api import is_service_invitation_code
-from ..products import products_web
-from ..products.models import Product
-from ..session.access_policies import (
+from ...._meta import API_VTAG
+from ....groups.api import auto_add_user_to_groups, auto_add_user_to_product_group
+from ....invitations.api import is_service_invitation_code
+from ....products import products_web
+from ....products.models import Product
+from ....session.access_policies import (
     on_success_grant_session_access_to,
     session_access_required,
 )
-from ..utils import MINUTE
-from ..utils_aiohttp import NextPage, envelope_json_response
-from ..utils_rate_limiting import global_rate_limit_route
-from . import _auth_api
-from ._2fa_api import create_2fa_code, mask_phone_number, send_sms_code
-from ._confirmation import make_confirmation_link
-from ._constants import (
+from ....utils import MINUTE
+from ....utils_aiohttp import NextPage, envelope_json_response
+from ....utils_rate_limiting import global_rate_limit_route
+from ... import _auth_service, _confirmation_service, _security_service, _twofa_service
+from ..._constants import (
     CODE_2FA_SMS_CODE_REQUIRED,
     MAX_2FA_CODE_RESEND,
     MAX_2FA_CODE_TRIALS,
@@ -44,27 +42,31 @@ from ._constants import (
     MSG_UNAUTHORIZED_REGISTER_PHONE,
     MSG_WEAK_PASSWORD,
 )
-from ._models import InputSchema, check_confirm_password_match
-from ._registration import (
+from ..._emails_service import get_template_path, send_email_from_template
+from ..._invitations_service import (
+    ConfirmedInvitationData,
     check_and_consume_invitation,
     check_other_registrations,
     extract_email_from_invitation,
 )
-from ._security import login_granted_response
-from .settings import (
-    LoginOptions,
-    LoginSettingsForProduct,
-    get_plugin_options,
-    get_plugin_settings,
+from ..._login_repository_legacy import (
+    AsyncpgStorage,
+    ConfirmationTokenDict,
+    get_plugin_storage,
 )
-from .storage import AsyncpgStorage, ConfirmationTokenDict, get_plugin_storage
-from .utils import (
+from ..._login_service import (
     envelope_response,
     flash_response,
     get_user_name_from_email,
     notify_user_confirmation,
 )
-from .utils_email import get_template_path, send_email_from_template
+from ..._models import InputSchema, check_confirm_password_match
+from ...settings import (
+    LoginOptions,
+    LoginSettingsForProduct,
+    get_plugin_options,
+    get_plugin_settings,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -174,7 +176,7 @@ async def register(request: web.Request):
 
     # INVITATIONS
     expires_at: datetime | None = None  # = does not expire
-    invitation = None
+    invitation: ConfirmedInvitationData | None = None
     # There are 3 possible states for an invitation:
     # 1. Invitation is not required (i.e. the app has disabled invitations)
     # 2. Invitation is invalid
@@ -212,15 +214,15 @@ async def register(request: web.Request):
             expires_at = datetime.now(UTC) + timedelta(invitation.trial_account_days)
 
     #  get authorized user or create new
-    user = await _auth_api.get_user_by_email(request.app, email=registration.email)
+    user = await _auth_service.get_user_by_email(request.app, email=registration.email)
     if user:
-        await _auth_api.check_authorized_user_credentials_or_raise(
+        await _auth_service.check_authorized_user_credentials_or_raise(
             user,
             password=registration.password.get_secret_value(),
             product=product,
         )
     else:
-        user = await _auth_api.create_user(
+        user = await _auth_service.create_user(
             request.app,
             email=registration.email,
             password=registration.password.get_secret_value(),
@@ -255,7 +257,9 @@ async def register(request: web.Request):
         )
 
         try:
-            email_confirmation_url = make_confirmation_link(request, _confirmation)
+            email_confirmation_url = _confirmation_service.make_confirmation_link(
+                request, _confirmation
+            )
             email_template_path = await get_template_path(
                 request, "registration_email.jinja2"
             )
@@ -321,7 +325,7 @@ async def register(request: web.Request):
     assert not settings.LOGIN_REGISTRATION_CONFIRMATION_REQUIRED  # nosec
     assert not settings.LOGIN_2FA_REQUIRED  # nosec
 
-    return await login_granted_response(request=request, user=user)
+    return await _security_service.login_granted_response(request=request, user=user)
 
 
 class RegisterPhoneBody(InputSchema):
@@ -380,12 +384,12 @@ async def register_phone(request: web.Request):
             msg = f"Messaging SID is not configured in {product}. Update product's twilio_messaging_sid in database."
             raise ValueError(msg)
 
-        code = await create_2fa_code(
+        code = await _twofa_service.create_2fa_code(
             app=request.app,
             user_email=registration.email,
             expiration_in_seconds=settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
         )
-        await send_sms_code(
+        await _twofa_service.send_sms_code(
             phone_number=registration.phone,
             code=code,
             twilio_auth=settings.LOGIN_TWILIO,
@@ -402,7 +406,7 @@ async def register_phone(request: web.Request):
                     "expiration_2fa": settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
                 },
                 "message": MSG_2FA_CODE_SENT.format(
-                    phone_number=mask_phone_number(registration.phone)
+                    phone_number=_twofa_service.mask_phone_number(registration.phone)
                 ),
                 "level": "INFO",
                 "logger": "user",
