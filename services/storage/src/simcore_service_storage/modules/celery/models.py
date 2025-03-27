@@ -3,7 +3,7 @@ from typing import Any, Final, Protocol, Self, TypeAlias
 from uuid import UUID
 
 from models_library.progress_bar import ProgressReport
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel
 
 TaskContext: TypeAlias = dict[str, Any]
 TaskID: TypeAlias = str
@@ -56,7 +56,7 @@ class TaskStatus(BaseModel):
     def is_done(self) -> bool:
         return self.task_state in _TASK_DONE
 
-    @model_validator(mode="after")
+    # @model_validator(mode="after") This does not work MB
     def _check_consistency(self) -> Self:
         value = self.progress_report.actual_value
         min_value = 0.0
