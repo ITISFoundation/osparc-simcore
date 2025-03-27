@@ -62,7 +62,7 @@ def product_data(
         support_email=product["support_email"],
         logo=vendor.get('logo','https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/refs/heads/master/services/static-webserver/client/source/resource/osparc/osparc-black.svg'),
         homepage=vendor.get('url','https://osparc.io/'),
-        strong_color=vendor.get('strong_color','#8300bf'),
+        strong_color=vendor.get('strong_color','rgb(131, 0, 191)'),
     )
 
 
