@@ -23,22 +23,22 @@ from ..products.models import ProductName
 from ..products.plugin import setup_products
 from ..redis import setup_redis
 from ..rest.plugin import setup_rest
-from . import (
-    _2fa_handlers,
-    _auth_handlers,
-    _registration_handlers,
-    handlers_change,
-    handlers_confirmation,
-    handlers_registration,
-)
 from ._constants import APP_LOGIN_SETTINGS_PER_PRODUCT_KEY
+from ._controller.rest import (
+    auth,
+    change,
+    confirmation,
+    preregistration,
+    registration,
+    twofa,
+)
+from ._login_repository_legacy import APP_LOGIN_STORAGE_KEY, AsyncpgStorage
 from .settings import (
     APP_LOGIN_OPTIONS_KEY,
     LoginOptions,
     LoginSettings,
     LoginSettingsForProduct,
 )
-from .storage import APP_LOGIN_STORAGE_KEY, AsyncpgStorage
 
 log = logging.getLogger(__name__)
 
@@ -93,11 +93,11 @@ async def _resolve_login_settings_per_product(app: web.Application):
         errors = {}
         for product in products_service.list_products(app):
             try:
-                login_settings_per_product[
-                    product.name
-                ] = LoginSettingsForProduct.create_from_composition(
-                    app_login_settings=app_login_settings,
-                    product_login_settings=product.login_settings,
+                login_settings_per_product[product.name] = (
+                    LoginSettingsForProduct.create_from_composition(
+                        app_login_settings=app_login_settings,
+                        product_login_settings=product.login_settings,
+                    )
                 )
             except ValidationError as err:  # noqa: PERF203
                 errors[product.name] = err
@@ -138,12 +138,12 @@ def setup_login(app: web.Application):
 
     # routes
 
-    app.router.add_routes(_auth_handlers.routes)
-    app.router.add_routes(handlers_confirmation.routes)
-    app.router.add_routes(handlers_registration.routes)
-    app.router.add_routes(_registration_handlers.routes)
-    app.router.add_routes(handlers_change.routes)
-    app.router.add_routes(_2fa_handlers.routes)
+    app.router.add_routes(auth.routes)
+    app.router.add_routes(confirmation.routes)
+    app.router.add_routes(registration.routes)
+    app.router.add_routes(preregistration.routes)
+    app.router.add_routes(change.routes)
+    app.router.add_routes(twofa.routes)
 
     _setup_login_options(app)
     setup_login_storage(app)

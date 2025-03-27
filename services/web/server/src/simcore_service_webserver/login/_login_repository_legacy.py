@@ -6,7 +6,7 @@ import asyncpg
 from aiohttp import web
 from servicelib.utils_secrets import generate_passcode
 
-from . import _sql
+from . import _login_repository_legacy_sql
 
 _logger = getLogger(__name__)
 
@@ -54,12 +54,18 @@ class AsyncpgStorage:
 
     async def get_user(self, with_data: dict[str, Any]) -> asyncpg.Record | None:
         async with self.pool.acquire() as conn:
-            return await _sql.find_one(conn, self.user_tbl, with_data)
+            return await _login_repository_legacy_sql.find_one(
+                conn, self.user_tbl, with_data
+            )
 
     async def create_user(self, data: dict[str, Any]) -> dict[str, Any]:
         async with self.pool.acquire() as conn:
-            user_id = await _sql.insert(conn, self.user_tbl, data)
-            new_user = await _sql.find_one(conn, self.user_tbl, {"id": user_id})
+            user_id = await _login_repository_legacy_sql.insert(
+                conn, self.user_tbl, data
+            )
+            new_user = await _login_repository_legacy_sql.find_one(
+                conn, self.user_tbl, {"id": user_id}
+            )
             assert new_user  # nosec
             data.update(
                 id=new_user["id"],
@@ -70,11 +76,15 @@ class AsyncpgStorage:
 
     async def update_user(self, user: dict[str, Any], updates: dict[str, Any]) -> None:
         async with self.pool.acquire() as conn:
-            await _sql.update(conn, self.user_tbl, {"id": user["id"]}, updates)
+            await _login_repository_legacy_sql.update(
+                conn, self.user_tbl, {"id": user["id"]}, updates
+            )
 
     async def delete_user(self, user: dict[str, Any]) -> None:
         async with self.pool.acquire() as conn:
-            await _sql.delete(conn, self.user_tbl, {"id": user["id"]})
+            await _login_repository_legacy_sql.delete(
+                conn, self.user_tbl, {"id": user["id"]}
+            )
 
     #
     # CRUD confirmation
@@ -87,7 +97,7 @@ class AsyncpgStorage:
             while True:
                 # NOTE: use only numbers (i.e. avoid generate_password) since front-end does not handle well url encoding
                 numeric_code: str = generate_passcode(20)
-                if not await _sql.find_one(
+                if not await _login_repository_legacy_sql.find_one(
                     conn, self.confirm_tbl, {"code": numeric_code}
                 ):
                     break
@@ -100,7 +110,7 @@ class AsyncpgStorage:
                 data=data,
                 created_at=datetime.utcnow(),
             )
-            c = await _sql.insert(
+            c = await _login_repository_legacy_sql.insert(
                 conn, self.confirm_tbl, dict(confirmation), returning="code"
             )
             assert numeric_code == c  # nosec
@@ -112,7 +122,9 @@ class AsyncpgStorage:
         if "user" in filter_dict:
             filter_dict["user_id"] = filter_dict.pop("user")["id"]
         async with self.pool.acquire() as conn:
-            confirmation = await _sql.find_one(conn, self.confirm_tbl, filter_dict)
+            confirmation = await _login_repository_legacy_sql.find_one(
+                conn, self.confirm_tbl, filter_dict
+            )
             confirmation_token: ConfirmationTokenDict | None = (
                 ConfirmationTokenDict(**confirmation) if confirmation else None  # type: ignore[typeddict-item]
             )
@@ -120,7 +132,9 @@ class AsyncpgStorage:
 
     async def delete_confirmation(self, confirmation: ConfirmationTokenDict):
         async with self.pool.acquire() as conn:
-            await _sql.delete(conn, self.confirm_tbl, {"code": confirmation["code"]})
+            await _login_repository_legacy_sql.delete(
+                conn, self.confirm_tbl, {"code": confirmation["code"]}
+            )
 
     #
     # Transactions that guarantee atomicity. This avoids
@@ -131,15 +145,23 @@ class AsyncpgStorage:
         self, user: dict[str, Any], confirmation: ConfirmationTokenDict
     ):
         async with self.pool.acquire() as conn, conn.transaction():
-            await _sql.delete(conn, self.confirm_tbl, {"code": confirmation["code"]})
-            await _sql.delete(conn, self.user_tbl, {"id": user["id"]})
+            await _login_repository_legacy_sql.delete(
+                conn, self.confirm_tbl, {"code": confirmation["code"]}
+            )
+            await _login_repository_legacy_sql.delete(
+                conn, self.user_tbl, {"id": user["id"]}
+            )
 
     async def delete_confirmation_and_update_user(
         self, user_id: int, updates: dict[str, Any], confirmation: ConfirmationTokenDict
     ):
         async with self.pool.acquire() as conn, conn.transaction():
-            await _sql.delete(conn, self.confirm_tbl, {"code": confirmation["code"]})
-            await _sql.update(conn, self.user_tbl, {"id": user_id}, updates)
+            await _login_repository_legacy_sql.delete(
+                conn, self.confirm_tbl, {"code": confirmation["code"]}
+            )
+            await _login_repository_legacy_sql.update(
+                conn, self.user_tbl, {"id": user_id}, updates
+            )
 
 
 def get_plugin_storage(app: web.Application) -> AsyncpgStorage:

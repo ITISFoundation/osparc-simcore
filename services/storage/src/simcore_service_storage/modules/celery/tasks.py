@@ -13,6 +13,7 @@ _logger = logging.getLogger(__name__)
 
 def export_data(task: Task, files: list[StorageFileID]):
     _logger.info("Exporting files: %s", files)
+    assert len(files) > 0
     for n, file in enumerate(files, start=1):
         with log_context(
             _logger,
@@ -23,7 +24,7 @@ def export_data(task: Task, files: list[StorageFileID]):
             get_celery_worker(task.app).set_task_progress(
                 task_name=task.name,
                 task_id=task.request.id,
-                report=ProgressReport(actual_value=n / len(files) * 100),
+                report=ProgressReport(actual_value=n / len(files), total=1),
             )
             time.sleep(10)
     return "done"

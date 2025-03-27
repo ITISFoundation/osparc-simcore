@@ -62,13 +62,15 @@ class TaskStatus(BaseModel):
     @model_validator(mode="after")
     def _check_consistency(self) -> Self:
         value = self.progress_report.actual_value
+        min_value = 0.0
+        max_value = self.progress_report.total
 
         valid_states = {
-            TaskState.PENDING: value == _MIN_PROGRESS,
-            TaskState.RUNNING: _MIN_PROGRESS <= value <= _MAX_PROGRESS,
-            TaskState.SUCCESS: value == _MAX_PROGRESS,
-            TaskState.ABORTED: value == _MAX_PROGRESS,
-            TaskState.ERROR: value == _MAX_PROGRESS,
+            TaskState.PENDING: value == min_value,
+            TaskState.RUNNING: min_value <= value <= max_value,
+            TaskState.SUCCESS: value == max_value,
+            TaskState.ABORTED: value == max_value,
+            TaskState.ERROR: value == max_value,
         }
 
         if not valid_states.get(self.task_state, True):
