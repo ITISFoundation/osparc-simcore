@@ -20,6 +20,7 @@ from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 
 
 class CatalogRpcSideEffects:
+    # pylint: disable=no-self-use
     async def list_services_paginated(
         self,
         rpc_client: RabbitMQRPCClient,
@@ -104,9 +105,7 @@ class CatalogRpcSideEffects:
         assert service_key
 
         items = TypeAdapter(list[ServiceRelease]).validate_python(
-            [
-                ServiceRelease.model_json_schema()["example"],
-            ]
+            ServiceRelease.model_json_schema()["examples"],
         )
         total_count = len(items)
 
