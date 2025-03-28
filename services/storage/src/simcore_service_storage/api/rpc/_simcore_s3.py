@@ -50,8 +50,6 @@ async def start_data_export(
     data_export_start: DataExportTaskStartInput,
     job_id_data: AsyncJobNameData,
 ) -> AsyncJobGet:
-    assert app  # nosec
-
     dsm = get_dsm_provider(app).get(data_export_start.location_id)
 
     try:
