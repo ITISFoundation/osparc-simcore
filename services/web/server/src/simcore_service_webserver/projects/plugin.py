@@ -19,13 +19,14 @@ from ._controller import (
     nodes_rest,
     ports_rest,
     projects_rest,
+    projects_rpc,
+    projects_slot,
     projects_states_rest,
     tags_rest,
     trash_rest,
     wallets_rest,
     workspaces_rest,
 )
-from ._controller.projects_slot import setup_project_observer_events
 from ._projects_repository_legacy import setup_projects_db
 from ._security_service import setup_projects_access
 
@@ -48,9 +49,13 @@ def setup_projects(app: web.Application) -> bool:
     # database API
     setup_projects_db(app)
 
-    # registers event handlers (e.g. on_user_disconnect)
-    setup_project_observer_events(app)
+    # setup SLOT-controllers
+    projects_slot.setup_project_observer_events(app)
 
+    # setup RPC-controllers
+    app.on_startup.append(projects_rpc.register_rpc_routes_on_startup)
+
+    # setup REST-controllers
     app.router.add_routes(projects_states_rest.routes)
     app.router.add_routes(projects_rest.routes)
     app.router.add_routes(comments_rest.routes)
