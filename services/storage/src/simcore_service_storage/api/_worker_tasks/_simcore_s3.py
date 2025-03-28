@@ -17,11 +17,13 @@ from ...simcore_s3_dsm import SimcoreS3DataManager
 _logger = logging.getLogger(__name__)
 
 
-def _task_progress_cb(task: Task, task_id: TaskId, report: ProgressReport) -> None:
+async def _task_progress_cb(
+    task: Task, task_id: TaskId, report: ProgressReport
+) -> None:
     worker = get_celery_worker(task.app)
     assert task.name  # nosec
-    worker.set_task_progress(
-        task_name=task.name,
+    await worker.set_task_progress(
+        task_name=task,
         task_id=task_id,
         report=report,
     )
