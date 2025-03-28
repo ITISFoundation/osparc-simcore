@@ -38,6 +38,7 @@ def _as_path_regex(initial_path: str):
 @pytest.fixture
 def mocked_backend(
     mocked_webserver_service_api: MockRouter,
+    mocked_rpc_webserver_service_api: dict[str, MockType],
     mocked_catalog_service_api: MockRouter,
     project_tests_dir: Path,
 ) -> MockedBackendApiDict:

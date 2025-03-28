@@ -54,6 +54,7 @@ async def test_get_profile(
     client: httpx.AsyncClient,
     auth: httpx.BasicAuth,
     mocked_webserver_service_api: MockRouter,
+    mocked_rpc_webserver_service_api: dict[str, MockType],
 ):
     # needs no auth
     resp = await client.get(f"/{API_VTAG}/meta")
@@ -77,6 +78,7 @@ async def test_update_profile(
     client: httpx.AsyncClient,
     auth: httpx.BasicAuth,
     mocked_webserver_service_api: MockRouter,
+    mocked_rpc_webserver_service_api: dict[str, MockType],
 ):
     # needs auth
     resp = await client.put(
