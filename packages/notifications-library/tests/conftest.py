@@ -10,7 +10,7 @@ from typing import Any
 import notifications_library
 import pytest
 from models_library.products import ProductName
-from notifications_library._models import ProductData, UserData
+from notifications_library._models import ProductData, UserData, ProductUIData
 from notifications_library.payments import PaymentData
 from pydantic import EmailStr
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -44,7 +44,7 @@ def external_envfile_dict(external_envfile_dict: EnvVarsDict) -> EnvVarsDict:
 
 
 #
-# mock data for templaes
+# mock data for templates
 #
 
 
@@ -55,14 +55,18 @@ def product_data(
 ) -> ProductData:
     vendor: Vendor = product["vendor"]
 
+    product_ui = ProductUIData(
+        logo_url=vendor.get('logo','https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/refs/heads/master/services/static-webserver/client/source/resource/osparc/osparc-black.svg'),
+        strong_color=vendor.get('strong_color','rgb(131, 0, 191)'),
+    )
+
     return ProductData(  # type: ignore
         product_name=product_name,
         display_name=product["display_name"],
         vendor_display_inline=f"{vendor.get('name','')}, {vendor.get('address','')}",
         support_email=product["support_email"],
-        logo=vendor.get('logo','https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/refs/heads/master/services/static-webserver/client/source/resource/osparc/osparc-black.svg'),
-        homepage=vendor.get('url','https://osparc.io/'),
-        strong_color=vendor.get('strong_color','rgb(131, 0, 191)'),
+        homepage_url=vendor.get('url','https://osparc.io/'),
+        ui=product_ui,
     )
 
 
