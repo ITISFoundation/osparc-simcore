@@ -239,11 +239,13 @@ class Product(BaseModel):
                         "vendor": {
                             "url": "https://acme.com",
                             "license_url": "https://acme.com/license",
-                            "logo": "https://acme.com/logo",
-                            "strong_color": "#123456",
                             "invitation_form": True,
                             "name": "ACME",
                             "copyright": "© ACME correcaminos",
+                            "ui": {
+                                "logo_url": "https://acme.com/logo",
+                                "strong_color": "#123456",
+                            },
                         },
                         "issues": [
                             {

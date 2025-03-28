@@ -1,15 +1,15 @@
 """
-    Collection of functions that create fake raw data that can be used
-    to populate postgres DATABASE, create datasets with consistent values, etc
+Collection of functions that create fake raw data that can be used
+to populate postgres DATABASE, create datasets with consistent values, etc
 
-    Built on top of the idea of Faker library (https://faker.readthedocs.io/en/master/),
-    that generate fake data to bootstrap a database, fill-in stress tests, anonymize data ...
-    etc
+Built on top of the idea of Faker library (https://faker.readthedocs.io/en/master/),
+that generate fake data to bootstrap a database, fill-in stress tests, anonymize data ...
+etc
 
-    NOTE: all outputs MUST be Dict-like or built-in data structures that fit at least
-    required fields in postgres_database.models tables or pydantic models.
+NOTE: all outputs MUST be Dict-like or built-in data structures that fit at least
+required fields in postgres_database.models tables or pydantic models.
 
-    NOTE: to reduce coupling, please import simcore_postgres_database inside of the functions
+NOTE: to reduce coupling, please import simcore_postgres_database inside of the functions
 """
 
 import itertools
@@ -232,7 +232,7 @@ def random_product(
         - group_id: product group ID. SEE get_or_create_product_group to produce `group_id`
         - registration_email_template
     """
-    from simcore_postgres_database.models.products import Vendor, products
+    from simcore_postgres_database.models.products import Vendor, VendorUI, products
 
     name = overrides.get("name")
     suffix = fake.unique.word() if name is None else name
@@ -253,12 +253,14 @@ def random_product(
             name=fake.company(),
             copyright=fake.company_suffix(),
             url=fake.url(),
-            logo=fake.url(),
-            strong_color=fake.color(),
             license_url=fake.url(),
             invitation_url=fake.url(),
             invitation_form=fake.boolean(),
             address=fake.address().replace("\n", ". "),
+            ui=VendorUI(
+                logo_url=fake.url(),
+                strong_color=fake.color(),
+            ),
         ),
         "registration_email_template": registration_email_template,
         "created": fake.date_time_this_decade(),

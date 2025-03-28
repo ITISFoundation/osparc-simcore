@@ -56,11 +56,11 @@ def product_data(
     vendor: Vendor = product["vendor"]
 
     product_ui = ProductUIData(
-        logo_url=vendor.get(
-            "logo",
-            "https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/refs/heads/master/services/static-webserver/client/source/resource/osparc/osparc-black.svg",
+        logo_url=vendor.get("ui", {}).get(
+            "logo_url",
+            "https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/refs/heads/master/services/static-webserver/client/source/resource/osparc/osparc-white.svg",
         ),
-        strong_color=vendor.get("strong_color", "rgb(131, 0, 191)"),
+        strong_color=vendor.get("ui", {}).get("strong_color", "rgb(131, 0, 191)"),
     )
 
     return ProductData(  # type: ignore
