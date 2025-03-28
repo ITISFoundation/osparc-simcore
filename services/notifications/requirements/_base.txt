@@ -1,5 +1,7 @@
-aio-pika==9.5.5
-    # via -r requirements/../../../packages/service-library/requirements/_base.in
+aio-pika==9.5.3
+    # via
+    #   -c requirements/./constraints.txt
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
 aiocache==0.12.3
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 aiodebug==2.3.0
@@ -305,7 +307,7 @@ psycopg2-binary==2.9.10
     # via sqlalchemy
 pycryptodome==3.22.0
     # via stream-zip
-pydantic==2.10.6
+pydantic==2.11.0
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -339,7 +341,7 @@ pydantic==2.10.6
     #   fastapi
     #   pydantic-extra-types
     #   pydantic-settings
-pydantic-core==2.27.2
+pydantic-core==2.33.0
     # via pydantic
 pydantic-extra-types==2.10.3
     # via
@@ -511,6 +513,9 @@ typing-extensions==4.13.0
     #   pydantic-core
     #   pydantic-extra-types
     #   typer
+    #   typing-inspection
+typing-inspection==0.4.0
+    # via pydantic
 urllib3==2.3.0
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
