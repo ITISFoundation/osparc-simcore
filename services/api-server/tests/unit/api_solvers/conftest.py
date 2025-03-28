@@ -49,7 +49,8 @@ def mocked_webserver_service_api(
 def mocked_rpc_webserver_service_api(
     app: FastAPI, mocker: MockerFixture
 ) -> dict[str, MockType]:
-    from simcore_service_api_server.services_rpc.wb_api_server import projects_rpc
+    # from simcore_service_api_server.services_rpc.wb_api_server import projects_rpc
+    from servicelib.rabbitmq.rpc_interfaces.webserver import projects as projects_rpc
 
     settings: ApplicationSettings = app.state.settings
     assert settings.API_SERVER_WEBSERVER

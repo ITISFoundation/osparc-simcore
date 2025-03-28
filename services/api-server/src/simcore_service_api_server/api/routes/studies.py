@@ -90,7 +90,6 @@ async def clone_study(
         hidden=False,
         parent_project_uuid=x_simcore_parent_project_uuid,
         parent_node_id=x_simcore_parent_node_id,
-        job_parent_resource_name=None,  # this resource is NOT a job
     )
     return _create_study_from_project(project)
 

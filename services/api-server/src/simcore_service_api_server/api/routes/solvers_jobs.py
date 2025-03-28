@@ -127,7 +127,6 @@ async def create_job(
     new_project: ProjectGet = await webserver_api.create_project(
         project_in,
         is_hidden=hidden,
-        job_parent_resource_name=pre_job.runner_name,
         parent_project_uuid=x_simcore_parent_project_uuid,
         parent_node_id=x_simcore_parent_node_id,
     )
