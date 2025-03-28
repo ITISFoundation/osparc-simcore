@@ -9,18 +9,12 @@ from pydantic import (
     ConfigDict,
     Field,
     NonNegativeInt,
-    StringConstraints,
 )
-from simcore_service_api_server.models.schemas.programs import ProgramJobFilePath
 
 from .._utils_pydantic import UriSchema
 from ..domain.files import File as _File
+from ..domain.files import FileName
 from ._utils import ApiServerInputSchema, ApiServerOutputSchema
-
-NAMESPACE_FILEID_KEY = UUID("aa154444-d22d-4290-bb15-df37dba87865")
-
-
-FileName = Annotated[str, StringConstraints(strip_whitespace=True)]
 
 
 class ClientFile(ApiServerInputSchema):
@@ -29,10 +23,6 @@ class ClientFile(ApiServerInputSchema):
     filename: FileName = Field(..., description="File name")
     filesize: NonNegativeInt = Field(..., description="File size in bytes")
     sha256_checksum: SHA256Str = Field(..., description="SHA256 checksum")
-    destination: Annotated[
-        ProgramJobFilePath | None,
-        Field(..., description="Destination within a program job"),
-    ]
 
 
 class File(ApiServerOutputSchema):

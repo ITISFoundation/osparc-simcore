@@ -1,5 +1,4 @@
 import urllib.parse
-from collections.abc import Callable
 from typing import Annotated, Any, Literal
 
 import packaging.version
@@ -8,7 +7,6 @@ from models_library.services import ServiceMetaDataPublished
 from models_library.services_regex import COMPUTATIONAL_SERVICE_KEY_RE
 from packaging.version import Version
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl, StringConstraints
-from simcore_service_api_server.models.schemas.jobs import JobID
 
 from ...models._utils_pydantic import UriSchema
 from ..api_resources import compose_resource_name
@@ -108,31 +106,6 @@ class Solver(BaseModel):
     def name(self) -> str:
         """API standards notation (see api_resources.py)"""
         return self.resource_name
-
-    def get_url(self, url_for: Callable[..., HttpUrl], job_id: JobID) -> HttpUrl:
-        return url_for(
-            "get_job",
-            solver_key=self.id,
-            version=self.version,
-            job_id=job_id,
-        )
-
-    def get_runner_url(self, url_for: Callable[..., HttpUrl]) -> HttpUrl:
-        return url_for(
-            "get_solver_release",
-            solver_key=self.id,
-            version=self.version,
-        )
-
-    def get_outputs_url(
-        self, url_for: Callable[..., HttpUrl], job_id: JobID
-    ) -> HttpUrl:
-        return url_for(
-            "get_job_outputs",
-            solver_key=self.id,
-            version=self.version,
-            job_id=job_id,
-        )
 
     @classmethod
     def compose_resource_name(cls, solver_key, solver_version) -> str:

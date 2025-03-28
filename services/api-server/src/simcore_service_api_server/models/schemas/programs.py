@@ -1,6 +1,4 @@
 import urllib.parse
-from collections.abc import Callable
-from pathlib import Path
 from typing import Annotated
 
 import packaging.version
@@ -8,10 +6,8 @@ from models_library.services import ServiceMetaDataPublished
 from models_library.services_regex import DYNAMIC_SERVICE_KEY_RE
 from packaging.version import Version
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl, StringConstraints
-from simcore_service_api_server.models.schemas._utils import ApiServerInputSchema
 
 from ...models._utils_pydantic import UriSchema
-from ...models.schemas.jobs import JobID
 from ..api_resources import compose_resource_name
 from ..basic_types import VersionStr
 
@@ -37,19 +33,6 @@ PROGRAM_RESOURCE_NAME_RE = r"^programs/([^\s/]+)/releases/([\d\.]+)$"
 ProgramKeyId = Annotated[
     str, StringConstraints(strip_whitespace=True, pattern=DYNAMIC_SERVICE_KEY_RE)
 ]
-
-
-class ProgramJobFilePath(ApiServerInputSchema):
-    program_key: Annotated[ProgramKeyId, Field(..., description="Program identifier")]
-    program_version: Annotated[VersionStr, Field(..., description="Program version")]
-    job: Annotated[JobID, Field(..., description="Job identifier")]
-    relative_path: Annotated[
-        Path,
-        Field(
-            ...,
-            description="The file's relative path within the job's workspace directory",
-        ),
-    ]
 
 
 class Program(BaseModel):
@@ -122,20 +105,6 @@ class Program(BaseModel):
     def name(self) -> str:
         """API standards notation (see api_resources.py)"""
         return self.resource_name
-
-    def get_url(self, url_for: Callable[..., HttpUrl], job_id: JobID) -> HttpUrl | None:
-        # missing endpoint
-        return None
-
-    def get_runner_url(self, url_for: Callable[..., HttpUrl]) -> HttpUrl | None:
-        # missing endpoint
-        return None
-
-    def get_outputs_url(
-        self, url_for: Callable[..., HttpUrl], job_id: JobID
-    ) -> HttpUrl | None:
-        # missing endpoint
-        return None
 
     @classmethod
     def compose_resource_name(

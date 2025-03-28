@@ -25,6 +25,9 @@ from ..models.schemas.jobs import (
     JobInputs,
     JobStatus,
     PercentageInt,
+    get_outputs_url,
+    get_runner_url,
+    get_url,
 )
 from ..models.schemas.programs import Program
 from ..models.schemas.solvers import Solver
@@ -212,9 +215,13 @@ def create_job_from_project(
         inputs_checksum=job_inputs.compute_checksum(),
         created_at=project.creation_date,  # type: ignore[arg-type]
         runner_name=solver_or_program_name,
-        url=solver_or_program.get_url(url_for=url_for, job_id=job_id),
-        runner_url=solver_or_program.get_runner_url(url_for=url_for),
-        outputs_url=solver_or_program.get_outputs_url(url_for=url_for, job_id=job_id),
+        url=get_url(
+            solver_or_program=solver_or_program, url_for=url_for, job_id=job_id
+        ),
+        runner_url=get_runner_url(solver_or_program=solver_or_program, url_for=url_for),
+        outputs_url=get_outputs_url(
+            solver_or_program=solver_or_program, url_for=url_for, job_id=job_id
+        ),
     )
 
     return job

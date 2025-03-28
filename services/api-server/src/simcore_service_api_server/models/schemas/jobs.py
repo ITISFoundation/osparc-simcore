@@ -1,6 +1,8 @@
 import datetime
 import hashlib
 import logging
+from collections.abc import Callable
+from pathlib import Path
 from typing import Annotated, TypeAlias
 from uuid import UUID, uuid4
 
@@ -16,6 +18,7 @@ from pydantic import (
     StrictBool,
     StrictFloat,
     StrictInt,
+    StringConstraints,
     TypeAdapter,
     ValidationError,
     ValidationInfo,
@@ -31,6 +34,16 @@ from ..api_resources import (
     compose_resource_name,
     split_resource_name,
 )
+from ._utils import ApiServerInputSchema
+
+# JOB SUB-RESOURCES  ----------
+#
+#  - Wrappers for input/output values
+#  - Input/outputs are defined in service metadata
+#  - custom metadata
+#
+from .programs import Program, ProgramKeyId, VersionStr
+from .solvers import Solver
 
 JobID: TypeAlias = UUID
 
@@ -54,12 +67,18 @@ def _compute_keyword_arguments_checksum(kwargs: KeywordArguments):
     return hashlib.sha256(_dump_str.encode("utf-8")).hexdigest()
 
 
-# JOB SUB-RESOURCES  ----------
-#
-#  - Wrappers for input/output values
-#  - Input/outputs are defined in service metadata
-#  - custom metadata
-#
+class ProgramJobFilePath(ApiServerInputSchema):
+    program_key: Annotated[ProgramKeyId, Field(..., description="Program identifier")]
+    program_version: Annotated[VersionStr, Field(..., description="Program version")]
+    job_id: Annotated[JobID, Field(..., description="Job identifier")]
+    workspace_path: Annotated[
+        Path,
+        StringConstraints(pattern=r"^workspace/.*"),
+        Field(
+            ...,
+            description="The file's relative path within the job's workspace directory. E.g. 'workspace/myfile.txt'",
+        ),
+    ]
 
 
 class JobInputs(BaseModel):
@@ -279,6 +298,47 @@ class Job(BaseModel):
     def resource_name(self) -> str:
         """Relative Resource Name"""
         return self.name
+
+
+def get_url(
+    solver_or_program: Solver | Program, url_for: Callable[..., HttpUrl], job_id: JobID
+) -> HttpUrl | None:
+    if isinstance(solver_or_program, Solver):
+        return url_for(
+            "get_job",
+            solver_key=solver_or_program.id,
+            version=solver_or_program.version,
+            job_id=job_id,
+        )
+    else:
+        return None
+
+
+def get_runner_url(
+    solver_or_program: Solver | Program, url_for: Callable[..., HttpUrl]
+) -> HttpUrl | None:
+    if isinstance(solver_or_program, Solver):
+        return url_for(
+            "get_solver_release",
+            solver_key=solver_or_program.id,
+            version=solver_or_program.version,
+        )
+    else:
+        return None
+
+
+def get_outputs_url(
+    solver_or_program: Solver | Program, url_for: Callable[..., HttpUrl], job_id: JobID
+) -> HttpUrl | None:
+    if isinstance(solver_or_program, Solver):
+        return url_for(
+            "get_job_outputs",
+            solver_key=solver_or_program.id,
+            version=solver_or_program.version,
+            job_id=job_id,
+        )
+    else:
+        return None
 
 
 PercentageInt: TypeAlias = Annotated[int, Field(ge=0, le=100)]

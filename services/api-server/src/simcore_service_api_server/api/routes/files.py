@@ -16,6 +16,7 @@ from models_library.api_schemas_storage.storage_schemas import (
     LinkType,
 )
 from models_library.basic_types import SHA256Str
+from models_library.projects_nodes_io import NodeID
 from pydantic import AnyUrl, ByteSize, PositiveInt, TypeAdapter, ValidationError
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 from simcore_sdk.node_ports_common.constants import SIMCORE_LOCATION
@@ -28,11 +29,15 @@ from simcore_sdk.node_ports_common.filemanager import (
     get_upload_links_from_s3,
 )
 from simcore_sdk.node_ports_common.filemanager import upload_path as storage_upload_path
+from simcore_service_api_server.api.dependencies.webserver_http import (
+    get_webserver_session,
+)
 from starlette.datastructures import URL
 from starlette.responses import RedirectResponse
 
 from ...exceptions.service_errors_utils import DEFAULT_BACKEND_SERVICE_STATUS_CODES
 from ...models.domain.files import File as DomainFile
+from ...models.domain.files import FileInProgramJobData
 from ...models.pagination import Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
 from ...models.schemas.files import (
@@ -44,7 +49,9 @@ from ...models.schemas.files import (
     FileUploadData,
     UploadLinks,
 )
+from ...models.schemas.jobs import ProgramJobFilePath
 from ...services_http.storage import StorageApi, StorageFileMetaData, to_file_api_model
+from ...services_http.webserver import AuthSession
 from ..dependencies.authentication import get_current_user_id
 from ..dependencies.services import get_api_client
 from ._common import API_SERVER_DEV_FEATURES_ENABLED
@@ -244,12 +251,32 @@ async def get_upload_links(
     request: Request,
     client_file: ClientFile,
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+    webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
+    destination: ProgramJobFilePath | None = None,
 ):
     """Get upload links for uploading a file to storage"""
     assert request  # nosec
+
+    program_job_path = None
+    if destination:
+        project = await webserver_api.get_project(project_id=destination.job_id)
+        if len(project.workbench) > 0:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"Job_id {project.uuid} is not a valid program job.",
+            )
+        node_id = next(iter(project.workbench.keys()))
+        program_job_path = FileInProgramJobData(
+            project_id=project.uuid,
+            node_id=NodeID(node_id),
+            workspace_path=destination.workspace_path,
+        )
     file_meta = await DomainFile.create_from_client_file(
-        client_file,
-        datetime.datetime.now(datetime.UTC).isoformat(),
+        filename=client_file.filename,
+        filesize=client_file.filesize,
+        sha256_checksum=client_file.sha256_checksum,
+        created_at=datetime.datetime.now(datetime.UTC).isoformat(),
+        program_job_path=program_job_path,
     )
     _, upload_links = await get_upload_links_from_s3(
         user_id=user_id,

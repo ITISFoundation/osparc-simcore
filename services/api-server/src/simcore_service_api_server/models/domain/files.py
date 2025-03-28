@@ -1,5 +1,6 @@
 from mimetypes import guess_type
 from pathlib import Path
+from typing import Annotated
 from urllib.parse import quote as _quote
 from urllib.parse import unquote as _unquote
 from uuid import UUID, uuid3
@@ -8,20 +9,34 @@ import aiofiles
 from fastapi import UploadFile
 from models_library.api_schemas_storage.storage_schemas import ETag
 from models_library.basic_types import SHA256Str
-from models_library.projects_nodes_io import StorageFileID
+from models_library.projects import ProjectID
+from models_library.projects_nodes_io import NodeID, StorageFileID
 from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
+    NonNegativeInt,
+    StringConstraints,
     TypeAdapter,
     ValidationInfo,
     field_validator,
 )
 from servicelib.file_utils import create_sha256_checksum
-from simcore_service_api_server.models.schemas.files import (
-    NAMESPACE_FILEID_KEY,
-    ClientFile,
-)
+
+FileName = Annotated[str, StringConstraints(strip_whitespace=True)]
+NAMESPACE_FILEID_KEY = UUID("aa154444-d22d-4290-bb15-df37dba87865")
+
+
+class FileInProgramJobData(BaseModel):
+    """Represents a file stored on the client side"""
+
+    project_id: Annotated[ProjectID, Field(..., description="Project identifier")]
+    node_id: Annotated[NodeID, Field(..., description="Node identifier")]
+    workspace_path: Annotated[
+        Path,
+        StringConstraints(pattern=r"^workspace/.*"),
+        Field(..., description="File path within the workspace"),
+    ]
 
 
 class File(BaseModel):
@@ -44,6 +59,13 @@ class File(BaseModel):
         alias="checksum",  # alias for backwards compatibility
     )
     e_tag: ETag | None = Field(default=None, description="S3 entity tag")
+    program_job_file_path: Annotated[
+        FileInProgramJobData | None,
+        Field(
+            ...,
+            description="Destination information in case the file is uploaded directly to a program job",
+        ),
+    ] = None
 
     model_config = ConfigDict(
         populate_by_name=True,
@@ -113,13 +135,18 @@ class File(BaseModel):
     @classmethod
     async def create_from_client_file(
         cls,
-        client_file: ClientFile,
+        *,
+        filename: FileName,
+        filesize: NonNegativeInt,
+        sha256_checksum: SHA256Str,
         created_at: str,
+        program_job_path: FileInProgramJobData | None = None,
     ) -> "File":
         return cls(
-            id=cls.create_id(client_file.filesize, client_file.filename, created_at),
-            filename=client_file.filename,
-            checksum=client_file.sha256_checksum,
+            id=cls.create_id(filesize, filename, created_at),
+            filename=filename,
+            checksum=sha256_checksum,
+            program_job_file_path=program_job_path,
         )
 
     @classmethod
@@ -137,9 +164,14 @@ class File(BaseModel):
     @property
     def storage_file_id(self) -> StorageFileID:
         """Get the StorageFileId associated with this file"""
-        return TypeAdapter(StorageFileID).validate_python(
-            f"api/{self.id}/{self.filename}"
-        )
+        if program_path := self.program_job_file_path:
+            return TypeAdapter(StorageFileID).validate_python(
+                f"{program_path.project_id}/{program_path.node_id}/{program_path.workspace_path}"
+            )
+        else:
+            return TypeAdapter(StorageFileID).validate_python(
+                f"api/{self.id}/{self.filename}"
+            )
 
     @property
     def quoted_storage_file_id(self) -> str:
