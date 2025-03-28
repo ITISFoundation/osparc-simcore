@@ -33,7 +33,10 @@ async def data_export(
 
         async def _progress_cb(report: ProgressReport) -> None:
             set_tqdm_absolute_progress(pbar, report)
-            await get_celery_worker(task.app).set_task_progress(task, task_id, report)
+            assert task.name  # nosec
+            await get_celery_worker(task.app).set_task_progress(
+                task.name, task_id, report
+            )
 
         async with ProgressBarData(
             num_steps=1, description="data export", progress_report_cb=_progress_cb

@@ -22,7 +22,7 @@ async def _task_progress_cb(
 ) -> None:
     worker = get_celery_worker(task.app)
     assert task.name  # nosec
-    await worker.set_task_progress(task=task, task_id=task_id, report=report)
+    await worker.set_task_progress(task.name, task_id, report)
 
 
 async def deep_copy_files_from_project(
