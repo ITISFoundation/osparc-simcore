@@ -49,15 +49,17 @@ def celery_client(
 async def _async_archive(
     celery_app: Celery, task_name: str, task_id: str, files: list[str]
 ) -> str:
-    worker_client = get_celery_worker(celery_app)
+    worker = get_celery_worker(celery_app)
 
     def sleep_for(seconds: float) -> None:
         time.sleep(seconds)
 
     for n, file in enumerate(files, start=1):
         with log_context(_logger, logging.INFO, msg=f"Processing file {file}"):
-            await worker_client.set_task_progress(
-                task_name, task_id, ProgressReport(actual_value=n / len(files) * 10)
+            await worker.set_task_progress(
+                task_name=task_name,
+                task_id=task_id,
+                report=ProgressReport(actual_value=n / len(files) * 10),
             )
             await asyncio.get_event_loop().run_in_executor(None, sleep_for, 1)
 
