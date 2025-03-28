@@ -9,6 +9,9 @@ from models_library.projects_nodes_io import StorageFileID
 from models_library.users import UserID
 from servicelib.logging_utils import log_context
 from servicelib.progress_bar import ProgressBarData
+from simcore_service_storage.api.rpc._simcore_s3 import DatcoreAdapterError
+from simcore_service_storage.exceptions.errors import FileAccessRightError
+from simcore_service_webserver.tasks._exception_handlers import AccessRightError
 
 from ...dsm import get_dsm_provider
 from ...modules.celery.models import TaskID, TaskId
@@ -72,6 +75,17 @@ async def data_export(
         SimcoreS3DataManager.get_location_id()
     )
     assert isinstance(dsm, SimcoreS3DataManager)  # nosec
+
+    try:
+        for path_to_export in paths_to_export:
+            await dsm.can_read_file(user_id=user_id, file_id=path_to_export)
+
+    except (FileAccessRightError, DatcoreAdapterError) as err:
+        raise AccessRightError(
+            user_id=user_id,
+            file_id=path_to_export,
+            location_id=SimcoreS3DataManager.get_location_id(),
+        ) from err
 
     with get_tqdm_progress(total=1, description=f"{task.name}") as pbar:
 
