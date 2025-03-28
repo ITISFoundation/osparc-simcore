@@ -315,17 +315,19 @@ def compute_task_labels(
         ValidationError
     """
     product_name = run_metadata.get("product_name", UNDEFINED_DOCKER_LABEL)
-    standard_simcore_labels = StandardSimcoreDockerLabels.model_construct(
-        user_id=user_id,
-        project_id=project_id,
-        node_id=node_id,
-        product_name=product_name,
-        simcore_user_agent=run_metadata.get(
-            "simcore_user_agent", UNDEFINED_DOCKER_LABEL
-        ),
-        swarm_stack_name=UNDEFINED_DOCKER_LABEL,  # NOTE: there is currently no need for this label in the comp backend
-        memory_limit=node_requirements.ram,
-        cpu_limit=node_requirements.cpu,
+    standard_simcore_labels = StandardSimcoreDockerLabels.model_validate(
+        {
+            "user_id": user_id,
+            "project_id": project_id,
+            "node_id": node_id,
+            "product_name": product_name,
+            "simcore_user_agent": run_metadata.get(
+                "simcore_user_agent", UNDEFINED_DOCKER_LABEL
+            ),
+            "swarm_stack_name": UNDEFINED_DOCKER_LABEL,  # NOTE: there is currently no need for this label in the comp backend
+            "memory_limit": node_requirements.ram,
+            "cpu_limit": node_requirements.cpu,
+        }
     ).to_simcore_runtime_docker_labels()
     return standard_simcore_labels | TypeAdapter(ContainerLabelsDict).validate_python(
         {
@@ -633,7 +635,7 @@ R = TypeVar("R")
 
 
 async def wrap_client_async_routine(
-    client_coroutine: Coroutine[Any, Any, Any] | Any | None
+    client_coroutine: Coroutine[Any, Any, Any] | Any | None,
 ) -> Any:
     """Dask async behavior does not go well with Pylance as it returns
     a union of types. this wrapper makes both mypy and pylance happy"""
