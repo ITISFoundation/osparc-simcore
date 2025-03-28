@@ -23,10 +23,6 @@ async def mark_project_as_job(
     job_parent_resource_name: str,
 ) -> None:
 
-    assert not job_parent_resource_name.startswith("/")  # nosec
-    assert "/" in job_parent_resource_name  # nosec
-    assert not job_parent_resource_name.endswith("/")  # nosec
-
     result = await rpc_client.request(
         WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("mark_project_as_job"),
@@ -34,6 +30,5 @@ async def mark_project_as_job(
         user_id=user_id,
         project_uuid=project_uuid,
         job_parent_resource_name=job_parent_resource_name,
-        timeout_s=None,  # TODO: remove after testing
     )
     assert result is None

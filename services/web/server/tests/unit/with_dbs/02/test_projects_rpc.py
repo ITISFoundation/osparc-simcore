@@ -12,12 +12,16 @@ from aiohttp.test_utils import TestClient
 from common_library.users_enums import UserRole
 from models_library.products import ProductName
 from models_library.projects import ProjectID
+from pydantic import ValidationError
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_login import NewUser, UserInfoDict
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.webserver import projects as projects_rpc
-from servicelib.rabbitmq.rpc_interfaces.webserver.errors import ProjectForbiddenRpcError
+from servicelib.rabbitmq.rpc_interfaces.webserver.errors import (
+    ProjectForbiddenRpcError,
+    ProjectNotFoundRpcError,
+)
 from settings_library.rabbit import RabbitSettings
 from simcore_service_webserver.application_settings import ApplicationSettings
 from simcore_service_webserver.projects.models import ProjectDict
@@ -64,6 +68,25 @@ async def rpc_client(
     return await rabbitmq_rpc_client("client")
 
 
+async def test_rpc_client_mark_project_as_job(
+    rpc_client: RabbitMQRPCClient,
+    product_name: ProductName,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+):
+    # `logged_user` OWNS the `user_project` but not `other_user`
+    project_uuid: ProjectID = UUID(user_project["uuid"])
+    user_id = logged_user["id"]
+
+    await projects_rpc.mark_project_as_job(
+        rpc_client=rpc_client,
+        product_name=product_name,
+        user_id=user_id,
+        project_uuid=project_uuid,
+        job_parent_resource_name="solvers/solver123/version/1.2.3",
+    )
+
+
 @pytest.fixture
 async def other_user(
     client: TestClient,
@@ -82,7 +105,7 @@ async def other_user(
         yield other_user_info
 
 
-async def test_rpc_client_mark_project_as_job(
+async def test_errors_on_rpc_client_mark_project_as_job(
     rpc_client: RabbitMQRPCClient,
     product_name: ProductName,
     logged_user: UserInfoDict,
@@ -94,15 +117,7 @@ async def test_rpc_client_mark_project_as_job(
     user_id = logged_user["id"]
     other_user_id = other_user["id"]
 
-    await projects_rpc.mark_project_as_job(
-        rpc_client=rpc_client,
-        product_name=product_name,
-        user_id=user_id,
-        project_uuid=project_uuid,
-        job_parent_resource_name="solvers/solver123/version/1.2.3",
-    )
-
-    with pytest.raises(ProjectForbiddenRpcError) as err_info:
+    with pytest.raises(ProjectForbiddenRpcError) as exc_info:
         await projects_rpc.mark_project_as_job(
             rpc_client=rpc_client,
             product_name=product_name,
@@ -111,9 +126,9 @@ async def test_rpc_client_mark_project_as_job(
             job_parent_resource_name="solvers/solver123/version/1.2.3",
         )
 
-    assert err_info.value.error_context()["project_uuid"] == project_uuid
+    assert exc_info.value.error_context()["project_uuid"] == project_uuid
 
-    with pytest.raises(Exception, match="not found"):
+    with pytest.raises(ProjectNotFoundRpcError, match="not found"):
         await projects_rpc.mark_project_as_job(
             rpc_client=rpc_client,
             product_name=product_name,
@@ -121,3 +136,16 @@ async def test_rpc_client_mark_project_as_job(
             project_uuid=UUID("00000000-0000-0000-0000-000000000000"),  # <-- wont find
             job_parent_resource_name="solvers/solver123/version/1.2.3",
         )
+
+    with pytest.raises(ValidationError, match="job_parent_resource_name") as exc_info:
+        await projects_rpc.mark_project_as_job(
+            rpc_client=rpc_client,
+            product_name=product_name,
+            user_id=user_id,
+            project_uuid=project_uuid,
+            job_parent_resource_name="This is not a resource",  # <-- wrong format
+        )
+
+    assert exc_info.value.error_count() == 1
+    assert exc_info.value.errors()[0]["loc"] == ("job_parent_resource_name",)
+    assert exc_info.value.errors()[0]["type"] == "value_error"
