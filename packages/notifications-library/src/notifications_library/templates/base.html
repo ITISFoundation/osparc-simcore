@@ -1,3 +1,7 @@
+{% set default_strong_color = "rgb(131, 0, 191)" %}
+{% set default_logo = "https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/refs/heads/master/services/static-webserver/client/source/resource/osparc/osparc-black.svg" %}
+{% set default_homepage = "https://osparc.io/" %}
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -40,7 +44,7 @@
   }
   .strong-button {
       cursor: pointer;
-      background-color: {{ product.ui.strong_color }};
+      background-color: {{ product.ui.strong_color | default(default_strong_color) }};
       color: white;
       padding: 10px;
       border: none;
@@ -81,8 +85,8 @@
 <body>
   <div class="email-container">
     <div class="header">
-      <a href="{{ product.homepage_url }}" target="_blank" rel="noopener noreferrer">
-        <img src="{{ product.ui.logo_url }}" alt="Logo" class="logo">
+      <a href="{{ product.homepage_url | default(default_homepage) }}" target="_blank" rel="noopener noreferrer">
+        <img src="{{ product.ui.logo_url | default(default_logo) }}" alt="Logo" class="logo">
       </a>
     </div>
 
@@ -93,7 +97,7 @@
 
     <div class="footer">
       <p>
-        Visit the <a href="{{ product.homepage_url }}" target="_blank" rel="noopener noreferrer">Platform</a> |
+        Visit the <a href="{{ product.homepage_url | default(default_homepage) }}" target="_blank" rel="noopener noreferrer">Platform</a> |
         Need help? <a href="mailto:{{ product.support_email }}">Support</a> |
         Powered by oSPARC
         <a href="https://github.com/ITISFoundation/osparc-simcore" target="_blank" rel="noopener noreferrer">
