@@ -5,10 +5,9 @@ from servicelib.logging_utils import log_context
 
 from ...modules.celery._celery_types import register_celery_types
 from ...modules.celery._task import define_task
-from ._data_export import data_export
 from ._files import complete_upload_file
 from ._paths import compute_path_size
-from ._simcore_s3 import deep_copy_files_from_project
+from ._simcore_s3 import data_export, deep_copy_files_from_project
 
 _logger = logging.getLogger(__name__)
 
