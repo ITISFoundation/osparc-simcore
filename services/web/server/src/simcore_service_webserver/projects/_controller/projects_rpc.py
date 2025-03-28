@@ -7,6 +7,7 @@ from pydantic import validate_call
 from servicelib.rabbitmq import RPCRouter
 
 from ...rabbitmq import get_rabbitmq_rpc_server
+from .. import _jobs_service
 
 router = RPCRouter()
 
@@ -21,11 +22,14 @@ async def mark_project_as_job(
     project_uuid: ProjectID,
     job_parent_resource_name: str,
 ) -> None:
-    msg = (
-        f"You have reached {__name__} but this feature is still not implemented. "
-        f"Inputs: {app=}, {product_name=}, {user_id=}, {project_uuid=}, {job_parent_resource_name=}"
+
+    await _jobs_service.set_project_as_job(
+        app,
+        product_name=product_name,
+        user_id=user_id,
+        project_uuid=project_uuid,
+        job_parent_resource_name=job_parent_resource_name,
     )
-    raise NotImplementedError(msg)
 
 
 async def register_rpc_routes_on_startup(app: web.Application):
