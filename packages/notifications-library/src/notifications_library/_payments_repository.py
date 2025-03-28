@@ -4,14 +4,15 @@ from models_library.users import UserID
 from simcore_postgres_database.models.payments_transactions import payments_transactions
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.users import users
+from simcore_postgres_database.utils_repos import pass_or_acquire_connection
 
-from ._db import _BaseRepo
+from ._repository import _BaseRepo
 
 
 class PaymentsDataRepo(_BaseRepo):
     async def get_on_payed_data(self, user_id: UserID, payment_id: PaymentID):
         """Retrieves payment data for the templates on the `on_payed` event"""
-        if row := await self._get(
+        query = (
             sa.select(
                 payments_transactions.c.payment_id,
                 users.c.first_name,
@@ -37,8 +38,14 @@ class PaymentsDataRepo(_BaseRepo):
                 (payments_transactions.c.payment_id == payment_id)
                 & (payments_transactions.c.user_id == user_id)
             )
-        ):
-            return row
+        )
 
-        msg = f"{payment_id=} for {user_id=} was not found"
-        raise ValueError(msg)
+        async with pass_or_acquire_connection(self.db_engine) as conn:
+            result = await conn.execute(query)
+            row = result.one_or_none()
+
+        if not row:
+            msg = f"{payment_id=} for {user_id=} was not found"
+            raise ValueError(msg)
+
+        return row

@@ -1,9 +1,11 @@
 import sqlalchemy as sa
 from models_library.products import ProductName
 from models_library.users import UserID
+from notifications_library._models import UserData
 from simcore_postgres_database.models.jinja2_templates import jinja2_templates
 from simcore_postgres_database.models.products_to_templates import products_to_templates
 from simcore_postgres_database.models.users import users
+from simcore_postgres_database.utils_repos import pass_or_acquire_connection
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 
@@ -12,26 +14,31 @@ class _BaseRepo:
         assert db_engine is not None  # nosec
         self.db_engine = db_engine
 
-    async def _get(self, query):
-        async with self.db_engine.begin() as conn:
-            result = await conn.execute(query)
-            return result.first()
-
 
 class UsersRepo(_BaseRepo):
-    async def get_user_data(self, user_id: UserID):
-        return await self._get(
-            sa.select(
-                users.c.first_name,
-                users.c.last_name,
-                users.c.email,
-            ).where(users.c.id == user_id)
+    async def get_user_data(self, user_id: UserID) -> UserData:
+        query = sa.select(
+            # NOTE: careful! privacy applies here!
+            users.c.first_name,
+            users.c.last_name,
+            users.c.email,
+        ).where(users.c.id == user_id)
+        async with pass_or_acquire_connection(self.db_engine) as conn:
+            result = await conn.execute(query)
+            row = result.one_or_none()
+
+        if row is None:
+            msg = f"User not found {user_id=}"
+            raise ValueError(msg)
+
+        return UserData(
+            first_name=row.first_name, last_name=row.last_name, email=row.email
         )
 
 
 class TemplatesRepo(_BaseRepo):
     async def iter_email_templates(self, product_name: ProductName):
-        async with self.db_engine.begin() as conn:
+        async with pass_or_acquire_connection(self.db_engine) as conn:
             async for row in await conn.stream(
                 sa.select(
                     jinja2_templates.c.name,
@@ -46,7 +53,7 @@ class TemplatesRepo(_BaseRepo):
                 yield row
 
     async def iter_product_templates(self, product_name: ProductName):
-        async with self.db_engine.begin() as conn:
+        async with pass_or_acquire_connection(self.db_engine) as conn:
             async for row in await conn.stream(
                 sa.select(
                     products_to_templates.c.product_name,
