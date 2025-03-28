@@ -4,7 +4,7 @@ from servicelib.fastapi.exceptions_utils import (
     http_exception_as_json_response,
 )
 
-from ..domains.health.controllers.rest import router as health_router
+from ..domains.health.cnt.rest import router as health_router
 
 
 def initialize_rest_api(app: FastAPI) -> None:
