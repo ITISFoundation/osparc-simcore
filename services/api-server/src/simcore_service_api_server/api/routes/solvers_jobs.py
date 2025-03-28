@@ -12,10 +12,6 @@ from models_library.clusters import ClusterID
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from pydantic.types import PositiveInt
-from simcore_service_api_server.api.dependencies.webserver_rpc import (
-    get_wb_api_rpc_client,
-)
-from simcore_service_api_server.services_rpc.wb_api_server import WbApiRpcClient
 
 from ...exceptions.backend_errors import ProjectAlreadyStartedError
 from ...exceptions.service_errors_utils import DEFAULT_BACKEND_SERVICE_STATUS_CODES
@@ -38,10 +34,14 @@ from ...services_http.solver_job_models_converters import (
     create_jobstatus_from_task,
     create_new_project_for_job,
 )
+from ...services_rpc.wb_api_server import WbApiRpcClient
 from ..dependencies.application import get_reverse_url_mapper
 from ..dependencies.authentication import get_current_user_id, get_product_name
 from ..dependencies.services import get_api_client
 from ..dependencies.webserver_http import AuthSession, get_webserver_session
+from ..dependencies.webserver_rpc import (
+    get_wb_api_rpc_client,
+)
 from ._constants import (
     FMSG_CHANGELOG_ADDED_IN_VERSION,
     FMSG_CHANGELOG_CHANGED_IN_VERSION,
