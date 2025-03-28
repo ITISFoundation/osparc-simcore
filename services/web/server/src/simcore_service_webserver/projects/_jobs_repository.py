@@ -24,7 +24,7 @@ class ProjectJobsRepository(BaseRepository):
             stmt = (
                 pg_insert(projects_to_jobs)
                 .values(
-                    project_uuid=project_uuid,
+                    project_uuid=f"{project_uuid}",
                     job_parent_resource_name=job_parent_resource_name,
                 )
                 .on_conflict_do_update(

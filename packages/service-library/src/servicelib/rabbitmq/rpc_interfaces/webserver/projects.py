@@ -34,5 +34,6 @@ async def mark_project_as_job(
         user_id=user_id,
         project_uuid=project_uuid,
         job_parent_resource_name=job_parent_resource_name,
+        timeout_s=None,  # TODO: remove after testing
     )
     assert result is None
