@@ -26,6 +26,7 @@ from models_library.api_schemas_rpc_async_jobs.exceptions import (
 )
 from models_library.api_schemas_storage import STORAGE_RPC_NAMESPACE
 from models_library.api_schemas_storage.data_export_async_jobs import (
+    AccessRightError,
     DataExportTaskStartInput,
 )
 from models_library.progress_bar import ProgressReport
@@ -36,8 +37,7 @@ from pytest_mock import MockerFixture
 from pytest_simcore.helpers.storage_utils import FileIDDict, ProjectWithFilesParams
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.async_jobs import async_jobs
-from servicelib.rabbitmq.rpc_interfaces.storage.data_export import start_data_export
-from simcore_service_storage.api.rpc._data_export import AccessRightError
+from servicelib.rabbitmq.rpc_interfaces.storage.simcore_s3 import start_data_export
 from simcore_service_storage.modules.celery.client import TaskUUID
 from simcore_service_storage.modules.celery.models import TaskState, TaskStatus
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager

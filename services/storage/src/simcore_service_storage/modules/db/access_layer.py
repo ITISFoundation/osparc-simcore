@@ -53,6 +53,7 @@ from simcore_postgres_database.utils_repos import pass_or_acquire_connection
 from simcore_postgres_database.utils_sql import assemble_array_groups
 from sqlalchemy.ext.asyncio import AsyncConnection
 
+from ...constants import EXPORTS_S3_PREFIX
 from ...exceptions.errors import InvalidFileIdentifierError
 from ...models import AccessRights
 from ._base import BaseRepository
@@ -274,7 +275,7 @@ class AccessLayerRepository(BaseRepository):
         # determine user's access rights by aggregating AR of all groups
         return _aggregate_access_rights(row.access_rights, user_group_ids)
 
-    async def get_file_access_rights(
+    async def get_file_access_rights(  # pylint:disable=too-many-return-statements # noqa: PLR0911
         self,
         *,
         connection: AsyncConnection | None = None,
@@ -326,12 +327,18 @@ class AccessLayerRepository(BaseRepository):
             #
             #       - project's data: {project_id}/{node_id}/{filename/with/possible/folders}
             #       - API data:       api/{file_id}/{filename/with/possible/folders}
+            #       - Exporter data:  exporter/{user_id}/{filename/with/possible/folders}
             #
             try:
                 parent, _, _ = file_id.split("/", maxsplit=2)
 
                 if parent == "api":
                     # ownership still not defined, so we assume it is user_id
+                    return AccessRights.all()
+
+                if parent == EXPORTS_S3_PREFIX:
+                    # ownership still not defined, so we assume it is user_id
+                    # NOTE: all permissions are required for: downloading, uploading and aborting
                     return AccessRights.all()
 
                 # otherwise assert 'parent' string corresponds to a valid UUID

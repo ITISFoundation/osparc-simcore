@@ -1,10 +1,11 @@
 import logging
 
 from celery import Celery  # type: ignore[import-untyped]
+from common_library.async_tools import make_async
 from models_library.progress_bar import ProgressReport
 from servicelib.logging_utils import log_context
 
-from .models import TaskID
+from ..celery.models import TaskID
 
 _logger = logging.getLogger(__name__)
 
@@ -13,6 +14,7 @@ class CeleryTaskQueueWorker:
     def __init__(self, celery_app: Celery) -> None:
         self.celery_app = celery_app
 
+    @make_async()
     def set_task_progress(
         self, task_name: str, task_id: TaskID, report: ProgressReport
     ) -> None:

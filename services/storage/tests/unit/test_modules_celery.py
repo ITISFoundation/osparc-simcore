@@ -56,10 +56,10 @@ async def _async_archive(
 
     for n, file in enumerate(files, start=1):
         with log_context(_logger, logging.INFO, msg=f"Processing file {file}"):
-            worker.set_task_progress(
+            await worker.set_task_progress(
                 task_name=task_name,
                 task_id=task_id,
-                report=ProgressReport(actual_value=n / len(files), total=1.0),
+                report=ProgressReport(actual_value=n / len(files) * 10),
             )
             await asyncio.get_event_loop().run_in_executor(None, sleep_for, 1)
 
@@ -113,7 +113,7 @@ async def test_submitting_task_calling_async_function_results_with_success_state
     task_context = TaskContext(user_id=42)
 
     task_uuid = await celery_client.send_task(
-        "sync_archive",
+        sync_archive.__name__,
         task_context=task_context,
         files=[f"file{n}" for n in range(5)],
     )
@@ -141,7 +141,9 @@ async def test_submitting_task_with_failure_results_with_error(
 ):
     task_context = TaskContext(user_id=42)
 
-    task_uuid = await celery_client.send_task("failure_task", task_context=task_context)
+    task_uuid = await celery_client.send_task(
+        failure_task.__name__, task_context=task_context
+    )
 
     for attempt in Retrying(
         retry=retry_if_exception_type((AssertionError, ValidationError)),
@@ -168,7 +170,7 @@ async def test_aborting_task_results_with_aborted_state(
     task_context = TaskContext(user_id=42)
 
     task_uuid = await celery_client.send_task(
-        "dreamer_task",
+        dreamer_task.__name__,
         task_context=task_context,
     )
 

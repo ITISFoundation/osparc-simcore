@@ -9,6 +9,7 @@
 import asyncio
 import datetime
 import logging
+import re
 from collections.abc import Awaitable, Callable
 from copy import deepcopy
 from pathlib import Path
@@ -29,9 +30,11 @@ from models_library.api_schemas_storage.storage_schemas import (
 )
 from models_library.basic_types import SHA256Str
 from models_library.products import ProductName
+from models_library.progress_bar import ProgressReport, ProgressStructuredMessage
 from models_library.projects_nodes_io import NodeID, NodeIDStr, SimcoreS3FileID
 from models_library.users import UserID
 from pydantic import ByteSize, TypeAdapter
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.fastapi import url_from_operation_id
 from pytest_simcore.helpers.httpx_assert_checks import assert_status
 from pytest_simcore.helpers.logging_tools import log_context
@@ -49,6 +52,7 @@ from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import wait_and_get_result
 from servicelib.rabbitmq.rpc_interfaces.storage.simcore_s3 import (
     copy_folders_from_project,
+    start_data_export,
 )
 from simcore_postgres_database.storage_models import file_meta_data
 from simcore_service_storage.modules.celery.worker import CeleryTaskQueueWorker
@@ -501,3 +505,132 @@ async def test_create_and_delete_folders_from_project(
             for _ in range(num_concurrent_calls)
         ]
     )
+
+
+async def _request_start_data_export(
+    rpc_client: RabbitMQRPCClient,
+    user_id: UserID,
+    product_name: ProductName,
+    paths_to_export: list[SimcoreS3FileID],
+    *,
+    client_timeout: datetime.timedelta = datetime.timedelta(seconds=60),
+) -> dict[str, Any]:
+    with log_context(
+        logging.INFO,
+        f"Data export form {paths_to_export=}",
+    ) as ctx:
+        async_job_get, async_job_name = await start_data_export(
+            rpc_client,
+            user_id=user_id,
+            product_name=product_name,
+            paths_to_export=[],
+        )
+
+        async for async_job_result in wait_and_get_result(
+            rpc_client,
+            rpc_namespace=STORAGE_RPC_NAMESPACE,
+            method_name=copy_folders_from_project.__name__,
+            job_id=async_job_get.job_id,
+            job_id_data=async_job_name,
+            client_timeout=client_timeout,
+        ):
+            ctx.logger.info("%s", f"<-- current state is {async_job_result=}")
+            if async_job_result.done:
+                result = await async_job_result.result()
+                assert isinstance(result, AsyncJobResult)
+                return result.result
+
+    pytest.fail(reason="data export failed!")
+
+
+@pytest.fixture
+def mock_task_progress(mocker: MockerFixture) -> list[ProgressReport]:
+    progress_updates = []
+
+    async def _progress(*args, **_) -> None:
+        progress_updates.append(args[2])
+
+    mocker.patch(
+        "simcore_service_storage.modules.celery.worker.CeleryTaskQueueWorker.set_task_progress",
+        side_effect=_progress,
+    )
+    return progress_updates
+
+
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
+@pytest.mark.parametrize(
+    "project_params",
+    [
+        ProjectWithFilesParams(
+            num_nodes=1,
+            allowed_file_sizes=(TypeAdapter(ByteSize).validate_python("210Mib"),),
+            allowed_file_checksums=(
+                TypeAdapter(SHA256Str).validate_python(
+                    "0b3216d95ec5a36c120ba16c88911dcf5ff655925d0fbdbc74cf95baf86de6fc"
+                ),
+            ),
+            workspace_files_count=0,
+        ),
+    ],
+    ids=str,
+)
+async def test_start_data_export(
+    initialized_app: FastAPI,
+    short_dsm_cleaner_interval: int,
+    storage_rabbitmq_rpc_client: RabbitMQRPCClient,
+    user_id: UserID,
+    product_name: ProductName,
+    create_project: Callable[[], Awaitable[dict[str, Any]]],
+    sqlalchemy_async_engine: AsyncEngine,
+    random_project_with_files: Callable[
+        [ProjectWithFilesParams],
+        Awaitable[
+            tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]
+        ],
+    ],
+    project_params: ProjectWithFilesParams,
+    mock_task_progress: list[ProgressReport],
+):
+    _, src_projects_list = await random_project_with_files(project_params)
+
+    paths_to_export: set[SimcoreS3FileID] = set()
+    for x in src_projects_list.values():
+        paths_to_export |= x.keys()
+
+    result = await _request_start_data_export(
+        storage_rabbitmq_rpc_client,
+        user_id,
+        product_name,
+        paths_to_export=list(paths_to_export),
+    )
+
+    assert re.fullmatch(
+        rf"^exports/{user_id}/[0-9a-fA-F]{{8}}-[0-9a-fA-F]{{4}}-[0-9a-fA-F]{{4}}-[0-9a-fA-F]{{4}}-[0-9a-fA-F]{{12}}\.zip$",
+        result,
+    )
+
+    assert mock_task_progress == [
+        ProgressReport(
+            actual_value=0.0,
+            total=1.0,
+            attempt=0,
+            unit=None,
+            message=ProgressStructuredMessage(
+                description="data export", current=0.0, total=1, unit=None, sub=None
+            ),
+        ),
+        ProgressReport(
+            actual_value=1.0,
+            total=1.0,
+            attempt=0,
+            unit=None,
+            message=ProgressStructuredMessage(
+                description="data export", current=1.0, total=1, unit=None, sub=None
+            ),
+        ),
+    ]
