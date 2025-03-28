@@ -10,6 +10,7 @@ import pytest
 import respx
 from fastapi import FastAPI
 from models_library.api_schemas_webserver.users import MyProfileGet as WebProfileGet
+from pytest_mock import MockType
 from respx import MockRouter
 from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server.core.settings import ApplicationSettings
