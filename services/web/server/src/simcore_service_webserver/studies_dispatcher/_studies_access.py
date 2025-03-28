@@ -195,19 +195,20 @@ async def copy_study_to_account(
         )
         async for lr_task in copy_data_folders_from_project(
             request.app,
-            template_project,
-            project,
-            nodes_map,
-            user["id"],
+            source_project=template_project,
+            destination_project=project,
+            nodes_map=nodes_map,
+            user_id=user["id"],
+            product_name=product_name,
         ):
             _logger.info(
                 "copying %s into %s for %s: %s",
                 f"{template_project['uuid']=}",
                 f"{project['uuid']}",
                 f"{user['id']}",
-                f"{lr_task.progress=}",
+                f"{lr_task.status.progress=}",
             )
-            if lr_task.done():
+            if lr_task.done:
                 await lr_task.result()
         await create_or_update_pipeline(
             request.app, user["id"], project["uuid"], product_name

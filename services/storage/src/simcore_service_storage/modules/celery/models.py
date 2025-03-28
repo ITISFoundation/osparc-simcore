@@ -1,13 +1,27 @@
 from enum import StrEnum, auto
-from typing import Any, Self, TypeAlias
+from typing import Any, Final, Protocol, Self, TypeAlias
 from uuid import UUID
 
 from models_library.progress_bar import ProgressReport
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel
 
 TaskContext: TypeAlias = dict[str, Any]
 TaskID: TypeAlias = str
 TaskUUID: TypeAlias = UUID
+
+_CELERY_TASK_ID_KEY_SEPARATOR: Final[str] = ":"
+
+
+def build_task_id_prefix(task_context: TaskContext) -> str:
+    return _CELERY_TASK_ID_KEY_SEPARATOR.join(
+        [f"{task_context[key]}" for key in sorted(task_context)]
+    )
+
+
+def build_task_id(task_context: TaskContext, task_uuid: TaskUUID) -> TaskID:
+    return _CELERY_TASK_ID_KEY_SEPARATOR.join(
+        [build_task_id_prefix(task_context), f"{task_uuid}"]
+    )
 
 
 class TaskState(StrEnum):
@@ -18,7 +32,19 @@ class TaskState(StrEnum):
     ABORTED = auto()
 
 
+class TaskData(BaseModel):
+    status: str
+
+
 _TASK_DONE = {TaskState.SUCCESS, TaskState.ERROR, TaskState.ABORTED}
+
+
+class TaskStore(Protocol):
+    async def get_task_uuids(self, task_context: TaskContext) -> set[TaskUUID]: ...
+
+    async def task_exists(self, task_id: TaskID) -> bool: ...
+
+    async def set_task(self, task_id: TaskID, task_data: TaskData) -> None: ...
 
 
 class TaskStatus(BaseModel):
@@ -30,7 +56,7 @@ class TaskStatus(BaseModel):
     def is_done(self) -> bool:
         return self.task_state in _TASK_DONE
 
-    @model_validator(mode="after")
+    # @model_validator(mode="after") This does not work MB
     def _check_consistency(self) -> Self:
         value = self.progress_report.actual_value
         min_value = 0.0

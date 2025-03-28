@@ -9,7 +9,9 @@ from typing import Final, Literal, overload
 
 from fastapi import FastAPI, status
 from models_library.emails import LowerCaseEmailStr
+from models_library.products import ProductName
 from models_library.services import ServiceMetaDataPublished, ServiceType
+from models_library.users import UserID
 from pydantic import ConfigDict, TypeAdapter, ValidationError
 from settings_library.catalog import CatalogSettings
 from settings_library.tracing import TracingSettings
@@ -287,8 +289,13 @@ class CatalogApi(BaseServiceClientApi):
         http_status_map={status.HTTP_404_NOT_FOUND: SolverOrStudyNotFoundError}
     )
     async def get_service_ports(
-        self, *, user_id: int, name: SolverKeyId, version: VersionStr, product_name: str
-    ):
+        self,
+        *,
+        user_id: UserID,
+        name: SolverKeyId,
+        version: VersionStr,
+        product_name: ProductName,
+    ) -> list[SolverPort]:
 
         assert version != LATEST_VERSION  # nosec
 
@@ -306,7 +313,7 @@ class CatalogApi(BaseServiceClientApi):
         return TypeAdapter(list[SolverPort]).validate_python(response.json())
 
     async def list_latest_releases(
-        self, *, user_id: int, product_name: str
+        self, *, user_id: UserID, product_name: ProductName
     ) -> list[Solver]:
         solvers: list[Solver] = await self.list_solvers(
             user_id=user_id, product_name=product_name

@@ -6,6 +6,7 @@ from ..core.settings import ApplicationSettings
 from .routes import credits as _credits
 from .routes import (
     files,
+    functions,
     health,
     licensed_items,
     meta,
@@ -46,6 +47,7 @@ def create_router(settings: ApplicationSettings):
     router.include_router(
         licensed_items.router, tags=["licensed-items"], prefix="/licensed-items"
     )
+    router.include_router(functions.router, tags=["functions"], prefix="/functions")
 
     # NOTE: multiple-files upload is currently disabled
     # Web form to upload files at http://localhost:8000/v0/upload-form-view

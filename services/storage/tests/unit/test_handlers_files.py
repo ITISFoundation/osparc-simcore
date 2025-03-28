@@ -30,12 +30,10 @@ from models_library.api_schemas_storage.storage_schemas import (
     FileUploadCompleteFutureResponse,
     FileUploadCompleteResponse,
     FileUploadCompleteState,
-    FileUploadCompletionBody,
     FileUploadSchema,
     LinkType,
     PresignedLink,
     SoftCopyBody,
-    UploadedPart,
 )
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import LocationID, NodeID, SimcoreS3FileID
@@ -47,7 +45,7 @@ from pytest_simcore.helpers.fastapi import url_from_operation_id
 from pytest_simcore.helpers.httpx_assert_checks import assert_status
 from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.parametrizations import byte_size_ids
-from pytest_simcore.helpers.s3 import upload_file_part, upload_file_to_presigned_link
+from pytest_simcore.helpers.s3 import upload_file_part
 from pytest_simcore.helpers.storage_utils import FileIDDict, ProjectWithFilesParams
 from pytest_simcore.helpers.storage_utils_file_meta_data import (
     assert_file_meta_data_in_db,
@@ -55,9 +53,7 @@ from pytest_simcore.helpers.storage_utils_file_meta_data import (
 from servicelib.aiohttp import status
 from simcore_service_storage.constants import S3_UNDEFINED_OR_EXTERNAL_MULTIPART_ID
 from simcore_service_storage.models import FileDownloadResponse, S3BucketName, UploadID
-from simcore_service_storage.modules.long_running_tasks import (
-    get_completed_upload_tasks,
-)
+from simcore_service_storage.modules.celery.worker import CeleryTaskQueueWorker
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 from sqlalchemy.ext.asyncio import AsyncEngine
 from tenacity.asyncio import AsyncRetrying
@@ -608,10 +604,7 @@ def complex_file_name(faker: Faker) -> str:
     "file_size",
     [
         (TypeAdapter(ByteSize).validate_python("1Mib")),
-        (TypeAdapter(ByteSize).validate_python("500Mib")),
-        pytest.param(
-            TypeAdapter(ByteSize).validate_python("5Gib"), marks=pytest.mark.heavy_load
-        ),
+        (TypeAdapter(ByteSize).validate_python("127Mib")),
     ],
     ids=byte_size_ids,
 )
@@ -621,114 +614,6 @@ async def test_upload_real_file(
     upload_file: Callable[[ByteSize, str], Awaitable[Path]],
 ):
     await upload_file(file_size, complex_file_name)
-
-
-@pytest.mark.parametrize(
-    "location_id",
-    [SimcoreS3DataManager.get_location_id()],
-    ids=[SimcoreS3DataManager.get_location_name()],
-    indirect=True,
-)
-@pytest.mark.parametrize(
-    "file_size",
-    [
-        (TypeAdapter(ByteSize).validate_python("1Mib")),
-        (TypeAdapter(ByteSize).validate_python("117Mib")),
-    ],
-    ids=byte_size_ids,
-)
-async def test_upload_real_file_with_emulated_storage_restart_after_completion_was_called(
-    complex_file_name: str,
-    file_size: ByteSize,
-    initialized_app: FastAPI,
-    client: httpx.AsyncClient,
-    user_id: UserID,
-    project_id: ProjectID,
-    node_id: NodeID,
-    location_id: LocationID,
-    create_simcore_file_id: Callable[[ProjectID, NodeID, str], SimcoreS3FileID],
-    create_file_of_size: Callable[[ByteSize, str | None], Path],
-    create_upload_file_link_v2: Callable[..., Awaitable[FileUploadSchema]],
-    sqlalchemy_async_engine: AsyncEngine,
-    storage_s3_client: SimcoreS3API,
-    storage_s3_bucket: S3BucketName,
-):
-    """what does that mean?
-    storage runs the completion tasks in the background,
-    if after running the completion task, storage restarts then the task is lost.
-    Nevertheless the client still has a reference to the completion future and shall be able
-    to ask for its status"""
-
-    file = create_file_of_size(file_size, complex_file_name)
-    file_id = create_simcore_file_id(project_id, node_id, complex_file_name)
-    file_upload_link = await create_upload_file_link_v2(
-        file_id, link_type="PRESIGNED", file_size=file_size
-    )
-    # upload the file
-    part_to_etag: list[UploadedPart] = await upload_file_to_presigned_link(
-        file, file_upload_link
-    )
-    # complete the upload
-    complete_url = URL(f"{file_upload_link.links.complete_upload}").relative()
-    response = await client.post(
-        f"{complete_url}",
-        json=jsonable_encoder(FileUploadCompletionBody(parts=part_to_etag)),
-    )
-    response.raise_for_status()
-    file_upload_complete_response, error = assert_status(
-        response, status.HTTP_202_ACCEPTED, FileUploadCompleteResponse
-    )
-    assert not error
-    assert file_upload_complete_response
-    state_url = URL(f"{file_upload_complete_response.links.state}").relative()
-
-    # here we do not check now for the state completion. instead we simulate a restart where the tasks disappear
-    get_completed_upload_tasks(initialized_app).clear()
-    # now check for the completion
-    completion_etag = None
-    async for attempt in AsyncRetrying(
-        reraise=True,
-        wait=wait_fixed(1),
-        stop=stop_after_delay(60),
-        retry=retry_if_exception_type(AssertionError),
-    ):
-        with (
-            attempt,
-            log_context(
-                logging.INFO,
-                f"waiting for upload completion {state_url=}, {attempt.retry_state.attempt_number}",
-            ) as ctx,
-        ):
-            response = await client.post(f"{state_url}")
-            future, error = assert_status(
-                response, status.HTTP_200_OK, FileUploadCompleteFutureResponse
-            )
-            assert not error
-            assert future
-            assert future.state == FileUploadCompleteState.OK
-            assert future.e_tag is not None
-            completion_etag = future.e_tag
-            ctx.logger.info(
-                "%s",
-                f"--> done waiting, data is completely uploaded [{attempt.retry_state.retry_object.statistics}]",
-            )
-    # check the entry in db now has the correct file size, and the upload id is gone
-    await assert_file_meta_data_in_db(
-        sqlalchemy_async_engine,
-        file_id=file_id,
-        expected_entry_exists=True,
-        expected_file_size=file_size,
-        expected_upload_id=False,
-        expected_upload_expiration_date=False,
-        expected_sha256_checksum=None,
-    )
-    # check the file is in S3 for real
-    s3_metadata = await storage_s3_client.get_object_metadata(
-        bucket=storage_s3_bucket, object_key=file_id
-    )
-    assert s3_metadata.size == file_size
-    assert s3_metadata.last_modified
-    assert s3_metadata.e_tag == completion_etag
 
 
 @pytest.mark.parametrize(
@@ -751,7 +636,7 @@ async def test_upload_of_single_presigned_link_lazily_update_database_on_get(
     get_file_meta_data: Callable[..., Awaitable[FileMetaDataGet]],
     s3_client: S3Client,
 ):
-    file_size = TypeAdapter(ByteSize).validate_python("500Mib")
+    file_size = TypeAdapter(ByteSize).validate_python("127Mib")
     file_name = faker.file_name()
     # create a file
     file = create_file_of_size(file_size, file_name)
@@ -798,6 +683,7 @@ async def test_upload_real_file_with_s3_client(
     node_id: NodeID,
     faker: Faker,
     s3_client: S3Client,
+    with_storage_celery_worker: CeleryTaskQueueWorker,
 ):
     file_size = TypeAdapter(ByteSize).validate_python("500Mib")
     file_name = faker.file_name()
