@@ -12,7 +12,7 @@ from servicelib.rabbitmq.rpc_interfaces.webserver.errors import (
 
 from ...rabbitmq import get_rabbitmq_rpc_server
 from .. import _jobs_service
-from ..exceptions import ProjectInvalidRightsError
+from ..exceptions import ProjectInvalidRightsError, ProjectNotFoundError
 
 router = RPCRouter()
 
@@ -45,6 +45,9 @@ async def mark_project_as_job(
         )
     except ProjectInvalidRightsError as err:
         raise ProjectForbiddenRpcError.from_domain_error(err) from err
+
+    except ProjectNotFoundError as err:
+        raise ProjectNotFoundRpcError.from_domain_error(err) from err
 
 
 async def register_rpc_routes_on_startup(app: web.Application):
