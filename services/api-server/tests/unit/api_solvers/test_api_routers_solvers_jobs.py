@@ -18,6 +18,7 @@ from fastapi import FastAPI
 from models_library.services import ServiceMetaDataPublished
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import AnyUrl, HttpUrl, TypeAdapter
+from pytest_mock import MockType
 from respx import MockRouter
 from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server.core.settings import ApplicationSettings
@@ -206,6 +207,7 @@ async def test_run_solver_job(
     mocked_catalog_service_api: MockRouter,
     mocked_directorv2_service_api: MockRouter,
     mocked_webserver_service_api: MockRouter,
+    mocked_rpc_webserver_service_api: dict[str, MockType],
     auth: httpx.BasicAuth,
     project_id: str,
     solver_key: str,

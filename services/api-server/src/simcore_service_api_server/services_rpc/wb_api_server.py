@@ -27,6 +27,7 @@ from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
 from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
     NotEnoughAvailableSeatsError,
 )
+from servicelib.rabbitmq.rpc_interfaces.webserver import projects as projects_rpc
 from servicelib.rabbitmq.rpc_interfaces.webserver.functions.functions import (
     ping as _ping,
 )
@@ -211,7 +212,11 @@ class WbApiRpcClient(SingletonInAppStateMixin):
 
         assert project_uuid
 
-        raise NotImplementedError
+        await projects_rpc.mark_project_as_job(
+            rpc_client=self._client,
+            project_uuid=project_uuid,
+            job_parent_resource_name=job_parent_resource_name,
+        )
 
 
 def setup(app: FastAPI, rabbitmq_rmp_client: RabbitMQRPCClient):

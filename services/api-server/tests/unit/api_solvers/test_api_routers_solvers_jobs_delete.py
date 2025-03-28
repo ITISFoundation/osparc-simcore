@@ -33,6 +33,7 @@ class MockedBackendApiDict(TypedDict):
 @pytest.fixture
 def mocked_backend_services_apis_for_delete_non_existing_project(
     mocked_webserver_service_api: MockRouter,
+    mocked_rpc_webserver_service_api: dict[str, MockType],
     project_tests_dir: Path,
 ) -> MockedBackendApiDict:
     mock_name = "delete_project_not_found.json"
@@ -85,6 +86,7 @@ async def test_delete_non_existing_solver_job(
 @pytest.fixture
 def mocked_backend_services_apis_for_create_and_delete_solver_job(
     mocked_webserver_service_api: MockRouter,
+    mocked_rpc_webserver_service_api: dict[str, MockType],
     mocked_catalog_service_api: MockRouter,
     project_tests_dir: Path,
 ) -> MockedBackendApiDict:

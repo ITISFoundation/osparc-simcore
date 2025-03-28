@@ -13,7 +13,9 @@ import pytest
 from fastapi import FastAPI, status
 from fastapi.encoders import jsonable_encoder
 from models_library.projects_state import RunningState
+from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers import faker_catalog
+from pytest_simcore.helpers.webserver_rpc_server import WebserverRpcSideEffects
 from respx import MockRouter
 from simcore_service_api_server.core.settings import ApplicationSettings
 from simcore_service_api_server.services_http.director_v2 import ComputationTaskGet
@@ -41,6 +43,26 @@ def mocked_webserver_service_api(
     patch_webserver_long_running_project_tasks(mocked_webserver_service_api_base)
 
     return mocked_webserver_service_api_base
+
+
+@pytest.fixture
+def mocked_rpc_webserver_service_api(
+    app: FastAPI, mocker: MockerFixture
+) -> dict[str, MockType]:
+    from simcore_service_api_server.services_rpc.wb_api_server import projects_rpc
+
+    settings: ApplicationSettings = app.state.settings
+    assert settings.API_SERVER_WEBSERVER
+
+    side_effects = WebserverRpcSideEffects()
+
+    return {
+        "mark_project_as_job": mocker.patch.object(
+            projects_rpc,
+            "mark_project_as_job",
+            side_effects.mark_project_as_job,
+        ),
+    }
 
 
 @pytest.fixture
