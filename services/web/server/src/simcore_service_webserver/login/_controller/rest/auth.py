@@ -12,30 +12,18 @@ from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.request_keys import RQT_USERID_KEY
 from simcore_postgres_database.models.users import UserRole
 
-from .._meta import API_VTAG
-from ..products import products_web
-from ..products.models import Product
-from ..security.api import forget_identity
-from ..session.access_policies import (
+from ...._meta import API_VTAG
+from ....products import products_web
+from ....products.models import Product
+from ....security import api as security_service
+from ....session.access_policies import (
     on_success_grant_session_access_to,
     session_access_required,
 )
-from ..users import preferences_api as user_preferences_api
-from ..utils_aiohttp import NextPage
-from ._2fa_api import (
-    create_2fa_code,
-    delete_2fa_code,
-    get_2fa_code,
-    mask_phone_number,
-    send_email_code,
-    send_sms_code,
-)
-from ._auth_api import (
-    check_authorized_user_credentials_or_raise,
-    check_authorized_user_in_product_or_raise,
-    get_user_by_email,
-)
-from ._constants import (
+from ....users import preferences_api as user_preferences_api
+from ....utils_aiohttp import NextPage
+from ... import _auth_service, _login_service, _security_service, _twofa_service
+from ..._constants import (
     CODE_2FA_EMAIL_CODE_REQUIRED,
     CODE_2FA_SMS_CODE_REQUIRED,
     CODE_PHONE_NUMBER_REQUIRED,
@@ -49,13 +37,10 @@ from ._constants import (
     MSG_WRONG_2FA_CODE__EXPIRED,
     MSG_WRONG_2FA_CODE__INVALID,
 )
-from ._models import InputSchema
-from ._security import login_granted_response
-from .decorators import login_required
-from .errors import handle_login_exceptions
-from .settings import LoginSettingsForProduct, get_plugin_settings
-from .storage import AsyncpgStorage, get_plugin_storage
-from .utils import envelope_response, flash_response, notify_user_logout
+from ..._models import InputSchema
+from ...decorators import login_required
+from ...errors import handle_login_exceptions
+from ...settings import LoginSettingsForProduct, get_plugin_settings
 
 log = logging.getLogger(__name__)
 
@@ -74,8 +59,7 @@ class CodePageParams(BaseModel):
     next_url: str | None = None
 
 
-class LoginNextPage(NextPage[CodePageParams]):
-    ...
+class LoginNextPage(NextPage[CodePageParams]): ...
 
 
 @routes.post(f"/{API_VTAG}/auth/login", name="auth_login")
@@ -104,19 +88,19 @@ async def login(request: web.Request):
     login_data = await parse_request_body_as(LoginBody, request)
 
     # Authenticate user and verify access to the product
-    user = await check_authorized_user_credentials_or_raise(
-        user=await get_user_by_email(request.app, email=login_data.email),
+    user = await _auth_service.check_authorized_user_credentials_or_raise(
+        user=await _auth_service.get_user_by_email(request.app, email=login_data.email),
         password=login_data.password.get_secret_value(),
         product=product,
     )
-    await check_authorized_user_in_product_or_raise(
+    await _auth_service.check_authorized_user_in_product_or_raise(
         request.app, user=user, product=product
     )
 
     # Check if user role allows skipping 2FA or if 2FA is not required
     skip_2fa = UserRole(user["role"]) == UserRole.TESTER
     if skip_2fa or not settings.LOGIN_2FA_REQUIRED:
-        return await login_granted_response(request, user=user)
+        return await _security_service.login_granted_response(request, user=user)
 
     # 2FA login process continuation
     user_2fa_preference = await user_preferences_api.get_frontend_user_preference(
@@ -143,14 +127,14 @@ async def login(request: web.Request):
         ).validate_python(user_2fa_preference.value)
 
     if user_2fa_authentification_method == TwoFactorAuthentificationMethod.DISABLED:
-        return await login_granted_response(request, user=user)
+        return await _security_service.login_granted_response(request, user=user)
 
     # Check phone for SMS authentication
     if (
         user_2fa_authentification_method == TwoFactorAuthentificationMethod.SMS
         and not user["phone"]
     ):
-        return envelope_response(
+        return _login_service.envelope_response(
             # LoginNextPage
             {
                 "name": CODE_PHONE_NUMBER_REQUIRED,
@@ -162,7 +146,7 @@ async def login(request: web.Request):
             status=status.HTTP_202_ACCEPTED,
         )
 
-    code = await create_2fa_code(
+    code = await _twofa_service.create_2fa_code(
         app=request.app,
         user_email=user["email"],
         expiration_in_seconds=settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
@@ -175,7 +159,7 @@ async def login(request: web.Request):
         assert settings.LOGIN_TWILIO  # nosec
         assert product.twilio_messaging_sid  # nosec
 
-        await send_sms_code(
+        await _twofa_service.send_sms_code(
             phone_number=user["phone"],
             code=code,
             twilio_auth=settings.LOGIN_TWILIO,
@@ -185,13 +169,13 @@ async def login(request: web.Request):
             user_id=user["id"],
         )
 
-        return envelope_response(
+        return _login_service.envelope_response(
             # LoginNextPage
             {
                 "name": CODE_2FA_SMS_CODE_REQUIRED,
                 "parameters": {
                     "message": MSG_2FA_CODE_SENT.format(
-                        phone_number=mask_phone_number(user["phone"])
+                        phone_number=_twofa_service.mask_phone_number(user["phone"])
                     ),
                     "expiration_2fa": settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
                 },
@@ -203,7 +187,7 @@ async def login(request: web.Request):
     assert (
         user_2fa_authentification_method == TwoFactorAuthentificationMethod.EMAIL
     )  # nosec
-    await send_email_code(
+    await _twofa_service.send_email_code(
         request,
         user_email=user["email"],
         support_email=product.support_email,
@@ -212,7 +196,7 @@ async def login(request: web.Request):
         product=product,
         user_id=user["id"],
     )
-    return envelope_response(
+    return _login_service.envelope_response(
         {
             "name": CODE_2FA_EMAIL_CODE_REQUIRED,
             "parameters": {
@@ -240,8 +224,6 @@ async def login_2fa(request: web.Request):
     settings: LoginSettingsForProduct = get_plugin_settings(
         request.app, product_name=product.name
     )
-    db: AsyncpgStorage = get_plugin_storage(request.app)
-
     if not settings.LOGIN_2FA_REQUIRED:
         raise web.HTTPServiceUnavailable(
             reason="2FA login is not available",
@@ -252,7 +234,9 @@ async def login_2fa(request: web.Request):
     login_2fa_ = await parse_request_body_as(LoginTwoFactorAuthBody, request)
 
     # validates code
-    _expected_2fa_code = await get_2fa_code(request.app, login_2fa_.email)
+    _expected_2fa_code = await _twofa_service.get_2fa_code(
+        request.app, login_2fa_.email
+    )
     if not _expected_2fa_code:
         raise web.HTTPUnauthorized(
             reason=MSG_WRONG_2FA_CODE__EXPIRED, content_type=MIMETYPE_APPLICATION_JSON
@@ -262,16 +246,16 @@ async def login_2fa(request: web.Request):
             reason=MSG_WRONG_2FA_CODE__INVALID, content_type=MIMETYPE_APPLICATION_JSON
         )
 
-    user = await db.get_user({"email": login_2fa_.email})
+    user = await _auth_service.get_user_by_email(request.app, email=login_2fa_.email)
     assert user is not None  # nosec
 
     # NOTE: a priviledge user should not have called this entrypoint
     assert UserRole(user["role"]) <= UserRole.USER  # nosec
 
     # dispose since code was used
-    await delete_2fa_code(request.app, login_2fa_.email)
+    await _twofa_service.delete_2fa_code(request.app, login_2fa_.email)
 
-    return await login_granted_response(request, user=dict(user))
+    return await _security_service.login_granted_response(request, user=dict(user))
 
 
 class LogoutBody(InputSchema):
@@ -296,9 +280,11 @@ async def logout(request: web.Request) -> web.Response:
         f"{logout_.client_session_id=}",
         extra=get_log_record_extra(user_id=user_id),
     ):
-        response = flash_response(MSG_LOGGED_OUT, "INFO")
-        await notify_user_logout(request.app, user_id, logout_.client_session_id)
-        await forget_identity(request, response)
+        response = _login_service.flash_response(MSG_LOGGED_OUT, "INFO")
+        await _login_service.notify_user_logout(
+            request.app, user_id, logout_.client_session_id
+        )
+        await security_service.forget_identity(request, response)
 
         return response
 

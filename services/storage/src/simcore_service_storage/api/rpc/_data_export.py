@@ -1,3 +1,5 @@
+import logging
+
 from celery.exceptions import CeleryError  # type: ignore[import-untyped]
 from fastapi import FastAPI
 from models_library.api_schemas_rpc_async_jobs.async_jobs import (
@@ -18,6 +20,8 @@ from ...modules.celery import get_celery_client
 from ...modules.datcore_adapter.datcore_adapter_exceptions import DatcoreAdapterError
 from ...simcore_s3_dsm import SimcoreS3DataManager
 from .._worker_tasks._data_export import data_export
+
+_logger = logging.getLogger(__name__)
 
 router = RPCRouter()
 

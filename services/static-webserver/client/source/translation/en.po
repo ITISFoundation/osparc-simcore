@@ -1,0 +1,4411 @@
+#: osparc/Application.js
+msgid "You have been logged out"
+msgstr ""
+
+#: osparc/Application.js
+msgid "New Version Released"
+msgstr ""
+
+#: osparc/Application.js
+msgid "Privacy Policy"
+msgstr ""
+
+#: osparc/Application.js
+msgid "Privacy Policy and License Terms"
+msgstr ""
+
+#: osparc/Application.js
+msgid "You have been logged out"
+msgstr ""
+
+#: osparc/desktop/credits/ResourceInTableViewer.js
+msgid "Reload"
+msgstr ""
+
+#: osparc/desktop/credits/UsageTable.js
+msgid "Service"
+msgstr ""
+
+#: osparc/info/ServiceLarge.js
+msgid "Copy to clipboard"
+msgstr ""
+
+#: osparc/utils/Utils.js
+msgid "Today"
+msgstr ""
+
+#: osparc/utils/Utils.js
+msgid "Yesterday"
+msgstr ""
+
+#: osparc/utils/Utils.js
+msgid "Tomorrow"
+msgstr ""
+
+#: osparc/utils/Utils.js
+msgid "Your account will expire today."
+msgstr ""
+
+#: osparc/utils/Utils.js
+msgid "Your account will expire tomorrow."
+msgstr ""
+
+#: osparc/utils/Utils.js
+msgid "Your account will expire in "
+msgstr ""
+
+#: osparc/utils/Utils.js
+msgid " days."
+msgstr ""
+
+#: osparc/utils/Utils.js
+msgid "Please contact us via email:"
+msgstr ""
+
+#: osparc/utils/Utils.js
+msgid "To use all "
+msgstr ""
+
+#: osparc/utils/Utils.js
+msgid ", please send us an e-mail to create an account:"
+msgstr ""
+
+#: osparc/utils/Utils.js
+msgid "Copied to clipboard"
+msgstr ""
+
+#: osparc/WindowSizeTracker.js
+msgid "This app performs better for larger window size: "
+msgstr ""
+
+#: osparc/WindowSizeTracker.js
+msgid "Touchscreen devices are not supported yet."
+msgstr ""
+
+#: osparc/auth/Manager.js
+msgid "Unsuccessful Login"
+msgstr ""
+
+#: osparc/ErrorPage.js
+msgid "Support email"
+msgstr ""
+
+#: osparc/navigation/UserMenu.js
+msgid "Log in"
+msgstr ""
+
+#: osparc/store/Support.js
+msgid "Please send us an email to:"
+msgstr ""
+
+#: osparc/product/Utils.js
+msgid "projects"
+msgstr ""
+
+#: osparc/product/Utils.js
+msgid "project"
+msgstr ""
+
+#: osparc/product/Utils.js
+msgid "studies"
+msgstr ""
+
+#: osparc/product/Utils.js
+msgid "study"
+msgstr ""
+
+#: osparc/product/Utils.js
+msgid "tutorials"
+msgstr ""
+
+#: osparc/product/Utils.js
+msgid "tutorial"
+msgstr ""
+
+#: osparc/product/Utils.js
+msgid "templates"
+msgstr ""
+
+#: osparc/product/Utils.js
+msgid "template"
+msgstr ""
+
+#: osparc/product/Utils.js
+msgid "service"
+msgstr ""
+
+#: osparc/product/Utils.js
+msgid "services"
+msgstr ""
+
+#: osparc/NewRelease.js
+msgid "We are pleased to announce that some new features were deployed for you!"
+msgstr ""
+
+#: osparc/NewRelease.js
+msgid "What's new in "
+msgstr ""
+
+#: osparc/CookiePolicy.js
+msgid "This website applies cookies to personalize your experience and to make our site easier to navigate. By visiting the site, you agree to the "
+msgstr ""
+
+#: osparc/CookiePolicy.js
+msgid "By visiting the site, you agree to the "
+msgstr ""
+
+#: osparc/CookiePolicy.js
+msgid "It also uses third party software and libraries. By visiting the site, you agree to the "
+msgstr ""
+
+#: osparc/CookiePolicy.js
+msgid "Licensing."
+msgstr ""
+
+#: osparc/metadata/QualityEditor.js
+msgid "Accept"
+msgstr ""
+
+#: osparc/data/Resources.js
+msgid "You have been logged out. Your cookie might have expired."
+msgstr ""
+
+#: osparc/FlashMessenger.js
+msgid "Oops... something went wrong"
+msgstr ""
+
+#: osparc/FlashMessenger.js
+msgid "No message"
+msgstr ""
+
+#: osparc/desktop/MainPage.js
+msgid "Do you want to close "
+msgstr ""
+
+#: osparc/desktop/MainPage.js
+msgid "Make sure you saved your changes to:"
+msgstr ""
+
+#: osparc/desktop/MainPage.js
+msgid "- current <b>smash file</b>"
+msgstr ""
+
+#: osparc/desktop/MainPage.js
+msgid "- current <b>notebooks</b> (<b>jupyterlab</b> session will be terminated)"
+msgstr ""
+
+#: osparc/desktop/MainPage.js
+msgid "Close"
+msgstr ""
+
+#: osparc/share/CollaboratorsStudy.js
+msgid "Yes"
+msgstr ""
+
+#: osparc/desktop/MainPage.js
+msgid "Do you want to save and close "
+msgstr ""
+
+#: osparc/desktop/MainPage.js
+msgid "Save & Close"
+msgstr ""
+
+#: osparc/desktop/MainPage.js
+msgid "Platform logger"
+msgstr ""
+
+#: osparc/desktop/MainPage.js
+msgid "Started template creation and added to the background tasks"
+msgstr ""
+
+#: osparc/dashboard/StudyBrowser.js
+msgid "Something went wrong while duplicating the study<br>"
+msgstr ""
+
+#: osparc/desktop/MainPage.js
+msgid "Loading Snapshot"
+msgstr ""
+
+#: osparc/desktop/MainPage.js
+msgid "Closing previous snapshot..."
+msgstr ""
+
+#: osparc/desktop/MainPage.js
+msgid "No snapshot found"
+msgstr ""
+
+#: osparc/desktop/MainPageHandler.js
+msgid "Study not found"
+msgstr ""
+
+#: osparc/desktop/MainPage.js
+msgid "Loading Iteration"
+msgstr ""
+
+#: osparc/desktop/MainPage.js
+msgid "Closing..."
+msgstr ""
+
+#: osparc/desktop/MainPage.js
+msgid "Iteration not found"
+msgstr ""
+
+#: osparc/MaintenanceTracker.js
+msgid "The service is under maintenance. Please check back later"
+msgstr ""
+
+#: osparc/CookieExpirationTracker.js
+msgid "Your session has expired"
+msgstr ""
+
+#: osparc/NewUITracker.js
+msgid "A new version of the application is now available."
+msgstr ""
+
+#: osparc/NewUITracker.js
+msgid "Click the Reload button to get the latest features."
+msgstr ""
+
+#: osparc/ui/switch/ThemeSwitcher.js
+msgid "Dark theme"
+msgstr ""
+
+#: osparc/ui/switch/ThemeSwitcher.js
+msgid "Light theme"
+msgstr ""
+
+#: osparc/metadata/QualityEditor.js
+msgid "Ten Simple Rules"
+msgstr ""
+
+#: osparc/dashboard/CardBase.js
+msgid "TSR:"
+msgstr ""
+
+#: osparc/share/NewCollaboratorsManager.js
+msgid "Share"
+msgstr ""
+
+#: osparc/dashboard/CardBase.js
+msgid "App mode"
+msgstr ""
+
+#: osparc/service/ServiceListItem.js
+msgid "Hits: "
+msgstr ""
+
+#: osparc/dashboard/CardBase.js
+msgid "Unaccessible service(s):"
+msgstr ""
+
+#: osparc/dashboard/CardBase.js
+msgid "Service(s) retired, please update"
+msgstr ""
+
+#: osparc/dashboard/CardBase.js
+msgid "Service(s) deprecated, please update"
+msgstr ""
+
+#: osparc/dashboard/CardBase.js
+msgid "Update available"
+msgstr ""
+
+#: osparc/navigation/PrevNextButtons.js
+msgid "Running"
+msgstr ""
+
+#: osparc/dashboard/CardBase.js
+msgid "Ran successfully"
+msgstr ""
+
+#: osparc/dashboard/CardBase.js
+msgid "Run aborted"
+msgstr ""
+
+#: osparc/dashboard/CardBase.js
+msgid "Unsuccessful Run"
+msgstr ""
+
+#: osparc/dashboard/CardBase.js
+msgid "A user"
+msgstr ""
+
+#: osparc/dashboard/CardBase.js
+msgid " is closing it..."
+msgstr ""
+
+#: osparc/dashboard/CardBase.js
+msgid " is cloning it..."
+msgstr ""
+
+#: osparc/dashboard/CardBase.js
+msgid " is exporting it..."
+msgstr ""
+
+#: osparc/dashboard/CardBase.js
+msgid " is opening it..."
+msgstr ""
+
+#: osparc/dashboard/CardBase.js
+msgid " is using it."
+msgstr ""
+
+#: osparc/dashboard/CardBase.js
+msgid "Embargoed<br>Credits Required"
+msgstr ""
+
+#: osparc/dashboard/StudyBrowser.js
+msgid "Empty"
+msgstr ""
+
+#: osparc/product/quickStart/s4llite/Slides.js
+msgid "Quick Start"
+msgstr ""
+
+#: osparc/tours/Manager.js
+msgid "Guided Tours"
+msgstr ""
+
+#: osparc/desktop/WorkbenchView.js
+msgid "Information"
+msgstr ""
+
+#: osparc/store/Support.js
+msgid "To create an issue, you must have an account and be already logged-in."
+msgstr ""
+
+#: osparc/store/Support.js
+msgid "Continue"
+msgstr ""
+
+#: osparc/store/Support.js
+msgid "Log in in "
+msgstr ""
+
+#: osparc/store/Support.js
+msgid "Release Notes"
+msgstr ""
+
+#: osparc/store/Support.js
+msgid "Registration is currently only available with an invitation."
+msgstr ""
+
+#: osparc/store/Support.js
+msgid "Please request access to "
+msgstr ""
+
+#: osparc/store/Data.js
+msgid "Oops... more than 10.000 items to be listed here. Maybe it's time to make a folder :)."
+msgstr ""
+
+#: osparc/store/Data.js
+msgid "Unsuccessful file copy"
+msgstr ""
+
+#: osparc/store/Data.js
+msgid "Unsuccessful file deletion"
+msgstr ""
+
+#: osparc/notification/RibbonNotification.js
+msgid "Maintenance scheduled."
+msgstr ""
+
+#: osparc/notification/RibbonNotification.js
+msgid "Please save your work and logout."
+msgstr ""
+
+#: osparc/notification/RibbonNotification.js
+msgid "Oops, your window is a bit small!"
+msgstr ""
+
+#: osparc/product/quickStart/Utils.js
+msgid "Don't show again"
+msgstr ""
+
+#: osparc/TooSmallDialog.js
+msgid "Window size too small"
+msgstr ""
+
+#: osparc/TooSmallDialog.js
+msgid "The application can't perform in such a small window."
+msgstr ""
+
+#: osparc/navigation/UserMenu.js
+msgid "Exit"
+msgstr ""
+
+#: osparc/navigation/UserMenu.js
+msgid "Log out"
+msgstr ""
+
+#: osparc/desktop/credits/Utils.js
+msgid "You can't access this information"
+msgstr ""
+
+#: osparc/desktop/credits/Utils.js
+msgid "You can't access these operations"
+msgstr ""
+
+#: osparc/share/Collaborators.js
+msgid "Any logged-in user with access to the "
+msgstr ""
+
+#: osparc/share/Collaborators.js
+msgid " can open it"
+msgstr ""
+
+#: osparc/share/Collaborators.js
+msgid "Copy link"
+msgstr ""
+
+#: osparc/share/Collaborators.js
+msgid "Anyone on the internet with the link can open this "
+msgstr ""
+
+#: osparc/share/Collaborators.js
+msgid "Any logged-in user with the link can copy and open this "
+msgstr ""
+
+#: osparc/dashboard/SearchBarFilter.js
+msgid "Shared with"
+msgstr ""
+
+#: osparc/share/Collaborators.js
+msgid "Collaborator can't be removed:"
+msgstr ""
+
+#: osparc/share/Collaborators.js
+msgid " needs at least one owner."
+msgstr ""
+
+#: osparc/share/Collaborators.js
+msgid "You might want to delete it instead."
+msgstr ""
+
+#: osparc/ui/list/MemberListItem.js
+msgid "Leave"
+msgstr ""
+
+#: osparc/auth/core/Utils.js
+msgid "Passwords do not match"
+msgstr ""
+
+#: osparc/auth/core/Utils.js
+msgid "Invalid phone number. Please [+][country code][phone number]"
+msgstr ""
+
+#: osparc/auth/core/Utils.js
+msgid "Invalid email address.<br>Please register using your university email address"
+msgstr ""
+
+#: osparc/pricing/UnitEditor.js
+msgid "Cancel"
+msgstr ""
+
+#: osparc/po/PreRegistration.js
+msgid "Submit"
+msgstr ""
+
+#: osparc/form/json/JsonSchemaForm.js
+msgid "There was an issue generating the form or one or more schemas failed to validate. Check your Javascript console for more details."
+msgstr ""
+
+#: osparc/auth/LoginWithDecorators.js
+msgid "Your account has been created.<br>You can now use your credentials to login."
+msgstr ""
+
+#: osparc/navigation/NavigationBar.js
+msgid "This is TIP.lite, a light version of TIP.<br>Request access to TIP."
+msgstr ""
+
+#: osparc/product/quickStart/tis/Dashboard.js
+msgid "Dashboard"
+msgstr ""
+
+#: osparc/navigation/NavigationBar.js
+msgid "Read only"
+msgstr ""
+
+#: osparc/ui/window/Confirmation.js
+msgid "Confirmation"
+msgstr ""
+
+#: osparc/snapshots/Loading.js
+msgid "Loading "
+msgstr ""
+
+#: osparc/desktop/MainPageHandler.js
+msgid "is already open by"
+msgstr ""
+
+#: osparc/desktop/MainPageHandler.js
+msgid "another user."
+msgstr ""
+
+#: osparc/desktop/MainPageHandler.js
+msgid "We encountered an issue with the"
+msgstr ""
+
+#: osparc/desktop/MainPageHandler.js
+msgid "Please contact support."
+msgstr ""
+
+#: osparc/dashboard/Dashboard.js
+msgid "SERVICES"
+msgstr ""
+
+#: osparc/dashboard/Dashboard.js
+msgid "DATA"
+msgstr ""
+
+#: osparc/desktop/StudyEditor.js
+msgid "You do not have writing permissions.<br>Your changes will not be saved."
+msgstr ""
+
+#: osparc/data/model/IframeHandler.js
+msgid "Starting"
+msgstr ""
+
+#: osparc/desktop/StudyEditor.js
+msgid "Opening "
+msgstr ""
+
+#: osparc/desktop/StudyEditor.js
+msgid " is already opened"
+msgstr ""
+
+#: osparc/desktop/StudyEditor.js
+msgid "Error opening study"
+msgstr ""
+
+#: osparc/desktop/StudyEditor.js
+msgid "The Study contains more than "
+msgstr ""
+
+#: osparc/desktop/StudyEditor.js
+msgid " Interactive services."
+msgstr ""
+
+#: osparc/desktop/StudyEditor.js
+msgid "Please start them manually."
+msgstr ""
+
+#: osparc/desktop/SlideshowToolbar.js
+msgid "Edit App Mode"
+msgstr ""
+
+#: osparc/desktop/StudyEditor.js
+msgid "The pipeline is up-to-date. Do you want to re-run it?"
+msgstr ""
+
+#: osparc/widget/PreparingInputs.js
+msgid "Re-run"
+msgstr ""
+
+#: osparc/desktop/StartStopButtons.js
+msgid "Run"
+msgstr ""
+
+#: osparc/desktop/StudyEditor.js
+msgid "Take Snapshot"
+msgstr ""
+
+#: osparc/desktop/WorkbenchView.js
+msgid "Checkpoints"
+msgstr ""
+
+#: osparc/desktop/WorkbenchView.js
+msgid "Iterations"
+msgstr ""
+
+#: osparc/desktop/StudyEditor.js
+msgid "Error saving the study"
+msgstr ""
+
+#: osparc/data/PollTask.js
+msgid "Unsuccessful polling status"
+msgstr ""
+
+#: osparc/dashboard/StudyBrowserHeader.js
+msgid "My Workspace"
+msgstr ""
+
+#: osparc/study/Utils.js
+msgid "CREATING "
+msgstr ""
+
+#: osparc/service/Utils.js
+msgid "Parameter"
+msgstr ""
+
+#: osparc/service/Utils.js
+msgid "File"
+msgstr ""
+
+#: osparc/service/Utils.js
+msgid "Iterator"
+msgstr ""
+
+#: osparc/service/Utils.js
+msgid "Computational"
+msgstr ""
+
+#: osparc/desktop/WorkbenchView.js
+msgid "Interactive"
+msgstr ""
+
+#: osparc/service/Utils.js
+msgid "Probe"
+msgstr ""
+
+#: osparc/service/Utils.js
+msgid "Service deprecated"
+msgstr ""
+
+#: osparc/service/Utils.js
+msgid "Please go back to the dashboard and Update the Service or download its data and upload it to an updated version"
+msgstr ""
+
+#: osparc/service/Utils.js
+msgid "Please instantiate an updated version"
+msgstr ""
+
+#: osparc/service/Utils.js
+msgid "Service retired"
+msgstr ""
+
+#: osparc/service/Utils.js
+msgid "Please download the Service data and upload it to an updated version"
+msgstr ""
+
+#: osparc/service/Utils.js
+msgid "Please Stop the Service and then Update it"
+msgstr ""
+
+#: osparc/service/Utils.js
+msgid "Please Update the Service"
+msgstr ""
+
+#: osparc/service/Utils.js
+msgid "It will be Retired: "
+msgstr ""
+
+#: osparc/ui/basic/NodeStatusUI.js
+msgid "Idle"
+msgstr ""
+
+#: osparc/service/StatusUI.js
+msgid "Waiting for resources"
+msgstr ""
+
+#: osparc/service/StatusUI.js
+msgid "Unsuccessful"
+msgstr ""
+
+#: osparc/service/StatusUI.js
+msgid "Ready"
+msgstr ""
+
+#: osparc/service/StatusUI.js
+msgid "Deprecated"
+msgstr ""
+
+#: osparc/service/StatusUI.js
+msgid "Retired"
+msgstr ""
+
+#: osparc/service/StatusUI.js
+msgid "Starting..."
+msgstr ""
+
+#: osparc/service/StatusUI.js
+msgid "Stopping..."
+msgstr ""
+
+#: osparc/service/StatusUI.js
+msgid "Pending..."
+msgstr ""
+
+#: osparc/service/StatusUI.js
+msgid "Pulling..."
+msgstr ""
+
+#: osparc/service/StatusUI.js
+msgid "Connecting..."
+msgstr ""
+
+#: osparc/task/Export.js
+msgid "Exporting "
+msgstr ""
+
+#: osparc/info/StudyUtils.js
+msgid "Details"
+msgstr ""
+
+#: osparc/dashboard/ResourceDetails.js
+msgid "Credits required"
+msgstr ""
+
+#: osparc/study/StudyOptions.js
+msgid "Open"
+msgstr ""
+
+#: osparc/dashboard/NewPlusButton.js
+msgid "New"
+msgstr ""
+
+#: osparc/dashboard/ResourceDetails.js
+msgid "Some of your services are outdated. Please update to the latest version for better performance.\\\\\\\\n\\\\\\\\nDo you want to update now?"
+msgstr ""
+
+#: osparc/workbench/ServiceCatalog.js
+msgid "Version"
+msgstr ""
+
+#: osparc/dashboard/ResourceDetails.js
+msgid " Files..."
+msgstr ""
+
+#: osparc/dashboard/ResourceDetails.js
+msgid "Overview"
+msgstr ""
+
+#: osparc/dashboard/ResourceDetails.js
+msgid "Billing Settings"
+msgstr ""
+
+#: osparc/node/TierSelectionView.js
+msgid "Tiers"
+msgstr ""
+
+#: osparc/dashboard/ResourceDetails.js
+msgid "Pipeline View"
+msgstr ""
+
+#: osparc/dashboard/ResourceDetails.js
+msgid "Comments"
+msgstr ""
+
+#: osparc/dashboard/ResourceDetails.js
+msgid "Sharing"
+msgstr ""
+
+#: osparc/info/MergedLarge.js
+msgid "Classifiers"
+msgstr ""
+
+#: osparc/info/MergedLarge.js
+msgid "Quality"
+msgstr ""
+
+#: osparc/desktop/credits/UsageTable.js
+msgid "Tags"
+msgstr ""
+
+#: osparc/dashboard/ResourceDetails.js
+msgid "Services Updates"
+msgstr ""
+
+#: osparc/node/BootOptionsView.js
+msgid "Boot Options"
+msgstr ""
+
+#: osparc/dashboard/ResourceDetails.js
+msgid "Publish "
+msgstr ""
+
+#: osparc/dashboard/ResourceBrowserBase.js
+msgid "You need to be logged in to create a study"
+msgstr ""
+
+#: osparc/dashboard/ResourceBrowserBase.js
+msgid "Group"
+msgstr ""
+
+#: osparc/dashboard/ResourceBrowserBase.js
+msgid "None"
+msgstr ""
+
+#: osparc/dashboard/ResourceBrowserBase.js
+msgid "Grid view"
+msgstr ""
+
+#: osparc/dashboard/ResourceBrowserBase.js
+msgid "List view"
+msgstr ""
+
+#: osparc/dashboard/StudyBrowser.js
+msgid "Creating "
+msgstr ""
+
+#: osparc/dashboard/WorkspaceButtonItem.js
+msgid "Share..."
+msgstr ""
+
+#: osparc/dashboard/ResourceBrowserBase.js
+msgid "Tags..."
+msgstr ""
+
+#: osparc/widget/StudyDataManager.js
+msgid " Files"
+msgstr ""
+
+#: osparc/tours/Manager.js
+msgid "This collection of Guided Tours will show you how to use the platform:"
+msgstr ""
+
+#: osparc/desktop/credits/BuyCreditsStepper.js
+msgid "Payment "
+msgstr ""
+
+#: osparc/share/CollaboratorsWorkspace.js
+msgid "Workspace successfully shared"
+msgstr ""
+
+#: osparc/share/CollaboratorsWorkspace.js
+msgid "Something went wrong while sharing the workspace"
+msgstr ""
+
+#: osparc/desktop/organizations/MembersList.js
+msgid " successfully removed"
+msgstr ""
+
+#: osparc/desktop/organizations/MembersList.js
+msgid "Something went wrong while removing "
+msgstr ""
+
+#: osparc/share/CollaboratorsStudy.js
+msgid "Demote"
+msgstr ""
+
+#: osparc/share/CollaboratorsTag.js
+msgid "Tag successfully shared"
+msgstr ""
+
+#: osparc/share/CollaboratorsTag.js
+msgid "Something went wrong while sharing the tag"
+msgstr ""
+
+#: osparc/data/Roles.js
+msgid "Restricted Member"
+msgstr ""
+
+#: osparc/data/Roles.js
+msgid "Restricted member: no Read access"
+msgstr ""
+
+#: osparc/data/Roles.js
+msgid "- can access content shared within the Organization"
+msgstr ""
+
+#: osparc/data/Roles.js
+msgid "Member"
+msgstr ""
+
+#: osparc/data/Roles.js
+msgid "Member: Read access"
+msgstr ""
+
+#: osparc/data/Roles.js
+msgid "- can see other members"
+msgstr ""
+
+#: osparc/data/Roles.js
+msgid "- can share with other members"
+msgstr ""
+
+#: osparc/data/Roles.js
+msgid "Manager"
+msgstr ""
+
+#: osparc/data/Roles.js
+msgid "Manager: Read/Write access"
+msgstr ""
+
+#: osparc/data/Roles.js
+msgid "- can Add/Delete members"
+msgstr ""
+
+#: osparc/data/Roles.js
+msgid "- can Promote/Demote members"
+msgstr ""
+
+#: osparc/data/Roles.js
+msgid "- can Edit Organization details"
+msgstr ""
+
+#: osparc/data/Roles.js
+msgid "Administrator"
+msgstr ""
+
+#: osparc/data/Roles.js
+msgid "Admin: Read/Write/Delete access"
+msgstr ""
+
+#: osparc/data/Roles.js
+msgid "- can Delete the Organization"
+msgstr ""
+
+#: osparc/desktop/credits/CheckoutsTable.js
+msgid "User"
+msgstr ""
+
+#: osparc/data/Roles.js
+msgid "User: Read access"
+msgstr ""
+
+#: osparc/data/Roles.js
+msgid "- can open it"
+msgstr ""
+
+#: osparc/info/StudyUtils.js
+msgid "Editor"
+msgstr ""
+
+#: osparc/data/Roles.js
+msgid "Editor: Read/Write access"
+msgstr ""
+
+#: osparc/data/Roles.js
+msgid "- can make changes"
+msgstr ""
+
+#: osparc/data/Roles.js
+msgid "- can share it"
+msgstr ""
+
+#: osparc/dashboard/SortedByMenuButton.js
+msgid "Owner"
+msgstr ""
+
+#: osparc/data/Roles.js
+msgid "Owner: Read/Write/Delete access"
+msgstr ""
+
+#: osparc/data/Roles.js
+msgid "- can delete it"
+msgstr ""
+
+#: osparc/data/Roles.js
+msgid "- can use it"
+msgstr ""
+
+#: osparc/data/Roles.js
+msgid "- can use the credits"
+msgstr ""
+
+#: osparc/data/Roles.js
+msgid "Accountant"
+msgstr ""
+
+#: osparc/data/Roles.js
+msgid "Accountant: Read/Write access"
+msgstr ""
+
+#: osparc/data/Roles.js
+msgid "- can Edit Credit Account details"
+msgstr ""
+
+#: osparc/data/Roles.js
+msgid "Viewer"
+msgstr ""
+
+#: osparc/data/Roles.js
+msgid "Viewer: Read access"
+msgstr ""
+
+#: osparc/data/Roles.js
+msgid "- can inspect the content and open "
+msgstr ""
+
+#: osparc/data/Roles.js
+msgid "- can add "
+msgstr ""
+
+#: osparc/data/Roles.js
+msgid "- can add folders"
+msgstr ""
+
+#: osparc/data/Roles.js
+msgid "- can rename workspace"
+msgstr ""
+
+#: osparc/data/Roles.js
+msgid "Roles"
+msgstr ""
+
+#: osparc/share/AddCollaborators.js
+msgid "Share with..."
+msgstr ""
+
+#: osparc/share/AddCollaborators.js
+msgid "My Organizations..."
+msgstr ""
+
+#: osparc/share/AddCollaborators.js
+msgid "Publish for"
+msgstr ""
+
+#: osparc/share/CollaboratorsStudy.js
+msgid " successfully shared"
+msgstr ""
+
+#: osparc/share/CollaboratorsStudy.js
+msgid "Something went wrong while sharing the "
+msgstr ""
+
+#: osparc/share/CollaboratorsStudy.js
+msgid "Sharee permissions"
+msgstr ""
+
+#: osparc/ui/form/FileInput.js
+msgid "Select File..."
+msgstr ""
+
+#: osparc/auth/ui/LoginView.js
+msgid "Sign in"
+msgstr ""
+
+#: osparc/auth/ui/LoginView.js
+msgid "Create Account"
+msgstr ""
+
+#: osparc/auth/ui/RequestAccount.js
+msgid "Request Account"
+msgstr ""
+
+#: osparc/auth/ui/LoginView.js
+msgid "Forgot Password?"
+msgstr ""
+
+#: osparc/auth/ui/LoginView.js
+msgid "Disclaimer"
+msgstr ""
+
+#: osparc/ui/basic/PoweredByOsparc.js
+msgid "powered by"
+msgstr ""
+
+#: osparc/auth/ui/LoginView.js
+msgid "email or password don't look correct"
+msgstr ""
+
+#: osparc/auth/ui/RegistrationView.js
+msgid "Registration"
+msgstr ""
+
+#: osparc/auth/ui/RegistrationView.js
+msgid "Type your email"
+msgstr ""
+
+#: osparc/auth/ui/RegistrationView.js
+msgid "Type a password"
+msgstr ""
+
+#: osparc/auth/ui/RegistrationView.js
+msgid "Retype the password"
+msgstr ""
+
+#: osparc/auth/ui/RegistrationView.js
+msgid "Cannot register user"
+msgstr ""
+
+#: osparc/desktop/account/ProfilePage.js
+msgid "First Name"
+msgstr ""
+
+#: osparc/desktop/account/ProfilePage.js
+msgid "Last Name"
+msgstr ""
+
+#: osparc/auth/ui/RequestAccount.js
+msgid "University Email"
+msgstr ""
+
+#: osparc/po/Users.js
+msgid "Email"
+msgstr ""
+
+#: osparc/auth/ui/RequestAccount.js
+msgid "Phone Number"
+msgstr ""
+
+#: osparc/auth/ui/RequestAccount.js
+msgid "Company Name"
+msgstr ""
+
+#: osparc/auth/ui/RequestAccount.js
+msgid "University"
+msgstr ""
+
+#: osparc/auth/ui/RequestAccount.js
+msgid "Organization"
+msgstr ""
+
+#: osparc/auth/ui/RequestAccount.js
+msgid "Research Group/Organization"
+msgstr ""
+
+#: osparc/auth/ui/RequestAccount.js
+msgid "Address"
+msgstr ""
+
+#: osparc/auth/ui/RequestAccount.js
+msgid "City"
+msgstr ""
+
+#: osparc/auth/ui/RequestAccount.js
+msgid "Postal code"
+msgstr ""
+
+#: osparc/auth/ui/RequestAccount.js
+msgid "Country"
+msgstr ""
+
+#: osparc/auth/ui/RequestAccount.js
+msgid "Application"
+msgstr ""
+
+#: osparc/pricing/PlanEditor.js
+msgid "Description"
+msgstr ""
+
+#: osparc/auth/ui/RequestAccount.js
+msgid "How did you hear about us?"
+msgstr ""
+
+#: osparc/auth/ui/RequestAccount.js
+msgid "I acknowledge that data will be processed in accordance to "
+msgstr ""
+
+#: osparc/auth/ui/RequestAccount.js
+msgid "Request"
+msgstr ""
+
+#: osparc/auth/ui/RequestAccount.js
+msgid "The request is being processed, you will hear from us in the coming hours"
+msgstr ""
+
+#: osparc/auth/ui/RequestAccount.js
+msgid "Reload Captcha"
+msgstr ""
+
+#: osparc/auth/ui/RequestAccount.js
+msgid "Type the 6 digits:"
+msgstr ""
+
+#: osparc/auth/ui/VerifyPhoneNumberView.js
+msgid "Two-Factor Authentication (2FA)"
+msgstr ""
+
+#: osparc/auth/ui/VerifyPhoneNumberView.js
+msgid "A text message will be sent to your mobile phone for authentication each time you log in."
+msgstr ""
+
+#: osparc/auth/ui/VerifyPhoneNumberView.js
+msgid "Send SMS"
+msgstr ""
+
+#: osparc/auth/ui/VerifyPhoneNumberView.js
+msgid "Type the SMS code"
+msgstr ""
+
+#: osparc/file/FileDownloadLink.js
+msgid "Validate"
+msgstr ""
+
+#: osparc/auth/ui/VerifyPhoneNumberView.js
+msgid "Skip phone registration and send code via email"
+msgstr ""
+
+#: osparc/auth/ui/Login2FAValidationCodeView.js
+msgid "Invalid code"
+msgstr ""
+
+#: osparc/auth/ui/ResetPassView.js
+msgid "Reset Password"
+msgstr ""
+
+#: osparc/auth/ui/ResetPassRequestView.js
+msgid "Type your registration email"
+msgstr ""
+
+#: osparc/auth/ui/ResetPassRequestView.js
+msgid "Could not request password reset"
+msgstr ""
+
+#: osparc/desktop/account/ProfilePage.js
+msgid "Your new password"
+msgstr ""
+
+#: osparc/desktop/account/ProfilePage.js
+msgid "Retype your new password"
+msgstr ""
+
+#: osparc/auth/ui/ResetPassView.js
+msgid "Could not reset password"
+msgstr ""
+
+#: osparc/auth/ui/Login2FAValidationCodeView.js
+msgid "Type code"
+msgstr ""
+
+#: osparc/auth/ui/Login2FAValidationCodeView.js
+msgid "Didn't receive the code? Click to resend"
+msgstr ""
+
+#: osparc/auth/ui/Login2FAValidationCodeView.js
+msgid "Via SMS"
+msgstr ""
+
+#: osparc/auth/ui/Login2FAValidationCodeView.js
+msgid "Via email"
+msgstr ""
+
+#: osparc/navigation/UserMenu.js
+msgid "Access Full TIP"
+msgstr ""
+
+#: osparc/ui/basic/PoweredByOsparc.js
+msgid "powered by "
+msgstr ""
+
+#: osparc/workbench/BaseNodeUI.js
+msgid "Information..."
+msgstr ""
+
+#: osparc/dashboard/StudyBrowser.js
+msgid "Convert to Pipeline"
+msgstr ""
+
+#: osparc/navigation/StudyTitleWOptions.js
+msgid "Convert to Standalone"
+msgstr ""
+
+#: osparc/dashboard/FolderButtonItem.js
+msgid "Restore"
+msgstr ""
+
+#: osparc/navigation/StudyTitleWOptions.js
+msgid "Platform Logs..."
+msgstr ""
+
+#: osparc/task/TasksButton.js
+msgid "Tasks"
+msgstr ""
+
+#: osparc/jobs/JobsBrowser.js
+msgid "Jobs"
+msgstr ""
+
+#: osparc/navigation/UserMenu.js
+msgid "My Account"
+msgstr ""
+
+#: osparc/desktop/credits/BillingCenter.js
+msgid "Credit Accounts"
+msgstr ""
+
+#: osparc/desktop/credits/BillingCenter.js
+msgid "Payment Methods"
+msgstr ""
+
+#: osparc/desktop/credits/BillingCenter.js
+msgid "Payments"
+msgstr ""
+
+#: osparc/desktop/account/MyAccount.js
+msgid "Usage"
+msgstr ""
+
+#: osparc/desktop/credits/BillingCenter.js
+msgid "Purchases"
+msgstr ""
+
+#: osparc/desktop/credits/BillingCenter.js
+msgid "Checkouts"
+msgstr ""
+
+#: osparc/desktop/account/ProfilePage.js
+msgid "username"
+msgstr ""
+
+#: osparc/desktop/account/ProfilePage.js
+msgid "Expiration date:"
+msgstr ""
+
+#: osparc/desktop/account/ProfilePage.js
+msgid "Please contact us via email:<br>"
+msgstr ""
+
+#: osparc/desktop/account/ProfilePage.js
+msgid "Avoid dots or numbers in text"
+msgstr ""
+
+#: osparc/desktop/account/ProfilePage.js
+msgid "Update Profile"
+msgstr ""
+
+#: osparc/desktop/account/ProfilePage.js
+msgid "Profile updated"
+msgstr ""
+
+#: osparc/desktop/account/ProfilePage.js
+msgid "Unsuccessful profile update"
+msgstr ""
+
+#: osparc/desktop/account/ProfilePage.js
+msgid "Privacy"
+msgstr ""
+
+#: osparc/desktop/account/ProfilePage.js
+msgid "For Privacy reasons, you might want to hide some personal data."
+msgstr ""
+
+#: osparc/desktop/account/ProfilePage.js
+msgid "Update Privacy"
+msgstr ""
+
+#: osparc/desktop/account/ProfilePage.js
+msgid "Name is required"
+msgstr ""
+
+#: osparc/desktop/account/ProfilePage.js
+msgid "Set the Name first"
+msgstr ""
+
+#: osparc/desktop/account/ProfilePage.js
+msgid "Privacy updated"
+msgstr ""
+
+#: osparc/desktop/account/ProfilePage.js
+msgid "Unsuccessful privacy update"
+msgstr ""
+
+#: osparc/desktop/account/ProfilePage.js
+msgid "If all searchable fields are hidden, you will not be discoverable."
+msgstr ""
+
+#: osparc/desktop/account/ProfilePage.js
+msgid "Two-Factor Authentication"
+msgstr ""
+
+#: osparc/desktop/account/ProfilePage.js
+msgid "Set your preferred method to use for two-factor authentication when signing in:"
+msgstr ""
+
+#: osparc/desktop/account/ProfilePage.js
+msgid "You are about to disable the 2FA"
+msgstr ""
+
+#: osparc/desktop/account/ProfilePage.js
+msgid "            The Two-Factor Authentication is one more measure to prevent hackers from accessing your account with an additional layer of security.             When you sign in, 2FA helps make sure that your resources and personal information stays private, safe and secure.          "
+msgstr ""
+
+#: osparc/desktop/account/ProfilePage.js
+msgid "Yes, disable"
+msgstr ""
+
+#: osparc/desktop/account/ProfilePage.js
+msgid "2FA Method"
+msgstr ""
+
+#: osparc/desktop/account/ProfilePage.js
+msgid "Password"
+msgstr ""
+
+#: osparc/desktop/account/ProfilePage.js
+msgid "Your current password"
+msgstr ""
+
+#: osparc/desktop/account/ProfilePage.js
+msgid "Unsuccessful password reset"
+msgstr ""
+
+#: osparc/desktop/account/ProfilePage.js
+msgid "Danger Zone"
+msgstr ""
+
+#: osparc/desktop/account/DeleteAccount.js
+msgid "Delete Account"
+msgstr ""
+
+#: osparc/store/Services.js
+msgid "Unable to fetch Services"
+msgstr ""
+
+#: osparc/store/Services.js
+msgid "Some services are inaccessible:<br>"
+msgstr ""
+
+#: osparc/dashboard/StudyBrowser.js
+msgid "Successfully deleted"
+msgstr ""
+
+#: osparc/dashboard/StudyBrowser.js
+msgid "Successfully restored"
+msgstr ""
+
+#: osparc/dashboard/StudyBrowser.js
+msgid "The permissions will be taken from the new workspace."
+msgstr ""
+
+#: osparc/dashboard/MoveResourceTo.js
+msgid "Move"
+msgstr ""
+
+#: osparc/dashboard/FolderButtonItem.js
+msgid "Move to..."
+msgstr ""
+
+#: osparc/dashboard/StudyBrowser.js
+msgid "Are you sure you want to delete the Folder and all its content?"
+msgstr ""
+
+#: osparc/dashboard/WorkspaceButtonItem.js
+msgid "It will be permanently deleted after "
+msgstr ""
+
+#: osparc/editor/AnnotationEditor.js
+msgid "Delete"
+msgstr ""
+
+#: osparc/dashboard/StudyBrowser.js
+msgid "Start with an empty study"
+msgstr ""
+
+#: osparc/dashboard/StudyBrowser.js
+msgid "New Plan"
+msgstr ""
+
+#: osparc/dashboard/FolderButtonItem.js
+msgid "Delete permanently"
+msgstr ""
+
+#: osparc/vipMarket/LicensedItemDetails.js
+msgid "Import"
+msgstr ""
+
+#: osparc/dashboard/StudyBrowser.js
+msgid "Import Study"
+msgstr ""
+
+#: osparc/dashboard/StudyBrowser.js
+msgid "Move to"
+msgstr ""
+
+#: osparc/dashboard/StudyBrowser.js
+msgid "Cancel Selection"
+msgstr ""
+
+#: osparc/dashboard/StudyBrowser.js
+msgid "Select "
+msgstr ""
+
+#: osparc/dashboard/FolderButtonItem.js
+msgid "Open location"
+msgstr ""
+
+#: osparc/dashboard/FolderButtonItem.js
+msgid "Rename..."
+msgstr ""
+
+#: osparc/dashboard/StudyBrowser.js
+msgid "Thumbnail..."
+msgstr ""
+
+#: osparc/info/MergedLarge.js
+msgid "Edit Thumbnail"
+msgstr ""
+
+#: osparc/study/StudyOptions.js
+msgid "Something went wrong while renaming"
+msgstr ""
+
+#: osparc/dashboard/StudyBrowser.js
+msgid "Something went wrong while updating the thumbnail"
+msgstr ""
+
+#: osparc/dashboard/StudyBrowser.js
+msgid " files..."
+msgstr ""
+
+#: osparc/dashboard/StudyBrowser.js
+msgid "Billing Settings..."
+msgstr ""
+
+#: osparc/dashboard/StudyBrowser.js
+msgid "Duplicate"
+msgstr ""
+
+#: osparc/dashboard/StudyBrowser.js
+msgid "Something went wrong while converting to pipeline"
+msgstr ""
+
+#: osparc/dashboard/StudyBrowser.js
+msgid "Export cMIS"
+msgstr ""
+
+#: osparc/dashboard/StudyBrowser.js
+msgid "Duplicate process started and added to the background tasks"
+msgstr ""
+
+#: osparc/dashboard/StudyBrowser.js
+msgid "Something went wrong while duplicating"
+msgstr ""
+
+#: osparc/dashboard/StudyBrowser.js
+msgid "Preparing files"
+msgstr ""
+
+#: osparc/dashboard/StudyBrowser.js
+msgid "Exporting process started and added to the background tasks"
+msgstr ""
+
+#: osparc/dashboard/StudyBrowser.js
+msgid "Download started"
+msgstr ""
+
+#: osparc/dashboard/StudyBrowser.js
+msgid "Something went wrong while exporting the study"
+msgstr ""
+
+#: osparc/dashboard/StudyBrowser.js
+msgid "Uploading file"
+msgstr ""
+
+#: osparc/dashboard/StudyBrowser.js
+msgid "Importing process started and added to the background tasks"
+msgstr ""
+
+#: osparc/dashboard/StudyBrowser.js
+msgid "Importing Study..."
+msgstr ""
+
+#: osparc/dashboard/StudyBrowser.js
+msgid "Processing study"
+msgstr ""
+
+#: osparc/dashboard/StudyBrowser.js
+msgid "Something went wrong while fetching the study"
+msgstr ""
+
+#: osparc/dashboard/StudyBrowser.js
+msgid "Something went wrong while importing the study"
+msgstr ""
+
+#: osparc/dashboard/FolderButtonItem.js
+msgid "Are you sure you want to delete"
+msgstr ""
+
+#: osparc/dashboard/StudyBrowser.js
+msgid "will be removed from your list. Collaborators will still have access."
+msgstr ""
+
+#: osparc/form/json/JsonSchemaFormHeader.js
+msgid "Remove"
+msgstr ""
+
+#: osparc/dashboard/StudyBrowser.js
+msgid "Duplicating "
+msgstr ""
+
+#: osparc/dashboard/StudyBrowser.js
+msgid "Duplication cancelled"
+msgstr ""
+
+#: osparc/metadata/ServicesInStudyUpdate.js
+msgid "Update all"
+msgstr ""
+
+#: osparc/dashboard/TemplateBrowser.js
+msgid "Are you sure you want to update all "
+msgstr ""
+
+#: osparc/node/LifeCycleView.js
+msgid "Update"
+msgstr ""
+
+#: osparc/desktop/organizations/OrganizationsList.js
+msgid "Are you sure you want to delete "
+msgstr ""
+
+#: osparc/dashboard/TemplateBrowser.js
+msgid "Study to Template cancelled"
+msgstr ""
+
+#: osparc/dashboard/TemplateBrowser.js
+msgid "Something went wrong while publishing the study<br>"
+msgstr ""
+
+#: osparc/dashboard/TemplateBrowser.js
+msgid "Publishing "
+msgstr ""
+
+#: osparc/dashboard/ServiceBrowser.js
+msgid "It seems you don't have access to this product."
+msgstr ""
+
+#: osparc/dashboard/ServiceBrowser.js
+msgid "Please contact us:"
+msgstr ""
+
+#: osparc/dashboard/ServiceBrowser.js
+msgid "Test with data"
+msgstr ""
+
+#: osparc/dashboard/ServiceBrowser.js
+msgid "Submit new service"
+msgstr ""
+
+#: osparc/dashboard/ServiceBrowser.js
+msgid "Submit a new service"
+msgstr ""
+
+#: osparc/desktop/WorkbenchView.js
+msgid "New Node"
+msgstr ""
+
+#: osparc/desktop/WorkbenchView.js
+msgid "Nodes"
+msgstr ""
+
+#: osparc/desktop/WorkbenchView.js
+msgid "Storage"
+msgstr ""
+
+#: osparc/desktop/WorkbenchView.js
+msgid "Study options"
+msgstr ""
+
+#: osparc/desktop/WorkbenchView.js
+msgid "Service options"
+msgstr ""
+
+#: osparc/desktop/WorkbenchView.js
+msgid "Workbench"
+msgstr ""
+
+#: osparc/node/slideshow/NodeView.js
+msgid "Logger"
+msgstr ""
+
+#: osparc/desktop/SlideshowToolbar.js
+msgid "App Mode"
+msgstr ""
+
+#: osparc/desktop/WorkbenchView.js
+msgid "Start App Mode"
+msgstr ""
+
+#: osparc/pricing/PlanListItem.js
+msgid "Edit"
+msgstr ""
+
+#: osparc/admin/Announcements.js
+msgid "Start"
+msgstr ""
+
+#: osparc/desktop/WorkbenchView.js
+msgid "Annotations"
+msgstr ""
+
+#: osparc/editor/AnnotationNoteCreator.js
+msgid "Note"
+msgstr ""
+
+#: osparc/desktop/WorkbenchView.js
+msgid "Rectangle"
+msgstr ""
+
+#: osparc/desktop/WorkbenchView.js
+msgid "Text"
+msgstr ""
+
+#: osparc/desktop/WorkbenchView.js
+msgid "Show"
+msgstr ""
+
+#: osparc/pricing/UnitEditor.js
+msgid "Create"
+msgstr ""
+
+#: osparc/node/slideshow/BaseNodeView.js
+msgid "Inputs"
+msgstr ""
+
+#: osparc/desktop/WorkbenchView.js
+msgid "Service data"
+msgstr ""
+
+#: osparc/node/slideshow/BaseNodeView.js
+msgid "Outputs"
+msgstr ""
+
+#: osparc/desktop/WorkbenchView.js
+msgid "Options"
+msgstr ""
+
+#: osparc/desktop/WorkbenchView.js
+msgid "Are you sure you want to delete the selected node?"
+msgstr ""
+
+#: osparc/desktop/WorkbenchView.js
+msgid "Delete Node"
+msgstr ""
+
+#: osparc/desktop/WorkbenchView.js
+msgid "Are you sure you want to delete the selected "
+msgstr ""
+
+#: osparc/desktop/WorkbenchView.js
+msgid "Delete Nodes"
+msgstr ""
+
+#: osparc/node/slideshow/BaseNodeView.js
+msgid "Settings"
+msgstr ""
+
+#: osparc/desktop/SlideshowView.js
+msgid "Are you sure you want to delete node?"
+msgstr ""
+
+#: osparc/widget/logger/LoggerView.js
+msgid "Show logs only from current node"
+msgstr ""
+
+#: osparc/filter/TextFilter.js
+msgid "Filter"
+msgstr ""
+
+#: osparc/widget/logger/LoggerView.js
+msgid "Min log-level"
+msgstr ""
+
+#: osparc/widget/logger/LoggerView.js
+msgid "Toggle auto-scroll"
+msgstr ""
+
+#: osparc/widget/logger/LoggerView.js
+msgid "Copy logs to clipboard"
+msgstr ""
+
+#: osparc/widget/logger/LoggerView.js
+msgid "Copy Selected log to clipboard"
+msgstr ""
+
+#: osparc/widget/logger/LoggerView.js
+msgid "Download logs"
+msgstr ""
+
+#: osparc/form/renderer/PropForm.js
+msgid "Unlink"
+msgstr ""
+
+#: osparc/navigation/PrevNextButtons.js
+msgid "Select File"
+msgstr ""
+
+#: osparc/form/renderer/PropForm.js
+msgid "Set new parameter"
+msgstr ""
+
+#: osparc/form/renderer/PropForm.js
+msgid "Set existing parameter"
+msgstr ""
+
+#: osparc/form/renderer/PropForm.js
+msgid "Required Input"
+msgstr ""
+
+#: osparc/form/renderer/PropForm.js
+msgid "Input"
+msgstr ""
+
+#: osparc/widget/NodesSlidesTree.js
+msgid "Use the eye icons to display/hide nodes in the App Mode."
+msgstr ""
+
+#: osparc/widget/NodesSlidesTree.js
+msgid "Use the up and down arrows to sort them."
+msgstr ""
+
+#: osparc/widget/NodesSlidesTree.js
+msgid "You can also display nodes by clicking on them on the Workbench or Nodes list."
+msgstr ""
+
+#: osparc/widget/NodesSlidesTree.js
+msgid "Disable"
+msgstr ""
+
+#: osparc/pricing/UnitEditor.js
+msgid "Save"
+msgstr ""
+
+#: osparc/snapshots/EditSnapshotView.js
+msgid "OK"
+msgstr ""
+
+#: osparc/snapshots/IterationsView.js
+msgid "Edit Tag"
+msgstr ""
+
+#: osparc/snapshots/SnapshotsView.js
+msgid "Edit Snapshot"
+msgstr ""
+
+#: osparc/snapshots/IterationsView.js
+msgid "iterations"
+msgstr ""
+
+#: osparc/snapshots/IterationsView.js
+msgid "Edit Iteration"
+msgstr ""
+
+#: osparc/desktop/StudyEditorIdlingTracker.js
+msgid "Are you still there?"
+msgstr ""
+
+#: osparc/data/model/Workbench.js
+msgid "Nodes can't be added while the pipeline is running"
+msgstr ""
+
+#: osparc/data/model/Workbench.js
+msgid "Nodes can't be deleted while the pipeline is running"
+msgstr ""
+
+#: osparc/data/model/Workbench.js
+msgid "You are not allowed to add nodes"
+msgstr ""
+
+#: osparc/data/model/IframeHandler.js
+msgid " is retired"
+msgstr ""
+
+#: osparc/data/model/Workbench.js
+msgid "Error creating "
+msgstr ""
+
+#: osparc/data/model/Workbench.js
+msgid "File couldn't be assigned"
+msgstr ""
+
+#: osparc/data/model/Workbench.js
+msgid "Parameter couldn't be assigned"
+msgstr ""
+
+#: osparc/data/model/Workbench.js
+msgid "Probe couldn't be assigned"
+msgstr ""
+
+#: osparc/data/model/Node.js
+msgid " ports auto connected"
+msgstr ""
+
+#: osparc/data/model/Node.js
+msgid "Do you really want Stop and Save the current state?"
+msgstr ""
+
+#: osparc/desktop/StartStopButtons.js
+msgid "Stop"
+msgstr ""
+
+#: osparc/data/model/NodeProgressSequence.js
+msgid "Waiting ..."
+msgstr ""
+
+#: osparc/widget/ProgressSequence.js
+msgid "CREATING ..."
+msgstr ""
+
+#: osparc/share/CollaboratorsService.js
+msgid "Service successfully shared"
+msgstr ""
+
+#: osparc/share/CollaboratorsService.js
+msgid "Something went wrong while sharing the service"
+msgstr ""
+
+#: osparc/share/CollaboratorsService.js
+msgid "Something went wrong while removing member"
+msgstr ""
+
+#: osparc/share/CollaboratorsService.js
+msgid "Operation not available"
+msgstr ""
+
+#: osparc/file/FilePicker.js
+msgid "Cancel upload"
+msgstr ""
+
+#: osparc/file/FileLabelWithActions.js
+msgid "Download"
+msgstr ""
+
+#: osparc/node/UpdateResourceLimitsView.js
+msgid "Reset"
+msgstr ""
+
+#: osparc/file/FileDrop.js
+msgid "Provide Link"
+msgstr ""
+
+#: osparc/file/FilePicker.js
+msgid "In order to Select a File you have three options:"
+msgstr ""
+
+#: osparc/file/FilePicker.js
+msgid "Drop file here"
+msgstr ""
+
+#: osparc/file/FilePicker.js
+msgid "Select New File"
+msgstr ""
+
+#: osparc/file/FilePicker.js
+msgid "Select Download Link"
+msgstr ""
+
+#: osparc/file/FilePicker.js
+msgid "Select File from other "
+msgstr ""
+
+#: osparc/file/FileDownloadLink.js
+msgid "Select"
+msgstr ""
+
+#: osparc/task/TaskUI.js
+msgid "Are you sure you want to cancel the task?"
+msgstr ""
+
+#: osparc/task/TaskUI.js
+msgid "Cancel Task"
+msgstr ""
+
+#: osparc/task/TaskUI.js
+msgid "Ignore"
+msgstr ""
+
+#: osparc/dashboard/ResourceUpgradeHelper.js
+msgid "Outdated services"
+msgstr ""
+
+#: osparc/info/ServiceLarge.js
+msgid "Copy Raw metadata"
+msgstr ""
+
+#: osparc/info/ServiceLarge.js
+msgid "Copy Service Id"
+msgstr ""
+
+#: osparc/info/ServiceLarge.js
+msgid "SERVICE ID"
+msgstr ""
+
+#: osparc/info/ServiceLarge.js
+msgid "KEY"
+msgstr ""
+
+#: osparc/info/ServiceLarge.js
+msgid "INTEGRATION VERSION"
+msgstr ""
+
+#: osparc/info/ServiceLarge.js
+msgid "VERSION"
+msgstr ""
+
+#: osparc/info/ServiceLarge.js
+msgid "RELEASE DATE"
+msgstr ""
+
+#: osparc/info/ServiceLarge.js
+msgid "CONTACT"
+msgstr ""
+
+#: osparc/info/ServiceLarge.js
+msgid "AUTHORS"
+msgstr ""
+
+#: osparc/info/StudyMedium.js
+msgid "ACCESS RIGHTS"
+msgstr ""
+
+#: osparc/info/ServiceLarge.js
+msgid "CLASSIFIERS"
+msgstr ""
+
+#: osparc/info/StudyMedium.js
+msgid "QUALITY"
+msgstr ""
+
+#: osparc/info/ServiceLarge.js
+msgid "Show Description only"
+msgstr ""
+
+#: osparc/info/ServiceLarge.js
+msgid "From all the metadata shown in this view,\\\\\\\\nonly the Description will be shown to Users."
+msgstr ""
+
+#: osparc/info/ServiceLarge.js
+msgid "Edit Icon"
+msgstr ""
+
+#: osparc/info/ServiceLarge.js
+msgid "Edit Name"
+msgstr ""
+
+#: osparc/info/ServiceLarge.js
+msgid "Edit Version Display"
+msgstr ""
+
+#: osparc/info/MergedLarge.js
+msgid "Edit Description"
+msgstr ""
+
+#: osparc/info/MergedLarge.js
+msgid "An issue occurred while updating the information."
+msgstr ""
+
+#: osparc/info/StudyLarge.js
+msgid "Title:"
+msgstr ""
+
+#: osparc/info/StudyLarge.js
+msgid "Thumbnail:"
+msgstr ""
+
+#: osparc/info/StudyLarge.js
+msgid "Description:"
+msgstr ""
+
+#: osparc/info/StudyLarge.js
+msgid "Author:"
+msgstr ""
+
+#: osparc/info/StudyLarge.js
+msgid "Access:"
+msgstr ""
+
+#: osparc/info/StudyLarge.js
+msgid "Created:"
+msgstr ""
+
+#: osparc/info/StudyLarge.js
+msgid "Modified:"
+msgstr ""
+
+#: osparc/info/StudyLarge.js
+msgid "Tags:"
+msgstr ""
+
+#: osparc/info/StudyLarge.js
+msgid "Quality:"
+msgstr ""
+
+#: osparc/info/StudyLarge.js
+msgid "Classifiers:"
+msgstr ""
+
+#: osparc/info/StudyLarge.js
+msgid "Location:"
+msgstr ""
+
+#: osparc/info/MergedLarge.js
+msgid "Edit Title"
+msgstr ""
+
+#: osparc/study/StudyOptions.js
+msgid "Credit Account"
+msgstr ""
+
+#: osparc/desktop/wallets/WalletListItem.js
+msgid "Buy Credits"
+msgstr ""
+
+#: osparc/study/BillingSettings.js
+msgid "Transfer from this Credit Account"
+msgstr ""
+
+#: osparc/study/BillingSettings.js
+msgid "Last charge:"
+msgstr ""
+
+#: osparc/study/BillingSettings.js
+msgid "credits"
+msgstr ""
+
+#: osparc/study/BillingSettings.js
+msgid "You don't have access to the last used Credit Account"
+msgstr ""
+
+#: osparc/study/BillingSettings.js
+msgid "Top up the Credit Account:<br>Purchase additional credits to restore a positive balance."
+msgstr ""
+
+#: osparc/study/BillingSettings.js
+msgid "Transfer credits from another Account:<br>Use this Credit Account to cover the negative balance."
+msgstr ""
+
+#: osparc/study/BillingSettings.js
+msgid "A credits transfer will be initiated to cover the negative balance:"
+msgstr ""
+
+#: osparc/study/BillingSettings.js
+msgid "Credits to transfer: "
+msgstr ""
+
+#: osparc/study/BillingSettings.js
+msgid "From: "
+msgstr ""
+
+#: osparc/study/BillingSettings.js
+msgid "To: "
+msgstr ""
+
+#: osparc/study/BillingSettings.js
+msgid "Transfer"
+msgstr ""
+
+#: osparc/study/BillingSettings.js
+msgid "Credit Account saved"
+msgstr ""
+
+#: osparc/service/PricingUnitsList.js
+msgid "No Tiers found"
+msgstr ""
+
+#: osparc/info/CommentsList.js
+msgid "0 Comments"
+msgstr ""
+
+#: osparc/info/CommentsList.js
+msgid "Load more comments..."
+msgstr ""
+
+#: osparc/info/CommentsList.js
+msgid "1 Comment"
+msgstr ""
+
+#: osparc/info/CommentsList.js
+msgid " Comments"
+msgstr ""
+
+#: osparc/info/CommentAdd.js
+msgid "Add comment"
+msgstr ""
+
+#: osparc/editor/AnnotationNoteCreator.js
+msgid "Add"
+msgstr ""
+
+#: osparc/metadata/ClassifiersEditor.js
+msgid "RRID:"
+msgstr ""
+
+#: osparc/metadata/ClassifiersEditor.js
+msgid "Add Classifier"
+msgstr ""
+
+#: osparc/metadata/ClassifiersEditor.js
+msgid "RRID classifier successfully added"
+msgstr ""
+
+#: osparc/metadata/ClassifiersEditor.js
+msgid "Classifiers successfully edited"
+msgstr ""
+
+#: osparc/metadata/ClassifiersEditor.js
+msgid "Something went wrong while editing classifiers"
+msgstr ""
+
+#: osparc/metadata/ClassifiersViewer.js
+msgid "No Classifiers assigned"
+msgstr ""
+
+#: osparc/metadata/QualityEditor.js
+msgid "Quality Assessment data not found"
+msgstr ""
+
+#: osparc/metadata/QualityEditor.js
+msgid "There was an issue validating the metadata."
+msgstr ""
+
+#: osparc/desktop/credits/AutoRecharge.js
+msgid "Enabled"
+msgstr ""
+
+#: osparc/metadata/QualityEditor.js
+msgid "Rules"
+msgstr ""
+
+#: osparc/metadata/QualityEditor.js
+msgid "Conformance Level"
+msgstr ""
+
+#: osparc/metadata/QualityEditor.js
+msgid "Target"
+msgstr ""
+
+#: osparc/metadata/QualityEditor.js
+msgid "Conformance Level Target"
+msgstr ""
+
+#: osparc/metadata/QualityEditor.js
+msgid "References"
+msgstr ""
+
+#: osparc/metadata/QualityEditor.js
+msgid "TSR SCORE"
+msgstr ""
+
+#: osparc/metadata/QualityEditor.js
+msgid "Not Applicable"
+msgstr ""
+
+#: osparc/metadata/QualityEditor.js
+msgid "Edit References"
+msgstr ""
+
+#: osparc/metadata/QualityEditor.js
+msgid "There was an issue while updating the Quality Assessment."
+msgstr ""
+
+#: osparc/form/tag/TagManager.js
+msgid "Apply Tags"
+msgstr ""
+
+#: osparc/desktop/preferences/pages/TagsPage.js
+msgid "New Tag"
+msgstr ""
+
+#: osparc/metadata/ServicesInStudyUpdate.js
+msgid "This service is deprecated. Please update."
+msgstr ""
+
+#: osparc/metadata/ServicesInStudyUpdate.js
+msgid "This service has been retired. Please update."
+msgstr ""
+
+#: osparc/metadata/ServicesInStudyUpdate.js
+msgid "Some services are inaccessible. Please contact the service owner:"
+msgstr ""
+
+#: osparc/metadata/ServicesInStudyUpdate.js
+msgid "Services marked in red are retired and can no longer be used."
+msgstr ""
+
+#: osparc/metadata/ServicesInStudyUpdate.js
+msgid "If the Update button is disabled, they might require manual intervention to be updated:"
+msgstr ""
+
+#: osparc/metadata/ServicesInStudyUpdate.js
+msgid "Open the study"
+msgstr ""
+
+#: osparc/metadata/ServicesInStudyUpdate.js
+msgid "Click on the retired service, download the data"
+msgstr ""
+
+#: osparc/metadata/ServicesInStudyUpdate.js
+msgid "Upload the data to a newer version"
+msgstr ""
+
+#: osparc/metadata/ServicesInStudyUpdate.js
+msgid "Services marked in yellow are deprecated, they will be retired soon."
+msgstr ""
+
+#: osparc/metadata/ServicesInStudyUpdate.js
+msgid "They can be updated by pressing the Update button."
+msgstr ""
+
+#: osparc/metadata/ServicesInStudyUpdate.js
+msgid "All services are up to date to their latest compatible version."
+msgstr ""
+
+#: osparc/metadata/ServicesInStudyUpdate.js
+msgid "Click Update to upgrade services to the latest compatible version."
+msgstr ""
+
+#: osparc/metadata/ServicesInStudyUpdate.js
+msgid "Some services are not up to date."
+msgstr ""
+
+#: osparc/metadata/ServicesInStudyUpdate.js
+msgid "Current"
+msgstr ""
+
+#: osparc/metadata/ServicesInStudyUpdate.js
+msgid "Compatible"
+msgstr ""
+
+#: osparc/metadata/ServicesInStudyUpdate.js
+msgid "Latest compatible version"
+msgstr ""
+
+#: osparc/metadata/ServicesInStudyUpdate.js
+msgid "Unknown"
+msgstr ""
+
+#: osparc/metadata/ServicesInStudyUpdate.js
+msgid "Up-to-date"
+msgstr ""
+
+#: osparc/metadata/ServicesInStudyBootOpts.js
+msgid "Here you can select in which mode the services will be started:"
+msgstr ""
+
+#: osparc/metadata/ServicesInStudyBootOpts.js
+msgid "Boot Mode"
+msgstr ""
+
+#: osparc/metadata/ServicesInStudyBootOpts.js
+msgid "Select boot type"
+msgstr ""
+
+#: osparc/metadata/ServicesInStudy.js
+msgid "Could not retrieve some service information"
+msgstr ""
+
+#: osparc/info/StudyUtils.js
+msgid "me"
+msgstr ""
+
+#: osparc/info/ServiceUtils.js
+msgid "Ten Simple Rules score"
+msgstr ""
+
+#: osparc/info/StudyUtils.js
+msgid "Autostart services"
+msgstr ""
+
+#: osparc/info/StudyUtils.js
+msgid "Disabling this will help opening and closing studies/projects faster"
+msgstr ""
+
+#: osparc/info/StudyUtils.js
+msgid "Add tags"
+msgstr ""
+
+#: osparc/info/StudyUtils.js
+msgid "Meta details"
+msgstr ""
+
+#: osparc/info/StudyUtils.js
+msgid "Share with Editors and Organizations"
+msgstr ""
+
+#: osparc/info/ServiceUtils.js
+msgid "Quality Assessment"
+msgstr ""
+
+#: osparc/study/SaveAsTemplate.js
+msgid "Publish with data"
+msgstr ""
+
+#: osparc/study/SaveAsTemplate.js
+msgid "Publish"
+msgstr ""
+
+#: osparc/study/StudyOptions.js
+msgid " Options"
+msgstr ""
+
+#: osparc/study/StudyOptions.js
+msgid "An issue occurred while selecting Credit Account"
+msgstr ""
+
+#: osparc/admin/Announcements.js
+msgid "Title"
+msgstr ""
+
+#: osparc/study/StudyOptions.js
+msgid "Advanced options"
+msgstr ""
+
+#: osparc/service/ServiceListItem.js
+msgid "Number of times you instantiated it"
+msgstr ""
+
+#: osparc/dashboard/GridButtonItem.js
+msgid "Viewer only"
+msgstr ""
+
+#: osparc/dashboard/FolderButtonItem.js
+msgid "Last modified"
+msgstr ""
+
+#: osparc/dashboard/FolderButtonItem.js
+msgid "Deleted"
+msgstr ""
+
+#: osparc/dashboard/ListButtonItem.js
+msgid "Click to filter by this Tag"
+msgstr ""
+
+#: osparc/dashboard/ListButtonItem.js
+msgid "More..."
+msgstr ""
+
+#: osparc/dashboard/SearchBarFilter.js
+msgid "All "
+msgstr ""
+
+#: osparc/dashboard/SearchBarFilter.js
+msgid "My "
+msgstr ""
+
+#: osparc/dashboard/SearchBarFilter.js
+msgid "Shared with Me"
+msgstr ""
+
+#: osparc/dashboard/SearchBarFilter.js
+msgid "Shared with Everyone"
+msgstr ""
+
+#: osparc/dashboard/SearchBarFilter.js
+msgid "search"
+msgstr ""
+
+#: osparc/dashboard/SearchBarFilter.js
+msgid "Service Type"
+msgstr ""
+
+#: osparc/dashboard/StudyBrowserHeader.js
+msgid "Recently Deleted"
+msgstr ""
+
+#: osparc/pricing/PlanDetails.js
+msgid "Services"
+msgstr ""
+
+#: osparc/dashboard/ResourceFilter.js
+msgid "Shared"
+msgstr ""
+
+#: osparc/dashboard/ResourceFilter.js
+msgid "All Tags..."
+msgstr ""
+
+#: osparc/dashboard/ResourceFilter.js
+msgid "Less Tags..."
+msgstr ""
+
+#: osparc/dashboard/ResourceFilter.js
+msgid "Edit Tags..."
+msgstr ""
+
+#: osparc/study/NodePricingUnits.js
+msgid "Cannot change Tier"
+msgstr ""
+
+#: osparc/file/TreeFolderView.js
+msgid "Calculating Size"
+msgstr ""
+
+#: osparc/file/TreeFolderView.js
+msgid "Total size: "
+msgstr ""
+
+#: osparc/product/quickStart/s4l/Welcome.js
+msgid "Welcome to Sim4Life"
+msgstr ""
+
+#: osparc/product/quickStart/s4lacad/Welcome.js
+msgid "Experience Most Advanced Simulations – All In The Cloud"
+msgstr ""
+
+#: osparc/product/quickStart/s4llite/Welcome.js
+msgid "Welcome onboard "
+msgstr ""
+
+#: osparc/product/quickStart/s4lacad/Welcome.js
+msgid "        Sim4Life is a revolutionary simulation platform, combining computable human phantoms with the most powerful physics solvers and the most advanced tissue models, for directly analyzing biological real-world phenomena and complex technical devices in a validated biological and anatomical environment.        <br>        <br>        In order to facilitate the introduction to the platform, we have some Guided Tours that can be found under the User Menu.        <br>        <br>        For more specific technical information, please refer to the Manuals on the Navigation Bar.      "
+msgstr ""
+
+#: osparc/product/quickStart/s4lacad/Welcome.js
+msgid "Welcome to Sim4Life Science"
+msgstr ""
+
+#: osparc/tours/Step.js
+msgid "Skip"
+msgstr ""
+
+#: osparc/navigation/PrevNextButtons.js
+msgid "Next"
+msgstr ""
+
+#: osparc/tours/Step.js
+msgid "To Tours"
+msgstr ""
+
+#: osparc/tours/Step.js
+msgid "Step: "
+msgstr ""
+
+#: osparc/admin/Announcements.js
+msgid "End"
+msgstr ""
+
+#: osparc/desktop/credits/BuyCreditsForm.js
+msgid "A one-off, non recurring payment."
+msgstr ""
+
+#: osparc/desktop/credits/AutoRecharge.js
+msgid "Pay with"
+msgstr ""
+
+#: osparc/desktop/credits/BuyCreditsForm.js
+msgid "Enter card details in the next step..."
+msgstr ""
+
+#: osparc/share/NewCollaboratorsManager.js
+msgid "Share with"
+msgstr ""
+
+#: osparc/share/NewCollaboratorsManager.js
+msgid "Select users or organizations from the list below."
+msgstr ""
+
+#: osparc/share/NewCollaboratorsManager.js
+msgid "Select users from the list below."
+msgstr ""
+
+#: osparc/share/NewCollaboratorsManager.js
+msgid "<br>Search them if they aren't listed."
+msgstr ""
+
+#: osparc/po/Users.js
+msgid "Search"
+msgstr ""
+
+#: osparc/navigation/UserMenu.js
+msgid "Organizations"
+msgstr ""
+
+#: osparc/desktop/organizations/OrganizationsWindow.js
+msgid "Organization details"
+msgstr ""
+
+#: osparc/share/ShareePermissions.js
+msgid "The following users/groups will not be able to open the shared study, because they don't have access to some services. Please contact the service owner(s) to give permission."
+msgstr ""
+
+#: osparc/utils/Validators.js
+msgid "Color must be in hexadecimal form"
+msgstr ""
+
+#: osparc/utils/Validators.js
+msgid "Format is invalid"
+msgstr ""
+
+#: osparc/widget/IntlTelInput.js
+msgid "Invalid number"
+msgstr ""
+
+#: osparc/widget/IntlTelInput.js
+msgid "Invalid country code"
+msgstr ""
+
+#: osparc/widget/IntlTelInput.js
+msgid "Number too short"
+msgstr ""
+
+#: osparc/widget/IntlTelInput.js
+msgid "Number too long"
+msgstr ""
+
+#: osparc/product/AboutProduct.js
+msgid "About "
+msgstr ""
+
+#: osparc/About.js
+msgid "         is an online-accessible, cloud-based, and collaborative computational modeling platform         that was developed under the Common Fund’s Stimulating Peripheral Activity to Relieve Conditions         (SPARC) program to ensure sustainable, reproducible, and FAIR (findable, accessible, interoperable, reusable)         computational modeling in the field of bioelectronic medicine – from neural interfaces to peripheral nerve recruitment         and the resulting effects on organ function.<br><br>        For more information about SPARC and the services offered, visit the       "
+msgstr ""
+
+#: osparc/About.js
+msgid "The platform is built upon a number of open-source       resources - we can't do it all alone! Some of the technologies that we leverage include:"
+msgstr ""
+
+#: osparc/About.js
+msgid "Front-end"
+msgstr ""
+
+#: osparc/About.js
+msgid "Back-end"
+msgstr ""
+
+#: osparc/info/MergedLarge.js
+msgid "Raw metadata"
+msgstr ""
+
+#: osparc/info/MergedLarge.js
+msgid "Author"
+msgstr ""
+
+#: osparc/info/MergedLarge.js
+msgid "Creation Date"
+msgstr ""
+
+#: osparc/info/MergedLarge.js
+msgid "Last Modified"
+msgstr ""
+
+#: osparc/info/MergedLarge.js
+msgid "Access Rights"
+msgstr ""
+
+#: osparc/info/MergedLarge.js
+msgid "Service ID"
+msgstr ""
+
+#: osparc/info/MergedLarge.js
+msgid "Service Key"
+msgstr ""
+
+#: osparc/info/MergedLarge.js
+msgid "Service Integration Version"
+msgstr ""
+
+#: osparc/info/MergedLarge.js
+msgid "Service Version"
+msgstr ""
+
+#: osparc/desktop/account/MyAccount.js
+msgid "Profile"
+msgstr ""
+
+#: osparc/desktop/account/MyAccount.js
+msgid "Confirmations"
+msgstr ""
+
+#: osparc/desktop/account/MyAccount.js
+msgid "API Keys/Tokens"
+msgstr ""
+
+#: osparc/desktop/account/MyAccount.js
+msgid "Create/Edit Tags"
+msgstr ""
+
+#: osparc/admin/AdminCenterWindow.js
+msgid "Admin Center"
+msgstr ""
+
+#: osparc/po/POCenterWindow.js
+msgid "PO Center"
+msgstr ""
+
+#: osparc/tester/TesterCenterWindow.js
+msgid "Tester Center"
+msgstr ""
+
+#: osparc/desktop/credits/BillingCenterWindow.js
+msgid "Billing Center"
+msgstr ""
+
+#: osparc/vipMarket/MarketWindow.js
+msgid "The Shop"
+msgstr ""
+
+#: osparc/navigation/UserMenu.js
+msgid "About oSPARC"
+msgstr ""
+
+#: osparc/product/AboutProduct.js
+msgid "About Product"
+msgstr ""
+
+#: osparc/navigation/UserMenu.js
+msgid "License"
+msgstr ""
+
+#: osparc/desktop/credits/CreditsIndicator.js
+msgid " credits"
+msgstr ""
+
+#: osparc/desktop/paymentMethods/PaymentMethods.js
+msgid "Credit cards used for payments in your personal Credit Account"
+msgstr ""
+
+#: osparc/desktop/credits/AutoRecharge.js
+msgid "Add Payment Method"
+msgstr ""
+
+#: osparc/desktop/paymentMethods/PaymentMethods.js
+msgid "Fetching Payment Methods"
+msgstr ""
+
+#: osparc/desktop/paymentMethods/PaymentMethods.js
+msgid "The window was closed. Try again and follow the instructions inside the opened window."
+msgstr ""
+
+#: osparc/desktop/paymentMethods/PaymentMethods.js
+msgid "No Payment Methods found"
+msgstr ""
+
+#: osparc/desktop/paymentMethods/PaymentMethods.js
+msgid "Could not retrieve your saved payment methods. Please try again later."
+msgstr ""
+
+#: osparc/desktop/credits/Transactions.js
+msgid "Top-up and refunds in US Dollars associated to your personal account show up here."
+msgstr ""
+
+#: osparc/desktop/account/DeleteAccount.js
+msgid "Your email"
+msgstr ""
+
+#: osparc/desktop/account/DeleteAccount.js
+msgid "Your password"
+msgstr ""
+
+#: osparc/workbench/DiskUsageIndicator.js
+msgid "Disk usage"
+msgstr ""
+
+#: osparc/workbench/DiskUsageIndicator.js
+msgid "Data storage: "
+msgstr ""
+
+#: osparc/workbench/DiskUsageIndicator.js
+msgid "I/O storage: "
+msgstr ""
+
+#: osparc/dashboard/WorkspaceButtonNew.js
+msgid "New Workspace"
+msgstr ""
+
+#: osparc/dashboard/FolderButtonNew.js
+msgid "New folder"
+msgstr ""
+
+#: osparc/dashboard/NewPlusMenu.js
+msgid "New Folder"
+msgstr ""
+
+#: osparc/dashboard/MoveResourceTo.js
+msgid "Current location:"
+msgstr ""
+
+#: osparc/dashboard/MoveResourceTo.js
+msgid "- Workspace: "
+msgstr ""
+
+#: osparc/dashboard/MoveResourceTo.js
+msgid "- Folder: "
+msgstr ""
+
+#: osparc/dashboard/StudyBrowserHeader.js
+msgid "Delete all"
+msgstr ""
+
+#: osparc/dashboard/StudyBrowserHeader.js
+msgid "All items will be permanently deleted"
+msgstr ""
+
+#: osparc/dashboard/StudyBrowserHeader.js
+msgid "Shared Workspaces"
+msgstr ""
+
+#: osparc/dashboard/StudyBrowserHeader.js
+msgid "Search results"
+msgstr ""
+
+#: osparc/dashboard/WorkspaceButtonItem.js
+msgid "Edit..."
+msgstr ""
+
+#: osparc/dashboard/WorkspaceButtonItem.js
+msgid "Edit Workspace"
+msgstr ""
+
+#: osparc/dashboard/WorkspaceButtonItem.js
+msgid "Share Workspace"
+msgstr ""
+
+#: osparc/vipMarket/SortModelsButtons.js
+msgid "Sort"
+msgstr ""
+
+#: osparc/pricing/PlanEditor.js
+msgid "Name"
+msgstr ""
+
+#: osparc/dashboard/SortedByMenuButton.js
+msgid "Created"
+msgstr ""
+
+#: osparc/dashboard/SortedByMenuButton.js
+msgid "Modified"
+msgstr ""
+
+#: osparc/study/Import.js
+msgid "Max file size 10GB"
+msgstr ""
+
+#: osparc/workbench/BaseNodeUI.js
+msgid "Rename"
+msgstr ""
+
+#: osparc/widget/Renamer.js
+msgid "Type text"
+msgstr ""
+
+#: osparc/editor/ThumbnailEditor.js
+msgid "Error checking link"
+msgstr ""
+
+#: osparc/editor/ThumbnailEditor.js
+msgid "url"
+msgstr ""
+
+#: osparc/editor/ThumbnailEditor.js
+msgid "or pick one from the list below:"
+msgstr ""
+
+#: osparc/task/Import.js
+msgid "Importing Study"
+msgstr ""
+
+#: osparc/task/Duplicate.js
+msgid "Duplicating:"
+msgstr ""
+
+#: osparc/task/ToTemplate.js
+msgid "Publishing:"
+msgstr ""
+
+#: osparc/service/SortServicesButtons.js
+msgid "Hits"
+msgstr ""
+
+#: osparc/service/SortServicesButtons.js
+msgid "Name Asc"
+msgstr ""
+
+#: osparc/service/SortServicesButtons.js
+msgid "Name Desc"
+msgstr ""
+
+#: osparc/widget/CollapsibleViewLight.js
+msgid "Expand"
+msgstr ""
+
+#: osparc/widget/CollapsibleViewLight.js
+msgid "Collapse"
+msgstr ""
+
+#: osparc/info/StudyMedium.js
+msgid "Study Information"
+msgstr ""
+
+#: osparc/info/StudyMedium.js
+msgid "DESCRIPTION"
+msgstr ""
+
+#: osparc/info/StudyMedium.js
+msgid "More Info"
+msgstr ""
+
+#: osparc/info/StudyMedium.js
+msgid "AUTHOR"
+msgstr ""
+
+#: osparc/info/StudyMedium.js
+msgid "CREATED"
+msgstr ""
+
+#: osparc/info/StudyMedium.js
+msgid "MODIFIED"
+msgstr ""
+
+#: osparc/info/StudyMedium.js
+msgid "TAGS"
+msgstr ""
+
+#: osparc/widget/NodeOptions.js
+msgid "To proceed with the following actions, the service needs to be Stopped."
+msgstr ""
+
+#: osparc/desktop/SlideshowToolbar.js
+msgid "Save App Mode"
+msgstr ""
+
+#: osparc/desktop/SlideshowToolbar.js
+msgid "Stop App Mode"
+msgstr ""
+
+#: osparc/navigation/PrevNextButtons.js
+msgid "Previous"
+msgstr ""
+
+#: osparc/node/slideshow/BaseNodeView.js
+msgid "Service Information"
+msgstr ""
+
+#: osparc/node/slideshow/BaseNodeView.js
+msgid "Instructions"
+msgstr ""
+
+#: osparc/node/slideshow/BaseNodeView.js
+msgid "Preparing Inputs"
+msgstr ""
+
+#: osparc/workbench/ServiceCatalog.js
+msgid "Service catalog"
+msgstr ""
+
+#: osparc/form/renderer/PropFormBase.js
+msgid "Required input: without it, the service will not start/run."
+msgstr ""
+
+#: osparc/widget/NodeSlideTreeItem.js
+msgid "Edit Instructions"
+msgstr ""
+
+#: osparc/jobs/JobsTable.js
+msgid "Progress"
+msgstr ""
+
+#: osparc/workbench/NodeUI.js
+msgid "Convert to Iterator"
+msgstr ""
+
+#: osparc/workbench/NodeUI.js
+msgid "Convert to Parameter"
+msgstr ""
+
+#: osparc/widget/NodeTreeItem.js
+msgid "Remove Marker"
+msgstr ""
+
+#: osparc/widget/NodeTreeItem.js
+msgid "Add Marker"
+msgstr ""
+
+#: osparc/data/model/IframeHandler.js
+msgid "There was an issue starting"
+msgstr ""
+
+#: osparc/widget/NodeOutputs.js
+msgid "Connects a Probe to this output"
+msgstr ""
+
+#: osparc/file/FileDownloadLink.js
+msgid "An issue occurred while checking link"
+msgstr ""
+
+#: osparc/file/FileDownloadLink.js
+msgid "Type a Link"
+msgstr ""
+
+#: osparc/file/FileDrop.js
+msgid "Upload file"
+msgstr ""
+
+#: osparc/file/FileDrop.js
+msgid "Drop file from File Explorer"
+msgstr ""
+
+#: osparc/file/FileDrop.js
+msgid "Drop file from tree"
+msgstr ""
+
+#: osparc/file/FileDrop.js
+msgid "or"
+msgstr ""
+
+#: osparc/file/FileDrop.js
+msgid "Only one file can be uploaded at a time."
+msgstr ""
+
+#: osparc/file/FileDrop.js
+msgid "Please compress all files into a single zip file."
+msgstr ""
+
+#: osparc/file/FileDrop.js
+msgid "Drop me"
+msgstr ""
+
+#: osparc/workbench/WorkbenchUI.js
+msgid "Folders are not accepted. Please upload a zip file instead."
+msgstr ""
+
+#: osparc/file/FolderViewer.js
+msgid "Select folder"
+msgstr ""
+
+#: osparc/file/FolderViewer.js
+msgid "Multiselect"
+msgstr ""
+
+#: osparc/editor/TextEditor.js
+msgid "Write"
+msgstr ""
+
+#: osparc/info/ServiceUtils.js
+msgid "Execute"
+msgstr ""
+
+#: osparc/info/ServiceUtils.js
+msgid "Public"
+msgstr ""
+
+#: osparc/info/ServiceUtils.js
+msgid "Limit"
+msgstr ""
+
+#: osparc/info/ServiceUtils.js
+msgid "Runtime check:<br>The service can consume a maximum of 'limit' resources - if it attempts to use more resources than this limit, it will be stopped"
+msgstr ""
+
+#: osparc/info/ServiceUtils.js
+msgid "Resources"
+msgstr ""
+
+#: osparc/node/UpdateResourceLimitsView.js
+msgid "Resource Limits"
+msgstr ""
+
+#: osparc/info/ServiceUtils.js
+msgid "Share with Collaborators and Organizations"
+msgstr ""
+
+#: osparc/editor/MarkdownEditor.js
+msgid "Markdown supported"
+msgstr ""
+
+#: osparc/editor/HtmlEditor.js
+msgid "Preview"
+msgstr ""
+
+#: osparc/form/tag/TagItem.js
+msgid "Share Tag"
+msgstr ""
+
+#: osparc/form/tag/TagItem.js
+msgid "Color"
+msgstr ""
+
+#: osparc/metadata/ServicesInStudy.js
+msgid "Something went wrong while updating the service"
+msgstr ""
+
+#: osparc/metadata/ServicesInStudy.js
+msgid "The Study is empty"
+msgstr ""
+
+#: osparc/metadata/ServicesInStudy.js
+msgid "Could not retrieve service information"
+msgstr ""
+
+#: osparc/share/PublishTemplate.js
+msgid "Make the "
+msgstr ""
+
+#: osparc/share/PublishTemplate.js
+msgid " also accessible to:"
+msgstr ""
+
+#: osparc/share/PublishTemplate.js
+msgid "Publish for..."
+msgstr ""
+
+#: osparc/dashboard/GroupedCardContainer.js
+msgid "Show less"
+msgstr ""
+
+#: osparc/dashboard/GroupedCardContainer.js
+msgid "Show all"
+msgstr ""
+
+#: osparc/dashboard/WorkspaceButtonItem.js
+msgid "Are you sure you want to delete the Workspace and all its content?"
+msgstr ""
+
+#: osparc/dashboard/WorkspaceButtonItem.js
+msgid "All the content of the workspace will be deleted."
+msgstr ""
+
+#: osparc/dashboard/WorkspaceButtonItem.js
+msgid "Delete Workspace"
+msgstr ""
+
+#: osparc/dashboard/FolderButtonItem.js
+msgid "Edit Folder"
+msgstr ""
+
+#: osparc/dashboard/FolderButtonItem.js
+msgid "Delete Folder"
+msgstr ""
+
+#: osparc/product/quickStart/s4llite/Welcome.js
+msgid "Quick Start Guide"
+msgstr ""
+
+#: osparc/product/quickStart/tis/Welcome.js
+msgid "        This quick tutorial gives a basic overview of how the TI Planning Tool works and how to navigate through the interface.<br>        We will focus on two main aspects, how to:<br>        - Use the platform<br>        - Get started with a New Plan<br>      "
+msgstr ""
+
+#: osparc/product/quickStart/tis/Dashboard.js
+msgid "        The Dashboard is your private hub which contains all of your Plans as well as Plans that have been shared with you.         From the Dashboard you are able to open your Plan or create a New Plan from scratch.      "
+msgstr ""
+
+#: osparc/product/quickStart/tis/Dashboard.js
+msgid "        1) New Plan: by clicking on this card a new study will be created and open.        The planning process will be presented in three successive steps that will be described more in detail in the following steps.      "
+msgstr ""
+
+#: osparc/product/quickStart/tis/Dashboard.js
+msgid "        2) The other cards are TI Plans that were already created by you or shared with you. You can reopen them to do further analysis         or by clicking three dots, on the top right corner, you can share, delete or check the details and metadata.      "
+msgstr ""
+
+#: osparc/product/quickStart/tis/ElectrodeSelector.js
+msgid "Electrode Selector"
+msgstr ""
+
+#: osparc/product/quickStart/tis/ElectrodeSelector.js
+msgid "        After pressing New Plan, three panels will be shown.      "
+msgstr ""
+
+#: osparc/product/quickStart/tis/ElectrodeSelector.js
+msgid "        In a first step, the relevant species, stimulation target, electrode shapes, electrode dimensions and         potential electrode locations (currently required to narrow down the huge exposure configuration search space) are selected.      "
+msgstr ""
+
+#: osparc/product/quickStart/tis/ElectrodeSelector.js
+msgid "        After finishing the set up, the big button on the top right will turn blue and by clicking on it you will submit the configuration.      "
+msgstr ""
+
+#: osparc/product/quickStart/tis/ElectrodeSelector.js
+msgid "        Now the Arrow that says 'Next' can be pushed and the optimization will immediately start.      "
+msgstr ""
+
+#: osparc/product/quickStart/tis/PostPro.js
+msgid "Post Processing"
+msgstr ""
+
+#: osparc/product/quickStart/tis/PostPro.js
+msgid "        Based on extensive sweeping/optimization, a series of highly performing exposure parameters are proposed for the         user to interactively explore, using predefined quantification metrics and visualizations. Identified         conditions-of-interest can be documented and added to a report.      "
+msgstr ""
+
+#: osparc/product/quickStart/tis/PostPro.js
+msgid "        These metrics are reported in the Post Processing analysis environment for each electrode pair in the combination in         a sorted tabular form that can be used to inspect the stimulation performances. By clicking on each pair, slice views         of the maximum amplitude modulation (MAP) within the head are produced.<br>        Pressing the `Load` button on the right, the selected configuration will be loaded.      "
+msgstr ""
+
+#: osparc/product/quickStart/tis/PostPro.js
+msgid "        Alternatively, slice views of the maximum interferential E-field can also be visualized and synchronous with the MAP slices         to assess safety-related aspects (e.g., field intensity in proximity of the electrodes). These maps can be edited, thresholded,         and saved offline for further inspection and analysis.<br>        An isosurface of the TI stimulation distribution for the selected configuration can also be visualized within the head anatomy for inspection.      "
+msgstr ""
+
+#: osparc/product/quickStart/tis/PostPro.js
+msgid "        At the end of the optimization procedure, you can automatically generate a report.<br>        It includes a summary of all the performance metrics calculated for each electrode pair combination, and a detailed performance report         of the optimized electrode configuration. The report includes electrode placement, current intensities, performance metrics, TI and maximum         high-frequency field distributions, cumulative dose histograms and all the graphs generated in the post-pro analysis tab.      "
+msgstr ""
+
+#: osparc/product/quickStart/tis/S4LPostPro.js
+msgid "Not available in"
+msgstr ""
+
+#: osparc/product/quickStart/tis/S4LPostPro.js
+msgid "Sim4Life Post Processing"
+msgstr ""
+
+#: osparc/product/quickStart/tis/S4LPostPro.js
+msgid "        Finally, and optionally, exposure conditions-of-interest can be visualized and analyzed freely, using the web-version of the         Sim4Life (ZMT Zurich MedTech AG) computational life sciences platform.      "
+msgstr ""
+
+#: osparc/product/quickStart/tis/MoreInformation.js
+msgid "For more information:"
+msgstr ""
+
+#: osparc/product/quickStart/s4llite/Welcome.js
+msgid "        This quick user’s guide gives a short introduction to Sim4Life.lite. We will show:<br>          - how to get started with a new project,<br>          - how to get started from an existing tutorial project<br>          - how to open Sim4Life desktop simulation projects in Sim4Life.lite,<br>          - Sim4Life.lite features, limitations and user interface<br>          <br>          For more specific technical information, please refer to the Dashboard Manual and the Sim4Life.lite Manual.      "
+msgstr ""
+
+#: osparc/product/quickStart/s4llite/Dashboard.js
+msgid "Dashboard - Projects & Tutorials"
+msgstr ""
+
+#: osparc/product/quickStart/s4llite/Dashboard.js
+msgid "        The Dashboard is the place where Projects and Tutorials can be accessed and organized.      "
+msgstr ""
+
+#: osparc/product/quickStart/s4llite/Dashboard.js
+msgid "        1) Start Sim4Life.lite: Click the <b>+ Start Sim4Life.lite</b> button to create a new project. This will start the user interface of Sim4Life.lite.      "
+msgstr ""
+
+#: osparc/product/quickStart/s4llite/Dashboard.js
+msgid "        2) Other cards: Each card represents an existing project (own projects, or projects shared by other users) that can be accessed and managed.         Click on the card to open the project. Click the “three dots” in the upper right corner of the card to perform operations such as rename, share, delete.      "
+msgstr ""
+
+#: osparc/product/quickStart/s4llite/Dashboard.js
+msgid "        3) TUTORIALS: A set of pre-built read-only tutorial projects with results is available to all Sim4Life.lite users. When a tutorial is selected, a         copy is automatically created and added to the user’s Projects tab. This new copy is editable and can be shared.      "
+msgstr ""
+
+#: osparc/product/quickStart/s4llite/Dashboard.js
+msgid "        4) To open an existing desktop project in Sim4Life.lite:         - Click the + Start Sim4Life.lite button to create a new project.<br>        - Click the menu and select “File Browser…”.<br>        - Click “Upload File” for the .smash project and select the file from your desktop. Repeat the same step, but this         time select “Upload Folder” and then select the result folder from your desktop. Close the window<br>        - Click the Menu again and click “Open” to select the file you just uploaded.<br>      "
+msgstr ""
+
+#: osparc/product/quickStart/s4llite/S4LLiteSpecs.js
+msgid "Sim4Life.lite: Features and Limitations"
+msgstr ""
+
+#: osparc/product/quickStart/s4llite/S4LLiteSpecs.js
+msgid "        Sim4Life.lite is a powerful web-based simulation platform that allows you to model and analyze real-world phenomena and to         design complex technical devices in a validated environment. Sim4Life.lite has been created specifically for students to         facilitate their understanding of computational modeling and simulations for various topics, ranging from wireless communication         to medical applications. The access to Sim4Life.lite is available free of charge to students enrolled at registered universities.      "
+msgstr ""
+
+#: osparc/product/quickStart/s4llite/S4LLiteSpecs.js
+msgid "        <b>Sim4Life.lite offers</b><br>        - Framework (GUI, Modeling, Postprocessing)<br>        - 3D modeling environment (based on the ACIS toolkit) and CAD translators<br>        - Postprocessing and visualization of the simulation results (2D and 3D viewers, 2D planar slice, volume rendering, streamlines, surface fields on arbitrary 3D structures, radiation and far-field data)<br>        - No restrictions on number of modeling objects<br>        - Solvers & Tissue Models:<br>        &emsp;- P-EM-FDTD: Electromagnetics Full-Wave Solver<br>        &emsp;- P-EM-QS: Quasi-Static Electromagnetics Solver<br>        &emsp;- P-Thermal: Thermodynamic Solver<br>        &emsp;- P-Acoustics: Acoustics Solver<br>        &emsp;- T-Neuro: Neuronal Tissue Models<br>        - Computational anatomical model Yoon-sun, the first Korean model of the IT’IS Virtual Population<br>        - Material database<br>        - Python and Jupyter Notebook scripting      "
+msgstr ""
+
+#: osparc/product/quickStart/s4llite/S4LLiteSpecs.js
+msgid "        <b>Limitations</b><br>        The following limitations apply:<br>        - Grid size of each simulation is limited to a maximum of <b>20 million grid cells</b><br>        - High-Performance Computing is not supported:<br>        &emsp;- GPU acceleration is not available<br>        &emsp;- MPI multicore acceleration is not available<br>        - 3rd-party tools are not available (e.g., MUSAIK, SYSSIM, IMAnalytics, etc…)<br>        - Additional ViP models cannot be added<br>        - 30 minutes idle time before logout<br>        - Hardware resource limits<br>        &emsp;- 3 CPUs<br>        &emsp;- 3 GB of GPU RAM<br>        &emsp;- 5 GB disk space<br>        &emsp;- 16 GB RAM<br>      "
+msgstr ""
+
+#: osparc/product/quickStart/s4llite/S4LLiteUI.js
+msgid "Sim4Life.lite"
+msgstr ""
+
+#: osparc/product/quickStart/s4llite/S4LLiteUI.js
+msgid "        To check the Sim4Life.lite manual, please open a project and access the documentation via Help in the menu as shown below. Enjoy!      "
+msgstr ""
+
+#: osparc/desktop/credits/BuyCreditsInput.js
+msgid "Credit Price"
+msgstr ""
+
+#: osparc/desktop/credits/BuyCreditsInput.js
+msgid "Credit Amount"
+msgstr ""
+
+#: osparc/desktop/credits/BuyCreditsInput.js
+msgid "Total"
+msgstr ""
+
+#: osparc/filter/SearchingCollaborators.js
+msgid "Searching..."
+msgstr ""
+
+#: osparc/desktop/organizations/OrganizationsList.js
+msgid "    An organization is a group of users who can share "
+msgstr ""
+
+#: osparc/desktop/organizations/OrganizationsList.js
+msgid " and other resources.<br>    Here you can see the list of organizations you belong to, create new organizations,     or manage the membership by setting up the access rights of each member in the organization     if you are a manager or administrator."
+msgstr ""
+
+#: osparc/desktop/organizations/OrganizationsList.js
+msgid "New Organization"
+msgstr ""
+
+#: osparc/desktop/organizations/OrganizationDetails.js
+msgid "Organization Details Editor"
+msgstr ""
+
+#: osparc/desktop/organizations/OrganizationsList.js
+msgid "Delete Organization"
+msgstr ""
+
+#: osparc/desktop/organizations/OrganizationsList.js
+msgid "Something went wrong while deleting "
+msgstr ""
+
+#: osparc/pricing/PlanEditor.js
+msgid " successfully created"
+msgstr ""
+
+#: osparc/pricing/PlanEditor.js
+msgid "Something went wrong while creating "
+msgstr ""
+
+#: osparc/desktop/wallets/WalletDetails.js
+msgid " successfully edited"
+msgstr ""
+
+#: osparc/desktop/wallets/WalletDetails.js
+msgid "Something went wrong while editing "
+msgstr ""
+
+#: osparc/desktop/organizations/OrganizationDetails.js
+msgid "Return to Organizations list"
+msgstr ""
+
+#: osparc/desktop/wallets/WalletDetails.js
+msgid "Members"
+msgstr ""
+
+#: osparc/jobs/JobsTable.js
+msgid "Job Id"
+msgstr ""
+
+#: osparc/jobs/JobsTable.js
+msgid "Solver"
+msgstr ""
+
+#: osparc/desktop/credits/TransactionsTableModel.js
+msgid "Status"
+msgstr ""
+
+#: osparc/jobs/JobsTable.js
+msgid "Submitted"
+msgstr ""
+
+#: osparc/jobs/JobsTable.js
+msgid "Started"
+msgstr ""
+
+#: osparc/jobs/JobsTable.js
+msgid "Info"
+msgstr ""
+
+#: osparc/jobs/JobsTable.js
+msgid "Instance"
+msgstr ""
+
+#: osparc/notification/NotificationUI.js
+msgid "You don't have access anymore"
+msgstr ""
+
+#: osparc/notification/NotificationUI.js
+msgid "Do you want to make it the default Credit Account?"
+msgstr ""
+
+#: osparc/notification/NotificationUI.js
+msgid "Default Credit Account"
+msgstr ""
+
+#: osparc/desktop/preferences/pages/GeneralPage.js
+msgid "Credits Indicator"
+msgstr ""
+
+#: osparc/desktop/preferences/pages/GeneralPage.js
+msgid "Show indicator"
+msgstr ""
+
+#: osparc/desktop/preferences/pages/GeneralPage.js
+msgid "Show warning when credits below"
+msgstr ""
+
+#: osparc/desktop/preferences/pages/GeneralPage.js
+msgid "Automatic Shutdown of Idle Instances"
+msgstr ""
+
+#: osparc/desktop/preferences/pages/GeneralPage.js
+msgid "Enter 0 to disable this function"
+msgstr ""
+
+#: osparc/desktop/preferences/pages/GeneralPage.js
+msgid "Idle time before closing (in minutes)"
+msgstr ""
+
+#: osparc/desktop/preferences/pages/GeneralPage.js
+msgid "Job Concurrency"
+msgstr ""
+
+#: osparc/desktop/preferences/pages/GeneralPage.js
+msgid "Maximum number of concurrent jobs"
+msgstr ""
+
+#: osparc/desktop/preferences/pages/GeneralPage.js
+msgid "Low Disk Space Threshold"
+msgstr ""
+
+#: osparc/desktop/preferences/pages/GeneralPage.js
+msgid "Set the warning Threshold for Low Disk Space availability"
+msgstr ""
+
+#: osparc/desktop/preferences/pages/GeneralPage.js
+msgid "Threshold (in GB)"
+msgstr ""
+
+#: osparc/desktop/preferences/pages/GeneralPage.js
+msgid "Help us improve Sim4Life user experience"
+msgstr ""
+
+#: osparc/desktop/preferences/pages/GeneralPage.js
+msgid "Share usage data"
+msgstr ""
+
+#: osparc/desktop/preferences/pages/ConfirmationsPage.js
+msgid "Ask for confirmation for the following actions:"
+msgstr ""
+
+#: osparc/desktop/preferences/pages/ConfirmationsPage.js
+msgid "Go back to the Dashboard"
+msgstr ""
+
+#: osparc/desktop/preferences/pages/ConfirmationsPage.js
+msgid "Delete a "
+msgstr ""
+
+#: osparc/desktop/preferences/pages/ConfirmationsPage.js
+msgid "Warning: deleting a "
+msgstr ""
+
+#: osparc/desktop/preferences/pages/ConfirmationsPage.js
+msgid " cannot be undone"
+msgstr ""
+
+#: osparc/desktop/preferences/pages/ConfirmationsPage.js
+msgid "Understood"
+msgstr ""
+
+#: osparc/desktop/preferences/pages/ConfirmationsPage.js
+msgid "Delete a Node"
+msgstr ""
+
+#: osparc/desktop/preferences/pages/ConfirmationsPage.js
+msgid "Warning: deleting a node cannot be undone"
+msgstr ""
+
+#: osparc/desktop/preferences/pages/ConfirmationsPage.js
+msgid "Stop Node"
+msgstr ""
+
+#: osparc/desktop/preferences/pages/ConfirmationsPage.js
+msgid "Snap Node to Grid"
+msgstr ""
+
+#: osparc/desktop/preferences/pages/ConfirmationsPage.js
+msgid "This is a list of experimental preferences"
+msgstr ""
+
+#: osparc/desktop/preferences/pages/ConfirmationsPage.js
+msgid "Connect ports automatically"
+msgstr ""
+
+#: osparc/desktop/preferences/pages/TokensPage.js
+msgid "API Keys"
+msgstr ""
+
+#: osparc/desktop/preferences/pages/TokensPage.js
+msgid "List API keys associated to your account."
+msgstr ""
+
+#: osparc/desktop/preferences/pages/TokensPage.js
+msgid "New API Key"
+msgstr ""
+
+#: osparc/desktop/preferences/pages/TokensPage.js
+msgid "Cannot create API Key"
+msgstr ""
+
+#: osparc/desktop/preferences/pages/TokensPage.js
+msgid "Do you want to delete the API key?"
+msgstr ""
+
+#: osparc/desktop/preferences/pages/TokensPage.js
+msgid "Delete API key"
+msgstr ""
+
+#: osparc/desktop/preferences/pages/TokensPage.js
+msgid "Cannot delete API Key"
+msgstr ""
+
+#: osparc/desktop/preferences/pages/TokensPage.js
+msgid "API Tokens for External Services"
+msgstr ""
+
+#: osparc/desktop/preferences/pages/TokensPage.js
+msgid "Provide the API tokens needed to access external services."
+msgstr ""
+
+#: osparc/desktop/preferences/pages/TokensPage.js
+msgid "Current Tokens"
+msgstr ""
+
+#: osparc/desktop/preferences/pages/TokensPage.js
+msgid "Supported services"
+msgstr ""
+
+#: osparc/desktop/preferences/pages/TokensPage.js
+msgid "Are you sure you want to delete this token?"
+msgstr ""
+
+#: osparc/desktop/preferences/pages/TokensPage.js
+msgid "Delete Token"
+msgstr ""
+
+#: osparc/desktop/preferences/pages/TokensPage.js
+msgid "Enter your token key"
+msgstr ""
+
+#: osparc/desktop/preferences/pages/TokensPage.js
+msgid "Key"
+msgstr ""
+
+#: osparc/desktop/preferences/pages/TokensPage.js
+msgid "Enter your token secret"
+msgstr ""
+
+#: osparc/desktop/preferences/pages/TokensPage.js
+msgid "Secret"
+msgstr ""
+
+#: osparc/desktop/preferences/pages/TagsPage.js
+msgid "    Tags help you organize the "
+msgstr ""
+
+#: osparc/desktop/preferences/pages/TagsPage.js
+msgid " in the Dashboard by categorizing topics, making it easier to search and filter.     Once the tags are created, they can be assigned to the "
+msgstr ""
+
+#: osparc/desktop/preferences/pages/TagsPage.js
+msgid "  via 'More options...' on the "
+msgstr ""
+
+#: osparc/desktop/preferences/pages/TagsPage.js
+msgid " cards."
+msgstr ""
+
+#: osparc/desktop/credits/CreditsPerService.js
+msgid "No usage records found"
+msgstr ""
+
+#: osparc/product/AboutProduct.js
+msgid "Information is unavailable"
+msgstr ""
+
+#: osparc/desktop/wallets/WalletsList.js
+msgid "Personal"
+msgstr ""
+
+#: osparc/desktop/wallets/WalletsList.js
+msgid "No personal Credit Account found"
+msgstr ""
+
+#: osparc/desktop/wallets/WalletsList.js
+msgid "Shared with me"
+msgstr ""
+
+#: osparc/desktop/wallets/WalletsList.js
+msgid "No shared Credit Accounts found"
+msgstr ""
+
+#: osparc/desktop/wallets/WalletDetails.js
+msgid "Credit Account Details Editor"
+msgstr ""
+
+#: osparc/desktop/wallets/WalletsList.js
+msgid "Something went wrong while updating the Credit Account"
+msgstr ""
+
+#: osparc/desktop/wallets/WalletsList.js
+msgid "Currently in use"
+msgstr ""
+
+#: osparc/desktop/wallets/WalletDetails.js
+msgid "Return to Credit Accounts list"
+msgstr ""
+
+#: osparc/desktop/paymentMethods/PaymentMethodListItem.js
+msgid "Are you sure you want to delete this Payment Method?"
+msgstr ""
+
+#: osparc/desktop/paymentMethods/PaymentMethodListItem.js
+msgid "Delete Payment Method"
+msgstr ""
+
+#: osparc/desktop/paymentMethods/PaymentMethodDetails.js
+msgid "Payment Method details"
+msgstr ""
+
+#: osparc/desktop/paymentMethods/PaymentMethodDetails.js
+msgid "Card Holder name"
+msgstr ""
+
+#: osparc/filter/NodeTypeFilter.js
+msgid "Type"
+msgstr ""
+
+#: osparc/desktop/paymentMethods/PaymentMethodDetails.js
+msgid "Number"
+msgstr ""
+
+#: osparc/desktop/paymentMethods/PaymentMethodDetails.js
+msgid "Expiration date"
+msgstr ""
+
+#: osparc/desktop/credits/ResourceInTableViewer.js
+msgid "Export"
+msgstr ""
+
+#: osparc/desktop/credits/UsageTable.js
+msgid "Node"
+msgstr ""
+
+#: osparc/desktop/credits/CheckoutsTable.js
+msgid "Duration"
+msgstr ""
+
+#: osparc/study/PricingUnitLicense.js
+msgid "Credits"
+msgstr ""
+
+#: osparc/desktop/credits/PurchasesTable.js
+msgid "PurchaseId"
+msgstr ""
+
+#: osparc/desktop/credits/CheckoutsTable.js
+msgid "ItemId"
+msgstr ""
+
+#: osparc/desktop/credits/CheckoutsTable.js
+msgid "Seats"
+msgstr ""
+
+#: osparc/desktop/credits/CheckoutsTable.js
+msgid "CheckoutId"
+msgstr ""
+
+#: osparc/vipMarket/Market.js
+msgid "My Models"
+msgstr ""
+
+#: osparc/editor/OrganizationEditor.js
+msgid "Thumbnail"
+msgstr ""
+
+#: osparc/workbench/WorkbenchUI.js
+msgid "Double-click to add a node"
+msgstr ""
+
+#: osparc/workbench/WorkbenchUI.js
+msgid "INPUTS"
+msgstr ""
+
+#: osparc/workbench/WorkbenchUI.js
+msgid "OUTPUTS"
+msgstr ""
+
+#: osparc/workbench/WorkbenchUI.js
+msgid "Pick the position"
+msgstr ""
+
+#: osparc/workbench/WorkbenchUI.js
+msgid "Draw a rectangle"
+msgstr ""
+
+#: osparc/workbench/WorkbenchUI.js
+msgid "Drop here"
+msgstr ""
+
+#: osparc/workbench/WorkbenchUI.js
+msgid "Draw a rectangle first"
+msgstr ""
+
+#: osparc/widget/NodeTreeItem.js
+msgid "Full Screen"
+msgstr ""
+
+#: osparc/node/LifeCycleView.js
+msgid "Update Service"
+msgstr ""
+
+#: osparc/node/UpdateResourceLimitsView.js
+msgid "Limits have been successfully updated"
+msgstr ""
+
+#: osparc/node/UpdateResourceLimitsView.js
+msgid "Something went wrong while updating the limits"
+msgstr ""
+
+#: osparc/navigation/BreadcrumbsSlideshow.js
+msgid "Pipeline is empty"
+msgstr ""
+
+#: osparc/navigation/BreadcrumbsSlideshow.js
+msgid "No visible nodes. Enable some by adjusting the app mode."
+msgstr ""
+
+#: osparc/data/model/NodeProgressSequence.js
+msgid "Please wait, this process may take a few minutes ..."
+msgstr ""
+
+#: osparc/data/model/NodeProgressSequence.js
+msgid "LOADING ..."
+msgstr ""
+
+#: osparc/data/model/NodeProgressSequence.js
+msgid "Provisioning resources ..."
+msgstr ""
+
+#: osparc/data/model/NodeProgressSequence.js
+msgid "Setting up system software ..."
+msgstr ""
+
+#: osparc/data/model/NodeProgressSequence.js
+msgid "Retrieving your output data ..."
+msgstr ""
+
+#: osparc/data/model/NodeProgressSequence.js
+msgid "Retrieving your work ..."
+msgstr ""
+
+#: osparc/data/model/NodeProgressSequence.js
+msgid "Installing services ..."
+msgstr ""
+
+#: osparc/data/model/NodeProgressSequence.js
+msgid "Starting services ..."
+msgstr ""
+
+#: osparc/data/model/NodeProgressSequence.js
+msgid "Retrieving your input data ..."
+msgstr ""
+
+#: osparc/ui/basic/NodeStatusUI.js
+msgid "Select a file"
+msgstr ""
+
+#: osparc/ui/basic/NodeStatusUI.js
+msgid "Uploading..."
+msgstr ""
+
+#: osparc/widget/PreparingInputs.js
+msgid "To proceed, we need to prepare some inputs. You can check the progress logs here:"
+msgstr ""
+
+#: osparc/widget/PreparingInputs.js
+msgid "Run all"
+msgstr ""
+
+#: osparc/widget/PreparingInputs.js
+msgid "Logs"
+msgstr ""
+
+#: osparc/ui/form/ContentSchemaHelper.js
+msgid "Minimum items: "
+msgstr ""
+
+#: osparc/ui/form/ContentSchemaHelper.js
+msgid "Maximum items: "
+msgstr ""
+
+#: osparc/ui/form/ContentSchemaHelper.js
+msgid "Out of range"
+msgstr ""
+
+#: osparc/ui/form/ContentSchemaHelper.js
+msgid "Minimum value: "
+msgstr ""
+
+#: osparc/ui/form/ContentSchemaHelper.js
+msgid "Maximum value: "
+msgstr ""
+
+#: osparc/file/FolderContent.js
+msgid "Date Modified"
+msgstr ""
+
+#: osparc/file/FolderContent.js
+msgid "Size"
+msgstr ""
+
+#: osparc/file/FolderContent.js
+msgid "Id"
+msgstr ""
+
+#: osparc/file/FileLabelWithActions.js
+msgid "This action cannot be undone."
+msgstr ""
+
+#: osparc/file/FileLabelWithActions.js
+msgid "All contents within the folders will be deleted."
+msgstr ""
+
+#: osparc/file/FileLabelWithActions.js
+msgid "Do you want to proceed?"
+msgstr ""
+
+#: osparc/file/FileLabelWithActions.js
+msgid "Items successfully deleted"
+msgstr ""
+
+#: osparc/file/FileLabelWithActions.js
+msgid "Externally managed items cannot be deleted"
+msgstr ""
+
+#: osparc/editor/HtmlEditor.js
+msgid "Supports HTML"
+msgstr ""
+
+#: osparc/study/PricingUnitTier.js
+msgid "Credits/h"
+msgstr ""
+
+#: osparc/study/PricingUnitTier.js
+msgid "EC2"
+msgstr ""
+
+#: osparc/ui/list/OrganizationListItem.js
+msgid " members"
+msgstr ""
+
+#: osparc/desktop/wallets/WalletListItem.js
+msgid "Edit details..."
+msgstr ""
+
+#: osparc/desktop/wallets/MembersList.js
+msgid "Add Members..."
+msgstr ""
+
+#: osparc/desktop/organizations/MembersList.js
+msgid "You can add new members and assign roles."
+msgstr ""
+
+#: osparc/desktop/organizations/MembersList.js
+msgid "You cannot add new members to this Organization. Please contact an Administrator or Manager."
+msgstr ""
+
+#: osparc/desktop/organizations/MembersList.js
+msgid " successfully added"
+msgstr ""
+
+#: osparc/desktop/organizations/MembersList.js
+msgid "Something went wrong while adding the user"
+msgstr ""
+
+#: osparc/desktop/organizations/MembersList.js
+msgid "Something went wrong while promoting to "
+msgstr ""
+
+#: osparc/desktop/organizations/MembersList.js
+msgid "Something went wrong while demoting to "
+msgstr ""
+
+#: osparc/desktop/organizations/MembersList.js
+msgid "Are you sure you want to leave?"
+msgstr ""
+
+#: osparc/desktop/organizations/MembersList.js
+msgid "If you leave, the page will reload."
+msgstr ""
+
+#: osparc/desktop/organizations/MembersList.js
+msgid "Leave Organization"
+msgstr ""
+
+#: osparc/desktop/organizations/TemplatesList.js
+msgid "This is the list of "
+msgstr ""
+
+#: osparc/desktop/organizations/TemplatesList.js
+msgid " shared with this Organization"
+msgstr ""
+
+#: osparc/desktop/organizations/ServicesList.js
+msgid "This is the list of services shared with this Organization"
+msgstr ""
+
+#: osparc/jobs/JobInfo.js
+msgid "Job Info"
+msgstr ""
+
+#: osparc/desktop/preferences/window/CreateAPIKey.js
+msgid "Generate API Key"
+msgstr ""
+
+#: osparc/desktop/preferences/window/CreateAPIKey.js
+msgid "Key names must be unique."
+msgstr ""
+
+#: osparc/desktop/preferences/window/CreateAPIKey.js
+msgid "Key Name"
+msgstr ""
+
+#: osparc/desktop/preferences/window/CreateAPIKey.js
+msgid "Expiration Date"
+msgstr ""
+
+#: osparc/desktop/preferences/window/CreateAPIKey.js
+msgid "Select a future date"
+msgstr ""
+
+#: osparc/desktop/preferences/window/CreateAPIKey.js
+msgid "Confirm"
+msgstr ""
+
+#: osparc/desktop/preferences/window/ShowAPIKey.js
+msgid "API Key"
+msgstr ""
+
+#: osparc/desktop/preferences/window/ShowAPIKey.js
+msgid "For your security, store your access keys safely. You will not be able to access them again after closing this window."
+msgstr ""
+
+#: osparc/desktop/preferences/window/ShowAPIKey.js
+msgid "<b>Key:</b>"
+msgstr ""
+
+#: osparc/desktop/preferences/window/ShowAPIKey.js
+msgid "<b>Secret:</b>"
+msgstr ""
+
+#: osparc/desktop/preferences/window/ShowAPIKey.js
+msgid "<b>Base url:</b>"
+msgstr ""
+
+#: osparc/desktop/preferences/window/ShowAPIKey.js
+msgid "API Secret"
+msgstr ""
+
+#: osparc/desktop/preferences/window/ShowAPIKey.js
+msgid "Base URL"
+msgstr ""
+
+#: osparc/admin/AdminCenter.js
+msgid "Pricing Plans"
+msgstr ""
+
+#: osparc/admin/AdminCenter.js
+msgid "Maintenance"
+msgstr ""
+
+#: osparc/admin/AdminCenter.js
+msgid "Announcements"
+msgstr ""
+
+#: osparc/po/POCenter.js
+msgid "Users"
+msgstr ""
+
+#: osparc/po/POCenter.js
+msgid "Pre-Registration"
+msgstr ""
+
+#: osparc/po/POCenter.js
+msgid "Invitations"
+msgstr ""
+
+#: osparc/po/POCenter.js
+msgid "Product Info"
+msgstr ""
+
+#: osparc/po/POCenter.js
+msgid "Message Templates"
+msgstr ""
+
+#: osparc/tester/TesterCenter.js
+msgid "Socket Messages"
+msgstr ""
+
+#: osparc/tester/TesterCenter.js
+msgid "Console Errors"
+msgstr ""
+
+#: osparc/tester/Statics.js
+msgid "Statics"
+msgstr ""
+
+#: osparc/desktop/wallets/WalletListItem.js
+msgid "Something went wrong while updating the state"
+msgstr ""
+
+#: osparc/desktop/credits/AutoRecharge.js
+msgid "Auto-recharge"
+msgstr ""
+
+#: osparc/desktop/wallets/WalletListItem.js
+msgid "Auto-recharge: ON"
+msgstr ""
+
+#: osparc/desktop/wallets/WalletListItem.js
+msgid "Auto-recharge: OFF"
+msgstr ""
+
+#: osparc/desktop/wallets/WalletListItem.js
+msgid "ON"
+msgstr ""
+
+#: osparc/desktop/wallets/WalletListItem.js
+msgid "OFF"
+msgstr ""
+
+#: osparc/desktop/wallets/WalletListItem.js
+msgid "Credit Account enabled"
+msgstr ""
+
+#: osparc/desktop/wallets/WalletListItem.js
+msgid "Credit Account blocked"
+msgstr ""
+
+#: osparc/desktop/wallets/WalletListItem.js
+msgid "Currently being used"
+msgstr ""
+
+#: osparc/desktop/wallets/WalletListItem.js
+msgid "Switch to this Credit Account"
+msgstr ""
+
+#: osparc/desktop/wallets/MembersList.js
+msgid "Only Accountants of an Organization can share a wallet with other users."
+msgstr ""
+
+#: osparc/vipMarket/SortModelsButtons.js
+msgid "Date"
+msgstr ""
+
+#: osparc/desktop/credits/TransactionsTableModel.js
+msgid "Price USD"
+msgstr ""
+
+#: osparc/pricing/UnitEditor.js
+msgid "Comment"
+msgstr ""
+
+#: osparc/desktop/credits/TransactionsTableModel.js
+msgid "Invoice"
+msgstr ""
+
+#: osparc/vipMarket/VipMarket.js
+msgid "Loading"
+msgstr ""
+
+#: osparc/vipMarket/VipMarket.js
+msgid "Cannot purchase model"
+msgstr ""
+
+#: osparc/desktop/StartStopButtons.js
+msgid "Run All"
+msgstr ""
+
+#: osparc/desktop/StartStopButtons.js
+msgid "Run Selection"
+msgstr ""
+
+#: osparc/desktop/ZoomButtons.js
+msgid "Zoom In"
+msgstr ""
+
+#: osparc/desktop/ZoomButtons.js
+msgid "Zoom Out"
+msgstr ""
+
+#: osparc/desktop/ZoomButtons.js
+msgid "Reset Zoom"
+msgstr ""
+
+#: osparc/editor/AnnotationNoteCreator.js
+msgid "Add Note"
+msgstr ""
+
+#: osparc/editor/AnnotationNoteCreator.js
+msgid "Add a recipient to be notified. Please make sure the user has access to the "
+msgstr ""
+
+#: osparc/editor/AnnotationNoteCreator.js
+msgid "Select recipient"
+msgstr ""
+
+#: osparc/desktop/wallets/MemberListItem.js
+msgid "Promote to "
+msgstr ""
+
+#: osparc/desktop/wallets/MemberListItem.js
+msgid "Demote to "
+msgstr ""
+
+#: osparc/desktop/wallets/MemberListItem.js
+msgid "Remove "
+msgstr ""
+
+#: osparc/admin/Maintenance.js
+msgid "Start and End dates go in UTC time zone"
+msgstr ""
+
+#: osparc/admin/Maintenance.js
+msgid "No Maintenance scheduled"
+msgstr ""
+
+#: osparc/admin/Announcements.js
+msgid "Create announcement"
+msgstr ""
+
+#: osparc/admin/Announcements.js
+msgid "title"
+msgstr ""
+
+#: osparc/admin/Announcements.js
+msgid "description"
+msgstr ""
+
+#: osparc/admin/Announcements.js
+msgid "link"
+msgstr ""
+
+#: osparc/admin/Announcements.js
+msgid "Link"
+msgstr ""
+
+#: osparc/admin/Announcements.js
+msgid "Login"
+msgstr ""
+
+#: osparc/admin/Announcements.js
+msgid "Ribbon"
+msgstr ""
+
+#: osparc/admin/Announcements.js
+msgid "User Menu"
+msgstr ""
+
+#: osparc/po/Invitations.js
+msgid "Generate"
+msgstr ""
+
+#: osparc/admin/Announcements.js
+msgid "Copy announcement"
+msgstr ""
+
+#: osparc/po/Users.js
+msgid "user@email.address or user@*"
+msgstr ""
+
+#: osparc/po/Users.js
+msgid "Searching users..."
+msgstr ""
+
+#: osparc/po/Users.js
+msgid " user(s) found"
+msgstr ""
+
+#: osparc/po/Users.js
+msgid "Error searching users"
+msgstr ""
+
+#: osparc/po/PreRegistration.js
+msgid "Pre-Registration"
+msgstr ""
+
+#: osparc/po/PreRegistration.js
+msgid "Copy&Paste the Request Account Form in JSON format here ..."
+msgstr ""
+
+#: osparc/po/PreRegistration.js
+msgid "Request Form"
+msgstr ""
+
+#: osparc/po/PreRegistration.js
+msgid "Unsuccessful Pre-Registration. See details below"
+msgstr ""
+
+#: osparc/po/PreRegistration.js
+msgid "Searching Pre-Registered users..."
+msgstr ""
+
+#: osparc/po/PreRegistration.js
+msgid "Pre-Registered as:"
+msgstr ""
+
+#: osparc/po/PreRegistration.js
+msgid "No Pre-Registered user found"
+msgstr ""
+
+#: osparc/po/Invitations.js
+msgid "Create invitation"
+msgstr ""
+
+#: osparc/po/Invitations.js
+msgid "There is no invitation required in this product/deployment."
+msgstr ""
+
+#: osparc/po/Invitations.js
+msgid "new.user@email.address"
+msgstr ""
+
+#: osparc/po/Invitations.js
+msgid "User Email"
+msgstr ""
+
+#: osparc/po/Invitations.js
+msgid "Welcome Credits (USD)"
+msgstr ""
+
+#: osparc/po/Invitations.js
+msgid "With expiration"
+msgstr ""
+
+#: osparc/po/Invitations.js
+msgid "Trial Days"
+msgstr ""
+
+#: osparc/po/Invitations.js
+msgid "Remember that this is a one time use link"
+msgstr ""
+
+#: osparc/po/Invitations.js
+msgid "Copy invitation link"
+msgstr ""
+
+#: osparc/po/Invitations.js
+msgid "Data encrypted in the invitation"
+msgstr ""
+
+#: osparc/po/MessageTemplates.js
+msgid "Template updated"
+msgstr ""
+
+#: osparc/tester/ConsoleErrors.js
+msgid "Search in Message"
+msgstr ""
+
+#: osparc/tester/WebSocketMessages.js
+msgid "Channel"
+msgstr ""
+
+#: osparc/tester/ConsoleErrors.js
+msgid "Message"
+msgstr ""
+
+#: osparc/tester/Statics.js
+msgid "Local Storage"
+msgstr ""
+
+#: osparc/desktop/credits/AutoRecharge.js
+msgid "Keep your balance running smoothly by automatically setting your credits to be recharged when it runs low."
+msgstr ""
+
+#: osparc/desktop/credits/AutoRecharge.js
+msgid "Before the auto-recharge function can be activated you need to add your first payment method"
+msgstr ""
+
+#: osparc/desktop/credits/AutoRecharge.js
+msgid "Recharging amount (USD)"
+msgstr ""
+
+#: osparc/desktop/credits/AutoRecharge.js
+msgid "Monthly limit (USD)"
+msgstr ""
+
+#: osparc/desktop/credits/AutoRecharge.js
+msgid "Maximum amount in USD charged within a natural month."
+msgstr ""
+
+#: osparc/desktop/credits/AutoRecharge.js
+msgid "To disable spending limit, clear input field"
+msgstr ""
+
+#: osparc/desktop/credits/AutoRecharge.js
+msgid "Save and close"
+msgstr ""
+
+#: osparc/desktop/credits/AutoRecharge.js
+msgid "Changes on the Auto recharge were successfully saved"
+msgstr ""
+
+#: osparc/vipMarket/LicensedItemDetails.js
+msgid "Select a model for more details"
+msgstr ""
+
+#: osparc/vipMarket/LicensedItemDetails.js
+msgid "This bundle contains:"
+msgstr ""
+
+#: osparc/vipMarket/LicensedItemDetails.js
+msgid "<u>Terms and Conditions</u>"
+msgstr ""
+
+#: osparc/vipMarket/LicensedItemDetails.js
+msgid "Terms and Conditions"
+msgstr ""
+
+#: osparc/vipMarket/LicensedItemDetails.js
+msgid "Available for Importing"
+msgstr ""
+
+#: osparc/form/ColorPicker.js
+msgid "Pick a color"
+msgstr ""
+
+#: osparc/pricing/Plans.js
+msgid "New Pricing Plan"
+msgstr ""
+
+#: osparc/pricing/Plans.js
+msgid "Pricing Plan Creator"
+msgstr ""
+
+#: osparc/pricing/Plans.js
+msgid "Pricing Plan Editor"
+msgstr ""
+
+#: osparc/pricing/PlanDetails.js
+msgid "Return to Pricing Plans"
+msgstr ""
+
+#: osparc/pricing/PlanDetails.js
+msgid "Pricing Units"
+msgstr ""
+
+#: osparc/study/PricingUnitLicense.js
+msgid "Duration: 1 year"
+msgstr ""
+
+#: osparc/study/PricingUnitLicense.js
+msgid "Rent"
+msgstr ""
+
+#: osparc/study/PricingUnitLicense.js
+msgid "will be available until "
+msgstr ""
+
+#: osparc/pricing/PlanEditor.js
+msgid "Pricing Plan Key"
+msgstr ""
+
+#: osparc/pricing/UnitEditor.js
+msgid "Successfully updated"
+msgstr ""
+
+#: osparc/pricing/UnitsList.js
+msgid "New Pricing Unit"
+msgstr ""
+
+#: osparc/pricing/UnitsList.js
+msgid "Pricing Unit Creator"
+msgstr ""
+
+#: osparc/pricing/UnitsList.js
+msgid "Pricing Unit Editor"
+msgstr ""
+
+#: osparc/pricing/ServicesList.js
+msgid "Add Service"
+msgstr ""
+
+#: osparc/pricing/UnitEditor.js
+msgid "Unit Name"
+msgstr ""
+
+#: osparc/pricing/UnitEditor.js
+msgid "Cost per unit"
+msgstr ""
+
+#: osparc/pricing/UnitEditor.js
+msgid "Specific info"
+msgstr ""
+
+#: osparc/pricing/UnitEditor.js
+msgid "CPU"
+msgstr ""
+
+#: osparc/pricing/UnitEditor.js
+msgid "RAM"
+msgstr ""
+
+#: osparc/pricing/UnitEditor.js
+msgid "VRAM"
+msgstr ""
+
+#: osparc/pricing/UnitEditor.js
+msgid "More Extra Info"
+msgstr ""
+
+#: osparc/pricing/UnitEditor.js
+msgid "Number of Seats"
+msgstr ""
+
+#: osparc/pricing/UnitEditor.js
+msgid "Default"
+msgstr ""
+
+#: osparc/pricing/UnitEditor.js
+msgid "Successfully created"
+msgstr ""

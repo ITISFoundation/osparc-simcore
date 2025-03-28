@@ -14,31 +14,46 @@ from aiohttp import web
 from models_library.users import UserID
 from yarl import URL
 
+from ._login_repository_legacy import (
+    ActionLiteralStr,
+    AsyncpgStorage,
+    ConfirmationTokenDict,
+)
 from .settings import LoginOptions
-from .storage import ActionLiteralStr, AsyncpgStorage, ConfirmationTokenDict
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
-async def validate_confirmation_code(
-    code: str, db: AsyncpgStorage, cfg: LoginOptions
-) -> ConfirmationTokenDict | None:
-    """
-    Returns None if validation fails
-    """
-    assert not code.startswith("***"), "forgot .get_secret_value()??"  # nosec
+async def get_or_create_confirmation_without_data(
+    cfg: LoginOptions,
+    db: AsyncpgStorage,
+    user_id: UserID,
+    action: ActionLiteralStr,
+) -> ConfirmationTokenDict:
 
     confirmation: ConfirmationTokenDict | None = await db.get_confirmation(
-        {"code": code}
+        {"user": {"id": user_id}, "action": action}
     )
-    if confirmation and is_confirmation_expired(cfg, confirmation):
+
+    if confirmation is not None and is_confirmation_expired(cfg, confirmation):
         await db.delete_confirmation(confirmation)
-        log.warning(
+        _logger.warning(
             "Used expired token [%s]. Deleted from confirmations table.",
             confirmation,
         )
-        return None
+        confirmation = None
+
+    if confirmation is None:
+        confirmation = await db.create_confirmation(user_id, action=action)
+
     return confirmation
+
+
+def get_expiration_date(
+    cfg: LoginOptions, confirmation: ConfirmationTokenDict
+) -> datetime:
+    lifetime = cfg.get_confirmation_lifetime(confirmation["action"])
+    return confirmation["created_at"] + lifetime
 
 
 def _url_for_confirmation(app: web.Application, code: str) -> URL:
@@ -54,39 +69,28 @@ def make_confirmation_link(
     return f"{request.scheme}://{request.host}{link}"
 
 
-def get_expiration_date(
-    cfg: LoginOptions, confirmation: ConfirmationTokenDict
-) -> datetime:
-    lifetime = cfg.get_confirmation_lifetime(confirmation["action"])
-    return confirmation["created_at"] + lifetime
-
-
-async def get_or_create_confirmation(
-    cfg: LoginOptions,
-    db: AsyncpgStorage,
-    user_id: UserID,
-    action: ActionLiteralStr,
-) -> ConfirmationTokenDict:
-
-    confirmation: ConfirmationTokenDict | None = await db.get_confirmation(
-        {"user": {"id": user_id}, "action": action}
-    )
-
-    if confirmation is not None and is_confirmation_expired(cfg, confirmation):
-        await db.delete_confirmation(confirmation)
-        log.warning(
-            "Used expired token [%s]. Deleted from confirmations table.",
-            confirmation,
-        )
-        confirmation = None
-
-    if confirmation is None:
-        confirmation = await db.create_confirmation(user_id, action=action)
-
-    return confirmation
-
-
 def is_confirmation_expired(cfg: LoginOptions, confirmation: ConfirmationTokenDict):
     age = datetime.utcnow() - confirmation["created_at"]
     lifetime = cfg.get_confirmation_lifetime(confirmation["action"])
     return age > lifetime
+
+
+async def validate_confirmation_code(
+    code: str, db: AsyncpgStorage, cfg: LoginOptions
+) -> ConfirmationTokenDict | None:
+    """
+    Returns None if validation fails
+    """
+    assert not code.startswith("***"), "forgot .get_secret_value()??"  # nosec
+
+    confirmation: ConfirmationTokenDict | None = await db.get_confirmation(
+        {"code": code}
+    )
+    if confirmation and is_confirmation_expired(cfg, confirmation):
+        await db.delete_confirmation(confirmation)
+        _logger.warning(
+            "Used expired token [%s]. Deleted from confirmations table.",
+            confirmation,
+        )
+        return None
+    return confirmation

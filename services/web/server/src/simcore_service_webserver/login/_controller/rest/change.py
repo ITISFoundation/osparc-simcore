@@ -10,16 +10,16 @@ from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.request_keys import RQT_USERID_KEY
 from simcore_postgres_database.utils_users import UsersRepo
 
-from .._meta import API_VTAG
-from ..db.plugin import get_database_engine
-from ..products import products_web
-from ..products.models import Product
-from ..security.api import check_password, encrypt_password
-from ..users import api as users_service
-from ..utils import HOUR
-from ..utils_rate_limiting import global_rate_limit_route
-from ._confirmation import get_or_create_confirmation, make_confirmation_link
-from ._constants import (
+from ...._meta import API_VTAG
+from ....db.plugin import get_database_engine
+from ....products import products_web
+from ....products.models import Product
+from ....security.api import check_password, encrypt_password
+from ....users import api as users_service
+from ....utils import HOUR
+from ....utils_rate_limiting import global_rate_limit_route
+from ... import _confirmation_service
+from ..._constants import (
     MSG_CANT_SEND_MAIL,
     MSG_CHANGE_EMAIL_REQUESTED,
     MSG_EMAIL_SENT,
@@ -27,17 +27,17 @@ from ._constants import (
     MSG_PASSWORD_CHANGED,
     MSG_WRONG_PASSWORD,
 )
-from ._models import InputSchema, create_password_match_validator
-from .decorators import login_required
-from .settings import LoginOptions, get_plugin_options
-from .storage import AsyncpgStorage, get_plugin_storage
-from .utils import (
+from ..._emails_service import get_template_path, send_email_from_template
+from ..._login_repository_legacy import AsyncpgStorage, get_plugin_storage
+from ..._login_service import (
     ACTIVE,
     CHANGE_EMAIL,
     flash_response,
     validate_user_status,
 )
-from .utils_email import get_template_path, send_email_from_template
+from ..._models import InputSchema, create_password_match_validator
+from ...decorators import login_required
+from ...settings import LoginOptions, get_plugin_options
 
 _logger = logging.getLogger(__name__)
 
@@ -180,12 +180,14 @@ async def initiate_reset_password(request: web.Request):
         try:
             # Confirmation token that includes code to `complete_reset_password`.
             # Recreated if non-existent or expired  (Guideline #2)
-            confirmation = await get_or_create_confirmation(
-                cfg, db, user_id=user["id"], action="RESET_PASSWORD"
+            confirmation = (
+                await _confirmation_service.get_or_create_confirmation_without_data(
+                    cfg, db, user_id=user["id"], action="RESET_PASSWORD"
+                )
             )
 
             # Produce a link so that the front-end can hit `complete_reset_password`
-            link = make_confirmation_link(request, confirmation)
+            link = _confirmation_service.make_confirmation_link(request, confirmation)
 
             # primary reset email with a URL and the normal instructions.
             await send_email_from_template(
@@ -221,7 +223,7 @@ class ChangeEmailBody(InputSchema):
     email: LowerCaseEmailStr
 
 
-async def submit_request_to_change_email(request: web.Request):
+async def initiate_change_email(request: web.Request):
     # NOTE: This code have been intentially disabled in https://github.com/ITISFoundation/osparc-simcore/pull/5472
     db: AsyncpgStorage = get_plugin_storage(request.app)
     product: Product = products_web.get_current_product(request)
@@ -247,7 +249,7 @@ async def submit_request_to_change_email(request: web.Request):
     confirmation = await db.create_confirmation(
         user_id=user["id"], action="CHANGE_EMAIL", data=request_body.email
     )
-    link = make_confirmation_link(request, confirmation)
+    link = _confirmation_service.make_confirmation_link(request, confirmation)
     try:
         await send_email_from_template(
             request,

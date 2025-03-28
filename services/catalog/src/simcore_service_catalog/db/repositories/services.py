@@ -16,7 +16,10 @@ from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from psycopg2.errors import ForeignKeyViolation
 from pydantic import PositiveInt, TypeAdapter, ValidationError
+from simcore_postgres_database.utils import as_postgres_sql_query_str
+from simcore_postgres_database.utils_repos import pass_or_acquire_connection
 from simcore_postgres_database.utils_services import create_select_latest_services_query
+from sqlalchemy import sql
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.sql import and_, or_
 from sqlalchemy.sql.expression import tuple_
@@ -30,17 +33,24 @@ from ...models.services_db import (
     ServiceWithHistoryDBGet,
 )
 from ...models.services_specifications import ServiceSpecificationsAtDB
-from ..tables import services_access_rights, services_meta_data, services_specifications
+from ..tables import (
+    services_access_rights,
+    services_compatibility,
+    services_meta_data,
+    services_specifications,
+    user_to_groups,
+)
 from ._base import BaseRepository
 from ._services_sql import (
     SERVICES_META_DATA_COLS,
     AccessRightsClauses,
+    by_version,
     can_get_service_stmt,
     get_service_history_stmt,
     get_service_stmt,
+    latest_services_total_count_stmt,
     list_latest_services_stmt,
     list_services_stmt,
-    total_count_stmt,
 )
 
 _logger = logging.getLogger(__name__)
@@ -381,7 +391,7 @@ class ServicesRepository(BaseRepository):
     ) -> tuple[PositiveInt, list[ServiceWithHistoryDBGet]]:
 
         # get page
-        stmt_total = total_count_stmt(
+        stmt_total = latest_services_total_count_stmt(
             product_name=product_name,
             user_id=user_id,
             access_rights=AccessRightsClauses.can_read,
@@ -438,8 +448,10 @@ class ServicesRepository(BaseRepository):
         user_id: UserID,
         # get args
         key: ServiceKey,
-    ) -> list[ReleaseDBGet] | None:
-
+    ) -> list[ReleaseDBGet]:
+        """
+        DEPRECATED: use get_service_history_page instead!
+        """
         stmt_history = get_service_history_stmt(
             product_name=product_name,
             user_id=user_id,
@@ -451,10 +463,93 @@ class ServicesRepository(BaseRepository):
             row = result.one_or_none()
 
         return (
-            TypeAdapter(list[ReleaseDBGet]).validate_python(row.history)
-            if row
-            else None
+            TypeAdapter(list[ReleaseDBGet]).validate_python(row.history) if row else []
         )
+
+    async def get_service_history_page(
+        self,
+        *,
+        # access-rights
+        product_name: ProductName,
+        user_id: UserID,
+        # get args
+        key: ServiceKey,
+        # list args: pagination
+        limit: int | None = None,
+        offset: int | None = None,
+    ) -> tuple[PositiveInt, list[ReleaseDBGet]]:
+
+        base_subquery = (
+            # Search on service (key, *) for (product_name, user_id w/ access)
+            sql.select(
+                services_meta_data.c.key,
+                services_meta_data.c.version,
+            )
+            .select_from(
+                services_meta_data.join(
+                    services_access_rights,
+                    (services_meta_data.c.key == services_access_rights.c.key)
+                    & (
+                        services_meta_data.c.version == services_access_rights.c.version
+                    ),
+                ).join(
+                    user_to_groups,
+                    (user_to_groups.c.gid == services_access_rights.c.gid),
+                )
+            )
+            .where(
+                (services_meta_data.c.key == key)
+                & (services_access_rights.c.product_name == product_name)
+                & (user_to_groups.c.uid == user_id)
+                & AccessRightsClauses.can_read
+            )
+        ).subquery()
+
+        # Query to count the TOTAL number of rows
+        count_query = sql.select(sql.func.count()).select_from(base_subquery)
+        _logger.debug("count_query=\n%s", as_postgres_sql_query_str(count_query))
+
+        # Query to retrieve page with additional columns, ordering, offset, and limit
+        page_query = (
+            sql.select(
+                services_meta_data.c.key,
+                services_meta_data.c.version,
+                services_meta_data.c.version_display,
+                services_meta_data.c.deprecated,
+                services_meta_data.c.created,
+                # CompatiblePolicyDict | None
+                services_compatibility.c.custom_policy.label("compatibility_policy"),
+            )
+            .select_from(
+                # NOTE: these joins are avoided in count_query
+                base_subquery.join(
+                    services_meta_data,
+                    (base_subquery.c.key == services_meta_data.c.key)
+                    & (base_subquery.c.version == services_meta_data.c.version),
+                ).outerjoin(
+                    services_compatibility,
+                    (services_meta_data.c.key == services_compatibility.c.key)
+                    & (
+                        services_meta_data.c.version == services_compatibility.c.version
+                    ),
+                )
+            )
+            .order_by(sql.desc(by_version(services_meta_data.c.version)))
+            .offset(offset)
+            .limit(limit)
+        )
+        _logger.debug("page_query=\n%s", as_postgres_sql_query_str(page_query))
+
+        async with pass_or_acquire_connection(self.db_engine) as conn:
+            total_count: PositiveInt = await conn.scalar(count_query) or 0
+
+            result = await conn.stream(page_query)
+            items: list[ReleaseDBGet] = [
+                ReleaseDBGet.model_validate(row, from_attributes=True)
+                async for row in result
+            ]
+
+        return total_count, items
 
     # Service Access Rights ----
 

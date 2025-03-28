@@ -1,5 +1,5 @@
 """
-    Scheduled tasks addressing users
+Scheduled tasks addressing users
 
 """
 
@@ -14,7 +14,7 @@ from tenacity import retry
 from tenacity.before_sleep import before_sleep_log
 from tenacity.wait import wait_exponential
 
-from ..login.utils import notify_user_logout
+from ..login import login_service
 from ..security.api import clean_auth_policy_cache
 from ..users.api import update_expired_users
 
@@ -39,7 +39,7 @@ async def notify_user_logout_all_sessions(
         get_log_record_extra(user_id=user_id),
     ):
         try:
-            await notify_user_logout(app, user_id, client_session_id=None)
+            await login_service.notify_user_logout(app, user_id, client_session_id=None)
         except Exception:  # pylint: disable=broad-except
             _logger.warning(
                 "Ignored error while notifying logout for %s",

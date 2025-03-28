@@ -16,25 +16,25 @@ from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.request_keys import RQT_USERID_KEY
 from servicelib.utils import fire_and_forget_task
 
-from .._meta import API_VTAG
-from ..constants import RQ_PRODUCT_KEY
-from ..products import products_web
-from ..products.models import Product
-from ..security.api import check_password, forget_identity
-from ..security.decorators import permission_required
-from ..session.api import get_session
-from ..users.api import get_user_credentials, set_user_as_deleted
-from ..utils import MINUTE
-from ..utils_rate_limiting import global_rate_limit_route
-from ._constants import CAPTCHA_SESSION_KEY, MSG_LOGGED_OUT, MSG_WRONG_CAPTCHA__INVALID
-from ._registration_api import (
-    generate_captcha,
-    send_account_request_email_to_support,
-    send_close_account_email,
+from ...._meta import API_VTAG
+from ....constants import RQ_PRODUCT_KEY
+from ....products import products_web
+from ....products.models import Product
+from ....security import api as security_service
+from ....security.decorators import permission_required
+from ....session.api import get_session
+from ....users.api import get_user_credentials, set_user_as_deleted
+from ....utils import MINUTE
+from ....utils_rate_limiting import global_rate_limit_route
+from ... import _preregistration_service
+from ..._constants import (
+    CAPTCHA_SESSION_KEY,
+    MSG_LOGGED_OUT,
+    MSG_WRONG_CAPTCHA__INVALID,
 )
-from .decorators import login_required
-from .settings import LoginSettingsForProduct, get_plugin_settings
-from .utils import flash_response, notify_user_logout
+from ..._login_service import flash_response, notify_user_logout
+from ...decorators import login_required
+from ...settings import LoginSettingsForProduct, get_plugin_settings
 
 _logger = logging.getLogger(__name__)
 
@@ -78,7 +78,7 @@ async def request_product_account(request: web.Request):
 
     # send email to fogbugz or user itself
     fire_and_forget_task(
-        send_account_request_email_to_support(
+        _preregistration_service.send_account_request_email_to_support(
             request,
             product=product,
             request_form=body.form,
@@ -109,7 +109,7 @@ async def unregister_account(request: web.Request):
 
     # checks before deleting
     credentials = await get_user_credentials(request.app, user_id=req_ctx.user_id)
-    if body.email != credentials.email.lower() or not check_password(
+    if body.email != credentials.email.lower() or not security_service.check_password(
         body.password.get_secret_value(), credentials.password_hash
     ):
         raise web.HTTPConflict(
@@ -131,11 +131,11 @@ async def unregister_account(request: web.Request):
             request.app, user_id=req_ctx.user_id, client_session_id=None
         )
         response = flash_response(MSG_LOGGED_OUT, "INFO")
-        await forget_identity(request, response)
+        await security_service.forget_identity(request, response)
 
         # send email in the background
         fire_and_forget_task(
-            send_close_account_email(
+            _preregistration_service.send_close_account_email(
                 request,
                 user_email=credentials.email,
                 user_first_name=credentials.display_name,
@@ -156,7 +156,7 @@ async def unregister_account(request: web.Request):
 async def request_captcha(request: web.Request):
     session = await get_session(request)
 
-    captcha_text, image_data = await generate_captcha()
+    captcha_text, image_data = await _preregistration_service.generate_captcha()
 
     # Store captcha text in session
     session[CAPTCHA_SESSION_KEY] = captcha_text

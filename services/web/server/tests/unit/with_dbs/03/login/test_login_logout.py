@@ -6,7 +6,7 @@ from aiohttp.test_utils import TestClient
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import LoggedUser
 from servicelib.aiohttp import status
-from simcore_service_webserver.login.storage import AsyncpgStorage
+from simcore_service_webserver.login._login_repository_legacy import AsyncpgStorage
 
 
 async def test_logout(client: TestClient, db: AsyncpgStorage):

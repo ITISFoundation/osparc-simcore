@@ -3,6 +3,7 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
+import random
 from collections import Counter
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -476,3 +477,75 @@ async def test_can_get_service(
         key=service_key,
         version=service_version,
     )
+
+
+async def test_get_service_history_page(
+    target_product: ProductName,
+    create_fake_service_data: Callable,
+    services_db_tables_injector: Callable,
+    services_repo: ServicesRepository,
+    user_id: UserID,
+):
+    # inject services with multiple versions
+    service_key = "simcore/services/dynamic/test-service"
+    num_versions = 10
+
+    release_versions = [
+        f"{random.randint(0, 2)}.{random.randint(0, 9)}.{random.randint(0, 9)}"  # noqa: S311
+        for _ in range(num_versions)
+    ]
+    await services_db_tables_injector(
+        [
+            create_fake_service_data(
+                service_key,
+                service_version,
+                team_access=None,
+                everyone_access=None,
+                product=target_product,
+            )
+            for service_version in release_versions
+        ]
+    )
+    # sorted AFTER injecting
+    release_versions = sorted(release_versions, key=version.Version, reverse=True)
+    assert version.Version(release_versions[0]) > version.Version(release_versions[-1])
+
+    # fetch full history using get_service_history_page
+    total_count, history = await services_repo.get_service_history_page(
+        product_name=target_product,
+        user_id=user_id,
+        key=service_key,
+    )
+    assert total_count == num_versions
+    assert len(history) == num_versions
+    assert [release.version for release in history] == release_versions
+
+    # fetch full history using deprecated get_service_history
+    deprecated_history = await services_repo.get_service_history(
+        product_name=target_product,
+        user_id=user_id,
+        key=service_key,
+    )
+    assert len(deprecated_history) == len(history)
+    assert [release.version for release in deprecated_history] == [
+        release.version for release in history
+    ]
+
+    # fetch paginated history
+    limit = 3
+    offset = 2
+    total_count, paginated_history = await services_repo.get_service_history_page(
+        product_name=target_product,
+        user_id=user_id,
+        key=service_key,
+        limit=limit,
+        offset=offset,
+    )
+    assert total_count == num_versions
+    assert len(paginated_history) == limit
+    assert [release.version for release in paginated_history] == release_versions[
+        offset : offset + limit
+    ]
+
+    # compare paginated results with the corresponding slice of the full history
+    assert paginated_history == history[offset : offset + limit]

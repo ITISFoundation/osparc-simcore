@@ -28,6 +28,8 @@ PageLimitInt: TypeAlias = Annotated[
 
 PageOffsetInt: TypeAlias = NonNegativeInt
 
+PageTotalCount: TypeAlias = NonNegativeInt
+
 DEFAULT_NUMBER_OF_ITEMS_PER_PAGE: Final[PageLimitInt] = TypeAdapter(
     PageLimitInt
 ).validate_python(20)
@@ -70,7 +72,7 @@ class PageQueryParameters(RequestParameters):
 
 class PageMetaInfoLimitOffset(BaseModel):
     limit: PositiveInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE
-    total: NonNegativeInt
+    total: PageTotalCount
     offset: NonNegativeInt = 0
     count: NonNegativeInt
 

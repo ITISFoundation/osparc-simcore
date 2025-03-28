@@ -1242,26 +1242,6 @@ qx.Class.define("osparc.data.Resources", {
         }
       },
       /*
-       * STORAGE ASYNC
-       */
-      "storageAsyncJobs": {
-        useCache: false,
-        endpoints: {
-          jobStatus: {
-            method: "GET",
-            url: statics.API + "/storage/async-jobs/{jobId}/status"
-          },
-          jobResult: {
-            method: "GET",
-            url: statics.API + "/storage/async-jobs/{jobId}/result"
-          },
-          abortJob: {
-            method: "POST",
-            url: statics.API + "/storage/async-jobs/{jobId}/abort"
-          },
-        }
-      },
-      /*
        * ACTIVITY
        */
       "activity": {
@@ -1491,7 +1471,7 @@ qx.Class.define("osparc.data.Resources", {
                 if ("status" in err && err.status === 401) {
                   // Unauthorized again, the cookie might have expired.
                   // We can assume that all calls after this will respond with 401, so bring the user ot the login page.
-                  qx.core.Init.getApplication().logout(qx.locale.Manager.tr("You were logged out. Your cookie might have expired."));
+                  qx.core.Init.getApplication().logout(qx.locale.Manager.tr("You have been logged out. Your cookie might have expired."));
                 }
               });
           }

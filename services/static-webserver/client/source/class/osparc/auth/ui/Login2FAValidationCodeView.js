@@ -97,7 +97,7 @@ qx.Class.define("osparc.auth.ui.Login2FAValidationCodeView", {
         alignY: "middle"
       }));
       const resendCodeDesc = new qx.ui.basic.Label().set({
-        value: this.tr("Didn't receive the code? Resend code")
+        value: this.tr("Didn't receive the code? Click to resend")
       });
       resendLayout.add(resendCodeDesc);
 
