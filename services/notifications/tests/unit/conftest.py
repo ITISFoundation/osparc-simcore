@@ -37,7 +37,7 @@ def service_env(
 async def initialized_app(service_env: EnvVarsDict) -> AsyncIterator[FastAPI]:
     app: FastAPI = create_app()
 
-    async with LifespanManager(app):
+    async with LifespanManager(app, startup_timeout=30, shutdown_timeout=30):
         yield app
 
 
