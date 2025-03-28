@@ -66,7 +66,7 @@ def list_services_stmt(
     return stmt
 
 
-def _version(column_or_value):
+def by_version(column_or_value):
     # converts version value string to array[integer] that can be compared
     # i.e. '1.2.3' -> [1, 2, 3]
     return sa.func.string_to_array(column_or_value, ".").cast(ARRAY(INTEGER))
@@ -111,7 +111,7 @@ def _has_access_rights(
     )
 
 
-def total_count_stmt(
+def latest_services_total_count_stmt(
     *,
     product_name: ProductName,
     user_id: UserID,
@@ -165,7 +165,7 @@ def list_latest_services_stmt(
         .where(access_rights)
         .order_by(
             services_meta_data.c.key,
-            sa.desc(_version(services_meta_data.c.version)),  # latest first
+            sa.desc(by_version(services_meta_data.c.version)),  # latest first
         )
         .distinct(services_meta_data.c.key)  # get only first
         .limit(limit)
@@ -313,7 +313,6 @@ def get_service_history_stmt(
     access_rights: sa.sql.ClauseElement,
     service_key: ServiceKey,
 ):
-
     _sq = (
         sa.select(
             services_meta_data.c.key,
@@ -352,7 +351,7 @@ def get_service_history_stmt(
     history_subquery = (
         sa.select(_sq)
         .order_by(
-            sa.desc(_version(_sq.c.version)),  # latest version first
+            sa.desc(by_version(_sq.c.version)),  # latest version first
         )
         .alias("history_subquery")
     )

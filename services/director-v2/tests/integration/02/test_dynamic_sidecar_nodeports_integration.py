@@ -110,6 +110,7 @@ pytest_simcore_core_services_selection = [
     "rabbit",
     "redis",
     "storage",
+    "sto-worker",
     "redis",
 ]
 
@@ -934,15 +935,15 @@ async def test_nodeports_integration(
     `aioboto` instead of `docker` or `storage-data_manager API`.
     """
     # STEP 1
-    dynamic_services_urls: dict[
-        str, str
-    ] = await _start_and_wait_for_dynamic_services_ready(
-        director_v2_client=async_client,
-        product_name=osparc_product_name,
-        user_id=current_user["id"],
-        workbench_dynamic_services=workbench_dynamic_services,
-        current_study=current_study,
-        catalog_url=services_endpoint["catalog"],
+    dynamic_services_urls: dict[str, str] = (
+        await _start_and_wait_for_dynamic_services_ready(
+            director_v2_client=async_client,
+            product_name=osparc_product_name,
+            user_id=current_user["id"],
+            workbench_dynamic_services=workbench_dynamic_services,
+            current_study=current_study,
+            catalog_url=services_endpoint["catalog"],
+        )
     )
 
     # STEP 2

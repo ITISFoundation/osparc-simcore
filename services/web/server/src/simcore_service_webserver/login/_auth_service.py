@@ -10,9 +10,9 @@ from ..db.plugin import get_database_engine
 from ..groups.api import is_user_by_email_in_group
 from ..products.models import Product
 from ..security.api import check_password, encrypt_password
+from . import _login_service
 from ._constants import MSG_UNKNOWN_EMAIL, MSG_WRONG_PASSWORD
-from .storage import AsyncpgStorage, get_plugin_storage
-from .utils import validate_user_status
+from ._login_repository_legacy import AsyncpgStorage, get_plugin_storage
 
 
 async def get_user_by_email(app: web.Application, *, email: str) -> dict[str, Any]:
@@ -55,7 +55,7 @@ async def check_authorized_user_credentials_or_raise(
             reason=MSG_UNKNOWN_EMAIL, content_type=MIMETYPE_APPLICATION_JSON
         )
 
-    validate_user_status(user=user, support_email=product.support_email)
+    _login_service.validate_user_status(user=user, support_email=product.support_email)
 
     if not check_password(password, user["password_hash"]):
         raise web.HTTPUnauthorized(

@@ -16,12 +16,12 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.constants import RQ_PRODUCT_KEY
 from simcore_service_webserver.email.plugin import setup_email
-from simcore_service_webserver.login.plugin import setup_login
-from simcore_service_webserver.login.utils_email import (
+from simcore_service_webserver.login._emails_service import (
     AttachmentTuple,
     get_template_path,
     send_email_from_template,
 )
+from simcore_service_webserver.login.plugin import setup_login
 from simcore_service_webserver.publications._utils import json2html
 from simcore_service_webserver.statics._constants import FRONTEND_APPS_AVAILABLE
 
