@@ -50,6 +50,7 @@ pytest_simcore_core_services_selection = [
     "rabbit",
     "redis",
     "storage",
+    "sto-worker",
 ]
 
 pytest_simcore_ops_services_selection = [
@@ -179,7 +180,6 @@ async def restore_legacy_state_archives(
     node_id: NodeID,
     state_paths_to_legacy_archives: dict[Path, Path],
 ) -> None:
-
     tasks = []
     for legacy_archive_zip in state_paths_to_legacy_archives.values():
         s3_path = f"{project_id}/{node_id}/{legacy_archive_zip.name}"
