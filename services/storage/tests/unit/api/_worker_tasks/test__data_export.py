@@ -7,7 +7,7 @@ from celery import Task
 from faker import Faker
 from models_library.progress_bar import ProgressReport, ProgressStructuredMessage
 from models_library.users import UserID
-from simcore_service_storage.api._worker_tasks._data_export import data_export
+from simcore_service_storage.api._worker_tasks._simcore_s3 import data_export
 from simcore_service_storage.modules.celery.models import TaskID
 
 pytest_simcore_core_services_selection = [
