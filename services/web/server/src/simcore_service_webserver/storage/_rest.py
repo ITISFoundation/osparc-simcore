@@ -458,7 +458,7 @@ async def export_data(request: web.Request) -> web.Response:
     data_export_post = await parse_request_body_as(
         model_schema_cls=DataExportPost, request=request
     )
-    async_job_rpc_get = await start_data_export(
+    async_job_rpc_get, _ = await start_data_export(
         rabbitmq_rpc_client=rabbitmq_rpc_client,
         user_id=_req_ctx.user_id,
         product_name=_req_ctx.product_name,

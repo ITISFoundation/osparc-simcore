@@ -37,12 +37,13 @@ async def start_data_export(
     user_id: UserID,
     product_name: str,
     paths_to_export: list[StorageFileID],
-) -> AsyncJobGet:
+) -> tuple[AsyncJobGet, AsyncJobNameData]:
     job_id_data = AsyncJobNameData(user_id=user_id, product_name=product_name)
-    return await submit(
+    async_job_rpc_get = await submit(
         rabbitmq_rpc_client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
         method_name=TypeAdapter(RPCMethodName).validate_python("start_data_export"),
         job_id_data=job_id_data,
         paths_to_export=paths_to_export,
     )
+    return async_job_rpc_get, job_id_data
