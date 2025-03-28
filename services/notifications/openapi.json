@@ -1,0 +1,66 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "simcore-service-notifications",
+    "description": "Service for executing commands on docker nodes",
+    "version": "0.0.1"
+  },
+  "servers": [
+    {
+      "url": "/",
+      "description": "Default server: requests directed to serving url"
+    },
+    {
+      "url": "http://{host}:{port}",
+      "description": "Development server: can configure any base url",
+      "variables": {
+        "host": {
+          "default": "127.0.0.1"
+        },
+        "port": {
+          "default": "8000"
+        }
+      }
+    }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Check Service Health",
+        "operationId": "check_service_health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthCheckGet"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "HealthCheckGet": {
+        "properties": {
+          "timestamp": {
+            "type": "string",
+            "title": "Timestamp"
+          }
+        },
+        "type": "object",
+        "required": [
+          "timestamp"
+        ],
+        "title": "HealthCheckGet",
+        "example": {
+          "timestamp": "simcore_service_directorv2.api.routes.health@2023-07-03T12:59:12.024551+00:00"
+        }
+      }
+    }
+  }
+}
