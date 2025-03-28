@@ -13,8 +13,10 @@ from faker import Faker
 from fastapi import FastAPI
 from models_library.products import ProductName
 from models_library.rest_pagination import MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
+from models_library.services_history import ServiceRelease
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
+from packaging import version
 from pydantic import ValidationError
 from pytest_simcore.helpers.faker_factories import random_icon_url
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
@@ -29,6 +31,7 @@ from servicelib.rabbitmq.rpc_interfaces.catalog.services import (
     batch_get_my_services,
     check_for_service,
     get_service,
+    list_my_service_history_paginated,
     list_services_paginated,
     update_service,
 )
@@ -477,3 +480,76 @@ async def test_rpc_batch_get_my_services(
         "write": True,
     }
     assert my_services[1].owner == user["primary_gid"]
+    assert my_services[1].key == other_service_key
+    assert my_services[1].release.version == other_service_version
+
+
+async def test_rpc_get_my_service_history(
+    background_sync_task_mocked: None,
+    mocked_director_service_api: MockRouter,
+    rpc_client: RabbitMQRPCClient,
+    product_name: ProductName,
+    user_id: UserID,
+    app: FastAPI,
+    create_fake_service_data: Callable,
+    services_db_tables_injector: Callable,
+):
+    assert app
+
+    service_key = "simcore/services/comp/test-service-release-history"
+    service_version_1 = "1.0.0"
+    service_version_2 = "1.1.0"
+
+    assert version.Version(service_version_1) < version.Version(service_version_2)
+
+    # Inject fake service releases for the target service
+    fake_releases = [
+        create_fake_service_data(
+            service_key,
+            srv_version,
+            team_access=None,
+            everyone_access=None,
+            product=product_name,
+        )
+        for srv_version in (service_version_1, service_version_2)
+    ]
+
+    # Inject unrelated fake service releases
+    unrelated_service_key_1 = "simcore/services/comp/unrelated-service-1"
+    unrelated_service_key_2 = "simcore/services/comp/unrelated-service-2"
+    unrelated_releases = [
+        *[
+            create_fake_service_data(
+                unrelated_service_key_1,
+                srv_version,
+                team_access=None,
+                everyone_access=None,
+                product=product_name,
+            )
+            for srv_version in (service_version_1, service_version_2)
+        ],
+        create_fake_service_data(
+            unrelated_service_key_2,
+            "2.0.0",
+            team_access=None,
+            everyone_access=None,
+            product=product_name,
+        ),
+    ]
+
+    await services_db_tables_injector(fake_releases + unrelated_releases)
+
+    # Call the RPC function
+    page = await list_my_service_history_paginated(
+        rpc_client,
+        product_name=product_name,
+        user_id=user_id,
+        service_key=service_key,
+    )
+    release_history: list[ServiceRelease] = page.data
+
+    # Validate the response
+    assert isinstance(release_history, list)
+    assert len(release_history) == 2
+    assert release_history[0].version == service_version_2, "expected newest first"
+    assert release_history[1].version == service_version_1

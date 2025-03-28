@@ -85,21 +85,30 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
         cls, settings: S3Settings, s3_max_concurrency: int = _S3_MAX_CONCURRENCY_DEFAULT
     ) -> "SimcoreS3API":
         session = aioboto3.Session()
-        session_client = session.client(  # type: ignore[call-overload]
-            "s3",
-            endpoint_url=f"{settings.S3_ENDPOINT}",
-            aws_access_key_id=settings.S3_ACCESS_KEY,
-            aws_secret_access_key=settings.S3_SECRET_KEY,
-            region_name=settings.S3_REGION,
-            config=Config(signature_version="s3v4"),
-        )
-        assert isinstance(session_client, ClientCreatorContext)  # nosec
+        session_client = None
         exit_stack = contextlib.AsyncExitStack()
-        s3_client = cast(S3Client, await exit_stack.enter_async_context(session_client))
-        # NOTE: this triggers a botocore.exception.ClientError in case the connection is not made to the S3 backend
-        await s3_client.list_buckets()
+        try:
+            session_client = session.client(  # type: ignore[call-overload]
+                "s3",
+                endpoint_url=f"{settings.S3_ENDPOINT}",
+                aws_access_key_id=settings.S3_ACCESS_KEY,
+                aws_secret_access_key=settings.S3_SECRET_KEY,
+                region_name=settings.S3_REGION,
+                config=Config(signature_version="s3v4"),
+            )
+            assert isinstance(session_client, ClientCreatorContext)  # nosec
 
-        return cls(s3_client, session, exit_stack, s3_max_concurrency)
+            s3_client = cast(
+                S3Client, await exit_stack.enter_async_context(session_client)
+            )
+            # NOTE: this triggers a botocore.exception.ClientError in case the connection is not made to the S3 backend
+            await s3_client.list_buckets()
+
+            return cls(s3_client, session, exit_stack, s3_max_concurrency)
+        except Exception:
+            await exit_stack.aclose()
+
+            raise
 
     async def close(self) -> None:
         await self._exit_stack.aclose()

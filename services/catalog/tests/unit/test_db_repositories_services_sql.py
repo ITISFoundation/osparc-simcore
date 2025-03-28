@@ -9,8 +9,8 @@ from simcore_service_catalog.db.repositories._services_sql import (
     can_get_service_stmt,
     get_service_history_stmt,
     get_service_stmt,
+    latest_services_total_count_stmt,
     list_latest_services_stmt,
-    total_count_stmt,
 )
 
 
@@ -70,7 +70,7 @@ def test_building_services_sql_statements():
     )
 
     _check(
-        total_count_stmt,
+        latest_services_total_count_stmt,
         product_name=product_name,
         user_id=user_id,
         access_rights=AccessRightsClauses.can_read,
