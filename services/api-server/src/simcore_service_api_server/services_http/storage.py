@@ -8,7 +8,9 @@ from uuid import UUID
 
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
-from models_library.api_schemas_storage.storage_schemas import FileMetaDataArray
+from models_library.api_schemas_storage.storage_schemas import (
+    FileMetaDataArray,
+)
 from models_library.api_schemas_storage.storage_schemas import (
     FileMetaDataGet as StorageFileMetaData,
 )
@@ -24,15 +26,16 @@ from starlette.datastructures import URL
 
 from ..core.settings import StorageSettings
 from ..exceptions.service_errors_utils import service_exception_mapper
-from ..models.schemas.files import File
+from ..models.domain.files import File
 from ..utils.client_base import BaseServiceClientApi, setup_client_instance
 
 _logger = logging.getLogger(__name__)
 
 _exception_mapper = partial(service_exception_mapper, service_name="Storage")
 
-_FILE_ID_PATTERN = re.compile(r"^api\/(?P<file_id>[\w-]+)\/(?P<filename>.+)$")
 AccessRight = Literal["read", "write"]
+
+_FILE_ID_PATTERN = re.compile(r"^api\/(?P<file_id>[\w-]+)\/(?P<filename>.+)$")
 
 
 def to_file_api_model(stored_file_meta: StorageFileMetaData) -> File:

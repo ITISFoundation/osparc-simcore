@@ -1,5 +1,6 @@
 import urllib.parse
 from collections.abc import Callable
+from pathlib import Path
 from typing import Annotated
 
 import packaging.version
@@ -7,6 +8,7 @@ from models_library.services import ServiceMetaDataPublished
 from models_library.services_regex import DYNAMIC_SERVICE_KEY_RE
 from packaging.version import Version
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl, StringConstraints
+from simcore_service_api_server.models.schemas._utils import ApiServerInputSchema
 
 from ...models._utils_pydantic import UriSchema
 from ...models.schemas.jobs import JobID
@@ -37,10 +39,23 @@ ProgramKeyId = Annotated[
 ]
 
 
+class ProgramJobFilePath(ApiServerInputSchema):
+    program_key: Annotated[ProgramKeyId, Field(..., description="Program identifier")]
+    program_version: Annotated[VersionStr, Field(..., description="Program version")]
+    job: Annotated[JobID, Field(..., description="Job identifier")]
+    relative_path: Annotated[
+        Path,
+        Field(
+            ...,
+            description="The file's relative path within the job's workspace directory",
+        ),
+    ]
+
+
 class Program(BaseModel):
     """A released solver with a specific version"""
 
-    id: ProgramKeyId = Field(..., description="Solver identifier")
+    id: ProgramKeyId = Field(..., description="Program identifier")
     version: VersionStr = Field(
         ...,
         description="semantic version number of the node",
