@@ -1,7 +1,5 @@
-aio-pika==9.5.3
-    # via
-    #   -c requirements/./constraints.txt
-    #   -r requirements/../../../packages/service-library/requirements/_base.in
+aio-pika==9.5.5
+    # via -r requirements/../../../packages/service-library/requirements/_base.in
 aiocache==0.12.3
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 aiodebug==2.3.0
