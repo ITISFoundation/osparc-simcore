@@ -66,7 +66,7 @@ def make_resource_error(
     resource: str,
     error_cls: type[OsparcErrorMixin],
     base_exception: type[Exception] = Exception,
-) -> type[OsparcErrorMixin]:
+) -> type[Exception]:
     class _ResourceError(error_cls, base_exception):
         def __init__(self, **ctx: Any):
             ctx.setdefault("resource", resource)
