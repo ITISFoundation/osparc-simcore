@@ -32,12 +32,15 @@ from starlette.datastructures import URL
 from starlette.responses import RedirectResponse
 
 from ...exceptions.service_errors_utils import DEFAULT_BACKEND_SERVICE_STATUS_CODES
+from ...models.domain.files import File as DomainFile
 from ...models.pagination import Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
 from ...models.schemas.files import (
     ClientFile,
     ClientFileUploadData,
-    File,
+)
+from ...models.schemas.files import File as OutputFile
+from ...models.schemas.files import (
     FileUploadData,
     UploadLinks,
 )
@@ -70,14 +73,14 @@ async def _get_file(
     file_id: UUID,
     storage_client: StorageApi,
     user_id: int,
-):
+) -> DomainFile:
     """Gets metadata for a given file resource"""
 
     try:
-        stored_files: list[
-            StorageFileMetaData
-        ] = await storage_client.search_owned_files(
-            user_id=user_id, file_id=file_id, limit=1
+        stored_files: list[StorageFileMetaData] = (
+            await storage_client.search_owned_files(
+                user_id=user_id, file_id=file_id, limit=1
+            )
         )
         if not stored_files:
             msg = "Not found in storage"
@@ -98,7 +101,7 @@ async def _get_file(
         ) from err
 
 
-@router.get("", response_model=list[File], responses=_FILE_STATUS_CODES)
+@router.get("", response_model=list[OutputFile], responses=_FILE_STATUS_CODES)
 async def list_files(
     storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
     user_id: Annotated[int, Depends(get_current_user_id)],
@@ -113,12 +116,12 @@ async def list_files(
     )
 
     # Adapts storage API model to API model
-    all_files: list[File] = []
+    all_files: list[OutputFile] = []
     for stored_file_meta in stored_files:
         try:
             assert stored_file_meta.file_id  # nosec
 
-            file_meta: File = to_file_api_model(stored_file_meta)
+            file_meta = to_file_api_model(stored_file_meta)
 
         except (ValidationError, ValueError, AttributeError) as err:
             _logger.warning(
@@ -129,14 +132,14 @@ async def list_files(
             )
 
         else:
-            all_files.append(file_meta)
+            all_files.append(OutputFile.from_domain_model(file_meta))
 
     return all_files
 
 
 @router.get(
     "/page",
-    response_model=Page[File],
+    response_model=Page[OutputFile],
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
     status_code=status.HTTP_501_NOT_IMPLEMENTED,
 )
@@ -161,7 +164,7 @@ def _get_spooled_file_size(file_io: IO) -> int:
 
 @router.put(
     "/content",
-    response_model=File,
+    response_model=OutputFile,
     responses=_FILE_STATUS_CODES,
 )
 @cancel_on_disconnect
@@ -187,7 +190,7 @@ async def upload_file(
         None, _get_spooled_file_size, file.file
     )
     # assign file_id.
-    file_meta: File = await File.create_from_uploaded(
+    file_meta = await DomainFile.create_from_uploaded(
         file,
         file_size=file_size,
         created_at=datetime.datetime.now(datetime.UTC).isoformat(),
@@ -216,7 +219,7 @@ async def upload_file(
     assert isinstance(upload_result, UploadedFile)  # nosec
 
     file_meta.e_tag = upload_result.etag
-    return file_meta
+    return OutputFile.from_domain_model(file_meta)
 
 
 # NOTE: MaG suggested a single function that can upload one or multiple files instead of having
@@ -244,7 +247,7 @@ async def get_upload_links(
 ):
     """Get upload links for uploading a file to storage"""
     assert request  # nosec
-    file_meta: File = await File.create_from_client_file(
+    file_meta = await DomainFile.create_from_client_file(
         client_file,
         datetime.datetime.now(datetime.UTC).isoformat(),
     )
@@ -275,7 +278,7 @@ async def get_upload_links(
 
 @router.get(
     "/{file_id}",
-    response_model=File,
+    response_model=OutputFile,
     responses=_FILE_STATUS_CODES,
 )
 async def get_file(
@@ -294,7 +297,7 @@ async def get_file(
 
 @router.get(
     ":search",
-    response_model=Page[File],
+    response_model=Page[OutputFile],
     responses=_FILE_STATUS_CODES,
 )
 async def search_files_page(
@@ -317,8 +320,11 @@ async def search_files_page(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Not found in storage"
         )
+    file_list = [
+        OutputFile.from_domain_model(to_file_api_model(fmd)) for fmd in stored_files
+    ]
     return create_page(
-        [to_file_api_model(fmd) for fmd in stored_files],
+        file_list,
         total=len(stored_files),
         params=page_params,
     )
@@ -333,7 +339,7 @@ async def delete_file(
     user_id: Annotated[int, Depends(get_current_user_id)],
     storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
 ):
-    file: File = await _get_file(
+    file = await _get_file(
         file_id=file_id,
         storage_client=storage_client,
         user_id=user_id,
@@ -356,7 +362,7 @@ async def abort_multipart_upload(
 ):
     assert request  # nosec
     assert user_id  # nosec
-    file: File = File(
+    file = DomainFile(
         id=file_id,
         filename=client_file.filename,
         checksum=client_file.sha256_checksum,
@@ -372,7 +378,7 @@ async def abort_multipart_upload(
 
 @router.post(
     "/{file_id}:complete",
-    response_model=File,
+    response_model=OutputFile,
     responses=_FILE_STATUS_CODES,
 )
 @cancel_on_disconnect
@@ -387,7 +393,7 @@ async def complete_multipart_upload(
     assert request  # nosec
     assert user_id  # nosec
 
-    file: File = File(
+    file = DomainFile(
         id=file_id,
         filename=client_file.filename,
         checksum=client_file.sha256_checksum,
@@ -429,7 +435,7 @@ async def download_file(
 ):
     # NOTE: application/octet-stream is defined as "arbitrary binary data" in RFC 2046,
     # gets meta
-    file_meta: File = await get_file(file_id, storage_client, user_id)
+    file_meta = await get_file(file_id, storage_client, user_id)
 
     # download from S3 using pre-signed link
     presigned_download_link = await storage_client.get_download_link(

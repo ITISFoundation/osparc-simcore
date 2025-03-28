@@ -1,16 +1,17 @@
 import urllib.parse
 from collections.abc import Callable
-from typing import Annotated, Any, Literal
+from pathlib import Path
+from typing import Annotated
 
 import packaging.version
-from models_library.basic_regex import PUBLIC_VARIABLE_NAME_RE
 from models_library.services import ServiceMetaDataPublished
-from models_library.services_regex import COMPUTATIONAL_SERVICE_KEY_RE
+from models_library.services_regex import DYNAMIC_SERVICE_KEY_RE
 from packaging.version import Version
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl, StringConstraints
-from simcore_service_api_server.models.schemas.jobs import JobID
+from simcore_service_api_server.models.schemas._utils import ApiServerInputSchema
 
 from ...models._utils_pydantic import UriSchema
+from ...models.schemas.jobs import JobID
 from ..api_resources import compose_resource_name
 from ..basic_types import VersionStr
 
@@ -30,18 +31,31 @@ LATEST_VERSION = "latest"
 
 # SOLVER ----------
 #
-SOLVER_RESOURCE_NAME_RE = r"^solvers/([^\s/]+)/releases/([\d\.]+)$"
+PROGRAM_RESOURCE_NAME_RE = r"^programs/([^\s/]+)/releases/([\d\.]+)$"
 
 
-SolverKeyId = Annotated[
-    str, StringConstraints(strip_whitespace=True, pattern=COMPUTATIONAL_SERVICE_KEY_RE)
+ProgramKeyId = Annotated[
+    str, StringConstraints(strip_whitespace=True, pattern=DYNAMIC_SERVICE_KEY_RE)
 ]
 
 
-class Solver(BaseModel):
+class ProgramJobFilePath(ApiServerInputSchema):
+    program_key: Annotated[ProgramKeyId, Field(..., description="Program identifier")]
+    program_version: Annotated[VersionStr, Field(..., description="Program version")]
+    job: Annotated[JobID, Field(..., description="Job identifier")]
+    relative_path: Annotated[
+        Path,
+        Field(
+            ...,
+            description="The file's relative path within the job's workspace directory",
+        ),
+    ]
+
+
+class Program(BaseModel):
     """A released solver with a specific version"""
 
-    id: SolverKeyId = Field(..., description="Solver identifier")
+    id: ProgramKeyId = Field(..., description="Program identifier")
     version: VersionStr = Field(
         ...,
         description="semantic version number of the node",
@@ -64,18 +78,18 @@ class Solver(BaseModel):
         extra="ignore",
         json_schema_extra={
             "example": {
-                "id": "simcore/services/comp/isolve",
-                "version": "2.1.1",
-                "title": "iSolve",
-                "description": "EM solver",
+                "id": "simcore/services/dynamic/sim4life",
+                "version": "8.0.0",
+                "title": "Sim4life",
+                "description": "Simulation framework",
                 "maintainer": "info@itis.swiss",
-                "url": "https://api.osparc.io/v0/solvers/simcore%2Fservices%2Fcomp%2Fisolve/releases/2.1.1",
+                "url": "https://api.osparc.io/v0/solvers/simcore%2Fservices%2Fdynamic%2Fsim4life/releases/8.0.0",
             }
         },
     )
 
     @classmethod
-    def create_from_image(cls, image_meta: ServiceMetaDataPublished) -> "Solver":
+    def create_from_image(cls, image_meta: ServiceMetaDataPublished) -> "Program":
         data = image_meta.model_dump(
             include={"name", "key", "version", "description", "contact"},
         )
@@ -109,64 +123,24 @@ class Solver(BaseModel):
         """API standards notation (see api_resources.py)"""
         return self.resource_name
 
-    def get_url(self, url_for: Callable[..., HttpUrl], job_id: JobID) -> HttpUrl:
-        return url_for(
-            "get_job",
-            solver_key=self.id,
-            version=self.version,
-            job_id=job_id,
-        )
+    def get_url(self, url_for: Callable[..., HttpUrl], job_id: JobID) -> HttpUrl | None:
+        # missing endpoint
+        return None
 
-    def get_runner_url(self, url_for: Callable[..., HttpUrl]) -> HttpUrl:
-        return url_for(
-            "get_solver_release",
-            solver_key=self.id,
-            version=self.version,
-        )
+    def get_runner_url(self, url_for: Callable[..., HttpUrl]) -> HttpUrl | None:
+        # missing endpoint
+        return None
 
     def get_outputs_url(
         self, url_for: Callable[..., HttpUrl], job_id: JobID
-    ) -> HttpUrl:
-        return url_for(
-            "get_job_outputs",
-            solver_key=self.id,
-            version=self.version,
-            job_id=job_id,
-        )
+    ) -> HttpUrl | None:
+        # missing endpoint
+        return None
 
     @classmethod
-    def compose_resource_name(cls, solver_key, solver_version) -> str:
-        return compose_resource_name("solvers", solver_key, "releases", solver_version)
-
-
-PortKindStr = Literal["input", "output"]
-
-
-class SolverPort(BaseModel):
-    key: str = Field(
-        ...,
-        description="port identifier name",
-        pattern=PUBLIC_VARIABLE_NAME_RE,
-        title="Key name",
-    )
-    kind: PortKindStr
-    content_schema: dict[str, Any] | None = Field(
-        None,
-        description="jsonschema for the port's value. SEE https://json-schema.org",
-    )
-    model_config = ConfigDict(
-        extra="ignore",
-        json_schema_extra={
-            "example": {
-                "key": "input_2",
-                "kind": "input",
-                "content_schema": {
-                    "title": "Sleep interval",
-                    "type": "integer",
-                    "x_unit": "second",
-                    "minimum": 0,
-                    "maximum": 5,
-                },
-            }
-        },
-    )
+    def compose_resource_name(
+        cls, program_key: ProgramKeyId, program_version: VersionStr
+    ) -> str:
+        return compose_resource_name(
+            "programs", program_key, "releases", program_version
+        )

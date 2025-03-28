@@ -25,7 +25,6 @@ from servicelib.logging_utils import LogLevelInt, LogMessageStr
 from starlette.datastructures import Headers
 
 from ...models.schemas.files import File
-from ...models.schemas.solvers import Solver
 from .._utils_pydantic import UriSchema
 from ..api_resources import (
     RelativeResourceName,
@@ -255,9 +254,11 @@ class Job(BaseModel):
         )
 
     @classmethod
-    def create_solver_job(cls, *, solver: Solver, inputs: JobInputs):
+    def create_job_from_solver_or_program(
+        cls, *, solver_or_program_name: str, inputs: JobInputs
+    ):
         return Job.create_now(
-            parent_name=solver.name,
+            parent_name=solver_or_program_name,
             inputs_checksum=inputs.compute_checksum(),
         )
 
