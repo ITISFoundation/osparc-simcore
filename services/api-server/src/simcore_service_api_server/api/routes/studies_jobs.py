@@ -46,7 +46,7 @@ from ...services_http.study_job_models_converters import (
 from ...services_http.webserver import AuthSession
 from ...services_rpc.wb_api_server import WbApiRpcClient
 from ..dependencies.application import get_reverse_url_mapper
-from ..dependencies.authentication import get_current_user_id
+from ..dependencies.authentication import get_current_user_id, get_product_name
 from ..dependencies.services import get_api_client
 from ..dependencies.webserver_http import get_webserver_session
 from ..dependencies.webserver_rpc import (
@@ -92,6 +92,8 @@ async def create_study_job(
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
+    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+    product_name: Annotated[str, Depends(get_product_name)],
     hidden: Annotated[bool, Query()] = True,
     x_simcore_parent_project_uuid: ProjectID | None = Header(default=None),
     x_simcore_parent_node_id: NodeID | None = Header(default=None),
@@ -126,7 +128,10 @@ async def create_study_job(
     )
 
     await wb_api_rpc.mark_project_as_job(
-        project_uuid=job.id, job_parent_resource_name=job.runner_name
+        product_name=product_name,
+        user_id=user_id,
+        project_uuid=job.id,
+        job_parent_resource_name=job.runner_name,
     )
 
     project_inputs = await webserver_api.get_project_inputs(project_id=project.uuid)
