@@ -9,7 +9,7 @@ from models_library.api_schemas_catalog.services import (
 )
 from models_library.groups import GroupID
 from models_library.products import ProductName
-from models_library.rest_pagination import PageLimitInt
+from models_library.rest_pagination import PageLimitInt, PageTotalCount
 from models_library.services_access import ServiceGroupAccessRightsV2
 from models_library.services_history import Compatibility, ServiceRelease
 from models_library.services_metadata_published import ServiceMetaDataPublished
@@ -121,11 +121,12 @@ def _to_get_schema(
 async def list_latest_services(
     repo: ServicesRepository,
     director_api: DirectorApi,
+    *,
     product_name: ProductName,
     user_id: UserID,
     limit: PageLimitInt | None,
     offset: NonNegativeInt = 0,
-) -> tuple[NonNegativeInt, list[LatestServiceGet]]:
+) -> tuple[PageTotalCount, list[LatestServiceGet]]:
 
     # defines the order
     total_count, services = await repo.list_latest_services(
@@ -464,3 +465,48 @@ async def batch_get_my_services(
         )
 
     return my_services
+
+
+async def list_my_service_release_history(
+    repo: ServicesRepository,
+    *,
+    # access-rights
+    product_name: ProductName,
+    user_id: UserID,
+    # target service
+    service_key: ServiceKey,
+    # pagination
+    limit: PageLimitInt | None = None,
+    offset: NonNegativeInt | None = None,
+    # options
+    include_compatibility: bool = False,
+) -> tuple[PageTotalCount, list[ServiceRelease]]:
+
+    total_count, history = await repo.get_service_history_page(
+        # NOTE: that the service history might be different for each user
+        # since access-rights are defined on a k:v basis
+        product_name=product_name,
+        user_id=user_id,
+        key=service_key,
+        limit=limit,
+        offset=offset,
+    )
+
+    compatibility_map: dict[ServiceVersion, Compatibility | None] = {}
+    if include_compatibility:
+        msg = "This operation is heavy and for the moment is not necessary"
+        raise NotImplementedError(msg)
+
+    items = [
+        # domain -> domain
+        ServiceRelease.model_construct(
+            version=h.version,
+            version_display=h.version_display,
+            released=h.created,
+            retired=h.deprecated,
+            compatibility=compatibility_map.get(h.version),
+        )
+        for h in history
+    ]
+
+    return total_count, items

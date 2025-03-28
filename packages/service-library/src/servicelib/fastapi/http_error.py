@@ -1,3 +1,4 @@
+import logging
 from collections.abc import Awaitable, Callable
 from typing import TypeVar
 
@@ -10,6 +11,9 @@ from fastapi.requests import Request
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 
+from ..logging_errors import create_troubleshotting_log_kwargs
+from ..status_codes_utils import is_5xx_server_error
+
 validation_error_response_definition["properties"] = {
     "errors": {
         "title": "Validation errors",
@@ -20,6 +24,8 @@ validation_error_response_definition["properties"] = {
 
 
 TException = TypeVar("TException")
+
+_logger = logging.getLogger(__name__)
 
 
 def make_http_error_handler_for_exception(
@@ -36,11 +42,23 @@ def make_http_error_handler_for_exception(
     SEE https://docs.python.org/3/library/exceptions.html#concrete-exceptions
     """
 
-    async def _http_error_handler(_: Request, exc: Exception) -> JSONResponse:
+    async def _http_error_handler(request: Request, exc: Exception) -> JSONResponse:
         assert isinstance(exc, exception_cls)  # nosec
         error_content = {
             "errors": error_extractor(exc) if error_extractor else [f"{exc}"]
         }
+
+        if is_5xx_server_error(status_code):
+            _logger.exception(
+                create_troubleshotting_log_kwargs(
+                    "Unexpected error happened in the Resource Usage Tracker. Please contact support.",
+                    error=exc,
+                    error_context={
+                        "request": request,
+                        "request.method": f"{request.method}",
+                    },
+                )
+            )
 
         return JSONResponse(
             content=jsonable_encoder(

@@ -76,9 +76,6 @@ from simcore_service_storage.modules.celery.signals import (
     on_worker_shutdown,
 )
 from simcore_service_storage.modules.celery.worker import CeleryTaskQueueWorker
-from simcore_service_storage.modules.long_running_tasks import (
-    get_completed_upload_tasks,
-)
 from simcore_service_storage.modules.s3 import get_s3_client
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 from sqlalchemy import literal_column
@@ -481,8 +478,8 @@ async def with_versioning_enabled(
 async def create_empty_directory(
     create_simcore_file_id: Callable[[ProjectID, NodeID, str], SimcoreS3FileID],
     create_upload_file_link_v2: Callable[..., Awaitable[FileUploadSchema]],
-    initialized_app: FastAPI,
     client: httpx.AsyncClient,
+    with_storage_celery_worker: CeleryTaskQueueWorker,
 ) -> Callable[[str, ProjectID, NodeID], Awaitable[SimcoreS3FileID]]:
     async def _directory_creator(
         dir_name: str, project_id: ProjectID, node_id: NodeID
@@ -515,8 +512,6 @@ async def create_empty_directory(
         assert file_upload_complete_response
         state_url = URL(f"{file_upload_complete_response.links.state}").relative()
 
-        # check that it finished updating
-        get_completed_upload_tasks(initialized_app).clear()
         # now check for the completion
         async for attempt in AsyncRetrying(
             reraise=True,
@@ -1023,8 +1018,6 @@ async def with_storage_celery_worker_controller(
     ) as worker:
         worker_init.send(sender=worker)
 
-        # NOTE: wait for worker to be ready (sic)
-        await asyncio.sleep(1)
         yield worker
 
         worker_shutdown.send(sender=worker)

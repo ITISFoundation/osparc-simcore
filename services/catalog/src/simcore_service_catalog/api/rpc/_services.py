@@ -5,15 +5,17 @@ from typing import cast
 from fastapi import FastAPI
 from models_library.api_schemas_catalog.services import (
     MyServiceGet,
-    PageRpcServicesGetV2,
+    PageRpcLatestServiceGet,
+    PageRpcServiceRelease,
     ServiceGetV2,
     ServiceUpdateV2,
 )
 from models_library.products import ProductName
+from models_library.rest_pagination import PageOffsetInt
 from models_library.rpc_pagination import DEFAULT_NUMBER_OF_ITEMS_PER_PAGE, PageLimitInt
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
-from pydantic import NonNegativeInt, ValidationError, validate_call
+from pydantic import ValidationError, validate_call
 from pyinstrument import Profiler
 from servicelib.logging_utils import log_decorator
 from servicelib.rabbitmq import RPCRouter
@@ -62,8 +64,8 @@ async def list_services_paginated(
     product_name: ProductName,
     user_id: UserID,
     limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
-    offset: NonNegativeInt = 0,
-) -> PageRpcServicesGetV2:
+    offset: PageOffsetInt = 0,
+) -> PageRpcLatestServiceGet:
     assert app.state.engine  # nosec
 
     total_count, items = await services_api.list_latest_services(
@@ -79,8 +81,8 @@ async def list_services_paginated(
     assert len(items) <= limit  # nosec
 
     return cast(
-        PageRpcServicesGetV2,
-        PageRpcServicesGetV2.create(
+        PageRpcLatestServiceGet,
+        PageRpcLatestServiceGet.create(
             items,
             total=total_count,
             limit=limit,
@@ -219,3 +221,40 @@ async def batch_get_my_services(
     assert [(sv.key, sv.release.version) for sv in services] == ids  # nosec
 
     return services
+
+
+@router.expose(reraise_if_error_type=(ValidationError,))
+@log_decorator(_logger, level=logging.DEBUG)
+@validate_call(config={"arbitrary_types_allowed": True})
+async def list_my_service_history_paginated(
+    app: FastAPI,
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    service_key: ServiceKey,
+    limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
+    offset: PageOffsetInt = 0,
+) -> PageRpcServiceRelease:
+    assert app.state.engine  # nosec
+
+    total_count, items = await services_api.list_my_service_release_history(
+        repo=ServicesRepository(app.state.engine),
+        product_name=product_name,
+        user_id=user_id,
+        service_key=service_key,
+        limit=limit,
+        offset=offset,
+    )
+
+    assert len(items) <= total_count  # nosec
+    assert len(items) <= limit  # nosec
+
+    return cast(
+        PageRpcServiceRelease,
+        PageRpcServiceRelease.create(
+            items,
+            total=total_count,
+            limit=limit,
+            offset=offset,
+        ),
+    )
