@@ -52,30 +52,3 @@ class OsparcErrorMixin(PydanticErrorMixin):
     def error_code(self) -> str:
         assert isinstance(self, Exception), "subclass must be exception"  # nosec
         return create_error_code(self)
-
-
-class NotFoundError(OsparcErrorMixin):
-    msg_template = "{resource} not found: id='{resource_id}'"
-
-
-class ForbiddenError(OsparcErrorMixin):
-    msg_template = "Access to {resource} is forbidden: id='{resource_id}'"
-
-
-def make_resource_error(
-    resource: str,
-    error_cls: type[OsparcErrorMixin],
-    base_exception: type[Exception] = Exception,
-) -> type[Exception]:
-    class _ResourceError(error_cls, base_exception):
-        def __init__(self, **ctx: Any):
-            ctx.setdefault("resource", resource)
-            # guesses identifer e.g. project_id, user_id
-            if resource_id := ctx.get(f"{resource.lower()}_id"):
-                ctx.setdefault("resource_id", resource_id)
-
-            super().__init__(**ctx)
-
-    resource_class_name = "".join(word.capitalize() for word in resource.split("_"))
-    _ResourceError.__name__ = f"{resource_class_name}{error_cls.__name__}"
-    return _ResourceError
