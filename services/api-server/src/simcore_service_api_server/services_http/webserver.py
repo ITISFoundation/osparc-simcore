@@ -186,15 +186,15 @@ class AuthSession:
         limit: int,
         offset: int,
         show_hidden: bool,
-        job_parent_resource_name: str | None = None,
+        search_by_project_name: str | None = None,
     ) -> Page[ProjectGet]:
         assert 1 <= limit <= MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE  # nosec
         assert offset >= 0  # nosec
 
         optional: dict[str, Any] = {}
-        if job_parent_resource_name is not None:
+        if search_by_project_name is not None:
             optional["filters"] = json_dumps(
-                {"job_parent_resource_name": job_parent_resource_name}
+                {"search_by_project_name": search_by_project_name}
             )
 
         with service_exception_handler(
@@ -361,7 +361,7 @@ class AuthSession:
             limit=limit,
             offset=offset,
             show_hidden=True,
-            job_parent_resource_name=solver_name,
+            search_by_project_name=solver_name,
         )
 
     async def get_projects_page(self, *, limit: int, offset: int):

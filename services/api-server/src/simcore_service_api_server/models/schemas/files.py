@@ -37,28 +37,28 @@ class ClientFile(BaseModel):
     filename: FileName = Field(..., description="File name")
     filesize: NonNegativeInt = Field(..., description="File size in bytes")
     sha256_checksum: SHA256Str = Field(..., description="SHA256 checksum")
-    destination: Annotated[
-        ProgramJobFilePath | None,
-        Field(..., description="Destination within a program job"),
-    ]
 
 
 class File(BaseModel):
     """Represents a file stored on the server side i.e. a unique reference to a file in the cloud."""
 
-    id: Annotated[UUID, Field(description="Resource identifier")]
-    filename: Annotated[str, Field(description="Name of the file with extension")]
-    content_type: Annotated[
-        str | None,
-        Field(
-            description="Guess of type content [EXPERIMENTAL]", validate_default=True
-        ),
-    ] = None
-    sha256_checksum: Annotated[
-        SHA256Str | None,
-        Field(description="SHA256 hash of the file's content", alias="checksum"),
-    ] = None
-    e_tag: Annotated[ETag | None, Field(description="S3 entity tag")] = None
+    # WARNING: from pydantic import File as FileParam
+    # NOTE: see https://ant.apache.org/manual/Tasks/checksum.html
+
+    id: UUID = Field(..., description="Resource identifier")
+
+    filename: str = Field(..., description="Name of the file with extension")
+    content_type: str | None = Field(
+        default=None,
+        description="Guess of type content [EXPERIMENTAL]",
+        validate_default=True,
+    )
+    sha256_checksum: SHA256Str | None = Field(
+        default=None,
+        description="SHA256 hash of the file's content",
+        alias="checksum",  # alias for backwards compatibility
+    )
+    e_tag: ETag | None = Field(default=None, description="S3 entity tag")
 
     model_config = ConfigDict(
         populate_by_name=True,
@@ -163,18 +163,16 @@ class File(BaseModel):
 
 
 class UploadLinks(BaseModel):
-    abort_upload: Annotated[str, Field()]
-    complete_upload: Annotated[str, Field()]
+    abort_upload: str
+    complete_upload: str
 
 
 class FileUploadData(BaseModel):
-    chunk_size: Annotated[int, Field(description="Chunk size in bytes")]
-    urls: Annotated[list[Annotated[AnyHttpUrl, UriSchema()]], Field()]
-    links: Annotated[UploadLinks, Field()]
+    chunk_size: NonNegativeInt
+    urls: list[Annotated[AnyHttpUrl, UriSchema()]]
+    links: UploadLinks
 
 
 class ClientFileUploadData(BaseModel):
-    file_id: Annotated[UUID, Field(description="The file resource id")]
-    upload_schema: Annotated[
-        FileUploadData, Field(description="Schema for uploading file")
-    ]
+    file_id: UUID = Field(..., description="The file resource id")
+    upload_schema: FileUploadData = Field(..., description="Schema for uploading file")
