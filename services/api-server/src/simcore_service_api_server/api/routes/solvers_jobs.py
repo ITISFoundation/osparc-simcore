@@ -12,6 +12,10 @@ from models_library.clusters import ClusterID
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from pydantic.types import PositiveInt
+from simcore_service_api_server.api.dependencies.webserver_rpc import (
+    get_wb_api_rpc_client,
+)
+from simcore_service_api_server.services_rpc.wb_api_server import WbApiRpcClient
 
 from ...exceptions.backend_errors import ProjectAlreadyStartedError
 from ...exceptions.service_errors_utils import DEFAULT_BACKEND_SERVICE_STATUS_CODES
@@ -95,6 +99,7 @@ async def create_job(
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     catalog_client: Annotated[CatalogApi, Depends(get_api_client(CatalogApi))],
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
+    wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
     product_name: Annotated[str, Depends(get_product_name)],
     hidden: Annotated[bool, Query()] = True,
@@ -126,6 +131,7 @@ async def create_job(
         parent_project_uuid=x_simcore_parent_project_uuid,
         parent_node_id=x_simcore_parent_node_id,
     )
+
     assert new_project  # nosec
     assert new_project.uuid == pre_job.id  # nosec
 
@@ -139,6 +145,10 @@ async def create_job(
     assert job.id == pre_job.id  # nosec
     assert job.name == pre_job.name  # nosec
     assert job.name == _compose_job_resource_name(solver_key, version, job.id)  # nosec
+
+    await wb_api_rpc.mark_project_as_job(
+        project_uuid=new_project.uuid, job_parent_resource_name=job.runner_name
+    )
 
     return job
 
