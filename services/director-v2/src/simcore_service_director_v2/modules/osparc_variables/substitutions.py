@@ -32,7 +32,7 @@ from ...utils.osparc_variables import (
     resolve_variables_from_context,
 )
 from ..db.repositories.services_environments import ServicesEnvironmentsRepository
-from ._api_auth import get_or_create_user_api_key, get_or_create_user_api_secret
+from ._api_auth import create_user_api_key, create_user_api_secret
 from ._user import request_user_email, request_user_role
 
 _logger = logging.getLogger(__name__)
@@ -130,11 +130,9 @@ class OsparcSessionVariablesTable(OsparcVariablesTable, SingletonInAppStateMixin
 
         table.register_from_handler("OSPARC_VARIABLE_USER_EMAIL")(request_user_email)
         table.register_from_handler("OSPARC_VARIABLE_USER_ROLE")(request_user_role)
-        table.register_from_handler("OSPARC_VARIABLE_API_KEY")(
-            get_or_create_user_api_key
-        )
+        table.register_from_handler("OSPARC_VARIABLE_API_KEY")(create_user_api_key)
         table.register_from_handler("OSPARC_VARIABLE_API_SECRET")(
-            get_or_create_user_api_secret
+            create_user_api_secret
         )
 
         _logger.debug(
