@@ -26,4 +26,4 @@ class ProductData:
     vendor_display_inline: str
     support_email: str
     homepage_url: str
-    ui: ProductUIData
+    product_ui: ProductUIData
