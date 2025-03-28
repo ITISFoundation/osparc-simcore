@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from fastapi_pagination import create_page
 from models_library.api_schemas_webserver.licensed_items import LicensedItemRpcGetPage
 from models_library.licenses import LicensedItemID
+from models_library.projects import ProjectID
 from models_library.resource_tracker_licensed_items_checkouts import (
     LicensedItemCheckoutID,
 )
@@ -41,6 +42,7 @@ from servicelib.rabbitmq.rpc_interfaces.webserver.licenses.licensed_items import
 from servicelib.rabbitmq.rpc_interfaces.webserver.licenses.licensed_items import (
     release_licensed_item_for_wallet as _release_licensed_item_for_wallet,
 )
+from simcore_service_api_server.models.api_resources import RelativeResourceName
 
 from ..exceptions.backend_errors import (
     CanNotCheckoutServiceIsNotRunningError,
@@ -199,6 +201,17 @@ class WbApiRpcClient(SingletonInAppStateMixin):
 
     async def ping(self) -> str:
         return await _ping(self._client)
+
+    async def mark_project_as_job(
+        self, project_uuid: ProjectID, job_parent_resource_name: RelativeResourceName
+    ):
+        assert not job_parent_resource_name.startswith("/")  # nosec
+        assert "/" in job_parent_resource_name  # nosec
+        assert not job_parent_resource_name.endswith("/")  # nosec
+
+        assert project_uuid
+
+        raise NotImplementedError
 
 
 def setup(app: FastAPI, rabbitmq_rmp_client: RabbitMQRPCClient):

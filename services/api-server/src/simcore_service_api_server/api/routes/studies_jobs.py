@@ -15,6 +15,10 @@ from models_library.projects_nodes import InputID, InputTypes
 from models_library.projects_nodes_io import NodeID
 from pydantic import PositiveInt
 from servicelib.logging_utils import log_context
+from simcore_service_api_server.api.dependencies.webserver_rpc import (
+    get_wb_api_rpc_client,
+)
+from simcore_service_api_server.services_rpc.wb_api_server import WbApiRpcClient
 
 from ...api.dependencies.authentication import get_current_user_id
 from ...api.dependencies.services import get_api_client
@@ -86,6 +90,7 @@ async def create_study_job(
     study_id: StudyID,
     job_inputs: JobInputs,
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
+    wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
     hidden: Annotated[bool, Query()] = True,
     x_simcore_parent_project_uuid: ProjectID | None = Header(default=None),
@@ -94,14 +99,11 @@ async def create_study_job(
     """
     hidden -- if True (default) hides project from UI
     """
-    study_name = Study.compose_resource_name(f"{study_id}")
-
     project = await webserver_api.clone_project(
         project_id=study_id,
         hidden=hidden,
         parent_project_uuid=x_simcore_parent_project_uuid,
         parent_node_id=x_simcore_parent_node_id,
-        job_parent_resource_name=study_name,
     )
     job = create_job_from_study(
         study_key=study_id, project=project, job_inputs=job_inputs
@@ -121,6 +123,10 @@ async def create_study_job(
     await webserver_api.patch_project(
         project_id=job.id,
         patch_params=ProjectPatch(name=job.name),  # type: ignore[arg-type]
+    )
+
+    await wb_api_rpc.mark_project_as_job(
+        project_uuid=job.id, job_parent_resource_name=job.runner_name
     )
 
     project_inputs = await webserver_api.get_project_inputs(project_id=project.uuid)
