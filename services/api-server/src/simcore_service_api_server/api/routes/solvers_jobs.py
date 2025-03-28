@@ -146,7 +146,10 @@ async def create_job(
     assert job.name == _compose_job_resource_name(solver_key, version, job.id)  # nosec
 
     await wb_api_rpc.mark_project_as_job(
-        project_uuid=new_project.uuid, job_parent_resource_name=job.runner_name
+        product_name=product_name,
+        user_id=user_id,
+        project_uuid=new_project.uuid,
+        job_parent_resource_name=job.runner_name,
     )
 
     return job
