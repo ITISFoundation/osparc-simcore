@@ -7,6 +7,7 @@ from fastapi.testclient import TestClient
 from models_library.api_schemas__common.health import HealthCheckGet
 
 pytest_simcore_core_services_selection = [
+    "postgres",
     "rabbit",
 ]
 

@@ -5,6 +5,7 @@ from models_library.basic_types import BootModeEnum, LogLevel
 from pydantic import AliasChoices, Field, field_validator
 from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
 from settings_library.base import BaseCustomSettings
+from settings_library.postgres import PostgresSettings
 from settings_library.rabbit import RabbitSettings
 from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
@@ -53,6 +54,13 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         RabbitSettings,
         Field(
             description="settings for service/rabbitmq",
+            json_schema_extra={"auto_default_from_env": True},
+        ),
+    ]
+
+    NOTIFICATIONS_POSTGRES: Annotated[
+        PostgresSettings,
+        Field(
             json_schema_extra={"auto_default_from_env": True},
         ),
     ]

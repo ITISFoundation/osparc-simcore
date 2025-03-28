@@ -17,6 +17,7 @@ def service_env(
     monkeypatch: pytest.MonkeyPatch,
     mock_environment: EnvVarsDict,
     rabbit_service: RabbitSettings,
+    postgres_env_vars_dict: EnvVarsDict,
 ) -> EnvVarsDict:
     return setenvs_from_dict(
         monkeypatch,
@@ -27,6 +28,7 @@ def service_env(
             "RABBIT_PORT": f"{rabbit_service.RABBIT_PORT}",
             "RABBIT_SECURE": f"{rabbit_service.RABBIT_SECURE}",
             "RABBIT_USER": rabbit_service.RABBIT_USER,
+            **postgres_env_vars_dict,
         },
     )
 

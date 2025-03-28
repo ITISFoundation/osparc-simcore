@@ -6,15 +6,18 @@ from fastapi_lifespan_manager import State
 from servicelib.rabbitmq import RabbitMQRPCClient, wait_till_rabbitmq_responsive
 from settings_library.rabbit import RabbitSettings
 
+from ...core.settings import ApplicationSettings
+
 
 async def lifespan_rabbitmq(app: FastAPI) -> AsyncIterator[State]:
-    settings: RabbitSettings = app.state.settings.NOTIFICATIONS_RABBITMQ
+    settings: ApplicationSettings = app.state.settings
+    rabbit_settings: RabbitSettings = settings.NOTIFICATIONS_RABBITMQ
     app.state.rabbitmq_rpc_server = None
 
-    await wait_till_rabbitmq_responsive(settings.dsn)
+    await wait_till_rabbitmq_responsive(rabbit_settings.dsn)
 
     app.state.rabbitmq_rpc_server = await RabbitMQRPCClient.create(
-        client_name="dynamic_scheduler_rpc_server", settings=settings
+        client_name="dynamic_scheduler_rpc_server", settings=rabbit_settings
     )
 
     yield {}

@@ -9,9 +9,14 @@ from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
 from simcore_service_notifications.cli import main
 from typer.testing import CliRunner
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "rabbit",
+]
+
 
 @pytest.fixture
-def cli_runner(mock_environment: EnvVarsDict) -> CliRunner:
+def cli_runner(service_env: EnvVarsDict) -> CliRunner:
     return CliRunner()
 
 

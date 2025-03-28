@@ -19,6 +19,7 @@ from .._meta import (
     SUMMARY,
     VERSION,
 )
+from ..domains.database.service import lifespan_postgres
 from ..domains.rabbitmq.service import lifespan_rabbitmq
 from .routing_rest import initialize_rest_api
 from .routing_rpc import lifespan_rpc_api_routes
@@ -53,6 +54,7 @@ def create_app() -> FastAPI:
 
     lifespans: list[LifespanGenerator] = [
         lifespan_rabbitmq,
+        lifespan_postgres,
         lifespan_rpc_api_routes,
     ]
 
