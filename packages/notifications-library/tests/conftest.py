@@ -69,7 +69,7 @@ def product_data(
         vendor_display_inline=f"{vendor.get('name','')}, {vendor.get('address','')}",
         support_email=product["support_email"],
         homepage_url=vendor.get("url", "https://osparc.io/"),
-        product_ui=product_ui,
+        ui=product_ui,
     )
 
 
