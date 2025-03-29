@@ -11,6 +11,7 @@ import pytest
 from faker import Faker
 from models_library.basic_regex import UUID_RE_BASE
 from pydantic import TypeAdapter
+from pytest_mock import MockType
 from pytest_simcore.helpers.httpx_calls_capture_models import HttpApiCallCaptureModel
 from respx import MockRouter
 from simcore_service_api_server._meta import API_VTAG
@@ -38,6 +39,7 @@ def _as_path_regex(initial_path: str):
 @pytest.fixture
 def mocked_backend(
     mocked_webserver_service_api: MockRouter,
+    mocked_rpc_webserver_service_api: dict[str, MockType],
     mocked_catalog_service_api: MockRouter,
     project_tests_dir: Path,
 ) -> MockedBackendApiDict:

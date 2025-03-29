@@ -1,6 +1,5 @@
 # pylint: disable=too-many-public-methods
 
-import json
 import logging
 import urllib.parse
 from collections.abc import Mapping
@@ -10,6 +9,7 @@ from typing import Any
 from uuid import UUID
 
 import httpx
+from common_library.json_serialization import json_dumps
 from cryptography import fernet
 from fastapi import FastAPI, status
 from models_library.api_schemas_api_server.pricing_plans import ServicePricingPlanGet
@@ -193,9 +193,9 @@ class AuthSession:
 
         optional: dict[str, Any] = {}
         if search_by_project_name is not None:
-            filters_dict = {"search_by_project_name": search_by_project_name}
-            filters_json = json.dumps(filters_dict)
-            optional["filters"] = filters_json
+            optional["filters"] = json_dumps(
+                {"search_by_project_name": search_by_project_name}
+            )
 
         with service_exception_handler(
             service_name="Webserver",
@@ -298,14 +298,16 @@ class AuthSession:
         parent_node_id: NodeID | None,
     ) -> ProjectGet:
         # POST /projects --> 202 Accepted
-        _headers = {
+        query_params = {"hidden": is_hidden}
+        headers = {
             X_SIMCORE_PARENT_PROJECT_UUID: parent_project_uuid,
             X_SIMCORE_PARENT_NODE_ID: parent_node_id,
         }
+
         response = await self.client.post(
             "/projects",
-            params={"hidden": is_hidden},
-            headers={k: f"{v}" for k, v in _headers.items() if v is not None},
+            params=query_params,
+            headers={k: f"{v}" for k, v in headers.items() if v is not None},
             json=jsonable_encoder(project, by_alias=True, exclude={"state"}),
             cookies=self.session_cookies,
         )
@@ -322,7 +324,8 @@ class AuthSession:
         parent_project_uuid: ProjectID | None,
         parent_node_id: NodeID | None,
     ) -> ProjectGet:
-        query = {"from_study": project_id, "hidden": hidden}
+        # POST /projects --> 202 Accepted
+        query_params = {"from_study": project_id, "hidden": hidden}
         _headers = {
             X_SIMCORE_PARENT_PROJECT_UUID: parent_project_uuid,
             X_SIMCORE_PARENT_NODE_ID: parent_node_id,
@@ -331,7 +334,7 @@ class AuthSession:
         response = await self.client.post(
             "/projects",
             cookies=self.session_cookies,
-            params=query,
+            params=query_params,
             headers={k: f"{v}" for k, v in _headers.items() if v is not None},
         )
         response.raise_for_status()
@@ -352,6 +355,8 @@ class AuthSession:
     async def get_projects_w_solver_page(
         self, *, solver_name: str, limit: int, offset: int
     ) -> Page[ProjectGet]:
+        assert not solver_name.endswith("/")  # nosec
+
         return await self._page_projects(
             limit=limit,
             offset=offset,

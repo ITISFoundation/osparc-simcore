@@ -12,6 +12,7 @@ import pytest
 from faker import Faker
 from models_library.basic_regex import UUID_RE_BASE
 from pydantic import TypeAdapter
+from pytest_mock import MockType
 from pytest_simcore.helpers.httpx_calls_capture_models import HttpApiCallCaptureModel
 from respx import MockRouter
 from servicelib.common_headers import (
@@ -33,6 +34,7 @@ class MockedBackendApiDict(TypedDict):
 @pytest.fixture
 def mocked_backend_services_apis_for_delete_non_existing_project(
     mocked_webserver_service_api: MockRouter,
+    mocked_rpc_webserver_service_api: dict[str, MockType],
     project_tests_dir: Path,
 ) -> MockedBackendApiDict:
     mock_name = "delete_project_not_found.json"
@@ -85,6 +87,7 @@ async def test_delete_non_existing_solver_job(
 @pytest.fixture
 def mocked_backend_services_apis_for_create_and_delete_solver_job(
     mocked_webserver_service_api: MockRouter,
+    mocked_rpc_webserver_service_api: dict[str, MockType],
     mocked_catalog_service_api: MockRouter,
     project_tests_dir: Path,
 ) -> MockedBackendApiDict:

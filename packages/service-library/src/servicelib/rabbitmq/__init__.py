@@ -5,6 +5,7 @@ from ._client_rpc import RabbitMQRPCClient
 from ._constants import BIND_TO_ALL_TOPICS, RPC_REQUEST_DEFAULT_TIMEOUT_S
 from ._errors import (
     RemoteMethodNotRegisteredError,
+    RPCInterfaceError,
     RPCNotInitializedError,
     RPCServerError,
 )
@@ -14,18 +15,19 @@ from ._utils import is_rabbitmq_responsive, wait_till_rabbitmq_responsive
 
 __all__: tuple[str, ...] = (
     "BIND_TO_ALL_TOPICS",
+    "RPC_REQUEST_DEFAULT_TIMEOUT_S",
     "ConsumerTag",
     "ExchangeName",
-    "is_rabbitmq_responsive",
     "QueueName",
-    "RabbitMQClient",
-    "RabbitMQRPCClient",
-    "RemoteMethodNotRegisteredError",
-    "RPC_REQUEST_DEFAULT_TIMEOUT_S",
+    "RPCInterfaceError",
     "RPCNamespace",
     "RPCNotInitializedError",
     "RPCRouter",
     "RPCServerError",
+    "RabbitMQClient",
+    "RabbitMQRPCClient",
+    "RemoteMethodNotRegisteredError",
+    "is_rabbitmq_responsive",
     "wait_till_rabbitmq_responsive",
 )
 
