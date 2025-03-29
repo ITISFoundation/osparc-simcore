@@ -37,5 +37,5 @@ class ProjectJobsRepository(BaseRepository):
 
             result = await conn.execute(stmt)
             row = result.one()
-            projects_to_jobs_id: PositiveInt = row.int
+            projects_to_jobs_id: PositiveInt = row.id
             return projects_to_jobs_id
