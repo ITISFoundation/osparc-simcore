@@ -107,6 +107,28 @@ async def _get_file(
         ) from err
 
 
+async def _create_domain_file(
+    webserver_api: AuthSession, client_file: ClientFile | ClientFileInProgramJob
+) -> DomainFile:
+    if isinstance(client_file, ClientFile):
+        file = client_file.to_domain_model()
+    elif isinstance(client_file, ClientFileInProgramJob):
+        project = await webserver_api.get_project(project_id=client_file.job_id)
+        if len(project.workbench) > 1:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"Job_id {project.uuid} is not a valid program job.",
+            )
+        node_id = next(iter(project.workbench.keys()))
+        file = client_file.to_domain_model(
+            project_id=project.uuid, node_id=NodeID(node_id)
+        )
+    else:
+        err_msg = f"Invalid client_file type passed: {type(client_file)=}"
+        raise TypeError(err_msg)
+    return file
+
+
 @router.get("", response_model=list[OutputFile], responses=_FILE_STATUS_CODES)
 async def list_files(
     storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
@@ -254,22 +276,7 @@ async def get_upload_links(
 ):
     """Get upload links for uploading a file to storage"""
     assert request  # nosec
-    if isinstance(client_file, ClientFile):
-        file_meta = client_file.to_domain_model()
-    elif isinstance(client_file, ClientFileInProgramJob):
-        project = await webserver_api.get_project(project_id=client_file.job_id)
-        if len(project.workbench) > 1:
-            raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail=f"Job_id {project.uuid} is not a valid program job.",
-            )
-        node_id = next(iter(project.workbench.keys()))
-        file_meta = client_file.to_domain_model(
-            project_id=project.uuid, node_id=NodeID(node_id)
-        )
-    else:
-        err_msg = f"Invalid client_file type passed: {type(client_file)=}"
-        raise TypeError(err_msg)
+    file_meta = await _create_domain_file(webserver_api, client_file)
     _, upload_links = await get_upload_links_from_s3(
         user_id=user_id,
         store_name=None,
@@ -384,23 +391,7 @@ async def abort_multipart_upload(
     assert request  # nosec
     assert user_id  # nosec
 
-    if isinstance(client_file, ClientFile):
-        file = client_file.to_domain_model()
-    elif isinstance(client_file, ClientFileInProgramJob):
-        project = await webserver_api.get_project(project_id=client_file.job_id)
-        if len(project.workbench) > 1:
-            raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail=f"Job_id {project.uuid} is not a valid program job.",
-            )
-        node_id = next(iter(project.workbench.keys()))
-        file = client_file.to_domain_model(
-            project_id=project.uuid, node_id=NodeID(node_id)
-        )
-    else:
-        err_msg = f"Invalid client_file type passed: {type(client_file)=}"
-        raise TypeError(err_msg)
-
+    file = await _create_domain_file(webserver_api, client_file)
     abort_link: URL = await storage_client.create_abort_upload_link(
         file=file, query={"user_id": str(user_id)}
     )
@@ -427,32 +418,17 @@ async def complete_multipart_upload(
     assert file_id  # nosec
     assert request  # nosec
     assert user_id  # nosec
-
-    if isinstance(client_file, ClientFile):
-        file = client_file.to_domain_model()
-    elif isinstance(client_file, ClientFileInProgramJob):
-        project = await webserver_api.get_project(project_id=client_file.job_id)
-        if len(project.workbench) > 1:
-            raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail=f"Job_id {project.uuid} is not a valid program job.",
-            )
-        node_id = next(iter(project.workbench.keys()))
-        file = client_file.to_domain_model(
-            project_id=project.uuid, node_id=NodeID(node_id)
-        )
-    else:
-        err_msg = f"Invalid client_file type passed: {type(client_file)=}"
-        raise TypeError(err_msg)
+    file = await _create_domain_file(webserver_api, client_file)
     complete_link: URL = await storage_client.create_complete_upload_link(
         file=file, query={"user_id": str(user_id)}
     )
 
-    e_tag: ETag = await complete_file_upload(
+    e_tag: ETag | None = await complete_file_upload(
         uploaded_parts=uploaded_parts.parts,
         upload_completion_link=TypeAdapter(AnyUrl).validate_python(f"{complete_link}"),
         is_directory=False,
     )
+    assert e_tag is not None  # nosec
 
     file.e_tag = e_tag
     return file

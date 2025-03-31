@@ -133,6 +133,7 @@ async def create_program_job(
         url_for=url_for,
         hidden=False,
     )
+    # create workspace directory so files can be uploaded to it
     assert len(project.workbench) > 0  # nosec
     node_id = next(iter(project.workbench))
 
