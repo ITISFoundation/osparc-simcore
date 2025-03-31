@@ -158,7 +158,6 @@ async def list_projects(request: web.Request):
         workspace_id=query_params.workspace_id,
         search_by_multi_columns=query_params.search,
         search_by_project_name=query_params.filters.search_by_project_name,
-        # TODO: query_params.filters.job_parent_resource_name
         offset=query_params.offset,
         limit=query_params.limit,
         order_by=OrderBy.model_construct(**query_params.order_by.model_dump()),
@@ -199,7 +198,6 @@ async def list_projects_full_search(request: web.Request):
         tag_ids_list=tag_ids_list,
         search_by_multi_columns=query_params.text,
         search_by_project_name=query_params.filters.search_by_project_name,
-        # TODO: query_params.filters.job_parent_resource_name
         offset=query_params.offset,
         limit=query_params.limit,
         order_by=OrderBy.model_construct(**query_params.order_by.model_dump()),

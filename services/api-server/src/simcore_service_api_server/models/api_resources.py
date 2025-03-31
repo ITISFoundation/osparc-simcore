@@ -5,7 +5,7 @@ from typing import Annotated, TypeAlias
 from pydantic import Field, TypeAdapter
 from pydantic.types import StringConstraints
 
-# RESOURCE NAMES https://cloud.google.com/apis/design/resource_names
+# RESOURCE NAMES https://google.aip.dev/122
 #
 #
 # API Service Name          Collection ID   Resource ID         Collection ID  Resource ID
