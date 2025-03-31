@@ -121,10 +121,11 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
 
     @field_validator("DIRECTOR_REGISTRY_CLIENT_TIMEOUT")
     @classmethod
-    def _check_positive(cls, value: datetime.timedelta) -> None:
+    def _check_positive(cls, value: datetime.timedelta) -> datetime.timedelta:
         if value.total_seconds() < 0:
             msg = "DIRECTOR_REGISTRY_CLIENT_TIMEOUT must be positive"
             raise ValueError(msg)
+        return value
 
     @field_validator("DIRECTOR_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS")
     @classmethod
