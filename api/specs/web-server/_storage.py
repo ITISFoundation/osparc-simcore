@@ -81,6 +81,19 @@ async def compute_path_size(_path: Annotated[StoragePathComputeSizeParams, Depen
     """Compute the size of a path"""
 
 
+@router.post(
+    "/storage/locations/{location_id}/-/paths:batchDelete",
+    response_model=Envelope[TaskGet],
+    status_code=status.HTTP_202_ACCEPTED,
+    description="Deletes Paths",
+)
+async def batch_delete_paths(
+    _path: Annotated[StorageLocationPathParams, Depends()],
+    _body: Annotated[BatchDeletePathsBodyParams, Depends()],
+):
+    """deletes files/folders if user has the rights to"""
+
+
 @router.get(
     "/storage/locations/{location_id}/datasets",
     response_model=Envelope[list[DatasetMetaData]],
@@ -171,18 +184,6 @@ async def upload_file(
     description="Deletes File",
 )
 async def delete_file(location_id: LocationID, file_id: StorageFileIDStr):
-    """deletes file if user has the rights to"""
-
-
-@router.post(
-    "/storage/locations/{location_id}/-/files:batchDelete",
-    status_code=status.HTTP_204_NO_CONTENT,
-    description="Deletes Files",
-)
-async def batch_delete_files(
-    _path: Annotated[StorageLocationPathParams, Depends()],
-    _body: Annotated[BatchDeletePathsBodyParams, Depends()],
-):
     """deletes file if user has the rights to"""
 
 
