@@ -42,7 +42,6 @@ async def set_project_as_job(
 
     repo = ProjectJobsRepository.create_from_app(app)
 
-    projects_to_jobs_id = await repo.set_project_as_job(
+    await repo.set_project_as_job(
         project_uuid=project_uuid, job_parent_resource_name=job_parent_resource_name
     )
-    assert projects_to_jobs_id  # nosec

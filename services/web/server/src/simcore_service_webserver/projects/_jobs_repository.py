@@ -1,7 +1,6 @@
 import logging
 
 from models_library.projects import ProjectID
-from pydantic import PositiveInt
 from simcore_postgres_database.models.projects_to_jobs import projects_to_jobs
 from simcore_postgres_database.utils_repos import transaction_context
 from sqlalchemy.dialects.postgresql import insert as pg_insert
@@ -20,7 +19,7 @@ class ProjectJobsRepository(BaseRepository):
         *,
         project_uuid: ProjectID,
         job_parent_resource_name: str,
-    ) -> PositiveInt:
+    ) -> None:
         async with transaction_context(self.engine, connection) as conn:
             stmt = (
                 pg_insert(projects_to_jobs)
@@ -32,10 +31,6 @@ class ProjectJobsRepository(BaseRepository):
                     index_elements=["project_uuid", "job_parent_resource_name"],
                     set_={"job_parent_resource_name": job_parent_resource_name},
                 )
-                .returning(projects_to_jobs.c.id)
             )
 
-            result = await conn.execute(stmt)
-            row = result.one()
-            projects_to_jobs_id: PositiveInt = row.id
-            return projects_to_jobs_id
+            await conn.execute(stmt)

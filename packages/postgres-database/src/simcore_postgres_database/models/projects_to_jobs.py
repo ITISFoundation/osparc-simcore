@@ -9,13 +9,6 @@ projects_to_jobs = sa.Table(
     "projects_to_jobs",
     metadata,
     sa.Column(
-        "id",
-        sa.BigInteger,
-        primary_key=True,
-        autoincrement=True,
-        doc="Identifier index",
-    ),
-    sa.Column(
         "project_uuid",
         sa.String,
         sa.ForeignKey(
@@ -35,6 +28,7 @@ projects_to_jobs = sa.Table(
         "the relative resource name is shelves/shelf1/jobs/job2, "
         "the parent resource name is shelves/shelf1.",
     ),
+    # Composite key (project_uuid, job_parent_resource_name) uniquely identifies very row
     sa.UniqueConstraint(
         "project_uuid",
         "job_parent_resource_name",
