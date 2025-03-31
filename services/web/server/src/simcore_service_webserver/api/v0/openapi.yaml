@@ -6168,6 +6168,38 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_TaskGet_'
+  /v0/storage/locations/{location_id}/-/paths:batchDelete:
+    post:
+      tags:
+      - storage
+      summary: Batch Delete Paths
+      description: Deletes Paths
+      operationId: batch_delete_paths
+      parameters:
+      - name: location_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Location Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              uniqueItems: true
+              items:
+                type: string
+                format: path
+              title: Paths
+      responses:
+        '202':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_TaskGet_'
   /v0/storage/locations/{location_id}/datasets:
     get:
       tags:

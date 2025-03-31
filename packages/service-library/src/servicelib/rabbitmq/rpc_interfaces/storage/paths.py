@@ -32,3 +32,23 @@ async def compute_path_size(
         path=path,
     )
     return async_job_rpc_get, job_id_data
+
+
+async def delete_paths(
+    client: RabbitMQRPCClient,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    location_id: LocationID,
+    paths: set[Path],
+) -> tuple[AsyncJobGet, AsyncJobNameData]:
+    job_id_data = AsyncJobNameData(user_id=user_id, product_name=product_name)
+    async_job_rpc_get = await submit(
+        rabbitmq_rpc_client=client,
+        rpc_namespace=STORAGE_RPC_NAMESPACE,
+        method_name=RPCMethodName("delete_paths"),
+        job_id_data=job_id_data,
+        location_id=location_id,
+        paths=paths,
+    )
+    return async_job_rpc_get, job_id_data
