@@ -50,7 +50,7 @@ async def _remove_service(
         except (UserNotFoundError, ValueError):
             save_service_state = False
 
-    with log_context(
+    with log_catch(_logger, reraise=False), log_context(
         _logger,
         logging.INFO,
         msg=f"removing {(service.node_uuid, service.host)} with {save_service_state=}",
@@ -134,7 +134,7 @@ async def remove_orphaned_services(
                     ),
                     exc_info=True,
                 )
-                return
+                continue
 
         potentially_running_service_ids_set: set[NodeID] = set().union(
             *(node_id for node_id in potentially_running_service_ids)
