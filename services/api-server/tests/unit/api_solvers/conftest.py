@@ -17,6 +17,7 @@ from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers import faker_catalog
 from pytest_simcore.helpers.webserver_rpc_server import WebserverRpcSideEffects
 from respx import MockRouter
+from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 from simcore_service_api_server.core.settings import ApplicationSettings
 from simcore_service_api_server.services_http.director_v2 import ComputationTaskGet
 
@@ -56,7 +57,9 @@ def mocked_webserver_rpc_api(
     try:
         wb_api_server.WbApiRpcClient.get_from_app_state(app)
     except AttributeError:
-        wb_api_server.setup(app, mocker.MagicMock())
+        wb_api_server.setup(
+            app, RabbitMQRPCClient("fake_rpc_client", settings=mocker.MagicMock())
+        )
 
     settings: ApplicationSettings = app.state.settings
     assert settings.API_SERVER_WEBSERVER
