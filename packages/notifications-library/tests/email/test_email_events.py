@@ -134,6 +134,13 @@ def event_extra_data(  # noqa: PLR0911
                 "reason": faker.sentence(),
                 "link": f"{host_url}?reset-password={code}",
             }
+        case "on_share_project":
+            return {
+                "host": host_url,
+                "resource_alias": "Project",
+                "sharer_username": "sharer_username",
+                "accept_link": f"{host_url}?code={code}",
+            }
         case "on_unregister":
             return {
                 "host": host_url,
