@@ -242,6 +242,10 @@ class Product(BaseModel):
                             "invitation_form": True,
                             "name": "ACME",
                             "copyright": "© ACME correcaminos",
+                            "ui": {
+                                "logo_url": "https://acme.com/logo",
+                                "strong_color": "#123456",
+                            },
                         },
                         "issues": [
                             {
