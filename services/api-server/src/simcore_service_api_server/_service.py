@@ -26,7 +26,7 @@ async def create_solver_or_program_job(
     parent_node_id: NodeID | None,
     url_for: Callable[..., HttpUrl],
     hidden: bool
-) -> Job:
+) -> tuple[Job, ProjectGet]:
     # creates NEW job as prototype
     pre_job = Job.create_job_from_solver_or_program(
         solver_or_program_name=solver_or_program.name, inputs=inputs
@@ -55,4 +55,4 @@ async def create_solver_or_program_job(
         parent_name=solver_or_program.resource_name,
         job_id=job.id,
     )
-    return job
+    return job, new_project

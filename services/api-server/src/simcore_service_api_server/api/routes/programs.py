@@ -5,10 +5,18 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Header, HTTPException, status
 from httpx import HTTPStatusError
+from models_library.api_schemas_storage.storage_schemas import (
+    LinkType,
+)
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from pydantic import PositiveInt, ValidationError
+from pydantic import ByteSize, PositiveInt, ValidationError
 from servicelib.fastapi.dependencies import get_reverse_url_mapper
+from simcore_sdk.node_ports_common.constants import SIMCORE_LOCATION
+from simcore_sdk.node_ports_common.filemanager import (
+    complete_file_upload,
+    get_upload_links_from_s3,
+)
 from simcore_service_api_server._service import create_solver_or_program_job
 from simcore_service_api_server.api.dependencies.webserver_http import (
     get_webserver_session,
@@ -116,7 +124,7 @@ async def create_program_job(
         product_name=product_name,
     )
 
-    job = await create_solver_or_program_job(
+    job, project = await create_solver_or_program_job(
         webserver_api=webserver_api,
         solver_or_program=program,
         inputs=inputs,
@@ -124,5 +132,24 @@ async def create_program_job(
         parent_node_id=x_simcore_parent_node_id,
         url_for=url_for,
         hidden=False,
+    )
+    assert len(project.workbench) > 0  # nosec
+    node_id = next(iter(project.workbench))
+
+    _, file_upload_schema = await get_upload_links_from_s3(
+        user_id=user_id,
+        store_name=None,
+        store_id=SIMCORE_LOCATION,
+        s3_object=f"{project.uuid}/{node_id}/workspace",
+        link_type=LinkType.PRESIGNED,
+        client_session=None,
+        file_size=ByteSize(0),
+        is_directory=True,
+        sha256_checksum=None,
+    )
+    await complete_file_upload(
+        uploaded_parts=[],
+        upload_completion_link=file_upload_schema.links.complete_upload,
+        is_directory=True,
     )
     return job

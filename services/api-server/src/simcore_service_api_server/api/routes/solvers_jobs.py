@@ -111,7 +111,7 @@ async def create_solver_job(
         version=version,
         product_name=product_name,
     )
-    job = await create_solver_or_program_job(
+    job, _ = await create_solver_or_program_job(
         webserver_api=webserver_api,
         solver_or_program=solver,
         inputs=inputs,
