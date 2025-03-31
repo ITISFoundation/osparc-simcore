@@ -207,27 +207,33 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
     },
 
     __doDeleteSelected: function(toBeDeleted) {
-      const requests = [];
-      toBeDeleted.forEach(selection => {
+      let request = null;
+      if (toBeDeleted.length === 0) {
+        osparc.FlashMessenger.logAs(this.tr("Nothing to delete"), "ERROR");
+        return;
+      } else if (toBeDeleted.length === 1) {
+        const selection = toBeDeleted[0];
         if (selection) {
-          let request = null;
           if (osparc.file.FilesTree.isFile(selection)) {
             request = this.__deleteItem(selection.getFileId(), selection.getLocation());
           } else {
             request = this.__deleteItem(selection.getPath(), selection.getLocation());
           }
-          if (request) {
-            requests.push(request);
-          }
+          request
+            .then(datas => {
+              if (datas.length) {
+                this.fireDataEvent("fileDeleted", datas[0]);
+                osparc.FlashMessenger.logAs(this.tr("Items successfully deleted"), "INFO");
+              }
+            });
         }
-      });
-      Promise.all(requests)
-        .then(datas => {
-          if (datas.length) {
-            this.fireDataEvent("fileDeleted", datas[0]);
-            osparc.FlashMessenger.logAs(this.tr("Items successfully deleted"), "INFO");
-          }
-        });
+      } else if (toBeDeleted.length > 1) {
+        this.__deleteItems(toBeDeleted)
+          .then(resp => {
+            // It returns a long running task
+            console.log(resp);
+          });
+      }
     },
 
     __deleteItem: function(itemId, locationId) {
@@ -237,6 +243,12 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
       }
       const dataStore = osparc.store.Data.getInstance();
       return dataStore.deleteFile(locationId, itemId);
+    },
+
+    __deleteItems: function(items) {
+      const dataStore = osparc.store.Data.getInstance();
+      const paths = items.map(item => item.getPath());
+      return dataStore.deleteFiles(paths);
     },
   }
 });
