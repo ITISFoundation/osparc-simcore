@@ -149,7 +149,7 @@ class AttachmentTuple(NamedTuple):
     payload: bytearray
 
 
-async def _send_email_with_attachements(
+async def _send_email_with_attachments(
     *,
     settings: SMTPSettings,
     sender: str,
@@ -160,7 +160,7 @@ async def _send_email_with_attachements(
     reply_to: str | None = None,
 ) -> MIMEMessage:
     """
-    Sends an email with a body/subject marked as html with file attachement/s
+    Sends an email with a body/subject marked as html with file attachment/s
     """
     # NOTE: Intentionally separated from send_email to further optimize legacy code
 
@@ -240,7 +240,7 @@ async def send_email_from_template(
     subject, body = _render_template(request, template, context)
 
     if attachments:
-        return await _send_email_with_attachements(
+        return await _send_email_with_attachments(
             settings=settings,
             sender=from_,
             recipient=to,

@@ -1,8 +1,8 @@
-""" Products table
+"""Products table
 
-    - List of products served by the simcore platform
-    - Products have a name and an associated host (defined by a regex)
-    - Every product has a front-end with exactly the same name
+- List of products served by the simcore platform
+- Products have a name and an associated host (defined by a regex)
+- Every product has a front-end with exactly the same name
 """
 
 import json
@@ -29,6 +29,11 @@ from .jinja2_templates import jinja2_templates
 #
 
 
+class VendorUI(TypedDict, total=True):
+    logo_url: str  # vendor logo url
+    strong_color: str  # vendor main color
+
+
 class Vendor(TypedDict, total=False):
     """
         Brand information about the vendor
@@ -46,6 +51,8 @@ class Vendor(TypedDict, total=False):
     invitation_form: bool  # If True, it takes precendence over invitation_url and asks the FE to show the form (if defined)
 
     release_notes_url_template: str  # a template url where `{vtag}` will be replaced, eg: "http://example.com/{vtag}.md"
+
+    ui: VendorUI
 
 
 class IssueTracker(TypedDict, total=True):
