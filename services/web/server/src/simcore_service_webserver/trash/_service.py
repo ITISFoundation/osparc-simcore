@@ -101,7 +101,7 @@ async def _empty_explicitly_trashed_folders_and_content(
                 )
 
 
-async def _empty_trashed_workspaces_and_content(
+async def _empty_explicitely_trashed_workspaces_and_content(
     app: web.Application, product_name: ProductName, user_id: UserID
 ):
     trashed_workspaces_ids = await workspaces_trash_service.list_trashed_workspaces(
@@ -153,7 +153,8 @@ async def safe_empty_trash(
     # Delete explicitly trashed folders (and all implicitly trashed sub-folders and projects)
     await _empty_explicitly_trashed_folders_and_content(app, product_name, user_id)
 
-    await _empty_trashed_workspaces_and_content(app, product_name, user_id)
+    # Delete explicitly trashed workspaces (and all implicitly trashed sub-folders and projects)
+    await _empty_explicitely_trashed_workspaces_and_content(app, product_name, user_id)
 
 
 async def safe_delete_expired_trash_as_admin(app: web.Application) -> None:
