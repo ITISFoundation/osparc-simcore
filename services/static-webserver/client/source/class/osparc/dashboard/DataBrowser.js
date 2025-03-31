@@ -94,7 +94,7 @@ qx.Class.define("osparc.dashboard.DataBrowser", {
       // After deleting a file, try to keep the user in the same folder.
       // If the folder doesn't longer exist, open the closest available parent
 
-      const pathParts = fileMetadata["fileUuid"].split("/");
+      const pathParts = ("getPath" in fileMetadata ? fileMetadata.getPath() : fileMetadata["fileUuid"]).split("/");
 
       const treeFolderView = this.getChildControl("tree-folder-view");
       const foldersTree = treeFolderView.getChildControl("folder-tree");
