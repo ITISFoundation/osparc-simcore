@@ -15,7 +15,7 @@ from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 class WebserverRpcSideEffects:
     # pylint: disable=no-self-use
 
-    @validate_call(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config={"arbitrary_types_allowed": True})
     async def mark_project_as_job(
         self,
         rpc_client: RabbitMQRPCClient,

@@ -98,7 +98,7 @@ async def test_log_streaming(
     solver_version: str,
     fake_log_distributor,
     fake_project_for_streaming: ProjectGet,
-    mocked_directorv2_service: MockRouter,
+    mocked_directorv2_rest_api: MockRouter,
     disconnect: bool,
 ):
 

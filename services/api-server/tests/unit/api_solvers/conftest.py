@@ -32,7 +32,7 @@ def solver_version() -> str:
 
 
 @pytest.fixture
-def mocked_webserver_service_api(
+def mocked_webserver_rest_api(
     app: FastAPI,
     mocked_webserver_service_api_base: MockRouter,
     patch_webserver_long_running_project_tasks: Callable[[MockRouter], MockRouter],
@@ -46,11 +46,17 @@ def mocked_webserver_service_api(
 
 
 @pytest.fixture
-def mocked_rpc_webserver_service_api(
+def mocked_webserver_rpc_api(
     app: FastAPI, mocker: MockerFixture
 ) -> dict[str, MockType]:
-    # from simcore_service_api_server.services_rpc.wb_api_server import projects_rpc
     from servicelib.rabbitmq.rpc_interfaces.webserver import projects as projects_rpc
+    from simcore_service_api_server.services_rpc import wb_api_server
+
+    # NOTE: mock_missing_plugins patches `setup_rabbitmq`
+    try:
+        wb_api_server.WbApiRpcClient.get_from_app_state(app)
+    except AttributeError:
+        wb_api_server.setup(app, mocker.MagicMock())
 
     settings: ApplicationSettings = app.state.settings
     assert settings.API_SERVER_WEBSERVER
@@ -67,7 +73,7 @@ def mocked_rpc_webserver_service_api(
 
 
 @pytest.fixture
-def mocked_catalog_service_api(
+def mocked_catalog_rest_api(
     app: FastAPI,
     mocked_catalog_service_api_base: MockRouter,
     catalog_service_openapi_specs: dict[str, Any],
@@ -113,7 +119,7 @@ def mocked_catalog_service_api(
 
 
 @pytest.fixture
-async def mocked_directorv2_service(
+async def mocked_directorv2_rest_api(
     mocked_directorv2_service_api_base,
 ) -> AsyncIterable[MockRouter]:
     stop_time: Final[datetime] = datetime.now() + timedelta(seconds=5)
