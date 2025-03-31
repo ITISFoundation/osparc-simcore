@@ -46,7 +46,6 @@ def parse_last_resource_id(resource_name: RelativeResourceName) -> str:
 
 
 def compose_resource_name(*collection_or_resource_ids) -> RelativeResourceName:
-    # NOTE: collection_or_resource_ids expected de
     quoted_parts = [
         urllib.parse.quote_plus(f"{_id}".lstrip("/"))
         for _id in collection_or_resource_ids
