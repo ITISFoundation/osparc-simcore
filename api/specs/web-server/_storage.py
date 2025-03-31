@@ -22,6 +22,7 @@ from models_library.api_schemas_storage.storage_schemas import (
     PresignedLink,
 )
 from models_library.api_schemas_webserver.storage import (
+    BatchDeletePathsBodyParams,
     DataExportPost,
     ListPathsQueryParams,
     StorageLocationPathParams,
@@ -170,6 +171,18 @@ async def upload_file(
     description="Deletes File",
 )
 async def delete_file(location_id: LocationID, file_id: StorageFileIDStr):
+    """deletes file if user has the rights to"""
+
+
+@router.post(
+    "/storage/locations/{location_id}/-/files:batchDelete",
+    status_code=status.HTTP_204_NO_CONTENT,
+    description="Deletes Files",
+)
+async def batch_delete_files(
+    _path: Annotated[StorageLocationPathParams, Depends()],
+    _body: Annotated[BatchDeletePathsBodyParams, Depends()],
+):
     """deletes file if user has the rights to"""
 
 
