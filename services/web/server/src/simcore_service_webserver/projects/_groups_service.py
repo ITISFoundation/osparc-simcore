@@ -1,12 +1,16 @@
+import hashlib
 import logging
 from datetime import datetime
 
+import arrow
 from aiohttp import web
+from models_library.access_rights import AccessRights
+from models_library.basic_types import IDStr
 from models_library.groups import GroupID
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.users import UserID
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, TypeAdapter
 
 from ..users import api as users_service
 from . import _groups_repository
@@ -170,7 +174,7 @@ async def delete_project_group(
     )
 
 
-async def share_project_by_email(
+async def create_confirmation_action_to_share_project(
     app: web.Application,
     *,
     product_name: ProductName,
@@ -181,8 +185,35 @@ async def share_project_by_email(
     read: bool,
     write: bool,
     delete: bool,
-):
-    raise NotImplementedError
+) -> IDStr:
+    assert app  # nosec
+
+    _logger.debug(
+        "Checking that %s in %s has enough access rights (ownership) to %s for sharing",
+        f"{user_id=}",
+        f"{product_name=}",
+        f"{project_id=}",
+    )
+
+    sharer_user_id = user_id
+    shared_resource_type = "project"
+    shared_resource_id = project_id
+    shared_resource_access_rights = AccessRights(read=read, write=write, delete=delete)
+    shared_at = arrow.utcnow().datetime
+
+    _logger.debug(
+        "Creating confirmation token for action=SHARE with and producing a code:"
+        "\n %s," * 6,
+        sharer_user_id,
+        shared_resource_type,
+        shared_resource_id,
+        shared_resource_access_rights,
+        shared_at,
+        sharee_email,
+    )
+
+    fake_code = hashlib.sha256(sharee_email.encode()).hexdigest()
+    return TypeAdapter(IDStr).validate_python(f"fake{fake_code}")
 
 
 ### Operations without checking permissions

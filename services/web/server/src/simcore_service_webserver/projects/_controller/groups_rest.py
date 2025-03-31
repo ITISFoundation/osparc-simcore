@@ -2,6 +2,7 @@ import logging
 
 from aiohttp import web
 from models_library.api_schemas_webserver._base import InputSchema
+from models_library.basic_types import IDStr
 from models_library.groups import GroupID
 from models_library.projects import ProjectID
 from pydantic import BaseModel, ConfigDict, EmailStr
@@ -14,6 +15,7 @@ from servicelib.logging_utils import log_context
 
 from ..._meta import api_version_prefix as VTAG
 from ...application_settings_utils import requires_dev_feature_enabled
+from ...login import login_web
 from ...login.decorators import login_required
 from ...security.decorators import permission_required
 from ...utils_aiohttp import envelope_json_response
@@ -60,7 +62,7 @@ async def share_project(request: web.Request):
         body_params.sharee_email,
     ):
 
-        await _groups_service.share_project_by_email(
+        code: IDStr = await _groups_service.create_confirmation_action_to_share_project(
             app=request.app,
             user_id=req_ctx.user_id,
             project_id=path_params.project_id,
@@ -70,6 +72,10 @@ async def share_project(request: web.Request):
             delete=body_params.delete,
             product_name=req_ctx.product_name,
         )
+
+        confirmation_link: str = login_web.make_confirmation_link(request, code=code)
+
+        _logger.debug("Send email with confirmation link: %s", confirmation_link)
 
         return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
