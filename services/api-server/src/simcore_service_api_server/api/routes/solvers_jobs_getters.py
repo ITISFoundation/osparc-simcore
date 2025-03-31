@@ -22,9 +22,9 @@ from servicelib.logging_utils import log_context
 from ...exceptions.custom_errors import InsufficientCreditsError, MissingWalletError
 from ...exceptions.service_errors_utils import DEFAULT_BACKEND_SERVICE_STATUS_CODES
 from ...models.basic_types import LogStreamingResponse, VersionStr
+from ...models.domain.files import File
 from ...models.pagination import Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
-from ...models.schemas.files import File
 from ...models.schemas.jobs import (
     ArgumentTypes,
     Job,

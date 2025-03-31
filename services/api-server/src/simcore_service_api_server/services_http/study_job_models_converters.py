@@ -1,7 +1,8 @@
 """
-    Helper functions to convert models used in
-    services/api-server/src/simcore_service_api_server/api/routes/studies_jobs.py
+Helper functions to convert models used in
+services/api-server/src/simcore_service_api_server/api/routes/studies_jobs.py
 """
+
 from typing import Any, NamedTuple
 from uuid import UUID
 
@@ -15,8 +16,8 @@ from models_library.projects_nodes import InputID
 from models_library.projects_nodes_io import LinkToFileTypes, NodeID, SimcoreS3FileID
 from pydantic import TypeAdapter
 
+from ..models.domain.files import File
 from ..models.domain.projects import InputTypes, SimCoreFileLink
-from ..models.schemas.files import File
 from ..models.schemas.jobs import Job, JobInputs, JobOutputs
 from ..models.schemas.studies import Study, StudyID
 from .storage import StorageApi, to_file_api_model

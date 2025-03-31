@@ -31,11 +31,11 @@ from pytest_simcore.helpers.httpx_calls_capture_models import (
 )
 from respx import MockRouter
 from simcore_service_api_server._meta import API_VTAG
+from simcore_service_api_server.models.domain.files import File
 from simcore_service_api_server.models.pagination import Page
 from simcore_service_api_server.models.schemas.files import (
     ClientFile,
     ClientFileUploadData,
-    File,
 )
 
 _FAKER = Faker()

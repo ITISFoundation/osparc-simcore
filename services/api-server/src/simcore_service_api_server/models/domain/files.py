@@ -15,7 +15,6 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
-    NonNegativeInt,
     StringConstraints,
     TypeAdapter,
     ValidationInfo,
@@ -130,23 +129,6 @@ class File(BaseModel):
             filename=file.filename or "Undefined",
             content_type=file.content_type,
             checksum=SHA256Str(sha256check),
-        )
-
-    @classmethod
-    async def create_from_client_file(
-        cls,
-        *,
-        filename: FileName,
-        filesize: NonNegativeInt,
-        sha256_checksum: SHA256Str,
-        created_at: str,
-        program_job_path: FileInProgramJobData | None = None,
-    ) -> "File":
-        return cls(
-            id=cls.create_id(filesize, filename, created_at),
-            filename=filename,
-            checksum=sha256_checksum,
-            program_job_file_path=program_job_path,
         )
 
     @classmethod

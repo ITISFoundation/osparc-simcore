@@ -1,3 +1,4 @@
+import datetime
 from typing import Annotated
 from uuid import UUID
 
@@ -12,7 +13,7 @@ from pydantic import (
 )
 
 from .._utils_pydantic import UriSchema
-from ..domain.files import File as _File
+from ..domain.files import File as DomainFile
 from ..domain.files import FileName
 from ._utils import ApiServerInputSchema, ApiServerOutputSchema
 
@@ -23,6 +24,20 @@ class ClientFile(ApiServerInputSchema):
     filename: FileName = Field(..., description="File name")
     filesize: NonNegativeInt = Field(..., description="File size in bytes")
     sha256_checksum: SHA256Str = Field(..., description="SHA256 checksum")
+
+    def to_domain_model(
+        self,
+    ) -> DomainFile:
+        return DomainFile(
+            id=DomainFile.create_id(
+                self.filesize,
+                self.filename,
+                datetime.datetime.now(datetime.UTC).isoformat(),
+            ),
+            filename=self.filename,
+            checksum=self.sha256_checksum,
+            program_job_file_path=None,
+        )
 
 
 class File(ApiServerOutputSchema):
@@ -67,7 +82,7 @@ class File(ApiServerOutputSchema):
     )
 
     @classmethod
-    def from_domain_model(cls, file: _File) -> "File":
+    def from_domain_model(cls, file: DomainFile) -> "File":
         return cls(
             id=file.id,
             filename=file.filename,

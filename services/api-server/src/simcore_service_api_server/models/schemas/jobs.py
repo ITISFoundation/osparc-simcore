@@ -6,14 +6,17 @@ from pathlib import Path
 from typing import Annotated, TypeAlias
 from uuid import UUID, uuid4
 
+from models_library.basic_types import SHA256Str
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
+from models_library.services_types import FileName
 from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
     HttpUrl,
+    NonNegativeInt,
     PositiveInt,
     StrictBool,
     StrictFloat,
@@ -27,13 +30,16 @@ from pydantic import (
 from servicelib.logging_utils import LogLevelInt, LogMessageStr
 from starlette.datastructures import Headers
 
-from ...models.schemas.files import File
+from ...models.schemas.files import ClientFile, File
 from .._utils_pydantic import UriSchema
 from ..api_resources import (
     RelativeResourceName,
     compose_resource_name,
     split_resource_name,
 )
+from ..domain.files import File as DomainFile
+from ..domain.files import FileInProgramJobData
+from ..schemas.files import ClientFile
 from ._utils import ApiServerInputSchema
 
 # JOB SUB-RESOURCES  ----------
@@ -67,7 +73,10 @@ def _compute_keyword_arguments_checksum(kwargs: KeywordArguments):
     return hashlib.sha256(_dump_str.encode("utf-8")).hexdigest()
 
 
-class ProgramJobFilePath(ApiServerInputSchema):
+class ClientFileInProgramJob(ApiServerInputSchema):
+    filename: FileName = Field(..., description="File name")
+    filesize: NonNegativeInt = Field(..., description="File size in bytes")
+    sha256_checksum: SHA256Str = Field(..., description="SHA256 checksum")
     program_key: Annotated[ProgramKeyId, Field(..., description="Program identifier")]
     program_version: Annotated[VersionStr, Field(..., description="Program version")]
     job_id: Annotated[JobID, Field(..., description="Job identifier")]
@@ -79,6 +88,27 @@ class ProgramJobFilePath(ApiServerInputSchema):
             description="The file's relative path within the job's workspace directory. E.g. 'workspace/myfile.txt'",
         ),
     ]
+
+    def to_domain_model(self, *, project_id: ProjectID, node_id: NodeID) -> DomainFile:
+        return DomainFile(
+            id=DomainFile.create_id(
+                self.filesize,
+                self.filename,
+                datetime.datetime.now(datetime.UTC).isoformat(),
+            ),
+            filename=self.filename,
+            checksum=self.sha256_checksum,
+            program_job_file_path=FileInProgramJobData(
+                project_id=project_id,
+                node_id=node_id,
+                workspace_path=self.workspace_path,
+            ),
+        )
+
+
+assert set(ClientFile.model_fields.keys()).issubset(
+    set(ClientFileInProgramJob.model_fields.keys())
+)  # noseq
 
 
 class JobInputs(BaseModel):
