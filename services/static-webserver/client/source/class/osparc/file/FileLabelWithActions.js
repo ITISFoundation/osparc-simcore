@@ -228,10 +228,21 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
             });
         }
       } else if (toBeDeleted.length > 1) {
-        this.__deleteItems(toBeDeleted)
-          .then(resp => {
-            // It returns a long running task
-            console.log(resp);
+        const dataStore = osparc.store.Data.getInstance();
+        const paths = toBeDeleted.map(item => item.getPath());
+        const promise = dataStore.deleteFiles(paths);
+        const pollTasks = osparc.store.PollTasks.getInstance();
+        const interval = 1000;
+        pollTasks.createPollingTask(promise, interval)
+          .then(task => {
+            task.addListener("resultReceived", e => {
+              console.log("deleted");
+            });
+          })
+          .catch(errMsg => {
+            console.log(errMsg);
+            const msg = this.tr("Something went wrong while deleting the files");
+            osparc.FlashMessenger.logError(msg);
           });
       }
     },
@@ -246,9 +257,6 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
     },
 
     __deleteItems: function(items) {
-      const dataStore = osparc.store.Data.getInstance();
-      const paths = items.map(item => item.getPath());
-      return dataStore.deleteFiles(paths);
     },
   }
 });
