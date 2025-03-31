@@ -2,10 +2,11 @@ import logging
 from pathlib import Path
 
 from celery import Task  # type: ignore[import-untyped]
-from models_library.projects_nodes_io import LocationID
+from models_library.projects_nodes_io import LocationID, StorageFileID
 from models_library.users import UserID
-from pydantic import ByteSize
+from pydantic import ByteSize, TypeAdapter
 from servicelib.logging_utils import log_context
+from servicelib.utils import limited_gather
 
 from ...dsm import get_dsm_provider
 from ...modules.celery.models import TaskId
@@ -25,3 +26,25 @@ async def compute_path_size(
     ):
         dsm = get_dsm_provider(get_fastapi_app(task.app)).get(location_id)
         return await dsm.compute_path_size(user_id, path=Path(path))
+
+
+async def delete_paths(
+    task: Task,
+    task_id: TaskId,
+    user_id: UserID,
+    location_id: LocationID,
+    paths: set[Path],
+) -> None:
+    assert task_id  # nosec
+    with log_context(
+        _logger,
+        logging.INFO,
+        msg=f"delete {paths=} in {location_id=} for {user_id=}",
+    ):
+        dsm = get_dsm_provider(get_fastapi_app(task.app)).get(location_id)
+        files_ids = {
+            TypeAdapter(StorageFileID).validate_python(f"{path}") for path in paths
+        }
+        await limited_gather(
+            *[dsm.delete_file(user_id, file_id) for file_id in files_ids]
+        )

@@ -290,13 +290,36 @@ async def test_path_compute_size_inexistent_path(
     ids=[SimcoreS3DataManager.get_location_name()],
     indirect=True,
 )
+async def test_delete_paths_empty_set(
+    initialized_app: FastAPI,
+    storage_rabbitmq_rpc_client: RabbitMQRPCClient,
+    user_id: UserID,
+    location_id: LocationID,
+    product_name: ProductName,
+    with_storage_celery_worker: CeleryTaskQueueWorker,
+):
+    await _assert_delete_paths(
+        storage_rabbitmq_rpc_client,
+        location_id,
+        user_id,
+        product_name,
+        paths=set(),
+    )
+
+
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
 @pytest.mark.parametrize(
     "project_params",
     [
         ProjectWithFilesParams(
-            num_nodes=5,
+            num_nodes=1,
             allowed_file_sizes=(TypeAdapter(ByteSize).validate_python("1b"),),
-            workspace_files_count=10,
+            workspace_files_count=15,
         )
     ],
     ids=str,
@@ -314,10 +337,52 @@ async def test_delete_paths(
     product_name: ProductName,
     with_storage_celery_worker: CeleryTaskQueueWorker,
 ):
+    assert (
+        len(project_params.allowed_file_sizes) == 1
+    ), "test preconditions are not filled! allowed file sizes should have only 1 option for this test"
+    project, list_of_files = with_random_project_with_files
+
+    total_num_files = sum(
+        len(files_in_node) for files_in_node in list_of_files.values()
+    )
+
+    # get size of a full project
+    expected_total_size = project_params.allowed_file_sizes[0] * total_num_files
+    path = Path(project["uuid"])
+    await _assert_compute_path_size(
+        storage_rabbitmq_rpc_client,
+        location_id,
+        user_id,
+        path=path,
+        expected_total_size=expected_total_size,
+        product_name=product_name,
+    )
+
+    # now select multiple random files to delete
+    selected_paths = random.sample(
+        list(
+            list_of_files[
+                NodeID(random.choice(list(project["workbench"])))  # noqa: S311
+            ]
+        ),
+        round(project_params.workspace_files_count / 2),
+    )
+
     await _assert_delete_paths(
         storage_rabbitmq_rpc_client,
         location_id,
         user_id,
         product_name,
-        paths=set(),
+        paths=set({Path(_) for _ in selected_paths}),
+    )
+
+    # the size is reduced by the amount of deleted files
+    await _assert_compute_path_size(
+        storage_rabbitmq_rpc_client,
+        location_id,
+        user_id,
+        path=path,
+        expected_total_size=expected_total_size
+        - len(selected_paths) * project_params.allowed_file_sizes[0],
+        product_name=product_name,
     )
