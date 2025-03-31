@@ -43,7 +43,7 @@ async def delete_paths(
         msg=f"delete {paths=} in {location_id=} for {user_id=}",
     ):
         dsm = get_dsm_provider(get_fastapi_app(task.app)).get(location_id)
-        files_ids = {
+        files_ids: set[StorageFileID] = {
             TypeAdapter(StorageFileID).validate_python(f"{path}") for path in paths
         }
         await limited_gather(
