@@ -36,7 +36,7 @@ async def create_project_group(
     *,
     user_id: UserID,
     project_id: ProjectID,
-    group_id: GroupID,
+    sharee_group_id: GroupID,
     read: bool,
     write: bool,
     delete: bool,
@@ -53,7 +53,7 @@ async def create_project_group(
     project_group_db: ProjectGroupGetDB = await _groups_repository.create_project_group(
         app=app,
         project_id=project_id,
-        group_id=group_id,
+        group_id=sharee_group_id,
         read=read,
         write=write,
         delete=delete,
@@ -189,7 +189,7 @@ async def create_confirmation_action_to_share_project(
     assert app  # nosec
 
     _logger.debug(
-        "Checking that %s in %s has enough access rights (ownership) to %s for sharing",
+        "Checking that %s in %s has enough access rights (i.e. ownership) to %s for sharing",
         f"{user_id=}",
         f"{product_name=}",
         f"{project_id=}",
@@ -200,6 +200,9 @@ async def create_confirmation_action_to_share_project(
     shared_resource_id = project_id
     shared_resource_access_rights = AccessRights(read=read, write=write, delete=delete)
     shared_at = arrow.utcnow().datetime
+
+    # action will be a wrapper around create_project_group that gets primary_gid from the email
+    # action needs to be statically registered
 
     _logger.debug(
         "Creating confirmation token for action=SHARE with and producing a code:"

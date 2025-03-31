@@ -62,20 +62,28 @@ async def share_project(request: web.Request):
         body_params.sharee_email,
     ):
 
-        code: IDStr = await _groups_service.create_confirmation_action_to_share_project(
-            app=request.app,
-            user_id=req_ctx.user_id,
-            project_id=path_params.project_id,
-            sharee_email=body_params.sharee_email,
-            read=body_params.read,
-            write=body_params.write,
-            delete=body_params.delete,
-            product_name=req_ctx.product_name,
+        confirmation_code: IDStr = (
+            await _groups_service.create_confirmation_action_to_share_project(
+                app=request.app,
+                user_id=req_ctx.user_id,
+                project_id=path_params.project_id,
+                sharee_email=body_params.sharee_email,
+                read=body_params.read,
+                write=body_params.write,
+                delete=body_params.delete,
+                product_name=req_ctx.product_name,
+            )
         )
 
-        confirmation_link: str = login_web.make_confirmation_link(request, code=code)
+        confirmation_link: str = login_web.make_confirmation_link(
+            request, code=confirmation_code
+        )
 
-        _logger.debug("Send email with confirmation link: %s", confirmation_link)
+        _logger.debug(
+            "Send email with confirmation link %s to %s ",
+            confirmation_link,
+            body_params.sharee_email,
+        )
 
         return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
@@ -108,7 +116,7 @@ async def create_project_group(request: web.Request):
         request.app,
         user_id=req_ctx.user_id,
         project_id=path_params.project_id,
-        group_id=path_params.group_id,
+        sharee_group_id=path_params.group_id,
         read=body_params.read,
         write=body_params.write,
         delete=body_params.delete,
