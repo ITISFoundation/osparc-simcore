@@ -5,7 +5,7 @@ from models_library.api_schemas_webserver._base import InputSchema
 from models_library.basic_types import IDStr
 from models_library.groups import GroupID
 from models_library.projects import ProjectID
-from pydantic import BaseModel, ConfigDict, EmailStr
+from pydantic import BaseModel, ConfigDict, EmailStr, HttpUrl
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
@@ -78,6 +78,8 @@ async def share_project(request: web.Request):
         confirmation_link: str = login_web.make_confirmation_link(
             request, code=confirmation_code
         )
+
+        assert HttpUrl(confirmation_link)  # nosec
 
         _logger.debug(
             "Send email with confirmation link %s to %s ",

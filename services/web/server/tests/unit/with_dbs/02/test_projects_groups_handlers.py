@@ -39,7 +39,7 @@ def mock_project_uses_available_services(mocker: MockerFixture):
     "Driving test for https://github.com/ITISFoundation/osparc-issues/issues/1547"
 )
 @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_200_OK)])
-async def test_projects_groups_full_workflow(
+async def test_projects_groups_full_workflow(  # noqa: PLR0915
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
@@ -251,3 +251,41 @@ async def test_projects_groups_full_workflow(
                 "delete": True,
             },
         }
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_share_project(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    mock_catalog_api_get_services_for_user_in_product,
+    mock_project_uses_available_services,
+):
+    assert client.app
+
+    # Share the project with a fake email
+    url = client.app.router["share_project"].url_for(
+        project_id=f"{user_project['uuid']}"
+    )
+    resp = await client.post(
+        f"{url}",
+        json={
+            "shareeEmail": "sharee@email.com",
+            "read": True,
+            "write": False,
+            "delete": False,
+        },
+    )
+    await assert_status(resp, status.HTTP_204_NO_CONTENT)
+
+    # Verify that only logged_user["primary_gid"] has access to the project
+    url = client.app.router["list_project_groups"].url_for(
+        project_id=f"{user_project['uuid']}"
+    )
+    resp = await client.get(f"{url}")
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+    assert len(data) == 1
+    assert data[0]["gid"] == logged_user["primary_gid"]
+    assert data[0]["read"] is True
+    assert data[0]["write"] is True
+    assert data[0]["delete"] is True
