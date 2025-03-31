@@ -272,9 +272,7 @@ qx.Class.define("osparc.store.Data", {
           paths,
         }
       };
-      return osparc.data.Resources.fetch("storagePaths", "batchDelete", params)
-        .then(resp => console.log(resp))
-        .catch(err => osparc.FlashMessenger.logError(err, this.tr("Unsuccessful files deletion")));
+      return osparc.data.Resources.fetch("storagePaths", "batchDelete", params);
     },
   }
 });

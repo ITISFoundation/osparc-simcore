@@ -228,22 +228,18 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
             });
         }
       } else if (toBeDeleted.length > 1) {
-        const dataStore = osparc.store.Data.getInstance();
         const paths = toBeDeleted.map(item => item.getPath());
-        const promise = dataStore.deleteFiles(paths);
+        const dataStore = osparc.store.Data.getInstance();
+        const fetchPromise = dataStore.deleteFiles(paths);
         const pollTasks = osparc.store.PollTasks.getInstance();
         const interval = 1000;
-        pollTasks.createPollingTask(promise, interval)
+        pollTasks.createPollingTask(fetchPromise, interval)
           .then(task => {
             task.addListener("resultReceived", e => {
-              console.log("deleted");
+              this.fireDataEvent("fileDeleted", toBeDeleted[0]);
             });
           })
-          .catch(errMsg => {
-            console.log(errMsg);
-            const msg = this.tr("Something went wrong while deleting the files");
-            osparc.FlashMessenger.logError(msg);
-          });
+          .catch(err => osparc.FlashMessenger.logError(err, this.tr("Unsuccessful files deletion")));
       }
     },
 
@@ -254,9 +250,6 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
       }
       const dataStore = osparc.store.Data.getInstance();
       return dataStore.deleteFile(locationId, itemId);
-    },
-
-    __deleteItems: function(items) {
     },
   }
 });
