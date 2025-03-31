@@ -55,6 +55,14 @@ qx.Class.define("osparc.store.PollTasks", {
       });
     },
 
+    removeTask: function(task) {
+      const tasks = this.getTasks();
+      const index = tasks.findIndex(t => t.getTaskId() === task.getTaskId());
+      if (index > -1) {
+        tasks.splice(index, 1);
+      }
+    },
+
     __addTask: function(taskData, interval = 1000) {
       const tasks = this.getTasks();
       const index = tasks.findIndex(t => t.getTaskId() === taskData["task_id"]);
