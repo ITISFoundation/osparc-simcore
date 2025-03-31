@@ -259,7 +259,7 @@ qx.Class.define("osparc.store.Data", {
         .catch(err => osparc.FlashMessenger.logError(err, this.tr("Unsuccessful file deletion")));
     },
 
-    deleteFiles: function(items) {
+    deleteFiles: function(paths) {
       if (!osparc.data.Permissions.getInstance().canDo("study.node.data.delete", true)) {
         return null;
       }
@@ -269,7 +269,7 @@ qx.Class.define("osparc.store.Data", {
           locationId: 0,
         },
         data: {
-          items,
+          paths,
         }
       };
       return osparc.data.Resources.fetch("storagePaths", "batchDelete", params)
