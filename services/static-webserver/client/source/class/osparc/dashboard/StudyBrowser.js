@@ -375,6 +375,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       this.__addNewStudyButtons();
 
+      this.__tasksToCards();
+
       const loadMoreBtn = this.__createLoadMoreButton();
       loadMoreBtn.set({
         fetching,
