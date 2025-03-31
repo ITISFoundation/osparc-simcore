@@ -8,6 +8,7 @@ from pydantic import ByteSize, TypeAdapter
 from servicelib.logging_utils import log_context
 from servicelib.utils import limited_gather
 
+from ...constants import MAX_CONCURRENT_S3_TASKS
 from ...dsm import get_dsm_provider
 from ...modules.celery.models import TaskId
 from ...modules.celery.utils import get_fastapi_app
@@ -46,5 +47,6 @@ async def delete_paths(
             TypeAdapter(StorageFileID).validate_python(f"{path}") for path in paths
         }
         await limited_gather(
-            *[dsm.delete_file(user_id, file_id) for file_id in files_ids]
+            *[dsm.delete_file(user_id, file_id) for file_id in files_ids],
+            limit=MAX_CONCURRENT_S3_TASKS,
         )
