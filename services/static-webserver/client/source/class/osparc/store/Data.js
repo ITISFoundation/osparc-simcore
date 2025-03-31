@@ -257,6 +257,24 @@ qx.Class.define("osparc.store.Data", {
           return data;
         })
         .catch(err => osparc.FlashMessenger.logError(err, this.tr("Unsuccessful file deletion")));
-    }
+    },
+
+    deleteFiles: function(items) {
+      if (!osparc.data.Permissions.getInstance().canDo("study.node.data.delete", true)) {
+        return null;
+      }
+
+      const params = {
+        url: {
+          locationId: 0,
+        },
+        data: {
+          items,
+        }
+      };
+      return osparc.data.Resources.fetch("storagePaths", "batchDelete", params)
+        .then(resp => console.log(resp))
+        .catch(err => osparc.FlashMessenger.logError(err, this.tr("Unsuccessful files deletion")));
+    },
   }
 });

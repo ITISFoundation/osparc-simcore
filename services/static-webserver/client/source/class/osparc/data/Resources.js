@@ -1219,6 +1219,10 @@ qx.Class.define("osparc.data.Resources", {
             method: "GET",
             url: statics.API + "/storage/locations/{locationId}/paths?file_filter={path}&cursor={cursor}&size=1000"
           },
+          batchDelete: {
+            method: "POST",
+            url: statics.API + "/storage/locations/{locationId}/-/paths:batchDelete"
+          },
           requestSize: {
             method: "POST",
             url: statics.API + "/storage/locations/0/paths/{pathId}:size"
