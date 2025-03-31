@@ -112,9 +112,19 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         ),
     )
 
-    DIRECTOR_REGISTRY_CLIENT_MAX_KEEPALIVE_CONNECTIONS: NonNegativeInt = 0
+    DIRECTOR_REGISTRY_CLIENT_MAX_KEEPALIVE_CONNECTIONS: NonNegativeInt = 5
+    DIRECTOR_REGISTRY_CLIENT_TIMEOUT: datetime.timedelta = datetime.timedelta(
+        seconds=20
+    )
     DIRECTOR_REGISTRY_CLIENT_MAX_CONCURRENT_CALLS: PositiveInt = 20
     DIRECTOR_REGISTRY_CLIENT_MAX_NUMBER_OF_RETRIEVED_OBJECTS: PositiveInt = 30
+
+    @field_validator("DIRECTOR_REGISTRY_CLIENT_TIMEOUT")
+    @classmethod
+    def _check_positive(cls, value: datetime.timedelta) -> None:
+        if value.total_seconds() < 0:
+            msg = "DIRECTOR_REGISTRY_CLIENT_TIMEOUT must be positive"
+            raise ValueError(msg)
 
     @field_validator("DIRECTOR_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS")
     @classmethod
