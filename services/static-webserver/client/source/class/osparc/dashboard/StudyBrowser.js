@@ -2132,18 +2132,18 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const cardTitle = this.tr("Duplicating ") + studyName;
       const duplicatingStudyCard = this._addTaskCard(task, cardTitle, osparc.task.Duplicate.ICON);
       if (duplicatingStudyCard) {
-        this.__attachDuplicateEventHandler(task, duplicateTaskUI, duplicatingStudyCard);
+        this.__attachDuplicateEventHandler(task, duplicateTaskUI);
       }
     },
 
-    __attachDuplicateEventHandler: function(task, taskUI, duplicatingStudyCard) {
+    __attachDuplicateEventHandler: function(task, taskUI) {
       const finished = (msg, msgLevel) => {
         if (msg) {
           osparc.FlashMessenger.logAs(msg, msgLevel);
         }
         osparc.store.PollTasks.getInstance().removeTask(task);
         osparc.task.TasksContainer.getInstance().removeTaskUI(taskUI);
-        this._resourcesContainer.removeNonResourceCard(duplicatingStudyCard);
+        this._removeTaskCard(task);
       };
 
       task.addListener("taskAborted", () => {
