@@ -22,6 +22,7 @@ from .dynamic_scheduler.plugin import setup_dynamic_scheduler
 from .email.plugin import setup_email
 from .exporter.plugin import setup_exporter
 from .folders.plugin import setup_folders
+from .functions.plugin import setup_functions
 from .garbage_collector.plugin import setup_garbage_collector
 from .groups.plugin import setup_groups
 from .invitations.plugin import setup_invitations
@@ -132,6 +133,9 @@ def create_application() -> web.Application:
 
     # folders
     setup_folders(app)
+
+    # functions
+    setup_functions(app)
 
     # projects
     setup_projects(app)
