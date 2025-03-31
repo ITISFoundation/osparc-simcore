@@ -48,7 +48,7 @@ from ...models.schemas.files import (
     FileUploadData,
     UploadLinks,
 )
-from ...models.schemas.jobs import ClientFileInProgramJob
+from ...models.schemas.jobs import ClientFileToProgramJob
 from ...services_http.storage import StorageApi, StorageFileMetaData, to_file_api_model
 from ...services_http.webserver import AuthSession
 from ..dependencies.authentication import get_current_user_id
@@ -108,11 +108,11 @@ async def _get_file(
 
 
 async def _create_domain_file(
-    webserver_api: AuthSession, client_file: ClientFile | ClientFileInProgramJob
+    webserver_api: AuthSession, client_file: ClientFile | ClientFileToProgramJob
 ) -> DomainFile:
     if isinstance(client_file, ClientFile):
         file = client_file.to_domain_model()
-    elif isinstance(client_file, ClientFileInProgramJob):
+    elif isinstance(client_file, ClientFileToProgramJob):
         project = await webserver_api.get_project(project_id=client_file.job_id)
         if len(project.workbench) > 1:
             raise HTTPException(
@@ -270,7 +270,7 @@ async def upload_files(files: list[UploadFile] = FileParam(...)):
 @cancel_on_disconnect
 async def get_upload_links(
     request: Request,
-    client_file: ClientFileInProgramJob | ClientFile,
+    client_file: ClientFileToProgramJob | ClientFile,
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
 ):
@@ -382,7 +382,7 @@ async def delete_file(
 async def abort_multipart_upload(
     request: Request,
     file_id: UUID,
-    client_file: Annotated[ClientFileInProgramJob | ClientFile, Body(..., embed=True)],
+    client_file: Annotated[ClientFileToProgramJob | ClientFile, Body(..., embed=True)],
     storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
@@ -409,7 +409,7 @@ async def abort_multipart_upload(
 async def complete_multipart_upload(
     request: Request,
     file_id: UUID,
-    client_file: Annotated[ClientFileInProgramJob | ClientFile, Body(...)],
+    client_file: Annotated[ClientFileToProgramJob | ClientFile, Body(...)],
     uploaded_parts: Annotated[FileUploadCompletionBody, Body(...)],
     storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],

@@ -73,7 +73,7 @@ def _compute_keyword_arguments_checksum(kwargs: KeywordArguments):
     return hashlib.sha256(_dump_str.encode("utf-8")).hexdigest()
 
 
-class ClientFileInProgramJob(ApiServerInputSchema):
+class ClientFileToProgramJob(ApiServerInputSchema):
     filename: FileName = Field(..., description="File name")
     filesize: NonNegativeInt = Field(..., description="File size in bytes")
     sha256_checksum: SHA256Str = Field(..., description="SHA256 checksum")
@@ -107,8 +107,8 @@ class ClientFileInProgramJob(ApiServerInputSchema):
 
 
 assert set(ClientFile.model_fields.keys()).issubset(
-    set(ClientFileInProgramJob.model_fields.keys())
-)  # noseq
+    set(ClientFileToProgramJob.model_fields.keys())
+)  # nosec
 
 
 class JobInputs(BaseModel):
