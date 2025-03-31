@@ -4,7 +4,7 @@ from uuid import uuid4
 
 import orjson
 from aws_library.s3 import S3MetaData, SimcoreS3API
-from aws_library.s3._constants import MULTIPART_COPY_THRESHOLD
+from aws_library.s3._constants import STREAM_REDER_CHUNK
 from models_library.api_schemas_storage.storage_schemas import S3BucketName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import (
@@ -173,7 +173,7 @@ async def create_and_upload_export(
                 get_zip_bytes_iter(
                     archive_entries,
                     progress_bar=progress_bar,
-                    chunk_size=MULTIPART_COPY_THRESHOLD,
+                    chunk_size=STREAM_REDER_CHUNK,
                 )
             ),
         )

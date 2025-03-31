@@ -9,6 +9,7 @@ MULTIPART_UPLOADS_MIN_TOTAL_SIZE: Final[ByteSize] = TypeAdapter(
 MULTIPART_COPY_THRESHOLD: Final[ByteSize] = TypeAdapter(ByteSize).validate_python(
     "100MiB"
 )
+STREAM_REDER_CHUNK: Final[ByteSize] = TypeAdapter(ByteSize).validate_python("10MiB")
 
 PRESIGNED_LINK_MAX_SIZE: Final[ByteSize] = TypeAdapter(ByteSize).validate_python("5GiB")
 S3_MAX_FILE_SIZE: Final[ByteSize] = TypeAdapter(ByteSize).validate_python("5TiB")
