@@ -67,8 +67,8 @@ def ipinfo(faker: Faker) -> dict[str, Any]:
 
 @pytest.fixture
 def request_form(faker: Faker) -> dict[str, Any]:
-    return AccountRequestInfo(
-        **AccountRequestInfo.model_config["json_schema_extra"]["example"]
+    return AccountRequestInfo.model_validate(
+        AccountRequestInfo.model_json_schema()["example"]
     ).model_dump()
 
 
