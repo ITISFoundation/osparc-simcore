@@ -14,6 +14,7 @@ import pytest
 import respx
 from faker import Faker
 from fastapi import status
+from pytest_mock import MockType
 from pytest_simcore.helpers.httpx_calls_capture_models import (
     CreateRespxMockCallback,
     HttpApiCallCaptureModel,
@@ -37,7 +38,8 @@ _faker = Faker()
 async def test_studies_jobs_workflow(
     client: httpx.AsyncClient,
     auth: httpx.BasicAuth,
-    mocked_webserver_service_api_base: respx.MockRouter,
+    mocked_webserver_rest_api_base: respx.MockRouter,
+    mocked_webserver_rpc_api: dict[str, MockType],
     study_id: StudyID,
 ):
     # get_study
@@ -121,8 +123,8 @@ async def test_studies_jobs_workflow(
 
 async def test_start_stop_delete_study_job(
     client: httpx.AsyncClient,
-    mocked_webserver_service_api_base,
-    mocked_directorv2_service_api_base,
+    mocked_webserver_rest_api_base,
+    mocked_directorv2_rest_api_base,
     create_respx_mock_from_capture: CreateRespxMockCallback,
     auth: httpx.BasicAuth,
     project_tests_dir: Path,
@@ -154,8 +156,8 @@ async def test_start_stop_delete_study_job(
 
     create_respx_mock_from_capture(
         respx_mocks=[
-            mocked_webserver_service_api_base,
-            mocked_directorv2_service_api_base,
+            mocked_webserver_rest_api_base,
+            mocked_directorv2_rest_api_base,
         ],
         capture_path=capture_file,
         side_effects_callbacks=[_side_effect_no_project_id]
@@ -200,8 +202,8 @@ async def test_start_stop_delete_study_job(
 @pytest.mark.parametrize("hidden", [True, False])
 async def test_create_study_job(
     client: httpx.AsyncClient,
-    mocked_webserver_service_api_base,
-    mocked_directorv2_service_api_base,
+    mocked_webserver_rest_api_base,
+    mocked_directorv2_rest_api_base,
     create_respx_mock_from_capture: CreateRespxMockCallback,
     auth: httpx.BasicAuth,
     project_tests_dir: Path,
@@ -251,8 +253,8 @@ async def test_create_study_job(
 
     create_respx_mock_from_capture(
         respx_mocks=[
-            mocked_webserver_service_api_base,
-            mocked_directorv2_service_api_base,
+            mocked_webserver_rest_api_base,
+            mocked_directorv2_rest_api_base,
         ],
         capture_path=_capture_file,
         side_effects_callbacks=[_default_side_effect] * 5,
@@ -279,7 +281,7 @@ async def test_get_study_job_outputs(
     client: httpx.AsyncClient,
     fake_study_id: UUID,
     auth: httpx.BasicAuth,
-    mocked_webserver_service_api_base: MockRouter,
+    mocked_webserver_rest_api_base: MockRouter,
 ):
     job_id = "cfe9a77a-f71e-11ee-8fca-0242ac140008"
 
@@ -316,7 +318,7 @@ async def test_get_study_job_outputs(
         "status_code": 200,
     }
 
-    mocked_webserver_service_api_base.get(
+    mocked_webserver_rest_api_base.get(
         path=capture["path"]["path"].format(project_id=job_id)
     ).respond(
         status_code=capture["status_code"],
@@ -336,8 +338,8 @@ async def test_get_study_job_outputs(
 
 async def test_get_job_logs(
     client: httpx.AsyncClient,
-    mocked_webserver_service_api_base,
-    mocked_directorv2_service_api_base,
+    mocked_webserver_rest_api_base,
+    mocked_directorv2_rest_api_base,
     create_respx_mock_from_capture: CreateRespxMockCallback,
     auth: httpx.BasicAuth,
     project_tests_dir: Path,
@@ -347,7 +349,7 @@ async def test_get_job_logs(
 
     create_respx_mock_from_capture(
         respx_mocks=[
-            mocked_directorv2_service_api_base,
+            mocked_directorv2_rest_api_base,
         ],
         capture_path=project_tests_dir / "mocks" / "get_study_job_logs.json",
         side_effects_callbacks=[],
@@ -363,8 +365,8 @@ async def test_get_job_logs(
 async def test_get_study_outputs(
     client: httpx.AsyncClient,
     create_respx_mock_from_capture: CreateRespxMockCallback,
-    mocked_directorv2_service_api_base,
-    mocked_webserver_service_api_base,
+    mocked_directorv2_rest_api_base,
+    mocked_webserver_rest_api_base,
     auth: httpx.BasicAuth,
     project_tests_dir: Path,
 ):
@@ -373,8 +375,8 @@ async def test_get_study_outputs(
 
     create_respx_mock_from_capture(
         respx_mocks=[
-            mocked_directorv2_service_api_base,
-            mocked_webserver_service_api_base,
+            mocked_directorv2_rest_api_base,
+            mocked_webserver_rest_api_base,
         ],
         capture_path=project_tests_dir / "mocks" / "get_job_outputs.json",
         side_effects_callbacks=[],

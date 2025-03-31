@@ -35,15 +35,15 @@ def solver_version() -> str:
 @pytest.fixture
 def mocked_webserver_rest_api(
     app: FastAPI,
-    mocked_webserver_service_api_base: MockRouter,
+    mocked_webserver_rest_api_base: MockRouter,
     patch_webserver_long_running_project_tasks: Callable[[MockRouter], MockRouter],
 ) -> MockRouter:
     settings: ApplicationSettings = app.state.settings
     assert settings.API_SERVER_WEBSERVER
 
-    patch_webserver_long_running_project_tasks(mocked_webserver_service_api_base)
+    patch_webserver_long_running_project_tasks(mocked_webserver_rest_api_base)
 
-    return mocked_webserver_service_api_base
+    return mocked_webserver_rest_api_base
 
 
 @pytest.fixture
@@ -78,10 +78,10 @@ def mocked_webserver_rpc_api(
 @pytest.fixture
 def mocked_catalog_rest_api(
     app: FastAPI,
-    mocked_catalog_service_api_base: MockRouter,
+    mocked_catalog_rest_api_base: MockRouter,
     catalog_service_openapi_specs: dict[str, Any],
 ) -> MockRouter:
-    respx_mock = mocked_catalog_service_api_base
+    respx_mock = mocked_catalog_rest_api_base
     openapi = deepcopy(catalog_service_openapi_specs)
     schemas = openapi["components"]["schemas"]
 
@@ -123,7 +123,7 @@ def mocked_catalog_rest_api(
 
 @pytest.fixture
 async def mocked_directorv2_rest_api(
-    mocked_directorv2_service_api_base,
+    mocked_directorv2_rest_api_base,
 ) -> AsyncIterable[MockRouter]:
     stop_time: Final[datetime] = datetime.now() + timedelta(seconds=5)
 
@@ -138,7 +138,7 @@ async def mocked_directorv2_rest_api(
             status_code=status.HTTP_200_OK, json=jsonable_encoder(task)
         )
 
-    mocked_directorv2_service_api_base.get(
+    mocked_directorv2_rest_api_base.get(
         path__regex=r"/v2/computations/(?P<project_id>[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})"
     ).mock(side_effect=_get_computation)
-    return mocked_directorv2_service_api_base
+    return mocked_directorv2_rest_api_base

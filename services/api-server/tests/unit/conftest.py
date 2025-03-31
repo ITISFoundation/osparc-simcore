@@ -256,7 +256,7 @@ def catalog_service_openapi_specs(osparc_simcore_services_dir: Path) -> dict[str
 
 
 @pytest.fixture
-def mocked_directorv2_service_api_base(
+def mocked_directorv2_rest_api_base(
     app: FastAPI,
     directorv2_service_openapi_specs: dict[str, Any],
     services_mocks_enabled: bool,
@@ -291,7 +291,7 @@ def mocked_directorv2_service_api_base(
 
 
 @pytest.fixture
-def mocked_webserver_service_api_base(
+def mocked_webserver_rest_api_base(
     app: FastAPI,
     webserver_service_openapi_specs: dict[str, Any],
     services_mocks_enabled: bool,
@@ -333,7 +333,7 @@ def mocked_webserver_service_api_base(
 
 
 @pytest.fixture
-def mocked_storage_service_api_base(
+def mocked_storage_rest_api_base(
     app: FastAPI,
     storage_service_openapi_specs: dict[str, Any],
     faker: Faker,
@@ -393,7 +393,7 @@ def mocked_storage_service_api_base(
 
 
 @pytest.fixture
-def mocked_catalog_service_api_base(
+def mocked_catalog_rest_api_base(
     app: FastAPI,
     catalog_service_openapi_specs: dict[str, Any],
     services_mocks_enabled: bool,

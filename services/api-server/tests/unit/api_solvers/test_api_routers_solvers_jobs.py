@@ -86,7 +86,7 @@ def presigned_download_link(
 def mocked_directorv2_service_api(
     app: FastAPI,
     presigned_download_link: AnyUrl,
-    mocked_directorv2_service_api_base: MockRouter,
+    mocked_directorv2_rest_api_base: MockRouter,
     directorv2_service_openapi_specs: dict[str, Any],
 ):
     settings: ApplicationSettings = app.state.settings
@@ -94,7 +94,7 @@ def mocked_directorv2_service_api(
     oas = directorv2_service_openapi_specs
 
     # pylint: disable=not-context-manager
-    respx_mock = mocked_directorv2_service_api_base
+    respx_mock = mocked_directorv2_rest_api_base
     # check that what we emulate, actually still exists
     path = "/v2/computations/{project_id}/tasks/-/logfile"
     assert path in oas["paths"]
