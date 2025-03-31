@@ -449,7 +449,15 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ClientFile"
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/ClientFileInProgramJob"
+                  },
+                  {
+                    "$ref": "#/components/schemas/ClientFile"
+                  }
+                ],
+                "title": "Client File"
               }
             }
           }
@@ -1248,6 +1256,189 @@
         }
       }
     },
+    "/v0/programs": {
+      "get": {
+        "tags": [
+          "programs"
+        ],
+        "summary": "List Programs",
+        "description": "Lists all available solvers (latest version)\n\nSEE get_solvers_page for paginated version of this function",
+        "operationId": "list_programs",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Program"
+                  },
+                  "type": "array",
+                  "title": "Response List Programs V0 Programs Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
+      }
+    },
+    "/v0/programs/{program_key}/releases/{version}": {
+      "get": {
+        "tags": [
+          "programs"
+        ],
+        "summary": "Get Program Release",
+        "description": "Gets a specific release of a solver",
+        "operationId": "get_program_release",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "program_key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^simcore/services/dynamic/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
+              "title": "Program Key"
+            }
+          },
+          {
+            "name": "version",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+              "title": "Version"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Program"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/programs/{program_key}/releases/{version}/jobs": {
+      "post": {
+        "tags": [
+          "programs"
+        ],
+        "summary": "Create Program Job",
+        "description": "Creates a job in a specific release with given inputs.\n\nNOTE: This operation does **not** start the job",
+        "operationId": "create_program_job",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "program_key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^simcore/services/dynamic/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
+              "title": "Program Key"
+            }
+          },
+          {
+            "name": "version",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+              "title": "Version"
+            }
+          },
+          {
+            "name": "x-simcore-parent-project-uuid",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Simcore-Parent-Project-Uuid"
+            }
+          },
+          {
+            "name": "x-simcore-parent-node-id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Simcore-Parent-Node-Id"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Job"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v0/solvers": {
       "get": {
         "tags": [
@@ -2014,9 +2205,9 @@
         "tags": [
           "solvers"
         ],
-        "summary": "Create Job",
+        "summary": "Create Solver Job",
         "description": "Creates a job in a specific release with given inputs.\n\nNOTE: This operation does **not** start the job",
-        "operationId": "create_job",
+        "operationId": "create_solver_job",
         "security": [
           {
             "HTTPBasic": []
@@ -5923,6 +6114,64 @@
         "title": "ClientFile",
         "description": "Represents a file stored on the client side"
       },
+      "ClientFileInProgramJob": {
+        "properties": {
+          "filename": {
+            "type": "string",
+            "pattern": ".+",
+            "title": "Filename",
+            "description": "File name"
+          },
+          "filesize": {
+            "type": "integer",
+            "minimum": 0,
+            "title": "Filesize",
+            "description": "File size in bytes"
+          },
+          "sha256_checksum": {
+            "type": "string",
+            "pattern": "^[a-fA-F0-9]{64}$",
+            "title": "Sha256 Checksum",
+            "description": "SHA256 checksum"
+          },
+          "program_key": {
+            "type": "string",
+            "pattern": "^simcore/services/dynamic/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
+            "title": "Program Key",
+            "description": "Program identifier"
+          },
+          "program_version": {
+            "type": "string",
+            "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+            "title": "Program Version",
+            "description": "Program version"
+          },
+          "job_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Job Id",
+            "description": "Job identifier"
+          },
+          "workspace_path": {
+            "type": "string",
+            "pattern": "^workspace/.*",
+            "format": "path",
+            "title": "Workspace Path",
+            "description": "The file's relative path within the job's workspace directory. E.g. 'workspace/myfile.txt'"
+          }
+        },
+        "type": "object",
+        "required": [
+          "filename",
+          "filesize",
+          "sha256_checksum",
+          "program_key",
+          "program_version",
+          "job_id",
+          "workspace_path"
+        ],
+        "title": "ClientFileInProgramJob"
+      },
       "ClientFileUploadData": {
         "properties": {
           "file_id": {
@@ -7521,6 +7770,75 @@
         },
         "type": "object",
         "title": "ProfileUpdate"
+      },
+      "Program": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^simcore/services/dynamic/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
+            "title": "Id",
+            "description": "Program identifier"
+          },
+          "version": {
+            "type": "string",
+            "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+            "title": "Version",
+            "description": "semantic version number of the node"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "description": "Human readable name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "maintainer": {
+            "type": "string",
+            "title": "Maintainer"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2083,
+                "minLength": 1,
+                "format": "uri"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url",
+            "description": "Link to get this resource"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "version",
+          "title",
+          "maintainer",
+          "url"
+        ],
+        "title": "Program",
+        "description": "A released solver with a specific version",
+        "example": {
+          "description": "Simulation framework",
+          "id": "simcore/services/dynamic/sim4life",
+          "maintainer": "info@itis.swiss",
+          "title": "Sim4life",
+          "url": "https://api.osparc.io/v0/solvers/simcore%2Fservices%2Fdynamic%2Fsim4life/releases/8.0.0",
+          "version": "8.0.0"
+        }
       },
       "RunningState": {
         "type": "string",

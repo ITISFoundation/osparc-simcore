@@ -35,7 +35,9 @@ _exception_mapper = partial(service_exception_mapper, service_name="Storage")
 
 AccessRight = Literal["read", "write"]
 
-_FILE_ID_PATTERN = re.compile(r"^api\/(?P<file_id>[\w-]+)\/(?P<filename>.+)$")
+_FILE_ID_PATTERN = re.compile(
+    r"^api\/(?P<file_id>[\w-]+)\/(?P<filename>.+)|(?P<project_id>[\w-]+)\/(?P<node_id>[\w-]+)\/workspace/.*$"
+)
 
 
 def to_file_api_model(stored_file_meta: StorageFileMetaData) -> File:
