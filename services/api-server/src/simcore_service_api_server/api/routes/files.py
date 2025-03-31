@@ -375,18 +375,32 @@ async def delete_file(
 async def abort_multipart_upload(
     request: Request,
     file_id: UUID,
-    client_file: Annotated[ClientFile, Body(..., embed=True)],
+    client_file: Annotated[ClientFileInProgramJob | ClientFile, Body(..., embed=True)],
     storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+    webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
 ):
+    assert file_id  # nosec
     assert request  # nosec
     assert user_id  # nosec
-    file = DomainFile(
-        id=file_id,
-        filename=client_file.filename,
-        checksum=client_file.sha256_checksum,
-        e_tag=None,
-    )
+
+    if isinstance(client_file, ClientFile):
+        file = client_file.to_domain_model()
+    elif isinstance(client_file, ClientFileInProgramJob):
+        project = await webserver_api.get_project(project_id=client_file.job_id)
+        if len(project.workbench) > 1:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"Job_id {project.uuid} is not a valid program job.",
+            )
+        node_id = next(iter(project.workbench.keys()))
+        file = client_file.to_domain_model(
+            project_id=project.uuid, node_id=NodeID(node_id)
+        )
+    else:
+        err_msg = f"Invalid client_file type passed: {type(client_file)=}"
+        raise TypeError(err_msg)
+
     abort_link: URL = await storage_client.create_abort_upload_link(
         file=file, query={"user_id": str(user_id)}
     )
@@ -404,20 +418,32 @@ async def abort_multipart_upload(
 async def complete_multipart_upload(
     request: Request,
     file_id: UUID,
-    client_file: Annotated[ClientFile, Body(...)],
+    client_file: Annotated[ClientFileInProgramJob | ClientFile, Body(...)],
     uploaded_parts: Annotated[FileUploadCompletionBody, Body(...)],
     storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+    webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
 ):
+    assert file_id  # nosec
     assert request  # nosec
     assert user_id  # nosec
 
-    file = DomainFile(
-        id=file_id,
-        filename=client_file.filename,
-        checksum=client_file.sha256_checksum,
-        e_tag=None,
-    )
+    if isinstance(client_file, ClientFile):
+        file = client_file.to_domain_model()
+    elif isinstance(client_file, ClientFileInProgramJob):
+        project = await webserver_api.get_project(project_id=client_file.job_id)
+        if len(project.workbench) > 1:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"Job_id {project.uuid} is not a valid program job.",
+            )
+        node_id = next(iter(project.workbench.keys()))
+        file = client_file.to_domain_model(
+            project_id=project.uuid, node_id=NodeID(node_id)
+        )
+    else:
+        err_msg = f"Invalid client_file type passed: {type(client_file)=}"
+        raise TypeError(err_msg)
     complete_link: URL = await storage_client.create_complete_upload_link(
         file=file, query={"user_id": str(user_id)}
     )

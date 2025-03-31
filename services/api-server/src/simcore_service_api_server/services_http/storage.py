@@ -35,9 +35,7 @@ _exception_mapper = partial(service_exception_mapper, service_name="Storage")
 
 AccessRight = Literal["read", "write"]
 
-_FILE_ID_PATTERN = re.compile(
-    r"^api\/(?P<file_id>[\w-]+)\/(?P<filename>.+)|(?P<project_id>[\w-]+)\/(?P<node_id>[\w-]+)\/workspace/.*$"
-)
+_FILE_ID_PATTERN = re.compile(r"^api\/(?P<file_id>[\w-]+)\/(?P<filename>.+)$")
 
 
 def to_file_api_model(stored_file_meta: StorageFileMetaData) -> File:
@@ -47,12 +45,11 @@ def to_file_api_model(stored_file_meta: StorageFileMetaData) -> File:
         msg = f"Invalid file_id {stored_file_meta.file_id} in file metadata"
         raise ValueError(msg)
 
-    file_id, filename = match.groups()
-
     return File(
-        id=file_id,  # type: ignore
-        filename=filename,
-        content_type=guess_type(filename)[0] or "application/octet-stream",
+        id=stored_file_meta.file_id,  # type: ignore
+        filename=stored_file_meta.file_name,
+        content_type=guess_type(stored_file_meta.file_name)[0]
+        or "application/octet-stream",
         e_tag=stored_file_meta.entity_tag,
         checksum=stored_file_meta.sha256_checksum,
     )
@@ -110,7 +107,7 @@ class StorageApi(BaseServiceClientApi):
                 {
                     "kind": "owned",
                     "user_id": f"{user_id}",
-                    "startswith": None if file_id is None else f"api/{file_id}",
+                    "startswith": "api/" if file_id is None else f"api/{file_id}",
                     "sha256_checksum": sha256_checksum,
                     "limit": limit,
                     "offset": offset,
