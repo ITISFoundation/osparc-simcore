@@ -32,6 +32,7 @@ pytest_simcore_core_services_selection = [
     "rabbit",
     "redis",
     "storage",
+    "sto-worker",
 ]
 
 pytest_simcore_ops_services_selection = [

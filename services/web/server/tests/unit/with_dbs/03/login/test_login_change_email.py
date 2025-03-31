@@ -18,8 +18,8 @@ from yarl import URL
 
 
 @pytest.fixture
-def new_email(fake_user_email: str) -> str:
-    return fake_user_email
+def new_email(user_email: str) -> str:
+    return user_email
 
 
 async def test_change_email_disabled(client: TestClient, new_email: str):

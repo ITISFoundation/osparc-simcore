@@ -62,6 +62,7 @@ qx.Class.define("osparc.file.TreeFolderView", {
             icon: "@FontAwesome5Solid/spinner/14",
             allowGrowX: false
           });
+          osparc.utils.Utils.setIdToWidget(control.getChildControl("label"), "totalSizeLabel");
           this.getChildControl("header-layout").add(control);
           break;
         case "tree-folder-layout":
@@ -160,22 +161,19 @@ qx.Class.define("osparc.file.TreeFolderView", {
       const totalSize = this.getChildControl("total-size-label");
       totalSize.getChildControl("icon").getContentElement().addClass("rotate");
 
-      osparc.data.Resources.fetch("storagePaths", "requestSize", { url: { pathId } })
-        .then(resp => {
-          const jobId = resp["job_id"];
-          if (jobId) {
-            const asyncJob = new osparc.file.StorageAsyncJob(jobId);
-            asyncJob.addListener("resultReceived", e => {
-              const size = e.getData();
-              totalSize.set({
-                icon: null,
-                label: this.tr("Total size: ") + osparc.utils.Utils.bytesToSize(size),
-              });
+      const pollTasks = osparc.store.PollTasks.getInstance();
+      const fetchPromise = osparc.data.Resources.fetch("storagePaths", "requestSize", { url: { pathId } })
+      pollTasks.createPollingTask(fetchPromise)
+        .then(task => {
+          task.addListener("resultReceived", e => {
+            const data = e.getData();
+            const size = (data && "result" in data) ? osparc.utils.Utils.bytesToSize(data["result"]) : "-";
+            totalSize.set({
+              icon: null,
+              label: this.tr("Total size: ") + size,
             });
-            asyncJob.addListener("pollingError", e => {
-              totalSize.hide();
-            });
-          }
+          });
+          task.addListener("pollingError", e => totalSize.hide());
         })
         .catch(err => {
           console.error(err);

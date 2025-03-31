@@ -15,29 +15,29 @@ from models_library.generics import Envelope
 from models_library.rest_error import EnvelopedError, Log
 from pydantic import BaseModel, Field, confloat
 from simcore_service_webserver._meta import API_VTAG
-from simcore_service_webserver.login._2fa_handlers import Resend2faBody
-from simcore_service_webserver.login._auth_handlers import (
+from simcore_service_webserver.login._controller.rest.auth import (
     LoginBody,
     LoginNextPage,
     LoginTwoFactorAuthBody,
     LogoutBody,
 )
-from simcore_service_webserver.login.handlers_change import (
+from simcore_service_webserver.login._controller.rest.change import (
     ChangeEmailBody,
     ChangePasswordBody,
     ResetPasswordBody,
 )
-from simcore_service_webserver.login.handlers_confirmation import (
+from simcore_service_webserver.login._controller.rest.confirmation import (
     PhoneConfirmationBody,
     ResetPasswordConfirmation,
 )
-from simcore_service_webserver.login.handlers_registration import (
+from simcore_service_webserver.login._controller.rest.registration import (
     InvitationCheck,
     InvitationInfo,
     RegisterBody,
     RegisterPhoneBody,
     RegisterPhoneNextPage,
 )
+from simcore_service_webserver.login._controller.rest.twofa import Resend2faBody
 
 router = APIRouter(prefix=f"/{API_VTAG}", tags=["auth"])
 

@@ -500,6 +500,16 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       return taskCard;
     },
 
+    _removeTaskCard: function(task) {
+      if (task) {
+        const taskPlaceholders = this._resourcesContainer.getCards().filter(card => osparc.dashboard.ResourceBrowserBase.isCardTaskPlaceholder(card));
+        const taskCard = taskPlaceholders.find(taskPlaceholder => taskPlaceholder.getTask() === task);
+        if (taskCard) {
+          this._resourcesContainer.removeNonResourceCard(taskCard);
+        }
+      }
+    },
+
     _populateCardMenu: function(card) {
       throw new Error("Abstract method called!");
     },
