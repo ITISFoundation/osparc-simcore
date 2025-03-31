@@ -451,13 +451,13 @@
               "schema": {
                 "anyOf": [
                   {
-                    "$ref": "#/components/schemas/ClientFileInProgramJob"
+                    "$ref": "#/components/schemas/ClientFileToProgramJob"
                   },
                   {
                     "$ref": "#/components/schemas/ClientFile"
                   }
                 ],
-                "title": "Client File"
+                "title": "User File"
               }
             }
           }
@@ -6045,20 +6045,36 @@
     "schemas": {
       "Body_abort_multipart_upload_v0_files__file_id__abort_post": {
         "properties": {
-          "client_file": {
-            "$ref": "#/components/schemas/ClientFile"
+          "user_file": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ClientFileToProgramJob"
+              },
+              {
+                "$ref": "#/components/schemas/ClientFile"
+              }
+            ],
+            "title": "User File"
           }
         },
         "type": "object",
         "required": [
-          "client_file"
+          "user_file"
         ],
         "title": "Body_abort_multipart_upload_v0_files__file_id__abort_post"
       },
       "Body_complete_multipart_upload_v0_files__file_id__complete_post": {
         "properties": {
-          "client_file": {
-            "$ref": "#/components/schemas/ClientFile"
+          "user_file": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ClientFileToProgramJob"
+              },
+              {
+                "$ref": "#/components/schemas/ClientFile"
+              }
+            ],
+            "title": "User File"
           },
           "uploaded_parts": {
             "$ref": "#/components/schemas/FileUploadCompletionBody"
@@ -6066,7 +6082,7 @@
         },
         "type": "object",
         "required": [
-          "client_file",
+          "user_file",
           "uploaded_parts"
         ],
         "title": "Body_complete_multipart_upload_v0_files__file_id__complete_post"
@@ -6114,7 +6130,7 @@
         "title": "ClientFile",
         "description": "Represents a file stored on the client side"
       },
-      "ClientFileInProgramJob": {
+      "ClientFileToProgramJob": {
         "properties": {
           "filename": {
             "type": "string",
@@ -6170,7 +6186,7 @@
           "job_id",
           "workspace_path"
         ],
-        "title": "ClientFileInProgramJob"
+        "title": "ClientFileToProgramJob"
       },
       "ClientFileUploadData": {
         "properties": {

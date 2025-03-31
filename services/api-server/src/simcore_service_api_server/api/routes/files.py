@@ -270,13 +270,13 @@ async def upload_files(files: list[UploadFile] = FileParam(...)):
 @cancel_on_disconnect
 async def get_upload_links(
     request: Request,
-    client_file: ClientFileToProgramJob | ClientFile,
+    user_file: ClientFileToProgramJob | ClientFile,
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
 ):
     """Get upload links for uploading a file to storage"""
     assert request  # nosec
-    file_meta = await _create_domain_file(webserver_api, client_file)
+    file_meta = await _create_domain_file(webserver_api, user_file)
     _, upload_links = await get_upload_links_from_s3(
         user_id=user_id,
         store_name=None,
@@ -284,7 +284,7 @@ async def get_upload_links(
         s3_object=file_meta.storage_file_id,
         client_session=None,
         link_type=LinkType.PRESIGNED,
-        file_size=ByteSize(client_file.filesize),
+        file_size=ByteSize(user_file.filesize),
         is_directory=False,
         sha256_checksum=file_meta.sha256_checksum,
     )
@@ -382,7 +382,7 @@ async def delete_file(
 async def abort_multipart_upload(
     request: Request,
     file_id: UUID,
-    client_file: Annotated[ClientFileToProgramJob | ClientFile, Body(..., embed=True)],
+    user_file: Annotated[ClientFileToProgramJob | ClientFile, Body(..., embed=True)],
     storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
@@ -391,7 +391,7 @@ async def abort_multipart_upload(
     assert request  # nosec
     assert user_id  # nosec
 
-    file = await _create_domain_file(webserver_api, client_file)
+    file = await _create_domain_file(webserver_api, user_file)
     abort_link: URL = await storage_client.create_abort_upload_link(
         file=file, query={"user_id": str(user_id)}
     )
@@ -409,7 +409,7 @@ async def abort_multipart_upload(
 async def complete_multipart_upload(
     request: Request,
     file_id: UUID,
-    client_file: Annotated[ClientFileToProgramJob | ClientFile, Body(...)],
+    user_file: Annotated[ClientFileToProgramJob | ClientFile, Body(...)],
     uploaded_parts: Annotated[FileUploadCompletionBody, Body(...)],
     storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
@@ -418,7 +418,7 @@ async def complete_multipart_upload(
     assert file_id  # nosec
     assert request  # nosec
     assert user_id  # nosec
-    file = await _create_domain_file(webserver_api, client_file)
+    file = await _create_domain_file(webserver_api, user_file)
     complete_link: URL = await storage_client.create_complete_upload_link(
         file=file, query={"user_id": str(user_id)}
     )
