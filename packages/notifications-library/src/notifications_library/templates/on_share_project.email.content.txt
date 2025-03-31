@@ -1,0 +1,12 @@
+Dear {{ user.first_name }},
+
+Great news! {{ sharer_username }} has shared a {{ resource_alias }} with you on {{ product.display_name }}.
+
+To view the {{ resource_alias }} and accept the sharing, simply click the link below:
+
+{{ accept_link }}
+
+Please don't hesitate to contact us at {{ product.support_email }} if you need further help.
+
+Best Regards,
+The {{ product.display_name }} Team

@@ -1,0 +1,1 @@
+A {{ resource_name }} was shared with you on {{ host }}
