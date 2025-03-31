@@ -10,6 +10,7 @@ from aiohttp import web
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
 from ..constants import APP_SETTINGS_KEY
+from ..rabbitmq import setup_rabbitmq
 from ._controller import (
     comments_rest,
     folders_rest,
@@ -53,7 +54,9 @@ def setup_projects(app: web.Application) -> bool:
     projects_slot.setup_project_observer_events(app)
 
     # setup RPC-controllers
-    app.on_startup.append(projects_rpc.register_rpc_routes_on_startup)
+    setup_rabbitmq(app)
+    if app[APP_SETTINGS_KEY].WEBSERVER_RABBITMQ:
+        app.on_startup.append(projects_rpc.register_rpc_routes_on_startup)
 
     # setup REST-controllers
     app.router.add_routes(projects_states_rest.routes)
