@@ -14,6 +14,7 @@ from collections.abc import Awaitable, Callable
 from copy import deepcopy
 from pathlib import Path
 from typing import Any
+from unittest.mock import Mock
 
 import httpx
 import pytest
@@ -544,17 +545,8 @@ async def _request_start_data_export(
 
 
 @pytest.fixture
-def mock_task_progress(mocker: MockerFixture) -> list[ProgressReport]:
-    progress_updates = []
-
-    async def _progress(*args, **_) -> None:
-        progress_updates.append(args[2])
-
-    mocker.patch(
-        "simcore_service_storage.modules.celery.worker.CeleryTaskQueueWorker.set_task_progress",
-        side_effect=_progress,
-    )
-    return progress_updates
+def task_progress_spy(mocker: MockerFixture) -> Mock:
+    return mocker.spy(CeleryTaskQueueWorker, "set_task_progress")
 
 
 @pytest.mark.parametrize(
@@ -594,7 +586,7 @@ async def test_start_data_export(
         ],
     ],
     project_params: ProjectWithFilesParams,
-    mock_task_progress: list[ProgressReport],
+    task_progress_spy: Mock,
 ):
     _, src_projects_list = await random_project_with_files(project_params)
 
@@ -614,7 +606,7 @@ async def test_start_data_export(
         result,
     )
 
-    assert mock_task_progress == [
+    assert [x[0][3] for x in task_progress_spy.call_args_list] == [
         ProgressReport(
             actual_value=0.0,
             total=1.0,
