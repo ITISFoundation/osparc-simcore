@@ -182,10 +182,11 @@ def _create_data_response_from_async_job(
     request: web.Request,
     async_job: AsyncJobGet,
 ) -> web.Response:
+    async_job_id = f"{async_job.job_id}"
     return create_data_response(
         TaskGet(
-            task_id=f"{async_job.job_id}",
-            task_name=f"{async_job.job_id}",
+            task_id=async_job_id,
+            task_name=async_job_id,
             status_href=f"{request.url.with_path(str(request.app.router['get_async_job_status'].url_for(task_id=async_job_id)))}",
             abort_href=f"{request.url.with_path(str(request.app.router['abort_async_job'].url_for(task_id=async_job_id)))}",
             result_href=f"{request.url.with_path(str(request.app.router['get_async_job_result'].url_for(task_id=async_job_id)))}",
@@ -238,41 +239,6 @@ async def batch_delete_paths(request: web.Request):
         paths=body.paths,
     )
     return _create_data_response_from_async_job(request, async_job)
-
-
-@routes.post(
-    f"{_storage_locations_prefix}/{{location_id}}/-/paths:batchDelete",
-    name="batch_delete_paths",
-)
-@login_required
-@permission_required("storage.files.*")
-async def batch_delete_paths(
-    request: web.Request,
-):
-    req_ctx = RequestContext.model_validate(request)
-    path_params = parse_request_path_parameters_as(StorageLocationPathParams, request)
-    body = await parse_request_body_as(BatchDeletePathsBodyParams, request)
-
-    rabbitmq_rpc_client = get_rabbitmq_rpc_client(request.app)
-    async_job, _ = await remote_delete_paths(
-        rabbitmq_rpc_client,
-        user_id=req_ctx.user_id,
-        product_name=req_ctx.product_name,
-        location_id=path_params.location_id,
-        paths=body.paths,
-    )
-
-    _job_id = f"{async_job.job_id}"
-    return create_data_response(
-        TaskGet(
-            task_id=_job_id,
-            task_name=_job_id,
-            status_href=f"{request.url.with_path(str(request.app.router['get_async_job_status'].url_for(task_id=_job_id)))}",
-            abort_href=f"{request.url.with_path(str(request.app.router['abort_async_job'].url_for(task_id=_job_id)))}",
-            result_href=f"{request.url.with_path(str(request.app.router['get_async_job_result'].url_for(task_id=_job_id)))}",
-        ),
-        status=status.HTTP_202_ACCEPTED,
-    )
 
 
 @routes.get(
