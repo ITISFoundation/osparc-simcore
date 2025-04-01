@@ -7,7 +7,6 @@
 # pylint:disable=unused-variable
 
 
-import asyncio
 import datetime
 import random
 from pathlib import Path
@@ -77,7 +76,6 @@ async def _assert_compute_path_size(
         location_id=location_id,
         path=path,
     )
-    await asyncio.sleep(1)
     async for job_composed_result in wait_and_get_result(
         storage_rpc_client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
@@ -94,6 +92,7 @@ async def _assert_compute_path_size(
             return received_size
 
     pytest.fail("Job did not finish")
+    return ByteSize(0)  # for mypy
 
 
 async def _assert_delete_paths(
@@ -111,7 +110,6 @@ async def _assert_delete_paths(
         location_id=location_id,
         paths=paths,
     )
-    await asyncio.sleep(1)
     async for job_composed_result in wait_and_get_result(
         storage_rpc_client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
