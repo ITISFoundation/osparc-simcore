@@ -33,7 +33,7 @@ async def test_user_data_repo(
 
     repo = UsersRepo(sqlalchemy_async_engine)
     got = await repo.get_user_data(user_id)
-    assert UserData(*got) == user_data
+    assert got == user_data
 
 
 async def test_payments_data_repo(

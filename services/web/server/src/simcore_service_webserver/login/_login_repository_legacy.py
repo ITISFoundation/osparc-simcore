@@ -4,7 +4,6 @@ from typing import Any, Literal, TypedDict, cast
 
 import asyncpg
 from aiohttp import web
-from models_library.basic_types import IDStr
 from servicelib.utils_secrets import generate_passcode
 
 from . import _login_repository_legacy_sql
@@ -22,7 +21,7 @@ ActionLiteralStr = Literal[
 
 
 class BaseConfirmationTokenDict(TypedDict):
-    code: IDStr
+    code: str
     action: ActionLiteralStr
 
 
