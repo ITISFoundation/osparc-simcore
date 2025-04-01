@@ -238,18 +238,6 @@ class NodeProgressEvent:
     total_progress: float
 
 
-class ServiceStatus(str, Enum):
-    IDLE = "idle"
-    RUNNING = "running"
-    FAILED = "failed"
-
-
-@dataclass(frozen=True, slots=True, kw_only=True)
-class NodeServicestatusEvent:
-    node_id: str
-    status: ServiceStatus
-
-
 def retrieve_node_progress_from_decoded_message(
     event: SocketIOEvent,
 ) -> NodeProgressEvent:
@@ -261,18 +249,6 @@ def retrieve_node_progress_from_decoded_message(
         progress_type=NodeProgressType(event.obj["progress_type"]),
         current_progress=float(event.obj["progress_report"]["actual_value"]),
         total_progress=float(event.obj["progress_report"]["total"]),
-    )
-
-
-def retrieve_node_service_status_from_decoded_message(
-    event: SocketIOEvent,
-) -> NodeServicestatusEvent:
-    assert event.name == _OSparcMessages.SERVICE_STATUS.value
-    assert "progress_type" in event.obj
-    assert "progress_report" in event.obj
-    return NodeServicestatusEvent(
-        node_id=event.obj["service_uuid"],
-        status=ServiceStatus(event.obj["service_state"]),
     )
 
 
@@ -362,6 +338,7 @@ class SocketIONodeProgressCompleteWaiter:
                     in _FAIL_FAST_DYNAMIC_SERVICE_STATES
                 )
             ):
+                # NOTE: this is a fail fast for dynamic services that fail to start
                 self.logger.error(
                     "node %s failed with state %s, failing fast",
                     self.node_id,
