@@ -1190,10 +1190,6 @@ qx.Class.define("osparc.data.Resources", {
           copy: {
             method: "PUT",
             url: statics.API + "/storage/locations/{toLoc}/files/{fileName}?extra_location={fromLoc}&extra_source={fileUuid}"
-          },
-          delete: {
-            method: "DELETE",
-            url: statics.API + "/storage/locations/{locationId}/files/{fileUuid}"
           }
         }
       },
@@ -1218,6 +1214,10 @@ qx.Class.define("osparc.data.Resources", {
           getPathsPage: {
             method: "GET",
             url: statics.API + "/storage/locations/{locationId}/paths?file_filter={path}&cursor={cursor}&size=1000"
+          },
+          batchDelete: {
+            method: "POST",
+            url: statics.API + "/storage/locations/{locationId}/-/paths:batchDelete"
           },
           requestSize: {
             method: "POST",

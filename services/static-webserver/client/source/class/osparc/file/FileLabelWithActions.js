@@ -21,7 +21,7 @@
  *   It is used together with a virtual tree of files where the selection is displayed
  * in the text field and the download and delete are related to that selection.
  * Download and deleted methods are also provided.
- * If a file is deleted it fires "fileDeleted" data event
+ * If a file is deleted it fires "pathsDeleted" data event
  *
  * *Example*
  *
@@ -54,7 +54,7 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
   },
 
   events: {
-    "fileDeleted": "qx.event.type.Data"
+    "pathsDeleted": "qx.event.type.Data",
   },
 
   properties: {
@@ -188,6 +188,13 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
           }
         }
       }
+      if (toBeDeleted.length === 0) {
+        return;
+      }
+      if (toBeDeleted[0].getLocation() != 0) {
+        osparc.FlashMessenger.logAs(this.tr("You can only delete files in the local storage"), "WARNING");
+        return;
+      }
 
       let msg = this.tr("This action cannot be undone.");
       msg += isFolderSelected ? ("<br>"+this.tr("All contents within the folders will be deleted.")) : "";
@@ -207,36 +214,24 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
     },
 
     __doDeleteSelected: function(toBeDeleted) {
-      const requests = [];
-      toBeDeleted.forEach(selection => {
-        if (selection) {
-          let request = null;
-          if (osparc.file.FilesTree.isFile(selection)) {
-            request = this.__deleteItem(selection.getFileId(), selection.getLocation());
-          } else {
-            request = this.__deleteItem(selection.getPath(), selection.getLocation());
-          }
-          if (request) {
-            requests.push(request);
-          }
-        }
-      });
-      Promise.all(requests)
-        .then(datas => {
-          if (datas.length) {
-            this.fireDataEvent("fileDeleted", datas[0]);
-            osparc.FlashMessenger.logAs(this.tr("Items successfully deleted"), "INFO");
-          }
-        });
-    },
-
-    __deleteItem: function(itemId, locationId) {
-      if (locationId !== 0 && locationId !== "0") {
-        osparc.FlashMessenger.logAs(this.tr("Externally managed items cannot be deleted"));
-        return null;
+      if (toBeDeleted.length === 0) {
+        osparc.FlashMessenger.logAs(this.tr("Nothing to delete"), "ERROR");
+        return;
+      } else if (toBeDeleted.length > 0) {
+        const paths = toBeDeleted.map(item => item.getPath());
+        const dataStore = osparc.store.Data.getInstance();
+        const fetchPromise = dataStore.deleteFiles(paths);
+        const pollTasks = osparc.store.PollTasks.getInstance();
+        const interval = 1000;
+        pollTasks.createPollingTask(fetchPromise, interval)
+          .then(task => {
+            task.addListener("resultReceived", e => {
+              this.fireDataEvent("pathsDeleted", paths);
+              osparc.FlashMessenger.logAs(this.tr("Items successfully deleted"), "INFO");
+            });
+          })
+          .catch(err => osparc.FlashMessenger.logError(err, this.tr("Unsuccessful files deletion")));
       }
-      const dataStore = osparc.store.Data.getInstance();
-      return dataStore.deleteFile(locationId, itemId);
     },
   }
 });
