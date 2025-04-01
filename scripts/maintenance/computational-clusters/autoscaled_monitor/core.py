@@ -413,7 +413,60 @@ async def _parse_dynamic_instances(
     return dynamic_instances
 
 
-async def summary(state: AppState, user_id: int | None, wallet_id: int | None) -> bool:
+def _print_summary_as_json(
+    dynamic_instances: list[DynamicInstance],
+    computational_clusters: list[ComputationalCluster],
+) -> None:
+    result = {
+        "dynamic_instances": [
+            {
+                "name": instance.name,
+                "ec2_instance_id": instance.ec2_instance.instance_id,
+                "running_services": [
+                    {
+                        "user_id": service.user_id,
+                        "project_id": service.project_id,
+                        "node_id": service.node_id,
+                        "service_name": service.service_name,
+                        "service_version": service.service_version,
+                        "created_at": service.created_at.isoformat(),
+                        "needs_manual_intervention": service.needs_manual_intervention,
+                    }
+                    for service in instance.running_services
+                ],
+                "disk_space": instance.disk_space.human_readable(),
+            }
+            for instance in dynamic_instances
+        ],
+        "computational_clusters": [
+            {
+                "primary": {
+                    "name": cluster.primary.name,
+                    "ec2_instance_id": cluster.primary.ec2_instance.instance_id,
+                    "user_id": cluster.primary.user_id,
+                    "wallet_id": cluster.primary.wallet_id,
+                    "disk_space": cluster.primary.disk_space.human_readable(),
+                },
+                "workers": [
+                    {
+                        "name": worker.name,
+                        "ec2_instance_id": worker.ec2_instance.instance_id,
+                        "disk_space": worker.disk_space.human_readable(),
+                    }
+                    for worker in cluster.workers
+                ],
+                "datasets": cluster.datasets,
+                "processing_jobs": cluster.processing_jobs,
+            }
+            for cluster in computational_clusters
+        ],
+    }
+    rich.print_json(json.dumps(result, indent=2))
+
+
+async def summary(
+    state: AppState, user_id: int | None, wallet_id: int | None, *, output_json: bool
+) -> bool:
     # get all the running instances
     assert state.ec2_resource_autoscaling
     dynamic_instances = await ec2.list_dynamic_instances_from_ec2(
@@ -421,19 +474,6 @@ async def summary(state: AppState, user_id: int | None, wallet_id: int | None) -
     )
     dynamic_autoscaled_instances = await _parse_dynamic_instances(
         state, dynamic_instances, state.ssh_key_path, user_id, wallet_id
-    )
-    _print_dynamic_instances(
-        dynamic_autoscaled_instances,
-        state.environment,
-        state.ec2_resource_autoscaling.meta.client.meta.region_name,
-    )
-
-    time_threshold = arrow.utcnow().shift(minutes=-30).datetime
-
-    dynamic_services_in_error = any(
-        service.needs_manual_intervention and service.created_at < time_threshold
-        for instance in dynamic_autoscaled_instances
-        for service in instance.running_services
     )
 
     assert state.ec2_resource_clusters_keeper
@@ -443,10 +483,27 @@ async def summary(state: AppState, user_id: int | None, wallet_id: int | None) -
     computational_clusters = await _parse_computational_clusters(
         state, computational_instances, state.ssh_key_path, user_id, wallet_id
     )
-    _print_computational_clusters(
-        computational_clusters,
-        state.environment,
-        state.ec2_resource_clusters_keeper.meta.client.meta.region_name,
+
+    if output_json:
+        _print_summary_as_json(dynamic_autoscaled_instances, computational_clusters)
+
+    if not output_json:
+        _print_dynamic_instances(
+            dynamic_autoscaled_instances,
+            state.environment,
+            state.ec2_resource_autoscaling.meta.client.meta.region_name,
+        )
+        _print_computational_clusters(
+            computational_clusters,
+            state.environment,
+            state.ec2_resource_clusters_keeper.meta.client.meta.region_name,
+        )
+
+    time_threshold = arrow.utcnow().shift(minutes=-30).datetime
+    dynamic_services_in_error = any(
+        service.needs_manual_intervention and service.created_at < time_threshold
+        for instance in dynamic_autoscaled_instances
+        for service in instance.running_services
     )
 
     return not dynamic_services_in_error
