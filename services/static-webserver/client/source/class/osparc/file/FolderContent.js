@@ -267,7 +267,7 @@ qx.Class.define("osparc.file.FolderContent", {
         table.getSelectionModel().resetSelection();
       } else if (this.getMode() === "icons") {
         const iconsLayout = this.getChildControl("icons-layout");
-        iconsLayout.resetSelection();
+        iconsLayout.getChildren().forEach(btn => btn.setValue(false));
       }
     },
 
