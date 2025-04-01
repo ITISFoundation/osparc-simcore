@@ -1,14 +1,19 @@
 import logging
-from typing import Annotated, Final
+from typing import Annotated, Final, TypeAlias, TypeVar
 
 from aiocache import cached  # type: ignore[import-untyped]
-from fastapi import APIRouter, Depends, Header, Request
+from fastapi import APIRouter, Depends, Header, Query, Request
 from fastapi_pagination import Page, Params
 from fastapi_pagination.api import create_page, resolve_params
 from fastapi_pagination.bases import RawParams
+from fastapi_pagination.customization import CustomizedPage, UseParamsFields
 from models_library.api_schemas_datcore_adapter.datasets import (
     DatasetMetaData,
     FileMetaData,
+)
+from models_library.api_schemas_storage.storage_schemas import (
+    DEFAULT_NUMBER_OF_PATHS_PER_PAGE,
+    MAX_NUMBER_OF_PATHS_PER_PAGE,
 )
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 from starlette import status
@@ -25,11 +30,24 @@ _PENNSIEVE_CACHING_TTL_S: Final[int] = (
 )  # NOTE: this caching time is arbitrary
 
 
+_T = TypeVar("_T")
+_CustomPage = CustomizedPage[
+    Page[_T],
+    UseParamsFields(
+        size=Query(
+            DEFAULT_NUMBER_OF_PATHS_PER_PAGE, ge=1, le=MAX_NUMBER_OF_PATHS_PER_PAGE
+        ),
+    ),
+]
+
+_CustomizedPageParams: TypeAlias = _CustomPage.__params_type__  # type: ignore
+
+
 @router.get(
     "/datasets",
     summary="list datasets",
     status_code=status.HTTP_200_OK,
-    response_model=Page[DatasetMetaData],
+    response_model=_CustomPage[DatasetMetaData],
 )
 @cancel_on_disconnect
 @cached(
@@ -41,8 +59,8 @@ async def list_datasets(
     x_datcore_api_key: Annotated[str, Header(..., description="Datcore API Key")],
     x_datcore_api_secret: Annotated[str, Header(..., description="Datcore API Secret")],
     pennsieve_client: Annotated[PennsieveApiClient, Depends(get_pennsieve_api_client)],
-    params: Annotated[Params, Depends()],
-) -> Page[DatasetMetaData]:
+    params: Annotated[_CustomizedPageParams, Depends()],
+):
     assert request  # nosec
     raw_params: RawParams = resolve_params(params).to_raw_params()
     assert raw_params.limit is not None  # nosec
@@ -85,7 +103,7 @@ async def get_dataset(
     "/datasets/{dataset_id}/files",
     summary="list top level files/folders in a dataset",
     status_code=status.HTTP_200_OK,
-    response_model=Page[FileMetaData],
+    response_model=_CustomPage[FileMetaData],
 )
 @cancel_on_disconnect
 @cached(
@@ -98,8 +116,8 @@ async def list_dataset_top_level_files(
     x_datcore_api_key: Annotated[str, Header(..., description="Datcore API Key")],
     x_datcore_api_secret: Annotated[str, Header(..., description="Datcore API Secret")],
     pennsieve_client: Annotated[PennsieveApiClient, Depends(get_pennsieve_api_client)],
-    params: Annotated[Params, Depends()],
-) -> Page[FileMetaData]:
+    params: Annotated[_CustomizedPageParams, Depends()],
+):
     assert request  # nosec
     raw_params: RawParams = resolve_params(params).to_raw_params()
 
@@ -119,7 +137,7 @@ async def list_dataset_top_level_files(
     "/datasets/{dataset_id}/files/{collection_id}",
     summary="list top level files/folders in a collection in a dataset",
     status_code=status.HTTP_200_OK,
-    response_model=Page[FileMetaData],
+    response_model=_CustomPage[FileMetaData],
 )
 @cancel_on_disconnect
 @cached(
@@ -133,8 +151,8 @@ async def list_dataset_collection_files(
     x_datcore_api_key: Annotated[str, Header(..., description="Datcore API Key")],
     x_datcore_api_secret: Annotated[str, Header(..., description="Datcore API Secret")],
     pennsieve_client: Annotated[PennsieveApiClient, Depends(get_pennsieve_api_client)],
-    params: Annotated[Params, Depends()],
-) -> Page[FileMetaData]:
+    params: Annotated[_CustomizedPageParams, Depends()],
+):
     assert request  # nosec
     raw_params: RawParams = resolve_params(params).to_raw_params()
     assert raw_params.limit is not None  # nosec
