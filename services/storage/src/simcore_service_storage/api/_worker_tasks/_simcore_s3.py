@@ -16,7 +16,7 @@ from ...dsm import get_dsm_provider
 from ...modules.celery.models import TaskID, TaskId
 from ...modules.celery.utils import get_celery_worker, get_fastapi_app
 from ...simcore_s3_dsm import SimcoreS3DataManager
-from ._progress_utils import get_tqdm_progress, set_tqdm_absolute_progress
+from ...utils.progress_utils import get_tqdm_progress, set_tqdm_absolute_progress
 
 _logger = logging.getLogger(__name__)
 

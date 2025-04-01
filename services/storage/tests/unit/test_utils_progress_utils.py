@@ -1,7 +1,7 @@
 from time import sleep
 
 from models_library.progress_bar import ProgressReport
-from simcore_service_storage.api._worker_tasks._progress_utils import (
+from simcore_service_storage.utils.progress_utils import (
     get_tqdm_progress,
     set_tqdm_absolute_progress,
 )
