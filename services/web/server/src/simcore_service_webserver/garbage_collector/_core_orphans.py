@@ -12,7 +12,7 @@ from models_library.projects_nodes_io import NodeID
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from servicelib.logging_errors import create_troubleshotting_log_kwargs
 from servicelib.logging_utils import log_catch, log_context
-from servicelib.utils import limited_as_completed, logged_gather
+from servicelib.utils import limited_as_completed, limited_gather
 
 from ..dynamic_scheduler import api as dynamic_scheduler_service
 from ..projects._projects_service import (
@@ -53,7 +53,7 @@ async def _remove_service(
     with log_catch(_logger, reraise=False), log_context(
         _logger,
         logging.INFO,
-        msg=f"removing {(service.node_uuid, service.host)} with {save_service_state=}",
+        f"removing {(service.node_uuid, service.host)} with {save_service_state=}",
     ):
         await dynamic_scheduler_service.stop_dynamic_service(
             app,
@@ -150,11 +150,11 @@ async def remove_orphaned_services(
     _logger.debug("Found orphaned services: %s", orphaned_running_service_ids)
     # NOTE: no need to not reraise here, since we catch everything above
     # and logged_gather first runs everything
-    await logged_gather(
+    await limited_gather(
         *(
             _remove_service(app, node_id, running_services_by_id[node_id])
             for node_id in orphaned_running_service_ids
         ),
         log=_logger,
-        max_concurrency=_MAX_CONCURRENT_CALLS,
+        limit=_MAX_CONCURRENT_CALLS,
     )
