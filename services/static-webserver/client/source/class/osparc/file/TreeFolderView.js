@@ -150,31 +150,6 @@ qx.Class.define("osparc.file.TreeFolderView", {
       });
     },
 
-    openPath: async function(pathParts) {
-      console.log("openPath", pathParts);
-      const foldersTree = this.getChildControl("folder-tree");
-      const folderViewer = this.getChildControl("folder-viewer");
-
-      const locationId = 0;
-      let found = false;
-      for (let i=1; i<=pathParts.length; i++) {
-        try {
-          let path = pathParts.slice(0, i);
-          path = path.join("/");
-          found = await foldersTree.requestPathItems(locationId, path);
-        } catch (err) {
-          console.error(err);
-        }
-      }
-      if (found) {
-        foldersTree.openNodeAndParents(found);
-        foldersTree.setSelection(new qx.data.Array([found]));
-        foldersTree.fireEvent("selectionChanged");
-      } else {
-        folderViewer.resetFolder();
-      }
-    },
-
     requestSize: function(pathId) {
       const totalSize = this.getChildControl("total-size-label");
       totalSize.getChildControl("icon").getContentElement().addClass("rotate");

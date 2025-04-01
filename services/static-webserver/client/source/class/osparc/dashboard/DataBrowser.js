@@ -76,7 +76,7 @@ qx.Class.define("osparc.dashboard.DataBrowser", {
       reloadButton.addListener("execute", () => this.__reloadTree(), this);
 
       const selectedFileLayout = treeFolderView.getChildControl("folder-viewer").getChildControl("selected-file-layout");
-      selectedFileLayout.addListener("fileDeleted", e => this.__fileDeleted(e.getData()), this);
+      selectedFileLayout.addListener("pathsDeleted", e => treeFolderView.pathsDeleted(e.getData()), this);
     },
 
     __reloadTree: function() {
@@ -89,34 +89,5 @@ qx.Class.define("osparc.dashboard.DataBrowser", {
       const folderViewer = treeFolderView.getChildControl("folder-viewer");
       folderViewer.resetFolder();
     },
-
-    __fileDeleted: function(fileMetadata) {
-      // After deleting a file, try to keep the user in the same folder.
-      // If the folder doesn't longer exist, open the closest available parent
-
-      const pathParts = ("getPath" in fileMetadata ? fileMetadata.getPath() : fileMetadata["fileUuid"]).split("/");
-
-      const treeFolderView = this.getChildControl("tree-folder-view");
-      const foldersTree = treeFolderView.getChildControl("folder-tree");
-      const folderViewer = treeFolderView.getChildControl("folder-viewer");
-
-      const openSameFolder = () => {
-        // drop last, which is the file
-        pathParts.pop();
-        treeFolderView.openPath(pathParts);
-      };
-
-      folderViewer.resetFolder();
-      const locationId = fileMetadata["locationId"];
-      const path = pathParts[0];
-      foldersTree.resetCache();
-      foldersTree.populateLocations()
-        .then(datasetPromises => {
-          Promise.all(datasetPromises)
-            .then(() => foldersTree.requestPathItems(locationId, path))
-            .then(() => openSameFolder());
-        })
-        .catch(err => console.error(err));
-    }
   }
 });

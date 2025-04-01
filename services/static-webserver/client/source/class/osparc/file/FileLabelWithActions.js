@@ -21,7 +21,7 @@
  *   It is used together with a virtual tree of files where the selection is displayed
  * in the text field and the download and delete are related to that selection.
  * Download and deleted methods are also provided.
- * If a file is deleted it fires "fileDeleted" data event
+ * If a file is deleted it fires "pathsDeleted" data event
  *
  * *Example*
  *
@@ -54,7 +54,6 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
   },
 
   events: {
-    "fileDeleted": "qx.event.type.Data",
     "pathsDeleted": "qx.event.type.Data",
   },
 
