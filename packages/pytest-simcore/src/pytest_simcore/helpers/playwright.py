@@ -64,12 +64,15 @@ class NodeProgressType(str, Enum):
     # NOTE: this is a partial duplicate of models_library/rabbitmq_messages.py
     # It must remain as such until that module is pydantic V2 compatible
     CLUSTER_UP_SCALING = "CLUSTER_UP_SCALING"
-    SERVICE_INPUTS_PULLING = "SERVICE_INPUTS_PULLING"
     SIDECARS_PULLING = "SIDECARS_PULLING"
+    SERVICE_INPUTS_PULLING = "SERVICE_INPUTS_PULLING"
     SERVICE_OUTPUTS_PULLING = "SERVICE_OUTPUTS_PULLING"
     SERVICE_STATE_PULLING = "SERVICE_STATE_PULLING"
     SERVICE_IMAGES_PULLING = "SERVICE_IMAGES_PULLING"
     SERVICE_CONTAINERS_STARTING = "SERVICE_CONTAINERS_STARTING"
+    SERVICE_STATE_PUSHING = "SERVICE_STATE_PUSHING"
+    SERVICE_OUTPUTS_PUSHING = "SERVICE_OUTPUTS_PUSHING"
+    PROJECT_CLOSING = "PROJECT_CLOSING"
 
     @classmethod
     def required_types_for_started_service(cls) -> set["NodeProgressType"]:
@@ -304,6 +307,7 @@ class SocketIONodeProgressCompleteWaiter:
         # https://stackoverflow.com/questions/24564877/what-do-these-numbers-mean-in-socket-io-payload
         if message.startswith(SOCKETIO_MESSAGE_PREFIX):
             decoded_message = decode_socketio_42_message(message)
+            self.logger.info("Received message: %s", decoded_message.name)
             if decoded_message.name == _OSparcMessages.NODE_PROGRESS.value:
                 node_progress_event = retrieve_node_progress_from_decoded_message(
                     decoded_message
@@ -336,14 +340,15 @@ class SocketIONodeProgressCompleteWaiter:
 
         _current_timestamp = datetime.now(UTC)
         if _current_timestamp - self._last_poll_timestamp > timedelta(seconds=5):
+            # NOTE: we might have missed some websocket messages, and we check if the service is ready
             if self.is_service_legacy:
                 url = f"https://{self.get_partial_product_url()}x/{self.node_id}/"
             else:
                 url = (
                     f"https://{self.node_id}.services.{self.get_partial_product_url()}"
                 )
-            with contextlib.suppress(PlaywrightTimeoutError):
-                response = self.api_request_context.get(url, timeout=1000)
+            with contextlib.suppress(PlaywrightTimeoutError, TimeoutError):
+                response = self.api_request_context.get(url, timeout=5000)
                 level = logging.DEBUG
                 if (response.status >= 400) and (response.status not in (502, 503)):
                     level = logging.ERROR
@@ -353,12 +358,12 @@ class SocketIONodeProgressCompleteWaiter:
                     url,
                     f"{response.status}: {response.text()}",
                     (
-                        "We are emulating the frontend; a 5XX response is acceptable if the service is not yet ready."
+                        "We are emulating the frontend; a 502/503 response is acceptable if the service is not yet ready."
                     ),
                 )
 
                 if response.status <= 400:
-                    # NOTE: If the response status is less than 400, it means that the backend is ready (There are some services that respond with a 3XX)
+                    # NOTE: If the response status is less than 400, it means that the service is ready (There are some services that respond with a 3XX)
                     if self.got_expected_node_progress_types():
                         self.logger.warning(
                             "⚠️ Progress bar didn't receive 100 percent but service is already running: %s. TIP: we missed some websocket messages! ⚠️",  # https://github.com/ITISFoundation/osparc-simcore/issues/6449
