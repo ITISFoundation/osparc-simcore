@@ -34,7 +34,6 @@ def upgrade():
             onupdate="CASCADE",
             ondelete="CASCADE",
         ),
-        sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint(
             "project_uuid",
             "job_parent_resource_name",
