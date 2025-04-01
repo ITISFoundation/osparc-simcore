@@ -118,12 +118,9 @@ qx.Class.define("osparc.file.TreeFolderView", {
           if (osparc.file.FilesTree.isDir(selectedModel)) {
             folderViewer.setFolder(selectedModel);
           }
+          // this will trigger the fetching of the content
           folderTree.openNodeAndParents(selectedModel);
           folderTree.setSelection(new qx.data.Array([selectedModel]));
-          if (selectedModel.getPath() && !selectedModel.getLoaded()) {
-            selectedModel.setLoaded(true);
-            folderTree.requestPathItems(selectedModel.getLocation(), selectedModel.getPath());
-          }
         }
       }, this);
 
