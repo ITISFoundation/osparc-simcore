@@ -137,9 +137,17 @@ qx.Class.define("osparc.file.TreeFolderView", {
     },
 
     pathsDeleted: function(paths) {
-      console.log("pathsDeleted", paths);
-      const folderContent = this.getChildControl("folder-viewer").getChildControl("folder-content");
-      folderContent.resetSelection();
+      this.getChildControl("folder-viewer").resetSelection();
+
+      const folderTree = this.getChildControl("folder-tree");
+      const selectedFolder = folderTree.getSelectedItem();
+      const children = selectedFolder.getChildren();
+      paths.forEach(path => {
+        const found = children.toArray().find(child => child.getPath() === path);
+        if (found) {
+          children.remove(found);
+        }
+      });
     },
 
     openPath: async function(pathParts) {

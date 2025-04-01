@@ -234,31 +234,6 @@ qx.Class.define("osparc.store.Data", {
       return true;
     },
 
-    // if folder path is provided as fileUuid, it can also be deleted
-    deleteFile: function(locationId, fileUuid) {
-      if (!osparc.data.Permissions.getInstance().canDo("study.node.data.delete", true)) {
-        return null;
-      }
-
-      // Deletes File
-      const params = {
-        url: {
-          locationId,
-          fileUuid: encodeURIComponent(fileUuid)
-        }
-      };
-      return osparc.data.Resources.fetch("storageFiles", "delete", params)
-        .then(files => {
-          const data = {
-            data: files,
-            locationId: locationId,
-            fileUuid: fileUuid
-          };
-          return data;
-        })
-        .catch(err => osparc.FlashMessenger.logError(err, this.tr("Unsuccessful file deletion")));
-    },
-
     deleteFiles: function(paths) {
       if (!osparc.data.Permissions.getInstance().canDo("study.node.data.delete", true)) {
         return null;
