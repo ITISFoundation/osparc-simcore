@@ -7,6 +7,7 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, status
+from models_library.api_schemas_webserver.groups import ProjectShare
 from models_library.generics import Envelope
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.projects._controller._rest_schemas import (
@@ -16,7 +17,6 @@ from simcore_service_webserver.projects._controller.groups_rest import (
     ProjectShareAccepted,
     _ProjectsGroupsBodyParams,
     _ProjectsGroupsPathParams,
-    _ProjectShare,
 )
 from simcore_service_webserver.projects._groups_service import ProjectGroupGet
 
@@ -38,7 +38,7 @@ router = APIRouter(
 )
 async def share_project(
     _path: Annotated[ProjectPathParams, Depends()],
-    _body: _ProjectShare,
+    _body: ProjectShare,
 ): ...
 
 

@@ -4561,14 +4561,15 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/_ProjectsGroupsBodyParams'
+              $ref: '#/components/schemas/ProjectShare'
       responses:
-        '201':
-          description: Successful Response
+        '202':
+          description: The request to share the project has been accepted, but the
+            actual sharing process has to be confirmd.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_ProjectGroupGet_'
+                $ref: '#/components/schemas/Envelope_ProjectShareAccepted_'
   /v0/projects/{project_id}/groups/{group_id}:
     post:
       tags:
@@ -9456,6 +9457,19 @@ components:
           title: Error
       type: object
       title: Envelope[ProjectNodeServicesGet]
+    Envelope_ProjectShareAccepted_:
+      properties:
+        data:
+          anyOf:
+          - $ref: '#/components/schemas/ProjectShareAccepted'
+          - type: 'null'
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[ProjectShareAccepted]
     Envelope_ProjectState_:
       properties:
         data:
@@ -13955,6 +13969,42 @@ components:
       required:
       - value
       title: ProjectRunningState
+    ProjectShare:
+      properties:
+        shareeEmail:
+          type: string
+          format: email
+          title: Shareeemail
+        read:
+          type: boolean
+          title: Read
+        write:
+          type: boolean
+          title: Write
+        delete:
+          type: boolean
+          title: Delete
+      type: object
+      required:
+      - shareeEmail
+      - read
+      - write
+      - delete
+      title: ProjectShare
+    ProjectShareAccepted:
+      properties:
+        shareeEmail:
+          type: string
+          format: email
+          title: Shareeemail
+        confirmationLink:
+          type: string
+          title: Confirmationlink
+      type: object
+      required:
+      - shareeEmail
+      - confirmationLink
+      title: ProjectShareAccepted
     ProjectState:
       properties:
         locked:
