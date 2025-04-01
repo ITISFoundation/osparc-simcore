@@ -45,9 +45,11 @@ def to_file_api_model(stored_file_meta: StorageFileMetaData) -> File:
         msg = f"Invalid file_id {stored_file_meta.file_id} in file metadata"
         raise ValueError(msg)
 
+    file_id, filename = match.groups()
+
     return File(
-        id=stored_file_meta.file_id,  # type: ignore
-        filename=stored_file_meta.file_name,
+        id=file_id,  # type: ignore
+        filename=filename,
         content_type=guess_type(stored_file_meta.file_name)[0]
         or "application/octet-stream",
         e_tag=stored_file_meta.entity_tag,
