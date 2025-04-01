@@ -1,3 +1,8 @@
+# pylint:disable=unused-variable
+# pylint:disable=unused-argument
+# pylint:disable=redefined-outer-name
+# pylint:disable=too-many-instance-attributes
+
 import contextlib
 import json
 import logging
