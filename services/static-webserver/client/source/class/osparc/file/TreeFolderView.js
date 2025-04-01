@@ -147,25 +147,10 @@ qx.Class.define("osparc.file.TreeFolderView", {
         try {
           let path = pathParts.slice(0, i);
           path = path.join("/");
-          console.log("recursive load", path);
           found = await foldersTree.requestPathItems(locationId, path);
-          foldersTree.openNodeAndParents(found);
-          console.log("found", found);
         } catch (err) {
           console.error(err);
         }
-      }
-      if (found) {
-        foldersTree.setSelection(new qx.data.Array([found]));
-        foldersTree.fireEvent("selectionChanged");
-      } else {
-        folderViewer.resetFolder();
-      }
-      /*
-      while (!found && pathParts.length) {
-        found = foldersTree.findItemId(pathParts.join("/"));
-        // look for next parent
-        pathParts.pop();
       }
       if (found) {
         foldersTree.openNodeAndParents(found);
@@ -174,7 +159,6 @@ qx.Class.define("osparc.file.TreeFolderView", {
       } else {
         folderViewer.resetFolder();
       }
-      */
     },
 
     requestSize: function(pathId) {
