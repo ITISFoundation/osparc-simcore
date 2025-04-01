@@ -59,19 +59,18 @@ async def list_datasets(
     x_datcore_api_key: Annotated[str, Header(..., description="Datcore API Key")],
     x_datcore_api_secret: Annotated[str, Header(..., description="Datcore API Secret")],
     pennsieve_client: Annotated[PennsieveApiClient, Depends(get_pennsieve_api_client)],
-    params: Annotated[_CustomizedPageParams, Depends()],
+    page_params: Annotated[_CustomizedPageParams, Depends()],
 ):
     assert request  # nosec
-    raw_params: RawParams = resolve_params(params).to_raw_params()
-    assert raw_params.limit is not None  # nosec
-    assert raw_params.offset is not None  # nosec
+    assert page_params.limit is not None  # nosec
+    assert page_params.offset is not None  # nosec
     datasets, total = await pennsieve_client.list_datasets(
         api_key=x_datcore_api_key,
         api_secret=x_datcore_api_secret,
-        limit=raw_params.limit,
-        offset=raw_params.offset,
+        limit=page_params.limit,
+        offset=page_params.offset,
     )
-    return create_page(datasets, total=total, params=params)  # type: ignore[return-value]
+    return create_page(datasets, total=total, params=page_params)
 
 
 @router.get(
@@ -116,21 +115,20 @@ async def list_dataset_top_level_files(
     x_datcore_api_key: Annotated[str, Header(..., description="Datcore API Key")],
     x_datcore_api_secret: Annotated[str, Header(..., description="Datcore API Secret")],
     pennsieve_client: Annotated[PennsieveApiClient, Depends(get_pennsieve_api_client)],
-    params: Annotated[_CustomizedPageParams, Depends()],
+    page_params: Annotated[_CustomizedPageParams, Depends()],
 ):
     assert request  # nosec
-    raw_params: RawParams = resolve_params(params).to_raw_params()
 
-    assert raw_params.limit is not None  # nosec
-    assert raw_params.offset is not None  # nosec
+    assert page_params.limit is not None  # nosec
+    assert page_params.offset is not None  # nosec
     file_metas, total = await pennsieve_client.list_packages_in_dataset(
         api_key=x_datcore_api_key,
         api_secret=x_datcore_api_secret,
         dataset_id=dataset_id,
-        limit=raw_params.limit,
-        offset=raw_params.offset,
+        limit=page_params.limit,
+        offset=page_params.offset,
     )
-    return create_page(file_metas, total=total, params=params)  # type: ignore[return-value]
+    return create_page(file_metas, total=total, params=page_params)
 
 
 @router.get(
@@ -151,21 +149,20 @@ async def list_dataset_collection_files(
     x_datcore_api_key: Annotated[str, Header(..., description="Datcore API Key")],
     x_datcore_api_secret: Annotated[str, Header(..., description="Datcore API Secret")],
     pennsieve_client: Annotated[PennsieveApiClient, Depends(get_pennsieve_api_client)],
-    params: Annotated[_CustomizedPageParams, Depends()],
+    page_params: Annotated[_CustomizedPageParams, Depends()],
 ):
     assert request  # nosec
-    raw_params: RawParams = resolve_params(params).to_raw_params()
-    assert raw_params.limit is not None  # nosec
-    assert raw_params.offset is not None  # nosec
+    assert page_params.limit is not None  # nosec
+    assert page_params.offset is not None  # nosec
     file_metas, total = await pennsieve_client.list_packages_in_collection(
         api_key=x_datcore_api_key,
         api_secret=x_datcore_api_secret,
-        limit=raw_params.limit,
-        offset=raw_params.offset,
+        limit=page_params.limit,
+        offset=page_params.offset,
         dataset_id=dataset_id,
         collection_id=collection_id,
     )
-    return create_page(file_metas, total=total, params=params)  # type: ignore[return-value]
+    return create_page(file_metas, total=total, params=page_params)
 
 
 @router.get(
