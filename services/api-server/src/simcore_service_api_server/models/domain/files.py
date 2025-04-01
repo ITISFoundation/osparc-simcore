@@ -137,10 +137,9 @@ class File(BaseModel):
             return TypeAdapter(StorageFileID).validate_python(
                 f"{program_path.project_id}/{program_path.node_id}/{program_path.workspace_path}"
             )
-        else:
-            return TypeAdapter(StorageFileID).validate_python(
-                f"api/{self.id}/{self.filename}"
-            )
+        return TypeAdapter(StorageFileID).validate_python(
+            f"api/{self.id}/{self.filename}"
+        )
 
     @property
     def quoted_storage_file_id(self) -> str:

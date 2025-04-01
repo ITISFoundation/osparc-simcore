@@ -340,8 +340,7 @@ def get_url(
             version=solver_or_program.version,
             job_id=job_id,
         )
-    else:
-        return None
+    return None
 
 
 def get_runner_url(
@@ -353,8 +352,7 @@ def get_runner_url(
             solver_key=solver_or_program.id,
             version=solver_or_program.version,
         )
-    else:
-        return None
+    return None
 
 
 def get_outputs_url(
@@ -367,8 +365,7 @@ def get_outputs_url(
             version=solver_or_program.version,
             job_id=job_id,
         )
-    else:
-        return None
+    return None
 
 
 PercentageInt: TypeAlias = Annotated[int, Field(ge=0, le=100)]
