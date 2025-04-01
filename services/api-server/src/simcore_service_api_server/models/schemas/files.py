@@ -18,7 +18,7 @@ from ..domain.files import FileName
 from ._utils import ApiServerInputSchema, ApiServerOutputSchema
 
 
-class ClientFile(ApiServerInputSchema):
+class UserFile(ApiServerInputSchema):
     """Represents a file stored on the client side"""
 
     filename: FileName = Field(..., description="File name")

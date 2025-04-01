@@ -451,13 +451,13 @@
               "schema": {
                 "anyOf": [
                   {
-                    "$ref": "#/components/schemas/ClientFileToProgramJob"
+                    "$ref": "#/components/schemas/UserFileToProgramJob"
                   },
                   {
-                    "$ref": "#/components/schemas/ClientFile"
+                    "$ref": "#/components/schemas/UserFile"
                   }
                 ],
-                "title": "User File"
+                "title": "Client File"
               }
             }
           }
@@ -6045,36 +6045,36 @@
     "schemas": {
       "Body_abort_multipart_upload_v0_files__file_id__abort_post": {
         "properties": {
-          "user_file": {
+          "client_file": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/ClientFileToProgramJob"
+                "$ref": "#/components/schemas/UserFileToProgramJob"
               },
               {
-                "$ref": "#/components/schemas/ClientFile"
+                "$ref": "#/components/schemas/UserFile"
               }
             ],
-            "title": "User File"
+            "title": "Client File"
           }
         },
         "type": "object",
         "required": [
-          "user_file"
+          "client_file"
         ],
         "title": "Body_abort_multipart_upload_v0_files__file_id__abort_post"
       },
       "Body_complete_multipart_upload_v0_files__file_id__complete_post": {
         "properties": {
-          "user_file": {
+          "client_file": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/ClientFileToProgramJob"
+                "$ref": "#/components/schemas/UserFileToProgramJob"
               },
               {
-                "$ref": "#/components/schemas/ClientFile"
+                "$ref": "#/components/schemas/UserFile"
               }
             ],
-            "title": "User File"
+            "title": "Client File"
           },
           "uploaded_parts": {
             "$ref": "#/components/schemas/FileUploadCompletionBody"
@@ -6082,7 +6082,7 @@
         },
         "type": "object",
         "required": [
-          "user_file",
+          "client_file",
           "uploaded_parts"
         ],
         "title": "Body_complete_multipart_upload_v0_files__file_id__complete_post"
@@ -6100,93 +6100,6 @@
           "file"
         ],
         "title": "Body_upload_file_v0_files_content_put"
-      },
-      "ClientFile": {
-        "properties": {
-          "filename": {
-            "type": "string",
-            "title": "Filename",
-            "description": "File name"
-          },
-          "filesize": {
-            "type": "integer",
-            "minimum": 0,
-            "title": "Filesize",
-            "description": "File size in bytes"
-          },
-          "sha256_checksum": {
-            "type": "string",
-            "pattern": "^[a-fA-F0-9]{64}$",
-            "title": "Sha256 Checksum",
-            "description": "SHA256 checksum"
-          }
-        },
-        "type": "object",
-        "required": [
-          "filename",
-          "filesize",
-          "sha256_checksum"
-        ],
-        "title": "ClientFile",
-        "description": "Represents a file stored on the client side"
-      },
-      "ClientFileToProgramJob": {
-        "properties": {
-          "filename": {
-            "type": "string",
-            "pattern": ".+",
-            "title": "Filename",
-            "description": "File name"
-          },
-          "filesize": {
-            "type": "integer",
-            "minimum": 0,
-            "title": "Filesize",
-            "description": "File size in bytes"
-          },
-          "sha256_checksum": {
-            "type": "string",
-            "pattern": "^[a-fA-F0-9]{64}$",
-            "title": "Sha256 Checksum",
-            "description": "SHA256 checksum"
-          },
-          "program_key": {
-            "type": "string",
-            "pattern": "^simcore/services/dynamic/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
-            "title": "Program Key",
-            "description": "Program identifier"
-          },
-          "program_version": {
-            "type": "string",
-            "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
-            "title": "Program Version",
-            "description": "Program version"
-          },
-          "job_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Job Id",
-            "description": "Job identifier"
-          },
-          "workspace_path": {
-            "type": "string",
-            "pattern": "^workspace/.*",
-            "format": "path",
-            "title": "Workspace Path",
-            "description": "The file's relative path within the job's workspace directory. E.g. 'workspace/myfile.txt'"
-          }
-        },
-        "type": "object",
-        "required": [
-          "filename",
-          "filesize",
-          "sha256_checksum",
-          "program_key",
-          "program_version",
-          "job_id",
-          "workspace_path"
-        ],
-        "title": "ClientFileToProgramJob"
       },
       "ClientFileUploadData": {
         "properties": {
@@ -8185,6 +8098,93 @@
           "e_tag"
         ],
         "title": "UploadedPart"
+      },
+      "UserFile": {
+        "properties": {
+          "filename": {
+            "type": "string",
+            "title": "Filename",
+            "description": "File name"
+          },
+          "filesize": {
+            "type": "integer",
+            "minimum": 0,
+            "title": "Filesize",
+            "description": "File size in bytes"
+          },
+          "sha256_checksum": {
+            "type": "string",
+            "pattern": "^[a-fA-F0-9]{64}$",
+            "title": "Sha256 Checksum",
+            "description": "SHA256 checksum"
+          }
+        },
+        "type": "object",
+        "required": [
+          "filename",
+          "filesize",
+          "sha256_checksum"
+        ],
+        "title": "UserFile",
+        "description": "Represents a file stored on the client side"
+      },
+      "UserFileToProgramJob": {
+        "properties": {
+          "filename": {
+            "type": "string",
+            "pattern": ".+",
+            "title": "Filename",
+            "description": "File name"
+          },
+          "filesize": {
+            "type": "integer",
+            "minimum": 0,
+            "title": "Filesize",
+            "description": "File size in bytes"
+          },
+          "sha256_checksum": {
+            "type": "string",
+            "pattern": "^[a-fA-F0-9]{64}$",
+            "title": "Sha256 Checksum",
+            "description": "SHA256 checksum"
+          },
+          "program_key": {
+            "type": "string",
+            "pattern": "^simcore/services/dynamic/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
+            "title": "Program Key",
+            "description": "Program identifier"
+          },
+          "program_version": {
+            "type": "string",
+            "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+            "title": "Program Version",
+            "description": "Program version"
+          },
+          "job_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Job Id",
+            "description": "Job identifier"
+          },
+          "workspace_path": {
+            "type": "string",
+            "pattern": "^workspace/.*",
+            "format": "path",
+            "title": "Workspace Path",
+            "description": "The file's relative path within the job's workspace directory. E.g. 'workspace/myfile.txt'"
+          }
+        },
+        "type": "object",
+        "required": [
+          "filename",
+          "filesize",
+          "sha256_checksum",
+          "program_key",
+          "program_version",
+          "job_id",
+          "workspace_path"
+        ],
+        "title": "UserFileToProgramJob"
       },
       "UserRoleEnum": {
         "type": "string",

@@ -30,7 +30,7 @@ from pydantic import (
 from servicelib.logging_utils import LogLevelInt, LogMessageStr
 from starlette.datastructures import Headers
 
-from ...models.schemas.files import ClientFile, File
+from ...models.schemas.files import File, UserFile
 from .._utils_pydantic import UriSchema
 from ..api_resources import (
     RelativeResourceName,
@@ -39,7 +39,7 @@ from ..api_resources import (
 )
 from ..domain.files import File as DomainFile
 from ..domain.files import FileInProgramJobData
-from ..schemas.files import ClientFile
+from ..schemas.files import UserFile
 from ._utils import ApiServerInputSchema
 
 # JOB SUB-RESOURCES  ----------
@@ -73,7 +73,7 @@ def _compute_keyword_arguments_checksum(kwargs: KeywordArguments):
     return hashlib.sha256(_dump_str.encode("utf-8")).hexdigest()
 
 
-class ClientFileToProgramJob(ApiServerInputSchema):
+class UserFileToProgramJob(ApiServerInputSchema):
     filename: FileName = Field(..., description="File name")
     filesize: NonNegativeInt = Field(..., description="File size in bytes")
     sha256_checksum: SHA256Str = Field(..., description="SHA256 checksum")
@@ -106,8 +106,8 @@ class ClientFileToProgramJob(ApiServerInputSchema):
         )
 
 
-assert set(ClientFile.model_fields.keys()).issubset(
-    set(ClientFileToProgramJob.model_fields.keys())
+assert set(UserFile.model_fields.keys()).issubset(
+    set(UserFileToProgramJob.model_fields.keys())
 )  # nosec
 
 
