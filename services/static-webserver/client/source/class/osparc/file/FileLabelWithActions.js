@@ -191,7 +191,7 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
       if (toBeDeleted.length === 0) {
         return;
       }
-      if (toBeDeleted[0].getLocation() !== 0) {
+      if (toBeDeleted[0].getLocation() != 0) {
         osparc.FlashMessenger.logAs(this.tr("You can only delete files in the local storage"), "WARNING");
         return;
       }
