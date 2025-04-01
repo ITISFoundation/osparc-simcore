@@ -8,13 +8,25 @@ from collections.abc import Generator
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from enum import Enum, unique
+from pathlib import Path
 from typing import Any, Final
 
 import pytest
 from playwright._impl._sync_base import EventContextManager
-from playwright.sync_api import APIRequestContext, FrameLocator, Locator, Page, Request
+from playwright.sync_api import (
+    APIRequestContext,
+)
+from playwright.sync_api import Error as PlaywrightError
+from playwright.sync_api import (
+    FrameLocator,
+    Locator,
+    Page,
+    Request,
+)
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
-from playwright.sync_api import WebSocket
+from playwright.sync_api import (
+    WebSocket,
+)
 from pydantic import AnyUrl
 
 from .logging_tools import log_context
@@ -111,6 +123,9 @@ class AutoRegisteredUser:
 class SocketIOEvent:
     name: str
     obj: dict[str, Any]
+
+    def to_json(self) -> str:
+        return json.dumps({"name": self.name, "obj": self.obj})
 
 
 SOCKETIO_MESSAGE_PREFIX: Final[str] = "42"
@@ -325,20 +340,20 @@ class SocketIONodeProgressCompleteWaiter:
     product_url: AnyUrl
     api_request_context: APIRequestContext
     is_service_legacy: bool
+    assertion_output_folder: Path
     _current_progress: dict[NodeProgressType, float] = field(
         default_factory=defaultdict
     )
     _last_poll_timestamp: datetime = field(default_factory=lambda: datetime.now(tz=UTC))
-    _number_of_messages_received: int = 0
+    _received_messages: list[SocketIOEvent] = field(default_factory=list)
     _service_ready: bool = False
 
     def __call__(self, message: str) -> bool:
         # socket.io encodes messages like so
         # https://stackoverflow.com/questions/24564877/what-do-these-numbers-mean-in-socket-io-payload
         if message.startswith(SOCKETIO_MESSAGE_PREFIX):
-            self._number_of_messages_received += 1
             decoded_message = decode_socketio_42_message(message)
-            self.logger.info("Received message: %s", decoded_message.name)
+            self._received_messages.append(decoded_message)
             if (
                 (decoded_message.name == _OSparcMessages.SERVICE_STATUS.value)
                 and (decoded_message.obj["service_uuid"] == self.node_id)
@@ -392,8 +407,12 @@ class SocketIONodeProgressCompleteWaiter:
                 url = (
                     f"https://{self.node_id}.services.{self.get_partial_product_url()}"
                 )
-            with contextlib.suppress(PlaywrightTimeoutError, TimeoutError):
+            response = None
+            with contextlib.suppress(
+                PlaywrightTimeoutError, TimeoutError, PlaywrightError
+            ):
                 response = self.api_request_context.get(url, timeout=5000)
+            if response:
                 self.logger.log(
                     (
                         logging.ERROR
@@ -418,11 +437,11 @@ class SocketIONodeProgressCompleteWaiter:
                         )
                     self._service_ready = True
                     return True
-                self._last_poll_timestamp = datetime.now(UTC)
+            self._last_poll_timestamp = datetime.now(UTC)
 
         return False
 
-    def got_expected_node_progress_types(self):
+    def got_expected_node_progress_types(self) -> bool:
         return all(
             progress_type in self._current_progress
             for progress_type in NodeProgressType.required_types_for_started_service()
@@ -431,12 +450,28 @@ class SocketIONodeProgressCompleteWaiter:
     def get_current_progress(self):
         return self._current_progress.values()
 
-    def get_partial_product_url(self):
+    def get_partial_product_url(self) -> str:
         return f"{self.product_url}".split("//")[1]
 
     @property
-    def is_service_ready(self) -> bool:
-        return self._service_ready
+    def number_received_messages(self) -> int:
+        return len(self._received_messages)
+
+    def assert_service_ready(self) -> None:
+        if not self._service_ready:
+            with self.assertion_output_folder.joinpath("websocket.json").open("w") as f:
+                f.writelines("[")
+                f.writelines(
+                    f"{msg.to_json()}," for msg in self._received_messages[:-1]
+                )
+                f.writelines(
+                    f"{self._received_messages[-1].to_json()}"
+                )  # no comma for last element
+                f.writelines("]")
+        assert self._service_ready, (
+            f"the service failed and received {self.number_received_messages} websocket messages while waiting!"
+            "\nTIP: check websocket.log for detailed information in the test-results folder!"
+        )
 
 
 _FAIL_FAST_COMPUTATIONAL_STATES: Final[tuple[RunningState, ...]] = (
@@ -510,6 +545,7 @@ def expected_service_running(
     press_start_button: bool,
     product_url: AnyUrl,
     is_service_legacy: bool,
+    assertion_output_folder: Path,
 ) -> Generator[ServiceRunning, None, None]:
     with log_context(
         logging.INFO, msg=f"Waiting for node to run. Timeout: {timeout}"
@@ -520,6 +556,7 @@ def expected_service_running(
             product_url=product_url,
             api_request_context=page.request,
             is_service_legacy=is_service_legacy,
+            assertion_output_folder=assertion_output_folder,
         )
         service_running = ServiceRunning(iframe_locator=None)
 
@@ -528,7 +565,7 @@ def expected_service_running(
                 _trigger_service_start(page, node_id)
 
             yield service_running
-    assert waiter.is_service_ready
+    waiter.assert_service_ready()
     service_running.iframe_locator = page.frame_locator(
         f'[osparc-test-id="iframe_{node_id}"]'
     )
@@ -543,6 +580,7 @@ def wait_for_service_running(
     press_start_button: bool,
     product_url: AnyUrl,
     is_service_legacy: bool,
+    assertion_output_folder: Path,
 ) -> FrameLocator:
     """NOTE: if the service was already started this will not work as some of the required websocket events will not be emitted again
     In which case this will need further adjutment"""
@@ -556,11 +594,13 @@ def wait_for_service_running(
             product_url=product_url,
             api_request_context=page.request,
             is_service_legacy=is_service_legacy,
+            assertion_output_folder=assertion_output_folder,
         )
         with websocket.expect_event("framereceived", waiter, timeout=timeout):
             if press_start_button:
                 _trigger_service_start(page, node_id)
-        assert waiter.is_service_ready
+
+        waiter.assert_service_ready()
     return page.frame_locator(f'[osparc-test-id="iframe_{node_id}"]')
 
 

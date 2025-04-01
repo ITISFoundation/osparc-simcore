@@ -14,6 +14,7 @@ import re
 import urllib.parse
 from collections.abc import Callable, Iterator
 from contextlib import ExitStack
+from pathlib import Path
 from typing import Any, Final
 
 import arrow
@@ -794,3 +795,10 @@ def start_and_stop_pipeline(
             logging.INFO, f"Stop computation with {pipeline_id=} in {product_url=}"
         ):
             api_request_context.post(f"{product_url}v0/computations/{pipeline_id}:stop")
+
+
+@pytest.fixture
+def playwright_test_results_dir() -> Path:
+    results_dir = Path.cwd() / "test-results"
+    results_dir.mkdir(parents=True, exist_ok=True)
+    return results_dir
