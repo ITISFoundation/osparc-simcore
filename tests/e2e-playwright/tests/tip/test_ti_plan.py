@@ -11,6 +11,7 @@ import logging
 import re
 from collections.abc import Callable
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, Final
 
 from playwright.sync_api import Page, WebSocket
@@ -96,6 +97,7 @@ def test_classic_ti_plan(  # noqa: PLR0915
     create_tip_plan_from_dashboard: Callable[[str], dict[str, Any]],
     product_url: AnyUrl,
     is_service_legacy: bool,
+    playwright_test_results_dir: Path,
 ):
     with log_context(logging.INFO, "Checking 'Access TIP' teaser"):
         # click to open and expand
@@ -147,6 +149,7 @@ def test_classic_ti_plan(  # noqa: PLR0915
             press_start_button=False,
             product_url=product_url,
             is_service_legacy=is_service_legacy,
+            assertion_output_folder=playwright_test_results_dir,
         )
         # NOTE: Sometimes this iframe flicks and shows a white page. This wait will avoid it
         page.wait_for_timeout(_ELECTRODE_SELECTOR_FLICKERING_WAIT_TIME)
@@ -212,6 +215,7 @@ def test_classic_ti_plan(  # noqa: PLR0915
                 press_start_button=False,
                 product_url=product_url,
                 is_service_legacy=is_service_legacy,
+                assertion_output_folder=playwright_test_results_dir,
             ) as service_running:
                 app_mode_trigger_next_app(page)
             ti_iframe = service_running.iframe_locator
@@ -326,6 +330,7 @@ def test_classic_ti_plan(  # noqa: PLR0915
                 press_start_button=False,
                 product_url=product_url,
                 is_service_legacy=is_service_legacy,
+                assertion_output_folder=playwright_test_results_dir,
             ) as service_running:
                 app_mode_trigger_next_app(page)
             s4l_postpro_iframe = service_running.iframe_locator
