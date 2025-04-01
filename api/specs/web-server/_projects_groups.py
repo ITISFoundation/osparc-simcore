@@ -13,8 +13,10 @@ from simcore_service_webserver.projects._controller._rest_schemas import (
     ProjectPathParams,
 )
 from simcore_service_webserver.projects._controller.groups_rest import (
+    ProjectShareAccepted,
     _ProjectsGroupsBodyParams,
     _ProjectsGroupsPathParams,
+    _ProjectShare,
 )
 from simcore_service_webserver.projects._groups_service import ProjectGroupGet
 
@@ -26,12 +28,17 @@ router = APIRouter(
 
 @router.post(
     "/projects/{project_id}:share",
-    response_model=Envelope[ProjectGroupGet],
-    status_code=status.HTTP_204_NO_CONTENT,
+    response_model=Envelope[ProjectShareAccepted],
+    status_code=status.HTTP_202_ACCEPTED,
+    responses={
+        status.HTTP_202_ACCEPTED: {
+            "description": "The request to share the project has been accepted, but the actual sharing process has to be confirmd."
+        }
+    },
 )
 async def share_project(
     _path: Annotated[ProjectPathParams, Depends()],
-    _body: _ProjectsGroupsBodyParams,
+    _body: _ProjectShare,
 ): ...
 
 

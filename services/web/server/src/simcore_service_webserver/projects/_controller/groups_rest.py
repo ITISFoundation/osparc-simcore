@@ -1,17 +1,21 @@
 import logging
 
 from aiohttp import web
-from models_library.api_schemas_webserver._base import InputSchema
+from models_library.api_schemas_webserver.groups import (
+    ProjectShare,
+    ProjectShareAccepted,
+)
 from models_library.basic_types import IDStr
 from models_library.groups import GroupID
 from models_library.projects import ProjectID
-from pydantic import BaseModel, ConfigDict, EmailStr, HttpUrl
+from pydantic import BaseModel, ConfigDict
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
 )
 from servicelib.logging_utils import log_context
+from simcore_service_webserver.login._login_service import envelope_response
 
 from ..._meta import api_version_prefix as VTAG
 from ...application_settings_utils import requires_dev_feature_enabled
@@ -30,18 +34,6 @@ _logger = logging.getLogger(__name__)
 routes = web.RouteTableDef()
 
 
-class _ProjectShare(InputSchema):
-    # TODO: move to models_library.api_schemas_webserver.groups together with the rest
-    sharee_email: EmailStr
-
-    # sharing access
-    read: bool
-    write: bool
-    delete: bool
-
-    model_config = ConfigDict(extra="forbid")
-
-
 @routes.post(f"/{VTAG}/projects/{{project_id}}:share", name="share_project")
 @requires_dev_feature_enabled
 @login_required
@@ -50,7 +42,7 @@ class _ProjectShare(InputSchema):
 async def share_project(request: web.Request):
     req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
-    body_params = await parse_request_body_as(_ProjectShare, request)
+    body_params = await parse_request_body_as(ProjectShare, request)
 
     with log_context(
         _logger,
@@ -79,15 +71,16 @@ async def share_project(request: web.Request):
             request, code=confirmation_code
         )
 
-        assert HttpUrl(confirmation_link)  # nosec
-
         _logger.debug(
             "Send email with confirmation link %s to %s ",
             confirmation_link,
             body_params.sharee_email,
         )
 
-        return web.json_response(status=status.HTTP_204_NO_CONTENT)
+        return envelope_response(
+            data=ProjectShareAccepted(confirmation_link=confirmation_link),  # type: ignore
+            status=status.HTTP_202_ACCEPTED,
+        )
 
 
 class _ProjectsGroupsPathParams(BaseModel):

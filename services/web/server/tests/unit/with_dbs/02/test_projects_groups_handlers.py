@@ -276,7 +276,10 @@ async def test_share_project(
             "delete": False,
         },
     )
-    await assert_status(resp, status.HTTP_204_NO_CONTENT)
+    data, error = await assert_status(resp, status.HTTP_202_ACCEPTED)
+    assert data["shareeEmail"] == "sharee@email.com"
+    assert data["confirmationLink"]
+    assert not error
 
     # Verify that only logged_user["primary_gid"] has access to the project
     url = client.app.router["list_project_groups"].url_for(
