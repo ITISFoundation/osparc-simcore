@@ -139,14 +139,36 @@ qx.Class.define("osparc.file.TreeFolderView", {
       }, this);
     },
 
-    openPath: function(path) {
+    openPath: async function(pathParts) {
+      console.log("openPath", pathParts);
       const foldersTree = this.getChildControl("folder-tree");
       const folderViewer = this.getChildControl("folder-viewer");
+
+      const locationId = 0;
       let found = false;
-      while (!found && path.length) {
-        found = foldersTree.findItemId(path.join("/"));
+      for (let i=1; i<=pathParts.length; i++) {
+        try {
+          let path = pathParts.slice(0, i);
+          path = path.join("/");
+          console.log("recursive load", path);
+          found = await foldersTree.requestPathItems(locationId, path);
+          foldersTree.openNodeAndParents(found);
+          console.log("found", found);
+        } catch (err) {
+          console.error(err);
+        }
+      }
+      if (found) {
+        foldersTree.setSelection(new qx.data.Array([found]));
+        foldersTree.fireEvent("selectionChanged");
+      } else {
+        folderViewer.resetFolder();
+      }
+      /*
+      while (!found && pathParts.length) {
+        found = foldersTree.findItemId(pathParts.join("/"));
         // look for next parent
-        path.pop();
+        pathParts.pop();
       }
       if (found) {
         foldersTree.openNodeAndParents(found);
@@ -155,6 +177,7 @@ qx.Class.define("osparc.file.TreeFolderView", {
       } else {
         folderViewer.resetFolder();
       }
+      */
     },
 
     requestSize: function(pathId) {
