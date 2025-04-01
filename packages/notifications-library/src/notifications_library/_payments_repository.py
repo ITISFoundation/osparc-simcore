@@ -10,6 +10,9 @@ from ._repository import _BaseRepo
 
 
 class PaymentsDataRepo(_BaseRepo):
+    # NOSONAR
+    # NOTE: this is for the moment duplicated from the payments until completed
+    # then it will be replaced
     async def get_on_payed_data(self, user_id: UserID, payment_id: PaymentID):
         """Retrieves payment data for the templates on the `on_payed` event"""
         query = (
