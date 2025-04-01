@@ -182,10 +182,11 @@ def _create_data_response_from_async_job(
     request: web.Request,
     async_job: AsyncJobGet,
 ) -> web.Response:
+    async_job_id = f"{async_job.job_id}"
     return create_data_response(
         TaskGet(
-            task_id=f"{async_job.job_id}",
-            task_name=f"{async_job.job_id}",
+            task_id=async_job_id,
+            task_name=async_job_id,
             status_href=f"{request.url.with_path(str(request.app.router['get_async_job_status'].url_for(task_id=async_job_id)))}",
             abort_href=f"{request.url.with_path(str(request.app.router['abort_async_job'].url_for(task_id=async_job_id)))}",
             result_href=f"{request.url.with_path(str(request.app.router['get_async_job_result'].url_for(task_id=async_job_id)))}",
