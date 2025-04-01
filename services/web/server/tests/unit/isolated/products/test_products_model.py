@@ -60,6 +60,10 @@ def test_product_to_static():
             "url": "https://acme.com",
             "license_url": "https://acme.com/license",
             "invitation_form": True,
+            "ui": {
+                "logo_url": "https://acme.com/logo",
+                "strong_color": "#123456",
+            },
         },
         "issues": [
             {
@@ -106,7 +110,7 @@ def test_product_host_regex_with_spaces():
 
 
 def test_safe_load_empty_blanks_on_string_cols_from_db(
-    fake_product_from_db: dict[str, Any]
+    fake_product_from_db: dict[str, Any],
 ):
     nullable_strings_column_names = [
         c.name

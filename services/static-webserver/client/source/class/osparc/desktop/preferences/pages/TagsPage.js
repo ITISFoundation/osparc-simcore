@@ -24,8 +24,6 @@ qx.Class.define("osparc.desktop.preferences.pages.TagsPage", {
     const intro = osparc.ui.window.TabbedView.createHelpLabel(msg);
     this._add(intro);
 
-    this._add(new qx.ui.core.Spacer(null, 10));
-
     this.__renderLayout();
   },
 
