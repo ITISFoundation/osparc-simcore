@@ -151,27 +151,48 @@ async def get_available_disk_space(
 async def get_dask_ip(
     state: AppState, instance: Instance, username: str, private_key_path: Path
 ) -> str:
-
     try:
         async with ssh_instance(
             instance, state=state, username=username, private_key_path=private_key_path
         ) as ssh_client:
-            dask_ip_command = "docker inspect -f '{{.NetworkSettings.Networks.dask_stack_cluster.IPAddress}}' $(docker ps --filter 'name=dask-sidecar|dask-scheduler' --format '{{.ID}}')"
-
-            # Run the command on the remote machine
-            _, stdout, stderr = ssh_client.exec_command(dask_ip_command)
+            # First, get the container IDs for dask-sidecar or dask-scheduler
+            list_containers_command = "docker ps --filter 'name=dask-sidecar|dask-scheduler' --format '{{.ID}}'"
+            _, stdout, stderr = ssh_client.exec_command(list_containers_command)
+            container_ids = stdout.read().decode("utf-8").strip()
             exit_status = stdout.channel.recv_exit_status()
-            if exit_status != 0:
+
+            if exit_status != 0 or not container_ids:
                 error_message = stderr.read().decode().strip()
-                _logger.error(
-                    "Inspecting dask IP Command failed with exit status %s: %s",
+                _logger.warning(
+                    "No matching containers found or command failed with exit status %s: %s",
                     exit_status,
                     error_message,
                 )
-                return "Not Found / Drained / Not Ready"
+                return "No Containers Found / Not Ready"
 
-            # Available disk space will be captured here
-            return stdout.read().decode("utf-8").strip()
+            # If containers are found, inspect their IP addresses
+            dask_ip_command = (
+                "docker inspect -f '{{.NetworkSettings.Networks.dask_stack_cluster.IPAddress}}' "
+                f"{container_ids}"
+            )
+            _, stdout, stderr = ssh_client.exec_command(dask_ip_command)
+            exit_status = stdout.channel.recv_exit_status()
+
+            if exit_status != 0:
+                error_message = stderr.read().decode().strip()
+                _logger.error(
+                    "Inspecting Dask IP command failed with exit status %s: %s",
+                    exit_status,
+                    error_message,
+                )
+                return "Not docker network Found / Drained / Not Ready"
+
+            ip_address = stdout.read().decode("utf-8").strip()
+            if not ip_address:
+                _logger.error("Dask IP address not found in the output")
+                return "Not IP Found / Drained / Not Ready"
+
+            return ip_address
     except (
         paramiko.AuthenticationException,
         paramiko.SSHException,
@@ -209,7 +230,7 @@ async def list_running_dyn_services(
                         arrow.get(
                             match["created_at"],
                             "YYYY-MM-DD HH:mm:ss",
-                            tzinfo=datetime.timezone.utc,
+                            tzinfo=datetime.UTC,
                         ).datetime,
                         container,
                         (
