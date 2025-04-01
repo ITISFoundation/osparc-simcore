@@ -98,6 +98,7 @@ class _OSparcMessages(str, Enum):
     SERVICE_DISK_USAGE = "serviceDiskUsage"
     WALLET_OSPARC_CREDITS_UPDATED = "walletOsparcCreditsUpdated"
     LOGGER = "logger"
+    SERVICE_STATUS = "serviceStatus"
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -222,6 +223,18 @@ class NodeProgressEvent:
     total_progress: float
 
 
+class ServiceStatus(str, Enum):
+    IDLE = "idle"
+    RUNNING = "running"
+    FAILED = "failed"
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class NodeServicestatusEvent:
+    node_id: str
+    status: ServiceStatus
+
+
 def retrieve_node_progress_from_decoded_message(
     event: SocketIOEvent,
 ) -> NodeProgressEvent:
@@ -233,6 +246,18 @@ def retrieve_node_progress_from_decoded_message(
         progress_type=NodeProgressType(event.obj["progress_type"]),
         current_progress=float(event.obj["progress_report"]["actual_value"]),
         total_progress=float(event.obj["progress_report"]["total"]),
+    )
+
+
+def retrieve_node_service_status_from_decoded_message(
+    event: SocketIOEvent,
+) -> NodeServicestatusEvent:
+    assert event.name == _OSparcMessages.SERVICE_STATUS.value
+    assert "progress_type" in event.obj
+    assert "progress_report" in event.obj
+    return NodeServicestatusEvent(
+        node_id=event.obj["service_uuid"],
+        status=ServiceStatus(event.obj["service_state"]),
     )
 
 
@@ -290,6 +315,9 @@ class SocketIOOsparcMessagePrinter:
                 print("WS Message:", decoded_message.name, decoded_message.obj)
 
 
+_FAIL_FAST_DYNAMIC_SERVICE_STATES: Final[tuple[str, ...]] = ("idle", "failed")
+
+
 @dataclass
 class SocketIONodeProgressCompleteWaiter:
     node_id: str
@@ -301,13 +329,30 @@ class SocketIONodeProgressCompleteWaiter:
         default_factory=defaultdict
     )
     _last_poll_timestamp: datetime = field(default_factory=lambda: datetime.now(tz=UTC))
+    _number_of_messages_received: int = 0
+    _service_ready: bool = False
 
     def __call__(self, message: str) -> bool:
         # socket.io encodes messages like so
         # https://stackoverflow.com/questions/24564877/what-do-these-numbers-mean-in-socket-io-payload
         if message.startswith(SOCKETIO_MESSAGE_PREFIX):
+            self._number_of_messages_received += 1
             decoded_message = decode_socketio_42_message(message)
             self.logger.info("Received message: %s", decoded_message.name)
+            if (
+                (decoded_message.name == _OSparcMessages.SERVICE_STATUS.value)
+                and (decoded_message.obj["service_uuid"] == self.node_id)
+                and (
+                    decoded_message.obj["service_state"]
+                    in _FAIL_FAST_DYNAMIC_SERVICE_STATES
+                )
+            ):
+                self.logger.error(
+                    "node %s failed with state %s, failing fast",
+                    self.node_id,
+                    decoded_message.obj["service_state"],
+                )
+                return True
             if decoded_message.name == _OSparcMessages.NODE_PROGRESS.value:
                 node_progress_event = retrieve_node_progress_from_decoded_message(
                     decoded_message
@@ -332,11 +377,11 @@ class SocketIONodeProgressCompleteWaiter:
                             len(NodeProgressType.required_types_for_started_service()),
                             f"{json.dumps({k: round(v, 2) for k, v in self._current_progress.items()})}",
                         )
-
-                return self.got_expected_node_progress_types() and all(
+                self._service_ready = self.got_expected_node_progress_types() and all(
                     round(progress, 1) == 1.0
                     for progress in self._current_progress.values()
                 )
+                return self._service_ready
 
         _current_timestamp = datetime.now(UTC)
         if _current_timestamp - self._last_poll_timestamp > timedelta(seconds=5):
@@ -349,11 +394,13 @@ class SocketIONodeProgressCompleteWaiter:
                 )
             with contextlib.suppress(PlaywrightTimeoutError, TimeoutError):
                 response = self.api_request_context.get(url, timeout=5000)
-                level = logging.DEBUG
-                if (response.status >= 400) and (response.status not in (502, 503)):
-                    level = logging.ERROR
                 self.logger.log(
-                    level,
+                    (
+                        logging.ERROR
+                        if (response.status >= 400)
+                        and (response.status not in (502, 503))
+                        else logging.DEBUG
+                    ),
                     "Querying service endpoint in case we missed some websocket messages. Url: %s Response: '%s' TIP: %s",
                     url,
                     f"{response.status}: {response.text()}",
@@ -369,6 +416,7 @@ class SocketIONodeProgressCompleteWaiter:
                             "⚠️ Progress bar didn't receive 100 percent but service is already running: %s. TIP: we missed some websocket messages! ⚠️",  # https://github.com/ITISFoundation/osparc-simcore/issues/6449
                             self.get_current_progress(),
                         )
+                    self._service_ready = True
                     return True
                 self._last_poll_timestamp = datetime.now(UTC)
 
@@ -386,8 +434,12 @@ class SocketIONodeProgressCompleteWaiter:
     def get_partial_product_url(self):
         return f"{self.product_url}".split("//")[1]
 
+    @property
+    def is_service_ready(self) -> bool:
+        return self._service_ready
 
-_FAIL_FAST_STATES: Final[tuple[RunningState, ...]] = (
+
+_FAIL_FAST_COMPUTATIONAL_STATES: Final[tuple[RunningState, ...]] = (
     RunningState.FAILED,
     RunningState.ABORTED,
 )
@@ -410,7 +462,7 @@ def wait_for_pipeline_state(
             ),
         ):
             waiter = SocketIOProjectStateUpdatedWaiter(
-                expected_states=expected_states + _FAIL_FAST_STATES
+                expected_states=expected_states + _FAIL_FAST_COMPUTATIONAL_STATES
             )
             with websocket.expect_event(
                 "framereceived", waiter, timeout=timeout_ms
@@ -419,7 +471,7 @@ def wait_for_pipeline_state(
                     decode_socketio_42_message(event.value)
                 )
             if (
-                current_state in _FAIL_FAST_STATES
+                current_state in _FAIL_FAST_COMPUTATIONAL_STATES
                 and current_state not in expected_states
             ):
                 pytest.fail(
@@ -476,7 +528,7 @@ def expected_service_running(
                 _trigger_service_start(page, node_id)
 
             yield service_running
-
+    assert waiter.is_service_ready
     service_running.iframe_locator = page.frame_locator(
         f'[osparc-test-id="iframe_{node_id}"]'
     )
@@ -508,6 +560,7 @@ def wait_for_service_running(
         with websocket.expect_event("framereceived", waiter, timeout=timeout):
             if press_start_button:
                 _trigger_service_start(page, node_id)
+        assert waiter.is_service_ready
     return page.frame_locator(f'[osparc-test-id="iframe_{node_id}"]')
 
 
