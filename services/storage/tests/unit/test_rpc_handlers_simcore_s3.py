@@ -529,7 +529,7 @@ async def _request_start_data_export(
         async for async_job_result in wait_and_get_result(
             rpc_client,
             rpc_namespace=STORAGE_RPC_NAMESPACE,
-            method_name=copy_folders_from_project.__name__,
+            method_name=start_data_export.__name__,
             job_id=async_job_get.job_id,
             job_id_data=async_job_name,
             client_timeout=client_timeout,
@@ -634,3 +634,23 @@ async def test_start_data_export(
             ),
         ),
     ]
+
+
+async def test_start_data_export_access_error(
+    initialized_app: FastAPI,
+    short_dsm_cleaner_interval: int,
+    storage_rabbitmq_rpc_client: RabbitMQRPCClient,
+    user_id: UserID,
+    product_name: ProductName,
+    faker: Faker,
+):
+
+    await _request_start_data_export(
+        storage_rabbitmq_rpc_client,
+        user_id,
+        product_name,
+        paths_to_export=[f"{faker.uuid4()}/{faker.uuid4()}/{faker.file_name()}"],
+        client_timeout=datetime.timedelta(seconds=10),
+    )
+    # STATUS does nto report failuire WTF
+    # STATUS i do not see the retry attempts, soemthing should be done here

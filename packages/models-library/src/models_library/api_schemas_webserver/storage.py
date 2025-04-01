@@ -3,7 +3,6 @@ from typing import Annotated
 
 from pydantic import BaseModel, Field
 
-from ..api_schemas_storage.data_export_async_jobs import DataExportTaskStartInput
 from ..api_schemas_storage.storage_schemas import (
     DEFAULT_NUMBER_OF_PATHS_PER_PAGE,
     MAX_NUMBER_OF_PATHS_PER_PAGE,
@@ -38,9 +37,3 @@ class ListPathsQueryParams(InputSchema, CursorQueryParameters):
 
 class DataExportPost(InputSchema):
     paths: list[StorageFileID]
-
-    def to_rpc_schema(self, location_id: LocationID) -> DataExportTaskStartInput:
-        return DataExportTaskStartInput(
-            file_and_folder_ids=self.paths,
-            location_id=location_id,
-        )
