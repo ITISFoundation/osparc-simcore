@@ -177,6 +177,7 @@ def cancel_jobs(
 def trigger_cluster_termination(
     user_id: Annotated[int, typer.Option(help="the user ID")],
     wallet_id: Annotated[int, typer.Option(help="the wallet ID")],
+    force: Annotated[bool, typer.Option(help="will not ask for confirmation")] = False,
 ) -> None:
     """this will set the Heartbeat tag on the primary machine to 1 hour, thus ensuring the
     clusters-keeper will properly terminate that cluster.
@@ -185,7 +186,7 @@ def trigger_cluster_termination(
         user_id -- the user ID
         wallet_id -- the wallet ID
     """
-    asyncio.run(api.trigger_cluster_termination(state, user_id, wallet_id))
+    asyncio.run(api.trigger_cluster_termination(state, user_id, wallet_id, force=force))
 
 
 @app.command()

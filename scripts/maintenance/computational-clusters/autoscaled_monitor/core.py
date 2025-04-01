@@ -446,6 +446,7 @@ def _print_summary_as_json(
                     "user_id": cluster.primary.user_id,
                     "wallet_id": cluster.primary.wallet_id,
                     "disk_space": cluster.primary.disk_space.human_readable(),
+                    "last_heartbeat": cluster.primary.last_heartbeat.isoformat(),
                 },
                 "workers": [
                     {
@@ -561,29 +562,48 @@ async def _list_computational_clusters(
     )
 
 
-async def cancel_jobs(  # noqa: C901, PLR0912
-    state: AppState, user_id: int, wallet_id: int | None, *, force: bool
+async def _cancel_all_jobs(
+    state: AppState,
+    the_cluster: ComputationalCluster,
+    *,
+    task_to_dask_job: list[tuple[ComputationalTask | None, DaskTask | None]],
+    abort_in_db: bool,
 ) -> None:
-    # get the theory
-    computational_tasks = await db.list_computational_tasks_from_db(state, user_id)
+    rich.print("cancelling all tasks")
+    for comp_task, dask_task in task_to_dask_job:
+        if dask_task is not None and dask_task.state != "unknown":
+            await dask.trigger_job_cancellation_in_scheduler(
+                state,
+                the_cluster,
+                dask_task.job_id,
+            )
+            if comp_task is None:
+                # we need to clear it of the cluster
+                await dask.remove_job_from_scheduler(
+                    state,
+                    the_cluster,
+                    dask_task.job_id,
+                )
+        if comp_task is not None and abort_in_db:
+            await db.abort_job_in_db(state, comp_task.project_id, comp_task.node_id)
 
-    # get the reality
-    computational_clusters = await _list_computational_clusters(
-        state, user_id, wallet_id
-    )
+        rich.print("cancelled all tasks")
+
+
+async def _get_job_id_to_dask_state_from_cluster(
+    cluster: ComputationalCluster,
+) -> dict[TaskId, TaskState]:
     job_id_to_dask_state: dict[TaskId, TaskState] = {}
-    if computational_clusters:
-        assert (
-            len(computational_clusters) == 1
-        ), "too many clusters found! TIP: fix this code or something weird is playing out"
+    for job_state, job_ids in cluster.task_states_to_tasks.items():
+        for job_id in job_ids:
+            job_id_to_dask_state[job_id] = job_state
+    return job_id_to_dask_state
 
-        the_cluster = computational_clusters[0]
-        rich.print(f"{the_cluster.task_states_to_tasks=}")
 
-        for job_state, job_ids in the_cluster.task_states_to_tasks.items():
-            for job_id in job_ids:
-                job_id_to_dask_state[job_id] = job_state
-
+async def _get_db_task_to_dask_job(
+    computational_tasks: list[ComputationalTask],
+    job_id_to_dask_state: dict[TaskId, TaskState],
+) -> list[tuple[ComputationalTask | None, DaskTask | None]]:
     task_to_dask_job: list[tuple[ComputationalTask | None, DaskTask | None]] = []
     for task in computational_tasks:
         dask_task = None
@@ -596,6 +616,32 @@ async def cancel_jobs(  # noqa: C901, PLR0912
     # keep the jobs still in the cluster
     for job_id, dask_state in job_id_to_dask_state.items():
         task_to_dask_job.append((None, DaskTask(job_id=job_id, state=dask_state)))
+    return task_to_dask_job
+
+
+async def cancel_jobs(  # noqa: C901, PLR0912
+    state: AppState, user_id: int, wallet_id: int | None, *, force: bool
+) -> None:
+    # get the theory
+    computational_tasks = await db.list_computational_tasks_from_db(state, user_id)
+
+    # get the reality
+    computational_clusters = await _list_computational_clusters(
+        state, user_id, wallet_id
+    )
+
+    if computational_clusters:
+        assert (
+            len(computational_clusters) == 1
+        ), "too many clusters found! TIP: fix this code or something weird is playing out"
+
+        the_cluster = computational_clusters[0]
+        rich.print(f"{the_cluster.task_states_to_tasks=}")
+
+    job_id_to_dask_state = await _get_job_id_to_dask_state_from_cluster(the_cluster)
+    task_to_dask_job: list[tuple[ComputationalTask | None, DaskTask | None]] = (
+        await _get_db_task_to_dask_job(computational_tasks, job_id_to_dask_state)
+    )
 
     if not task_to_dask_job:
         rich.print("[red]nothing found![/red]")
@@ -611,27 +657,12 @@ async def cancel_jobs(  # noqa: C901, PLR0912
             if response == "none":
                 rich.print("[yellow]not cancelling anything[/yellow]")
             elif response == "all":
-                rich.print("cancelling all tasks")
-                for comp_task, dask_task in task_to_dask_job:
-                    if dask_task is not None and dask_task.state != "unknown":
-                        await dask.trigger_job_cancellation_in_scheduler(
-                            state,
-                            the_cluster,
-                            dask_task.job_id,
-                        )
-                        if comp_task is None:
-                            # we need to clear it of the cluster
-                            await dask.remove_job_from_scheduler(
-                                state,
-                                the_cluster,
-                                dask_task.job_id,
-                            )
-                    if comp_task is not None and force:
-                        await db.abort_job_in_db(
-                            state, comp_task.project_id, comp_task.node_id
-                        )
-
-                rich.print("cancelled all tasks")
+                await _cancel_all_jobs(
+                    state,
+                    the_cluster,
+                    task_to_dask_job=task_to_dask_job,
+                    abort_in_db=force,
+                )
             else:
                 try:
                     # Split the response and handle ranges
@@ -673,7 +704,7 @@ async def cancel_jobs(  # noqa: C901, PLR0912
 
 
 async def trigger_cluster_termination(
-    state: AppState, user_id: int, wallet_id: int
+    state: AppState, user_id: int, wallet_id: int, *, force: bool
 ) -> None:
     assert state.ec2_resource_clusters_keeper
     computational_instances = await ec2.list_computational_instances_from_ec2(
@@ -692,8 +723,20 @@ async def trigger_cluster_termination(
         state.environment,
         state.ec2_resource_clusters_keeper.meta.client.meta.region_name,
     )
-    if typer.confirm("Are you sure you want to trigger termination of that cluster?"):
+    if (force is True) or typer.confirm(
+        "Are you sure you want to trigger termination of that cluster?"
+    ):
         the_cluster = computational_clusters[0]
+
+        computational_tasks = await db.list_computational_tasks_from_db(state, user_id)
+        job_id_to_dask_state = await _get_job_id_to_dask_state_from_cluster(the_cluster)
+        task_to_dask_job: list[tuple[ComputationalTask | None, DaskTask | None]] = (
+            await _get_db_task_to_dask_job(computational_tasks, job_id_to_dask_state)
+        )
+        await _cancel_all_jobs(
+            state, the_cluster, task_to_dask_job=task_to_dask_job, abort_in_db=force
+        )
+
         new_heartbeat_tag: TagTypeDef = {
             "Key": "last_heartbeat",
             "Value": f"{arrow.utcnow().datetime - datetime.timedelta(hours=1)}",
