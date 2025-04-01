@@ -136,6 +136,10 @@ qx.Class.define("osparc.file.TreeFolderView", {
       }, this);
     },
 
+    pathsDeleted: function(paths) {
+      console.log("pathsDeleted", paths);
+    },
+
     openPath: async function(pathParts) {
       console.log("openPath", pathParts);
       const foldersTree = this.getChildControl("folder-tree");

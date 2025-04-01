@@ -54,7 +54,8 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
   },
 
   events: {
-    "fileDeleted": "qx.event.type.Data"
+    "fileDeleted": "qx.event.type.Data",
+    "pathsDeleted": "qx.event.type.Data",
   },
 
   properties: {
@@ -236,7 +237,7 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
         pollTasks.createPollingTask(fetchPromise, interval)
           .then(task => {
             task.addListener("resultReceived", e => {
-              this.fireDataEvent("fileDeleted", toBeDeleted[0]);
+              this.fireDataEvent("pathsDeleted", paths);
             });
           })
           .catch(err => osparc.FlashMessenger.logError(err, this.tr("Unsuccessful files deletion")));

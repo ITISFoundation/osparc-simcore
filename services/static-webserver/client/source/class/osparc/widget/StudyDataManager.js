@@ -97,6 +97,7 @@ qx.Class.define("osparc.widget.StudyDataManager", {
 
       const selectedFileLayout = treeFolderView.getChildControl("folder-viewer").getChildControl("selected-file-layout");
       selectedFileLayout.addListener("fileDeleted", e => this.__fileDeleted(e.getData()), this);
+      selectedFileLayout.addListener("pathsDeleted", e => treeFolderView.pathsDeleted(e.getData()), this);
     },
 
     __reloadTree: function() {
