@@ -19,7 +19,7 @@ from starlette import status
 
 
 @pytest.fixture
-def mocked_webserver_service_api(app: FastAPI):
+def mocked_webserver_rest_api(app: FastAPI):
     """Mocks some responses of web-server service"""
 
     settings: ApplicationSettings = app.state.settings
@@ -54,8 +54,8 @@ def mocked_webserver_service_api(app: FastAPI):
 async def test_get_profile(
     client: httpx.AsyncClient,
     auth: httpx.BasicAuth,
-    mocked_webserver_service_api: MockRouter,
-    mocked_rpc_webserver_service_api: dict[str, MockType],
+    mocked_webserver_rest_api: MockRouter,
+    mocked_webserver_rpc_api: dict[str, MockType],
 ):
     # needs no auth
     resp = await client.get(f"/{API_VTAG}/meta")
@@ -64,11 +64,11 @@ async def test_get_profile(
     # needs auth
     resp = await client.get(f"/{API_VTAG}/me")
     assert resp.status_code == status.HTTP_401_UNAUTHORIZED
-    assert not mocked_webserver_service_api["get_me"].called
+    assert not mocked_webserver_rest_api["get_me"].called
 
     resp = await client.get(f"/{API_VTAG}/me", auth=auth)
     assert resp.status_code == status.HTTP_200_OK
-    assert mocked_webserver_service_api["get_me"].called
+    assert mocked_webserver_rest_api["get_me"].called
 
     profile = Profile(**resp.json())
     assert profile.first_name == "James"
@@ -78,8 +78,8 @@ async def test_get_profile(
 async def test_update_profile(
     client: httpx.AsyncClient,
     auth: httpx.BasicAuth,
-    mocked_webserver_service_api: MockRouter,
-    mocked_rpc_webserver_service_api: dict[str, MockType],
+    mocked_webserver_rest_api: MockRouter,
+    mocked_webserver_rpc_api: dict[str, MockType],
 ):
     # needs auth
     resp = await client.put(
