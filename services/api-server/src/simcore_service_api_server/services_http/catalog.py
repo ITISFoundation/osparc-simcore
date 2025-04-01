@@ -5,7 +5,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from functools import partial
 from operator import attrgetter
-from typing import Final, Literal, overload
+from typing import Final, Literal, cast
 
 from fastapi import FastAPI, status
 from models_library.emails import LowerCaseEmailStr
@@ -109,26 +109,6 @@ class CatalogApi(BaseServiceClientApi):
     SEE osparc-simcore/services/catalog/openapi.json
     """
 
-    @overload
-    async def _list_services(
-        self,
-        *,
-        user_id: int,
-        product_name: str,
-        predicate: Callable[[Solver], bool] | None = None,
-        type_filter: ServiceTypes,
-    ) -> list[Solver]: ...
-
-    @overload
-    async def _list_services(
-        self,
-        *,
-        user_id: int,
-        product_name: str,
-        predicate: Callable[[Program], bool] | None = None,
-        type_filter: ServiceTypes,
-    ) -> list[Program]: ...
-
     @_exception_mapper(
         http_status_map={status.HTTP_404_NOT_FOUND: ListSolversOrStudiesError}
     )
@@ -137,9 +117,9 @@ class CatalogApi(BaseServiceClientApi):
         *,
         user_id: int,
         product_name: str,
-        predicate: Callable[[Solver | Program], bool] | None = None,
+        predicate: Callable[[Solver], bool] | Callable[[Program], bool] | None = None,
         type_filter: ServiceTypes,
-    ) -> list[Solver | Program]:
+    ) -> list[Solver] | list[Program]:
 
         response = await self.client.get(
             "/services",
@@ -156,14 +136,14 @@ class CatalogApi(BaseServiceClientApi):
             TruncatedCatalogServiceOutListAdapter,
             response,
         )
-        solvers_or_programs = []
         if type_filter == "COMPUTATIONAL":
+            solvers: list[Solver] = []
             for service in services:
                 try:
                     if service.service_type == ServiceType.COMPUTATIONAL:
                         solver = service.to_solver()
-                        if predicate is None or predicate(solver):
-                            solvers_or_programs.append(solver)
+                        if predicate is None or predicate(solver):  # type: ignore
+                            solvers.append(solver)
                 except ValidationError as err:
                     # NOTE: For the moment, this is necessary because there are no guarantees
                     #       at the image registry. Therefore we exclude and warn
@@ -173,13 +153,15 @@ class CatalogApi(BaseServiceClientApi):
                         service.model_dump_json(),
                         err,
                     )
+            return solvers
         elif type_filter == "DYNAMIC":
+            programs: list[Program] = []
             for service in services:
                 try:
                     if service.service_type == ServiceType.DYNAMIC:
                         program = service.to_program()
-                        if predicate is None or predicate(program):
-                            solvers_or_programs.append(program)
+                        if predicate is None or predicate(program):  # type: ignore
+                            programs.append(program)
                 except ValidationError as err:
                     # NOTE: For the moment, this is necessary because there are no guarantees
                     #       at the image registry. Therefore we exclude and warn
@@ -189,10 +171,9 @@ class CatalogApi(BaseServiceClientApi):
                         service.model_dump_json(),
                         err,
                     )
+            return programs
         else:
             raise ValueError(f"Invalid {type_filter=}")
-
-        return solvers_or_programs
 
     async def list_solvers(
         self,
@@ -209,7 +190,7 @@ class CatalogApi(BaseServiceClientApi):
             type_filter="COMPUTATIONAL",
         )
         assert all(isinstance(s, Solver) for s in solvers)  # nosec
-        return solvers
+        return cast(list[Solver], solvers)
 
     async def list_programs(
         self,
@@ -218,7 +199,6 @@ class CatalogApi(BaseServiceClientApi):
         product_name: str,
         predicate: Callable[[Program], bool] | None = None,
     ) -> list[Program]:
-
         programs = await self._list_services(
             user_id=user_id,
             product_name=product_name,
@@ -226,7 +206,7 @@ class CatalogApi(BaseServiceClientApi):
             type_filter="DYNAMIC",
         )
         assert all(isinstance(s, Program) for s in programs)  # nosec
-        return programs
+        return cast(list[Program], programs)
 
     async def get_solver(
         self, *, user_id: int, name: SolverKeyId, version: VersionStr, product_name: str

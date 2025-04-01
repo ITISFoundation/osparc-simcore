@@ -37,6 +37,7 @@ from ..api_resources import (
     compose_resource_name,
     split_resource_name,
 )
+from ..basic_types import VersionStr
 from ..domain.files import File as DomainFile
 from ..domain.files import FileInProgramJobData
 from ..schemas.files import UserFile
@@ -48,7 +49,7 @@ from ._utils import ApiServerInputSchema
 #  - Input/outputs are defined in service metadata
 #  - custom metadata
 #
-from .programs import Program, ProgramKeyId, VersionStr
+from .programs import Program, ProgramKeyId
 from .solvers import Solver
 
 JobID: TypeAlias = UUID

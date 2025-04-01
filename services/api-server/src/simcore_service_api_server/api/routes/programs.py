@@ -23,8 +23,9 @@ from simcore_service_api_server.api.dependencies.webserver_http import (
 )
 from simcore_service_api_server.services_http.webserver import AuthSession
 
+from ...models.basic_types import VersionStr
 from ...models.schemas.jobs import Job, JobInputs
-from ...models.schemas.programs import Program, ProgramKeyId, VersionStr
+from ...models.schemas.programs import Program, ProgramKeyId
 from ...services_http.catalog import CatalogApi
 from ..dependencies.authentication import get_current_user_id, get_product_name
 from ..dependencies.services import get_api_client
