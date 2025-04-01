@@ -188,6 +188,13 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
           }
         }
       }
+      if (toBeDeleted.length === 0) {
+        return;
+      }
+      if (toBeDeleted[0].getLocation() !== 0) {
+        osparc.FlashMessenger.logAs(this.tr("You can only delete files in the local storage"), "WARNING");
+        return;
+      }
 
       let msg = this.tr("This action cannot be undone.");
       msg += isFolderSelected ? ("<br>"+this.tr("All contents within the folders will be deleted.")) : "";
@@ -220,6 +227,7 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
           .then(task => {
             task.addListener("resultReceived", e => {
               this.fireDataEvent("pathsDeleted", paths);
+              osparc.FlashMessenger.logAs(this.tr("Items successfully deleted"), "INFO");
             });
           })
           .catch(err => osparc.FlashMessenger.logError(err, this.tr("Unsuccessful files deletion")));
