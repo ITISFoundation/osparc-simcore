@@ -7,7 +7,6 @@
 # pylint:disable=unused-variable
 
 
-import asyncio
 import datetime
 import random
 from pathlib import Path
@@ -77,7 +76,6 @@ async def _assert_compute_path_size(
         location_id=location_id,
         path=path,
     )
-    await asyncio.sleep(1)
     async for job_composed_result in wait_and_get_result(
         storage_rpc_client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
@@ -92,6 +90,39 @@ async def _assert_compute_path_size(
             received_size = TypeAdapter(ByteSize).validate_python(response.result)
             assert received_size == expected_total_size
             return received_size
+
+    pytest.fail("Job did not finish")
+    return ByteSize(0)  # for mypy
+
+
+async def _assert_delete_paths(
+    storage_rpc_client: RabbitMQRPCClient,
+    location_id: LocationID,
+    user_id: UserID,
+    product_name: ProductName,
+    *,
+    paths: set[Path],
+) -> None:
+    async_job, async_job_name = await delete_paths(
+        storage_rpc_client,
+        product_name=product_name,
+        user_id=user_id,
+        location_id=location_id,
+        paths=paths,
+    )
+    async for job_composed_result in wait_and_get_result(
+        storage_rpc_client,
+        rpc_namespace=STORAGE_RPC_NAMESPACE,
+        method_name=RPCMethodName(compute_path_size.__name__),
+        job_id=async_job.job_id,
+        job_id_data=AsyncJobNameData(user_id=user_id, product_name=product_name),
+        client_timeout=datetime.timedelta(seconds=120),
+    ):
+        if job_composed_result.done:
+            response = await job_composed_result.result()
+            assert isinstance(response, AsyncJobResult)
+            assert response.result is None
+            return
 
     pytest.fail("Job did not finish")
 
