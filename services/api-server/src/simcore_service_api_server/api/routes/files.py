@@ -426,7 +426,6 @@ async def complete_multipart_upload(
     e_tag: ETag | None = await complete_file_upload(
         uploaded_parts=uploaded_parts.parts,
         upload_completion_link=TypeAdapter(AnyUrl).validate_python(f"{complete_link}"),
-        is_directory=False,
     )
     assert e_tag is not None  # nosec
 

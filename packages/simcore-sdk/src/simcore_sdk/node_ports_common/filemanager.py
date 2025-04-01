@@ -41,10 +41,23 @@ from .file_io_utils import (
 _logger = logging.getLogger(__name__)
 
 
+async def complete_directory_upload(
+    uploaded_parts: list[UploadedPart],
+    upload_completion_link: AnyUrl,
+    client_session: ClientSession | None = None,
+) -> None:
+    async with ClientSessionContextManager(client_session) as session:
+        await _filemanager_utils.complete_upload(
+            session=session,
+            upload_completion_link=upload_completion_link,
+            parts=uploaded_parts,
+            is_directory=True,
+        )
+
+
 async def complete_file_upload(
     uploaded_parts: list[UploadedPart],
     upload_completion_link: AnyUrl,
-    is_directory: bool,
     client_session: ClientSession | None = None,
 ) -> ETag | None:
     async with ClientSessionContextManager(client_session) as session:
@@ -52,11 +65,10 @@ async def complete_file_upload(
             session=session,
             upload_completion_link=upload_completion_link,
             parts=uploaded_parts,
-            is_directory=is_directory,
+            is_directory=False,
         )
     # should not be None because a file is being uploaded
-    if not is_directory:
-        assert e_tag is not None  # nosec
+    assert e_tag is not None  # nosec
     return e_tag
 
 
