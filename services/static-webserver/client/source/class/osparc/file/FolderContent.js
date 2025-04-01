@@ -261,6 +261,16 @@ qx.Class.define("osparc.file.FolderContent", {
       }
     },
 
+    resetSelection: function() {
+      if (this.getMode() === "list") {
+        const table = this.getChildControl("table");
+        table.getSelectionModel().resetSelection();
+      } else if (this.getMode() === "icons") {
+        const iconsLayout = this.getChildControl("icons-layout");
+        iconsLayout.resetSelection();
+      }
+    },
+
     __selectionChanged: function(selection) {
       if (this.isMultiSelect()) {
         this.fireDataEvent("multiSelectionChanged", selection);

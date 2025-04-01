@@ -138,6 +138,8 @@ qx.Class.define("osparc.file.TreeFolderView", {
 
     pathsDeleted: function(paths) {
       console.log("pathsDeleted", paths);
+      const folderContent = this.getChildControl("folder-viewer").getChildControl("folder-content");
+      folderContent.resetSelection();
     },
 
     openPath: async function(pathParts) {
