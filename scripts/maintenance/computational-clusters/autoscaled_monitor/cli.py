@@ -155,7 +155,7 @@ def cancel_jobs(
         typer.Option(help="the wallet ID"),
     ] = None,
     *,
-    force: Annotated[
+    abort_in_db: Annotated[
         bool,
         typer.Option(
             help="will also force the job to abort in the database (use only if job is in WAITING FOR CLUSTER/WAITING FOR RESOURCE)"
@@ -169,8 +169,9 @@ def cancel_jobs(
     Keyword Arguments:
         user_id -- the user ID
         wallet_id -- the wallet ID
+        abort_in_db -- will also force the job to abort in the database (use only if job is in WAITING FOR CLUSTER/WAITING FOR RESOURCE)
     """
-    asyncio.run(api.cancel_jobs(state, user_id, wallet_id, force=force))
+    asyncio.run(api.cancel_jobs(state, user_id, wallet_id, abort_in_db=abort_in_db))
 
 
 @app.command()
@@ -185,6 +186,7 @@ def trigger_cluster_termination(
     Keyword Arguments:
         user_id -- the user ID
         wallet_id -- the wallet ID
+        force -- will not ask for confirmation (VERY RISKY! USE WITH CAUTION!)
     """
     asyncio.run(api.trigger_cluster_termination(state, user_id, wallet_id, force=force))
 

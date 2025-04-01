@@ -620,7 +620,7 @@ async def _get_db_task_to_dask_job(
 
 
 async def cancel_jobs(  # noqa: C901, PLR0912
-    state: AppState, user_id: int, wallet_id: int | None, *, force: bool
+    state: AppState, user_id: int, wallet_id: int | None, *, abort_in_db: bool
 ) -> None:
     # get the theory
     computational_tasks = await db.list_computational_tasks_from_db(state, user_id)
@@ -661,7 +661,7 @@ async def cancel_jobs(  # noqa: C901, PLR0912
                     state,
                     the_cluster,
                     task_to_dask_job=task_to_dask_job,
-                    abort_in_db=force,
+                    abort_in_db=abort_in_db,
                 )
             else:
                 try:
@@ -685,7 +685,7 @@ async def cancel_jobs(  # noqa: C901, PLR0912
                                     state, the_cluster, dask_task.job_id
                                 )
 
-                        if comp_task is not None and force:
+                        if comp_task is not None and abort_in_db:
                             await db.abort_job_in_db(
                                 state, comp_task.project_id, comp_task.node_id
                             )
