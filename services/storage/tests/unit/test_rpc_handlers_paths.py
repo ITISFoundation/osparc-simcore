@@ -32,6 +32,7 @@ from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import (
 )
 from servicelib.rabbitmq.rpc_interfaces.storage.paths import (
     compute_path_size,
+    delete_paths,
 )
 from simcore_service_storage.modules.celery.worker import CeleryTaskQueueWorker
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
