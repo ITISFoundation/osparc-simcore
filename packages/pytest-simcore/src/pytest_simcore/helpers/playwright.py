@@ -10,6 +10,7 @@ from datetime import UTC, datetime, timedelta
 from enum import Enum, unique
 from typing import Any, Final
 
+import pytest
 from playwright._impl._sync_base import EventContextManager
 from playwright.sync_api import APIRequestContext, FrameLocator, Locator, Page, Request
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
@@ -381,6 +382,12 @@ class SocketIONodeProgressCompleteWaiter:
         return f"{self.product_url}".split("//")[1]
 
 
+_FAIL_FAST_STATES: Final[tuple[RunningState, ...]] = (
+    RunningState.FAILED,
+    RunningState.ABORTED,
+)
+
+
 def wait_for_pipeline_state(
     current_state: RunningState,
     *,
@@ -397,12 +404,21 @@ def wait_for_pipeline_state(
                 f"pipeline is now in {current_state=}",
             ),
         ):
-            waiter = SocketIOProjectStateUpdatedWaiter(expected_states=expected_states)
+            waiter = SocketIOProjectStateUpdatedWaiter(
+                expected_states=expected_states + _FAIL_FAST_STATES
+            )
             with websocket.expect_event(
                 "framereceived", waiter, timeout=timeout_ms
             ) as event:
                 current_state = retrieve_project_state_from_decoded_message(
                     decode_socketio_42_message(event.value)
+                )
+            if (
+                current_state in _FAIL_FAST_STATES
+                and current_state not in expected_states
+            ):
+                pytest.fail(
+                    f"Pipeline failed with state {current_state}. Expected one of {expected_states}"
                 )
     return current_state
 
