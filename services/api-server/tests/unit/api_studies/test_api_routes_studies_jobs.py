@@ -19,7 +19,6 @@ from pytest_simcore.helpers.httpx_calls_capture_models import (
     CreateRespxMockCallback,
     HttpApiCallCaptureModel,
 )
-from respx import MockRouter
 from servicelib.common_headers import (
     X_SIMCORE_PARENT_NODE_ID,
     X_SIMCORE_PARENT_PROJECT_UUID,
@@ -123,8 +122,9 @@ async def test_studies_jobs_workflow(
 
 async def test_start_stop_delete_study_job(
     client: httpx.AsyncClient,
-    mocked_webserver_rest_api_base,
-    mocked_directorv2_rest_api_base,
+    mocked_webserver_rest_api_base: respx.MockRouter,
+    mocked_webserver_rpc_api: dict[str, MockType],
+    mocked_directorv2_rest_api_base: respx.MockRouter,
     create_respx_mock_from_capture: CreateRespxMockCallback,
     auth: httpx.BasicAuth,
     project_tests_dir: Path,
@@ -202,8 +202,9 @@ async def test_start_stop_delete_study_job(
 @pytest.mark.parametrize("hidden", [True, False])
 async def test_create_study_job(
     client: httpx.AsyncClient,
-    mocked_webserver_rest_api_base,
-    mocked_directorv2_rest_api_base,
+    mocked_webserver_rest_api_base: respx.MockRouter,
+    mocked_webserver_rpc_api: dict[str, MockType],
+    mocked_directorv2_rest_api_base: respx.MockRouter,
     create_respx_mock_from_capture: CreateRespxMockCallback,
     auth: httpx.BasicAuth,
     project_tests_dir: Path,
@@ -281,7 +282,8 @@ async def test_get_study_job_outputs(
     client: httpx.AsyncClient,
     fake_study_id: UUID,
     auth: httpx.BasicAuth,
-    mocked_webserver_rest_api_base: MockRouter,
+    mocked_webserver_rest_api_base: respx.MockRouter,
+    mocked_webserver_rpc_api: dict[str, MockType],
 ):
     job_id = "cfe9a77a-f71e-11ee-8fca-0242ac140008"
 
@@ -338,8 +340,9 @@ async def test_get_study_job_outputs(
 
 async def test_get_job_logs(
     client: httpx.AsyncClient,
-    mocked_webserver_rest_api_base,
-    mocked_directorv2_rest_api_base,
+    mocked_webserver_rest_api_base: respx.MockRouter,
+    mocked_webserver_rpc_api: dict[str, MockType],
+    mocked_directorv2_rest_api_base: respx.MockRouter,
     create_respx_mock_from_capture: CreateRespxMockCallback,
     auth: httpx.BasicAuth,
     project_tests_dir: Path,
@@ -365,8 +368,9 @@ async def test_get_job_logs(
 async def test_get_study_outputs(
     client: httpx.AsyncClient,
     create_respx_mock_from_capture: CreateRespxMockCallback,
-    mocked_directorv2_rest_api_base,
-    mocked_webserver_rest_api_base,
+    mocked_webserver_rest_api_base: respx.MockRouter,
+    mocked_webserver_rpc_api: dict[str, MockType],
+    mocked_directorv2_rest_api_base: respx.MockRouter,
     auth: httpx.BasicAuth,
     project_tests_dir: Path,
 ):

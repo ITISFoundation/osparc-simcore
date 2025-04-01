@@ -13,11 +13,8 @@ import pytest
 from fastapi import FastAPI, status
 from fastapi.encoders import jsonable_encoder
 from models_library.projects_state import RunningState
-from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers import faker_catalog
-from pytest_simcore.helpers.webserver_rpc_server import WebserverRpcSideEffects
 from respx import MockRouter
-from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 from simcore_service_api_server.core.settings import ApplicationSettings
 from simcore_service_api_server.services_http.director_v2 import ComputationTaskGet
 
@@ -44,35 +41,6 @@ def mocked_webserver_rest_api(
     patch_webserver_long_running_project_tasks(mocked_webserver_rest_api_base)
 
     return mocked_webserver_rest_api_base
-
-
-@pytest.fixture
-def mocked_webserver_rpc_api(
-    app: FastAPI, mocker: MockerFixture
-) -> dict[str, MockType]:
-    from servicelib.rabbitmq.rpc_interfaces.webserver import projects as projects_rpc
-    from simcore_service_api_server.services_rpc import wb_api_server
-
-    # NOTE: mock_missing_plugins patches `setup_rabbitmq`
-    try:
-        wb_api_server.WbApiRpcClient.get_from_app_state(app)
-    except AttributeError:
-        wb_api_server.setup(
-            app, RabbitMQRPCClient("fake_rpc_client", settings=mocker.MagicMock())
-        )
-
-    settings: ApplicationSettings = app.state.settings
-    assert settings.API_SERVER_WEBSERVER
-
-    side_effects = WebserverRpcSideEffects()
-
-    return {
-        "mark_project_as_job": mocker.patch.object(
-            projects_rpc,
-            "mark_project_as_job",
-            side_effects.mark_project_as_job,
-        ),
-    }
 
 
 @pytest.fixture
