@@ -471,21 +471,11 @@ def expected_service_running(
         )
         service_running = ServiceRunning(iframe_locator=None)
 
-        try:
-            with websocket.expect_event("framereceived", waiter, timeout=timeout):
-                if press_start_button:
-                    _trigger_service_start(page, node_id)
+        with websocket.expect_event("framereceived", waiter, timeout=timeout):
+            if press_start_button:
+                _trigger_service_start(page, node_id)
 
-                yield service_running
-
-        except PlaywrightTimeoutError:
-            if waiter.got_expected_node_progress_types():
-                ctx.logger.warning(
-                    "⚠️ Progress bar didn't receive 100 percent but all expected node-progress-types are in place: %s ⚠️",  # https://github.com/ITISFoundation/osparc-simcore/issues/6449
-                    waiter.get_current_progress(),
-                )
-            else:
-                raise
+            yield service_running
 
     service_running.iframe_locator = page.frame_locator(
         f'[osparc-test-id="iframe_{node_id}"]'
