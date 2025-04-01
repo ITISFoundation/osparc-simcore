@@ -435,12 +435,12 @@ async def delete_file(request: web.Request) -> web.Response:
 
 
 @routes.post(
-    _storage_locations_prefix + "/{location_id}/export-data", name="export_data"
+    _storage_locations_prefix + "/{location_id}/data-export", name="data_export"
 )
 @login_required
 @permission_required("storage.files.*")
 @handle_data_export_exceptions
-async def export_data(request: web.Request) -> web.Response:
+async def data_export(request: web.Request) -> web.Response:
     class _PathParams(BaseModel):
         location_id: LocationID
 

@@ -214,11 +214,11 @@ _data_export_responses: dict[int | str, dict[str, Any]] = {
 
 
 @router.post(
-    "/storage/locations/{location_id}/export-data",
+    "/storage/locations/{location_id}/data-export",
     response_model=Envelope[TaskGet],
-    name="export_data",
+    name="data_export",
     description="Export data",
     responses=_data_export_responses,
 )
-async def export_data(data_export: DataExportPost, location_id: LocationID):
+async def data_export(data_export: DataExportPost, location_id: LocationID):
     """Trigger data export. Returns async job id for getting status and results"""

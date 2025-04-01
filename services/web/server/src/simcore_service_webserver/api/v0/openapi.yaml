@@ -6495,13 +6495,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_FileUploadCompleteFutureResponse_'
-  /v0/storage/locations/{location_id}/export-data:
+  /v0/storage/locations/{location_id}/data-export:
     post:
       tags:
       - storage
-      summary: Export Data
+      summary: Data Export
       description: Export data
-      operationId: export_data
+      operationId: data_export
       parameters:
       - name: location_id
         in: path
