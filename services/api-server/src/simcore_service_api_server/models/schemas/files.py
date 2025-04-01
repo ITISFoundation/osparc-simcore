@@ -1,4 +1,5 @@
 import datetime
+from mimetypes import guess_type
 from typing import Annotated
 from uuid import UUID
 
@@ -10,6 +11,8 @@ from pydantic import (
     ConfigDict,
     Field,
     NonNegativeInt,
+    ValidationInfo,
+    field_validator,
 )
 
 from .._utils_pydantic import UriSchema
@@ -80,6 +83,16 @@ class File(ApiServerOutputSchema):
             ]
         },
     )
+
+    @field_validator("content_type", mode="before")
+    @classmethod
+    def guess_content_type(cls, v, info: ValidationInfo):
+        if v is None:
+            filename = info.data.get("filename")
+            if filename:
+                mime_content_type, _ = guess_type(filename, strict=False)
+                return mime_content_type
+        return v
 
     @classmethod
     def from_domain_model(cls, file: DomainFile) -> "File":

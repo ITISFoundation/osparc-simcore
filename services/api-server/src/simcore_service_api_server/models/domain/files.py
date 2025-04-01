@@ -1,4 +1,3 @@
-from mimetypes import guess_type
 from pathlib import Path
 from typing import Annotated
 from urllib.parse import quote as _quote
@@ -17,8 +16,6 @@ from pydantic import (
     Field,
     StringConstraints,
     TypeAdapter,
-    ValidationInfo,
-    field_validator,
 )
 from servicelib.file_utils import create_sha256_checksum
 
@@ -85,16 +82,6 @@ class File(BaseModel):
             ]
         },
     )
-
-    @field_validator("content_type", mode="before")
-    @classmethod
-    def guess_content_type(cls, v, info: ValidationInfo):
-        if v is None:
-            filename = info.data.get("filename")
-            if filename:
-                mime_content_type, _ = guess_type(filename, strict=False)
-                return mime_content_type
-        return v
 
     @classmethod
     async def create_from_path(cls, path: Path) -> "File":
