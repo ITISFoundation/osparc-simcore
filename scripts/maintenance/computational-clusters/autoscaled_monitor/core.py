@@ -456,12 +456,12 @@ def _print_summary_as_json(
                     for worker in cluster.workers
                 ],
                 "datasets": cluster.datasets,
-                "processing_jobs": cluster.processing_jobs,
+                "tasks": cluster.task_states_to_tasks,
             }
             for cluster in computational_clusters
         ],
     }
-    rich.print_json(json.dumps(result, indent=2))
+    rich.print_json(json.dumps(result))
 
 
 async def summary(
