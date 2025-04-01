@@ -22,6 +22,7 @@ from models_library.api_schemas_storage.storage_schemas import (
     PresignedLink,
 )
 from models_library.api_schemas_webserver.storage import (
+    BatchDeletePathsBodyParams,
     DataExportPost,
     ListPathsQueryParams,
     StorageLocationPathParams,
@@ -78,6 +79,19 @@ async def list_storage_paths(
 )
 async def compute_path_size(_path: Annotated[StoragePathComputeSizeParams, Depends()]):
     """Compute the size of a path"""
+
+
+@router.post(
+    "/storage/locations/{location_id}/-/paths:batchDelete",
+    response_model=Envelope[TaskGet],
+    status_code=status.HTTP_202_ACCEPTED,
+    description="Deletes Paths",
+)
+async def batch_delete_paths(
+    _path: Annotated[StorageLocationPathParams, Depends()],
+    _body: Annotated[BatchDeletePathsBodyParams, Depends()],
+):
+    """deletes files/folders if user has the rights to"""
 
 
 @router.get(
