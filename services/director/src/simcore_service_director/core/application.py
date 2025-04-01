@@ -56,6 +56,7 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
     setup_client_session(
         app,
         max_keepalive_connections=settings.DIRECTOR_REGISTRY_CLIENT_MAX_KEEPALIVE_CONNECTIONS,
+        default_timeout=settings.DIRECTOR_REGISTRY_CLIENT_TIMEOUT,
     )
     setup_registry(app)
 
