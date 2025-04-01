@@ -154,7 +154,7 @@ class CatalogApi(BaseServiceClientApi):
                         err,
                     )
             return solvers
-        elif type_filter == "DYNAMIC":
+        if type_filter == "DYNAMIC":
             programs: list[Program] = []
             for service in services:
                 try:
@@ -172,8 +172,8 @@ class CatalogApi(BaseServiceClientApi):
                         err,
                     )
             return programs
-        else:
-            raise ValueError(f"Invalid {type_filter=}")
+        err_msg = f"Invalid {type_filter=}"
+        raise ValueError(err_msg)
 
     async def list_solvers(
         self,
