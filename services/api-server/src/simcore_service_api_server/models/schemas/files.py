@@ -30,12 +30,17 @@ class UserFile(ApiServerInputSchema):
 
     def to_domain_model(
         self,
+        file_id: UUID | None = None,
     ) -> DomainFile:
         return DomainFile(
-            id=DomainFile.create_id(
-                self.filesize,
-                self.filename,
-                datetime.datetime.now(datetime.UTC).isoformat(),
+            id=(
+                file_id
+                if file_id
+                else DomainFile.create_id(
+                    self.filesize,
+                    self.filename,
+                    datetime.datetime.now(datetime.UTC).isoformat(),
+                )
             ),
             filename=self.filename,
             checksum=self.sha256_checksum,

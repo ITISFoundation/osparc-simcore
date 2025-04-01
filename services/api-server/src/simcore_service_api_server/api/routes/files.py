@@ -108,10 +108,13 @@ async def _get_file(
 
 
 async def _create_domain_file(
-    webserver_api: AuthSession, client_file: UserFile | UserFileToProgramJob
+    *,
+    webserver_api: AuthSession,
+    file_id: UUID | None,
+    client_file: UserFile | UserFileToProgramJob,
 ) -> DomainFile:
     if isinstance(client_file, UserFile):
-        file = client_file.to_domain_model()
+        file = client_file.to_domain_model(file_id=file_id)
     elif isinstance(client_file, UserFileToProgramJob):
         project = await webserver_api.get_project(project_id=client_file.job_id)
         if len(project.workbench) > 1:
@@ -276,7 +279,9 @@ async def get_upload_links(
 ):
     """Get upload links for uploading a file to storage"""
     assert request  # nosec
-    file_meta = await _create_domain_file(webserver_api, client_file)
+    file_meta = await _create_domain_file(
+        webserver_api=webserver_api, file_id=None, client_file=client_file
+    )
     _, upload_links = await get_upload_links_from_s3(
         user_id=user_id,
         store_name=None,
@@ -391,7 +396,9 @@ async def abort_multipart_upload(
     assert request  # nosec
     assert user_id  # nosec
 
-    file = await _create_domain_file(webserver_api, client_file)
+    file = await _create_domain_file(
+        webserver_api=webserver_api, file_id=file_id, client_file=client_file
+    )
     abort_link: URL = await storage_client.create_abort_upload_link(
         file=file, query={"user_id": str(user_id)}
     )
@@ -418,7 +425,9 @@ async def complete_multipart_upload(
     assert file_id  # nosec
     assert request  # nosec
     assert user_id  # nosec
-    file = await _create_domain_file(webserver_api, client_file)
+    file = await _create_domain_file(
+        webserver_api=webserver_api, file_id=file_id, client_file=client_file
+    )
     complete_link: URL = await storage_client.create_complete_upload_link(
         file=file, query={"user_id": str(user_id)}
     )
