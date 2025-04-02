@@ -372,8 +372,6 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
         if (msg) {
           osparc.FlashMessenger.logAs(msg, msgLevel);
         }
-        osparc.store.PollTasks.getInstance().removeTask(task);
-        osparc.task.TasksContainer.getInstance().removeTaskUI(taskUI);
         this._resourcesContainer.removeNonResourceCard(toTemplateCard);
       };
 

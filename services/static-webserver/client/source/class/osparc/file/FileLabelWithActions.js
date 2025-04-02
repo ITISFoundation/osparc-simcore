@@ -225,6 +225,11 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
         const interval = 1000;
         pollTasks.createPollingTask(fetchPromise, interval)
           .then(task => {
+            const taskUI = new osparc.task.TaskUI();
+            taskUI.setTitle(this.tr("Deleting files"));
+            taskUI.setTask(task);
+            osparc.task.TasksContainer.getInstance().addTaskUI(taskUI);
+
             task.addListener("resultReceived", e => {
               this.fireDataEvent("pathsDeleted", paths);
               osparc.FlashMessenger.logAs(this.tr("Items successfully deleted"), "INFO");

@@ -1924,8 +1924,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .catch(err => {
           const msg = osparc.data.Resources.getErrorMsg(JSON.parse(err.response)) || this.tr("Something went wrong while exporting the study");
           osparc.FlashMessenger.logError(err, msg);
-        })
-        .finally(() => osparc.task.TasksContainer.getInstance().removeTaskUI(exportTaskUI));
+        });
     },
 
     __importStudy: function(file) {
@@ -1983,11 +1982,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             .then(studyData => this._updateStudyData(studyData))
             .catch(err => osparc.FlashMessenger.logError(err, this.tr("Something went wrong while fetching the study")))
             .finally(() => {
-              osparc.task.TasksContainer.getInstance().removeTaskUI(importTaskUI);
               this._resourcesContainer.removeNonResourceCard(importingStudyCard);
             });
         } else if (req.status == 400) {
-          osparc.task.TasksContainer.getInstance().removeTaskUI(importTaskUI);
           this._resourcesContainer.removeNonResourceCard(importingStudyCard);
           const msg = osparc.data.Resources.getErrorMsg(JSON.parse(req.response)) || this.tr("Something went wrong while importing the study");
           osparc.FlashMessenger.logError(msg);
@@ -1995,14 +1992,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       });
       req.addEventListener("error", e => {
         // transferFailed
-        osparc.task.TasksContainer.getInstance().removeTaskUI(importTaskUI);
         this._resourcesContainer.removeNonResourceCard(importingStudyCard);
         const msg = osparc.data.Resources.getErrorMsg(e) || this.tr("Something went wrong while importing the study");
         osparc.FlashMessenger.logError(msg);
       });
       req.addEventListener("abort", e => {
         // transferAborted
-        osparc.task.TasksContainer.getInstance().removeTaskUI(importTaskUI);
         this._resourcesContainer.removeNonResourceCard(importingStudyCard);
         const msg = osparc.data.Resources.getErrorMsg(e) || this.tr("Something went wrong while importing the study");
         osparc.FlashMessenger.logError(msg);
@@ -2143,8 +2138,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         if (msg) {
           osparc.FlashMessenger.logAs(msg, msgLevel);
         }
-        osparc.store.PollTasks.getInstance().removeTask(task);
-        osparc.task.TasksContainer.getInstance().removeTaskUI(taskUI);
         this._removeTaskCard(task);
       };
 

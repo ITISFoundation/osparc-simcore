@@ -46,9 +46,11 @@ qx.Class.define("osparc.task.TasksContainer", {
       }
       this.__tasks.push(taskUI);
       this.__tasksContainer.addAt(taskUI, 0);
+
+      taskUI.getTask().addListener("resultReceived", () => this.__removeTaskUI(taskUI), this);
     },
 
-    removeTaskUI: function(taskUI) {
+    __removeTaskUI: function(taskUI) {
       if (this.__tasks.indexOf(taskUI) > -1) {
         this.__tasks.remove(taskUI);
       }

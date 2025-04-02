@@ -55,7 +55,7 @@ qx.Class.define("osparc.store.PollTasks", {
       });
     },
 
-    removeTask: function(task) {
+    __removeTask: function(task) {
       const tasks = this.getTasks();
       const index = tasks.findIndex(t => t.getTaskId() === task.getTaskId());
       if (index > -1) {
@@ -68,6 +68,7 @@ qx.Class.define("osparc.store.PollTasks", {
       const index = tasks.findIndex(t => t.getTaskId() === taskData["task_id"]);
       if (index === -1) {
         const task = new osparc.data.PollTask(taskData, interval);
+        task.addListener("resultReceived", () => this.__removeTask(task), this);
         tasks.push(task);
         return task;
       }
