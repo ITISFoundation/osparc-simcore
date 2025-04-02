@@ -56,7 +56,6 @@ from servicelib.rabbitmq.rpc_interfaces.storage.simcore_s3 import (
     start_data_export,
 )
 from simcore_postgres_database.storage_models import file_meta_data
-from simcore_service_storage.api._worker_tasks._simcore_s3 import AccessRightError
 from simcore_service_storage.modules.celery.worker import CeleryTaskQueueWorker
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 from sqlalchemy.ext.asyncio import AsyncEngine
@@ -633,4 +632,5 @@ async def test_start_data_export_access_error(
             client_timeout=datetime.timedelta(seconds=60),
         )
 
-    assert isinstance(exc.value.exc, AccessRightError)
+    assert isinstance(exc.value, JobError)
+    assert exc.value.exc_type == "AccessRightError"

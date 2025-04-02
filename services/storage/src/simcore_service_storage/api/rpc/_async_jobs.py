@@ -107,8 +107,11 @@ async def result(
             exc_msg = f"{exception}"
 
         if exception is None:
-            _logger.warning("Was not expecting %s", exception)
-        raise JobError(job_id=job_id, exc_type=exc_type, exc_msg=exc_msg, exc=exception)
+            _logger.warning("Was not expecting %s", _result)
+
+        # NOTE: cannot transfer original exception since this will not be able to be serialized
+        # outside of storage
+        raise JobError(job_id=job_id, exc_type=exc_type, exc_msg=exc_msg)
 
     return AsyncJobResult(result=_result)
 
