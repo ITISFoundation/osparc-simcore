@@ -19,7 +19,6 @@ from models_library.api_schemas_rpc_async_jobs.exceptions import (
     JobNotDoneError,
     JobSchedulerError,
 )
-from servicelib.logging_utils import log_catch
 from servicelib.rabbitmq import RPCRouter
 
 from ...modules.celery import get_celery_client
@@ -96,14 +95,10 @@ async def result(
     if _status.task_state == TaskState.ABORTED:
         raise JobAbortedError(job_id=job_id)
     if _status.task_state == TaskState.ERROR:
-        exc_type = ""
-        exc_msg = ""
-        with log_catch(logger=_logger, reraise=False):
-            # NOTE: recover original error from wrapped error
-            exception = pickle.loads(base64.b64decode(_result.args[0]))
-            exc_type = type(exception).__name__
-            exc_msg = f"{exception}"
-
+        # NOTE: recover original error from wrapped error
+        exception = pickle.loads(base64.b64decode(_result.args[0]))
+        exc_type = type(exception).__name__
+        exc_msg = f"{exception}"
         raise JobError(job_id=job_id, exc_type=exc_type, exc_msg=exc_msg, exc=exception)
 
     return AsyncJobResult(result=_result)

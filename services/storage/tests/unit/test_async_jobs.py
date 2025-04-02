@@ -28,6 +28,7 @@ from models_library.progress_bar import ProgressReport
 from pytest_mock import MockerFixture
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.async_jobs import async_jobs
+from simcore_service_storage.modules.celery._task import _wrap_exception
 from simcore_service_storage.modules.celery.client import TaskUUID
 from simcore_service_storage.modules.celery.models import TaskState, TaskStatus
 
@@ -68,7 +69,7 @@ class _MockCeleryClient:
         _ = kwargs
         assert self.get_task_result_object is not None
         if isinstance(self.get_task_result_object, Exception):
-            raise self.get_task_result_object
+            return _wrap_exception(self.get_task_result_object)
         return self.get_task_result_object
 
     async def get_task_uuids(self, *args, **kwargs) -> set[TaskUUID]:
@@ -318,7 +319,7 @@ async def test_async_jobs_result_success(
                     task_state=TaskState.ERROR,
                     progress_report=ProgressReport(actual_value=1.0, total=1.0),
                 ),
-                "get_task_result_object": _faker.text(),
+                "get_task_result_object": Exception("generic exception"),
                 "get_task_uuids_object": [AsyncJobId(_faker.uuid4())],
             },
             JobError,

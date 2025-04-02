@@ -28,6 +28,14 @@ P = ParamSpec("P")
 R = TypeVar("R")
 
 
+def _wrap_exception(exc: Exception) -> Exception:
+    return Exception(
+        base64.b64encode(pickle.dumps(exc, protocol=pickle.HIGHEST_PROTOCOL)).decode(
+            "ascii"
+        )
+    )
+
+
 def _async_task_wrapper(
     app: Celery,
 ) -> Callable[
@@ -73,15 +81,10 @@ def _error_handling(max_retries: NonNegativeInt, delay_between_retries: timedelt
                 # by running it's magic, it looses the context of some errors
                 # this allows to recreate the same error in the caller side excatly as
                 # it was raised in this context
-                wrapping_exception = Exception(
-                    base64.b64encode(
-                        pickle.dumps(exc, protocol=pickle.HIGHEST_PROTOCOL)
-                    ).decode("ascii")
-                )
                 raise task.retry(
                     max_retries=max_retries,
                     countdown=delay_between_retries.total_seconds(),
-                    exc=wrapping_exception,
+                    exc=_wrap_exception(exc),
                 )
 
         return wrapper
