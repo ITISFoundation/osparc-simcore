@@ -121,15 +121,18 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
 
     addNonResourceCard: function(card) {
       if (osparc.dashboard.CardContainer.isValidCard(card)) {
+        let groupContainer = null;
+        let contentContainer = null;
         if (this.getGroupBy()) {
           // it will always go to the no-group group
-          const noGroupContainer = this.__getGroupContainer("no-group");
-          this.__addCardToContainer(card, noGroupContainer);
-          this.self().sortListByPriority(noGroupContainer.getContentContainer());
+          groupContainer = this.__getGroupContainer("no-group");
+          contentContainer = groupContainer.getContentContainer();
         } else {
-          this.__addCardToContainer(card, this.__nonGroupedContainer);
-          this.self().sortListByPriority(this.__nonGroupedContainer);
+          groupContainer = this.__nonGroupedContainer;
+          contentContainer = this.__nonGroupedContainer;
         }
+        this.__addCardToContainer(card, groupContainer);
+        this.self().sortListByPriority(contentContainer);
       } else {
         console.error("CardContainer only allows CardBase as its children.");
       }
@@ -137,13 +140,15 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
 
     removeNonResourceCard: function(card) {
       if (osparc.dashboard.CardContainer.isValidCard(card)) {
+        let contentContainer = null;
         if (this.getGroupBy()) {
           const noGroupContainer = this.__getGroupContainer("no-group");
-          if (noGroupContainer.getContentContainer().getChildren().indexOf(card) > -1) {
-            noGroupContainer.getContentContainer().remove(card);
-          }
-        } else if (this.__nonGroupedContainer.getChildren().indexOf(card) > -1) {
-          this.__nonGroupedContainer.remove(card);
+          contentContainer = noGroupContainer.getContentContainer();
+        } else {
+          contentContainer = this.__nonGroupedContainer;
+        }
+        if (contentContainer && contentContainer.getChildren().indexOf(card) > -1) {
+          contentContainer.remove(card);
         }
       } else {
         console.error("CardContainer only allows CardBase as its children.");

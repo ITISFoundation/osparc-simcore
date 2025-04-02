@@ -219,8 +219,8 @@ qx.Class.define("osparc.auth.LoginWithDecorators", {
       if (urlFragment.nav && urlFragment.nav.length) {
         if (urlFragment.nav[0] === "registration") {
           pages.setSelection([registration]);
-        } else if (urlFragment.nav[0] === "request-account" && requestAccount) {
-          pages.setSelection([requestAccount]);
+        } else if (urlFragment.nav[0] === "request-account") {
+          requestAccount ? pages.setSelection([requestAccount]) : pages.setSelection([registration]);
         } else if (urlFragment.nav[0] === "reset-password") {
           pages.setSelection([resetPassword]);
         }
