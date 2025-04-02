@@ -93,6 +93,16 @@ qx.Class.define("osparc.task.TaskUI", {
             row: 1
           });
           break;
+        case "progress":
+          control = new qx.ui.basic.Label("").set({
+            alignY: "middle",
+          });
+          this._add(control, {
+            column: 2,
+            row: 0,
+            rowSpan: 2
+          });
+          break;
         case "stop":
           control = new qx.ui.basic.Image("@MaterialIcons/close/16").set({
             width: 25,
@@ -101,7 +111,7 @@ qx.Class.define("osparc.task.TaskUI", {
             alignY: "middle"
           });
           this._add(control, {
-            column: 2,
+            column: 3,
             row: 0,
             rowSpan: 2
           });
@@ -111,6 +121,19 @@ qx.Class.define("osparc.task.TaskUI", {
     },
 
     __applyTask: function(task) {
+      task.addListener("updateReceived", e => {
+        const data = e.getData();
+        if (data["task_progress"]) {
+          if ("message" in data["task_progress"] && !this.getChildControl("subtitle").getValue()) {
+            this.getChildControl("subtitle").setValue(data["task_progress"]["message"]);
+          }
+          if ("percent" in data["task_progress"]) {
+            const progress = data["task_progress"]["percent"];
+            this.getChildControl("progress").setValue(progress*100 + "%");
+          }
+        }
+      }, this);
+
       const stopButton = this.getChildControl("stop");
       task.bind("abortHref", stopButton, "visibility", {
         converter: abortHref => abortHref ? "visible" : "excluded"
@@ -138,11 +161,9 @@ qx.Class.define("osparc.task.TaskUI", {
       this.getChildControl("icon").setSource(source);
     },
 
-    /**
-      * @abstract
-      */
     _buildLayout: function() {
-      throw new Error("Abstract method called!");
+      this.getChildControl("title");
+      this.getChildControl("subtitle");
     }
   }
 });

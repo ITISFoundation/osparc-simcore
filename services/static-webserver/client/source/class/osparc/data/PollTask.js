@@ -176,10 +176,8 @@ qx.Class.define("osparc.data.PollTask", {
         fetch(abortPath, {
           method: "DELETE"
         })
-          .then(() => this.fireEvent("taskAborted"))
-          .catch(err => {
-            throw err;
-          });
+          .catch(err => osparc.FlashMessenger.logError(err))
+          .finally(() => this.fireEvent("taskAborted"));
       }
     }
   }

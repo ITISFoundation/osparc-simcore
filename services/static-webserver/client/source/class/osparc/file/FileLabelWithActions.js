@@ -225,9 +225,60 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
         const interval = 1000;
         pollTasks.createPollingTask(fetchPromise, interval)
           .then(task => {
+            const taskUI = new osparc.task.TaskUI();
+            taskUI.setIcon("@FontAwesome5Solid/trash/14");
+            taskUI.setTitle(this.tr("Deleting files"));
+            taskUI.setTask(task);
+            osparc.task.TasksContainer.getInstance().addTaskUI(taskUI);
+
+            const progressWindow = new osparc.ui.window.Progress(
+              this.tr("Delete files"),
+              "@FontAwesome5Solid/trash/14",
+              this.tr("Deleting files..."),
+            );
+            if (task.getAbortHref()) {
+              const cancelButton = progressWindow.addCancelButton();
+              cancelButton.setLabel(this.tr("Ignore"));
+              const abortButton = new qx.ui.form.Button().set({
+                label: this.tr("Cancel"),
+                center: true,
+                minWidth: 100,
+              });
+              abortButton.addListener("execute", () => task.abortRequested());
+              progressWindow.addButton(abortButton);
+              abortButton.set({
+                appearance: "danger-button",
+              });
+            }
+            progressWindow.open();
+
+            const finished = (msg, msgLevel) => {
+              if (msg) {
+                osparc.FlashMessenger.logAs(msg, msgLevel);
+              }
+              progressWindow.close();
+            };
+
+            task.addListener("updateReceived", e => {
+              const data = e.getData();
+              if (data["task_progress"]) {
+                if ("message" in data["task_progress"] && data["task_progress"]["message"]) {
+                  progressWindow.setMessage(data["task_progress"]["message"]);
+                }
+                if ("percent" in data["task_progress"]) {
+                  progressWindow.setProgress(data["task_progress"]["percent"]*100);
+                }
+              }
+            }, this);
             task.addListener("resultReceived", e => {
               this.fireDataEvent("pathsDeleted", paths);
-              osparc.FlashMessenger.logAs(this.tr("Items successfully deleted"), "INFO");
+              finished(this.tr("Items successfully deleted"), "INFO");
+            });
+            task.addListener("taskAborted", () => finished(this.tr("Deletion aborted"), "WARNING"));
+            task.addListener("pollingError", e => {
+              const err = e.getData();
+              const msg = this.tr("Something went wrong while deleting the files<br>") + err.message;
+              finished(msg, "ERROR");
             });
           })
           .catch(err => osparc.FlashMessenger.logError(err, this.tr("Unsuccessful files deletion")));
