@@ -247,7 +247,6 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
 
             task.addListener("updateReceived", e => {
               const data = e.getData();
-              console.log("updateReceived", data);
               if (data["task_progress"]) {
                 if ("message" in data["task_progress"] && data["task_progress"]["message"]) {
                   progressWindow.setMessage(data["task_progress"]["message"]);
