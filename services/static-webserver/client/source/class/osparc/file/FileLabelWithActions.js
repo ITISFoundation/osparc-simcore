@@ -236,6 +236,20 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
               "@FontAwesome5Solid/trash/14",
               this.tr("Deleting files..."),
             );
+            if (task.getAbortHref()) {
+              const cancelButton = progressWindow.addCancelButton();
+              cancelButton.setLabel(this.tr("Ignore"));
+              const abortButton = new qx.ui.form.Button().set({
+                label: this.tr("Cancel"),
+                center: true,
+                minWidth: 100,
+              });
+              abortButton.addListener("execute", () => task.abortRequested());
+              progressWindow.addButton(abortButton);
+              abortButton.set({
+                appearance: "danger-button",
+              });
+            }
             progressWindow.open();
 
             const finished = (msg, msgLevel) => {
