@@ -4,7 +4,6 @@ from aiohttp import web
 from models_library.products import ProductName
 from models_library.rpc.webserver.auth.api_keys import (
     generate_api_key_and_secret,
-    generate_unique_api_key,
 )
 from models_library.users import UserID
 
@@ -49,14 +48,13 @@ async def delete_api_key(
     )
 
 
-async def delete_api_key_by_display_name(
+async def delete_api_key_by_key(
     app: web.Application,
     *,
     product_name: ProductName,
     user_id: UserID,
-    display_name: str,
+    api_key: str,
 ) -> None:
-    api_key = generate_unique_api_key(display_name)
     await _repository.delete_api_key_by_key(
         app,
         product_name=product_name,
