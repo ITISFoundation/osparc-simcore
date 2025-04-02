@@ -44,11 +44,7 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
   members: {
     __resourceData: null,
     __showOrganizations: null,
-
-    __collabButtonsContainer: null,
-    __searchingCollaborators: null,
     __searchDelayer: null,
-    __shareButton: null,
     __selectedCollaborators: null,
     __potentialCollaborators: null,
 
@@ -79,12 +75,39 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
           this.add(control);
           break;
         }
+        case "potential-collaborators-list": {
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox());
+          const scrollContainer = new qx.ui.container.Scroll();
+          scrollContainer.add(control);
+          this.add(scrollContainer, {
+            flex: 1
+          });
+          break;
+        }
+        case "searching-collaborators":
+          control = new osparc.filter.SearchingCollaborators();
+          control.exclude();
+          this.getChildControl("potential-collaborators-list").add(control);
+          break;
+        case "buttons-layout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
+            alignX: "right"
+          }));
+          this.add(control);
+          break;
+        case "share-button":
+          control = new osparc.ui.form.FetchButton(this.tr("Share")).set({
+            appearance: "form-button",
+            enabled: false,
+          });
+          this.getChildControl("buttons-layout").add(control);
+          break;
       }
       return control || this.base(arguments, id);
     },
 
     getActionButton: function() {
-      return this.__shareButton;
+      return this.getChildControl("share-button");
     },
 
     __renderLayout: function() {
@@ -105,31 +128,15 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
         }
       });
 
-      const collabButtonsContainer = this.__collabButtonsContainer = new qx.ui.container.Composite(new qx.ui.layout.VBox());
-      const scrollContainer = new qx.ui.container.Scroll();
-      scrollContainer.add(collabButtonsContainer);
-      this.add(scrollContainer, {
-        flex: 1
-      });
+      this.getChildControl("potential-collaborators-list");
+      this.getChildControl("searching-collaborators");
 
-      const searchingCollaborators = this.__searchingCollaborators = new osparc.filter.SearchingCollaborators();
-      searchingCollaborators.exclude();
-      this.__collabButtonsContainer.add(searchingCollaborators);
-
-      const buttons = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
-        alignX: "right"
-      }));
-      const shareButton = this.__shareButton = new osparc.ui.form.FetchButton(this.tr("Share")).set({
-        appearance: "form-button",
-        enabled: false,
-      });
+      const shareButton = this.getChildControl("share-button");
       shareButton.addListener("execute", () => this.__shareClicked(), this);
-      buttons.add(shareButton);
-      this.add(buttons);
     },
 
     __searchUsers: function() {
-      this.__searchingCollaborators.show();
+      this.getChildControl("searching-collaborators").show();
       const text = this.getChildControl("text-filter").getChildControl("textfield").getValue();
       osparc.store.Users.getInstance().searchUsers(text)
         .then(users => {
@@ -137,7 +144,7 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
           this.__addPotentialCollaborators(users);
         })
         .catch(err => osparc.FlashMessenger.logError(err))
-        .finally(() => this.__searchingCollaborators.exclude());
+        .finally(() => this.getChildControl("searching-collaborators").exclude());
     },
 
     __showProductEveryone: function() {
@@ -177,7 +184,7 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
             this.__selectedCollaborators.splice(idx, 1);
           }
         }
-        this.__shareButton.setEnabled(Boolean(this.__selectedCollaborators.length));
+        this.getChildControl("share-button").setEnabled(Boolean(this.__selectedCollaborators.length));
       }, this);
       collaboratorButton.subscribeToFilterGroup("collaboratorsManager");
       return collaboratorButton;
@@ -221,23 +228,24 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
           return;
         }
         // do not list those that were already listed
-        if (this.__collabButtonsContainer.getChildren().find(c => "groupId" in c && c["groupId"] === potentialCollaborator.getGroupId())) {
+        if (this.getChildControl("potential-collaborators-list").getChildren().find(c => "groupId" in c && c["groupId"] === potentialCollaborator.getGroupId())) {
           return;
         }
         if (this.__showOrganizations === false && potentialCollaborator["collabType"] !== 2) {
           return;
         }
-        this.__collabButtonsContainer.add(this.__collaboratorButton(potentialCollaborator));
+        this.getChildControl("potential-collaborators-list").add(this.__collaboratorButton(potentialCollaborator));
       });
 
       // move it to last position
-      this.__collabButtonsContainer.remove(this.__searchingCollaborators);
-      this.__collabButtonsContainer.add(this.__searchingCollaborators);
+      const searching = this.getChildControl("searching-collaborators");
+      this.getChildControl("potential-collaborators-list").remove(searching);
+      this.getChildControl("potential-collaborators-list").add(searching);
     },
 
     __shareClicked: function() {
-      this.__collabButtonsContainer.setEnabled(false);
-      this.__shareButton.setFetching(true);
+      this.getChildControl("potential-collaborators-list").setEnabled(false);
+      this.getChildControl("share-button").setFetching(true);
 
       if (this.__selectedCollaborators.length) {
         this.fireDataEvent("addCollaborators", this.__selectedCollaborators);
