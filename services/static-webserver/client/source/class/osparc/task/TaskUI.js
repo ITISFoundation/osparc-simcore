@@ -123,9 +123,14 @@ qx.Class.define("osparc.task.TaskUI", {
     __applyTask: function(task) {
       task.addListener("updateReceived", e => {
         const data = e.getData();
-        if (data["task_progress"] && "percent" in data["task_progress"]) {
-          const progress = data["task_progress"]["percent"];
-          this.getChildControl("progress").setValue(progress*100 + "%");
+        if (data["task_progress"]) {
+          if ("message" in data["task_progress"] && !this.getChildControl("subtitle").getValue()) {
+            this.getChildControl("subtitle").setValue(data["task_progress"]["message"]);
+          }
+          if ("percent" in data["task_progress"]) {
+            const progress = data["task_progress"]["percent"];
+            this.getChildControl("progress").setValue(progress*100 + "%");
+          }
         }
       }, this);
 
