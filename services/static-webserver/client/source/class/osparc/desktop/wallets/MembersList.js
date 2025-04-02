@@ -33,38 +33,6 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
   },
 
   statics: {
-    getNoReadAccess: function() {
-      return {
-        "read": false,
-        "write": false,
-        "delete": false
-      };
-    },
-
-    getReadAccess: function() {
-      return {
-        "read": true,
-        "write": false,
-        "delete": false
-      };
-    },
-
-    getWriteAccess: function() {
-      return {
-        "read": true,
-        "write": true,
-        "delete": false
-      };
-    },
-
-    getDeleteAccess: function() {
-      return {
-        "read": true,
-        "write": true,
-        "delete": true
-      };
-    },
-
     sortWalletMembers: function(a, b) {
       const sorted = osparc.share.Collaborators.sortByAccessRights(a["accessRights"], b["accessRights"]);
       if (sorted !== 0) {
@@ -266,6 +234,7 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
         return;
       }
 
+      const readAccessRole = osparc.data.Roles.WALLET["read"];
       const promises = [];
       gids.forEach(gid => {
         const params = {
@@ -273,7 +242,7 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
             "walletId": wallet.getWalletId(),
             "groupId": gid
           },
-          data: this.self().getReadAccess()
+          data: readAccessRole.accessRights
         };
         promises.push(osparc.data.Resources.fetch("wallets", "postAccessRights", params));
       });
@@ -305,12 +274,13 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
         return;
       }
 
+      const writeAccessRole = osparc.data.Roles.WALLET["write"];
       const params = {
         url: {
           "walletId": wallet.getWalletId(),
           "groupId": listedMember["gid"],
         },
-        data: this.self().getWriteAccess()
+        data: writeAccessRole.accessRights
       };
       osparc.data.Resources.fetch("wallets", "putAccessRights", params)
         .then(() => {
@@ -325,12 +295,13 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
         return;
       }
 
+      const readAccessRole = osparc.data.Roles.WALLET["read"];
       const params = {
         url: {
           "walletId": wallet.getWalletId(),
           "groupId": listedMember["gid"],
         },
-        data: this.self().getReadAccess()
+        data: readAccessRole.accessRights
       };
       osparc.data.Resources.fetch("wallets", "putAccessRights", params)
         .then(() => {

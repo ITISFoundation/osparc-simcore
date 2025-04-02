@@ -129,7 +129,12 @@ qx.Class.define("osparc.data.Roles", {
         longLabel: qx.locale.Manager.tr("User: Read access"),
         canDo: [
           qx.locale.Manager.tr("- can use the credits")
-        ]
+        ],
+        accessRights: {
+          "read": true,
+          "write": false,
+          "delete": false
+        },
       },
       "write": {
         label: qx.locale.Manager.tr("Accountant"),
@@ -137,7 +142,12 @@ qx.Class.define("osparc.data.Roles", {
         canDo: [
           qx.locale.Manager.tr("- can Add/Delete members"),
           qx.locale.Manager.tr("- can Edit Credit Account details")
-        ]
+        ],
+        accessRights: {
+          "read": true,
+          "write": true,
+          "delete": false
+        },
       }
     },
 
