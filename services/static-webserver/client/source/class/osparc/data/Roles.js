@@ -138,7 +138,6 @@ qx.Class.define("osparc.data.Roles", {
         },
       },
     },
-
     WALLET: {
       "read": {
         label: qx.locale.Manager.tr("User"),
@@ -166,7 +165,6 @@ qx.Class.define("osparc.data.Roles", {
         },
       }
     },
-
     WORKSPACE: {
       "read": {
         label: qx.locale.Manager.tr("Viewer"),
