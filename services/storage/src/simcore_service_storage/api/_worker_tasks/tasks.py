@@ -17,6 +17,6 @@ def setup_worker_tasks(app: Celery) -> None:
     with log_context(_logger, logging.INFO, msg="celery task registration"):
         register_task(app, data_export, timeout=None)
         register_task(app, compute_path_size, timeout=None)
-        register_task(app, complete_upload_file)
+        register_task(app, complete_upload_file, timeout=None)
         register_task(app, delete_paths, timeout=None)
         register_task(app, deep_copy_files_from_project, timeout=None)
