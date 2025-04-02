@@ -1,12 +1,12 @@
 import datetime as dt
 import hashlib
 import re
+import secrets
 import string
 from typing import Annotated, Final
 
 from models_library.basic_types import IDStr
 from pydantic import BaseModel, ConfigDict, Field
-from servicelib.utils_secrets import generate_token_secret_key
 
 _PUNCTUATION_REGEX = re.compile(
     pattern="[" + re.escape(string.punctuation.replace("_", "")) + "]"
@@ -24,7 +24,7 @@ def generate_unique_api_key(name: str, length: int = _KEY_LEN) -> str:
 
 def generate_api_key_and_secret(name: str):
     api_key = generate_unique_api_key(name)
-    api_secret = generate_token_secret_key(_SECRET_LEN)
+    api_secret = secrets.token_hex(_SECRET_LEN)
     return api_key, api_secret
 
 
