@@ -80,11 +80,13 @@ qx.Class.define("osparc.share.PublishTemplate", {
     },
 
     __updateAccessRights: function() {
+      const readAccessRole = osparc.data.Roles.STUDY["read"];
+      const deleteAccessRole = osparc.data.Roles.STUDY["delete"];
       // these "accessRights" are only used for repopulating potential collaborators in the AddCollaborators -> NewCollaboratorsManager
       const myGroupId = osparc.auth.Data.getInstance().getGroupId();
       this.__potentialTemplateData["accessRights"] = {};
-      this.__potentialTemplateData["accessRights"][myGroupId] = osparc.share.CollaboratorsStudy.getOwnerAccessRight();
-      this.getSelectedGroups().forEach(gid => this.__potentialTemplateData["accessRights"][gid] = osparc.share.CollaboratorsStudy.getViewerAccessRight());
+      this.__potentialTemplateData["accessRights"][myGroupId] = deleteAccessRole.accessRights;
+      this.getSelectedGroups().forEach(gid => this.__potentialTemplateData["accessRights"][gid] = readAccessRole.accessRights);
     },
 
     getSelectedGroups: function() {
