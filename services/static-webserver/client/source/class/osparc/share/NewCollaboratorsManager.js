@@ -9,7 +9,7 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
   extend: osparc.ui.window.SingletonWindow,
 
   construct: function(resourceData, showOrganizations = true) {
-    this.base(arguments, "collaboratorsManager", this.tr("Share with"));
+    this.base(arguments, "collaboratorsManager", this.tr("New collaborators"));
 
     this.set({
       layout: new qx.ui.layout.VBox(5),
@@ -91,6 +91,30 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
           control.exclude();
           this.getChildControl("potential-collaborators-list").add(control);
           break;
+        case "access-rights-layout": {
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(2)).set({
+            paddingLeft: 8,
+          });
+          const title = new qx.ui.basic.Label(this.tr("Access"));
+          control.add(title);
+          this.add(control);
+          break;
+        }
+        case "access-rights-selector":
+          control = new qx.ui.form.SelectBox().set({
+            allowGrowX: false,
+            backgroundColor: "transparent",
+          });
+          this.getChildControl("access-rights-layout").add(control);
+          break;
+        case "access-rights-helper": {
+          control = new qx.ui.basic.Label().set({
+            paddingLeft: 5,
+            font: "text-12",
+          });
+          this.getChildControl("access-rights-layout").add(control);
+          break;
+        }
         case "buttons-layout":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
             alignX: "right"
@@ -132,6 +156,28 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
 
       this.getChildControl("potential-collaborators-list");
       this.getChildControl("searching-collaborators");
+
+      if (this.__resourceData["resourceType"] === "study") {
+        const selectBox = this.getChildControl("access-rights-selector");
+        const helper = this.getChildControl("access-rights-helper");
+
+        Object.entries(osparc.data.Roles.STUDY).forEach(([id, role]) => {
+          const option = new qx.ui.form.ListItem(role.label, null, id);
+          selectBox.add(option);
+        });
+        selectBox.addListener("changeSelection", e => {
+          const selected = e.getData()[0];
+          if (selected) {
+            const selectedRole = osparc.data.Roles.STUDY[selected.getModel()];
+            helper.setValue(selectedRole.longLabel);
+          }
+        }, this);
+        selectBox.getSelectables().forEach(selectable => {
+          if (selectable.getModel() == 2) { // "write"
+            selectBox.setSelection([selectable]);
+          }
+        });
+      }
 
       const shareButton = this.getChildControl("share-button");
       shareButton.addListener("execute", () => this.__shareClicked(), this);
