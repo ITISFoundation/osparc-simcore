@@ -2,6 +2,7 @@ import functools
 import logging
 from typing import Any
 
+from aws_library.s3._models import S3ObjectKey
 from celery import Task  # type: ignore[import-untyped]
 from models_library.api_schemas_storage.data_export_async_jobs import AccessRightError
 from models_library.api_schemas_storage.storage_schemas import FoldersBody
@@ -15,7 +16,7 @@ from simcore_service_storage.exceptions.errors import FileAccessRightError
 from ...dsm import get_dsm_provider
 from ...modules.celery.models import TaskID, TaskId
 from ...modules.celery.utils import get_celery_worker, get_fastapi_app
-from ...simcore_s3_dsm import S3ObjectKey, SimcoreS3DataManager
+from ...simcore_s3_dsm import SimcoreS3DataManager
 from ...utils.progress_utils import get_tqdm_progress, set_tqdm_absolute_progress
 
 _logger = logging.getLogger(__name__)
