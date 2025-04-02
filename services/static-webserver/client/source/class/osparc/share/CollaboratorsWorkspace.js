@@ -34,30 +34,6 @@ qx.Class.define("osparc.share.CollaboratorsWorkspace", {
     canIDelete: function(myAccessRights) {
       return myAccessRights["delete"];
     },
-
-    getViewerAccessRight: function() {
-      return {
-        "read": true,
-        "write": false,
-        "delete": false
-      };
-    },
-
-    getCollaboratorAccessRight: function() {
-      return {
-        "read": true,
-        "write": true,
-        "delete": false
-      };
-    },
-
-    getOwnerAccessRight: function() {
-      return {
-        "read": true,
-        "write": true,
-        "delete": true
-      };
-    }
   },
 
   members: {
@@ -68,8 +44,9 @@ qx.Class.define("osparc.share.CollaboratorsWorkspace", {
         return;
       }
 
+      const writeAccessRole = osparc.data.Roles.WORKSPACE["write"];
       const newCollaborators = {};
-      gids.forEach(gid => newCollaborators[gid] = this.self().getCollaboratorAccessRight());
+      gids.forEach(gid => newCollaborators[gid] = writeAccessRole.accessRights);
       osparc.store.Workspaces.getInstance().addCollaborators(this.__workspace.getWorkspaceId(), newCollaborators)
         .then(() => {
           const text = this.tr("Workspace successfully shared");
@@ -117,40 +94,43 @@ qx.Class.define("osparc.share.CollaboratorsWorkspace", {
     },
 
     _promoteToEditor: function(collaborator, item) {
+      const writeAccessRole = osparc.data.Roles.WORKSPACE["write"];
       this.__make(
         collaborator["gid"],
-        this.self().getCollaboratorAccessRight(),
-        this.tr(`Successfully promoted to ${osparc.data.Roles.WORKSPACE["write"].label}`),
-        this.tr(`Something went wrong while promoting to ${osparc.data.Roles.WORKSPACE["write"].label}`),
+        writeAccessRole.accessRights,
+        this.tr(`Successfully promoted to ${writeAccessRole.label}`),
+        this.tr(`Something went wrong while promoting to ${writeAccessRole.label}`),
         item
       );
     },
 
     _promoteToOwner: function(collaborator, item) {
+      const deleteAccessRole = osparc.data.Roles.WORKSPACE["delete"];
       this.__make(
         collaborator["gid"],
-        this.self().getOwnerAccessRight(),
-        this.tr(`Successfully promoted to ${osparc.data.Roles.WORKSPACE["delete"].label}`),
-        this.tr(`Something went wrong while promoting to ${osparc.data.Roles.WORKSPACE["delete"].label}`),
+        deleteAccessRole.accessRights,
+        this.tr(`Successfully promoted to ${deleteAccessRole.label}`),
+        this.tr(`Something went wrong while promoting to ${deleteAccessRole.label}`),
         item
       );
     },
 
     _demoteToUser: async function(collaborator, item) {
+      const readAccessRole = osparc.data.Roles.WORKSPACE["read"];
       const groupId = collaborator["gid"];
       const demoteToUser = (gid, itm) => {
         this.__make(
           gid,
-          this.self().getViewerAccessRight(),
-          this.tr(`Successfully demoted to ${osparc.data.Roles.WORKSPACE["read"].label}`),
-          this.tr(`Something went wrong while demoting to ${osparc.data.Roles.WORKSPACE["read"].label}`),
+          readAccessRole.accessRights,
+          this.tr(`Successfully demoted to ${readAccessRole.label}`),
+          this.tr(`Something went wrong while demoting to ${readAccessRole.label}`),
           itm
         );
       };
 
       const group = osparc.store.Groups.getInstance().getOrganization(groupId);
       if (group) {
-        const msg = this.tr(`Demoting to ${osparc.data.Roles.WORKSPACE["read"].label} will remove write access to all the members of the Organization. Are you sure?`);
+        const msg = this.tr(`Demoting to ${readAccessRole.label} will remove write access to all the members of the Organization. Are you sure?`);
         const win = new osparc.ui.window.Confirmation(msg).set({
           caption: this.tr("Demote"),
           confirmAction: "delete",
@@ -169,11 +149,12 @@ qx.Class.define("osparc.share.CollaboratorsWorkspace", {
     },
 
     _demoteToEditor: function(collaborator, item) {
+      const writeAccessRole = osparc.data.Roles.WORKSPACE["write"];
       this.__make(
         collaborator["gid"],
-        this.self().getCollaboratorAccessRight(),
-        this.tr(`Successfully demoted to ${osparc.data.Roles.WORKSPACE["write"].label}`),
-        this.tr(`Something went wrong while demoting to ${osparc.data.Roles.WORKSPACE["write"].label}`),
+        writeAccessRole.accessRights,
+        this.tr(`Successfully demoted to ${writeAccessRole.label}`),
+        this.tr(`Something went wrong while demoting to ${writeAccessRole.label}`),
         item
       );
     }
