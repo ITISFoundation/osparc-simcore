@@ -19,6 +19,7 @@ from unittest.mock import Mock
 import httpx
 import pytest
 import sqlalchemy as sa
+from celery.contrib.testing.worker import TestWorkController
 from faker import Faker
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
@@ -31,7 +32,6 @@ from models_library.api_schemas_storage.storage_schemas import (
 )
 from models_library.basic_types import SHA256Str
 from models_library.products import ProductName
-from models_library.progress_bar import ProgressReport, ProgressStructuredMessage
 from models_library.projects_nodes_io import NodeID, NodeIDStr, SimcoreS3FileID
 from models_library.users import UserID
 from pydantic import ByteSize, TypeAdapter
@@ -56,6 +56,7 @@ from servicelib.rabbitmq.rpc_interfaces.storage.simcore_s3 import (
     start_data_export,
 )
 from simcore_postgres_database.storage_models import file_meta_data
+from simcore_service_storage.api._worker_tasks._simcore_s3 import AccessRightError
 from simcore_service_storage.modules.celery.worker import CeleryTaskQueueWorker
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 from sqlalchemy.ext.asyncio import AsyncEngine
@@ -209,6 +210,7 @@ def short_dsm_cleaner_interval(monkeypatch: pytest.MonkeyPatch) -> int:
 async def test_copy_folders_from_valid_project_with_one_large_file(
     initialized_app: FastAPI,
     short_dsm_cleaner_interval: int,
+    with_storage_celery_worker_controller: TestWorkController,
     storage_rabbitmq_rpc_client: RabbitMQRPCClient,
     user_id: UserID,
     product_name: ProductName,
@@ -302,6 +304,7 @@ async def test_copy_folders_from_valid_project_with_one_large_file(
 async def test_copy_folders_from_valid_project(
     short_dsm_cleaner_interval: int,
     initialized_app: FastAPI,
+    with_storage_celery_worker_controller: TestWorkController,
     storage_rabbitmq_rpc_client: RabbitMQRPCClient,
     user_id: UserID,
     product_name: ProductName,
@@ -431,7 +434,7 @@ async def _create_and_delete_folders_from_project(
 
 
 @pytest.fixture
-def mock_datcore_download(mocker, client):
+def mock_datcore_download(mocker: MockerFixture, client: httpx.AsyncClient) -> None:
     # Use to mock downloading from DATCore
     async def _fake_download_to_file_or_raise(session, url, dest_path):
         with log_context(logging.INFO, f"Faking download:  {url} -> {dest_path}"):
@@ -524,7 +527,7 @@ async def _request_start_data_export(
             rpc_client,
             user_id=user_id,
             product_name=product_name,
-            paths_to_export=[],
+            paths_to_export=paths_to_export,
         )
 
         async for async_job_result in wait_and_get_result(
@@ -559,14 +562,14 @@ def task_progress_spy(mocker: MockerFixture) -> Mock:
     "project_params",
     [
         ProjectWithFilesParams(
-            num_nodes=1,
-            allowed_file_sizes=(TypeAdapter(ByteSize).validate_python("210Mib"),),
+            num_nodes=4,
+            allowed_file_sizes=(TypeAdapter(ByteSize).validate_python("1KiB"),),
             allowed_file_checksums=(
                 TypeAdapter(SHA256Str).validate_python(
                     "0b3216d95ec5a36c120ba16c88911dcf5ff655925d0fbdbc74cf95baf86de6fc"
                 ),
             ),
-            workspace_files_count=0,
+            workspace_files_count=10,
         ),
     ],
     ids=str,
@@ -574,6 +577,7 @@ def task_progress_spy(mocker: MockerFixture) -> Mock:
 async def test_start_data_export(
     initialized_app: FastAPI,
     short_dsm_cleaner_interval: int,
+    with_storage_celery_worker_controller: TestWorkController,
     storage_rabbitmq_rpc_client: RabbitMQRPCClient,
     user_id: UserID,
     product_name: ProductName,
@@ -606,43 +610,27 @@ async def test_start_data_export(
         result,
     )
 
-    assert [x[0][3] for x in task_progress_spy.call_args_list] == [
-        ProgressReport(
-            actual_value=0.0,
-            total=1.0,
-            attempt=0,
-            unit=None,
-            message=ProgressStructuredMessage(
-                description="data export", current=0.0, total=1, unit=None, sub=None
-            ),
-        ),
-        ProgressReport(
-            actual_value=1.0,
-            total=1.0,
-            attempt=0,
-            unit=None,
-            message=ProgressStructuredMessage(
-                description="data export", current=1.0, total=1, unit=None, sub=None
-            ),
-        ),
-    ]
+    progress_updates = [x[0][3].actual_value for x in task_progress_spy.call_args_list]
+    assert progress_updates[0] == 0
+    assert progress_updates[-1] == 1
 
 
 async def test_start_data_export_access_error(
     initialized_app: FastAPI,
     short_dsm_cleaner_interval: int,
+    with_storage_celery_worker_controller: TestWorkController,
     storage_rabbitmq_rpc_client: RabbitMQRPCClient,
     user_id: UserID,
     product_name: ProductName,
     faker: Faker,
 ):
+    with pytest.raises(JobError) as exc:
+        await _request_start_data_export(
+            storage_rabbitmq_rpc_client,
+            user_id,
+            product_name,
+            paths_to_export=[f"{faker.uuid4()}/{faker.uuid4()}/{faker.file_name()}"],
+            client_timeout=datetime.timedelta(seconds=60),
+        )
 
-    await _request_start_data_export(
-        storage_rabbitmq_rpc_client,
-        user_id,
-        product_name,
-        paths_to_export=[f"{faker.uuid4()}/{faker.uuid4()}/{faker.file_name()}"],
-        client_timeout=datetime.timedelta(seconds=10),
-    )
-    # STATUS does nto report failuire WTF
-    # STATUS i do not see the retry attempts, soemthing should be done here
+    assert isinstance(exc.value.exc, AccessRightError)
