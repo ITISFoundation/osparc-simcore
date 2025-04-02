@@ -4,7 +4,6 @@ from models_library.api_schemas_rpc_async_jobs.async_jobs import (
 )
 from models_library.api_schemas_storage import STORAGE_RPC_NAMESPACE
 from models_library.api_schemas_storage.storage_schemas import FoldersBody
-from models_library.projects_nodes_io import StorageFileID
 from models_library.rabbitmq_basic_types import RPCMethodName
 from models_library.users import UserID
 from pydantic import TypeAdapter
@@ -36,7 +35,7 @@ async def start_data_export(
     *,
     user_id: UserID,
     product_name: str,
-    paths_to_export: list[StorageFileID],
+    paths_to_export: list[str],
 ) -> tuple[AsyncJobGet, AsyncJobNameData]:
     job_id_data = AsyncJobNameData(user_id=user_id, product_name=product_name)
     async_job_rpc_get = await submit(

@@ -15,7 +15,7 @@ from simcore_service_storage.exceptions.errors import FileAccessRightError
 from ...dsm import get_dsm_provider
 from ...modules.celery.models import TaskID, TaskId
 from ...modules.celery.utils import get_celery_worker, get_fastapi_app
-from ...simcore_s3_dsm import SimcoreS3DataManager
+from ...simcore_s3_dsm import S3ObjectKey, SimcoreS3DataManager
 from ...utils.progress_utils import get_tqdm_progress, set_tqdm_absolute_progress
 
 _logger = logging.getLogger(__name__)
@@ -66,7 +66,7 @@ async def data_export(
     task_id: TaskID,
     *,
     user_id: UserID,
-    paths_to_export: list[StorageFileID],
+    paths_to_export: list[S3ObjectKey],
 ) -> StorageFileID:
     _logger.info("Exporting (for user='%s') selection: %s", user_id, paths_to_export)
 

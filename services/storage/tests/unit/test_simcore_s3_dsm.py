@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from aws_library.s3._models import S3ObjectKey
 from faker import Faker
 from models_library.basic_types import SHA256Str
 from models_library.progress_bar import ProgressReport
@@ -194,7 +195,7 @@ async def paths_for_export(
 
 def _get_folder_and_files_selection(
     paths_for_export: set[SimcoreS3FileID],
-) -> list[SimcoreS3FileID]:
+) -> list[S3ObjectKey]:
     # select 10 % of files
 
     random_files: list[SimcoreS3FileID] = [
@@ -203,7 +204,7 @@ def _get_folder_and_files_selection(
     ]
 
     all_containing_folders: set[SimcoreS3FileID] = {
-        TypeAdapter(SimcoreS3FileID).validate_python(f"{Path(f).parent}")
+        TypeAdapter(S3ObjectKey).validate_python(f"{Path(f).parent}")
         for f in random_files
     }
 

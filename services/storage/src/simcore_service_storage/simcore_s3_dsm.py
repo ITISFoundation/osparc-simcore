@@ -17,6 +17,7 @@ from aws_library.s3 import (
     UploadedBytesTransferredCallback,
     UploadID,
 )
+from aws_library.s3._models import S3ObjectKey
 from fastapi import FastAPI
 from models_library.api_schemas_storage.storage_schemas import (
     UNDEFINED_SIZE,
@@ -1243,7 +1244,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
     async def create_s3_export(
         self,
         user_id: UserID,
-        object_keys: list[StorageFileID],
+        object_keys: list[S3ObjectKey],
         *,
         progress_bar: ProgressBarData | None,
     ) -> StorageFileID:
