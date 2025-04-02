@@ -34,7 +34,7 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
     ),
     JobError: HttpErrorInfo(
         status.HTTP_500_INTERNAL_SERVER_ERROR,
-        "Task {job_id} failed with exception type {exc_type} and message {exc_msg}",
+        "Task '{job_id}' failed with exception type '{exc_type}' and message: {exc_msg}",
     ),
     JobNotDoneError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
