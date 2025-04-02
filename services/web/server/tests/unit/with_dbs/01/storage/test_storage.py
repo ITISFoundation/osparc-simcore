@@ -427,7 +427,10 @@ def create_storage_rpc_client_mock(
 @pytest.mark.parametrize(
     "backend_result_or_exception, expected_status",
     [
-        (AsyncJobGet(job_id=AsyncJobId(f"{_faker.uuid4()}")), status.HTTP_202_ACCEPTED),
+        (
+            (AsyncJobGet(job_id=AsyncJobId(f"{_faker.uuid4()}")), None),
+            status.HTTP_202_ACCEPTED,
+        ),
         (
             InvalidFileIdentifierError(file_id=Path("/my/file")),
             status.HTTP_404_NOT_FOUND,
@@ -438,7 +441,10 @@ def create_storage_rpc_client_mock(
             ),
             status.HTTP_403_FORBIDDEN,
         ),
-        (JobSchedulerError(exc=_faker.text()), status.HTTP_500_INTERNAL_SERVER_ERROR),
+        (
+            JobSchedulerError(exc=_faker.text()),
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
+        ),
     ],
     ids=lambda x: type(x).__name__,
 )
@@ -454,7 +460,7 @@ async def test_data_export(
     create_storage_rpc_client_mock(
         "simcore_service_webserver.storage._rest",
         start_data_export.__name__,
-        (backend_result_or_exception, None),
+        backend_result_or_exception,
     )
 
     _body = DataExportPost(
