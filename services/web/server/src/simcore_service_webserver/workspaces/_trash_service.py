@@ -21,8 +21,9 @@ from simcore_postgres_database.utils_repos import transaction_context
 from ..db.plugin import get_asyncpg_engine
 from ..folders._folders_service import list_folders
 from ..folders._trash_service import trash_folder, untrash_folder
-from ..projects._crud_api_read import ProjectTypeAPI, list_projects
+from ..projects._crud_api_read import list_projects
 from ..projects._trash_service import trash_project, untrash_project
+from ..projects.models import ProjectTypeAPI
 from . import _workspaces_repository, _workspaces_service
 from .errors import WorkspaceNotTrashedError
 
