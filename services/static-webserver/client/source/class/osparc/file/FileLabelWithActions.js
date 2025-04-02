@@ -232,7 +232,7 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
             osparc.task.TasksContainer.getInstance().addTaskUI(taskUI);
 
             const progressWindow = new osparc.ui.window.Progress(
-              this.tr("Deleting files"),
+              this.tr("Delete files"),
               "@FontAwesome5Solid/trash/14",
               this.tr("Deleting files..."),
             );
