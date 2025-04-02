@@ -5,7 +5,9 @@
 # pylint: disable=unused-variable
 
 import asyncio
+import base64
 import logging
+import pickle
 import time
 from collections.abc import Callable
 from random import randint
@@ -16,14 +18,13 @@ from celery.contrib.abortable import AbortableTask
 from common_library.errors_classes import OsparcErrorMixin
 from fastapi import FastAPI
 from models_library.progress_bar import ProgressReport
-from pydantic import TypeAdapter, ValidationError
+from pydantic import ValidationError
 from servicelib.logging_utils import log_context
 from simcore_service_storage.modules.celery import get_celery_client, get_event_loop
-from simcore_service_storage.modules.celery._task import define_task
+from simcore_service_storage.modules.celery._task import register_task
 from simcore_service_storage.modules.celery.client import CeleryTaskQueueClient
 from simcore_service_storage.modules.celery.models import (
     TaskContext,
-    TaskError,
     TaskState,
 )
 from simcore_service_storage.modules.celery.utils import (
@@ -46,7 +47,7 @@ def celery_client(
     return get_celery_client(initialized_app)
 
 
-async def _async_archive(
+async def _fake_file_processor(
     celery_app: Celery, task_name: str, task_id: str, files: list[str]
 ) -> str:
     worker = get_celery_worker(celery_app)
@@ -66,11 +67,11 @@ async def _async_archive(
     return "archive.zip"
 
 
-def sync_archive(task: Task, files: list[str]) -> str:
+def fake_file_processor(task: Task, files: list[str]) -> str:
     assert task.name
-    _logger.info("Calling async_archive")
+    _logger.info("Calling _fake_file_processor")
     return asyncio.run_coroutine_threadsafe(
-        _async_archive(task.app, task.name, task.request.id, files),
+        _fake_file_processor(task.app, task.name, task.request.id, files),
         get_event_loop(get_fastapi_app(task.app)),
     ).result()
 
@@ -99,9 +100,9 @@ def dreamer_task(task: AbortableTask) -> list[int]:
 @pytest.fixture
 def register_celery_tasks() -> Callable[[Celery], None]:
     def _(celery_app: Celery) -> None:
-        define_task(celery_app, sync_archive)
-        define_task(celery_app, failure_task)
-        define_task(celery_app, dreamer_task)
+        register_task(celery_app, fake_file_processor)
+        register_task(celery_app, failure_task)
+        register_task(celery_app, dreamer_task)
 
     return _
 
@@ -113,7 +114,7 @@ async def test_submitting_task_calling_async_function_results_with_success_state
     task_context = TaskContext(user_id=42)
 
     task_uuid = await celery_client.send_task(
-        sync_archive.__name__,
+        fake_file_processor.__name__,
         task_context=task_context,
         files=[f"file{n}" for n in range(5)],
     )
@@ -152,15 +153,11 @@ async def test_submitting_task_with_failure_results_with_error(
     ):
         with attempt:
             raw_result = await celery_client.get_task_result(task_context, task_uuid)
-            result = TypeAdapter(TaskError).validate_python(raw_result)
-            assert isinstance(result, TaskError)
+            assert isinstance(raw_result, Exception)
 
-    assert (
-        await celery_client.get_task_status(task_context, task_uuid)
-    ).task_state == TaskState.ERROR
     raw_result = await celery_client.get_task_result(task_context, task_uuid)
-    result = TypeAdapter(TaskError).validate_python(raw_result)
-    assert f"{result.exc_msg}" == "Something strange happened: BOOM!"
+    result = pickle.loads(base64.b64decode(raw_result.args[0]))
+    assert f"{result}" == "Something strange happened: BOOM!"
 
 
 async def test_aborting_task_results_with_aborted_state(
