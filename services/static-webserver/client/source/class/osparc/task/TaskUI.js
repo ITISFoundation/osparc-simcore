@@ -138,11 +138,9 @@ qx.Class.define("osparc.task.TaskUI", {
       this.getChildControl("icon").setSource(source);
     },
 
-    /**
-      * @abstract
-      */
     _buildLayout: function() {
-      throw new Error("Abstract method called!");
+      this.getChildControl("title");
+      this.getChildControl("subtitle");
     }
   }
 });
