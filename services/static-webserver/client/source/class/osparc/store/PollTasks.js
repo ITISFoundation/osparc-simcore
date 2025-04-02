@@ -34,13 +34,36 @@ qx.Class.define("osparc.store.PollTasks", {
         .then(tasksData => {
           tasksData.forEach(taskData => {
             const interval = 1000;
-            this.addTask(taskData, interval);
+            this.__addTask(taskData, interval);
           });
         })
         .catch(err => console.error(err));
     },
 
-    addTask: function(taskData, interval = 1000) {
+    createPollingTask: function(fetchPromise, interval) {
+      return new Promise((resolve, reject) => {
+        fetchPromise
+          .then(taskData => {
+            if ("status_href" in taskData) {
+              const task = this.__addTask(taskData, interval);
+              resolve(task);
+            } else {
+              throw Error("Status missing");
+            }
+          })
+          .catch(err => reject(err));
+      });
+    },
+
+    removeTask: function(task) {
+      const tasks = this.getTasks();
+      const index = tasks.findIndex(t => t.getTaskId() === task.getTaskId());
+      if (index > -1) {
+        tasks.splice(index, 1);
+      }
+    },
+
+    __addTask: function(taskData, interval = 1000) {
       const tasks = this.getTasks();
       const index = tasks.findIndex(t => t.getTaskId() === taskData["task_id"]);
       if (index === -1) {
@@ -49,21 +72,6 @@ qx.Class.define("osparc.store.PollTasks", {
         return task;
       }
       return null;
-    },
-
-    createPollingTask: function(fetchPromise, interval) {
-      return new Promise((resolve, reject) => {
-        fetchPromise
-          .then(taskData => {
-            if ("status_href" in taskData) {
-              const task = this.addTask(taskData, interval);
-              resolve(task);
-            } else {
-              throw Error("Status missing");
-            }
-          })
-          .catch(err => reject(err));
-      });
     },
 
     getDuplicateStudyTasks: function() {

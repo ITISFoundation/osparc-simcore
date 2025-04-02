@@ -8,6 +8,7 @@ from common_library.json_serialization import json_dumps
 from jsonschema import ValidationError as JsonSchemaValidationError
 from models_library.api_schemas_long_running_tasks.base import ProgressPercent
 from models_library.api_schemas_webserver.projects import ProjectGet
+from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_access import Owner
 from models_library.projects_nodes_io import NodeID
@@ -71,6 +72,7 @@ async def _prepare_project_copy(
     app: web.Application,
     *,
     user_id: UserID,
+    product_name: ProductName,
     src_project_uuid: ProjectID,
     as_template: bool,
     deep_copy: bool,
@@ -121,6 +123,7 @@ async def _prepare_project_copy(
             new_project,
             nodes_map,
             user_id,
+            product_name,
             task_progress,
         )
     return new_project, copy_project_nodes_coro, copy_file_coro
@@ -155,6 +158,7 @@ async def _copy_files_from_source_project(
     new_project: ProjectDict,
     nodes_map: NodesMap,
     user_id: UserID,
+    product_name: str,
     task_progress: TaskProgress,
 ):
     _projects_repository = ProjectDBAPI.get_from_app_context(app)
@@ -168,20 +172,26 @@ async def _copy_files_from_source_project(
 
     async def _copy() -> None:
         starting_value = task_progress.percent
-        async for long_running_task in copy_data_folders_from_project(
-            app, source_project, new_project, nodes_map, user_id
+        async for async_job_composed_result in copy_data_folders_from_project(
+            app,
+            source_project=source_project,
+            destination_project=new_project,
+            nodes_map=nodes_map,
+            user_id=user_id,
+            product_name=product_name,
         ):
             task_progress.update(
-                message=long_running_task.progress.message,
+                message=async_job_composed_result.status.progress.composed_message,
                 percent=TypeAdapter(ProgressPercent).validate_python(
                     (
                         starting_value
-                        + long_running_task.progress.percent * (1.0 - starting_value)
+                        + async_job_composed_result.status.progress.percent_value
+                        * (1.0 - starting_value)
                     ),
                 ),
             )
-            if long_running_task.done():
-                await long_running_task.result()
+            if async_job_composed_result.done:
+                await async_job_composed_result.result()
 
     if needs_lock_source_project:
         await with_project_locked(
@@ -311,6 +321,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
             ) = await _prepare_project_copy(
                 request.app,
                 user_id=user_id,
+                product_name=product_name,
                 src_project_uuid=from_study,
                 as_template=as_template,
                 deep_copy=copy_data,

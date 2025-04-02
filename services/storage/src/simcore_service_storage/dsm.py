@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 def setup_dsm(app: FastAPI) -> None:
     async def _on_startup() -> None:
-        dsm_provider = DataManagerProvider(app)
+        dsm_provider = DataManagerProvider(app=app)
         dsm_provider.register_builder(
             SimcoreS3DataManager.get_location_id(),
             create_simcore_s3_data_manager,
@@ -38,7 +38,7 @@ def setup_dsm(app: FastAPI) -> None:
 
 
 def get_dsm_provider(app: FastAPI) -> DataManagerProvider:
-    if not app.state.dsm_provider:
+    if not hasattr(app.state, "dsm_provider"):
         raise ConfigurationError(
             msg="DSM provider not available. Please check the configuration."
         )

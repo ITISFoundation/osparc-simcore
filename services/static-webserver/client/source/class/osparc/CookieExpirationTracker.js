@@ -112,7 +112,7 @@ qx.Class.define("osparc.CookieExpirationTracker", {
     // /FLASH MESSAGE //
 
     __logoutUser: function() {
-      const reason = qx.locale.Manager.tr("Session expired");
+      const reason = qx.locale.Manager.tr("Your session has expired");
       qx.core.Init.getApplication().logout(reason);
     }
   }

@@ -14,8 +14,16 @@ class UserData:
 
 
 @dataclass(frozen=True)
+class ProductUIData:
+    logo_url: str
+    strong_color: str
+
+
+@dataclass(frozen=True)
 class ProductData:
     product_name: ProductName
     display_name: str
     vendor_display_inline: str
     support_email: str
+    homepage_url: str
+    ui: ProductUIData

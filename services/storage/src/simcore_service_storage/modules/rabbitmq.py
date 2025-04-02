@@ -4,7 +4,6 @@ from typing import cast
 from fastapi import FastAPI
 from servicelib.logging_utils import log_context
 from servicelib.rabbitmq import (
-    RabbitMQClient,
     RabbitMQRPCClient,
     wait_till_rabbitmq_responsive,
 )
@@ -22,16 +21,12 @@ def setup(app: FastAPI) -> None:
             logging.INFO,
             msg="Storage startup Rabbitmq",
         ):
-            app.state.rabbitmq_client = None
             rabbit_settings: RabbitSettings | None = app.state.settings.STORAGE_RABBITMQ
             if not rabbit_settings:
                 raise ConfigurationError(
                     msg="RabbitMQ client is de-activated in the settings"
                 )
             await wait_till_rabbitmq_responsive(rabbit_settings.dsn)
-            app.state.rabbitmq_client = RabbitMQClient(
-                client_name="storage", settings=rabbit_settings
-            )
             app.state.rabbitmq_rpc_server = await RabbitMQRPCClient.create(
                 client_name="storage_rpc_server", settings=rabbit_settings
             )
@@ -42,21 +37,11 @@ def setup(app: FastAPI) -> None:
             logging.INFO,
             msg="Storage shutdown Rabbitmq",
         ):
-            if app.state.rabbitmq_client:
-                await app.state.rabbitmq_client.close()
             if app.state.rabbitmq_rpc_server:
                 await app.state.rabbitmq_rpc_server.close()
 
     app.add_event_handler("startup", on_startup)
     app.add_event_handler("shutdown", on_shutdown)
-
-
-def get_rabbitmq_client(app: FastAPI) -> RabbitMQClient:
-    if not app.state.rabbitmq_client:
-        raise ConfigurationError(
-            msg="RabbitMQ client is not available. Please check the configuration."
-        )
-    return cast(RabbitMQClient, app.state.rabbitmq_client)
 
 
 def get_rabbitmq_rpc_server(app: FastAPI) -> RabbitMQRPCClient:

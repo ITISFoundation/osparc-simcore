@@ -48,6 +48,7 @@ pytest_simcore_core_services_selection = [
     "rabbit",
     "redis",
     "storage",
+    "sto-worker",
 ]
 
 pytest_simcore_ops_services_selection = [
@@ -280,7 +281,6 @@ async def test_port_file_accessors(
     request: pytest.FixtureRequest,
     constant_uuid4: None,
 ):
-
     if item_value == "symlink_path":
         item_value = request.getfixturevalue("symlink_path")
     if config_value == "config_value_symlink_path":

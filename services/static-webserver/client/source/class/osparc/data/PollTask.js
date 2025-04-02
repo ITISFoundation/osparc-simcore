@@ -22,10 +22,10 @@
 qx.Class.define("osparc.data.PollTask", {
   extend: qx.core.Object,
 
-  construct: function(taskData, interval) {
+  construct: function(taskData, interval = 1000) {
     this.base(arguments);
 
-    interval ? this.setPollInterval(interval) : this.initPollInterval();
+    this.setPollInterval(interval);
 
     if (taskData && "task_id" in taskData) {
       this.set({

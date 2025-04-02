@@ -8,7 +8,10 @@
 </p>
 
 <p>
-  <a href="{{ link }}">{{ link }}</a>
+  <!-- Many email clients strip or ignore certain CSS properties, including them inline -->
+  <button class="strong-button" style="border-radius: 4px;">
+    <a href="{{ link }}" style="color: white;">Change email</a>
+  </button>
 </p>
 
 <p>Please don't hesitate to contact us at {{ product.support_email }} if you need further help.

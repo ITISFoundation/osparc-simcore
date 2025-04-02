@@ -18,7 +18,7 @@ from simcore_postgres_database.storage_models import projects, users
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
-from .helpers.faker_factories import random_project, random_user
+from .helpers.faker_factories import DEFAULT_FAKER, random_project, random_user
 
 
 @asynccontextmanager
@@ -62,7 +62,7 @@ async def other_user_id(sqlalchemy_async_engine: AsyncEngine) -> AsyncIterator[U
 @pytest.fixture
 async def create_project(
     user_id: UserID, sqlalchemy_async_engine: AsyncEngine
-) -> AsyncIterator[Callable[[], Awaitable[dict[str, Any]]]]:
+) -> AsyncIterator[Callable[..., Awaitable[dict[str, Any]]]]:
     created_project_uuids = []
 
     async def _creator(**kwargs) -> dict[str, Any]:
@@ -71,7 +71,7 @@ async def create_project(
         async with sqlalchemy_async_engine.begin() as conn:
             result = await conn.execute(
                 projects.insert()
-                .values(**random_project(**prj_config))
+                .values(**random_project(DEFAULT_FAKER, **prj_config))
                 .returning(sa.literal_column("*"))
             )
             row = result.one()

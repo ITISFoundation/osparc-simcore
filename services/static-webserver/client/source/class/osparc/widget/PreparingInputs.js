@@ -25,7 +25,7 @@ qx.Class.define("osparc.widget.PreparingInputs", {
 
     this._setLayout(new qx.ui.layout.VBox(10));
 
-    const text = this.tr("In order to move to this step, we need to prepare some inputs for you.<br>Here you can check the logs of the progress:");
+    const text = this.tr("To proceed, we need to prepare some inputs. You can check the progress logs here:");
     const title = new qx.ui.basic.Label(text).set({
       font: "text-14",
       rich: true
