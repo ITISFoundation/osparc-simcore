@@ -132,15 +132,17 @@ async def trash_folder(
         )
 
         # 2. Trash all child projects that I am an owner
-        child_projects: list[
-            ProjectID
-        ] = await _folders_repository.get_projects_recursively_only_if_user_is_owner(
-            app,
-            connection,
-            folder_id=folder_id,
-            private_workspace_user_id_or_none=user_id if workspace_is_private else None,
-            user_id=user_id,
-            product_name=product_name,
+        child_projects: list[ProjectID] = (
+            await _folders_repository.get_projects_recursively_only_if_user_is_owner(
+                app,
+                connection,
+                folder_id=folder_id,
+                private_workspace_user_id_or_none=(
+                    user_id if workspace_is_private else None
+                ),
+                user_id=user_id,
+                product_name=product_name,
+            )
         )
 
         for project_id in child_projects:
@@ -178,14 +180,14 @@ async def untrash_folder(
     )
 
     # 3.2 UNtrash all child projects that I am an owner
-    child_projects: list[
-        ProjectID
-    ] = await _folders_repository.get_projects_recursively_only_if_user_is_owner(
-        app,
-        folder_id=folder_id,
-        private_workspace_user_id_or_none=user_id if workspace_is_private else None,
-        user_id=user_id,
-        product_name=product_name,
+    child_projects: list[ProjectID] = (
+        await _folders_repository.get_projects_recursively_only_if_user_is_owner(
+            app,
+            folder_id=folder_id,
+            private_workspace_user_id_or_none=user_id if workspace_is_private else None,
+            user_id=user_id,
+            product_name=product_name,
+        )
     )
 
     for project_id in child_projects:
@@ -204,7 +206,7 @@ def _can_delete(
         folder_db.trashed
         and (until_equal_datetime is None or folder_db.trashed < until_equal_datetime)
         and my_access_rights.delete
-        and folder_db.trashed_by == user_id
+        and folder_db.trashed_by == user_id  # <-- Ask PC - is this correct?
         and folder_db.trashed_explicitly
     )
 

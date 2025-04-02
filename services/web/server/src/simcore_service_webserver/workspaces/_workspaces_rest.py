@@ -23,7 +23,7 @@ from .._meta import API_VTAG as VTAG
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
-from . import _workspaces_service
+from . import _workspaces_service, _workspaces_service_crud_read
 from ._common.exceptions_handlers import handle_plugin_requests_exceptions
 from ._common.models import (
     WorkspacesFilters,
@@ -76,7 +76,7 @@ async def list_workspaces(request: web.Request):
         query_params.filters = WorkspacesFilters()
 
     assert query_params.filters
-    total_count, workspaces = await _workspaces_service.list_workspaces(
+    total_count, workspaces = await _workspaces_service_crud_read.list_workspaces(
         app=request.app,
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
@@ -110,7 +110,7 @@ async def get_workspace(request: web.Request):
     req_ctx = WorkspacesRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(WorkspacesPathParams, request)
 
-    workspace = await _workspaces_service.get_workspace(
+    workspace = await _workspaces_service_crud_read.get_workspace(
         app=request.app,
         workspace_id=path_params.workspace_id,
         user_id=req_ctx.user_id,

@@ -245,7 +245,9 @@ async def list_(  # pylint: disable=too-many-arguments,too-many-branches
 
     # Ordering and pagination
     list_query = (
-        combined_query.order_by(_to_expression(order_by)).offset(offset).limit(limit)
+        combined_query.order_by(_to_expression(order_by), folders_v2.c.folder_id)
+        .offset(offset)
+        .limit(limit)
     )
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
@@ -294,7 +296,9 @@ async def list_trashed_folders(
 
     # Ordering and pagination
     list_query = (
-        base_query.order_by(_to_expression(order_by)).offset(offset).limit(limit)
+        base_query.order_by(_to_expression(order_by), folders_v2.c.folder_id)
+        .offset(offset)
+        .limit(limit)
     )
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
@@ -534,7 +538,7 @@ async def get_all_folders_and_projects_ids_recursively(
     product_name: ProductName,
 ) -> tuple[list[FolderID], list[ProjectID]]:
     """
-    The purpose of this function is to retrieve all projects within the provided folder ID.
+    The purpose of this function is to retrieve all subfolders and projects within the provided folder ID.
     """
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
