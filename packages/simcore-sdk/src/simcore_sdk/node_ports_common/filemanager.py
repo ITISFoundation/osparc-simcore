@@ -41,11 +41,25 @@ from .file_io_utils import (
 _logger = logging.getLogger(__name__)
 
 
+async def complete_directory_upload(
+    uploaded_parts: list[UploadedPart],
+    upload_completion_link: AnyUrl,
+    client_session: ClientSession | None = None,
+) -> None:
+    async with ClientSessionContextManager(client_session) as session:
+        await _filemanager_utils.complete_upload(
+            session=session,
+            upload_completion_link=upload_completion_link,
+            parts=uploaded_parts,
+            is_directory=True,
+        )
+
+
 async def complete_file_upload(
     uploaded_parts: list[UploadedPart],
     upload_completion_link: AnyUrl,
     client_session: ClientSession | None = None,
-) -> ETag:
+) -> ETag | None:
     async with ClientSessionContextManager(client_session) as session:
         e_tag: ETag | None = await _filemanager_utils.complete_upload(
             session=session,
@@ -278,8 +292,7 @@ class UploadedFile:
 
 
 @dataclass
-class UploadedFolder:
-    ...
+class UploadedFolder: ...
 
 
 async def _generate_checksum(
