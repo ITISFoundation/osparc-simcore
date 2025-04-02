@@ -1,6 +1,8 @@
 # pylint: disable=unused-argument
 
+import base64
 import logging
+import pickle
 
 from celery.exceptions import CeleryError  # type: ignore[import-untyped]
 from fastapi import FastAPI
@@ -21,7 +23,7 @@ from servicelib.logging_utils import log_catch
 from servicelib.rabbitmq import RPCRouter
 
 from ...modules.celery import get_celery_client
-from ...modules.celery.models import TaskError, TaskState
+from ...modules.celery.models import TaskState
 
 _logger = logging.getLogger(__name__)
 router = RPCRouter()
@@ -97,10 +99,12 @@ async def result(
         exc_type = ""
         exc_msg = ""
         with log_catch(logger=_logger, reraise=False):
-            task_error = TaskError.model_validate(_result)
-            exc_type = task_error.exc_type
-            exc_msg = task_error.exc_msg
-        raise JobError(job_id=job_id, exc_type=exc_type, exc_msg=exc_msg)
+            # NOTE: recover original error from wrapped error
+            exc = pickle.loads(base64.b64decode(_result.args[0]))
+            exc_type = type(exc).__name__
+            exc_msg = f"{exc}"
+
+        raise JobError(job_id=job_id, exc_type=exc_type, exc_msg=exc_msg, exc=exc)
 
     return AsyncJobResult(result=_result)
 

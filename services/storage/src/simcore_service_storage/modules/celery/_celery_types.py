@@ -10,7 +10,6 @@ from models_library.api_schemas_storage.storage_schemas import (
 from pydantic import BaseModel
 
 from ...models import FileMetaData
-from ...modules.celery.models import TaskError
 
 
 def _path_encoder(obj):
@@ -58,4 +57,3 @@ def register_celery_types() -> None:
     _register_pydantic_types(FileUploadCompletionBody)
     _register_pydantic_types(FileMetaData)
     _register_pydantic_types(FoldersBody)
-    _register_pydantic_types(TaskError)

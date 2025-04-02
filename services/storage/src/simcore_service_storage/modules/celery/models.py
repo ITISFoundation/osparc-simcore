@@ -77,9 +77,4 @@ class TaskStatus(BaseModel):
         return self
 
 
-class TaskError(BaseModel):
-    exc_type: str
-    exc_msg: str
-
-
 TaskId: TypeAlias = str

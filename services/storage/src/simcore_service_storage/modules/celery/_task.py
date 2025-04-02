@@ -1,50 +1,26 @@
 import asyncio
+import base64
 import inspect
 import logging
-import traceback
+import pickle
 from collections.abc import Callable, Coroutine
+from datetime import timedelta
 from functools import wraps
-from typing import Any, Concatenate, ParamSpec, TypeVar, overload
+from typing import Any, Concatenate, Final, ParamSpec, TypeVar, overload
 
-from celery import Celery  # type: ignore[import-untyped]
-from celery.contrib.abortable import AbortableTask  # type: ignore[import-untyped]
-from celery.exceptions import Ignore  # type: ignore[import-untyped]
+from celery import Celery, Task  # type: ignore[import-untyped]
+from celery.contrib.abortable import AbortableTask
+from pydantic import NonNegativeInt
 
 from . import get_event_loop
-from .models import TaskError, TaskId, TaskState
+from .models import TaskId
 from .utils import get_fastapi_app
 
 _logger = logging.getLogger(__name__)
 
-
-def error_handling(func: Callable[..., Any]) -> Callable[..., Any]:
-    @wraps(func)
-    def wrapper(task: AbortableTask, *args: Any, **kwargs: Any) -> Any:
-        try:
-            return func(task, *args, **kwargs)
-        except Exception as exc:
-            exc_type = type(exc).__name__
-            exc_message = f"{exc}"
-            exc_traceback = traceback.format_exc().split("\n")
-
-            _logger.exception(
-                "Task %s failed with exception: %s:%s",
-                task.request.id,
-                exc_type,
-                exc_message,
-            )
-
-            task.update_state(
-                state=TaskState.ERROR.upper(),
-                meta=TaskError(
-                    exc_type=exc_type,
-                    exc_msg=exc_message,
-                ).model_dump(mode="json"),
-                traceback=exc_traceback,
-            )
-            raise Ignore from exc  # ignore doing state updates
-
-    return wrapper
+_DEFAULT_TASK_TIMEOUT: Final[timedelta] = timedelta(minutes=1)
+_DEFAULT_MAX_RETRIES: Final[NonNegativeInt] = 3
+_DEFAULT_WAIT_BEFORE_RETRY: Final[timedelta] = timedelta(seconds=1)
 
 
 T = TypeVar("T")
@@ -77,11 +53,50 @@ def _async_task_wrapper(
     return decorator
 
 
+def _error_handling(max_retries: NonNegativeInt, delay_between_retries: timedelta):
+    def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
+        @wraps(func)
+        def wrapper(task: Task, *args: Any, **kwargs: Any) -> Any:
+            try:
+                return func(task, *args, **kwargs)
+            except Exception as exc:
+                exc_type = type(exc).__name__
+                exc_message = f"{exc}"
+                _logger.exception(
+                    "Task %s failed with exception: %s:%s",
+                    task.request.id,
+                    exc_type,
+                    exc_message,
+                )
+
+                # NOTE: since celery does a wonderful job when serializing exceptions
+                # by running it's magic, it looses the context of some errors
+                # this allows to recreate the same error in the caller side excatly as
+                # it was raised in this context
+                wrapping_exception = Exception(
+                    base64.b64encode(
+                        pickle.dumps(exc, protocol=pickle.HIGHEST_PROTOCOL)
+                    ).decode("ascii")
+                )
+                raise task.retry(
+                    max_retries=max_retries,
+                    countdown=delay_between_retries.total_seconds(),
+                    exc=wrapping_exception,
+                )
+
+        return wrapper
+
+    return decorator
+
+
 @overload
 def define_task(
     app: Celery,
     fn: Callable[Concatenate[AbortableTask, TaskId, P], Coroutine[Any, Any, R]],
     task_name: str | None = None,
+    timeout: timedelta | None = _DEFAULT_TASK_TIMEOUT,
+    max_retries: NonNegativeInt = _DEFAULT_MAX_RETRIES,
+    delay_between_retries: timedelta = _DEFAULT_WAIT_BEFORE_RETRY,
 ) -> None: ...
 
 
@@ -90,6 +105,9 @@ def define_task(
     app: Celery,
     fn: Callable[Concatenate[AbortableTask, P], R],
     task_name: str | None = None,
+    timeout: timedelta | None = _DEFAULT_TASK_TIMEOUT,
+    max_retries: NonNegativeInt = _DEFAULT_MAX_RETRIES,
+    delay_between_retries: timedelta = _DEFAULT_WAIT_BEFORE_RETRY,
 ) -> None: ...
 
 
@@ -100,8 +118,18 @@ def define_task(  # type: ignore[misc]
         | Callable[Concatenate[AbortableTask, P], R]
     ),
     task_name: str | None = None,
+    timeout: timedelta | None = _DEFAULT_TASK_TIMEOUT,
+    max_retries: NonNegativeInt = _DEFAULT_MAX_RETRIES,
+    delay_between_retries: timedelta = _DEFAULT_WAIT_BEFORE_RETRY,
 ) -> None:
-    """Decorator to define a celery task with error handling and abortable support"""
+    """Decorator to define a celery task with error handling and abortable support
+
+    Keyword Arguments:
+        task_name -- name of the function used in Celery (default: {None} will be generated automatically)
+        timeout -- when None no timeout is enforced, task is allowed to run forever (default: {_DEFAULT_TASK_TIMEOUT})
+        max_retries -- number of attempts in case of failuire before giving up (default: {_DEFAULT_MAX_RETRIES})
+        delay_between_retries -- dealy between each attempt in case of error (default: {_DEFAULT_WAIT_BEFORE_RETRY})
+    """
     wrapped_fn: Callable[Concatenate[AbortableTask, P], R]
     if asyncio.iscoroutinefunction(fn):
         wrapped_fn = _async_task_wrapper(app)(fn)
@@ -109,9 +137,13 @@ def define_task(  # type: ignore[misc]
         assert inspect.isfunction(fn)  # nosec
         wrapped_fn = fn
 
-    wrapped_fn = error_handling(wrapped_fn)
+    wrapped_fn = _error_handling(
+        max_retries=max_retries, delay_between_retries=delay_between_retries
+    )(wrapped_fn)
+
     app.task(
         name=task_name or fn.__name__,
         bind=True,
         base=AbortableTask,
+        time_limit=None if timeout is None else timeout.total_seconds(),
     )(wrapped_fn)
