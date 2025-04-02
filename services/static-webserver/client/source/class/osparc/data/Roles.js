@@ -26,7 +26,12 @@ qx.Class.define("osparc.data.Roles", {
         longLabel: qx.locale.Manager.tr("Restricted member: no Read access"),
         canDo: [
           qx.locale.Manager.tr("- can access content shared within the Organization")
-        ]
+        ],
+        accessRights: {
+          "read": false,
+          "write": false,
+          "delete": false
+        },
       },
       "read": {
         label: qx.locale.Manager.tr("Member"),
@@ -34,7 +39,12 @@ qx.Class.define("osparc.data.Roles", {
         canDo: [
           qx.locale.Manager.tr("- can see other members"),
           qx.locale.Manager.tr("- can share with other members")
-        ]
+        ],
+        accessRights: {
+          "read": true,
+          "write": false,
+          "delete": false
+        },
       },
       "write": {
         label: qx.locale.Manager.tr("Manager"),
@@ -43,14 +53,24 @@ qx.Class.define("osparc.data.Roles", {
           qx.locale.Manager.tr("- can Add/Delete members"),
           qx.locale.Manager.tr("- can Promote/Demote members"),
           qx.locale.Manager.tr("- can Edit Organization details")
-        ]
+        ],
+        accessRights: {
+          "read": true,
+          "write": true,
+          "delete": false
+        },
       },
       "delete": {
         label: qx.locale.Manager.tr("Administrator"),
         longLabel: qx.locale.Manager.tr("Admin: Read/Write/Delete access"),
         canDo: [
           qx.locale.Manager.tr("- can Delete the Organization")
-        ]
+        ],
+        accessRights: {
+          "read": true,
+          "write": true,
+          "delete": true
+        },
       }
     },
     // study & templates
