@@ -10,6 +10,7 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
 
   construct: function(resourceData, showOrganizations = true) {
     this.base(arguments, "collaboratorsManager", this.tr("Share with"));
+
     this.set({
       layout: new qx.ui.layout.VBox(5),
       allowMinimize: false,
@@ -43,7 +44,7 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
   members: {
     __resourceData: null,
     __showOrganizations: null,
-    __textFilter: null,
+
     __collabButtonsContainer: null,
     __searchingCollaborators: null,
     __searchDelayer: null,
@@ -51,34 +52,46 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
     __selectedCollaborators: null,
     __potentialCollaborators: null,
 
+    _createChildControlImpl: function(id) {
+      let control;
+      switch (id) {
+        case "intro-text": {
+          let text = this.__showOrganizations ?
+            this.tr("Select users or organizations from the list below.") :
+            this.tr("Select users from the list below.");
+          text += this.tr("<br>Search them if they aren't listed.");
+          control = new qx.ui.basic.Label().set({
+            value: text,
+            rich: true,
+            wrap: true,
+            paddingBottom: 5
+          });
+          this.add(control);
+          break;
+        }
+        case "text-filter": {
+          control = new osparc.filter.TextFilter("name", "collaboratorsManager");
+          control.setCompact(true);
+          const filterTextField = control.getChildControl("textfield");
+          filterTextField.setPlaceholder(this.tr("Search"));
+          filterTextField.setBackgroundColor("transparent");
+          this.addListener("appear", () => filterTextField.focus());
+          this.add(control);
+          break;
+        }
+      }
+      return control || this.base(arguments, id);
+    },
+
     getActionButton: function() {
       return this.__shareButton;
     },
 
     __renderLayout: function() {
-      let text = this.__showOrganizations ?
-        this.tr("Select users or organizations from the list below.") :
-        this.tr("Select users from the list below.");
-      text += this.tr("<br>Search them if they aren't listed.");
-      const introLabel = new qx.ui.basic.Label().set({
-        value: text,
-        rich: true,
-        wrap: true,
-        paddingBottom: 5
-      });
-      this.add(introLabel);
+      this.getChildControl("intro-text");
 
-      const toolbar = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
-        alignY: "middle",
-      }));
-      const filter = this.__textFilter = new osparc.filter.TextFilter("name", "collaboratorsManager");
-      filter.setCompact(true);
-      const filterTextField = filter.getChildControl("textfield");
-      filterTextField.setPlaceholder(this.tr("Search"));
-      this.addListener("appear", () => filterTextField.focus());
-      toolbar.add(filter, {
-        flex: 1
-      });
+      const textFilter = this.getChildControl("text-filter");
+      const filterTextField = textFilter.getChildControl("textfield");
       filterTextField.addListener("input", e => {
         const filterValue = e.getData();
         if (this.__searchDelayer) {
@@ -91,7 +104,6 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
           }, waitBeforeSearching);
         }
       });
-      this.add(toolbar);
 
       const collabButtonsContainer = this.__collabButtonsContainer = new qx.ui.container.Composite(new qx.ui.layout.VBox());
       const scrollContainer = new qx.ui.container.Scroll();
@@ -118,7 +130,7 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
 
     __searchUsers: function() {
       this.__searchingCollaborators.show();
-      const text = this.__textFilter.getChildControl("textfield").getValue();
+      const text = this.getChildControl("text-filter").getChildControl("textfield").getValue();
       osparc.store.Users.getInstance().searchUsers(text)
         .then(users => {
           users.forEach(user => user["collabType"] = 2);
