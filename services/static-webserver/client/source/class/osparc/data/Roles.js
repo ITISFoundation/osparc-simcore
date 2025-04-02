@@ -79,7 +79,7 @@ qx.Class.define("osparc.data.Roles", {
         label: qx.locale.Manager.tr("User"),
         longLabel: qx.locale.Manager.tr("User: Read access"),
         canDo: [
-          qx.locale.Manager.tr("- can open it")
+          qx.locale.Manager.tr("- can open it without making changes")
         ],
         accessRights: {
           "read": true,

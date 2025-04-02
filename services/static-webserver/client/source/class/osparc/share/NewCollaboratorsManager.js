@@ -173,7 +173,7 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
           }
         }, this);
         selectBox.getSelectables().forEach(selectable => {
-          if (selectable.getModel() === "write") {
+          if (selectable.getModel() === "write") { // default to write
             selectBox.setSelection([selectable]);
           }
         });
