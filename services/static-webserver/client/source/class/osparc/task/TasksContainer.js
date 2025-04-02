@@ -48,6 +48,7 @@ qx.Class.define("osparc.task.TasksContainer", {
       this.__tasksContainer.addAt(taskUI, 0);
 
       taskUI.getTask().addListener("resultReceived", () => this.__removeTaskUI(taskUI), this);
+      taskUI.getTask().addListener("taskAborted", () => this.__removeTaskUI(taskUI), this);
     },
 
     __removeTaskUI: function(taskUI) {

@@ -69,6 +69,7 @@ qx.Class.define("osparc.store.PollTasks", {
       if (index === -1) {
         const task = new osparc.data.PollTask(taskData, interval);
         task.addListener("resultReceived", () => this.__removeTask(task), this);
+        task.addListener("taskAborted", () => this.__removeTask(task), this);
         tasks.push(task);
         return task;
       }
