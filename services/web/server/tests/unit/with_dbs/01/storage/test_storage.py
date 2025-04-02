@@ -59,7 +59,7 @@ from servicelib.rabbitmq.rpc_interfaces.async_jobs import async_jobs
 from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import (
     submit,
 )
-from servicelib.rabbitmq.rpc_interfaces.storage.data_export import start_data_export
+from servicelib.rabbitmq.rpc_interfaces.storage.simcore_s3 import start_data_export
 from simcore_postgres_database.models.users import UserRole
 from yarl import URL
 
