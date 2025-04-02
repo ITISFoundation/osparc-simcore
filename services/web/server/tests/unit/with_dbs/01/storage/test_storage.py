@@ -454,7 +454,7 @@ async def test_data_export(
     create_storage_rpc_client_mock(
         "simcore_service_webserver.storage._rest",
         start_data_export.__name__,
-        backend_result_or_exception,
+        (backend_result_or_exception, None),
     )
 
     _body = DataExportPost(
@@ -661,7 +661,7 @@ async def test_get_async_job_links(
     create_storage_rpc_client_mock(
         "simcore_service_webserver.storage._rest",
         start_data_export.__name__,
-        AsyncJobGet(job_id=AsyncJobId(f"{_faker.uuid4()}")),
+        (AsyncJobGet(job_id=AsyncJobId(f"{_faker.uuid4()}")), None),
     )
 
     _body = DataExportPost(
