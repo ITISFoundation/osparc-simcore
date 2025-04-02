@@ -363,11 +363,11 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       const cardTitle = this.tr("Publishing ") + studyName;
       const toTemplateCard = this._addTaskCard(task, cardTitle, osparc.task.ToTemplate.ICON);
       if (toTemplateCard) {
-        this.__attachToTemplateEventHandler(task, toTemplateTaskUI, toTemplateCard);
+        this.__attachToTemplateEventHandler(task, toTemplateCard);
       }
     },
 
-    __attachToTemplateEventHandler: function(task, taskUI, toTemplateCard) {
+    __attachToTemplateEventHandler: function(task, toTemplateCard) {
       const finished = (msg, msgLevel) => {
         if (msg) {
           osparc.FlashMessenger.logAs(msg, msgLevel);
@@ -375,10 +375,6 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
         this._resourcesContainer.removeNonResourceCard(toTemplateCard);
       };
 
-      task.addListener("taskAborted", () => {
-        const msg = this.tr("Study to Template cancelled");
-        finished(msg, "WARNING");
-      });
       task.addListener("updateReceived", e => {
         const updateData = e.getData();
         if ("task_progress" in updateData && toTemplateCard) {
@@ -395,6 +391,10 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
         const msg = this.tr("Template created");
         finished(msg, "INFO");
         this.reloadResources();
+      });
+      task.addListener("taskAborted", () => {
+        const msg = this.tr("Study to Template cancelled");
+        finished(msg, "WARNING");
       });
       task.addListener("pollingError", e => {
         const err = e.getData();

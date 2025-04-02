@@ -2129,11 +2129,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const cardTitle = this.tr("Duplicating ") + studyName;
       const duplicatingStudyCard = this._addTaskCard(task, cardTitle, osparc.task.Duplicate.ICON);
       if (duplicatingStudyCard) {
-        this.__attachDuplicateEventHandler(task, duplicateTaskUI);
+        this.__attachDuplicateEventHandler(task);
       }
     },
 
-    __attachDuplicateEventHandler: function(task, taskUI) {
+    __attachDuplicateEventHandler: function(task) {
       const finished = (msg, msgLevel) => {
         if (msg) {
           osparc.FlashMessenger.logAs(msg, msgLevel);
@@ -2141,15 +2141,15 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         this._removeTaskCard(task);
       };
 
-      task.addListener("taskAborted", () => {
-        const msg = this.tr("Duplication cancelled");
-        finished(msg, "WARNING");
-      });
       task.addListener("resultReceived", e => {
         const msg = this.tr("Duplication completed");
         finished(msg, "INFO");
         const duplicatedStudyData = e.getData();
         this._updateStudyData(duplicatedStudyData);
+      });
+      task.addListener("taskAborted", () => {
+        const msg = this.tr("Duplication cancelled");
+        finished(msg, "WARNING");
       });
       task.addListener("pollingError", e => {
         const err = e.getData();
