@@ -95,7 +95,7 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
           control = new qx.ui.container.Composite(new qx.ui.layout.VBox(2)).set({
             paddingLeft: 8,
           });
-          const title = new qx.ui.basic.Label(this.tr("Access"));
+          const title = new qx.ui.basic.Label(this.tr("Give access:"));
           control.add(title);
           this.add(control);
           break;
@@ -111,6 +111,7 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
           control = new qx.ui.basic.Label().set({
             paddingLeft: 5,
             font: "text-12",
+            rich: true,
           });
           this.getChildControl("access-rights-layout").add(control);
           break;
@@ -169,7 +170,8 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
           const selected = e.getData()[0];
           if (selected) {
             const selectedRole = osparc.data.Roles.STUDY[selected.getModel()];
-            helper.setValue(selectedRole.longLabel);
+            const helperText = selectedRole.canDo.join("<br>");
+            helper.setValue(helperText);
           }
         }, this);
         selectBox.getSelectables().forEach(selectable => {
