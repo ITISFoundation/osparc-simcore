@@ -105,6 +105,9 @@ async def result(
             exception = pickle.loads(base64.b64decode(_result.args[0]))
             exc_type = type(exception).__name__
             exc_msg = f"{exception}"
+
+        if exception is None:
+            _logger.warning("Was not expecting %s", exception)
         raise JobError(job_id=job_id, exc_type=exc_type, exc_msg=exc_msg, exc=exception)
 
     return AsyncJobResult(result=_result)
