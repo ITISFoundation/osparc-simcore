@@ -61,7 +61,7 @@ async def create_user_api_key(
     project_id: ProjectID,
     node_id: NodeID,
 ) -> str:
-    data = await _create_for(
+    data: ApiKeyGet = await _create_for(
         app,
         product_name=product_name,
         user_id=user_id,
@@ -79,7 +79,7 @@ async def create_user_api_secret(
     project_id: ProjectID,
     node_id: NodeID,
 ) -> str:
-    data = await _create_for(
+    data: ApiKeyGet = await _create_for(
         app,
         product_name=product_name,
         user_id=user_id,
