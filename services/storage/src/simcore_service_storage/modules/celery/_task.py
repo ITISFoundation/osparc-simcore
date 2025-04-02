@@ -20,7 +20,7 @@ _logger = logging.getLogger(__name__)
 
 _DEFAULT_TASK_TIMEOUT: Final[timedelta] = timedelta(minutes=1)
 _DEFAULT_MAX_RETRIES: Final[NonNegativeInt] = 3
-_DEFAULT_WAIT_BEFORE_RETRY: Final[timedelta] = timedelta(seconds=1)
+_DEFAULT_WAIT_BEFORE_RETRY: Final[timedelta] = timedelta(seconds=5)
 
 
 T = TypeVar("T")
@@ -90,7 +90,7 @@ def _error_handling(max_retries: NonNegativeInt, delay_between_retries: timedelt
 
 
 @overload
-def define_task(
+def register_task(
     app: Celery,
     fn: Callable[Concatenate[AbortableTask, TaskId, P], Coroutine[Any, Any, R]],
     task_name: str | None = None,
@@ -101,7 +101,7 @@ def define_task(
 
 
 @overload
-def define_task(
+def register_task(
     app: Celery,
     fn: Callable[Concatenate[AbortableTask, P], R],
     task_name: str | None = None,
@@ -111,7 +111,7 @@ def define_task(
 ) -> None: ...
 
 
-def define_task(  # type: ignore[misc]
+def register_task(  # type: ignore[misc]
     app: Celery,
     fn: (
         Callable[Concatenate[AbortableTask, TaskId, P], Coroutine[Any, Any, R]]
