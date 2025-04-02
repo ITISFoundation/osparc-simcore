@@ -309,22 +309,23 @@ async def attempt_pod_removal_and_data_saving(
 
     await service_remove_containers(app, scheduler_data.node_uuid, sidecars_client)
 
-    try:
-        display_name = create_unique_api_name_for(
-            scheduler_data.product_name,
-            scheduler_data.user_id,
-            scheduler_data.project_id,
-            scheduler_data.node_uuid,
-        )
-        api_key = generate_unique_api_key(display_name)
-        await delete_api_key_by_key(
-            app,
-            product_name=scheduler_data.product_name,
-            user_id=scheduler_data.user_id,
-            api_key=api_key,
-        )
-    except Exception:  # pylint: disable=broad-except
-        _logger.warning("failed to delete api key %s", display_name)
+    if scheduler_data.product_name:
+        try:
+            display_name = create_unique_api_name_for(
+                scheduler_data.product_name,
+                scheduler_data.user_id,
+                scheduler_data.project_id,
+                scheduler_data.node_uuid,
+            )
+            api_key = generate_unique_api_key(display_name)
+            await delete_api_key_by_key(
+                app,
+                product_name=scheduler_data.product_name,
+                user_id=scheduler_data.user_id,
+                api_key=api_key,
+            )
+        except Exception:  # pylint: disable=broad-except
+            _logger.warning("failed to delete api key %s", display_name)
 
     # used for debuug, normally sleeps 0
     await asyncio.sleep(
