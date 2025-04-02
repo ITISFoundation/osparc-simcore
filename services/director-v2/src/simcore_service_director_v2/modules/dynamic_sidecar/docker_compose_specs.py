@@ -128,9 +128,9 @@ def _update_paths_mappings(
         )
         env_vars["DY_SIDECAR_PATH_INPUTS"] = f"{path_mappings.inputs_path}"
         env_vars["DY_SIDECAR_PATH_OUTPUTS"] = f"{path_mappings.outputs_path}"
-        env_vars[
-            "DY_SIDECAR_STATE_PATHS"
-        ] = f"{json_dumps( { f'{p}' for p in path_mappings.state_paths } )}"
+        env_vars["DY_SIDECAR_STATE_PATHS"] = (
+            f"{json_dumps( { f'{p}' for p in path_mappings.state_paths } )}"
+        )
 
         service_content["environment"] = _EnvironmentSection.export_as_list(env_vars)
 
@@ -241,15 +241,17 @@ def _update_container_labels(
             spec_service_key, default_limits
         )
 
-        label_keys = StandardSimcoreDockerLabels.model_construct(
-            user_id=user_id,
-            project_id=project_id,
-            node_id=node_id,
-            simcore_user_agent=simcore_user_agent,
-            product_name=product_name,
-            swarm_stack_name=swarm_stack_name,
-            memory_limit=ByteSize(container_limits["memory"]),
-            cpu_limit=container_limits["cpu"],
+        label_keys = StandardSimcoreDockerLabels.model_validate(
+            {
+                "user_id": user_id,
+                "project_id": project_id,
+                "node_id": node_id,
+                "simcore_user_agent": simcore_user_agent,
+                "product_name": product_name,
+                "swarm_stack_name": swarm_stack_name,
+                "memory_limit": ByteSize(container_limits["memory"]),
+                "cpu_limit": container_limits["cpu"],
+            }
         )
         docker_labels = [
             f"{k}={v}" for k, v in label_keys.to_simcore_runtime_docker_labels().items()
