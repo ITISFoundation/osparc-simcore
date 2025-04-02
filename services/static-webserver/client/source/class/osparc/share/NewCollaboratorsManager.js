@@ -76,7 +76,9 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
           break;
         }
         case "potential-collaborators-list": {
-          control = new qx.ui.container.Composite(new qx.ui.layout.VBox());
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox()).set({
+            minHeight: 100,
+          });
           const scrollContainer = new qx.ui.container.Scroll();
           scrollContainer.add(control);
           this.add(scrollContainer, {
