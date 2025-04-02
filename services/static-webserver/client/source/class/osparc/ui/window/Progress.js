@@ -44,7 +44,7 @@ qx.Class.define("osparc.ui.window.Progress", {
           control.getChildControl("progress").set({
             backgroundColor: "strong-main"
           });
-          this.add(control);
+          this.addAt(control, 1);
           break;
       }
       return control || this.base(arguments, id);
