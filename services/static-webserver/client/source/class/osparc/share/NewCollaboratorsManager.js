@@ -173,7 +173,7 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
           }
         }, this);
         selectBox.getSelectables().forEach(selectable => {
-          if (selectable.getModel() == 2) { // "write"
+          if (selectable.getModel() === "write") {
             selectBox.setSelection([selectable]);
           }
         });

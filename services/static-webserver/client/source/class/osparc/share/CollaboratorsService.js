@@ -127,8 +127,8 @@ qx.Class.define("osparc.share.CollaboratorsService", {
       this.__make(
         collaborator["gid"],
         this.self().getOwnerAccessRight(),
-        this.tr(`Successfully promoted to ${osparc.data.Roles.SERVICE[2].label}`),
-        this.tr(`Something went wrong while promoting to ${osparc.data.Roles.SERVICE[2].label}`),
+        this.tr(`Successfully promoted to ${osparc.data.Roles.SERVICE["write"].label}`),
+        this.tr(`Something went wrong while promoting to ${osparc.data.Roles.SERVICE["write"].label}`),
         item
       );
     },
@@ -141,8 +141,8 @@ qx.Class.define("osparc.share.CollaboratorsService", {
       this.__make(
         collaborator["gid"],
         this.self().getCollaboratorAccessRight(),
-        this.tr(`Successfully demoted to ${osparc.data.Roles.SERVICE[1].label}`),
-        this.tr(`Something went wrong while demoting ${osparc.data.Roles.SERVICE[1].label}`),
+        this.tr(`Successfully demoted to ${osparc.data.Roles.SERVICE["read"].label}`),
+        this.tr(`Something went wrong while demoting ${osparc.data.Roles.SERVICE["read"].label}`),
         item
       );
     },

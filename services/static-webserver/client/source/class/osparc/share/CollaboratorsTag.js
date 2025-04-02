@@ -124,8 +124,8 @@ qx.Class.define("osparc.share.CollaboratorsTag", {
       this.__make(
         collaborator["gid"],
         this.self().getCollaboratorAccessRight(),
-        this.tr(`Successfully promoted to ${osparc.data.Roles.STUDY[2].label}`),
-        this.tr(`Something went wrong while promoting to ${osparc.data.Roles.STUDY[2].label}`),
+        this.tr(`Successfully promoted to ${osparc.data.Roles.STUDY["write"].label}`),
+        this.tr(`Something went wrong while promoting to ${osparc.data.Roles.STUDY["write"].label}`),
         item
       );
     },
@@ -134,8 +134,8 @@ qx.Class.define("osparc.share.CollaboratorsTag", {
       this.__make(
         collaborator["gid"],
         this.self().getOwnerAccessRight(),
-        this.tr(`Successfully promoted to ${osparc.data.Roles.STUDY[3].label}`),
-        this.tr(`Something went wrong while promoting to ${osparc.data.Roles.STUDY[3].label}`),
+        this.tr(`Successfully promoted to ${osparc.data.Roles.STUDY["delete"].label}`),
+        this.tr(`Something went wrong while promoting to ${osparc.data.Roles.STUDY["delete"].label}`),
         item
       );
     },
@@ -144,8 +144,8 @@ qx.Class.define("osparc.share.CollaboratorsTag", {
       this.__make(
         collaborator["gid"],
         this.self().getViewerAccessRight(),
-        this.tr(`Successfully demoted to ${osparc.data.Roles.STUDY[1].label}`),
-        this.tr(`Something went wrong while demoting to ${osparc.data.Roles.STUDY[1].label}`),
+        this.tr(`Successfully demoted to ${osparc.data.Roles.STUDY["read"].label}`),
+        this.tr(`Something went wrong while demoting to ${osparc.data.Roles.STUDY["read"].label}`),
         item
       );
     },
@@ -154,8 +154,8 @@ qx.Class.define("osparc.share.CollaboratorsTag", {
       this.__make(
         collaborator["gid"],
         this.self().getCollaboratorAccessRight(),
-        this.tr(`Successfully demoted to ${osparc.data.Roles.STUDY[2].label}`),
-        this.tr(`Something went wrong while demoting to ${osparc.data.Roles.STUDY[2].label}`),
+        this.tr(`Successfully demoted to ${osparc.data.Roles.STUDY["write"].label}`),
+        this.tr(`Something went wrong while demoting to ${osparc.data.Roles.STUDY["write"].label}`),
         item
       );
     }

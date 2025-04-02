@@ -120,8 +120,8 @@ qx.Class.define("osparc.share.CollaboratorsWorkspace", {
       this.__make(
         collaborator["gid"],
         this.self().getCollaboratorAccessRight(),
-        this.tr(`Successfully promoted to ${osparc.data.Roles.WORKSPACE[2].label}`),
-        this.tr(`Something went wrong while promoting to ${osparc.data.Roles.WORKSPACE[2].label}`),
+        this.tr(`Successfully promoted to ${osparc.data.Roles.WORKSPACE["write"].label}`),
+        this.tr(`Something went wrong while promoting to ${osparc.data.Roles.WORKSPACE["write"].label}`),
         item
       );
     },
@@ -130,8 +130,8 @@ qx.Class.define("osparc.share.CollaboratorsWorkspace", {
       this.__make(
         collaborator["gid"],
         this.self().getOwnerAccessRight(),
-        this.tr(`Successfully promoted to ${osparc.data.Roles.WORKSPACE[3].label}`),
-        this.tr(`Something went wrong while promoting to ${osparc.data.Roles.WORKSPACE[3].label}`),
+        this.tr(`Successfully promoted to ${osparc.data.Roles.WORKSPACE["delete"].label}`),
+        this.tr(`Something went wrong while promoting to ${osparc.data.Roles.WORKSPACE["delete"].label}`),
         item
       );
     },
@@ -142,15 +142,15 @@ qx.Class.define("osparc.share.CollaboratorsWorkspace", {
         this.__make(
           gid,
           this.self().getViewerAccessRight(),
-          this.tr(`Successfully demoted to ${osparc.data.Roles.WORKSPACE[1].label}`),
-          this.tr(`Something went wrong while demoting to ${osparc.data.Roles.WORKSPACE[1].label}`),
+          this.tr(`Successfully demoted to ${osparc.data.Roles.WORKSPACE["read"].label}`),
+          this.tr(`Something went wrong while demoting to ${osparc.data.Roles.WORKSPACE["read"].label}`),
           itm
         );
       };
 
       const group = osparc.store.Groups.getInstance().getOrganization(groupId);
       if (group) {
-        const msg = this.tr(`Demoting to ${osparc.data.Roles.WORKSPACE[1].label} will remove write access to all the members of the Organization. Are you sure?`);
+        const msg = this.tr(`Demoting to ${osparc.data.Roles.WORKSPACE["read"].label} will remove write access to all the members of the Organization. Are you sure?`);
         const win = new osparc.ui.window.Confirmation(msg).set({
           caption: this.tr("Demote"),
           confirmAction: "delete",
@@ -172,8 +172,8 @@ qx.Class.define("osparc.share.CollaboratorsWorkspace", {
       this.__make(
         collaborator["gid"],
         this.self().getCollaboratorAccessRight(),
-        this.tr(`Successfully demoted to ${osparc.data.Roles.WORKSPACE[2].label}`),
-        this.tr(`Something went wrong while demoting to ${osparc.data.Roles.WORKSPACE[2].label}`),
+        this.tr(`Successfully demoted to ${osparc.data.Roles.WORKSPACE["write"].label}`),
+        this.tr(`Something went wrong while demoting to ${osparc.data.Roles.WORKSPACE["write"].label}`),
         item
       );
     }
