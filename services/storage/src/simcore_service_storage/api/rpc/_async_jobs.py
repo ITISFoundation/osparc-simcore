@@ -100,11 +100,11 @@ async def result(
         exc_msg = ""
         with log_catch(logger=_logger, reraise=False):
             # NOTE: recover original error from wrapped error
-            exc = pickle.loads(base64.b64decode(_result.args[0]))
-            exc_type = type(exc).__name__
-            exc_msg = f"{exc}"
+            exception = pickle.loads(base64.b64decode(_result.args[0]))
+            exc_type = type(exception).__name__
+            exc_msg = f"{exception}"
 
-        raise JobError(job_id=job_id, exc_type=exc_type, exc_msg=exc_msg, exc=exc)
+        raise JobError(job_id=job_id, exc_type=exc_type, exc_msg=exc_msg, exc=exception)
 
     return AsyncJobResult(result=_result)
 

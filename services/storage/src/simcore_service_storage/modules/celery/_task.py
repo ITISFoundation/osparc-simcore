@@ -9,7 +9,7 @@ from functools import wraps
 from typing import Any, Concatenate, Final, ParamSpec, TypeVar, overload
 
 from celery import Celery, Task  # type: ignore[import-untyped]
-from celery.contrib.abortable import AbortableTask
+from celery.contrib.abortable import AbortableTask  # type: ignore[import-untyped]
 from pydantic import NonNegativeInt
 
 from . import get_event_loop
